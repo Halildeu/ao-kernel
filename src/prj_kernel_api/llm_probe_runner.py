@@ -31,7 +31,11 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
 
 
 def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None):
-    provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
+    from src.shared.resource_loader import load_resource_path
+
+    provider_map = load_resource_path("operations", "llm_provider_map.v1.json")
+    if provider_map is None:
+        provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
     state_path = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
     return provider_map, state_path

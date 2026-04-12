@@ -41,9 +41,20 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
 
 
 def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path, Path, Path, Path]:
-    class_registry = repo_root / "docs" / "OPERATIONS" / "llm_class_registry.v1.json"
-    resolver_rules = repo_root / "docs" / "OPERATIONS" / "llm_resolver_rules.v1.json"
-    provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
+    from src.shared.resource_loader import load_resource_path
+
+    class_registry = load_resource_path("operations", "llm_class_registry.v1.json")
+    resolver_rules = load_resource_path("operations", "llm_resolver_rules.v1.json")
+    provider_map = load_resource_path("operations", "llm_provider_map.v1.json")
+
+    # Fallback to repo-root if resource_loader returns paths
+    if class_registry is None:
+        class_registry = repo_root / "docs" / "OPERATIONS" / "llm_class_registry.v1.json"
+    if resolver_rules is None:
+        resolver_rules = repo_root / "docs" / "OPERATIONS" / "llm_resolver_rules.v1.json"
+    if provider_map is None:
+        provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
+
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
     probe_state = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
     return class_registry, resolver_rules, provider_map, probe_state

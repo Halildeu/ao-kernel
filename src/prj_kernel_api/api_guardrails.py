@@ -32,13 +32,6 @@ class GuardrailsError(ValueError):
     pass
 
 
-def _find_repo_root(start: Path) -> Path:
-    for p in [start] + list(start.parents):
-        if (p / "pyproject.toml").exists():
-            return p
-    return Path.cwd()
-
-
 def _load_json(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -77,17 +70,25 @@ def _resolve_int_override(key: str, workspace_root: str, env_mode: str) -> int |
 
 
 def load_guardrails_policy(workspace_root: str) -> Dict[str, Any]:
-    repo_root = _find_repo_root(Path(__file__).resolve())
-    ws_policy = Path(workspace_root) / "policies" / "policy_kernel_api_guardrails.v1.json"
-    policy_path = ws_policy if ws_policy.exists() else repo_root / POLICY_PATH
-    if not policy_path.exists():
-        raise GuardrailsError("KERNEL_API_POLICY_MISSING")
+    from src.shared.resource_loader import load_resource, load_resource_path
 
-    policy = _load_json(policy_path)
-    schema_path = repo_root / SCHEMA_PATH
-    if not schema_path.exists():
-        raise GuardrailsError("KERNEL_API_POLICY_SCHEMA_MISSING")
-    schema = _load_json(schema_path)
+    ws_policy = Path(workspace_root) / "policies" / "policy_kernel_api_guardrails.v1.json"
+    if ws_policy.exists():
+        policy = _load_json(ws_policy)
+    else:
+        try:
+            policy = load_resource("policies", "policy_kernel_api_guardrails.v1.json")
+        except (FileNotFoundError, Exception):
+            raise GuardrailsError("KERNEL_API_POLICY_MISSING")
+
+    schema_path = load_resource_path("schemas", "policy-kernel-api-guardrails.schema.json")
+    if schema_path is None:
+        try:
+            schema = load_resource("schemas", "policy-kernel-api-guardrails.schema.json")
+        except (FileNotFoundError, Exception):
+            raise GuardrailsError("KERNEL_API_POLICY_SCHEMA_MISSING")
+    else:
+        schema = _load_json(schema_path)
     errors = sorted(Draft202012Validator(schema).iter_errors(policy), key=lambda e: e.json_path)
     if errors:
         raise GuardrailsError("KERNEL_API_POLICY_INVALID")

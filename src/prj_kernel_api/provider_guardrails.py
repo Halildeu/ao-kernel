@@ -11,13 +11,6 @@ from src.prj_kernel_api.dotenv_loader import resolve_env_value
 POLICY_PATH = "policies/policy_llm_providers_guardrails.v1.json"
 
 
-def _find_repo_root(start: Path) -> Path:
-    for p in [start] + list(start.parents):
-        if (p / "pyproject.toml").exists():
-            return p
-    return Path.cwd()
-
-
 def _load_json(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -95,12 +88,16 @@ def validate_guardrails(obj: Any) -> None:
 
 
 def load_guardrails(workspace_root: str) -> Dict[str, Any]:
-    repo_root = _find_repo_root(Path(__file__).resolve())
+    from src.shared.resource_loader import load_resource
+
     ws_policy = Path(workspace_root) / "policies" / "policy_llm_providers_guardrails.v1.json"
-    policy_path = ws_policy if ws_policy.exists() else repo_root / POLICY_PATH
-    if not policy_path.exists():
-        raise ValueError("PROVIDER_GUARDRAILS_MISSING")
-    policy = _load_json(policy_path)
+    if ws_policy.exists():
+        policy = _load_json(ws_policy)
+    else:
+        try:
+            policy = load_resource("policies", "policy_llm_providers_guardrails.v1.json")
+        except (FileNotFoundError, Exception):
+            raise ValueError("PROVIDER_GUARDRAILS_MISSING")
     validate_guardrails(policy)
     return policy
 
