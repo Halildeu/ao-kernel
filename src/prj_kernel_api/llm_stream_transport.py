@@ -215,6 +215,16 @@ def execute_stream_request(
     else:
         cb.record_failure(Exception(f"{error_code}: {finish_reason}"))
 
+    # Telemetry
+    from ao_kernel.telemetry import record_llm_call_duration, record_stream_first_token
+    record_llm_call_duration(
+        elapsed, provider=provider_id, model="unknown", status=status,
+    )
+    if first_token_time is not None:
+        record_stream_first_token(
+            _elapsed_ms_from(start, first_token_time), provider=provider_id,
+        )
+
     return StreamResult(
         status=status,
         complete=complete,

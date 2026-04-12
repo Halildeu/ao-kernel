@@ -450,6 +450,9 @@ def create_mcp_server():
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict):
+        import time as _time
+        from ao_kernel.telemetry import span as otel_span, record_mcp_tool_call, record_policy_check
+
         handler = TOOL_DISPATCH.get(name)
         if handler is None:
             return [TextContent(
@@ -457,7 +460,22 @@ def create_mcp_server():
                 text=json.dumps({"error": f"Unknown tool: {name}"}),
             )]
 
-        result = handler(arguments or {})
+        start = _time.monotonic()
+        with otel_span("ao.mcp_tool_call", {"ao.mcp.tool": name}) as s:
+            result = handler(arguments or {})
+            elapsed = (_time.monotonic() - start) * 1000.0
+
+            decision = result.get("decision", "unknown")
+            s.set_attribute("ao.decision", decision)
+            s.set_attribute("ao.allowed", result.get("allowed", False))
+            record_mcp_tool_call(elapsed, tool=name, decision=decision)
+
+            if name == "ao_policy_check":
+                record_policy_check(
+                    policy=result.get("policy_ref", "unknown"),
+                    decision=decision,
+                )
+
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
     @server.list_resources()

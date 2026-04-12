@@ -206,26 +206,45 @@ def execute_http_request_with_resilience(
             max_response_bytes=max_response_bytes,
         )
 
-    result = execute_with_retry(
-        _do_request,
-        max_retries=max_retries,
-        provider_id=provider_id,
-        request_id=request_id,
-        on_retry=_on_retry,
-    )
+    from ao_kernel.telemetry import span as otel_span, record_llm_call_duration
 
-    # Update circuit breaker state
-    if result.get("status") == "OK":
-        cb.record_success()
-    else:
-        cb.record_failure(
-            Exception(f"HTTP {result.get('http_status')} {result.get('error_code')}")
+    with otel_span("ao.llm_call", {
+        "gen_ai.system": provider_id,
+        "ao.request_id": request_id,
+        "ao.retry.max": max_retries,
+    }) as s:
+        result = execute_with_retry(
+            _do_request,
+            max_retries=max_retries,
+            provider_id=provider_id,
+            request_id=request_id,
+            on_retry=_on_retry,
         )
 
-    # Attach retry evidence
-    if retry_evidence:
-        result["retry_evidence"] = retry_evidence
-    result["retry_attempts"] = result.get("retry_attempts", len(retry_evidence))
-    result["circuit_state"] = cb.status_dict()
+        # Update circuit breaker state
+        if result.get("status") == "OK":
+            cb.record_success()
+        else:
+            cb.record_failure(
+                Exception(f"HTTP {result.get('http_status')} {result.get('error_code')}")
+            )
+
+        # Attach retry evidence
+        if retry_evidence:
+            result["retry_evidence"] = retry_evidence
+            s.add_event("ao.retry", {"ao.retry.count": len(retry_evidence)})
+        result["retry_attempts"] = result.get("retry_attempts", len(retry_evidence))
+        result["circuit_state"] = cb.status_dict()
+
+        # Telemetry
+        s.set_attribute("ao.status", result.get("status", "UNKNOWN"))
+        s.set_attribute("ao.elapsed_ms", result.get("elapsed_ms", 0))
+        s.set_attribute("ao.http_status", result.get("http_status") or 0)
+        record_llm_call_duration(
+            result.get("elapsed_ms", 0),
+            provider=provider_id,
+            model="unknown",  # model not available at transport level
+            status=result.get("status", "UNKNOWN"),
+        )
 
     return result
