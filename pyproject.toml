@@ -28,9 +28,11 @@ llm = [
 ]
 dev = [
     "pytest",
+    "pytest-cov",
     "ruff",
     "mypy",
     "build",
+    "mutmut",
 ]
 otel = [
     "opentelemetry-api",
@@ -73,3 +75,30 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "quality_waiver: exempt from test quality gate (requires justification)",
+]
+
+[tool.coverage.run]
+source = ["ao_kernel", "src"]
+branch = true
+omit = [
+    "*/test_*",
+    "*/_test*",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "raise NotImplementedError",
+]
+
+[tool.mutmut]
+paths_to_mutate = "ao_kernel/"
+tests_dir = "tests/"
+runner = "python -m pytest -x --tb=no -q"
