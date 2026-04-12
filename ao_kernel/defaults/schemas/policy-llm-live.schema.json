@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-llm-live.schema.json",
+  "title": "Policy LLM Live",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "live_enabled",
+    "enable_env_key",
+    "allowed_providers",
+    "max_calls_per_run",
+    "timeout_ms",
+    "max_output_chars"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "live_enabled": {
+      "type": "boolean"
+    },
+    "enable_env_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "allowed_providers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "enabled_probe_families": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "chat",
+          "embeddings",
+          "moderation",
+          "vision",
+          "audio",
+          "image_gen",
+          "realtime",
+          "video_gen"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "max_calls_per_run": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 60000
+    },
+    "max_output_chars": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

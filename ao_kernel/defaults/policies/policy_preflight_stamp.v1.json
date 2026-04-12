@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "stamp_ttl_minutes": 30,
+  "require_pass_for_apply": true,
+  "notes": [
+    "PROGRAM_LED=true",
+    "NO_WAIT=true"
+  ],
+  "fail_action": "warn"
+}

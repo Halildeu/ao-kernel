@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/project-manifest.schema.json",
+  "title": "Project Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project_id",
+    "purpose",
+    "domain_tags",
+    "iso_refs",
+    "selected_pack_ids",
+    "target_maturity_level"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "project_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "layer_scope": { "type": "string", "enum": ["L0", "L1", "L2", "L3"] },
+    "purpose": { "type": "string", "minLength": 1 },
+    "domain_tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "iso_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context", "stakeholders", "scope", "criteria"],
+      "properties": {
+        "context": { "type": "string", "minLength": 1 },
+        "stakeholders": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 },
+        "criteria": { "type": "string", "minLength": 1 }
+      }
+    },
+    "selected_pack_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "target_maturity_level": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "target_milestones": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "success_metrics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risk_category": { "type": "string", "enum": ["low", "medium", "high"] },
+    "program_led_entrypoints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence_expectations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "promotion_policy": { "type": "string", "minLength": 1 }
+  }
+}

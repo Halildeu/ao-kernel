@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:agent-consultation:v1",
+  "title": "Agent Consultation",
+  "description": "Schema for async agent-to-agent consultations via git repo. Agents write OPEN consultations, others respond, and resolution is recorded. Git is the transport layer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "consultation_id", "status", "from_agent", "to_agent", "topic", "question", "created_at", "branch", "head_sha"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "consultation_id": {
+      "type": "string",
+      "pattern": "^CNS-[0-9]{8}-[0-9]{3}$",
+      "description": "Unique consultation ID. Format: CNS-YYYYMMDD-NNN."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["OPEN", "RESPONDED", "RESOLVED", "EXPIRED"],
+      "description": "OPEN: awaiting response. RESPONDED: at least one agent replied. RESOLVED: decision made. EXPIRED: TTL exceeded without resolution."
+    },
+    "from_agent": {
+      "type": "string",
+      "enum": ["claude", "codex", "antigravity", "human"],
+      "description": "Agent that initiated the consultation."
+    },
+    "to_agent": {
+      "type": "string",
+      "enum": ["claude", "codex", "antigravity", "all"],
+      "description": "Target agent(s). 'all' broadcasts to every agent."
+    },
+    "topic": {
+      "type": "string",
+      "enum": ["architecture", "assessment", "review", "planning", "decision", "maturity", "operations", "other"],
+      "description": "Consultation topic category."
+    },
+    "question": {
+      "$ref": "#/$defs/question",
+      "description": "The consultation question with optional structured options."
+    },
+    "responses": {
+      "type": "array",
+      "description": "Agent responses. Multiple agents may respond.",
+      "items": { "$ref": "#/$defs/response" }
+    },
+    "resolution": {
+      "$ref": "#/$defs/resolution",
+      "description": "Final resolution. Written by initiator or human."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when consultation was created."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when consultation expires if unresolved."
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch where consultation was created.",
+      "minLength": 1
+    },
+    "head_sha": {
+      "type": "string",
+      "description": "Git HEAD SHA at creation time.",
+      "minLength": 7
+    }
+  },
+  "$defs": {
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "body"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Short consultation title."
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Detailed question or analysis to consult on."
+        },
+        "context_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Repo-relative file paths providing context for this consultation."
+        },
+        "options": {
+          "type": "array",
+          "description": "Structured options for the respondent to choose from (optional).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["option_id", "title"],
+            "properties": {
+              "option_id": { "type": "string", "minLength": 1 },
+              "title": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "pros": { "type": "string" },
+              "cons": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "responded_at", "body"],
+      "properties": {
+        "agent": {
+          "type": "string",
+          "enum": ["claude", "codex", "antigravity", "human"],
+          "description": "Responding agent."
+        },
+        "responded_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 response timestamp."
+        },
+        "verdict": {
+          "type": "string",
+          "description": "Chosen option_id (if options were provided)."
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Full response text."
+        },
+        "agreements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Points the respondent agrees with."
+        },
+        "objections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Points the respondent disagrees with, with reasons."
+        },
+        "additions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "New findings or suggestions the initiator missed."
+        },
+        "branch": { "type": "string" },
+        "head_sha": { "type": "string" }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decided_by", "summary", "resolved_at"],
+      "properties": {
+        "decided_by": {
+          "type": "string",
+          "enum": ["human", "consensus", "initiator", "timeout"],
+          "description": "Who made the final decision."
+        },
+        "chosen_option": {
+          "type": "string",
+          "description": "Chosen option_id if structured options were provided."
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Summary of the resolution decision."
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 resolution timestamp."
+        },
+        "action_items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Concrete action items from this consultation."
+        }
+      }
+    }
+  }
+}

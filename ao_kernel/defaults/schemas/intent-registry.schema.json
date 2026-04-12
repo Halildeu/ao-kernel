@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/intent-registry.schema.json",
+  "title": "Intent Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "intents"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["intent", "workflow_id"],
+        "properties": {
+          "intent": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^urn:"
+          },
+          "workflow_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
+

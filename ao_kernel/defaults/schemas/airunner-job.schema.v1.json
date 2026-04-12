@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-job.schema.v1.json",
+  "title": "Airunner Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "job_id",
+    "job_type",
+    "kind",
+    "workspace_root",
+    "status",
+    "created_at",
+    "started_at",
+    "last_poll_at",
+    "updated_at",
+    "attempts",
+    "evidence_paths",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "job_id": { "type": "string", "minLength": 1 },
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "SMOKE_FULL",
+        "RELEASE_PREPARE",
+        "RELEASE_PUBLISH",
+        "GITHUB_CHECKS_POLL",
+        "GITHUB_MERGE_POLL"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "SMOKE_FULL",
+        "RELEASE_PREPARE",
+        "RELEASE_PUBLISH",
+        "GITHUB_CHECKS_POLL",
+        "GITHUB_MERGE_POLL"
+      ]
+    },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["QUEUED", "RUNNING", "PASS", "FAIL", "TIMEOUT", "KILLED", "SKIP"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "last_poll_at": { "type": "string", "format": "date-time" },
+    "run_after": { "type": "string", "format": "date-time" },
+    "attempts": { "type": "integer", "minimum": 0 },
+    "pid": { "type": ["integer", "null"], "minimum": 0 },
+    "rc": { "type": ["integer", "null"] },
+    "error_code": { "type": "string" },
+    "skip_reason": { "type": "string" },
+    "failure_class": {
+      "type": "string",
+      "enum": ["DEMO_PREREQ_FAIL", "DEMO_CATALOG_PARSE", "CORE_BREAK", "OTHER", "TIMEOUT", "PASS"]
+    },
+    "signature_hash": { "type": "string", "minLength": 1 },
+    "polls_without_progress": { "type": "integer", "minimum": 0 },
+    "last_progress_at": { "type": "string", "format": "date-time" },
+    "archived_at": { "type": "string", "format": "date-time" },
+    "stale_reason": { "type": "string" },
+    "archived": { "type": "boolean" },
+    "policy_hash": { "type": "string" },
+    "evidence_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "result_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

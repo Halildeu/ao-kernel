@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:decision-quality:v1",
+  "title": "Decision Quality Assessment",
+  "description": "Schema for measuring and tracking decision quality across the orchestrator. Each decision can be scored on multiple quality dimensions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "decision_id", "assessed_at", "scores"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "decision_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for the decision being assessed."
+    },
+    "assessed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of when the assessment was performed."
+    },
+    "assessor": {
+      "type": "string",
+      "enum": ["auto", "human", "policy"],
+      "description": "Who performed the assessment."
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy", "completeness", "consistency"],
+      "properties": {
+        "accuracy": {
+          "$ref": "#/$defs/score",
+          "description": "How correct the decision is relative to the available evidence."
+        },
+        "completeness": {
+          "$ref": "#/$defs/score",
+          "description": "Whether all relevant inputs were considered."
+        },
+        "consistency": {
+          "$ref": "#/$defs/score",
+          "description": "Whether the decision aligns with prior decisions in similar contexts."
+        },
+        "timeliness": {
+          "$ref": "#/$defs/score",
+          "description": "Whether the decision was made within acceptable time bounds."
+        },
+        "reversibility": {
+          "$ref": "#/$defs/score",
+          "description": "How easily the decision can be undone if wrong."
+        }
+      },
+      "description": "Quality dimension scores."
+    },
+    "composite_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Weighted composite quality score (0.0–1.0)."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Human-readable notes on the assessment."
+    }
+  },
+  "$defs": {
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Score value between 0.0 (worst) and 1.0 (best)."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence in this score (0.0–1.0)."
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Brief evidence supporting this score."
+        }
+      }
+    }
+  }
+}

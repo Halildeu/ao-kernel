@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-enforcement-pack.schema.v1.json",
+  "title": "policy-enforcement-pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "profiles",
+    "baseline",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_mode",
+        "strict_mode"
+      ],
+      "properties": {
+        "default_mode": {
+          "type": "string",
+          "enum": [
+            "default_profile",
+            "strict_profile"
+          ]
+        },
+        "strict_mode": {
+          "type": "string",
+          "enum": [
+            "default_profile",
+            "strict_profile"
+          ]
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_mode",
+        "strict_mode"
+      ],
+      "properties": {
+        "default_mode": {
+          "type": "string"
+        },
+        "strict_mode": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

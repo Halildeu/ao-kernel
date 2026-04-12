@@ -1,0 +1,39 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "schema_ref": "schemas/risk-scoring.schema.v1.json",
+  "thresholds": {
+    "low": {
+      "max_composite_score": 0.3,
+      "boundary": "full_auto",
+      "description": "Low risk — orchestrator may proceed autonomously."
+    },
+    "medium": {
+      "max_composite_score": 0.6,
+      "boundary": "human_review",
+      "description": "Medium risk — surface to decision inbox, await human review."
+    },
+    "high": {
+      "max_composite_score": 0.85,
+      "boundary": "human_review",
+      "description": "High risk — block execution, require explicit human approval."
+    },
+    "critical": {
+      "max_composite_score": 1.0,
+      "boundary": "strict_deny",
+      "description": "Critical risk — STRICT_DENY, human must execute manually."
+    }
+  },
+  "factor_weights": {
+    "impact": 0.35,
+    "probability": 0.25,
+    "reversibility": 0.25,
+    "scope": 0.15
+  },
+  "integration": {
+    "decision_boundary_ref": "policies/policy_decision_boundaries.v1.json",
+    "human_approval_ref": "policies/policy_human_approval_request.v1.json",
+    "note": "composite_score maps to decision boundary levels. Scores above medium threshold trigger human_approval_request creation."
+  },
+  "fail_action": "block"
+}

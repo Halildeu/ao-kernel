@@ -1,0 +1,66 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "default_workspace": ".cache/ws_customer_default",
+  "runbooks": {
+    "system_full_start": {
+      "triggers": ["sistemi başlat", "komple başlat", "full bootstrap", "sıfırdan başla"],
+      "steps": [
+        "workspace-bootstrap --workspace-root {ws}",
+        "system-status --workspace-root {ws}",
+        "script-budget",
+        "work-intake-check --workspace-root {ws}",
+        "decision-inbox-build --workspace-root {ws}",
+        "project-status --workspace-root {ws}"
+      ],
+      "profile": "STARTUP",
+      "description": "Full system bootstrap: workspace → status → intake → decisions → project overview."
+    },
+    "status_check": {
+      "triggers": ["neredeyiz", "durum ne", "durum", "status", "ne durumda"],
+      "steps": ["project-status --workspace-root {ws}"],
+      "fallback": "system-status --workspace-root {ws}",
+      "profile": "TASK_EXECUTION",
+      "description": "Quick status check. Falls back to system-status if project-status unavailable."
+    },
+    "assessment_run": {
+      "triggers": ["olgunluk değerlendir", "maturity assessment", "değerlendirme yap", "skor ver"],
+      "steps": [
+        "system-status --workspace-root {ws}",
+        "portfolio-status --workspace-root {ws}",
+        "roadmap-status --workspace-root {ws} --roadmap roadmaps/SSOT/roadmap.v1.json",
+        "integrity-verify --workspace-root {ws}"
+      ],
+      "profile": "ASSESSMENT",
+      "description": "Full maturity assessment pipeline."
+    },
+    "code_review": {
+      "triggers": ["kod incele", "review yap", "code review", "PR incele"],
+      "steps": [
+        "context-drift --workspace-root {ws}",
+        "policy-check --source both"
+      ],
+      "profile": "REVIEW",
+      "description": "Code/PR review with drift detection and policy check."
+    },
+    "planning_session": {
+      "triggers": ["plan yap", "roadmap planla", "strateji", "mimari plan"],
+      "steps": [
+        "roadmap-status --workspace-root {ws} --roadmap roadmaps/SSOT/roadmap.v1.json",
+        "portfolio-status --workspace-root {ws}"
+      ],
+      "profile": "PLANNING",
+      "description": "Planning/architecture session with roadmap context."
+    },
+    "emergency_triage": {
+      "triggers": ["acil", "emergency", "sistem çöktü", "integrity hatası"],
+      "steps": [
+        "system-status --workspace-root {ws}",
+        "integrity-verify --workspace-root {ws}"
+      ],
+      "profile": "EMERGENCY",
+      "description": "Emergency triage: status + integrity check. Report-only mode."
+    }
+  },
+  "fail_action": "warn"
+}

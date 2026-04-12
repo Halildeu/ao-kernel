@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "format-autopilot-chat.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "sections", "rules"],
+  "properties": {
+    "id": { "type": "string", "const": "FORMAT-AUTOPILOT-CHAT" },
+    "version": { "type": "string", "const": "v1" },
+    "sections": {
+      "type": "array",
+      "minItems": 5,
+      "items": { "$ref": "#/$defs/section" },
+      "allOf": [
+        { "$ref": "#/$defs/contains_required_preview" },
+        { "$ref": "#/$defs/contains_required_result" },
+        { "$ref": "#/$defs/contains_required_evidence" },
+        { "$ref": "#/$defs/contains_required_actions" },
+        { "$ref": "#/$defs/contains_required_next" }
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["no_shell_commands_in_user_text", "always_show_evidence_paths"],
+      "properties": {
+        "no_shell_commands_in_user_text": { "type": "boolean" },
+        "always_show_evidence_paths": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "required"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[A-Z][A-Z0-9_]{1,31}$"
+        },
+        "required": { "type": "boolean" }
+      }
+    },
+    "contains_required_preview": {
+      "contains": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": { "id": { "const": "PREVIEW" }, "required": { "const": true } }
+      }
+    },
+    "contains_required_result": {
+      "contains": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": { "id": { "const": "RESULT" }, "required": { "const": true } }
+      }
+    },
+    "contains_required_evidence": {
+      "contains": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": { "id": { "const": "EVIDENCE" }, "required": { "const": true } }
+      }
+    },
+    "contains_required_actions": {
+      "contains": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": { "id": { "const": "ACTIONS" }, "required": { "const": true } }
+      }
+    },
+    "contains_required_next": {
+      "contains": {
+        "type": "object",
+        "required": ["id", "required"],
+        "properties": { "id": { "const": "NEXT" }, "required": { "const": true } }
+      }
+    }
+  }
+}

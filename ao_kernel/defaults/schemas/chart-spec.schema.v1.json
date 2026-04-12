@@ -1,0 +1,414 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:chart-spec:v1",
+  "title": "ChartSpec",
+  "description": "Engine-agnostic declarative chart specification for Design Lab Chart Platform. Defines data, visual mappings, interactions, accessibility, states, animation, locale, security, and performance hints. Consumed by renderers (ECharts, AG Charts, Canvas/SVG).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "chart_id", "chart_type", "data_source", "encoding"],
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "ChartSpec schema version. Additive-only backwards compatibility guarantee."
+    },
+    "chart_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique chart identifier within the dashboard/page."
+    },
+    "chart_type": {
+      "type": "string",
+      "enum": [
+        "bar", "line", "area", "pie", "scatter",
+        "gauge", "radar", "treemap", "heatmap", "waterfall",
+        "funnel", "bullet", "control", "histogram", "pareto",
+        "sankey", "sunburst", "chord", "parallel", "candlestick",
+        "boxplot", "graph", "geo", "calendar", "themeRiver",
+        "sparkline", "mini", "org"
+      ],
+      "description": "Chart type. Determines which renderer and option transformer is used."
+    },
+    "title": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "position": { "type": "string", "enum": ["top", "bottom", "left", "right"] }
+      }
+    },
+    "data_source": { "$ref": "#/$defs/data_source" },
+    "encoding": { "$ref": "#/$defs/encoding" },
+    "legend": { "$ref": "#/$defs/legend" },
+    "tooltip": { "$ref": "#/$defs/tooltip" },
+    "interaction": { "$ref": "#/$defs/interaction" },
+    "accessibility_spec": { "$ref": "#/$defs/accessibility_spec" },
+    "states_spec": { "$ref": "#/$defs/states_spec" },
+    "animation_spec": { "$ref": "#/$defs/animation_spec" },
+    "locale_spec": { "$ref": "#/$defs/locale_spec" },
+    "security_spec": { "$ref": "#/$defs/security_spec" },
+    "performance_spec": { "$ref": "#/$defs/performance_spec" },
+    "theme_override": {
+      "type": "object",
+      "description": "Per-chart theme overrides (colors, fonts, etc.)."
+    },
+    "renderer_hint": {
+      "type": "string",
+      "enum": ["svg", "canvas", "webgl", "auto"],
+      "default": "auto",
+      "description": "Preferred renderer. auto = size-based selection."
+    },
+    "responsive": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min_width": { "type": "integer", "minimum": 0 },
+        "min_height": { "type": "integer", "minimum": 0 },
+        "aspect_ratio": { "type": "string", "pattern": "^[0-9]+:[0-9]+$" },
+        "breakpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max_width": { "type": "integer" },
+              "chart_type_override": { "type": "string" },
+              "hide_legend": { "type": "boolean" },
+              "compact_tooltip": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled_formats": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["png", "svg", "pdf", "csv", "xlsx"] }
+        },
+        "mask_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Fields to mask in export (e.g. salary, SSN)."
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata (created_by, tags, etc.)."
+    }
+  },
+  "$defs": {
+    "data_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["inline", "url", "query", "stream"],
+          "description": "inline=embedded data, url=fetch from endpoint, query=DashboardQueryEngine, stream=WebSocket/SSE."
+        },
+        "inline_data": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "Embedded data rows (for inline type)."
+        },
+        "url": { "type": "string", "format": "uri" },
+        "query_id": { "type": "string", "description": "DashboardQueryEngine query reference." },
+        "stream_url": { "type": "string", "format": "uri", "description": "WebSocket/SSE endpoint for real-time data." },
+        "refresh_interval_ms": { "type": "integer", "minimum": 0 },
+        "transforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/data_transform" }
+        }
+      }
+    },
+    "data_transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["filter", "sort", "aggregate", "pivot", "moving_avg", "percentile", "std_dev", "regression", "auto_granularity", "top_n", "cumulative"]
+        },
+        "field": { "type": "string" },
+        "params": { "type": "object", "description": "Transform-specific parameters." }
+      }
+    },
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "$ref": "#/$defs/channel" },
+        "y": { "$ref": "#/$defs/channel" },
+        "color": { "$ref": "#/$defs/channel" },
+        "size": { "$ref": "#/$defs/channel" },
+        "shape": { "$ref": "#/$defs/channel" },
+        "label": { "$ref": "#/$defs/channel" },
+        "detail": { "$ref": "#/$defs/channel" },
+        "angle": { "$ref": "#/$defs/channel" },
+        "radius": { "$ref": "#/$defs/channel" },
+        "source": { "$ref": "#/$defs/channel" },
+        "target": { "$ref": "#/$defs/channel" },
+        "value": { "$ref": "#/$defs/channel" }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field"],
+      "properties": {
+        "field": { "type": "string" },
+        "type": { "type": "string", "enum": ["quantitative", "ordinal", "nominal", "temporal"] },
+        "aggregate": { "type": "string", "enum": ["sum", "avg", "min", "max", "count", "distinct", "median"] },
+        "format": { "type": "string", "description": "Display format string (d3-format or date-fns)." },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["linear", "log", "sqrt", "band", "time", "ordinal"] },
+            "domain": { "type": "array" },
+            "range": { "type": "array" }
+          }
+        },
+        "axis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string" },
+            "label_angle": { "type": "number" },
+            "grid": { "type": "boolean" },
+            "position": { "type": "string", "enum": ["top", "bottom", "left", "right"] }
+          }
+        },
+        "stack": { "type": "string", "enum": ["zero", "normalize", "center", "none"] }
+      }
+    },
+    "legend": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "show": { "type": "boolean", "default": true },
+        "position": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
+        "orient": { "type": "string", "enum": ["horizontal", "vertical"] },
+        "interactive": { "type": "boolean", "default": true }
+      }
+    },
+    "tooltip": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "show": { "type": "boolean", "default": true },
+        "trigger": { "type": "string", "enum": ["item", "axis", "none"] },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": { "type": "string" },
+              "label": { "type": "string" },
+              "format": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "click_action": {
+          "type": "string",
+          "enum": ["none", "filter", "drill_down", "navigate", "select"],
+          "description": "What happens on click."
+        },
+        "drill_down": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "levels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": { "type": "string" },
+                  "chart_type": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "brush": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "type": { "type": "string", "enum": ["rect", "x", "y", "polygon"] }
+          }
+        },
+        "zoom": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "type": { "type": "string", "enum": ["x", "y", "xy"] }
+          }
+        },
+        "cross_filter_group": {
+          "type": "string",
+          "description": "Charts with same group ID are linked for cross-filtering."
+        }
+      }
+    },
+    "accessibility_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "WCAG 2.1 AA accessibility configuration.",
+      "properties": {
+        "description": { "type": "string", "description": "Alt text / aria-label for the chart." },
+        "keyboard_navigation": { "type": "boolean", "default": true },
+        "data_table_fallback": { "type": "boolean", "default": true, "description": "Show data as table for screen readers." },
+        "aria_live_updates": { "type": "boolean", "default": false, "description": "Announce data changes via ARIA live region." },
+        "reduced_motion": { "type": "boolean", "default": false, "description": "Disable animations (prefers-reduced-motion)." },
+        "colorblind_palette": {
+          "type": "string",
+          "enum": ["default", "deuteranopia", "protanopia", "tritanopia", "monochrome"],
+          "default": "default"
+        },
+        "decal_patterns": { "type": "boolean", "default": false, "description": "Use patterns in addition to colors for differentiation." },
+        "high_contrast": { "type": "boolean", "default": false }
+      }
+    },
+    "states_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Visual states for loading, empty, error, and partial data scenarios.",
+      "properties": {
+        "loading": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["skeleton", "spinner", "shimmer"], "default": "skeleton" },
+            "message": { "type": "string" }
+          }
+        },
+        "empty": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "message": { "type": "string" },
+            "show_illustration": { "type": "boolean", "default": true },
+            "action_label": { "type": "string", "description": "CTA button text (e.g., 'Add data')." }
+          }
+        },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "message": { "type": "string" },
+            "retry_enabled": { "type": "boolean", "default": true },
+            "fallback_chart_type": { "type": "string", "description": "Simpler chart type to show on error." }
+          }
+        },
+        "partial": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "indicator": { "type": "string", "enum": ["badge", "watermark", "border"], "default": "badge" },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+    "animation_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Chart animation configuration, integrated with Design Lab motion system.",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "duration_ms": { "type": "integer", "minimum": 0, "default": 500 },
+        "easing": { "type": "string", "enum": ["linear", "ease-in", "ease-out", "ease-in-out", "spring"], "default": "ease-out" },
+        "stagger_ms": { "type": "integer", "minimum": 0, "default": 0, "description": "Delay between series animations." },
+        "update_transition_ms": { "type": "integer", "minimum": 0, "default": 300, "description": "Transition duration on data updates." },
+        "respect_reduced_motion": { "type": "boolean", "default": true }
+      }
+    },
+    "locale_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Internationalization configuration.",
+      "properties": {
+        "locale": { "type": "string", "default": "tr-TR", "description": "BCP 47 locale tag." },
+        "number_format": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decimal_separator": { "type": "string", "default": "," },
+            "thousands_separator": { "type": "string", "default": "." },
+            "currency_symbol": { "type": "string", "default": "TL" },
+            "currency_position": { "type": "string", "enum": ["prefix", "suffix"], "default": "suffix" }
+          }
+        },
+        "date_format": { "type": "string", "default": "dd.MM.yyyy" },
+        "timezone": { "type": "string", "default": "Europe/Istanbul" },
+        "rtl": { "type": "boolean", "default": false }
+      }
+    },
+    "security_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Security configuration for chart rendering.",
+      "properties": {
+        "sanitize_html": { "type": "boolean", "default": true, "description": "Escape HTML in all text content (titles, labels, tooltips)." },
+        "allow_custom_formatter": { "type": "boolean", "default": false, "description": "Allow custom JS formatter functions. DISABLED by default for XSS prevention." },
+        "stream_url_whitelist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed WebSocket/SSE URL patterns for streaming data."
+        },
+        "export_mask_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Fields masked in exported files (e.g., salary)."
+        },
+        "max_data_points": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 100000,
+          "description": "Maximum data points before server-side aggregation is required."
+        }
+      }
+    },
+    "performance_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Performance optimization hints.",
+      "properties": {
+        "lazy_render": { "type": "boolean", "default": true, "description": "Only render when chart is in viewport." },
+        "debounce_resize_ms": { "type": "integer", "minimum": 0, "default": 150 },
+        "progressive_render": { "type": "boolean", "default": false, "description": "Render data incrementally for large datasets." },
+        "web_worker_transform": { "type": "boolean", "default": false, "description": "Run data transforms in Web Worker." },
+        "sampling_threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 50000,
+          "description": "Auto-downsample data above this threshold."
+        },
+        "sampling_method": {
+          "type": "string",
+          "enum": ["lttb", "random", "nth", "min-max"],
+          "default": "lttb",
+          "description": "Downsampling algorithm. LTTB preserves visual shape."
+        }
+      }
+    }
+  }
+}

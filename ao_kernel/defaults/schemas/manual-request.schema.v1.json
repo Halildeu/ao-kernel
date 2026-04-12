@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/manual-request.schema.v1.json",
+  "title": "Manual Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "request_id",
+    "created_at",
+    "source",
+    "artifact_type",
+    "domain",
+    "kind",
+    "text"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "request_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["human", "llm", "system", "api", "webhook", "ui", "chat"]
+        },
+        "channel": { "type": "string" },
+        "user_id": { "type": "string" }
+      }
+    },
+    "tenant_id": { "type": "string" },
+    "artifact_type": { "type": "string", "minLength": 1 },
+    "domain": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "context-router",
+        "doc-fix",
+        "doc-link-fix",
+        "doc-metadata",
+        "note",
+        "support",
+        "question",
+        "minor_fix",
+        "feature",
+        "refactor",
+        "new_project",
+        "strategy",
+        "multi-quarter",
+        "unspecified"
+      ]
+    },
+    "impact_scope": {
+      "type": "string",
+      "enum": ["doc-only", "workspace-only", "core-change", "external-change"]
+    },
+    "requires_core_change": { "type": "boolean" },
+    "text": { "type": "string", "minLength": 1 },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "value"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["path", "url", "text"] },
+          "value": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layer": { "type": "string", "enum": ["L0", "L1", "L2", "L3"] },
+        "side_effect": { "type": "string" },
+        "requires_core_change": { "type": "boolean" }
+      }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": ["doc-fix", "doc-link-fix", "doc-metadata", "context-router"]
+          }
+        }
+      },
+      "then": { "required": ["impact_scope"] }
+    },
+    {
+      "if": { "properties": { "kind": { "enum": ["context-router"] } } },
+      "then": { "required": ["requires_core_change"] }
+    }
+  ]
+}

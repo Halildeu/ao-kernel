@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/release-manifest.schema.v1.json",
+  "title": "Release Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "channel",
+    "release_version",
+    "plan_path",
+    "dirty_tree",
+    "publish_allowed",
+    "approvals_required",
+    "components",
+    "notes",
+    "errors"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL", "SKIP"] },
+    "channel": { "type": "string", "enum": ["rc", "final"] },
+    "release_version": { "type": "string" },
+    "plan_path": { "type": "string" },
+    "dirty_tree": { "type": "boolean" },
+    "publish_allowed": { "type": "boolean" },
+    "approvals_required": { "type": "array", "items": { "type": "string" } },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component_id", "changed"],
+        "properties": {
+          "component_id": { "type": "string" },
+          "changed": { "type": "boolean" }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

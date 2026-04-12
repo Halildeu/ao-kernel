@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:maturity-rubric:v1",
+  "title": "Maturity Rubric Schema",
+  "description": "Agent-agnostic maturity assessment rubric. Defines scoring criteria so all agents (Codex, Claude, Gemini) evaluate the same dimensions with the same scale.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Schema version"
+    },
+    "assessment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date of the assessment"
+    },
+    "assessed_by": {
+      "type": "string",
+      "description": "Agent identifier (e.g., codex, claude, gemini, human)"
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch or worktree assessed. MUST be explicit to prevent branch divergence in scoring."
+    },
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "HEAD commit SHA at assessment time"
+    },
+    "overall_score_pct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Weighted average of all area scores"
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/area_assessment"
+      },
+      "minItems": 1,
+      "description": "Per-area maturity assessments"
+    }
+  },
+  "required": ["version", "assessment_date", "assessed_by", "branch", "commit_sha", "overall_score_pct", "areas"],
+  "additionalProperties": false,
+  "$defs": {
+    "area_assessment": {
+      "type": "object",
+      "properties": {
+        "area_id": {
+          "type": "string",
+          "enum": [
+            "state_machine",
+            "crash_consistency",
+            "decision_mechanism",
+            "rule_composition",
+            "ci_gates",
+            "policy_coverage",
+            "extensions",
+            "multi_agent",
+            "observability",
+            "test_coverage"
+          ],
+          "description": "Canonical area identifier"
+        },
+        "score_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Area maturity percentage"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["L0_absent", "L1_schema_only", "L2_partial_runtime", "L3_enforced", "L4_observable"],
+          "description": "Maturity level. L0: nothing exists. L1: schema/doc defined but no runtime. L2: runtime code exists but not fully wired. L3: enforced in pipeline with tests. L4: enforced + observable with metrics/alerts."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Weight for overall score calculation (sum of all weights should be 1.0)"
+        },
+        "evidence_commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ops/CI commands the agent MUST run to score this area. Prevents read-only assessment."
+        },
+        "evidence_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Files the agent MUST inspect for this area"
+        },
+        "criteria": {
+          "type": "object",
+          "properties": {
+            "l0_definition": {
+              "type": "string",
+              "description": "What 0% looks like for this area"
+            },
+            "l1_definition": {
+              "type": "string",
+              "description": "What qualifies as L1 (schema-only, 25%)"
+            },
+            "l2_definition": {
+              "type": "string",
+              "description": "What qualifies as L2 (partial runtime, 50%)"
+            },
+            "l3_definition": {
+              "type": "string",
+              "description": "What qualifies as L3 (enforced, 75%)"
+            },
+            "l4_definition": {
+              "type": "string",
+              "description": "What qualifies as L4 (observable, 100%)"
+            }
+          },
+          "required": ["l0_definition", "l1_definition", "l2_definition", "l3_definition", "l4_definition"],
+          "additionalProperties": false
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Specific gaps preventing next level"
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Concrete actions to reach next level"
+        }
+      },
+      "required": ["area_id", "score_pct", "level", "weight", "evidence_commands", "evidence_files", "criteria"],
+      "additionalProperties": false
+    }
+  }
+}

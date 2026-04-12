@@ -1,0 +1,111 @@
+{
+  "version": "v1",
+  "extension_id": "PRJ-UX-NORTH-STAR",
+  "semver": "0.1.0",
+  "origin": "CORE",
+  "owner": "CORE",
+  "enabled": true,
+  "layer_contract": {
+    "write_roots_allowlist": [
+      ".cache/",
+      "external_allowlist/",
+      "incubator/"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-UX-NORTH-STAR/",
+      "schemas/",
+      "src/ops/"
+    ],
+    "notes": [
+      "north_star catalogdan UX outputs uretir",
+      "network default off"
+    ]
+  },
+  "entrypoints": {
+    "ops": [
+      "north-star-ux-build"
+    ],
+    "kernel_api_actions": [],
+    "cockpit_sections": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-UX-NORTH-STAR/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "policies": [
+    "policies/policy_north_star_eval_lenses.v1.json",
+    "policies/policy_north_star_subject_plan.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_north_star_eval_lenses.v1.json",
+    "policies/policy_north_star_subject_plan.v1.json"
+  ],
+  "ui_surfaces": [],
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-UX-NORTH-STAR",
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "policies/policy_ux_catalog_enforcement.v1.json",
+    "schemas/ux-catalog.schema.v1.json",
+    "schemas/ux-blueprint.schema.v1.json",
+    "schemas/ux-interaction-matrix.schema.v1.json",
+    "schemas/policy-ux-catalog-enforcement.schema.v1.json",
+    "extensions/PRJ-UX-NORTH-STAR/contract/ux_katalogu.final_lock.v1.json",
+    "extensions/PRJ-UX-NORTH-STAR/contract/ux_change_map.v1.json",
+    "extensions/PRJ-UX-NORTH-STAR/contract/check_ux_catalog_enforcement.py",
+    "src/ops/north_star_ux_build.py"
+  ],
+  "model_kind": "delivery_model",
+  "delivery_modes": [
+    "embedded",
+    "vendor_pack"
+  ],
+  "required_policies": [
+    "policies/policy_north_star_eval_lenses.v1.json",
+    "policies/policy_north_star_subject_plan.v1.json"
+  ],
+  "intake_sources": [
+    "LENS_GAP",
+    "WORK_INTAKE"
+  ],
+  "supported_modes": [
+    "embedded",
+    "vendor_pack"
+  ],
+  "tenant_policy_requirements": [
+    "policies/policy_north_star_subject_plan.v1.json"
+  ],
+  "outputs": {
+    "workspace_reports": [
+      ".cache/index/ux/*.ux_blueprint.v1.json",
+      ".cache/index/ux/*.ux_catalog.v1.json",
+      ".cache/index/ux/*.ux_interaction_matrix.v1.json"
+    ]
+  },
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "compat": {
+    "core_min": "0.0.0",
+    "core_max": "",
+    "notes": []
+  },
+  "guardrails": {
+    "offline": true,
+    "network_default": false
+  },
+  "notes": [
+    "North Star referansli UX output generation extension",
+    "Outputs: ux_catalog, ux_blueprint, ux_interaction_matrix"
+  ]
+}

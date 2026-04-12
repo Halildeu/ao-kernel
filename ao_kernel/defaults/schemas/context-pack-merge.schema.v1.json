@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/context-pack-merge.schema.v1.json",
+  "title": "Context Pack Merge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "merge_rule",
+    "majority_threshold",
+    "candidates",
+    "merged",
+    "disagreements",
+    "assumptions"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "merge_rule": { "type": "string", "enum": ["field_majority"] },
+    "majority_threshold": { "type": "integer", "minimum": 2 },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate_ref" }
+    },
+    "merged": { "type": "object" },
+    "disagreements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/disagreement" }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "candidate_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["response_path", "content_hash"],
+      "properties": {
+        "response_path": { "type": "string", "minLength": 1 },
+        "content_hash": { "type": "string", "minLength": 8 }
+      }
+    },
+    "disagreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "value_hashes", "present_count"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "value_hashes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 8 }
+        },
+        "present_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kernel API Request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "kind", "workspace_root"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "project_status",
+        "system_status",
+        "doc_nav_check",
+        "roadmap_finish",
+        "roadmap_follow",
+        "codex_env_check",
+        "codex_home_init",
+        "m0_plan_ensure",
+        "llm_providers_init",
+        "llm_list_providers",
+        "llm_call",
+        "llm_call_live",
+        "llm_live_probe",
+        "intake_status",
+        "intake_next",
+        "intake_create_plan",
+        "github_ops_check",
+        "github_ops_job_start",
+        "github_ops_job_poll"
+      ]
+    },
+    "workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "github_ops_pr_open": {
+          "$ref": "https://example.com/schemas/github-ops-pr-open.schema.v1.json"
+        }
+      }
+    },
+    "env_mode": {
+      "type": "string",
+      "enum": ["dotenv", "process"],
+      "default": "dotenv"
+    },
+    "strict": {
+      "type": "boolean"
+    },
+    "detail": {
+      "type": "boolean"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["json", "autopilot_chat"],
+      "default": "json"
+    }
+  }
+}

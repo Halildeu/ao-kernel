@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "inputs": {
+    "public_candidates_path": ".cache/learning/public_candidates.v1.json",
+    "ops_run_index_path": ".cache/index/run_index.v1.json",
+    "ops_dlq_index_path": ".cache/index/dlq_index.v1.json",
+    "action_register_path": ".cache/roadmap_actions.v1.json"
+  },
+  "output_path": ".cache/learning/advisor_suggestions.v1.json",
+  "max_suggestions": 50,
+  "min_confidence_to_emit": 0.2,
+  "on_fail": "warn",
+  "forbid_kinds": [
+    "SECRET_HINT",
+    "TENANT_IDENTITY"
+  ],
+  "fail_action": "warn"
+}

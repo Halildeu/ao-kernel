@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-scope-guard:v1",
+  "title": "Scope Guard Policy",
+  "description": "Policy for scope guard thresholds — detects scope creep during agent sessions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "warn_multiplier", "block_multiplier", "default_max_files", "domain_change_warn", "auto_init_on_first_write"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "description": { "type": "string" },
+    "warn_multiplier": { "type": "number", "minimum": 1, "description": "Files > max * warn_multiplier triggers WARN." },
+    "block_multiplier": { "type": "number", "minimum": 1, "description": "Files > max * block_multiplier triggers BLOCK." },
+    "default_max_files": { "type": "integer", "minimum": 1, "description": "Default max files if not explicitly declared." },
+    "domain_change_warn": { "type": "boolean", "description": "WARN when writing to undeclared domain." },
+    "auto_init_on_first_write": { "type": "boolean", "description": "Auto-initialize scope on first write if not declared." }
+  }
+}

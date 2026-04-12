@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-benchmark.schema.json",
+  "title": "policy-benchmark.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "outputs",
+    "cursor_mode"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "cursor_mode": {
+      "type": "string",
+      "enum": [
+        "hash"
+      ]
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "north_star_catalog",
+        "assessment",
+        "assessment_cursor",
+        "scorecard_json",
+        "scorecard_md",
+        "gap_register",
+        "gap_summary_md"
+      ],
+      "properties": {
+        "north_star_catalog": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assessment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assessment_cursor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scorecard_json": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scorecard_md": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gap_register": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gap_summary_md": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maturity_tracking": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "max_controls": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2000
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "extensions/PRJ-SEARCH/README.md",
+    "extensions/PRJ-SEARCH/search_adapter.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/keyword_search.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-SEARCH",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [],
+    "ops": [
+      "search-check"
+    ],
+    "ops_single_gate": [
+      "search-check"
+    ],
+    "tests": [
+      "extensions/PRJ-SEARCH/tests/contract_test.py",
+      "extensions/PRJ-SEARCH/tests/shim_compat_contract_test.py",
+      "extensions/PRJ-SEARCH/tests/search_check_contract_test.py"
+    ]
+  },
+  "extension_id": "PRJ-SEARCH",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "Phase-1 contract only: capabilities endpoint and adapter routing metadata."
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-SEARCH/",
+      "extensions/PRJ-UI-COCKPIT-LITE/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "Phase-1 skeleton for controlled search adapter migration."
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/ws_customer_default/.cache/reports/search_adapter_contract.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [],
+  "semver": "0.1.0",
+  "tests_entrypoints": [
+    "extensions/PRJ-SEARCH/tests/contract_test.py",
+    "extensions/PRJ-SEARCH/tests/shim_compat_contract_test.py",
+    "extensions/PRJ-SEARCH/tests/search_check_contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "ui_surfaces": [],
+  "version": "v1"
+}

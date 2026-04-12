@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:rule-packet:v1",
+  "title": "Rule Packet",
+  "description": "Compiled enforcement context for a single file write. Merges profile, rules digest, and write authorization into one JSON artifact that an agent consumes before writing code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "target_path", "authorization", "rules"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "target_path": { "type": "string", "minLength": 1 },
+    "profile_id": { "type": "string" },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["PASS", "BLOCKED", "WARN"] },
+        "deny_reasons": { "type": "array", "items": { "type": "string" } },
+        "core_unlock_required": { "type": "boolean" },
+        "core_unlock_active": { "type": "boolean" }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "layer": { "type": "string" },
+        "domain": { "type": "string" },
+        "naming": { "type": "object", "additionalProperties": true },
+        "shared_utils": { "type": "object", "additionalProperties": true },
+        "domain_rules": { "type": "array", "items": { "type": "string" } },
+        "general_rules": { "type": "object", "additionalProperties": true },
+        "forbidden_patterns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "required_validations": { "type": "array", "items": { "type": "string" } },
+    "evidence_required": { "type": "boolean" }
+  }
+}

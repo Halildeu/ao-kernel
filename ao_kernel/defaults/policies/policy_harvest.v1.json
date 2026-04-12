@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "output_path": ".cache/learning/public_candidates.v1.json",
+  "cursor_path": ".cache/learning/harvest_cursor.v1.json",
+  "incremental": true,
+  "window": {
+    "max_dlq_items": 200,
+    "max_days": 7
+  },
+  "forbid_patterns": [
+    "@",
+    "http://",
+    "https://",
+    "TENANT-",
+    "Beykent"
+  ],
+  "max_candidates": 200,
+  "min_evidence_refs_per_candidate": 1,
+  "on_fail": "block",
+  "fail_action": "warn"
+}

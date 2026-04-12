@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "max_tool_calls_per_request": 5,
+  "max_tool_rounds": 3,
+  "allowed_tools": [],
+  "blocked_tools": [],
+  "tool_permissions": {
+    "default": "read_only",
+    "mutating_requires_confirmation": true
+  },
+  "cycle_detection": {
+    "enabled": true,
+    "max_identical_calls": 2
+  },
+  "fail_action": "block"
+}

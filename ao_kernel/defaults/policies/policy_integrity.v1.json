@@ -1,0 +1,40 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "verify_on_read_required": true,
+  "allow_report_only_when_missing_sources": true,
+  "exclude_paths": [
+    ".cache/reports/system_status.v1.json"
+  ],
+  "inputs": {
+    "system_status": {
+      "required": true,
+      "on_mismatch": "FAIL"
+    },
+    "pack_index": {
+      "required": true,
+      "on_mismatch": "FAIL"
+    },
+    "quality_gate": {
+      "required": false,
+      "on_mismatch": "WARN"
+    },
+    "repo_hygiene": {
+      "required": false,
+      "on_mismatch": "WARN"
+    },
+    "harvest": {
+      "required": false,
+      "on_mismatch": "WARN"
+    },
+    "script_budget": {
+      "required": true,
+      "on_mismatch": "FAIL"
+    }
+  },
+  "notes": [
+    "Integrity-first default: required inputs fail-closed; advisory inputs warn.",
+    "Allow report-only when sources are missing."
+  ],
+  "fail_action": "block"
+}

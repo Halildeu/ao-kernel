@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:tool-registry:v1",
+  "title": "Tool Registry",
+  "description": "Registry of tools available for LLM function calling. Each tool maps to an ops command.",
+  "type": "object",
+  "required": ["version", "tools"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tool_definition"
+      }
+    }
+  },
+  "$defs": {
+    "tool_definition": {
+      "type": "object",
+      "required": ["name", "description", "parameters", "ops_command", "permission"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "description": "Tool name (kebab-case). Must match ops command naming."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable tool description for LLM context."
+        },
+        "parameters": {
+          "type": "object",
+          "description": "JSON Schema describing the tool's input parameters."
+        },
+        "ops_command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Ops manage.py command name to dispatch to."
+        },
+        "permission": {
+          "type": "string",
+          "enum": ["read_only", "mutating"],
+          "description": "Tool permission level. Mutating tools require confirmation."
+        },
+        "allowed_providers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Provider IDs that support this tool. Empty/absent = all providers."
+        }
+      }
+    }
+  }
+}

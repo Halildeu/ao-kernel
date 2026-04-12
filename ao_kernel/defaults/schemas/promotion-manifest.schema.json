@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/promotion-manifest.schema.json",
+  "title": "Promotion Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "mode", "allowlist", "denylist", "outputs"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "mode": { "type": "string", "enum": ["customer_clean", "internal_dev"] },
+    "allowlist": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/allowlist_item" }
+    },
+    "denylist": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "outputs": { "$ref": "#/$defs/outputs" }
+  },
+  "$defs": {
+    "allowlist_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundle_zip", "bundle_report", "core_patch", "core_patch_md"],
+      "properties": {
+        "bundle_zip": { "type": "string", "minLength": 1 },
+        "bundle_report": { "type": "string", "minLength": 1 },
+        "core_patch": { "type": "string", "minLength": 1 },
+        "core_patch_md": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

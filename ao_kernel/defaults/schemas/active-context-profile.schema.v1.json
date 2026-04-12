@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:active-context-profile:v1",
+  "title": "Active Context Profile",
+  "description": "Per-workspace artifact written to .cache/index/active_context_profile.v1.json. Records which context profile is currently active, how it was resolved, and when it was activated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profile_id", "activated_at", "resolution_method", "workspace_root"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "profile_id": {
+      "type": "string",
+      "enum": ["STARTUP", "TASK_EXECUTION", "REVIEW", "ASSESSMENT", "EMERGENCY", "PLANNING"],
+      "description": "Active profile identifier."
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when this profile was activated."
+    },
+    "resolution_method": {
+      "type": "string",
+      "enum": ["auto", "explicit", "default", "fallback"],
+      "description": "How the profile was selected: 'auto' = trigger_condition matched, 'explicit' = user/agent set it, 'default' = registry default, 'fallback' = error during resolution."
+    },
+    "workspace_root": {
+      "type": "string",
+      "description": "Workspace root path this profile applies to.",
+      "minLength": 1
+    },
+    "matched_trigger": {
+      "type": "string",
+      "description": "ID of the trigger condition that matched (if resolution_method=auto)."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent that activated this profile (e.g. 'claude', 'codex')."
+    },
+    "bootstrap_commands_run": {
+      "type": "array",
+      "description": "Bootstrap commands that were executed when this profile was activated.",
+      "items": { "type": "string" }
+    },
+    "notes": {
+      "type": "array",
+      "description": "Diagnostic or audit notes recorded during profile activation.",
+      "items": { "type": "string" }
+    }
+  }
+}

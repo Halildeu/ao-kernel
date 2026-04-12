@@ -1,0 +1,38 @@
+{
+  "version": "v2",
+  "enabled": true,
+  "plan_policy": "optional",
+  "auto_remediation": {
+    "enabled": true,
+    "seed_tag": "work_intake_auto_remediation"
+  },
+  "bucket_order": [
+    "INCIDENT",
+    "TICKET",
+    "PROJECT",
+    "ROADMAP"
+  ],
+  "default_rule": {
+    "bucket": "TICKET",
+    "severity": "S3",
+    "priority": "P3"
+  },
+  "dedupe": {
+    "strategy": "stable_sha256",
+    "template": "source_type+source_ref+bucket"
+  },
+  "sla_hints": {
+    "INCIDENT": "4h",
+    "TICKET": "5d",
+    "PROJECT": "sprint",
+    "ROADMAP": "quarter"
+  },
+  "notes": [
+    "Incident only for critical nav gaps, regressions, hard budget, or integrity FAIL.",
+    "Small GAPs and doc cleanups prefer TICKET; medium/large GAPs remain PROJECT.",
+    "Script budget routes docs/tests/tooling to TICKET, core code to PROJECT.",
+    "Manual requests map to ROADMAP/PROJECT/TICKET based on kind and core-change constraints.",
+    "Release signals map to TICKET/PROJECT/ROADMAP based on dirty tree, publish block, and channel."
+  ],
+  "fail_action": "warn"
+}

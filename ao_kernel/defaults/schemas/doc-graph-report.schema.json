@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "doc-graph-report.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "repo_root",
+    "workspace_root",
+    "status",
+    "counts",
+    "ref_summary",
+    "broken_refs",
+    "top_placeholders",
+    "orphan_critical",
+    "ambiguities",
+    "entrypoints",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "repo_root": { "type": "string", "minLength": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+    "placeholders_baseline": { "type": "integer", "minimum": 0 },
+    "placeholders_baseline_enabled": { "type": "boolean" },
+    "placeholders_delta": { "type": "integer" },
+    "placeholders_fail": { "type": "integer", "minimum": 0 },
+    "placeholders_warn_delta": { "type": "integer", "minimum": 0 },
+    "placeholders_warn_mode": { "type": "string", "enum": ["delta", "threshold"] },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scanned_files",
+        "reference_count",
+        "broken_refs",
+        "orphan_critical",
+        "ambiguity",
+        "ambiguity_count",
+        "critical_nav_gaps",
+        "workspace_bound_refs_count",
+        "external_pointer_refs_count",
+        "placeholder_refs_count",
+        "archive_refs_count"
+      ],
+      "properties": {
+        "scanned_files": { "type": "integer", "minimum": 0 },
+        "reference_count": { "type": "integer", "minimum": 0 },
+        "broken_refs": { "type": "integer", "minimum": 0 },
+        "orphan_critical": { "type": "integer", "minimum": 0 },
+        "ambiguity": { "type": "integer", "minimum": 0 },
+        "ambiguity_count": { "type": "integer", "minimum": 0 },
+        "critical_nav_gaps": { "type": "integer", "minimum": 0 },
+        "workspace_bound_refs_count": { "type": "integer", "minimum": 0 },
+        "external_pointer_refs_count": { "type": "integer", "minimum": 0 },
+        "placeholder_refs_count": { "type": "integer", "minimum": 0 },
+        "archive_refs_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ref_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_file",
+        "wrong_path",
+        "deprecated",
+        "archive_ref",
+        "workspace_bound",
+        "external_pointer",
+        "plan_only_placeholder"
+      ],
+      "properties": {
+        "missing_file": { "type": "integer", "minimum": 0 },
+        "wrong_path": { "type": "integer", "minimum": 0 },
+        "deprecated": { "type": "integer", "minimum": 0 },
+        "archive_ref": { "type": "integer", "minimum": 0 },
+        "workspace_bound": { "type": "integer", "minimum": 0 },
+        "external_pointer": { "type": "integer", "minimum": 0 },
+        "plan_only_placeholder": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "top_placeholders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target", "kind"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["plan_only_placeholder"] }
+        }
+      }
+    },
+    "broken_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "target", "kind"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["missing_file", "wrong_path", "deprecated"]
+          }
+        }
+      }
+    },
+    "orphan_critical": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "reason"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "paths"],
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "paths": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        }
+      }
+    },
+    "entrypoints": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "out_json": ".cache/reports/system_status.v1.json",
+  "out_md": ".cache/reports/system_status.v1.md",
+  "max_actions": 10,
+  "max_suggestions": 10,
+  "include_repo_hygiene_suggestions": false,
+  "core_integrity_dirty_mode": "warn",
+  "on_fail": "warn",
+  "fail_action": "warn"
+}

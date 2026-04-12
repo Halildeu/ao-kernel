@@ -1,0 +1,21 @@
+{
+  "policy_version": "v0.1",
+  "generated_at": "",
+  "classes": [
+    { "class_id": "FAST_TEXT", "active_core": true, "modality": "text", "verified_only_default": false, "allowed_intents": ["DISCOVERY", "BASELINE"] },
+    { "class_id": "BALANCED_TEXT", "active_core": true, "modality": "text", "verified_only_default": false, "allowed_intents": ["DISCOVERY", "BASELINE"] },
+    { "class_id": "REASONING_TEXT", "active_core": true, "modality": "text", "verified_only_default": true, "allowed_intents": ["GAP_ANALYSIS", "PLAN_ONLY"] },
+    { "class_id": "GOVERNANCE_ASSURANCE", "active_core": true, "modality": "text", "verified_only_default": true, "allowed_intents": ["ASSURANCE_LOCK"] },
+    { "class_id": "CODE_AGENTIC", "active_core": true, "modality": "code", "verified_only_default": true, "allowed_intents": ["APPLY"] },
+    { "class_id": "VISION_MM", "active_core": true, "modality": "vision", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "OCR_DOC", "active_core": true, "modality": "vision", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "VISION_REASONING", "active_core": false, "modality": "vision", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "IMAGE_GEN", "active_core": false, "modality": "vision", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "VIDEO_GEN", "active_core": false, "modality": "vision", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "AUDIO", "active_core": false, "modality": "audio", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "REALTIME_STREAMING", "active_core": false, "modality": "streaming", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "EMBEDDINGS", "active_core": false, "modality": "text", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "MODERATION_SAFETY", "active_core": false, "modality": "text", "verified_only_default": true, "allowed_intents": [] },
+    { "class_id": "DEEP_RESEARCH", "active_core": false, "modality": "text", "verified_only_default": true, "allowed_intents": [] }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-context-triangulation.schema.v1.json",
+  "title": "Policy Context Triangulation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "merge",
+    "inputs"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "merge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "min_agreement",
+        "record_disagreements",
+        "record_assumptions"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "field_majority"
+          ]
+        },
+        "min_agreement": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "record_disagreements": {
+          "type": "boolean"
+        },
+        "record_assumptions": {
+          "type": "boolean"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_three"
+      ],
+      "properties": {
+        "require_three": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

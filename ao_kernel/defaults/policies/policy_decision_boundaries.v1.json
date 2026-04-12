@@ -1,0 +1,56 @@
+{
+  "version": "v1",
+  "default_mode": "human_review",
+  "boundaries": {
+    "full_auto": {
+      "description": "AI karar verir, insan bilgilendirilir",
+      "operations": [
+        "context_drift_reconcile",
+        "session_renew",
+        "compaction_trigger",
+        "gap_to_ticket",
+        "health_score_compute",
+        "fact_distillation",
+        "artifact_push",
+        "cross_session_aggregate",
+        "extension_registry_rebuild"
+      ],
+      "conditions": {
+        "max_risk_score": 0.3
+      }
+    },
+    "human_review": {
+      "description": "AI onerir, insan onaylar",
+      "operations": [
+        "routing_bucket_change",
+        "policy_override",
+        "side_effect_execution",
+        "autonomy_mode_transition",
+        "design_lab_taxonomy",
+        "schema_migration",
+        "provider_switch",
+        "work_intake_exec_ticket",
+        "feature_contract_update"
+      ],
+      "conditions": {
+        "max_risk_score": 0.7,
+        "require_approval_node": true
+      }
+    },
+    "strict_deny": {
+      "description": "AI yapamaz, insan zorunlu",
+      "operations": [
+        "production_deploy",
+        "data_migration",
+        "security_policy_change",
+        "core_ssot_write",
+        "compliance_decision",
+        "secret_rotation",
+        "branch_protection_change",
+        "user_data_delete",
+        "network_policy_change"
+      ]
+    }
+  },
+  "fail_action": "warn"
+}

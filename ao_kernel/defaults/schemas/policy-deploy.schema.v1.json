@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-deploy.schema.v1.json",
+  "title": "policy-deploy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "network_enabled",
+    "allowed_kinds",
+    "mode",
+    "job_store",
+    "retry_count"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "network_enabled": {
+      "type": "boolean"
+    },
+    "allowed_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "DEPLOY_STATIC_FE",
+          "DEPLOY_SELFHOST_BE"
+        ]
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "dry_run_only",
+        "live"
+      ]
+    },
+    "job_store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jobs_index_path",
+        "keep_last_n",
+        "ttl_seconds",
+        "poll_interval_seconds",
+        "cooldown_seconds"
+      ],
+      "properties": {
+        "jobs_index_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keep_last_n": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "poll_interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "retry_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

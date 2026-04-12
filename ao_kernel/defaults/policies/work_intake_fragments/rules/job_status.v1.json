@@ -1,0 +1,189 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "job_status",
+  "source_types": [
+    "JOB_STATUS"
+  ],
+  "rules": [
+    {
+      "id": "job_smoke_full_demo_prereq_fail",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ],
+        "job_type_in": [
+          "SMOKE_FULL"
+        ],
+        "job_failure_class_in": [
+          "DEMO_PREREQ_FAIL"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "job_smoke_full_demo_catalog_parse",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ],
+        "job_type_in": [
+          "SMOKE_FULL"
+        ],
+        "job_failure_class_in": [
+          "DEMO_CATALOG_PARSE"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "job_smoke_full_core_break",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ],
+        "job_type_in": [
+          "SMOKE_FULL"
+        ],
+        "job_failure_class_in": [
+          "CORE_BREAK"
+        ]
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    },
+    {
+      "id": "job_smoke_full_fail_other",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ],
+        "job_type_in": [
+          "SMOKE_FULL"
+        ],
+        "job_failure_class_in": [
+          "OTHER"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "job_smoke_full_timeout",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "TIMEOUT",
+          "KILLED"
+        ],
+        "job_type_in": [
+          "SMOKE_FULL"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "job_status_pass_auto_close",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "PASS"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S4",
+      "priority": "P4",
+      "auto_close": true,
+      "closed_reason": "JOB_STATUS_PASS"
+    },
+    {
+      "id": "job_status_fail_core_break",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ],
+        "job_failure_class_in": [
+          "CORE_BREAK"
+        ]
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    },
+    {
+      "id": "job_status_fail",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "FAIL"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "job_status_skip_policy_blocked",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "SKIP"
+        ],
+        "job_skip_reason_in": [
+          "POLICY_BLOCKED"
+        ]
+      },
+      "bucket": "ROADMAP",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "job_status_skip_auth_missing",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "SKIP"
+        ],
+        "job_skip_reason_in": [
+          "AUTH_MISSING",
+          "NETWORK_DISABLED"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S4",
+      "priority": "P4"
+    },
+    {
+      "id": "job_status_skip_no_network",
+      "source_type": "JOB_STATUS",
+      "when": {
+        "job_status_in": [
+          "SKIP"
+        ],
+        "job_skip_reason_in": [
+          "NO_NETWORK"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S4",
+      "priority": "P4"
+    }
+  ]
+}

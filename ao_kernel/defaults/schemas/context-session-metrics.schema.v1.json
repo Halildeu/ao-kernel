@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:context-session-metrics:v1",
+  "title": "Context Session Metrics",
+  "description": "Aggregated session metrics for context quality scoring — rule usage, cache performance, scope events.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "total_writes", "cache_hits", "cache_misses", "cache_hit_rate", "quality_trend"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "total_writes": { "type": "integer", "minimum": 0 },
+    "rules_loaded": { "type": "integer", "minimum": 0 },
+    "rules_applied": { "type": "integer", "minimum": 0 },
+    "rules_violated": { "type": "integer", "minimum": 0 },
+    "rules_ignored": { "type": "integer", "minimum": 0 },
+    "rules_never_used": { "type": "integer", "minimum": 0 },
+    "scope_warnings": { "type": "integer", "minimum": 0 },
+    "scope_blocks": { "type": "integer", "minimum": 0 },
+    "domain_switches": { "type": "integer", "minimum": 0 },
+    "domains_touched": { "type": "array", "items": { "type": "string" } },
+    "cache_hits": { "type": "integer", "minimum": 0 },
+    "cache_misses": { "type": "integer", "minimum": 0 },
+    "cache_hit_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+    "avg_compilation_ms": { "type": "integer", "minimum": 0 },
+    "quality_trend": { "type": "string", "enum": ["IMPROVING", "STABLE", "DEGRADING"] },
+    "total_events": { "type": "integer", "minimum": 0 }
+  }
+}

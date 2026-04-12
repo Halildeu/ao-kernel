@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-advisor.schema.json",
+  "title": "Policy Advisor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "inputs",
+    "output_path",
+    "max_suggestions",
+    "min_confidence_to_emit",
+    "on_fail",
+    "forbid_kinds"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_candidates_path",
+        "ops_run_index_path",
+        "ops_dlq_index_path",
+        "action_register_path"
+      ],
+      "properties": {
+        "public_candidates_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ops_run_index_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ops_dlq_index_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_register_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "output_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "max_suggestions": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "min_confidence_to_emit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "on_fail": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "block"
+      ]
+    },
+    "forbid_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

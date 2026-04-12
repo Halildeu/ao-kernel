@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/north_star.metric.schema.json",
+  "title": "north_star.metric.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "metrics"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "metrics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/metric" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "target"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "unit": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent-context-version.schema.v1.json",
+  "title": "Agent Context Version",
+  "description": "Tracks SSOT file hashes for cross-agent context drift detection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "files", "aggregate_sha256", "status"],
+  "properties": {
+    "version": { "const": "v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "agent_tag": { "type": "string", "minLength": 1 },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "exists"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string" },
+          "exists": { "type": "boolean" },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "modified_at": { "type": "string" }
+        }
+      }
+    },
+    "aggregate_sha256": { "type": "string", "minLength": 64, "maxLength": 64 },
+    "stale_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "status": { "type": "string", "enum": ["CURRENT", "STALE_CONTEXT"] }
+  }
+}

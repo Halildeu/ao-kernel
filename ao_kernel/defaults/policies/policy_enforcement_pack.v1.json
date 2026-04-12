@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "profiles": {
+    "default_mode": "default_profile",
+    "strict_mode": "strict_profile"
+  },
+  "baseline": {
+    "default_mode": "git:HEAD~1",
+    "strict_mode": "git:HEAD~1"
+  },
+  "notes": [
+    "profile_pin_enabled",
+    "strict_default_pinned"
+  ],
+  "fail_action": "block"
+}

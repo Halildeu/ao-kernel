@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:status-vocabulary:v1",
+  "title": "Canonical Status Vocabulary",
+  "description": "SSOT for all status enum families used across the autonomous-orchestrator control-plane. Each family is an independent enum set; schemas referencing statuses MUST use one of these families.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "families"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "families": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_status",
+        "work_item_status",
+        "work_item_lifecycle",
+        "node_execution_status",
+        "run_result_status",
+        "intake_action_status"
+      ],
+      "properties": {
+        "report_status": {
+          "$ref": "#/$defs/family",
+          "description": "Status for CI gates, ops commands, and report outputs."
+        },
+        "work_item_status": {
+          "$ref": "#/$defs/family",
+          "description": "Status for PM work items (pm-work-item.schema.v1.json)."
+        },
+        "work_item_lifecycle": {
+          "$ref": "#/$defs/family",
+          "description": "Lifecycle states for work items through the orchestrator pipeline."
+        },
+        "node_execution_status": {
+          "$ref": "#/$defs/family",
+          "description": "Status for individual workflow node execution results."
+        },
+        "run_result_status": {
+          "$ref": "#/$defs/family",
+          "description": "Overall result status for an orchestrator run."
+        },
+        "intake_action_status": {
+          "$ref": "#/$defs/family",
+          "description": "Status for work intake exec ticket entries."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["values"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this status family."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$",
+                "description": "Status value (UPPER_SNAKE_CASE)."
+              },
+              "description": {
+                "type": "string",
+                "description": "Meaning of this status value."
+              }
+            }
+          },
+          "minItems": 2,
+          "description": "Enumerated status values for this family."
+        }
+      }
+    }
+  }
+}

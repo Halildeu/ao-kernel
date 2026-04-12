@@ -1,0 +1,148 @@
+{
+  "version": "v1",
+  "kind": "version-registry",
+  "project_id": "PRJ-MULTI-AI-CODING-OS",
+  "status": "INITIAL_POPULATION",
+  "notes": [
+    "Her aktif target icin version source tek yerde kayitli olmali.",
+    "Unknown version source ile apply baslamaz."
+  ],
+  "targets": [
+    {
+      "target_id": "ao-core",
+      "repo_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator",
+      "version_sources": [
+        {
+          "kind": "repo_snapshot",
+          "value": "4f96551",
+          "path": "git:HEAD"
+        },
+        {
+          "kind": "canonical_branch",
+          "value": "main",
+          "path": "git:origin/HEAD"
+        }
+      ],
+      "toolchain_sources": [],
+      "runtime_sources": [],
+      "lockfile_sources": [],
+      "status": "PARTIAL",
+      "notes": [
+        "Core repo icin tek semver kaynagi degil, repo snapshot odakli kayit tutuldu."
+      ]
+    },
+    {
+      "target_id": "dev:web",
+      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "version_sources": [
+        {
+          "kind": "workspace_version",
+          "value": "1.0.0",
+          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+        }
+      ],
+      "toolchain_sources": [
+        {
+          "kind": "node_engines",
+          "value": "20.x || 22.x",
+          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+        },
+        {
+          "kind": "package_manager_docs",
+          "value": "pnpm 10.x",
+          "path": "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md"
+        }
+      ],
+      "runtime_sources": [
+        {
+          "kind": "react",
+          "value": "~18.2.0",
+          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+        },
+        {
+          "kind": "storybook",
+          "value": "^10.3.0",
+          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+        }
+      ],
+      "lockfile_sources": [
+        {
+          "kind": "workspace_manifest",
+          "value": "pnpm workspace",
+          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+        }
+      ],
+      "status": "PARTIAL"
+    },
+    {
+      "target_id": "dev:mobile",
+      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "version_sources": [
+        {
+          "kind": "workspace_version",
+          "value": "1.0.0",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        }
+      ],
+      "toolchain_sources": [
+        {
+          "kind": "typescript",
+          "value": "~5.9.2",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        }
+      ],
+      "runtime_sources": [
+        {
+          "kind": "expo",
+          "value": "~55.0.6",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        },
+        {
+          "kind": "react",
+          "value": "19.2.0",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        },
+        {
+          "kind": "react_native",
+          "value": "0.83.2",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        }
+      ],
+      "lockfile_sources": [
+        {
+          "kind": "workspace_manifest",
+          "value": "npm workspaces",
+          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        }
+      ],
+      "status": "PARTIAL"
+    },
+    {
+      "target_id": "dev:backend",
+      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "version_sources": [
+        {
+          "kind": "parent_pom_version",
+          "value": "1.0.0",
+          "path": "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+        }
+      ],
+      "toolchain_sources": [
+        {
+          "kind": "build_tool",
+          "value": "maven_wrapper",
+          "path": "/Users/halilkocoglu/Documents/dev/backend/mvnw"
+        }
+      ],
+      "runtime_sources": [
+        {
+          "kind": "service_modules",
+          "value": "common-auth, discovery-server, api-gateway, auth-service, permission-service, user-service, variant-service, core-data-service, report-service",
+          "path": "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+        }
+      ],
+      "lockfile_sources": [],
+      "status": "PARTIAL"
+    }
+  ]
+}

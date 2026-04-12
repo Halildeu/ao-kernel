@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/worktree-health.schema.json",
+  "title": "worktree-health.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "project_id",
+    "status",
+    "repos"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "worktree-health"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo_id",
+          "repo_root",
+          "current_branch",
+          "current_head",
+          "upstream",
+          "dirty",
+          "risk_flags",
+          "worktrees"
+        ],
+        "properties": {
+          "repo_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo_root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "current_branch": {
+            "type": "string",
+            "minLength": 1
+          },
+          "current_head": {
+            "type": "string",
+            "minLength": 1
+          },
+          "upstream": {
+            "type": "string"
+          },
+          "upstream_sync_state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dirty": {
+            "type": "boolean"
+          },
+          "risk_flags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "worktrees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "branch",
+                "status"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "branch": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

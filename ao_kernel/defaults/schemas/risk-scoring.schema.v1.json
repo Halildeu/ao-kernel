@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:risk-scoring:v1",
+  "title": "Multi-Factor Risk Scoring",
+  "description": "Schema for multi-factor risk assessment. Replaces single-value risk_score with a structured breakdown across impact, probability, reversibility, and scope dimensions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "factors", "composite_score"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "target": {
+      "type": "string",
+      "description": "What is being risk-assessed (operation ID, work item ID, etc.)."
+    },
+    "assessed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of risk assessment."
+    },
+    "factors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "probability", "reversibility", "scope"],
+      "properties": {
+        "impact": {
+          "$ref": "#/$defs/factor",
+          "description": "Severity of negative outcome if the risk materializes."
+        },
+        "probability": {
+          "$ref": "#/$defs/factor",
+          "description": "Likelihood of the risk materializing."
+        },
+        "reversibility": {
+          "$ref": "#/$defs/factor",
+          "description": "How easily the outcome can be undone. Higher = harder to reverse = higher risk."
+        },
+        "scope": {
+          "$ref": "#/$defs/factor",
+          "description": "Blast radius — how many systems/users are affected. Higher = wider scope = higher risk."
+        }
+      },
+      "description": "Individual risk factor assessments."
+    },
+    "composite_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Weighted composite risk score (0.0 = no risk, 1.0 = critical risk)."
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Derived risk level from composite score."
+    },
+    "mitigations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recommended mitigation actions."
+    }
+  },
+  "$defs": {
+    "factor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Factor score (0.0–1.0)."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.25,
+          "description": "Weight of this factor in composite calculation."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Explanation for this score."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$id": "https://example.com/schemas/policy-auto-mode.schema.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "enum": [
+        "v1"
+      ],
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "mode": {
+      "enum": [
+        "selected_only",
+        "suggested_only",
+        "mixed"
+      ],
+      "type": "string"
+    },
+    "limits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_ticks_per_run": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_actions_per_tick": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_jobs_start_per_tick": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_polls_per_tick": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_ticks_per_run",
+        "max_actions_per_tick",
+        "max_jobs_start_per_tick",
+        "max_polls_per_tick"
+      ],
+      "type": "object"
+    },
+    "dispatch": {
+      "additionalProperties": false,
+      "properties": {
+        "prefer_selected_autopilot": {
+          "type": "boolean"
+        },
+        "prefer_suggested_extension": {
+          "type": "boolean"
+        },
+        "fallback_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "prefer_selected_autopilot",
+        "prefer_suggested_extension",
+        "fallback_mapping"
+      ],
+      "type": "object"
+    },
+    "network_gate": {
+      "additionalProperties": false,
+      "properties": {
+        "default_network_enabled": {
+          "type": "boolean"
+        },
+        "require_extension_policy_enable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "default_network_enabled",
+        "require_extension_policy_enable"
+      ],
+      "type": "object"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "required": [
+    "version",
+    "enabled",
+    "mode",
+    "limits",
+    "dispatch",
+    "network_gate"
+  ],
+  "title": "Policy Auto Mode",
+  "type": "object"
+}

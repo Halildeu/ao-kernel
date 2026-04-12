@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/github-ops-report.schema.v1.json",
+  "title": "GitHub Ops Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "live_gate",
+    "git_state",
+    "jobs_summary",
+    "jobs_index_path",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "live_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "network_enabled", "env_flag", "env_flag_set", "env_key_present", "allowed_ops"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "network_enabled": { "type": "boolean" },
+        "env_flag": { "type": "string" },
+        "env_flag_set": { "type": "boolean" },
+        "env_key_present": { "type": "boolean" },
+        "allowed_ops": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "git_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dirty_tree", "branch", "ahead", "behind", "index_lock"],
+      "properties": {
+        "dirty_tree": { "type": "boolean" },
+        "branch": { "type": "string" },
+        "ahead": { "type": "integer", "minimum": 0 },
+        "behind": { "type": "integer", "minimum": 0 },
+        "index_lock": { "type": "boolean" }
+      }
+    },
+    "signals": { "type": "array", "items": { "type": "string" } },
+    "jobs_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "by_status"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["QUEUED", "RUNNING", "PASS", "FAIL", "TIMEOUT", "KILLED", "SKIP"],
+          "properties": {
+            "QUEUED": { "type": "integer", "minimum": 0 },
+            "RUNNING": { "type": "integer", "minimum": 0 },
+            "PASS": { "type": "integer", "minimum": 0 },
+            "FAIL": { "type": "integer", "minimum": 0 },
+            "TIMEOUT": { "type": "integer", "minimum": 0 },
+            "KILLED": { "type": "integer", "minimum": 0 },
+            "SKIP": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "jobs_index_path": { "type": "string", "minLength": 1 },
+    "last_pr_open": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "status"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "status": { "type": "string" },
+        "pr_url": { "type": "string" },
+        "pr_number": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "failure_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_fail", "by_class"],
+      "properties": {
+        "total_fail": { "type": "integer", "minimum": 0 },
+        "by_class": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "AUTH": { "type": "integer", "minimum": 0 },
+            "PERMISSION": { "type": "integer", "minimum": 0 },
+            "VALIDATION": { "type": "integer", "minimum": 0 },
+            "NOT_FOUND": { "type": "integer", "minimum": 0 },
+            "CONFLICT": { "type": "integer", "minimum": 0 },
+            "RATE_LIMIT": { "type": "integer", "minimum": 0 },
+            "NETWORK": { "type": "integer", "minimum": 0 },
+            "POLICY_TIME_LIMIT": { "type": "integer", "minimum": 0 },
+            "DEMO_PUBLIC_CANDIDATES_POINTER_MISSING": { "type": "integer", "minimum": 0 },
+            "DEMO_PACK_CAPABILITY_INDEX_MISSING": { "type": "integer", "minimum": 0 },
+            "DEMO_M9_3_APPLY_MUST_WRITE_PACK_SELECTION_TRACE_V1_JSON": { "type": "integer", "minimum": 0 },
+            "DEMO_OTHER_MARKER_2472D115C490": { "type": "integer", "minimum": 0 },
+            "DEMO_QUALITY_GATE_REPORT_MISSING": { "type": "integer", "minimum": 0 },
+            "DEMO_SESSION_CONTEXT_HASH_MISMATCH": { "type": "integer", "minimum": 0 },
+            "OTHER": { "type": "integer", "minimum": 0 }
+          },
+          "required": [
+            "AUTH",
+            "PERMISSION",
+            "VALIDATION",
+            "NOT_FOUND",
+            "CONFLICT",
+            "RATE_LIMIT",
+            "NETWORK",
+            "POLICY_TIME_LIMIT",
+            "DEMO_PUBLIC_CANDIDATES_POINTER_MISSING",
+            "DEMO_PACK_CAPABILITY_INDEX_MISSING",
+            "DEMO_M9_3_APPLY_MUST_WRITE_PACK_SELECTION_TRACE_V1_JSON",
+            "DEMO_OTHER_MARKER_2472D115C490",
+            "DEMO_QUALITY_GATE_REPORT_MISSING",
+            "DEMO_SESSION_CONTEXT_HASH_MISMATCH",
+            "OTHER"
+          ]
+        }
+      }
+    },
+    "network_live": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled_by_decision", "allow_domains_count", "allow_actions_count", "policy_source"],
+      "properties": {
+        "enabled_by_decision": { "type": "boolean" },
+        "allow_domains_count": { "type": "integer", "minimum": 0 },
+        "allow_actions_count": { "type": "integer", "minimum": 0 },
+        "policy_source": { "type": "string" }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "items": { "$ref": "https://example.com/schemas/github-ops-job.schema.v1.json" }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-perf-event.schema.v1.json",
+  "title": "Airunner Perf Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "event_id",
+    "event_type",
+    "op_name",
+    "started_at",
+    "ended_at",
+    "duration_ms",
+    "status",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "event_id": { "type": "string", "minLength": 1 },
+    "event_type": { "type": "string", "enum": ["OP_CALL", "JOB_RUN"] },
+    "op_name": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "ended_at": { "type": "string", "format": "date-time" },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "FAIL", "SKIP"] },
+    "job_id": { "type": "string" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-tool-calling:v1",
+  "title": "Tool Calling Policy",
+  "description": "Policy for LLM tool/function calling — fail-closed defaults.",
+  "type": "object",
+  "required": ["version", "enabled", "max_tool_calls_per_request", "max_tool_rounds", "allowed_tools", "fail_action"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Master switch. false = no tool calling (fail-closed default)."
+    },
+    "max_tool_calls_per_request": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "description": "Max tool calls in a single LLM request."
+    },
+    "max_tool_rounds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Max agentic loop rounds (call→dispatch→result→call)."
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tool names allowed. Empty = no tools allowed (fail-closed)."
+    },
+    "blocked_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tool names explicitly blocked (overrides allowed_tools)."
+    },
+    "tool_permissions": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": ["read_only", "mutating"],
+          "description": "Default permission for unlisted tools."
+        },
+        "mutating_requires_confirmation": {
+          "type": "boolean",
+          "description": "Mutating tools require human confirmation before dispatch."
+        }
+      }
+    },
+    "cycle_detection": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "max_identical_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Max times same tool+input can be called before blocking."
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["block", "warn", "log"],
+      "description": "Action on policy violation."
+    }
+  }
+}

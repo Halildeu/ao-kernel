@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "policy-ui-design-system.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "status",
+    "owner",
+    "purpose",
+    "enforcement_mode",
+    "ci_lane",
+    "single_ui_library",
+    "design_tokens",
+    "page_modularity",
+    "parametric_data"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "policy-ui-design-system"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "DRAFT",
+        "ARCHIVED"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enforcement_mode": {
+      "const": "blocking"
+    },
+    "ci_lane": {
+      "const": "contract"
+    },
+    "single_ui_library": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_name",
+        "package_manifest_path",
+        "design_catalog_index_path",
+        "required_npm_scripts",
+        "forbidden_imports"
+      ],
+      "properties": {
+        "package_name": {
+          "const": "mfe-ui-kit"
+        },
+        "package_manifest_path": {
+          "const": "web/packages/ui-kit/package.json"
+        },
+        "design_catalog_index_path": {
+          "const": "web/apps/mfe-shell/src/pages/admin/design-lab.index.json"
+        },
+        "required_npm_scripts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 3
+        },
+        "forbidden_imports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "forbidden_imports_note": {
+          "type": "string",
+          "description": "Human-readable note explaining why certain imports are forbidden."
+        }
+      }
+    },
+    "design_tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "generated_paths",
+        "check_command"
+      ],
+      "properties": {
+        "source_path": {
+          "const": "web/design-tokens/figma.tokens.json"
+        },
+        "generated_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2
+        },
+        "check_command": {
+          "const": "node web/scripts/theme/generate-theme-css.mjs --check"
+        }
+      }
+    },
+    "page_modularity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layout_exports_required",
+        "ui_usage_import_prefix",
+        "pages_root"
+      ],
+      "properties": {
+        "layout_exports_required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 3
+        },
+        "ui_usage_import_prefix": {
+          "const": "from 'mfe-ui-kit'"
+        },
+        "pages_root": {
+          "const": "web/apps"
+        }
+      }
+    },
+    "parametric_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query_builder_path",
+        "theme_contract_runtime_path",
+        "theme_context_provider_path"
+      ],
+      "properties": {
+        "query_builder_path": {
+          "const": "web/packages/ui-kit/src/components/entity-grid/buildEntityGridQueryParams.ts"
+        },
+        "theme_contract_runtime_path": {
+          "const": "web/packages/ui-kit/src/runtime/theme-contract.ts"
+        },
+        "theme_context_provider_path": {
+          "const": "web/apps/mfe-shell/src/app/theme/theme-context.provider.tsx"
+        }
+      }
+    },
+    "chart_platform": {
+      "type": "object",
+      "description": "Chart & visualization platform configuration.",
+      "additionalProperties": false,
+      "properties": {
+        "primary_engine": { "type": "string" },
+        "primary_engine_license": { "type": "string" },
+        "grid_linked_engine": { "type": "string" },
+        "grid_linked_engine_license": { "type": "string" },
+        "spec_schema": { "type": "string" },
+        "decision_topic": { "type": "string" },
+        "internal_packages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "bundle_size_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_gzip_kb": { "type": "integer", "minimum": 1 },
+            "tree_shaking_required": { "type": "boolean" }
+          }
+        },
+        "accessibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "wcag_level": { "type": "string", "enum": ["A", "AA", "AAA"] },
+            "keyboard_navigation": { "type": "boolean" },
+            "data_table_fallback": { "type": "boolean" },
+            "colorblind_palettes": { "type": "boolean" },
+            "contrast_ratio_min": { "type": "number" }
+          }
+        },
+        "ci_gates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

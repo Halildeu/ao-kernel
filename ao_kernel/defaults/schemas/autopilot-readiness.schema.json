@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/autopilot-readiness.schema.json",
+  "title": "Autopilot Readiness",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "status", "checks", "missing", "notes"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["READY", "NOT_READY"] },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "status", "details", "paths"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "enum": ["WORKSPACE", "POLICY", "INTEGRATION"] },
+          "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+          "details": { "type": "string", "minLength": 1 },
+          "paths": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "missing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "category"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "category": { "type": "string", "enum": ["WORKSPACE", "POLICY", "INTEGRATION"] }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

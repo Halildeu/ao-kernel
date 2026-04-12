@@ -1,0 +1,8 @@
+{
+  "deny_cves": [
+    "CVE-2099-0001"
+  ],
+  "unknown_behavior": "warn",
+  "version": "v1",
+  "fail_action": "warn"
+}

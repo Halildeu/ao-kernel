@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "modules": [
+    { "id": "MOD_A", "context_strategy": "inherit", "allowed_tools": ["fs_read", "secrets_get"] },
+    { "id": "MOD_B", "context_strategy": "inherit", "allowed_tools": ["fs_write", "github_pr_create"] },
+    { "id": "MOD_POLICY_REVIEW", "context_strategy": "inherit", "allowed_tools": ["fs_read", "fs_write"] },
+    { "id": "MOD_DLQ_TRIAGE", "context_strategy": "inherit", "allowed_tools": ["fs_read"] }
+  ],
+  "workflows": [{ "workflow_id": "WF_CORE", "path": "workflows/wf_core.v1.json" }]
+}

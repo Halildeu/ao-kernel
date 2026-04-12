@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "defaults": {
+    "mode": "human_review",
+    "success_threshold": 0.8,
+    "min_samples": 5
+  },
+  "intents": {
+    "urn:core:summary:summary_to_file": {
+      "mode": "human_review",
+      "success_threshold": 0.8,
+      "min_samples": 3
+    }
+  },
+  "risk_scoring_ref": "policies/policy_risk_scoring.v1.json",
+  "risk_scoring_note": "When risk_scoring composite_score exceeds medium threshold (0.6), autonomy mode is overridden to human_review regardless of intent config.",
+  "fail_action": "block"
+}

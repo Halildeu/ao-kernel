@@ -1,0 +1,53 @@
+{
+  "version": "v1",
+  "plan_policy": "optional",
+  "channel_defaults": {
+    "default": "rc",
+    "available": [
+      "rc",
+      "final"
+    ]
+  },
+  "network_publish_enabled": false,
+  "require_manual_approval": {
+    "core": true,
+    "catalog": true
+  },
+  "component_paths": {
+    "core": [
+      "src/",
+      "ci/",
+      "scripts/"
+    ],
+    "catalog": [
+      "schemas/",
+      "policies/",
+      "registry/",
+      "workflows/",
+      "orchestrator/"
+    ],
+    "projects": [
+      "roadmaps/PROJECTS/",
+      "extensions/"
+    ],
+    "docs": [
+      "docs/",
+      "README.md",
+      "CHANGELOG.md"
+    ]
+  },
+  "bump_rules": {
+    "core": "minor",
+    "catalog": "minor",
+    "projects": "minor",
+    "docs": "patch",
+    "fallback": "patch"
+  },
+  "platform_bump": "max_of_components",
+  "current_version": "0.2.0",
+  "notes": [
+    "local_first",
+    "publish_requires_explicit_flag"
+  ],
+  "fail_action": "warn"
+}

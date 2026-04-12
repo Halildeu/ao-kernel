@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/repo-layout.schema.json",
+  "title": "Repo Layout SSOT",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "allowed_top_level_dirs",
+    "allowed_top_level_files",
+    "generated_dirs",
+    "generated_files_patterns",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "allowed_top_level_dirs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "allowed_top_level_files": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "generated_dirs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "generated_files_patterns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

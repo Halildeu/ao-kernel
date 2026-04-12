@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-system-status.schema.json",
+  "title": "Policy System Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "out_json",
+    "out_md",
+    "max_actions",
+    "max_suggestions",
+    "on_fail"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "out_json": {
+      "type": "string",
+      "minLength": 1
+    },
+    "out_md": {
+      "type": "string",
+      "minLength": 1
+    },
+    "max_actions": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "max_suggestions": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "include_repo_hygiene_suggestions": {
+      "type": "boolean"
+    },
+    "core_integrity_dirty_mode": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "warn"
+      ]
+    },
+    "on_fail": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "block"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

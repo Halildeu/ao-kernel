@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/pack-advisor-suggestions.schema.json",
+  "title": "Pack Advisor Suggestions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "selected_pack_ids", "suggestions", "safety"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "selected_pack_ids": { "type": "array", "items": { "type": "string" } },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "pack_id",
+          "kind",
+          "title",
+          "details",
+          "confidence",
+          "evidence_refs",
+          "recommended_action"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "pack_id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "details": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "recommended_action": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "notes"],
+      "properties": {
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

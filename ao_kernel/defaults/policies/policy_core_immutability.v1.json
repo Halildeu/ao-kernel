@@ -1,0 +1,51 @@
+{
+  "allow_core_writes_only_when": {
+    "env_value": "1",
+    "env_var": "CORE_UNLOCK"
+  },
+  "blocked_write_error_code": "CORE_IMMUTABLE_WRITE_BLOCKED",
+  "core_git_required": true,
+  "core_write_mode": "ssot_only_when_unlocked",
+  "default_mode": "locked",
+  "enabled": true,
+  "evidence_required_when_unlocked": true,
+  "notes": [
+    "Temporary narrowing MUST be done via workspace override, not core SSOT.",
+    "src/** yazimi ssot_write_allowlist ile acilmaz; yalniz one_shot_src_window istisnasi ile izin verilir."
+  ],
+  "one_shot_src_window": {
+    "allow_paths": [],
+    "enabled": false,
+    "expires_at": null,
+    "opened_at": null,
+    "reason": "",
+    "restore_policy_hash": "",
+    "ttl_seconds": 0
+  },
+  "require_unlock_reason": true,
+  "ssot_write_allowlist": [
+    "AGENTS.md",
+    "docs/LAYER-MODEL-LOCK.v1.md",
+    "docs/OPERATIONS/",
+    "docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "docs/ROADMAP.md",
+    ".github/workflows/gate-enforcement-check.yml",
+    ".github/workflows/module-delivery-lanes.yml",
+    ".github/CODEOWNERS",
+    ".pre-commit-config.yaml",
+    "extensions/",
+    "policies/",
+    "schemas/",
+    "standards.lock",
+    "scripts/sync_managed_repo_standards.py",
+    "ci/check_standards_lock.py",
+    "ci/check_standards_lock_parts/",
+    "ci/check_module_delivery_lanes.py",
+    "ci/run_module_delivery_lane.py",
+    "ci/module_delivery_lanes.v1.json",
+    "pyproject.toml"
+  ],
+  "version": "v1",
+  "fail_action": "block"
+}

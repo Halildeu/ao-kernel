@@ -1,0 +1,88 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_enforcement_pack.v1.json",
+    "schemas/extension-manifest.schema.v1.json",
+    "schemas/policy-enforcement-pack.schema.v1.json",
+    "extensions/PRJ-ENFORCEMENT-PACK/README.md",
+    "extensions/PRJ-ENFORCEMENT-PACK/contract/enforcement-check.schema.v1.json",
+    "extensions/PRJ-ENFORCEMENT-PACK/contract/enforcement-check.example.v1.json",
+    "extensions/PRJ-ENFORCEMENT-PACK/contract/false_positive_baseline.v1.json",
+    "ci/check_enforcement_rules.py",
+    "extensions/PRJ-ENFORCEMENT-PACK/semgrep/rules/ep006_shallow_render_fake.yaml",
+    "extensions/PRJ-ENFORCEMENT-PACK/semgrep/rules/ep009_data_testid_render_only.yaml",
+    "extensions/PRJ-ENFORCEMENT-PACK/semgrep/rules/ep014_react19_api.yaml",
+    "extensions/PRJ-ENFORCEMENT-PACK/tests/contract_hardening_test.py",
+    "extensions/PRJ-ENFORCEMENT-PACK/tests/ops_wiring_contract_test.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-ENFORCEMENT-PACK",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [],
+    "ops": [
+      "enforcement-check"
+    ],
+    "ops_single_gate": [
+      "enforcement-check"
+    ],
+    "tests": [
+      "extensions/PRJ-ENFORCEMENT-PACK/tests/contract_hardening_test.py",
+      "extensions/PRJ-ENFORCEMENT-PACK/tests/ops_wiring_contract_test.py"
+    ]
+  },
+  "extension_id": "PRJ-ENFORCEMENT-PACK",
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "extension_only",
+      "no_ci_precommit_v1"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-ENFORCEMENT-PACK/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/"
+    ]
+  },
+  "model_kind": "governance_model",
+  "notes": [
+    "Enforcement Pack v1: Semgrep OSS adapter skeleton + canonical enforcement-check contract.",
+    "V1 mode: extension-only; no CI/pre-commit wiring (defer to V2).",
+    "Decisions are workspace-bound: .cache/ws_customer_default/.cache/index/decisions/SELECTED_DEC-ENF-V1-*.v1.json",
+    "P1 contract hardening: self-hit and false-positive baseline fields are standardized in contract stats.",
+    "P2 ops wiring: extension-run single-gate dispatch is bound to enforcement-check.",
+    "P3 policy pin: strict/default profile mapping is pinned via policy_enforcement_pack.v1.json."
+  ],
+  "origin": "CORE",
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_enforcement_pack.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_enforcement_pack.v1.json"
+  ],
+  "semver": "0.1.0",
+  "tests_entrypoints": [
+    "extensions/PRJ-ENFORCEMENT-PACK/tests/contract_hardening_test.py",
+    "extensions/PRJ-ENFORCEMENT-PACK/tests/ops_wiring_contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_hardening_and_ops_wiring"
+    ]
+  },
+  "ui_surfaces": [],
+  "version": "v1"
+}

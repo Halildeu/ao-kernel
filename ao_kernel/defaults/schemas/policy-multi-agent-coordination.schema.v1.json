@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-multi-agent-coordination:v1",
+  "title": "Multi-Agent Coordination Policy Schema",
+  "description": "Defines rules for multi-agent git coordination in managed repos. Ensures worktree isolation, branch hygiene, shared tree protection, and hook behavior.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path to the schema file"
+    },
+    "schema_ref": {
+      "type": "string",
+      "description": "Reference to this schema URN"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the policy instance"
+    },
+    "worktree_isolation": {
+      "type": "object",
+      "description": "Rules for agent-per-worktree isolation",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether worktree isolation is enforced"
+        },
+        "rule": {
+          "enum": ["one_agent_one_worktree"],
+          "description": "Isolation rule: each agent works in its own worktree"
+        },
+        "canonical_tree_commit": {
+          "enum": ["blocked", "allowed"],
+          "description": "Whether commits are allowed in the canonical (shared) working tree"
+        },
+        "worktree_location": {
+          "enum": ["external_peer", "subdirectory"],
+          "description": "Where worktrees are created relative to the canonical repo"
+        }
+      },
+      "required": ["enabled", "rule", "canonical_tree_commit"],
+      "additionalProperties": false
+    },
+    "branch_policy": {
+      "type": "object",
+      "description": "Branch creation and naming rules",
+      "properties": {
+        "base_branch": {
+          "type": "string",
+          "description": "All feature branches must be created from this branch"
+        },
+        "chaining_allowed": {
+          "type": "boolean",
+          "description": "Whether branch chaining (branch from branch) is allowed"
+        },
+        "naming_patterns": {
+          "type": "object",
+          "description": "Agent-specific branch naming patterns. Key=agent_id, value=pattern",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["base_branch", "chaining_allowed"],
+      "additionalProperties": false
+    },
+    "shared_tree_protection": {
+      "type": "object",
+      "description": "Protection rules for the canonical (shared) working tree",
+      "properties": {
+        "commit_blocked": {
+          "type": "boolean",
+          "description": "Block commits in canonical tree when side worktrees exist"
+        },
+        "push_blocked": {
+          "type": "boolean",
+          "description": "Block pushes from canonical tree when side worktrees exist"
+        },
+        "destructive_ops_blocked": {
+          "type": "array",
+          "description": "Git operations that are blocked in the shared tree",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["commit_blocked", "push_blocked"],
+      "additionalProperties": false
+    },
+    "hook_behavior": {
+      "type": "object",
+      "description": "Git hook behavior configuration for canonical and worktree contexts",
+      "properties": {
+        "canonical_mode": {
+          "enum": ["blocked", "full_gate_chain"],
+          "description": "Hook behavior in canonical tree: blocked (when side worktrees exist) or full gate chain"
+        },
+        "worktree_mode": {
+          "enum": ["light", "full_gate_chain"],
+          "description": "Hook behavior in linked worktrees"
+        },
+        "worktree_detection": {
+          "type": "object",
+          "description": "Methods for detecting linked worktree context",
+          "properties": {
+            "authoritative": {
+              "type": "string",
+              "description": "Primary detection: git rev-parse --git-dir != --git-common-dir"
+            },
+            "fast_path": {
+              "type": "string",
+              "description": "Fast check: test -f .git (gitlink file presence)"
+            }
+          },
+          "additionalProperties": false
+        },
+        "light_mode_steps": {
+          "type": "array",
+          "description": "Gate steps executed in worktree light mode",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "scope_aware_lint": {
+          "type": "object",
+          "description": "Scope-aware lint behavior in light mode",
+          "properties": {
+            "toolchain_missing": {
+              "enum": ["skip", "warn", "fail"],
+              "description": "Action when required toolchain (node, java) is not available"
+            },
+            "changed_scope_match": {
+              "enum": ["skip", "warn", "fail"],
+              "description": "Action when staged files match a lint scope and toolchain is available"
+            }
+          },
+          "additionalProperties": false
+        },
+        "artifact_storage": {
+          "enum": ["worktree_local", "canonical_namespaced"],
+          "description": "Where gate artifacts are stored: worktree's own .cache or canonical .cache with namespacing"
+        },
+        "fingerprint_mode": {
+          "type": "object",
+          "description": "Fingerprint computation modes for stale artifact detection",
+          "properties": {
+            "canonical": {
+              "type": "string",
+              "description": "Full mode: staged + unstaged + untracked + HEAD + branch"
+            },
+            "worktree": {
+              "type": "string",
+              "description": "Reduced mode: staged_diff + staged_paths + HEAD + branch + worktree_id"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["canonical_mode", "worktree_mode", "light_mode_steps"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_ref",
+    "version",
+    "worktree_isolation",
+    "branch_policy",
+    "shared_tree_protection",
+    "hook_behavior"
+  ],
+  "additionalProperties": false
+}

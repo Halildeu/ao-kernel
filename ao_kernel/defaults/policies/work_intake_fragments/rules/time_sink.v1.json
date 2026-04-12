@@ -1,0 +1,39 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "time_sink",
+  "source_types": [
+    "TIME_SINK"
+  ],
+  "rules": [
+    {
+      "id": "time_sink_project_over_threshold",
+      "source_type": "TIME_SINK",
+      "when": {
+        "time_sink_over_threshold_eq": true
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "time_sink_escalate",
+      "source_type": "TIME_SINK",
+      "when": {
+        "time_sink_breach_count_gte": 3
+      },
+      "bucket": "INCIDENT",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "time_sink_default",
+      "source_type": "TIME_SINK",
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3",
+      "suggested_extension": "PRJ-AIRUNNER"
+    }
+  ]
+}

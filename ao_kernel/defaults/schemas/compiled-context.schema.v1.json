@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:compiled-context:v1",
+  "title": "Compiled Context",
+  "description": "Unified enforcement context compiled by context_compiler.py for any agent (Claude/Codex). Superset of rule-packet.schema.v1.json with provenance tracking and agent-scoped metadata.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "compiled_at", "compiler_version", "agent_id", "target_path", "profile", "authorization", "rules", "rules_with_provenance", "domain_scope", "compilation_sources", "required_validations", "evidence_required", "fingerprint"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "compiled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 compilation timestamp."
+    },
+    "compiler_version": {
+      "type": "string",
+      "description": "Compiler version (semver)."
+    },
+    "agent_id": {
+      "type": "string",
+      "enum": ["claude", "codex", "antigravity"],
+      "description": "Agent that requested compilation."
+    },
+    "target_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative path of the file being written."
+    },
+    "profile": {
+      "type": "object",
+      "required": ["id", "resolution_method"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Active profile ID (STARTUP, EMERGENCY, TASK_EXECUTION, REVIEW, ASSESSMENT, PLANNING)."
+        },
+        "resolution_method": {
+          "type": "string",
+          "enum": ["explicit", "auto", "default", "fallback"],
+          "description": "How the profile was resolved."
+        },
+        "matched_trigger": {
+          "type": ["string", "null"],
+          "description": "Trigger condition that matched (for auto resolution)."
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["PASS", "BLOCKED", "WARN"],
+          "description": "Write authorization result."
+        },
+        "deny_reasons": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Reasons for BLOCKED status."
+        },
+        "core_unlock_required": {
+          "type": "boolean",
+          "description": "Whether CORE_UNLOCK=1 is needed."
+        },
+        "core_unlock_active": {
+          "type": "boolean",
+          "description": "Whether CORE_UNLOCK=1 is currently set."
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Compiled rules digest (layer, domain, naming, shared_utils, domain_rules, general_rules)."
+    },
+    "rules_with_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "text", "source", "domain", "profile", "priority"],
+        "additionalProperties": false,
+        "properties": {
+          "rule_id": { "type": "string", "description": "Unique rule identifier." },
+          "text": { "type": "string", "description": "Rule text." },
+          "source": { "type": "string", "description": "File path (and optional line) where rule is defined." },
+          "domain": { "type": "string", "description": "Domain this rule applies to." },
+          "profile": { "type": "string", "description": "Profile under which this rule was loaded." },
+          "priority": { "type": "string", "enum": ["MUST", "SHOULD"], "description": "Rule enforcement level." }
+        }
+      },
+      "description": "Rules with full provenance — source, why, domain, priority."
+    },
+    "domain_scope": {
+      "type": "object",
+      "description": "Detected domain scope from target path and content analysis.",
+      "required": ["detected_domains", "primary_domain", "confidence"],
+      "properties": {
+        "detected_domains": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "primary_domain": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "detection_method": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "compilation_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "exists"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "exists": { "type": "boolean" }
+        }
+      },
+      "description": "Files that contributed to this compilation."
+    },
+    "required_validations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Post-write validation commands."
+    },
+    "evidence_required": {
+      "type": "boolean",
+      "description": "Whether evidence trace is required for this write."
+    },
+    "fingerprint": {
+      "type": "string",
+      "description": "SHA256 fingerprint for cache deduplication."
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-debt.schema.json",
+  "title": "Policy Debt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "max_items",
+    "outdir"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "max_items": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "outdir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "draft_only",
+        "safe_apply"
+      ]
+    },
+    "max_auto_apply_per_finish": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "safe_action_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "require_sanitize_pass": {
+      "type": "boolean"
+    },
+    "recheck_system_status": {
+      "type": "boolean"
+    },
+    "on_apply_fail": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "block"
+      ]
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

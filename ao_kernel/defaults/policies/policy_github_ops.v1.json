@@ -1,0 +1,47 @@
+{
+  "version": "v1",
+  "network_enabled": false,
+  "live_gate": {
+    "enabled": false,
+    "require_env_key_present": true,
+    "env_flag": "KERNEL_API_GITHUB_LIVE",
+    "env_key": "GITHUB_TOKEN"
+  },
+  "allowed_actions": [
+    "PR_OPEN",
+    "PR_POLL",
+    "CI_POLL",
+    "MERGE",
+    "RELEASE_RC",
+    "RELEASE_FINAL",
+    "SMOKE_FAST",
+    "SMOKE_FULL"
+  ],
+  "allowed_ops": [
+    "pr_list",
+    "pr_open",
+    "pr_update",
+    "merge",
+    "deploy_trigger",
+    "status_poll"
+  ],
+  "auth": {
+    "mode": "bearer",
+    "token_env": "GITHUB_TOKEN"
+  },
+  "retry_count": 0,
+  "rate_limit": {
+    "cooldown_seconds": 300,
+    "max_per_tick": 1
+  },
+  "job": {
+    "keep_last_n": 50,
+    "ttl_seconds": 604800,
+    "poll_interval_seconds": 300,
+    "cooldown_seconds": 3600
+  },
+  "notes": [
+    "network_default_off"
+  ],
+  "fail_action": "warn"
+}

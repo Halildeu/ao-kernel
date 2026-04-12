@@ -1,0 +1,76 @@
+{
+  "version": "v1",
+  "runtime_overlay": {
+    "model": "gpt-5.3-codex",
+    "review_model": "gpt-5.4",
+    "model_provider": "openai",
+    "approval_policy": "never",
+    "sandbox_mode": "workspace-write",
+    "project_doc_max_bytes": 65536,
+    "project_doc_fallback_filenames": [
+      "AGENTS.md",
+      "AGENT-CODEX.md",
+      "TEAM_GUIDE.md"
+    ],
+    "project_root_markers": [
+      ".git",
+      "AGENTS.md"
+    ],
+    "model_reasoning_effort": "medium",
+    "model_reasoning_summary": "auto",
+    "model_verbosity": "medium",
+    "model_auto_compact_token_limit": 24000,
+    "web_search": false,
+    "sandbox_workspace_write": {
+      "network_access": false
+    }
+  },
+  "repo_features": {
+    "memory_strategy": "hybrid_provider_state",
+    "provider_state_fields": [
+      "provider",
+      "conversation_id",
+      "last_response_id",
+      "wire_api",
+      "updated_at",
+      "summary_ref"
+    ],
+    "compaction_fields": [
+      "summary_ref",
+      "last_compacted_at",
+      "trigger",
+      "source",
+      "approx_input_tokens"
+    ],
+    "mcp_contract": {
+      "enabled": true,
+      "default_mode": "disabled",
+      "servers": [
+        {
+          "server_id": "openai_docs",
+          "purpose": "Resmi OpenAI dokumani icin read-only MCP",
+          "default_enabled": false
+        },
+        {
+          "server_id": "repo_search",
+          "purpose": "Repo icinde kontrollu arama ve belge yonlendirme",
+          "default_enabled": false
+        }
+      ]
+    },
+    "capability_catalog_contract": {
+      "enabled": true,
+      "capability_search_paths": [
+        "$CODEX_HOME/capability_catalog"
+      ],
+      "repo_local_planned": true
+    },
+    "automations_bridge": {
+      "enabled": true,
+      "target_extension": "PRJ-AIRUNNER",
+      "inbox_required": true,
+      "workspace_mode": "worktree_or_workspace"
+    }
+  },
+  "fail_action": "warn"
+}

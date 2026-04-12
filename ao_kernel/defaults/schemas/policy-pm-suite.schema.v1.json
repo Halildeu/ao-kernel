@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-pm-suite.schema.v1.json",
+  "title": "PM Suite Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "default_workflow",
+    "default_priority",
+    "default_severity",
+    "execution_bridge",
+    "delivery_session",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "default_workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statuses"
+      ],
+      "properties": {
+        "statuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "default_priority": {
+      "type": "string",
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ]
+    },
+    "default_severity": {
+      "type": "string",
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ]
+    },
+    "execution_bridge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "contract_path",
+        "checker_path",
+        "seed_script_path",
+        "contract_schema_path",
+        "report_path"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "contract_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checker_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seed_script_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract_schema_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "delivery_session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "packet_path",
+        "guard_report_path",
+        "builder_path",
+        "guard_path",
+        "packet_schema_path",
+        "note"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "packet_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "guard_report_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "builder_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "guard_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "packet_schema_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

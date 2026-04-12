@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-north-star-eval-lenses.schema.v1.json",
+  "title": "Policy North Star Eval Lenses",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "mode",
+    "workflow_axes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "lensless",
+        "lenses"
+      ]
+    },
+    "workflow_axes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "reference",
+          "assessment",
+          "gap"
+        ]
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "dimension_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trend_best_practice",
+        "integrity_compat",
+        "ai_ops_fit",
+        "github_ops_release",
+        "operability",
+        "integration_coherence"
+      ],
+      "properties": {
+        "trend_best_practice": {
+          "$ref": "#/$defs/dimension"
+        },
+        "integrity_compat": {
+          "$ref": "#/$defs/dimension"
+        },
+        "ai_ops_fit": {
+          "$ref": "#/$defs/dimension"
+        },
+        "github_ops_release": {
+          "$ref": "#/$defs/dimension"
+        },
+        "operability": {
+          "$ref": "#/$defs/dimension"
+        },
+        "integration_coherence": {
+          "$ref": "#/$defs/dimension"
+        },
+        "context_health": {
+          "$ref": "#/$defs/dimension"
+        }
+      }
+    },
+    "trend_best_practice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_coverage_ok",
+        "min_coverage_warn"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimension"
+        },
+        "min_coverage_ok": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_coverage_warn": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "integrity_compat": {
+      "$ref": "#/$defs/scored_lens"
+    },
+    "ai_ops_fit": {
+      "$ref": "#/$defs/scored_lens_with_fields"
+    },
+    "github_ops_release": {
+      "$ref": "#/$defs/scored_lens_with_fields"
+    },
+    "operability": {
+      "$ref": "#/$defs/scored_lens_with_fields"
+    },
+    "integration_coherence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_score_ok",
+        "min_score_warn"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimension"
+        },
+        "min_score_ok": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_score_warn": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "required_signals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        }
+      }
+    },
+    "context_health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_score_ok",
+        "min_score_warn"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimension"
+        },
+        "min_score_ok": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_score_warn": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        }
+      }
+    },
+    "maturity_tracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "levels"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/maturity_level"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "lenses"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "dimension_map",
+          "trend_best_practice",
+          "integrity_compat",
+          "ai_ops_fit",
+          "github_ops_release",
+          "operability",
+          "integration_coherence",
+          "maturity_tracking"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "dimension": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    "scored_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_score_ok",
+        "min_score_warn"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimension"
+        },
+        "min_score_ok": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_score_warn": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "scored_lens_with_fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_score_ok",
+        "min_score_warn"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimension"
+        },
+        "min_score_ok": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_score_warn": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "required_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        }
+      }
+    },
+    "maturity_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "criteria"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "min_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

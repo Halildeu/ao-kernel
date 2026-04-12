@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-run.schema.v1.json",
+  "title": "Airunner Run",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "evidence_paths"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "policy_hash": { "type": ["string", "null"] },
+    "evidence_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "trace_meta": { "$ref": "https://example.com/schemas/trace-meta.schema.v1.json" }
+  }
+}

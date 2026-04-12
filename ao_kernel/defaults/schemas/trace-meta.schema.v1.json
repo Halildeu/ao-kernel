@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/trace-meta.schema.v1.json",
+  "title": "Trace Meta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "work_item_id",
+    "work_item_kind",
+    "run_id",
+    "policy_hash",
+    "evidence_paths"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "work_item_id": { "type": "string", "minLength": 1 },
+    "work_item_kind": { "type": "string", "enum": ["INTAKE", "JOB", "DECISION", "RUN"] },
+    "run_id": { "type": "string", "minLength": 1 },
+    "policy_hash": { "type": ["string", "null"] },
+    "evidence_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "planner_tag": { "type": "string" },
+    "doer_tag": { "type": "string" },
+    "chat_tag": { "type": "string" },
+    "owner_session": { "type": "string" },
+    "workspace_root": { "type": "string" }
+  }
+}

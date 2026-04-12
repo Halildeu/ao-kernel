@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/pm-work-item.schema.v1.json",
+  "title": "PM Work Item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "item_id", "project_id", "title", "status", "priority", "severity", "kind"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "item_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "BLOCKED", "DONE", "DEFERRED"] },
+    "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3", "P4"] },
+    "severity": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] },
+    "kind": { "type": "string", "enum": ["TASK", "BUG", "DOC", "EPIC"] },
+    "assignee": { "type": "string" },
+    "created_at": { "type": "string" }
+  }
+}

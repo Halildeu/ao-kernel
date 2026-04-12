@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-work-intake-exec.schema.v1.json",
+  "title": "policy-work-intake-exec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "apply_scope",
+    "action_rules",
+    "default_action"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "apply_scope": {
+      "type": "string",
+      "enum": [
+        "WORKSPACE_ONLY"
+      ]
+    },
+    "allow_workspace_override": {
+      "type": "boolean"
+    },
+    "safe_only_apply_manual_request_kinds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/manual_request_kind"
+      }
+    },
+    "safe_only_apply_manual_request_scopes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/impact_scope"
+      }
+    },
+    "safe_only_apply_gap_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "safe_only_apply_script_budget_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_safe_only_path_prefixes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "require_impact_scope": {
+      "$ref": "#/$defs/impact_scope"
+    },
+    "applied_requires_evidence_path": {
+      "type": "boolean"
+    },
+    "unsafe_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "action_rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "default_action": {
+      "$ref": "#/$defs/action"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "action_kind": {
+      "type": "string",
+      "enum": [
+        "APPLY_WORKSPACE_PATCH",
+        "APPLY_INCUBATOR_CHG",
+        "WRITE_DOC_NOTE",
+        "NOOP"
+      ]
+    },
+    "manual_request_kind": {
+      "type": "string",
+      "enum": [
+        "context-router",
+        "doc-fix",
+        "doc-link-fix",
+        "doc-metadata",
+        "note",
+        "support",
+        "question",
+        "minor_fix",
+        "feature",
+        "refactor",
+        "new_project",
+        "strategy",
+        "multi-quarter",
+        "unspecified"
+      ]
+    },
+    "impact_scope": {
+      "type": "string",
+      "enum": [
+        "doc-only",
+        "workspace-only",
+        "core-change",
+        "external-change"
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_kind"
+      ],
+      "properties": {
+        "action_kind": {
+          "$ref": "#/$defs/action_kind"
+        },
+        "plan_only": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_type",
+        "action_kind"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "DOC_NAV",
+            "SCRIPT_BUDGET",
+            "MANUAL_REQUEST",
+            "GAP",
+            "PDCA_REGRESSION",
+            "INTEGRITY",
+            "USER_REQUEST",
+            "ROADMAP_ITEM"
+          ]
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "broken_refs_gt": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "manual_request_kind_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/manual_request_kind"
+              }
+            },
+            "manual_request_impact_scope_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/impact_scope"
+              }
+            },
+            "path_prefix_in": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "action_kind": {
+          "$ref": "#/$defs/action_kind"
+        },
+        "plan_only": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

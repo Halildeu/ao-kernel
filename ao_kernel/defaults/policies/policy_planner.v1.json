@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "limits": {
+    "max_steps": 12,
+    "max_plan_bytes": 65536,
+    "max_chg_drafts": 5,
+    "max_selected_items": 3,
+    "max_reason_lines": 40
+  },
+  "selection": {
+    "prefer_operability_fail_warn": true,
+    "prefer_selected_autopilot": true,
+    "prefer_suggested_extension": true,
+    "fallback_use_work_intake": true
+  },
+  "simplicity_guard": {
+    "require_modular_steps": true,
+    "disallow_unbounded_lists": true,
+    "prefer_existing_ops": true
+  },
+  "inputs": {
+    "required": [
+      "system_status.v1.json",
+      "work_intake.v1.json",
+      "assessment_eval.v1.json",
+      "gap_register.v1.json"
+    ]
+  },
+  "fail_action": "warn"
+}

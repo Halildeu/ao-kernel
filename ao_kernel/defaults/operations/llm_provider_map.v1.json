@@ -1,0 +1,156 @@
+{
+  "policy_version": "v0.1",
+  "generated_at": "2026-03-05T00:00:00Z",
+  "probe": {
+    "ttl_hours_default": 72,
+    "ttl_hours_by_class": {
+      "REASONING_TEXT": 24,
+      "GOVERNANCE_ASSURANCE": 24,
+      "CODE_AGENTIC": 24
+    }
+  },
+  "classes": {
+    "FAST_TEXT": {
+      "providers": {
+        "openai": {
+          "pinned_model_id": "gpt-4o-mini",
+          "preferred_candidate_model_id": "gpt-5.2-mini",
+          "models": [
+            { "model_id": "gpt-4o-mini", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "gpt-5.2-mini", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "google": {
+          "pinned_model_id": "gemini-2.0-flash",
+          "preferred_candidate_model_id": "gemini-3-flash-preview",
+          "models": [
+            { "model_id": "gemini-2.0-flash", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "gemini-3-flash-preview", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "claude": {
+          "pinned_model_id": "claude-3-haiku-20240307",
+          "preferred_candidate_model_id": "claude-haiku-4-5-20251001",
+          "models": [
+            { "model_id": "claude-3-haiku-20240307", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "claude-haiku-4-5-20251001", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "deepseek": {
+          "pinned_model_id": "deepseek-chat",
+          "preferred_candidate_model_id": "deepseek-reasoner",
+          "models": [
+            { "model_id": "deepseek-chat", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "deepseek-reasoner", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "qwen": {
+          "pinned_model_id": "qwen-plus",
+          "preferred_candidate_model_id": "qwen-flash",
+          "models": [
+            { "model_id": "qwen-plus", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "qwen-flash", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        }
+      }
+    },
+    "BALANCED_TEXT": {
+      "providers": {
+        "qwen": {
+          "pinned_model_id": "qwen-plus",
+          "preferred_candidate_model_id": "qwen-plus-latest",
+          "models": [
+            { "model_id": "qwen-plus", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "qwen-plus-latest", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "qwen2.5-72b-instruct", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "deepseek": {
+          "pinned_model_id": "deepseek-chat",
+          "preferred_candidate_model_id": "deepseek-reasoner",
+          "models": [
+            { "model_id": "deepseek-chat", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "deepseek-reasoner", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "openai": {
+          "pinned_model_id": "gpt-4o-mini",
+          "preferred_candidate_model_id": "gpt-4o",
+          "models": [
+            { "model_id": "gpt-4o-mini", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "gpt-4o", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        }
+      }
+    },
+    "REASONING_TEXT": {
+      "providers": {
+        "xai": {
+          "pinned_model_id": "grok-4-latest",
+          "preferred_candidate_model_id": null,
+          "models": [
+            { "model_id": "grok-4-latest", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "deepseek": {
+          "pinned_model_id": "deepseek-reasoner",
+          "preferred_candidate_model_id": null,
+          "models": [
+            { "model_id": "deepseek-reasoner", "stage": "verified", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "qwen": {
+          "pinned_model_id": null,
+          "preferred_candidate_model_id": "qwen-plus",
+          "models": [
+            { "model_id": "qwen-plus", "stage": "deprecated", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null, "notes": "reasoning-lite; strict reasoning için yasak" }
+          ]
+        }
+      }
+    },
+    "GOVERNANCE_ASSURANCE": {
+      "providers": {
+        "claude": {
+          "pinned_model_id": "claude-3-haiku-20240307",
+          "preferred_candidate_model_id": null,
+          "models": [
+            { "model_id": "claude-3-haiku-20240307", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "openai": {
+          "pinned_model_id": "gpt-4o-mini",
+          "preferred_candidate_model_id": null,
+          "models": [
+            { "model_id": "gpt-4o-mini", "stage": "verified", "verified_at": null, "probe_status": "ok", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        }
+      }
+    },
+    "CODE_AGENTIC": {
+      "providers": {
+        "openai": {
+          "pinned_model_id": "gpt-5.3-codex",
+          "preferred_candidate_model_id": "gpt-5.4",
+          "models": [
+            { "model_id": "gpt-5.3-codex", "stage": "verified", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "gpt-5.4", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null },
+            { "model_id": "gpt-5.2-codex", "stage": "candidate", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        },
+        "xai": {
+          "pinned_model_id": "grok-code-fast-1",
+          "preferred_candidate_model_id": "grok-code-fast-1",
+          "models": [
+            { "model_id": "grok-code-fast-1", "stage": "verified", "verified_at": null, "probe_status": "unknown", "probe_last_at": null, "probe_latency_ms_p95": null, "probe_error_code": null }
+          ]
+        }
+      }
+    },
+    "VISION_MM": {
+      "providers": {}
+    },
+    "OCR_DOC": {
+      "providers": {}
+    }
+  }
+}

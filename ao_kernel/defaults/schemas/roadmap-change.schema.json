@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "roadmap-change.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["change_id", "version", "type", "target", "rationale", "patches", "risk_level"],
+  "properties": {
+    "change_id": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 64,
+      "pattern": "^CHG-[0-9]{8}-[0-9]{3}$"
+    },
+    "version": { "type": "string", "const": "v1" },
+    "type": { "type": "string", "enum": ["add", "remove", "modify"] },
+    "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["milestone_id"],
+      "properties": {
+        "milestone_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "step_id": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "patches": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/patch" }
+    },
+    "gates": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    }
+  },
+  "$defs": {
+    "patch": {
+      "oneOf": [
+        { "$ref": "#/$defs/patch_append_milestone_note" },
+        { "$ref": "#/$defs/patch_replace_milestone_notes" },
+        { "$ref": "#/$defs/patch_replace_milestone_steps" },
+        { "$ref": "#/$defs/patch_replace_milestone_title" }
+      ]
+    },
+    "roadmap_step": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string", "minLength": 1 }
+      }
+    },
+    "patch_append_milestone_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "milestone_id", "note"],
+      "properties": {
+        "op": { "const": "append_milestone_note" },
+        "milestone_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "note": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      }
+    },
+    "patch_replace_milestone_notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "milestone_id", "notes"],
+      "properties": {
+        "op": { "const": "replace_milestone_notes" },
+        "milestone_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+        }
+      }
+    },
+    "patch_replace_milestone_steps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "milestone_id", "steps"],
+      "properties": {
+        "op": { "const": "replace_milestone_steps" },
+        "milestone_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/roadmap_step" }
+        }
+      }
+    },
+    "patch_replace_milestone_title": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "milestone_id", "title"],
+      "properties": {
+        "op": { "const": "replace_milestone_title" },
+        "milestone_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "extensions/PRJ-UI-COCKPIT-LITE/README.md",
+    "extensions/PRJ-UI-COCKPIT-LITE/server.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-UI-COCKPIT-LITE",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [
+      "cockpit_lite"
+    ],
+    "kernel_api_actions": [],
+    "ops": [
+      "cockpit-healthcheck",
+      "cockpit-serve"
+    ],
+    "ops_single_gate": [
+      "cockpit-healthcheck",
+      "cockpit-serve"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/chat_log_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/command_composer_allowlist_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/cockpit_smoke_actions_allowlist_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/dashboard_endpoints_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/evidence_browser_path_traversal_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/evidence_search_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/locks_tab_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/notes_search_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/op_allowlist_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/op_allowlist_strict_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/override_list_get_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/override_write_allowlist_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/path_traversal_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_chat_send_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_chat_threads_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_notes_endpoints_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_notes_op_allowlist_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_notes_path_traversal_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/planner_notes_sse_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/settings_override_validation_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/sse_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/sse_event_types_contract_test.py",
+    "extensions/PRJ-UI-COCKPIT-LITE/tests/ui_render_smoke_contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-UI-COCKPIT-LITE",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "extensions/PRJ-UI-COCKPIT-LITE/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "Zero-deps local cockpit UI with ops allowlist + SSE (read-only)."
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/ui_cockpit_lite_status.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [],
+  "semver": "0.4.0",
+  "ui_surfaces": [
+    "cockpit_lite"
+  ],
+  "version": "v1"
+}

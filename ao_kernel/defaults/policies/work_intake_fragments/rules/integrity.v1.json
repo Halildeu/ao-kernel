@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "integrity",
+  "source_types": [
+    "INTEGRITY"
+  ],
+  "rules": [
+    {
+      "id": "integrity_fail",
+      "source_type": "INTEGRITY",
+      "when": {
+        "integrity_status_in": [
+          "FAIL"
+        ]
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    }
+  ]
+}

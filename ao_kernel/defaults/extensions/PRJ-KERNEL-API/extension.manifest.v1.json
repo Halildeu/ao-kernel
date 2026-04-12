@@ -1,0 +1,76 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_kernel_api_guardrails.v1.json",
+    "schemas/kernel-api-request.schema.v1.json",
+    "schemas/kernel-api-response.schema.v1.json",
+    "src/prj_kernel_api/adapter.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-KERNEL-API",
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [
+      "doc_nav_check",
+      "intake_create_plan",
+      "intake_next",
+      "intake_status",
+      "project_status",
+      "roadmap_finish",
+      "roadmap_follow",
+      "system_status"
+    ],
+    "ops": [],
+    "ops_single_gate": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-KERNEL-API/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-KERNEL-API",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "validate_schemas"
+    ]
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "roadmaps/PROJECTS/PRJ-KERNEL-API/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/kernel_api_audit.v1.jsonl"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [],
+  "policy_files": [
+    "policies/policy_kernel_api_guardrails.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [],
+  "version": "v1",
+  "enabled": true
+}

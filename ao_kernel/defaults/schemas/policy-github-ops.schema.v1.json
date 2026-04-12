@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-github-ops.schema.v1.json",
+  "title": "policy-github-ops",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "network_enabled",
+    "live_gate",
+    "allowed_actions",
+    "allowed_ops",
+    "auth",
+    "retry_count",
+    "rate_limit",
+    "job"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "network_enabled": {
+      "type": "boolean"
+    },
+    "live_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "require_env_key_present",
+        "env_flag",
+        "env_key"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "require_env_key_present": {
+          "type": "boolean"
+        },
+        "env_flag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "env_key": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "allowed_ops": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pr_list",
+          "pr_open",
+          "pr_update",
+          "merge",
+          "deploy_trigger",
+          "status_poll"
+        ]
+      }
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "PR_OPEN",
+          "PR_POLL",
+          "CI_POLL",
+          "MERGE",
+          "RELEASE_RC",
+          "RELEASE_FINAL",
+          "SMOKE_FAST",
+          "SMOKE_FULL"
+        ]
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "token_env"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "bearer",
+            "signature"
+          ]
+        },
+        "token_env": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "retry_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rate_limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cooldown_seconds",
+        "max_per_tick"
+      ],
+      "properties": {
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_per_tick": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keep_last_n",
+        "ttl_seconds",
+        "poll_interval_seconds",
+        "cooldown_seconds"
+      ],
+      "properties": {
+        "keep_last_n": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "poll_interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

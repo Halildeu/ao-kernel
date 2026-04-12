@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/request-envelope.schema.json",
+  "title": "Request Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "tenant_id",
+    "intent",
+    "risk_score",
+    "dry_run",
+    "side_effect_policy",
+    "idempotency_key"
+  ],
+  "properties": {
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^urn:"
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "side_effect_policy": {
+      "type": "string",
+      "enum": ["none", "draft", "pr", "allow"]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_time_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600000
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "use_openai": {
+          "type": "boolean"
+        },
+        "input_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "launch_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "pr_repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pr_head": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pr_base": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pr_title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pr_body": {
+          "type": "string"
+        },
+        "pr_draft": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

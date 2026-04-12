@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-work-intake.schema.v1.json",
+  "title": "policy-work-intake",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "plan_policy",
+    "buckets",
+    "severity_levels",
+    "classification",
+    "severity_map"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "plan_policy": { "type": "string", "enum": ["optional", "required"] },
+    "buckets": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["ROADMAP", "PROJECT", "TICKET", "INCIDENT"] }
+    },
+    "severity_levels": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] }
+    },
+    "sla_hints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["S0", "S1", "S2", "S3", "S4"],
+      "properties": {
+        "S0": { "type": "string" },
+        "S1": { "type": "string" },
+        "S2": { "type": "string" },
+        "S3": { "type": "string" },
+        "S4": { "type": "string" }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "incident_keywords",
+        "roadmap_keywords",
+        "coverage_suffixes",
+        "regression_bucket",
+        "default_bucket"
+      ],
+      "properties": {
+        "incident_keywords": { "type": "array", "items": { "type": "string" } },
+        "roadmap_keywords": { "type": "array", "items": { "type": "string" } },
+        "coverage_suffixes": { "type": "array", "items": { "type": "string" } },
+        "regression_bucket": { "type": "string", "enum": ["ROADMAP", "PROJECT", "TICKET", "INCIDENT"] },
+        "default_bucket": { "type": "string", "enum": ["ROADMAP", "PROJECT", "TICKET", "INCIDENT"] }
+      }
+    },
+    "severity_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["high", "medium", "low", "unknown"],
+      "properties": {
+        "high": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] },
+        "medium": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] },
+        "low": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] },
+        "unknown": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

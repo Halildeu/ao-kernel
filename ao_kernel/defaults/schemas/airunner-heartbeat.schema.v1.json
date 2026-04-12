@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-heartbeat.schema.v1.json",
+  "title": "Airunner Heartbeat",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "last_tick_id",
+    "last_tick_at",
+    "last_status",
+    "last_tick_window",
+    "policy_hash",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "last_tick_id": { "type": "string", "minLength": 1 },
+    "last_tick_at": { "type": "string", "format": "date-time" },
+    "last_status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "last_error_code": { "type": ["string", "null"] },
+    "last_tick_window": { "type": "string", "minLength": 1 },
+    "policy_hash": { "type": "string", "minLength": 1 },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

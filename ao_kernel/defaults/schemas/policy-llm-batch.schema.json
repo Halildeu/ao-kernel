@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Policy LLM Batch v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "batch_enabled", "enable_env_key", "allowed_providers", "allowed_job_types"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "batch_enabled": {
+      "type": "boolean"
+    },
+    "enable_env_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "allowed_providers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "allowed_job_types": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "completion_window": {
+      "type": "string",
+      "default": "24h"
+    },
+    "max_runs_for_trends": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "default": 20
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 300000,
+      "default": 60000
+    },
+    "max_output_chars": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 200000,
+      "default": 8000
+    }
+  }
+}
+

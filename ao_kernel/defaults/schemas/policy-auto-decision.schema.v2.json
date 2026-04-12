@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-auto-decision.schema.v2.json",
+  "title": "policy-auto-decision.schema.v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "decision_apply_mode",
+    "auto_apply_limits",
+    "defaults",
+    "guards",
+    "circuit_breakers"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v2"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "decision_apply_mode": {
+      "type": "string",
+      "enum": [
+        "autopilot"
+      ]
+    },
+    "auto_apply_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_decisions_per_loop",
+        "max_overrides_written_per_loop"
+      ],
+      "properties": {
+        "max_decisions_per_loop": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_overrides_written_per_loop": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "NETWORK_LIVE_ENABLE",
+        "NETWORK_ENABLE",
+        "AUTO_APPLY_ALLOW",
+        "ROUTE_OVERRIDE",
+        "CORE_UNLOCK_REQUEST",
+        "UNKNOWN"
+      ],
+      "properties": {
+        "NETWORK_LIVE_ENABLE": {
+          "type": "string",
+          "enum": [
+            "ENABLE_SCOPED",
+            "KEEP_OFF"
+          ]
+        },
+        "NETWORK_ENABLE": {
+          "type": "string",
+          "enum": [
+            "ENABLE_SCOPED",
+            "KEEP_OFF"
+          ]
+        },
+        "AUTO_APPLY_ALLOW": {
+          "type": "string",
+          "enum": [
+            "ALLOW",
+            "KEEP_SAFE"
+          ]
+        },
+        "ROUTE_OVERRIDE": {
+          "type": "string",
+          "enum": [
+            "APPLY_RECOMMENDED",
+            "KEEP_SAFE"
+          ]
+        },
+        "CORE_UNLOCK_REQUEST": {
+          "type": "string",
+          "enum": [
+            "ALLOW_SSOT_ONLY",
+            "KEEP_SAFE"
+          ]
+        },
+        "UNKNOWN": {
+          "type": "string",
+          "enum": [
+            "KEEP_SAFE"
+          ]
+        }
+      }
+    },
+    "guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_env_for_live_github",
+        "require_env_for_live_deploy",
+        "core_unlock_allowlist_only"
+      ],
+      "properties": {
+        "require_env_for_live_github": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "require_env_for_live_deploy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "core_unlock_allowlist_only": {
+          "type": "boolean"
+        }
+      }
+    },
+    "circuit_breakers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_pr_open_network_fail_window_minutes",
+        "github_pr_open_network_fail_max",
+        "github_pr_open_cooldown_override_mode"
+      ],
+      "properties": {
+        "github_pr_open_network_fail_window_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "github_pr_open_network_fail_max": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "github_pr_open_cooldown_override_mode": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

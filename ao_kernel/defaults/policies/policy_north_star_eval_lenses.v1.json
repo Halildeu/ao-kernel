@@ -1,0 +1,156 @@
+{
+  "version": "v1",
+  "mode": "lenses",
+  "workflow_axes": [
+    "reference",
+    "assessment",
+    "gap"
+  ],
+  "dimension_map": {
+    "trend_best_practice": "A",
+    "integrity_compat": "B",
+    "ai_ops_fit": "C",
+    "github_ops_release": "D",
+    "operability": "E",
+    "integration_coherence": "F",
+    "context_health": "G"
+  },
+  "trend_best_practice": {
+    "dimension": "A",
+    "min_coverage_ok": 0.5,
+    "min_coverage_warn": 0.2
+  },
+  "integrity_compat": {
+    "dimension": "B",
+    "min_score_ok": 1.0,
+    "min_score_warn": 0.5
+  },
+  "ai_ops_fit": {
+    "dimension": "C",
+    "min_score_ok": 1.0,
+    "min_score_warn": 0.5,
+    "required_fields": [
+      "context_pack_present",
+      "provider_policy_pinned",
+      "secrets_redacted"
+    ]
+  },
+  "github_ops_release": {
+    "dimension": "D",
+    "min_score_ok": 1.0,
+    "min_score_warn": 0.5,
+    "required_fields": [
+      "github_ops_policy_present",
+      "github_ops_network_default_off",
+      "release_policy_present",
+      "github_jobs_index_present",
+      "release_manifest_present"
+    ]
+  },
+  "operability": {
+    "dimension": "E",
+    "min_score_ok": 1.0,
+    "min_score_warn": 0.5,
+    "required_fields": [
+      "script_budget_present",
+      "doc_nav_present",
+      "docs_hygiene_present",
+      "docs_drift_present",
+      "airunner_jobs_present",
+      "pdca_cursor_present",
+      "heartbeat_present",
+      "work_intake_present",
+      "integrity_present"
+    ]
+  },
+  "integration_coherence": {
+    "dimension": "F",
+    "min_score_ok": 1.0,
+    "min_score_warn": 0.5,
+    "required_signals": [
+      "layer_boundary_violations_count",
+      "pack_conflict_count",
+      "core_unlock_scope_widen_count",
+      "schema_fail_count"
+    ]
+  },
+  "context_health": {
+    "dimension": "G",
+    "min_score_ok": 0.8,
+    "min_score_warn": 0.5,
+    "components": [
+      "session_freshness",
+      "decision_coverage",
+      "standards_compliance",
+      "artifact_completeness",
+      "drift_score"
+    ]
+  },
+  "maturity_tracking": {
+    "enabled": true,
+    "output_path": ".cache/index/north_star_maturity_tracking.v1.json",
+    "levels": [
+      {
+        "id": "L1",
+        "label": "Foundation",
+        "description": "Signal visibility is basic and mostly reactive.",
+        "min_score": 0.0,
+        "max_score": 0.24,
+        "criteria": [
+          "Core signals are partially present",
+          "Most checks are manual"
+        ]
+      },
+      {
+        "id": "L2",
+        "label": "Managed",
+        "description": "Signals are consistently produced with limited automation.",
+        "min_score": 0.25,
+        "max_score": 0.49,
+        "criteria": [
+          "Critical checks are repeatable",
+          "Partial gate automation exists"
+        ]
+      },
+      {
+        "id": "L3",
+        "label": "Defined",
+        "description": "Process and execution controls are standardized.",
+        "min_score": 0.5,
+        "max_score": 0.69,
+        "criteria": [
+          "Policy-driven execution is standard",
+          "Evidence paths are stable"
+        ]
+      },
+      {
+        "id": "L4",
+        "label": "Measured",
+        "description": "Quality and flow are tracked with proactive remediation.",
+        "min_score": 0.7,
+        "max_score": 0.84,
+        "criteria": [
+          "Lens-based scoring drives backlog",
+          "Regression loops are controlled"
+        ]
+      },
+      {
+        "id": "L5",
+        "label": "Autonomous",
+        "description": "End-to-end execution is deterministic and continuously optimized.",
+        "min_score": 0.85,
+        "max_score": 1.0,
+        "criteria": [
+          "Quality bar is consistently enforced",
+          "Execution is mostly self-healing"
+        ]
+      }
+    ]
+  },
+  "notes": [
+    "North Star eval lens mekanizmasi aktif.",
+    "Assessment ciktilari 7 boyutlu A-G lens degerlendirmesi uretir.",
+    "Maturity tracking ciktilari north_star.maturity schema ile dogrulanir."
+  ],
+  "fail_action": "warn"
+}

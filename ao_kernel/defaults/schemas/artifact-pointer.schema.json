@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/artifact-pointer.schema.json",
+  "title": "Artifact Pointer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sha256", "size_bytes", "stored_path", "original_relpath", "created_at"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "size_bytes": { "type": "integer", "minimum": 0 },
+    "stored_path": { "type": "string", "minLength": 1 },
+    "original_relpath": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 }
+  }
+}

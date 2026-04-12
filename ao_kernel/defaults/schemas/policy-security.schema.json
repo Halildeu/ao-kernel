@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-security.schema.json",
+  "title": "Policy Security",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kill_switch",
+    "allowed_side_effect_policies",
+    "network_access",
+    "network_allowlist",
+    "max_risk_score"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "kill_switch": {
+      "type": "boolean"
+    },
+    "allowed_side_effect_policies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "none",
+          "draft",
+          "allow"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "network_access": {
+      "type": "boolean"
+    },
+    "network_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "max_risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

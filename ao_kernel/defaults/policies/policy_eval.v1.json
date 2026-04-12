@@ -1,0 +1,8 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "checks": ["json_conformance", "groundedness", "citation_completeness", "tool_consistency", "refusal_correctness", "truncation_safety"],
+  "min_score_threshold": 0.7,
+  "fail_action": "warn",
+  "golden_set_path": "fixtures/eval/golden_set.v1.json"
+}

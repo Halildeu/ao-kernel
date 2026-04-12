@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "default_deadline_local": "07:00",
+  "tick_interval_seconds": 120,
+  "budget_seconds_per_poll": 60,
+  "max_polls_per_call": 1,
+  "max_actions_per_tick": 5,
+  "auto_decision_mode": "autopilot",
+  "network_default_off": true,
+  "fail_action": "warn"
+}

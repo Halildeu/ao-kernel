@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "auto_run_on_work_intake_check": true,
+  "github_ops": {
+    "enabled": true,
+    "prune_superseded_by_pass": true,
+    "archive_reason": "SUPERSEDED_BY_PASS"
+  },
+  "notes": [
+    "Historical prune runs before work-intake-build inside work-intake-check.",
+    "Prune scope is intentionally narrow: only superseded github_ops terminal records."
+  ],
+  "fail_action": "warn"
+}

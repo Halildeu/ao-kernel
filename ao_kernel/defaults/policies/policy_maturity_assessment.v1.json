@@ -1,0 +1,263 @@
+{
+  "version": "v1",
+  "$schema": "../schemas/policy-maturity-assessment.schema.v1.json",
+  "description": "Canonical maturity assessment rubric. All agents use this to evaluate repo maturity on the same scale.",
+  "assessment_protocol": {
+    "branch_rule": "Always assess the branch/worktree you are currently on. Record branch name and HEAD SHA. Cross-agent comparison REQUIRES both agents on the same branch.",
+    "execution_rule": "MUST run evidence_commands listed per area. Read-only file inspection alone is insufficient for scoring. All evidence_commands output must be recorded.",
+    "scoring_rule": "Score based on criteria definitions. L0=0%, L1=25%, L2=50%, L3=75%, L4=100%. Band interpolation: 0 gaps to next level = band top (e.g. L2=62%), 1-2 gaps = band mid (50%), 3+ gaps = band bottom (38%). For L3 and L4: ALL conditions listed must be met; partial match = previous level.",
+    "conflict_resolution": "If two agents score differently, the one that ran more evidence_commands wins. Attach command output as evidence.",
+    "self_reference_rule": "The maturity rubric policy itself (policy_maturity_assessment.v1.json) must NOT be counted as evidence for any area score. Only operational policies count.",
+    "l3_strict_rule": "L3 criteria use absolute quantifiers (all, every, always). If ANY condition is not met, score as L2 with interpolation. Do not round up to L3 for partial compliance.",
+    "evidence_threshold_rule": "Evidence commands that produce counts (e.g. file counts, match counts) must be compared against explicit thresholds defined in criteria. High count alone does not imply high maturity."
+  },
+  "areas": [
+    {
+      "area_id": "state_machine",
+      "weight": 0.12,
+      "evidence_commands": [
+        "python3 -c \"import json; d=json.load(open('orchestrator/state_machine.v1.json')); print('machines:', list(d.get('machines',{}).keys()))\"",
+        "pytest tests/contract/test_state_machine_trajectory.py -v 2>&1 | tail -20",
+        "grep -r 'validate_transition\\|check_transition\\|enforce_transition' src/ --include='*.py' -l"
+      ],
+      "evidence_files": [
+        "orchestrator/state_machine.v1.json",
+        "schemas/state-machine.schema.v1.json",
+        "src/shared/status.py",
+        "src/ops/work_item_state.py"
+      ],
+      "criteria": {
+        "l0_definition": "state_machine.v1.json is placeholder or missing",
+        "l1_definition": "State machines defined with states/transitions; schema exists; no runtime code",
+        "l2_definition": "State store exists (work_item_state.py); trajectory tests pass; but no runtime transition guard",
+        "l3_definition": "validate_transition() called before every state write; invalid transitions BLOCKED; CI contract test",
+        "l4_definition": "L3 + transition metrics (count, latency, rejection rate) exported to observability"
+      }
+    },
+    {
+      "area_id": "crash_consistency",
+      "weight": 0.12,
+      "evidence_commands": [
+        "grep -r 'fsync\\|os\\.fsync' src/ --include='*.py' -l",
+        "grep -r 'write_text_atomic\\|write_json_atomic\\|write_bytes_atomic' src/ --include='*.py' -l",
+        "grep -r 'journal_mode\\|synchronous' src/ extensions/ --include='*.py' -c",
+        "grep -r 'write_text\\|write_bytes' src/ --include='*.py' -l | grep -v atomic | grep -v _test"
+      ],
+      "evidence_files": [
+        "src/shared/utils.py",
+        "src/utils/jsonio.py",
+        "src/tools/fs_write.py"
+      ],
+      "criteria": {
+        "l0_definition": "No atomic write pattern; direct open().write() everywhere",
+        "l1_definition": "Atomic write helper exists (tmp+rename) but not consistently used",
+        "l2_definition": "Atomic write + fsync on critical paths; but scattered direct writes remain; no WAL",
+        "l3_definition": "All stateful writes go through durable_write; SQLite WAL+synchronous=NORMAL; CI gate blocks direct writes",
+        "l4_definition": "L3 + crash recovery on startup; write durability matrix documented; CAS/revision on mutable stores"
+      }
+    },
+    {
+      "area_id": "decision_mechanism",
+      "weight": 0.12,
+      "evidence_commands": [
+        "grep -r 'enforce_decision_boundary\\|record_decision_quality\\|record_provider_call' src/ --include='*.py' -l",
+        "python3 -m src.ops.manage policy-check --source both --workspace-root .cache/ws_customer_default 2>&1 | tail -10",
+        "python3 ci/decision_boundary_contract_test.py 2>&1 | tail -5"
+      ],
+      "evidence_files": [
+        "schemas/decision-quality.schema.v1.json",
+        "schemas/human-approval-request.schema.v1.json",
+        "schemas/risk-scoring.schema.v1.json",
+        "src/orchestrator/decision_boundary.py",
+        "src/orchestrator/decision_quality.py",
+        "src/orchestrator/quality_gate.py"
+      ],
+      "criteria": {
+        "l0_definition": "No decision schema or boundary logic",
+        "l1_definition": "Schemas defined (decision-quality, risk-scoring, human-approval); no runtime wiring",
+        "l2_definition": "Runtime code exists (decision_boundary.py, quality_gate.py) but not called from runner pipeline",
+        "l3_definition": "enforce_decision_boundary() in runner pre-exec; quality gates enforce reject/suspend; approval TTL timeout live",
+        "l4_definition": "L3 + decision quality trend alerts; provider benchmark comparison; human approval SLA metrics"
+      }
+    },
+    {
+      "area_id": "rule_composition",
+      "weight": 0.08,
+      "evidence_commands": [
+        "grep -r 'rule_composition\\|RuleEvaluator\\|evaluate_rule\\|combinator' src/ --include='*.py' -l",
+        "grep -rl 'fail_action' policies/ --include='*.json' | grep -v maturity | wc -l",
+        "python3 -c \"import json,glob; files=[f for f in glob.glob('policies/*.json') if 'maturity' not in f and 'fail_action' in open(f).read()]; print(f'operational policies with fail_action: {len(files)}'); [print(f'  {f}') for f in files]\""
+      ],
+      "evidence_files": [
+        "schemas/rule-composition.schema.v1.json",
+        "extensions/PRJ-WORK-INTAKE/build_policy_work_intake_v2.py"
+      ],
+      "criteria": {
+        "l0_definition": "No rule composition concept",
+        "l1_definition": "Schema defined (AND/OR/NOT combinators, fail_action); no runtime evaluator",
+        "l2_definition": "Build-time composition exists (work-intake fragments); but no generic runtime engine; fail_action unused",
+        "l3_definition": "Generic RuleEvaluator with AND/OR/NOT; fail_action enforced in policies; conflict detection; CI test",
+        "l4_definition": "L3 + dynamic rule loading; rule evaluation metrics; hot-reload without restart"
+      }
+    },
+    {
+      "area_id": "ci_gates",
+      "weight": 0.10,
+      "evidence_commands": [
+        "ls ci/*.py | wc -l",
+        "ls .github/workflows/*.yml | wc -l",
+        "python3 ci/validate_schemas.py 2>&1 | tail -5",
+        "grep -r 'contract_test\\|_contract_test' ci/ --include='*.py' -l | wc -l",
+        "for f in ci/*contract*.py ci/*test*.py; do basename $f; done | while read t; do grep -rl \"$t\" .github/workflows/ 2>/dev/null | wc -l | xargs -I{} echo \"$t -> {} workflow refs\"; done 2>/dev/null | head -20"
+      ],
+      "evidence_files": [
+        ".github/workflows/gate-schema.yml",
+        ".github/workflows/gate-policy-dry-run.yml",
+        ".github/workflows/gate-enforcement-check.yml",
+        ".github/workflows/module-delivery-lanes.yml"
+      ],
+      "criteria": {
+        "l0_definition": "No CI pipeline",
+        "l1_definition": "Basic schema validation gate; manual runs",
+        "l2_definition": "Multiple gates (schema, policy, enforcement); but <80% of contract tests wired to merge gate workflows",
+        "l3_definition": ">=80% of ci/*contract* and ci/*test* files referenced in workflow YAMLs; merge blocked on failure; coverage report generated. ALL conditions required.",
+        "l4_definition": "L3 + gate duration metrics; flaky test detection; auto-retry with evidence; gate-level SLA"
+      }
+    },
+    {
+      "area_id": "policy_coverage",
+      "weight": 0.10,
+      "evidence_commands": [
+        "ls policies/*.json | wc -l",
+        "python3 ci/policy_dry_run.py --fixtures fixtures/envelopes --out /tmp/_mat_sim.json 2>&1 | tail -5",
+        "grep -rl 'fail_action' policies/ --include='*.json' | grep -v maturity | wc -l",
+        "python3 ci/validate_schemas.py 2>&1 | grep -i policy | tail -5",
+        "grep -r 'load_policy_validated\\|validate_policy_against_schema' src/ --include='*.py' -l | wc -l"
+      ],
+      "evidence_files": [
+        "policies/",
+        "schemas/"
+      ],
+      "criteria": {
+        "l0_definition": "No policies defined",
+        "l1_definition": "Policies exist and validate against schemas; but no runtime loader validation",
+        "l2_definition": "Schema coverage good; dry-run works; but fail_action not used in operational policies; runtime loaders skip validation",
+        "l3_definition": "ALL of: (a) load_policy_validated() helper exists and used by loaders, (b) fail_action on >50% operational policies, (c) dry-run in CI workflow. ALL conditions required.",
+        "l4_definition": "L3 + policy drift detection; deprecation lifecycle; policy effectiveness metrics"
+      }
+    },
+    {
+      "area_id": "extensions",
+      "weight": 0.08,
+      "evidence_commands": [
+        "ls -d extensions/PRJ-* | wc -l",
+        "for d in extensions/PRJ-*/; do echo \"$d: manifest=$(test -f ${d}extension.manifest.v1.json && echo YES || echo NO)\"; done",
+        "python3 ci/validate_pack_manifest.py 2>&1 | tail -5",
+        "for d in extensions/PRJ-*/; do tests=$(find $d -name '*test*' -o -name '*contract*' 2>/dev/null | wc -l); echo \"$(basename $d): $tests test files\"; done",
+        "grep -r 'extension_health\\|auto_disable\\|compatibility_matrix' src/ extensions/ --include='*.py' --include='*.json' -l 2>/dev/null | wc -l"
+      ],
+      "evidence_files": [
+        "extensions/PRJ-ENFORCEMENT-PACK/extension.manifest.v1.json",
+        "docs/OPERATIONS/EXTENSIONS.md"
+      ],
+      "criteria": {
+        "l0_definition": "No extension structure",
+        "l1_definition": "Extension directories exist with manifests; but minimal tests",
+        "l2_definition": "All manifests present; docs_ref and ai_context_refs present; but not all extensions have >=2 test files",
+        "l3_definition": "ALL extensions have: manifest + >=2 test files (smoke + contract). Manifest schema validation passes. ALL conditions required.",
+        "l4_definition": "L3 + extension health dashboard exists (code evidence); auto-disable on contract failure implemented; version compatibility matrix generated. Must have code evidence, not just docs."
+      }
+    },
+    {
+      "area_id": "multi_agent",
+      "weight": 0.10,
+      "evidence_commands": [
+        "python3 ci/ai_config_contract_test.py 2>&1 | tail -5",
+        "python3 ci/context_drift_contract_test.py 2>&1 | tail -5",
+        "diff <(grep 'workspace' AGENTS.md) <(grep 'workspace' .gemini/INSTRUCTIONS.md) 2>&1 | head -10",
+        "diff <(grep -E 'ops\\.main|manage\\.py|workspace.root' AGENTS.md) <(grep -E 'ops\\.main|manage\\.py|workspace.root' .gemini/INSTRUCTIONS.md) 2>&1 | head -10",
+        "grep -c 'src.ops.main' .gemini/INSTRUCTIONS.md 2>/dev/null || echo 0"
+      ],
+      "evidence_files": [
+        "AGENTS.md",
+        ".codex/config.toml",
+        ".gemini/settings.json",
+        ".gemini/INSTRUCTIONS.md"
+      ],
+      "criteria": {
+        "l0_definition": "Single-agent repo; no shared context",
+        "l1_definition": "AGENTS.md exists as shared SSOT; multiple agent configs present",
+        "l2_definition": "Shared ops commands; context bootstrap defined; but instruction drift between agents (e.g. .gemini/INSTRUCTIONS.md contains stale refs like src.ops.main)",
+        "l3_definition": "ALL of: (a) context_drift_contract_test passes, (b) .gemini/INSTRUCTIONS.md has zero stale refs (src.ops.main=0), (c) bootstrap code shared. ALL conditions required.",
+        "l4_definition": "L3 + cross-agent evaluation consistency (maturity rubric); shared context health dashboard"
+      }
+    },
+    {
+      "area_id": "observability",
+      "weight": 0.08,
+      "evidence_commands": [
+        "grep -r 'trace_meta\\|otel\\|opentelemetry\\|exporter' src/ --include='*.py' -l | wc -l",
+        "grep -r 'import logging\\|getLogger' src/ --include='*.py' -l | wc -l",
+        "grep -r 'Exporter\\|export_traces\\|OTLPSpanExporter\\|ConsoleSpanExporter' src/ --include='*.py' -l | wc -l",
+        "grep -r 'Counter\\|Histogram\\|metrics\\.record\\|metrics\\.add' src/ --include='*.py' -l | wc -l",
+        "cat docs/OPERATIONS/OBSERVABILITY-COVERAGE-MATRIX.v1.json 2>/dev/null | python3 -m json.tool 2>&1 | head -20"
+      ],
+      "evidence_files": [
+        "src/orchestrator/observability/otel_bridge.py",
+        "src/ops/trace_meta.py",
+        "docs/OPERATIONS/OBSERVABILITY-COVERAGE-MATRIX.v1.json"
+      ],
+      "criteria": {
+        "l0_definition": "No logging or tracing",
+        "l1_definition": "Print/basic logging scattered; trace_meta concept exists but trace file count alone is not sufficient",
+        "l2_definition": "Custom trace_meta attached to summaries; decision quality JSONL; but structured logger count=0 OR OTEL exporter count=0",
+        "l3_definition": "ALL of: (a) import logging/getLogger count > 0, (b) OTEL exporter code exists, (c) metrics Counter/Histogram in decision or gate code. ALL conditions required — trace_meta file count alone is NOT sufficient for L3.",
+        "l4_definition": "L3 + dashboard code/config exists; alerting on degradation implemented; trace correlation across runner/gate/policy. Must have code evidence."
+      }
+    },
+    {
+      "area_id": "test_coverage",
+      "weight": 0.06,
+      "evidence_commands": [
+        "pytest tests/ -x --co -q 2>&1 | tail -5",
+        "python3 -c \"import ast,sys; t=ast.parse(open('src/ops/manage.py').read()); cmds=[n.s for n in ast.walk(t) if isinstance(n,ast.Constant) and isinstance(n.s,str) and '-' in n.s and len(n.s)<40]; print(f'ops commands: {len(cmds)}')\"",
+        "ls ci/*contract* ci/*test* 2>/dev/null | wc -l",
+        "python3 -c \"import ast; t=ast.parse(open('src/ops/manage.py').read()); cmds={n.s for n in ast.walk(t) if isinstance(n,ast.Constant) and isinstance(n.s,str) and '-' in n.s and len(n.s)<40}; import glob; tests={f.split('test_')[-1].replace('.py','').replace('_','-') for f in glob.glob('tests/**/*test*.py',recursive=True)+glob.glob('ci/*contract*.py')+glob.glob('ci/*test*.py')}; covered=cmds&tests; print(f'commands:{len(cmds)} tests:{len(tests)} covered:{len(covered)} ratio:{len(covered)/max(len(cmds),1):.0%}')\""
+      ],
+      "evidence_files": [
+        "src/ops/manage.py",
+        "tests/",
+        "ci/"
+      ],
+      "criteria": {
+        "l0_definition": "No tests",
+        "l1_definition": "Some contract tests exist; but no coverage mapping to ops commands",
+        "l2_definition": "Contract tests for critical paths; CI runs them; but command-to-test coverage ratio < 70%",
+        "l3_definition": "Command-to-test coverage ratio >= 70%; coverage matrix auto-generated; CI fails on gap. ALL conditions required.",
+        "l4_definition": "L3 + golden-path CLI tests; mutation testing; coverage trend tracking"
+      }
+    },
+    {
+      "area_id": "test_quality",
+      "weight": 0.04,
+      "evidence_commands": [
+        "python3 ci/check_test_quality.py --repo-root . --dry-run --out /tmp/_tq_maturity.json 2>&1 | tail -5",
+        "grep -rl 'quality-edge-boost\\|auto-generated-test' . --include='*.test.tsx' --include='*.test.ts' 2>/dev/null | wc -l",
+        "python3 -c \"import json; r=json.load(open('/tmp/_tq_maturity.json')); m=r.get('metrics',{}); print(f'shallow={m.get(\\\"shallow_ratio\\\",\\\"N/A\\\")} density={m.get(\\\"assertion_density\\\",\\\"N/A\\\")} dup={m.get(\\\"duplication_ratio\\\",\\\"N/A\\\")}')\""
+      ],
+      "evidence_files": [
+        "policies/policy_test_quality.v1.json",
+        "schemas/policy-test-quality.schema.v1.json",
+        "extensions/PRJ-ENFORCEMENT-PACK/semgrep/rules/ep006_shallow_render_fake.yaml",
+        "ci/check_test_quality.py"
+      ],
+      "criteria": {
+        "l0_definition": "No test quality rules or checks exist",
+        "l1_definition": "Test quality policy + schema + semgrep rules defined; but not enforced in CI",
+        "l2_definition": "Semgrep rules or check_test_quality.py running in CI advisory mode; findings tracked; threshold calibration incomplete",
+        "l3_definition": "ALL: (a) CI gate blocking mode, (b) zero bulk-generation markers, (c) shallow_render_ratio < 0.10, (d) assertion_density >= 2.0, (e) threshold calibration documented, (f) managed repo sync verified",
+        "l4_definition": "L3 + quality trend dashboard; suppression expiry policy; near-duplicate detection; sampled audit or mutation-level quality verification"
+      }
+    }
+  ]
+}

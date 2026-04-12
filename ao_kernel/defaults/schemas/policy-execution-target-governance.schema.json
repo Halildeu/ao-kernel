@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-execution-target-governance.schema.json",
+  "title": "policy-execution-target-governance.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "inputs",
+    "resolution",
+    "blocking",
+    "guardrails",
+    "outputs",
+    "rollout"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_registries",
+        "required_reports",
+        "optional_sources"
+      ],
+      "properties": {
+        "required_registries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_reports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "optional_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registry_first",
+        "fallback_to_filesystem_discovery",
+        "nested_targets_inherit_repo_git_health",
+        "require_launch_profile_registry",
+        "require_version_source_for_apply",
+        "require_authority_matrix",
+        "require_duplicate_surface_register"
+      ],
+      "properties": {
+        "registry_first": {
+          "type": "boolean"
+        },
+        "fallback_to_filesystem_discovery": {
+          "type": "boolean"
+        },
+        "nested_targets_inherit_repo_git_health": {
+          "type": "boolean"
+        },
+        "require_launch_profile_registry": {
+          "type": "boolean"
+        },
+        "require_version_source_for_apply": {
+          "type": "boolean"
+        },
+        "require_authority_matrix": {
+          "type": "boolean"
+        },
+        "require_duplicate_surface_register": {
+          "type": "boolean"
+        }
+      }
+    },
+    "blocking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocked_lifecycle_states",
+        "hard_block_conditions",
+        "report_only_conditions",
+        "block_or_warn_conditions",
+        "allow_dirty_tree_intents"
+      ],
+      "properties": {
+        "blocked_lifecycle_states": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hard_block_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "report_only_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "block_or_warn_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allow_dirty_tree_intents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_if_ai_entry_pack_missing_on_apply",
+        "block_if_launch_profile_missing",
+        "block_if_effective_path_not_registered",
+        "block_if_uncontrolled_duplicate_exists",
+        "record_selection_reason",
+        "record_target_evidence"
+      ],
+      "properties": {
+        "block_if_ai_entry_pack_missing_on_apply": {
+          "type": "boolean"
+        },
+        "block_if_launch_profile_missing": {
+          "type": "boolean"
+        },
+        "block_if_effective_path_not_registered": {
+          "type": "boolean"
+        },
+        "block_if_uncontrolled_duplicate_exists": {
+          "type": "boolean"
+        },
+        "record_selection_reason": {
+          "type": "boolean"
+        },
+        "record_target_evidence": {
+          "type": "boolean"
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_reports",
+        "required_evidence_fields"
+      ],
+      "properties": {
+        "workspace_reports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_evidence_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode_default",
+        "promote_to_block_on"
+      ],
+      "properties": {
+        "mode_default": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promote_to_block_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

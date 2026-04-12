@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/context-pack-router-result.schema.v1.json",
+  "title": "Context Pack Router Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "request_id",
+    "context_pack_id",
+    "status",
+    "bucket",
+    "action",
+    "severity",
+    "priority",
+    "reasons",
+    "next_actions",
+    "evidence_paths",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "request_id": { "type": "string", "minLength": 1 },
+    "context_pack_id": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE"] },
+    "bucket": { "type": "string", "enum": ["INCIDENT", "TICKET", "PROJECT", "ROADMAP"] },
+    "action": { "type": "string", "enum": ["NOOP", "PLAN", "APPLY_SAFE_ONLY", "APPLY_REQUIRES_UNLOCK"] },
+    "severity": { "type": "string", "enum": ["S0", "S1", "S2", "S3", "S4"] },
+    "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3", "P4"] },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "next_actions": { "type": "array", "items": { "type": "string" } },
+    "evidence_paths": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

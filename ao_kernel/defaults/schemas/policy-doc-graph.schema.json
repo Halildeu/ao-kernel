@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "policy-doc-graph.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "mode",
+    "broken_ref_policy",
+    "workspace_bound_patterns",
+    "deprecated_patterns",
+    "wrong_path_patterns",
+    "max_items",
+    "placeholder_warn_threshold",
+    "strict_fail_on_broken",
+    "strict_fail_on_critical_nav_gaps",
+    "orphan_target"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "report",
+        "strict"
+      ]
+    },
+    "broken_ref_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "core",
+        "workspace"
+      ],
+      "properties": {
+        "core": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "warn"
+          ]
+        },
+        "workspace": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "warn"
+          ]
+        }
+      }
+    },
+    "workspace_bound_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "deprecated_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "wrong_path_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "summary_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "strict_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "broken_refs",
+        "orphan_critical"
+      ],
+      "properties": {
+        "broken_refs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "orphan_critical": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "placeholders_baseline_enabled": {
+      "type": "boolean"
+    },
+    "placeholders_warn_mode": {
+      "type": "string",
+      "enum": [
+        "delta",
+        "threshold"
+      ]
+    },
+    "placeholders_warn_delta": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "placeholder_warn_threshold": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "placeholders_fail": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "strict_fail_on_broken": {
+      "type": "boolean"
+    },
+    "strict_fail_on_critical_nav_gaps": {
+      "type": "boolean"
+    },
+    "orphan_target": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

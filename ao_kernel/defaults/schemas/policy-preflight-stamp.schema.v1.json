@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-preflight-stamp.schema.v1.json",
+  "title": "Policy: Preflight Stamp",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "stamp_ttl_minutes",
+    "require_pass_for_apply"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "stamp_ttl_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "require_pass_for_apply": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

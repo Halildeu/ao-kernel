@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "iso_gate_level": "warn",
+  "required_iso_files": [
+    "context.v1.md",
+    "stakeholders.v1.md",
+    "scope.v1.md",
+    "criteria.v1.md"
+  ],
+  "required_chat_sections": [
+    "PREVIEW",
+    "RESULT",
+    "EVIDENCE",
+    "ACTIONS",
+    "NEXT"
+  ],
+  "no_unsubstantiated_claims": true,
+  "evidence_required_for_pass_claims": true,
+  "fail_action": "warn"
+}

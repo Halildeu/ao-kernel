@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-feature-execution-bridge.schema.v1.json",
+  "title": "Policy Feature Execution Bridge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "status",
+    "enforcement_mode",
+    "contract_path",
+    "contract_schema_path",
+    "pm_policy_path",
+    "technical_baseline_path",
+    "ux_lock_path",
+    "scope_detection",
+    "ux_scope",
+    "validation",
+    "reporting"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "policy-feature-execution-bridge"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "DRAFT"
+      ]
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": [
+        "blocking",
+        "warn"
+      ]
+    },
+    "contract_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contract_schema_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pm_policy_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "technical_baseline_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ux_lock_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include_globs",
+        "exclude_globs",
+        "scope_globs"
+      ],
+      "properties": {
+        "include_globs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "exclude_globs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "scope_globs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "backend",
+            "frontend",
+            "database",
+            "api"
+          ],
+          "properties": {
+            "backend": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "frontend": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "database": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "api": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "ux_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_globs",
+        "require_ux_on_frontend_changes"
+      ],
+      "properties": {
+        "required_globs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "require_ux_on_frontend_changes": {
+          "type": "boolean"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active_status_on_scoped_change",
+        "required_source_refs_min",
+        "placeholder_tokens",
+        "required_execution_sequence_from_lock",
+        "required_lanes_from_lock"
+      ],
+      "properties": {
+        "active_status_on_scoped_change": {
+          "type": "boolean"
+        },
+        "required_source_refs_min": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "placeholder_tokens": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_execution_sequence_from_lock": {
+          "type": "boolean"
+        },
+        "required_lanes_from_lock": {
+          "type": "boolean"
+        }
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "out_path"
+      ],
+      "properties": {
+        "out_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

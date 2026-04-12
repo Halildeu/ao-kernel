@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-risk-scoring:v1",
+  "title": "Policy Risk Scoring",
+  "description": "Schema for policy_risk_scoring.v1.json — defines risk level thresholds, factor weights, and boundary mappings for multi-factor composite risk assessment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "thresholds", "factor_weights"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "schema_ref": { "type": "string" },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["low", "medium", "high", "critical"],
+      "properties": {
+        "low":      { "$ref": "#/$defs/threshold" },
+        "medium":   { "$ref": "#/$defs/threshold" },
+        "high":     { "$ref": "#/$defs/threshold" },
+        "critical": { "$ref": "#/$defs/threshold" }
+      }
+    },
+    "factor_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "probability", "reversibility", "scope"],
+      "properties": {
+        "impact":        { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "probability":   { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "reversibility": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "scope":         { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "decision_boundary_ref": { "type": "string" },
+        "human_approval_ref":    { "type": "string" },
+        "note":                  { "type": "string" }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["block", "warn", "log"]
+    }
+  },
+  "$defs": {
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_composite_score", "boundary"],
+      "properties": {
+        "max_composite_score": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "boundary": { "type": "string", "enum": ["full_auto", "human_review", "strict_deny"] },
+        "description": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,700 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/north-star-subject-plan.schema.v1.json",
+  "title": "North Star Subject Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "plan_id",
+    "created_at",
+    "scope",
+    "inputs",
+    "decision",
+    "steps",
+    "modules",
+    "evidence_paths",
+    "notes",
+    "subject_catalog"
+  ],
+  "$defs": {
+    "planner_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "type",
+        "ops",
+        "expected_outputs"
+      ],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ops": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "expected_outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "id_pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_id",
+        "subtheme_id"
+      ],
+      "properties": {
+        "theme_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subtheme_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "theme_subtheme_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_id",
+        "subtheme_id",
+        "theme_title_tr",
+        "subtheme_title_tr",
+        "assignment_reason"
+      ],
+      "properties": {
+        "theme_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subtheme_id": {
+          "type": "string"
+        },
+        "theme_title_tr": {
+          "type": "string"
+        },
+        "subtheme_title_tr": {
+          "type": "string"
+        },
+        "assignment_reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "module_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme_count",
+        "subtheme_pair_count"
+      ],
+      "properties": {
+        "theme_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subtheme_pair_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "module_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module_id",
+        "module_title_tr",
+        "module_title_en",
+        "module_kind",
+        "flow",
+        "covered_theme_ids",
+        "covered_subtheme_pairs",
+        "source_refs",
+        "coverage"
+      ],
+      "properties": {
+        "module_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_title_tr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_title_en": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inputs",
+            "process",
+            "outputs"
+          ],
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "process": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "covered_theme_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "covered_subtheme_pairs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id_pair"
+          }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/theme_subtheme_ref"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/module_coverage"
+        }
+      }
+    }
+  },
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_root",
+        "mode",
+        "subject_id",
+        "subject_title_tr",
+        "subject_title_en",
+        "synthesis_mode"
+      ],
+      "properties": {
+        "workspace_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_title_tr": {
+          "type": "string"
+        },
+        "subject_title_en": {
+          "type": "string"
+        },
+        "synthesis_mode": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mechanisms_registry_path",
+        "subject_id",
+        "theme_count",
+        "subtheme_count"
+      ],
+      "properties": {
+        "mechanisms_registry_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "theme_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subtheme_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "why",
+        "synthesis_mode",
+        "selected_subject_id",
+        "selected_theme_ids",
+        "selected_subtheme_ids",
+        "selected_theme_subtheme_pairs",
+        "module_count",
+        "module_ids",
+        "module_assignments",
+        "coverage",
+        "quality_gate"
+      ],
+      "properties": {
+        "why": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "synthesis_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_theme_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selected_subtheme_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selected_theme_subtheme_pairs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id_pair"
+          }
+        },
+        "module_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "module_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "module_assignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "module_id",
+              "theme_id",
+              "subtheme_id",
+              "reason"
+            ],
+            "properties": {
+              "module_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "theme_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "subtheme_id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "theme_count",
+            "subtheme_count",
+            "theme_subtheme_pair_count",
+            "covered_theme_ids",
+            "covered_theme_subtheme_pairs",
+            "uncovered_theme_ids",
+            "uncovered_theme_subtheme_pairs",
+            "coverage_theme_ratio",
+            "coverage_subtheme_ratio",
+            "coverage_quality_score",
+            "scoring_weights",
+            "is_complete"
+          ],
+          "properties": {
+            "theme_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "subtheme_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "theme_subtheme_pair_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "covered_theme_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "covered_theme_subtheme_pairs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id_pair"
+              }
+            },
+            "uncovered_theme_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "uncovered_theme_subtheme_pairs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id_pair"
+              }
+            },
+            "coverage_theme_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "coverage_subtheme_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "coverage_quality_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "scoring_weights": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "pair_weight",
+                "theme_weight",
+                "completeness_weight"
+              ],
+              "properties": {
+                "pair_weight": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "theme_weight": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "completeness_weight": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "is_complete": {
+              "type": "boolean"
+            }
+          }
+        },
+        "quality_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "enforced",
+            "enforced_result",
+            "run_status",
+            "thresholds",
+            "actuals",
+            "reasons"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "PASS",
+                "FAIL"
+              ]
+            },
+            "enforced": {
+              "type": "boolean"
+            },
+            "enforced_result": {
+              "type": "boolean"
+            },
+            "run_status": {
+              "type": "string",
+              "enum": [
+                "OK",
+                "WARN"
+              ]
+            },
+            "thresholds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_module_count",
+                "min_coverage_quality",
+                "require_full_coverage",
+                "scoring_weights"
+              ],
+              "properties": {
+                "max_module_count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "min_coverage_quality": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "require_full_coverage": {
+                  "type": "boolean"
+                },
+                "scoring_weights": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "pair_weight",
+                    "theme_weight",
+                    "completeness_weight"
+                  ],
+                  "properties": {
+                    "pair_weight": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "theme_weight": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "completeness_weight": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  }
+                }
+              }
+            },
+            "actuals": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "module_count",
+                "coverage_quality_score",
+                "coverage_complete"
+              ],
+              "properties": {
+                "module_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "coverage_quality_score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "coverage_complete": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/planner_step"
+      },
+      "minItems": 1
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/module_item"
+      }
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "subject_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_id",
+        "subject_title_tr",
+        "subject_title_en",
+        "themes"
+      ],
+      "properties": {
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_title_tr": {
+          "type": "string"
+        },
+        "subject_title_en": {
+          "type": "string"
+        },
+        "themes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "theme_id",
+              "title_tr",
+              "title_en",
+              "subthemes"
+            ],
+            "properties": {
+              "theme_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title_tr": {
+                "type": "string"
+              },
+              "title_en": {
+                "type": "string"
+              },
+              "subthemes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "subtheme_id",
+                    "title_tr",
+                    "title_en"
+                  ],
+                  "properties": {
+                    "subtheme_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "title_tr": {
+                      "type": "string"
+                    },
+                    "title_en": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

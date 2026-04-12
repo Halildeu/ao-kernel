@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "gates": {
+    "schema_valid": {
+      "enabled": true,
+      "on_fail": "retry",
+      "max_retries": 1
+    },
+    "output_not_empty": {
+      "enabled": true,
+      "on_fail": "reject",
+      "min_output_chars": 10
+    },
+    "consistency_check": {
+      "enabled": true,
+      "on_fail": "warn",
+      "check_against": "previous_decisions"
+    },
+    "regression_check": {
+      "enabled": true,
+      "on_fail": "escalate",
+      "check_against": "fact_history"
+    }
+  },
+  "fallback_on_all_fail": "suspend",
+  "decision_quality_ref": "schemas/decision-quality.schema.v1.json",
+  "fail_action": "warn"
+}

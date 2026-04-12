@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-autonomy.schema.json",
+  "title": "Policy Autonomy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "defaults",
+    "intents"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "success_threshold",
+        "min_samples"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "manual_only",
+            "human_review",
+            "full_auto"
+          ]
+        },
+        "success_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "min_samples": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        }
+      }
+    },
+    "intents": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^urn:": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "success_threshold",
+            "min_samples"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "manual_only",
+                "human_review",
+                "full_auto"
+              ]
+            },
+            "success_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "min_samples": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          }
+        }
+      }
+    },
+    "risk_scoring_ref": {
+      "type": "string",
+      "description": "Path to risk scoring policy for composite score override integration."
+    },
+    "risk_scoring_note": {
+      "type": "string",
+      "description": "Human-readable note on how risk scoring interacts with autonomy mode."
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

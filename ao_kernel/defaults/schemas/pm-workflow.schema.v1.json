@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/pm-workflow.schema.v1.json",
+  "title": "PM Workflow",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "workflow_id", "statuses"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "workflow_id": { "type": "string", "minLength": 1 },
+    "statuses": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "quota": {
+    "max_gaps_per_run": 50
+  },
+  "cooldown": {
+    "days": 1
+  },
+  "retention": {
+    "max_reports": 10
+  },
+  "notes": [
+    "Deterministic PDCA guardrails: quota + cooldown + retention.",
+    "Enforcement is report-only unless policy_integrity blocks."
+  ],
+  "fail_action": "warn"
+}

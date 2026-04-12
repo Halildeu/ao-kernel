@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-cve.schema.json",
+  "title": "Policy CVE",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "unknown_behavior",
+    "deny_cves"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "unknown_behavior": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "fail"
+      ]
+    },
+    "deny_cves": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

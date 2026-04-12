@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airrunner-auto-run-job.schema.v1.json",
+  "title": "airrunner-auto-run-job.schema.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "job_id",
+    "status",
+    "workspace_root",
+    "created_at",
+    "updated_at",
+    "timezone",
+    "stop_at_local",
+    "mode",
+    "poll_count"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "job_id": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "minLength": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "timezone": { "type": "string", "minLength": 1 },
+    "stop_at_local": { "type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$" },
+    "mode": { "type": "string", "minLength": 1 },
+    "poll_count": { "type": "integer", "minimum": 0 },
+    "last_poll_at": { "type": "string", "format": "date-time" },
+    "last_poll_path": { "type": "string" },
+    "last_closeout_path": { "type": "string" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-airrunner-jobs.schema.v2.json",
+  "title": "policy-airrunner-jobs",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "jobs",
+    "perf",
+    "intake_mapping"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v2"
+      ]
+    },
+    "jobs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_running",
+        "max_poll_per_tick",
+        "poll_interval_seconds",
+        "keep_last_n",
+        "ttl_seconds",
+        "timeout_seconds",
+        "stale_after_seconds",
+        "allowed_job_types",
+        "network_required_job_types"
+      ],
+      "properties": {
+        "max_running": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_poll_per_tick": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "poll_interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "keep_last_n": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stale_after_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stuck_job": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_polls_without_progress",
+            "stale_after_seconds",
+            "action_on_stale"
+          ],
+          "properties": {
+            "max_polls_without_progress": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stale_after_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "action_on_stale": {
+              "type": "string",
+              "enum": [
+                "ARCHIVE",
+                "SKIP"
+              ]
+            }
+          }
+        },
+        "archive": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "keep_last_n",
+            "ttl_days"
+          ],
+          "properties": {
+            "keep_last_n": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ttl_days": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "classify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release_publish_no_network"
+          ],
+          "properties": {
+            "release_publish_no_network": {
+              "type": "string",
+              "enum": [
+                "SKIP"
+              ]
+            }
+          }
+        },
+        "smoke_full": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "timeout_seconds",
+            "poll_interval_seconds",
+            "max_concurrent",
+            "cooldown_seconds"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "timeout_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "poll_interval_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_concurrent": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "cooldown_seconds": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "smoke_full_cmd": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allowed_job_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "SMOKE_FULL",
+              "SMOKE_FAST",
+              "RELEASE_PREPARE",
+              "RELEASE_PUBLISH",
+              "GITHUB_CHECKS_POLL",
+              "GITHUB_MERGE_POLL"
+            ]
+          }
+        },
+        "network_required_job_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RELEASE_PUBLISH",
+              "GITHUB_CHECKS_POLL",
+              "GITHUB_MERGE_POLL"
+            ]
+          }
+        }
+      }
+    },
+    "perf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enable",
+        "event_log_max_lines",
+        "time_sinks_window",
+        "thresholds_ms"
+      ],
+      "properties": {
+        "enable": {
+          "type": "boolean"
+        },
+        "event_log_max_lines": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "time_sinks_window": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "thresholds_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "smoke_full_p95_warn",
+            "smoke_fast_p95_warn",
+            "release_prepare_p95_warn"
+          ],
+          "properties": {
+            "smoke_full_p95_warn": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "smoke_fast_p95_warn": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "release_prepare_p95_warn": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "intake_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "time_sink_bucket",
+        "time_sink_escalate_to_incident_after"
+      ],
+      "properties": {
+        "time_sink_bucket": {
+          "type": "string",
+          "enum": [
+            "ROADMAP",
+            "PROJECT",
+            "TICKET",
+            "INCIDENT"
+          ]
+        },
+        "time_sink_escalate_to_incident_after": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

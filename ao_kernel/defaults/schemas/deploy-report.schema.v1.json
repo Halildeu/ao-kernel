@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/deploy-report.schema.v1.json",
+  "title": "Deploy Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "policy_source",
+    "policy_hash",
+    "network_enabled",
+    "mode",
+    "allowed_kinds",
+    "jobs_summary",
+    "jobs_index_path",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE"] },
+    "policy_source": { "type": "string" },
+    "policy_hash": { "type": "string" },
+    "network_enabled": { "type": "boolean" },
+    "mode": { "type": "string" },
+    "allowed_kinds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "jobs_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "by_status"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["QUEUED", "RUNNING", "PASS", "FAIL", "TIMEOUT", "KILLED", "SKIP"],
+          "properties": {
+            "QUEUED": { "type": "integer", "minimum": 0 },
+            "RUNNING": { "type": "integer", "minimum": 0 },
+            "PASS": { "type": "integer", "minimum": 0 },
+            "FAIL": { "type": "integer", "minimum": 0 },
+            "TIMEOUT": { "type": "integer", "minimum": 0 },
+            "KILLED": { "type": "integer", "minimum": 0 },
+            "SKIP": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "jobs_index_path": { "type": "string", "minLength": 1 },
+    "last_job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "kind", "status", "job_report_path"],
+      "properties": {
+        "job_id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "job_report_path": { "type": "string", "minLength": 1 },
+        "skip_reason": { "type": "string" },
+        "error_code": { "type": "string" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

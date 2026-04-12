@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-quality.schema.json",
+  "title": "Policy Quality",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "iso_gate_level",
+    "required_iso_files",
+    "required_chat_sections",
+    "no_unsubstantiated_claims",
+    "evidence_required_for_pass_claims"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "iso_gate_level": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "block"
+      ]
+    },
+    "required_iso_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "required_chat_sections": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "no_unsubstantiated_claims": {
+      "type": "boolean"
+    },
+    "evidence_required_for_pass_claims": {
+      "type": "boolean"
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

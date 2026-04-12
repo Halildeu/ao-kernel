@@ -1,0 +1,5 @@
+{
+  "version": "v1",
+  "note": "Minimal placeholder policy. Extend with data-handling constraints.",
+  "fail_action": "warn"
+}

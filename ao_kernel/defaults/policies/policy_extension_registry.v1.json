@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "enabled_by_default": false,
+  "layer_contract": {
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ],
+    "read_roots_allowlist": [
+      "extensions/"
+    ],
+    "notes": []
+  },
+  "entrypoints": {
+    "ops": [
+      "extension-registry"
+    ],
+    "kernel_api_actions": [],
+    "cockpit_sections": [
+      "extensions"
+    ]
+  },
+  "determinism": {
+    "stable_sort": true,
+    "content_hash_required": true,
+    "version_required": true
+  },
+  "idle_on_missing_manifests": true,
+  "fail_action": "warn"
+}

@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "network_allowed": false,
+  "extension_workspace_root": ".cache/extensions",
+  "write_roots_allowlist": [
+    ".cache/extensions",
+    ".cache/reports",
+    "evidence"
+  ],
+  "read_roots_allowlist": [
+    "extensions",
+    "policies",
+    "schemas",
+    "docs",
+    ".cache/index",
+    ".cache/reports"
+  ],
+  "notes": [
+    "per_extension_workspace"
+  ],
+  "fail_action": "warn"
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-eval:v1",
+  "title": "Evaluation Policy",
+  "description": "Policy for LLM output evaluation harness.",
+  "type": "object",
+  "required": ["version", "enabled", "checks", "min_score_threshold", "fail_action"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["json_conformance", "groundedness", "citation_completeness", "tool_consistency", "refusal_correctness", "truncation_safety"]
+      }
+    },
+    "min_score_threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+    "fail_action": { "type": "string", "enum": ["block", "warn", "log"] },
+    "golden_set_path": { "type": "string" }
+  }
+}

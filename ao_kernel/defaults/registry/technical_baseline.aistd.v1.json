@@ -1,0 +1,139 @@
+{
+  "version": "v1",
+  "kind": "technical-baseline-aistd",
+  "profile_id": "erp-fullstack-java21-react18",
+  "status": "ACTIVE",
+  "ownership": {
+    "canonical_repo": "autonomous-orchestrator",
+    "sync_script": "scripts/sync_managed_repo_standards.py",
+    "validation_script": "ci/check_standards_lock.py"
+  },
+  "baseline": {
+    "backend": {
+      "language": "java",
+      "java_major": 21,
+      "framework": "spring-boot",
+      "framework_line": "3.5.x",
+      "build_tool": "maven-wrapper",
+      "maven_line": "3.9.x",
+      "service_architecture": "microservice",
+      "required_layers": [
+        "config",
+        "controller",
+        "dto",
+        "model",
+        "repository",
+        "security",
+        "service"
+      ],
+      "inter_service_communication": [
+        "rest",
+        "event"
+      ]
+    },
+    "frontend": {
+      "language": "typescript",
+      "framework": "react",
+      "framework_line": "18.x",
+      "runtime": "node",
+      "node_major": 22,
+      "package_manager": "npm",
+      "mfe_architecture": "module-federation",
+      "style_system": [
+        "design-tokens",
+        "ui-kit",
+        "tailwind"
+      ],
+      "design_contract": {
+        "single_ui_library": "@mfe/design-system",
+        "ui_package_manifest_path": "web/packages/design-system/package.json",
+        "design_catalog_index_path": "web/apps/mfe-shell/src/pages/admin/design-lab.index.json",
+        "forbidden_imports": [
+          "antd",
+          "@ant-design/icons"
+        ],
+        "token_source_path": "web/design-tokens/figma.tokens.json",
+        "token_generated_paths": [
+          "web/apps/mfe-shell/src/styles/theme.css",
+          "web/design-tokens/generated/theme-contract.json"
+        ]
+      },
+      "page_composition": {
+        "required_layout_exports": [
+          "PageLayout",
+          "DetailDrawer",
+          "FormDrawer"
+        ],
+        "ui_import_prefix": "from '@mfe/design-system'",
+        "pages_root": "web/apps"
+      },
+      "parametric_data": {
+        "query_builder_path": "web/packages/design-system/src/advanced/data-grid/buildEntityGridQueryParams.ts",
+        "theme_contract_runtime_path": "web/packages/design-system/src/theme/core/theme-contract.ts",
+        "theme_context_provider_path": "web/apps/mfe-shell/src/app/theme/theme-context.provider.tsx"
+      }
+    },
+    "database": {
+      "engine": "postgresql",
+      "migration_tool": "flyway",
+      "sql_ruleset": "STYLE-DATA-001",
+      "mandatory_rules": [
+        "no_select_star",
+        "explicit_columns",
+        "forward_only_migrations",
+        "index_friendly_filters"
+      ]
+    },
+    "api": {
+      "protocol": "rest",
+      "version_prefix": "/api/v1",
+      "contract_style": "resource-oriented",
+      "auth_scheme": "bearer-jwt",
+      "error_envelope_fields": [
+        "code",
+        "message",
+        "timestamp",
+        "path"
+      ]
+    }
+  },
+  "topology": {
+    "edge_gateway": "spring-cloud-gateway",
+    "service_discovery": "eureka",
+    "default_entrypoint": "api-gateway:8080"
+  },
+  "ci_contract": {
+    "delivery_sequence": [
+      "backend",
+      "database",
+      "api",
+      "frontend",
+      "integration",
+      "e2e"
+    ],
+    "required_lanes": [
+      "unit",
+      "database",
+      "api",
+      "contract",
+      "integration",
+      "e2e"
+    ],
+    "gate_name": "module-delivery-gate",
+    "merge_requires_all_green": true
+  },
+  "archive": {
+    "legacy_mode": "read-only",
+    "legacy_manifest_path": "registry/archives/legacy_standards_archive.aistd.v1.json",
+    "archive_root": "docs/ARCHIVE/legacy_standards"
+  },
+  "source_trace": {
+    "note": "legacy dokumanlardan derlenmis normatif baseline; runtime enforcement bu dosya uzerinden yapilir.",
+    "legacy_source_ids": [
+      "coding_standards_md",
+      "architecture_constraints_md",
+      "repo_layout_json",
+      "multi_repo_operating_contract_md"
+    ]
+  }
+}

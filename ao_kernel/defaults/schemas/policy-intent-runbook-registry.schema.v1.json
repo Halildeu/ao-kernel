@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-intent-runbook-registry:v1",
+  "title": "Policy Intent Runbook Registry",
+  "description": "Maps ambiguous user intents to deterministic ops command sequences. Prevents free-form interpretation of commands like 'sistemi başlat'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "default_workspace", "runbooks"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "default_workspace": { "type": "string" },
+    "runbooks": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/runbook"
+      }
+    },
+    "fail_action": { "type": "string", "enum": ["block", "warn", "log"] }
+  },
+  "$defs": {
+    "runbook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triggers", "steps", "profile"],
+      "properties": {
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Keywords/phrases that activate this runbook."
+        },
+        "steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Ordered ops commands. {ws} is replaced with workspace root."
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["STARTUP", "TASK_EXECUTION", "REVIEW", "ASSESSMENT", "EMERGENCY", "PLANNING"],
+          "description": "Context profile to activate for this runbook."
+        },
+        "fallback": {
+          "type": "string",
+          "description": "Fallback command if primary steps fail."
+        },
+        "description": { "type": "string" },
+        "requires_core_unlock": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

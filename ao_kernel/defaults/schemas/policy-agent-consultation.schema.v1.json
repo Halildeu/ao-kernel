@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-agent-consultation:v1",
+  "title": "Policy Agent Consultation",
+  "description": "Schema for policy_agent_consultation.v1.json — defines consultation protocol settings, workspace paths, state machine, and agent routing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "defaults", "paths", "naming", "topics", "agents", "protocol", "state_machine"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ttl_seconds", "status_on_expiry", "max_open_consultations"],
+      "properties": {
+        "ttl_seconds": { "type": "integer", "minimum": 60 },
+        "status_on_expiry": { "type": "string", "enum": ["EXPIRED"] },
+        "max_open_consultations": { "type": "integer", "minimum": 1, "maximum": 10 }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "state", "responses", "config"],
+      "description": "Workspace-relative paths for consultation artifacts. All paths relative to workspace root.",
+      "properties": {
+        "requests":  { "type": "string", "description": "Immutable request artifacts (agent writes once)." },
+        "state":     { "type": "string", "description": "Mutable state (dispatcher single-writer)." },
+        "responses": { "type": "string", "description": "Immutable response artifacts (dispatcher writes after agent stdout parse)." },
+        "config":    { "type": "string", "description": "Agent binary config and dispatcher settings." }
+      }
+    },
+    "naming": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "state", "response"],
+      "description": "File naming conventions for consultation artifacts.",
+      "properties": {
+        "request":  { "type": "string" },
+        "state":    { "type": "string" },
+        "response": { "type": "string" },
+        "note":     { "type": "string" }
+      }
+    },
+    "topics": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Allowed consultation topics."
+    },
+    "agents": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Registered agent IDs that can participate in consultations."
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_at_bootstrap", "respond_before_task", "auto_archive_resolved", "single_writer", "agent_output"],
+      "properties": {
+        "check_at_bootstrap":    { "type": "boolean" },
+        "respond_before_task":   { "type": "boolean" },
+        "auto_archive_resolved": { "type": "boolean" },
+        "single_writer":         { "type": "string", "enum": ["dispatcher"], "description": "Only dispatcher writes state and response files." },
+        "agent_output":          { "type": "string", "enum": ["stdout_json_only"], "description": "Agents produce structured JSON on stdout, nothing else." }
+      }
+    },
+    "state_machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transitions", "terminal"],
+      "properties": {
+        "transitions": { "type": "array", "items": { "type": "string" }, "description": "Allowed state transitions in FROM->TO format." },
+        "terminal":    { "type": "array", "items": { "type": "string" }, "description": "Terminal states." }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["block", "warn", "log"]
+    }
+  }
+}

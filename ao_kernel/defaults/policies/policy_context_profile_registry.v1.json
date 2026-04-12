@@ -1,0 +1,242 @@
+{
+  "$schema": "../schemas/context-profile-registry.schema.v1.json",
+  "version": "v1",
+  "default_profile": "TASK_EXECUTION",
+  "profiles": [
+    {
+      "profile_id": "STARTUP",
+      "title": "Startup / New Session",
+      "description": "Activated at the very beginning of a session when no prior context exists. Loads minimum viable context to orient the agent: system status, portfolio, and core instructions. Optimizes for fast bootstrap.",
+      "trigger_conditions": [
+        {
+          "op": "eq",
+          "left": { "var": "session.context_loaded" },
+          "right": false
+        }
+      ],
+      "sections": {
+        "required": ["guardrails", "routing"],
+        "optional": ["define", "gap", "pdca", "intake"],
+        "forbidden": ["measure_raw", "eval"]
+      },
+      "required_files": [
+        "AGENTS.md",
+        "docs/LAYER-MODEL-LOCK.v1.md"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/system_status.v1.json",
+        ".cache/ws_customer_default/.cache/reports/portfolio_status.v1.json"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "ON",
+        "fail_closed": true
+      },
+      "tags": ["bootstrap", "ops", "orientation"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage system-status --workspace-root .cache/ws_customer_default",
+        "python -m src.ops.manage portfolio-status --workspace-root .cache/ws_customer_default"
+      ],
+      "agent_notes": "Do not attempt any write operations until bootstrap_commands complete. If system_status returns FAIL, activate EMERGENCY profile instead."
+    },
+    {
+      "profile_id": "EMERGENCY",
+      "title": "Emergency / Incident Response",
+      "description": "Activated when system_status=FAIL or integrity violations are detected. Loads full diagnostic context. Restricts side effects — prefer report_only. Optimizes for fast triage and safe remediation.",
+      "trigger_conditions": [
+        {
+          "op": "eq",
+          "left": { "var": "system_status.overall_status" },
+          "right": "FAIL"
+        },
+        {
+          "op": "gt",
+          "left": { "var": "integrity.violation_count" },
+          "right": 0
+        }
+      ],
+      "sections": {
+        "required": ["define", "guardrails", "gap", "pdca"],
+        "optional": ["measure_raw", "eval", "intake", "routing"],
+        "forbidden": []
+      },
+      "required_files": [
+        "AGENTS.md",
+        "docs/LAYER-MODEL-LOCK.v1.md",
+        "policies/policy_core_immutability.v1.json",
+        "policies/policy_integrity.v1.json"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/system_status.v1.json",
+        ".cache/ws_customer_default/.cache/reports/integrity_report.v1.json",
+        ".cache/ws_customer_default/.cache/reports/pdca_regression_index.v1.json"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "STRICT",
+        "side_effect_max": "REPORT_ONLY",
+        "fail_closed": true
+      },
+      "tags": ["incident", "ops", "integrity", "triage"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage system-status --workspace-root .cache/ws_customer_default",
+        "python -m src.ops.manage integrity-verify --workspace-root .cache/ws_customer_default"
+      ],
+      "agent_notes": "All writes require explicit human confirmation. Prefer dry-run and report_only modes. Record every action to evidence path. Do not attempt auto-remediation of integrity violations."
+    },
+    {
+      "profile_id": "TASK_EXECUTION",
+      "title": "Task Execution",
+      "description": "Default profile for executing a specific ops command or work item. Loads task-relevant context only — intake, routing, guardrails, and relevant policies. Optimizes for minimal context window usage.",
+      "trigger_conditions": [
+        {
+          "op": "in",
+          "left": { "var": "session.mode" },
+          "right": ["ops_command", "work_item", "ticket"]
+        }
+      ],
+      "sections": {
+        "required": ["intake", "routing", "guardrails"],
+        "optional": ["define", "gap"],
+        "forbidden": ["measure_raw", "eval", "pdca"]
+      },
+      "required_files": [
+        "AGENTS.md"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/work_intake.v1.json",
+        ".cache/ws_customer_default/.cache/reports/session_status.v1.json"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "ON",
+        "fail_closed": true
+      },
+      "tags": ["ops", "work-item", "execution"],
+      "task_scope_hints": ["cockpit", "schema", "roadmap", "evidence", "ci", "policy", "extension"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage work-intake-check --workspace-root .cache/ws_customer_default",
+        "python -m src.ops.manage session-status --workspace-root .cache/ws_customer_default"
+      ],
+      "agent_notes": "Load only the files and sections relevant to the current task. Do not preload assessment or roadmap data unless the task explicitly requires it."
+    },
+    {
+      "profile_id": "REVIEW",
+      "title": "Review",
+      "description": "Activated for code review, PR review, report review, or policy audit tasks. Loads define + eval + gap sections. Does not load intake or work execution context. Optimizes for analytical depth over execution speed.",
+      "trigger_conditions": [
+        {
+          "op": "in",
+          "left": { "var": "manual_request.kind" },
+          "right": ["review", "audit", "report"]
+        }
+      ],
+      "sections": {
+        "required": ["define", "eval", "guardrails"],
+        "optional": ["gap", "measure_raw", "pdca"],
+        "forbidden": ["intake", "routing"]
+      },
+      "required_files": [
+        "AGENTS.md",
+        "docs/OPERATIONS/CODING-STANDARDS.md"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/assessment_eval.v1.json",
+        ".cache/ws_customer_default/.cache/reports/gap_register.v1.json",
+        ".cache/ws_customer_default/.cache/reports/context_drift_report.v1.json"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "ON",
+        "side_effect_max": "NONE",
+        "fail_closed": true
+      },
+      "tags": ["review", "audit", "analysis", "ci"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage context-drift --workspace-root .cache/ws_customer_default"
+      ],
+      "agent_notes": "Produce structured findings in AUTOPILOT CHAT format. No writes unless explicitly requested. Use report_only for all policy checks."
+    },
+    {
+      "profile_id": "ASSESSMENT",
+      "title": "Maturity Assessment",
+      "description": "Activated for maturity evaluation, gap analysis, PDCA, or north-star assessment sessions. Loads full DMEGP stack (define, measure_raw, eval, gap, pdca). Heaviest profile — use only when full assessment is needed.",
+      "trigger_conditions": [
+        {
+          "op": "in",
+          "left": { "var": "manual_request.kind" },
+          "right": ["assessment", "maturity", "gap_analysis", "pdca"]
+        }
+      ],
+      "sections": {
+        "required": ["define", "measure_raw", "eval", "gap", "pdca", "guardrails"],
+        "optional": ["intake", "routing"],
+        "forbidden": []
+      },
+      "required_files": [
+        "AGENTS.md",
+        "policies/policy_maturity_assessment.v1.json",
+        "docs/OPERATIONS/SSOT-MAP.md"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/north_star_report.v1.json",
+        ".cache/ws_customer_default/.cache/reports/assessment_raw.v1.json",
+        ".cache/ws_customer_default/.cache/reports/assessment_eval.v1.json",
+        ".cache/ws_customer_default/.cache/reports/gap_register.v1.json",
+        ".cache/ws_customer_default/.cache/reports/pdca_regression_index.v1.json",
+        "roadmaps/SSOT/roadmap.v1.json"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "ON",
+        "fail_closed": true
+      },
+      "tags": ["assessment", "maturity", "gap", "pdca", "north-star"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage system-status --workspace-root .cache/ws_customer_default",
+        "python -m src.ops.manage portfolio-status --workspace-root .cache/ws_customer_default",
+        "python -m src.ops.manage roadmap-status --workspace-root .cache/ws_customer_default --roadmap roadmaps/SSOT/roadmap.v1.json"
+      ],
+      "agent_notes": "Follow Maturity Assessment Protocol from AGENTS.md: run evidence_commands for each dimension before scoring. Do not score from file presence alone."
+    },
+    {
+      "profile_id": "PLANNING",
+      "title": "Planning / Architecture",
+      "description": "Activated for roadmap planning, architecture decisions, Change Proposal (CHG) creation, or multi-quarter strategy sessions. Loads define + gap + pdca + roadmap context. Optimizes for decision quality.",
+      "trigger_conditions": [
+        {
+          "op": "in",
+          "left": { "var": "manual_request.kind" },
+          "right": ["strategy", "multi-quarter", "chg", "architecture", "planning"]
+        }
+      ],
+      "sections": {
+        "required": ["define", "gap", "pdca", "guardrails"],
+        "optional": ["eval", "measure_raw", "routing"],
+        "forbidden": ["intake"]
+      },
+      "required_files": [
+        "AGENTS.md",
+        "roadmaps/SSOT/roadmap.v1.json",
+        "docs/OPERATIONS/SSOT-MAP.md",
+        "docs/LAYER-MODEL-LOCK.v1.md"
+      ],
+      "optional_files": [
+        ".cache/ws_customer_default/.cache/reports/gap_register.v1.json",
+        ".cache/ws_customer_default/.cache/reports/pdca_regression_index.v1.json",
+        "roadmaps/PROJECTS/README.md"
+      ],
+      "guardrails_override": {
+        "network_allowed": false,
+        "core_lock": "ON",
+        "fail_closed": true
+      },
+      "tags": ["planning", "roadmap", "architecture", "strategy"],
+      "bootstrap_commands": [
+        "python -m src.ops.manage roadmap-status --workspace-root .cache/ws_customer_default --roadmap roadmaps/SSOT/roadmap.v1.json",
+        "python -m src.ops.manage portfolio-status --workspace-root .cache/ws_customer_default"
+      ],
+      "agent_notes": "Any roadmap change requires a Change Proposal (CHG). Do not silently edit roadmaps/SSOT/roadmap.v1.json. Present plan first, await explicit approval. Record decisions in evidence path."
+    }
+  ]
+}

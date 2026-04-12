@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/session-context.schema.json",
+  "title": "session-context.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "session_id",
+    "workspace_root",
+    "created_at",
+    "updated_at",
+    "ttl_seconds",
+    "expires_at",
+    "ephemeral_decisions",
+    "hashes"
+  ],
+  "properties": {
+    "version": { "const": "v1" },
+    "session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "predecessor_session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "ttl_seconds": { "type": "integer", "minimum": 60, "maximum": 604800 },
+    "decision_ttl_seconds_default": { "type": "integer", "minimum": 60, "maximum": 604800, "default": 3600 },
+    "expires_at": { "type": "string", "minLength": 1 },
+    "paused": { "type": "boolean", "default": false },
+    "memory_strategy": {
+      "type": "string",
+      "enum": ["local_only", "provider_state", "hybrid"],
+      "default": "hybrid"
+    },
+    "provider_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "wire_api", "updated_at"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "conversation_id": { "type": "string", "minLength": 1 },
+        "last_response_id": { "type": "string", "minLength": 1 },
+        "wire_api": { "type": "string", "minLength": 1 },
+        "updated_at": { "type": "string", "minLength": 1 },
+        "summary_ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "actor_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "actor", "provider", "model", "updated_at"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["architect", "planner", "implementer", "reviewer", "verifier", "consultant", "assurance_owner", "operator"]
+        },
+        "actor": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "target_id": { "type": "string" },
+        "selection_reason": { "type": "string" },
+        "fallback_used": { "type": "boolean", "default": false },
+        "updated_at": { "type": "string", "minLength": 1 }
+      }
+    },
+    "compaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["idle", "scheduled", "completed"] },
+        "summary_ref": { "type": "string", "minLength": 1 },
+        "last_compacted_at": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "approx_input_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ephemeral_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "value", "source", "created_at"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "value": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "number" },
+              { "type": "boolean" },
+              { "type": "object" }
+            ]
+          },
+          "source": { "type": "string", "enum": ["user_chat", "agent"] },
+          "created_at": { "type": "string", "minLength": 1 },
+          "ttl_seconds": { "type": "integer", "minimum": 60, "maximum": 604800 },
+          "expires_at": { "type": "string", "minLength": 1 },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {},
+                "changed_at": { "type": "string", "minLength": 1 },
+                "source": { "type": "string", "enum": ["user_chat", "agent"] }
+              },
+              "required": ["value", "changed_at"]
+            },
+            "maxItems": 10
+          }
+        }
+      },
+      "default": []
+    },
+    "parent_session_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace_root", "session_id", "relationship"],
+      "properties": {
+        "workspace_root": { "type": "string", "minLength": 1 },
+        "session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "relationship": { "type": "string", "enum": ["parent", "peer"] }
+      }
+    },
+    "hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_context_sha256"],
+      "properties": {
+        "session_context_sha256": { "type": "string", "minLength": 64, "maxLength": 64 }
+      }
+    }
+  }
+}

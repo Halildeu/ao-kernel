@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:context-profile-registry:v1",
+  "title": "Context Profile Registry",
+  "description": "Defines named context profiles. Each profile specifies which sections, files, and guardrails are active for a given session mode. Used by agents to load only the context relevant to the current task.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "default_profile", "profiles"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema meta-reference."
+    },
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "default_profile": {
+      "type": "string",
+      "description": "Profile ID to use when no profile is explicitly activated.",
+      "minLength": 1
+    },
+    "profiles": {
+      "type": "array",
+      "description": "Ordered list of context profiles. First matching trigger_condition wins.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/profile" }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "title", "description", "sections", "required_files", "bootstrap_commands"],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "enum": ["STARTUP", "TASK_EXECUTION", "REVIEW", "ASSESSMENT", "EMERGENCY", "PLANNING"],
+          "description": "Canonical profile identifier."
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable profile name.",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "When this profile is active and what it optimizes for.",
+          "minLength": 1
+        },
+        "trigger_conditions": {
+          "type": "array",
+          "description": "Mini-DSL conditions evaluated at session start to auto-select this profile. Uses same op/left/right/var syntax as context_pack_router rules.",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "sections": {
+          "$ref": "#/$defs/section_spec",
+          "description": "Context sections to include, exclude, or make optional for this profile."
+        },
+        "required_files": {
+          "type": "array",
+          "description": "File paths (repo-relative) that must be loaded before any task begins in this profile.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "optional_files": {
+          "type": "array",
+          "description": "File paths that are loaded if present but not required.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "guardrails_override": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Per-profile overrides for guardrail settings. Unset keys inherit from base policy.",
+          "properties": {
+            "network_allowed": { "type": "boolean" },
+            "core_lock": { "type": "string", "enum": ["ON", "OFF", "STRICT"] },
+            "side_effect_max": { "type": "string" },
+            "fail_closed": { "type": "boolean" }
+          }
+        },
+        "bootstrap_commands": {
+          "type": "array",
+          "description": "Ops commands to run at profile activation to populate context.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Free-form domain/scope labels for this profile (e.g. 'ops', 'ci', 'schema', 'roadmap'). Enables external domain queries without adding new profiles.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "task_scope_hints": {
+          "type": "array",
+          "description": "Scope qualifiers narrowing TASK_EXECUTION context (e.g. 'cockpit', 'schema', 'roadmap', 'evidence', 'ci'). Used by context pack router to select relevant required_files dynamically. Only meaningful on TASK_EXECUTION profile.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "agent_notes": {
+          "type": "string",
+          "description": "Behavioral guidance for agents operating in this profile."
+        }
+      }
+    },
+    "section_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "optional"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "description": "Context pack sections that must be present.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "optional": {
+          "type": "array",
+          "description": "Context pack sections loaded if available.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "forbidden": {
+          "type": "array",
+          "description": "Context pack sections explicitly excluded from this profile.",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

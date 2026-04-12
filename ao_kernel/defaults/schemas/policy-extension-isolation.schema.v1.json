@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-extension-isolation.schema.v1.json",
+  "title": "Extension Isolation Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "network_allowed",
+    "extension_workspace_root",
+    "write_roots_allowlist",
+    "read_roots_allowlist",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "network_allowed": {
+      "type": "boolean"
+    },
+    "extension_workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "write_roots_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "read_roots_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

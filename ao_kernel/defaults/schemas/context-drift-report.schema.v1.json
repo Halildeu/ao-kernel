@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "context-drift-report.schema.v1.json",
+  "title": "Context Drift Report",
+  "description": "Combined drift detection report for artifact, session, and policy drift between orchestrator and managed repos.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "status", "drift_score", "total_drifted", "artifact_drift", "session_drift", "policy_drift"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+    "drift_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "total_drifted": { "type": "integer", "minimum": 0 },
+    "artifact_drift": {
+      "type": "object",
+      "required": ["drift_type", "status", "drifted_count"],
+      "properties": {
+        "drift_type": { "type": "string", "enum": ["artifact"] },
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "generated_at": { "type": "string" },
+        "source_workspace": { "type": "string" },
+        "target_workspace": { "type": "string" },
+        "total_checked": { "type": "integer", "minimum": 0 },
+        "drifted_count": { "type": "integer", "minimum": 0 },
+        "missing_in_target": { "type": "integer", "minimum": 0 },
+        "missing_in_source": { "type": "integer", "minimum": 0 },
+        "in_sync_count": { "type": "integer", "minimum": 0 },
+        "artifacts": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "session_drift": {
+      "type": "object",
+      "required": ["drift_type", "status"],
+      "properties": {
+        "drift_type": { "type": "string", "enum": ["session"] },
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "generated_at": { "type": "string" },
+        "parent_workspace": { "type": "string" },
+        "child_workspace": { "type": "string" },
+        "session_id": { "type": "string" },
+        "parent_exists": { "type": "boolean" },
+        "child_exists": { "type": "boolean" },
+        "parent_expired": { "type": "boolean" },
+        "child_expired": { "type": "boolean" },
+        "parent_linked": { "type": "boolean" },
+        "missing_in_child": { "type": "integer", "minimum": 0 },
+        "stale_in_child": { "type": "integer", "minimum": 0 },
+        "conflict_count": { "type": "integer", "minimum": 0 },
+        "child_only_count": { "type": "integer", "minimum": 0 },
+        "details": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "policy_drift": {
+      "type": "object",
+      "required": ["drift_type", "status", "drifted_count"],
+      "properties": {
+        "drift_type": { "type": "string", "enum": ["policy"] },
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "generated_at": { "type": "string" },
+        "source_root": { "type": "string" },
+        "target_root": { "type": "string" },
+        "total_checked": { "type": "integer", "minimum": 0 },
+        "drifted_count": { "type": "integer", "minimum": 0 },
+        "drifted_policies": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

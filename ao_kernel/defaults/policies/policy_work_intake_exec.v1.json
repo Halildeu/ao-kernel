@@ -1,0 +1,87 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "apply_scope": "WORKSPACE_ONLY",
+  "allow_workspace_override": false,
+  "safe_only_apply_manual_request_kinds": [
+    "note",
+    "doc-fix",
+    "doc-link-fix",
+    "doc-metadata",
+    "minor_fix"
+  ],
+  "safe_only_apply_manual_request_scopes": [
+    "doc-only",
+    "workspace-only"
+  ],
+  "safe_only_apply_gap_types": [
+    "COVERAGE"
+  ],
+  "safe_only_apply_script_budget_sources": [
+    "ci/**",
+    "docs/**"
+  ],
+  "forbidden_safe_only_path_prefixes": [
+    "src/ops/",
+    "src/orchestrator/"
+  ],
+  "require_impact_scope": "doc-only",
+  "applied_requires_evidence_path": true,
+  "unsafe_kinds": [
+    "MOVE",
+    "DELETE",
+    "REFACTOR",
+    "CODEGEN"
+  ],
+  "action_rules": [
+    {
+      "id": "doc_nav_broken_refs",
+      "source_type": "DOC_NAV",
+      "when": {
+        "broken_refs_gt": 0
+      },
+      "action_kind": "WRITE_DOC_NOTE"
+    },
+    {
+      "id": "manual_request_doc_fix",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "doc-fix",
+          "doc-link-fix",
+          "doc-metadata",
+          "note",
+          "minor_fix"
+        ],
+        "manual_request_impact_scope_in": [
+          "doc-only",
+          "workspace-only"
+        ]
+      },
+      "action_kind": "WRITE_DOC_NOTE"
+    },
+    {
+      "id": "gap_safe_only",
+      "source_type": "GAP",
+      "action_kind": "WRITE_DOC_NOTE",
+      "plan_only": false
+    },
+    {
+      "id": "script_budget_docs_ci",
+      "source_type": "SCRIPT_BUDGET",
+      "when": {
+        "path_prefix_in": [
+          "docs/",
+          "ci/"
+        ]
+      },
+      "action_kind": "WRITE_DOC_NOTE",
+      "plan_only": false
+    }
+  ],
+  "default_action": {
+    "action_kind": "NOOP",
+    "plan_only": true
+  },
+  "fail_action": "warn"
+}

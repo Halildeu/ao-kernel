@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "pdca_regression",
+  "source_types": [
+    "PDCA_REGRESSION"
+  ],
+  "rules": [
+    {
+      "id": "pdca_regression_high",
+      "source_type": "PDCA_REGRESSION",
+      "when": {
+        "regression_severity_gte": "high"
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-core-immutability.schema.json",
+  "title": "Policy Core Immutability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "default_mode",
+    "allow_core_writes_only_when",
+    "core_write_mode",
+    "ssot_write_allowlist",
+    "require_unlock_reason",
+    "evidence_required_when_unlocked",
+    "blocked_write_error_code",
+    "core_git_required"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "default_mode": {
+      "type": "string",
+      "enum": [
+        "locked"
+      ]
+    },
+    "allow_core_writes_only_when": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env_var",
+        "env_value"
+      ],
+      "properties": {
+        "env_var": {
+          "type": "string",
+          "minLength": 1
+        },
+        "env_value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "core_write_mode": {
+      "type": "string",
+      "enum": [
+        "locked",
+        "ssot_only_when_unlocked"
+      ]
+    },
+    "ssot_write_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "one_shot_src_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "allow_paths",
+        "ttl_seconds",
+        "opened_at",
+        "expires_at",
+        "reason",
+        "restore_policy_hash"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allow_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "opened_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "restore_policy_hash": {
+          "type": "string"
+        }
+      }
+    },
+    "require_unlock_reason": {
+      "type": "boolean"
+    },
+    "evidence_required_when_unlocked": {
+      "type": "boolean"
+    },
+    "blocked_write_error_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "core_git_required": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}
