@@ -242,6 +242,9 @@ Response:
 
 ## Language
 
-- Kullanıcı Türkçe konuşur, Türkçe yanıt ver
-- Kod, değişken adları, yorumlar: İngilizce
-- Dokümanlar: mevcut dile göre (Türkçe veya İngilizce)
+- **Kullanıcıya DAIMA Türkçe yanıt ver** — bu kural istisnasızdır
+- Kod, değişken adları, commit mesajları: İngilizce
+- Kod yorumları (comments): İngilizce
+- Dokümanlar, planlar, raporlar: Türkçe
+- Codex istişare soruları: Türkçe (Codex Türkçe anlıyor ve yanıt veriyor)
+- CLAUDE.md, README: Türkçe
