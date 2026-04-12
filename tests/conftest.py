@@ -137,6 +137,22 @@ def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:
                         "except: pass swallows test failures — use pytest.raises or handle explicitly",
                     ))
 
+        # ADV-002: Weak single assertion (is not None, isinstance, len > 0)
+        # Only triggers when it's the SOLE meaningful assertion in the test
+        assert_nodes = [c for c in ast.walk(node) if isinstance(c, ast.Assert)]
+        if len(assert_nodes) == 1:
+            sole = assert_nodes[0]
+            # assert x is not None
+            if (isinstance(sole.test, ast.Compare)
+                    and len(sole.test.ops) == 1
+                    and isinstance(sole.test.ops[0], ast.IsNot)
+                    and isinstance(sole.test.comparators[0], ast.Constant)
+                    and sole.test.comparators[0].value is None):
+                violations.append(_TestQualityViolation(
+                    fname, func_name, "ADV-002",
+                    "sole assertion is 'is not None' — add a behavioral assertion",
+                ))
+
         # ADV-001: No assertions at all
         has_assert = False
         for child in ast.walk(node):
