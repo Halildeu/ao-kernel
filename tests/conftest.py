@@ -117,6 +117,16 @@ def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:
                         "assert callable(x) is tautological — test actual behavior instead",
                     ))
 
+        # BLK-002: assert True (placeholder — proves nothing)
+        for child in ast.walk(node):
+            if isinstance(child, ast.Assert):
+                test_val = child.test
+                if isinstance(test_val, ast.Constant) and test_val.value is True:
+                    violations.append(_TestQualityViolation(
+                        fname, func_name, "BLK-002",
+                        "assert True is a placeholder — assert actual behavior instead",
+                    ))
+
         # BLK-003: except ...: pass
         for child in ast.walk(node):
             if isinstance(child, ast.ExceptHandler):
