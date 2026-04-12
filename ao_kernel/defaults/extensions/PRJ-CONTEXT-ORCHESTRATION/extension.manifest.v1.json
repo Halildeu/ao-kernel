@@ -1,0 +1,104 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_context_orchestration.v1.json",
+    "schemas/context-pack-router-result.schema.v1.json",
+    "schemas/context-pack.schema.v1.json",
+    "schemas/policy-context-orchestration.schema.v1.json",
+    "schemas/session-context.schema.json"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-CONTEXT-ORCHESTRATION",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [
+      "context_orchestration"
+    ],
+    "kernel_api_actions": [],
+    "ops": [
+      "context-drift",
+      "context-health",
+      "context-pack-build",
+      "context-pack-route",
+      "context-reconcile",
+      "session-link-parent",
+      "session-set",
+      "session-status",
+      "session-sync"
+    ],
+    "ops_single_gate": [
+      "context-health-check",
+      "context-router-check"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-CONTEXT-ORCHESTRATION/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-CONTEXT-ORCHESTRATION",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "skeleton_plus_ops_mapping"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-CONTEXT-ORCHESTRATION/",
+      "policies/",
+      "schemas/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "ai_ile_yazilim_gelistirirken_baglam_yonetimi",
+    "self_healing_context_triad_p0_p1_p6"
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/context_orchestration_status.v1.json",
+      ".cache/reports/request_intake_to_exec_trace.v1.json",
+      ".cache/reports/context_drift_report.v1.json",
+      ".cache/reports/context_reconciliation_report.v1.json",
+      ".cache/reports/portfolio_context_health.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_context_orchestration.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_context_orchestration.v1.json"
+  ],
+  "semver": "0.2.0",
+  "ui_surfaces": [
+    "system-status",
+    "portfolio-status"
+  ],
+  "version": "v1"
+}

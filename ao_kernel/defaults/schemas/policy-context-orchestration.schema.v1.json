@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-context-orchestration.schema.v1.json",
+  "title": "Context Orchestration Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "focus",
+    "limits",
+    "inputs",
+    "outputs",
+    "guardrails"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "focus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_continuity",
+        "context_pack_routing",
+        "memory_assist",
+        "plan_apply_traceability"
+      ],
+      "properties": {
+        "session_continuity": {
+          "type": "boolean"
+        },
+        "context_pack_routing": {
+          "type": "boolean"
+        },
+        "memory_assist": {
+          "type": "boolean"
+        },
+        "plan_apply_traceability": {
+          "type": "boolean"
+        },
+        "profile_based_context": {
+          "type": "boolean",
+          "description": "Whether profile-based context loading is enabled."
+        }
+      }
+    },
+    "profile_registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Profile-based context registry configuration.",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "policy_path": { "type": "string" },
+        "schema_path": { "type": "string" },
+        "active_artifact_path": { "type": "string" },
+        "resolution_order": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["auto", "explicit", "default", "fallback"] }
+        },
+        "on_resolution_fail": { "type": "string" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_context_pack_bytes",
+        "max_session_items",
+        "max_recommended_next_actions"
+      ],
+      "properties": {
+        "max_context_pack_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_session_items": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_recommended_next_actions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_reports"
+      ],
+      "properties": {
+        "workspace_reports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "bootstrap_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Pre-agent bootstrap gate settings (Phase 1).",
+      "required": ["enabled", "min_health_score", "grace_invocations", "evidence_path"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether bootstrap gate is active."
+        },
+        "min_health_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum health score to pass gate."
+        },
+        "grace_invocations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of invocations that get WARN instead of BLOCKED."
+        },
+        "evidence_path": {
+          "type": "string",
+          "description": "Workspace-relative path for gate evidence artifact."
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_default",
+        "report_only_on_missing_context",
+        "fail_closed_on_schema_mismatch"
+      ],
+      "properties": {
+        "network_default": {
+          "type": "boolean"
+        },
+        "report_only_on_missing_context": {
+          "type": "boolean"
+        },
+        "fail_closed_on_schema_mismatch": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

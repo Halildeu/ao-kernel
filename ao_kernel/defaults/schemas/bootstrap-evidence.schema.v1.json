@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:bootstrap-evidence:v1",
+  "title": "Bootstrap Evidence",
+  "description": "Evidence artifact from bootstrap gate execution. Records tier checks, health score, profile resolution, and grace mode state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "gate_result", "workspace_root", "tiers", "tier_status", "gates", "health_score", "profile_id", "grace_count", "grace_limit"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "gate_result": {
+      "type": "string",
+      "enum": ["PASS", "WARN", "BLOCKED"],
+      "description": "PASS=healthy, WARN=grace period active, BLOCKED=agent must not proceed."
+    },
+    "workspace_root": {
+      "type": "string"
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tier", "name", "files", "status"],
+        "properties": {
+          "tier": { "type": "integer" },
+          "name": { "type": "string" },
+          "files": { "type": "array" },
+          "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] }
+        }
+      }
+    },
+    "tier_status": {
+      "type": "string",
+      "enum": ["OK", "WARN", "FAIL"]
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate", "status"],
+        "properties": {
+          "gate": { "type": "string" },
+          "status": { "type": "string", "enum": ["PASS", "WARN", "FAIL"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "health_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "profile_id": {
+      "type": "string"
+    },
+    "grace_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "grace_limit": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "from_cache": {
+      "type": "boolean"
+    }
+  }
+}

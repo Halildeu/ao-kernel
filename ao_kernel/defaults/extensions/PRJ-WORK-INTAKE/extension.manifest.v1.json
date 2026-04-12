@@ -1,0 +1,90 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_work_intake.v2.json",
+    "policies/work_intake_fragments/manifest.v1.json",
+    "policies/work_intake_fragments/shared.v1.json",
+    "policies/policy_work_intake_exec.v1.json",
+    "schemas/work-intake.schema.v1.json",
+    "extensions/PRJ-WORK-INTAKE/build_policy_work_intake_v2.py",
+    "extensions/PRJ-WORK-INTAKE/check_policy_work_intake_modularization.py",
+    "src/ops/work_intake_exec_ticket.py",
+    "src/ops/work_intake_from_sources.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-WORK-INTAKE",
+  "entrypoints": {
+    "cockpit_sections": [
+      "work_intake",
+      "work_intake_exec"
+    ],
+    "kernel_api_actions": [
+      "intake_create_plan",
+      "intake_next",
+      "intake_status"
+    ],
+    "ops": [
+      "work-intake-build",
+      "work-intake-check",
+      "work-intake-exec-ticket"
+    ],
+    "ops_single_gate": [
+      "work-intake-check"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-WORK-INTAKE/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-WORK-INTAKE",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "roadmaps/PROJECTS/PRJ-WORK-INTAKE/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/index/work_intake.v1.json",
+      ".cache/reports/work_intake_exec_ticket.v1.json",
+      ".cache/reports/work_intake_summary.v1.md",
+      ".cache/reports/work_intake_modularization_check.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [],
+  "policy_files": [
+    "policies/policy_work_intake.v2.json",
+    "policies/policy_work_intake_exec.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [],
+  "version": "v1",
+  "enabled": true
+}

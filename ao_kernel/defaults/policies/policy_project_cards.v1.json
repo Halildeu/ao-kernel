@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "description": "Project context card registry — groups projects by tech domain with shared conventions and extension references.",
+  "groups": {
+    "frontend": {
+      "projects": ["dev-web-frontend", "dev-design-system"],
+      "extension_ref": "extensions/PRJ-PM-SUITE/extension.manifest.v1.json",
+      "shared_rules": ".claude/rules/frontend.md",
+      "shared_tech_stack": true
+    },
+    "backend": {
+      "projects": ["dev-web-backend", "schema-service"],
+      "extension_ref": "extensions/PRJ-KERNEL-API/extension.manifest.v1.json",
+      "shared_rules": ".claude/rules/backend.md"
+    },
+    "orchestrator": {
+      "projects": ["autonomous-orchestrator"],
+      "shared_rules": ".claude/rules/src-ops.md"
+    },
+    "database": {
+      "projects": ["workcube-db"],
+      "shared_rules": ".claude/rules/database.md"
+    }
+  },
+  "resolution": {
+    "source": "extension_registry + feature_execution_contract",
+    "fallback": "path_based_map"
+  }
+}

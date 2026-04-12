@@ -1,0 +1,32 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "mode_default": "customer_clean",
+  "allowlist": [
+    {
+      "from": "incubator/notes/**",
+      "to": "docs/INCUBATOR_NOTES/**"
+    },
+    {
+      "from": "incubator/templates/**",
+      "to": "templates/**"
+    },
+    {
+      "from": "incubator/patches/**",
+      "to": "patches/**"
+    }
+  ],
+  "denylist": [
+    "**/.env",
+    "**/secrets*",
+    "**/*.key",
+    "**/tokens*"
+  ],
+  "outputs": {
+    "bundle_zip": ".cache/promotion/promotion_bundle.v1.zip",
+    "bundle_report": ".cache/promotion/promotion_report.v1.json",
+    "core_patch": ".cache/promotion/core_patch.v1.diff",
+    "core_patch_md": ".cache/promotion/core_patch_summary.v1.md"
+  },
+  "fail_action": "warn"
+}

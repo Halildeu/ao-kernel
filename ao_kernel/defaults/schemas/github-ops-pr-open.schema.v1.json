@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/github-ops-pr-open.schema.v1.json",
+  "title": "GitHub PR Open Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repo_owner",
+    "repo_name",
+    "base_branch",
+    "head_branch",
+    "title"
+  ],
+  "properties": {
+    "repo_owner": { "type": "string", "minLength": 1 },
+    "repo_name": { "type": "string", "minLength": 1 },
+    "base_branch": { "type": "string", "minLength": 1 },
+    "head_branch": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "body": { "type": "string" },
+    "draft": { "type": "boolean", "default": true },
+    "labels": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "reviewers": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "assignees": { "type": "array", "items": { "type": "string" }, "default": [] }
+  }
+}

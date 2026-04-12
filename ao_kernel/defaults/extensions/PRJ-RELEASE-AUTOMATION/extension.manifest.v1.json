@@ -1,0 +1,96 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/LAYER-MODEL-LOCK.v1.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_release_automation.v1.json",
+    "schemas/release-manifest.schema.v1.json",
+    "schemas/release-plan.schema.v1.json",
+    "schemas/system-status.schema.json",
+    "src/prj_release_automation/release_engine.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-RELEASE-AUTOMATION",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [
+      "release"
+    ],
+    "kernel_api_actions": [],
+    "ops": [
+      "pr-merge-e2e",
+      "release-check",
+      "release-final-e2e",
+      "release-plan",
+      "release-prepare",
+      "release-publish"
+    ],
+    "ops_single_gate": [
+      "release-check"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-RELEASE-AUTOMATION/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-RELEASE-AUTOMATION",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "workspace_scoped_outputs_only"
+    ],
+    "read_roots_allowlist": [
+      "extensions/",
+      "policies/",
+      "schemas/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/"
+    ]
+  },
+  "notes": [
+    "local_first"
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/release_manifest.v1.json",
+      ".cache/reports/release_notes.v1.md",
+      ".cache/reports/release_plan.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_release_automation.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_release_automation.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [
+    "system-status",
+    "portfolio-status"
+  ],
+  "version": "v1"
+}

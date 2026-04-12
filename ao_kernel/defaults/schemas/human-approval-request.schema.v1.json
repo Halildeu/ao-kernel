@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:human-approval-request:v1",
+  "title": "Human Approval Request",
+  "description": "Schema for requests that require human approval before the orchestrator can proceed. Used by the decision inbox and approval workflow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "request_id", "operation", "reason", "requested_at", "status"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for this approval request."
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "NETWORK_ENABLE",
+        "CORE_ALLOWLIST_EXPAND",
+        "DEPLOY_LIVE",
+        "MERGE_PUBLISH",
+        "SCHEMA_BREAKING_CHANGE",
+        "POLICY_OVERRIDE",
+        "BUDGET_INCREASE",
+        "OTHER"
+      ],
+      "description": "The operation requiring approval."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why this operation requires human approval."
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional context for the approver (run_id, affected paths, risk assessment, etc.)."
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of when approval was requested."
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "Agent or system that requested approval."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "APPROVED", "REJECTED", "EXPIRED"],
+      "description": "Current status of the approval request."
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of when the decision was made."
+    },
+    "decided_by": {
+      "type": "string",
+      "description": "Human who approved or rejected."
+    },
+    "decision_notes": {
+      "type": "string",
+      "description": "Notes from the approver."
+    },
+    "ttl_seconds": {
+      "type": "integer",
+      "minimum": 60,
+      "description": "Time-to-live in seconds; request expires if not decided within TTL."
+    }
+  }
+}

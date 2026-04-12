@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/gap.record.schema.json",
+  "title": "gap.record.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gaps"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/gap" },
+      "default": []
+    }
+  },
+  "$defs": {
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "control_id": { "type": "string" },
+        "metric_id": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "status": { "type": "string", "enum": ["open", "closed"] },
+        "risk_class": { "type": "string", "enum": ["low", "medium", "high"] },
+        "effort": { "type": "string", "enum": ["low", "medium", "high"] },
+        "notes": { "type": "string" },
+        "integrity_snapshot_ref": { "type": "string" },
+        "source_eval_hash": { "type": "string" },
+        "source_raw_hash": { "type": "string" },
+        "evidence_pointers": { "type": "array", "items": { "type": "string" } },
+        "report_only": { "type": "boolean" },
+        "update_only": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:prompt-registry:v1",
+  "title": "Prompt Registry",
+  "description": "Registry of prompts with version lineage and experiment governance.",
+  "type": "object",
+  "required": ["version", "prompts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "prompts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/prompt_entry" }
+    }
+  },
+  "$defs": {
+    "prompt_entry": {
+      "type": "object",
+      "required": ["prompt_id", "version", "template"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt_id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "prompt_hash": { "type": "string" },
+        "template": { "type": "string" },
+        "model_compatibility": { "type": "array", "items": { "type": "string" } },
+        "tool_schema_version": { "type": ["string", "null"] },
+        "guardrail_version": { "type": "string" },
+        "input_schema": { "type": ["object", "null"] },
+        "output_schema": { "type": ["object", "null"] },
+        "eval_score": { "type": ["number", "null"] },
+        "last_tested_at": { "type": ["string", "null"] },
+        "experiment": { "$ref": "#/$defs/experiment" }
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "experiment_id": { "type": ["string", "null"] },
+        "lane": { "type": "string", "enum": ["control", "treatment", "canary", "shadow"] },
+        "rollout_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "owner": { "type": ["string", "null"] },
+        "status": { "type": "string", "enum": ["active", "promoted", "archived"] },
+        "promoted_at": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "version": "v1",
+  "defaults": {
+    "selected_default": false,
+    "max_apply_per_tick": 2,
+    "max_plans_per_tick": 5,
+    "max_poll_per_tick": 1
+  },
+  "auto_select": {
+    "enabled": false,
+    "max_select": 3,
+    "allow_buckets": [
+      "TICKET"
+    ],
+    "allow_source_types": [
+      "MANUAL_REQUEST",
+      "DOC_NAV",
+      "SCRIPT_BUDGET",
+      "JOB_STATUS"
+    ],
+    "require_impact_scope": "doc-only",
+    "deny_if_requires_core_change": true,
+    "rank_rule": "priority asc -> severity asc -> intake_id asc"
+  },
+  "selection_rules": [
+    {
+      "id": "ticket_manual_doc_only",
+      "when": {
+        "bucket": "TICKET",
+        "source_type": "MANUAL_REQUEST",
+        "impact_scope": "doc-only",
+        "kind_in": [
+          "note",
+          "doc-fix"
+        ]
+      },
+      "set": {
+        "autopilot_allowed": true,
+        "autopilot_reason": "DOC_ONLY"
+      }
+    },
+    {
+      "id": "ticket_doc_nav_broken",
+      "when": {
+        "bucket": "TICKET",
+        "source_type": "DOC_NAV",
+        "broken_refs_gt": 0
+      },
+      "set": {
+        "autopilot_allowed": true,
+        "autopilot_reason": "DOC_ONLY"
+      }
+    },
+    {
+      "id": "ticket_script_budget_ci_docs",
+      "when": {
+        "bucket": "TICKET",
+        "source_type": "SCRIPT_BUDGET",
+        "path_prefix_in": [
+          "ci/",
+          "docs/"
+        ],
+        "hard_exceeded_eq": 0
+      },
+      "set": {
+        "autopilot_allowed": true,
+        "autopilot_reason": "CI_ONLY"
+      }
+    },
+    {
+      "id": "job_status_poll_only",
+      "when": {
+        "source_type": "JOB_STATUS",
+        "job_status_in": [
+          "RUNNING",
+          "QUEUED"
+        ]
+      },
+      "set": {
+        "autopilot_allowed": true,
+        "autopilot_reason": "POLL_ONLY"
+      }
+    },
+    {
+      "id": "project_requires_core",
+      "when": {
+        "bucket": "PROJECT",
+        "requires_core_change": true
+      },
+      "set": {
+        "autopilot_allowed": false,
+        "autopilot_reason": "REQUIRES_CORE_UNLOCK"
+      }
+    }
+  ],
+  "apply_guards": {
+    "require_evidence_paths": true,
+    "deny_buckets": [
+      "INCIDENT"
+    ],
+    "deny_when": {
+      "network_required": true
+    }
+  },
+  "fail_action": "warn"
+}

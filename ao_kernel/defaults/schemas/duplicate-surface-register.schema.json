@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/duplicate-surface-register.schema.json",
+  "title": "duplicate-surface-register.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "project_id",
+    "status",
+    "summary",
+    "concerns"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "duplicate-surface-register"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "concern_count",
+        "controlled_count",
+        "consolidation_required_count",
+        "drifting_count",
+        "high_risk_count"
+      ],
+      "properties": {
+        "concern_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "controlled_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "consolidation_required_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "drifting_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high_risk_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "concerns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "concern_id",
+          "domain",
+          "status",
+          "risk_level",
+          "owner",
+          "effective_state",
+          "effective_paths",
+          "parallel_paths",
+          "archive_paths",
+          "duplicate_reason",
+          "required_action",
+          "sources"
+        ],
+        "properties": {
+          "concern_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "risk_level": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effective_state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effective_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "parallel_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "archive_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "promotion_target_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "duplicate_reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required_action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

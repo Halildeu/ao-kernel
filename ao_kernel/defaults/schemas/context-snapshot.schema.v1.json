@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:context-snapshot:v1",
+  "title": "Context Snapshot",
+  "description": "Portable context snapshot for agent handoff — captures profile, domain, decisions, scope, and quality state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "snapshot_id", "created_at", "from_agent", "to_agent", "compiled_context_hash", "active_profile"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "snapshot_id": { "type": "string", "pattern": "^SNAP-" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "from_agent": { "type": "string", "enum": ["claude", "codex", "antigravity", "human"] },
+    "to_agent": { "type": "string", "enum": ["claude", "codex", "antigravity", "human"] },
+    "compiled_context_hash": { "type": "string" },
+    "active_profile": { "type": "string" },
+    "domain_scope": {
+      "type": "object",
+      "properties": { "primary": { "type": "string" } }
+    },
+    "key_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "value": {},
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "scope_state": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" },
+        "files_written": { "type": "integer" },
+        "domains_touched": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "quality_metrics": {
+      "type": "object",
+      "properties": {
+        "cache_hit_rate": { "type": "number" },
+        "quality_trend": { "type": "string" },
+        "total_writes": { "type": "integer" }
+      }
+    },
+    "pending_consultations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "consultation_id": { "type": "string" },
+          "topic": { "type": "string" },
+          "question": { "type": "string" }
+        }
+      }
+    }
+  }
+}

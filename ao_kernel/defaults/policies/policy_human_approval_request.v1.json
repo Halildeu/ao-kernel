@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "schema_ref": "schemas/human-approval-request.schema.v1.json",
+  "defaults": {
+    "ttl_seconds": 86400,
+    "status_on_expiry": "EXPIRED",
+    "action_on_expiry": "block"
+  },
+  "required_for_operations": [
+    "NETWORK_ENABLE",
+    "CORE_ALLOWLIST_EXPAND",
+    "DEPLOY_LIVE",
+    "MERGE_PUBLISH",
+    "SCHEMA_BREAKING_CHANGE",
+    "POLICY_OVERRIDE",
+    "BUDGET_INCREASE"
+  ],
+  "routing": {
+    "inbox_path": ".cache/reports/approval_inbox.v1.jsonl",
+    "notify_on_create": true,
+    "notify_on_decide": true
+  },
+  "guardrails": {
+    "block_operation_until_approved": true,
+    "allow_reject_without_reason": false,
+    "max_open_requests_per_operation": 1
+  },
+  "integration": {
+    "decision_boundary_ref": "policies/policy_decision_boundaries.v1.json",
+    "risk_scoring_ref": "policies/policy_risk_scoring.v1.json",
+    "note": "Approval requests are created when risk_scoring composite_score > medium threshold or operation is in required_for_operations list."
+  },
+  "fail_action": "block"
+}

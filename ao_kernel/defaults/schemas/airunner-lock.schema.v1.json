@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-lock.schema.v1.json",
+  "title": "Airunner Lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "lock_id",
+    "acquired_at",
+    "expires_at",
+    "ttl_seconds",
+    "workspace_root",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "lock_id": { "type": "string", "minLength": 1 },
+    "acquired_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "ttl_seconds": { "type": "integer", "minimum": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

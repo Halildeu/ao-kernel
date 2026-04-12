@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "doc_nav",
+  "source_types": [
+    "DOC_NAV"
+  ],
+  "rules": [
+    {
+      "id": "doc_nav_critical",
+      "source_type": "DOC_NAV",
+      "when": {
+        "critical_nav_gaps_gt": 0
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    },
+    {
+      "id": "doc_nav_broken_refs",
+      "source_type": "DOC_NAV",
+      "when": {
+        "broken_refs_gt": 0
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3",
+      "suggested_extension": "PRJ-AIRUNNER"
+    }
+  ]
+}

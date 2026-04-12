@@ -1,0 +1,100 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "manual_request",
+  "source_types": [
+    "MANUAL_REQUEST"
+  ],
+  "rules": [
+    {
+      "id": "manual_request_core_change",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_requires_core_change": true
+      },
+      "bucket": "ROADMAP",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "plan_only"
+      ]
+    },
+    {
+      "id": "manual_request_strategy",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "strategy",
+          "multi-quarter"
+        ]
+      },
+      "bucket": "ROADMAP",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "manual_request_context_router_project",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "context-router"
+        ]
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "plan_only"
+      ]
+    },
+    {
+      "id": "manual_request_doc_only_safe",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "doc-fix",
+          "doc-link-fix",
+          "doc-metadata",
+          "note"
+        ],
+        "manual_request_impact_scope_in": [
+          "doc-only",
+          "workspace-only"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "manual_request_project",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "feature",
+          "refactor",
+          "new_project"
+        ]
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "manual_request_ticket",
+      "source_type": "MANUAL_REQUEST",
+      "when": {
+        "manual_request_kind_in": [
+          "support",
+          "question",
+          "minor_fix"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3",
+      "suggested_extension": "PRJ-AIRUNNER"
+    }
+  ]
+}

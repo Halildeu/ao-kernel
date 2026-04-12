@@ -1,0 +1,169 @@
+{
+  "version": "v1",
+  "kind": "active-execution-registry",
+  "project_id": "PRJ-MULTI-AI-CODING-OS",
+  "status": "INITIAL_POPULATION",
+  "notes": [
+    "Yalnizca aktif ve izinli execution target'lar burada listelenir.",
+    "archive, backup, legacy, disabled ve unknown target'lar burada yer almaz.",
+    "Nested app target'lari git sagligini parent repo'dan inherit eder."
+  ],
+  "repos": [
+    {
+      "repo_id": "ao-core",
+      "repo_kind": "control_plane",
+      "repo_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator",
+      "workspace_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default",
+      "status": "ACTIVE_WITH_WARNINGS",
+      "lifecycle_state": "active",
+      "owner": "CORE",
+      "canonical_branch": "main",
+      "current_branch": "codex/core-cache-boundary-20260308",
+      "current_head": "4f96551",
+      "upstream": "",
+      "dirty": true,
+      "allowed_worktrees": [
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator"
+      ],
+      "observed_worktrees": [
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator",
+        "/Users/halilkocoglu/Documents/.codex-tmp/ao-core-ux-pr",
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/nostalgic-lederberg",
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/upbeat-darwin",
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/zealous-ritchie"
+      ],
+      "app_ids": [
+        "ao:cockpit-lite",
+        "ao:ops-kernel"
+      ],
+      "version_source_refs": [
+        "/Users/halilkocoglu/Documents/autonomous-orchestrator/standards.lock",
+        "git:HEAD"
+      ],
+      "allowed_intents": [
+        "DISCOVERY",
+        "PLAN_ONLY",
+        "ASSURANCE_LOCK"
+      ],
+      "blocked_intents": [
+        "APPLY"
+      ],
+      "notes": [
+        "Core repo varsayilan olarak control-plane hedefidir; governed unlock olmadan core apply yapilmaz.",
+        "Ek worktree'ler gozlemlendi; allowlist disindaki worktree'ler kayit altina alinmadan aktif target kabul edilmemelidir."
+      ]
+    },
+    {
+      "repo_id": "dev",
+      "repo_kind": "execution_umbrella",
+      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "workspace_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default_multi2/repo-1-dev-1bc3d890",
+      "status": "ACTIVE_WITH_WARNINGS",
+      "lifecycle_state": "active",
+      "owner": "EXECUTION",
+      "canonical_branch": "main",
+      "current_branch": "codex/dev-local-integration-20260308",
+      "current_head": "e9284de",
+      "upstream": "origin/codex/dev-local-integration-20260308",
+      "dirty": true,
+      "allowed_worktrees": [
+        "/Users/halilkocoglu/Documents/dev"
+      ],
+      "observed_worktrees": [
+        "/Users/halilkocoglu/Documents/dev"
+      ],
+      "app_ids": [
+        "dev:web",
+        "dev:mobile",
+        "dev:backend"
+      ],
+      "version_source_refs": [
+        "/Users/halilkocoglu/Documents/dev/web/package.json",
+        "/Users/halilkocoglu/Documents/dev/mobile/package.json",
+        "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+      ],
+      "allowed_intents": [
+        "DISCOVERY",
+        "PLAN_ONLY",
+        "APPLY",
+        "ASSURANCE_LOCK"
+      ],
+      "blocked_intents": [],
+      "notes": [
+        "Managed repo umbrella hedefidir.",
+        "web, mobile ve backend alt hedefleri ayri git repo degil; branch/worktree sagligini parent repo'dan inherit eder."
+      ],
+      "upstream_sync_state": "0_behind_0_ahead"
+    }
+  ],
+  "targets": [
+    {
+      "target_id": "dev:web",
+      "target_kind": "workspace_app_suite",
+      "parent_repo_id": "dev",
+      "root_path": "/Users/halilkocoglu/Documents/dev/web",
+      "status": "ACTIVE_WITH_WARNINGS",
+      "lifecycle_state": "active",
+      "owner": "WEB",
+      "git_inherits_repo": "dev",
+      "canonical_branch": "main",
+      "launch_profile_ids": [
+        "dev:web-shell",
+        "dev:web-core-stack",
+        "dev:web-full-stack",
+        "dev:web-storybook"
+      ],
+      "version_source_refs": [
+        "/Users/halilkocoglu/Documents/dev/web/package.json",
+        "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md"
+      ],
+      "notes": [
+        "Web monorepo target'i; aktif launch path'leri apps_and_launch_registry icinde ayri tanimlanmistir."
+      ]
+    },
+    {
+      "target_id": "dev:mobile",
+      "target_kind": "workspace_app_suite",
+      "parent_repo_id": "dev",
+      "root_path": "/Users/halilkocoglu/Documents/dev/mobile",
+      "status": "ACTIVE_CANDIDATE",
+      "lifecycle_state": "active",
+      "owner": "MOBILE",
+      "git_inherits_repo": "dev",
+      "canonical_branch": "main",
+      "launch_profile_ids": [
+        "dev:mobile-expo"
+      ],
+      "version_source_refs": [
+        "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+      ],
+      "notes": [
+        "Expo mobile workspace target'i."
+      ]
+    },
+    {
+      "target_id": "dev:backend",
+      "target_kind": "workspace_service_suite",
+      "parent_repo_id": "dev",
+      "root_path": "/Users/halilkocoglu/Documents/dev/backend",
+      "status": "ACTIVE_CANDIDATE",
+      "lifecycle_state": "active",
+      "owner": "BACKEND",
+      "git_inherits_repo": "dev",
+      "canonical_branch": "main",
+      "launch_profile_ids": [
+        "dev:backend-compose",
+        "dev:backend-local"
+      ],
+      "version_source_refs": [
+        "/Users/halilkocoglu/Documents/dev/backend/pom.xml",
+        "/Users/halilkocoglu/Documents/dev/backend/README.md",
+        "/Users/halilkocoglu/Documents/dev/backend/dev-start.sh",
+        "/Users/halilkocoglu/Documents/dev/backend/scripts/start-local.sh"
+      ],
+      "notes": [
+        "Maven multi-module backend target'i."
+      ]
+    }
+  ]
+}

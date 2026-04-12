@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "out_run_index": ".cache/index/run_index.v1.json",
+  "out_dlq_index": ".cache/index/dlq_index.v1.json",
+  "max_run_dirs": 200,
+  "max_dlq_items": 500,
+  "include_prefixes": [
+    "roadmap_finish",
+    "roadmap_orchestrator",
+    "roadmap"
+  ],
+  "mode": "bounded",
+  "on_fail": "warn",
+  "fail_action": "warn"
+}

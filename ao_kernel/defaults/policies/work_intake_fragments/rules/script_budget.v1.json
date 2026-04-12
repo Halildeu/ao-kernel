@@ -1,0 +1,72 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "script_budget",
+  "source_types": [
+    "SCRIPT_BUDGET"
+  ],
+  "rules": [
+    {
+      "id": "script_budget_hard",
+      "source_type": "SCRIPT_BUDGET",
+      "when": {
+        "hard_exceeded_gt": 0
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    },
+    {
+      "id": "script_budget_soft_docs",
+      "source_type": "SCRIPT_BUDGET",
+      "when": {
+        "hard_exceeded_eq": 0,
+        "soft_only": true,
+        "path_prefix_in": [
+          "docs/",
+          "tests/",
+          "test/",
+          "ci/",
+          "scripts/",
+          "tools/"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3",
+      "suggested_extension": "PRJ-AIRUNNER"
+    },
+    {
+      "id": "script_budget_soft_ops",
+      "source_type": "SCRIPT_BUDGET",
+      "when": {
+        "hard_exceeded_eq": 0,
+        "soft_only": true,
+        "path_prefix_in": [
+          "src/ops/",
+          "src/orchestrator/"
+        ]
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "M0"
+      ]
+    },
+    {
+      "id": "script_budget_soft_default",
+      "source_type": "SCRIPT_BUDGET",
+      "when": {
+        "hard_exceeded_eq": 0,
+        "soft_only": true
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "M0"
+      ]
+    }
+  ]
+}

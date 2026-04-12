@@ -1,0 +1,256 @@
+{
+  "version": "v1",
+  "routing": {
+    "buckets": [
+      "INCIDENT",
+      "TICKET",
+      "PROJECT",
+      "ROADMAP"
+    ],
+    "default_bucket": "TICKET",
+    "rule_engine": {
+      "engine": "mini_dsl",
+      "legacy_compat": true,
+      "legacy_compat_deprecation": {
+        "enabled": true,
+        "current_phase": "warn",
+        "default_message": "legacy_compat fallback deprecation path active: warn in v1.1, remove in v2.",
+        "timeline": [
+          {
+            "release": "v1.1",
+            "action": "warn",
+            "note": "Keep backward compatibility but emit warnings in policy report while legacy_compat=true."
+          },
+          {
+            "release": "v2",
+            "action": "remove",
+            "note": "Disable and remove legacy expression fallback path."
+          }
+        ]
+      }
+    },
+    "incident_rules": [
+      {
+        "id": "INC_DOC_NAV_GAPS",
+        "if": "doc_nav.critical_nav_gaps>0",
+        "when": {
+          "op": "gt",
+          "left": {
+            "var": "doc_nav.critical_nav_gaps"
+          },
+          "right": 0
+        },
+        "then": "INCIDENT"
+      },
+      {
+        "id": "INC_INTEGRITY_FAIL",
+        "if": "integrity.status==FAIL",
+        "when": {
+          "op": "eq",
+          "left": {
+            "var": "integrity.status"
+          },
+          "right": "FAIL"
+        },
+        "then": "INCIDENT"
+      },
+      {
+        "id": "INC_SCRIPT_BUDGET_HARD",
+        "if": "script_budget.hard_exceeded>0",
+        "when": {
+          "op": "gt",
+          "left": {
+            "var": "script_budget.hard_exceeded"
+          },
+          "right": 0
+        },
+        "then": "INCIDENT"
+      },
+      {
+        "id": "INC_PDCA_REGRESSION",
+        "if": "pdca.regression_count>0",
+        "when": {
+          "op": "gt",
+          "left": {
+            "var": "pdca.regression_count"
+          },
+          "right": 0
+        },
+        "then": "INCIDENT"
+      }
+    ],
+    "ticket_rules": [
+      {
+        "id": "TICKET_MANUAL_KIND",
+        "if": "manual_request.kind in ['support','question','minor_fix']",
+        "when": {
+          "op": "in",
+          "left": {
+            "var": "manual_request.kind"
+          },
+          "right": [
+            "support",
+            "question",
+            "minor_fix"
+          ]
+        },
+        "then": "TICKET"
+      },
+      {
+        "id": "TICKET_LOW_SMALL_GAP",
+        "if": "gap.severity in ['LOW'] and gap.effort in ['S']",
+        "when": {
+          "op": "and",
+          "items": [
+            {
+              "op": "in",
+              "left": {
+                "var": "gap.severity"
+              },
+              "right": [
+                "LOW"
+              ]
+            },
+            {
+              "op": "in",
+              "left": {
+                "var": "gap.effort"
+              },
+              "right": [
+                "S"
+              ]
+            }
+          ]
+        },
+        "then": "TICKET"
+      },
+      {
+        "id": "TICKET_SOFT_ONLY_DOCS_CI",
+        "if": "script_budget.soft_only and target_path in ['docs/','ci/']",
+        "when": {
+          "op": "and",
+          "items": [
+            {
+              "op": "truthy",
+              "value": {
+                "var": "script_budget.soft_only"
+              }
+            },
+            {
+              "op": "starts_with",
+              "left": {
+                "var": "target_path"
+              },
+              "right": [
+                "docs/",
+                "ci/"
+              ]
+            }
+          ]
+        },
+        "then": "TICKET"
+      }
+    ],
+    "project_rules": [
+      {
+        "id": "PROJECT_MANUAL_KIND",
+        "if": "manual_request.kind in ['feature','refactor','new_project','context-router']",
+        "when": {
+          "op": "in",
+          "left": {
+            "var": "manual_request.kind"
+          },
+          "right": [
+            "feature",
+            "refactor",
+            "new_project",
+            "context-router"
+          ]
+        },
+        "then": "PROJECT"
+      },
+      {
+        "id": "PROJECT_GAP_MEDIUM_HIGH",
+        "if": "gap.severity in ['MEDIUM','HIGH']",
+        "when": {
+          "op": "in",
+          "left": {
+            "var": "gap.severity"
+          },
+          "right": [
+            "MEDIUM",
+            "HIGH"
+          ]
+        },
+        "then": "PROJECT"
+      },
+      {
+        "id": "PROJECT_SOFT_ONLY_SRC",
+        "if": "script_budget.soft_only and target_path in ['src/ops/','src/orchestrator/']",
+        "when": {
+          "op": "and",
+          "items": [
+            {
+              "op": "truthy",
+              "value": {
+                "var": "script_budget.soft_only"
+              }
+            },
+            {
+              "op": "starts_with",
+              "left": {
+                "var": "target_path"
+              },
+              "right": [
+                "src/ops/",
+                "src/orchestrator/"
+              ]
+            }
+          ]
+        },
+        "then": "PROJECT"
+      }
+    ],
+    "roadmap_rules": [
+      {
+        "id": "ROADMAP_MANUAL_KIND",
+        "if": "manual_request.kind in ['strategy','multi-quarter']",
+        "when": {
+          "op": "in",
+          "left": {
+            "var": "manual_request.kind"
+          },
+          "right": [
+            "strategy",
+            "multi-quarter"
+          ]
+        },
+        "then": "ROADMAP"
+      }
+    ]
+  },
+  "context_pack": {
+    "max_bytes_preview": 4096,
+    "pointer_only": true,
+    "include_sections": [
+      "define",
+      "measure_raw",
+      "integrity",
+      "eval",
+      "gap",
+      "pdca",
+      "guardrails",
+      "routing"
+    ],
+    "redaction": {
+      "enabled": true,
+      "deny_patterns": [
+        "API_KEY",
+        "PASSWORD",
+        "SECRET"
+      ],
+      "max_preview_chars": 800
+    }
+  },
+  "fail_action": "warn"
+}

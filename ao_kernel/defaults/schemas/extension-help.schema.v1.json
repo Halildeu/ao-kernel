@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/extension-help.schema.v1.json",
+  "title": "Extension Help",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "docs_coverage",
+    "tests_coverage",
+    "extensions",
+    "notes",
+    "errors"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string" },
+    "workspace_root": { "type": "string" },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "docs_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "with_docs_ref", "with_ai_context_refs"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "with_docs_ref": { "type": "integer", "minimum": 0 },
+        "with_ai_context_refs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "tests_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "with_tests_entrypoints", "with_tests_files"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "with_tests_entrypoints": { "type": "integer", "minimum": 0 },
+        "with_tests_files": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["extension_id", "semver", "manifest_path", "entrypoints"],
+        "properties": {
+          "extension_id": { "type": "string", "minLength": 1 },
+          "semver": { "type": "string", "minLength": 1 },
+          "manifest_path": { "type": "string", "minLength": 1 },
+          "docs_ref": { "type": "string" },
+          "ai_context_refs": { "type": "array", "items": { "type": "string" } },
+          "entrypoints": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ops", "ops_single_gate", "kernel_api_actions", "cockpit_sections"],
+            "properties": {
+              "ops": { "type": "array", "items": { "type": "string" } },
+              "ops_single_gate": { "type": "array", "items": { "type": "string" } },
+              "kernel_api_actions": { "type": "array", "items": { "type": "string" } },
+              "cockpit_sections": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["workspace_reports"],
+            "properties": {
+              "workspace_reports": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "policy_files": { "type": "array", "items": { "type": "string" } },
+          "gates_required": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

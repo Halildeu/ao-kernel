@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "strategy": "sliding_window",
+  "trigger": "decision_count",
+  "trigger_threshold": 30,
+  "keep_recent_count": 10,
+  "archive_older": true,
+  "max_archive_files": 20,
+  "notes": [
+    "JetBrains NeurIPS 2025: sliding window + summary hybrid",
+    "Keep last N decisions in full detail, archive older ones"
+  ],
+  "fail_action": "warn"
+}

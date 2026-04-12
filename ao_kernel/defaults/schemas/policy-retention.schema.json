@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-retention.schema.json",
+  "title": "Policy Retention",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "evidence_days",
+    "dlq_days",
+    "cache_days"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "evidence_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 36500
+    },
+    "dlq_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 36500
+    },
+    "cache_days": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 36500
+    },
+    "allow_critical_cache_delete": {
+      "type": "boolean",
+      "default": false
+    },
+    "cache_exclude_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "cache_exclude_globs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

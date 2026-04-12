@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/deploy-job.schema.v1.json",
+  "title": "Deploy Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "job_id",
+    "kind",
+    "status",
+    "created_at",
+    "updated_at",
+    "workspace_root",
+    "dry_run",
+    "network_enabled",
+    "mode",
+    "evidence_paths",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "job_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "enum": ["DEPLOY_STATIC_FE", "DEPLOY_SELFHOST_BE"] },
+    "status": {
+      "type": "string",
+      "enum": ["QUEUED", "RUNNING", "PASS", "FAIL", "TIMEOUT", "KILLED", "SKIP", "ARCHIVED"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "last_poll_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "dry_run": { "type": "boolean" },
+    "network_enabled": { "type": "boolean" },
+    "mode": { "type": "string" },
+    "payload_ref": { "type": "string" },
+    "payload_hash": { "type": "string" },
+    "attempts": { "type": "integer", "minimum": 0 },
+    "error_code": { "type": "string" },
+    "skip_reason": { "type": "string" },
+    "failure_class": { "type": "string", "enum": ["PASS", "TIMEOUT", "POLICY_BLOCKED", "OTHER"] },
+    "signature_hash": { "type": "string", "minLength": 1 },
+    "evidence_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "result_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

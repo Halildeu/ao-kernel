@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/feature-execution-contract.schema.v1.json",
+  "title": "Feature Execution Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "status",
+    "feature_id",
+    "title",
+    "summary",
+    "source_context",
+    "delivery_scope",
+    "ux_contract",
+    "technical_contract",
+    "lane_plan",
+    "definition_of_done",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["feature-execution-contract"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["DRAFT", "ACTIVE", "ARCHIVED"]
+    },
+    "feature_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "source_refs",
+        "business_goal",
+        "requested_outcome"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": ["manual", "work_intake", "planner", "catalog"]
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "business_goal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_outcome": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "delivery_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo_root",
+        "service_scopes",
+        "change_path_globs",
+        "affected_modules"
+      ],
+      "properties": {
+        "repo_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["backend", "frontend", "database", "api"]
+          }
+        },
+        "change_path_globs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "affected_modules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "ux_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "rationale",
+        "artifacts"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["REQUIRED", "NOT_APPLICABLE"]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path_glob",
+              "ux_theme_id",
+              "ux_subtheme_id"
+            ],
+            "properties": {
+              "path_glob": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ux_theme_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ux_subtheme_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "technical_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_profile_id",
+        "api_version_prefix",
+        "design_system_policy",
+        "db_migration_required"
+      ],
+      "properties": {
+        "baseline_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_version_prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "design_system_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "db_migration_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "lane_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "execution_sequence",
+        "required_lanes",
+        "notes"
+      ],
+      "properties": {
+        "execution_sequence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["backend", "database", "api", "frontend", "integration", "e2e"]
+          }
+        },
+        "required_lanes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["unit", "database", "api", "contract", "integration", "e2e"]
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "definition_of_done": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "acceptance_criteria",
+        "evidence_paths"
+      ],
+      "properties": {
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "ux_contract": {
+            "properties": {
+              "mode": {
+                "const": "REQUIRED"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ux_contract": {
+            "properties": {
+              "artifacts": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

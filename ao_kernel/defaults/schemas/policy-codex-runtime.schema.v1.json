@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-codex-runtime.schema.v1.json",
+  "title": "policy-codex-runtime.schema.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "runtime_overlay",
+    "repo_features"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "runtime_overlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "review_model",
+        "model_provider",
+        "approval_policy",
+        "sandbox_mode",
+        "project_doc_max_bytes",
+        "project_doc_fallback_filenames",
+        "project_root_markers",
+        "model_reasoning_effort",
+        "model_reasoning_summary",
+        "model_verbosity",
+        "model_auto_compact_token_limit",
+        "web_search",
+        "sandbox_workspace_write"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approval_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sandbox_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project_doc_max_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "project_doc_fallback_filenames": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "project_root_markers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "model_reasoning_effort": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_reasoning_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_verbosity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_auto_compact_token_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "web_search": {
+          "type": "boolean"
+        },
+        "sandbox_workspace_write": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "network_access"
+          ],
+          "properties": {
+            "network_access": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "repo_features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory_strategy",
+        "mcp_contract",
+        "capability_catalog_contract",
+        "automations_bridge"
+      ],
+      "properties": {
+        "memory_strategy": {
+          "type": "string",
+          "enum": [
+            "local_only",
+            "provider_state",
+            "hybrid_provider_state"
+          ]
+        },
+        "provider_state_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "compaction_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mcp_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "default_mode",
+            "servers"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "default_mode": {
+              "type": "string",
+              "minLength": 1
+            },
+            "servers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "server_id",
+                  "purpose",
+                  "default_enabled"
+                ],
+                "properties": {
+                  "server_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "default_enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "capability_catalog_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "capability_search_paths",
+            "repo_local_planned"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "capability_search_paths": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "repo_local_planned": {
+              "type": "boolean"
+            }
+          }
+        },
+        "automations_bridge": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "target_extension",
+            "inbox_required",
+            "workspace_mode"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "target_extension": {
+              "type": "string",
+              "minLength": 1
+            },
+            "inbox_required": {
+              "type": "boolean"
+            },
+            "workspace_mode": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

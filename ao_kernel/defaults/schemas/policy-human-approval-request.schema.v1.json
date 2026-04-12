@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-human-approval-request:v1",
+  "title": "Policy Human Approval Request",
+  "description": "Schema for policy_human_approval_request.v1.json — defines which operations require human approval, default TTL, routing, and guardrails.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "defaults", "required_for_operations", "routing", "guardrails"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "schema_ref": { "type": "string" },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ttl_seconds", "status_on_expiry", "action_on_expiry"],
+      "properties": {
+        "ttl_seconds":      { "type": "integer", "minimum": 60 },
+        "status_on_expiry": { "type": "string", "enum": ["EXPIRED"] },
+        "action_on_expiry": { "type": "string", "enum": ["block", "warn", "log"] }
+      }
+    },
+    "required_for_operations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "NETWORK_ENABLE", "CORE_ALLOWLIST_EXPAND", "DEPLOY_LIVE",
+          "MERGE_PUBLISH", "SCHEMA_BREAKING_CHANGE", "POLICY_OVERRIDE",
+          "BUDGET_INCREASE", "OTHER"
+        ]
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inbox_path", "notify_on_create", "notify_on_decide"],
+      "properties": {
+        "inbox_path":        { "type": "string" },
+        "notify_on_create":  { "type": "boolean" },
+        "notify_on_decide":  { "type": "boolean" }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block_operation_until_approved", "allow_reject_without_reason", "max_open_requests_per_operation"],
+      "properties": {
+        "block_operation_until_approved":    { "type": "boolean" },
+        "allow_reject_without_reason":       { "type": "boolean" },
+        "max_open_requests_per_operation":   { "type": "integer", "minimum": 1 }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "decision_boundary_ref": { "type": "string" },
+        "risk_scoring_ref":      { "type": "string" },
+        "note":                  { "type": "string" }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["block", "warn", "log"]
+    }
+  }
+}

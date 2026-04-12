@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "llm_provider_map",
+  "type": "object",
+  "required": ["policy_version", "classes"],
+  "properties": {
+    "policy_version": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "probe": {
+      "type": "object",
+      "properties": {
+        "ttl_hours_default": { "type": "integer" },
+        "ttl_hours_by_class": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "classes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "pinned_model_id": { "type": ["string", "null"] },
+                "preferred_candidate_model_id": { "type": ["string", "null"] },
+                "models": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["model_id", "stage", "probe_status"],
+                    "properties": {
+                      "model_id": { "type": "string" },
+                      "stage": { "type": "string" },
+                      "verified_at": { "type": ["string", "null"] },
+                      "probe_status": { "type": "string" },
+                      "probe_last_at": { "type": ["string", "null"] },
+                      "probe_latency_ms_p95": { "type": ["number", "null"] },
+                      "probe_error_code": { "type": ["string", "null"] },
+                      "notes": { "type": ["string", "null"] }
+                    },
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/extension-manifest.schema.v1.json",
+  "title": "Extension Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "extension_id",
+    "semver",
+    "origin",
+    "owner",
+    "layer_contract",
+    "entrypoints",
+    "policies",
+    "ui_surfaces",
+    "compat"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "extension_id": { "type": "string", "minLength": 1 },
+    "semver": { "type": "string", "minLength": 1 },
+    "origin": { "type": "string", "enum": ["CORE", "CUSTOMER"] },
+    "owner": { "type": "string", "enum": ["CORE", "CUSTOMER"] },
+    "owner_tenant": { "type": "string" },
+    "enabled": { "type": "boolean" },
+    "layer_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["write_roots_allowlist"],
+      "properties": {
+        "write_roots_allowlist": { "type": "array", "items": { "type": "string" } },
+        "read_roots_allowlist": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ops", "kernel_api_actions", "cockpit_sections"],
+      "properties": {
+        "ops": { "type": "array", "items": { "type": "string" } },
+        "ops_single_gate": { "type": "array", "items": { "type": "string" } },
+        "kernel_api_actions": { "type": "array", "items": { "type": "string" } },
+        "cockpit_sections": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tests_entrypoints": { "type": "array", "items": { "type": "string" } },
+    "tests_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network_allowed", "notes"],
+      "properties": {
+        "network_allowed": { "type": "boolean" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "policies": { "type": "array", "items": { "type": "string" } },
+    "policy_files": { "type": "array", "items": { "type": "string" } },
+    "ui_surfaces": { "type": "array", "items": { "type": "string" } },
+    "docs_ref": { "type": "string" },
+    "ai_context_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 20
+    },
+    "model_kind": {
+      "type": "string",
+      "enum": ["ops_model", "governance_model", "delivery_model"]
+    },
+    "delivery_modes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["embedded", "vendor_pack"] }
+    },
+    "required_policies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cockpit_sections": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "intake_sources": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "supported_modes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["embedded", "vendor_pack"] }
+    },
+    "tenant_policy_requirements": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "repo_identity_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace_reports"],
+      "properties": {
+        "workspace_reports": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "compat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_min", "core_max", "notes"],
+      "properties": {
+        "core_min": { "type": "string" },
+        "core_max": { "type": "string" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offline", "network_default"],
+      "properties": {
+        "offline": { "type": "boolean" },
+        "network_default": { "type": "boolean" }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

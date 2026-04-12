@@ -1,0 +1,91 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "gap",
+  "source_types": [
+    "GAP"
+  ],
+  "rules": [
+    {
+      "id": "gap_effort_small",
+      "source_type": "GAP",
+      "when": {
+        "effort_in": [
+          "XS",
+          "S",
+          "LOW"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "gap_low_risk",
+      "source_type": "GAP",
+      "when": {
+        "risk_in": [
+          "LOW"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "gap_severity_s3",
+      "source_type": "GAP",
+      "when": {
+        "severity_in": [
+          "S3"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "gap_medium_high_risk",
+      "source_type": "GAP",
+      "when": {
+        "severity_in": [
+          "S1",
+          "S2"
+        ],
+        "risk_in": [
+          "MEDIUM",
+          "HIGH"
+        ]
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "gap_medium_high_effort",
+      "source_type": "GAP",
+      "when": {
+        "severity_in": [
+          "S1",
+          "S2"
+        ],
+        "effort_in": [
+          "M",
+          "L",
+          "MEDIUM",
+          "HIGH"
+        ]
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2"
+    },
+    {
+      "id": "gap_default_project",
+      "source_type": "GAP",
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2"
+    }
+  ]
+}

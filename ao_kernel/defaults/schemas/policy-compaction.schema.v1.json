@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "policy-compaction.schema.v1.json",
+  "title": "Policy Compaction",
+  "description": "Configuration for sliding window decision compaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "strategy"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "strategy": {
+      "type": "string",
+      "enum": [
+        "sliding_window"
+      ]
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "decision_count"
+      ]
+    },
+    "trigger_threshold": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 1000
+    },
+    "keep_recent_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500
+    },
+    "archive_older": {
+      "type": "boolean"
+    },
+    "max_archive_files": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

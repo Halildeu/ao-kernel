@@ -1,0 +1,87 @@
+{
+  "version": "v1",
+  "extension_id": "PRJ-OBSERVABILITY-OTEL",
+  "semver": "0.1.0",
+  "origin": "CORE",
+  "owner": "CORE",
+  "enabled": true,
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-OBSERVABILITY-OTEL",
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "schemas/extension-manifest.schema.v1.json",
+    "schemas/trace-meta.schema.v1.json",
+    "src/ops/trace_meta.py",
+    "src/orchestrator/runner_execute.py",
+    "src/orchestrator/observability/__init__.py",
+    "src/orchestrator/observability/otel_bridge.py",
+    "docs/OPERATIONS/OBSERVABILITY-COVERAGE-MATRIX.v1.json",
+    "docs/OPERATIONS/OBSERVABILITY-COVERAGE-MATRIX.v1.md",
+    "extensions/PRJ-OBSERVABILITY-OTEL/extension.manifest.v1.json",
+    "extensions/PRJ-OBSERVABILITY-OTEL/export_observability_coverage_matrix.py",
+    "extensions/PRJ-OBSERVABILITY-OTEL/coverage_visibility_report.py",
+    "extensions/PRJ-OBSERVABILITY-OTEL/tests/contract_test.py"
+  ],
+  "compat": {
+    "core_min": "0.0.0",
+    "core_max": "",
+    "notes": []
+  },
+  "guardrails": {
+    "offline": true,
+    "network_default": false
+  },
+  "layer_contract": {
+    "notes": [
+      "vendor-neutral",
+      "offline-first",
+      "otel-optional"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-OBSERVABILITY-OTEL/",
+      "src/orchestrator/",
+      "schemas/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "entrypoints": {
+    "ops": [],
+    "ops_single_gate": [],
+    "kernel_api_actions": [],
+    "cockpit_sections": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-OBSERVABILITY-OTEL/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only",
+      "no_deps_added"
+    ]
+  },
+  "gates": {
+    "required": [
+      "validate_schemas",
+      "policy_check"
+    ]
+  },
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/otel_pack.contract_test.v1.txt",
+      ".cache/reports/observability_coverage_matrix.v1.json",
+      ".cache/reports/coverage_visibility.v1.json"
+    ]
+  },
+  "policies": [],
+  "policy_files": [],
+  "ui_surfaces": [],
+  "notes": [
+    "Observability pack: attach trace_meta to run summaries for run_id correlation; OTel optional; offline-first."
+  ]
+}

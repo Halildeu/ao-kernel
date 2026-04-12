@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-north-star-integration-coherence.schema.v1.json",
+  "title": "Policy North Star Integration Coherence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "thresholds",
+    "signals",
+    "classification",
+    "gap_rules"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layer_boundary_violations_warn",
+        "layer_boundary_violations_fail",
+        "pack_conflicts_warn",
+        "pack_conflicts_fail",
+        "core_unlock_scope_widen_warn",
+        "core_unlock_scope_widen_fail",
+        "schema_fail_warn",
+        "schema_fail_fail"
+      ],
+      "properties": {
+        "layer_boundary_violations_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "layer_boundary_violations_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pack_conflicts_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pack_conflicts_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "core_unlock_scope_widen_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "core_unlock_scope_widen_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema_fail_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema_fail_fail": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layer_boundary_report",
+        "pack_validation_report",
+        "core_unlock_compliance",
+        "schema_validation_summary"
+      ],
+      "properties": {
+        "layer_boundary_report": {
+          "type": "boolean"
+        },
+        "pack_validation_report": {
+          "type": "boolean"
+        },
+        "core_unlock_compliance": {
+          "type": "boolean"
+        },
+        "schema_validation_summary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "FAIL_if",
+        "WARN_if"
+      ],
+      "properties": {
+        "FAIL_if": {
+          "$ref": "#/$defs/classification_rules"
+        },
+        "WARN_if": {
+          "$ref": "#/$defs/classification_rules"
+        }
+      }
+    },
+    "gap_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "layer_boundary_violations_fail",
+        "layer_boundary_violations_warn",
+        "pack_conflicts_fail",
+        "pack_conflicts_warn",
+        "core_unlock_scope_widen_fail",
+        "core_unlock_scope_widen_warn",
+        "schema_fail_fail",
+        "schema_fail_warn"
+      ],
+      "properties": {
+        "layer_boundary_violations_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "layer_boundary_violations_warn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_conflicts_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pack_conflicts_warn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "core_unlock_scope_widen_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "core_unlock_scope_widen_warn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_fail_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_fail_warn": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "classification_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layer_boundary_violations_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "pack_conflicts_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "core_unlock_scope_widen_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "schema_fail_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      }
+    }
+  }
+}

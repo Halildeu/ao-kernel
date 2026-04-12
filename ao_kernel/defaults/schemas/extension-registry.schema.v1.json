@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/extension-registry.schema.v1.json",
+  "title": "Extension Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "extensions",
+    "counts",
+    "registry_cursor",
+    "content_hash",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "error_code": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "registry_cursor": { "type": "string" },
+    "content_hash": { "type": "string" },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "enabled"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "enabled": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "extension_id",
+          "semver",
+          "origin",
+          "owner",
+          "source_type",
+          "manifest_path",
+          "layer_contract",
+          "entrypoints",
+          "policies",
+          "ui_surfaces",
+          "compat",
+          "content_hash",
+          "enabled"
+        ],
+        "properties": {
+          "extension_id": { "type": "string", "minLength": 1 },
+          "semver": { "type": "string", "minLength": 1 },
+          "origin": { "type": "string", "enum": ["CORE", "CUSTOMER"] },
+          "owner": { "type": "string", "enum": ["CORE", "CUSTOMER"] },
+          "owner_tenant": { "type": "string" },
+          "source_type": { "type": "string", "enum": ["extension_manifest", "project_manifest"] },
+          "manifest_path": { "type": "string" },
+          "layer_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["write_roots_allowlist"],
+            "properties": {
+              "write_roots_allowlist": { "type": "array", "items": { "type": "string" } },
+              "read_roots_allowlist": { "type": "array", "items": { "type": "string" } },
+              "notes": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "entrypoints": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ops", "kernel_api_actions", "cockpit_sections"],
+            "properties": {
+              "ops": { "type": "array", "items": { "type": "string" } },
+              "ops_single_gate": { "type": "array", "items": { "type": "string" } },
+              "kernel_api_actions": { "type": "array", "items": { "type": "string" } },
+              "cockpit_sections": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "policies": { "type": "array", "items": { "type": "string" } },
+          "ui_surfaces": { "type": "array", "items": { "type": "string" } },
+          "compat": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["core_min", "core_max", "notes"],
+            "properties": {
+              "core_min": { "type": "string" },
+              "core_max": { "type": "string" },
+              "notes": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "content_hash": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        }
+      }
+    },
+    "next_steps": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

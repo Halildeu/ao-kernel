@@ -1,0 +1,103 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_planner.v1.json",
+    "schemas/planner-plan.schema.v1.json",
+    "schemas/planner-step.schema.v1.json",
+    "schemas/policy-planner.schema.v1.json",
+    "src/prj_planner/planner_build.py",
+    "src/prj_airunner/airunner_tick.py",
+    "src/prj_airunner/auto_mode_dispatch.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-PLANNER",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [
+      "decisions"
+    ],
+    "kernel_api_actions": [],
+    "ops": [
+      "planner-apply-selection",
+      "planner-build-plan",
+      "planner-show-plan"
+    ],
+    "ops_single_gate": [
+      "planner-show-plan"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-PLANNER/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-PLANNER",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "extensions/PRJ-PLANNER/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "model_kind": "ops_model",
+  "delivery_modes": [
+    "embedded",
+    "vendor_pack"
+  ],
+  "intake_sources": [
+    "LENS_GAP",
+    "OPERABILITY",
+    "WORK_INTAKE",
+    "DECISION_INBOX"
+  ],
+  "notes": [
+    "Planner: plan-first; no direct apply; emits selection + CHG drafts."
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/index/plans/*.v1.json",
+      ".cache/reports/planner_plan_summary.v1.md",
+      ".cache/index/work_intake_selection.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_planner.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_planner.v1.json"
+  ],
+  "required_policies": [
+    "policies/policy_planner.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [],
+  "version": "v1"
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-airunner-auto-run.schema.v1.json",
+  "title": "policy-airunner-auto-run.schema.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "default_deadline_local",
+    "tick_interval_seconds",
+    "budget_seconds_per_poll",
+    "max_polls_per_call",
+    "max_actions_per_tick",
+    "auto_decision_mode",
+    "network_default_off"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "default_deadline_local": {
+      "type": "string",
+      "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+    },
+    "tick_interval_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "budget_seconds_per_poll": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_polls_per_call": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_actions_per_tick": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "auto_decision_mode": {
+      "type": "string",
+      "enum": [
+        "autopilot"
+      ]
+    },
+    "network_default_off": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "version": "v1",
+  "rules": [
+    {
+      "id": "SSOT_ROUTER",
+      "type": "ssot_map_refs"
+    },
+    {
+      "id": "EXTENSION_DOC_REF",
+      "type": "extension_manifest_docs_ref"
+    },
+    {
+      "id": "VIEW_ALLOWLIST",
+      "type": "view_allowlist_globs",
+      "globs": [
+        "docs/ARCHITECTURE/**/*.md",
+        "docs/DECISIONS/**/*.md",
+        "docs/OPERATIONS/**/*.md",
+        "modules/**/README.md",
+        "roadmaps/PROJECTS/**/*.md"
+      ]
+    },
+    {
+      "id": "TEMPLATE_FIXTURE",
+      "type": "path_prefix",
+      "prefixes": [
+        "templates/",
+        "fixtures/"
+      ]
+    },
+    {
+      "id": "ARCHIVE",
+      "type": "path_prefix",
+      "prefixes": [
+        "docs/ARCHIVE/"
+      ]
+    }
+  ],
+  "outputs": {
+    "report_json": ".cache/reports/docs_md_classification.v1.json",
+    "report_md": ".cache/reports/docs_md_classification.v1.md"
+  },
+  "thresholds": {
+    "unmapped_warn": 5,
+    "unmapped_fail": 20
+  },
+  "fail_action": "warn"
+}

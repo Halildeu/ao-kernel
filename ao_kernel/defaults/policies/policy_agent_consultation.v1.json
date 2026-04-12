@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "defaults": {
+    "ttl_seconds": 86400,
+    "status_on_expiry": "EXPIRED",
+    "max_open_consultations": 3
+  },
+  "paths": {
+    "requests": ".cache/index/consultations/requests",
+    "state": ".cache/index/consultations/state",
+    "responses": ".cache/reports/consultations",
+    "config": ".cache/config/consultation_agents.v1.json"
+  },
+  "naming": {
+    "request": "CNS-{YYYYMMDD}-{NNN}.request.v1.json",
+    "state": "CNS-{YYYYMMDD}-{NNN}.state.v1.json",
+    "response": "CNS-{YYYYMMDD}-{NNN}.{agent}.response.v1.json",
+    "note": "All paths are workspace-relative. Dispatcher is single writer for state and response."
+  },
+  "topics": ["architecture", "assessment", "review", "planning", "decision", "maturity", "operations", "other"],
+  "agents": ["claude", "codex"],
+  "protocol": {
+    "check_at_bootstrap": true,
+    "respond_before_task": true,
+    "auto_archive_resolved": true,
+    "single_writer": "dispatcher",
+    "agent_output": "stdout_json_only"
+  },
+  "state_machine": {
+    "transitions": ["OPEN->CLAIMED", "CLAIMED->RUNNING", "RUNNING->ANSWERED", "RUNNING->FAILED", "FAILED->CLAIMED", "FAILED->CLOSED", "ANSWERED->CLOSED"],
+    "terminal": ["CLOSED"]
+  },
+  "fail_action": "warn"
+}

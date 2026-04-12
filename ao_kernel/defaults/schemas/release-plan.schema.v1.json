@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/release-plan.schema.v1.json",
+  "title": "Release Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "channel",
+    "dirty_tree",
+    "change_detector",
+    "changed_paths",
+    "components",
+    "version_plan",
+    "approvals",
+    "next_steps",
+    "notes",
+    "errors"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "channel": { "type": "string", "enum": ["rc", "final"] },
+    "dirty_tree": { "type": "boolean" },
+    "change_detector": { "type": "string", "enum": ["git_diff_tag", "git_status", "hash_fallback"] },
+    "changed_paths": { "type": "array", "items": { "type": "string" } },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component_id", "path_globs", "changed", "bump", "reason"],
+        "properties": {
+          "component_id": { "type": "string" },
+          "path_globs": { "type": "array", "items": { "type": "string" } },
+          "changed": { "type": "boolean" },
+          "bump": { "type": "string", "enum": ["major", "minor", "patch", "none"] },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "component_hashes": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "version_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_version", "bump_level", "rc_version", "final_version", "channel_version"],
+      "properties": {
+        "base_version": { "type": "string" },
+        "bump_level": { "type": "string", "enum": ["major", "minor", "patch", "none"] },
+        "rc_version": { "type": "string" },
+        "final_version": { "type": "string" },
+        "channel_version": { "type": "string" }
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["require_manual_core", "require_manual_catalog", "approvals_required"],
+      "properties": {
+        "require_manual_core": { "type": "boolean" },
+        "require_manual_catalog": { "type": "boolean" },
+        "approvals_required": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "next_steps": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

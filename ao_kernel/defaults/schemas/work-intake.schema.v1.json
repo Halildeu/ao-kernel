@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/work-intake.schema.v1.json",
+  "title": "Work Intake",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "plan_policy",
+    "items",
+    "summary",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "plan_policy": { "type": "string", "enum": ["optional", "required"] },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item" },
+      "default": []
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_count", "counts_by_bucket", "top_next_actions", "next_intake_focus"],
+      "properties": {
+        "total_count": { "type": "integer", "minimum": 0 },
+        "active_count": { "type": "integer", "minimum": 0 },
+        "historical_done_count": { "type": "integer", "minimum": 0 },
+        "counts_by_bucket": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ROADMAP", "PROJECT", "TICKET", "INCIDENT"],
+          "properties": {
+            "ROADMAP": { "type": "integer", "minimum": 0 },
+            "PROJECT": { "type": "integer", "minimum": 0 },
+            "TICKET": { "type": "integer", "minimum": 0 },
+            "INCIDENT": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "total_counts_by_bucket": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "historical_counts_by_bucket": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "top_next_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/item_summary" }
+        },
+        "next_intake_focus": { "type": "string" }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "bucket": {
+      "type": "string",
+      "enum": ["ROADMAP", "PROJECT", "TICKET", "INCIDENT"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["S0", "S1", "S2", "S3", "S4"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3", "P4"]
+    },
+    "item_status": {
+      "type": "string",
+      "enum": ["OPEN", "IN_PROGRESS", "BLOCKED", "DONE", "DEFERRED"]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["GAP", "LENS_GAP", "PDCA_REGRESSION", "SCRIPT_BUDGET", "DOC_NAV", "USER_REQUEST", "ROADMAP_ITEM", "INTEGRITY", "MANUAL_REQUEST", "RELEASE", "JOB_STATUS", "TIME_SINK", "GITHUB_OPS", "DEPLOY_JOB"]
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["L2"]
+    },
+    "item_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intake_id", "bucket", "severity", "priority", "status", "title", "source_type", "source_ref"],
+      "properties": {
+        "intake_id": { "type": "string", "minLength": 1 },
+        "bucket": { "$ref": "#/$defs/bucket" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "priority": { "$ref": "#/$defs/priority" },
+        "status": { "$ref": "#/$defs/item_status" },
+        "title": { "type": "string", "minLength": 1 },
+        "source_type": { "$ref": "#/$defs/source_type" },
+        "source_ref": { "type": "string", "minLength": 1 },
+        "tenant_id": { "type": "string", "minLength": 1 },
+        "repo_id": { "type": "string", "minLength": 1 },
+        "source_repo_root": { "type": "string", "minLength": 1 },
+        "suggested_extension": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "lens_id": { "type": "string", "minLength": 1 },
+        "lens_reason": { "type": "string", "minLength": 1 },
+        "autopilot_allowed": { "type": "boolean" },
+        "autopilot_selected": { "type": "boolean" },
+        "autopilot_reason": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "autopilot_notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intake_id",
+        "bucket",
+        "severity",
+        "priority",
+        "status",
+        "title",
+        "source_type",
+        "source_ref",
+        "evidence_paths",
+        "owner_tenant",
+        "layer"
+      ],
+      "properties": {
+        "intake_id": { "type": "string", "minLength": 1 },
+        "bucket": { "$ref": "#/$defs/bucket" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "priority": { "$ref": "#/$defs/priority" },
+        "status": { "$ref": "#/$defs/item_status" },
+        "title": { "type": "string", "minLength": 1 },
+        "source_type": { "$ref": "#/$defs/source_type" },
+        "source_ref": { "type": "string", "minLength": 1 },
+        "evidence_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "owner_tenant": { "type": "string", "minLength": 1 },
+        "layer": { "$ref": "#/$defs/layer" },
+        "tenant_id": { "type": "string", "minLength": 1 },
+        "repo_id": { "type": "string", "minLength": 1 },
+        "source_repo_root": { "type": "string", "minLength": 1 },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "sla_hint": { "type": "string" },
+        "suggested_extension": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "lens_id": { "type": "string", "minLength": 1 },
+        "lens_reason": { "type": "string", "minLength": 1 },
+        "closed_reason": { "type": "string" },
+        "last_seen": { "type": "string", "format": "date-time" },
+        "last_status": { "type": "string", "minLength": 1 },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "ingested_at": { "type": "string", "format": "date-time" },
+        "autopilot_allowed": { "type": "boolean" },
+        "autopilot_selected": { "type": "boolean" },
+        "autopilot_reason": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "autopilot_notes": { "type": "array", "items": { "type": "string" } },
+        "time_sink_count": { "type": "integer", "minimum": 0 },
+        "time_sink_p50_ms": { "type": "integer", "minimum": 0 },
+        "time_sink_p95_ms": { "type": "integer", "minimum": 0 },
+        "time_sink_threshold_ms": { "type": "integer", "minimum": 0 },
+        "time_sink_breach_count": { "type": "integer", "minimum": 0 },
+        "time_sink_over_threshold": { "type": "boolean" },
+        "time_sink_rank": { "type": "integer", "minimum": 1 },
+        "time_sink_last_seen": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [
+        { "required": ["updated_at"] },
+        { "required": ["ingested_at"] }
+      ]
+    }
+  }
+}

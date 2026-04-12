@@ -1,0 +1,51 @@
+{
+  "version": "v1",
+  "tools": [
+    {
+      "name": "system-status",
+      "description": "Get current system status including health checks and portfolio state.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "workspace_root": {
+            "type": "string",
+            "description": "Workspace root path."
+          }
+        }
+      },
+      "ops_command": "system-status",
+      "permission": "read_only"
+    },
+    {
+      "name": "portfolio-status",
+      "description": "Get portfolio status with project health and roadmap progress.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "workspace_root": {
+            "type": "string",
+            "description": "Workspace root path."
+          }
+        }
+      },
+      "ops_command": "portfolio-status",
+      "permission": "read_only"
+    },
+    {
+      "name": "policy-check",
+      "description": "Run policy validation checks against schemas and policies.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["both", "workspace", "repo"],
+            "description": "Policy source to check."
+          }
+        }
+      },
+      "ops_command": "policy-check",
+      "permission": "read_only"
+    }
+  ]
+}

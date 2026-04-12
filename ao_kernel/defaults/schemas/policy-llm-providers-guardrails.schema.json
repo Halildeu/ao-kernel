@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LLM Providers Guardrails Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "defaults",
+    "providers",
+    "live_gate"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "timeout_seconds",
+        "max_request_bytes",
+        "max_response_bytes",
+        "retry_count",
+        "allow_models"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_request_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_response_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "default_model": {
+          "type": "string"
+        },
+        "allow_models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claude": {
+          "$ref": "#/definitions/provider"
+        },
+        "deepseek": {
+          "$ref": "#/definitions/provider"
+        },
+        "google": {
+          "$ref": "#/definitions/provider"
+        },
+        "openai": {
+          "$ref": "#/definitions/provider"
+        },
+        "qwen": {
+          "$ref": "#/definitions/provider"
+        },
+        "xai": {
+          "$ref": "#/definitions/provider"
+        }
+      }
+    },
+    "live_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_live_enabled",
+        "require_env_key_present",
+        "require_explicit_live_flag",
+        "explicit_live_flag_env"
+      ],
+      "properties": {
+        "policy_live_enabled": {
+          "type": "boolean"
+        },
+        "require_env_key_present": {
+          "type": "boolean"
+        },
+        "require_explicit_live_flag": {
+          "type": "boolean"
+        },
+        "explicit_live_flag_env": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "definitions": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "expected_env_keys",
+        "allow_models"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "expected_env_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "default_model": {
+          "type": "string"
+        },
+        "allow_models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

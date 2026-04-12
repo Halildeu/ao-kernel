@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-autopilot-apply.schema.v1.json",
+  "title": "policy-autopilot-apply.schema.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "defaults",
+    "selection_rules",
+    "apply_guards"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_default",
+        "max_apply_per_tick",
+        "max_plans_per_tick",
+        "max_poll_per_tick"
+      ],
+      "properties": {
+        "selected_default": {
+          "type": "boolean"
+        },
+        "max_apply_per_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_plans_per_tick": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_poll_per_tick": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "auto_select": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "max_select": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allow_buckets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allow_source_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "require_impact_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deny_if_requires_core_change": {
+          "type": "boolean"
+        },
+        "rank_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "selection_rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/selection_rule"
+      }
+    },
+    "apply_guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_evidence_paths",
+        "deny_buckets",
+        "deny_when"
+      ],
+      "properties": {
+        "require_evidence_paths": {
+          "type": "boolean"
+        },
+        "deny_buckets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "deny_when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "network_required": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "selection_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when",
+        "set"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "when": {
+          "$ref": "#/$defs/selection_when"
+        },
+        "set": {
+          "$ref": "#/$defs/selection_set"
+        }
+      }
+    },
+    "selection_when": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "impact_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind_in": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "broken_refs_gt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path_prefix_in": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hard_exceeded_eq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "job_status_in": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "requires_core_change": {
+          "type": "boolean"
+        },
+        "network_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "selection_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "autopilot_allowed",
+        "autopilot_reason"
+      ],
+      "properties": {
+        "autopilot_allowed": {
+          "type": "boolean"
+        },
+        "autopilot_reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    }
+  }
+}

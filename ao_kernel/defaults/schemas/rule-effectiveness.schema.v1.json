@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:rule-effectiveness:v1",
+  "title": "Rule Effectiveness",
+  "description": "Per-rule usage tracking and tier classification for memory optimization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "rules", "session_count"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "rules": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["total_loads", "times_applied", "times_violated", "times_ignored"],
+        "properties": {
+          "total_loads": { "type": "integer", "minimum": 0 },
+          "times_applied": { "type": "integer", "minimum": 0 },
+          "times_violated": { "type": "integer", "minimum": 0 },
+          "times_ignored": { "type": "integer", "minimum": 0 },
+          "first_seen": { "type": "string" },
+          "last_loaded": { "type": ["string", "null"] },
+          "last_applied": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "session_count": { "type": "integer", "minimum": 0 },
+    "updated_at": { "type": "string" }
+  }
+}

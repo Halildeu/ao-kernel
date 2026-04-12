@@ -1,0 +1,44 @@
+{
+  "version": "v1",
+  "thresholds": {
+    "layer_boundary_violations_warn": 0,
+    "layer_boundary_violations_fail": 0,
+    "pack_conflicts_warn": 0,
+    "pack_conflicts_fail": 0,
+    "core_unlock_scope_widen_warn": 0,
+    "core_unlock_scope_widen_fail": 1,
+    "schema_fail_warn": 0,
+    "schema_fail_fail": 1
+  },
+  "signals": {
+    "layer_boundary_report": true,
+    "pack_validation_report": true,
+    "core_unlock_compliance": true,
+    "schema_validation_summary": true
+  },
+  "classification": {
+    "FAIL_if": {
+      "layer_boundary_violations_gt": "layer_boundary_violations_fail",
+      "pack_conflicts_gt": "pack_conflicts_fail",
+      "core_unlock_scope_widen_gt": "core_unlock_scope_widen_fail",
+      "schema_fail_gt": "schema_fail_fail"
+    },
+    "WARN_if": {
+      "layer_boundary_violations_gt": "layer_boundary_violations_warn",
+      "pack_conflicts_gt": "pack_conflicts_warn",
+      "core_unlock_scope_widen_gt": "core_unlock_scope_widen_warn",
+      "schema_fail_gt": "schema_fail_warn"
+    }
+  },
+  "gap_rules": {
+    "layer_boundary_violations_fail": "INCIDENT:LAYER_BOUNDARY",
+    "layer_boundary_violations_warn": "TICKET:LAYER_BOUNDARY_REVIEW",
+    "pack_conflicts_fail": "INCIDENT:PACK_CONFLICTS",
+    "pack_conflicts_warn": "PROJECT:PACK_CONFLICT_REVIEW",
+    "core_unlock_scope_widen_fail": "INCIDENT:CORE_UNLOCK_SCOPE",
+    "core_unlock_scope_widen_warn": "TICKET:CORE_UNLOCK_DISCIPLINE",
+    "schema_fail_fail": "INCIDENT:SCHEMA_FAIL",
+    "schema_fail_warn": "TICKET:SCHEMA_HYGIENE"
+  },
+  "fail_action": "warn"
+}

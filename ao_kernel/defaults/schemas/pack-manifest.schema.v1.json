@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/pack-manifest.schema.v1.json",
+  "title": "pack-manifest.schema.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_id",
+    "version",
+    "lifecycle_state",
+    "iso_kernel_refs",
+    "provides",
+    "namespace_prefix",
+    "conflict_policy"
+  ],
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "pattern": "^pack-[a-z0-9-]+$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "enum": ["active", "experimental", "deprecated"]
+    },
+    "iso_kernel_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context_ref", "stakeholders_ref", "scope_ref", "criteria_ref", "gate_level"],
+      "properties": {
+        "context_ref": { "type": "string", "minLength": 1 },
+        "stakeholders_ref": { "type": "string", "minLength": 1 },
+        "scope_ref": { "type": "string", "minLength": 1 },
+        "criteria_ref": { "type": "string", "minLength": 1 },
+        "gate_level": { "type": "string", "enum": ["warn", "fail"] }
+      }
+    },
+    "provides": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intents", "workflows", "formats", "capability_refs", "format_refs"],
+      "properties": {
+        "intents": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "workflows": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "formats": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "capability_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "format_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "namespace_prefix": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{2,32}$"
+    },
+    "conflict_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hard_conflict", "soft_conflict", "deterministic_tie_break"],
+      "properties": {
+        "hard_conflict": { "const": "fail" },
+        "soft_conflict": { "const": "warn" },
+        "deterministic_tie_break": { "enum": ["pack_id_lexicographic"] }
+      }
+    },
+    "improvement_mappings": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trigger_kind", "suggestion_kind", "target"],
+        "properties": {
+          "trigger_kind": { "type": "string", "minLength": 1 },
+          "min_severity": { "type": "string", "enum": ["INFO", "WARN", "FAIL"] },
+          "suggestion_kind": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

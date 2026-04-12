@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "cursor_mode": "hash",
+  "outputs": {
+    "north_star_catalog": ".cache/index/north_star_catalog.v1.json",
+    "assessment": ".cache/index/assessment.v1.json",
+    "assessment_cursor": ".cache/index/assessment_cursor.v1.json",
+    "scorecard_json": ".cache/reports/benchmark_scorecard.v1.json",
+    "scorecard_md": ".cache/reports/benchmark_scorecard.v1.md",
+    "gap_register": ".cache/index/gap_register.v1.json",
+    "gap_summary_md": ".cache/reports/gap_summary.v1.md",
+    "maturity_tracking": ".cache/index/north_star_maturity_tracking.v1.json"
+  },
+  "max_controls": 2000,
+  "fail_action": "warn"
+}

@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "jobs": {
+    "max_running": 3,
+    "max_poll_per_tick": 3,
+    "poll_interval_seconds": 300,
+    "keep_last_n": 50,
+    "ttl_seconds": 604800,
+    "timeout_seconds": 3600,
+    "stale_after_seconds": 3600,
+    "smoke_full": {
+      "enabled": true,
+      "timeout_seconds": 900,
+      "poll_interval_seconds": 30,
+      "max_concurrent": 1,
+      "cooldown_seconds": 3600
+    },
+    "allowed_job_types": [
+      "SMOKE_FULL",
+      "RELEASE_PREPARE",
+      "RELEASE_PUBLISH",
+      "GITHUB_CHECKS_POLL",
+      "GITHUB_MERGE_POLL"
+    ],
+    "network_required_job_types": [
+      "RELEASE_PUBLISH",
+      "GITHUB_CHECKS_POLL",
+      "GITHUB_MERGE_POLL"
+    ]
+  },
+  "perf": {
+    "enable": true,
+    "event_log_max_lines": 5000,
+    "time_sinks_window": 200,
+    "thresholds_ms": {
+      "smoke_full_p95_warn": 240000,
+      "smoke_fast_p95_warn": 60000,
+      "release_prepare_p95_warn": 180000
+    }
+  },
+  "intake_mapping": {
+    "time_sink_bucket": "TICKET",
+    "time_sink_escalate_to_incident_after": 3
+  },
+  "fail_action": "warn"
+}

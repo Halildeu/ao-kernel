@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/doer-actionability.schema.v1.json",
+  "title": "Doer Actionability Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "workspace_root",
+    "generated_at",
+    "mode",
+    "counts",
+    "top_blockers",
+    "skipped_by_reason",
+    "sample_ids_by_reason",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auto_mode", "autopilot_apply"],
+      "properties": {
+        "auto_mode": {
+          "type": "string",
+          "enum": ["selected_only", "mixed", "suggested_only"]
+        },
+        "autopilot_apply": {
+          "type": "string",
+          "enum": ["selected_only", "mixed", "suggested_only"]
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_intake",
+        "candidate_total",
+        "selected",
+        "autopilot_allowed",
+        "skipped",
+        "decision_needed",
+        "safe_only",
+        "job_needed",
+        "network_blocked",
+        "policy_blocked"
+      ],
+      "properties": {
+        "total_intake": { "type": "integer", "minimum": 0 },
+        "candidate_total": { "type": "integer", "minimum": 0 },
+        "selected": { "type": "integer", "minimum": 0 },
+        "autopilot_allowed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "decision_needed": { "type": "integer", "minimum": 0 },
+        "safe_only": { "type": "integer", "minimum": 0 },
+        "job_needed": { "type": "integer", "minimum": 0 },
+        "network_blocked": { "type": "integer", "minimum": 0 },
+        "policy_blocked": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "top_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "count"],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "NOT_SELECTED",
+              "DECISION_NEEDED",
+              "NOT_SAFE_ONLY",
+              "NETWORK_DISABLED",
+              "POLICY_BLOCKED"
+            ]
+          },
+          "count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "sample_ids_by_reason": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "maxItems": 5,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    },
+    "skipped_by_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Z0-9_]+$": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "counts": {
+            "properties": {
+              "skipped": { "minimum": 1 }
+            }
+          }
+        },
+        "required": ["counts"]
+      },
+      "then": {
+        "properties": {
+          "skipped_by_reason": { "minProperties": 1 }
+        },
+        "required": ["skipped_by_reason"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "version": "v1",
+  "kind": "apps-and-launch-registry",
+  "project_id": "PRJ-MULTI-AI-CODING-OS",
+  "status": "INITIAL_POPULATION",
+  "notes": [
+    "Bu registry kanonik launch path'leri listeler.",
+    "Belirtilmeyen script veya klasor dogrudan aktif launch hedefi sayilmaz."
+  ],
+  "profiles": [
+    {
+      "app_id": "ao:cockpit-lite",
+      "target_id": "ao-core",
+      "display_name": "Orchestrator Cockpit Lite",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "ops_command",
+      "working_dir": "__WORKSPACE_ROOT__",
+      "command": "python3 -m src.ops.manage cockpit-serve --workspace-root .cache/ws_customer_default --port 8787",
+      "ports": [
+        8787
+      ],
+      "source_refs": [
+        "__WORKSPACE_ROOT__/extensions/PRJ-UI-COCKPIT-LITE/extension.manifest.v1.json",
+        "__WORKSPACE_ROOT__/src/ops/commands/maintenance_cmds.py"
+      ]
+    },
+    {
+      "app_id": "dev:web-shell",
+      "target_id": "dev:web",
+      "display_name": "Web Shell",
+      "status": "ACTIVE",
+      "launch_mode": "pnpm_script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "pnpm dev:shell",
+      "ports": [
+        3000
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/package.json",
+        "__PROJECT_ROOT__/docs/first-contribution.md"
+      ]
+    },
+    {
+      "app_id": "dev:web-core-stack",
+      "target_id": "dev:web",
+      "display_name": "Web Core Stack",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "pnpm_script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "pnpm dev:all",
+      "ports": [
+        3000,
+        3001,
+        3002,
+        3003
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/package.json"
+      ]
+    },
+    {
+      "app_id": "dev:web-full-stack",
+      "target_id": "dev:web",
+      "display_name": "Web Full Frontend Stack",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "pnpm_script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "pnpm start",
+      "ports": [
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/package.json"
+      ]
+    },
+    {
+      "app_id": "dev:web-storybook",
+      "target_id": "dev:web",
+      "display_name": "Web Storybook",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "pnpm_script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "pnpm storybook",
+      "ports": [
+        6006
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/package.json",
+        "__PROJECT_ROOT__/docs/first-contribution.md"
+      ]
+    },
+    {
+      "app_id": "dev:mobile-expo",
+      "target_id": "dev:mobile",
+      "display_name": "Mobile Expo",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "npm_script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "npm start",
+      "ports": [],
+      "source_refs": [
+        "__PROJECT_ROOT__/package.json"
+      ]
+    },
+    {
+      "app_id": "dev:backend-compose",
+      "target_id": "dev:backend",
+      "display_name": "Backend Compose Stack",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "./dev-start.sh",
+      "ports": [
+        8080,
+        8081,
+        8761,
+        8200,
+        3010
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/dev-start.sh",
+        "__PROJECT_ROOT__/README.md"
+      ]
+    },
+    {
+      "app_id": "dev:backend-local",
+      "target_id": "dev:backend",
+      "display_name": "Backend Local Spring Boot",
+      "status": "ACTIVE_CANDIDATE",
+      "launch_mode": "script",
+      "working_dir": "__PROJECT_ROOT__",
+      "command": "./scripts/start-local.sh",
+      "ports": [
+        8761
+      ],
+      "source_refs": [
+        "__PROJECT_ROOT__/scripts/start-local.sh"
+      ]
+    }
+  ]
+}

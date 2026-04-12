@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:decision-registry:v1",
+  "title": "Decision Registry",
+  "description": "Index of all decision topics. Loaded at bootstrap to provide cross-session decision awareness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "topics"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["topic_id", "title", "status", "path", "revision"],
+        "properties": {
+          "topic_id": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "string", "enum": ["ACTIVE", "SUPERSEDED", "ARCHIVED"] },
+          "path": { "type": "string", "description": "Repo-relative path to topic file." },
+          "revision": { "type": "integer" },
+          "last_updated": { "type": "string" }
+        }
+      }
+    }
+  }
+}

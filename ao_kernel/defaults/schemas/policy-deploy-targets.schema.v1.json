@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-deploy-targets.schema.v1.json",
+  "title": "policy-deploy-targets",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "frontend_provider",
+    "backend_provider",
+    "environments",
+    "deploy_job_kinds",
+    "defaults"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "frontend_provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backend_provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environments": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "deploy_job_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "DEPLOY_FE",
+          "DEPLOY_BE"
+        ]
+      },
+      "minItems": 1
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dry_run",
+        "network_enabled"
+      ],
+      "properties": {
+        "dry_run": {
+          "type": "boolean"
+        },
+        "network_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

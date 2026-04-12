@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/layer-boundary-report.schema.v1.json",
+  "title": "Layer Boundary Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "mode",
+    "enforcement_mode",
+    "core_unlock_requested",
+    "workspace_root_required",
+    "core_roots",
+    "catalog_roots",
+    "external_write_allowlist",
+    "checked_paths",
+    "would_block",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+    "mode": { "type": "string", "enum": ["report", "strict"] },
+    "enforcement_mode": { "type": "string", "minLength": 1 },
+    "core_unlock_requested": { "type": "boolean" },
+    "workspace_root_required": { "type": "boolean" },
+    "core_roots": { "type": "array", "items": { "type": "string" } },
+    "catalog_roots": { "type": "array", "items": { "type": "string" } },
+    "external_write_allowlist": { "type": "array", "items": { "type": "string" } },
+    "checked_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["git_status_paths"],
+      "properties": {
+        "git_status_paths": { "type": "array", "items": { "type": "string" } },
+        "allowlist_hits": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "would_block": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "layer", "reason"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "layer": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

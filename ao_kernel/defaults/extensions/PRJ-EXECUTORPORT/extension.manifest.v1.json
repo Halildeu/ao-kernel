@@ -1,0 +1,78 @@
+{
+  "version": "v1",
+  "extension_id": "PRJ-EXECUTORPORT",
+  "semver": "0.1.0",
+  "origin": "CORE",
+  "owner": "CORE",
+  "enabled": true,
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-EXECUTORPORT",
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "schemas/extension-manifest.schema.v1.json",
+    "src/orchestrator/runner_execute.py",
+    "src/orchestrator/executor_port.py",
+    "src/orchestrator/executor_adapters/__init__.py",
+    "src/orchestrator/executor_adapters/local_manual.py",
+    "src/orchestrator/executor_adapters/codex_optional.py",
+    "extensions/PRJ-EXECUTORPORT/extension.manifest.v1.json",
+    "extensions/PRJ-EXECUTORPORT/tests/contract_test.py"
+  ],
+  "compat": {
+    "core_min": "0.0.0",
+    "core_max": "",
+    "notes": []
+  },
+  "guardrails": {
+    "offline": true,
+    "network_default": false
+  },
+  "layer_contract": {
+    "notes": [
+      "vendor-neutral",
+      "offline-first"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-EXECUTORPORT/",
+      "src/orchestrator/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "entrypoints": {
+    "ops": [],
+    "ops_single_gate": [],
+    "kernel_api_actions": [],
+    "cockpit_sections": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-EXECUTORPORT/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "gates": {
+    "required": [
+      "validate_schemas",
+      "policy_check"
+    ]
+  },
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/executorport_contract_test.v1.txt"
+    ]
+  },
+  "policies": [],
+  "policy_files": [],
+  "ui_surfaces": [],
+  "notes": [
+    "ExecutorPort + adapters (local/manual default; Codex optional) — vendor-neutral."
+  ]
+}

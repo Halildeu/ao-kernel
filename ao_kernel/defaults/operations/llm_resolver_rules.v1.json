@@ -1,0 +1,44 @@
+{
+  "policy_version": "v0.1",
+  "intent_to_class": {
+    "DISCOVERY": "BALANCED_TEXT",
+    "BASELINE": "FAST_TEXT",
+    "GAP_ANALYSIS": "REASONING_TEXT",
+    "PLAN_ONLY": "REASONING_TEXT",
+    "APPLY": "CODE_AGENTIC",
+    "ASSURANCE_LOCK": "GOVERNANCE_ASSURANCE"
+  },
+  "fallback_order_by_class": {
+    "FAST_TEXT": ["openai", "google", "claude", "qwen", "deepseek", "xai"],
+    "BALANCED_TEXT": ["qwen", "deepseek", "openai", "google", "claude", "xai"],
+    "REASONING_TEXT": ["xai", "deepseek", "google", "claude", "openai", "qwen"],
+    "GOVERNANCE_ASSURANCE": ["claude", "openai", "google", "qwen", "deepseek", "xai"],
+    "CODE_AGENTIC": ["openai", "xai", "qwen", "deepseek", "google", "claude"],
+    "VISION_MM": ["openai", "google", "claude", "qwen"],
+    "OCR_DOC": ["qwen"]
+  },
+  "strictness": {
+    "REASONING_TEXT": { "verified_only": true, "degrade_allowed": false },
+    "CODE_AGENTIC": { "verified_only": true, "degrade_allowed": false, "apply_fail_closed": true },
+    "GOVERNANCE_ASSURANCE": { "verified_only": true, "degrade_allowed": false }
+  },
+  "soft_degrade": {
+    "enabled": true,
+    "rules": [
+      { "from_class": "BALANCED_TEXT", "to_class": "FAST_TEXT", "intents": ["DISCOVERY"] },
+      { "from_class": "FAST_TEXT", "to_class": "BALANCED_TEXT", "intents": ["BASELINE"] }
+    ]
+  },
+  "ttl_hours_default": 72,
+  "ttl_hours_by_class": {
+    "REASONING_TEXT": 24,
+    "GOVERNANCE_ASSURANCE": 24,
+    "CODE_AGENTIC": 24
+  },
+  "override_policy": {
+    "class_override_allowed": false,
+    "provider_priority_allowed": true,
+    "degrade_override_allowed": false,
+    "audit_fields": ["override_used", "override_reason_code", "override_actor", "override_timestamp"]
+  }
+}

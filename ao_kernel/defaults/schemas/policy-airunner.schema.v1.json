@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-airunner.schema.v1.json",
+  "title": "Airunner Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "schedule",
+    "lock_ttl_seconds",
+    "heartbeat_interval_seconds",
+    "watchdog",
+    "job_policy",
+    "limits",
+    "single_gate",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "max_runtime_seconds_per_day": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "lock_ttl_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "heartbeat_interval_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "interval_seconds",
+        "jitter_seconds"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "OFF",
+            "interval"
+          ]
+        },
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "jitter_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outside_hours_mode": {
+          "type": "string",
+          "enum": [
+            "ignore",
+            "poll_only",
+            "idle"
+          ]
+        },
+        "active_hours": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tz",
+            "start",
+            "end"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "tz": {
+              "type": "string",
+              "minLength": 1
+            },
+            "start": {
+              "type": "string",
+              "minLength": 1
+            },
+            "end": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "weekday_only": {
+          "type": "boolean"
+        }
+      }
+    },
+    "watchdog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "heartbeat_stale_seconds",
+        "max_recoveries_per_day"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "heartbeat_stale_seconds": {
+          "type": "integer",
+          "minimum": 60
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "CLEAR_STALE_LOCK_THEN_POLL_ONLY"
+          ]
+        },
+        "max_recoveries_per_day": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "job_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_running_jobs",
+        "poll_interval_seconds",
+        "closeout_ttl_days",
+        "keep_last_n"
+      ],
+      "properties": {
+        "max_running_jobs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "poll_interval_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closeout_ttl_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "keep_last_n": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_ticks_per_run",
+        "max_actions_per_tick",
+        "max_plans_per_tick",
+        "tick_budget_seconds"
+      ],
+      "properties": {
+        "max_ticks_per_run": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_actions_per_tick": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_plans_per_tick": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tick_budget_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "single_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_ops",
+        "require_strict_isolation"
+      ],
+      "properties": {
+        "allowed_ops": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "require_strict_isolation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

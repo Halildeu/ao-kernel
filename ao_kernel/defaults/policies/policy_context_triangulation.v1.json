@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "merge": {
+    "strategy": "field_majority",
+    "min_agreement": 2,
+    "record_disagreements": true,
+    "record_assumptions": true
+  },
+  "inputs": {
+    "require_three": true
+  },
+  "fail_action": "warn"
+}

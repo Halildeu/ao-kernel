@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-harvest.schema.json",
+  "title": "Policy Harvest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "output_path",
+    "cursor_path",
+    "incremental",
+    "window",
+    "forbid_patterns",
+    "max_candidates",
+    "min_evidence_refs_per_candidate",
+    "on_fail"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "output_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cursor_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "incremental": {
+      "type": "boolean"
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_dlq_items",
+        "max_days"
+      ],
+      "properties": {
+        "max_dlq_items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "max_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650
+        }
+      }
+    },
+    "forbid_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "max_candidates": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "min_evidence_refs_per_candidate": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "on_fail": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "limits": {
+    "max_items_per_run": 20,
+    "dedup_window_hours": 24
+  },
+  "mapping": {
+    "decision_kind_map": {
+      "DECISION_NEEDED": "AUTO_APPLY_ALLOW",
+      "ROUTE_CONFLICT": "ROUTE_OVERRIDE",
+      "NETWORK_DISABLED": "NETWORK_ENABLE",
+      "NETWORK_LIVE_REQUIRED": "NETWORK_LIVE_ENABLE",
+      "POLICY_BLOCKED": "AUTO_APPLY_ALLOW"
+    },
+    "default_decision_kind": "UNKNOWN"
+  },
+  "output_paths": {
+    "decision_inbox_path": ".cache/index/decision_inbox.v1.json",
+    "decision_inbox_md_path": ".cache/reports/decision_inbox.v1.md",
+    "decisions_applied_path": ".cache/index/decisions_applied.v1.jsonl",
+    "selection_path": ".cache/index/work_intake_selection.v1.json",
+    "policy_overrides_dir": ".cache/policy_overrides"
+  },
+  "fail_action": "warn"
+}

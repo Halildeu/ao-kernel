@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/integrity-snapshot.schema.v1.json",
+  "title": "Integrity Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "input_hashes",
+    "pointer_store_head",
+    "verify_on_read_result",
+    "mismatch_count",
+    "mismatches"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "input_hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system_status",
+        "pack_index",
+        "quality_gate",
+        "repo_hygiene",
+        "harvest",
+        "script_budget"
+      ],
+      "properties": {
+        "system_status": { "type": ["string", "null"] },
+        "pack_index": { "type": ["string", "null"] },
+        "quality_gate": { "type": ["string", "null"] },
+        "repo_hygiene": { "type": ["string", "null"] },
+        "harvest": { "type": ["string", "null"] },
+        "script_budget": { "type": ["string", "null"] }
+      }
+    },
+    "excluded_inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "pointer_store_head": { "type": ["string", "null"] },
+    "verify_on_read_result": { "type": "string", "enum": ["PASS", "WARN", "FAIL"] },
+    "mismatch_count": { "type": "integer", "minimum": 0 },
+    "mismatches": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

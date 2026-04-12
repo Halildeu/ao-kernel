@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/smoke-root-cause-report.schema.v1.json",
+  "title": "Smoke Root Cause Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "taxonomy_version",
+    "generated_at",
+    "status",
+    "level",
+    "root_error_code",
+    "root_error_category",
+    "root_error_severity",
+    "root_error_retryable",
+    "root_error_summary",
+    "root_error_ci_action",
+    "classification_source",
+    "failed_step_id",
+    "failed_cmd",
+    "failed_error_code",
+    "failed_stderr_preview",
+    "report_path"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "taxonomy_version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["OK", "FAIL"]
+    },
+    "level": {
+      "type": "string",
+      "enum": ["fast", "full"]
+    },
+    "root_error_code": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "SCRIPT_BUDGET",
+        "READONLY_CMD_NOT_ALLOWED",
+        "READONLY_MODE_VIOLATION",
+        "CORE_IMMUTABLE_WRITE_BLOCKED",
+        "WORKSPACE_ROOT_VIOLATION",
+        "SANITIZE_VIOLATION",
+        "CONTENT_MISMATCH",
+        "CMD_FAILED",
+        "SMOKE_ASSERTION_FAILED",
+        "UNKNOWN"
+      ]
+    },
+    "root_error_category": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "MAINTAINABILITY",
+        "SAFETY_GUARDRAIL",
+        "CORE_LOCK",
+        "BOUNDARY",
+        "SECURITY",
+        "IDEMPOTENCY",
+        "ROADMAP_GATE",
+        "SMOKE_ASSERTION",
+        "UNKNOWN"
+      ]
+    },
+    "root_error_severity": {
+      "type": "string",
+      "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "root_error_retryable": {
+      "type": "boolean"
+    },
+    "root_error_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "root_error_ci_action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classification_source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "failed_step_id": {
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
+    "failed_cmd": {
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
+    "failed_error_code": {
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
+    "failed_stderr_preview": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "null" }
+      ]
+    },
+    "report_path": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

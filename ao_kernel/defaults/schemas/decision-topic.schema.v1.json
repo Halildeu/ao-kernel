@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:decision-topic:v1",
+  "title": "Decision Topic",
+  "description": "Canonical record of architectural decisions for a specific topic. Prevents cross-session drift by providing a single source of truth that all AI agents and sessions must follow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "topic_id", "title", "status", "revision", "decided_at", "decisions"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "topic_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,48}$",
+      "description": "Kebab-case unique topic identifier."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "SUPERSEDED", "ARCHIVED"],
+      "description": "ACTIVE = follow these decisions. SUPERSEDED = replaced by another topic. ARCHIVED = no longer relevant."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonically increasing revision number. Every change increments this."
+    },
+    "decided_at": { "type": "string", "format": "date-time" },
+    "decided_by": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Who made/confirmed these decisions (user, claude, codex, etc.)."
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/decision" },
+      "description": "Ordered list of decisions. Each has a clear statement and rationale."
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Active constraints that all agents must respect."
+    },
+    "rejected_alternatives": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/rejected_alternative" },
+      "description": "Approaches that were tried and rejected. Prevents repeating mistakes."
+    },
+    "related_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Repo-relative paths affected by these decisions."
+    },
+    "cross_repo_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "References to other repos affected (e.g. 'dev-repo: src/services/')."
+    },
+    "supersedes": { "type": ["string", "null"], "description": "Topic ID this replaces." },
+    "superseded_by": { "type": ["string", "null"], "description": "Topic ID that replaces this." },
+    "change_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision", "date", "change"],
+        "properties": {
+          "revision": { "type": "integer" },
+          "date": { "type": "string" },
+          "change": { "type": "string" },
+          "reverted": { "type": "boolean", "description": "True if this revision reverted a previous decision." }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_id", "statement", "status"],
+      "properties": {
+        "decision_id": { "type": "string", "pattern": "^D-[0-9]{3}$" },
+        "statement": { "type": "string", "minLength": 1, "description": "Clear, unambiguous decision statement." },
+        "rationale": { "type": "string", "description": "Why this decision was made." },
+        "status": {
+          "type": "string",
+          "enum": ["FINAL", "TENTATIVE", "REVERTED"],
+          "description": "FINAL = locked, TENTATIVE = may change, REVERTED = was decided then undone."
+        },
+        "revert_reason": { "type": "string", "description": "Why this decision was reverted (if status=REVERTED)." }
+      }
+    },
+    "rejected_alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alternative", "reason"],
+      "properties": {
+        "alternative": { "type": "string" },
+        "reason": { "type": "string" },
+        "tried_count": { "type": "integer", "description": "How many times this was attempted before rejecting." }
+      }
+    }
+  }
+}

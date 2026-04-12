@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/decision-inbox.schema.v1.json",
+  "title": "Decision Inbox",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "items",
+    "counts",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "by_kind"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_kind": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ROUTE_OVERRIDE": { "type": "integer", "minimum": 0 },
+            "AUTO_APPLY_ALLOW": { "type": "integer", "minimum": 0 },
+            "NETWORK_ENABLE": { "type": "integer", "minimum": 0 },
+            "NETWORK_LIVE_ENABLE": { "type": "integer", "minimum": 0 },
+            "SCOPE_CONFIRM": { "type": "integer", "minimum": 0 },
+            "UNKNOWN": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "decision_kind": {
+      "type": "string",
+      "enum": ["ROUTE_OVERRIDE", "AUTO_APPLY_ALLOW", "NETWORK_ENABLE", "NETWORK_LIVE_ENABLE", "SCOPE_CONFIRM", "UNKNOWN"]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "source_intake_id",
+        "bucket",
+        "decision_kind",
+        "question",
+        "options",
+        "default_option_id",
+        "why_blocked",
+        "evidence_paths",
+        "expires_at"
+      ],
+      "properties": {
+        "decision_id": { "type": "string", "minLength": 1 },
+        "source_intake_id": { "type": "string", "minLength": 1 },
+        "bucket": { "type": "string", "minLength": 1 },
+        "decision_kind": { "$ref": "#/$defs/decision_kind" },
+        "question": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/option" }
+        },
+        "default_option_id": { "type": "string", "minLength": 1 },
+        "why_blocked": { "type": "string", "minLength": 1 },
+        "evidence_paths": { "type": "array", "items": { "type": "string" } },
+        "expires_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["option_id", "title", "changes_ref"],
+      "properties": {
+        "option_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "changes_ref": { "type": "string" }
+      }
+    }
+  }
+}

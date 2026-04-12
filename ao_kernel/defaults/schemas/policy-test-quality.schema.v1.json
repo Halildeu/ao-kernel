@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:test-quality-rules:v1",
+  "title": "Test Quality Rules Schema",
+  "description": "Defines canonical test quality rules for fake test detection and prevention. Each rule describes a detectable anti-pattern in component/unit test files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "kind", "status", "enforcement_mode", "fail_action", "rules", "thresholds"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "$schema": {
+      "type": "string",
+      "description": "Schema reference path."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["policy-test-quality"],
+      "description": "Policy kind identifier."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "DRAFT", "DEPRECATED"],
+      "description": "Policy lifecycle status."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Owning team or domain."
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": ["blocking", "warning", "advisory"],
+      "description": "How violations are enforced in CI."
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["block", "warn", "log"],
+      "description": "Action taken on policy violation."
+    },
+    "ci_lane": {
+      "type": "string",
+      "description": "Which CI lane runs this check."
+    },
+    "dry_run_support": {
+      "type": "boolean",
+      "description": "Whether the policy supports report_only mode."
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Test quality rule definitions.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "name", "description", "severity", "detection_method", "languages", "pattern_indicators", "remediation"],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "pattern": "^TQ-[0-9]{3}$",
+            "description": "Unique rule ID. Format: TQ-NNN."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Short machine-friendly rule name."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable description of the anti-pattern."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+            "description": "Rule severity level."
+          },
+          "detection_method": {
+            "type": "string",
+            "enum": ["semgrep_pattern", "semgrep_regex", "ast_analysis", "heuristic_metric", "structural_similarity", "custom"],
+            "description": "Primary detection mechanism. semgrep_pattern = parser-backed; semgrep_regex = literal regex; ast_analysis = AST traversal; heuristic_metric = computed score; structural_similarity = hash/fingerprint; custom = extension point."
+          },
+          "languages": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Target languages (e.g., typescript, javascript, python)."
+          },
+          "pattern_indicators": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Signals that indicate this anti-pattern.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["indicator_type", "description"],
+              "properties": {
+                "indicator_type": {
+                  "type": "string",
+                  "enum": ["regex_match", "import_absence", "assertion_weakness", "structural_duplication", "marker_presence", "mock_ratio", "interaction_absence"],
+                  "description": "Kind of signal."
+                },
+                "pattern": {
+                  "type": "string",
+                  "description": "Regex or descriptor for the signal."
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "What this indicator detects."
+                }
+              }
+            }
+          },
+          "remediation": {
+            "type": "string",
+            "minLength": 1,
+            "description": "How to fix the anti-pattern."
+          },
+          "semgrep_rule_id": {
+            "type": "string",
+            "description": "Linked semgrep enforcement rule ID (e.g., EP-006)."
+          },
+          "examples": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "positive_match": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Code snippets that SHOULD trigger this rule."
+              },
+              "negative_match": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Code snippets that should NOT trigger."
+              }
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Links to documentation or decisions."
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_shallow_render_ratio", "min_assertion_density", "max_duplication_ratio"],
+      "description": "Aggregate quality thresholds for the test suite.",
+      "properties": {
+        "max_shallow_render_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Maximum fraction of tests that are shallow-render-only."
+        },
+        "min_assertion_density": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum average meaningful assertions per test case."
+        },
+        "max_duplication_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Maximum fraction of tests with duplicate normalized body hash."
+        }
+      }
+    }
+  }
+}

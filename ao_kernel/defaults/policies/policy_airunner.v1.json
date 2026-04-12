@@ -1,0 +1,55 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "max_runtime_seconds_per_day": 3600,
+  "lock_ttl_seconds": 900,
+  "heartbeat_interval_seconds": 300,
+  "schedule": {
+    "mode": "interval",
+    "interval_seconds": 900,
+    "jitter_seconds": 0,
+    "outside_hours_mode": "poll_only",
+    "active_hours": {
+      "enabled": false,
+      "tz": "Europe/Istanbul",
+      "start": "09:00",
+      "end": "19:00"
+    },
+    "weekday_only": false
+  },
+  "watchdog": {
+    "enabled": true,
+    "heartbeat_stale_seconds": 1200,
+    "action": "CLEAR_STALE_LOCK_THEN_POLL_ONLY",
+    "max_recoveries_per_day": 3
+  },
+  "job_policy": {
+    "max_running_jobs": 1,
+    "poll_interval_seconds": 60,
+    "closeout_ttl_days": 0,
+    "keep_last_n": 50
+  },
+  "limits": {
+    "max_ticks_per_run": 1,
+    "max_actions_per_tick": 1,
+    "max_plans_per_tick": 1,
+    "tick_budget_seconds": 60
+  },
+  "single_gate": {
+    "allowed_ops": [
+      "github-ops-check",
+      "github-ops-job-poll",
+      "github-ops-job-start",
+      "deploy-job-poll",
+      "deploy-job-start",
+      "portfolio-status",
+      "system-status",
+      "work-intake-check",
+      "work-intake-autoselect",
+      "work-intake-exec-ticket"
+    ],
+    "require_strict_isolation": true
+  },
+  "notes": [],
+  "fail_action": "warn"
+}

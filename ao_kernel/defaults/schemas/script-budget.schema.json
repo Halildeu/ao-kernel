@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "script-budget.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "python_file_limits",
+    "grandfathered_files",
+    "file_line_limits",
+    "function_line_limits",
+    "function_scan_paths"
+  ],
+  "properties": {
+    "version": { "const": "v1" },
+    "python_file_limits": { "$ref": "#/$defs/python_file_limits" },
+    "grandfathered_files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/grandfathered_file" }
+    },
+    "file_line_limits": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/file_line_limit" }
+    },
+    "function_line_limits": { "$ref": "#/$defs/function_line_limits" },
+    "function_scan_paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "python_file_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soft_lines", "hard_lines"],
+      "properties": {
+        "soft_lines": { "type": "integer", "minimum": 0 },
+        "hard_lines": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "grandfathered_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "current_lines", "max_allowed_lines"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "mode": { "type": "string", "enum": ["baseline_ref", "no_growth_only"] },
+        "current_lines": { "type": "integer", "minimum": 0 },
+        "max_allowed_lines": { "type": "integer", "minimum": 0 },
+        "expires_on": { "type": ["string", "null"], "minLength": 1 },
+        "target_soft": { "type": ["integer", "null"], "minimum": 0 },
+        "target_hard": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "file_line_limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "soft", "hard"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "soft": { "type": "integer", "minimum": 0 },
+        "hard": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "function_line_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soft", "hard"],
+      "properties": {
+        "soft": { "type": "integer", "minimum": 0 },
+        "hard": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,439 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-north-star-operability.schema.v1.json",
+  "title": "Policy North Star Operability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "thresholds",
+    "signals",
+    "classification",
+    "gap_rules"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "heartbeat_expectation_mode": {
+      "type": "string",
+      "enum": [
+        "ALWAYS",
+        "ACTIVE_HOURS",
+        "NONE"
+      ]
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hard_exceeded_must_be",
+        "soft_target",
+        "soft_warn",
+        "placeholders_warn",
+        "placeholders_fail",
+        "docs_ops_md_count_warn",
+        "docs_ops_md_count_fail",
+        "docs_ops_md_bytes_warn",
+        "docs_ops_md_bytes_fail",
+        "repo_md_total_count_warn",
+        "repo_md_total_count_fail",
+        "docs_unmapped_md_warn",
+        "docs_unmapped_md_fail",
+        "jobs_stuck_warn",
+        "jobs_stuck_fail",
+        "jobs_fail_warn",
+        "jobs_fail_fail",
+        "pdca_cursor_stale_hours_warn",
+        "pdca_cursor_stale_hours_fail",
+        "heartbeat_stale_seconds_warn",
+        "heartbeat_stale_seconds_fail",
+        "intake_new_items_per_day_warn",
+        "intake_new_items_per_day_fail",
+        "suppressed_per_day_warn"
+      ],
+      "properties": {
+        "hard_exceeded_must_be": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "soft_target": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "soft_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "placeholders_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "placeholders_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_ops_md_count_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_ops_md_count_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_ops_md_bytes_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_ops_md_bytes_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repo_md_total_count_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repo_md_total_count_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_unmapped_md_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "docs_unmapped_md_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "jobs_stuck_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "jobs_stuck_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "jobs_fail_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "jobs_fail_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pdca_cursor_stale_hours_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pdca_cursor_stale_hours_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "heartbeat_stale_seconds_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "heartbeat_stale_seconds_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "intake_new_items_per_day_warn": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "intake_new_items_per_day_fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "suppressed_per_day_warn": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "script_budget",
+        "doc_nav_placeholders",
+        "docs_hygiene",
+        "docs_drift",
+        "airunner_jobs",
+        "pdca_cursor",
+        "airunner_heartbeat",
+        "work_intake_noise",
+        "integrity_pass_required"
+      ],
+      "properties": {
+        "script_budget": {
+          "type": "boolean"
+        },
+        "doc_nav_placeholders": {
+          "type": "boolean"
+        },
+        "docs_hygiene": {
+          "type": "boolean"
+        },
+        "docs_drift": {
+          "type": "boolean"
+        },
+        "airunner_jobs": {
+          "type": "boolean"
+        },
+        "pdca_cursor": {
+          "type": "boolean"
+        },
+        "airunner_heartbeat": {
+          "type": "boolean"
+        },
+        "work_intake_noise": {
+          "type": "boolean"
+        },
+        "integrity_pass_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "docs_drift_mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include_extension_manifest_refs",
+        "view_doc_allowlist_globs",
+        "exclude_legacy_redirect_stubs",
+        "exclude_archive_only_banners",
+        "root_readme_mode",
+        "root_changelog_mode"
+      ],
+      "properties": {
+        "include_extension_manifest_refs": {
+          "type": "boolean"
+        },
+        "view_doc_allowlist_globs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "exclude_legacy_redirect_stubs": {
+          "type": "boolean"
+        },
+        "exclude_archive_only_banners": {
+          "type": "boolean"
+        },
+        "root_readme_mode": {
+          "type": "string",
+          "enum": [
+            "mapped",
+            "unmapped"
+          ]
+        },
+        "root_changelog_mode": {
+          "type": "string",
+          "enum": [
+            "mapped",
+            "unmapped"
+          ]
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "FAIL_if",
+        "WARN_if"
+      ],
+      "properties": {
+        "FAIL_if": {
+          "$ref": "#/$defs/classification_rules"
+        },
+        "WARN_if": {
+          "$ref": "#/$defs/classification_rules"
+        }
+      }
+    },
+    "gap_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hard_exceeded_gt",
+        "integrity_fail",
+        "soft_exceeded_gt",
+        "jobs_stuck_gt",
+        "jobs_fail_gt",
+        "pdca_cursor_stale_hours_gt",
+        "heartbeat_stale_seconds_gt",
+        "placeholders_gt",
+        "docs_ops_md_count_gt",
+        "docs_ops_md_bytes_gt",
+        "repo_md_total_count_gt",
+        "docs_unmapped_md_gt_warn",
+        "docs_unmapped_md_gt_fail",
+        "intake_new_items_per_day_gt",
+        "suppressed_per_day_gt"
+      ],
+      "properties": {
+        "hard_exceeded_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "integrity_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "soft_exceeded_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "jobs_stuck_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "jobs_fail_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pdca_cursor_stale_hours_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "heartbeat_stale_seconds_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "placeholders_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docs_ops_md_count_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docs_ops_md_bytes_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo_md_total_count_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docs_unmapped_md_gt_warn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docs_unmapped_md_gt_fail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intake_new_items_per_day_gt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suppressed_per_day_gt": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "classification_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hard_exceeded_gt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "soft_exceeded_gt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "integrity_fail": {
+          "type": "boolean"
+        },
+        "jobs_stuck_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "jobs_fail_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "pdca_cursor_stale_hours_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "heartbeat_stale_seconds_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "placeholders_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "docs_ops_md_count_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "docs_ops_md_bytes_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "repo_md_total_count_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "docs_unmapped_md_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "intake_new_items_per_day_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "suppressed_per_day_gt": {
+          "type": [
+            "string",
+            "integer"
+          ]
+        }
+      }
+    }
+  }
+}

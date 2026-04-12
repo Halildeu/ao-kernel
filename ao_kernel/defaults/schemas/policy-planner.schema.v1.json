@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-planner.schema.v1.json",
+  "title": "Planner Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "limits",
+    "selection",
+    "simplicity_guard",
+    "inputs"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_steps",
+        "max_plan_bytes",
+        "max_chg_drafts",
+        "max_selected_items",
+        "max_reason_lines"
+      ],
+      "properties": {
+        "max_steps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_plan_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_chg_drafts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_selected_items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_reason_lines": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prefer_operability_fail_warn",
+        "prefer_selected_autopilot",
+        "prefer_suggested_extension",
+        "fallback_use_work_intake"
+      ],
+      "properties": {
+        "prefer_operability_fail_warn": {
+          "type": "boolean"
+        },
+        "prefer_selected_autopilot": {
+          "type": "boolean"
+        },
+        "prefer_suggested_extension": {
+          "type": "boolean"
+        },
+        "fallback_use_work_intake": {
+          "type": "boolean"
+        }
+      }
+    },
+    "simplicity_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_modular_steps",
+        "disallow_unbounded_lists",
+        "prefer_existing_ops"
+      ],
+      "properties": {
+        "require_modular_steps": {
+          "type": "boolean"
+        },
+        "disallow_unbounded_lists": {
+          "type": "boolean"
+        },
+        "prefer_existing_ops": {
+          "type": "boolean"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

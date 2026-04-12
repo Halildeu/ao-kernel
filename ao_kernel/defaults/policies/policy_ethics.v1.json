@@ -1,0 +1,5 @@
+{
+  "version": "v1",
+  "note": "Minimal placeholder policy. Extend with domain-specific rules.",
+  "fail_action": "block"
+}

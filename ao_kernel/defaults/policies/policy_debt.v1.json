@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "mode": "draft_only",
+  "max_items": 3,
+  "outdir": ".cache/debt_chg",
+  "max_auto_apply_per_finish": 1,
+  "safe_action_kinds": [
+    "DOC_NOTE",
+    "TEMPLATE_ADD",
+    "ADD_IGNORE"
+  ],
+  "require_sanitize_pass": true,
+  "recheck_system_status": true,
+  "on_apply_fail": "warn",
+  "fail_action": "warn"
+}

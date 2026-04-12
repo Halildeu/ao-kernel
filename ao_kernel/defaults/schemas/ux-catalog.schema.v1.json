@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/ux-catalog.schema.v1.json",
+  "title": "UX Catalog Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "subject_id",
+    "subject_title",
+    "source",
+    "sections",
+    "references"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject_title": {
+      "$ref": "#/$defs/bilingual_title"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_mode",
+        "mechanisms_registry_path",
+        "north_star_catalog_path"
+      ],
+      "properties": {
+        "reference_mode": {
+          "type": "string",
+          "enum": [
+            "north_star_reference"
+          ]
+        },
+        "mechanisms_registry_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "north_star_catalog_path": {
+          "type": "string"
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pack_ids",
+        "controls_count",
+        "metrics_count"
+      ],
+      "properties": {
+        "pack_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "controls_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "metrics_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "$defs": {
+    "bilingual_title": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tr",
+        "en"
+      ],
+      "properties": {
+        "tr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "section_id",
+        "title",
+        "item_count",
+        "subsections"
+      ],
+      "properties": {
+        "section_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "$ref": "#/$defs/bilingual_title"
+        },
+        "item_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "subsections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/subsection"
+          }
+        }
+      }
+    },
+    "subsection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subsection_id",
+        "title"
+      ],
+      "properties": {
+        "subsection_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "$ref": "#/$defs/bilingual_title"
+        }
+      }
+    }
+  }
+}

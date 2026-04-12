@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "roadmap-state.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "roadmap_path",
+    "workspace_root",
+    "completed_milestones",
+    "current_milestone",
+    "attempts",
+    "last_result",
+    "quarantine",
+    "backoff"
+  ],
+  "properties": {
+    "version": { "type": "string", "pattern": "^v[0-9]+$" },
+    "roadmap_path": { "type": "string", "minLength": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "roadmap_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "last_roadmap_sha256": { "anyOf": [{ "type": "string", "pattern": "^[a-f0-9]{64}$" }, { "type": "null" }] },
+    "drift_detected": { "type": "boolean", "default": false },
+    "completed_milestones_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Z0-9][A-Z0-9_.-]{0,63}$": { "$ref": "#/$defs/completed_milestone_meta" }
+      },
+      "default": {}
+    },
+    "bootstrapped": { "type": "boolean", "default": false },
+    "paused": { "type": "boolean", "default": false },
+    "paused_at": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "pause_reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "current_step_id": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "last_completed_step_id": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "last_gate_ok": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+    "completed_milestones": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/milestone_id" },
+      "default": []
+    },
+    "current_milestone": { "anyOf": [{ "$ref": "#/$defs/milestone_id" }, { "type": "null" }] },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Z0-9][A-Z0-9_.-]{0,63}$": { "type": "integer", "minimum": 0 }
+      },
+      "default": {}
+    },
+    "last_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "milestone", "evidence_path", "error_code"],
+      "properties": {
+        "status": { "type": "string", "enum": ["OK", "FAIL"] },
+        "milestone": { "anyOf": [{ "$ref": "#/$defs/milestone_id" }, { "type": "null" }] },
+        "evidence_path": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "error_code": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    },
+    "quarantine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["milestone", "until", "reason"],
+      "properties": {
+        "milestone": { "anyOf": [{ "$ref": "#/$defs/milestone_id" }, { "type": "null" }] },
+        "until": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    },
+    "backoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seconds", "next_try_at"],
+      "properties": {
+        "seconds": { "type": "integer", "minimum": 0 },
+        "next_try_at": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    }
+  },
+  "$defs": {
+    "milestone_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z0-9][A-Z0-9_.-]{0,63}$"
+    },
+    "completed_milestone_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roadmap_sha256_at_completion", "completed_at"],
+      "properties": {
+        "roadmap_sha256_at_completion": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "completed_at": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

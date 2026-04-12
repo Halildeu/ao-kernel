@@ -1,0 +1,404 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-context-pack-router.schema.v1.json",
+  "title": "policy-context-pack-router",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "routing",
+    "context_pack"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buckets",
+        "default_bucket",
+        "incident_rules",
+        "ticket_rules",
+        "project_rules",
+        "roadmap_rules"
+      ],
+      "properties": {
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "INCIDENT",
+              "TICKET",
+              "PROJECT",
+              "ROADMAP"
+            ]
+          }
+        },
+        "default_bucket": {
+          "type": "string",
+          "enum": [
+            "INCIDENT",
+            "TICKET",
+            "PROJECT",
+            "ROADMAP"
+          ]
+        },
+        "rule_engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "engine",
+            "legacy_compat"
+          ],
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": [
+                "legacy_expr",
+                "mini_dsl",
+                "cel_adapter",
+                "cel_like"
+              ]
+            },
+            "legacy_compat": {
+              "type": "boolean"
+            },
+            "legacy_compat_deprecation": {
+              "$ref": "#/$defs/legacy_compat_deprecation"
+            }
+          }
+        },
+        "incident_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        },
+        "ticket_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        },
+        "project_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        },
+        "roadmap_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        }
+      }
+    },
+    "context_pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_bytes_preview",
+        "pointer_only",
+        "include_sections",
+        "redaction"
+      ],
+      "properties": {
+        "max_bytes_preview": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pointer_only": {
+          "type": "boolean"
+        },
+        "include_sections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "define",
+              "measure_raw",
+              "integrity",
+              "eval",
+              "gap",
+              "pdca",
+              "guardrails",
+              "routing"
+            ]
+          }
+        },
+        "redaction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "deny_patterns",
+            "max_preview_chars"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "deny_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "max_preview_chars": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "deprecation_milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release",
+        "action"
+      ],
+      "properties": {
+        "release": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "remove"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "legacy_compat_deprecation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "current_phase",
+        "timeline"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "current_phase": {
+          "type": "string",
+          "enum": [
+            "none",
+            "warn",
+            "remove"
+          ]
+        },
+        "default_message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeline": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/deprecation_milestone"
+          }
+        }
+      }
+    },
+    "var_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "var"
+      ],
+      "properties": {
+        "var": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "operand": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        {
+          "$ref": "#/$defs/var_ref"
+        }
+      ]
+    },
+    "dsl_expr": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "items"
+          ],
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "and",
+                "or"
+              ]
+            },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/dsl_expr"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "item"
+          ],
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "not"
+              ]
+            },
+            "item": {
+              "$ref": "#/$defs/dsl_expr"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "exists",
+                "truthy"
+              ]
+            },
+            "value": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": [
+                "eq",
+                "gt",
+                "in",
+                "starts_with"
+              ]
+            },
+            "left": {
+              "$ref": "#/$defs/operand"
+            },
+            "right": {
+              "$ref": "#/$defs/operand"
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "then"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "if": {
+          "type": "string",
+          "minLength": 1
+        },
+        "when": {
+          "$ref": "#/$defs/dsl_expr"
+        },
+        "then": {
+          "type": "string",
+          "enum": [
+            "INCIDENT",
+            "TICKET",
+            "PROJECT",
+            "ROADMAP"
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "if"
+          ]
+        },
+        {
+          "required": [
+            "when"
+          ]
+        }
+      ]
+    }
+  }
+}

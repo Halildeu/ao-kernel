@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ao-kernel"
+version = "0.1.0"
+description = "Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    {name = "Halil Kocoglu"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+]
+dependencies = ["jsonschema>=4.23.0"]
+
+[project.optional-dependencies]
+llm = [
+    "tenacity>=9.0.0",
+    "tiktoken>=0.9.0",
+]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+    "build",
+]
+otel = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+]
+pgvector = [
+    "pgvector",
+    "psycopg2-binary",
+]
+
+[project.scripts]
+ao-kernel = "ao_kernel.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ao_kernel", "ao_kernel.*", "src", "src.*"]
+exclude = [
+    "*_test",
+    "*_test.*",
+    "*_contract_test",
+    "*_contract_test.*",
+    "*.tests",
+    "*.tests.*",
+]
+
+[tool.setuptools.package-data]
+"ao_kernel.defaults" = ["**/*.json"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

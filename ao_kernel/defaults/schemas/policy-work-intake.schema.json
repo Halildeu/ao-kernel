@@ -1,0 +1,743 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-work-intake.schema.json",
+  "title": "policy-work-intake",
+  "anyOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "enabled",
+        "plan_policy",
+        "buckets",
+        "severity_levels",
+        "classification",
+        "severity_map"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "v1"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "plan_policy": {
+          "type": "string",
+          "enum": [
+            "optional",
+            "required"
+          ]
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bucket"
+          }
+        },
+        "severity_levels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/severity"
+          }
+        },
+        "sla_hints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "S0",
+            "S1",
+            "S2",
+            "S3",
+            "S4"
+          ],
+          "properties": {
+            "S0": {
+              "type": "string"
+            },
+            "S1": {
+              "type": "string"
+            },
+            "S2": {
+              "type": "string"
+            },
+            "S3": {
+              "type": "string"
+            },
+            "S4": {
+              "type": "string"
+            }
+          }
+        },
+        "classification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "incident_keywords",
+            "roadmap_keywords",
+            "coverage_suffixes",
+            "regression_bucket",
+            "default_bucket"
+          ],
+          "properties": {
+            "incident_keywords": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "roadmap_keywords": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "coverage_suffixes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "regression_bucket": {
+              "$ref": "#/$defs/bucket"
+            },
+            "default_bucket": {
+              "$ref": "#/$defs/bucket"
+            }
+          }
+        },
+        "severity_map": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "high",
+            "medium",
+            "low",
+            "unknown"
+          ],
+          "properties": {
+            "high": {
+              "$ref": "#/$defs/severity"
+            },
+            "medium": {
+              "$ref": "#/$defs/severity"
+            },
+            "low": {
+              "$ref": "#/$defs/severity"
+            },
+            "unknown": {
+              "$ref": "#/$defs/severity"
+            }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fail_action": {
+          "type": "string",
+          "enum": [
+            "block",
+            "warn",
+            "log"
+          ],
+          "description": "Action when policy check fails."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "enabled",
+        "plan_policy",
+        "bucket_order",
+        "bucket_rules",
+        "default_rule",
+        "dedupe"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "v2"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "plan_policy": {
+          "type": "string",
+          "enum": [
+            "optional",
+            "required"
+          ]
+        },
+        "auto_remediation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "seed_tag": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "bucket_order": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bucket"
+          },
+          "minItems": 4
+        },
+        "bucket_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          },
+          "minItems": 1
+        },
+        "default_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bucket",
+            "severity",
+            "priority"
+          ],
+          "properties": {
+            "bucket": {
+              "$ref": "#/$defs/bucket"
+            },
+            "severity": {
+              "$ref": "#/$defs/severity"
+            },
+            "priority": {
+              "$ref": "#/$defs/priority"
+            }
+          }
+        },
+        "dedupe": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "strategy",
+            "template"
+          ],
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "stable_sha256"
+              ]
+            },
+            "template": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "sla_hints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "INCIDENT",
+            "TICKET",
+            "PROJECT",
+            "ROADMAP"
+          ],
+          "properties": {
+            "INCIDENT": {
+              "type": "string"
+            },
+            "TICKET": {
+              "type": "string"
+            },
+            "PROJECT": {
+              "type": "string"
+            },
+            "ROADMAP": {
+              "type": "string"
+            }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fail_action": {
+          "type": "string",
+          "enum": [
+            "block",
+            "warn",
+            "log"
+          ],
+          "description": "Action when policy check fails."
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "bucket": {
+      "type": "string",
+      "enum": [
+        "ROADMAP",
+        "PROJECT",
+        "TICKET",
+        "INCIDENT"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "S0",
+        "S1",
+        "S2",
+        "S3",
+        "S4"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ]
+    },
+    "effort_band": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "xs",
+        "s",
+        "m",
+        "l"
+      ]
+    },
+    "risk_band": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "integrity_status": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "WARN",
+        "FAIL"
+      ]
+    },
+    "manual_request_kind": {
+      "type": "string",
+      "enum": [
+        "context-router",
+        "doc-fix",
+        "doc-link-fix",
+        "doc-metadata",
+        "note",
+        "support",
+        "question",
+        "minor_fix",
+        "feature",
+        "refactor",
+        "new_project",
+        "strategy",
+        "multi-quarter",
+        "unspecified"
+      ]
+    },
+    "manual_request_impact_scope": {
+      "type": "string",
+      "enum": [
+        "doc-only",
+        "workspace-only",
+        "core-change",
+        "external-change"
+      ]
+    },
+    "release_signal": {
+      "type": "string",
+      "enum": [
+        "plan_present",
+        "manifest_present",
+        "dirty_tree",
+        "unpushed_commits",
+        "publish_blocked",
+        "status_warn",
+        "status_fail"
+      ]
+    },
+    "release_channel": {
+      "type": "string",
+      "enum": [
+        "rc",
+        "final"
+      ]
+    },
+    "release_status": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "WARN",
+        "IDLE",
+        "FAIL"
+      ]
+    },
+    "github_ops_signal": {
+      "type": "string",
+      "enum": [
+        "dirty_tree",
+        "behind_remote",
+        "index_lock",
+        "live_gate_disabled"
+      ]
+    },
+    "job_status": {
+      "type": "string",
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "PASS",
+        "FAIL",
+        "TIMEOUT",
+        "KILLED",
+        "SKIP",
+        "DONE"
+      ]
+    },
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "SMOKE_FULL",
+        "RELEASE_PREPARE",
+        "RELEASE_PUBLISH",
+        "GITHUB_CHECKS_POLL",
+        "GITHUB_MERGE_POLL"
+      ]
+    },
+    "job_failure_class": {
+      "type": "string",
+      "enum": [
+        "DEMO_PREREQ_FAIL",
+        "DEMO_PREREQ_APPLY_FAIL",
+        "DEMO_ADVISOR_SUGGESTIONS_MISSING",
+        "DEMO_CATALOG_MISSING",
+        "DEMO_CATALOG_PARSE",
+        "DEMO_PUBLIC_CANDIDATES_POINTER_MISSING",
+        "DEMO_QUALITY_GATE_REPORT_MISSING",
+        "DEMO_SESSION_CONTEXT_HASH_MISMATCH",
+        "DEMO_SESSION_CONTEXT_MISSING",
+        "CORE_BREAK",
+        "POLICY_TIME_LIMIT",
+        "OTHER",
+        "TIMEOUT",
+        "PASS"
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_type",
+        "bucket",
+        "severity",
+        "priority"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "GAP",
+            "LENS_GAP",
+            "PDCA_REGRESSION",
+            "SCRIPT_BUDGET",
+            "DOC_NAV",
+            "USER_REQUEST",
+            "ROADMAP_ITEM",
+            "INTEGRITY",
+            "MANUAL_REQUEST",
+            "RELEASE",
+            "JOB_STATUS",
+            "TIME_SINK",
+            "GITHUB_OPS",
+            "DEPLOY_JOB"
+          ]
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "critical_nav_gaps_gt": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "broken_refs_gt": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "regression_severity_gte": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "budget_status_in": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "effort_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/effort_band"
+              }
+            },
+            "effort_gte": {
+              "$ref": "#/$defs/effort_band"
+            },
+            "risk_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/risk_band"
+              }
+            },
+            "risk_gte": {
+              "$ref": "#/$defs/risk_band"
+            },
+            "severity_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/severity"
+              }
+            },
+            "severity_gte": {
+              "$ref": "#/$defs/severity"
+            },
+            "hard_exceeded_gt": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hard_exceeded_eq": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "soft_only": {
+              "type": "boolean"
+            },
+            "path_prefix_in": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "integrity_status_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/integrity_status"
+              }
+            },
+            "manual_request_kind_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/manual_request_kind"
+              }
+            },
+            "manual_request_kind_eq": {
+              "$ref": "#/$defs/manual_request_kind"
+            },
+            "manual_request_impact_scope_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/manual_request_impact_scope"
+              }
+            },
+            "manual_request_requires_core_change": {
+              "type": "boolean"
+            },
+            "release_signal_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/release_signal"
+              }
+            },
+            "release_channel_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/release_channel"
+              }
+            },
+            "release_status_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/release_status"
+              }
+            },
+            "release_dirty_tree_eq": {
+              "type": "boolean"
+            },
+            "release_unpushed_commits_gt": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "release_publish_blocked_eq": {
+              "type": "boolean"
+            },
+            "release_plan_present_eq": {
+              "type": "boolean"
+            },
+            "github_ops_signal_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/github_ops_signal"
+              }
+            },
+            "github_ops_job_status_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/job_status"
+              }
+            },
+            "github_ops_job_failure_class_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/job_failure_class"
+              }
+            },
+            "github_ops_job_skip_reason_in": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "job_status_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/job_status"
+              }
+            },
+            "job_type_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/job_type"
+              }
+            },
+            "job_failure_class_in": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/job_failure_class"
+              }
+            },
+            "job_skip_reason_in": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "time_sink_escalate_eq": {
+              "type": "boolean"
+            },
+            "time_sink_breach_count_gte": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "time_sink_over_threshold_eq": {
+              "type": "boolean"
+            },
+            "time_sink_p95_ms_gte": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "lens_id_in": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "lens_reason_in": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "bucket": {
+          "$ref": "#/$defs/bucket"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "priority": {
+          "$ref": "#/$defs/priority"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "suggested_extension": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auto_close": {
+          "type": "boolean"
+        },
+        "closed_reason": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "properties": {
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

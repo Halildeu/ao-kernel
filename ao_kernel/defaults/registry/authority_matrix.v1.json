@@ -1,0 +1,331 @@
+{
+  "version": "v1",
+  "kind": "authority-matrix",
+  "project_id": "PRJ-MULTI-AI-CODING-OS",
+  "status": "INITIAL_POPULATION",
+  "precedence_order": [
+    "canonical",
+    "execution_mirror",
+    "current_delivery",
+    "transition_active",
+    "archive_reference",
+    "workspace_derived"
+  ],
+  "layers": [
+    {
+      "layer_id": "canonical",
+      "conflict_precedence": 1,
+      "allowed_write_mode": "governed",
+      "notes": [
+        "Normatif kaynaklar",
+        "Conflict aninda her zaman kazanir"
+      ]
+    },
+    {
+      "layer_id": "execution_mirror",
+      "conflict_precedence": 2,
+      "allowed_write_mode": "delivery_mirror",
+      "notes": [
+        "Execution tercihleri ve tenant kararlari icin gecici ama current mirror katmani",
+        "Canonical ile celisemez"
+      ]
+    },
+    {
+      "layer_id": "current_delivery",
+      "conflict_precedence": 3,
+      "allowed_write_mode": "delivery",
+      "notes": [
+        "Guncel delivery gercegi",
+        "Governance authority degil, execution context"
+      ]
+    },
+    {
+      "layer_id": "transition_active",
+      "conflict_precedence": 4,
+      "allowed_write_mode": "redirect_only",
+      "notes": [
+        "Rehber ve uyumluluk katmani",
+        "Yeni normatif kural yazilmaz"
+      ]
+    },
+    {
+      "layer_id": "archive_reference",
+      "conflict_precedence": 5,
+      "allowed_write_mode": "blocked",
+      "notes": [
+        "Read-only archive",
+        "Hicbir durumda live authority degil"
+      ]
+    },
+    {
+      "layer_id": "workspace_derived",
+      "conflict_precedence": 6,
+      "allowed_write_mode": "workspace_only",
+      "notes": [
+        "Derived planning, reports ve promotion adayi truth",
+        "Canonical veya current delivery authority yerine gecmez"
+      ]
+    }
+  ],
+  "conflict_rules": [
+    {
+      "rule_id": "R1",
+      "when": "canonical_vs_any",
+      "winner_layer": "canonical",
+      "notes": [
+        "SSOT ve standards.lock ekseni son karari verir"
+      ]
+    },
+    {
+      "rule_id": "R2",
+      "when": "execution_mirror_vs_current_delivery",
+      "winner_layer": "execution_mirror",
+      "notes": [
+        "Tenant decision bundle ve execution mirror, current delivery baglamini sinirlar"
+      ]
+    },
+    {
+      "rule_id": "R3",
+      "when": "transition_active_vs_archive_reference",
+      "winner_layer": "transition_active",
+      "notes": [
+        "Redirect rehberler archive alanindan once gelir ama authority sayilmaz"
+      ]
+    },
+    {
+      "rule_id": "R4",
+      "when": "workspace_derived_vs_any_authority_layer",
+      "winner_layer": "authoritative_layer",
+      "notes": [
+        "Workspace-derived artefact yalniz planning ve evidence icindir"
+      ]
+    }
+  ],
+  "surfaces": [
+    {
+      "surface_id": "core:ssot-roadmap",
+      "concern": "roadmap",
+      "layer_id": "canonical",
+      "repo_scope": "ao-core",
+      "owner": "CORE",
+      "authority_state": "canonical",
+      "effective_paths": [
+        "__WORKSPACE_ROOT__/roadmaps/SSOT/roadmap.v1.json"
+      ],
+      "supporting_paths": [
+        "__WORKSPACE_ROOT__/docs/ROADMAP.md"
+      ],
+      "archive_paths": [
+        "__WORKSPACE_ROOT__/docs/ROADMAP_v2.7_legacy.md"
+      ],
+      "write_policy": "governed_core_only",
+      "notes": [
+        "Machine truth JSON dosyasidir",
+        "Markdown yalniz human mirror'dur"
+      ]
+    },
+    {
+      "surface_id": "core:governance-policies-and-schemas",
+      "concern": "core_governance",
+      "layer_id": "canonical",
+      "repo_scope": "ao-core",
+      "owner": "CORE",
+      "authority_state": "canonical",
+      "effective_paths": [
+        "__WORKSPACE_ROOT__/standards.lock",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/SSOT-MAP.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/EXTENSIONS.md",
+        "__WORKSPACE_ROOT__/policies/*.v1.json",
+        "__WORKSPACE_ROOT__/schemas/*.json"
+      ],
+      "supporting_paths": [
+        "__WORKSPACE_ROOT__/AGENTS.md"
+      ],
+      "archive_paths": [
+        "__WORKSPACE_ROOT__/registry/archives/legacy_standards_archive.aistd.v1.json"
+      ],
+      "write_policy": "governed_core_only",
+      "notes": [
+        "Core governance her zaman source policy ve schema katmanindan okunur",
+        "AGENTS yonlendiricidir ama policy yerine gecmez"
+      ]
+    },
+    {
+      "surface_id": "core:runtime-policy-overlays",
+      "concern": "runtime_overlays",
+      "layer_id": "workspace_derived",
+      "repo_scope": "ao-core",
+      "owner": "WORKSPACE",
+      "authority_state": "derived_overlay",
+      "effective_paths": [
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/policies/policy_llm_providers_guardrails.v1.json"
+      ],
+      "supporting_paths": [
+        "__WORKSPACE_ROOT__/policies/policy_llm_providers_guardrails.v1.json"
+      ],
+      "archive_paths": [],
+      "write_policy": "derived_only",
+      "notes": [
+        "Workspace overlay source policy ile conflict halinde authority kazanmaz",
+        "Drift tespiti yapilsa da normatif kabul edilmez"
+      ]
+    },
+    {
+      "surface_id": "managed:opo-governance",
+      "concern": "managed_repo_opo",
+      "layer_id": "canonical",
+      "repo_scope": "dev",
+      "owner": "EXECUTION",
+      "authority_state": "canonical_for_managed_repo",
+      "effective_paths": [
+        "__HOME__/Documents/dev/standards.lock",
+        "__HOME__/Documents/dev/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
+        "__HOME__/Documents/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md",
+        "__HOME__/Documents/dev/docs/OPERATIONS/ARCHITECTURE-CONSTRAINTS.md",
+        "__HOME__/Documents/dev/docs/OPERATIONS/CACHE-BOUNDARY-RULES.v1.md",
+        "__HOME__/Documents/dev/docs/OPERATIONS/CODING-STANDARDS.md"
+      ],
+      "supporting_paths": [],
+      "archive_paths": [],
+      "write_policy": "managed_repo_governed",
+      "notes": [
+        "Dev repo icinde normatif OPO authority bu katmandadir"
+      ]
+    },
+    {
+      "surface_id": "managed:tenant-execution-mirror",
+      "concern": "tenant_decisions",
+      "layer_id": "execution_mirror",
+      "repo_scope": "dev",
+      "owner": "EXECUTION",
+      "authority_state": "execution_mirror",
+      "effective_paths": [
+        "__HOME__/Documents/dev/tenant/TENANT-DEFAULT/decision-bundle.v1.json"
+      ],
+      "supporting_paths": [
+        "__HOME__/Documents/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md"
+      ],
+      "archive_paths": [],
+      "write_policy": "mirror_until_core_promotion",
+      "notes": [
+        "Execution tercihi tasir",
+        "Canonical governance policy yerine gecmez"
+      ]
+    },
+    {
+      "surface_id": "managed:current-delivery",
+      "concern": "delivery_truth",
+      "layer_id": "current_delivery",
+      "repo_scope": "dev",
+      "owner": "EXECUTION",
+      "authority_state": "current_delivery",
+      "effective_paths": [
+        "__HOME__/Documents/dev/docs/03-delivery/PROJECT-FLOW.md",
+        "__HOME__/Documents/dev/docs/03-delivery/STORIES/**",
+        "__HOME__/Documents/dev/docs/03-delivery/ACCEPTANCE/**",
+        "__HOME__/Documents/dev/docs/04-operations/RUNBOOKS/**",
+        "__HOME__/Documents/dev/extensions/PRJ-PM-SUITE/contract/feature_execution_contract.v1.json"
+      ],
+      "supporting_paths": [
+        "__HOME__/Documents/dev/docs/OPERATIONS/MULTI-PLANE-EXECUTION-MODEL.v1.md"
+      ],
+      "archive_paths": [],
+      "write_policy": "delivery_owned",
+      "notes": [
+        "Live delivery ve feature scoping bu katmandan okunur",
+        "OPO governance ile conflict olursa canonical OPO kazanir"
+      ]
+    },
+    {
+      "surface_id": "managed:transition-guides",
+      "concern": "transition_guidance",
+      "layer_id": "transition_active",
+      "repo_scope": "dev",
+      "owner": "EXECUTION",
+      "authority_state": "redirect_only",
+      "effective_paths": [
+        "__HOME__/Documents/dev/AGENTS.md",
+        "__HOME__/Documents/dev/AGENT-CODEX.*.md",
+        "__HOME__/Documents/dev/docs/00-handbook/**"
+      ],
+      "supporting_paths": [],
+      "archive_paths": [],
+      "write_policy": "redirect_only",
+      "notes": [
+        "Yeni normatif kural yazilmaz",
+        "Current OPO veya delivery authority'ye yonlendirir"
+      ]
+    },
+    {
+      "surface_id": "managed:archive-reference",
+      "concern": "managed_archive",
+      "layer_id": "archive_reference",
+      "repo_scope": "dev",
+      "owner": "EXECUTION",
+      "authority_state": "read_only_archive",
+      "effective_paths": [
+        "__HOME__/Documents/dev/backend/docs/legacy/**",
+        "__HOME__/Documents/dev/docs/ARCHIVE/**"
+      ],
+      "supporting_paths": [
+        "__HOME__/Documents/dev/registry/archives/legacy_standards_archive.aistd.v1.json"
+      ],
+      "archive_paths": [],
+      "write_policy": "blocked",
+      "notes": [
+        "Referans ve migration izi icindir",
+        "Live authority sayilmaz"
+      ]
+    },
+    {
+      "surface_id": "core:execution-target-governance",
+      "concern": "execution_targets",
+      "layer_id": "canonical",
+      "repo_scope": "ao-core",
+      "owner": "CORE",
+      "authority_state": "canonical",
+      "effective_paths": [
+        "__WORKSPACE_ROOT__/registry/active_execution_registry.v1.json",
+        "__WORKSPACE_ROOT__/registry/apps_and_launch_registry.v1.json",
+        "__WORKSPACE_ROOT__/registry/version_registry.v1.json",
+        "__WORKSPACE_ROOT__/registry/authority_matrix.v1.json",
+        "__WORKSPACE_ROOT__/registry/duplicate_surface_register.v1.json"
+      ],
+      "supporting_paths": [
+        "__WORKSPACE_ROOT__/policies/policy_execution_target_governance.v1.json",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/EXECUTION-TARGET-GOVERNANCE.v1.md",
+        "__WORKSPACE_ROOT__/.cache/managed_repos.v1.json",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/product_catalog.v1.json"
+      ],
+      "archive_paths": [],
+      "write_policy": "governed_core_only",
+      "notes": [
+        "Target ve launch truth artik core registry setinden okunur",
+        "managed_repos umbrella truth tasir, product catalog launch truth tasimaz"
+      ]
+    },
+    {
+      "surface_id": "workspace:ai-entry-pack",
+      "concern": "ai_bootstrap",
+      "layer_id": "workspace_derived",
+      "repo_scope": "workspace",
+      "owner": "ORCHESTRATION",
+      "authority_state": "promotion_candidate",
+      "effective_paths": [
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/ai_entry_pack.v1.json",
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/current_truth_snapshot.v1.md"
+      ],
+      "supporting_paths": [
+        "__WORKSPACE_ROOT__/AGENTS.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/NEW-CHAT-BOOTSTRAP.v1.md"
+      ],
+      "archive_paths": [],
+      "write_policy": "workspace_only",
+      "notes": [
+        "Yeni AI icin tek giris paketi olarak dusunulur",
+        "Repo canonical authority dosyalari yerine gecmez; onlara referans verir"
+      ]
+    }
+  ]
+}

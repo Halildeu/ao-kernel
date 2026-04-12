@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:state-machine:v1",
+  "title": "State Machine Definition",
+  "description": "Schema for canonical state machine definitions used by the orchestrator control-plane.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "machines"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Self-referencing schema URI."
+    },
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this state machine collection."
+    },
+    "machines": {
+      "type": "object",
+      "description": "Named state machine definitions.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/machine"
+      }
+    }
+  },
+  "$defs": {
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initial", "terminal", "states", "transitions"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this state machine."
+        },
+        "initial": {
+          "type": "string",
+          "description": "The starting state for new instances."
+        },
+        "terminal": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "States that mark the end of the lifecycle."
+        },
+        "states": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/state" },
+          "minItems": 2,
+          "description": "All states in this machine."
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/transition" },
+          "minItems": 1,
+          "description": "Valid state transitions."
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "State identifier (UPPER_SNAKE_CASE)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this state."
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "trigger"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source state ID."
+        },
+        "to": {
+          "type": "string",
+          "description": "Target state ID."
+        },
+        "trigger": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Event that causes this transition (lower_snake_case)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this transition."
+        }
+      }
+    }
+  }
+}

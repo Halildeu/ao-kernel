@@ -1,0 +1,33 @@
+{
+  "version": "v2",
+  "enabled": true,
+  "decision_apply_mode": "autopilot",
+  "auto_apply_limits": {
+    "max_decisions_per_loop": 50,
+    "max_overrides_written_per_loop": 20
+  },
+  "defaults": {
+    "NETWORK_LIVE_ENABLE": "ENABLE_SCOPED",
+    "NETWORK_ENABLE": "ENABLE_SCOPED",
+    "AUTO_APPLY_ALLOW": "ALLOW",
+    "ROUTE_OVERRIDE": "APPLY_RECOMMENDED",
+    "CORE_UNLOCK_REQUEST": "ALLOW_SSOT_ONLY",
+    "UNKNOWN": "KEEP_SAFE"
+  },
+  "guards": {
+    "require_env_for_live_github": [
+      "KERNEL_API_GITHUB_LIVE=1",
+      "GITHUB_TOKEN_PRESENT"
+    ],
+    "require_env_for_live_deploy": [
+      "KERNEL_API_DEPLOY_LIVE=1"
+    ],
+    "core_unlock_allowlist_only": true
+  },
+  "circuit_breakers": {
+    "github_pr_open_network_fail_window_minutes": 60,
+    "github_pr_open_network_fail_max": 3,
+    "github_pr_open_cooldown_override_mode": "proof_cooldown_zero_if_needed"
+  },
+  "fail_action": "warn"
+}

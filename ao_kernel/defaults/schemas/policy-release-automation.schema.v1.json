@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-release-automation.schema.v1.json",
+  "title": "Policy Release Automation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "plan_policy",
+    "channel_defaults",
+    "network_publish_enabled",
+    "require_manual_approval",
+    "component_paths",
+    "bump_rules",
+    "platform_bump"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "plan_policy": {
+      "type": "string",
+      "enum": [
+        "optional",
+        "required"
+      ]
+    },
+    "channel_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "available"
+      ],
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": [
+            "rc",
+            "final"
+          ]
+        },
+        "available": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "rc",
+              "final"
+            ]
+          }
+        }
+      }
+    },
+    "network_publish_enabled": {
+      "type": "boolean"
+    },
+    "require_manual_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "core",
+        "catalog"
+      ],
+      "properties": {
+        "core": {
+          "type": "boolean"
+        },
+        "catalog": {
+          "type": "boolean"
+        }
+      }
+    },
+    "component_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "core",
+        "catalog",
+        "projects",
+        "docs"
+      ],
+      "properties": {
+        "core": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "catalog": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "docs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "bump_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "core",
+        "catalog",
+        "projects",
+        "docs",
+        "fallback"
+      ],
+      "properties": {
+        "core": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "none"
+          ]
+        },
+        "catalog": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "none"
+          ]
+        },
+        "projects": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "none"
+          ]
+        },
+        "docs": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "none"
+          ]
+        },
+        "fallback": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "none"
+          ]
+        }
+      }
+    },
+    "platform_bump": {
+      "type": "string",
+      "enum": [
+        "max_of_components"
+      ]
+    },
+    "current_version": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

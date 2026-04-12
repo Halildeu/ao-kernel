@@ -1,0 +1,100 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "docs/OPERATIONS/NORTH-STAR-EVAL-LENSES.v1.md",
+    "schemas/deploy-job.schema.v1.json",
+    "schemas/deploy-report.schema.v1.json",
+    "schemas/extension-manifest.schema.v1.json",
+    "schemas/pack-manifest.schema.v1.json",
+    "schemas/policy-deploy.schema.v1.json",
+    "schemas/policy-deploy-targets.schema.v1.json",
+    "policies/policy_deploy.v1.json",
+    "policies/policy_deploy_targets.v1.json",
+    "src/extensions/prj_deploy/deploy_jobs.py",
+    "src/ops/commands/extension_cmds.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-DEPLOY",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [],
+    "ops": [
+      "deploy-check",
+      "deploy-job-poll",
+      "deploy-job-start"
+    ],
+    "ops_single_gate": [
+      "deploy-check"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-DEPLOY/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-DEPLOY",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "skeleton_only"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-DEPLOY/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "skeleton_only",
+    "Deploy providers: static FE + selfhost BE (plan-only)."
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/deploy/jobs_index.v1.json",
+      ".cache/reports/deploy_plan.v1.json",
+      ".cache/reports/deploy_report.v1.json",
+      ".cache/reports/deploy_jobs/*.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_deploy.v1.json",
+    "policies/policy_deploy_targets.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_deploy.v1.json",
+    "policies/policy_deploy_targets.v1.json"
+  ],
+  "semver": "0.1.1",
+  "ui_surfaces": [
+    "system-status",
+    "ui-snapshot-bundle"
+  ],
+  "version": "v1"
+}

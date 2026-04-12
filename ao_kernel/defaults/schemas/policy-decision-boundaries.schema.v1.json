@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "policy-decision-boundaries.schema.v1.json",
+  "title": "Policy Decision Boundaries",
+  "description": "Defines AI decision authority: FULL_AUTO, HUMAN_REVIEW, or STRICT_DENY per operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "default_mode",
+    "boundaries"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "default_mode": {
+      "type": "string",
+      "enum": [
+        "full_auto",
+        "human_review",
+        "strict_deny"
+      ]
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full_auto",
+        "human_review",
+        "strict_deny"
+      ],
+      "properties": {
+        "full_auto": {
+          "$ref": "#/$defs/boundary_level"
+        },
+        "human_review": {
+          "$ref": "#/$defs/boundary_level"
+        },
+        "strict_deny": {
+          "$ref": "#/$defs/boundary_level"
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "boundary_level": {
+      "type": "object",
+      "required": [
+        "description",
+        "operations"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "conditions": {
+          "type": "object",
+          "properties": {
+            "max_risk_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "require_approval_node": {
+              "type": "boolean"
+            },
+            "require_dry_run_success_first": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "version": "v1",
+  "kind": "policy-work-intake-rules-fragment",
+  "fragment_id": "release",
+  "source_types": [
+    "RELEASE"
+  ],
+  "rules": [
+    {
+      "id": "release_status_fail",
+      "source_type": "RELEASE",
+      "when": {
+        "release_status_in": [
+          "FAIL"
+        ]
+      },
+      "bucket": "INCIDENT",
+      "severity": "S1",
+      "priority": "P1"
+    },
+    {
+      "id": "release_status_warn",
+      "source_type": "RELEASE",
+      "when": {
+        "release_status_in": [
+          "WARN"
+        ]
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "release_dirty_tree",
+      "source_type": "RELEASE",
+      "when": {
+        "release_dirty_tree_eq": true
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "release_unpushed_commits",
+      "source_type": "RELEASE",
+      "when": {
+        "release_unpushed_commits_gt": 0
+      },
+      "bucket": "TICKET",
+      "severity": "S3",
+      "priority": "P3"
+    },
+    {
+      "id": "release_publish_blocked",
+      "source_type": "RELEASE",
+      "when": {
+        "release_publish_blocked_eq": true
+      },
+      "bucket": "ROADMAP",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "plan_only"
+      ]
+    },
+    {
+      "id": "release_plan_final",
+      "source_type": "RELEASE",
+      "when": {
+        "release_plan_present_eq": true,
+        "release_channel_in": [
+          "final"
+        ]
+      },
+      "bucket": "ROADMAP",
+      "severity": "S2",
+      "priority": "P2",
+      "tags": [
+        "plan_only"
+      ]
+    },
+    {
+      "id": "release_plan_present",
+      "source_type": "RELEASE",
+      "when": {
+        "release_plan_present_eq": true
+      },
+      "bucket": "PROJECT",
+      "severity": "S2",
+      "priority": "P2",
+      "suggested_extension": "PRJ-RELEASE-AUTOMATION"
+    }
+  ]
+}

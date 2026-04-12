@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "policies": [
+    "policies/policy_security.v1.json",
+    "policies/policy_ethics.v1.json",
+    "policies/policy_data.v1.json"
+  ],
+  "fail_action": "warn"
+}

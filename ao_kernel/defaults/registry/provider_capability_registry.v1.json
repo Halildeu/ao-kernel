@@ -1,0 +1,155 @@
+{
+  "version": "v1",
+  "updated_at": "2026-03-22T00:00:00Z",
+  "description": "Provider capability matrisi. Her provider icin desteklenen yetenekler ve seviyeler.",
+  "capabilities": [
+    "chat",
+    "streaming",
+    "tool_use",
+    "vision",
+    "batch",
+    "continuation",
+    "extended_thinking",
+    "code_agentic",
+    "embedding"
+  ],
+  "providers": {
+    "claude": {
+      "display_name": "Anthropic Claude",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "messages",
+      "auth_header": "x-api-key",
+      "api_version": "2023-06-01",
+      "expected_env_keys": ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY"],
+      "default_model": "claude-opus-4-5-20251101",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "unsupported",
+        "batch": "unsupported",
+        "continuation": "unsupported",
+        "extended_thinking": "unsupported",
+        "code_agentic": "experimental",
+        "embedding": "unsupported"
+      },
+      "notes": "Raw HTTP integration via urllib. SDK entegrasyonu yok. Streaming, tool_use, continuation icin Anthropic SDK gerekli."
+    },
+    "openai": {
+      "display_name": "OpenAI",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "responses",
+      "auth_header": "Authorization",
+      "api_version": null,
+      "expected_env_keys": ["OPENAI_API_KEY"],
+      "default_model": "gpt-4o-mini",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "unsupported",
+        "batch": "supported",
+        "continuation": "supported",
+        "extended_thinking": "unsupported",
+        "code_agentic": "supported",
+        "embedding": "supported"
+      },
+      "notes": "Dedicated openai_provider.py mevcut. Continuation: previous_response_id + conversation_id. Batch lane aktif."
+    },
+    "google": {
+      "display_name": "Google Gemini",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "generateContent",
+      "auth_header": "x-goog-api-key",
+      "api_version": null,
+      "expected_env_keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+      "default_model": "gemini-2.0-flash",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "experimental",
+        "batch": "unsupported",
+        "continuation": "unsupported",
+        "extended_thinking": "unsupported",
+        "code_agentic": "unsupported",
+        "embedding": "supported"
+      },
+      "notes": "Raw HTTP. Vision ve image generation icin ayri model ID'ler gerekli."
+    },
+    "deepseek": {
+      "display_name": "DeepSeek",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "chat/completions",
+      "auth_header": "Authorization",
+      "api_version": null,
+      "expected_env_keys": ["DEEPSEEK_API_KEY"],
+      "default_model": "deepseek-chat",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "unsupported",
+        "batch": "unsupported",
+        "continuation": "unsupported",
+        "extended_thinking": "supported",
+        "code_agentic": "unsupported",
+        "embedding": "unsupported"
+      },
+      "notes": "deepseek-reasoner extended thinking destekler. OpenAI-compatible API."
+    },
+    "qwen": {
+      "display_name": "Alibaba Qwen",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "chat/completions",
+      "auth_header": "Authorization",
+      "api_version": null,
+      "expected_env_keys": ["DASHSCOPE_API_KEY", "QWEN_API_KEY"],
+      "default_model": "qwen-plus",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "experimental",
+        "batch": "unsupported",
+        "continuation": "unsupported",
+        "extended_thinking": "experimental",
+        "code_agentic": "unsupported",
+        "embedding": "unsupported"
+      },
+      "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision icin qwen3-vl-* gerekli."
+    },
+    "xai": {
+      "display_name": "xAI Grok",
+      "enabled": true,
+      "sdk": "urllib",
+      "wire_api": "chat/completions",
+      "auth_header": "Authorization",
+      "api_version": null,
+      "expected_env_keys": ["XAI_API_KEY"],
+      "default_model": "grok-4-1-fast-reasoning",
+      "capabilities": {
+        "chat": "supported",
+        "streaming": "unsupported",
+        "tool_use": "unsupported",
+        "vision": "supported",
+        "batch": "unsupported",
+        "continuation": "unsupported",
+        "extended_thinking": "supported",
+        "code_agentic": "supported",
+        "embedding": "unsupported"
+      },
+      "notes": "grok-code-fast-1 code agentic destekler. grok-2-vision-1212 vision destekler. OpenAI-compatible API."
+    }
+  },
+  "capability_levels": {
+    "supported": "Tam desteklenir, contract test ile dogrulanmis.",
+    "experimental": "Calisiyor ama contract test kapsaminda degil, regression riski var.",
+    "unsupported": "Henuz entegre edilmemis veya API destegi yok."
+  }
+}

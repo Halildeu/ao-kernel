@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/spec-capability.schema.json",
+  "title": "spec-capability.schema.json",
+  "allOf": [
+    { "$ref": "https://example.com/schemas/spec-core.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "CAPABILITY" }
+          }
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "implementation_ref"],
+          "properties": {
+            "type": { "const": "capability" },
+            "implementation_ref": { "type": "string", "minLength": 1 },
+            "steps": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "default": []
+            }
+          }
+        }
+      }
+    }
+  ]
+}

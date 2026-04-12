@@ -1,0 +1,41 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "mode": "report",
+  "broken_ref_policy": {
+    "core": "fail",
+    "workspace": "warn"
+  },
+  "workspace_bound_patterns": [
+    "${WORKSPACE_ROOT}/**",
+    ".cache/**",
+    "incubator/**",
+    "tenant/**",
+    "project/**",
+    "roadmaps/PROJECTS/**",
+    "supply_chain/**"
+  ],
+  "deprecated_patterns": [
+    "deprecated",
+    "ROADMAP_v2.7_legacy.md"
+  ],
+  "wrong_path_patterns": [
+    "schemas/policies",
+    "policies/schemas"
+  ],
+  "summary_timeout_seconds": 10,
+  "strict_timeout_seconds": 180,
+  "max_items": {
+    "broken_refs": 1000,
+    "orphan_critical": 1000
+  },
+  "placeholders_baseline_enabled": true,
+  "placeholders_warn_mode": "delta",
+  "placeholders_warn_delta": 0,
+  "placeholder_warn_threshold": 25,
+  "placeholders_fail": 200,
+  "strict_fail_on_broken": true,
+  "strict_fail_on_critical_nav_gaps": true,
+  "orphan_target": 0,
+  "fail_action": "warn"
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:domain-conventions:v1",
+  "title": "Domain Conventions",
+  "description": "Schema for domain-specific convention policy defining forbidden imports, required packages, and rules per domain.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "detection", "domains"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "description": {
+      "type": "string"
+    },
+    "detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confidence_threshold", "max_rules_per_domain", "fallback_domain"],
+      "properties": {
+        "confidence_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum confidence to load domain-specific rules."
+        },
+        "max_rules_per_domain": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum rules loaded per domain to prevent context overflow."
+        },
+        "fallback_domain": {
+          "type": "string",
+          "description": "Domain used when detection confidence is below threshold."
+        }
+      }
+    },
+    "domains": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["rules_file"],
+        "properties": {
+          "forbidden_imports": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "required_package": {
+            "type": "string"
+          },
+          "required_imports": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "forbidden_patterns": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "bundler": { "type": "string" },
+          "test_framework": { "type": "string" },
+          "auth_model": { "type": "string" },
+          "query_rules": { "type": "object" },
+          "tier_model": { "type": "string" },
+          "schema_discovery": { "type": "string" },
+          "standard": { "type": "string" },
+          "core_tables": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "style": { "type": "string" },
+          "versioning": { "type": "string" },
+          "auth": { "type": "string" },
+          "rules_file": {
+            "type": "string",
+            "description": "Path to .claude/rules/{domain}.md file."
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

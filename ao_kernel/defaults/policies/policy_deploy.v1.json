@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "network_enabled": false,
+  "allowed_kinds": [
+    "DEPLOY_STATIC_FE",
+    "DEPLOY_SELFHOST_BE"
+  ],
+  "mode": "dry_run_only",
+  "job_store": {
+    "jobs_index_path": ".cache/deploy/jobs_index.v1.json",
+    "keep_last_n": 50,
+    "ttl_seconds": 604800,
+    "poll_interval_seconds": 300,
+    "cooldown_seconds": 0
+  },
+  "retry_count": 0,
+  "notes": [
+    "network_default_off",
+    "dry_run_only"
+  ],
+  "fail_action": "warn"
+}

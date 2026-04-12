@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-ux-catalog-enforcement.schema.v1.json",
+  "title": "Policy UX Catalog Enforcement",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "status",
+    "enforcement_mode",
+    "lock_file",
+    "change_map",
+    "enforce_scope",
+    "mapping_contract"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "policy-ux-catalog-enforcement"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "DRAFT"
+      ]
+    },
+    "enforcement_mode": {
+      "type": "string",
+      "enum": [
+        "blocking",
+        "warn"
+      ]
+    },
+    "lock_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "change_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "path",
+        "min_entries"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "min_entries": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "enforce_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include_globs",
+        "exclude_globs"
+      ],
+      "properties": {
+        "include_globs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "exclude_globs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "mapping_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_fields",
+        "allow_extra_fields"
+      ],
+      "properties": {
+        "required_fields": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allow_extra_fields": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

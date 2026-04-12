@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-time-sinks.schema.v1.json",
+  "title": "Airunner Time Sinks",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "window_size",
+    "thresholds_ms",
+    "sinks",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["OK", "WARN", "IDLE", "FAIL"] },
+    "window_size": { "type": "integer", "minimum": 0 },
+    "thresholds_ms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["smoke_full_p95_warn", "smoke_fast_p95_warn", "release_prepare_p95_warn"],
+      "properties": {
+        "smoke_full_p95_warn": { "type": "integer", "minimum": 0 },
+        "smoke_fast_p95_warn": { "type": "integer", "minimum": 0 },
+        "release_prepare_p95_warn": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sinks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_key", "p95_ms", "threshold_ms", "breach_count", "status"],
+        "properties": {
+          "event_key": { "type": "string", "minLength": 1 },
+          "op_name": { "type": "string" },
+          "count": { "type": "integer", "minimum": 0 },
+          "p50_ms": { "type": "integer", "minimum": 0 },
+          "p95_ms": { "type": "integer", "minimum": 0 },
+          "threshold_ms": { "type": "integer", "minimum": 0 },
+          "breach_count": { "type": "integer", "minimum": 0 },
+          "last_seen": { "type": "string" },
+          "status": { "type": "string", "enum": ["OK", "WARN"] }
+        }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

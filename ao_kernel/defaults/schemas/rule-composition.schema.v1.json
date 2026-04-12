@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:rule-composition:v1",
+  "title": "Rule Composition Definition",
+  "description": "Schema for composing policy rules using logical combinators (AND/OR/NOT). Enables building complex decision rules from simple policy predicates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "rule_id", "expression", "action"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"],
+      "description": "Schema version."
+    },
+    "rule_id": {
+      "type": "string",
+      "pattern": "^RULE-[A-Z0-9_]+$",
+      "description": "Unique rule identifier."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this rule does."
+    },
+    "expression": {
+      "$ref": "#/$defs/expression",
+      "description": "The logical expression tree that evaluates to true/false."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["ALLOW", "BLOCK", "WARN", "ESCALATE"],
+      "description": "Action to take when the expression evaluates to true."
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["BLOCK", "WARN", "LOG"],
+      "default": "BLOCK",
+      "description": "Action to take when evaluation itself fails. Fail-closed by default."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Rule priority (lower = higher priority). Used for conflict resolution."
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of policy file names this rule depends on."
+    }
+  },
+  "$defs": {
+    "expression": {
+      "oneOf": [
+        { "$ref": "#/$defs/predicate" },
+        { "$ref": "#/$defs/and_expr" },
+        { "$ref": "#/$defs/or_expr" },
+        { "$ref": "#/$defs/not_expr" }
+      ]
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "policy_ref", "field", "operator", "value"],
+      "properties": {
+        "type": { "type": "string", "const": "predicate" },
+        "policy_ref": {
+          "type": "string",
+          "description": "Policy file name to evaluate against."
+        },
+        "field": {
+          "type": "string",
+          "description": "JSON path to the field in the policy output."
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "in", "not_in", "contains"],
+          "description": "Comparison operator."
+        },
+        "value": {
+          "description": "Expected value for comparison."
+        }
+      }
+    },
+    "and_expr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "operands"],
+      "properties": {
+        "type": { "type": "string", "const": "AND" },
+        "operands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/expression" },
+          "minItems": 2,
+          "description": "All operands must be true."
+        }
+      }
+    },
+    "or_expr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "operands"],
+      "properties": {
+        "type": { "type": "string", "const": "OR" },
+        "operands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/expression" },
+          "minItems": 2,
+          "description": "At least one operand must be true."
+        }
+      }
+    },
+    "not_expr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "operand"],
+      "properties": {
+        "type": { "type": "string", "const": "NOT" },
+        "operand": {
+          "$ref": "#/$defs/expression",
+          "description": "Expression to negate."
+        }
+      }
+    }
+  }
+}

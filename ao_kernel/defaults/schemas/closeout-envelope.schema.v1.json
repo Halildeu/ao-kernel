@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "closeout-envelope.schema.v1.json",
+  "title": "Closeout Envelope",
+  "description": "Finalizes execution with evidence collection. Terminal artifact for a work item or job.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "generated_at",
+    "title",
+    "workspace_root",
+    "report_path",
+    "evidence_paths",
+    "trace_meta",
+    "notes"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["closeout-envelope"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "report_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "trace_meta": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "actor_role": {
+      "type": "string",
+      "enum": ["architect", "planner", "implementer", "reviewer", "verifier", "consultant", "assurance_owner", "operator"]
+    },
+    "actor": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "handoff_from": {
+      "type": "string"
+    },
+    "work_item_id": {
+      "type": "string"
+    },
+    "result_state": {
+      "type": "string",
+      "enum": ["COMPLETED", "FAILED", "SUSPENDED"]
+    },
+    "session_id": {
+      "type": "string",
+      "maxLength": 128
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agent-handoff-status.schema.v1.json",
+  "title": "Agent Handoff Status",
+  "description": "Status report of active agent work-item claims for multi-agent coordination.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "claims", "summary", "status"],
+  "properties": {
+    "version": { "const": "v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["work_item_id", "claim_id", "owner_tag"],
+        "properties": {
+          "work_item_id": { "type": "string" },
+          "claim_id": { "type": "string" },
+          "owner_tag": { "type": "string" },
+          "owner_session": { "type": "string" },
+          "agent_tag": { "type": "string" },
+          "run_id": { "type": "string" },
+          "acquired_at": { "type": "string" },
+          "ttl_seconds": { "type": "integer", "minimum": 1 },
+          "expires_at": { "type": "string" },
+          "heartbeat_at": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_active"],
+      "properties": {
+        "total_active": { "type": "integer", "minimum": 0 },
+        "by_agent": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "status": { "type": "string", "enum": ["OK", "CONFLICT", "IDLE"] }
+  }
+}

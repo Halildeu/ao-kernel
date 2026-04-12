@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/chg-debt.schema.json",
+  "title": "Debt Change Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "source",
+    "target_debt_kind",
+    "actions",
+    "safety"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CHG-[0-9]{8}-[0-9]{3}$"
+    },
+    "version": { "type": "string", "enum": ["v1"] },
+    "source": {
+      "type": "string",
+      "enum": ["SYSTEM_STATUS", "ADVISOR", "REPO_HYGIENE", "SCRIPT_BUDGET", "QUALITY_GATE"]
+    },
+    "target_debt_kind": {
+      "type": "string",
+      "enum": ["SCRIPT_BUDGET", "BENCHMARK_GAP", "QUALITY_GATE_WARN", "REPO_HYGIENE", "PLACEHOLDER_MILESTONE"]
+    },
+    "workspace_root": { "type": "string" },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/action" }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["apply_scope", "destructive"],
+      "properties": {
+        "apply_scope": { "type": "string", "enum": ["INCUBATOR_ONLY"] },
+        "destructive": { "type": "boolean", "const": false },
+        "requires_review": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "file_relpath"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["DOC_NOTE", "ADD_IGNORE", "MOVE_SUGGESTION", "TEMPLATE_ADD", "FORMAT_FIX", "REFACTOR_HINT"]
+        },
+        "file_relpath": { "type": "string", "minLength": 1 },
+        "patch": { "$ref": "#/$defs/patch" },
+        "create": { "$ref": "#/$defs/create" },
+        "note": { "$ref": "#/$defs/note" }
+      },
+      "anyOf": [
+        { "required": ["patch"] },
+        { "required": ["create"] },
+        { "required": ["note"] }
+      ]
+    },
+    "patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern", "replace"],
+      "properties": {
+        "pattern": { "type": "string" },
+        "replace": { "type": "string" }
+      }
+    },
+    "create": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content"],
+      "properties": {
+        "content": { "type": "string" }
+      }
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" }
+      }
+    }
+  }
+}

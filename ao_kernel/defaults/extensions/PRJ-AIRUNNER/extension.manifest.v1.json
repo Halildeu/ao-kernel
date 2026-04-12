@@ -1,0 +1,93 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/LAYER-MODEL-LOCK.v1.md",
+    "docs/OPERATIONS/CODEX-UX.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_airunner.v1.json",
+    "policies/policy_airunner_jobs.v1.json",
+    "policies/policy_work_intake.v2.json",
+    "schemas/airunner-job.schema.v1.json",
+    "schemas/airunner-jobs-index.schema.v1.json",
+    "schemas/airunner-perf-event.schema.v1.json",
+    "schemas/airunner-time-sinks.schema.v1.json",
+    "schemas/policy-airunner.schema.v1.json",
+    "schemas/policy-airunner-jobs.schema.v1.json",
+    "src/prj_airunner/airunner_tick.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-AIRUNNER",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [],
+    "ops": [
+      "airunner-run",
+      "airunner-status"
+    ],
+    "ops_single_gate": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-AIRUNNER/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-AIRUNNER",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "extensions/PRJ-AIRUNNER/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "Background automation runner: intake->plan->apply (policy gated).",
+    "Core default disabled; workspace override enables schedule."
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/airunner/*",
+      ".cache/reports/airunner/*",
+      ".cache/reports/time_sinks.v1.json",
+      ".cache/reports/time_sinks.v1.md"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_airunner.v1.json",
+    "policies/policy_airunner_jobs.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_airunner.v1.json",
+    "policies/policy_airunner_jobs.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [],
+  "version": "v1"
+}

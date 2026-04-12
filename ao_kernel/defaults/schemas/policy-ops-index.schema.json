@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-ops-index.schema.json",
+  "title": "Policy Ops Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "out_run_index",
+    "out_dlq_index",
+    "max_run_dirs",
+    "max_dlq_items",
+    "include_prefixes",
+    "mode",
+    "on_fail"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "out_run_index": {
+      "type": "string",
+      "minLength": 1
+    },
+    "out_dlq_index": {
+      "type": "string",
+      "minLength": 1
+    },
+    "max_run_dirs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "max_dlq_items": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "include_prefixes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "bounded"
+      ]
+    },
+    "on_fail": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "block"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

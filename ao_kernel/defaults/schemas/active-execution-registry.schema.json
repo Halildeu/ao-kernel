@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/active-execution-registry.schema.json",
+  "title": "active-execution-registry.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "project_id",
+    "status",
+    "repos",
+    "targets"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "active-execution-registry"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "repos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo_id",
+          "repo_kind",
+          "repo_root",
+          "workspace_root",
+          "status",
+          "lifecycle_state",
+          "owner",
+          "canonical_branch",
+          "current_branch",
+          "current_head",
+          "dirty",
+          "allowed_worktrees",
+          "observed_worktrees",
+          "app_ids",
+          "version_source_refs",
+          "allowed_intents",
+          "blocked_intents"
+        ],
+        "properties": {
+          "repo_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo_kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "repo_root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workspace_root": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lifecycle_state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "canonical_branch": {
+            "type": "string",
+            "minLength": 1
+          },
+          "current_branch": {
+            "type": "string",
+            "minLength": 1
+          },
+          "current_head": {
+            "type": "string",
+            "minLength": 1
+          },
+          "upstream": {
+            "type": "string"
+          },
+          "dirty": {
+            "type": "boolean"
+          },
+          "allowed_worktrees": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "observed_worktrees": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "app_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "version_source_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "allowed_intents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "blocked_intents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "upstream_sync_state": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_id",
+          "target_kind",
+          "parent_repo_id",
+          "root_path",
+          "status",
+          "lifecycle_state",
+          "owner",
+          "canonical_branch",
+          "launch_profile_ids",
+          "version_source_refs"
+        ],
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target_kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parent_repo_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "root_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lifecycle_state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "git_inherits_repo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "canonical_branch": {
+            "type": "string",
+            "minLength": 1
+          },
+          "launch_profile_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "version_source_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

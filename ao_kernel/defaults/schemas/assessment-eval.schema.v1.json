@@ -1,0 +1,395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/assessment-eval.schema.v1.json",
+  "title": "Assessment Eval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "report_only",
+    "integrity_snapshot_ref",
+    "raw_ref",
+    "bp_catalog_ref",
+    "trend_catalog_ref",
+    "scores",
+    "inputs",
+    "notes"
+  ],
+  "anyOf": [
+    { "required": ["assessment"] },
+    { "required": ["lenses"] }
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "WARN",
+        "SKIPPED"
+      ]
+    },
+    "report_only": {
+      "type": "boolean"
+    },
+    "integrity_snapshot_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "raw_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bp_catalog_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trend_catalog_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maturity_avg",
+        "coverage"
+      ],
+      "properties": {
+        "maturity_avg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controls",
+        "metrics",
+        "bp_items",
+        "trend_items"
+      ],
+      "properties": {
+        "controls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "metrics": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bp_items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trend_items": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_axes",
+        "integrity_status",
+        "raw_present",
+        "reference_catalog_items"
+      ],
+      "properties": {
+        "workflow_axes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "reference",
+              "assessment",
+              "gap"
+            ]
+          }
+        },
+        "integrity_status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "WARN",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "raw_present": {
+          "type": "boolean"
+        },
+        "reference_catalog_items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "lenses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trend_best_practice",
+        "integrity_compat",
+        "integration_coherence",
+        "ai_ops_fit",
+        "github_ops_release",
+        "operability"
+      ],
+      "properties": {
+        "trend_best_practice": { "$ref": "#/$defs/trend_lens" },
+        "integrity_compat": { "$ref": "#/$defs/integrity_lens" },
+        "integration_coherence": { "$ref": "#/$defs/integration_lens" },
+        "ai_ops_fit": { "$ref": "#/$defs/requirements_lens" },
+        "github_ops_release": { "$ref": "#/$defs/requirements_lens" },
+        "operability": { "$ref": "#/$defs/operability_lens" },
+        "context_health": { "$ref": "#/$defs/scored_lens" }
+      }
+    },
+    "maturity_tracking": {
+      "$ref": "#/$defs/maturity_document"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "lens_status": {
+      "type": "string",
+      "enum": ["OK", "WARN", "FAIL", "UNKNOWN"]
+    },
+    "dimension": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D", "E", "F", "G"]
+    },
+    "scored_lens": {
+      "type": "object",
+      "required": ["status", "score"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "components": { "type": "object" },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "findings": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ],
+      "default": []
+    },
+    "trend_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "coverage", "notes", "findings"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "findings": { "$ref": "#/$defs/findings" }
+      }
+    },
+    "integrity_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "integrity_status", "notes"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "integrity_status": {
+          "type": "string",
+          "enum": ["PASS", "WARN", "FAIL", "UNKNOWN"]
+        },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "integration_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "classification", "coverage", "reasons", "findings"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "classification": {
+          "type": "string",
+          "enum": ["OK", "WARN", "FAIL"]
+        },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "findings": { "$ref": "#/$defs/findings" }
+      }
+    },
+    "requirements_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "requirements", "notes", "findings"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "findings": { "$ref": "#/$defs/findings" }
+      }
+    },
+    "operability_lens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "classification", "coverage", "subscores", "reasons", "findings"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "classification": {
+          "type": "string",
+          "enum": ["OK", "WARN", "FAIL"]
+        },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "subscores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["simplicity", "sustainability", "continuity"],
+          "properties": {
+            "simplicity": { "type": "number", "minimum": 0, "maximum": 1 },
+            "sustainability": { "type": "number", "minimum": 0, "maximum": 1 },
+            "continuity": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "findings": { "$ref": "#/$defs/findings" }
+      }
+    },
+    "maturity_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "criteria"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "min_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "criteria": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "dimension_score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "lens_id", "status", "score"],
+      "properties": {
+        "dimension": { "$ref": "#/$defs/dimension" },
+        "lens_id": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/lens_status" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "maturity_tracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generated_at",
+        "workspace_root",
+        "mode",
+        "source_eval_ref",
+        "score",
+        "coverage",
+        "current_level_id",
+        "current_level_label",
+        "dimensions",
+        "notes"
+      ],
+      "properties": {
+        "generated_at": { "type": "string", "format": "date-time" },
+        "workspace_root": { "type": "string", "minLength": 1 },
+        "mode": { "type": "string", "minLength": 1 },
+        "source_eval_ref": { "type": "string", "minLength": 1 },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "current_level_id": { "type": "string", "minLength": 1 },
+        "current_level_label": { "type": "string", "minLength": 1 },
+        "dimensions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/dimension_score" },
+          "default": []
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "maturity_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "levels", "tracking"],
+      "properties": {
+        "version": { "type": "string", "enum": ["v1"] },
+        "levels": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/maturity_level" }
+        },
+        "tracking": { "$ref": "#/$defs/maturity_tracking" }
+      }
+    }
+  }
+}

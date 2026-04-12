@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "technical-baseline-aistd.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "profile_id",
+    "status",
+    "ownership",
+    "baseline",
+    "topology",
+    "ci_contract",
+    "archive"
+  ],
+  "properties": {
+    "version": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "technical-baseline-aistd"
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "DRAFT",
+        "ARCHIVED"
+      ]
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_repo",
+        "sync_script",
+        "validation_script"
+      ],
+      "properties": {
+        "canonical_repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sync_script": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validation_script": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "frontend",
+        "database",
+        "api"
+      ],
+      "properties": {
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "language",
+            "java_major",
+            "framework",
+            "framework_line",
+            "build_tool",
+            "maven_line",
+            "service_architecture",
+            "required_layers",
+            "inter_service_communication"
+          ],
+          "properties": {
+            "language": {
+              "const": "java"
+            },
+            "java_major": {
+              "type": "integer",
+              "minimum": 21
+            },
+            "framework": {
+              "const": "spring-boot"
+            },
+            "framework_line": {
+              "type": "string",
+              "pattern": "^3\\.2"
+            },
+            "build_tool": {
+              "const": "maven-wrapper"
+            },
+            "maven_line": {
+              "type": "string",
+              "pattern": "^3\\.9"
+            },
+            "service_architecture": {
+              "const": "microservice"
+            },
+            "required_layers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 6
+            },
+            "inter_service_communication": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "rest",
+                  "event"
+                ]
+              },
+              "minItems": 2,
+              "uniqueItems": true
+            }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "language",
+            "framework",
+            "framework_line",
+            "runtime",
+            "node_major",
+            "package_manager",
+            "mfe_architecture",
+            "style_system",
+            "design_contract",
+            "page_composition",
+            "parametric_data"
+          ],
+          "properties": {
+            "language": {
+              "const": "typescript"
+            },
+            "framework": {
+              "const": "react"
+            },
+            "framework_line": {
+              "type": "string",
+              "pattern": "^18"
+            },
+            "runtime": {
+              "const": "node"
+            },
+            "node_major": {
+              "type": "integer",
+              "const": 20
+            },
+            "package_manager": {
+              "const": "npm"
+            },
+            "mfe_architecture": {
+              "const": "module-federation"
+            },
+            "style_system": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "design_contract": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "single_ui_library",
+                "ui_package_manifest_path",
+                "design_catalog_index_path",
+                "forbidden_imports",
+                "token_source_path",
+                "token_generated_paths"
+              ],
+              "properties": {
+                "single_ui_library": {
+                  "const": "mfe-ui-kit"
+                },
+                "ui_package_manifest_path": {
+                  "const": "web/packages/ui-kit/package.json"
+                },
+                "design_catalog_index_path": {
+                  "const": "web/apps/mfe-shell/src/pages/admin/design-lab.index.json"
+                },
+                "forbidden_imports": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "uniqueItems": true
+                },
+                "token_source_path": {
+                  "const": "web/design-tokens/figma.tokens.json"
+                },
+                "token_generated_paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2
+                }
+              }
+            },
+            "page_composition": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "required_layout_exports",
+                "ui_import_prefix",
+                "pages_root"
+              ],
+              "properties": {
+                "required_layout_exports": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 3
+                },
+                "ui_import_prefix": {
+                  "const": "from 'mfe-ui-kit'"
+                },
+                "pages_root": {
+                  "const": "web/apps"
+                }
+              }
+            },
+            "parametric_data": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "query_builder_path",
+                "theme_contract_runtime_path",
+                "theme_context_provider_path"
+              ],
+              "properties": {
+                "query_builder_path": {
+                  "const": "web/packages/ui-kit/src/components/entity-grid/buildEntityGridQueryParams.ts"
+                },
+                "theme_contract_runtime_path": {
+                  "const": "web/packages/ui-kit/src/runtime/theme-contract.ts"
+                },
+                "theme_context_provider_path": {
+                  "const": "web/apps/mfe-shell/src/app/theme/theme-context.provider.tsx"
+                }
+              }
+            }
+          }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "engine",
+            "migration_tool",
+            "sql_ruleset",
+            "mandatory_rules"
+          ],
+          "properties": {
+            "engine": {
+              "const": "postgresql"
+            },
+            "migration_tool": {
+              "const": "flyway"
+            },
+            "sql_ruleset": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mandatory_rules": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3
+            }
+          }
+        },
+        "api": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "version_prefix",
+            "contract_style",
+            "auth_scheme",
+            "error_envelope_fields"
+          ],
+          "properties": {
+            "protocol": {
+              "const": "rest"
+            },
+            "version_prefix": {
+              "const": "/api/v1"
+            },
+            "contract_style": {
+              "const": "resource-oriented"
+            },
+            "auth_scheme": {
+              "const": "bearer-jwt"
+            },
+            "error_envelope_fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 4
+            }
+          }
+        }
+      }
+    },
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edge_gateway",
+        "service_discovery",
+        "default_entrypoint"
+      ],
+      "properties": {
+        "edge_gateway": {
+          "const": "spring-cloud-gateway"
+        },
+        "service_discovery": {
+          "const": "eureka"
+        },
+        "default_entrypoint": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ci_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delivery_sequence",
+        "required_lanes",
+        "gate_name",
+        "merge_requires_all_green"
+      ],
+      "properties": {
+        "delivery_sequence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 6
+        },
+        "required_lanes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 6
+        },
+        "gate_name": {
+          "const": "module-delivery-gate"
+        },
+        "merge_requires_all_green": {
+          "const": true
+        }
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "legacy_mode",
+        "legacy_manifest_path",
+        "archive_root"
+      ],
+      "properties": {
+        "legacy_mode": {
+          "const": "read-only"
+        },
+        "legacy_manifest_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "archive_root": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_trace": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "checks": [
+    {
+      "id": "formats_index",
+      "path": ".cache/index/formats.v1.json",
+      "owner_milestone": "M2.5",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "catalog_index",
+      "path": ".cache/index/catalog.v1.json",
+      "owner_milestone": "M3",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "session_context",
+      "path": ".cache/sessions/default/session_context.v1.json",
+      "owner_milestone": "M3.5",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "ops_run_index",
+      "path": ".cache/index/run_index.v1.json",
+      "owner_milestone": "M6.6",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "ops_dlq_index",
+      "path": ".cache/index/dlq_index.v1.json",
+      "owner_milestone": "M6.6",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "harvest_cursor",
+      "path": ".cache/learning/harvest_cursor.v1.json",
+      "owner_milestone": "M6.7",
+      "severity": "warn",
+      "auto_heal": true
+    },
+    {
+      "id": "advisor_suggestions",
+      "path": ".cache/learning/advisor_suggestions.v1.json",
+      "owner_milestone": "M7",
+      "severity": "warn",
+      "auto_heal": false
+    },
+    {
+      "id": "readiness_report",
+      "path": ".cache/ops/autopilot_readiness.v1.json",
+      "owner_milestone": "M8",
+      "severity": "warn",
+      "auto_heal": false
+    },
+    {
+      "id": "system_status",
+      "path": ".cache/reports/system_status.v1.json",
+      "owner_milestone": "M8.1",
+      "severity": "warn",
+      "auto_heal": false
+    }
+  ],
+  "fail_action": "warn"
+}

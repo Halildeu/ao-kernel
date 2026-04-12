@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workspace-facts.schema.v1.json",
+  "title": "Workspace Facts",
+  "description": "Long-term fact store distilled from ephemeral session decisions. Facts that stabilize across sessions are promoted here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "facts"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string" },
+    "total_facts": { "type": "integer", "minimum": 0 },
+    "distillation_runs": { "type": "integer", "minimum": 0 },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "value", "confidence", "first_seen", "last_confirmed", "occurrences"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "value": {},
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "first_seen": { "type": "string" },
+          "last_confirmed": { "type": "string" },
+          "occurrences": { "type": "integer", "minimum": 1 },
+          "source_sessions": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

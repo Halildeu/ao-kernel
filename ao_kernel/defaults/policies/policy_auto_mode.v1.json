@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "mode": "mixed",
+  "limits": {
+    "max_ticks_per_run": 1,
+    "max_actions_per_tick": 3,
+    "max_jobs_start_per_tick": 1,
+    "max_polls_per_tick": 2
+  },
+  "dispatch": {
+    "prefer_selected_autopilot": true,
+    "prefer_suggested_extension": true,
+    "fallback_mapping": {
+      "GITHUB_OPS": "PRJ-GITHUB-OPS",
+      "RELEASE": "PRJ-RELEASE-AUTOMATION",
+      "JOB_STATUS": "PRJ-AIRUNNER",
+      "MANUAL_REQUEST:doc-only": "PRJ-AIRUNNER"
+    }
+  },
+  "network_gate": {
+    "default_network_enabled": false,
+    "require_extension_policy_enable": true
+  },
+  "notes": [
+    "PROGRAM_LED=true",
+    "NO_WAIT=true"
+  ],
+  "fail_action": "warn"
+}

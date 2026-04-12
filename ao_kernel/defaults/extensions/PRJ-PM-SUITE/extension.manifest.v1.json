@@ -1,0 +1,97 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_pm_suite.v1.json",
+    "policies/policy_feature_execution_bridge.v1.json",
+    "schemas/feature-execution-contract.schema.v1.json",
+    "schemas/pm-board.schema.v1.json",
+    "schemas/pm-project.schema.v1.json",
+    "schemas/pm-work-item.schema.v1.json",
+    "schemas/pm-workflow.schema.v1.json",
+    "extensions/PRJ-PM-SUITE/contract/feature_execution_contract.v1.json",
+    "extensions/PRJ-PM-SUITE/contract/check_feature_execution_contract.py",
+    "extensions/PRJ-PM-SUITE/contract/seed_feature_execution_contract.py",
+    "schemas/delivery-session-packet.schema.v1.json",
+    "extensions/PRJ-PM-SUITE/contract/build_delivery_session_packet.py",
+    "extensions/PRJ-PM-SUITE/contract/check_delivery_session_guard.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-PM-SUITE",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [
+      "pm_suite"
+    ],
+    "kernel_api_actions": [],
+    "ops": [],
+    "ops_single_gate": []
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-PM-SUITE/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-PM-SUITE",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "feature_execution_bridge_active",
+      "delivery_session_compiler_active"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-PM-SUITE/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "project_management_to_code_bridge",
+    "delivery_session_compiler_active"
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/pm_suite_status.v1.json",
+      ".cache/reports/feature_execution_contract_check.v1.json",
+      ".cache/reports/delivery_session_packet.v1.json",
+      ".cache/reports/delivery_session_guard.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_pm_suite.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_pm_suite.v1.json"
+  ],
+  "semver": "0.3.0",
+  "ui_surfaces": [
+    "system-status",
+    "portfolio-status"
+  ],
+  "version": "v1"
+}

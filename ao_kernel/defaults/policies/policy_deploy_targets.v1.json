@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "frontend_provider": "netlify",
+  "backend_provider": "self_host",
+  "environments": [
+    "staging",
+    "prod"
+  ],
+  "deploy_job_kinds": [
+    "DEPLOY_BE",
+    "DEPLOY_FE"
+  ],
+  "defaults": {
+    "dry_run": true,
+    "network_enabled": false
+  },
+  "notes": [
+    "network_default_off",
+    "dry_run_default"
+  ],
+  "fail_action": "warn"
+}

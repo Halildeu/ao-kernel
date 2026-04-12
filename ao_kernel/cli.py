@@ -1,0 +1,89 @@
+"""ao-kernel CLI entrypoint.
+
+Usage:
+    ao-kernel init
+    ao-kernel migrate [--dry-run] [--backup]
+    ao-kernel doctor
+    ao-kernel version
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+import ao_kernel
+
+
+def _cmd_version(args: argparse.Namespace) -> int:
+    print(f"ao-kernel {ao_kernel.__version__}")
+    return 0
+
+
+def _cmd_init(args: argparse.Namespace) -> int:
+    from ao_kernel.init_cmd import run
+    return run(workspace_root_override=args.workspace_root)
+
+
+def _cmd_migrate(args: argparse.Namespace) -> int:
+    from ao_kernel.migrate_cmd import run
+    return run(
+        workspace_root_override=args.workspace_root,
+        dry_run=args.dry_run,
+        backup=args.backup,
+    )
+
+
+def _cmd_doctor(args: argparse.Namespace) -> int:
+    from ao_kernel.doctor_cmd import run
+    return run(workspace_root_override=args.workspace_root)
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="ao-kernel",
+        description="Governed AI orchestration runtime",
+    )
+    parser.add_argument(
+        "--workspace-root",
+        default=None,
+        help="Override workspace root directory",
+    )
+
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("version", help="Print version")
+
+    sub.add_parser("init", help="Create .ao/ workspace")
+
+    migrate_p = sub.add_parser("migrate", help="Run workspace migration")
+    migrate_p.add_argument("--dry-run", action="store_true", help="Only report, no changes")
+    migrate_p.add_argument("--backup", action="store_true", help="Backup files before mutation")
+
+    sub.add_parser("doctor", help="Workspace health check")
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = _build_parser()
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+
+    dispatch = {
+        "version": _cmd_version,
+        "init": _cmd_init,
+        "migrate": _cmd_migrate,
+        "doctor": _cmd_doctor,
+    }
+
+    cmd = args.command
+    if cmd is None:
+        parser.print_help()
+        return 0
+
+    handler = dispatch.get(cmd)
+    if handler is None:
+        parser.print_help()
+        return 1
+
+    return handler(args)

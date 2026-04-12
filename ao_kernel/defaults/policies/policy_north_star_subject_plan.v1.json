@@ -1,0 +1,209 @@
+{
+  "version": "v1",
+  "synthesis": {
+    "mode": "holistic_module_pack.v1",
+    "stopwords": [
+      "ve",
+      "ile",
+      "icin",
+      "for",
+      "the",
+      "and",
+      "of",
+      "to",
+      "in",
+      "a",
+      "an",
+      "modul",
+      "module",
+      "theme",
+      "subtheme"
+    ],
+    "module_blueprints": [
+      {
+        "module_id": "intake_scope_flow",
+        "title_tr": "Talep ve Kapsam Akisi",
+        "title_en": "Intake and Scope Flow",
+        "module_kind": "intake_scope",
+        "keywords": [
+          "intake",
+          "request",
+          "talep",
+          "scope",
+          "kapsam",
+          "acceptance",
+          "requirements",
+          "girdi",
+          "brief"
+        ],
+        "flow": {
+          "inputs": [
+            "request_text",
+            "constraints",
+            "acceptance_criteria"
+          ],
+          "process": [
+            "normalize_intake",
+            "scope_alignment",
+            "priority_seed"
+          ],
+          "outputs": [
+            "structured_work_item",
+            "accepted_scope"
+          ]
+        }
+      },
+      {
+        "module_id": "context_memory_layer",
+        "title_tr": "Baglam ve Hafiza Katmani",
+        "title_en": "Context and Memory Layer",
+        "module_kind": "context_memory",
+        "keywords": [
+          "context",
+          "baglam",
+          "memory",
+          "hafiza",
+          "session",
+          "state",
+          "knowledge",
+          "long",
+          "history",
+          "trace",
+          "sync"
+        ],
+        "flow": {
+          "inputs": [
+            "session_events",
+            "project_context",
+            "subject_catalog"
+          ],
+          "process": [
+            "context_pack",
+            "memory_sync",
+            "resume_anchor"
+          ],
+          "outputs": [
+            "active_context_pack",
+            "resume_checkpoint"
+          ]
+        }
+      },
+      {
+        "module_id": "execution_orchestration",
+        "title_tr": "Yurutme ve Orkestrasyon",
+        "title_en": "Execution and Orchestration",
+        "module_kind": "execution_control",
+        "keywords": [
+          "execution",
+          "yurutme",
+          "orchestration",
+          "dispatch",
+          "control",
+          "approval",
+          "gate",
+          "workflow",
+          "apply",
+          "run",
+          "otomasyon",
+          "otomat",
+          "onay"
+        ],
+        "flow": {
+          "inputs": [
+            "approved_work_items",
+            "module_plan",
+            "policy_state"
+          ],
+          "process": [
+            "dispatch",
+            "single_gate_checks",
+            "apply_or_skip"
+          ],
+          "outputs": [
+            "execution_trace",
+            "operation_status"
+          ]
+        }
+      },
+      {
+        "module_id": "quality_observability",
+        "title_tr": "Kalite ve Gozlemlenebilirlik",
+        "title_en": "Quality and Observability",
+        "module_kind": "quality_metrics",
+        "keywords": [
+          "quality",
+          "metric",
+          "metrics",
+          "kpi",
+          "report",
+          "observability",
+          "monitor",
+          "telemetry",
+          "audit",
+          "risk",
+          "validation"
+        ],
+        "flow": {
+          "inputs": [
+            "execution_trace",
+            "coverage_data",
+            "quality_rules"
+          ],
+          "process": [
+            "contract_checks",
+            "status_report",
+            "evidence_bundle"
+          ],
+          "outputs": [
+            "quality_gate_status",
+            "manager_summary"
+          ]
+        }
+      },
+      {
+        "module_id": "general_delivery_backlog",
+        "title_tr": "Genel Teslimat Backlogu",
+        "title_en": "General Delivery Backlog",
+        "module_kind": "general_delivery",
+        "keywords": [],
+        "flow": {
+          "inputs": [
+            "subject_catalog",
+            "work_items"
+          ],
+          "process": [
+            "modularization",
+            "backlog_ranking",
+            "implementation_plan"
+          ],
+          "outputs": [
+            "delivery_backlog",
+            "implementation_sequence"
+          ]
+        }
+      }
+    ]
+  },
+  "quality_gate": {
+    "enforce": true,
+    "max_module_count": 8,
+    "min_coverage_quality": 0.9,
+    "require_full_coverage": true,
+    "preferred_profile_order": [
+      "A",
+      "B",
+      "C"
+    ],
+    "scoring_weights": {
+      "pair_weight": 0.55,
+      "theme_weight": 0.35,
+      "completeness_weight": 0.1
+    }
+  },
+  "limits": {
+    "max_steps": 16,
+    "max_plan_bytes": 131072,
+    "plan_bytes_over_limit_action": "warn"
+  },
+  "fail_action": "warn"
+}

@@ -1,0 +1,73 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "ci/check_script_budget.py",
+    "ci/script_budget.v1.json",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "schemas/script-budget.schema.json",
+    "src/ops/commands/maintenance_cmds.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-M0-MAINTAINABILITY",
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [
+      "m0_plan_ensure"
+    ],
+    "ops": [
+      "script-budget"
+    ],
+    "ops_single_gate": [
+      "script-budget"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-M0-MAINTAINABILITY/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-M0-MAINTAINABILITY",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "validate_schemas"
+    ]
+  },
+  "layer_contract": {
+    "notes": [],
+    "read_roots_allowlist": [
+      "roadmaps/PROJECTS/PRJ-M0-MAINTAINABILITY/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/script_budget/report.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [],
+  "policy_files": [
+    "ci/script_budget.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [],
+  "version": "v1",
+  "enabled": true
+}

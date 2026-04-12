@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "handoff-envelope.schema.v1.json",
+  "title": "Handoff Envelope",
+  "description": "Cross-role task transfer envelope with evidence trail. Formalizes control-plane to execution handoff per AI-MULTIREPO-OPERATING-CONTRACT.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "generated_at",
+    "handoff_id",
+    "from_role",
+    "from_actor",
+    "from_provider",
+    "from_model",
+    "from_session_id",
+    "to_role",
+    "work_item_id",
+    "handoff_reason",
+    "evidence_paths",
+    "created_at"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["handoff-envelope"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_role": {
+      "type": "string",
+      "enum": ["architect", "planner", "implementer", "reviewer", "verifier", "consultant", "assurance_owner", "operator"]
+    },
+    "from_actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "to_role": {
+      "type": "string",
+      "enum": ["architect", "planner", "implementer", "reviewer", "verifier", "consultant", "assurance_owner", "operator"]
+    },
+    "to_actor": {
+      "type": "string"
+    },
+    "to_provider": {
+      "type": "string"
+    },
+    "to_model": {
+      "type": "string"
+    },
+    "work_item_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "handoff_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scope_glob": {
+      "type": "string"
+    },
+    "context_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decisions_snapshot": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

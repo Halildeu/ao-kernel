@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/north-star-catalog.schema.v1.json",
+  "title": "North Star Catalog (Seed + Materialized)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "workspace_root", "items"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/catalog_item" }
+    }
+  },
+  "$defs": {
+    "catalog_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "source", "tags"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "summary": { "type": "string" },
+        "evidence_expectations": { "type": "array", "items": { "type": "string" } },
+        "remediation": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
+

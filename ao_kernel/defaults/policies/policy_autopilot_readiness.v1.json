@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "output_path": ".cache/ops/autopilot_readiness.v1.json",
+  "required_files": [
+    ".cache/index/catalog.v1.json",
+    ".cache/index/formats.v1.json",
+    ".cache/index/run_index.v1.json",
+    ".cache/index/dlq_index.v1.json",
+    ".cache/learning/public_candidates.v1.json",
+    ".cache/learning/advisor_suggestions.v1.json",
+    ".cache/sessions/default/session_context.v1.json"
+  ],
+  "required_policies": [
+    "policies/policy_security.v1.json",
+    "policies/policy_secrets.v1.json",
+    "policies/policy_quality.v1.json",
+    "policies/policy_harvest.v1.json",
+    "policies/policy_advisor.v1.json"
+  ],
+  "integration_flags": [
+    "ORCH_INTEGRATION_MODE"
+  ],
+  "on_fail": "warn",
+  "fail_action": "warn"
+}

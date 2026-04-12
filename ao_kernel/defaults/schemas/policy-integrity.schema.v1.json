@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-integrity.schema.v1.json",
+  "title": "policy-integrity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "verify_on_read_required",
+    "allow_report_only_when_missing_sources",
+    "inputs"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": { "type": "boolean" },
+    "verify_on_read_required": { "type": "boolean" },
+    "allow_report_only_when_missing_sources": { "type": "boolean" },
+    "exclude_inputs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "exclude_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system_status",
+        "pack_index",
+        "quality_gate",
+        "repo_hygiene",
+        "harvest",
+        "script_budget"
+      ],
+      "properties": {
+        "system_status": { "$ref": "#/$defs/input_rule" },
+        "pack_index": { "$ref": "#/$defs/input_rule" },
+        "quality_gate": { "$ref": "#/$defs/input_rule" },
+        "repo_hygiene": { "$ref": "#/$defs/input_rule" },
+        "harvest": { "$ref": "#/$defs/input_rule" },
+        "script_budget": { "$ref": "#/$defs/input_rule" }
+      }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "input_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "on_mismatch"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "on_mismatch": { "type": "string", "enum": ["FAIL", "WARN"] }
+      }
+    }
+  }
+}

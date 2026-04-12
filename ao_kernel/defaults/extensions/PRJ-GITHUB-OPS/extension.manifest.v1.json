@@ -1,0 +1,100 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "docs/LAYER-MODEL-LOCK.v1.md",
+    "extensions/PRJ-GITHUB-OPS/EXTENSION.md",
+    "extensions/PRJ-GITHUB-OPS/extension.manifest.v1.json",
+    "policies/policy_github_ops.v1.json",
+    "schemas/github-ops-job.schema.v1.json",
+    "schemas/github-ops-jobs-index.schema.v1.json",
+    "schemas/github-ops-report.schema.v1.json",
+    "schemas/policy-github-ops.schema.v1.json",
+    "src/prj_github_ops/github_ops.py",
+    "src/ops/commands/extension_cmds.py"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": []
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-GITHUB-OPS",
+  "enabled": true,
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [
+      "github_ops_check",
+      "github_ops_job_poll",
+      "github_ops_job_start"
+    ],
+    "ops": [
+      "github-ops-check",
+      "github-ops-job-poll",
+      "github-ops-job-start"
+    ],
+    "ops_single_gate": [
+      "github-ops-check"
+    ]
+  },
+  "tests_entrypoints": [
+    "extensions/PRJ-GITHUB-OPS/tests/contract_test.py"
+  ],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": [
+      "contract_test_only"
+    ]
+  },
+  "extension_id": "PRJ-GITHUB-OPS",
+  "gates": {
+    "required": [
+      "script_budget",
+      "smoke_fast",
+      "system_status",
+      "validate_schemas"
+    ]
+  },
+  "guardrails": {
+    "network_default": false,
+    "offline": true
+  },
+  "layer_contract": {
+    "notes": [
+      "skeleton_only"
+    ],
+    "read_roots_allowlist": [
+      "extensions/PRJ-GITHUB-OPS/"
+    ],
+    "write_roots_allowlist": [
+      ".cache/",
+      "incubator/",
+      "external_allowlist/"
+    ]
+  },
+  "notes": [
+    "local_first",
+    "job_first"
+  ],
+  "origin": "CORE",
+  "outputs": {
+    "workspace_reports": [
+      ".cache/github_ops/jobs_index.v1.json",
+      ".cache/reports/github_ops_report.v1.json",
+      ".cache/reports/github_ops_jobs/*.v1.json"
+    ]
+  },
+  "owner": "CORE",
+  "policies": [
+    "policies/policy_github_ops.v1.json"
+  ],
+  "policy_files": [
+    "policies/policy_github_ops.v1.json"
+  ],
+  "semver": "0.1.0",
+  "ui_surfaces": [
+    "system-status",
+    "portfolio-status"
+  ],
+  "version": "v1"
+}

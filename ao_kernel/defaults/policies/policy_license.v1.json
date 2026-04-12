@@ -1,0 +1,15 @@
+{
+  "allowlist": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "MIT",
+    "PSF-2.0"
+  ],
+  "denylist": [
+    "AGPL-3.0-only",
+    "GPL-3.0-only"
+  ],
+  "unknown_behavior": "fail",
+  "version": "v1",
+  "fail_action": "warn"
+}

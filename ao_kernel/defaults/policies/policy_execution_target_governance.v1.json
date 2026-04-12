@@ -1,0 +1,99 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "inputs": {
+    "required_registries": [
+      "registry/active_execution_registry.v1.json",
+      "registry/apps_and_launch_registry.v1.json",
+      "registry/version_registry.v1.json",
+      "registry/authority_matrix.v1.json",
+      "registry/duplicate_surface_register.v1.json"
+    ],
+    "required_reports": [
+      ".cache/reports/system_status.v1.json",
+      ".cache/reports/portfolio_status.v1.json"
+    ],
+    "optional_sources": [
+      ".cache/managed_repos.v1.json",
+      "docs/OPERATIONS/product_catalog.v1.json",
+      ".cache/reports/worktree_health.v1.json"
+    ]
+  },
+  "resolution": {
+    "registry_first": true,
+    "fallback_to_filesystem_discovery": false,
+    "nested_targets_inherit_repo_git_health": true,
+    "require_launch_profile_registry": true,
+    "require_version_source_for_apply": true,
+    "require_authority_matrix": true,
+    "require_duplicate_surface_register": true
+  },
+  "blocking": {
+    "blocked_lifecycle_states": [
+      "archived",
+      "backup",
+      "legacy",
+      "disabled",
+      "unknown"
+    ],
+    "hard_block_conditions": [
+      "unknown_target",
+      "unknown_repo_root",
+      "unapproved_worktree",
+      "unknown_version_source",
+      "archived_target",
+      "backup_target",
+      "legacy_target"
+    ],
+    "report_only_conditions": [
+      "dirty_tree",
+      "no_upstream_on_current_branch"
+    ],
+    "block_or_warn_conditions": [
+      "wrong_branch",
+      "stale_checkout",
+      "detached_head"
+    ],
+    "allow_dirty_tree_intents": [
+      "DISCOVERY",
+      "PLAN_ONLY",
+      "ASSURANCE_LOCK"
+    ]
+  },
+  "guardrails": {
+    "block_if_ai_entry_pack_missing_on_apply": true,
+    "block_if_launch_profile_missing": true,
+    "block_if_effective_path_not_registered": true,
+    "block_if_uncontrolled_duplicate_exists": true,
+    "record_selection_reason": true,
+    "record_target_evidence": true
+  },
+  "outputs": {
+    "workspace_reports": [
+      ".cache/reports/execution_target_resolution.v1.json",
+      ".cache/reports/execution_target_guard.v1.json"
+    ],
+    "required_evidence_fields": [
+      "repo_id",
+      "target_id",
+      "repo_root",
+      "working_dir",
+      "branch",
+      "head",
+      "launch_profile_id",
+      "version_source_refs",
+      "selection_reason"
+    ]
+  },
+  "rollout": {
+    "mode_default": "report_only",
+    "promote_to_block_on": [
+      "unknown_target",
+      "archived_target",
+      "backup_target",
+      "legacy_target",
+      "unapproved_worktree",
+      "unknown_version_source"
+    ]
+  }
+}

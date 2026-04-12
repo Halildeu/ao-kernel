@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-decision-inbox.schema.v1.json",
+  "title": "policy-decision-inbox",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "limits",
+    "mapping",
+    "output_paths"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_items_per_run",
+        "dedup_window_hours"
+      ],
+      "properties": {
+        "max_items_per_run": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "dedup_window_hours": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_kind_map",
+        "default_decision_kind"
+      ],
+      "properties": {
+        "decision_kind_map": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/decision_kind"
+          }
+        },
+        "default_decision_kind": {
+          "$ref": "#/$defs/decision_kind"
+        }
+      }
+    },
+    "output_paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_inbox_path",
+        "decision_inbox_md_path",
+        "decisions_applied_path",
+        "selection_path",
+        "policy_overrides_dir"
+      ],
+      "properties": {
+        "decision_inbox_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_inbox_md_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decisions_applied_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_overrides_dir": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  },
+  "$defs": {
+    "decision_kind": {
+      "type": "string",
+      "enum": [
+        "ROUTE_OVERRIDE",
+        "AUTO_APPLY_ALLOW",
+        "NETWORK_ENABLE",
+        "NETWORK_LIVE_ENABLE",
+        "SCOPE_CONFIRM",
+        "UNKNOWN"
+      ]
+    }
+  }
+}

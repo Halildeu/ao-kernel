@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/airunner-seed-audit.schema.v1.json",
+  "title": "Airunner Seed Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "seed_id", "kind", "state", "created_at", "workspace_root", "notes"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "seed_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "state": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/decision-apply-bulk.schema.v1.json",
+  "title": "Decision Apply Bulk",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "status",
+    "mode",
+    "decision_inbox_path",
+    "decision_inbox_md_path",
+    "pending_decisions_before",
+    "pending_decisions_after",
+    "applied_count",
+    "skipped_count",
+    "report_path"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["v1"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workspace_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["OK", "WARN", "IDLE", "FAIL"]
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision_inbox_path": {
+      "type": "string"
+    },
+    "decision_inbox_md_path": {
+      "type": "string"
+    },
+    "decisions_applied_path": {
+      "type": "string"
+    },
+    "pending_decisions_before": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pending_decisions_after": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "applied_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_by_reason": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "applied_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision_id", "decision_kind", "option_id"],
+        "properties": {
+          "decision_id": { "type": "string", "minLength": 1 },
+          "decision_kind": { "type": "string", "minLength": 1 },
+          "option_id": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "requested_decision_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "error_code": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "report_path": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/policy-quota.schema.json",
+  "title": "Policy Quota",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "default",
+    "overrides"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "default": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_runs_per_day",
+        "max_est_tokens_per_day"
+      ],
+      "properties": {
+        "max_runs_per_day": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "max_est_tokens_per_day": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        }
+      }
+    },
+    "overrides": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "max_runs_per_day",
+          "max_est_tokens_per_day"
+        ],
+        "properties": {
+          "max_runs_per_day": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "max_est_tokens_per_day": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000000
+          }
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}

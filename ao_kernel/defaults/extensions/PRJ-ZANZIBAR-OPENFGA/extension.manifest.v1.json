@@ -1,0 +1,44 @@
+{
+  "ai_context_refs": [
+    "AGENTS.md",
+    "decisions/topics/zanzibar-openfga.v1.json",
+    "roadmaps/PROJECTS/PRJ-ZANZIBAR-OPENFGA/project.manifest.v1.json",
+    "docs/OPERATIONS/EXTENSIONS.md",
+    "docs/OPERATIONS/SSOT-MAP.md",
+    "policies/policy_domain_conventions.v1.json"
+  ],
+  "compat": {
+    "core_max": "",
+    "core_min": "0.0.0",
+    "notes": ["Cross-repo extension — dev repo is execution target"]
+  },
+  "context_integration": {
+    "enabled": true,
+    "notes": "Zanzibar context integrated via decisions/topics/zanbibar-openfga.v1.json"
+  },
+  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-ZANZIBAR-OPENFGA",
+  "entrypoints": {
+    "cockpit_sections": [],
+    "kernel_api_actions": [],
+    "ops": [],
+    "ops_single_gate": []
+  },
+  "extension_id": "PRJ-ZANZIBAR-OPENFGA",
+  "isolation": {
+    "network_allowed": false,
+    "workspace_root": ".cache/extensions/PRJ-ZANZIBAR-OPENFGA"
+  },
+  "outputs": {
+    "workspace_reports": []
+  },
+  "schemas": [],
+  "policies": [],
+  "status": "active",
+  "tests": {
+    "contract_tests": [
+      "tests/contract/test_zanzibar_extension.py"
+    ]
+  },
+  "title": "Zanzibar / OpenFGA Authorization Migration",
+  "version": "1.0.0"
+}

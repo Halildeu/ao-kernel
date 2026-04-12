@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/public-candidates.schema.json",
+  "title": "Public Candidates Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "source_counts",
+    "candidates",
+    "sanitization"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "source_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_runs", "dlq_items"],
+      "properties": {
+        "evidence_runs": { "type": "integer", "minimum": 0 },
+        "dlq_items": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "key", "value", "confidence", "evidence_refs"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["FLAKY_HINT", "STRATEGY_STAT", "FORMAT_HINT", "PACK_HINT"] },
+          "key": { "type": "string", "minLength": 1 },
+          "value": { "type": "object" },
+          "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "evidence_refs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "removed_tokens_count", "notes"],
+      "properties": {
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "removed_tokens_count": { "type": "integer", "minimum": 0 },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
+

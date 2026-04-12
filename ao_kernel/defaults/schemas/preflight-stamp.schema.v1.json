@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/preflight-stamp.schema.v1.json",
+  "title": "Preflight Stamp",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "workspace_root",
+    "gates",
+    "overall",
+    "notes"
+  ],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "workspace_root": { "type": "string", "minLength": 1 },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validate_schemas", "smoke_fast", "script_budget"],
+      "properties": {
+        "validate_schemas": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "smoke_fast": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "script_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hard_exceeded", "soft_exceeded", "status"],
+          "properties": {
+            "hard_exceeded": { "type": "integer", "minimum": 0 },
+            "soft_exceeded": { "type": "integer", "minimum": 0 },
+            "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] }
+          }
+        }
+      }
+    },
+    "overall": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}

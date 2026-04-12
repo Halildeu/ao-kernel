@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-context-quality:v1",
+  "title": "Context Quality Policy",
+  "description": "Thresholds for context quality scoring and drift early warning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scoring", "components"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "description": { "type": "string" },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_relevance_score", "max_efficiency_ratio", "min_cache_hit_rate_warn", "min_cache_hit_rate_alert", "quality_trend_alert"],
+      "properties": {
+        "min_relevance_score": { "type": "integer", "minimum": 0, "maximum": 20 },
+        "max_efficiency_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "min_cache_hit_rate_warn": { "type": "number", "minimum": 0, "maximum": 1 },
+        "min_cache_hit_rate_alert": { "type": "number", "minimum": 0, "maximum": 1 },
+        "quality_trend_alert": { "type": "string", "enum": ["DEGRADING"] }
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "max_points_per_component", "max_total_points"],
+      "properties": {
+        "total": { "type": "integer" },
+        "max_points_per_component": { "type": "integer" },
+        "max_total_points": { "type": "integer" }
+      }
+    }
+  }
+}

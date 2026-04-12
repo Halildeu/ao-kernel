@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "policy-quality-gates.schema.v1.json",
+  "title": "Policy Quality Gates",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "enabled",
+    "gates"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "on_fail"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "on_fail": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "retry",
+              "reject",
+              "warn",
+              "escalate",
+              "suspend"
+            ]
+          },
+          "max_retries": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "min_output_chars": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "check_against": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "decision_quality_ref": {
+      "type": "string",
+      "description": "Path to decision-quality schema used for decision quality scoring integration."
+    },
+    "fallback_on_all_fail": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "reject",
+        "suspend"
+      ]
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": [
+        "block",
+        "warn",
+        "log"
+      ],
+      "description": "Action to take when this policy check fails. block=hard stop, warn=log+continue, log=record only."
+    }
+  }
+}
