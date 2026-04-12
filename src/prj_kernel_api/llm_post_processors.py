@@ -11,9 +11,11 @@ import re
 from pathlib import Path
 from typing import Any, Dict
 
+import json as _json
+
 from src.shared.utils import write_text_atomic
 
-from src.prj_kernel_api.llm_transport import sha256_hex
+from src.prj_kernel_api.llm_transport import redact_secrets, sha256_hex
 
 
 def _sanitize_name(text: str) -> str:
@@ -146,3 +148,75 @@ def process_live_response(
         output_truncated=output_truncated,
         output_full_path=output_full_path,
     )
+
+
+# ── Streaming Evidence ──────────────────────────────────────────────
+
+
+def process_stream_response(
+    *,
+    stream_result: Any,  # StreamResult from llm_stream_transport
+    provider_id: str,
+    model: str,
+    workspace_root: str,
+    request_id: str,
+) -> Dict[str, Any]:
+    """Post-processing for streaming response. Writes 3 evidence artifacts:
+
+    1. {request_id}.stream.events.v1.jsonl — event audit trail
+    2. {request_id}.stream.summary.v1.json — final metadata
+    3. {request_id}_{provider_id}.txt — full text (compat with non-streaming)
+
+    Returns summary dict.
+    """
+    ws_root = Path(workspace_root).resolve()
+    out_dir = ws_root / ".cache" / "reports" / "llm_live_outputs"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_req = _sanitize_name(str(request_id or "request"))
+    safe_prov = _sanitize_name(str(provider_id or "provider"))
+
+    # 1. Events JSONL (audit trail)
+    if stream_result.events:
+        events_path = out_dir / f"{safe_req}.stream.events.v1.jsonl"
+        lines = []
+        for evt in stream_result.events:
+            try:
+                line = _json.dumps(evt, ensure_ascii=False, separators=(",", ":"))
+                lines.append(redact_secrets(line))
+            except (TypeError, ValueError):
+                continue
+        if lines:
+            write_text_atomic(events_path, "\n".join(lines) + "\n")
+
+    # 2. Full text (backward compat with non-streaming format)
+    text_path = None
+    if stream_result.text:
+        text_path = save_output_text(
+            stream_result.text,
+            workspace_root=workspace_root,
+            request_id=request_id,
+            provider_id=provider_id,
+        )
+
+    # 3. Summary JSON
+    summary = {
+        "request_id": request_id,
+        "provider_id": provider_id,
+        "model": model,
+        "status": stream_result.status,
+        "complete": stream_result.complete,
+        "finish_reason": stream_result.finish_reason,
+        "chunk_count": stream_result.chunk_count,
+        "elapsed_ms": stream_result.elapsed_ms,
+        "first_token_ms": stream_result.first_token_ms,
+        "usage": stream_result.usage,
+        "text_length": len(stream_result.text),
+        "text_sha256": sha256_hex(stream_result.text.encode("utf-8")) if stream_result.text else None,
+        "error_code": stream_result.error_code,
+        "text_path": text_path,
+    }
+    summary_path = out_dir / f"{safe_req}.stream.summary.v1.json"
+    write_text_atomic(summary_path, _json.dumps(summary, indent=2, ensure_ascii=False) + "\n")
+
+    return summary

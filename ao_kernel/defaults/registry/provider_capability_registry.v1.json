@@ -21,11 +21,14 @@
       "wire_api": "messages",
       "auth_header": "x-api-key",
       "api_version": "2023-06-01",
-      "expected_env_keys": ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY"],
+      "expected_env_keys": [
+        "ANTHROPIC_API_KEY",
+        "CLAUDE_API_KEY"
+      ],
       "default_model": "claude-opus-4-5-20251101",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "unsupported",
@@ -43,11 +46,13 @@
       "wire_api": "responses",
       "auth_header": "Authorization",
       "api_version": null,
-      "expected_env_keys": ["OPENAI_API_KEY"],
+      "expected_env_keys": [
+        "OPENAI_API_KEY"
+      ],
       "default_model": "gpt-4o-mini",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "supported",
@@ -65,11 +70,14 @@
       "wire_api": "generateContent",
       "auth_header": "x-goog-api-key",
       "api_version": null,
-      "expected_env_keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+      "expected_env_keys": [
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY"
+      ],
       "default_model": "gemini-2.0-flash",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "experimental",
         "batch": "unsupported",
@@ -87,11 +95,13 @@
       "wire_api": "chat/completions",
       "auth_header": "Authorization",
       "api_version": null,
-      "expected_env_keys": ["DEEPSEEK_API_KEY"],
+      "expected_env_keys": [
+        "DEEPSEEK_API_KEY"
+      ],
       "default_model": "deepseek-chat",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "unsupported",
@@ -109,11 +119,14 @@
       "wire_api": "chat/completions",
       "auth_header": "Authorization",
       "api_version": null,
-      "expected_env_keys": ["DASHSCOPE_API_KEY", "QWEN_API_KEY"],
+      "expected_env_keys": [
+        "DASHSCOPE_API_KEY",
+        "QWEN_API_KEY"
+      ],
       "default_model": "qwen-plus",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "experimental",
         "batch": "unsupported",
@@ -131,11 +144,13 @@
       "wire_api": "chat/completions",
       "auth_header": "Authorization",
       "api_version": null,
-      "expected_env_keys": ["XAI_API_KEY"],
+      "expected_env_keys": [
+        "XAI_API_KEY"
+      ],
       "default_model": "grok-4-1-fast-reasoning",
       "capabilities": {
         "chat": "supported",
-        "streaming": "unsupported",
+        "streaming": "experimental",
         "tool_use": "unsupported",
         "vision": "supported",
         "batch": "unsupported",

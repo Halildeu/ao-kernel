@@ -70,11 +70,24 @@ def build_live_request(
     response_format: Dict[str, Any] | None = None,
     tools: List[Dict[str, Any]] | None = None,
     tool_choice: str | None = None,
+    stream: bool = False,
 ) -> Dict[str, Any]:
     """Build provider-native HTTP request for a live LLM call.
 
     Returns dict with keys: url, headers, body_bytes, body_json (for logging).
+
+    Args:
+        stream: If True, adds stream flag to request body and adjusts
+                endpoint for providers that require it (e.g., Google).
+                Raises ValueError if stream=True and tools are provided
+                (tool streaming not yet supported — fail-closed).
     """
+    if stream and tools:
+        raise ValueError(
+            "stream=True with tools is not supported in v0.2.0. "
+            "Tool streaming will be added in v0.3.0. "
+            "Use stream=False for tool-calling requests."
+        )
     if provider_id == "claude":
         system, anthropic_messages = to_anthropic_messages(messages)
         req_body: dict[str, Any] = {
@@ -123,10 +136,24 @@ def build_live_request(
         headers["Accept"] = "application/json"
         headers["User-Agent"] = _XAI_USER_AGENT
 
+    # Streaming support
+    if stream:
+        req_body["stream"] = True
+        if provider_id == "xai":
+            headers["Accept"] = "text/event-stream"
+
+    # Google streaming requires different endpoint
+    url = base_url
+    if stream and provider_id == "google":
+        # Google Gemini: /models/{model}:generateContent → :streamGenerateContent
+        url = base_url.replace(":generateContent", ":streamGenerateContent")
+        if "?alt=sse" not in url:
+            url += "?alt=sse" if "?" not in url else "&alt=sse"
+
     body_bytes = json.dumps(req_body, ensure_ascii=False).encode("utf-8")
 
     return {
-        "url": base_url,
+        "url": url,
         "headers": headers,
         "body_bytes": body_bytes,
         "body_json": req_body,
