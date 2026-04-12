@@ -163,6 +163,83 @@ python -m build
 twine upload dist/*
 ```
 
+## Codex İstişare Altyapısı
+
+Bu repo'da Codex (GPT-5.4) ile istişare yapılabilir. Önemli mimari kararlarda istişare ZORUNLU.
+
+### İstişare Nasıl Yapılır
+
+```bash
+# 1. İstişare dosyası oluştur
+# .ao/consultations/requests/CNS-YYYYMMDD-NNN.request.v1.json
+
+# 2. Codex'i çağır
+codex exec -C . -o .ao/consultations/responses/CNS-YYYYMMDD-NNN.codex.response.v1.json \
+  "Bu bir istişare talebidir (CNS-...). <dosya path> oku. <sorular>"
+
+# 3. Yanıtı oku ve değerlendir
+```
+
+### İstişare Formatı
+
+Request:
+```json
+{
+  "version": "v1",
+  "consultation_id": "CNS-YYYYMMDD-NNN",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "architecture|planning|review|decision",
+  "question": {
+    "title": "Kısa başlık",
+    "body": "Detaylı soru",
+    "context_refs": ["dosya/yolları"],
+    "options": [{"option_id": "A", "title": "...", "pros": "...", "cons": "..."}]
+  },
+  "created_at": "ISO-8601",
+  "branch": "main",
+  "head_sha": "abc1234"
+}
+```
+
+Response:
+```json
+{
+  "agent": "codex",
+  "responded_at": "ISO-8601",
+  "verdict": "A|B|C",
+  "body": "Detaylı yanıt",
+  "agreements": ["Doğru bulunan noktalar"],
+  "objections": ["İtirazlar"],
+  "additions": ["Yeni öneriler"]
+}
+```
+
+### İstişare Dizinleri
+
+```
+.ao/consultations/
+  requests/    ← istişare talepleri
+  responses/   ← Codex yanıtları
+```
+
+### İstişare Geçmişi (autonomous-orchestrator'dan)
+
+| ID | Konu | Verdict | Sonuç |
+|---|---|---|---|
+| CNS-001 | Framework karşılaştırma | D (hibrit DIY) | LLM capabilities kendin yap |
+| CNS-002 | LLM plan review | B (orta revizyon) | PR0 eklendi, tool calling fail-closed |
+| CNS-003 | Paketleme planı | C (major revizyon) | Facade+shim, PyPI, dual resolver |
+| CNS-004 | Derin değerlendirme | Timeout | Tamamlanamadı |
+
+### İstişare Kuralları
+
+- Mimari karar gerektiren konularda istişare AÇ
+- Codex'in itirazlarını ciddiye al — her birini kanıtla kabul/ret
+- İstişare sonucunu memory'ye kaydet
+- Mevcut kararları (project_decisions.md) istişare olmadan değiştirme
+
 ## Language
 
 - Kullanıcı Türkçe konuşur, Türkçe yanıt ver
