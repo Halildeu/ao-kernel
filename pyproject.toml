@@ -37,6 +37,9 @@ otel = [
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp",
 ]
+mcp = [
+    "mcp>=1.0.0",
+]
 pgvector = [
     "pgvector",
     "psycopg2-binary",

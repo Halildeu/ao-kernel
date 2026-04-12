@@ -39,6 +39,22 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
     return run(workspace_root_override=args.workspace_root)
 
 
+def _cmd_mcp_serve(args: argparse.Namespace) -> int:
+    try:
+        import asyncio
+        from ao_kernel.mcp_server import serve_stdio
+        asyncio.run(serve_stdio())
+        return 0
+    except ImportError as e:
+        if "mcp" in str(e).lower():
+            print(
+                "Hata: MCP server icin 'mcp' paketi gerekli.\n"
+                "Kurmak icin: pip install ao-kernel[mcp]"
+            )
+            return 1
+        raise
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ao-kernel",
@@ -62,6 +78,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("doctor", help="Workspace health check")
 
+    mcp_p = sub.add_parser("mcp", help="MCP server commands")
+    mcp_sub = mcp_p.add_subparsers(dest="mcp_command")
+    mcp_sub.add_parser("serve", help="Start MCP server (stdio transport)")
+
     return parser
 
 
@@ -80,6 +100,14 @@ def main(argv: list[str] | None = None) -> int:
     if cmd is None:
         parser.print_help()
         return 0
+
+    # MCP subcommand
+    if cmd == "mcp":
+        mcp_cmd = getattr(args, "mcp_command", None)
+        if mcp_cmd == "serve":
+            return _cmd_mcp_serve(args)
+        print("Kullanim: ao-kernel mcp serve")
+        return 1
 
     handler = dispatch.get(cmd)
     if handler is None:
