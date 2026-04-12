@@ -192,13 +192,11 @@ def handle_llm_route(params: dict[str, Any]) -> dict[str, Any]:
         )
 
     try:
-        from src.prj_kernel_api.llm_router import resolve
-        result = resolve(
-            request={
-                "intent": intent,
-                "perspective": params.get("perspective"),
-                "provider_priority": params.get("provider_priority"),
-            },
+        from ao_kernel.llm import resolve_route
+        result = resolve_route(
+            intent=intent,
+            perspective=params.get("perspective"),
+            provider_priority=params.get("provider_priority"),
             workspace_root=params.get("workspace_root"),
         )
 
