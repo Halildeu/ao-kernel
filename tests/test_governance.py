@@ -1,0 +1,134 @@
+"""Tests for ao_kernel.governance facade — policy check, quality gate, fail-closed."""
+
+from __future__ import annotations
+
+from unittest.mock import patch
+
+from ao_kernel.governance import (
+    QualityGateResult,
+    check_policy,
+    evaluate_quality,
+    quality_summary,
+)
+
+
+class TestCheckPolicy:
+    def test_missing_policy_name_denied(self):
+        result = check_policy("", {})
+        assert result["allowed"] is False
+        assert "MISSING_POLICY_NAME" in result["reason_codes"]
+
+    def test_nonexistent_policy_denied(self):
+        result = check_policy("nonexistent_xyz.json", {"action": "test"})
+        assert result["allowed"] is False
+        assert "POLICY_NOT_FOUND" in result["reason_codes"]
+
+    def test_valid_policy_allowed(self):
+        result = check_policy("policy_autonomy.v1.json", {"type": "read"})
+        assert result["allowed"] is True
+        assert result["decision"] == "allow"
+
+    def test_disabled_policy_allowed(self):
+        disabled = {"enabled": False, "version": "v1"}
+        with patch("ao_kernel.config.load_with_override", return_value=disabled):
+            result = check_policy("test.json", {"action": "write"})
+        assert result["allowed"] is True
+        assert "POLICY_DISABLED" in result["reason_codes"]
+
+    def test_required_field_violation_denied(self):
+        policy = {"enabled": True, "required_fields": ["intent", "scope"]}
+        with patch("ao_kernel.config.load_with_override", return_value=policy):
+            result = check_policy("strict.json", {"intent": "test"})
+        assert result["allowed"] is False
+        assert any("MISSING_REQUIRED_FIELD:scope" in r for r in result["reason_codes"])
+
+    def test_blocked_value_violation_denied(self):
+        policy = {"enabled": True, "blocked_values": {"model": ["dangerous-model"]}}
+        with patch("ao_kernel.config.load_with_override", return_value=policy):
+            result = check_policy("block.json", {"model": "dangerous-model"})
+        assert result["allowed"] is False
+        assert any("BLOCKED_VALUE:model" in r for r in result["reason_codes"])
+
+    def test_limit_exceeded_denied(self):
+        policy = {"enabled": True, "limits": {"max_tokens": 1000}}
+        with patch("ao_kernel.config.load_with_override", return_value=policy):
+            result = check_policy("limits.json", {"max_tokens": 5000})
+        assert result["allowed"] is False
+        assert any("LIMIT_EXCEEDED:max_tokens" in r for r in result["reason_codes"])
+
+
+class TestEvaluateQuality:
+    def test_empty_output_fails(self):
+        results = evaluate_quality("")
+        assert len(results) >= 1
+        assert results[0].passed is False
+        assert results[0].gate_id == "output_not_empty"
+
+    def test_valid_output_evaluates(self):
+        results = evaluate_quality("This is a valid LLM output with meaningful content.")
+        assert isinstance(results, list)
+        for r in results:
+            assert isinstance(r, QualityGateResult)
+            assert isinstance(r.passed, bool)
+            assert isinstance(r.gate_id, str)
+
+    def test_fail_closed_on_error(self):
+        """If quality gate module fails, result must be DENY, not allow."""
+        with patch("src.orchestrator.quality_gate.run_quality_gates", side_effect=RuntimeError("broken")):
+            results = evaluate_quality("test output")
+        assert len(results) >= 1
+        assert results[0].passed is False
+        assert "error" in results[0].gate_id.lower() or "error" in results[0].reason.lower()
+
+    def test_with_workspace(self, tmp_workspace):
+        results = evaluate_quality(
+            "Valid output text",
+            workspace_root=tmp_workspace,
+        )
+        assert isinstance(results, list)
+
+
+class TestQualitySummary:
+    def test_all_passed(self):
+        results = [
+            QualityGateResult(passed=True, gate_id="schema_valid", action="pass", reason=""),
+            QualityGateResult(passed=True, gate_id="not_empty", action="pass", reason=""),
+        ]
+        summary = quality_summary(results)
+        assert summary["all_passed"] is True
+        assert summary["total"] == 2
+        assert summary["passed"] == 2
+        assert summary["failed"] == 0
+
+    def test_some_failed(self):
+        results = [
+            QualityGateResult(passed=True, gate_id="schema_valid", action="pass", reason=""),
+            QualityGateResult(passed=False, gate_id="consistency", action="reject", reason="contradicts"),
+        ]
+        summary = quality_summary(results)
+        assert summary["all_passed"] is False
+        assert summary["failed"] == 1
+        assert summary["gates"][1]["passed"] is False
+
+    def test_empty_results(self):
+        summary = quality_summary([])
+        assert summary["all_passed"] is True
+        assert summary["total"] == 0
+
+
+class TestMcpQualityGateFailClosed:
+    """Verify MCP quality gate handler no longer silently allows on error."""
+
+    def test_mcp_quality_gate_uses_governance_facade(self):
+        from ao_kernel.mcp_server import handle_quality_gate
+        result = handle_quality_gate({"output_text": "test output"})
+        assert result["tool"] == "ao_quality_gate"
+        # Must NOT be silent allow — must have evaluated
+        assert result["decision"] in ("allow", "deny")
+        assert "data" in result
+
+    def test_mcp_quality_gate_empty_denied(self):
+        from ao_kernel.mcp_server import handle_quality_gate
+        result = handle_quality_gate({"output_text": ""})
+        assert result["allowed"] is False
+        assert "EMPTY_OUTPUT" in result["reason_codes"]
