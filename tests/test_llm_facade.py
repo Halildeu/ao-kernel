@@ -213,4 +213,4 @@ class TestStreamTypes:
 
     def test_all_exports_count(self):
         from ao_kernel.llm import __all__
-        assert len(__all__) == 14
+        assert len(__all__) == 16  # 14 original + build_request_with_context + process_response_with_context

@@ -30,6 +30,14 @@ from typing import Any
 _API_VERSION = "0.1.0"
 
 
+def _find_workspace_root():
+    """Find workspace root for context operations. Returns Path or None."""
+    from pathlib import Path
+    from ao_kernel.config import workspace_root
+    ws = workspace_root()
+    return Path(ws) if ws else None
+
+
 # ── Decision Envelope ───────────────────────────────────────────────
 
 
@@ -457,18 +465,25 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
         import time as _time
         from ao_kernel.telemetry import span as otel_span, record_mcp_tool_call, record_policy_check
 
-        handler = TOOL_DISPATCH.get(name)
-        if handler is None:
-            return [TextContent(
-                type="text",
-                text=json.dumps({"error": f"Unknown tool: {name}"}),
-            )]
-
+        # Use ToolGateway for policy-gated dispatch (not raw TOOL_DISPATCH)
+        gateway = create_tool_gateway()
         start = _time.monotonic()
+
         with otel_span("ao.mcp_tool_call", {"ao.mcp.tool": name}) as s:
-            result = handler(arguments or {})
+            gw_result = gateway.dispatch(name, arguments or {})
             elapsed = (_time.monotonic() - start) * 1000.0
 
+            if gw_result.status == "DENIED":
+                deny_envelope = _decision_envelope(
+                    tool=name, allowed=False, decision="deny",
+                    reason_codes=[gw_result.reason],
+                    error=f"ToolGateway denied: {gw_result.reason}",
+                )
+                s.set_attribute("ao.decision", "deny")
+                record_mcp_tool_call(elapsed, tool=name, decision="deny")
+                return [TextContent(type="text", text=json.dumps(deny_envelope, ensure_ascii=False))]
+
+            result = gw_result.output or {"error": gw_result.reason}
             decision = result.get("decision", "unknown")
             s.set_attribute("ao.decision", decision)
             s.set_attribute("ao.allowed", result.get("allowed", False))
@@ -479,6 +494,21 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
                     policy=result.get("policy_ref", "unknown"),
                     decision=decision,
                 )
+
+            # Wire tool result into context pipeline
+            try:
+                from ao_kernel.context.decision_extractor import extract_from_tool_result
+                from ao_kernel.context.canonical_store import promote_decision
+                decisions = extract_from_tool_result(name, result)
+                for d in decisions:
+                    if d.confidence >= 0.8:
+                        promote_decision(
+                            _find_workspace_root(),
+                            key=d.key, value=d.value, source="mcp_tool",
+                            confidence=d.confidence,
+                        )
+            except Exception:
+                pass  # Context wiring failure shouldn't block tool response
 
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
