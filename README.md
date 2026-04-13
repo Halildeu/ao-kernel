@@ -113,7 +113,7 @@ ao-kernel mcp serve  # stdio transport
 
 | | ao-kernel | LangGraph | CrewAI | Pydantic AI |
 |---|---|---|---|---|
-| Policy engine | 90+ policies | No | No | No |
+| Policy engine | 96 policies | No | No | No |
 | Fail-closed | Yes | No | No | No |
 | Evidence trail | Self-hosted JSONL | LangSmith SaaS | No | No |
 | Migration CLI | Yes | No | No | No |
@@ -130,7 +130,7 @@ ao_kernel/          <- Public facade (clean API)
   llm.py            <- LLM routing, building, normalization
   mcp_server.py     <- MCP server (4 tools, 3 resources)
   telemetry.py      <- OpenTelemetry (lazy no-op fallback)
-  defaults/         <- 324 bundled JSON (policies, schemas, registry)
+  defaults/         <- 338 bundled JSON (policies, schemas, registry, extensions, ops)
 
 src/                <- Compat shim (deprecated, use ao_kernel.*)
 ```
