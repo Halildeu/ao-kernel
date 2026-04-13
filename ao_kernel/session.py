@@ -1,0 +1,58 @@
+"""ao_kernel.session — Public session management facade.
+
+Clean import path for session context operations.
+
+Usage:
+    from ao_kernel.session import new_context, save_context, load_context
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+
+def new_context(
+    session_id: str,
+    workspace_root: str | Path,
+    ttl_seconds: int = 3600,
+) -> dict[str, Any]:
+    """Create a new session context."""
+    from src.session.context_store import new_context as _new
+    return _new(
+        session_id=session_id,
+        workspace_root=str(workspace_root),
+        ttl_seconds=ttl_seconds,
+    )
+
+
+def save_context(
+    context: dict[str, Any],
+    workspace_root: str | Path,
+) -> None:
+    """Save session context atomically."""
+    from src.session.context_store import save_context_atomic, SessionPaths
+    paths = SessionPaths(workspace_root=Path(workspace_root))
+    save_context_atomic(context, paths)
+
+
+def load_context(workspace_root: str | Path) -> dict[str, Any]:
+    """Load session context from workspace."""
+    from src.session.context_store import load_context as _load, SessionPaths
+    paths = SessionPaths(workspace_root=Path(workspace_root))
+    return _load(paths)
+
+
+def distill_memory(
+    workspace_root: str | Path,
+    distilled: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Consolidate session facts."""
+    from src.session.memory_distiller import consolidate_facts
+    return consolidate_facts(
+        workspace_root=Path(workspace_root),
+        distilled=distilled or [],
+    )
+
+
+__all__ = ["new_context", "save_context", "load_context", "distill_memory"]

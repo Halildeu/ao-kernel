@@ -40,24 +40,18 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
     return ws_root
 
 
+def _load_operations_json(filename: str, repo_root: Path) -> Dict[str, Any]:
+    """Load operations JSON — tries repo-root first, falls back to bundled defaults."""
+    from src.shared.resource_loader import load_resource
+    return load_resource("operations", filename)
+
+
 def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path, Path, Path, Path]:
-    from src.shared.resource_loader import load_resource_path
-
-    class_registry = load_resource_path("operations", "llm_class_registry.v1.json")
-    resolver_rules = load_resource_path("operations", "llm_resolver_rules.v1.json")
-    provider_map = load_resource_path("operations", "llm_provider_map.v1.json")
-
-    # Fallback to repo-root if resource_loader returns paths
-    if class_registry is None:
-        class_registry = repo_root / "docs" / "OPERATIONS" / "llm_class_registry.v1.json"
-    if resolver_rules is None:
-        resolver_rules = repo_root / "docs" / "OPERATIONS" / "llm_resolver_rules.v1.json"
-    if provider_map is None:
-        provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
-
+    """Return probe_state path only. Operations loaded via _load_operations_json()."""
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
     probe_state = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
-    return class_registry, resolver_rules, provider_map, probe_state
+    # class_registry, resolver_rules, provider_map loaded directly via _load_operations_json
+    return None, None, None, probe_state
 
 
 def _merge_state(provider_map: Dict[str, Any], probe_state: Dict[str, Any]) -> Dict[str, Any]:
@@ -124,12 +118,12 @@ def resolve(
     perspective = request.get("perspective")
     provider_priority: List[str] = request.get("provider_priority") or []
 
-    class_registry_path, resolver_rules_path, provider_map_path, probe_state_path = _policy_paths(
-        repo_root, workspace_root=workspace_root
-    )
-    _load_json(class_registry_path)  # validate exists/parseable
-    resolver_rules = _load_json(resolver_rules_path)
-    provider_map = _load_json(provider_map_path)
+    _, _, _, probe_state_path = _policy_paths(repo_root, workspace_root=workspace_root)
+
+    # Load operations via resource_loader (bundled defaults fallback)
+    _load_operations_json("llm_class_registry.v1.json", repo_root)  # validate
+    resolver_rules = _load_operations_json("llm_resolver_rules.v1.json", repo_root)
+    provider_map = _load_operations_json("llm_provider_map.v1.json", repo_root)
     probe_state = _load_json(probe_state_path) if probe_state_path.exists() else {"classes": {}}
 
     merged_map = _merge_state(provider_map, probe_state)

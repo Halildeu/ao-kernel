@@ -97,7 +97,7 @@ Kaynak: `/Users/halilkocoglu/Documents/autonomous-orchestrator/`
 | tool_gateway | src/prj_kernel_api/tool_gateway.py | Typed allowlist, cycle detection, fail-closed |
 | capability_model | src/providers/capability_model.py | Provider capability SSOT + negotiation |
 | token_counter | src/providers/token_counter.py | tiktoken + heuristic + budget tracking |
-| eval_harness | src/orchestrator/eval_harness.py | 6 eval checks + scorecard |
+| eval_harness | src/orchestrator/eval_harness.py | 6 deterministic heuristic-based eval checks + scorecard |
 | prompt_registry | src/prj_kernel_api/prompt_registry.py | Experiment governance (A/B/canary/shadow) |
 
 ### Runtime Akışı (llm_call_live)
