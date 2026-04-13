@@ -131,11 +131,21 @@ def forget(
 def recall(
     workspace_root: Path,
     *,
-    key_pattern: str = "memory.*",
+    key_pattern: str = "*",
 ) -> list[dict[str, Any]]:
-    """Agent queries its self-stored memories."""
+    """Agent queries its self-stored memories.
+
+    The key_pattern is automatically prefixed with "memory." to match
+    the prefix added by remember(). Glob patterns supported (fnmatch).
+
+    Examples:
+        recall(ws, key_pattern="*")          → all memories
+        recall(ws, key_pattern="test.*")     → memory.test.*
+        recall(ws, key_pattern="test.fact")  → memory.test.fact
+    """
     from ao_kernel.context.canonical_store import query
-    return query(workspace_root, key_pattern=key_pattern)
+    full_pattern = f"memory.{key_pattern}" if not key_pattern.startswith("memory.") else key_pattern
+    return query(workspace_root, key_pattern=full_pattern)
 
 
 __all__ = ["remember", "update", "forget", "recall"]
