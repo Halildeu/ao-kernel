@@ -1,0 +1,53 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-003",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "planning",
+  "question": {
+    "title": "ao-kernel Master Proje Planı — toplu review (4 faz, 22 iş, ~41 test)",
+    "body": "ao-kernel v2.1.2 patch işleri tamamlandı (PR #46-49, 670 test). Kalan TÜM işleri tek bir master planda topladık. Bu planı toplu olarak review etmeni istiyoruz.\n\n## Mevcut Durum\n- v2.1.1 PyPI'de, 670+ test, 0 uyarı\n- CI: test.yml (lint+test+mypy+coverage) + publish.yml (PyPI)\n- README.md: 172 satır, py.typed var, CHANGELOG yok\n- Bu session'da: CLAUDE.md rewrite, 5 entegrasyon fix (lifecycle hook, canonical injection, stream tools, MCP desc, vision registry), telemetry fix, 18 tool calling test, 9 evidence test, tool-use contract belgeleme\n\n## Master Plan\n\n### Faz 1 — v2.2.0: Roadmap Test Kampanyası (~20 test)\nTop-5 modül: exec_steps, step_templates, executor, compiler, exec_evidence\n2,497 LOC, 0 gerçek test. CNS-009 ve CNS-20260414-001 Q5'te onaylandı.\nTest senaryoları: readonly enforcement, DLQ propagation, dry_run, milestone determinism, snapshot baseline.\n\n### Faz 2 — v2.2.0: Entegrasyon Derinleştirme (~15 test)\n2a. Tool Use Graduation Hazırlığı (~8 test): Provider başına contract test, tool-result roundtrip, build_tools_param callsite bağlantısı\n2b. Evidence Writer Client Entegrasyonu (~3 test): Non-streaming llm_call path evidence yazmıyor, streaming yazıyor — gap kapatılmalı\n2c. Compaction Engine Edge Case (~4 test): Büyük karar seti, threshold sınırı, malformed context, archive\n\n### Faz 3 — v2.3.0: Altyapı ve Kalite (~10 iş)\n3a. CHANGELOG.md oluşturma (Keep a Changelog)\n3b. SecretsProvider ABC enforcement\n3c. llm.py eski docstring temizliği (src/ shim referansları)\n3d. MCP HTTP transport testi (~2 test)\n3e. semantic_retrieval feature flag (context_compiler entegrasyonu, Codex istişaresi gerekli)\n3f. Vision/audio kod altyapısı (Codex istişaresi gerekli)\n3g. build_tools_param callsite temizliği\n3h. Memory distiller edge case testleri (~3 test)\n3i. Capability registry güncellemesi (tool use experimental → supported)\n3j. README.md güncellemesi\n\n### Faz 4 — v3.0.0+: Ekosistem Genişleme\npgvector backend, extension loader, async/await, secrets vault, roadmap checkpoint/resume, geniş _internal coverage, otomatik tool-use loop, prompt experiments\n\n## Sorular\n1. Faz sıralaması doğru mu? Faz 1 ve 2'yi aynı release'e (v2.2.0) koymak uygun mu yoksa ayırmalı mıyız?\n2. Faz 2b (evidence client entegrasyonu): Non-streaming path'e evidence yazımı eklemek doğru yaklaşım mı? Yoksa evidence sadece workspace mode + streaming için mi kalmalı?\n3. Faz 3'teki 10 iş: Öncelik sırası doğru mu? Hangisi öne çekilmeli, hangisi daha da ertelenmeli?\n4. Faz 3e (semantic_retrieval feature flag) ve 3f (vision altyapısı): Bunlar v2.3.0'a mı yoksa v3.0.0'a mı ait?\n5. Faz 4'teki 8 iş: Hangileri gerçekçi v3.0.0 hedefi, hangileri daha uzun vadeli?\n6. Toplam plan gerçekçi mi? 22 iş + ~41 test fazla mı az mı? Kaçırdığımız kritik bir şey var mı?",
+    "context_refs": [
+      ".claude/plans/master-plan.md",
+      "ao_kernel/client.py",
+      "ao_kernel/_internal/roadmap/executor.py",
+      "ao_kernel/_internal/roadmap/compiler.py",
+      "ao_kernel/_internal/evidence/writer.py",
+      "ao_kernel/_internal/session/compaction_engine.py",
+      "ao_kernel/_internal/secrets/provider.py",
+      "ao_kernel/defaults/registry/provider_capability_registry.v1.json",
+      "README.md",
+      "pyproject.toml"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Plan doğru ve yeterli — minor düzeltmelerle kabul",
+        "pros": "Hızlı başlangıç",
+        "cons": "Gözden kaçan sorunlar"
+      },
+      {
+        "option_id": "B",
+        "title": "Faz sıralaması veya gruplama değişmeli",
+        "pros": "Daha iyi önceliklendirme",
+        "cons": "Plan revizyonu"
+      },
+      {
+        "option_id": "C",
+        "title": "Eksik iş kalemleri var — plan genişletilmeli",
+        "pros": "Kapsamlılık",
+        "cons": "Scope genişleme riski"
+      },
+      {
+        "option_id": "D",
+        "title": "Plan fazla iddialı — scope daraltılmalı",
+        "pros": "Gerçekçilik",
+        "cons": "Bazı işler süresiz ertelenir"
+      }
+    ]
+  },
+  "created_at": "2026-04-14T01:30:00+03:00",
+  "branch": "claude/modest-ardinghelli",
+  "head_sha": "0040283"
+}
