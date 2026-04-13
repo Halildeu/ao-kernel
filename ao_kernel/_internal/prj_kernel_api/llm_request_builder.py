@@ -98,7 +98,8 @@ def build_live_request(
         if response_format is not None:
             req_body["response_format"] = response_format
         if tools:
-            req_body["tools"] = tools
+            from ao_kernel._internal.prj_kernel_api.tool_calling import build_tools_param
+            req_body["tools"] = build_tools_param(provider_id, tools)
         if tool_choice is not None:
             req_body["tool_choice"] = tool_choice
         headers = {
@@ -118,7 +119,8 @@ def build_live_request(
         if response_format is not None:
             req_body["response_format"] = response_format
         if tools:
-            req_body["tools"] = tools
+            from ao_kernel._internal.prj_kernel_api.tool_calling import build_tools_param
+            req_body["tools"] = build_tools_param(provider_id, tools)
         if tool_choice is not None:
             req_body["tool_choice"] = tool_choice
         if request_id and provider_id not in {"google", "openai", "qwen", "xai", "claude"}:

@@ -508,6 +508,136 @@ class TestAutoRouteContract:
                 assert result["model"] == "claude-3-opus"
 
 
+class TestEvidenceIntegration:
+    def test_nonstream_evidence_written(self, tmp_workspace: Path):
+        """Non-streaming llm_call writes evidence in workspace mode."""
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.execute_request", return_value={
+                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
+                "http_status": 200, "error_type": None, "error_detail": None,
+                "tls_cafile": None,
+            }),
+            patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
+            patch("ao_kernel.llm.extract_usage", return_value=None),
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+            )
+            assert result["status"] == "OK"
+
+        # Evidence file should exist
+        evidence_dir = ws_root / ".cache" / "reports" / "llm_live_outputs"
+        if evidence_dir.exists():
+            txt_files = list(evidence_dir.glob("*.txt"))
+            assert len(txt_files) >= 1
+
+    def test_nonstream_evidence_skipped_library_mode(self, tmp_path: Path):
+        """Library mode (no workspace) skips evidence writing."""
+        client = AoKernelClient()
+        client._workspace_root = None
+        client._session_active = True
+        client._context = {"session_id": "test", "ephemeral_decisions": []}
+
+        mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.execute_request", return_value={
+                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
+            }),
+            patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
+            patch("ao_kernel.llm.extract_usage", return_value=None),
+            patch(
+                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_live_response"
+            ) as mock_evidence,
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+            )
+            assert result["status"] == "OK"
+            mock_evidence.assert_not_called()
+
+    def test_stream_evidence_signature_fixed(self, tmp_workspace: Path):
+        """Streaming evidence uses keyword args (BUG-1 fix verification)."""
+        from ao_kernel.llm import StreamResult
+
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_sr = StreamResult(
+            status="OK", complete=True, text="hello",
+            finish_reason="stop", elapsed_ms=100, chunk_count=3,
+        )
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+            patch(
+                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response"
+            ) as mock_stream_ev,
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+                stream=True,
+            )
+            assert result["status"] == "OK"
+            # process_stream_response called with keyword args
+            mock_stream_ev.assert_called_once()
+            call_kwargs = mock_stream_ev.call_args
+            # Verify keyword-only call (no positional args)
+            assert call_kwargs.args == ()
+            assert "stream_result" in call_kwargs.kwargs
+            assert "model" in call_kwargs.kwargs
+
+    def test_stream_evidence_skipped_library_mode(self, tmp_path: Path):
+        """Library mode streaming skips evidence writing."""
+        from ao_kernel.llm import StreamResult
+
+        client = AoKernelClient()
+        client._workspace_root = None
+        client._session_active = True
+        client._context = {"session_id": "test", "ephemeral_decisions": []}
+
+        mock_sr = StreamResult(
+            status="OK", complete=True, text="hello",
+            finish_reason="stop", elapsed_ms=100, chunk_count=3,
+        )
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+            patch(
+                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response"
+            ) as mock_stream_ev,
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+                stream=True,
+            )
+            assert result["status"] == "OK"
+            mock_stream_ev.assert_not_called()
+
+
 class TestDoctor:
     def test_doctor_returns_dict(self, tmp_workspace: Path):
         ws_root = tmp_workspace.parent

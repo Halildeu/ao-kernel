@@ -15,14 +15,19 @@ def build_tools_param_claude(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]
     """Convert tool registry entries to Claude's tool format.
 
     Claude format: {name, description, input_schema}
+    Idempotent: tools already in Claude format (with input_schema) pass through unchanged.
     """
     result = []
     for tool in tools:
-        result.append({
-            "name": tool["name"],
-            "description": tool.get("description", ""),
-            "input_schema": tool.get("parameters", {"type": "object", "properties": {}}),
-        })
+        if "input_schema" in tool and "name" in tool:
+            # Already Claude-native format — pass through
+            result.append(tool)
+        else:
+            result.append({
+                "name": tool["name"],
+                "description": tool.get("description", ""),
+                "input_schema": tool.get("parameters", {"type": "object", "properties": {}}),
+            })
     return result
 
 
@@ -30,17 +35,22 @@ def build_tools_param_openai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]
     """Convert tool registry entries to OpenAI's function calling format.
 
     OpenAI format: {type: "function", function: {name, description, parameters}}
+    Idempotent: tools already in OpenAI format (with type: "function") pass through unchanged.
     """
     result = []
     for tool in tools:
-        result.append({
-            "type": "function",
-            "function": {
-                "name": tool["name"],
-                "description": tool.get("description", ""),
-                "parameters": tool.get("parameters", {"type": "object", "properties": {}}),
-            },
-        })
+        if tool.get("type") == "function" and "function" in tool:
+            # Already OpenAI-native format — pass through
+            result.append(tool)
+        else:
+            result.append({
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool.get("description", ""),
+                    "parameters": tool.get("parameters", {"type": "object", "properties": {}}),
+                },
+            })
     return result
 
 
