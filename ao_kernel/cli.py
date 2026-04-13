@@ -40,10 +40,17 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def _cmd_mcp_serve(args: argparse.Namespace) -> int:
+    transport = getattr(args, "transport", "stdio")
     try:
         import asyncio
-        from ao_kernel.mcp_server import serve_stdio
-        asyncio.run(serve_stdio())
+        if transport == "http":
+            from ao_kernel.mcp_server import serve_http
+            host = getattr(args, "host", "127.0.0.1")
+            port = getattr(args, "port", 8080)
+            asyncio.run(serve_http(host=host, port=port))
+        else:
+            from ao_kernel.mcp_server import serve_stdio
+            asyncio.run(serve_stdio())
         return 0
     except ImportError as e:
         if "mcp" in str(e).lower():
@@ -78,7 +85,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     mcp_p = sub.add_parser("mcp", help="MCP server commands")
     mcp_sub = mcp_p.add_subparsers(dest="mcp_command")
-    mcp_sub.add_parser("serve", help="Start MCP server (stdio transport)")
+    serve_p = mcp_sub.add_parser("serve", help="Start MCP server")
+    serve_p.add_argument("--transport", choices=["stdio", "http"], default="stdio", help="Transport (default: stdio)")
+    serve_p.add_argument("--host", default="127.0.0.1", help="HTTP bind host (default: 127.0.0.1)")
+    serve_p.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
 
     return parser
 

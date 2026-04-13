@@ -559,3 +559,39 @@ async def serve_stdio():  # pragma: no cover — requires mcp package
     server = create_mcp_server()
     async with stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())
+
+
+async def serve_http(  # pragma: no cover — requires mcp package
+    host: str = "127.0.0.1",
+    port: int = 8080,
+) -> None:
+    """Run MCP server over Streamable HTTP transport.
+
+    Requires `mcp` package with HTTP support: pip install ao-kernel[mcp]
+
+    Args:
+        host: Bind address (default: 127.0.0.1 for local only)
+        port: Listen port (default: 8080)
+    """
+    try:
+        from mcp.server.streamable_http import StreamableHTTPServerTransport
+    except ImportError:
+        raise ImportError(
+            "MCP HTTP transport requires the 'mcp' package with HTTP support. "
+            "Install with: pip install ao-kernel[mcp]"
+        )
+
+    from starlette.applications import Starlette
+    from starlette.routing import Mount
+    import uvicorn
+
+    server = create_mcp_server()
+    transport = StreamableHTTPServerTransport(server)
+
+    app = Starlette(
+        routes=[Mount("/mcp", app=transport.handle_request)],
+    )
+
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    srv = uvicorn.Server(config)
+    await srv.serve()
