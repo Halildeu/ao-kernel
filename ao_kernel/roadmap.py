@@ -27,8 +27,8 @@ def compile_roadmap(
 
     Returns compiled plan dict.
     """
-    from src.roadmap.compiler import compile_roadmap as _compile
-    from src.shared.resource_loader import load_resource_path
+    from ao_kernel._internal.roadmap.compiler import compile_roadmap as _compile
+    from ao_kernel._internal.shared.resource_loader import load_resource_path
 
     ws = Path(workspace_root)
     rp = Path(roadmap_path)
@@ -65,7 +65,7 @@ def apply_roadmap(
         workspace_root: Workspace root directory
         dry_run: If True, simulate only (default: True for fail-closed)
     """
-    from src.roadmap.executor import apply_roadmap as _apply
+    from ao_kernel._internal.roadmap.executor import apply_roadmap as _apply
 
     ws = Path(workspace_root)
     return _apply(

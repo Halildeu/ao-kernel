@@ -6,12 +6,12 @@ import json
 from pathlib import Path
 
 
-from src.prj_kernel_api.llm_stream_transport import StreamResult
+from ao_kernel._internal.prj_kernel_api.llm_stream_transport import StreamResult
 
 
 class TestStreamPostProcessors:
     def test_process_stream_response_writes_summary(self, tmp_path: Path):
-        from src.prj_kernel_api.llm_post_processors import process_stream_response
+        from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
 
         ws = tmp_path / ".cache" / "ws"
         ws.mkdir(parents=True)
@@ -41,7 +41,7 @@ class TestStreamPostProcessors:
         assert saved["chunk_count"] == 5
 
     def test_process_stream_response_writes_text(self, tmp_path: Path):
-        from src.prj_kernel_api.llm_post_processors import process_stream_response
+        from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
 
         ws = tmp_path / ".cache" / "ws"
         ws.mkdir(parents=True)
@@ -64,7 +64,7 @@ class TestStreamPostProcessors:
         assert text_path.read_text() == "Full output text"
 
     def test_process_stream_response_writes_events(self, tmp_path: Path):
-        from src.prj_kernel_api.llm_post_processors import process_stream_response
+        from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
 
         ws = tmp_path / ".cache" / "ws"
         ws.mkdir(parents=True)
@@ -92,7 +92,7 @@ class TestStreamPostProcessors:
         assert len(lines) == 2
 
     def test_partial_result_evidence(self, tmp_path: Path):
-        from src.prj_kernel_api.llm_post_processors import process_stream_response
+        from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
 
         ws = tmp_path / ".cache" / "ws"
         ws.mkdir(parents=True)

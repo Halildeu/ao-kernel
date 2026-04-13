@@ -1,0 +1,238 @@
+From 755b87ff7dc4ed9810aaa3dcd4206f5c924ddb89 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 14:20:38 +0300
+Subject: [PATCH] fix(wiring): connect context pipeline to LLM + MCP runtime
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+CRITICAL FIX: Context pipeline was built but not wired to runtime.
+
+llm.py:
+- build_request_with_context(): compile context → inject into messages → build request
+- process_response_with_context(): LLM output → process_turn + tool result extraction
+- extract_from_tool_result now WIRED (was orphaned dead code)
+
+mcp_server.py:
+- call_tool now uses ToolGateway (was bypassing policy gate)
+- Tool results flow into context pipeline (extract → promote if confident)
+- _find_workspace_root() helper for context operations
+
+Fixes: #1 (llm context), #2 (MCP context), #3 (tool_result), #10 (ToolGateway bypass)
+
+364 tests passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/llm.py         | 103 +++++++++++++++++++++++++++++++++++++++
+ ao_kernel/mcp_server.py  |  46 ++++++++++++++---
+ tests/test_llm_facade.py |   2 +-
+ 3 files changed, 142 insertions(+), 9 deletions(-)
+
+diff --git a/ao_kernel/llm.py b/ao_kernel/llm.py
+index 152bde1..1a77947 100644
+--- a/ao_kernel/llm.py
++++ b/ao_kernel/llm.py
+@@ -223,11 +223,114 @@ def count_tokens_heuristic(messages: list[dict[str, Any]]) -> int:
+     return _count(messages)
+ 
+ 
++# ── Context-Aware LLM Operations ────────────────────────────────────
++
++
++def build_request_with_context(
++    *,
++    provider_id: str,
++    model: str,
++    messages: list[dict[str, Any]],
++    base_url: str,
++    api_key: str,
++    session_context: dict[str, Any] | None = None,
++    workspace_root: str | None = None,
++    profile: str | None = None,
++    temperature: float | None = None,
++    max_tokens: int | None = None,
++    request_id: str | None = None,
++    stream: bool = False,
++) -> dict[str, Any]:
++    """Build LLM request with context injection.
++
++    If session_context is provided, compiles context and injects into messages.
++    Falls back to plain build_request if no context available.
++    """
++    if session_context:
++        from ao_kernel.context.context_compiler import compile_context
++        from ao_kernel.context.context_injector import inject_context_into_messages
++
++        compiled = compile_context(
++            session_context,
++            profile=profile,
++            messages=messages,
++        )
++        if compiled.preamble:
++            messages = inject_context_into_messages(
++                messages, session_context, max_tokens=compiled.total_tokens or 2000,
++            )
++
++    return build_request(
++        provider_id=provider_id,
++        model=model,
++        messages=messages,
++        base_url=base_url,
++        api_key=api_key,
++        temperature=temperature,
++        max_tokens=max_tokens,
++        request_id=request_id,
++        stream=stream,
++    )
++
++
++def process_response_with_context(
++    output_text: str,
++    session_context: dict[str, Any],
++    *,
++    provider_id: str = "",
++    request_id: str = "",
++    workspace_root: str | None = None,
++    tool_results: list[dict[str, Any]] | None = None,
++) -> dict[str, Any]:
++    """Process LLM response through context pipeline.
++
++    Extracts decisions, processes tool results, runs memory pipeline.
++    Returns updated session context.
++    """
++    from pathlib import Path
++    from ao_kernel.context.memory_pipeline import process_turn
++
++    ws = Path(workspace_root) if workspace_root else None
++
++    # Process LLM text output
++    session_context = process_turn(
++        output_text,
++        session_context,
++        provider_id=provider_id,
++        request_id=request_id,
++        workspace_root=ws,
++    )
++
++    # Process tool results (extract_from_tool_result — was disconnected, now wired)
++    if tool_results:
++        from ao_kernel.context.decision_extractor import extract_from_tool_result
++        from src.session.context_store import upsert_decision
++
++        for tr in tool_results:
++            tool_name = tr.get("tool_name", tr.get("name", ""))
++            tool_output = tr.get("output", tr)
++            if isinstance(tool_output, dict):
++                decisions = extract_from_tool_result(
++                    tool_name, tool_output, request_id=request_id,
++                )
++                for d in decisions:
++                    upsert_decision(
++                        session_context,
++                        key=d.key,
++                        value=d.value,
++                        source=d.source,
++                    )
++
++    return session_context
++
++
+ # ── Public API ───────────────────────────────────────────────────────
+ 
+ __all__ = [
+     "resolve_route",
+     "build_request",
++    "build_request_with_context",
++    "process_response_with_context",
+     "check_capabilities",
+     "normalize_response",
+     "extract_text",
+diff --git a/ao_kernel/mcp_server.py b/ao_kernel/mcp_server.py
+index 68bcea5..e17b135 100644
+--- a/ao_kernel/mcp_server.py
++++ b/ao_kernel/mcp_server.py
+@@ -30,6 +30,14 @@ from typing import Any
+ _API_VERSION = "0.1.0"
+ 
+ 
++def _find_workspace_root():
++    """Find workspace root for context operations. Returns Path or None."""
++    from pathlib import Path
++    from ao_kernel.config import workspace_root
++    ws = workspace_root()
++    return Path(ws) if ws else None
++
++
+ # ── Decision Envelope ───────────────────────────────────────────────
+ 
+ 
+@@ -457,18 +465,25 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
+         import time as _time
+         from ao_kernel.telemetry import span as otel_span, record_mcp_tool_call, record_policy_check
+ 
+-        handler = TOOL_DISPATCH.get(name)
+-        if handler is None:
+-            return [TextContent(
+-                type="text",
+-                text=json.dumps({"error": f"Unknown tool: {name}"}),
+-            )]
+-
++        # Use ToolGateway for policy-gated dispatch (not raw TOOL_DISPATCH)
++        gateway = create_tool_gateway()
+         start = _time.monotonic()
++
+         with otel_span("ao.mcp_tool_call", {"ao.mcp.tool": name}) as s:
+-            result = handler(arguments or {})
++            gw_result = gateway.dispatch(name, arguments or {})
+             elapsed = (_time.monotonic() - start) * 1000.0
+ 
++            if gw_result.status == "DENIED":
++                deny_envelope = _decision_envelope(
++                    tool=name, allowed=False, decision="deny",
++                    reason_codes=[gw_result.reason],
++                    error=f"ToolGateway denied: {gw_result.reason}",
++                )
++                s.set_attribute("ao.decision", "deny")
++                record_mcp_tool_call(elapsed, tool=name, decision="deny")
++                return [TextContent(type="text", text=json.dumps(deny_envelope, ensure_ascii=False))]
++
++            result = gw_result.output or {"error": gw_result.reason}
+             decision = result.get("decision", "unknown")
+             s.set_attribute("ao.decision", decision)
+             s.set_attribute("ao.allowed", result.get("allowed", False))
+@@ -480,6 +495,21 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
+                     decision=decision,
+                 )
+ 
++            # Wire tool result into context pipeline
++            try:
++                from ao_kernel.context.decision_extractor import extract_from_tool_result
++                from ao_kernel.context.canonical_store import promote_decision
++                decisions = extract_from_tool_result(name, result)
++                for d in decisions:
++                    if d.confidence >= 0.8:
++                        promote_decision(
++                            _find_workspace_root(),
++                            key=d.key, value=d.value, source="mcp_tool",
++                            confidence=d.confidence,
++                        )
++            except Exception:
++                pass  # Context wiring failure shouldn't block tool response
++
+         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+ 
+     @server.list_resources()
+diff --git a/tests/test_llm_facade.py b/tests/test_llm_facade.py
+index 8107aad..e42e76b 100644
+--- a/tests/test_llm_facade.py
++++ b/tests/test_llm_facade.py
+@@ -213,4 +213,4 @@ class TestStreamTypes:
+ 
+     def test_all_exports_count(self):
+         from ao_kernel.llm import __all__
+-        assert len(__all__) == 14
++        assert len(__all__) == 16  # 14 original + build_request_with_context + process_response_with_context
+-- 
+2.50.1 (Apple Git-155)
+

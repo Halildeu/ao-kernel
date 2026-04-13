@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ao-kernel"
-version = "0.2.0"
+version = "2.0.0"
 description = "Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -62,7 +62,7 @@ ao-kernel = "ao_kernel.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ao_kernel", "ao_kernel.*", "src", "src.*"]
+include = ["ao_kernel", "ao_kernel.*"]
 exclude = [
     "*_test",
     "*_test.*",

@@ -8,7 +8,7 @@ import json
 
 class TestStreamToolsAllowed:
     def test_stream_with_tools_no_longer_raises(self):
-        from src.prj_kernel_api.llm_request_builder import build_live_request
+        from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
         req = build_live_request(
             provider_id="openai",
             model="gpt-4",
@@ -37,7 +37,7 @@ class TestStreamToolsAllowed:
 
 class TestToolCallReconstruction:
     def test_openai_tool_deltas(self):
-        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
             {"choices": [{"delta": {"tool_calls": [
@@ -58,7 +58,7 @@ class TestToolCallReconstruction:
         assert args["city"] == "London"
 
     def test_openai_multiple_tools(self):
-        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
             {"choices": [{"delta": {"tool_calls": [
@@ -76,7 +76,7 @@ class TestToolCallReconstruction:
         assert "tool_b" in names
 
     def test_anthropic_tool_blocks(self):
-        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
             {"type": "content_block_start", "index": 1, "content_block": {
@@ -97,12 +97,12 @@ class TestToolCallReconstruction:
         assert args["query"] == "test"
 
     def test_empty_events_no_tools(self):
-        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
         assert reconstruct_tool_calls([], "openai") == []
         assert reconstruct_tool_calls([], "claude") == []
 
     def test_text_only_events_no_tools(self):
-        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
         events = [
             {"choices": [{"delta": {"content": "Hello"}}]},
             {"choices": [{"delta": {"content": " world"}}]},

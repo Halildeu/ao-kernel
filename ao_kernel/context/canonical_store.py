@@ -23,7 +23,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
-from src.shared.utils import write_json_atomic
+from ao_kernel._internal.shared.utils import write_json_atomic
 
 
 def _now_iso() -> str:

@@ -8,7 +8,7 @@ from pathlib import Path
 
 class TestVaultStubProvider:
     def test_get_existing_secret(self, tmp_path: Path):
-        from src.secrets.vault_stub_provider import VaultStubSecretsProvider
+        from ao_kernel._internal.secrets.vault_stub_provider import VaultStubSecretsProvider
         secrets_file = tmp_path / "secrets.json"
         secrets_file.write_text(json.dumps({
             "OPENAI_API_KEY": "sk-stub-openai-123",
@@ -19,7 +19,7 @@ class TestVaultStubProvider:
         assert provider.get("ANTHROPIC_API_KEY") == "sk-stub-anthropic-456"
 
     def test_get_missing_secret_returns_none(self, tmp_path: Path):
-        from src.secrets.vault_stub_provider import VaultStubSecretsProvider
+        from ao_kernel._internal.secrets.vault_stub_provider import VaultStubSecretsProvider
         secrets_file = tmp_path / "secrets.json"
         secrets_file.write_text(json.dumps({"SOME_KEY": "val"}))
         provider = VaultStubSecretsProvider(secrets_path=secrets_file)
@@ -27,7 +27,7 @@ class TestVaultStubProvider:
         assert result is None
 
     def test_missing_file_returns_none(self, tmp_path: Path):
-        from src.secrets.vault_stub_provider import VaultStubSecretsProvider
+        from ao_kernel._internal.secrets.vault_stub_provider import VaultStubSecretsProvider
         provider = VaultStubSecretsProvider(secrets_path=tmp_path / "nonexistent.json")
         result = provider.get("ANY_KEY")
         assert result is None
@@ -35,28 +35,28 @@ class TestVaultStubProvider:
 
 class TestEnvProviderEdgeCases:
     def test_empty_env_value_returns_none(self, monkeypatch):
-        from src.secrets.env_provider import EnvSecretsProvider
+        from ao_kernel._internal.secrets.env_provider import EnvSecretsProvider
         monkeypatch.setenv("OPENAI_API_KEY", "")
         provider = EnvSecretsProvider()
         result = provider.get("OPENAI_API_KEY")
         assert result is None  # Empty string → None
 
     def test_whitespace_only_returns_none(self, monkeypatch):
-        from src.secrets.env_provider import EnvSecretsProvider
+        from ao_kernel._internal.secrets.env_provider import EnvSecretsProvider
         monkeypatch.setenv("OPENAI_API_KEY", "   ")
         provider = EnvSecretsProvider()
         result = provider.get("OPENAI_API_KEY")
         assert result is None  # Whitespace stripped → empty → None
 
     def test_valid_key_with_whitespace_stripped(self, monkeypatch):
-        from src.secrets.env_provider import EnvSecretsProvider
+        from ao_kernel._internal.secrets.env_provider import EnvSecretsProvider
         monkeypatch.setenv("OPENAI_API_KEY", "  sk-real-key  ")
         provider = EnvSecretsProvider()
         result = provider.get("OPENAI_API_KEY")
         assert result == "sk-real-key"
 
     def test_unmapped_key_returns_none(self):
-        from src.secrets.env_provider import EnvSecretsProvider
+        from ao_kernel._internal.secrets.env_provider import EnvSecretsProvider
         provider = EnvSecretsProvider()
         result = provider.get("TOTALLY_UNKNOWN_KEY_XYZ")
         assert result is None
@@ -64,7 +64,7 @@ class TestEnvProviderEdgeCases:
 
 class TestSecretsProviderAbstract:
     def test_abstract_base_raises_on_get(self):
-        from src.secrets.provider import SecretsProvider
+        from ao_kernel._internal.secrets.provider import SecretsProvider
         provider = SecretsProvider()
         import pytest
         with pytest.raises(NotImplementedError):

@@ -1,6 +1,6 @@
 """ao-kernel — Governed AI orchestration runtime."""
 
-__version__ = "0.2.0"
+__version__ = "2.0.0"
 
 from ao_kernel.config import load_default, load_with_override, workspace_root
 

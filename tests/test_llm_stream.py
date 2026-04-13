@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 
 
-from src.prj_kernel_api.llm_stream import (
+from ao_kernel._internal.prj_kernel_api.llm_stream import (
     _parse_sse_lines,
     extract_delta_text,
     extract_stream_usage,

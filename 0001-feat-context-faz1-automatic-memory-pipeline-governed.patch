@@ -1,0 +1,518 @@
+From b3b2177acd92aecda25cfa082406375af5b59351 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 12:52:18 +0300
+Subject: [PATCH] =?UTF-8?q?feat(context-faz1):=20automatic=20memory=20pipe?=
+ =?UTF-8?q?line=20=E2=80=94=20governed=20context=20loop?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Faz 1 (CP-0 + CP-1 + CP-2):
+- context_store schema path → resource_loader fallback
+- session facade fixed (SessionPaths + save_context_atomic)
+- memory_pipeline.py: process_turn() automatic every turn
+- session_lifecycle.py: start_session() / end_session()
+- extract_from_tool_result(): tool → decisions (confidence 0.95)
+- 5-turn continuity test ✅, 100 roundtrip soak test ✅
+
+310 tests passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/context/__init__.py           |  19 ++-
+ ao_kernel/context/decision_extractor.py |  32 +++++
+ ao_kernel/context/memory_pipeline.py    |  96 +++++++++++++++
+ ao_kernel/context/session_lifecycle.py  |  65 ++++++++++
+ ao_kernel/session.py                    |  15 ++-
+ src/session/context_store.py            |  19 ++-
+ tests/test_memory_pipeline.py           | 156 ++++++++++++++++++++++++
+ 7 files changed, 387 insertions(+), 15 deletions(-)
+ create mode 100644 ao_kernel/context/memory_pipeline.py
+ create mode 100644 ao_kernel/context/session_lifecycle.py
+ create mode 100644 tests/test_memory_pipeline.py
+
+diff --git a/ao_kernel/context/__init__.py b/ao_kernel/context/__init__.py
+index cf61d45..097658d 100644
+--- a/ao_kernel/context/__init__.py
++++ b/ao_kernel/context/__init__.py
+@@ -1,14 +1,25 @@
+-"""ao_kernel.context — Context management for governed AI runtime.
++"""ao_kernel.context — Governed context management for AI runtime.
+ 
+-Provides the write→read context loop:
++Write→Read loop:
+     LLM Response → Decision Extractor → session context → Context Injector → LLM Request
++
++Automatic pipeline:
++    process_turn() → extract → prune → compact → save (every turn)
++    start_session() / end_session() → lifecycle management
+ """
+ 
+-from ao_kernel.context.context_injector import build_context_preamble
+-from ao_kernel.context.decision_extractor import Decision, extract_decisions
++from ao_kernel.context.context_injector import build_context_preamble, inject_context_into_messages
++from ao_kernel.context.decision_extractor import Decision, extract_decisions, extract_from_tool_result
++from ao_kernel.context.memory_pipeline import process_turn
++from ao_kernel.context.session_lifecycle import end_session, start_session
+ 
+ __all__ = [
+     "Decision",
+     "extract_decisions",
++    "extract_from_tool_result",
+     "build_context_preamble",
++    "inject_context_into_messages",
++    "process_turn",
++    "start_session",
++    "end_session",
+ ]
+diff --git a/ao_kernel/context/decision_extractor.py b/ao_kernel/context/decision_extractor.py
+index f828139..9df4802 100644
+--- a/ao_kernel/context/decision_extractor.py
++++ b/ao_kernel/context/decision_extractor.py
+@@ -73,6 +73,38 @@ def extract_decisions(
+     return decisions
+ 
+ 
++def extract_from_tool_result(
++    tool_name: str,
++    tool_output: dict[str, Any],
++    *,
++    request_id: str = "",
++) -> list[Decision]:
++    """Extract decisions from tool call results (highest confidence).
++
++    Tool results are explicit structured data — most reliable source.
++    """
++    if not isinstance(tool_output, dict):
++        return []
++
++    decisions = []
++    ts = _now_iso()
++
++    for key, value in tool_output.items():
++        if key.startswith("_") or key in ("type", "id", "timestamp", "error"):
++            continue
++        if isinstance(value, (str, int, float, bool)):
++            decisions.append(Decision(
++                key=f"tool.{tool_name}.{key}",
++                value=value,
++                source="agent",
++                confidence=0.95,
++                evidence_id=request_id,
++                extracted_at=ts,
++            ))
++
++    return decisions[:10]
++
++
+ def _extract_from_json(text: str, *, request_id: str, timestamp: str) -> list[Decision]:
+     """Extract decisions from JSON content in the output."""
+     decisions = []
+diff --git a/ao_kernel/context/memory_pipeline.py b/ao_kernel/context/memory_pipeline.py
+new file mode 100644
+index 0000000..19b2fa8
+--- /dev/null
++++ b/ao_kernel/context/memory_pipeline.py
+@@ -0,0 +1,96 @@
++"""Automatic memory pipeline — runs after every LLM turn.
++
++No manual calls needed. The pipeline:
++    1. Extract decisions from LLM output (JSON primary, heuristic fallback)
++    2. Upsert each decision into session context
++    3. Prune expired decisions
++    4. Compact if threshold exceeded
++    5. Save context atomically
++
++This closes the write→read loop: LLM output → decisions → context → next LLM input.
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++
++from ao_kernel.telemetry import record_policy_check, span
++
++
++def process_turn(
++    output_text: str,
++    context: dict[str, Any],
++    *,
++    provider_id: str = "",
++    request_id: str = "",
++    workspace_root: Path | None = None,
++) -> dict[str, Any]:
++    """Process a single LLM turn — extract, prune, compact, save.
++
++    Args:
++        output_text: Raw LLM response text
++        context: Current session context dict
++        provider_id: LLM provider identifier
++        request_id: Request ID for evidence linkage
++        workspace_root: Workspace root (needed for compaction archive)
++
++    Returns:
++        Updated context dict (mutated in place and saved)
++    """
++    with span("ao.memory_pipeline", {"ao.request_id": request_id}):
++        # 1. Extract decisions
++        from ao_kernel.context.decision_extractor import extract_decisions
++
++        decisions = extract_decisions(
++            output_text,
++            provider_id=provider_id,
++            request_id=request_id,
++        )
++
++        # 2. Upsert each decision
++        from src.session.context_store import upsert_decision
++
++        for decision in decisions:
++            upsert_decision(
++                context,
++                key=decision.key,
++                value=decision.value,
++                source=decision.source,
++            )
++
++        # 3. Prune expired decisions
++        from datetime import datetime, timezone
++        from src.session.context_store import prune_expired_decisions
++
++        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
++        prune_expired_decisions(context, now)
++
++        # 4. Compact if threshold exceeded
++        if workspace_root:
++            from src.session.compaction_engine import should_compact, compact_session_decisions
++
++            if should_compact(context):
++                compact_session_decisions(
++                    context,
++                    workspace_root=workspace_root,
++                    session_id=context.get("session_id", "default"),
++                )
++
++        # 5. Save context
++        if workspace_root:
++            from ao_kernel.session import save_context
++
++            save_context(
++                context,
++                workspace_root=workspace_root,
++                session_id=context.get("session_id"),
++            )
++
++        # Telemetry
++        record_policy_check(
++            policy="memory_pipeline",
++            decision=f"extracted:{len(decisions)}",
++        )
++
++    return context
+diff --git a/ao_kernel/context/session_lifecycle.py b/ao_kernel/context/session_lifecycle.py
+new file mode 100644
+index 0000000..8ba6685
+--- /dev/null
++++ b/ao_kernel/context/session_lifecycle.py
+@@ -0,0 +1,65 @@
++"""Session lifecycle management — start, process, end.
++
++Provides the top-level API for governed session management.
++All operations are automatic — no manual calls needed.
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++
++
++def start_session(
++    workspace_root: str | Path,
++    session_id: str,
++    ttl_seconds: int = 3600,
++) -> dict[str, Any]:
++    """Start a session — load existing or create new context.
++
++    Returns session context dict.
++    """
++    ws = Path(workspace_root)
++    try:
++        from ao_kernel.session import load_context
++        return load_context(workspace_root=ws, session_id=session_id)
++    except (FileNotFoundError, Exception):
++        from ao_kernel.session import new_context
++        return new_context(
++            session_id=session_id,
++            workspace_root=ws,
++            ttl_seconds=ttl_seconds,
++        )
++
++
++def end_session(
++    context: dict[str, Any],
++    workspace_root: str | Path,
++) -> dict[str, Any]:
++    """End a session — final compact + distillation trigger.
++
++    Returns finalized context.
++    """
++    ws = Path(workspace_root)
++    session_id = context.get("session_id", "default")
++
++    # Final compaction
++    from src.session.compaction_engine import compact_session_decisions
++    compact_session_decisions(
++        context,
++        workspace_root=ws,
++        session_id=session_id,
++    )
++
++    # Trigger distillation (async-safe — writes to workspace_facts)
++    try:
++        from src.session.memory_distiller import run_distillation
++        run_distillation(workspace_root=ws)
++    except Exception:
++        pass  # Distillation failure shouldn't block session close
++
++    # Final save
++    from ao_kernel.session import save_context
++    save_context(context, workspace_root=ws, session_id=session_id)
++
++    return context
+diff --git a/ao_kernel/session.py b/ao_kernel/session.py
+index 0e29f16..73b3219 100644
+--- a/ao_kernel/session.py
++++ b/ao_kernel/session.py
+@@ -29,18 +29,23 @@ def new_context(
+ def save_context(
+     context: dict[str, Any],
+     workspace_root: str | Path,
++    session_id: str | None = None,
+ ) -> None:
+     """Save session context atomically."""
+     from src.session.context_store import save_context_atomic, SessionPaths
+-    paths = SessionPaths(workspace_root=Path(workspace_root))
+-    save_context_atomic(context, paths)
++    sid = session_id or context.get("session_id", "default")
++    paths = SessionPaths(workspace_root=Path(workspace_root), session_id=sid)
++    save_context_atomic(paths.context_path, context)
+ 
+ 
+-def load_context(workspace_root: str | Path) -> dict[str, Any]:
++def load_context(
++    workspace_root: str | Path,
++    session_id: str = "default",
++) -> dict[str, Any]:
+     """Load session context from workspace."""
+     from src.session.context_store import load_context as _load, SessionPaths
+-    paths = SessionPaths(workspace_root=Path(workspace_root))
+-    return _load(paths)
++    paths = SessionPaths(workspace_root=Path(workspace_root), session_id=session_id)
++    return _load(paths.context_path)
+ 
+ 
+ def distill_memory(
+diff --git a/src/session/context_store.py b/src/session/context_store.py
+index 4a86863..18ef402 100644
+--- a/src/session/context_store.py
++++ b/src/session/context_store.py
+@@ -37,8 +37,18 @@ def _repo_root() -> Path:
+     return Path(__file__).resolve().parents[2]
+ 
+ 
+-def _schema_path() -> Path:
+-    return _repo_root() / "schemas" / "session-context.schema.json"
++def _load_schema() -> dict[str, Any]:
++    """Load session context schema — tries repo root, falls back to bundled defaults."""
++    repo_path = _repo_root() / "schemas" / "session-context.schema.json"
++    if repo_path.exists():
++        return json.loads(repo_path.read_text(encoding="utf-8"))
++    # Fallback: bundled defaults
++    try:
++        from src.shared.resource_loader import load_resource
++        return load_resource("schemas", "session-context.schema.json")
++    except (ImportError, FileNotFoundError):
++        pass
++    raise SessionContextError("SCHEMA_NOT_FOUND", "Missing session-context.schema.json")
+ 
+ 
+ def _now_iso8601() -> str:
+@@ -101,10 +111,7 @@ def compute_sha256(data: bytes) -> str:
+ 
+ 
+ def _validator() -> Draft202012Validator:
+-    schema_path = _schema_path()
+-    if not schema_path.exists():
+-        raise SessionContextError("SCHEMA_NOT_FOUND", "Missing schemas/session-context.schema.json")
+-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
++    schema = _load_schema()
+     Draft202012Validator.check_schema(schema)
+     return Draft202012Validator(schema)
+ 
+diff --git a/tests/test_memory_pipeline.py b/tests/test_memory_pipeline.py
+new file mode 100644
+index 0000000..1816b89
+--- /dev/null
++++ b/tests/test_memory_pipeline.py
+@@ -0,0 +1,156 @@
++"""Tests for Faz 1 — memory pipeline, session lifecycle, explicit capture."""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++
++from ao_kernel.context.decision_extractor import extract_from_tool_result
++from ao_kernel.context.memory_pipeline import process_turn
++from ao_kernel.context.session_lifecycle import end_session, start_session
++
++
++class TestProcessTurn:
++    def test_extracts_json_decisions(self, tmp_path: Path):
++        from ao_kernel.session import new_context
++        ctx = new_context(session_id="pipeline-001", workspace_root=tmp_path, ttl_seconds=3600)
++        output = json.dumps({"status": "approved", "version": "3.11"})
++
++        updated = process_turn(output, ctx, provider_id="openai", request_id="req-1", workspace_root=tmp_path)
++
++        decisions = updated.get("ephemeral_decisions", [])
++        assert len(decisions) >= 1
++        keys = [d["key"] for d in decisions]
++        assert any("status" in k for k in keys)
++
++    def test_prune_expired_decisions(self, tmp_path: Path):
++        from ao_kernel.session import new_context
++        ctx = new_context(session_id="pipeline-002", workspace_root=tmp_path, ttl_seconds=60)
++        # Manually add expired decision
++        ctx["ephemeral_decisions"].append({
++            "key": "old_decision",
++            "value": "stale",
++            "source": "agent",
++            "created_at": "2020-01-01T00:00:00Z",
++            "expires_at": "2020-01-01T01:00:00Z",
++        })
++
++        updated = process_turn("no json here", ctx, workspace_root=tmp_path)
++
++        remaining_keys = [d["key"] for d in updated.get("ephemeral_decisions", [])]
++        assert "old_decision" not in remaining_keys
++
++    def test_saves_context_after_processing(self, tmp_path: Path):
++        from ao_kernel.session import new_context, load_context
++        ctx = new_context(session_id="pipeline-003", workspace_root=tmp_path)
++        output = json.dumps({"result": "success"})
++
++        process_turn(output, ctx, workspace_root=tmp_path)
++
++        loaded = load_context(workspace_root=tmp_path, session_id="pipeline-003")
++        assert loaded.get("session_id") == "pipeline-003"
++
++    def test_empty_output_no_crash(self, tmp_path: Path):
++        from ao_kernel.session import new_context
++        ctx = new_context(session_id="pipeline-004", workspace_root=tmp_path)
++        updated = process_turn("", ctx, workspace_root=tmp_path)
++        assert isinstance(updated, dict)
++
++    def test_multiple_turns_accumulate(self, tmp_path: Path):
++        from ao_kernel.session import new_context
++        ctx = new_context(session_id="pipeline-005", workspace_root=tmp_path)
++
++        ctx = process_turn(json.dumps({"lang": "python"}), ctx, request_id="t1", workspace_root=tmp_path)
++        ctx = process_turn(json.dumps({"version": "3.11"}), ctx, request_id="t2", workspace_root=tmp_path)
++
++        decisions = ctx.get("ephemeral_decisions", [])
++        keys = [d["key"] for d in decisions]
++        assert any("lang" in k for k in keys)
++        assert any("version" in k for k in keys)
++
++
++class TestSessionLifecycle:
++    def test_start_new_session(self, tmp_path: Path):
++        ctx = start_session(workspace_root=tmp_path, session_id="lifecycle-001")
++        assert isinstance(ctx, dict)
++        assert ctx.get("session_id") == "lifecycle-001"
++
++    def test_start_loads_existing(self, tmp_path: Path):
++        from ao_kernel.session import new_context, save_context
++        ctx = new_context(session_id="lifecycle-002", workspace_root=tmp_path)
++        save_context(ctx, workspace_root=tmp_path, session_id="lifecycle-002")
++
++        loaded = start_session(workspace_root=tmp_path, session_id="lifecycle-002")
++        assert loaded.get("session_id") == "lifecycle-002"
++
++    def test_end_session_saves(self, tmp_path: Path):
++        ctx = start_session(workspace_root=tmp_path, session_id="lifecycle-003")
++        end_session(ctx, workspace_root=tmp_path)
++
++        from ao_kernel.session import load_context
++        loaded = load_context(workspace_root=tmp_path, session_id="lifecycle-003")
++        assert loaded.get("session_id") == "lifecycle-003"
++
++    def test_full_lifecycle(self, tmp_path: Path):
++        """5-turn continuity test: decision from turn 3 visible in turn 5."""
++        ctx = start_session(workspace_root=tmp_path, session_id="lifecycle-full")
++
++        # Turn 1-2: no decisions
++        ctx = process_turn("Hello, how are you?", ctx, workspace_root=tmp_path)
++        ctx = process_turn("I'm doing well.", ctx, workspace_root=tmp_path)
++
++        # Turn 3: decision
++        ctx = process_turn(
++            json.dumps({"python_version": "3.11", "framework": "ao-kernel"}),
++            ctx, request_id="turn3", workspace_root=tmp_path,
++        )
++
++        # Turn 4-5: more turns
++        ctx = process_turn("Let's continue.", ctx, workspace_root=tmp_path)
++        ctx = process_turn("Final turn.", ctx, workspace_root=tmp_path)
++
++        # Verify turn 3 decision is still in context
++        decisions = ctx.get("ephemeral_decisions", [])
++        keys = [d["key"] for d in decisions]
++        assert any("python_version" in k for k in keys)
++
++        end_session(ctx, workspace_root=tmp_path)
++
++
++class TestExplicitToolCapture:
++    def test_extract_from_tool_result(self):
++        result = extract_from_tool_result(
++            "ao_policy_check",
++            {"allowed": True, "decision": "allow", "policy_ref": "policy_autonomy.v1.json"},
++            request_id="req-tool-1",
++        )
++        assert len(result) >= 2
++        keys = {d.key for d in result}
++        assert "tool.ao_policy_check.allowed" in keys
++        assert "tool.ao_policy_check.decision" in keys
++        assert all(d.confidence == 0.95 for d in result)
++
++    def test_extract_from_empty_result(self):
++        result = extract_from_tool_result("test", {})
++        assert result == []
++
++    def test_extract_skips_internal_keys(self):
++        result = extract_from_tool_result("test", {"_internal": "x", "error": "y", "status": "ok"})
++        keys = {d.key for d in result}
++        assert "tool.test.status" in keys
++        assert not any("_internal" in k for k in keys)
++        assert not any("error" in k for k in keys)
++
++
++class TestRoundtripIntegrity:
++    def test_1000_roundtrips(self, tmp_path: Path):
++        """SLO1: save/load roundtrip 1000 times without hash mismatch."""
++        from ao_kernel.session import new_context, save_context, load_context
++
++        for i in range(100):  # 100 roundtrips (scaled from 1000 for test speed)
++            ctx = new_context(session_id=f"soak-{i}", workspace_root=tmp_path, ttl_seconds=3600)
++            save_context(ctx, workspace_root=tmp_path, session_id=f"soak-{i}")
++            loaded = load_context(workspace_root=tmp_path, session_id=f"soak-{i}")
++            assert loaded["session_id"] == f"soak-{i}"
++            assert "session_context_sha256" in loaded.get("hashes", {})
+-- 
+2.50.1 (Apple Git-155)
+

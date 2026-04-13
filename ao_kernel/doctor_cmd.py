@@ -67,12 +67,13 @@ def _check_optional_deps() -> bool | str:
     return True if not missing else "WARN"
 
 
-def _check_shim_import() -> bool:
+def _check_internal_import() -> bool:
+    """v2.0.0: Check ao_kernel._internal modules (src.* removed)."""
     import importlib
     for mod in (
-        "src.shared.utils",
-        "src.prj_kernel_api.llm_router",
-        "src.providers.capability_model",
+        "ao_kernel._internal.shared.utils",
+        "ao_kernel._internal.prj_kernel_api.llm_router",
+        "ao_kernel._internal.providers.capability_model",
     ):
         importlib.import_module(mod)
     return True
@@ -104,7 +105,7 @@ def run(workspace_root_override: str | None = None) -> int:
         ("Python >= 3.11", _check_python_version),
         ("jsonschema installed", _check_required_deps),
         ("tenacity/tiktoken (optional)", _check_optional_deps),
-        ("src shim import", _check_shim_import),
+        ("Internal modules import", _check_internal_import),
         ("Extension manifest discovery", _check_extension_manifests),
     ]
 

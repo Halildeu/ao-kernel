@@ -1,0 +1,441 @@
+From 090ff8d3540b8c5baf112ac224d4244e3bfb8a43 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 10:53:53 +0300
+Subject: [PATCH] =?UTF-8?q?feat(governance):=20ao=5Fkernel.governance=20fa?=
+ =?UTF-8?q?cade=20=E2=80=94=20fail-closed=20quality=20gate?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+CRITICAL BUG FIX: mcp_server quality gate was fail-OPEN (silent allow on
+ImportError). Now fail-CLOSED via governance facade.
+
+New module ao_kernel/governance.py:
+- check_policy(): policy validation with required_fields/blocked/limits
+- evaluate_quality(): quality gate evaluation — DENY on error, never silent allow
+- quality_summary(): structured gate result summary
+- QualityGateResult dataclass
+
+Changes:
+- mcp_server.py: handle_quality_gate() now uses ao_kernel.governance facade
+  instead of direct src.orchestrator import (fixes bypass)
+- No more ImportError → allow path (was: lines 254-262)
+
+Design decision (Codex CNS-20260413-011):
+- ao_kernel.governance is the governance facade (not llm)
+- Fail-closed: gate error → DENY, not allow
+- MCP server is transport adapter, governance logic in facade
+
+16 new tests, 240 total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/governance.py  | 187 +++++++++++++++++++++++++++++++++++++++
+ ao_kernel/mcp_server.py  |  45 +++-------
+ tests/test_governance.py | 134 ++++++++++++++++++++++++++++
+ 3 files changed, 335 insertions(+), 31 deletions(-)
+ create mode 100644 ao_kernel/governance.py
+ create mode 100644 tests/test_governance.py
+
+diff --git a/ao_kernel/governance.py b/ao_kernel/governance.py
+new file mode 100644
+index 0000000..d8fee71
+--- /dev/null
++++ b/ao_kernel/governance.py
+@@ -0,0 +1,187 @@
++"""ao_kernel.governance — Public governance facade for ao-kernel.
++
++Consolidates policy checking, quality gate evaluation, and tool authorization
++into a single import path. MCP server and other consumers should use this
++module instead of importing directly from src/.
++
++Usage:
++    from ao_kernel.governance import check_policy, evaluate_quality
++    from ao_kernel.governance import QualityGateResult
++"""
++
++from __future__ import annotations
++
++from dataclasses import dataclass
++from pathlib import Path
++from typing import Any
++
++
++@dataclass
++class QualityGateResult:
++    """Result of a single quality gate check."""
++
++    passed: bool
++    gate_id: str
++    action: str  # pass | retry | reject | warn | escalate
++    reason: str
++
++
++def check_policy(
++    policy_name: str,
++    action: dict[str, Any],
++    *,
++    workspace: Path | None = None,
++) -> dict[str, Any]:
++    """Check an action against a named policy.
++
++    Returns dict with: allowed (bool), decision, reason_codes, policy_ref, data.
++    Fail-closed: if policy can't be loaded, returns deny.
++    """
++    from ao_kernel.config import load_with_override, workspace_root as resolve_ws
++
++    if not policy_name:
++        return {
++            "allowed": False,
++            "decision": "deny",
++            "reason_codes": ["MISSING_POLICY_NAME"],
++        }
++
++    ws = workspace or resolve_ws()
++
++    try:
++        policy = load_with_override("policies", policy_name, workspace=ws)
++    except FileNotFoundError:
++        return {
++            "allowed": False,
++            "decision": "deny",
++            "reason_codes": ["POLICY_NOT_FOUND"],
++            "policy_ref": policy_name,
++        }
++
++    enabled = policy.get("enabled", True)
++    if not enabled:
++        return {
++            "allowed": True,
++            "decision": "allow",
++            "reason_codes": ["POLICY_DISABLED"],
++            "policy_ref": policy_name,
++        }
++
++    # Check rules
++    violations = _check_rules(policy, action)
++    if violations:
++        return {
++            "allowed": False,
++            "decision": "deny",
++            "reason_codes": violations,
++            "policy_ref": policy_name,
++        }
++
++    return {
++        "allowed": True,
++        "decision": "allow",
++        "reason_codes": ["POLICY_PASSED"],
++        "policy_ref": policy_name,
++        "data": {"policy_version": policy.get("version", "unknown")},
++    }
++
++
++def _check_rules(policy: dict, action: dict) -> list[str]:
++    """Check action against policy rules. Returns violation codes."""
++    violations = []
++
++    required = policy.get("required_fields", [])
++    if isinstance(required, list):
++        for field in required:
++            if field not in action:
++                violations.append(f"MISSING_REQUIRED_FIELD:{field}")
++
++    blocked = policy.get("blocked_values", {})
++    if isinstance(blocked, dict):
++        for field, blocked_vals in blocked.items():
++            if field in action and action[field] in blocked_vals:
++                violations.append(f"BLOCKED_VALUE:{field}")
++
++    limits = policy.get("limits", {})
++    if isinstance(limits, dict):
++        for field, max_val in limits.items():
++            if field in action:
++                try:
++                    if float(action[field]) > float(max_val):
++                        violations.append(f"LIMIT_EXCEEDED:{field}")
++                except (ValueError, TypeError):
++                    pass
++
++    return violations
++
++
++def evaluate_quality(
++    output_text: str,
++    *,
++    workspace_root: Path | None = None,
++    previous_decisions: list[dict[str, Any]] | None = None,
++) -> list[QualityGateResult]:
++    """Evaluate LLM output quality against configured gates.
++
++    Fail-closed: if gates can't be loaded, returns a single FAIL result.
++    Never silently allows — unlike the old mcp_server bypass.
++
++    Returns list of QualityGateResult.
++    """
++    if not output_text:
++        return [QualityGateResult(
++            passed=False,
++            gate_id="output_not_empty",
++            action="reject",
++            reason="Empty output",
++        )]
++
++    try:
++        from src.orchestrator.quality_gate import run_quality_gates
++
++        results = run_quality_gates(
++            output={"text": output_text},
++            workspace_root=workspace_root,
++            previous_decisions=previous_decisions,
++        )
++        # Convert src results to facade results
++        return [
++            QualityGateResult(
++                passed=r.passed,
++                gate_id=r.gate_id,
++                action=r.action,
++                reason=r.reason,
++            )
++            for r in results
++        ]
++    except Exception as exc:
++        # Fail-CLOSED: if quality gate can't run, DENY (not allow)
++        return [QualityGateResult(
++            passed=False,
++            gate_id="gate_load_error",
++            action="reject",
++            reason=f"Quality gate failed to load: {str(exc)[:200]}",
++        )]
++
++
++def quality_summary(results: list[QualityGateResult]) -> dict[str, Any]:
++    """Summarize quality gate results."""
++    all_passed = all(r.passed for r in results)
++    return {
++        "all_passed": all_passed,
++        "total": len(results),
++        "passed": sum(1 for r in results if r.passed),
++        "failed": sum(1 for r in results if not r.passed),
++        "gates": [
++            {"gate_id": r.gate_id, "passed": r.passed, "action": r.action, "reason": r.reason}
++            for r in results
++        ],
++    }
++
++
++__all__ = [
++    "check_policy",
++    "evaluate_quality",
++    "quality_summary",
++    "QualityGateResult",
++]
+diff --git a/ao_kernel/mcp_server.py b/ao_kernel/mcp_server.py
+index c1cac47..930bfa0 100644
+--- a/ao_kernel/mcp_server.py
++++ b/ao_kernel/mcp_server.py
+@@ -223,8 +223,9 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
+ 
+     Params:
+         output_text: str — the LLM output to evaluate
+-        gate_id: str | None — specific gate to check (default: all)
+         workspace_root: str | None
++
++    Fail-closed: if quality gate can't run, returns DENY (never silent allow).
+     """
+     output_text = params.get("output_text", "")
+     if not output_text:
+@@ -236,38 +237,20 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
+             error="output_text parameter is required",
+         )
+ 
+-    try:
+-        from src.orchestrator.quality_gate import check_output_quality
+-        from pathlib import Path
++    from ao_kernel.governance import evaluate_quality, quality_summary
++    from pathlib import Path
+ 
+-        ws = Path(params["workspace_root"]) if params.get("workspace_root") else None
+-        results = check_output_quality(output_text, workspace_root=ws)
++    ws = Path(params["workspace_root"]) if params.get("workspace_root") else None
++    results = evaluate_quality(output_text, workspace_root=ws)
++    summary = quality_summary(results)
+ 
+-        all_passed = all(r.get("passed", False) for r in results) if results else True
+-        return _decision_envelope(
+-            tool="ao_quality_gate",
+-            allowed=all_passed,
+-            decision="allow" if all_passed else "deny",
+-            reason_codes=[r.get("gate_id", "unknown") for r in results if not r.get("passed")],
+-            data={"gates": results, "total": len(results)},
+-        )
+-    except (ImportError, AttributeError):
+-        # quality_gate module may not expose check_output_quality directly
+-        return _decision_envelope(
+-            tool="ao_quality_gate",
+-            allowed=True,
+-            decision="allow",
+-            reason_codes=["GATE_NOT_CONFIGURED"],
+-            data={"note": "Quality gate not configured for this workspace"},
+-        )
+-    except Exception as e:
+-        return _decision_envelope(
+-            tool="ao_quality_gate",
+-            allowed=False,
+-            decision="deny",
+-            reason_codes=["GATE_ERROR"],
+-            error=str(e)[:200],
+-        )
++    return _decision_envelope(
++        tool="ao_quality_gate",
++        allowed=summary["all_passed"],
++        decision="allow" if summary["all_passed"] else "deny",
++        reason_codes=[g["gate_id"] for g in summary["gates"] if not g["passed"]],
++        data=summary,
++    )
+ 
+ 
+ def handle_workspace_status(params: dict[str, Any]) -> dict[str, Any]:
+diff --git a/tests/test_governance.py b/tests/test_governance.py
+new file mode 100644
+index 0000000..809aa32
+--- /dev/null
++++ b/tests/test_governance.py
+@@ -0,0 +1,134 @@
++"""Tests for ao_kernel.governance facade — policy check, quality gate, fail-closed."""
++
++from __future__ import annotations
++
++from unittest.mock import patch
++
++from ao_kernel.governance import (
++    QualityGateResult,
++    check_policy,
++    evaluate_quality,
++    quality_summary,
++)
++
++
++class TestCheckPolicy:
++    def test_missing_policy_name_denied(self):
++        result = check_policy("", {})
++        assert result["allowed"] is False
++        assert "MISSING_POLICY_NAME" in result["reason_codes"]
++
++    def test_nonexistent_policy_denied(self):
++        result = check_policy("nonexistent_xyz.json", {"action": "test"})
++        assert result["allowed"] is False
++        assert "POLICY_NOT_FOUND" in result["reason_codes"]
++
++    def test_valid_policy_allowed(self):
++        result = check_policy("policy_autonomy.v1.json", {"type": "read"})
++        assert result["allowed"] is True
++        assert result["decision"] == "allow"
++
++    def test_disabled_policy_allowed(self):
++        disabled = {"enabled": False, "version": "v1"}
++        with patch("ao_kernel.config.load_with_override", return_value=disabled):
++            result = check_policy("test.json", {"action": "write"})
++        assert result["allowed"] is True
++        assert "POLICY_DISABLED" in result["reason_codes"]
++
++    def test_required_field_violation_denied(self):
++        policy = {"enabled": True, "required_fields": ["intent", "scope"]}
++        with patch("ao_kernel.config.load_with_override", return_value=policy):
++            result = check_policy("strict.json", {"intent": "test"})
++        assert result["allowed"] is False
++        assert any("MISSING_REQUIRED_FIELD:scope" in r for r in result["reason_codes"])
++
++    def test_blocked_value_violation_denied(self):
++        policy = {"enabled": True, "blocked_values": {"model": ["dangerous-model"]}}
++        with patch("ao_kernel.config.load_with_override", return_value=policy):
++            result = check_policy("block.json", {"model": "dangerous-model"})
++        assert result["allowed"] is False
++        assert any("BLOCKED_VALUE:model" in r for r in result["reason_codes"])
++
++    def test_limit_exceeded_denied(self):
++        policy = {"enabled": True, "limits": {"max_tokens": 1000}}
++        with patch("ao_kernel.config.load_with_override", return_value=policy):
++            result = check_policy("limits.json", {"max_tokens": 5000})
++        assert result["allowed"] is False
++        assert any("LIMIT_EXCEEDED:max_tokens" in r for r in result["reason_codes"])
++
++
++class TestEvaluateQuality:
++    def test_empty_output_fails(self):
++        results = evaluate_quality("")
++        assert len(results) >= 1
++        assert results[0].passed is False
++        assert results[0].gate_id == "output_not_empty"
++
++    def test_valid_output_evaluates(self):
++        results = evaluate_quality("This is a valid LLM output with meaningful content.")
++        assert isinstance(results, list)
++        for r in results:
++            assert isinstance(r, QualityGateResult)
++            assert isinstance(r.passed, bool)
++            assert isinstance(r.gate_id, str)
++
++    def test_fail_closed_on_error(self):
++        """If quality gate module fails, result must be DENY, not allow."""
++        with patch("src.orchestrator.quality_gate.run_quality_gates", side_effect=RuntimeError("broken")):
++            results = evaluate_quality("test output")
++        assert len(results) >= 1
++        assert results[0].passed is False
++        assert "error" in results[0].gate_id.lower() or "error" in results[0].reason.lower()
++
++    def test_with_workspace(self, tmp_workspace):
++        results = evaluate_quality(
++            "Valid output text",
++            workspace_root=tmp_workspace,
++        )
++        assert isinstance(results, list)
++
++
++class TestQualitySummary:
++    def test_all_passed(self):
++        results = [
++            QualityGateResult(passed=True, gate_id="schema_valid", action="pass", reason=""),
++            QualityGateResult(passed=True, gate_id="not_empty", action="pass", reason=""),
++        ]
++        summary = quality_summary(results)
++        assert summary["all_passed"] is True
++        assert summary["total"] == 2
++        assert summary["passed"] == 2
++        assert summary["failed"] == 0
++
++    def test_some_failed(self):
++        results = [
++            QualityGateResult(passed=True, gate_id="schema_valid", action="pass", reason=""),
++            QualityGateResult(passed=False, gate_id="consistency", action="reject", reason="contradicts"),
++        ]
++        summary = quality_summary(results)
++        assert summary["all_passed"] is False
++        assert summary["failed"] == 1
++        assert summary["gates"][1]["passed"] is False
++
++    def test_empty_results(self):
++        summary = quality_summary([])
++        assert summary["all_passed"] is True
++        assert summary["total"] == 0
++
++
++class TestMcpQualityGateFailClosed:
++    """Verify MCP quality gate handler no longer silently allows on error."""
++
++    def test_mcp_quality_gate_uses_governance_facade(self):
++        from ao_kernel.mcp_server import handle_quality_gate
++        result = handle_quality_gate({"output_text": "test output"})
++        assert result["tool"] == "ao_quality_gate"
++        # Must NOT be silent allow — must have evaluated
++        assert result["decision"] in ("allow", "deny")
++        assert "data" in result
++
++    def test_mcp_quality_gate_empty_denied(self):
++        from ao_kernel.mcp_server import handle_quality_gate
++        result = handle_quality_gate({"output_text": ""})
++        assert result["allowed"] is False
++        assert "EMPTY_OUTPUT" in result["reason_codes"]
+-- 
+2.50.1 (Apple Git-155)
+

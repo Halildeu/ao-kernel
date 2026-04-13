@@ -10,7 +10,6 @@ Resolution order for workspace_root():
 from __future__ import annotations
 
 import json
-import warnings
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
@@ -44,17 +43,8 @@ def workspace_root(override: str | Path | None = None) -> Path | None:
         if candidate.is_dir():
             return candidate
 
-    for parent in [cwd, *cwd.parents]:
-        candidate = parent / ".cache" / "ws_customer_default"
-        if candidate.is_dir():
-            warnings.warn(
-                f"Using legacy workspace at {candidate}. "
-                "Migrate to .ao/ with 'ao-kernel init'. "
-                "Legacy support will be removed in v2.0.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return candidate
+    # Legacy .cache/ws_customer_default removed in v2.0.0
+    # Use .ao/ workspace instead: ao-kernel init
 
     return None
 

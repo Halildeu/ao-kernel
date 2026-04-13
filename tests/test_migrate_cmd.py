@@ -60,8 +60,7 @@ class TestMigrateCmd:
         assert updated["version"] == ao_kernel.__version__
         assert "migrated_at" in updated
 
-    def test_legacy_workspace_detected(self, legacy_workspace: Path, capsys):
-        rc = run(dry_run=True)
-        assert rc == 0
-        out = json.loads(capsys.readouterr().out)
-        assert out["legacy_workspace_detected"] is True
+    def test_legacy_workspace_not_supported(self, legacy_workspace: Path, capsys):
+        """v2.0.0: Legacy workspace no longer detected."""
+        rc = run()
+        assert rc == 1  # No workspace found (legacy removed)
