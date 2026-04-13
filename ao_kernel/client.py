@@ -230,6 +230,7 @@ class AoKernelClient:
         max_tokens: int | None = None,
         stream: bool = False,
         tools: list[dict[str, Any]] | None = None,
+        tool_results: list[dict[str, Any]] | None = None,
         response_format: dict[str, Any] | None = None,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -249,6 +250,7 @@ class AoKernelClient:
             max_tokens: Max response tokens.
             stream: Enable streaming.
             tools: Tool definitions for tool calling.
+            tool_results: Previous tool call results for decision extraction.
             response_format: Structured output format.
             profile: Context profile override.
 
@@ -336,6 +338,7 @@ class AoKernelClient:
                 model=model,
                 request_id=request_id,
                 ws_str=ws_str,
+                tool_results=tool_results,
             )
 
         from ao_kernel.llm import execute_request
@@ -369,6 +372,22 @@ class AoKernelClient:
         text = normalized.get("text", "")
         tool_calls = normalized.get("tool_calls", [])
 
+        # 5b. Evidence (non-streaming)
+        if ws_str:
+            try:
+                from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_live_response
+                process_live_response(
+                    resp_bytes=resp_bytes,
+                    transport_result=transport_result,
+                    provider_id=provider_id,
+                    model=model or "",
+                    workspace_root=ws_str,
+                    request_id=request_id,
+                    max_output_chars=2000,
+                )
+            except Exception:
+                pass
+
         # 6. Context pipeline (decision extraction + memory)
         decisions_extracted = 0
         if self._session_active and self._context and text:
@@ -379,6 +398,7 @@ class AoKernelClient:
                 provider_id=provider_id,
                 request_id=request_id,
                 workspace_root=ws_str,
+                tool_results=tool_results,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))
@@ -432,6 +452,7 @@ class AoKernelClient:
         model: str,
         request_id: str,
         ws_str: str | None,
+        tool_results: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Execute streaming LLM call and return aggregate result.
 
@@ -482,10 +503,11 @@ class AoKernelClient:
             try:
                 from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
                 process_stream_response(
-                    sr,
+                    stream_result=sr,
                     provider_id=provider_id,
-                    request_id=request_id,
+                    model=model or "",
                     workspace_root=ws_str,
+                    request_id=request_id,
                 )
             except Exception:
                 pass
@@ -500,6 +522,7 @@ class AoKernelClient:
                 provider_id=provider_id,
                 request_id=request_id,
                 workspace_root=ws_str,
+                tool_results=tool_results,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))

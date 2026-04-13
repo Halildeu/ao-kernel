@@ -33,7 +33,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "experimental",
+        "tool_use": "supported",
         "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
@@ -61,7 +61,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "experimental",
+        "tool_use": "supported",
         "vision": "unsupported",
         "batch": "supported",
         "continuation": "supported",
@@ -91,7 +91,7 @@
         "chat": "supported",
         "streaming": "supported",
         "tool_use": "unsupported",
-        "vision": "unsupported",
+        "vision": "experimental",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "unsupported",
@@ -102,7 +102,7 @@
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "Raw HTTP. Vision/image_gen icin request builder yok, flag reserved."
+      "notes": "Raw HTTP. Vision ve image generation icin ayri model ID'ler gerekli."
     },
     "deepseek": {
       "display_name": "DeepSeek",
@@ -118,7 +118,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "experimental",
+        "tool_use": "supported",
         "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
@@ -147,8 +147,8 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "experimental",
-        "vision": "unsupported",
+        "tool_use": "supported",
+        "vision": "experimental",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "experimental",
@@ -159,7 +159,7 @@
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision icin request builder yok, flag reserved."
+      "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision icin qwen3-vl-* gerekli."
     },
     "xai": {
       "display_name": "xAI Grok",
@@ -175,8 +175,8 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "experimental",
-        "vision": "unsupported",
+        "tool_use": "supported",
+        "vision": "supported",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "supported",
@@ -187,7 +187,7 @@
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "grok-code-fast-1 code agentic destekler. Vision icin request builder yok, flag reserved. OpenAI-compatible API."
+      "notes": "grok-code-fast-1 code agentic destekler. grok-2-vision-1212 vision destekler. OpenAI-compatible API."
     }
   },
   "capability_levels": {
