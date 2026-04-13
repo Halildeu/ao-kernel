@@ -91,14 +91,16 @@ class TestSessionMemoryDistiller:
         assert isinstance(result, dict)
 
 
-class TestToolGateway:
-    def test_gateway_has_dispatch_and_policy(self):
-        from src.prj_kernel_api.tool_gateway import ToolGateway, ToolCallPolicy
-        policy = ToolCallPolicy(policy={"enabled": True, "max_tool_rounds": 5, "allowlist": []})
-        gw = ToolGateway(registry=[], policy=policy)
-        assert hasattr(gw, "dispatch")
-        assert gw.policy.enabled is True
-        assert gw.policy.max_rounds == 5
+class TestLegacyToolGateway:
+    def test_legacy_import_warns_deprecated(self):
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            import importlib
+            importlib.reload(importlib.import_module("src.prj_kernel_api.tool_gateway"))
+            dep_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(dep_warnings) >= 1
+            assert "deprecated" in str(dep_warnings[0].message).lower()
 
 
 class TestUtils:

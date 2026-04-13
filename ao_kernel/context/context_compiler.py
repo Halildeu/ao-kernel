@@ -131,6 +131,16 @@ def compile_context(
         profile_config,
     )
 
+    # Telemetry
+    try:
+        from ao_kernel.telemetry import record_context_compile
+        record_context_compile(
+            included_count, len(items) - included_count,
+            profile=profile_config.profile_id, total_tokens=used_chars // 4,
+        )
+    except Exception:
+        pass
+
     return CompiledContext(
         preamble=preamble,
         total_tokens=used_chars // 4,

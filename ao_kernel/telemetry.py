@@ -237,3 +237,56 @@ def record_stream_first_token(
     )
     if h:
         h.record(first_token_ms, {"gen_ai.system": provider})
+
+
+# ── Context Management Metrics ──────────────────────────────────────
+
+
+def record_context_compile(
+    items_included: int,
+    items_excluded: int,
+    *,
+    profile: str,
+    total_tokens: int,
+) -> None:
+    """Record context compilation metrics."""
+    c = _get_counter(
+        "ao.context.compile.total",
+        description="Context compilations",
+    )
+    if c:
+        c.add(1, {"ao.context.profile": profile})
+    h = _get_histogram(
+        "ao.context.compile.tokens",
+        unit="token",
+        description="Tokens included in compiled context",
+    )
+    if h:
+        h.record(total_tokens, {"ao.context.profile": profile})
+
+
+def record_decision_extraction(
+    count: int,
+    *,
+    source: str = "llm",
+) -> None:
+    """Record decision extraction count."""
+    c = _get_counter(
+        "ao.context.decisions.extracted",
+        description="Decisions extracted from LLM/tool output",
+    )
+    if c:
+        c.add(count, {"ao.context.source": source})
+
+
+def record_canonical_promote(
+    *,
+    category: str,
+) -> None:
+    """Record canonical decision promotion."""
+    c = _get_counter(
+        "ao.context.canonical.promoted",
+        description="Decisions promoted to canonical store",
+    )
+    if c:
+        c.add(1, {"ao.context.category": category})

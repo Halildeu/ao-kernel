@@ -154,7 +154,15 @@ def query(
                 continue
             if not include_expired and item.get("expires_at", "") and item["expires_at"] < now:
                 continue
-            results.append(item)
+
+            # Temporal lifecycle metadata
+            item_copy = dict(item)
+            fresh_until = item_copy.get("fresh_until", "")
+            review_after = item_copy.get("review_after", "")
+            item_copy["_is_fresh"] = not fresh_until or fresh_until >= now
+            item_copy["_needs_review"] = bool(review_after and review_after < now)
+
+            results.append(item_copy)
 
     # Sort by promoted_at descending (newest first)
     results.sort(key=lambda x: x.get("promoted_at", ""), reverse=True)
