@@ -223,8 +223,9 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
 
     Params:
         output_text: str — the LLM output to evaluate
-        gate_id: str | None — specific gate to check (default: all)
         workspace_root: str | None
+
+    Fail-closed: if quality gate can't run, returns DENY (never silent allow).
     """
     output_text = params.get("output_text", "")
     if not output_text:
@@ -236,38 +237,20 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
             error="output_text parameter is required",
         )
 
-    try:
-        from src.orchestrator.quality_gate import check_output_quality
-        from pathlib import Path
+    from ao_kernel.governance import evaluate_quality, quality_summary
+    from pathlib import Path
 
-        ws = Path(params["workspace_root"]) if params.get("workspace_root") else None
-        results = check_output_quality(output_text, workspace_root=ws)
+    ws = Path(params["workspace_root"]) if params.get("workspace_root") else None
+    results = evaluate_quality(output_text, workspace_root=ws)
+    summary = quality_summary(results)
 
-        all_passed = all(r.get("passed", False) for r in results) if results else True
-        return _decision_envelope(
-            tool="ao_quality_gate",
-            allowed=all_passed,
-            decision="allow" if all_passed else "deny",
-            reason_codes=[r.get("gate_id", "unknown") for r in results if not r.get("passed")],
-            data={"gates": results, "total": len(results)},
-        )
-    except (ImportError, AttributeError):
-        # quality_gate module may not expose check_output_quality directly
-        return _decision_envelope(
-            tool="ao_quality_gate",
-            allowed=True,
-            decision="allow",
-            reason_codes=["GATE_NOT_CONFIGURED"],
-            data={"note": "Quality gate not configured for this workspace"},
-        )
-    except Exception as e:
-        return _decision_envelope(
-            tool="ao_quality_gate",
-            allowed=False,
-            decision="deny",
-            reason_codes=["GATE_ERROR"],
-            error=str(e)[:200],
-        )
+    return _decision_envelope(
+        tool="ao_quality_gate",
+        allowed=summary["all_passed"],
+        decision="allow" if summary["all_passed"] else "deny",
+        reason_codes=[g["gate_id"] for g in summary["gates"] if not g["passed"]],
+        data=summary,
+    )
 
 
 def handle_workspace_status(params: dict[str, Any]) -> dict[str, Any]:
