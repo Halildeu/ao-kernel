@@ -6,7 +6,7 @@
 
 **Kaynak repo:** `Halildeu/autonomous-orchestrator` (main HEAD: `314d396`, PR #76 merge dahil). Bu repo o kaynak repo'daki seçili dosyaların katman bazlı allowlist ile dağıtılabilir Python paketi haline getirmektir.
 
-**Scaffold durumu:** v0.1.0 tamamlandı. ao_kernel/ facade (10 dosya) + src/ shim (64 dosya) + bundled defaults (338 JSON).
+**Güncel durum:** v2.1.1 PyPI'de yayında. ao_kernel/ facade (18 dosya) + ao_kernel/_internal/ (64 dosya) + ao_kernel/context/ (11 dosya) + bundled defaults (338 JSON). 567 test, %82.75 coverage.
 
 ## Mimari Kararlar (8 istişare sonucu — CNS-001..005, CNS-20260413-001/002)
 
@@ -162,10 +162,10 @@ pytest tests/ -x
 ao-kernel doctor
 ao-kernel system-status
 
-# Release
-git tag v1.0.0
-python -m build
-twine upload dist/*
+# Release (trusted publishing — tag push tetikler)
+git tag v2.x.y
+git push origin v2.x.y
+# GitHub Actions .github/workflows/publish.yml otomatik PyPI upload yapar
 ```
 
 ## Codex İstişare Altyapısı

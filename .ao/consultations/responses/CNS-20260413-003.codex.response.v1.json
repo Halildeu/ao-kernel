@@ -1,0 +1,81 @@
+{
+  "agent": "codex",
+  "responded_at": "2026-04-13T16:16:32Z",
+  "verdict": "B",
+  "body": {
+    "summary": "Genel yön doğru: önce release blocker'lar, sonra MCP kullanım değerini artıran iş, sonra kapsamlı coverage. Ancak P0 listesi revize edilmeli. `record_decision_extraction()` ve `record_canonical_promote()` eksik call-site'leri bence P0 değil P1; buna karşılık planda olmayan bir P0 var: `AoKernelClient` auto-route sonucu ile client'ın beklediği alan adları uyuşmuyor, bu yüzden auto-routing sessizce `openai/gpt-4` fallback'ine kayabiliyor.",
+    "answers": {
+      "q1": {
+        "question": "Bu öncelik sırası doğru mu? P0’daki 4 item gerçekten release blocker mı?",
+        "answer": "Ana omurga doğru, ama P0 içeriği düzeltilmeli. Release blocker olarak gördüklerim: CI'daki `src/` referansları, `AoKernelClient.llm_call(stream=True)` path'i, MCP HTTP import/dependency guard'ı ve planda eksik olan auto-route contract bug'ı. Telemetry'deki iki eksik sayaç çağrısı ise gözlem boşluğu yaratıyor ama core davranışı bozmadığı için P1.",
+        "recommended_p0": [
+          "CI `src/` referanslarını kaldır: `.github/workflows/test.yml:27-28`, `pyproject.toml:93-95`",
+          "AoKernelClient auto-route contract fix: `ao_kernel/client.py:261-266` route'tan `provider_id/model` bekliyor, ama router `selected_provider/selected_model` döndürüyor (`ao_kernel/_internal/prj_kernel_api/llm_router.py:195-199`)",
+          "AoKernelClient streaming wiring fix: `ao_kernel/client.py:323-332` `stream=True` olsa da `execute_request()` çağrılıyor",
+          "MCP HTTP import/dependency guard fix: `ao_kernel/mcp_server.py:576-586` içinde `starlette` ve `uvicorn` guard dışında",
+          "Telemetry call-site eksikleri P1'e alınabilir: `ao_kernel/telemetry.py:268-292` tanımlı, call-site bulunmadı"
+        ]
+      },
+      "q2": {
+        "question": "P1’deki `ao_llm_call` tool için API key’i MCP parametresi olarak almamak doğru mu?",
+        "answer": "Evet, doğru yaklaşım. Hatta workspace config içine de raw secret koymamanızı öneririm; config yalnızca `api_key_env` veya ileride `secret_id` gibi bir referans taşımalı. Repo zaten bu desene yakın: provider registry `api_key` alanını normalize edip kaldırıyor ve `api_key_env` kullanıyor (`ao_kernel/_internal/prj_kernel_api/providers_registry.py:24-31`, `77-93`). `ao_llm_call` tool parametreleri `intent`, `provider_id`, `model`, `stream`, `temperature`, `max_tokens` gibi güvenli alanlar olmalı; secret çözümü env/secrets provider üzerinden yapılmalı; response/evidence tarafında da yalnızca `api_key_present` benzeri bilgi dönülmeli."
+      },
+      "q3": {
+        "question": "P2’deki `_internal` test coverage v2.0.0 için zorunlu mu, yoksa v2.0.1’e bırakılabilir mi?",
+        "answer": "Geniş `_internal` coverage artışı v2.0.0 için zorunlu değil; v2.0.1'e bırakılabilir. Ama bunun yerine v2.0.0 öncesi birkaç yüksek değerli regresyon testi eklenmeli: auto-route contract, `llm_call(stream=True)` davranışı, `serve_http()` missing-deps davranışı ve `ao_llm_call` secret resolution. Başka bir deyişle, geniş coverage yerine release yüzeyini koruyan dar ama etkili testler şimdi daha değerli."
+      },
+      "q4": {
+        "question": "OTEL’i varsayılan yapmama kararı doğru mu?",
+        "answer": "Evet. `ao_kernel.telemetry` zaten lazy import + no-op fallback tasarımında ve `pyproject.toml:47-54` OTEL'i optional extra olarak tutuyor. Bunu v2.0.0 öncesi default yapmak kurulum yüzeyini ve operational yükü artırır; kazanımı düşük. Optional kalması doğru."
+      },
+      "q5": {
+        "question": "Streaming wiring’de `on_chunk` callback’i client’a expose etmemek doğru mu?",
+        "answer": "Evet, sınır doğru. Chunk-level ihtiyaçları düşük seviye `ao_kernel.llm.stream_request()` karşılamalı; bu API zaten `on_chunk` destekliyor (`ao_kernel/_internal/prj_kernel_api/llm_stream_transport.py:46-64`). Sync SDK'nın aggregate/final-result dönen bir yüzey olarak kalması mantıklı. Ama bunun geçerli olabilmesi için `AoKernelClient.llm_call(stream=True)` ya gerçekten `stream_request()` üzerinden aggregate etmeli ya da açıkça fail-closed etmeli; bugünkü gibi sessizce blocking path'e düşmemeli."
+      },
+      "q6": {
+        "question": "Eksik gördüğün veya eklenmesi gereken bir şey var mı?",
+        "answer": [
+          "P0'a auto-route contract fix mutlaka eklenmeli. Şu an public facade doc'u `provider_id/model` diyor (`ao_kernel/llm.py:22-35`), client de bunu bekliyor (`ao_kernel/client.py:261-266`), ama router `selected_provider/selected_model` döndürüyor (`ao_kernel/_internal/prj_kernel_api/llm_router.py:195-199`).",
+          "MCP HTTP için yalnız import guard yetmeyebilir. İnferans: `pyproject.toml:52-54` içindeki `mcp` extra'da `starlette`/`uvicorn` explicit görünmüyor; transitive dependency garantisi yoksa ekstra genişletilmeli veya HTTP ayrı extra/dokümantasyonla ayrılmalı.",
+          "CLI tarafında `ao-kernel mcp serve --transport http` path'i `ImportError` yakalıyor ama mesaj filtrelemesi `mcp` string'ine bağlı (`ao_kernel/cli.py:42-60`); `starlette`/`uvicorn` eksikliği kullanıcıya kötü yüzey verebilir.",
+          "Release smoke yeniden doğrulanmalı. Bu worktree'de hedefli koşuda `pytest tests/test_client.py tests/test_mcp_server.py tests/test_telemetry.py tests/test_llm_facade.py -q` sonucu `117 passed, 1 failed` çıktı; fail olan test `tests/test_mcp_server.py:146-150`. Bu doğrudan plan maddesi olmayabilir ama release iddiasını yeniden teyit etmeyi gerektirir."
+        ]
+      }
+    },
+    "recommended_order": [
+      "P0: CI `src/` cleanup, auto-route contract fix, SDK streaming path fix, MCP HTTP import/dependency guard",
+      "P1: `ao_llm_call` tool + secret resolution + telemetry eksik call-site'leri + dar regresyon testleri",
+      "P2: geniş `_internal` coverage artışı (v2.0.1)"
+    ],
+    "evidence": [
+      "`.github/workflows/test.yml:27-28` halen `ruff check ao_kernel/ src/ tests/` çalıştırıyor",
+      "`pyproject.toml:93-95` coverage source içinde hâlâ `src` var",
+      "`ao_kernel/client.py:323-332` streaming için `stream_request()` yerine `execute_request()` kullanıyor",
+      "`ao_kernel/mcp_server.py:349-410` sadece 4 MCP tool register ediyor; `ao_llm_call` yok",
+      "`ao_kernel/mcp_server.py:576-586` `starlette` ve `uvicorn` importları guard dışında",
+      "`ao_kernel/telemetry.py:268-292` iki metric helper tanımlı; repo içinde call-site bulunmadı",
+      "`ao_kernel/client.py:261-266` route sonucunda `provider_id/model` bekliyor",
+      "`ao_kernel/_internal/prj_kernel_api/llm_router.py:195-199` gerçek çıktı `selected_provider/selected_model`"
+    ]
+  },
+  "agreements": [
+    "CI'daki `src/` referanslarını temizlemek release öncesi zorunlu.",
+    "MCP HTTP transport import guard problemi gerçek ve kullanıcı yüzeyine çarpabilir.",
+    "SDK streaming wiring hatası public API bug'ı olduğu için release blocker.",
+    "`ao_llm_call` tool yüksek değerli ve v2.0.0 öncesi yapılması mantıklı.",
+    "API key'i MCP parametresi yapmamak doğru güvenlik sınırı.",
+    "OTEL'in optional kalması doğru.",
+    "Chunk-level callback'in low-level streaming API'de kalması doğru."
+  ],
+  "objections": [
+    "`record_decision_extraction()` ve `record_canonical_promote()` eksik call-site'lerini P0 değil P1 görüyorum.",
+    "Mevcut P0 listesi eksik; auto-route contract bug'ı şu anda telemetry eksiklerinden daha kritik.",
+    "Geniş `_internal` coverage artışını v2.0.0 gate yapmıyorum; bunu v2.0.1'e bırakmak daha doğru."
+  ],
+  "additions": [
+    "P0'a `AoKernelClient` route çıktı anahtarlarının normalize edilmesini ekleyin.",
+    "HTTP MCP için dependency sözleşmesini netleştirin; guard fix tek başına yeterli olmayabilir.",
+    "P0/P1 için dar ama kritik regresyon testleri ekleyin: auto-route, stream dispatch, missing HTTP deps, `ao_llm_call` secret resolution.",
+    "Release öncesi test iddiasını release branch üzerinde yeniden doğrulayın."
+  ]
+}
