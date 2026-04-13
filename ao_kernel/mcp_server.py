@@ -418,7 +418,19 @@ def create_tool_gateway():
     """
     from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy
 
-    gateway = ToolGateway(policy=ToolCallPolicy(enabled=True, max_rounds=50))
+    # Load policy from bundled defaults
+    # MCP governance tools are ALWAYS enabled (they ARE the governance layer)
+    try:
+        from ao_kernel.config import load_default
+        tool_policy = load_default("policies", "policy_tool_calling.v1.json")
+        policy = ToolCallPolicy(
+            enabled=True,  # MCP governance tools always enabled
+            max_rounds=int(tool_policy.get("max_tool_rounds", 10)),
+        )
+    except Exception:
+        policy = ToolCallPolicy(enabled=True, max_rounds=10)
+
+    gateway = ToolGateway(policy=policy)
 
     for td in TOOL_DEFINITIONS:
         handler = TOOL_DISPATCH.get(td["name"])

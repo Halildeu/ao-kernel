@@ -87,7 +87,107 @@ def check_policy(
 
 
 def _check_rules(policy: dict, action: dict) -> list[str]:
-    """Check action against policy rules. Returns violation codes."""
+    """Check action against policy rules. Supports multiple policy types.
+
+    Policy types detected by structure:
+    - autonomy: has "intents" + "defaults.mode" → check intent authorization
+    - tool_calling: has "enabled" + "allowed_tools" → check tool authorization
+    - guardrails: has "defaults.enabled" + "providers" → check provider access
+    - generic: has "required_fields"/"blocked_values"/"limits" → field checks
+    """
+    violations = []
+
+    # Type 1: Autonomy policy (intent-based)
+    if "intents" in policy and isinstance(policy.get("intents"), dict):
+        violations.extend(_check_autonomy(policy, action))
+
+    # Type 2: Tool calling policy
+    if "allowed_tools" in policy or "blocked_tools" in policy:
+        violations.extend(_check_tool_calling(policy, action))
+
+    # Type 3: Provider guardrails
+    if "providers" in policy and isinstance(policy.get("providers"), dict):
+        violations.extend(_check_provider_guardrails(policy, action))
+
+    # Type 4: Generic rules (required_fields, blocked_values, limits)
+    violations.extend(_check_generic_rules(policy, action))
+
+    return violations
+
+
+def _check_autonomy(policy: dict, action: dict) -> list[str]:
+    """Check autonomy policy — intent authorization and mode enforcement."""
+    violations = []
+    defaults = policy.get("defaults", {})
+    default_mode = defaults.get("mode", "human_review")
+    intents = policy.get("intents", {})
+
+    intent = action.get("intent", "")
+    mode = action.get("mode", "")
+
+    if intent and intent in intents:
+        intent_config = intents[intent]
+        allowed_mode = intent_config.get("mode", default_mode)
+        if mode and mode != allowed_mode and mode == "full_auto" and allowed_mode == "human_review":
+            violations.append(f"AUTONOMY_MODE_DENIED:{intent}:requested={mode},allowed={allowed_mode}")
+    elif intent and intent not in intents:
+        # Unknown intent — check fail_action
+        fail_action = policy.get("fail_action", "block")
+        if fail_action == "block":
+            violations.append(f"AUTONOMY_UNKNOWN_INTENT:{intent}")
+
+    return violations
+
+
+def _check_tool_calling(policy: dict, action: dict) -> list[str]:
+    """Check tool calling policy — allowed/blocked tools."""
+    violations = []
+
+    if not policy.get("enabled", False):
+        tool = action.get("tool_name", action.get("tool", ""))
+        if tool:
+            violations.append(f"TOOL_CALLING_DISABLED:{tool}")
+        return violations
+
+    tool = action.get("tool_name", action.get("tool", ""))
+    if not tool:
+        return violations
+
+    blocked = set(policy.get("blocked_tools", []))
+    if tool in blocked:
+        violations.append(f"TOOL_BLOCKED:{tool}")
+
+    allowed = set(policy.get("allowed_tools", []))
+    if allowed and tool not in allowed:
+        violations.append(f"TOOL_NOT_ALLOWED:{tool}")
+    elif not allowed:
+        violations.append(f"TOOL_NO_ALLOWLIST:{tool}")
+
+    return violations
+
+
+def _check_provider_guardrails(policy: dict, action: dict) -> list[str]:
+    """Check provider guardrails — provider access control."""
+    violations = []
+    providers = policy.get("providers", {})
+    provider_id = action.get("provider_id", action.get("provider", ""))
+
+    if provider_id and provider_id in providers:
+        prov = providers[provider_id]
+        if isinstance(prov, dict) and not prov.get("enabled", True):
+            violations.append(f"PROVIDER_DISABLED:{provider_id}")
+
+        model = action.get("model", "")
+        if model and isinstance(prov, dict):
+            allow_models = prov.get("allow_models", [])
+            if allow_models and model not in allow_models and "*" not in allow_models:
+                violations.append(f"MODEL_NOT_ALLOWED:{provider_id}:{model}")
+
+    return violations
+
+
+def _check_generic_rules(policy: dict, action: dict) -> list[str]:
+    """Check generic policy rules — required fields, blocked values, limits."""
     violations = []
 
     required = policy.get("required_fields", [])
@@ -111,6 +211,8 @@ def _check_rules(policy: dict, action: dict) -> list[str]:
                         violations.append(f"LIMIT_EXCEEDED:{field}")
                 except (ValueError, TypeError):
                     pass
+
+    return violations
 
     return violations
 
