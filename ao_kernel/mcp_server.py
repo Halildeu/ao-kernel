@@ -419,7 +419,7 @@ TOOL_DISPATCH = {
 }
 
 
-def create_mcp_server():
+def create_mcp_server():  # pragma: no cover — requires mcp package
     """Create and configure the MCP server instance.
 
     Requires `mcp` package: pip install ao-kernel[mcp]
@@ -498,7 +498,7 @@ def create_mcp_server():
     return server
 
 
-async def serve_stdio():
+async def serve_stdio():  # pragma: no cover — requires mcp package
     """Run MCP server over stdio transport."""
     try:
         from mcp.server.stdio import stdio_server
