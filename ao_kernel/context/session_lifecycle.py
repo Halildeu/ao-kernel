@@ -1,0 +1,65 @@
+"""Session lifecycle management — start, process, end.
+
+Provides the top-level API for governed session management.
+All operations are automatic — no manual calls needed.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+
+def start_session(
+    workspace_root: str | Path,
+    session_id: str,
+    ttl_seconds: int = 3600,
+) -> dict[str, Any]:
+    """Start a session — load existing or create new context.
+
+    Returns session context dict.
+    """
+    ws = Path(workspace_root)
+    try:
+        from ao_kernel.session import load_context
+        return load_context(workspace_root=ws, session_id=session_id)
+    except (FileNotFoundError, Exception):
+        from ao_kernel.session import new_context
+        return new_context(
+            session_id=session_id,
+            workspace_root=ws,
+            ttl_seconds=ttl_seconds,
+        )
+
+
+def end_session(
+    context: dict[str, Any],
+    workspace_root: str | Path,
+) -> dict[str, Any]:
+    """End a session — final compact + distillation trigger.
+
+    Returns finalized context.
+    """
+    ws = Path(workspace_root)
+    session_id = context.get("session_id", "default")
+
+    # Final compaction
+    from src.session.compaction_engine import compact_session_decisions
+    compact_session_decisions(
+        context,
+        workspace_root=ws,
+        session_id=session_id,
+    )
+
+    # Trigger distillation (async-safe — writes to workspace_facts)
+    try:
+        from src.session.memory_distiller import run_distillation
+        run_distillation(workspace_root=ws)
+    except Exception:
+        pass  # Distillation failure shouldn't block session close
+
+    # Final save
+    from ao_kernel.session import save_context
+    save_context(context, workspace_root=ws, session_id=session_id)
+
+    return context

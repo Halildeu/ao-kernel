@@ -1,14 +1,25 @@
-"""ao_kernel.context — Context management for governed AI runtime.
+"""ao_kernel.context — Governed context management for AI runtime.
 
-Provides the write→read context loop:
+Write→Read loop:
     LLM Response → Decision Extractor → session context → Context Injector → LLM Request
+
+Automatic pipeline:
+    process_turn() → extract → prune → compact → save (every turn)
+    start_session() / end_session() → lifecycle management
 """
 
-from ao_kernel.context.context_injector import build_context_preamble
-from ao_kernel.context.decision_extractor import Decision, extract_decisions
+from ao_kernel.context.context_injector import build_context_preamble, inject_context_into_messages
+from ao_kernel.context.decision_extractor import Decision, extract_decisions, extract_from_tool_result
+from ao_kernel.context.memory_pipeline import process_turn
+from ao_kernel.context.session_lifecycle import end_session, start_session
 
 __all__ = [
     "Decision",
     "extract_decisions",
+    "extract_from_tool_result",
     "build_context_preamble",
+    "inject_context_into_messages",
+    "process_turn",
+    "start_session",
+    "end_session",
 ]

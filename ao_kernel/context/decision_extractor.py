@@ -73,6 +73,38 @@ def extract_decisions(
     return decisions
 
 
+def extract_from_tool_result(
+    tool_name: str,
+    tool_output: dict[str, Any],
+    *,
+    request_id: str = "",
+) -> list[Decision]:
+    """Extract decisions from tool call results (highest confidence).
+
+    Tool results are explicit structured data — most reliable source.
+    """
+    if not isinstance(tool_output, dict):
+        return []
+
+    decisions = []
+    ts = _now_iso()
+
+    for key, value in tool_output.items():
+        if key.startswith("_") or key in ("type", "id", "timestamp", "error"):
+            continue
+        if isinstance(value, (str, int, float, bool)):
+            decisions.append(Decision(
+                key=f"tool.{tool_name}.{key}",
+                value=value,
+                source="agent",
+                confidence=0.95,
+                evidence_id=request_id,
+                extracted_at=ts,
+            ))
+
+    return decisions[:10]
+
+
 def _extract_from_json(text: str, *, request_id: str, timestamp: str) -> list[Decision]:
     """Extract decisions from JSON content in the output."""
     decisions = []

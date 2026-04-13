@@ -37,8 +37,18 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _schema_path() -> Path:
-    return _repo_root() / "schemas" / "session-context.schema.json"
+def _load_schema() -> dict[str, Any]:
+    """Load session context schema — tries repo root, falls back to bundled defaults."""
+    repo_path = _repo_root() / "schemas" / "session-context.schema.json"
+    if repo_path.exists():
+        return json.loads(repo_path.read_text(encoding="utf-8"))
+    # Fallback: bundled defaults
+    try:
+        from src.shared.resource_loader import load_resource
+        return load_resource("schemas", "session-context.schema.json")
+    except (ImportError, FileNotFoundError):
+        pass
+    raise SessionContextError("SCHEMA_NOT_FOUND", "Missing session-context.schema.json")
 
 
 def _now_iso8601() -> str:
@@ -101,10 +111,7 @@ def compute_sha256(data: bytes) -> str:
 
 
 def _validator() -> Draft202012Validator:
-    schema_path = _schema_path()
-    if not schema_path.exists():
-        raise SessionContextError("SCHEMA_NOT_FOUND", "Missing schemas/session-context.schema.json")
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    schema = _load_schema()
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
 
