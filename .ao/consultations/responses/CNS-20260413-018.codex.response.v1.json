@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-018",
+  "agent": "codex",
+  "responded_at": "2026-04-13T15:00:00Z",
+  "verdict": "needs_changes",
+  "body": "Genel sonuc: 9 bulgunun omurgasina katiliyorum. En kritik sorunlar gercekten runtime wiring tarafinda: `ao_kernel/llm.py` context okumuyor/yazmiyor, `ao_kernel/mcp_server.py` context akisini kullanmiyor, `process_turn` ve `compile/inject` uretim yolunda degil. Hedefli dogrulamada `python3 -m pytest` ile `tests/test_mcp_server.py::TestWorkspaceStatusGovernance::test_no_workspace_reports_library_mode` ve `tests/test_tool_gateway.py::TestMcpToolGatewayIntegration::test_gateway_dispatch_workspace_status` fail etti; `tests/test_roadmap_facade.py` ise 1 skip verdi. Oncelik sirasi kabaca dogru, ama iki nuans var: `extract_from_tool_result` bence tek basina kritik degil, #2'nin alt-bulgusu gibi; README eksigi ise yuksekten cok orta. Tek PR onermem; runtime entegrasyonu, state/schema duzeltmeleri ve docs/tests/telemetry diye parcali gitmek daha guvenli.",
+  "agreements": [
+    "#1 ve #2 dogru: LLM ve MCP context pipeline'a bagli degil; `compile_context`, `inject_context_into_messages`, `process_turn` runtime'da kullanilmiyor.",
+    "#4 dogru: README context/session/canonical memory akislarini pratikte hic anlatmiyor.",
+    "#5 dogru: eski `src/prj_kernel_api/tool_gateway.py` repoda duruyor ve test yuzeyi olusturmaya devam ediyor.",
+    "#7 dogru: telemetry'de LLM/MCP span'lari var ama context load/compile/inject/persist span'lari yok.",
+    "#8 dogru: `tests/test_roadmap_facade.py` skip ile yesile boyaniyor.",
+    "#9 dogru: `fresh_until` ve `review_after` tanimli ama efektif enforcement yok; yalniz `expires_at` filtresi calisiyor.",
+    "Claude'un `src.session`/deprecated shim notu dogru: yeni facade'larin ici hala `src.*` import ediyor.",
+    "Claude'un E2E test boslugu notu dogru: gercek LLM→context→LLM veya MCP→context akisi test edilmiyor."
+  ],
+  "objections": [
+    "#3'e kismi itirazim var: `extract_from_tool_result` olu kod, evet; ama ayri root cause degil, daha cok #2'nin semptomu. Kritik yerine yuksek yazilabilir.",
+    "#6'ya kismi itirazim var: bug 'her zaman root'a yaziyor' degil; asil sorun `workspace_root` semantiginin tutarsiz olmasi. Kod `workspace_root / canonical_decisions.v1.json` yaziyor, bu da cagirana gore `.ao/` icine veya repo root'a gidebiliyor.",
+    "Claude'un `context_injector.py` ve `context_compiler.py` icin 'duplikasyon' yorumu eksik: esas problem sadece iki dosya olmasi degil, farkli contract beklemeleri."
+  ],
+  "additions": [
+    "YUKSEK: Canli MCP yolu `ToolGateway`'i bypass ediyor; `create_mcp_server().call_tool` dogrudan `TOOL_DISPATCH` cagiriyor. Policy gate ve round-limit canli serverda zorunlu degil.",
+    "YUKSEK: `context_injector.py` yanlis schema'ya bakiyor; gercek store `ephemeral_decisions` kullanirken injector ve testleri `decisions` bekliyor. Baglansa bile sessiz no-op riski var.",
+    "YUKSEK: `start_session` tum load hatalarini yakalayip yeni context uretiyor; bozuk/hash-mismatch context fail-closed olmak yerine sessiz resetlenebiliyor.",
+    "ORTA: `record_decision` API'si 'recorded' diyor ama session'a yazmiyor; `auto_promote=False` ise hicbir yere persist etmeden basarili donuyor.",
+    "ORTA: MCP `workspace_status` davranisi ambient CWD'ye bagli; hedefli testte bu yuzden 'library' yerine mevcut repo `.ao/` workspace'i dondu."
+  ],
+  "follow_up": [
+    "PR-1: Runtime wiring. LLM oncesi `compile_context`/inject, LLM ve tool sonrasinda `process_turn` + `extract_from_tool_result`, MCP'de `ToolGateway` zorunlu olsun.",
+    "PR-2: State/schema duzeltmeleri. `ephemeral_decisions` tek kaynak olsun, `canonical_store` path semantigi netlessin, `start_session` fail-closed davransin, `record_decision` gercek persist yapsin.",
+    "PR-3: Docs/tests/telemetry. README'ye context mimarisi eklensin, en az 1 gercek E2E test yazilsin, skip/fake testler kaldirilsin, context span'lari eklensin."
+  ]
+}

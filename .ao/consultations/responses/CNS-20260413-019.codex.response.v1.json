@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-019",
+  "agent": "codex",
+  "responded_at": "2026-04-13T16:00:00Z",
+  "verdict": "block",
+  "body": "Evet, production-oncesi gercek blocker var: (1) `check_policy` policy semantigini uygulamiyor; yalnizca `required_fields/blocked_values/limits` bakiyor. Bu yuzden `policy_security` ve `policy_autonomy` gibi policy'ler runtime'da fiilen no-op kaliyor; ben de `check_policy('policy_security.v1.json', {'network_access': True})` ve `check_policy('policy_autonomy.v1.json', {'intent': 'urn:core:summary:summary_to_file', 'mode': 'full_auto'})` cagrilarinda `POLICY_PASSED` gordum. (2) MCP ToolGateway gercek policy artifact'ini yuklemiyor; `policy_tool_calling.v1.json` yerine hardcoded `enabled=True, max_rounds=50` kullaniyor. Bu dogrudan governance bypass. (3) Provider/API guardrail modulleri tanimli ama public runtime'a bagli degil; provider allowlist, explicit live flag, auth, rate-limit ve audit kontrolleri canlida enforce edilmiyor. (4) Context akisi tam bagli degil; `build_request_with_context()` canonical decisions ve workspace facts yuklemiyor, `workspace_facts.v1.json` liste yazilirken compiler dict bekliyor, bu nedenle distilled facts runtime'da dusuyor.",
+  "agreements": [
+    "Governance katmani policy dosyalarini yukluyor ama policy davranisini gercekten yurutmuyor.",
+    "MCP tool dispatch policy-gated gorunse de runtime'da artifact-bypass var.",
+    "Context/canonical/facts hatti public API'de tam bagli degil."
+  ],
+  "objections": [],
+  "additions": [
+    "`start_session()` bozuk veya okunamayan session'i fail-closed yerine warning ile fresh context'e ceviriyor.",
+    "`end_session()` public path'te canonical promotion yapmiyor; README'deki 'compact + distill + promote' davranisiyla ayrisiyor.",
+    "MCP tool-result persistence explicit `workspace_root` yerine ambient workspace ariyor ve hatayi swallow ediyor; multi-workspace/library mode'da audit-memory kaybi yaratabilir."
+  ],
+  "follow_up": [
+    "`ao_kernel.governance.check_policy` ve MCP policy check yolunu policy-semantic aware tek evaluator altinda birlestir.",
+    "`create_tool_gateway()` icinde `policy_tool_calling.v1.json` yukle; hardcoded policy'yi kaldir.",
+    "Provider/API guardrails'i public LLM ve MCP akisina bagla; auth/rate-limit/audit fail-closed olsun.",
+    "Context tarafinda facts schema-loader uyumsuzlugunu gider; `build_request_with_context()` canonical+facts kullansin ve `end_session()` canonical promotion yapsin."
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-020",
+  "agent": "codex",
+  "responded_at": "2026-04-13T17:00:00Z",
+  "verdict": "scope_cut",
+  "body": "1) Şimdi yap: `6, 7, 8, 1, 3`. `11` en son. `4` ise ancak ürün vaadi gerçekten tier enforcement ise hemen arkaya alınmalı.\n2) Erken: `12-19` kesin erken. `2, 5, 9, 10` da değerli ama v0.2.0 blocker değil.\n3) 1 saat altı: net `6, 7, 8`. Dar kapsamda `3`. `1` sadece contract test + registry promote ise sığabilir.\n4) Doğru sıra: `6 -> 7 -> 8 -> 1 -> 3 -> 4 -> 11`. Sonra `2 -> 5 -> 9 -> 10`. `12-19` daha sonra.\n5) v0.2.0 minimum: `1, 6, 7, 8, 11`. `3` güçlü tavsiye. `4` sadece mevcut ürün iddiasının parçasıysa minimum.\n\nGerekçe: repo zaten facade yönüne gitmiş (`ao_kernel.governance` var), ama `ao_kernel.workspace` yok; schema tarafı 6 profili biliyor, runtime/router ve README fiilen 3 profilde; provider capability registry'de streaming hâlâ `experimental`. Yani şu an en yüksek değer, yeni capability açmak değil, public surface ve release confidence kapatmak.",
+  "agreements": [
+    "\"Hepsini tamamlayalım\" yanlış hedef; v0.2.0 scope'u daraltılmalı.",
+    "`1, 6, 7, 8` release/oncelik kalemleri.",
+    "`12-19` şu an erken; yeni yüzey veya yıkıcı refactor.",
+    "`2, 5, 9, 10` faydalı ama v0.2.0 için şart değil."
+  ],
+  "objections": [
+    "`4` hot/warm/cold tier enforcement minimum release kapsamına girer mi: bu, mevcut ürün vaadine bağlı.",
+    "`3` eksik profiller zorunlu mu yoksa güçlü tavsiye mi: schema/runtime tutarsızlığı yüzünden bence en azından v0.2.0 içinde kapanmalı."
+  ],
+  "additions": [
+    "`ao_kernel.policy` item'i büyük ihtimalle sıfırdan özellik değil, naming/public API düzenleme işi.",
+    "`ao_kernel/context/profile_router.py` yalnızca 3 profil taşıyor; schema enum'ları 6 profili zaten içeriyor.",
+    "`tests/test_context_compiler.py` geçiyor; profile zemini var.",
+    "`tests/test_tool_gateway.py` tarafında workspace mode ayrışması var; release öncesi surface güveni eksik.",
+    "Streaming testleri bu sandbox'ta socket kısıtı yüzünden tam doğrulanamadı; ayrıca testler hâlâ `src.*` üstünden gidiyor."
+  ],
+  "follow_up": [
+    "Kesim çizgisi koy: v0.2.0 = 'public surface + confidence release'.",
+    "Tek sprint hedefi yap: `6,7,8,1,3`; `4` için ayrı go/no-go kararı ver.",
+    "Release kriterini yazılı yap: extras install, streaming contract, facade importları, profile/runtime tutarlılığı.",
+    "`11` ancak bu kriterler yeşil olduktan sonra."
+  ]
+}

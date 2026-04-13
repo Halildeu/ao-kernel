@@ -1,0 +1,34 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-005",
+  "agent": "codex",
+  "responded_at": "2026-04-13T01:30:00Z",
+  "verdict": "B",
+  "body": "Q1: Yol B'yi tercih ederim, ama 'main + loving-pascal'in tamamini birlestir' anlaminda degil; 'main baseline + loving-pascal'dan secili core-service uplift' anlaminda. Gerekce: Yol A v0.1'i gereksiz derecede zayif bir runtime ile baslatir; CLAUDE.md'de vaat edilen live LLM control-plane, resiliency ve governance parcalarinin onemli kismi main'de yok. Yol C ise mevcut calisan PR #76 cekirdegini yeniden yazarak ikinci bir drift ve ikinci bir source-of-truth uretir. Yerel incelemede PR #76'nin gercek cekirdegi buyuk olcude temiz bir dependency closure veriyor: agirlikla `src/shared/*`, secili `src/providers/*` ve birkac `src/orchestrator/*` dosyasina bagli. Bu nedenle en dusuk toplam mimari risk, main'i ana kaynak alip worktree'den sadece eksik core katmani cekmek.\n\nQ2: Bu karar katman bazli allowlist onerimle dogrudan uyusuyor. Katman 1: yeni `ao_kernel/` facade elle yazilir. Katman 2: main'den stabil compat shim ve policy/registry/router tabani alinır. Katman 3: `loving-pascal` worktree'sinden yalniz worktree-only LLM control-plane dosyalari uplift edilir. Katman disinda kalanlar acikca disarida tutulur: `src.ops/*`, `src.sdk/*`, repo-spesifik orchestration shell, `src.session/*`, `src.evidence/writer.py` uzerinden gelen workflow shell kapanisi, ve tum klasoruyle `prj_kernel_api/` alma yaklasimi. Kritik istisna su: `src/prj_kernel_api/tool_gateway.py` worktree'de olsa da runtime'da `python -m src.ops.manage` dispatch ettigi icin v0.1 minimum katmana alinmamali; bu dosya core service degil, CLI adapter sızıntısıdir.\n\nQ3: Scaffold v0.1.0 icin benim minimum viable `src/` allowlist'im su olur.\n\nMain baseline:\n- `src/shared/__init__.py`\n- `src/shared/logger.py`\n- `src/shared/utils.py`\n- `src/prj_kernel_api/__init__.py`\n- `src/prj_kernel_api/api_guardrails.py`\n- `src/prj_kernel_api/provider_guardrails.py`\n- `src/prj_kernel_api/providers_registry.py`\n- `src/prj_kernel_api/providers_registry_schema.py`\n- `src/prj_kernel_api/dotenv_loader.py`\n- `src/prj_kernel_api/llm_clients.py`\n- `src/prj_kernel_api/llm_router.py`\n- `src/prj_kernel_api/llm_probe_runner.py`\n- `src/providers/__init__.py`\n- `src/orchestrator/quality_gate.py`\n- `src/orchestrator/decision_quality.py`\n- `src/roadmap/__init__.py`\n- `src/roadmap/change_proposals.py`\n- `src/roadmap/compiler.py`\n- `src/roadmap/evidence.py`\n- `src/roadmap/exec_contracts.py`\n- `src/roadmap/exec_evidence.py`\n- `src/roadmap/exec_steps.py`\n- `src/roadmap/executor.py`\n- `src/roadmap/sanitize.py`\n- `src/roadmap/step_templates.py`\n\nLoving-pascal uplift:\n- `src/prj_kernel_api/circuit_breaker.py`\n- `src/prj_kernel_api/llm_post_processors.py`\n- `src/prj_kernel_api/llm_request_builder.py`\n- `src/prj_kernel_api/llm_response_normalizer.py`\n- `src/prj_kernel_api/llm_retry.py`\n- `src/prj_kernel_api/llm_transport.py`\n- `src/prj_kernel_api/prompt_registry.py`\n- `src/prj_kernel_api/rate_limiter.py`\n- `src/prj_kernel_api/tool_calling.py`\n- `src/providers/capability_model.py`\n- `src/providers/response_parser.py`\n- `src/providers/structured_output.py`\n- `src/providers/token_counter.py`\n- `src/orchestrator/eval_harness.py`\n\nBu minimum liste bilerek sunlari disarida birakir: `src/prj_kernel_api/tool_gateway.py`, `src.tools/*`, `src.secrets/*`, `src.evidence/writer.py`, `src.utils/*`, `src.session/*`, `src.orchestrator/workflow_exec*`, `src.orchestrator/executor_port.py`, `src.ops/*`, `src.sdk/*`. Eger v0.1'de zorunlu olarak end-to-end tool dispatch istenirse, o zaman ayrica yeni bir service-adapter slice tanimlanmali; mevcut `src.ops.manage` subprocess zincirini core'a almak dogru degil.",
+  "agreements": [
+    "PR #76 dosyalarinin main'de olmamasi nedeniyle CLAUDE.md'deki 'zaten implement edildi' anlatimi main snapshot icin guvenilir degil.",
+    "Karar klasor bazinda degil, dosya ve katman bazinda verilmek zorunda.",
+    "`roadmap/` icinde execution kernel alinmali, orchestration shell alinmamali.",
+    "`sdk/`, `ops/` CLI shell'i ve repo-spesifik moduller v0.1 core runtime disinda kalmali.",
+    "Main snapshot tek basina hedeflenen governed AI runtime'i eksik bir cekirdekle baslatir."
+  ],
+  "objections": [
+    "`tool_gateway.py`yi PR #76 ile birlikte otomatik core'a almiyorum; worktree surumu dogrudan `src.ops.manage` dispatch ediyor ve katman sinirini deliyor.",
+    "`secrets/` katmanini v0.1 minimum listede core'a yukseltiyorum demiyorum; env tabanli cozum icin `dotenv_loader.py` yeterli, secret-provider abstraction sonraki dilim olabilir.",
+    "`llm_live_probe.py` ve `llm_allowlist_probe.py` minimum scaffold listesine girmemeli; synthetic `llm_probe_runner.py` baslangic icin yeterli, network-heavy probe slice doctor/ops fazina birakilmali."
+  ],
+  "additions": [
+    "Kaynak SHAlarini da sabitlemek gerekir: main HEAD `3f071b8d07a0435e4e4ce9f1c5f05357822b1b6b`, `loving-pascal` HEAD `8f22b206dd70a2802b333ca752a08ab80c7f14e9`.",
+    "PR #76 cekirdeginin gercek dependency closure'i beklediginden kucuk: cogu dosya yalniz `src.shared.logger`, `src.shared.utils`, secili `src.providers.*` ve `src.orchestrator.eval_harness`a dayaniyor.",
+    "Asil closure patlamasi `tool_gateway.py` ve workflow shell tarafinda: `tool_gateway.py` -> `src.ops.manage`, `workflow_exec*` -> `src.evidence.writer` -> `src.utils.jsonio` ve `src.session/*`.",
+    "`roadmap` execution kernel buna karsilik temiz bir slice veriyor; agirlikla `src.shared.utils` ve `src.roadmap.*` icinde kaliyor.",
+    "`tool_calling.py`yi `tool_gateway.py` olmadan da almak mantikli; ilki provider-wire format/parsing katmani, ikincisi dispatch adapter'i."
+  ],
+  "follow_up": [
+    "CLAUDE.md'yi hemen duzelt: main ile worktree ayrimini ve 'implement edildi' ifadesinin hangi snapshot icin gecerli oldugunu acik yaz.",
+    "Bir `source_manifest` cikar: her allowlist dosyasi icin kaynak repo, kaynak branch/worktree ve SHA kaydedilsin.",
+    "Kopyalamayi iki fazda yap: once main baseline, sonra `loving-pascal` uplift; her fazdan sonra import smoke testi calistir.",
+    "`tool_gateway.py` icin ayri karar ac: ya `ao_kernel` altinda service adapter olarak yeniden sinirla ya da v0.1'den tamamen cikar.",
+    "v0.1 disinda birakilan slice'lar icin ayri backlog ac: live probes, secrets abstraction, workflow shell, CLI adapters."
+  ]
+}

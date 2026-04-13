@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-012",
+  "agent": "codex",
+  "responded_at": "2026-04-13T10:00:00Z",
+  "verdict": "S1:C,S2:A,S3:C,S4:B",
+  "body": "S1 icin C: bug gercek; `resource_loader` operations icin repo kokunde `docs/OPERATIONS` varsayiyor, `llm_router` da path alamayinca ayni kirik fallback'e donuyor. Tek tarafli yama kok nedeni tam kapatmaz. S2 icin A: tutarli public Session API yok; `src/session/__init__.py` bos, `ao_kernel.session` yok, mevcut yuzey dict/fonksiyon tabanli. Sadece export duzeltmesi yetersiz. S3 icin C: roadmap motoru gercek ama ne public facade var ne de compile->apply zincirini kanitlayan E2E test var. Production yuzeyi icin ikisi birlikte gerekli. S4 icin B: eval harness'teki check'lerin cogu heuristic; ayrica ana governance akisi bu 6-check harness'i kullanmiyor. Bu haliyle 'production-grade eval' ifadesi yaniltici.",
+  "agreements": [
+    "S1 -> C",
+    "S2 -> A",
+    "S3 -> C",
+    "S4 -> B"
+  ],
+  "objections": [
+    "S1'de yalniz A veya yalniz B eksik kalir.",
+    "S2'de C sorunu cozmez; export edilecek net bir `SessionContext` sinifi yok.",
+    "S3'te yalniz A yeterli degil; unstable `src.roadmap` yuzeyi product API olmaz.",
+    "S4'te A simdi yanlis oncelik; once isimlendirme ve dokuman gercege cekilmeli."
+  ],
+  "additions": [
+    "Session tarafinda ikinci paketleme sorunu var: `context_store` schema'yi bundled defaults yerine repo kok `schemas/` altinda ariyor.",
+    "Roadmap tarafinda benzer risk var: executor `schemas/roadmap.schema.json` bekliyor; E2E test bunu hemen yakalar.",
+    "Eval harness ile quality gate ayni sey degil; mevcut quality gate de basit kural/heurstic mantiginda."
+  ],
+  "follow_up": [
+    "S1: resource resolution'i tek kaynaga indir; router'i path fallback yerine dogrudan bundled/default loader uzerinden okut.",
+    "S2: `ao_kernel.session` facade ekle; `new/load/save/renew` ve hata tiplerini buradan yayinla.",
+    "S3: `ao_kernel.roadmap` facade ekle; en az bir dry-run happy-path ve bir fail-path E2E test yaz.",
+    "S4: README/docstring/CLAUDE dilini `heuristic-based eval` olarak duzelt; daha sonra ayri embedding/LLM-based eval katmani tasarla."
+  ]
+}

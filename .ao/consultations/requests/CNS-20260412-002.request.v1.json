@@ -1,0 +1,43 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-002",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "review",
+  "question": {
+    "title": "ao-kernel scaffold implementasyon plani review",
+    "body": "CNS-20260412-001 istisaresinde uzerinde anlastigimiz mimari kararlara dayanarak somut bir scaffold implementasyon plani hazirladim. Bu plani inceleyip itirazlarini, onaylarini ve eklemelerini istiyorum.\n\n## PLAN OZETI (5 Task)\n\n### Task 1: pyproject.toml\n- name=ao-kernel, version=0.1.0, requires-python>=3.11\n- Dependencies: jsonschema>=4.23.0, tenacity>=9.0.0, tiktoken>=0.9.0\n- Extras: dev (pytest,ruff,mypy), otel (opentelemetry-*), pgvector\n- CLI: ao-kernel = ao_kernel.cli:main\n- Packages: ao_kernel + ao_kernel.* + src + src.* (dual package discovery)\n- Package-data: ao_kernel/defaults/ altindaki tum *.json\n\n### Task 2: ao_kernel/ Facade (6 dosya)\n- __init__.py: __version__=0.1.0, public exports (workspace_root, load_default, load_with_override)\n- cli.py: argparse, --workspace-root global opsiyon, subcommands: init/migrate/doctor/version\n- config.py: workspace_root(override) resolver (override > .ao/ > legacy .cache/ws_customer_default), load_default (importlib.resources), load_with_override (workspace > bundled)\n- init_cmd.py: .ao/ dizini olustur, workspace.json yaz, idempotent\n- migrate_cmd.py: workspace.json version karsilastir, v0.1.0 icin bos migration listesi\n- doctor_cmd.py: 7 saglik kontrolu (workspace, workspace.json, bundled defaults, Python>=3.11, zorunlu deps, opsiyonel deps, src shim importability)\n\n### Task 3: ao_kernel/defaults/ (Bundled JSON)\n- policies/*.json (90 dosya) -> ao_kernel/defaults/policies/\n- schemas/*.json (206 dosya) -> ao_kernel/defaults/schemas/\n- registry/*.json (8 dosya, archives/ haric) -> ao_kernel/defaults/registry/\n- Her dizine __init__.py eklenir (importlib.resources icin)\n\n### Task 4: ao_kernel/config.py (Detay)\n- workspace_root(): CWD'den yukari .ao/ arar, bulamazsa .cache/ws_customer_default arar\n- load_default(): importlib.resources.files('ao_kernel.defaults').joinpath(resource_type).joinpath(filename)\n- load_with_override(): workspace path varsa onu kullan, yoksa bundled default\n- _VALID_TYPES = {policies, schemas, registry} validation\n\n### Task 5: src/ Compat Shim Kopyasi\n- rsync -av --exclude=__pycache__ --exclude=.DS_Store --exclude=*.pyc autonomous-orchestrator/src/ -> ao-kernel/src/\n- 657 Python dosyasi birebir, HICBIR degisiklik yapilmaz\n- from src.shared.utils import load_json calismali\n\n## DOGRULAMA PLANI\n1. pip install -e .[dev] basarili\n2. python -c 'import ao_kernel; print(ao_kernel.__version__)' -> 0.1.0\n3. python -c 'from src.shared.utils import load_json' -> OK\n4. ao-kernel version -> 0.1.0\n5. ao-kernel init -> .ao/ olusur\n6. ao-kernel doctor -> tum kontrollar OK\n7. python -m build -> sdist + wheel\n\n## CNS-001 CODEX ITIRAZIYLA ILGILI NOTLAR\n\nCodex CNS-001'de su itirazlari verdi:\n- src.* shim dagitilan PyPI yuzeyinde kirli\n- Migration dar kapsamli olmamali\n- Legacy fallback sessiz olmamali\n- Urun sinirlari fazla genis\n- Library mode vs workspace mode ayrilmali\n\nBu scaffold planinda bunlarin hangisi adreslenebilir, hangisi Faz 2'ye birakilabilir?\n\n## 6 SORU\n\nQ1: pyproject.toml yapisinda eksik veya yanlis bir sey var mi? Dependency versiyonlari, extras, package-data config dogru mu?\n\nQ2: ao_kernel/ facade'in 6 dosya yapisi dogru mu? Eksik modul var mi? cli.py icinde subcommand dispatch pattern dogru mu?\n\nQ3: config.py workspace resolver algoritmasi dogru mu? importlib.resources kullanimi Pythonic mi? Edge case'ler (workspace yok, izin hatasi, corrupted JSON) yeterince handle ediliyor mu?\n\nQ4: 305 JSON dosyasini (90 policy + 206 schema + 9 registry) ao_kernel/defaults/'a kopyalamak dogru mu? PyPI paket boyutu (~1.6MB JSON) kabul edilebilir mi? Alternatif yaklasim (lazy download, subset) dusunulmeli mi?\n\nQ5: src/ shim'i 657 dosya olarak birebir kopyalamak dogru mu? CNS-001 itirazini dikkate alarak ao_kernel._legacy gibi bir namespace tercih etmeli miyiz? Yoksa v0.1.0 icin src/ kopyasi kabul edilebilir mi?\n\nQ6: Dogrulama plani yeterli mi? Eksik test senaryolari var mi?\n\nHer soru icin somut, cesur ve itiraz odakli yanit ver. Turkce yanit ver.",
+    "context_refs": [
+      "CLAUDE.md",
+      ".ao/consultations/responses/CNS-20260412-001.codex.response.v1.json"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Plan onay — kucuk duzeltme",
+        "description": "Scaffold plani buyuk olcude dogru, kucuk duzeltmelerle devam",
+        "pros": "Hizli baslangic, momentum kaybetmez",
+        "cons": "CNS-001 itirazlari ertelenmis olur"
+      },
+      {
+        "option_id": "B",
+        "title": "Orta revizyon",
+        "description": "Plan yapisal olarak dogru ama bazi task'lar degismeli (ornegin src/ kopyalama stratejisi)",
+        "pros": "Daha saglam temel",
+        "cons": "Ek sure"
+      },
+      {
+        "option_id": "C",
+        "title": "Major revizyon",
+        "description": "Plan yetersiz, onemli yapisal degisiklikler gerekli",
+        "pros": "Temiz baslangic",
+        "cons": "Onemli gecikme"
+      }
+    ]
+  },
+  "created_at": "2026-04-12T23:45:00Z",
+  "expires_at": "2026-04-13T23:45:00Z",
+  "branch": "main",
+  "head_sha": "0500370"
+}

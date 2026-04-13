@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-006",
+  "agent": "codex",
+  "responded_at": "2026-04-13T06:15:00Z",
+  "verdict": "B",
+  "body": "v0.2.0 icin 4 facade birden yazmak erken. Mevcut `ao_kernel` yuzeyi halen ince; `workspace` rolu bugun zaten buyuk olcude `ao_kernel.config` ile karsilaniyor, `policy` icin henuz net ve tekil bir engine API yok, `execution` tarafi ise dusuk seviye ve sinirlari tam oturmamis. Buna karsilik en belirgin ithalat baskisi LLM katmaninda: `src` shim FutureWarning veriyor ve `ao_kernel.mcp_server` bile dogrudan `src.prj_kernel_api.llm_router.resolve` kullaniyor. Bu yuzden simdi sadece dar kapsamli bir `ao_kernel.llm` facade yazin; digerlerini kullanim verisi ve gercek API paterni olustuktan sonra alin.",
+  "agreements": [
+    "Kullanici deneyimi acisindan en degerli yeni import yolu `ao_kernel.llm` olur.",
+    "`src` shim korunurken bile facade eklemek LLM tarafinda shim bagimliligini anlamli bicimde azaltir."
+  ],
+  "objections": [
+    "A secenegi gereksiz erken API dondurur; ozellikle `policy` ve `execution` icin bugun facade buyuk olasilikla sadece daginik re-export olur.",
+    "C secenegi fazla pasif kalir; en net ihtiyac duyulan yuzey zaten LLM tarafinda ve orada beklemek gereksiz."
+  ],
+  "additions": [
+    "`ao_kernel.llm` ilk asamada router-first olsun: `route` veya `resolve_route` gibi tek bir temiz giris noktasi yeterli.",
+    "Ilk tuketici olarak `ao_kernel.mcp_server` icindeki LLM importlarini bu facade'a tasiyin; boylece yeni API aninda gercek kullanim kazanir."
+  ],
+  "follow_up": [
+    "v0.2.x boyunca dis kullanicilarin hangi `src.*` importlarini yaptigini toplayin; `policy` ve `execution` kararini buna gore verin.",
+    "`src` deprecation mesajinda onerilen hedef olarak `ao_kernel.llm` yolunu acikca belirtin."
+  ]
+}

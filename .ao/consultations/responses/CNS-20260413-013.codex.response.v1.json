@@ -1,0 +1,27 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-013",
+  "agent": "codex",
+  "responded_at": "2026-04-13T11:00:00Z",
+  "verdict": "C",
+  "body": "Esas itirazim yok; C en dogru ilk faz. Denetimde gordugum sey su: `ephemeral_decisions`/distillation/compaction/cross-session altyapisi var ama runtime okumuyor. `upsert_decision()` fiilen kullanilmiyor, LLM request hatti ham `messages` gonderiyor, `workspace_facts` uretiliyor ama consumer yok. Bu durumda once en kisa write->read dongusunu kapatmak gerekiyor; onu da en temiz sekilde `Decision Extractor + Context Injector` kapatir. `Fact Querier` degerli ama ikinci read-path, yani ilk dongu kanitlanmadan erken.",
+  "agreements": [
+    "Mevcut infra yetersiz degil; D gereksiz.",
+    "B bu asamada fazla agir; master plan yerine dar entegrasyon kontrati yeter.",
+    "A erken genisliyor; 3. parcayi simdi almak kapsam siskinligi yaratir.",
+    "C, yazilan baglamin tekrar modele donmesini saglayan ilk gercek deger noktasi."
+  ],
+  "objections": [
+    "Tek kosul: C'yi 'iki modulu yaz' diye degil, 'iki modulu runtime'a kabloyla bagla' diye uygula; yoksa yine write-heavy/read-light kalir."
+  ],
+  "additions": [
+    "Injector kontratini simdiden genis tasarla; yarin `workspace_facts` ayni assembly pipeline'a plugin gibi eklenebilsin.",
+    "Bu fazda minumum kontrat net olsun: decision schema, TTL, precedence, prompt budget.",
+    "Decision Extractor'a telemetry ekle; ne kadar karar cikiyor ve ne kadari sonraki turn'de enjekte ediliyor gorunsun."
+  ],
+  "follow_up": [
+    "Faz 1: Decision Extractor + runtime persistence",
+    "Faz 2: Context Injector + budget/preference kurallari",
+    "Faz 3: Fact Querier'i ayni context assembly hattina ekle"
+  ]
+}

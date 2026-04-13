@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-022",
+  "agent": "codex",
+  "responded_at": "2026-04-13T19:00:00Z",
+  "verdict": "B",
+  "body": "Mevcut tanimla tek seferde yapmayin. `src/` direkt silinirse `ao_kernel` facade'lar aninda kirilir; cunku halen `from src...` kullaniyorlar (`ao_kernel/llm.py`, `ao_kernel/session.py`, `ao_kernel/roadmap.py`, `ao_kernel/governance.py`). Bu yuzden sizin oneriniz dogru: `src -> ao_kernel/_internal` rename + toplu import rewrite daha saglam. Boylece public `ao_kernel.*` API sabit kalir, `src` namespace'i public olmaktan cikar. Asil riskler sadece kod degil: package/test/docs kontrati (`pyproject.toml`, `README.md`, `tests/test_shim.py`), legacy `.cache/ws_customer_default` path'lerinin kod ve bundled JSON/policy icine gomulu olmasi, ve eski `tool_gateway` icin test kontrati.",
+  "agreements": [
+    "`src/` kaldirmak, facade'lari yeniden yazmak demek; bunu atlayarak temizlik yapilamaz.",
+    "`src -> ao_kernel/_internal` yaklasimi public API'yi koruyup internal namespace'i gizlemek icin en mantikli yol.",
+    "Eski `src/prj_kernel_api/tool_gateway.py` silinebilir, ama bu tek basina degil genel cleanup icinde ele alinmali."
+  ],
+  "objections": [
+    "'3 isi tek adimda sil' framing'i yanlis; 1. madde aslinda buyuk bir import ve paketleme refaktoru.",
+    "Legacy workspace fallback sadece `ao_kernel/config.py` konusu degil; `src` ve `ao_kernel/defaults/*` icinde cok sayida gomulu referans var."
+  ],
+  "additions": [
+    "`pyproject.toml` halen `src` ve `src.*` paketlerini dagitiyor; bu da breaking change kapsamina dahil.",
+    "Test yuzeyinde `src` compat davranisi bilincli olarak assert ediliyor; `tests/test_shim.py` ve `tests/test_backlog_modules.py` bilincli olarak guncellenmeli veya silinmeli.",
+    "Tek release teknik olarak mumkun, ama uygulamada staged yapmak rollback ve regression ayiklamasini ciddi azaltir."
+  ],
+  "follow_up": [
+    "Madde 1'i 'delete src' yerine '`src` kodunu `ao_kernel/_internal` altina tasi, tum `from src...` importlarini yeniden yaz, sonra `src` namespace'ini kaldir' diye yeniden tanimlayin.",
+    "Faz 1: internal rename + facade/test/docs/package cleanup. Faz 2: legacy `.cache/ws_customer_default` fallback kaldirma ve eski `tool_gateway` silme."
+  ]
+}

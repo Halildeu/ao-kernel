@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-003",
+  "agent": "codex",
+  "responded_at": "2026-04-13T00:30:00Z",
+  "verdict": "C",
+  "body": "Verdict C. Üç noktada da hibrit çözüm öneriyorum; ama iki yerde orijinal itirazın özü korunmalı.\n\n1. `defaults/extensions/` konusunda seni tam ikna edemem; çünkü temel öncülün source snapshot ile çelişiyor. Sorun `src/extensions/` değil, canonical discovery kökü olan üst seviye `extensions/` ağacı. `src/ops/extension_registry.py` manifestleri doğrudan `core_root / \"extensions\"` altından keşfediyor ve `schemas/extension-manifest.schema.v1.json` ile valide ediyor. Yani v0.1 için \"manifest schema henüz tanımlı değil\" diyemeyiz; schema ve çok sayıda gerçek manifest zaten var. Bu yüzden boş placeholder sektör standardı açısından zayıf kalır. Ama tam extension code payload'ını `ao_kernel/defaults/extensions/` altına taşımak da şart değil. Somut önerim: v0.1'da `ao_kernel/defaults/extensions/<EXT_ID>/extension.manifest.v1.json` manifest-only katalogu paketlensin; schema testi eklensin; ve ya `src.ops.extension_registry` packaged defaults'tan okuyacak küçük bir adapter/patch yapılsın ya da bu shim yüzeyi v0.1 destek kapsamı dışında açıkça ilan edilsin. Kısacası: placeholder yetmez, fakat full executable extension bundling de gerekmez.\n\n2. `migrate` konusunda saf A'yı artık savunmuyorum. Çünkü bu üründe ilk gerçek migration konusu zaten var: legacy `.cache/ws_customer_default` dünyasından `.ao/` workspace modeline geçiş. Kaynak ağaçta legacy workspace varsayımları yaygın ve `version_registry` gibi artefaktlar workspace üzerinden okunuyor. Bu yüzden `ao-kernel migrate` sadece version compare + \"güncel\" mesajı olursa ürün iddiasının altında kalır. Ama tam veri transform engine'i de beklemiyorum. Önerim B'nin inceltilmiş hali: `migrate` her zaman bir plan/rapor üretsin; `--dry-run` sadece tespit + plan + rapor yapsın; `--backup` yalnızca gerçekten değişecek dosyalar varsa hedeflenmiş yedek alsın; aksiyon yoksa raporda `backup_skipped: no_mutations` densin. İlk release'te gerçek aksiyon seti dar olabilir: `.ao/workspace.json` bootstrap, workspace schema/tool version stamp, legacy workspace tespiti ve gerekiyorsa köprü metadata yazımı. Böylece contract production-grade olur, ama sahte migration yazılmış olmaz.\n\n3. `legacy usage warning` konusunda B+C kombinasyonu yeterli değil. Çünkü docs + facade warning, doğrudan `src.*` import eden kullanıcıyı uyarmıyor; deprecation sinyalinin hedefi tam da o kullanıcı. Burada en düşük riskli, en temiz çözüm A+B: sadece `src/__init__.py` içine tek seferlik bir warning eklenir, yüzlerce import satırına dokunulmaz. Mevcut `src/__init__.py` zaten boş denecek kadar küçük; oraya `DeprecationWarning` veya görünürlük isteniyorsa kontrollü `FutureWarning` koymak domino etkisi yaratmaz. Buna README/CLAUDE tarafında kaldırma takvimi eklenir. Eğer politik olarak `src/` altında tek satır bile değiştirmek istemiyorsan, o zaman acceptance criteria'dan \"legacy kullanım warning alacak\" cümlesini çıkarmalısın; çünkü B+C bunu gerçekten sağlamaz. Ben production-grade çizgide `src/__init__.py` tek dosyalık uyarıyı tercih ederim.\n\nÖzet: 1. noktada orijinal itirazımı koruyorum ama kapsamı manifest-only'e daraltıyorum. 2. noktada orta yol alıyorum: no-op değil, ince bir migration contract. 3. noktada da \"hiç değişiklik yok\" mutlaklığını reddediyorum; fakat değişiklik alanını sadece `src/__init__.py` ile sınırlı tutuyorum.",
+  "agreements": [
+    "`ao_kernel/defaults/extensions/` altına tüm extension runtime kodunu doldurmak v0.1 için gereksiz; manifest-only yaklaşım daha doğru.",
+    "Migration tarafında gerçek veri transformları yoksa bunları uydurup yazmak doğru değil; ilk sürümde dar kapsamlı kalınabilir.",
+    "691 import satırına tek tek dokunmak gereksiz risk; çözüm minimum temasla kurgulanmalı."
+  ],
+  "objections": [
+    "\"Manifest schema henüz tanımlı değil\" önermesi mevcut snapshot ile uyuşmuyor; `schemas/extension-manifest.schema.v1.json` ve `extensions/PRJ-*/extension.manifest.v1.json` zaten mevcut.",
+    "Boş `defaults/extensions/` placeholder üretmek, mimaride ilan edilen manifest discovery contract'ını kağıt üzerinde bırakır; production-grade bir scaffold için yetersizdir.",
+    "Sadece version check yapan `migrate` komutu, legacy workspace -> `.ao/` geçişi gibi gerçek ilk migration ihtiyacını karşılamaz.",
+    "Yalnızca README/CLAUDE veya facade içinde warning vermek, doğrudan `src.*` kullanan tüketiciyi uyarmadığı için gerçek deprecation mekanizması sayılmaz.",
+    "`HICBIR degisiklik yapilmaz` ifadesi fazla mutlak; en azından `src/__init__.py` seviyesinde uyumluluğu bozmayan, kontrollü bir değişiklik alanı bırakılmalı."
+  ],
+  "additions": [
+    "`src/ops/extension_registry.py` manifest bulunamadığında `IDLE` ve `NO_MANIFESTS_FOUND` dönüyor; yani boş placeholder yalnızca eksikliği görünür kılan bir no-op üretiyor.",
+    "Canonical extension discovery kökü `src/extensions/` değil, üst seviye `extensions/` dizini; tartışmanın doğru referans noktası bu.",
+    "Legacy workspace varsayımı kaynak ağaçta yaygın; bu nedenle v0.1 migration için gerçek başlangıç senaryosu 'önceki ao-kernel sürümü' değil 'legacy workspace uyarlaması'.",
+    "`src/__init__.py` şu an tek satırlık bir docstring; deprecation warning için teknik olarak en düşük riskli enjeksiyon noktası burası."
+  ],
+  "follow_up": [
+    "Task 3'ü `ao_kernel/defaults/extensions/` manifest-only katalog + schema validation testleri şeklinde revize et.",
+    "Task 3/5 kesişiminde açık karar ver: `src.ops.extension_registry` packaged defaults'tan mı okuyacak, yoksa v0.1 destek yüzeyinden mi çıkarılacak.",
+    "Task 2'de `migrate_cmd.py` contract'ını netleştir: `plan`, `--dry-run`, `--backup`, `report`, `idempotency`, `no_mutations` davranışı.",
+    "Task 5'te `HICBIR degisiklik yapilmaz` cümlesini kaldır; yerine `src` davranışsal uyumluluğu korunur, yalnızca `src/__init__.py` düzeyinde deprecation warning eklenir` yaklaşımını yaz.",
+    "Doğrulama planına üç test ekle: manifest discovery smoke testi, migrate no-op/backup-skipped rapor testi, ilk `import src` warning testi."
+  ],
+  "evidence_paths": [
+    "CLAUDE.md",
+    ".ao/consultations/requests/CNS-20260412-002.request.v1.json",
+    ".ao/consultations/responses/CNS-20260412-002.codex.response.v1.json",
+    "../autonomous-orchestrator/src/ops/extension_registry.py",
+    "../autonomous-orchestrator/schemas/extension-manifest.schema.v1.json",
+    "../autonomous-orchestrator/extensions/PRJ-DEPLOY/extension.manifest.v1.json",
+    "../autonomous-orchestrator/src/ops/commands/common.py",
+    "../autonomous-orchestrator/src/prj_kernel_api/llm_router.py",
+    "../autonomous-orchestrator/src/orchestrator/target_registry.py",
+    "../autonomous-orchestrator/registry/version_registry.v1.json",
+    "../autonomous-orchestrator/src/__init__.py"
+  ]
+}

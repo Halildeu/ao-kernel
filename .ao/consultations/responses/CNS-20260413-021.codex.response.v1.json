@@ -1,0 +1,28 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-021",
+  "agent": "codex",
+  "responded_at": "2026-04-13T18:00:00Z",
+  "verdict": "phased-core",
+  "body": "Konsensus su: once cekirdegi kapat, sonra buyuk feature ve temizliklere gec. Gercek onem sirasi: 1) Checkpoint/resume, 2) Tool streaming (stream+tools), 3) Chaos/failure testleri, 4) HTTP transport MCP, 5) Mutation testing baseline, 6) Hot/warm/cold tier enforcement, 7) src.* shim kaldir, 8) Legacy workspace kaldir, 9) Eski tool_gateway sil, 10) Vector/semantic retrieval, 11) Eval harness embedding-based, 12) Self-editing memory, 13) sdk/client yeniden yaz. Kod sinyali bunu destekliyor: MCP stdio var ama HTTP yok (ao_kernel/mcp_server.py), stream var ama stream+tools yok (ao_kernel/llm.py ve src/prj_kernel_api/llm_request_builder.py), mutmut hazir (pyproject.toml), src.* hala paketleniyor ve facade'lar oraya bagli (pyproject.toml, ao_kernel/llm.py), legacy workspace fallback hala canli (ao_kernel/config.py). 1 saat alti tam backlog isi olarak sadece Mutation baseline net; Chaos/failure icin ancak smoke-baslangic sigar. Ayri proje/workstream gerektirenler: Vector/semantic retrieval, Self-editing memory, sdk/client yeniden yaz; embedding-based eval de buyuk ihtimalle ayri workstream. Minimum v0.3.0: Checkpoint/resume + Tool streaming + Failure/chaos smoke + Mutation baseline; eger MCP'yi gercek deployable yuzey yapmak istiyorsan HTTP MCP'yi de ayni sete al. v2.0.0 icin simdiden hazirlik: yeni from src. import yasagi, public API kontrati, legacy migrate yolu, eski gateway'i forwarding-stub'a indirme.",
+  "agreements": [
+    "Ilk dalga cekirdek runtime olmali: checkpoint/resume + tool streaming + failure testleri.",
+    "Mutation baseline ucuz, hizli ve hemen alinabilir.",
+    "v2 temizligi simdiden hazirlanmazsa shim ve legacy borcu buyur."
+  ],
+  "objections": [
+    "HTTP transport MCP'nin v0.3.0 minimum'una girip girmemesinde hafif ayrisma var; deployable MCP hedefi varsa girsin, yoksa v0.3.1 olur.",
+    "Self-editing memory'i tier enforcement ve failure testleri olmadan one cekmek dogru degil.",
+    "sdk/client rewrite'i backlog maddesi gibi sikistirmak yerine ayri program gibi yonetmek gerekir."
+  ],
+  "additions": [
+    "pyproject.toml mutmut'u zaten dev dependency ve config olarak tasiyor; bu yuzden mutation baseline hizli kazanim.",
+    "ao_kernel/mcp_server.py stdio-first, HTTP-later durumunda; yani HTTP sifirdan degil ama yine de gercek transport isi.",
+    "pyproject.toml src paketini hala dagitiyor ve ao_kernel facade'lari from src... kullaniyor; v2 borcu teorik degil, aktif."
+  ],
+  "follow_up": [
+    "Ilk paketi 4 is olarak ac: Checkpoint/resume, Tool streaming, Mutation baseline, Chaos/failure smoke.",
+    "Ayni anda v2 hazirligi icin from src. envanteri ve public API kontratini cikar.",
+    "Vector retrieval, Self-editing memory ve sdk/client rewrite icin ayri RFC/workstream ac; v0.3.0 milestone'una doldurma."
+  ]
+}

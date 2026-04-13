@@ -1,0 +1,22 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-006",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "architecture",
+  "question": {
+    "title": "ao-kernel modul refactoring degerlendirmesi — v0.2.0 facade modulleri gerekli mi",
+    "body": "ao-kernel v0.1.0 merge edildi (PR #1, 134 test). Scaffold + streaming + MCP + OTEL tamamlandi. Simdi son planlanan is: modul refactoring degerlendirmesi.\n\n## MEVCUT YAPI\n\nao_kernel/ facade:\n- __init__.py, cli.py, config.py, init_cmd.py, migrate_cmd.py, doctor_cmd.py, errors.py\n- mcp_server.py, telemetry.py\n- defaults/ (324 JSON)\n\nsrc/ shim (42 dosya):\n- shared/ (3): utils, logger\n- prj_kernel_api/ (19): LLM control plane\n- providers/ (5): provider abstraction\n- orchestrator/ (4): quality gate, eval harness\n- roadmap/ (10): change execution\n\n## SORU: Bu yapi yeterli mi yoksa facade modulleri gerekli mi?\n\nPotansiyel facade modulleri (PROJECT_PLAN.md bolum 14.1):\n- ao_kernel.llm — LLM control plane (prj_kernel_api wrap)\n- ao_kernel.policy — Policy engine\n- ao_kernel.workspace — Workspace management\n- ao_kernel.execution — Orchestrator + roadmap wrap\n\nBunlar su an gerekli mi? Yoksa v0.2.0 backlog icin erken mi?\n\nKarari etkileyen faktorler:\n1. Kullanici deneyimi: `from ao_kernel.llm import route` mi yoksa `from src.prj_kernel_api.llm_router import resolve` mi?\n2. src/ shim FutureWarning veriyor — kullanicilar facade'i tercih etmeli\n3. Ama src/ shim v2.0.0'a kadar kalacak — acele yok\n4. Facade modulleri yazarsak, src/ shim'e bagimlilik azalir\n5. Fazla erken facade yazmak, kullanim paterni netlesmeden arayuz dondurmak demek\n\nQ1: v0.2.0 icin facade modulleri yazmali miyiz?\nQ2: Yazacaksak hangileri oncelikli?\nQ3: Yoksa v0.1.x'te birakalim, v0.2.0'da kullanim verisine gore mi karar verelim?\n\nKisa yanit. Turkce.",
+    "context_refs": ["CLAUDE.md", ".ao/docs/PROJECT_PLAN.md"],
+    "options": [
+      {"option_id": "A", "title": "Simdi yaz — 4 facade modulu", "description": "ao_kernel.llm, policy, workspace, execution", "pros": "Temiz API", "cons": "Erken dondurme"},
+      {"option_id": "B", "title": "Sadece ao_kernel.llm yaz", "description": "En cok kullanilacak tek facade", "pros": "Odakli", "cons": "Kismi"},
+      {"option_id": "C", "title": "Erken — v0.2.0'da degerlendir", "description": "Kullanim verisine gore karar ver", "pros": "Veri odakli", "cons": "Gecikme"}
+    ]
+  },
+  "created_at": "2026-04-13T06:00:00Z",
+  "expires_at": "2026-04-14T06:00:00Z",
+  "branch": "main",
+  "head_sha": "3c7408d"
+}

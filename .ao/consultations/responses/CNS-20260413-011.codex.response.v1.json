@@ -1,0 +1,32 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-011",
+  "agent": "codex",
+  "responded_at": "2026-04-13T09:00:00Z",
+  "verdict": "1:C,3:B,7:C",
+  "body": "BULGU 1: C. İtirazım yok; doğru karar yeniden yazıp MCP'ye bağlamak. Gerekçe: konsept değerli ama mevcut implementasyon üretime bağlanamaz. `ToolGateway` bugün repo'da olmayan `src.ops.manage` subprocess hattına bağlı (`src/prj_kernel_api/tool_gateway.py:165-184`), gerçek kullanım yeri yok, yalnızca iskelet testinde görünüyor (`tests/test_backlog_modules.py:94-101`). Buna rağmen allowlist, cycle detection ve mutating confirmation mantığı governed runtime kimliğinin çekirdeği (`src/prj_kernel_api/tool_gateway.py:32-96`, `ao_kernel/defaults/schemas/policy-tool-calling.schema.v1.json:4-69`). Bu yüzden A fazla sert, B ise kırık ikinci hattı meşrulaştırır. Doğru uygulama: MCP `call_tool` -> ToolGateway authorize -> handler callable. `subprocess` ve `ops_command` bağımlılığı kalkmalı; tek dispatch hattı kalmalı.\n\nBULGU 3: B. `handle_quality_gate()` bugün doğrudan `src.orchestrator` import ediyor ve var olmayan `check_output_quality` sembolüne gidiyor (`ao_kernel/mcp_server.py:239-245`); sonuçta `ImportError/AttributeError` yolundan `GATE_NOT_CONFIGURED` ile `allow` dönüyor (`ao_kernel/mcp_server.py:254-262`). Bu, aynı dosyadaki fail-closed iddiasıyla ve tool açıklamasıyla çelişiyor (`ao_kernel/mcp_server.py:1-22`, `ao_kernel/mcp_server.py:390-399`). `ao_kernel.llm` zaten routing/build/normalize/transport sınırında (`ao_kernel/llm.py:1-243`); quality gate'i oraya koymak domain sızıntısı olur. Doğru çözüm `ao_kernel.governance` facade'ıdır: policy check, quality gate ve ileride tool authorization burada toplanmalı; `ao_kernel.mcp_server` yalnızca transport adapter kalmalı. C kabul edilemez, çünkü bug bugün fail-open davranış üretiyor.\n\nBULGU 7: C. PyPI açık kaynak CLI yüzeyi için İngilizce default doğru bazdır (`pyproject.toml:5-9`, `README.md:58-66`). Mevcut durum zaten karışık: help ve parser metinleri İngilizce (`ao_kernel/cli.py:59-83`), çalışma zamanı çıktıları Türkçe (`ao_kernel/init_cmd.py:37-54`, `ao_kernel/migrate_cmd.py:44-50`, `ao_kernel/doctor_cmd.py:85-112`). A yerel kullanıcıyı gereksizce siler, B küresel dağıtım için yanlış bazdır, D ise runtime yüzeyini çözemeden dokümantasyona kaçar. Doğru karar İngilizce default + `AO_KERNEL_LANG` ve sonra `LC_ALL/LC_MESSAGES/LANG` ile Türkçe opsiyonudur. Komut adları, flag'ler ve JSON anahtarları İngilizce sabit kalmalı; sadece help/error/status metinleri lokalize edilmelidir.",
+  "agreements": [
+    "ToolGateway konsepti korunmalı; sorun konseptte değil, broken dispatch implementasyonunda.",
+    "quality_gate bypass v0.2.0'a ertelenmemeli; bug bugün sessiz `allow` üretiyor.",
+    "CLI'nin bugünkü Türkçe/İngilizce karışık yüzeyi korunmamalı; tek locale stratejisi gerekli."
+  ],
+  "objections": [
+    "BULGU 1 için tek itirazım, C'nin ikinci bir dispatch hattı olarak uygulanmasıdır; yeni ToolGateway MCP arkasındaki tek yetkilendirme/dispatch katmanı olmalı.",
+    "BULGU 3 için A'ya itirazım var; `ao_kernel.llm` içine governance taşınmamalı.",
+    "BULGU 7 için B'ye itirazım var; `CLAUDE.md`'deki Türkçe zorunluluğu ajan/dokümantasyon kuralıdır, küresel CLI ürün kontratı değildir."
+  ],
+  "additions": [
+    "ToolGateway yeniden yazımında `subprocess` ve `ops_command` kaldırılmalı; handler registry callable olmalı.",
+    "`tool_registry.v1.json` semantik olarak registry yüzeyidir; uzun vadede `ao_kernel/defaults/registry` altına taşınmalı.",
+    "`ao_kernel.governance` için çekirdek API yüzeyi net olmalı: `check_policy(...)`, `evaluate_quality(...)`, `authorize_tool_call(...)`.",
+    "Quality gate adapter'ı `output_text` girdisini `{\"text\": ...}` yapısına normalize etmeli; `gate_id` ya gerçekten desteklenmeli ya da şemadan çıkarılmalı.",
+    "CLI i18n yalnızca user-facing message katmanını etkilemeli; komut adları, flag'ler ve JSON anahtarları lokalize edilmemeli."
+  ],
+  "follow_up": [
+    "MCP hattını `call_tool -> governance authorize -> handler -> envelope -> telemetry` olarak tekleştirin.",
+    "`ao_kernel.mcp_server` içindeki doğrudan `src.*` importlarını facade katmanına taşıyın.",
+    "`tests/test_mcp_server.py` içinde quality gate import/adapter hatasında `allow` dönmeyi yasaklayan davranış testi ekleyin.",
+    "CLI için locale çözümleme sırasını kesinleştirin: `AO_KERNEL_LANG > LC_ALL/LC_MESSAGES/LANG > en`.",
+    "İki dilli test matrisi ekleyin: default `en`, override `tr`."
+  ]
+}
