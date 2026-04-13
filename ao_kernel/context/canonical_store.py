@@ -12,6 +12,12 @@ Temporal lifecycle:
 
 Promotion: ephemeral → canonical (auto or approved)
 Storage: .ao/canonical_decisions.v1.json (workspace-scoped, atomic writes)
+
+Note on naming: This module's "decisions" dict refers to promoted, permanent
+decisions stored in .ao/canonical_decisions.v1.json. This is different from
+session context's "ephemeral_decisions" field which holds session-scoped,
+temporary decisions. The promotion flow is:
+    session ephemeral_decisions[] → canonical_store["decisions"]
 """
 
 from __future__ import annotations

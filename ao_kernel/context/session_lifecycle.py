@@ -34,22 +34,15 @@ def start_session(
             workspace_root=ws,
             ttl_seconds=ttl_seconds,
         )
-    except Exception:
-        # Corrupted/invalid session — log and create new
-        # Note: this is a compromise. Fail-closed would refuse to start,
-        # but for usability, we create a fresh session with warning.
-        import warnings
-        warnings.warn(
-            f"Session '{session_id}' corrupted or invalid. Creating fresh session.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-        from ao_kernel.session import new_context
-        return new_context(
-            session_id=session_id,
-            workspace_root=ws,
-            ttl_seconds=ttl_seconds,
-        )
+    except Exception as exc:
+        # Fail-closed: corrupted/invalid session must NOT silently reset.
+        # Let the caller decide: catch SessionCorruptedError to create a
+        # fresh session, or let it propagate (fail-closed default).
+        from ao_kernel.errors import SessionCorruptedError
+        raise SessionCorruptedError(
+            f"Session '{session_id}' corrupted or invalid. "
+            f"Original error: {exc}"
+        ) from exc
 
 
 def end_session(
@@ -81,7 +74,7 @@ def end_session(
     # Auto-promote high-confidence decisions to canonical store
     try:
         from ao_kernel.context.canonical_store import promote_from_ephemeral
-        decisions = context.get("ephemeral_decisions", [])
+        decisions = context.get("ephemeral_decisions", [])  # session-scoped, NOT canonical_store decisions
         promote_from_ephemeral(
             ws,
             decisions,

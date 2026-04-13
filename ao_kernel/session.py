@@ -42,9 +42,15 @@ def load_context(
     workspace_root: str | Path,
     session_id: str = "default",
 ) -> dict[str, Any]:
-    """Load session context from workspace."""
+    """Load session context from workspace.
+
+    Raises FileNotFoundError if no session file exists (normal flow).
+    Raises SessionContextError for corruption (fail-closed path).
+    """
     from ao_kernel._internal.session.context_store import load_context as _load, SessionPaths
     paths = SessionPaths(workspace_root=Path(workspace_root), session_id=session_id)
+    if not paths.context_path.exists():
+        raise FileNotFoundError(f"No session file: {paths.context_path}")
     return _load(paths.context_path)
 
 
