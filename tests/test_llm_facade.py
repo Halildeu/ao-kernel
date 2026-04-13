@@ -244,7 +244,8 @@ class TestBuildRequestWithContext:
             )
             mock_compile.assert_called_once()
             mock_inject.assert_called_once()
-            assert result is not None
+            assert isinstance(result, dict)
+            assert result["body_json"]["messages"][0]["content"] == "Previous decisions: use Python 3.11"
 
     def test_without_session_falls_back_to_plain_build(self):
         from ao_kernel.llm import build_request_with_context, build_request
@@ -305,4 +306,5 @@ class TestProcessResponseWithContext:
                 request_id="req-002",
                 tool_results=[{"name": "test_tool", "output": {"status": "ok"}}],
             )
-            assert result is not None
+            assert result is session_ctx
+            assert result["session_id"] == "test-002"
