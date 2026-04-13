@@ -6,7 +6,7 @@
 
 **Kaynak repo:** `Halildeu/autonomous-orchestrator`. Bu repo o kaynak repo'daki kodun dağıtılabilir Python paketi haline getirilmiş halidir.
 
-**Mevcut versiyon:** v2.1.x (Alpha). 508 test, 120 Python dosyası (18 facade + 13 context + 11 internal paket), 338 bundled JSON default.
+**Güncel durum:** v2.1.1 PyPI'de yayında. 18 facade + 13 context + 11 internal paket, 338 bundled JSON default. 567+ test, %82.75 coverage.
 
 ## Mimari
 
@@ -234,10 +234,10 @@ ao-kernel system-status  # workspace durumu
 ao-kernel mcp serve      # MCP server başlat (stdio)
 ao-kernel mcp serve --transport http --port 8080  # MCP HTTP
 
-# Release
-git tag vX.Y.Z
-python -m build
-twine upload dist/*
+# Release (trusted publishing — tag push tetikler)
+git tag v2.x.y
+git push origin v2.x.y
+# GitHub Actions .github/workflows/publish.yml otomatik PyPI upload yapar
 ```
 
 ## Test Altyapısı
