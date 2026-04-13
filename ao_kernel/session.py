@@ -29,18 +29,23 @@ def new_context(
 def save_context(
     context: dict[str, Any],
     workspace_root: str | Path,
+    session_id: str | None = None,
 ) -> None:
     """Save session context atomically."""
     from src.session.context_store import save_context_atomic, SessionPaths
-    paths = SessionPaths(workspace_root=Path(workspace_root))
-    save_context_atomic(context, paths)
+    sid = session_id or context.get("session_id", "default")
+    paths = SessionPaths(workspace_root=Path(workspace_root), session_id=sid)
+    save_context_atomic(paths.context_path, context)
 
 
-def load_context(workspace_root: str | Path) -> dict[str, Any]:
+def load_context(
+    workspace_root: str | Path,
+    session_id: str = "default",
+) -> dict[str, Any]:
     """Load session context from workspace."""
     from src.session.context_store import load_context as _load, SessionPaths
-    paths = SessionPaths(workspace_root=Path(workspace_root))
-    return _load(paths)
+    paths = SessionPaths(workspace_root=Path(workspace_root), session_id=session_id)
+    return _load(paths.context_path)
 
 
 def distill_memory(
