@@ -69,14 +69,29 @@ def check_json_conformance(
 def check_groundedness(
     output: str,
     context_sources: List[str],
+    *,
+    use_embedding: bool = False,
+    embedding_config: Dict[str, Any] | None = None,
 ) -> EvalResult:
     """Check if output claims are grounded in context sources.
 
-    Heuristic: word overlap between output sentences and context.
+    Two modes:
+    1. Heuristic (default): word overlap between output and context
+    2. Embedding (use_embedding=True): cosine similarity between embeddings
+
+    Embedding mode requires API key in embedding_config.
+    Falls back to heuristic if embedding unavailable.
     """
     if not context_sources:
         return EvalResult("groundedness", True, 1.0, "No context to check against", {})
 
+    # Try embedding-based groundedness if requested
+    if use_embedding and embedding_config:
+        emb_result = _check_groundedness_embedding(output, context_sources, embedding_config)
+        if emb_result is not None:
+            return emb_result
+
+    # Fallback: word overlap heuristic
     context_text = " ".join(context_sources).lower()
     context_words = set(re.findall(r"\b\w{4,}\b", context_text))
 
@@ -93,6 +108,41 @@ def check_groundedness(
         f"{len(overlap)}/{len(output_words)} words grounded ({score:.0%})",
         {"overlap_count": len(overlap), "output_word_count": len(output_words)},
     )
+
+
+def _check_groundedness_embedding(
+    output: str,
+    context_sources: List[str],
+    config: Dict[str, Any],
+) -> EvalResult | None:
+    """Embedding-based groundedness check. Returns None on failure (triggers heuristic fallback)."""
+    try:
+        from ao_kernel.context.semantic_retrieval import cosine_similarity, embed_text
+
+        api_key = config.get("api_key", "")
+        provider_id = config.get("provider_id", "openai")
+        model = config.get("model", "text-embedding-3-small")
+        base_url = config.get("base_url", "https://api.openai.com/v1")
+
+        output_emb = embed_text(output, provider_id=provider_id, model=model, base_url=base_url, api_key=api_key)
+        if not output_emb:
+            return None
+
+        context_text = " ".join(context_sources)
+        context_emb = embed_text(context_text, provider_id=provider_id, model=model, base_url=base_url, api_key=api_key)
+        if not context_emb:
+            return None
+
+        score = cosine_similarity(output_emb, context_emb)
+        passed = score >= 0.5  # Embedding similarity threshold
+
+        return EvalResult(
+            "groundedness", passed, round(max(0, score), 3),
+            f"Embedding similarity: {score:.2f} (threshold: 0.5)",
+            {"method": "embedding", "similarity": round(score, 4), "model": model},
+        )
+    except Exception:
+        return None  # Fallback to heuristic
 
 
 def check_citation_completeness(
