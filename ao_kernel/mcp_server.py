@@ -295,7 +295,7 @@ def handle_workspace_status(params: dict[str, Any]) -> dict[str, Any]:
         try:
             ws_data = load_workspace_json(ws)
             status = "healthy"
-        except Exception as e:
+        except Exception:
             ws_data = {}
             status = "corrupted"
 

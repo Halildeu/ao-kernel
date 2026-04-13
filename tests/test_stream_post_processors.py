@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from src.prj_kernel_api.llm_stream_transport import StreamResult
 

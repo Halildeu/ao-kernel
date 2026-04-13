@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from src.prj_kernel_api.providers_registry_schema import validate_policy, validate_registry
+from src.shared.utils import write_json_atomic
 
 PROVIDERS_DIR = ".cache/providers"
 PROVIDERS_FILE = "providers.v1.json"

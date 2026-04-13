@@ -8,9 +8,8 @@ Cost estimation from capability registry cost fields.
 
 from __future__ import annotations
 
-import json
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from src.shared.logger import get_logger

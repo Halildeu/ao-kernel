@@ -6,8 +6,7 @@ Non-retryable: 400, 401, 403, 404. Provider registry max_retries is canonical SS
 
 from __future__ import annotations
 
-import logging
-from typing import Any, Callable, Dict, TypeVar
+from typing import Any, Callable, Dict
 
 from src.shared.logger import get_logger
 

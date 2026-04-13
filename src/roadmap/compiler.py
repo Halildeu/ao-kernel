@@ -99,7 +99,7 @@ def compile_roadmap(
     roadmap_version = str(roadmap_obj["version"])
     iso_core_required = bool(roadmap_obj.get("iso_core_required", False))
     global_gates = roadmap_obj.get("global_gates", [])
-    milestones = roadmap_obj.get("milestones", [])
+    roadmap_obj.get("milestones", [])  # reserved for milestone gating
 
     steps: list[dict[str, Any]] = []
 

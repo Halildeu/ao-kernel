@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
-import pytest
 
 from ao_kernel.cli import main
 
@@ -65,8 +63,8 @@ class TestDoctor:
         rc = main(["doctor"])
         assert rc == 0
         out = capsys.readouterr().out
-        lines = [l for l in out.splitlines() if l.strip().startswith("[")]
-        fail_lines = [l for l in lines if "[!]" in l]
+        lines = [line for line in out.splitlines() if line.strip().startswith("[")]
+        fail_lines = [line for line in lines if "[!]" in line]
         assert len(fail_lines) == 0
         assert len(lines) >= 7  # At least 7 check lines
 

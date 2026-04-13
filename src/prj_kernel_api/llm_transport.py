@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import re
 import ssl
 import time
 from functools import lru_cache
