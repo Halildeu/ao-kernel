@@ -1,8 +1,16 @@
-"""LLM output evaluation harness — 6 checks for output quality assurance.
+"""LLM output evaluation harness — 6 deterministic heuristic-based checks.
 
-Checks: json_conformance, groundedness, citation_completeness,
-tool_result_consistency, refusal_correctness, truncation_safety.
-Integrates with quality_gate.py for gate enforcement.
+NOTE: These are rule-based/heuristic checks, NOT LLM-based evaluation.
+Groundedness uses word overlap, citation uses substring match,
+refusal uses keyword detection. For LLM-based eval, use external tools.
+
+Checks:
+    json_conformance       — JSON parse + optional jsonschema validation
+    groundedness           — word overlap heuristic (30% threshold)
+    citation_completeness  — substring search for expected refs (80% threshold)
+    tool_result_consistency — tool output values reflected in response
+    refusal_correctness    — keyword-based refusal detection
+    truncation_safety      — brace count + sentence termination heuristic
 """
 
 from __future__ import annotations

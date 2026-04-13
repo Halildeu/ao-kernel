@@ -30,21 +30,17 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
     return ws_root
 
 
-def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None):
-    from src.shared.resource_loader import load_resource_path
-
-    provider_map = load_resource_path("operations", "llm_provider_map.v1.json")
-    if provider_map is None:
-        provider_map = repo_root / "docs" / "OPERATIONS" / "llm_provider_map.v1.json"
+def _get_probe_state_path(repo_root: Path, workspace_root: str | Path | None = None) -> Path:
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
-    state_path = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
-    return provider_map, state_path
+    return ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
 
 
 def main(workspace_root: str | Path | None = None) -> None:
+    from src.shared.resource_loader import load_resource
+
     repo_root = Path(__file__).resolve().parents[2]
-    provider_map_path, state_path = _policy_paths(repo_root, workspace_root=workspace_root)
-    provider_map = _load_json(provider_map_path)
+    state_path = _get_probe_state_path(repo_root, workspace_root=workspace_root)
+    provider_map = load_resource("operations", "llm_provider_map.v1.json")
     now = datetime.now(timezone.utc).isoformat()
 
     # Synthetic probes are "availability-only" (no network). Keep this strictly limited
