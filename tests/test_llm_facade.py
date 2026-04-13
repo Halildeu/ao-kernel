@@ -219,7 +219,7 @@ class TestStreamTypes:
 class TestBuildRequestWithContext:
     """Tests for build_request_with_context — context injection into LLM requests."""
 
-    def test_with_session_context_calls_compile_and_inject(self):
+    def test_with_session_context_uses_compiled_preamble(self):
         from unittest.mock import patch, MagicMock
         from ao_kernel.llm import build_request_with_context
 
@@ -227,13 +227,7 @@ class TestBuildRequestWithContext:
         mock_compiled.preamble = "Previous decisions: use Python 3.11"
         mock_compiled.total_tokens = 50
 
-        with (
-            patch("ao_kernel.context.context_compiler.compile_context", return_value=mock_compiled) as mock_compile,
-            patch("ao_kernel.context.context_injector.inject_context_into_messages", return_value=[
-                {"role": "system", "content": "Previous decisions: use Python 3.11"},
-                {"role": "user", "content": "Hello"},
-            ]) as mock_inject,
-        ):
+        with patch("ao_kernel.context.context_compiler.compile_context", return_value=mock_compiled) as mock_compile:
             result = build_request_with_context(
                 messages=[{"role": "user", "content": "Hello"}],
                 provider_id="openai",
@@ -243,9 +237,11 @@ class TestBuildRequestWithContext:
                 session_context={"ephemeral_decisions": [{"key": "python_version", "value": "3.11"}]},
             )
             mock_compile.assert_called_once()
-            mock_inject.assert_called_once()
             assert isinstance(result, dict)
-            assert result["body_json"]["messages"][0]["content"] == "Previous decisions: use Python 3.11"
+            # compiled.preamble is injected directly as system message
+            first_msg = result["body_json"]["messages"][0]
+            assert first_msg["role"] == "system"
+            assert "Previous decisions: use Python 3.11" in first_msg["content"]
 
     def test_without_session_falls_back_to_plain_build(self):
         from ao_kernel.llm import build_request_with_context, build_request

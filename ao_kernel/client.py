@@ -184,7 +184,7 @@ class AoKernelClient:
         if ws:
             try:
                 from ao_kernel.context.session_lifecycle import start_session as _start
-                _start(self._context, workspace_root=ws)
+                _start(workspace_root=ws, session_id=self._session_id, ttl_seconds=ttl_seconds)
             except Exception:
                 pass
 
@@ -462,6 +462,15 @@ class AoKernelClient:
         usage = sr.usage
         status = sr.status  # OK or PARTIAL
 
+        # Reconstruct tool calls from captured stream events
+        tool_calls: list[dict[str, Any]] = []
+        if sr.events:
+            try:
+                from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+                tool_calls = reconstruct_tool_calls(sr.events, provider_id)
+            except Exception:
+                pass
+
         # Evidence (stream events + summary)
         if ws_str:
             try:
@@ -508,7 +517,7 @@ class AoKernelClient:
         return {
             "status": status,
             "text": text,
-            "tool_calls": [],
+            "tool_calls": tool_calls,
             "usage": usage,
             "stream": True,
             "complete": sr.complete,

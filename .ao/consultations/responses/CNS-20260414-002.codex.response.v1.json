@@ -1,0 +1,162 @@
+{
+  "consultation_id": "CNS-20260414-002",
+  "selected_option": {
+    "id": "A",
+    "title": "Claude'un P0/P1/P2 önceliklendirmesi doğru",
+    "why": "Bu turda doğruladığım 5 bulgu içinde en doğru sıralama P0=1/2/4, P1=3, P2=5. Küçük nüans: P2 maddesi sadece belgeleme değil, erişilemeyen tool_results entegrasyon yolunun açık kontrata bağlanması veya temizlenmesini de içermeli."
+  },
+  "divergence_verdicts": [
+    {
+      "issue": "Bulgu 2",
+      "who_is_right": "Claude",
+      "final_verdict": "Kısmi kopuk. Session ephemeral_decisions tarafı halen enjekte ediliyor; fakat compile_context'in 3-lane çıktısı, özellikle canonical decisions ve workspace facts, prompt'a taşınmıyor. Yani kopukluk gerçektir ve P0 ağırlığındadır, ama 'hiç context inject olmuyor' demek teknik olarak fazla sert olur."
+    },
+    {
+      "issue": "Bulgu 3",
+      "who_is_right": "Claude",
+      "final_verdict": "P1. ao_llm_call description ve docstring teknik olarak yanlış; ama bu bir release-blocker değil. En doğru kısa vadeli düzeltme description/docstring'i thin executor gerçekliğine çekmek. ao_llm_call'ı gerçek full facade'a yönlendirmek ayrı ve daha büyük bir geliştirme."
+    },
+    {
+      "issue": "Bulgu 5",
+      "who_is_right": "Claude",
+      "final_verdict": "Mevcut kontrata göre bug'dan çok not-yet-implemented feature / incomplete integration. tool_results işleme kodu var ama prod zincirinde çağrılmıyor; buna rağmen client otomatik tool loop vaat etmiyor, tool_calls döndürüp call_tool'ü ayrı sunuyor."
+    }
+  ],
+  "answers": {
+    "q1": {
+      "answer": "Kısmi kopuk.",
+      "who_is_right": "Claude",
+      "reason": "build_request_with_context önce compile_context ile 3 lane derliyor, sonra compiled.preamble'i doğrudan kullanmak yerine inject_context_into_messages'e ham session_context veriyor. inject_context_into_messages de build_context_preamble'i yalnızca context içinden kuruyor. Bu yüzden ephemeral_decisions tarafı sayılır; canonical/facts tarafı sayılmaz.",
+      "evidence": [
+        {
+          "ref": "ao_kernel/llm.py:302-312",
+          "detail": "compile_context(...) çağrısından sonra messages, compiled.preamble ile değil inject_context_into_messages(messages, session_context, ...) ile üretiliyor."
+        },
+        {
+          "ref": "ao_kernel/context/context_compiler.py:76-151",
+          "detail": "compile_context session + canonical + fact lane'lerini topluyor, relevance/budget uygulatıyor ve kendi preamble'ını üretiyor."
+        },
+        {
+          "ref": "ao_kernel/context/context_injector.py:22-77",
+          "detail": "build_context_preamble context içinden ephemeral_decisions veya legacy decisions, optional include_facts ve provider_state kullanıyor."
+        },
+        {
+          "ref": "ao_kernel/context/context_injector.py:80-115",
+          "detail": "inject_context_into_messages include_facts vermiyor; dolayısıyla canonical/fact lane'leri inject edilmiyor."
+        }
+      ],
+      "extra_note": "Hatta compile_context provider_state'i hiç modellemiyor; build_request_with_context injection'ı compiled.preamble varlığına bağladığı için yalnız provider_state olan bir senaryoda da context hiç enjekte edilmeyebilir. Bu da kopukluğu güçlendirir."
+    },
+    "q2": {
+      "answer": "P1. Önce description/docstring düzeltilmeli; facade'a yönlendirme ayrı iş.",
+      "who_is_right": "Claude",
+      "reason": "Kodun fiili davranışı thin executor. MCP tool yüzeyi yanlış tanıtılıyor, ama bu kendi başına P0 değil. Çünkü aynı repo içinde CLAUDE.md zaten thin executor diye belgeliyor; yani burada ana sorun davranış kırığı değil, yüzey sözleşmesi tutarsızlığı.",
+      "evidence": [
+        {
+          "ref": "ao_kernel/mcp_server.py:474-476",
+          "detail": "Tool description açıkça full ao-kernel pipeline diyor."
+        },
+        {
+          "ref": "ao_kernel/mcp_server.py:301-427",
+          "detail": "handle_llm_call route -> build_request -> execute_request -> normalize_response yapıyor; capability check, context injection, process_response_with_context, eval ve client telemetry zincirini kullanmıyor."
+        },
+        {
+          "ref": "ao_kernel/client.py:236-240",
+          "detail": "Gerçek full pipeline client tarafında route -> capabilities -> context inject -> build -> execute -> normalize -> extract decisions -> update context -> telemetry olarak tanımlı."
+        },
+        {
+          "ref": "CLAUDE.md:53",
+          "detail": "Repo dokümantasyonu MCP yüzeyini thin executor pipeline olarak anlatıyor."
+        },
+        {
+          "ref": "CLAUDE.md:128",
+          "detail": "ao_llm_call ayrıca thin executor olarak adlandırılmış."
+        }
+      ],
+      "recommendation": "Kısa vadede description/docstring'i thin executor diye düzeltin. Orta vadede MCP ile SDK davranış eşitliği isteniyorsa ayrı bir iş olarak ao_llm_call için shared facade tasarlayın; bunu description bug fix'i ile aynı pakete zorla bağlamayın."
+    },
+    "q3": {
+      "answer": "Bug değil; henüz tamamlanmamış özellik / erişilemeyen entegrasyon yolu.",
+      "who_is_right": "Claude",
+      "reason": "process_response_with_context tool_results alabiliyor, fakat üretim çağrı zinciri bu parametreyi hiçbir yerde geçmiyor. Buna rağmen AoKernelClient.llm_call otomatik tool-use loop vaat etmiyor; tool_calls döndürüyor ve call_tool'ü ayrı API olarak sunuyor. Bu yüzden sınıflandırma olarak 'disconnected code path' doğru, ama 'davranış bug' demek mevcut public contract açısından fazla sert.",
+      "evidence": [
+        {
+          "ref": "ao_kernel/llm.py:330-378",
+          "detail": "process_response_with_context tool_results verilirse extract_from_tool_result ile session context'e karar yazıyor."
+        },
+        {
+          "ref": "ao_kernel/client.py:370-376",
+          "detail": "Non-stream path process_response_with_context çağırıyor ama tool_results geçmiyor."
+        },
+        {
+          "ref": "ao_kernel/client.py:482-488",
+          "detail": "Stream path de process_response_with_context çağırıyor ama tool_results geçmiyor."
+        },
+        {
+          "ref": "ao_kernel/client.py:220-255",
+          "detail": "llm_call tools parametresi kabul ediyor ve tool_calls döndürüyor; otomatik tool execution loop taahhüdü yok."
+        },
+        {
+          "ref": "ao_kernel/client.py:578-599",
+          "detail": "Tool çağrısı için ayrı call_tool API'si var; bu da mevcut tasarımın manuel orkestrasyona açık olduğunu gösteriyor."
+        },
+        {
+          "ref": "tests/test_llm_facade.py:288-309",
+          "detail": "tool_results kullanan tek doğrulanmış çağrı testi burada; repo genel aramada prod callsite görünmüyor."
+        }
+      ],
+      "recommended_wording": "P2 maddesini 'tool-use loop belgeleme' yerine 'tool_results entegrasyonunu ya bağla ya da açıkça manuel kontrat olarak belgele' şeklinde yazmak daha doğru olur."
+    },
+    "q4": {
+      "answer": "Evet, bu consultation kapsamındaki bulgular için P0/P1/P2 önceliklendirmesi doğru.",
+      "who_is_right": "Claude",
+      "reason": "Bulgu 1 sessizce yutulan gerçek lifecycle bug'ı. Bulgu 2 kullanıcıya görünür şekilde canonical/facts lane'ini kaybettiriyor. Bulgu 4 var olan streaming tool-call altyapısını client yüzeyinde fiilen sıfırlıyor. Bunların üçü de P0. Bulgu 3 yanlış metadata/sözleşme anlatımı olduğu için P1. Bulgu 5 ise prod'da erişilemeyen ama mevcut public contract'ı kırmayan tamamlanmamış özellik olduğu için P2.",
+      "evidence": [
+        {
+          "ref": "ao_kernel/client.py:183-188",
+          "detail": "start_session lifecycle hook yanlış imzayla çağrılıyor ve exception yutuluyor."
+        },
+        {
+          "ref": "ao_kernel/context/session_lifecycle.py:13-17",
+          "detail": "start_session(workspace_root, session_id, ttl_seconds) imzası client çağrısıyla uyuşmuyor."
+        },
+        {
+          "ref": "ao_kernel/llm.py:302-312",
+          "detail": "compiled context üretiliyor ama inject aşamasında compiled.preamble kullanılmıyor."
+        },
+        {
+          "ref": "ao_kernel/client.py:508-512",
+          "detail": "Streaming dönüşünde tool_calls sabit [] dönüyor."
+        },
+        {
+          "ref": "ao_kernel/_internal/prj_kernel_api/llm_stream_normalizer.py:15-50",
+          "detail": "Alt seviyede reconstruct_tool_calls hazır; client yüzeyi bunu bağlamıyor."
+        },
+        {
+          "ref": "ao_kernel/mcp_server.py:474-476",
+          "detail": "ao_llm_call description gerçek davranıştan daha iddialı."
+        },
+        {
+          "ref": "ao_kernel/llm.py:358-377",
+          "detail": "tool_results desteği var ama prod zincirinde kullanılmıyor."
+        }
+      ],
+      "priority_map": {
+        "P0": [
+          "Bulgu 1: start_session lifecycle hook imza hatası",
+          "Bulgu 2: canonical/facts lane injection kopukluğu",
+          "Bulgu 4: stream tool_calls client yüzeyinde hardcoded []"
+        ],
+        "P1": [
+          "Bulgu 3: ao_llm_call description/docstring düzeltmesi",
+          "Vision registry cleanup"
+        ],
+        "P2": [
+          "Bulgu 5: tool_results entegrasyonu veya manuel tool-loop kontratının netleştirilmesi"
+        ]
+      }
+    }
+  },
+  "scope_note": "Vision registry cleanup bu turda ayrıca derin doğrulanmadı; A seçimini, istenen dosyalar üzerinden doğruladığım bulguların önceliğine dayanarak verdim.",
+  "confidence": "high"
+}

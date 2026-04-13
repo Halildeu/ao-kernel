@@ -6,7 +6,7 @@ as MCP resources. Transport-agnostic handler design (stdio first, HTTP later).
 Tools (5):
     ao_policy_check    — validate an action against policy
     ao_llm_route       — resolve provider/model for an intent
-    ao_llm_call        — governed LLM call through full pipeline
+    ao_llm_call        — governed LLM call — thin executor (route, build, execute, normalize)
     ao_quality_gate    — check output quality
     ao_workspace_status — workspace health report
 
@@ -299,7 +299,11 @@ def handle_resource(uri: str) -> dict[str, Any] | None:
 
 
 def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
-    """Execute a governed LLM call through the full ao-kernel pipeline.
+    """Execute a governed LLM call — thin executor (route, build, execute, normalize).
+
+    NOTE: This is NOT the full AoKernelClient pipeline. Context injection, eval
+    harness, quality gates, and telemetry are NOT included. For the full governed
+    pipeline, use AoKernelClient.llm_call() instead.
 
     Params:
         messages: list[dict] — chat messages (required)
@@ -472,7 +476,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "ao_llm_call",
-        "description": "Execute a governed LLM call through the full ao-kernel pipeline (route, policy, execute, normalize). API keys are resolved from environment variables.",
+        "description": "Execute a governed LLM call — thin executor (route, build, execute, normalize). No context injection, eval, or quality gate. API keys from env vars.",
         "inputSchema": {
             "type": "object",
             "required": ["messages"],

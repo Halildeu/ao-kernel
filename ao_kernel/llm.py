@@ -307,9 +307,18 @@ def build_request_with_context(
             messages=messages,
         )
         if compiled.preamble:
-            messages = inject_context_into_messages(
-                messages, session_context, max_tokens=compiled.total_tokens or 2000,
-            )
+            # Use compiled preamble directly — it includes all 3 lanes
+            # (session + canonical + facts), not just session_context
+            new_messages = list(messages)
+            if new_messages and new_messages[0].get("role") == "system":
+                original = new_messages[0].get("content", "")
+                new_messages[0] = {
+                    **new_messages[0],
+                    "content": compiled.preamble + "\n\n" + original,
+                }
+            else:
+                new_messages.insert(0, {"role": "system", "content": compiled.preamble})
+            messages = new_messages
 
     return build_request(
         provider_id=provider_id,
