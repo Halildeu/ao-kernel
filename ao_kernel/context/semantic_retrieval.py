@@ -112,7 +112,7 @@ def embed_decision(
 
 def semantic_search(
     query: str,
-    decisions: list[dict[str, Any]],
+    decisions: list[dict[str, Any]] | None = None,
     *,
     top_k: int = 10,
     min_similarity: float = 0.3,
@@ -121,8 +121,12 @@ def semantic_search(
     model: str = "text-embedding-3-small",
     base_url: str = "https://api.openai.com/v1",
     api_key: str = "",
+    vector_store: Any | None = None,
 ) -> list[dict[str, Any]]:
     """Search decisions by semantic similarity.
+
+    If vector_store provided, delegates to backend (scales to large corpora).
+    Otherwise falls back to in-memory search over decisions list.
 
     If query_embedding not provided, generates it via API.
     Only considers decisions that have _embedding attached.
@@ -140,6 +144,20 @@ def semantic_search(
 
     if not query_embedding:
         return []  # No embedding = fallback to deterministic
+
+    # Use vector store backend if provided
+    if vector_store is not None:
+        raw_results = vector_store.search(
+            query_embedding, top_k=top_k, min_similarity=min_similarity,
+        )
+        return [
+            {"key": r["key"], "_similarity": round(r["similarity"], 4), **r.get("metadata", {})}
+            for r in raw_results
+        ]
+
+    # In-memory search (default)
+    if not decisions:
+        return []
 
     results = []
     for d in decisions:

@@ -54,6 +54,7 @@ def compile_context(
     workspace_facts: dict[str, Any] | None = None,
     profile: str | None = None,
     messages: list[dict[str, Any]] | None = None,
+    enable_semantic_search: bool | None = None,
 ) -> CompiledContext:
     """Compile context from 3 lanes with relevance scoring and budget enforcement.
 
@@ -63,6 +64,8 @@ def compile_context(
         workspace_facts: Distilled workspace facts (from memory_distiller)
         profile: Explicit profile ID or None (auto-detect from messages)
         messages: Conversation messages (for profile auto-detection)
+        enable_semantic_search: Enable semantic reranking (None = use profile/env).
+            Default OFF. Set AO_SEMANTIC_SEARCH=1 env var to enable globally.
 
     Returns:
         CompiledContext with preamble, metrics, and selection log.
@@ -96,6 +99,9 @@ def compile_context(
 
     # Sort by relevance (highest first)
     items.sort(key=lambda x: x.relevance_score, reverse=True)
+
+    # Semantic reranking (opt-in, default OFF)
+    _apply_semantic_reranking(items, messages, profile_config, enable_semantic_search)
 
     # Budget enforcement
     budget = profile_config.max_tokens * 4  # ~4 chars per token
@@ -232,6 +238,88 @@ def _recency_score(created_at: str) -> float:
         return 0.2
     except (ValueError, TypeError):
         return 0.3
+
+
+def _apply_semantic_reranking(
+    items: list[ContextItem],
+    messages: list[dict[str, Any]] | None,
+    profile_config: ProfileConfig,
+    enable_override: bool | None,
+) -> None:
+    """Optionally rerank items by semantic similarity to user query.
+
+    Gate logic (short-circuit):
+        1. Explicit override wins (True/False)
+        2. Env var AO_SEMANTIC_SEARCH=1 enables globally
+        3. Profile config (default OFF for all profiles)
+
+    Modifies items in-place (blends semantic score into relevance_score).
+    Fails silently if embedding API unavailable — deterministic fallback preserved.
+    """
+    import os
+
+    # Resolve enable flag
+    if enable_override is not None:
+        enabled = enable_override
+    elif os.environ.get("AO_SEMANTIC_SEARCH", "").strip().lower() in ("1", "true", "yes"):
+        enabled = True
+    else:
+        enabled = profile_config.enable_semantic_search
+
+    if not enabled or not items or not messages:
+        return
+
+    # Extract query from first user message
+    query = ""
+    for msg in messages:
+        if msg.get("role") == "user":
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                query = content
+            elif isinstance(content, list):
+                query = " ".join(c.get("text", "") for c in content if isinstance(c, dict))
+            break
+
+    if not query:
+        return
+
+    try:
+        from ao_kernel.context.semantic_retrieval import semantic_search
+
+        # Build decisions list from items for semantic_search
+        decisions_for_search = [
+            {"key": item.key, "value": item.value, "_embedding": None}
+            for item in items
+        ]
+
+        # semantic_search needs pre-embedded decisions or API key;
+        # if neither available, it returns [] — deterministic fallback
+        results = semantic_search(
+            query,
+            decisions_for_search,
+            top_k=len(items),
+            min_similarity=0.2,
+        )
+
+        if not results:
+            return  # No embeddings available — keep deterministic order
+
+        # Build similarity map
+        sim_map: dict[str, float] = {}
+        for r in results:
+            sim_map[r.get("key", "")] = r.get("_similarity", 0.0)
+
+        # Blend: new_score = 0.7 * deterministic + 0.3 * semantic
+        for item in items:
+            sim = sim_map.get(item.key, 0.0)
+            if sim > 0:
+                item.relevance_score = min(1.0, item.relevance_score * 0.7 + sim * 0.3)
+
+        # Re-sort after blending
+        items.sort(key=lambda x: x.relevance_score, reverse=True)
+
+    except Exception:
+        pass  # Fail-open: semantic search is non-critical
 
 
 def _build_preamble(items: list[ContextItem], profile: ProfileConfig) -> str:

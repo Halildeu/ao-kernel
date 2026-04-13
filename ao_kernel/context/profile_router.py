@@ -23,6 +23,7 @@ class ProfileConfig:
     priority_prefixes: tuple[str, ...]  # key prefixes to prioritize
     max_decisions: int                   # max decisions to inject
     max_tokens: int                      # token budget for context preamble
+    enable_semantic_search: bool = False  # opt-in semantic reranking (default OFF)
 
 
 PROFILES: dict[str, ProfileConfig] = {
