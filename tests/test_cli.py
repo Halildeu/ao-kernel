@@ -55,7 +55,7 @@ class TestInit:
         rc = main(["init"])
         assert rc == 0
         out = capsys.readouterr().out
-        assert "mevcut" in out.lower()
+        assert "already exists" in out.lower()
 
 
 class TestDoctor:
@@ -84,7 +84,7 @@ class TestMigrate:
         rc = main(["migrate"])
         assert rc == 1
         out = capsys.readouterr().out.lower()
-        assert "bulunamadi" in out or "not found" in out
+        assert "not found" in out.lower() or "no workspace" in out.lower()
 
     def test_workspace_root_override(self, tmp_workspace, capsys):
         rc = main(["--workspace-root", str(tmp_workspace), "doctor"])

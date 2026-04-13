@@ -34,7 +34,7 @@ def run(workspace_root_override: str | None = None) -> int:
     if target.is_dir():
         ws_json = target / "workspace.json"
         if ws_json.is_file():
-            print(f"Workspace zaten mevcut: {target}")
+            print(f"Workspace already exists: {target}")
             return 0
 
     subdirs = ["policies", "schemas", "registry", "extensions"]
@@ -51,5 +51,5 @@ def run(workspace_root_override: str | None = None) -> int:
     if not ws_json.is_file():
         _write_json_atomic(ws_json, ws_data)
 
-    print(f"Workspace olusturuldu: {target}")
+    print(f"Workspace created: {target}")
     return 0

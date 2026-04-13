@@ -9,6 +9,7 @@ import sys
 
 import ao_kernel
 from ao_kernel.config import workspace_root
+from ao_kernel.errors import WorkspaceNotFoundError
 
 
 def _check(label: str, fn: callable) -> str:
@@ -26,7 +27,9 @@ def _check(label: str, fn: callable) -> str:
 
 def _check_workspace(ws_override: str | None) -> bool:
     ws = workspace_root(override=ws_override)
-    return ws is not None and ws.is_dir()
+    if ws is None:
+        raise WorkspaceNotFoundError("No workspace found (.ao/ or legacy)")
+    return ws.is_dir()
 
 
 def _check_workspace_json(ws_override: str | None) -> bool:
@@ -53,7 +56,8 @@ def _check_required_deps() -> bool:
     return True
 
 
-def _check_optional_deps() -> str:
+def _check_optional_deps() -> bool | str:
+    """Check optional dependencies. Returns True if all present, 'WARN' if some missing."""
     missing = []
     for mod in ("tenacity", "tiktoken"):
         try:
@@ -75,20 +79,31 @@ def _check_shim_import() -> bool:
 
 
 def _check_extension_manifests() -> bool:
-    from ao_kernel.config import load_default
-    load_default("extensions/PRJ-DEPLOY", "extension.manifest.v1.json")
-    return True
+    """Discover and validate ALL bundled extension manifests."""
+    from importlib.resources import files
+
+    extensions_pkg = files("ao_kernel.defaults.extensions")
+    found = 0
+    for item in extensions_pkg.iterdir():
+        if item.is_dir() and item.name.startswith("PRJ-"):
+            manifest = item.joinpath("extension.manifest.v1.json")
+            try:
+                manifest.read_text(encoding="utf-8")
+                found += 1
+            except (FileNotFoundError, TypeError):
+                return False
+    return found > 0
 
 
 def run(workspace_root_override: str | None = None) -> int:
     """Run all health checks and print report."""
     checks = [
-        ("Workspace bulundu", lambda: _check_workspace(workspace_root_override)),
-        ("workspace.json gecerli", lambda: _check_workspace_json(workspace_root_override)),
-        ("Bundled defaults erisim", _check_bundled_defaults),
+        ("Workspace found", lambda: _check_workspace(workspace_root_override)),
+        ("workspace.json valid", lambda: _check_workspace_json(workspace_root_override)),
+        ("Bundled defaults access", _check_bundled_defaults),
         ("Python >= 3.11", _check_python_version),
-        ("jsonschema yuklu", _check_required_deps),
-        ("tenacity/tiktoken (opsiyonel)", _check_optional_deps),
+        ("jsonschema installed", _check_required_deps),
+        ("tenacity/tiktoken (optional)", _check_optional_deps),
         ("src shim import", _check_shim_import),
         ("Extension manifest discovery", _check_extension_manifests),
     ]
