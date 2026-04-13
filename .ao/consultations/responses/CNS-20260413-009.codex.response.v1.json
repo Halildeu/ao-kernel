@@ -2,39 +2,29 @@
   "version": "v1",
   "consultation_id": "CNS-20260413-009",
   "agent": "codex",
-  "responded_at": "2026-04-13T08:00:00Z",
-  "verdict": "B",
-  "body": "Planin omurgasi dogru ama bu haliyle production-grade degil. Q1: 4 faz mantikli, ancak production PyPI publish CI'dan once yapilmamali; en azindan build, test ve release gate otomatiklesmeden canli yayin riskli. Q2: TestPyPI once, PyPI sonra dogru; fakat repo su an buna tam hazir degil: `README.md` 1 satir, `docs/` yok, `.github/workflows/` yok, `dev` extra icinde `pytest-cov` ve `twine` yok. Q3: CI taslagi yon olarak dogru ama coverage'i matrix'in her job'unda degil tek kanonik job'da fail ettirmek daha saglam olur. Q4: README yapisi eksik degil ama bugunku kodla uyumsuz; plandaki `ao_kernel.llm` modulu repoda yok. Q5: Backlog stratejisi yon olarak dogru ama fazla iyimser; `tool_gateway` kaynakta `subprocess` ve `src.ops.manage` bagimli, `session` ve `evidence` ise gorundugunden fazla transitive bagimlilik tasiyor. Q6: Risk matrisi fena degil ama legacy `src.*`, `src.ops.manage`, `.cache/ws_customer_default` ve coklu version drift risklerini acik yazmiyor. Q7: DoD temel olarak yeterli, ama non-editable wheel smoke, public API kontrati ve version yayilim kontrolu eklenmeli. Ek not: plandaki `172 test` baseline'i repo ile eslesmiyor; mevcut agacta 134 test gorunuyor. Ayrica `long_description_content_type` maddesi PEP 621 akisinda gereksiz/yanlis; `readme = \"README.md\"` zaten var.",
+  "responded_at": "2026-04-13T22:55:37+03:00",
+  "verdict": "D",
+  "answers": {
+    "q1": "Önerim iki fazlı önceliklendirme: önce İş 3 + İş 4 + İş 1 + İş 5 için v2.1.2, ardından İş 2 için v2.2.0. D13'ün 'tüm internal coverage'i şimdi yapmayalım' kısmı kısmen savunulabilir; ama 'roadmap'i 0 gerçek testle bırakabiliriz' kısmı artık savunulamaz. Kanıt: ao_kernel.roadmap public facade olarak export ediliyor (ao_kernel/roadmap.py:1-7, 15-81), arkasında 9 modül ve toplam 2,497 LOC var (ao_kernel/_internal/roadmap/*.py), fakat mevcut test yüzeyi sadece 4 facade/import-hata testiyle sınırlı (tests/test_roadmap_facade.py:8-34). Buna karşılık İş 3 ve İş 4 küçük, düşük-riskli ve hemen değer üreten düzeltmeler; İş 1 non-streaming tool path'ini güvenceye alıyor; İş 5 ise küçük ama audit/integrity açısından boşluğu kapatıyor.",
+    "q2": "Hepsini birden testlemeyin; sadece executor + compiler ile de yetinmeyin. İlk dalga için top-5 kritik modül: exec_steps.py, step_templates.py, executor.py, compiler.py, exec_evidence.py. Gerekçe: exec_steps.py safety mantığının merkezi; plan shape, write policy, core immutability, readonly enforcement, change_proposal_apply, DLQ ve step evidence burada (ao_kernel/_internal/roadmap/exec_steps.py:44-66, 284-318, 590-673, 717-1117). step_templates.py gerçek dosya sistemi ve subprocess yan etkilerini yürütüyor (ao_kernel/_internal/roadmap/step_templates.py:23-73, 90-150, 220-325). executor.py compile -> evidence -> execute akışını ve özet/DLQ yazımını orkestre ediyor (ao_kernel/_internal/roadmap/executor.py:41-63, 127-181, 234-312). compiler.py schema validation, milestone filtering ve deterministik plan üretimi yapıyor (ao_kernel/_internal/roadmap/compiler.py:22-31, 43-193). exec_evidence.py readonly mod için git/workspace baseline snapshot'larını hazırlıyor; bu safety-critical (ao_kernel/_internal/roadmap/exec_evidence.py:33-65, 68-145). change_proposals.py kritik ama ikinci dalga olabilir; isterseniz change_proposal_apply senaryosu üzerinden dolaylı kapsanabilir (ao_kernel/_internal/roadmap/exec_steps.py:645-665, ao_kernel/_internal/roadmap/change_proposals.py:50-114).",
+    "q3": "CLAUDE.md bunu açıkça iki ayrı sistem olarak belgelemeli: '4 policy-enforced quality gate + 6 deterministic eval check'. '10 validation check (4 enforced + 6 heuristic)' ifadesi teknik olarak mümkün olsa da enforcement sınırını bulanıklaştırıyor. Kanıt: gerçek gate seti policy_quality_gates.v1.json içinde sadece schema_valid, output_not_empty, consistency_check, regression_check olarak tanımlı (ao_kernel/defaults/policies/policy_quality_gates.v1.json:4-28) ve governance.evaluate_quality() -> mcp_server.handle_quality_gate() zincirinde allow/deny kararına bağlanıyor (ao_kernel/governance.py:218-279, ao_kernel/mcp_server.py:168-216). Buna karşılık eval_harness.py altı adet deterministik/heuristic check tanımlıyor (ao_kernel/_internal/orchestrator/eval_harness.py:1-14) ve client tarafında yalnız scorecard olarak ekleniyor; gate gibi fail-closed enforcement yapmıyor (ao_kernel/client.py:381-418). Bu yüzden doğru dokümantasyon ayrımı 'gate' ve 'eval' başlıklarını ayrı tutmak.",
+    "q4": "Burada parametreleri kaldırmak yerine metriğe eklemek daha doğru. record_context_compile() public telemetry modülünde tanımlı (ao_kernel/telemetry.py:245-265); imzadan items_included/items_excluded kaldırmak patch sürümde gereksiz uyumluluk riski yaratır. Tespit doğru: bu iki parametre şu an gerçekten dead, çünkü fonksiyon içinde hiç kullanılmıyor; buna rağmen tek çağrı yeri bunları hesaplayıp geçiriyor (ao_kernel/context/context_compiler.py:134-150). En doğru patch yaklaşımı, included/excluded için ayrı histogram veya counter üretmek ya da en azından telemetry event payload'ına yazmak. Eğer nihai hedef parametreyi silmekse, önce deprecation verip daha sonraki minor/major sürümde kaldırın. Ek kanıt: mevcut telemetry testleri record_context_compile'ı hiç kapsamıyor; sadece diğer beş metric helper testlenmiş (tests/test_telemetry.py:7-16, 89-139).",
+    "q5": "Tek bir tag altında tüm 5 işi birlikte yayınlamak zorundaysanız v2.2.0 demek daha emniyetli; çünkü roadmap tarafı public facade arkasındaki governed execution yüzeyini sertleştiriyor (ao_kernel/roadmap.py:1-81) ve bu kampanyanın gerçek bug fix'ler çıkarması olası. Ama benim önerim tek tag değil, split release: İş 3 + İş 4 + İş 1 + İş 5 -> v2.1.2; İş 2 -> v2.2.0. Gerekçe: İş 3 belgesel doğruluk düzeltmesi, İş 4 additive telemetry, İş 1 ve İş 5 küçük test/hardening işleri. Buna karşılık İş 2 çok daha büyük bir güvence kampanyası: 2,497 LOC roadmap engine, yalnız 4 facade testi (tests/test_roadmap_facade.py:8-34). Bu nedenle semver açısından 'tek paket = v2.2.0', release yönetimi açısından ise 'iki aşama = daha doğru'."
+  },
   "agreements": [
-    "Fazlama genel eksende dogru: paketleme, CI, docs ve backlog ayrimi mantikli.",
-    "TestPyPI once, PyPI sonra yaklasimi dogru.",
-    "Coverage hard gate ve 3.11/3.12/3.13 uyumluluk hedefi yerinde.",
-    "README ve dis dokumantasyonun v0.2.0'da buyuk oncelik olmasi dogru.",
-    "tool/session/evidence/secrets yonu urun vizyonuyla uyumlu."
+    "İş 1 gerçek bir boşluk: extract_tool_calls() non-streaming normalize path'inde canlı kullanılıyor (ao_kernel/_internal/prj_kernel_api/llm_response_normalizer.py:123-127) ve repo içinde tool_calling.py fonksiyonlarına doğrudan test görünmüyor; mevcut 7 test sadece streaming reconstruction tarafında (tests/test_tool_streaming.py:10-104).",
+    "İş 2 en büyük test açığı: roadmap dizini 9 modül / 2,497 LOC ve safety/IO/subprocess içeren kod barındırıyor; mevcut testler sadece 4 facade/import-hata senaryosu (tests/test_roadmap_facade.py:8-34).",
+    "İş 4 dead param tespiti doğru: record_context_compile(items_included, items_excluded, ...) imzada bu değerleri alıyor ama gövdede yalnız ao.context.compile.total ve ao.context.compile.tokens yazılıyor (ao_kernel/telemetry.py:245-265).",
+    "İş 5 derin test eksiği doğru: verify_run_dir() OK / MISSING / MISMATCH / manifest-shape-invalid dalları içeriyor (ao_kernel/_internal/evidence/integrity_verify.py:22-99), fakat testte yalnız empty-dir smoke var (tests/test_backlog_modules.py:40-44)."
   ],
   "objections": [
-    "Production PyPI publish'in CI/CD'den once konumlanmasi zayif.",
-    "CI komutlari mevcut bagimliliklarla calismaz; `pytest-cov` ve `twine` tanimli degil.",
-    "README quickstart bugunku public yuzeyle uyumsuz; `ao_kernel.llm` yok.",
-    "`0.2.0` sadece `pyproject.toml` guncellemesi degil; birden cok sabit version noktasi var.",
-    "`tool_gateway` icin sadece 'ops.manage bagimliligini kes' demek yetmez; subprocess, izin modeli ve dispatch kontrati yeniden tanimlanmali.",
-    "Risk matrisi legacy shim buyumesi ve workspace path borcunu yeterince somutlastirmiyor.",
-    "`Typing :: Typed` classifier var ama `py.typed` dosyasi gorunmuyor."
+    "D13'ü blanket erteleme olarak sürdürmeye itiraz ediyorum; ao_kernel.roadmap public facade olduğu için 0 gerçek test artık kabul edilebilir bir steady-state değil (ao_kernel/roadmap.py:1-81, tests/test_roadmap_facade.py:8-34).",
+    "Roadmap için sadece executor + compiler testlemek yetersiz olur; safety mantığının büyük kısmı exec_steps.py ve step_templates.py içinde (ao_kernel/_internal/roadmap/exec_steps.py:284-318, 717-1117; ao_kernel/_internal/roadmap/step_templates.py:23-73, 220-325).",
+    "Tool calling işinin tüm fonksiyonları eşit öncelikte değil: kritik canlı yol extract_tool_calls(); build_tools_param() ve build_tool_result() için repo içinde doğrudan call site görünmüyor. Bu yüzden test tasarımında extraction path'e öncelik verilmeli."
   ],
   "additions": [
-    "Faz sirasini su sekilde revize edin: metadata+build/TestPyPI -> CI -> docs -> production PyPI -> backlog.",
-    "DoD'ye non-editable smoke ekleyin: temiz venv'de wheel kur, `ao-kernel version`, `ao-kernel doctor`, gerekirse `ao-kernel mcp serve` import smoke.",
-    "Release checklist'e version yayilim kontrolu ekleyin: `pyproject.toml`, `ao_kernel.__version__`, MCP API version, telemetry ve ilgili manifest/test beklentileri.",
-    "F3'e public API siniri ekleyin: desteklenen yuzey `ao_kernel.*`, `src.*` uyumluluk/shim katmani mi net yazin.",
-    "F4 icin her modulde kabul kriteri tanimlayin: `src.ops.manage` yok, hardcoded legacy workspace path yok, subprocess yok ya da gerekceli, fail-closed korunuyor.",
-    "Publish workflow'da Trusted Publishing/OIDC veya en azindan protected environment onayi dusunun.",
-    "Coverage gate'i tek kanonik Python surumunde uygulayin; matrix testleri ayri kosun.",
-    "Baseline metriklerini repo gercegine hizalayin; 172 yerine bugun gozlenen sayilarla ratchet edin."
-  ],
-  "follow_up": [
-    "Karar alin: v0.2.0'da resmi LLM facade `ao_kernel.llm` eklenecek mi, yoksa docs'tan cikarilacak mi?",
-    "Karar alin: ilk production release CI'dan once manuel mi olacak, yoksa CI green tag zorunlu mu?",
-    "Karar alin: Faz 4'te once `tool_gateway` mi, yoksa daha dusuk bagimlilikli `evidence`/`session` parcali tasima mi yapilacak?",
-    "Ilk gate olarak su dordunu yazin: `python -m build`, `twine check`, wheel install smoke, tek-job coverage gate."
+    "CLAUDE.md güncellemesi sadece '567+ -> 643+' ile sınırlı olmamalı; aynı dosya test altyapısında ayrıca '508 test, 34 test dosyası' diyor (CLAUDE.md:245-251). pytest --collect-only -q çıktısı 643 test gösteriyor ve gerçek Python test dosyası sayısı 43.",
+    "Roadmap first-wave test önerisi: compiler milestone subset determinism, executor dry_run mode validation, exec_steps readonly cmd allowlist enforcement, core unlock blocked report, milestone caps, run_cmd failure -> DLQ/summary propagation, change_proposal_apply schema failure, exec_evidence readonly snapshot baseline.",
+    "Telemetry için önerilen backward-compatible çözüm: items_included ve items_excluded değerlerini yeni histogram/counter ile yayınlayın; parametre silme kararı ancak deprecation sonrası ayrı sürüme bırakılmalı."
   ]
 }

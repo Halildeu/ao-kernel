@@ -1,0 +1,52 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-010",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "review",
+  "question": {
+    "title": "CLAUDE.md sıfırdan yeniden yazıldı — içerik review",
+    "body": "ao-kernel'in CLAUDE.md dosyasını sıfırdan yeniden yazdık. Amaç: doğru, stabil, sürekli güncelleme gerektirmeyen bir CLAUDE.md. Lütfen CLAUDE.md dosyasını oku ve aşağıdaki sorulara yanıt ver.\n\n## Tasarım İlkeleri\n1. Değişken sayılar (test sayısı, policy sayısı, coverage) yazılmadı — bunun yerine komut verildi\n2. Quality gate vs eval check ayrımı netleştirildi (iki ayrı sistem)\n3. D1-D14 mimari kararlar tamamlandı\n4. İstişare geçmişi sabit tablo yerine dizin referansına dönüştürüldü\n5. Rakip tablosundan sabit sayılar kaldırıldı\n\n## Sorular\n1. İçerik doğruluğu: CLAUDE.md'deki her teknik iddia kodla uyuşuyor mu? Hatalı veya yanıltıcı bir şey var mı?\n2. Eksiklikler: Yeni bir geliştirici (veya AI agent) bu dosyayı okuyarak projeyi anlamak istese, hangi kritik bilgiler eksik?\n3. Fazlalıklar: Koddan zaten türetilebilen ve bu yüzden CLAUDE.md'de olmaması gereken bilgiler var mı?\n4. Stabil mi: Bu CLAUDE.md'nin v2.2.0, v2.3.0, v3.0.0'da bile büyük ölçüde geçerli kalması hedefleniyor. Hangi bölümler versiyon değişikliğinde kırılır?\n5. Yapısal öneri: Bölüm sırası, derinlik, format konusunda iyileştirme önerilerin var mı?",
+    "context_refs": [
+      "CLAUDE.md",
+      "pyproject.toml",
+      "ao_kernel/__init__.py",
+      "ao_kernel/client.py",
+      "ao_kernel/governance.py",
+      "ao_kernel/_internal/orchestrator/quality_gate.py",
+      "ao_kernel/_internal/orchestrator/eval_harness.py",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/telemetry.py"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "İçerik doğru ve yeterli — minor düzeltmelerle kabul",
+        "pros": "Hızlı finalize",
+        "cons": "Gözden kaçan sorunlar kalabilir"
+      },
+      {
+        "option_id": "B",
+        "title": "Yapısal sorunlar var — bölüm ekleme/çıkarma gerekli",
+        "pros": "Daha kapsamlı düzeltme",
+        "cons": "Ek iş"
+      },
+      {
+        "option_id": "C",
+        "title": "İçerik hataları var — teknik düzeltme gerekli",
+        "pros": "Doğruluk öncelikli",
+        "cons": "Ek iş"
+      },
+      {
+        "option_id": "D",
+        "title": "Major revision gerekli — yaklaşım değişmeli",
+        "pros": "Temel sorun çözülür",
+        "cons": "Baştan yazma"
+      }
+    ]
+  },
+  "created_at": "2026-04-13T23:15:00+03:00",
+  "branch": "claude/modest-ardinghelli",
+  "head_sha": "40c6acc"
+}
