@@ -47,10 +47,8 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
         return 0
     except ImportError as e:
         if "mcp" in str(e).lower():
-            print(
-                "Error: MCP server requires the 'mcp' package.\n"
-                "Install with: pip install ao-kernel[mcp]"
-            )
+            from ao_kernel.i18n import msg
+            print(msg("error_mcp_missing"))
             return 1
         raise
 
@@ -106,7 +104,8 @@ def main(argv: list[str] | None = None) -> int:
         mcp_cmd = getattr(args, "mcp_command", None)
         if mcp_cmd == "serve":
             return _cmd_mcp_serve(args)
-        print("Usage: ao-kernel mcp serve")
+        from ao_kernel.i18n import msg
+        print(msg("usage_mcp_serve"))
         return 1
 
     handler = dispatch.get(cmd)

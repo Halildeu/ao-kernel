@@ -34,7 +34,8 @@ def run(workspace_root_override: str | None = None) -> int:
     if target.is_dir():
         ws_json = target / "workspace.json"
         if ws_json.is_file():
-            print(f"Workspace already exists: {target}")
+            from ao_kernel.i18n import msg
+            print(msg("workspace_already_exists", path=str(target)))
             return 0
 
     subdirs = ["policies", "schemas", "registry", "extensions"]
@@ -51,5 +52,6 @@ def run(workspace_root_override: str | None = None) -> int:
     if not ws_json.is_file():
         _write_json_atomic(ws_json, ws_data)
 
-    print(f"Workspace created: {target}")
+    from ao_kernel.i18n import msg
+    print(msg("workspace_created", path=str(target)))
     return 0
