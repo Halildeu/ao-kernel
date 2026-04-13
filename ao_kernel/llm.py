@@ -1,6 +1,6 @@
 """ao_kernel.llm — Public LLM facade for ao-kernel.
 
-Clean import path for LLM operations. Replaces direct src.* shim imports.
+Clean import path for governed LLM operations.
 
 Usage:
     from ao_kernel.llm import resolve_route, build_request, normalize_response
@@ -8,8 +8,8 @@ Usage:
     from ao_kernel.llm import get_circuit_breaker, get_rate_limiter
     from ao_kernel.llm import stream_request, StreamResult, StreamEvent
 
-This module re-exports from src/ shim with stable names. When src/ shim
-is removed in v2.0.0, implementations will move here.
+All implementations live in ao_kernel._internal.prj_kernel_api.
+This module provides the stable public API surface.
 """
 
 from __future__ import annotations
