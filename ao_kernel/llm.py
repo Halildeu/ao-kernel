@@ -68,8 +68,31 @@ def build_request(
     Returns dict with keys: url, headers, body_bytes, body_json.
     Supports all 6 providers: claude, openai, google, deepseek, qwen, xai.
 
+    Provider guardrails are checked if policy is available (fail-closed on violation).
     Raises ValueError if stream=True and tools are provided (fail-closed).
     """
+    # Provider guardrails: enforced when workspace has explicit override policy
+    # Bundled defaults are reference-only (many providers disabled by default)
+    try:
+        from ao_kernel.config import workspace_root as _ws_root
+        from pathlib import Path as _Path
+        ws = _ws_root()
+        if ws:
+            guardrails_path = _Path(ws) / "policies" / "policy_llm_providers_guardrails.v1.json"
+            if guardrails_path.exists():
+                from ao_kernel.governance import check_policy
+                guardrails = check_policy(
+                    "policy_llm_providers_guardrails.v1.json",
+                    {"provider_id": provider_id, "model": model},
+                    workspace=_Path(ws),
+                )
+                if not guardrails.get("allowed", True):
+                    raise ValueError(
+                        f"Provider guardrails denied: {guardrails.get('reason_codes', [])}"
+                    )
+    except (FileNotFoundError, ImportError):
+        pass
+
     from src.prj_kernel_api.llm_request_builder import build_live_request
 
     return build_live_request(
@@ -247,11 +270,35 @@ def build_request_with_context(
     Falls back to plain build_request if no context available.
     """
     if session_context:
+        from pathlib import Path
         from ao_kernel.context.context_compiler import compile_context
         from ao_kernel.context.context_injector import inject_context_into_messages
 
+        # Load canonical decisions + workspace facts if workspace available
+        canonical_dict = None
+        workspace_facts = None
+        if workspace_root:
+            try:
+                from ao_kernel.context.canonical_store import query as query_canonical
+                import json
+                canonical_items = query_canonical(Path(workspace_root))
+                canonical_dict = {item["key"]: item for item in canonical_items} if canonical_items else None
+            except Exception:
+                pass
+            try:
+                facts_path = Path(workspace_root) / ".cache" / "index" / "workspace_facts.v1.json"
+                if facts_path.exists():
+                    workspace_facts = json.loads(facts_path.read_text(encoding="utf-8"))
+                    # Normalize facts format for compiler
+                    if isinstance(workspace_facts, list):
+                        workspace_facts = {"facts": {f.get("key", str(i)): f for i, f in enumerate(workspace_facts)}}
+            except Exception:
+                pass
+
         compiled = compile_context(
             session_context,
+            canonical_decisions=canonical_dict,
+            workspace_facts=workspace_facts,
             profile=profile,
             messages=messages,
         )

@@ -78,6 +78,19 @@ def end_session(
     except Exception:
         pass  # Distillation failure shouldn't block session close
 
+    # Auto-promote high-confidence decisions to canonical store
+    try:
+        from ao_kernel.context.canonical_store import promote_from_ephemeral
+        decisions = context.get("ephemeral_decisions", [])
+        promote_from_ephemeral(
+            ws,
+            decisions,
+            min_confidence=0.7,
+            session_id=session_id,
+        )
+    except Exception:
+        pass  # Promotion failure shouldn't block session close
+
     # Final save
     from ao_kernel.session import save_context
     save_context(context, workspace_root=ws, session_id=session_id)
