@@ -32,7 +32,7 @@
       "default_model": "claude-opus-4-5-20251101",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "unsupported",
@@ -60,7 +60,7 @@
       "default_model": "gpt-4o-mini",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "supported",
@@ -89,7 +89,7 @@
       "default_model": "gemini-2.0-flash",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "experimental",
         "batch": "unsupported",
@@ -117,7 +117,7 @@
       "default_model": "deepseek-chat",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "unsupported",
         "batch": "unsupported",
@@ -146,7 +146,7 @@
       "default_model": "qwen-plus",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "experimental",
         "batch": "unsupported",
@@ -174,7 +174,7 @@
       "default_model": "grok-4-1-fast-reasoning",
       "capabilities": {
         "chat": "supported",
-        "streaming": "experimental",
+        "streaming": "supported",
         "tool_use": "unsupported",
         "vision": "supported",
         "batch": "unsupported",

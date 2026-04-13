@@ -33,8 +33,9 @@ def tmp_workspace(tmp_path: Path):
     for d in ("policies", "schemas", "registry", "extensions"):
         (ws / d).mkdir()
     ws_json = ws / "workspace.json"
+    import ao_kernel
     ws_json.write_text(json.dumps({
-        "version": "0.1.0",
+        "version": ao_kernel.__version__,
         "created_at": "2026-01-01T00:00:00Z",
         "kind": "ao-workspace",
     }) + "\n")

@@ -47,6 +47,27 @@ PROFILES: dict[str, ProfileConfig] = {
         max_decisions=20,
         max_tokens=2000,
     ),
+    "EMERGENCY": ProfileConfig(
+        profile_id="EMERGENCY",
+        description="Incident response, urgent fix",
+        priority_prefixes=("error.", "incident.", "alert.", "hotfix.", "rollback."),
+        max_decisions=15,
+        max_tokens=2000,
+    ),
+    "ASSESSMENT": ProfileConfig(
+        profile_id="ASSESSMENT",
+        description="System assessment, maturity evaluation",
+        priority_prefixes=("assessment.", "maturity.", "metric.", "benchmark.", "score."),
+        max_decisions=25,
+        max_tokens=3000,
+    ),
+    "PLANNING": ProfileConfig(
+        profile_id="PLANNING",
+        description="Roadmap planning, sprint planning",
+        priority_prefixes=("plan.", "roadmap.", "sprint.", "milestone.", "priority."),
+        max_decisions=25,
+        max_tokens=3000,
+    ),
 }
 
 DEFAULT_PROFILE = "TASK_EXECUTION"
@@ -55,6 +76,9 @@ DEFAULT_PROFILE = "TASK_EXECUTION"
 _DETECTION_KEYWORDS: dict[str, list[str]] = {
     "STARTUP": ["init", "setup", "install", "configure", "bootstrap", "workspace", "getting started"],
     "REVIEW": ["review", "check", "audit", "inspect", "evaluate", "assess", "quality", "standard"],
+    "EMERGENCY": ["incident", "emergency", "urgent", "hotfix", "rollback", "outage", "down", "broken", "critical"],
+    "ASSESSMENT": ["assessment", "maturity", "benchmark", "evaluate", "score", "measure", "baseline"],
+    "PLANNING": ["plan", "roadmap", "sprint", "milestone", "priority", "schedule", "backlog"],
     # TASK_EXECUTION is the default — no specific keywords needed
 }
 

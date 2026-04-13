@@ -55,7 +55,9 @@ class TestMigrateCmd:
         assert "backup_path" in out
 
         updated = json.loads(ws_json.read_text())
-        assert updated["version"] == "0.1.0"
+        
+        import ao_kernel
+        assert updated["version"] == ao_kernel.__version__
         assert "migrated_at" in updated
 
     def test_legacy_workspace_detected(self, legacy_workspace: Path, capsys):

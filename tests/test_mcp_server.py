@@ -153,7 +153,9 @@ class TestWorkspaceStatusGovernance:
         result = handle_workspace_status({"workspace_root": str(tmp_workspace)})
         assert result["allowed"] is True
         assert result["data"]["status"] == "healthy"
-        assert result["data"]["version"] == "0.1.0"
+        
+        import ao_kernel
+        assert result["data"]["version"] == ao_kernel.__version__
         assert result["data"]["kind"] == "ao-workspace"
         assert result["data"]["mode"] == "workspace"
 
