@@ -53,7 +53,7 @@ class TestWorkspaceRoot:
         import os
 
         (tmp_path / ".ao").mkdir()
-        (tmp_path / ".ao" / "workspace.json").write_text('{"version":"0.1.0","kind":"ao-workspace"}')
+        (tmp_path / ".ao" / "workspace.json").write_text('{"version":"0.2.0","kind":"ao-workspace"}')
         (tmp_path / ".cache" / "ws_customer_default").mkdir(parents=True)
         old_cwd = os.getcwd()
         os.chdir(tmp_path)
@@ -68,7 +68,7 @@ class TestWorkspaceRoot:
 class TestLoadWorkspaceJson:
     def test_valid_workspace(self, tmp_workspace: Path):
         data = load_workspace_json(tmp_workspace)
-        assert data["version"] == "0.1.0"
+        assert data["version"] == "0.2.0"
         assert data["kind"] == "ao-workspace"
 
     def test_missing_workspace_json(self, tmp_path: Path):
@@ -81,7 +81,7 @@ class TestLoadWorkspaceJson:
             load_workspace_json(tmp_path)
 
     def test_missing_required_field(self, tmp_path: Path):
-        (tmp_path / "workspace.json").write_text('{"version": "0.1.0"}')
+        (tmp_path / "workspace.json").write_text('{"version": "0.2.0"}')
         with pytest.raises(WorkspaceCorruptedError, match="missing required field"):
             load_workspace_json(tmp_path)
 

@@ -35,6 +35,12 @@ jobs:
             --cov-report=xml \
             --cov-report=term-missing
 
+      - name: Extras install test (Python 3.13 only)
+        if: matrix.python-version == '3.13'
+        run: |
+          pip install -e ".[llm]" && python -c "import tenacity; import tiktoken; print('llm OK')"
+          pip install -e ".[otel]" && python -c "import opentelemetry; print('otel OK')"
+
       - name: Coverage gate (Python 3.13 only)
         if: matrix.python-version == '3.13'
         run: |

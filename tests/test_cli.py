@@ -47,7 +47,9 @@ class TestInit:
     def test_workspace_json_has_required_fields(self, empty_dir):
         main(["init"])
         data = json.loads((empty_dir / ".ao" / "workspace.json").read_text())
-        assert data["version"] == "0.1.0"
+        
+        import ao_kernel
+        assert data["version"] == ao_kernel.__version__
         assert data["kind"] == "ao-workspace"
         assert "created_at" in data
 
