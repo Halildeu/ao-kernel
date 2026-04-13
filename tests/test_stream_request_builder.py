@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-import pytest
 
 from src.prj_kernel_api.llm_request_builder import build_live_request
 
@@ -33,17 +32,18 @@ class TestStreamRequestBuilder:
         body = req["body_json"]
         assert "stream" not in body
 
-    def test_stream_with_tools_raises(self):
-        with pytest.raises(ValueError, match="stream=True with tools"):
-            build_live_request(
-                provider_id="openai",
-                model="gpt-4",
-                messages=[{"role": "user", "content": "hi"}],
-                base_url="https://api.openai.com/v1/chat/completions",
-                api_key="sk-test",
-                stream=True,
-                tools=[{"type": "function", "function": {"name": "test"}}],
-            )
+    def test_stream_with_tools_allowed(self):
+        req = build_live_request(
+            provider_id="openai",
+            model="gpt-4",
+            messages=[{"role": "user", "content": "hi"}],
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test",
+            stream=True,
+            tools=[{"type": "function", "function": {"name": "test"}}],
+        )
+        assert req["body_json"]["stream"] is True
+        assert len(req["body_json"]["tools"]) == 1
 
     def test_google_stream_endpoint(self):
         req = build_live_request(

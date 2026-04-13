@@ -82,12 +82,8 @@ def build_live_request(
                 Raises ValueError if stream=True and tools are provided
                 (tool streaming not yet supported — fail-closed).
     """
-    if stream and tools:
-        raise ValueError(
-            "stream=True with tools is not supported in v0.2.0. "
-            "Tool streaming will be added in v0.3.0. "
-            "Use stream=False for tool-calling requests."
-        )
+    # stream=True with tools is now supported (v0.3.0)
+    # Tool call deltas are reconstructed by llm_stream_normalizer
     if provider_id == "claude":
         system, anthropic_messages = to_anthropic_messages(messages)
         req_body: dict[str, Any] = {
