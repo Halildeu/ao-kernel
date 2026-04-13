@@ -91,7 +91,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["ao_kernel", "src"]
+source = ["ao_kernel"]
 branch = true
 omit = [
     "*/test_*",

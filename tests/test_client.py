@@ -343,6 +343,171 @@ class TestLLMCall:
             assert result["elapsed_ms"] == 500
 
 
+class TestLLMCallStreaming:
+    def test_llm_call_stream_ok(self, tmp_workspace: Path):
+        """stream=True dispatches to stream_request and returns OK."""
+        from ao_kernel.llm import StreamResult
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_sr = StreamResult(
+            status="OK",
+            complete=True,
+            text="Streamed response about Python.",
+            finish_reason="stop",
+            usage={"input_tokens": 5, "output_tokens": 15},
+            elapsed_ms=800,
+            first_token_ms=120,
+            chunk_count=12,
+        )
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "https://api.openai.com/v1/chat/completions",
+                "headers": {},
+                "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai",
+                model="gpt-4",
+                api_key="test-key",
+                stream=True,
+            )
+            assert result["status"] == "OK"
+            assert result["stream"] is True
+            assert result["complete"] is True
+            assert "Python" in result["text"]
+            assert result["first_token_ms"] == 120
+            assert result["chunk_count"] == 12
+            assert result["usage"]["output_tokens"] == 15
+
+    def test_llm_call_stream_partial(self, tmp_workspace: Path):
+        """PARTIAL stream returns PARTIAL status."""
+        from ao_kernel.llm import StreamResult
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_sr = StreamResult(
+            status="PARTIAL",
+            complete=False,
+            text="Partial respon",
+            finish_reason="timeout",
+            elapsed_ms=30000,
+            first_token_ms=200,
+            chunk_count=5,
+        )
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+                stream=True,
+            )
+            assert result["status"] == "PARTIAL"
+            assert result["complete"] is False
+            assert result["text"] == "Partial respon"
+
+    def test_llm_call_stream_fail(self, tmp_workspace: Path):
+        """FAIL stream returns TRANSPORT_ERROR."""
+        from ao_kernel.llm import StreamResult
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_sr = StreamResult(
+            status="FAIL",
+            complete=False,
+            text="",
+            finish_reason="connect_error",
+            error_code="STREAM_HTTP_503",
+            elapsed_ms=100,
+        )
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+                stream=True,
+            )
+            assert result["status"] == "TRANSPORT_ERROR"
+            assert result["error_code"] == "STREAM_HTTP_503"
+            assert result["stream"] is True
+
+    def test_llm_call_stream_false_uses_execute_request(self, tmp_workspace: Path):
+        """stream=False still uses blocking execute_request."""
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.execute_request", return_value={
+                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
+            }) as mock_exec,
+            patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
+            patch("ao_kernel.llm.extract_usage", return_value=None),
+        ):
+            result = client.llm_call(
+                messages=[{"role": "user", "content": "test"}],
+                provider_id="openai", model="gpt-4", api_key="k",
+                stream=False,
+            )
+            mock_exec.assert_called_once()
+            assert result["status"] == "OK"
+            assert "stream" not in result  # non-streaming has no stream key
+
+
+class TestAutoRouteContract:
+    def test_route_normalizes_selected_provider(self, tmp_workspace: Path):
+        """Router returning selected_provider/selected_model is normalized."""
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        with patch("ao_kernel.llm.resolve_route", return_value={
+            "status": "OK",
+            "selected_provider": "claude",
+            "selected_model": "claude-3-opus",
+            "base_url": "https://api.anthropic.com/v1",
+        }):
+            with (
+                patch("ao_kernel.llm.check_capabilities", return_value=(True, "claude", [])),
+                patch("ao_kernel.llm.build_request_with_context", return_value={
+                    "url": "u", "headers": {}, "body_bytes": b"{}",
+                }),
+                patch("ao_kernel.llm.execute_request", return_value={
+                    "status": "OK", "resp_bytes": b'{"choices":[{"message":{"content":"hi"}}]}', "elapsed_ms": 50,
+                }),
+                patch("ao_kernel.llm.normalize_response", return_value={"text": "hi", "tool_calls": []}),
+                patch("ao_kernel.llm.extract_usage", return_value=None),
+            ):
+                result = client.llm_call(
+                    messages=[{"role": "user", "content": "test"}],
+                    intent="code_generation",
+                )
+                assert result["provider_id"] == "claude"
+                assert result["model"] == "claude-3-opus"
+
+
 class TestDoctor:
     def test_doctor_returns_dict(self, tmp_workspace: Path):
         ws_root = tmp_workspace.parent

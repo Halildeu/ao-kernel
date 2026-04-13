@@ -257,11 +257,11 @@ class AoKernelClient:
         """
         request_id = f"req-{uuid.uuid4().hex[:12]}"
 
-        # 1. Route
+        # 1. Route (normalize: router returns selected_provider/selected_model)
         if not provider_id or not model:
             route = self._route(intent)
-            provider_id = provider_id or route.get("provider_id", "openai")
-            model = model or route.get("model", "gpt-4")
+            provider_id = provider_id or route.get("provider_id", route.get("selected_provider", "openai"))
+            model = model or route.get("model", route.get("selected_model", "gpt-4"))
             base_url = base_url or route.get("base_url", "")
             api_key = api_key or route.get("api_key", "")
 
@@ -320,7 +320,16 @@ class AoKernelClient:
                 stream=stream,
             )
 
-        # 4. Execute
+        # 4. Execute (streaming or blocking)
+        if stream:
+            return self._execute_stream(
+                req=req,
+                provider_id=provider_id,
+                model=model,
+                request_id=request_id,
+                ws_str=ws_str,
+            )
+
         from ao_kernel.llm import execute_request
         transport_result = execute_request(
             url=req["url"],
@@ -405,6 +414,109 @@ class AoKernelClient:
             "elapsed_ms": transport_result.get("elapsed_ms", 0),
             "decisions_extracted": decisions_extracted,
             "eval_scorecard": scorecard,
+        }
+
+    def _execute_stream(
+        self,
+        *,
+        req: dict[str, Any],
+        provider_id: str,
+        model: str,
+        request_id: str,
+        ws_str: str | None,
+    ) -> dict[str, Any]:
+        """Execute streaming LLM call and return aggregate result.
+
+        Uses ao_kernel.llm.stream_request() with OK/PARTIAL/FAIL contract.
+        The on_chunk callback is NOT exposed — this is a sync aggregate API.
+        For chunk-level streaming, use ao_kernel.llm.stream_request() directly.
+        """
+        from ao_kernel.llm import stream_request
+
+        sr = stream_request(
+            url=req["url"],
+            headers=req["headers"],
+            body_bytes=req["body_bytes"],
+            timeout_seconds=30.0,
+            provider_id=provider_id,
+            request_id=request_id,
+            capture_events=True,
+        )
+
+        # Map StreamResult status
+        if sr.status == "FAIL":
+            return {
+                "status": "TRANSPORT_ERROR",
+                "text": "",
+                "stream": True,
+                "error_code": sr.error_code or "STREAM_FAIL",
+                "provider_id": provider_id,
+                "model": model,
+                "request_id": request_id,
+                "elapsed_ms": sr.elapsed_ms,
+            }
+
+        text = sr.text
+        usage = sr.usage
+        status = sr.status  # OK or PARTIAL
+
+        # Evidence (stream events + summary)
+        if ws_str:
+            try:
+                from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
+                process_stream_response(
+                    sr,
+                    provider_id=provider_id,
+                    request_id=request_id,
+                    workspace_root=ws_str,
+                )
+            except Exception:
+                pass
+
+        # Context pipeline
+        decisions_extracted = 0
+        if self._session_active and self._context and text:
+            from ao_kernel.llm import process_response_with_context
+            self._context = process_response_with_context(
+                text,
+                self._context,
+                provider_id=provider_id,
+                request_id=request_id,
+                workspace_root=ws_str,
+            )
+            decisions_extracted = len(
+                self._context.get("ephemeral_decisions", self._context.get("decisions", []))
+            )
+
+        # Telemetry
+        try:
+            from ao_kernel.telemetry import record_llm_call_duration, record_token_usage, record_stream_first_token
+            record_llm_call_duration(sr.elapsed_ms, provider=provider_id, model=model, status=status)
+            if usage:
+                record_token_usage(
+                    provider=provider_id,
+                    input_tokens=usage.get("input_tokens", 0),
+                    output_tokens=usage.get("output_tokens", 0),
+                )
+            if sr.first_token_ms is not None:
+                record_stream_first_token(sr.first_token_ms, provider=provider_id)
+        except Exception:
+            pass
+
+        return {
+            "status": status,
+            "text": text,
+            "tool_calls": [],
+            "usage": usage,
+            "stream": True,
+            "complete": sr.complete,
+            "first_token_ms": sr.first_token_ms,
+            "chunk_count": sr.chunk_count,
+            "provider_id": provider_id,
+            "model": model,
+            "request_id": request_id,
+            "elapsed_ms": sr.elapsed_ms,
+            "decisions_extracted": decisions_extracted,
         }
 
     def _route(self, intent: str) -> dict[str, Any]:

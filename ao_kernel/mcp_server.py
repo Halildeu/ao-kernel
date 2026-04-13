@@ -575,15 +575,14 @@ async def serve_http(  # pragma: no cover — requires mcp package
     """
     try:
         from mcp.server.streamable_http import StreamableHTTPServerTransport
+        from starlette.applications import Starlette
+        from starlette.routing import Mount
+        import uvicorn
     except ImportError:
         raise ImportError(
             "MCP HTTP transport requires the 'mcp' package with HTTP support. "
             "Install with: pip install ao-kernel[mcp]"
-        )
-
-    from starlette.applications import Starlette
-    from starlette.routing import Mount
-    import uvicorn
+        ) from None
 
     server = create_mcp_server()
     transport = StreamableHTTPServerTransport(server)
