@@ -254,6 +254,12 @@ class AoKernelClient:
 
         Returns dict with: text, usage, tool_calls, provider_id, model,
                            request_id, decisions_extracted, eval_scorecard.
+
+        Tool-use contract:
+            When tools are provided and the model returns tool_calls, the caller
+            is responsible for executing them via call_tool() and passing results
+            back in a subsequent llm_call(). Automatic tool-use loops are NOT
+            implemented — orchestration is manual by design.
         """
         request_id = f"req-{uuid.uuid4().hex[:12]}"
 

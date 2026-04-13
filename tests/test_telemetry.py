@@ -7,6 +7,7 @@ import pytest
 from ao_kernel.telemetry import (
     _NoOpSpan,
     is_otel_available,
+    record_context_compile,
     record_llm_call_duration,
     record_mcp_tool_call,
     record_policy_check,
@@ -126,6 +127,16 @@ class TestMetricRecording:
         r2 = record_stream_first_token(150.0, provider="claude")
         assert r1 is None
         assert r2 is None
+
+    def test_context_compile_accepts_all_params(self):
+        r1 = record_context_compile(10, 5, profile="TASK_EXECUTION", total_tokens=2000)
+        r2 = record_context_compile(0, 0, profile="STARTUP", total_tokens=0)
+        assert r1 is None
+        assert r2 is None
+
+    def test_context_compile_high_volume(self):
+        r = record_context_compile(100, 50, profile="REVIEW", total_tokens=4000)
+        assert r is None
 
     def test_all_metrics_reentrant_no_state_corruption(self):
         """Call every metric function twice to verify no state corruption."""
