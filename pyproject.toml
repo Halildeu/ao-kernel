@@ -12,14 +12,24 @@ license = "MIT"
 authors = [
     {name = "Halil Kocoglu"}
 ]
+keywords = ["ai", "orchestrator", "llm", "policy", "governance", "fail-closed", "evidence"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Typing :: Typed",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = ["jsonschema>=4.23.0"]
+
+[project.urls]
+Homepage = "https://github.com/Halildeu/ao-kernel"
+Repository = "https://github.com/Halildeu/ao-kernel"
+Issues = "https://github.com/Halildeu/ao-kernel/issues"
 
 [project.optional-dependencies]
 llm = [
@@ -32,6 +42,7 @@ dev = [
     "ruff",
     "mypy",
     "build",
+    "twine",
     "mutmut",
 ]
 otel = [
@@ -91,7 +102,7 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 50
+fail_under = 75
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.",
