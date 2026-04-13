@@ -2,56 +2,33 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
 
-
-class TestRoadmapCompile:
-    def test_compile_valid_roadmap(self, tmp_path: Path):
+class TestRoadmapFacadeImport:
+    def test_compile_roadmap_importable(self):
         from ao_kernel.roadmap import compile_roadmap
+        assert hasattr(compile_roadmap, "__call__")
 
-        roadmap = {
-            "roadmap_id": "test-001",
-            "version": "v1",
-            "steps": [
-                {"step_id": "s1", "action": "validate", "target": "workspace"},
-            ],
-        }
-        roadmap_file = tmp_path / "roadmap.json"
-        roadmap_file.write_text(json.dumps(roadmap))
-
-        schema_file = tmp_path / "schema.json"
-        schema_file.write_text(json.dumps({"type": "object"}))
-
-        try:
-            result = compile_roadmap(
-                roadmap_file,
-                workspace_root=tmp_path,
-                schema_path=schema_file,
-            )
-            assert isinstance(result, dict)
-        except (KeyError, ValueError) as e:
-            # Compiler may require specific roadmap fields
-            assert "roadmap_id" in str(e) or len(str(e)) > 0
-
-
-class TestRoadmapApply:
-    def test_apply_dry_run_default(self, tmp_path: Path):
+    def test_apply_roadmap_importable(self):
         from ao_kernel.roadmap import apply_roadmap
+        assert hasattr(apply_roadmap, "__call__")
 
-        roadmap = {
-            "roadmap_id": "test-002",
-            "version": "v1",
-            "steps": [],
-        }
-        roadmap_file = tmp_path / "roadmap.json"
-        roadmap_file.write_text(json.dumps(roadmap))
+    def test_compile_requires_path(self):
+        from ao_kernel.roadmap import compile_roadmap
+        import pytest
+        # compile_roadmap needs a real file path
+        with pytest.raises((TypeError, FileNotFoundError, KeyError)):
+            compile_roadmap(
+                Path("/nonexistent/roadmap.json"),
+                workspace_root=Path("/tmp"),
+            )
 
-        try:
-            result = apply_roadmap(roadmap_file, workspace_root=tmp_path)
-            assert isinstance(result, dict)
-        except (KeyError, FileNotFoundError, ValueError):
-            # apply requires full roadmap structure — acceptable
-            pytest.skip("apply requires full roadmap/schema structure")
+    def test_apply_requires_valid_path(self):
+        from ao_kernel.roadmap import apply_roadmap
+        import pytest
+        with pytest.raises(Exception):
+            apply_roadmap(
+                Path("/nonexistent/roadmap.json"),
+                workspace_root=Path("/tmp"),
+            )

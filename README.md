@@ -109,6 +109,37 @@ ao-kernel mcp serve  # stdio transport
 - `ao://schemas/{name}` — Schema JSON
 - `ao://registry/{name}` — Registry JSON
 
+## Context Management
+
+Governed context loop — decisions extracted, scored, and injected automatically.
+
+```python
+from ao_kernel.context import start_session, process_turn, compile_context, end_session
+
+# Start session
+ctx = start_session(workspace_root=".", session_id="my-session")
+
+# After each LLM turn — automatic extraction + compaction
+ctx = process_turn(llm_output, ctx, workspace_root=".", request_id="req-1")
+
+# Compile context for next LLM call (relevance-scored, budget-aware)
+compiled = compile_context(ctx, profile="TASK_EXECUTION", max_tokens=4000)
+# compiled.preamble → inject into system prompt
+
+# End session — compact + distill + promote
+end_session(ctx, workspace_root=".")
+```
+
+**SDK Hooks (multi-agent):**
+```python
+from ao_kernel.context.agent_coordination import record_decision, query_memory
+
+record_decision(ws, key="arch.pattern", value="microservices", confidence=0.9)
+items = query_memory(ws, key_pattern="arch.*")
+```
+
+**Profiles:** STARTUP (minimal), TASK_EXECUTION (full), REVIEW (quality focus)
+
 ## What Makes ao-kernel Different
 
 | | ao-kernel | LangGraph | CrewAI | Pydantic AI |
