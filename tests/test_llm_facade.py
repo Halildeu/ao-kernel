@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 
 class TestBuildRequest:
@@ -57,16 +56,17 @@ class TestBuildRequest:
         )
         assert "stream" not in req["body_json"]
 
-    def test_stream_with_tools_raises_valueerror(self):
+    def test_stream_with_tools_allowed(self):
         from ao_kernel.llm import build_request
-        with pytest.raises(ValueError, match="stream=True with tools"):
-            build_request(
-                provider_id="openai", model="gpt-4",
-                messages=[{"role": "user", "content": "hi"}],
-                base_url="https://api.openai.com/v1/chat/completions",
-                api_key="sk-test", stream=True,
-                tools=[{"type": "function", "function": {"name": "test"}}],
-            )
+        req = build_request(
+            provider_id="openai", model="gpt-4",
+            messages=[{"role": "user", "content": "hi"}],
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test", stream=True,
+            tools=[{"type": "function", "function": {"name": "test"}}],
+        )
+        assert req["body_json"]["stream"] is True
+        assert len(req["body_json"]["tools"]) == 1
 
     def test_google_stream_changes_endpoint(self):
         from ao_kernel.llm import build_request
