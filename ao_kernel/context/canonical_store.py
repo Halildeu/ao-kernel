@@ -120,6 +120,13 @@ def promote_decision(
     store.setdefault(target, {})[key] = asdict(decision)
 
     save_store(workspace_root, store)
+
+    try:
+        from ao_kernel.telemetry import record_canonical_promote
+        record_canonical_promote(category=category)
+    except Exception:
+        pass
+
     return decision
 
 

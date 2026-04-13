@@ -3,9 +3,10 @@
 Exposes ao-kernel governance primitives as MCP tools and workspace content
 as MCP resources. Transport-agnostic handler design (stdio first, HTTP later).
 
-Tools (4):
+Tools (5):
     ao_policy_check    — validate an action against policy
     ao_llm_route       — resolve provider/model for an intent
+    ao_llm_call        — governed LLM call through full pipeline
     ao_quality_gate    — check output quality
     ao_workspace_status — workspace health report
 
@@ -343,6 +344,144 @@ def handle_resource(uri: str) -> dict[str, Any] | None:
         return None
 
 
+def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
+    """Execute a governed LLM call through the full ao-kernel pipeline.
+
+    Params:
+        messages: list[dict] — chat messages (required)
+        intent: str — routing intent (default: "general")
+        provider_id: str | None — override provider
+        model: str | None — override model
+        temperature: float | None
+        max_tokens: int | None
+        workspace_root: str | None
+
+    API keys are resolved from environment variables or workspace secrets.
+    They are NEVER accepted as MCP parameters (security boundary).
+    """
+    messages = params.get("messages")
+    if not messages or not isinstance(messages, list):
+        return _decision_envelope(
+            tool="ao_llm_call",
+            allowed=False,
+            decision="deny",
+            reason_codes=["MISSING_MESSAGES"],
+            error="messages parameter is required and must be a list",
+        )
+
+    intent = params.get("intent", "general")
+    provider_id = params.get("provider_id")
+    model = params.get("model")
+    temperature = params.get("temperature")
+    max_tokens = params.get("max_tokens")
+    ws = params.get("workspace_root")
+
+    # Route if provider/model not specified
+    if not provider_id or not model:
+        from ao_kernel.llm import resolve_route
+        route = resolve_route(intent=intent, workspace_root=ws)
+        provider_id = provider_id or route.get("provider_id", route.get("selected_provider", "openai"))
+        model = model or route.get("model", route.get("selected_model", "gpt-4"))
+
+    # Resolve API key from environment (never from params)
+    import os
+    api_key_env_map = {
+        "openai": "OPENAI_API_KEY",
+        "claude": "ANTHROPIC_API_KEY",
+        "google": "GOOGLE_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+        "qwen": "DASHSCOPE_API_KEY",
+        "xai": "XAI_API_KEY",
+    }
+    env_var = api_key_env_map.get(provider_id, f"{provider_id.upper()}_API_KEY")
+    api_key = os.environ.get(env_var, "")
+    if not api_key:
+        return _decision_envelope(
+            tool="ao_llm_call",
+            allowed=False,
+            decision="deny",
+            reason_codes=["MISSING_API_KEY"],
+            error=f"API key not found in environment variable {env_var}",
+        )
+
+    # Build + execute
+    import uuid
+    request_id = f"mcp-{uuid.uuid4().hex[:12]}"
+
+    try:
+        from ao_kernel.llm import build_request, execute_request, normalize_response
+
+        base_url_map = {
+            "openai": "https://api.openai.com/v1",
+            "claude": "https://api.anthropic.com/v1",
+            "google": "https://generativelanguage.googleapis.com/v1beta",
+            "deepseek": "https://api.deepseek.com/v1",
+            "qwen": "https://dashscope.aliyuncs.com/api/v1",
+            "xai": "https://api.x.ai/v1",
+        }
+
+        req = build_request(
+            provider_id=provider_id,
+            model=model,
+            messages=messages,
+            base_url=base_url_map.get(provider_id, ""),
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            request_id=request_id,
+        )
+
+        transport_result = execute_request(
+            url=req["url"],
+            headers=req["headers"],
+            body_bytes=req["body_bytes"],
+            timeout_seconds=30.0,
+            provider_id=provider_id,
+            request_id=request_id,
+        )
+
+        if transport_result.get("status") != "OK":
+            return _decision_envelope(
+                tool="ao_llm_call",
+                allowed=True,
+                decision="error",
+                reason_codes=["TRANSPORT_ERROR"],
+                data={
+                    "error_code": transport_result.get("error_code", "UNKNOWN"),
+                    "http_status": transport_result.get("http_status"),
+                    "elapsed_ms": transport_result.get("elapsed_ms", 0),
+                    "request_id": request_id,
+                },
+            )
+
+        resp_bytes = transport_result.get("resp_bytes", b"")
+        normalized = normalize_response(resp_bytes, provider_id=provider_id)
+
+        return _decision_envelope(
+            tool="ao_llm_call",
+            allowed=True,
+            decision="executed",
+            data={
+                "text": normalized.get("text", ""),
+                "tool_calls": normalized.get("tool_calls", []),
+                "provider_id": provider_id,
+                "model": model,
+                "request_id": request_id,
+                "elapsed_ms": transport_result.get("elapsed_ms", 0),
+                "api_key_present": True,
+            },
+        )
+    except Exception as exc:
+        return _decision_envelope(
+            tool="ao_llm_call",
+            allowed=True,
+            decision="error",
+            reason_codes=["EXECUTION_ERROR"],
+            error=str(exc)[:200],
+            data={"request_id": request_id},
+        )
+
+
 # ── MCP Server (requires `mcp` package) ────────────────────────────
 
 
@@ -378,6 +517,27 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "ao_llm_call",
+        "description": "Execute a governed LLM call through the full ao-kernel pipeline (route, policy, execute, normalize). API keys are resolved from environment variables.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["messages"],
+            "properties": {
+                "messages": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Chat messages [{role, content}]",
+                },
+                "intent": {"type": "string", "description": "Routing intent (default: general)"},
+                "provider_id": {"type": "string", "description": "Override provider"},
+                "model": {"type": "string", "description": "Override model"},
+                "temperature": {"type": "number"},
+                "max_tokens": {"type": "integer"},
+                "workspace_root": {"type": "string"},
+            },
+        },
+    },
+    {
         "name": "ao_quality_gate",
         "description": "Check LLM output quality against configured gates. Fail-closed.",
         "inputSchema": {
@@ -405,15 +565,16 @@ TOOL_DEFINITIONS = [
 TOOL_DISPATCH = {
     "ao_policy_check": handle_policy_check,
     "ao_llm_route": handle_llm_route,
+    "ao_llm_call": handle_llm_call,
     "ao_quality_gate": handle_quality_gate,
     "ao_workspace_status": handle_workspace_status,
 }
 
 
 def create_tool_gateway():
-    """Create a ToolGateway pre-configured with MCP governance tools.
+    """Create a ToolGateway pre-configured with MCP tools.
 
-    Returns a policy-gated gateway where all 4 governance tools are registered.
+    Returns a policy-gated gateway where all 5 tools are registered.
     Tool calls go through: authorize → handler → result.
     """
     from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy

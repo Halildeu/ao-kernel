@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ao_kernel.telemetry import record_policy_check, span
+from ao_kernel.telemetry import record_decision_extraction, record_policy_check, span
 
 
 def process_turn(
@@ -47,6 +47,7 @@ def process_turn(
             provider_id=provider_id,
             request_id=request_id,
         )
+        record_decision_extraction(len(decisions), source="llm")
 
         # 2. Upsert each decision
         from ao_kernel._internal.session.context_store import upsert_decision
