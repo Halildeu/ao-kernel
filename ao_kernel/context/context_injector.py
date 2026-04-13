@@ -37,7 +37,8 @@ def build_context_preamble(
     char_budget = max_tokens * 4  # ~4 chars per token
 
     # Section 1: Session decisions
-    decisions = context.get("decisions", [])
+    # Support both field names: ephemeral_decisions (canonical) and decisions (legacy)
+    decisions = context.get("ephemeral_decisions", context.get("decisions", []))
     if decisions:
         decision_lines = _format_decisions(decisions, relevance_filter)
         if decision_lines:

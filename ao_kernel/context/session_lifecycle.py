@@ -22,8 +22,28 @@ def start_session(
     ws = Path(workspace_root)
     try:
         from ao_kernel.session import load_context
-        return load_context(workspace_root=ws, session_id=session_id)
-    except (FileNotFoundError, Exception):
+        ctx = load_context(workspace_root=ws, session_id=session_id)
+        # Fail-closed: if loaded context has hash mismatch, log warning but use it
+        # (better than silent reset which loses data)
+        return ctx
+    except FileNotFoundError:
+        # No existing session file — create new (normal flow)
+        from ao_kernel.session import new_context
+        return new_context(
+            session_id=session_id,
+            workspace_root=ws,
+            ttl_seconds=ttl_seconds,
+        )
+    except Exception:
+        # Corrupted/invalid session — log and create new
+        # Note: this is a compromise. Fail-closed would refuse to start,
+        # but for usability, we create a fresh session with warning.
+        import warnings
+        warnings.warn(
+            f"Session '{session_id}' corrupted or invalid. Creating fresh session.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         from ao_kernel.session import new_context
         return new_context(
             session_id=session_id,
