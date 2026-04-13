@@ -24,19 +24,19 @@
       "owner": "CORE",
       "effective_state": "canonical",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/roadmaps/SSOT/roadmap.v1.json"
+        "__WORKSPACE_ROOT__/roadmaps/SSOT/roadmap.v1.json"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ROADMAP.md"
+        "__WORKSPACE_ROOT__/docs/ROADMAP.md"
       ],
       "archive_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ROADMAP_v2.7_legacy.md"
+        "__WORKSPACE_ROOT__/docs/ROADMAP_v2.7_legacy.md"
       ],
       "duplicate_reason": "Makinece islenen roadmap JSON'u, insan-okur mirror markdown ve legacy archive ayni concern etrafinda birlikte duruyor.",
       "required_action": "Makine kararlarinda yalniz SSOT JSON okunur; markdown mirror insan ozeti olarak kalir; legacy roadmap read-only kalir.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/SSOT-MAP.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ROADMAP.md"
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/SSOT-MAP.md",
+        "__WORKSPACE_ROOT__/docs/ROADMAP.md"
       ]
     },
     {
@@ -47,20 +47,20 @@
       "owner": "CORE",
       "effective_state": "canonical",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/extensions/*/extension.manifest.v1.json"
+        "__WORKSPACE_ROOT__/extensions/*/extension.manifest.v1.json"
       ],
       "parallel_paths": [],
       "archive_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ARCHIVE/extensions/PRJ-KERNEL-API/extension.manifest.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ARCHIVE/extensions/PRJ-M0-MAINTAINABILITY/extension.manifest.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ARCHIVE/extensions/PRJ-RELEASE-AUTOMATION/extension.manifest.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/ARCHIVE/extensions/PRJ-WORK-INTAKE/extension.manifest.v1.json"
+        "__WORKSPACE_ROOT__/docs/ARCHIVE/extensions/PRJ-KERNEL-API/extension.manifest.v1.json",
+        "__WORKSPACE_ROOT__/docs/ARCHIVE/extensions/PRJ-M0-MAINTAINABILITY/extension.manifest.v1.json",
+        "__WORKSPACE_ROOT__/docs/ARCHIVE/extensions/PRJ-RELEASE-AUTOMATION/extension.manifest.v1.json",
+        "__WORKSPACE_ROOT__/docs/ARCHIVE/extensions/PRJ-WORK-INTAKE/extension.manifest.v1.json"
       ],
       "duplicate_reason": "Extension manifestlerin archive kopyalari tutuluyor; bunlar live manifest gibi yorumlanirsa eski davranislar yeniden canlanabilir.",
       "required_action": "Extension discovery ve policy navigation yalniz extensions/ altindaki live manifestlerden yapilir; archive manifestler read-only referans olarak kalir.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/EXTENSIONS.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/SSOT-MAP.md"
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/EXTENSIONS.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/SSOT-MAP.md"
       ]
     },
     {
@@ -71,19 +71,19 @@
       "owner": "CORE",
       "effective_state": "canonical_but_drifting",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/policies/policy_llm_providers_guardrails.v1.json"
+        "__WORKSPACE_ROOT__/policies/policy_llm_providers_guardrails.v1.json"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default/policies/policy_llm_providers_guardrails.v1.json",
-        "/Users/halilkocoglu/Documents/dev/policies/policy_llm_providers_guardrails.v1.json"
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/policies/policy_llm_providers_guardrails.v1.json",
+        "__DOCUMENTS__/dev/policies/policy_llm_providers_guardrails.v1.json"
       ],
       "archive_paths": [],
       "duplicate_reason": "Source policy, workspace cache overlay ve managed repo kopyasi ayni concern'i farkli model setleri ve defaultlarla tasiyor.",
       "required_action": "Source policy authority olarak dondurulur; cache overlay derived runtime kabul edilir; managed repo policy yalniz source sync ile guncellenir.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/policies/policy_llm_providers_guardrails.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default/policies/policy_llm_providers_guardrails.v1.json",
-        "/Users/halilkocoglu/Documents/dev/policies/policy_llm_providers_guardrails.v1.json"
+        "__WORKSPACE_ROOT__/policies/policy_llm_providers_guardrails.v1.json",
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/policies/policy_llm_providers_guardrails.v1.json",
+        "__DOCUMENTS__/dev/policies/policy_llm_providers_guardrails.v1.json"
       ]
     },
     {
@@ -94,23 +94,23 @@
       "owner": "EXECUTION",
       "effective_state": "canonical",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/dev/standards.lock",
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md"
+        "__DOCUMENTS__/dev/standards.lock",
+        "__DOCUMENTS__/dev/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
+        "__DOCUMENTS__/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/dev/AGENTS.md",
-        "/Users/halilkocoglu/Documents/dev/AGENT-CODEX.*.md",
-        "/Users/halilkocoglu/Documents/dev/docs/00-handbook/**"
+        "__DOCUMENTS__/dev/AGENTS.md",
+        "__DOCUMENTS__/dev/AGENT-CODEX.*.md",
+        "__DOCUMENTS__/dev/docs/00-handbook/**"
       ],
       "archive_paths": [
-        "/Users/halilkocoglu/Documents/dev/docs/ARCHIVE/**"
+        "__DOCUMENTS__/dev/docs/ARCHIVE/**"
       ],
       "duplicate_reason": "Managed repo ayni anda hem canonical OPO belgeleri hem transition rehberler hem de archive tasiyor.",
       "required_action": "Normatif kararlar yalniz canonical OPO katmanina yazilir; handbook ve agent rehberleri redirect-only kalir; archive never-authority kalir.",
       "sources": [
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md",
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md"
+        "__DOCUMENTS__/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md",
+        "__DOCUMENTS__/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md"
       ]
     },
     {
@@ -121,21 +121,21 @@
       "owner": "EXECUTION",
       "effective_state": "current_delivery",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/dev/docs/03-delivery/PROJECT-FLOW.md",
-        "/Users/halilkocoglu/Documents/dev/docs/03-delivery/STORIES/**",
-        "/Users/halilkocoglu/Documents/dev/docs/03-delivery/ACCEPTANCE/**",
-        "/Users/halilkocoglu/Documents/dev/docs/04-operations/RUNBOOKS/**"
+        "__DOCUMENTS__/dev/docs/03-delivery/PROJECT-FLOW.md",
+        "__DOCUMENTS__/dev/docs/03-delivery/STORIES/**",
+        "__DOCUMENTS__/dev/docs/03-delivery/ACCEPTANCE/**",
+        "__DOCUMENTS__/dev/docs/04-operations/RUNBOOKS/**"
       ],
       "parallel_paths": [],
       "archive_paths": [
-        "/Users/halilkocoglu/Documents/dev/backend/docs/legacy/**",
-        "/Users/halilkocoglu/Documents/dev/docs/ARCHIVE/**"
+        "__PROJECT_ROOT__/docs/legacy/**",
+        "__DOCUMENTS__/dev/docs/ARCHIVE/**"
       ],
       "duplicate_reason": "Yeni delivery sistemi live gercegi tasirken eski backend docs ve archive alanlari referans olarak korunuyor.",
       "required_action": "Delivery editleri sadece current delivery altinda yapilir; legacy pathler read-only tutulur; migration referanslari acik kalir ama authority sayilmaz.",
       "sources": [
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md",
-        "/Users/halilkocoglu/Documents/dev/docs/03-delivery/STORIES/STORY-0001-backend-docs-refactor.md"
+        "__DOCUMENTS__/dev/docs/OPERATIONS/OPO-AUTHORITY-MAP.v1.md",
+        "__DOCUMENTS__/dev/docs/03-delivery/STORIES/STORY-0001-backend-docs-refactor.md"
       ]
     },
     {
@@ -146,21 +146,21 @@
       "owner": "ORCHESTRATION",
       "effective_state": "canonical",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/registry/active_execution_registry.v1.json"
+        "__WORKSPACE_ROOT__/registry/active_execution_registry.v1.json"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/active_execution_registry.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/managed_repos.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/product_catalog.v1.json"
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/active_execution_registry.v1.json",
+        "__WORKSPACE_ROOT__/.cache/managed_repos.v1.json",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/product_catalog.v1.json"
       ],
       "archive_paths": [],
       "duplicate_reason": "Managed repo manifest umbrella repo'lari biliyor, product catalog modul truth tasiyor; aktif target truth ise artik core active execution registry uzerinden tanimlaniyor.",
       "required_action": "Runtime target resolver registry-first calisacak sekilde baglanmali; managed_repos ve product catalog yalniz supporting signal olarak kalmali.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/EXECUTION-TARGET-GOVERNANCE.v1.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/product_catalog.v1.json",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/managed_repos.v1.json"
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/AI-MULTIREPO-OPERATING-CONTRACT.v1.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/EXECUTION-TARGET-GOVERNANCE.v1.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/product_catalog.v1.json",
+        "__WORKSPACE_ROOT__/.cache/managed_repos.v1.json"
       ]
     },
     {
@@ -171,24 +171,24 @@
       "owner": "ORCHESTRATION",
       "effective_state": "canonical",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/registry/apps_and_launch_registry.v1.json"
+        "__WORKSPACE_ROOT__/registry/apps_and_launch_registry.v1.json"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/apps_and_launch_registry.v1.json",
-        "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md",
-        "/Users/halilkocoglu/Documents/dev/backend/README.md",
-        "/Users/halilkocoglu/Documents/dev/backend/dev-start.sh",
-        "/Users/halilkocoglu/Documents/dev/backend/scripts/start-local.sh",
-        "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/apps_and_launch_registry.v1.json",
+        "__PROJECT_ROOT__/docs/first-contribution.md",
+        "__PROJECT_ROOT__/README.md",
+        "__PROJECT_ROOT__/dev-start.sh",
+        "__PROJECT_ROOT__/scripts/start-local.sh",
+        "__PROJECT_ROOT__/package.json"
       ],
       "archive_paths": [],
       "duplicate_reason": "Launch bilgisi uygulama bazli dokuman ve scriptlerde daginikti; core apps and launch registry artik kanonik launch truth'u tasiyor.",
       "required_action": "Runtime launch resolution registry-first yapilmali; uygulama dokumanlari ve scriptler evidence source olarak kalmali.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/EXECUTION-TARGET-GOVERNANCE.v1.md",
-        "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md",
-        "/Users/halilkocoglu/Documents/dev/backend/README.md",
-        "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/EXECUTION-TARGET-GOVERNANCE.v1.md",
+        "__PROJECT_ROOT__/docs/first-contribution.md",
+        "__PROJECT_ROOT__/README.md",
+        "__PROJECT_ROOT__/package.json"
       ]
     },
     {
@@ -199,24 +199,24 @@
       "owner": "ORCHESTRATION",
       "effective_state": "workspace_planning_candidate",
       "effective_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/ai_entry_pack.v1.json"
+        "__WORKSPACE_ROOT__/.cache/ws_customer_default/project/PRJ-MULTI-AI-CODING-OS/ai_entry_pack.v1.json"
       ],
       "parallel_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/AGENTS.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/NEW-CHAT-BOOTSTRAP.v1.md",
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md",
-        "/Users/halilkocoglu/Documents/dev/AGENTS.md"
+        "__WORKSPACE_ROOT__/AGENTS.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/NEW-CHAT-BOOTSTRAP.v1.md",
+        "__DOCUMENTS__/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md",
+        "__DOCUMENTS__/dev/AGENTS.md"
       ],
       "archive_paths": [],
       "promotion_target_paths": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/src/ops/ai_entry_pack_build.py"
+        "__WORKSPACE_ROOT__/src/ops/ai_entry_pack_build.py"
       ],
       "duplicate_reason": "AI'nin ilk okuyabilecegi baglam birden fazla dosyaya dagilmis durumda; bu da yanlis authority ve yanlis target secimine yol aciyor.",
       "required_action": "AI entry pack build edilip apply sinifi isler icin zorunlu preflight girdisi haline getirilmeli.",
       "sources": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/AGENTS.md",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/docs/OPERATIONS/NEW-CHAT-BOOTSTRAP.v1.md",
-        "/Users/halilkocoglu/Documents/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md"
+        "__WORKSPACE_ROOT__/AGENTS.md",
+        "__WORKSPACE_ROOT__/docs/OPERATIONS/NEW-CHAT-BOOTSTRAP.v1.md",
+        "__DOCUMENTS__/dev/docs/OPERATIONS/MANAGED-REPO-CONTEXT-CONSUMPTION.v1.md"
       ]
     }
   ]

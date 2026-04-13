@@ -12,8 +12,8 @@
     {
       "repo_id": "ao-core",
       "repo_kind": "control_plane",
-      "repo_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator",
-      "workspace_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default",
+      "repo_root": "__WORKSPACE_ROOT__",
+      "workspace_root": "__WORKSPACE_ROOT__/.cache/ws_customer_default",
       "status": "ACTIVE_WITH_WARNINGS",
       "lifecycle_state": "active",
       "owner": "CORE",
@@ -23,21 +23,21 @@
       "upstream": "",
       "dirty": true,
       "allowed_worktrees": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator"
+        "__WORKSPACE_ROOT__"
       ],
       "observed_worktrees": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator",
-        "/Users/halilkocoglu/Documents/.codex-tmp/ao-core-ux-pr",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/nostalgic-lederberg",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/upbeat-darwin",
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/.claude/worktrees/zealous-ritchie"
+        "__WORKSPACE_ROOT__",
+        "__DOCUMENTS__/.codex-tmp/ao-core-ux-pr",
+        "__WORKSPACE_ROOT__/.claude/worktrees/nostalgic-lederberg",
+        "__WORKSPACE_ROOT__/.claude/worktrees/upbeat-darwin",
+        "__WORKSPACE_ROOT__/.claude/worktrees/zealous-ritchie"
       ],
       "app_ids": [
         "ao:cockpit-lite",
         "ao:ops-kernel"
       ],
       "version_source_refs": [
-        "/Users/halilkocoglu/Documents/autonomous-orchestrator/standards.lock",
+        "__WORKSPACE_ROOT__/standards.lock",
         "git:HEAD"
       ],
       "allowed_intents": [
@@ -56,8 +56,8 @@
     {
       "repo_id": "dev",
       "repo_kind": "execution_umbrella",
-      "repo_root": "/Users/halilkocoglu/Documents/dev",
-      "workspace_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator/.cache/ws_customer_default_multi2/repo-1-dev-1bc3d890",
+      "repo_root": "__DOCUMENTS__/dev",
+      "workspace_root": "__WORKSPACE_ROOT__/.cache/ws_customer_default_multi2/repo-1-dev-1bc3d890",
       "status": "ACTIVE_WITH_WARNINGS",
       "lifecycle_state": "active",
       "owner": "EXECUTION",
@@ -67,10 +67,10 @@
       "upstream": "origin/codex/dev-local-integration-20260308",
       "dirty": true,
       "allowed_worktrees": [
-        "/Users/halilkocoglu/Documents/dev"
+        "__DOCUMENTS__/dev"
       ],
       "observed_worktrees": [
-        "/Users/halilkocoglu/Documents/dev"
+        "__DOCUMENTS__/dev"
       ],
       "app_ids": [
         "dev:web",
@@ -78,9 +78,9 @@
         "dev:backend"
       ],
       "version_source_refs": [
-        "/Users/halilkocoglu/Documents/dev/web/package.json",
-        "/Users/halilkocoglu/Documents/dev/mobile/package.json",
-        "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+        "__PROJECT_ROOT__/package.json",
+        "__PROJECT_ROOT__/package.json",
+        "__PROJECT_ROOT__/pom.xml"
       ],
       "allowed_intents": [
         "DISCOVERY",
@@ -101,7 +101,7 @@
       "target_id": "dev:web",
       "target_kind": "workspace_app_suite",
       "parent_repo_id": "dev",
-      "root_path": "/Users/halilkocoglu/Documents/dev/web",
+      "root_path": "__PROJECT_ROOT__",
       "status": "ACTIVE_WITH_WARNINGS",
       "lifecycle_state": "active",
       "owner": "WEB",
@@ -114,8 +114,8 @@
         "dev:web-storybook"
       ],
       "version_source_refs": [
-        "/Users/halilkocoglu/Documents/dev/web/package.json",
-        "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md"
+        "__PROJECT_ROOT__/package.json",
+        "__PROJECT_ROOT__/docs/first-contribution.md"
       ],
       "notes": [
         "Web monorepo target'i; aktif launch path'leri apps_and_launch_registry icinde ayri tanimlanmistir."
@@ -125,7 +125,7 @@
       "target_id": "dev:mobile",
       "target_kind": "workspace_app_suite",
       "parent_repo_id": "dev",
-      "root_path": "/Users/halilkocoglu/Documents/dev/mobile",
+      "root_path": "__PROJECT_ROOT__",
       "status": "ACTIVE_CANDIDATE",
       "lifecycle_state": "active",
       "owner": "MOBILE",
@@ -135,7 +135,7 @@
         "dev:mobile-expo"
       ],
       "version_source_refs": [
-        "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+        "__PROJECT_ROOT__/package.json"
       ],
       "notes": [
         "Expo mobile workspace target'i."
@@ -145,7 +145,7 @@
       "target_id": "dev:backend",
       "target_kind": "workspace_service_suite",
       "parent_repo_id": "dev",
-      "root_path": "/Users/halilkocoglu/Documents/dev/backend",
+      "root_path": "__PROJECT_ROOT__",
       "status": "ACTIVE_CANDIDATE",
       "lifecycle_state": "active",
       "owner": "BACKEND",
@@ -156,10 +156,10 @@
         "dev:backend-local"
       ],
       "version_source_refs": [
-        "/Users/halilkocoglu/Documents/dev/backend/pom.xml",
-        "/Users/halilkocoglu/Documents/dev/backend/README.md",
-        "/Users/halilkocoglu/Documents/dev/backend/dev-start.sh",
-        "/Users/halilkocoglu/Documents/dev/backend/scripts/start-local.sh"
+        "__PROJECT_ROOT__/pom.xml",
+        "__PROJECT_ROOT__/README.md",
+        "__PROJECT_ROOT__/dev-start.sh",
+        "__PROJECT_ROOT__/scripts/start-local.sh"
       ],
       "notes": [
         "Maven multi-module backend target'i."

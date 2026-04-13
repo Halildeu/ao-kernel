@@ -11,7 +11,11 @@
     "continuation",
     "extended_thinking",
     "code_agentic",
-    "embedding"
+    "embedding",
+    "structured_output",
+    "moderation",
+    "audio",
+    "image_gen"
   ],
   "providers": {
     "claude": {
@@ -35,7 +39,11 @@
         "continuation": "unsupported",
         "extended_thinking": "unsupported",
         "code_agentic": "experimental",
-        "embedding": "unsupported"
+        "embedding": "unsupported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "Raw HTTP integration via urllib. SDK entegrasyonu yok. Streaming, tool_use, continuation icin Anthropic SDK gerekli."
     },
@@ -59,7 +67,11 @@
         "continuation": "supported",
         "extended_thinking": "unsupported",
         "code_agentic": "supported",
-        "embedding": "supported"
+        "embedding": "supported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "Dedicated openai_provider.py mevcut. Continuation: previous_response_id + conversation_id. Batch lane aktif."
     },
@@ -84,7 +96,11 @@
         "continuation": "unsupported",
         "extended_thinking": "unsupported",
         "code_agentic": "unsupported",
-        "embedding": "supported"
+        "embedding": "supported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "Raw HTTP. Vision ve image generation icin ayri model ID'ler gerekli."
     },
@@ -108,7 +124,11 @@
         "continuation": "unsupported",
         "extended_thinking": "supported",
         "code_agentic": "unsupported",
-        "embedding": "unsupported"
+        "embedding": "unsupported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "deepseek-reasoner extended thinking destekler. OpenAI-compatible API."
     },
@@ -133,7 +153,11 @@
         "continuation": "unsupported",
         "extended_thinking": "experimental",
         "code_agentic": "unsupported",
-        "embedding": "unsupported"
+        "embedding": "unsupported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision icin qwen3-vl-* gerekli."
     },
@@ -157,7 +181,11 @@
         "continuation": "unsupported",
         "extended_thinking": "supported",
         "code_agentic": "supported",
-        "embedding": "unsupported"
+        "embedding": "unsupported",
+        "structured_output": "unsupported",
+        "moderation": "unsupported",
+        "audio": "unsupported",
+        "image_gen": "unsupported"
       },
       "notes": "grok-code-fast-1 code agentic destekler. grok-2-vision-1212 vision destekler. OpenAI-compatible API."
     }
