@@ -48,13 +48,24 @@ def _load_quality_gate_policy(workspace_root: Path | None = None) -> dict[str, A
                 if schema_path:
                     return load_policy_validated(ws_policy, schema_path)
                 return json.loads(ws_policy.read_text(encoding="utf-8"))
-            except (ValueError, Exception):
-                pass
+            except (ValueError, Exception) as exc:
+                import logging
+                logging.getLogger("ao_kernel").warning(
+                    "quality_gate workspace policy parse failed, falling back: %s", exc
+                )
 
     try:
         return load_resource("policies", "policy_quality_gates.v1.json")
-    except (FileNotFoundError, Exception):
-        return {"enabled": False, "gates": {}}
+    except (FileNotFoundError, Exception) as exc:
+        # Fail-closed: if policy can't load, enable restrictive defaults
+        import logging
+        logging.getLogger("ao_kernel").warning(
+            "quality_gate policy load failed, enabling restrictive defaults: %s", exc
+        )
+        return {"enabled": True, "gates": {
+            "output_not_empty": {"enabled": True, "action": "reject"},
+            "schema_valid": {"enabled": True, "action": "reject"},
+        }}
 
 
 def _check_output_not_empty(output: Any, gate_cfg: dict[str, Any]) -> QualityGateResult:

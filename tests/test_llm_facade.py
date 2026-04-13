@@ -214,3 +214,95 @@ class TestStreamTypes:
     def test_all_exports_count(self):
         from ao_kernel.llm import __all__
         assert len(__all__) == 16  # 14 original + build_request_with_context + process_response_with_context
+
+
+class TestBuildRequestWithContext:
+    """Tests for build_request_with_context — context injection into LLM requests."""
+
+    def test_with_session_context_calls_compile_and_inject(self):
+        from unittest.mock import patch, MagicMock
+        from ao_kernel.llm import build_request_with_context
+
+        mock_compiled = MagicMock()
+        mock_compiled.preamble = "Previous decisions: use Python 3.11"
+        mock_compiled.total_tokens = 50
+
+        with (
+            patch("ao_kernel.context.context_compiler.compile_context", return_value=mock_compiled) as mock_compile,
+            patch("ao_kernel.context.context_injector.inject_context_into_messages", return_value=[
+                {"role": "system", "content": "Previous decisions: use Python 3.11"},
+                {"role": "user", "content": "Hello"},
+            ]) as mock_inject,
+        ):
+            result = build_request_with_context(
+                messages=[{"role": "user", "content": "Hello"}],
+                provider_id="openai",
+                model="gpt-4",
+                base_url="https://api.openai.com/v1/chat/completions",
+                api_key="sk-test",
+                session_context={"ephemeral_decisions": [{"key": "python_version", "value": "3.11"}]},
+            )
+            mock_compile.assert_called_once()
+            mock_inject.assert_called_once()
+            assert result is not None
+
+    def test_without_session_falls_back_to_plain_build(self):
+        from ao_kernel.llm import build_request_with_context, build_request
+        result = build_request_with_context(
+            messages=[{"role": "user", "content": "Hello"}],
+            provider_id="openai",
+            model="gpt-4",
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test",
+            session_context=None,
+        )
+        # Should return same as build_request
+        plain = build_request(
+            messages=[{"role": "user", "content": "Hello"}],
+            provider_id="openai",
+            model="gpt-4",
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test",
+        )
+        assert result["body_json"]["model"] == plain["body_json"]["model"]
+
+
+class TestProcessResponseWithContext:
+    """Tests for process_response_with_context — decision extraction from LLM output."""
+
+    def test_process_turn_called_with_output(self):
+        from unittest.mock import patch
+        from ao_kernel.llm import process_response_with_context
+
+        session_ctx = {"session_id": "test-001", "ephemeral_decisions": []}
+        with patch("ao_kernel.context.memory_pipeline.process_turn", return_value=session_ctx) as mock_pt:
+            result = process_response_with_context(
+                "The system should use Python 3.11.",
+                session_ctx,
+                request_id="req-001",
+            )
+            mock_pt.assert_called_once()
+            assert result is session_ctx
+
+    def test_tool_results_extracted(self):
+        from unittest.mock import patch, MagicMock
+        from ao_kernel.llm import process_response_with_context
+
+        session_ctx = {"session_id": "test-002", "ephemeral_decisions": []}
+        mock_decision = MagicMock()
+        mock_decision.key = "test_key"
+        mock_decision.value = "test_value"
+        mock_decision.source = "agent"
+
+        with (
+            patch("ao_kernel.context.memory_pipeline.process_turn", return_value=session_ctx),
+            patch("ao_kernel.context.decision_extractor.extract_from_tool_result", return_value=[mock_decision]),
+            patch("ao_kernel._internal.session.context_store.upsert_decision") as mock_upsert,
+        ):
+            result = process_response_with_context(
+                "Tool completed.",
+                session_ctx,
+                request_id="req-002",
+                tool_results=[{"name": "test_tool", "output": {"status": "ok"}}],
+            )
+            assert result is not None

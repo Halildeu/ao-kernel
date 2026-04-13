@@ -68,8 +68,9 @@ def end_session(
     try:
         from ao_kernel._internal.session.memory_distiller import run_distillation
         run_distillation(workspace_root=ws)
-    except Exception:
-        pass  # Distillation failure shouldn't block session close
+    except Exception as exc:
+        import logging
+        logging.getLogger("ao_kernel").warning("session distillation failed: %s", exc)
 
     # Auto-promote high-confidence decisions to canonical store
     try:
@@ -81,8 +82,9 @@ def end_session(
             min_confidence=0.7,
             session_id=session_id,
         )
-    except Exception:
-        pass  # Promotion failure shouldn't block session close
+    except Exception as exc:
+        import logging
+        logging.getLogger("ao_kernel").warning("session promotion failed: %s", exc)
 
     # Final save
     from ao_kernel.session import save_context

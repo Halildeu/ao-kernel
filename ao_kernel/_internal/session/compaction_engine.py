@@ -41,8 +41,9 @@ def _load_compaction_policy(workspace_root: Path) -> dict[str, Any]:
                     if k not in obj:
                         obj[k] = v
                 return obj
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.getLogger("ao_kernel").warning("compaction policy load failed, using defaults: %s", exc)
     return defaults
 
 
