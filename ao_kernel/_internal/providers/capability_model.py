@@ -67,8 +67,10 @@ class CapabilityManifest:
 def load_capability_registry(repo_root: Path | str | None = None) -> Dict[str, Any]:
     """Load the canonical provider capability registry.
 
-    Searches: repo_root/registry/provider_capability_registry.v1.json
-    Falls back to: registry/provider_capability_registry.v1.json
+    Resolution order:
+        1. repo_root/registry/provider_capability_registry.v1.json (workspace override)
+        2. registry/provider_capability_registry.v1.json (repo-local)
+        3. ao_kernel.config.load_default (bundled defaults via importlib.resources)
     """
     candidates = []
     if repo_root:
@@ -78,7 +80,13 @@ def load_capability_registry(repo_root: Path | str | None = None) -> Dict[str, A
     for path in candidates:
         if path.exists():
             return load_json(path)
-    return {"version": "v1", "capabilities": [], "providers": {}}
+
+    # Fallback to bundled defaults (importlib.resources)
+    try:
+        from ao_kernel.config import load_default
+        return load_default("registry", "provider_capability_registry.v1.json")
+    except Exception:
+        return {"version": "v1", "capabilities": [], "providers": {}}
 
 
 def resolve_manifest(
