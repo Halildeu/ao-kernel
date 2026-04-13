@@ -223,11 +223,114 @@ def count_tokens_heuristic(messages: list[dict[str, Any]]) -> int:
     return _count(messages)
 
 
+# ── Context-Aware LLM Operations ────────────────────────────────────
+
+
+def build_request_with_context(
+    *,
+    provider_id: str,
+    model: str,
+    messages: list[dict[str, Any]],
+    base_url: str,
+    api_key: str,
+    session_context: dict[str, Any] | None = None,
+    workspace_root: str | None = None,
+    profile: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    request_id: str | None = None,
+    stream: bool = False,
+) -> dict[str, Any]:
+    """Build LLM request with context injection.
+
+    If session_context is provided, compiles context and injects into messages.
+    Falls back to plain build_request if no context available.
+    """
+    if session_context:
+        from ao_kernel.context.context_compiler import compile_context
+        from ao_kernel.context.context_injector import inject_context_into_messages
+
+        compiled = compile_context(
+            session_context,
+            profile=profile,
+            messages=messages,
+        )
+        if compiled.preamble:
+            messages = inject_context_into_messages(
+                messages, session_context, max_tokens=compiled.total_tokens or 2000,
+            )
+
+    return build_request(
+        provider_id=provider_id,
+        model=model,
+        messages=messages,
+        base_url=base_url,
+        api_key=api_key,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        request_id=request_id,
+        stream=stream,
+    )
+
+
+def process_response_with_context(
+    output_text: str,
+    session_context: dict[str, Any],
+    *,
+    provider_id: str = "",
+    request_id: str = "",
+    workspace_root: str | None = None,
+    tool_results: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Process LLM response through context pipeline.
+
+    Extracts decisions, processes tool results, runs memory pipeline.
+    Returns updated session context.
+    """
+    from pathlib import Path
+    from ao_kernel.context.memory_pipeline import process_turn
+
+    ws = Path(workspace_root) if workspace_root else None
+
+    # Process LLM text output
+    session_context = process_turn(
+        output_text,
+        session_context,
+        provider_id=provider_id,
+        request_id=request_id,
+        workspace_root=ws,
+    )
+
+    # Process tool results (extract_from_tool_result — was disconnected, now wired)
+    if tool_results:
+        from ao_kernel.context.decision_extractor import extract_from_tool_result
+        from src.session.context_store import upsert_decision
+
+        for tr in tool_results:
+            tool_name = tr.get("tool_name", tr.get("name", ""))
+            tool_output = tr.get("output", tr)
+            if isinstance(tool_output, dict):
+                decisions = extract_from_tool_result(
+                    tool_name, tool_output, request_id=request_id,
+                )
+                for d in decisions:
+                    upsert_decision(
+                        session_context,
+                        key=d.key,
+                        value=d.value,
+                        source=d.source,
+                    )
+
+    return session_context
+
+
 # ── Public API ───────────────────────────────────────────────────────
 
 __all__ = [
     "resolve_route",
     "build_request",
+    "build_request_with_context",
+    "process_response_with_context",
     "check_capabilities",
     "normalize_response",
     "extract_text",
