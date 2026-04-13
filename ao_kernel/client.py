@@ -662,8 +662,8 @@ class AoKernelClient:
         from ao_kernel.context.self_edit_memory import forget as _forget
         return _forget(self._workspace_root, key=key)
 
-    def recall(self, pattern: str = "memory.*") -> list[dict[str, Any]]:
-        """Query self-stored memories."""
+    def recall(self, pattern: str = "*") -> list[dict[str, Any]]:
+        """Query self-stored memories. Pattern auto-prefixed with 'memory.'."""
         if not self._workspace_root:
             return []
 
