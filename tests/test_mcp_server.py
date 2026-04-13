@@ -428,7 +428,10 @@ class TestToolRegistry:
     def test_every_definition_has_handler(self):
         for td in TOOL_DEFINITIONS:
             handler = TOOL_DISPATCH.get(td["name"])
-            assert handler is not None, f"Tool {td['name']} has no handler"
+            # Verify handler exists and returns a dict when called with empty params
+            result = handler({})
+            assert isinstance(result, dict), f"Tool {td['name']} handler should return dict"
+            assert "tool" in result, f"Tool {td['name']} handler response missing 'tool' field"
 
     def test_every_handler_has_definition(self):
         defined_names = {td["name"] for td in TOOL_DEFINITIONS}

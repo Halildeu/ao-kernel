@@ -13,7 +13,7 @@ class TestInternalNamespace:
     def test_internal_importable(self):
         """v2.0.0: src.* removed, ao_kernel._internal is internal."""
         import ao_kernel._internal
-        assert ao_kernel._internal is not None
+        assert hasattr(ao_kernel._internal, "__path__"), "_internal should be a package with __path__"
 
 
 class TestSharedUtils:
