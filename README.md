@@ -88,7 +88,31 @@ stream_request = build_req(
 | `get_circuit_breaker(provider_id)` | Per-provider circuit breaker |
 | `count_tokens(messages, provider_id, model)` | Token counting |
 
-Supported providers: Claude, OpenAI, Google Gemini, DeepSeek, Qwen, xAI.
+### Supported Providers
+
+| Provider | Streaming | Tool Use | Embedding |
+|----------|-----------|----------|-----------|
+| Claude | Yes | Yes | No |
+| OpenAI | Yes | Yes | Yes |
+| Google Gemini | Yes | No | Yes |
+| DeepSeek | Yes | Yes | No |
+| Qwen | Yes | Yes | No |
+| xAI | Yes | Yes | No |
+
+### AoKernelClient — Unified SDK
+
+Full governed pipeline: route → capabilities → context → build → execute → normalize → decisions → eval → telemetry.
+
+```python
+from ao_kernel import AoKernelClient
+
+with AoKernelClient(workspace_root=".") as client:
+    result = client.llm_call(
+        messages=[{"role": "user", "content": "Hello"}],
+        intent="FAST_TEXT",
+    )
+    print(result["text"])
+```
 
 ## MCP Server
 
@@ -101,6 +125,7 @@ ao-kernel mcp serve  # stdio transport
 **Tools:**
 - `ao_policy_check` — Validate action against policy (allow/deny)
 - `ao_llm_route` — Resolve provider/model for intent
+- `ao_llm_call` — Execute governed LLM call
 - `ao_quality_gate` — Check output quality
 - `ao_workspace_status` — Workspace health
 
@@ -155,16 +180,26 @@ items = query_memory(ws, key_pattern="arch.*")
 ## Architecture
 
 ```
-ao_kernel/          <- Public facade (clean API)
-  cli.py            <- CLI commands
-  config.py         <- Workspace + defaults resolver
-  llm.py            <- LLM routing, building, normalization
-  mcp_server.py     <- MCP server (4 tools, 3 resources)
-  telemetry.py      <- OpenTelemetry (lazy no-op fallback)
-  defaults/         <- 338 bundled JSON (policies, schemas, registry, extensions, ops)
-
-src/                <- Compat shim (deprecated, use ao_kernel.*)
+ao_kernel/              <- Public facade (clean API)
+  client.py             <- AoKernelClient — unified SDK
+  llm.py                <- LLM routing, building, normalization
+  governance.py         <- Policy SSOT (4 policy types, fail-closed)
+  mcp_server.py         <- MCP server (5 tools, 3 resources)
+  context/              <- Context pipeline (compile, inject, extract, promote)
+  _internal/            <- Private implementation (do not import directly)
+  defaults/             <- 338 bundled JSON (policies, schemas, registry, extensions)
 ```
+
+## Development
+
+```bash
+pip install -e ".[dev,llm,mcp]"          # Dev environment
+pytest tests/ -x                          # Run tests
+ruff check ao_kernel/ tests/              # Lint
+mypy ao_kernel/ --ignore-missing-imports  # Type check
+```
+
+Coverage target: 70% branch coverage (excluding `_internal`).
 
 ## License
 
