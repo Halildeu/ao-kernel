@@ -1,0 +1,111 @@
+{
+  "consultation_id": "CNS-20260414-004",
+  "divergence_validated": {
+    "status": true,
+    "summary": "Ayrışma gerçek: ao_kernel.llm.process_response_with_context() tool_results destekliyor, fakat AoKernelClient tarafındaki prod path bunu ne non-stream ne de stream çağrısında forward etmiyor."
+  },
+  "verdict": {
+    "option_id": "C",
+    "title": "Orta yol — tool_results Faz 2'de minimal bağlansın, auto loop Faz 4'te",
+    "rationale": "Kanıt, eksik parçanın otomatik tool dispatch değil, manuel tool-use kontratının client seviyesinde tamamlanması olduğunu gösteriyor. Auto loop hâlâ Faz 4 işidir."
+  },
+  "consistency_note": "Şu an üç parça tam uyumlu değil: client docstring'i sonuçların subsequent llm_call ile geri verileceğini söylüyor, llm.py structured tool_results kabul ediyor, ama client imzası ve çağrı noktaları bunu taşımıyor.",
+  "reason_assessment": [
+    {
+      "reason_id": 1,
+      "claim": "Bilinçli tasarım kararı",
+      "assessment": "kismen_kabul",
+      "argument": "Manuel orchestration bilinçli tasarım kararıdır; fakat bu, tool_results forwarding'in Faz 4'e itilmesini gerektirmez. Docstring, caller'ın tool'u çalıştırıp sonucu sonraki llm_call'a geri vermesini söylüyor. Sorun auto-loop eksikliği değil, bu kontratın client katmanında eksik uygulanması.",
+      "evidence": [
+        "ao_kernel/client.py:258-262",
+        "ao_kernel/client.py:220-235",
+        "ao_kernel/llm.py:346-347",
+        "ao_kernel/llm.py:367-385"
+      ]
+    },
+    {
+      "reason_id": 2,
+      "claim": "Scope inflation riski",
+      "assessment": "kismen_kabul",
+      "argument": "Tam auto-loop yapılırsa scope şişer; ama minimal Faz 2 bağı bununla aynı şey değil. Mevcut altyapı ve testlerin üstüne küçük bir signature + forwarding patch'i gerekir. Retry ve fail policy bu minimal işin parçası olmak zorunda değil; onlar Faz 4 auto-loop tasarımıdır.",
+      "evidence": [
+        "ao_kernel/client.py:376-382",
+        "ao_kernel/client.py:497-503",
+        "tests/test_llm_facade.py:284-305",
+        "tests/test_client.py:299-477"
+      ]
+    },
+    {
+      "reason_id": 3,
+      "claim": "Bağımsız değer",
+      "assessment": "kabul",
+      "argument": "Evet, Faz 2b ve 2c tool_results olmadan da değer üretir. Ama Faz 2a için bu yeterli değil; master plan tool-result roundtrip ve client tool_results bağlantısını zaten Faz 2 kapsamına koyuyor. Yani bu argüman Faz 2a graduation boşluğunu kapatmıyor.",
+      "evidence": [
+        ".claude/plans/master-plan.md:55-67"
+      ]
+    },
+    {
+      "reason_id": 4,
+      "claim": "Doğru zaman Faz 4",
+      "assessment": "kismen_kabul",
+      "argument": "Faz 4'e ait olan parça otomatik tool-use loop'tur: auto dispatch, max_rounds, fail policy. Ama plan Faz 4.7 için bağımlılığı açıkça Faz 2a graduation olarak tanımlıyor. Bu da minimal manual roundtrip entegrasyonunun önce gelmesi gerektiğini gösteriyor.",
+      "evidence": [
+        ".claude/plans/master-plan.md:141-154",
+        ".claude/plans/master-plan.md:153",
+        "ao_kernel/llm.py:367-385",
+        "ao_kernel/mcp_server.py:632-645"
+      ]
+    }
+  ],
+  "answers": {
+    "q1": {
+      "question": "tool_results'ın Faz 2'de olması neden Faz 4'ten daha iyi?",
+      "answer": "Çünkü Faz 2'de çözülmesi gereken boşluk auto-loop değil, manuel kontratın prod path'te gerçekten çalışmasıdır. process_response_with_context zaten tool_results destekliyor; eksik olan AoKernelClient'in bunu kabul edip forward etmesi. Bu, tool use graduation için gerekli roundtrip kanıtını verir. Faz 4 ise bunun üstüne otomatik dispatch davranışını eklemelidir.",
+      "evidence": [
+        "ao_kernel/client.py:258-262",
+        "ao_kernel/client.py:376-382",
+        "ao_kernel/client.py:497-503",
+        ".claude/plans/master-plan.md:55-67",
+        ".claude/plans/master-plan.md:153"
+      ]
+    },
+    "q2": {
+      "question": "Faz 2'ye eklenince toplam effort ne kadar artar?",
+      "answer": "Mevcut master plan açısından artış fiilen yoktur; Faz 2a bunu zaten budget etmiş durumda. Claude'un daraltılmış Faz 2 tabanına göre bakarsak minimal bağlama yaklaşık 2-3 test, 1 signature değişikliği ve 2 forwarding call-site değişikliği demektir. Bu yaklaşık yüzde 13-20 faz-geneli artış eder; yüzde 30-40 ancak auto-loop, retry ve fail policy de aynı faza çekilirse oluşur.",
+      "estimated_increment": {
+        "relative_to_current_master_plan": "0 unbudgeted",
+        "relative_to_reduced_phase2_baseline": "yaklaşık 2-3 test, 1 ana dosya, yaklaşık %13-20"
+      },
+      "evidence": [
+        ".claude/plans/master-plan.md:55-67",
+        "tests/test_llm_facade.py:284-305",
+        "tests/test_client.py:299-477"
+      ]
+    },
+    "q3": {
+      "question": "Manuel tool-use kontratı senin önerinle çelişmiyor mu?",
+      "answer": "Hayır. Manuel kontratın özü, tool'u caller'ın çalıştırmasıdır. Önerilen şey caller'ın ürettiği tool_results'ı sonraki llm_call içinde context pipeline'a taşımaktır; tool'u client'ın otomatik çalıştırması değildir. Üstelik call_tool() çıktısı zaten tool_name/output şekline yakın bir zarf döndürüyor; bu yüzden structured geri besleme mevcut tasarımla uyumludur.",
+      "evidence": [
+        "ao_kernel/client.py:258-262",
+        "ao_kernel/client.py:593-614",
+        "ao_kernel/tool_gateway.py:50-58",
+        "ao_kernel/llm.py:367-385"
+      ]
+    }
+  },
+  "recommended_phase_split": {
+    "phase_2": [
+      "AoKernelClient.llm_call'e opsiyonel tool_results parametresi ekle",
+      "tool_results'i hem non-stream hem stream process_response_with_context çağrılarına forward et",
+      "2-3 client seviyesinde roundtrip testi ekle",
+      "docstring'i llm_call(tool_results=...) şeklinde netleştir"
+    ],
+    "phase_4": [
+      "automatic tool dispatch",
+      "max_rounds ve termination policy",
+      "tool failure/retry policy",
+      "çok adımlı orchestration semantics"
+    ]
+  },
+  "bottom_line": "Claude'un 'auto-loop Faz 4' tezi doğru; fakat bundan 'tool_results prod path de Faz 4'e kalsın' sonucu çıkmıyor. Doğru ayrım: Faz 2'de minimal manual roundtrip entegrasyonu, Faz 4'te otomatik tool-use loop."
+}
