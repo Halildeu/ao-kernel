@@ -303,6 +303,8 @@ class AoKernelClient:
                 max_tokens=max_tokens,
                 request_id=request_id,
                 stream=stream,
+                tools=tools,
+                response_format=response_format,
             )
         else:
             from ao_kernel.llm import build_request

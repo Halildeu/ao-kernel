@@ -263,11 +263,15 @@ def build_request_with_context(
     max_tokens: int | None = None,
     request_id: str | None = None,
     stream: bool = False,
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | None = None,
+    response_format: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build LLM request with context injection.
 
     If session_context is provided, compiles context and injects into messages.
     Falls back to plain build_request if no context available.
+    Propagates tools, tool_choice, and response_format to the underlying request.
     """
     if session_context:
         from pathlib import Path
@@ -317,6 +321,9 @@ def build_request_with_context(
         max_tokens=max_tokens,
         request_id=request_id,
         stream=stream,
+        tools=tools,
+        tool_choice=tool_choice,
+        response_format=response_format,
     )
 
 
