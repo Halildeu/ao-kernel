@@ -10,7 +10,7 @@
   "targets": [
     {
       "target_id": "ao-core",
-      "repo_root": "/Users/halilkocoglu/Documents/autonomous-orchestrator",
+      "repo_root": "__WORKSPACE_ROOT__",
       "version_sources": [
         {
           "kind": "repo_snapshot",
@@ -33,112 +33,112 @@
     },
     {
       "target_id": "dev:web",
-      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "repo_root": "__DOCUMENTS__/dev",
       "version_sources": [
         {
           "kind": "workspace_version",
           "value": "1.0.0",
-          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "toolchain_sources": [
         {
           "kind": "node_engines",
           "value": "20.x || 22.x",
-          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         },
         {
           "kind": "package_manager_docs",
           "value": "pnpm 10.x",
-          "path": "/Users/halilkocoglu/Documents/dev/web/docs/first-contribution.md"
+          "path": "__PROJECT_ROOT__/docs/first-contribution.md"
         }
       ],
       "runtime_sources": [
         {
           "kind": "react",
           "value": "~18.2.0",
-          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         },
         {
           "kind": "storybook",
           "value": "^10.3.0",
-          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "lockfile_sources": [
         {
           "kind": "workspace_manifest",
           "value": "pnpm workspace",
-          "path": "/Users/halilkocoglu/Documents/dev/web/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "status": "PARTIAL"
     },
     {
       "target_id": "dev:mobile",
-      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "repo_root": "__DOCUMENTS__/dev",
       "version_sources": [
         {
           "kind": "workspace_version",
           "value": "1.0.0",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "toolchain_sources": [
         {
           "kind": "typescript",
           "value": "~5.9.2",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "runtime_sources": [
         {
           "kind": "expo",
           "value": "~55.0.6",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         },
         {
           "kind": "react",
           "value": "19.2.0",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         },
         {
           "kind": "react_native",
           "value": "0.83.2",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "lockfile_sources": [
         {
           "kind": "workspace_manifest",
           "value": "npm workspaces",
-          "path": "/Users/halilkocoglu/Documents/dev/mobile/package.json"
+          "path": "__PROJECT_ROOT__/package.json"
         }
       ],
       "status": "PARTIAL"
     },
     {
       "target_id": "dev:backend",
-      "repo_root": "/Users/halilkocoglu/Documents/dev",
+      "repo_root": "__DOCUMENTS__/dev",
       "version_sources": [
         {
           "kind": "parent_pom_version",
           "value": "1.0.0",
-          "path": "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+          "path": "__PROJECT_ROOT__/pom.xml"
         }
       ],
       "toolchain_sources": [
         {
           "kind": "build_tool",
           "value": "maven_wrapper",
-          "path": "/Users/halilkocoglu/Documents/dev/backend/mvnw"
+          "path": "__PROJECT_ROOT__/mvnw"
         }
       ],
       "runtime_sources": [
         {
           "kind": "service_modules",
           "value": "common-auth, discovery-server, api-gateway, auth-service, permission-service, user-service, variant-service, core-data-service, report-service",
-          "path": "/Users/halilkocoglu/Documents/dev/backend/pom.xml"
+          "path": "__PROJECT_ROOT__/pom.xml"
         }
       ],
       "lockfile_sources": [],

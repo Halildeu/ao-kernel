@@ -4,9 +4,9 @@
 
 `ao-kernel` bir **governed AI orchestration runtime** paketidir. Genel amaçlı agent framework DEĞİLDİR — policy-driven, fail-closed, evidence-trail'li bir runtime. `pip install ao-kernel` ile herhangi bir Python projesine kurulur.
 
-**Kaynak repo:** `Halildeu/autonomous-orchestrator` (main HEAD: `314d396`, PR #76 merge dahil). Bu repo o kaynak repo'daki seçili 42 dosyanın katman bazlı allowlist ile dağıtılabilir Python paketi haline getirmektir.
+**Kaynak repo:** `Halildeu/autonomous-orchestrator` (main HEAD: `314d396`, PR #76 merge dahil). Bu repo o kaynak repo'daki seçili dosyaların katman bazlı allowlist ile dağıtılabilir Python paketi haline getirmektir.
 
-**Scaffold durumu:** v0.1.0 tamamlandı. ao_kernel/ facade (7 dosya) + src/ shim (42 dosya) + bundled defaults (324 JSON).
+**Scaffold durumu:** v0.1.0 tamamlandı. ao_kernel/ facade (10 dosya) + src/ shim (64 dosya) + bundled defaults (338 JSON).
 
 ## Mimari Kararlar (8 istişare sonucu — CNS-001..005, CNS-20260413-001/002)
 
