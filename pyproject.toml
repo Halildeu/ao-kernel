@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ao-kernel"
-version = "2.1.0"
+version = "2.1.1"
 description = "Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -97,6 +97,7 @@ omit = [
     "*/test_*",
     "*/_test*",
     "*/conftest.py",
+    "ao_kernel/_internal/*",
 ]
 
 [tool.coverage.report]
