@@ -82,9 +82,11 @@ def record_decision(
 
     Returns {recorded: True, promoted: bool, key, value}.
     """
+    from ao_kernel.context.canonical_store import promote_decision
+
+    # Always persist to canonical store (record = persist)
     promoted = False
     if auto_promote and confidence >= promote_threshold:
-        from ao_kernel.context.canonical_store import promote_decision
         promote_decision(
             workspace_root,
             key=key,
@@ -94,6 +96,17 @@ def record_decision(
             session_id=session_id,
         )
         promoted = True
+    else:
+        # Even without auto-promote, persist as low-confidence canonical
+        promote_decision(
+            workspace_root,
+            key=key,
+            value=value,
+            source=source,
+            confidence=confidence,
+            session_id=session_id,
+            fresh_days=7,  # Short-lived for low-confidence
+        )
 
     return {
         "recorded": True,

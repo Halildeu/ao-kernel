@@ -54,6 +54,10 @@ class CanonicalDecision:
 
 
 def _store_path(workspace_root: Path) -> Path:
+    """Store canonical decisions in .ao/ directory if available."""
+    ao_dir = workspace_root / ".ao"
+    if ao_dir.is_dir():
+        return ao_dir / "canonical_decisions.v1.json"
     return workspace_root / "canonical_decisions.v1.json"
 
 
