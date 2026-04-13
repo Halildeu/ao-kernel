@@ -402,6 +402,29 @@ TOOL_DISPATCH = {
 }
 
 
+def create_tool_gateway():
+    """Create a ToolGateway pre-configured with MCP governance tools.
+
+    Returns a policy-gated gateway where all 4 governance tools are registered.
+    Tool calls go through: authorize → handler → result.
+    """
+    from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy
+
+    gateway = ToolGateway(policy=ToolCallPolicy(enabled=True, max_rounds=50))
+
+    for td in TOOL_DEFINITIONS:
+        handler = TOOL_DISPATCH.get(td["name"])
+        if handler:
+            gateway.register_handler(
+                name=td["name"],
+                handler=handler,
+                description=td["description"],
+                input_schema=td["inputSchema"],
+            )
+
+    return gateway
+
+
 def create_mcp_server():  # pragma: no cover — requires mcp package
     """Create and configure the MCP server instance.
 
