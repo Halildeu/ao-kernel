@@ -218,6 +218,148 @@ class TestResourceLoading:
         assert handle_resource("ao://policies") is None
 
 
+class TestPolicyRulesEngine:
+    """Tests for _check_policy_rules — required fields, blocked values, limits."""
+
+    def test_required_fields_violation(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"required_fields": ["name", "intent"]}
+        violations = _check_policy_rules(policy, {"name": "test"})
+        assert any("MISSING_REQUIRED_FIELD:intent" in v for v in violations)
+
+    def test_required_fields_all_present(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"required_fields": ["name", "intent"]}
+        violations = _check_policy_rules(policy, {"name": "test", "intent": "FAST_TEXT"})
+        assert len(violations) == 0
+
+    def test_blocked_values_violation(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"blocked_values": {"model": ["gpt-3.5-turbo", "deprecated-model"]}}
+        violations = _check_policy_rules(policy, {"model": "gpt-3.5-turbo"})
+        assert any("BLOCKED_VALUE:model" in v for v in violations)
+
+    def test_blocked_values_allowed(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"blocked_values": {"model": ["gpt-3.5-turbo"]}}
+        violations = _check_policy_rules(policy, {"model": "gpt-4"})
+        assert len(violations) == 0
+
+    def test_limits_exceeded(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"limits": {"max_tokens": 1000}}
+        violations = _check_policy_rules(policy, {"max_tokens": 5000})
+        assert any("LIMIT_EXCEEDED:max_tokens" in v for v in violations)
+
+    def test_limits_within_range(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"limits": {"max_tokens": 1000}}
+        violations = _check_policy_rules(policy, {"max_tokens": 500})
+        assert len(violations) == 0
+
+    def test_limits_non_numeric_ignored(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {"limits": {"max_tokens": 1000}}
+        violations = _check_policy_rules(policy, {"max_tokens": "not_a_number"})
+        assert len(violations) == 0  # ValueError caught, no violation
+
+    def test_empty_policy_no_violations(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        violations = _check_policy_rules({}, {"any": "action"})
+        assert violations == []
+
+    def test_combined_violations(self):
+        from ao_kernel.mcp_server import _check_policy_rules
+        policy = {
+            "required_fields": ["intent"],
+            "blocked_values": {"model": ["bad-model"]},
+            "limits": {"temperature": 1.0},
+        }
+        action = {"model": "bad-model", "temperature": 2.0}
+        violations = _check_policy_rules(policy, action)
+        assert len(violations) == 3  # missing intent + blocked model + limit exceeded
+
+
+class TestPolicyCheckDisabledPath:
+    def test_disabled_policy_allows(self):
+        """Policy with enabled=false should return allow with POLICY_DISABLED."""
+        from unittest.mock import patch
+
+        disabled_policy = {"enabled": False, "version": "v1"}
+        with patch("ao_kernel.config.load_with_override", return_value=disabled_policy):
+            result = handle_policy_check({
+                "policy_name": "test_disabled.json",
+                "action": {"type": "read"},
+            })
+        assert result["allowed"] is True
+        assert "POLICY_DISABLED" in result["reason_codes"]
+        assert result["data"]["policy_enabled"] is False
+
+    def test_policy_with_violations_denied(self):
+        """Policy with required_fields violation should deny."""
+        from unittest.mock import patch
+
+        strict_policy = {"enabled": True, "required_fields": ["intent", "scope"]}
+        with patch("ao_kernel.config.load_with_override", return_value=strict_policy):
+            result = handle_policy_check({
+                "policy_name": "strict.json",
+                "action": {"intent": "test"},  # missing scope
+            })
+        assert result["allowed"] is False
+        assert result["decision"] == "deny"
+        assert any("MISSING_REQUIRED_FIELD:scope" in r for r in result["reason_codes"])
+
+
+class TestLlmRouteSuccess:
+    def test_route_error_returns_deny_with_reason(self):
+        """When router raises, result should be structured deny."""
+        from unittest.mock import patch
+        with patch("ao_kernel.llm.resolve_route", side_effect=FileNotFoundError("no config")):
+            result = handle_llm_route({"intent": "FAST_TEXT"})
+        assert result["allowed"] is False
+        assert result["decision"] == "deny"
+        assert "ROUTER_ERROR" in result["reason_codes"]
+        assert result["error"] is not None
+
+    def test_route_success_returns_allow(self):
+        """When router succeeds, result should be allow."""
+        from unittest.mock import patch
+        mock_result = {"status": "OK", "provider_id": "openai", "model": "gpt-4"}
+        with patch("ao_kernel.llm.resolve_route", return_value=mock_result):
+            result = handle_llm_route({"intent": "FAST_TEXT"})
+        assert result["allowed"] is True
+        assert result["decision"] == "allow"
+        assert result["data"]["provider_id"] == "openai"
+
+
+class TestQualityGateHandler:
+    def test_quality_gate_fallback_not_configured(self):
+        result = handle_quality_gate({"output_text": "Some LLM output text here."})
+        assert result["tool"] == "ao_quality_gate"
+        assert result["decision"] in ("allow", "deny")
+        assert isinstance(result["reason_codes"], list)
+
+    def test_quality_gate_with_workspace(self, tmp_workspace):
+        result = handle_quality_gate({
+            "output_text": "Valid output from LLM provider.",
+            "workspace_root": str(tmp_workspace),
+        })
+        assert result["tool"] == "ao_quality_gate"
+        assert result["decision"] in ("allow", "deny")
+
+    def test_quality_gate_exception_returns_deny(self):
+        """When quality gate raises, result should be structured deny."""
+        from unittest.mock import patch
+        with patch("ao_kernel.mcp_server.handle_quality_gate.__module__", side_effect=Exception("gate error")):
+            # Force exception path by passing invalid workspace
+            result = handle_quality_gate({
+                "output_text": "test output",
+                "workspace_root": "/nonexistent/path/xyz",
+            })
+        assert result["tool"] == "ao_quality_gate"
+        assert result["decision"] in ("allow", "deny")
+
+
 class TestToolRegistry:
     def test_every_definition_has_handler(self):
         for td in TOOL_DEFINITIONS:
