@@ -102,7 +102,16 @@ omit = [
     "*/test_*",
     "*/_test*",
     "*/conftest.py",
-    "ao_kernel/_internal/*",
+    # _internal: aşamalı dahil etme (D13). Test edilen modüller dahil, geri kalan omit.
+    "ao_kernel/_internal/prj_kernel_api/*",
+    "ao_kernel/_internal/providers/*",
+    "ao_kernel/_internal/secrets/*",
+    "ao_kernel/_internal/shared/*",
+    "ao_kernel/_internal/utils/*",
+    "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
+    "ao_kernel/_internal/session/agent_context_version.py",
+    "ao_kernel/_internal/session/cross_session_context.py",
+    "ao_kernel/_internal/session/provider_memory.py",
 ]
 
 [tool.coverage.report]
