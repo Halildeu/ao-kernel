@@ -1,0 +1,28 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-005",
+  "agent": "codex",
+  "responded_at": "2026-04-13T05:15:00Z",
+  "verdict": "B",
+  "body": "B daha doğru. Liste genel olarak doğru ama v1'i çekirdek kapsamda tutun: `llm_call` ana/root span; `policy_check` ve `mcp_tool_call` child span; `stream_call` ayrı root değil, sadece streaming yolunda child span; `quality_gate` yalnızca belirgin maliyetli/ayrı lifecycle ise span, değilse event/attribute olsun. Metrik seti iyi; buna `mcp_tool_call` için duration veya total ve `retry_count`/error bilgisi eklemek faydalı. OTEL opsiyonelse tek bir `ao_kernel/telemetry.py` adapter'ında lazy import + cached no-op tracer/meter kullanın; OTEL yoksa API aynı kalsın, davranış değişmesin, mevcut JSONL/evidence akışı çalışmaya devam etsin. Semantic convention tarafında LLM alanlarında `gen_ai.*`, governance/runtime alanlarında `ao.*` hibrit yaklaşımı kullanın.",
+  "agreements": [
+    "`llm_call` zorunlu ana span.",
+    "`policy_check` ve `mcp_tool_call` governed runtime için birinci sınıf sinyal olmalı.",
+    "`first_token_ms` streaming için değerli bir histogram."
+  ],
+  "objections": [
+    "Her şeyi baştan full-span yapmak gürültü ve bakım maliyeti üretir.",
+    "Decorator-first yaklaşım async/stream/tool lifecycle için fazla örtük kalır.",
+    "Sadece `ao.*` kullanmak OTEL ekosistemiyle uyumu düşürür."
+  ],
+  "additions": [
+    "`mcp_tool_call.duration` veya `mcp_tool_call.total` ekleyin.",
+    "`llm_call` üstünde `retry_count`, breaker/error durumu attribute olarak tutun.",
+    "Rate-limit bekleme ve circuit-breaker geçişlerini span yerine event olarak düşünün."
+  ],
+  "follow_up": [
+    "V1 kapsamını `llm_call` + `policy_check` + `mcp_tool_call` (+ ağırsa `quality_gate`) olarak sabitleyin.",
+    "Telemetry kodunu tek adapter modülüne toplayın; modüllere OTEL importu yaymayın.",
+    "OTEL kapalı senaryoyu test edin: import hatası yok, API aynı, telemetry çağrıları no-op."
+  ]
+}

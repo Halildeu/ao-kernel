@@ -1,0 +1,32 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-004",
+  "agent": "codex",
+  "responded_at": "2026-04-13T04:45:00Z",
+  "verdict": "B",
+  "body": "Karar: v0.2.0 icin dogru yon Minimum viable MCP server. MCP yuzeyi ao-kernel'in governed runtime cekirdegini acmali, workspace icerigi icin read-only resources saglamali; governance ile ayni isi iki yoldan yapan gereksiz tool'lar ilk surume girmemeli.\n\nQ1: Expose edilmesi gereken cekirdek yuzey `policy_check`, `llm_route`, `quality_gate`, `workspace_status` tool'lari ve `ao://policies/{name}`, `ao://schemas/{name}`, `ao://registry/{name}` resource'laridir. `load_policy` ve `load_schema` tool olarak fazlaliktir; MCP resource modeli varken ayri tool yuzeyi yalnizca API sisirir. `evidence_record` v0.2.0'a alinmamali; audit kaydi tool cagrilarinin yan etkisi olarak otomatik uretilmeli, istemciye ayrica `kayit yaz` yetkisi verilmemelidir. Boylece denetim izi zorunlu ve merkezi kalir.\n\nQ2: `mcp` paketi zorunlu dependency degil, extras olmali: `ao-kernel[mcp]`. Cekirdek runtime'in minimal dependency, saldiri yuzeyi ve import maliyeti korunur. Mimari olarak adapter katmani cekirdekten ayrilmali; `mcp` sadece protocol/transport binding saglamalidir. CLI tarafinda `ao-kernel mcp serve` extras yoksa net kurulum hatasi vermelidir.\n\nQ3: Transport stratejisi `ikiye hazir, once stdio` olmali. v0.2.0'da stdio zorunlu desteklenmeli; HTTP veya Streamable HTTP sonraki surume birakilmalidir. Claude Desktop ve Claude Code icin stdio hemen deger uretir; HTTP ise auth, tenancy, TLS, replay, rate limit ve exposure boundary sorularini acar. Handler katmani transport-agnostic tasarlanirsa sonraki genisleme ucuz olur.\n\nQ4: MCP server rolu urun kimligini zayiflatmaz; dogru konumlandirmayla guclendirir. Net mesaj su olmali: `ao-kernel bir governed decision engine'dir; MCP bunun entegrasyon adaptorlerinden biridir.` Yani MCP, urunu generic tool server'a degil, policy/routing/quality enforcement katmanina donusturur. Kritik nokta, raw provider operasyonlarini degil governance primitive'lerini expose etmektir.\n\nQ5: v0.2.0 minimum kapsam 4 tool + 3 resource olmali. `policy_check` ve `llm_route` zorunlu cekirdek; `quality_gate` governed runtime anlatisini tamamlar; `workspace_status` operasyonel teshis icin gereklidir. `load_*` tool'larini ve `evidence_record`'u erteleyin. Daha sert bir MVP gerekirse 3 tool (`policy_check`, `llm_route`, `workspace_status`) + resources ile de cikilabilir; ancak `quality_gate` stratejik olarak dogru eklemedir cunku governance zincirini `oncesi-yonlendirme-sonrasi` olarak kapatir.\n\nQ6: Fail-closed, tool seviyesinde `deny by default, error by dependency failure` ilkesiyle uygulanmali. Policy yoksa, schema cozumlenemiyorsa, registry tutarsizsa, workspace sagliksizsa veya zorunlu audit/evidence yazimi basarisizsa sonuc `allow` olamaz. Beklenen policy ihlali protokol hatasi gibi firlatilmamali; tool sonucu olarak yapilandirilmis bir deny donmelidir: `allowed:false`, `decision:'deny'`, `reason_codes`, `policy_ref`, `evidence_id`, `redactions`, `retryable:false`. Gercek MCP/JSON-RPC error yalnizca malformed request, unsupported capability, internal exception gibi durumlarda kullanilmalidir. Bu ayrim istemcilerin guvenli otomasyon yapmasini saglar.\n\nSonuc: A erken optimizasyon ve kismi mukerrerlik yaratir; C ise ao-kernel'in asil degerini fazla daraltir. En dogru denge B'dir: dar ama stratejik, fail-closed ile uyumlu, transport ve kapsam acisindan kontrollu genislemeye acik.",
+  "agreements": [
+    "MCP yuzeyi governance primitive'lerini expose etmeli; raw provider operasyonlari veya ic runtime detaylari disari tasinmamali.",
+    "`load_policy` ve `load_schema` resource olarak daha dogru; ayni veriyi hem tool hem resource olarak acmak gereksiz yuzey alanidir.",
+    "Transport katmani cekirdek runtime'dan ayrilmali; is mantigi stdio ve HTTP arasinda tekrar etmemelidir.",
+    "Audit ve evidence zinciri istemci insiyatifine birakilmamali; denetim izi adaptor icinde zorunlu ve merkezi olmalidir."
+  ],
+  "objections": [
+    "7 tool + 3 resource paketi v0.2.0 icin fazla genis; ilk surumde hem implementasyon hem compatibility hem de test yuzeyi gereksiz buyur.",
+    "`evidence_record`'un istemciye ayri tool olarak acilmasi audit butunlugunu zayiflatir ve `kayit acildi mi acilmadi mi` tartismasi yaratir.",
+    "HTTP'yi stdio ile ayni anda production-grade cikarmak, kimlik dogrulama ve ag guvenligi modeli hazir degilse gereksiz risk tasir.",
+    "Sadece resources ile cikmak ao-kernel'i pasif bir config deposuna indirger; governed runtime deger onerisi yeterince gorunmez."
+  ],
+  "additions": [
+    "Tool ve resource adlari namespaced ve versioned olmali; ornek: `ao_policy_check`, `ao://policies/{name}` ve response envelope icinde `api_version` bulunmali.",
+    "Tum tool yanitlari ortak bir `decision envelope` donmeli; farkli tool'lar farkli hata ve deny formatlari uretmemeli.",
+    "Her tool icin side-effect seviyesi ve gerekli izinler capability manifest'te acik olmali; resources kesin olarak read-only kalmali.",
+    "Tool cagrilarinda `workspace_root`, `policy_set` ve gerekirse `tenant/context` explicit parametreler olmali; gizli global state'e dayanilmamali."
+  ],
+  "follow_up": [
+    "Her tool ve resource icin request/response JSON schema'lari dondurulup compatibility politikasi yazilmali.",
+    "`deny` ile `error` ayrimi icin net bir taxonomy belirlenmeli; hangi durumda tool sonucu, hangi durumda MCP error donulecegi testlerle sabitlenmeli.",
+    "CLI sekli netlestirilmeli: `ao-kernel mcp serve --transport stdio` ve extras eksikse yonlendirici hata mesaji verilmeli.",
+    "Conformance test paketi eklenmeli: malformed request, missing policy, registry corruption, evidence write failure, redaction, timeout ve client cancellation senaryolari kapsanmali."
+  ]
+}

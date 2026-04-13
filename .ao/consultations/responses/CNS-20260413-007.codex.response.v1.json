@@ -1,0 +1,56 @@
+{
+  "agent": "codex",
+  "responded_at": "2026-04-13T17:34:35Z",
+  "verdict": "D",
+  "body": "Genel değerlendirme: Talep metnindeki bazı metadata'lar repo gerçeğiyle uyuşmuyor; okuduğum kodda paket ve modül sürümü 2.0.0 görünüyor, `ao_kernel/client.py` dosyası yok ve `CLAUDE.md` hâlâ daha eski scaffold anlatısını taşıyor. Bu yüzden değerlendirmeyi talep metnindeki niyet yerine fiilî kod üzerinden yaptım.\n\nA. EKLE: En kritik eksik parça, session/context/policy/LLM/tool/quality zincirini tek çağrıda yürüten resmi bir runtime omurgası veya `AoKernelClient`. Bugün parçalar var ama bunları doğru sırayla bağlamak kullanıcıya bırakılmış durumda. İkinci eksik, field validation ötesine geçen semantik policy enforcement katmanı; intent, tool sınıfı, evidence zorunluluğu, live-call koşulları ve çapraz politika kompozisyonu bugün parça parça çözülüyor. Üçüncü eksik, MCP HTTP için net paket sözleşmesi; `serve_http()` mevcut ama `starlette` ve `uvicorn` bağımlılıkları `pyproject.toml` içinde tanımlı değil.\n\nB. ÇIKAR: `mcp_server.py` içindeki ikinci policy evaluator kaldırılmalı; aynı kavramın iki implementasyonu uzun vadede drift üretir. `decisions` ile `ephemeral_decisions` ikiliği kalıcı tutulmamalı; migration sonrası tek isim bırakılmalı. Dokümanda varmış gibi sunulan ama pakette bulunmayan `ao_kernel/client.py` ve sürüm anlatısı da kaldırılmalı ya da gerçekle hizalanmalı.\n\nC. DEĞİŞTİR: `start_session()` bozuk session'ı warning ile sıfırlıyor; bu fail-closed değil. `llm.build_request_with_context()` canonical kararları ve workspace fact'leri topluyor ama `compiled.preamble` yerine tekrar yalnız session context enjekte ediyor; yani wiring kısmi ve hatalı. `mcp_server.create_tool_gateway()` bundled tool policy'yi okuyup `enabled=true` zorlayarak policy niyetini etkisizleştiriyor; ayrıca gateway her tool çağrısında yeniden üretildiği için round-limit pratikte çalışmıyor. `handle_quality_gate()` önceki kararları geçmediğinden consistency/regression gate'leri kör kalıyor. Provider guardrail semantiği de facade ve internal katmanda iki farklı davranışa bölünmüş durumda.\n\nD. ÖNCELİKLENDİR: Benim sıram B -> A -> C. Önce fail-closed sözleşmesini gerçekten doğru hale getirmek gerekir; aksi halde ürünün temel vaadi zayıf kalıyor. Hemen ardından bunu resmi bir runtime/client omurgasına bağlamak gerekir; yoksa context/memory yatırımı dekoratif kalır. Son adımda public surface, sürüm ve dokümantasyon temizliği yapılmalı. Bu nedenle seçenekler içinde en doğru cevap D; ama D'nin içeriği 'önce fail-closed düzeltmeleri, hemen sonra runtime wiring, en son surface cleanup' olmalı.",
+  "add": [
+    "Tek resmi yüksek seviye runtime/client API'si (`AoKernelClient` veya benzeri) ve uçtan uca `run_turn()` akışı",
+    "Semantik policy enforcement katmanı (intent/tool/evidence/live-call koşulları için predicate tabanlı kurallar)",
+    "MCP HTTP transport için ayrı extra ve deklaratif bağımlılıklar (`mcp-http` veya eşdeğeri)",
+    "Async-native çalışma yüzeyi: iptal, timeout, streaming callback ve tool-loop state yönetimi"
+  ],
+  "remove": [
+    "`ao_kernel/mcp_server.py` içindeki duplicate policy-check mantığı ve `_check_policy_rules` kopyası",
+    "`decisions` ve `ephemeral_decisions` ikiliğini kalıcı taşıyan geriye dönük uyumluluk katmanı",
+    "Dokümanda/public surface'te varmış gibi duran ama repoda bulunmayan `ao_kernel/client.py` anlatısı",
+    "Policy'den bağımsızmış gibi davranan dekoratif ToolGateway kullanımı"
+  ],
+  "change": [
+    "`ao_kernel/context/session_lifecycle.py` içinde bozuk veya hash uyuşmazlığı olan session'larda warning+reset yerine typed fail-closed davranış",
+    "`ao_kernel/llm.py` içinde `compile_context()` çıktısının gerçekten prompt'a enjekte edilmesi; canonical ve fact lane'lerinin fiilen kullanılması",
+    "`ao_kernel/mcp_server.py` ve `ao_kernel/tool_gateway.py` içinde tool policy yükleme, allow/deny semantiği ve request-scope round tracking'inin yeniden tasarlanması",
+    "`ao_kernel/mcp_server.py` ve `ao_kernel/governance.py` içinde quality gate'lere `previous_decisions` ve workspace bağlamının geçirilmesi",
+    "`ao_kernel/__init__.py`, `pyproject.toml`, `CLAUDE.md` ve README arasında sürüm/public API hizalaması",
+    "Provider guardrail yükleme ve enforcement semantiğinin facade ile internal katmanda tek davranışta birleştirilmesi"
+  ],
+  "priority_prs": [
+    {
+      "pr": "Fail-closed sözleşmesini gerçek hale getir",
+      "scope": "ao_kernel/context/session_lifecycle.py, ao_kernel/governance.py, ao_kernel/mcp_server.py, ao_kernel/tool_gateway.py, ao_kernel/llm.py",
+      "reason": "Marka vaadi şu an kodla çelişiyor: bozuk session resetleniyor, policy iki yerde ayrışıyor, tool policy dekoratif kalıyor ve quality gate bağlamı kaybediyor."
+    },
+    {
+      "pr": "Resmi runtime/client omurgasını ekle",
+      "scope": "ao_kernel/client.py (yeni), ao_kernel/llm.py, ao_kernel/session.py, ao_kernel/context/memory_pipeline.py, ao_kernel/context/session_lifecycle.py, ao_kernel/context/agent_coordination.py",
+      "reason": "Context pipeline parçaları mevcut ama tek çağrıda route -> inject -> execute -> gate -> memory -> save akışı yok; ürün değeri burada açılıyor."
+    },
+    {
+      "pr": "Public surface ve paket sözleşmesini temizle",
+      "scope": "ao_kernel/__init__.py, pyproject.toml, CLAUDE.md, README.md, tests/*",
+      "reason": "Sürüm, dosya varlığı ve optional dependency sözleşmesi gerçeği yansıtmıyor; bu durum katkıcı güvenini ve entegrasyon kalitesini düşürüyor."
+    }
+  ],
+  "agreements": [
+    "Session corruption davranışı şu haliyle fail-closed değil.",
+    "ToolGateway policy dosyasını fiilen uygulamıyor; özellikle MCP yolunda policy dekoratif kalıyor.",
+    "Policy engine çoğunlukla alan doğrulaması yapıyor, semantik enforcement zayıf.",
+    "README/CLAUDE/public API anlatısı ile gerçek kod yüzeyi arasında ciddi sapma var.",
+    "Context pipeline varsayılan runtime akışına tam entegre değil."
+  ],
+  "objections": [
+    "\"Context pipeline izole\" tespiti yön olarak doğru ama eksik; `ao_kernel.llm` ve `ao_kernel.mcp_server` içinde kısmi wiring başlamış, sorun bunun varsayılan ve doğru çalışmaması.",
+    "\"v2.1.1 durumu\" ifadesini repo içinden doğrulayamadım; okuduğum kod ve paket metadata'sı 2.0.0 gösteriyor.",
+    "`ao_kernel/client.py` mevcut bir SDK girişi değil; bunun yerine dağınık hook'lar (`context/agent_coordination.py`, `llm.py`) var.",
+    "Branch temizliği ve stale branch sayısı önemli olsa da, mimari önceliklendirmede runtime sözleşmesi kadar kritik değil."
+  ]
+}

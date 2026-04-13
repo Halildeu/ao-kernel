@@ -1,0 +1,39 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-004",
+  "agent": "codex",
+  "responded_at": "2026-04-13T01:00:00Z",
+  "verdict": "C",
+  "body": "Verdict C. Bugunki kaynak agacta klasorler guvenilir mimari sinir degil; ayni dizinde core runtime, compat shim, CLI wrapper ve repo-spesifik operasyon kodu karismis. Bu yuzden nihai include/exclude kararini modul klasoru bazinda degil katman ve dosya allowlist'i bazinda vermek gerekiyor.\n\nQ1: Essential listesine itirazim var. `prj_kernel_api/` butunu alinmamali; mevcut snapshot'ta CLAUDE.md'de anilan PR #76 dosyalari yok, klasorun icinde core LLM control-plane ile `http_gateway.py`, `codex_home.py`, `m0_plan.py` gibi ao-kernel cekirdegi olmayan seyler karismis. Alinacak alt kume: `api_guardrails.py`, `provider_guardrails.py`, `providers_registry.py`, `providers_registry_schema.py`, `dotenv_loader.py`, `llm_clients.py`; opsiyonel olarak urunlestirilecekse `llm_router.py`, `llm_live_probe.py`, `llm_allowlist_probe.py`, `llm_probe_runner.py`. Park edilmesi gerekenler: `adapter.py`, `http_gateway.py`, `codex_home.py`, `m0_plan.py` ve runtime wrapper kopyalari. `sdk/` essential degil; `sdk/client.py` gercekte public SDK degil, `src.ops.manage` ve `src.orchestrator.local_runner` uzerinden subprocess wrapper. `tools/` useful degil essential olmali; orchestrator workflow execution dogrudan `src.tools.gateway` kullaniyor. Live-provider/tool yolu korunacaksa `secrets/` da `tools` ile ayni katmana yukselmeli. `orchestrator/` ve `session/` icin de klasorun tamami degil, cekirdek alt kume alinmali.\n\nQ2: `roadmap/` park edilmemeli ama butun olarak da alinmamali. Include: `change_proposals.py`, `compiler.py`, `exec_contracts.py`, `exec_evidence.py`, `exec_steps.py`, `executor.py`, `step_templates.py`, `sanitize.py`, `evidence.py`; bunlar governed change execution kernel'i. Exclude/park: `orchestrator.py`, `orchestrator_runtime.py`, `orchestrator_helpers.py`, `orchestrator_checks.py`, `orchestrator_artifacts.py`, `orchestrator_io.py`, `orchestrator_paths.py`, `state.py`; bunlar repo workflow'lerine ve `src.ops.*` entegrasyonlarina fazla bagli. `ops/` icin somut include: `workspace_find.py`, `trace_meta.py`, `evidence_export.py`, `extension_registry.py` (paketlenmis defaults okuyacak sekilde patch ile), `context_pack_builder.py`, `context_pack_loaders.py`, `context_pack_router.py`, `context_pack_routing.py`, `context_pack_triangulate.py`, `context_profile_resolver.py`, `context_reconciler.py`, `context_snapshot.py`, `context_session_metrics.py`; gerekiyorsa `write_authorize.py`. `learning/` ve `autopilot/` v1 core runtime yolu degil, extension/opsiyonel bundle olarak kalmali. `src/extensions/` icindeki stub'lar alinmamali; canonical extension discovery kok dizindeki `extensions/` katalogu.\n\nQ3: Exclude listesi buyuk olcude dogru. `prj_airunner/` core pakete girmemeli; 18 runtime dosyasi bile `ops.commands.*`, `work_intake_*`, `prj_github_ops`, `prj_release_automation` bagimliliklariyla cok sikica bu repoya bagli. En fazla `airunner_jobs_lifecycle.py` ve `airunner_perf.py` tasarim paterni olarak okunur, modul olarak tasinmaz. `prj_github_ops/`, `prj_planner/`, `prj_release_automation/`, `benchmark/` da core runtime disinda kalmali.\n\nQ4: `ops/` stratejisi uc katmanli olmali. Core service slice: `workspace_find.py`, `trace_meta.py`, `evidence_export.py`, `extension_registry.py`, `context_pack_*`, `context_profile_resolver.py`, `context_reconciler.py`, `context_snapshot.py`, `context_session_metrics.py`, opsiyonel `write_authorize.py`. CLI-only adapter slice: `manage.py`, `commands/common.py` ve yalniz secilen core servisleri saran minimal komutlar; bunlari oldugu gibi tasimak yerine yeni `ao_kernel/cli.py` facade'i yazilmali. Repo-spesifik slice: tum `work_intake_*`, `work_item_*`, `auto_loop.py`, `decision_*`, `system_status_*` mevcut hali, `portfolio_*`, `managed_repo_*`, `north_star_*`, `promotion_bundle.py`, `repo_hygiene.py`, `benchmark_cli.py`, `ui_snapshot_bundle.py`, `roadmap_seed.py`, `roadmap_state_sync.py`, `github_ops_index_lock_local.py`, `operability_*`, `heartbeat_*`.\n\nQ5: `utils/` simdi kaldirilmamali. `src.utils` bugun hala `orchestrator/validation.py`, `runner_config.py`, `runner_resume.py`, `route.py`, `quota.py`, `target_registry.py`, `target_health.py`, `workflow_exec_steps.py`, `session/provider_memory.py` tarafindan import ediliyor. Dogru strateji: `shared/` yeni canonical katman olsun, `utils/` frozen compat shim olarak kalsin, yeni importlar yasaklansin, mevcut importlar kademeli yakilsin, sonra v2'de silinsin.",
+  "agreements": [
+    "`shared/` ve `evidence/` temel katman; bunlarin alinmasi tartismasiz dogru.",
+    "`prj_github_ops/`, `prj_planner/`, `prj_release_automation/` ve `benchmark/` core ao-kernel runtime'i tanimlamamali.",
+    "`ops/` dizini topyekun alinmamali; dilimlenmesi gerekiyor.",
+    "`src/extensions/` icindeki stub'lar tek basina anlamli bir extension sistemi degil."
+  ],
+  "objections": [
+    "`prj_kernel_api/` klasorunun tamami essential degil; CLAUDE.md'deki PR #76 dosyalari mevcut source snapshot'ta yok, bugunku klasor karisik sorumluluk tasiyor.",
+    "`sdk/` essential diye etiketlenmemeli; `sdk/client.py` stabil library API degil, subprocess wrapper.",
+    "`tools/` useful degil essential olmali; orchestrator workflow execution dogrudan `src.tools.gateway` kullaniyor.",
+    "Live tool/provider yolu korunacaksa `secrets/` da useful yerine core control-plane katmanina yukselmeli.",
+    "`roadmap/` sadece questionable diye park edilirse governed change-execution degeri bosa gider; execution kernel alinmali, orchestration shell alinmamali.",
+    "`utils/` tamamen kaldiralim onerisi bugun kirici; orchestrator ve session icinde aktif importlar var.",
+    "`ops/` icin modul bazli karar yetersiz; `manage.py` ve 38 command dosyasini tasimak mimari hata olur."
+  ],
+  "additions": [
+    "Sayilar: `ops` 287 toplam dosya, yaklasik 149 runtime ve 138 test; `roadmap` 24/20/4; `prj_airunner` 67/18/49; `prj_github_ops` 41/10/31; `prj_kernel_api` 33/21/12.",
+    "Top-level `extensions/` dizininde gercek manifest katalogu var; canonical discovery kok orasi, `src/extensions/` degil.",
+    "`orchestrator/target_registry.py` icinde `PRJ-MULTI-AI-CODING-OS` ve legacy fallback hardcode'lari var; `orchestrator/` klasorunun tamami saf core degil.",
+    "`session/agent_context_version.py` legacy `.cache/ws_customer_default` ve repo dokuman yollarina gomulu; `session/` klasorunun tamami runtime-generic degil.",
+    "`sdk/client.py` hem `src.ops.manage` hem `src.orchestrator.local_runner` subprocess cagiriyor; facade yeniden yazilmazsa public API kirilgan kalir.",
+    "`prj_kernel_api` ile CLAUDE.md arasinda source drift var; include karari filesystem envanterinden verilmeli, belge anlatimindan degil."
+  ],
+  "follow_up": [
+    "Dosya bazli bir allowlist matrisi cikarin: her dosyayi `core_service`, `compat_shim`, `cli_adapter`, `repo_extension` olarak etiketleyin.",
+    "`prj_kernel_api` icin source-of-truth karari verin: ya gercek PR #76 dosyalarini getirin ya da bugunku snapshot'a gore modul anlatimini duzeltin.",
+    "`tools` + `secrets` + secili `providers` + secili `prj_kernel_api` dosyalariyla LLM/tool control-plane katmanini resmi olarak tanimlayin.",
+    "`roadmap` execution kernel'i icin ayri bir slice/paket tanimlayin; orchestration shell'i v1 core kapsamina sokmayin.",
+    "`ops/manage.py` ve `commands/*` agacini oldugu gibi tasimak yerine yeni `ao_kernel/cli.py` facade'i yazin ve sadece secilen servisleri baglayin.",
+    "`src.utils` icin import burn-down plani yapin; v1'de frozen shim, v2'de removal hedefi koyun."
+  ]
+}

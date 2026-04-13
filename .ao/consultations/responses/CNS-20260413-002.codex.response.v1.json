@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-002",
+  "agent": "codex",
+  "responded_at": "2026-04-13T02:45:00Z",
+  "verdict": "B",
+  "body": "R11 ve R12 plana açıkça eklenmiş; 324 JSON toplamı da plan içi aritmetikte doğru. Ancak final onay veremiyorum: allowlist sayımı tutarsız, 13 revizyonun tam izlenebilirliği yok ve doctor/DoD/doğrulama akışı birbiriyle çelişiyor. Bu haliyle implementasyona başlanırsa yanlış dosya seti ve yanlış kabul kriteriyle ilerlenir.",
+  "agreements": [
+    "4.8 ve 4.9 R11/R12 blokajlarını net biçimde kapsıyor.",
+    "Facade + shim, minimal dependency ve bundled defaults yönü genel olarak tutarlı.",
+    "Bundled defaults toplamı plan içi aritmetikte doğru: 90 + 206 + 8 + 17 + 3 = 324."
+  ],
+  "objections": [
+    "39 dosya allowlist doğrulanamıyor: 4.2'de kategori toplamı 41 ediyor, 5.2'de src root ile 42 ediyor; explicit dosya listesi de yok.",
+    "13 revizyon iddiası izlenebilir değil: plan 10 karar başlığı veriyor; R3, R5, R10 ve R13 için açık karşılık görünmüyor.",
+    "Doctor akışı çelişkili: 6.4'te opsiyonel LLM bağımlılıkları WARN, ama DoD/9.1/10.1 '8 OK' istiyor; V1 de sadece `.[dev]` kuruyor.",
+    "R1 mitigasyonu kararsız bırakılmış: 'kod adapte edilecek VEYA doctor kontrol edecek' ifadesi clean wheel runtime için yeterli değil.",
+    "V16 eksik tanımlı: clean venv senaryosunda `ao-kernel init` yok; ayrıca R11 ve R12 için wheel üstünde gerçek smoke test yok."
+  ],
+  "additions": [
+    "R1-R13 için tek satırlık bir traceability tablosu ekle: kaynak istişare, plan bölümü, etkilenen dosyalar, doğrulama ID.",
+    "39 dosyanın tam allowlist manifestini dosya bazında ekle ve tüm toplamları buna göre düzelt.",
+    "Doctor kabul kriterini netleştir: ya V1'i `.[dev,llm]` yap ya da kontrol 6'yı WARN kabul edecek şekilde DoD/F4/V6'yı revize et.",
+    "V16'ya `ao-kernel init` ekle; clean wheel altında `import src.prj_kernel_api` ve `llm_router`/`llm_probe_runner` smoke testleri ekle."
+  ],
+  "follow_up": [
+    "Allowlist manifest ve revision matrix düzeltildikten sonra hızlı final onay tekrar verilebilir.",
+    "R1 için resource loader'a çevrilecek dosyalar netleşmeden implementasyon başlatılmamalı.",
+    "V7 test sızıntısı kontrolü `_test` ile sınırlı kalmamalı; `test_` ve `tests/` desenleri de kapsanmalı."
+  ]
+}

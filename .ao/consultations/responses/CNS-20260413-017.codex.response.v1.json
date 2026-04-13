@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-017",
+  "agent": "codex",
+  "responded_at": "2026-04-13T14:00:00Z",
+  "verdict": "B",
+  "body": "Planin cekirdegi dogru: faz sirasi mantikli, kapsam disi kararlar isabetli ve dosya ayrimi genel olarak uygulanabilir. Ama bunu oldugu gibi implement etmeye onay vermem. En kritik sorunlar: '4 faz + 6 checkpoint' ifadesi planla tutarsiz cunku CP-0..CP-6 fiilen 7 checkpoint; bazi DoD ve basari kriterleri protokolsuz oldugu icin gercekten olculebilir degil; risk matrisi production operasyon risklerini eksik kapsiyor; test plani da failure-mode, migration ve concurrency tarafinda zayif. Kisa bir revizyon turundan sonra uygulanabilir.",
+  "agreements": [
+    "Faz sirasi dogru: once otomatik pipeline, sonra compiler, sonra canonical store, en sonda multi-agent.",
+    "Kapsam disi kararlar dogru: vector-first, self-editing memory ve full profile routing'i ertelemek isabetli.",
+    "Dosya plani moduler; sorumluluklar mantikli ayrilmis.",
+    "F1-F10 ve NF1-NF5 iskeleti iyi; ekip icin ortak hedef dili olusturuyor."
+  ],
+  "objections": [
+    "Checkpoint sayisi tutarsiz: plan 6 diyor ama CP-0..CP-6 toplam 7 checkpoint.",
+    "DoD'deki 'gereksiz inject <%20', 'uyum +20 puan', 'SDK entegrasyon <1 gun', 'roundtrip %99.9' gibi maddeler icin veri seti, skorlama rubric'i ve test protokolu tanimli degil.",
+    "Risk matrisi eksik: atomic write/corruption, restart recovery, migration/backfill, observability/telemetry, kill-switch/fallback, disk growth, policy misconfiguration, approval bypass ve concurrent writer riskleri yok.",
+    "F4'te last-write-wins tek basina zayif; governed canonical store icin revision/CAS veya optimistic concurrency gerekir.",
+    "Test plani gercekci ama eksik: idempotency, race condition, crash recovery, schema migration ve backward compatibility testleri olmadan production-grade denemez.",
+    "Dosya/satir tahminleri cekirdek icin makul ama benchmark harness, telemetry, migration ve rollout kodu hesaba katilmamis."
+  ],
+  "additions": [
+    "DoD'ye zorunlu olarak auditability ekleyin: her inject/save/promote icin provenance, revision ve selection_reason kaydi.",
+    "Basari kriterlerine operasyonel SLO ekleyin: save atomicity, recovery success, compile determinism, concurrent read consistency.",
+    "Risk matrisine R9-R14 olarak corruption, migration failure, stale revision, policy bypass, telemetry gap ve storage bloat ekleyin.",
+    "Test planina chaos/failure testleri ekleyin: yarim yazma, bozulan store, eski schema'dan migration, restart sonrasi devam, iki agent ayni anda promote.",
+    "F4 vector fallback'i ana DoD'den cikarip feature flag veya Faz 4b yapin; aksi halde kapsam kayar.",
+    "Canonical karar/fact ayrimi icin tombstone, supersedes zinciri ve schema_version alanlarini acikca zorunlu kilin."
+  ],
+  "follow_up": [
+    "CP sayisini ve faz/checkpoint adlandirmasini netlestirin.",
+    "Her olcum metri gi icin veri seti + skorlayici + kabul protokolu yazin.",
+    "Rollout planina dark launch, metrics dashboard ve emergency disable mekanizmasi ekleyin.",
+    "Bu revizyonlardan sonra plan A seviyesinde uygulanabilir."
+  ]
+}

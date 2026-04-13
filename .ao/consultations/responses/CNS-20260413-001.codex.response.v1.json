@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-001",
+  "agent": "codex",
+  "responded_at": "2026-04-13T02:00:00Z",
+  "verdict": "B",
+  "body": "Plan neredeyse hazır, ama iki blokaj var: 1) `src/prj_kernel_api/__init__.py` mevcut haliyle dışarıda bırakılan `adapter.py`ye import ediyor; bu dosya patchlenmeden kopyalanamaz. 2) Seçili shim dosyaları paketlenmiş `ao_kernel/defaults/` yerine eski repo-kökü asset yollarına bakıyor. Özellikle `api_guardrails.py`, `provider_guardrails.py`, `quality_gate.py`, `roadmap/*` `policies/` ve `schemas/`, `llm_router.py` ile `llm_probe_runner.py` ise ayrıca `docs/OPERATIONS/llm_{class_registry,resolver_rules,provider_map}.v1.json` bekliyor. Bu resource-loader düzeltmesi ya da ek asset allowlist’i plana açıkça eklenmeden implementasyona geçmeyin.",
+  "agreements": [
+    "Konumlandırma, iki fazlı copy stratejisi ve 39 dosyalık katman bazlı allowlist doğru yönde.",
+    "JSON sayıları mevcut kaynakla uyumlu: policies 90, schemas 206, registry 8, extension manifest 17.",
+    "`tool_gateway`, `ops`, `sdk`, `session` ve repo-spesifik shell katmanlarının v0.1 dışında tutulması doğru."
+  ],
+  "objections": [
+    "`src/prj_kernel_api/__init__.py` as-is alınamaz; excluded `adapter.py` importu yüzünden `import src.prj_kernel_api` kırılır.",
+    "`llm_router.py` ve `llm_probe_runner.py` için gereken `docs/OPERATIONS` LLM JSON’ları Task 3 asset planında yok.",
+    "`api_guardrails.py`, `provider_guardrails.py`, `quality_gate.py` ve `roadmap/*` eski repo-kökü path çözümüne bağlı; yalnız `ao_kernel/defaults/**/*.json` paketlemek bunu tek başına çözmez.",
+    "Doğrulama planı editable install ağırlıklı; built wheel ve clean env testi olmadan resource-path hataları kaçabilir."
+  ],
+  "additions": [
+    "Yeni kod dosyası ekleme zorunluluğu görmüyorum; eksik olan şey esas olarak asset/resource sözleşmesinin açıklaştırılması.",
+    "En temiz çözüm: seçili `src` shim dosyalarını `ao_kernel.config` benzeri tekil resource loader üzerinden workspace override + packaged defaults okuyacak şekilde patchlemek.",
+    "Alternatif çözüm: `llm_router` ve `llm_probe_runner`ı v0.1’den çıkarıp `docs/OPERATIONS` bağımlılığını sonraya bırakmak."
+  ],
+  "follow_up": [
+    "`import src.prj_kernel_api` için ayrı smoke testi ekleyin.",
+    "Built wheel’i clean venv’de kurup `ao-kernel doctor`, `llm_router`, `llm_probe_runner`, `quality_gate` ve `roadmap` resource lookup smoke testlerini çalıştırın.",
+    "Source manifest’e üç LLM ops JSON assetini ve her dosya için final resource-loading kararını yazın."
+  ]
+}

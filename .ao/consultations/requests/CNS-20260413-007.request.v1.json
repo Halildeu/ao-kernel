@@ -1,0 +1,54 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-007",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "review",
+  "question": {
+    "title": "ao-kernel v2.1.1 kapsamlı durum değerlendirmesi — ekleme/çıkarma/değiştirme önerileri",
+    "body": "ao-kernel v2.1.1 durumundadır. 45 commit, 405 test, 120 Python dosyası (14,285 LOC), 338 JSON default. Aşağıdaki mevcut durumu inceleyip şu 4 eksende değerlendirmeni istiyorum:\n\n## A. EKLE — Eksik olan, eklenmesi gereken\nHangi modüller, özellikler, altyapı bileşenleri eksik? Rakiplerde olup bizde olmayan kritik şeyler? 2026 AI trendlerinde kaçırılan fırsatlar?\n\n## B. ÇIKAR — Gereksiz, kaldırılması gereken\nOver-engineering var mı? Kullanılmayan modüller? Dead code? Karmaşıklığı artıran ama değer katmayan parçalar?\n\n## C. DEĞİŞTİR — Mevcut ama iyileştirilmesi gereken\nYanlış tasarım kararları? Rename/refactor gereken API'ler? Tutarsızlıklar? Fail-closed ilkesi ihlal eden noktalar?\n\n## D. ÖNCELİKLENDİR — Sonraki 3 PR ne olmalı\nYukarıdaki A/B/C'den en kritik 3 iş paketi nedir? Sıralama ve gerekçe.\n\n## Mevcut Mimari\n\n### Facade (ao_kernel/*.py — 17 modül, 2,663 LOC)\n__init__.py, cli.py, config.py, doctor_cmd.py, errors.py, governance.py, i18n.py, init_cmd.py, llm.py, mcp_server.py, migrate_cmd.py, policy.py, roadmap.py, session.py, telemetry.py, tool_gateway.py, workspace.py\n\n### Context Pipeline (ao_kernel/context/ — 11 modül)\nagent_coordination.py, canonical_store.py, checkpoint.py, context_compiler.py, context_injector.py, decision_extractor.py, memory_pipeline.py, memory_tiers.py, profile_router.py, session_lifecycle.py\n\n### Internal (ao_kernel/_internal/ — 10 paket)\nevidence, orchestrator, prj_kernel_api, providers, roadmap, secrets, session, shared, utils\n\n### SDK\nao_kernel/client.py — AoKernelClient (unified high-level entry point)\n\n### Bilinen Sorunlar\n1. Context pipeline izole — LLM/MCP runtime'a bağlanmamış\n2. Session start_session() corrupt'ta warning veriyor, fail-closed değil\n3. Policy engine sadece field validation yapıyor, semantik enforcement yok\n4. ToolGateway policy dosyalarını yüklemiyor (hardcoded enabled=True)\n5. Schema mismatch: ephemeral_decisions vs decisions\n6. 106 stale branch birikmiş\n7. _internal coverage'dan exclude edilmiş\n8. README context/session mimarisini anlatmıyor\n\n### Dependency\nCore: jsonschema. Extras: [llm] tenacity+tiktoken, [mcp] mcp>=1.0, [otel] opentelemetry, [pgvector] pgvector+psycopg2\n\n### Rakip Pozisyon\nao-kernel'in rakiplerde OLMAYAN güçleri: 96+ policy, fail-closed, evidence trail, deterministic stubs, prompt experiments, migration CLI\nRakiplerde OLUP bizde olmayan: streaming UX (kısmi var), async/await native, web UI, community/ecosystem\n\n### Test Durumu\n405 test passing, %70 coverage gate (_internal hariç). 6 warning (session corruption — known behavior).",
+    "context_refs": [
+      "ao_kernel/__init__.py",
+      "ao_kernel/llm.py",
+      "ao_kernel/governance.py",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/tool_gateway.py",
+      "ao_kernel/session.py",
+      "ao_kernel/client.py",
+      "ao_kernel/context/memory_pipeline.py",
+      "ao_kernel/context/session_lifecycle.py",
+      "pyproject.toml",
+      "CLAUDE.md"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Önce runtime wiring (context→LLM bağlantısı)",
+        "pros": "En büyük teknik borç kapanır, context pipeline anlamlı hale gelir",
+        "cons": "API stabilizasyonu olmadan wiring kırılabilir"
+      },
+      {
+        "option_id": "B",
+        "title": "Önce fail-closed düzeltmeleri (session+policy enforcement)",
+        "pros": "Projenin temel vaadini yerine getirir, güvenlik borcu kapanır",
+        "cons": "Context pipeline hâlâ dekoratif kalır"
+      },
+      {
+        "option_id": "C",
+        "title": "Önce temizlik + stabilizasyon (branch cleanup, coverage, docs)",
+        "pros": "Repo sağlığı artar, yeni katkıcılar başlayabilir",
+        "cons": "Fonksiyonel ilerleme olmaz"
+      },
+      {
+        "option_id": "D",
+        "title": "Farklı bir öncelik sırası öner",
+        "pros": "Codex'in perspektifi farklı olabilir",
+        "cons": "—"
+      }
+    ]
+  },
+  "created_at": "2026-04-13T23:00:00+03:00",
+  "branch": "main",
+  "head_sha": "322c3d7"
+}

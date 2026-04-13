@@ -1,0 +1,40 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-009",
+  "agent": "codex",
+  "responded_at": "2026-04-13T08:00:00Z",
+  "verdict": "B",
+  "body": "Planin omurgasi dogru ama bu haliyle production-grade degil. Q1: 4 faz mantikli, ancak production PyPI publish CI'dan once yapilmamali; en azindan build, test ve release gate otomatiklesmeden canli yayin riskli. Q2: TestPyPI once, PyPI sonra dogru; fakat repo su an buna tam hazir degil: `README.md` 1 satir, `docs/` yok, `.github/workflows/` yok, `dev` extra icinde `pytest-cov` ve `twine` yok. Q3: CI taslagi yon olarak dogru ama coverage'i matrix'in her job'unda degil tek kanonik job'da fail ettirmek daha saglam olur. Q4: README yapisi eksik degil ama bugunku kodla uyumsuz; plandaki `ao_kernel.llm` modulu repoda yok. Q5: Backlog stratejisi yon olarak dogru ama fazla iyimser; `tool_gateway` kaynakta `subprocess` ve `src.ops.manage` bagimli, `session` ve `evidence` ise gorundugunden fazla transitive bagimlilik tasiyor. Q6: Risk matrisi fena degil ama legacy `src.*`, `src.ops.manage`, `.cache/ws_customer_default` ve coklu version drift risklerini acik yazmiyor. Q7: DoD temel olarak yeterli, ama non-editable wheel smoke, public API kontrati ve version yayilim kontrolu eklenmeli. Ek not: plandaki `172 test` baseline'i repo ile eslesmiyor; mevcut agacta 134 test gorunuyor. Ayrica `long_description_content_type` maddesi PEP 621 akisinda gereksiz/yanlis; `readme = \"README.md\"` zaten var.",
+  "agreements": [
+    "Fazlama genel eksende dogru: paketleme, CI, docs ve backlog ayrimi mantikli.",
+    "TestPyPI once, PyPI sonra yaklasimi dogru.",
+    "Coverage hard gate ve 3.11/3.12/3.13 uyumluluk hedefi yerinde.",
+    "README ve dis dokumantasyonun v0.2.0'da buyuk oncelik olmasi dogru.",
+    "tool/session/evidence/secrets yonu urun vizyonuyla uyumlu."
+  ],
+  "objections": [
+    "Production PyPI publish'in CI/CD'den once konumlanmasi zayif.",
+    "CI komutlari mevcut bagimliliklarla calismaz; `pytest-cov` ve `twine` tanimli degil.",
+    "README quickstart bugunku public yuzeyle uyumsuz; `ao_kernel.llm` yok.",
+    "`0.2.0` sadece `pyproject.toml` guncellemesi degil; birden cok sabit version noktasi var.",
+    "`tool_gateway` icin sadece 'ops.manage bagimliligini kes' demek yetmez; subprocess, izin modeli ve dispatch kontrati yeniden tanimlanmali.",
+    "Risk matrisi legacy shim buyumesi ve workspace path borcunu yeterince somutlastirmiyor.",
+    "`Typing :: Typed` classifier var ama `py.typed` dosyasi gorunmuyor."
+  ],
+  "additions": [
+    "Faz sirasini su sekilde revize edin: metadata+build/TestPyPI -> CI -> docs -> production PyPI -> backlog.",
+    "DoD'ye non-editable smoke ekleyin: temiz venv'de wheel kur, `ao-kernel version`, `ao-kernel doctor`, gerekirse `ao-kernel mcp serve` import smoke.",
+    "Release checklist'e version yayilim kontrolu ekleyin: `pyproject.toml`, `ao_kernel.__version__`, MCP API version, telemetry ve ilgili manifest/test beklentileri.",
+    "F3'e public API siniri ekleyin: desteklenen yuzey `ao_kernel.*`, `src.*` uyumluluk/shim katmani mi net yazin.",
+    "F4 icin her modulde kabul kriteri tanimlayin: `src.ops.manage` yok, hardcoded legacy workspace path yok, subprocess yok ya da gerekceli, fail-closed korunuyor.",
+    "Publish workflow'da Trusted Publishing/OIDC veya en azindan protected environment onayi dusunun.",
+    "Coverage gate'i tek kanonik Python surumunde uygulayin; matrix testleri ayri kosun.",
+    "Baseline metriklerini repo gercegine hizalayin; 172 yerine bugun gozlenen sayilarla ratchet edin."
+  ],
+  "follow_up": [
+    "Karar alin: v0.2.0'da resmi LLM facade `ao_kernel.llm` eklenecek mi, yoksa docs'tan cikarilacak mi?",
+    "Karar alin: ilk production release CI'dan once manuel mi olacak, yoksa CI green tag zorunlu mu?",
+    "Karar alin: Faz 4'te once `tool_gateway` mi, yoksa daha dusuk bagimlilikli `evidence`/`session` parcali tasima mi yapilacak?",
+    "Ilk gate olarak su dordunu yazin: `python -m build`, `twine check`, wheel install smoke, tek-job coverage gate."
+  ]
+}

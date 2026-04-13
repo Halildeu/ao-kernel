@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-005",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "architecture",
+  "question": {
+    "title": "ao-kernel OTEL native — OpenTelemetry instrumentation",
+    "body": "ao-kernel'e OTEL (OpenTelemetry) native instrumentation ekliyoruz. Mevcut durum: streaming (experimental), MCP server (4 tool), 126 test.\n\nNeyi instrument etmeliyiz?\n\nPotansiyel spanlar:\n1. llm_call — her LLM cagrisinda (provider, model, latency, tokens, status)\n2. stream_call — streaming LLM cagrisinda (first_token_ms, chunk_count)\n3. policy_check — policy evaluation (policy_ref, decision, violations)\n4. quality_gate — output quality check (gate_id, passed/failed)\n5. mcp_tool_call — MCP tool invocation (tool_name, decision)\n\nPotansiyel metrikler:\n1. ao.llm.call.duration — histogram (provider, model, status)\n2. ao.llm.tokens.usage — counter (provider, input/output)\n3. ao.policy.check.total — counter (policy, decision)\n4. ao.quality.gate.total — counter (gate_id, result)\n5. ao.stream.first_token_ms — histogram\n\nSorular:\nQ1: Bu span ve metrik listesi dogru mu? Eksik/fazla?\nQ2: OTEL yuklu degilse graceful degrade nasil olmali? No-op tracer mi, import-time check mi?\nQ3: Instrumentation nereye konmali? Ayri modul mu (ao_kernel/telemetry.py), yoksa her moduldeki fonksiyonlara decorator mi?\nQ4: Semantic conventions: Gen AI OTEL conventions (gen_ai.*) mi kullanalim, yoksa custom ao.* namespace mi?\n\nKisa yanit ver. Turkce.",
+    "context_refs": ["CLAUDE.md"],
+    "options": [
+      {"option_id": "A", "title": "Tam instrumentation", "description": "5 span + 5 metrik + semantic conventions", "pros": "Kapsamli", "cons": "Buyuk kapsam"},
+      {"option_id": "B", "title": "Core spans only", "description": "llm_call + stream_call + policy_check spanlari, metrikler sonra", "pros": "Odakli", "cons": "Metrikler eksik"}
+    ]
+  },
+  "created_at": "2026-04-13T05:00:00Z",
+  "expires_at": "2026-04-14T05:00:00Z",
+  "branch": "claude/practical-wing",
+  "head_sha": "97c4cc0"
+}

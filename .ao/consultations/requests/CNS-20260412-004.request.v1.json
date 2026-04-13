@@ -1,0 +1,44 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-004",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "architecture",
+  "question": {
+    "title": "ao-kernel src/ modul envanteri — neyi alip neyi birakacagiz",
+    "body": "ao-kernel scaffold planini revize ediyoruz. Kaynak repo (autonomous-orchestrator) src/ agacinda 25 modul var. Her modulu analiz ettik. Simdi senden bu include/exclude kararlarini review etmeni istiyoruz.\n\nBu proje sektor lideri kalitesinde, production-grade bir governed AI runtime insa ediyor.\n\n## MODUL ENVANTERI ve CLAUDE'UN VERDICTLERI\n\n### ESSENTIAL (kesinlikle alinacak)\n\n| Modul | Dosya | Aciklama | Neden |\n|---|---|---|---|\n| orchestrator/ | 68 | Deterministic workflow execution engine | Cekirdek runtime |\n| prj_kernel_api/ | 33 | LLM katmani: request builder, transport, retry, circuit breaker, rate limiter, tool calling, tool gateway, prompt registry | **PR #76'daki 15 modul BURADA.** ao-kernel'in LLM value proposition'i bu modul. CLAUDE.md'de listelenen tum implement edilmis moduller bu dizinde. |\n| sdk/ | 2 | OrchestratorClient public API | Dis kullanici yüzeyi |\n| session/ | 10 | Context store, memory distiller, compaction | Runtime state yonetimi |\n| shared/ | 6 | SSOT utilities (load_json, write_json_atomic, logger) | Tum moduller buna bagimli |\n| providers/ | 6 | LLM provider abstraction (Claude, OpenAI) | Runtime LLM erisimi |\n| evidence/ | 4 | Evidence writer + integrity verify | Fail-closed evidence trail |\n\n### USEFUL (alinmali ama opsiyonel olabilir)\n\n| Modul | Dosya | Aciklama | Neden |\n|---|---|---|---|\n| quality/ | 2 | Quality gate checks | Eval harness'in parcasi |\n| secrets/ | 4 | Env provider + vault stub | API key yonetimi |\n| artifacts/ | 2 | Content-addressed artifact store | Workspace artifact'leri |\n| tools/ | 8 | Tool gateway, fs_read, fs_write | Tool execution layer |\n| tenant/ | 6 | Pack/catalog builder | Startup icin workspace config |\n| modules/ | 3 | DLQ triage, policy review | Built-in workflow modulleri |\n\n### QUESTIONABLE (tartismali)\n\n| Modul | Dosya | Aciklama | Soru |\n|---|---|---|---|\n| roadmap/ | 24 | Change proposal orchestration | Cok buyuk, ao-kernel icin gerekli mi? |\n| ops/ | 287 | CLI commands, extension registry, work intake | 287 dosya! Neyi alip neyi birakacagiz? |\n| learning/ | 5 | Advisor suggestions | Aktif runtime yolunda mi? |\n| autopilot/ | 2 | Readiness report | Status reporting, cekirdek degil |\n| extensions/ (src icindeki) | 6 | prj_deploy, prj_search stubs | Stub'lar gerekli mi? |\n| utils/ | 2 | jsonio.py, budget.py | shared/utils.py'ye delegate ediyor, redundant mi? |\n\n### EXCLUDE onerisi (repo-spesifik)\n\n| Modul | Dosya | Aciklama | Neden |\n|---|---|---|---|\n| prj_airunner/ | 67 | AI runner extension | %73 test, repo-spesifik tick runner |\n| prj_github_ops/ | 41 | GitHub operations | %76 test, repo-spesifik |\n| prj_planner/ | 10 | Planner extension | Repo-spesifik planlama |\n| prj_release_automation/ | 7 | Release pipeline | Kesinlikle repo-spesifik |\n| benchmark/ | 49 | Contract test suite | %75 test, benchmark/gap engine |\n\n## OPS/ OZEL DURUMU\n\nops/ 287 dosya ile src/'in %30'u. Icinde:\n- commands/ (38 dosya) — CLI dispatch\n- extension_registry.py — extension discovery (ONEMLI)\n- context_*.py — context building (ONEMLI)\n- work_intake_*.py — work intake rules (150+ dosya!)\n- decision_*.py — decision management\n- system_status_*.py — system health\n- ~132 contract test\n\nSoru: ops/'un hangi parcalarini alacagiz?\n\n## 5 SORU\n\nQ1: ESSENTIAL listesine itirazin var mi? Ozellikle prj_kernel_api/'nin tamamini mi almaliyiz yoksa sadece PR #76 modullerini mi?\n\nQ2: QUESTIONABLE kategorisindeki 6 modul hakkinda ne dusunuyorsun? roadmap/ (24 dosya) ve ops/ (287 dosya) icin somut include/exclude onerisi ver.\n\nQ3: EXCLUDE listesindeki 5 modulu gercekten dislamali miyiz? prj_airunner icindeki runtime (test olmayan) kod ao-kernel icin degerli olabilir mi?\n\nQ4: ops/ icin somut bir strateji oner: hangi dosyalar core, hangi dosyalar CLI-only, hangi dosyalar repo-spesifik?\n\nQ5: utils/ vs shared/ — utils/'i tamamen kaldirip shared/'a merge etmeli miyiz, yoksa birebir korumali miyiz?\n\nHer soru icin somut, cesur, itiraz odakli yanit ver. Turkce yanit ver.",
+    "context_refs": [
+      "CLAUDE.md",
+      ".ao/consultations/responses/CNS-20260412-002.codex.response.v1.json",
+      ".ao/consultations/responses/CNS-20260412-003.codex.response.v1.json"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Claude'un verdictleri buyuk olcude dogru",
+        "description": "Essential/Useful/Exclude kategorileri dogru, kucuk duzeltmeler yeterli",
+        "pros": "Hizli karar",
+        "cons": "Detaylar eksik kalabilir"
+      },
+      {
+        "option_id": "B",
+        "title": "Bazi kategoriler degismeli",
+        "description": "Essential veya Exclude listesinde hatalar var",
+        "pros": "Daha dogru envanter",
+        "cons": "Ek analiz suresi"
+      },
+      {
+        "option_id": "C",
+        "title": "Yaklasim yanlis — modul bazli degil katman bazli dusunmeli",
+        "description": "Include/exclude modul bazli degil, runtime katmani bazli olmali",
+        "pros": "Daha temiz mimari",
+        "cons": "Buyuk degisiklik"
+      }
+    ]
+  },
+  "created_at": "2026-04-13T00:45:00Z",
+  "expires_at": "2026-04-14T00:45:00Z",
+  "branch": "main",
+  "head_sha": "0500370"
+}

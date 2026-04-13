@@ -1,0 +1,50 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260412-002",
+  "agent": "codex",
+  "responded_at": "2026-04-12T23:55:00Z",
+  "verdict": "B",
+  "body": "Planin omurgasi dogru, ama A diyemem; Task 1, 3 ve 5 mevcut haliyle fazla iyimser.\n\nQ1: `pyproject.toml` bu haliyle eksik. `../autonomous-orchestrator/pyproject.toml` bugun yalnizca `jsonschema` runtime dependency ilan ediyor; mevcut kaynak agacinda `tiktoken` ve `tenacity` izine rastlamadim. Bunlari simdiden zorunlu dependency yapmak scaffold degil kapsam genisletme olur. `src + src.*` paket kesfi de 301 test modulunu wheel'e tasima riski tasiyor; `src` icin en azindan test dosyalari ve dagitilmayacak yuzeyler dislanmali. `package-data` duz `*.json` mantigiyla yazilamaz; policy agaci recursive.\n\nQ2: `ao_kernel/` icin 6 dosya iskelet olarak yeterli. Zorunlu bir yedinci modul gormuyorum; ama typed exception/status tasimak icin kucuk bir `errors.py` eklemek faydali olur. CLI dispatch'te `argparse` subparsers + `set_defaults(func=...)` kullanin; buyuk `if/elif` zinciri yazmayin. `version` ayri dosya olmak zorunda degil.\n\nQ3: Resolver sirasi (`--workspace-root` > `.ao/` > legacy) dogru ve `importlib.resources` secimi Pythonic. Yanlis olan kisim sessizlik: legacy fallback warning vermeli ve mumkunse hangi kaynagin secildigini donmeli. `workspace_root()` library mode'da workspace yoksa ya `None` dondurmeli ya da typed hata vermeli; CLI komutlari bunu acik mesajla fail etmeli. `PermissionError`, bozuk `workspace.json` ve invalid JSON icin ayri hata yuzeyi gerekli. Daha buyuk risk su: facade resolver tek basina yetmez; kaynak `src` agacinda 47 legacy `.cache/ws_customer_default` referansi ve yaygin repo-root kabulu var.\n\nQ4: JSON default'lari bundle etmek dogru; yaklasik 1.6 MB paket boyutu PyPI icin sorun degil. Ama planin sayilari tutarsiz. Gercek kaynakta `policies` recursive 90 dosya, ama bunlarin 12'si `policies/work_intake_fragments/...`; duz `policies/*.json` kopyasi bunlari kacirir. `schemas` 206, `registry` archive haric 8, archive dahil 9. Ayrica CLAUDE mimarisinde `ao_kernel/defaults/extensions/` var; plan bunu tamamen atliyor. Lazy download gerekmez; recursive preserve edilmis dizin yapisi gerekir. Eger `src.prj_kernel_api.llm_router` ve `src.ops.extension_registry` gibi moduller desteklenecekse `docs/OPERATIONS` ve `extensions/` gibi kok kaynaklar da ya paketlenmeli ya da bu moduller patch'lenmeli.\n\nQ5: `src/` agacini 657 dosya halinde birebir rsync ile dagitmak kabul edilebilir degil. Iki sebep var: bir, `src` icinde 301 test modulu var ve bunlar wheel'i sistirir/yanlis yuzey acar; iki, bircok runtime modulu repo kokunde `docs/`, `policies/`, `schemas/`, `registry/`, `extensions/` bekliyor. Bu yuzden sadece `from src.shared.utils import load_json` smokesi gercek uyumluluk gostergesi olmaz. Ben v0.1 icin `_legacy` namespace'i zorunlu tutmam; bu Faz 2 olabilir. Ama Faz 1'de en az su degismeli: `src` documented public API olmayacak, test modulleri dagitima girmeyecek, gerekli runtime data net listelenecek, legacy kullanim warning alacak. `HICBIR degisiklik yapilmaz` cumlesine itirazim var; Task 5 mutlaka revize edilmeli.\n\nQ6: Dogrulama plani yetersiz. `pip install -e .` ve tek util importu yetmez. En az su testler eklenmeli: wheel/sdist icerik testi; repo disi temiz ortamda `ao-kernel doctor`; recursive policy fragmentlerinin ve tum bundled JSON'larin wheel'de oldugu kontrolu; workspace precedence testi; legacy fallback warning testi; bozuk `workspace.json` ve izin hatasi; `init` idempotency; `migrate` dry-run/backup/report davranisi; temsil gucu yuksek birkac shim import smoke'u (`src.prj_kernel_api.llm_router`, `src.orchestrator.target_registry`, `src.ops.extension_registry`) veya bunlar desteklenmeyecekse bunun acikca dislanmasi.\n\nCNS-001 itirazlari icin Faz ayrimi:\nFaz 1'de adreslenmesi gerekenler: sessiz legacy fallback, recursive defaults/data eksigi, `src` blind-copy riski, dependency drift, zayif verification, `defaults/extensions` omisyonu.\nFaz 2'ye kalabilecekler: `ao_kernel._legacy` veya codemod, library mode vs workspace mode'un tam ayrismasi, gercek migration transformlari.\n\nSonuc: yon dogru ama plan bugunku kaynak snapshot'ina gore yeniden kalibre edilmeli; orta revizyon gerekli.",
+  "agreements": [
+    "Facade + bundled defaults + CLI iskeleti dogru yon.",
+    "`importlib.resources` ile package default + workspace override modeli dogru.",
+    "Yaklasik 1.6 MB JSON bundle PyPI icin makul; lazy download gerekmiyor.",
+    "Tek paket + extras yaklasimi v0.1 icin hala mantikli."
+  ],
+  "objections": [
+    "`src + src.*` blind discovery 301 test modulunu da wheel'e tasir; bu compat degil, dagitim gürültüsü.",
+    "`tiktoken` ve `tenacity` zorunlu dependency olarak kanitli degil; mevcut kaynak paket manifesti buna uymuyor.",
+    "`policies/*.json` duz kopyasi nested `work_intake_fragments` dosyalarini kacirir.",
+    "Legacy fallback'in sessiz kalmasi CNS-001 ile celisir ve hata ayiklamayi bozar.",
+    "Plan `defaults/extensions/` ve repo-root kaynak beklentilerini atliyor; bazi `src` runtime modulleri install sonrasi kirilir.",
+    "Migration task'ini sadece version compare + bos liste olarak tanimlamak fazla dar; en az dry-run, backup ve rapor scaffold seviyesinde olmali."
+  ],
+  "additions": [
+    "Task 3 ve Q4 kendi icinde sayisal olarak tutarsiz: registry 8 mi 9 mu, toplam JSON 304 mu 305 mi net degil.",
+    "Gercek kaynakta `policies` recursive 90 dosya ama top-level 78; 12 nested fragment dosyasi var.",
+    "Gercek kaynak `pyproject.toml` su an sadece `jsonschema` runtime dependency ilan ediyor.",
+    "Kaynak `src` agacinda 95 repo-root turetimi ve 47 legacy workspace referansi var; facade resolver bunu tek basina kapatmaz.",
+    "`src` icinde 8 JSON dosyasi ve 301 test modulu bulunuyor; yalnizca `.py` rsync ve tek util smoke testi gercegi orter.",
+    "CLAUDE.md'deki bazi modül/dependency iddialari bugunku source snapshot ile drift halinde; plan dogrudan filesystem envanterinden uretilmeli."
+  ],
+  "follow_up": [
+    "Kaynak snapshot'tan otomatik envanter cikar: dependencies, paketler, data file'lar, test dosyalari ve repo-root kaynak bagimliliklari.",
+    "Task 1'i mevcut kaynak `pyproject.toml` ile hizala; zorunlu dependency setini minimumda tut ve `src` icin exclude listesi tanimla.",
+    "Task 3 ve Task 5'i birlikte revize et: recursive defaults copy, `defaults/extensions` karari, `src` destek sozlesmesi ve gerekli kok kaynaklarin kaderi.",
+    "Dogrulama planina wheel-contents testi ve repo-disi temiz ortam smoke testleri ekle.",
+    "Migration task'ina en az dry-run, backup, report ve legacy fallback warning mekanizmasi ekle.",
+    "Desteklenecek shim yuzeyini acik yaz: tum `src.*` mi, yoksa karantina altinda sinirli bir compat seti mi."
+  ],
+  "evidence_paths": [
+    "CLAUDE.md",
+    ".ao/consultations/requests/CNS-20260412-002.request.v1.json",
+    ".ao/consultations/responses/CNS-20260412-001.codex.response.v1.json",
+    "../autonomous-orchestrator/pyproject.toml",
+    "../autonomous-orchestrator/policies/work_intake_fragments/manifest.v1.json",
+    "../autonomous-orchestrator/src/ops/commands/common.py",
+    "../autonomous-orchestrator/src/prj_kernel_api/llm_router.py",
+    "../autonomous-orchestrator/src/ops/extension_registry.py",
+    "../autonomous-orchestrator/src/orchestrator/target_registry.py",
+    "../autonomous-orchestrator/src/orchestrator/runner_stage_contract_test_utils.py"
+  ]
+}

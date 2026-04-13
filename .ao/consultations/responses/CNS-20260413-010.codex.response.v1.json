@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-010",
+  "agent": "codex",
+  "responded_at": "2026-04-13T08:30:00Z",
+  "verdict": "B",
+  "body": "1. KALDIR - runtime'da kullanim izi yok; ustelik `src.ops.manage` bagimliligi repo'da yok, MCP'ye simdi baglamak kirik ikinci dispatch hatti olur.\n2. DUZELT - annotation yanlis; `str` degil `bool | str` donuyor.\n3. DUZELT - `ao_kernel.llm` degil, yeni `ao_kernel.governance` veya `ao_kernel.quality` facade acilsin; MCP `src.orchestrator`a direkt uzanmasin. Ayrica mevcut import/kontrat zaten uyumsuz.\n4. KALDIR - `WorkspaceNotFoundError` hic kullanilmiyor ve mevcut `workspace_root()` kontrati `None` donme uzerine kurulu.\n5. DUZELT - shim sozunu bozma; ama `src/utils/jsonio.py` tam re-export/delegate olsun ve legacy oldugu net kalsin.\n6. DUZELT - `load_json` tek SSOT `src.shared.utils.load_json` olsun.\n7. DUZELT - acik kaynak/PyPI yuzeyi icin CLI stringleri English-first standardize edilmeli.\n8. DUZELT - doctor sabit `PRJ-DEPLOY` yerine 18 manifestin tamamini kesfetmeli.\n9. KALDIR - `Typing :: Typed` classifier'i simdilik kaldir; strict/type packaging gercekten temizlenince geri ekle.\n10. KALDIR - `ensure_codex_home()` hic cagrilmiyor; ustelik bekledigi `.codex/config.toml` repo'da da yok, su an dead code.",
+  "agreements": [
+    "Governed runtime kimligi facade sinirini ve claim hijyenini sikilastirmayi gerektiriyor.",
+    "2, 3, 6, 8 net duzeltme; 4, 9, 10 net temizlik adayi."
+  ],
+  "objections": [
+    "1 icin senin B onerine katilmiyorum: bugunku `ToolGateway` entegrasyonluk degil, kaldirilacak kadar bagimsiz ve kirik.",
+    "5'i tamamen kaldirmak icin erken; `src.*` shim v2.0.0'a kadar vaat ediliyorsa ince wrapper olarak korunmali."
+  ],
+  "additions": [
+    "3 ile birlikte quality-gate sonucu `QualityGateResult` -> MCP envelope donusumunu facade icinde yapin.",
+    "9'da classifier'i kaldirirken `py.typed` paketleme ve mypy hedefini ayri backlog maddesi yapin."
+  ],
+  "follow_up": [
+    "Ilk paket: 2, 3, 6, 8, 9.",
+    "Ardindan dead-code sweep: 1, 4, 10.",
+    "5 ve 7'yi public API/shim ve CLI locale politikasi ile birlikte tek PR'da toplayin."
+  ]
+}
