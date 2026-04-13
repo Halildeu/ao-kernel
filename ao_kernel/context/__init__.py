@@ -12,6 +12,7 @@ Modules:
     session_lifecycle: start/end session management
 """
 
+from ao_kernel.context.canonical_store import CanonicalDecision, promote_decision, query as query_canonical
 from ao_kernel.context.context_compiler import CompiledContext, compile_context
 from ao_kernel.context.context_injector import build_context_preamble, inject_context_into_messages
 from ao_kernel.context.decision_extractor import Decision, extract_decisions, extract_from_tool_result
@@ -33,4 +34,7 @@ __all__ = [
     "process_turn",
     "start_session",
     "end_session",
+    "CanonicalDecision",
+    "promote_decision",
+    "query_canonical",
 ]
