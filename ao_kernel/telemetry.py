@@ -263,6 +263,21 @@ def record_context_compile(
     )
     if h:
         h.record(total_tokens, {"ao.context.profile": profile})
+    # Record item inclusion/exclusion counts
+    h_inc = _get_histogram(
+        "ao.context.compile.items_included",
+        unit="item",
+        description="Context items included in compilation",
+    )
+    if h_inc:
+        h_inc.record(items_included, {"ao.context.profile": profile})
+    h_exc = _get_histogram(
+        "ao.context.compile.items_excluded",
+        unit="item",
+        description="Context items excluded from compilation",
+    )
+    if h_exc:
+        h_exc.record(items_excluded, {"ao.context.profile": profile})
 
 
 def record_decision_extraction(
