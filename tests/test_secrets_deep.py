@@ -63,9 +63,20 @@ class TestEnvProviderEdgeCases:
 
 
 class TestSecretsProviderAbstract:
-    def test_abstract_base_raises_on_get(self):
+    def test_cannot_instantiate_abstract_base(self):
+        """SecretsProvider is ABC — direct instantiation raises TypeError."""
         from ao_kernel._internal.secrets.provider import SecretsProvider
-        provider = SecretsProvider()
         import pytest
-        with pytest.raises(NotImplementedError):
-            provider.get("ANY_KEY")
+        with pytest.raises(TypeError, match="abstract method"):
+            SecretsProvider()
+
+    def test_subclass_must_implement_get(self):
+        """Subclass without get() cannot be instantiated."""
+        from ao_kernel._internal.secrets.provider import SecretsProvider
+        import pytest
+
+        class IncompleteProvider(SecretsProvider):
+            pass
+
+        with pytest.raises(TypeError, match="abstract method"):
+            IncompleteProvider()
