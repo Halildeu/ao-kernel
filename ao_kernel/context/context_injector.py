@@ -4,6 +4,14 @@ Reads session context and formats relevant decisions as a system prompt
 preamble. Token budget aware — never exceeds max_tokens.
 
 Plugin-ready: workspace_facts can be added to the same assembly pipeline.
+
+Naming convention:
+    ephemeral_decisions — session-scoped decisions (live in session context,
+        expire with session). This is the CANONICAL field name.
+    decisions — legacy field name for the same session-scoped list. Kept for
+        backward compatibility with older session files.
+    NOT to be confused with canonical_store decisions which are promoted,
+        permanent decisions persisted to .ao/canonical_decisions.v1.json.
 """
 
 from __future__ import annotations

@@ -13,3 +13,12 @@ class WorkspaceCorruptedError(ValueError):
 
 class DefaultsNotFoundError(FileNotFoundError):
     """A bundled default resource was not found in ao_kernel/defaults/."""
+
+
+class SessionCorruptedError(RuntimeError):
+    """Session context is corrupted or invalid — fail-closed.
+
+    Raised when a session file exists but cannot be loaded (e.g. invalid JSON,
+    schema mismatch, hash verification failure). Callers should decide whether
+    to create a fresh session or propagate the error.
+    """

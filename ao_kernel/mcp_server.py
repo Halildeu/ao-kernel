@@ -72,6 +72,9 @@ def _decision_envelope(
 def handle_policy_check(params: dict[str, Any]) -> dict[str, Any]:
     """Check an action against a named policy.
 
+    Delegates to governance.check_policy() which handles all policy types:
+    autonomy, tool_calling, provider_guardrails, and generic rules.
+
     Params:
         policy_name: str — policy file name (e.g., "policy_autonomy.v1.json")
         action: dict — the action to validate
@@ -91,94 +94,29 @@ def handle_policy_check(params: dict[str, Any]) -> dict[str, Any]:
         )
 
     try:
-        from ao_kernel.config import load_with_override, workspace_root as resolve_ws
+        from ao_kernel.governance import check_policy
         from pathlib import Path
 
-        ws = Path(workspace_root) if workspace_root else resolve_ws()
-        policy = load_with_override("policies", policy_name, workspace=ws)
-    except FileNotFoundError:
-        return _decision_envelope(
-            tool="ao_policy_check",
-            allowed=False,
-            decision="deny",
-            reason_codes=["POLICY_NOT_FOUND"],
-            policy_ref=policy_name,
-            error=f"Policy not found: {policy_name}",
-        )
+        ws = Path(workspace_root) if workspace_root else None
+        result = check_policy(policy_name, action, workspace=ws)
     except Exception as e:
         return _decision_envelope(
             tool="ao_policy_check",
             allowed=False,
             decision="deny",
-            reason_codes=["POLICY_LOAD_ERROR"],
+            reason_codes=["POLICY_CHECK_ERROR"],
             policy_ref=policy_name,
             error=str(e)[:200],
         )
 
-    # Basic policy validation: check if action violates any rules
-    enabled = policy.get("enabled", True)
-    if not enabled:
-        return _decision_envelope(
-            tool="ao_policy_check",
-            allowed=True,
-            decision="allow",
-            reason_codes=["POLICY_DISABLED"],
-            policy_ref=policy_name,
-            data={"policy_enabled": False},
-        )
-
-    # Policy is loaded and enabled — validate action fields against policy rules
-    violations = _check_policy_rules(policy, action)
-    if violations:
-        return _decision_envelope(
-            tool="ao_policy_check",
-            allowed=False,
-            decision="deny",
-            reason_codes=violations,
-            policy_ref=policy_name,
-            data={"violations": violations, "action": action},
-        )
-
     return _decision_envelope(
         tool="ao_policy_check",
-        allowed=True,
-        decision="allow",
-        reason_codes=["POLICY_PASSED"],
-        policy_ref=policy_name,
-        data={"policy_version": policy.get("version", "unknown")},
+        allowed=result.get("allowed", False),
+        decision=result.get("decision", "deny"),
+        reason_codes=result.get("reason_codes", []),
+        policy_ref=result.get("policy_ref", policy_name),
+        data=result.get("data"),
     )
-
-
-def _check_policy_rules(policy: dict, action: dict) -> list[str]:
-    """Check action against policy rules. Returns list of violation codes."""
-    violations = []
-
-    # Check required fields
-    required = policy.get("required_fields", [])
-    if isinstance(required, list):
-        for field in required:
-            if field not in action:
-                violations.append(f"MISSING_REQUIRED_FIELD:{field}")
-
-    # Check blocked values
-    blocked = policy.get("blocked_values", {})
-    if isinstance(blocked, dict):
-        for field, blocked_vals in blocked.items():
-            if field in action and action[field] in blocked_vals:
-                violations.append(f"BLOCKED_VALUE:{field}")
-
-    # Check max limits
-    limits = policy.get("limits", {})
-    if isinstance(limits, dict):
-        for field, max_val in limits.items():
-            if field in action:
-                try:
-                    if float(action[field]) > float(max_val):
-                        violations.append(f"LIMIT_EXCEEDED:{field}")
-                except (ValueError, TypeError):
-                    pass
-
-    return violations
 
 
 def handle_llm_route(params: dict[str, Any]) -> dict[str, Any]:
@@ -233,6 +171,8 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
     Params:
         output_text: str — the LLM output to evaluate
         workspace_root: str | None
+        previous_decisions: list[dict] | None — for consistency/regression checks
+            (auto-loaded from canonical store if omitted and workspace available)
 
     Fail-closed: if quality gate can't run, returns DENY (never silent allow).
     """
@@ -250,7 +190,21 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
     from pathlib import Path
 
     ws = Path(params["workspace_root"]) if params.get("workspace_root") else None
-    results = evaluate_quality(output_text, workspace_root=ws)
+
+    # Load previous decisions for consistency/regression checks
+    previous_decisions = params.get("previous_decisions")
+    if previous_decisions is None and ws:
+        try:
+            from ao_kernel.context.canonical_store import query as query_canonical
+            previous_decisions = query_canonical(ws)
+        except Exception:
+            previous_decisions = None
+
+    results = evaluate_quality(
+        output_text,
+        workspace_root=ws,
+        previous_decisions=previous_decisions,
+    )
     summary = quality_summary(results)
 
     return _decision_envelope(
@@ -547,6 +501,11 @@ TOOL_DEFINITIONS = [
                 "output_text": {"type": "string", "description": "LLM output to evaluate"},
                 "gate_id": {"type": "string", "description": "Specific gate (default: all)"},
                 "workspace_root": {"type": "string"},
+                "previous_decisions": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Previous decisions for consistency/regression checks (auto-loaded from workspace if omitted)",
+                },
             },
         },
     },
@@ -579,15 +538,13 @@ def create_tool_gateway():
     """
     from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy
 
-    # Load policy from bundled defaults
+    # Load policy from bundled defaults via from_dict()
     # MCP governance tools are ALWAYS enabled (they ARE the governance layer)
     try:
         from ao_kernel.config import load_default
         tool_policy = load_default("policies", "policy_tool_calling.v1.json")
-        policy = ToolCallPolicy(
-            enabled=True,  # MCP governance tools always enabled
-            max_rounds=int(tool_policy.get("max_tool_rounds", 10)),
-        )
+        policy = ToolCallPolicy.from_dict(tool_policy)
+        policy.enabled = True  # MCP governance tools always enabled (override)
     except Exception:
         policy = ToolCallPolicy(enabled=True, max_rounds=10)
 
@@ -741,8 +698,8 @@ async def serve_http(  # pragma: no cover — requires mcp package
         import uvicorn
     except ImportError:
         raise ImportError(
-            "MCP HTTP transport requires the 'mcp' package with HTTP support. "
-            "Install with: pip install ao-kernel[mcp]"
+            "MCP HTTP transport requires starlette and uvicorn. "
+            "Install with: pip install ao-kernel[mcp-http]"
         ) from None
 
     server = create_mcp_server()

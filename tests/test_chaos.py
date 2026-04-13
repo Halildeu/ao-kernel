@@ -74,21 +74,19 @@ class TestCorruption:
         assert store["decisions"] == {}
         assert store["facts"] == {}
 
-    def test_corrupted_session_creates_fresh(self, tmp_path: Path):
+    def test_corrupted_session_raises_fail_closed(self, tmp_path: Path):
+        """Corrupted session must raise SessionCorruptedError (fail-closed)."""
         from ao_kernel.context.session_lifecycle import start_session
-        import warnings
+        from ao_kernel.errors import SessionCorruptedError
+        import pytest
 
         # Create corrupted session file
         session_dir = tmp_path / ".cache" / "sessions" / "corrupt-test"
         session_dir.mkdir(parents=True)
         (session_dir / "session_context.v1.json").write_text("CORRUPTED!")
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            ctx = start_session(workspace_root=tmp_path, session_id="corrupt-test")
-            assert ctx["session_id"] == "corrupt-test"  # Fresh context created
-            runtime_warnings = [x for x in w if issubclass(x.category, RuntimeWarning)]
-            assert len(runtime_warnings) >= 1
+        with pytest.raises(SessionCorruptedError, match="corrupted or invalid"):
+            start_session(workspace_root=tmp_path, session_id="corrupt-test")
 
 
 class TestEdgeCases:

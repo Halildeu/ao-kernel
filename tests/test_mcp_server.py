@@ -222,65 +222,122 @@ class TestResourceLoading:
 
 
 class TestPolicyRulesEngine:
-    """Tests for _check_policy_rules — required fields, blocked values, limits."""
+    """Tests for governance._check_generic_rules — required fields, blocked values, limits.
+
+    These rules were previously duplicated in mcp_server._check_policy_rules.
+    Now handle_policy_check delegates to governance.check_policy which handles
+    all policy types (autonomy, tool_calling, provider_guardrails, generic).
+    """
 
     def test_required_fields_violation(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"required_fields": ["name", "intent"]}
-        violations = _check_policy_rules(policy, {"name": "test"})
+        violations = _check_generic_rules(policy, {"name": "test"})
         assert any("MISSING_REQUIRED_FIELD:intent" in v for v in violations)
 
     def test_required_fields_all_present(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"required_fields": ["name", "intent"]}
-        violations = _check_policy_rules(policy, {"name": "test", "intent": "FAST_TEXT"})
+        violations = _check_generic_rules(policy, {"name": "test", "intent": "FAST_TEXT"})
         assert len(violations) == 0
 
     def test_blocked_values_violation(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"blocked_values": {"model": ["gpt-3.5-turbo", "deprecated-model"]}}
-        violations = _check_policy_rules(policy, {"model": "gpt-3.5-turbo"})
+        violations = _check_generic_rules(policy, {"model": "gpt-3.5-turbo"})
         assert any("BLOCKED_VALUE:model" in v for v in violations)
 
     def test_blocked_values_allowed(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"blocked_values": {"model": ["gpt-3.5-turbo"]}}
-        violations = _check_policy_rules(policy, {"model": "gpt-4"})
+        violations = _check_generic_rules(policy, {"model": "gpt-4"})
         assert len(violations) == 0
 
     def test_limits_exceeded(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"limits": {"max_tokens": 1000}}
-        violations = _check_policy_rules(policy, {"max_tokens": 5000})
+        violations = _check_generic_rules(policy, {"max_tokens": 5000})
         assert any("LIMIT_EXCEEDED:max_tokens" in v for v in violations)
 
     def test_limits_within_range(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"limits": {"max_tokens": 1000}}
-        violations = _check_policy_rules(policy, {"max_tokens": 500})
+        violations = _check_generic_rules(policy, {"max_tokens": 500})
         assert len(violations) == 0
 
     def test_limits_non_numeric_ignored(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {"limits": {"max_tokens": 1000}}
-        violations = _check_policy_rules(policy, {"max_tokens": "not_a_number"})
+        violations = _check_generic_rules(policy, {"max_tokens": "not_a_number"})
         assert len(violations) == 0  # ValueError caught, no violation
 
     def test_empty_policy_no_violations(self):
-        from ao_kernel.mcp_server import _check_policy_rules
-        violations = _check_policy_rules({}, {"any": "action"})
+        from ao_kernel.governance import _check_generic_rules
+        violations = _check_generic_rules({}, {"any": "action"})
         assert violations == []
 
     def test_combined_violations(self):
-        from ao_kernel.mcp_server import _check_policy_rules
+        from ao_kernel.governance import _check_generic_rules
         policy = {
             "required_fields": ["intent"],
             "blocked_values": {"model": ["bad-model"]},
             "limits": {"temperature": 1.0},
         }
         action = {"model": "bad-model", "temperature": 2.0}
-        violations = _check_policy_rules(policy, action)
+        violations = _check_generic_rules(policy, action)
         assert len(violations) == 3  # missing intent + blocked model + limit exceeded
+
+
+class TestPolicyCheckDelegatesToGovernance:
+    """Verify handle_policy_check delegates to governance.check_policy."""
+
+    def test_delegates_to_governance_check_policy(self):
+        from unittest.mock import patch
+        mock_result = {
+            "allowed": True,
+            "decision": "allow",
+            "reason_codes": ["POLICY_PASSED"],
+            "policy_ref": "test.json",
+            "data": {"policy_version": "v1"},
+        }
+        with patch("ao_kernel.governance.check_policy", return_value=mock_result) as mock_check:
+            result = handle_policy_check({
+                "policy_name": "test.json",
+                "action": {"intent": "FAST_TEXT"},
+            })
+            mock_check.assert_called_once()
+            assert result["allowed"] is True
+            assert result["decision"] == "allow"
+
+    def test_autonomy_violation_caught(self):
+        """governance.check_policy handles autonomy policies (not just generic rules)."""
+        from unittest.mock import patch
+        autonomy_policy = {
+            "enabled": True,
+            "version": "v1",
+            "intents": {
+                "urn:core:deploy": {"mode": "human_review"},
+            },
+            "defaults": {"mode": "human_review"},
+            "fail_action": "block",
+        }
+        with patch("ao_kernel.config.load_with_override", return_value=autonomy_policy):
+            result = handle_policy_check({
+                "policy_name": "policy_autonomy.v1.json",
+                "action": {"intent": "urn:core:deploy", "mode": "full_auto"},
+            })
+        assert result["allowed"] is False
+        assert any("AUTONOMY_MODE_DENIED" in r for r in result["reason_codes"])
+
+    def test_governance_error_returns_deny(self):
+        from unittest.mock import patch
+        with patch("ao_kernel.governance.check_policy", side_effect=RuntimeError("boom")):
+            result = handle_policy_check({
+                "policy_name": "test.json",
+                "action": {},
+            })
+        assert result["allowed"] is False
+        assert "POLICY_CHECK_ERROR" in result["reason_codes"]
 
 
 class TestPolicyCheckDisabledPath:
@@ -288,15 +345,19 @@ class TestPolicyCheckDisabledPath:
         """Policy with enabled=false should return allow with POLICY_DISABLED."""
         from unittest.mock import patch
 
-        disabled_policy = {"enabled": False, "version": "v1"}
-        with patch("ao_kernel.config.load_with_override", return_value=disabled_policy):
+        mock_result = {
+            "allowed": True,
+            "decision": "allow",
+            "reason_codes": ["POLICY_DISABLED"],
+            "policy_ref": "test_disabled.json",
+        }
+        with patch("ao_kernel.governance.check_policy", return_value=mock_result):
             result = handle_policy_check({
                 "policy_name": "test_disabled.json",
                 "action": {"type": "read"},
             })
         assert result["allowed"] is True
         assert "POLICY_DISABLED" in result["reason_codes"]
-        assert result["data"]["policy_enabled"] is False
 
     def test_policy_with_violations_denied(self):
         """Policy with required_fields violation should deny."""
@@ -428,3 +489,67 @@ class TestHandleLLMCall:
     def test_dispatch_includes_llm_call(self):
         assert "ao_llm_call" in TOOL_DISPATCH
         assert TOOL_DISPATCH["ao_llm_call"] is handle_llm_call
+
+
+class TestQualityGatePreviousDecisions:
+    """Verify quality gate passes previous_decisions for consistency/regression checks."""
+
+    def test_passes_previous_decisions_from_params(self):
+        from unittest.mock import patch
+        prev = [{"key": "test", "value": "v1", "confidence": 0.9}]
+        with patch("ao_kernel.governance.evaluate_quality") as mock_eval:
+            mock_eval.return_value = []
+            handle_quality_gate({
+                "output_text": "test output",
+                "previous_decisions": prev,
+            })
+            _, kwargs = mock_eval.call_args
+            assert kwargs["previous_decisions"] is prev
+
+    def test_auto_loads_canonical_decisions(self, tmp_path):
+        from unittest.mock import patch
+        canonical = [{"key": "arch.pattern", "value": "CQRS"}]
+        with (
+            patch("ao_kernel.governance.evaluate_quality") as mock_eval,
+            patch("ao_kernel.context.canonical_store.query", return_value=canonical) as mock_query,
+        ):
+            mock_eval.return_value = []
+            handle_quality_gate({
+                "output_text": "test output",
+                "workspace_root": str(tmp_path),
+            })
+            mock_query.assert_called_once_with(tmp_path)
+            _, kwargs = mock_eval.call_args
+            assert kwargs["previous_decisions"] is canonical
+
+
+class TestToolGatewayFromDict:
+    """Verify create_tool_gateway uses ToolCallPolicy.from_dict."""
+
+    def test_uses_from_dict(self):
+        from unittest.mock import patch
+        from ao_kernel.mcp_server import create_tool_gateway
+        tool_policy = {"enabled": False, "max_tool_rounds": 5, "allow_unknown": True}
+        with patch("ao_kernel.config.load_default", return_value=tool_policy):
+            gw = create_tool_gateway()
+        # from_dict extracts max_tool_rounds=5, allow_unknown=True
+        # but enabled is always overridden to True
+        assert gw.policy.enabled is True
+        assert gw.policy.max_rounds == 5
+        assert gw.policy.allow_unknown is True
+
+    def test_always_enabled_even_if_policy_says_false(self):
+        from unittest.mock import patch
+        from ao_kernel.mcp_server import create_tool_gateway
+        tool_policy = {"enabled": False, "max_tool_rounds": 3}
+        with patch("ao_kernel.config.load_default", return_value=tool_policy):
+            gw = create_tool_gateway()
+        assert gw.policy.enabled is True
+
+    def test_fallback_on_load_error(self):
+        from unittest.mock import patch
+        from ao_kernel.mcp_server import create_tool_gateway
+        with patch("ao_kernel.config.load_default", side_effect=FileNotFoundError("nope")):
+            gw = create_tool_gateway()
+        assert gw.policy.enabled is True
+        assert gw.policy.max_rounds == 10
