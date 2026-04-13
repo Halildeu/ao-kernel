@@ -1,0 +1,632 @@
+From 83475be5ea8eff51d1472d4202d5407344285f6a Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 12:04:52 +0300
+Subject: [PATCH] =?UTF-8?q?feat(context):=20minimal=20viable=20context=20l?=
+ =?UTF-8?q?oop=20=E2=80=94=20Decision=20Extractor=20+=20Context=20Injector?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ARCHITECTURAL: Closes the write→read context gap (CNS-20260413-013).
+
+Before: Context written but NEVER read by LLM pipeline (write-heavy, read-light)
+After:  LLM Response → Decision Extractor → session → Context Injector → LLM Request
+
+ao_kernel/context/decision_extractor.py:
+- extract_decisions(): JSON extraction (confidence 0.9) + heuristic patterns (0.4-0.5)
+- Decision dataclass: key, value, source, confidence, evidence_id
+- Strategies: JSON key-value, nested dict, "key: value" lines, "decided to X"
+- Capped: max 20 JSON + 10 heuristic decisions per response
+
+ao_kernel/context/context_injector.py:
+- build_context_preamble(): session decisions → formatted system prompt section
+- inject_context_into_messages(): prepend/insert system message with context
+- Token budget aware (max_tokens * 4 chars)
+- Relevance filter (key prefix match)
+- Plugin-ready: include_facts parameter for workspace_facts
+
+25 new tests (15 extractor + 10 injector), 297 total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/context/__init__.py           |  14 ++
+ ao_kernel/context/context_injector.py   | 165 +++++++++++++++++++++++
+ ao_kernel/context/decision_extractor.py | 171 ++++++++++++++++++++++++
+ tests/test_context_injector.py          | 118 ++++++++++++++++
+ tests/test_decision_extractor.py        |  88 ++++++++++++
+ 5 files changed, 556 insertions(+)
+ create mode 100644 ao_kernel/context/__init__.py
+ create mode 100644 ao_kernel/context/context_injector.py
+ create mode 100644 ao_kernel/context/decision_extractor.py
+ create mode 100644 tests/test_context_injector.py
+ create mode 100644 tests/test_decision_extractor.py
+
+diff --git a/ao_kernel/context/__init__.py b/ao_kernel/context/__init__.py
+new file mode 100644
+index 0000000..cf61d45
+--- /dev/null
++++ b/ao_kernel/context/__init__.py
+@@ -0,0 +1,14 @@
++"""ao_kernel.context — Context management for governed AI runtime.
++
++Provides the write→read context loop:
++    LLM Response → Decision Extractor → session context → Context Injector → LLM Request
++"""
++
++from ao_kernel.context.context_injector import build_context_preamble
++from ao_kernel.context.decision_extractor import Decision, extract_decisions
++
++__all__ = [
++    "Decision",
++    "extract_decisions",
++    "build_context_preamble",
++]
+diff --git a/ao_kernel/context/context_injector.py b/ao_kernel/context/context_injector.py
+new file mode 100644
+index 0000000..6ff4afd
+--- /dev/null
++++ b/ao_kernel/context/context_injector.py
+@@ -0,0 +1,165 @@
++"""Context Injector — inject session context into LLM prompts.
++
++Reads session context and formats relevant decisions as a system prompt
++preamble. Token budget aware — never exceeds max_tokens.
++
++Plugin-ready: workspace_facts can be added to the same assembly pipeline.
++"""
++
++from __future__ import annotations
++
++from typing import Any
++
++
++def build_context_preamble(
++    context: dict[str, Any],
++    *,
++    max_tokens: int = 2000,
++    relevance_filter: str | None = None,
++    include_facts: dict[str, Any] | None = None,
++) -> str:
++    """Build a context preamble string for LLM system prompt injection.
++
++    Args:
++        context: Session context dict (from context_store.load_context)
++        max_tokens: Approximate token budget (~4 chars per token)
++        relevance_filter: Optional key prefix filter (e.g., "runtime." only injects runtime decisions)
++        include_facts: Optional workspace_facts dict to include
++
++    Returns:
++        Formatted preamble string ready to prepend to system prompt.
++        Empty string if no relevant context.
++    """
++    if not context:
++        return ""
++
++    sections: list[str] = []
++    char_budget = max_tokens * 4  # ~4 chars per token
++
++    # Section 1: Session decisions
++    decisions = context.get("decisions", [])
++    if decisions:
++        decision_lines = _format_decisions(decisions, relevance_filter)
++        if decision_lines:
++            sections.append("## Prior Decisions\n" + "\n".join(decision_lines))
++
++    # Section 2: Workspace facts (plugin)
++    if include_facts:
++        fact_lines = _format_facts(include_facts)
++        if fact_lines:
++            sections.append("## Workspace Facts\n" + "\n".join(fact_lines))
++
++    # Section 3: Provider state (continuation hint)
++    provider_state = context.get("provider_state", {})
++    if provider_state:
++        state_line = _format_provider_state(provider_state)
++        if state_line:
++            sections.append("## Session State\n" + state_line)
++
++    if not sections:
++        return ""
++
++    preamble = "\n\n".join(sections)
++
++    # Enforce token budget
++    if len(preamble) > char_budget:
++        preamble = preamble[:char_budget].rsplit("\n", 1)[0] + "\n[...context truncated]"
++
++    return preamble
++
++
++def inject_context_into_messages(
++    messages: list[dict[str, Any]],
++    context: dict[str, Any],
++    *,
++    max_tokens: int = 2000,
++    relevance_filter: str | None = None,
++) -> list[dict[str, Any]]:
++    """Inject context preamble into the first system/user message.
++
++    If first message is system, prepends to its content.
++    If no system message, inserts one at the beginning.
++
++    Returns new message list (does not mutate input).
++    """
++    preamble = build_context_preamble(
++        context, max_tokens=max_tokens, relevance_filter=relevance_filter,
++    )
++    if not preamble:
++        return messages
++
++    new_messages = list(messages)  # shallow copy
++
++    # Find or create system message
++    if new_messages and new_messages[0].get("role") == "system":
++        original = new_messages[0].get("content", "")
++        new_messages[0] = {
++            **new_messages[0],
++            "content": preamble + "\n\n" + original,
++        }
++    else:
++        new_messages.insert(0, {
++            "role": "system",
++            "content": preamble,
++        })
++
++    return new_messages
++
++
++def _format_decisions(
++    decisions: list[dict[str, Any]],
++    relevance_filter: str | None,
++) -> list[str]:
++    """Format decisions as readable lines, filtered and sorted."""
++    lines = []
++    # Sort by created_at descending (newest first)
++    sorted_decisions = sorted(
++        decisions,
++        key=lambda d: d.get("created_at", ""),
++        reverse=True,
++    )
++
++    for d in sorted_decisions:
++        key = d.get("key", "")
++        value = d.get("value", "")
++        source = d.get("source", "")
++
++        if relevance_filter and not key.startswith(relevance_filter):
++            continue
++
++        line = f"- {key}: {value}"
++        if source:
++            line += f" (source: {source})"
++        lines.append(line)
++
++    return lines
++
++
++def _format_facts(facts: dict[str, Any]) -> list[str]:
++    """Format workspace facts as readable lines."""
++    lines = []
++    items = facts.get("facts", facts)
++    if isinstance(items, dict):
++        for key, fact in items.items():
++            if isinstance(fact, dict):
++                value = fact.get("value", fact.get("latest_value", ""))
++                confidence = fact.get("confidence", "")
++                line = f"- {key}: {value}"
++                if confidence:
++                    line += f" (confidence: {confidence})"
++                lines.append(line)
++            else:
++                lines.append(f"- {key}: {fact}")
++    return lines
++
++
++def _format_provider_state(provider_state: dict[str, Any]) -> str:
++    """Format provider state as a single-line hint."""
++    parts = []
++    if provider_state.get("conversation_id"):
++        parts.append(f"conversation: {provider_state['conversation_id']}")
++    if provider_state.get("last_response_id"):
++        parts.append(f"last_response: {provider_state['last_response_id']}")
++    if provider_state.get("memory_strategy"):
++        parts.append(f"memory: {provider_state['memory_strategy']}")
++    return ", ".join(parts) if parts else ""
+diff --git a/ao_kernel/context/decision_extractor.py b/ao_kernel/context/decision_extractor.py
+new file mode 100644
+index 0000000..f828139
+--- /dev/null
++++ b/ao_kernel/context/decision_extractor.py
+@@ -0,0 +1,171 @@
++"""Decision Extractor — extract structured decisions from LLM responses.
++
++Strategies (in priority order):
++1. JSON response: extract key-value pairs directly
++2. Structured output: extract from known field patterns
++3. Heuristic: detect "X is Y" and "decided to Z" patterns
++
++Each extracted decision links back to its evidence (request_id).
++"""
++
++from __future__ import annotations
++
++import json
++import re
++from dataclasses import dataclass
++from datetime import datetime, timezone
++from typing import Any
++
++
++@dataclass(frozen=True)
++class Decision:
++    """A structured decision extracted from LLM output."""
++
++    key: str
++    value: Any
++    source: str = "agent"  # agent | user_chat
++    confidence: float = 0.5
++    evidence_id: str = ""
++    extracted_at: str = ""
++
++    def to_dict(self) -> dict[str, Any]:
++        return {
++            "key": self.key,
++            "value": self.value,
++            "source": self.source,
++            "confidence": self.confidence,
++            "evidence_id": self.evidence_id,
++            "extracted_at": self.extracted_at or _now_iso(),
++        }
++
++
++def _now_iso() -> str:
++    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++def extract_decisions(
++    output_text: str,
++    *,
++    provider_id: str = "",
++    request_id: str = "",
++) -> list[Decision]:
++    """Extract decisions from LLM output text.
++
++    Tries JSON extraction first (highest confidence), then heuristic patterns.
++    Returns empty list if no decisions found — never fails.
++    """
++    if not output_text or not output_text.strip():
++        return []
++
++    decisions: list[Decision] = []
++    ts = _now_iso()
++
++    # Strategy 1: JSON extraction (highest confidence)
++    json_decisions = _extract_from_json(output_text, request_id=request_id, timestamp=ts)
++    if json_decisions:
++        decisions.extend(json_decisions)
++
++    # Strategy 2: Heuristic patterns (lower confidence)
++    if not decisions:
++        heuristic_decisions = _extract_heuristic(output_text, request_id=request_id, timestamp=ts)
++        decisions.extend(heuristic_decisions)
++
++    return decisions
++
++
++def _extract_from_json(text: str, *, request_id: str, timestamp: str) -> list[Decision]:
++    """Extract decisions from JSON content in the output."""
++    decisions = []
++    stripped = text.strip()
++
++    # Try parsing entire output as JSON
++    obj = None
++    try:
++        obj = json.loads(stripped)
++    except json.JSONDecodeError:
++        # Try to find JSON block within text
++        match = re.search(r"\{[^{}]*\}", stripped, re.DOTALL)
++        if match:
++            try:
++                obj = json.loads(match.group())
++            except json.JSONDecodeError:
++                pass
++
++    if not isinstance(obj, dict):
++        return []
++
++    # Extract flat key-value pairs as decisions
++    for key, value in obj.items():
++        if key.startswith("_") or key in ("type", "id", "timestamp"):
++            continue
++        if isinstance(value, (str, int, float, bool)):
++            decisions.append(Decision(
++                key=f"llm.{key}",
++                value=value,
++                source="agent",
++                confidence=0.9,
++                evidence_id=request_id,
++                extracted_at=timestamp,
++            ))
++        elif isinstance(value, dict) and len(value) <= 5:
++            # Nested dict with few keys — extract each
++            for sub_key, sub_val in value.items():
++                if isinstance(sub_val, (str, int, float, bool)):
++                    decisions.append(Decision(
++                        key=f"llm.{key}.{sub_key}",
++                        value=sub_val,
++                        source="agent",
++                        confidence=0.8,
++                        evidence_id=request_id,
++                        extracted_at=timestamp,
++                    ))
++
++    return decisions[:20]  # Cap at 20 decisions per response
++
++
++def _extract_heuristic(text: str, *, request_id: str, timestamp: str) -> list[Decision]:
++    """Extract decisions using text pattern matching.
++
++    Patterns:
++    - "X is Y" (assertion)
++    - "decided to X" (action decision)
++    - "recommendation: X" (recommendation)
++    - "status: X" (status report)
++    """
++    decisions = []
++
++    # Pattern: "key: value" or "key = value" lines
++    kv_pattern = re.compile(
++        r"^[\s\-\*]*(\w[\w\s]{2,30}):\s+(.{3,100})$",
++        re.MULTILINE,
++    )
++    for match in kv_pattern.finditer(text):
++        key = match.group(1).strip().lower().replace(" ", "_")
++        value = match.group(2).strip().rstrip(".,;")
++        if len(key) >= 3 and len(value) >= 3:
++            decisions.append(Decision(
++                key=f"llm.heuristic.{key}",
++                value=value,
++                source="agent",
++                confidence=0.4,
++                evidence_id=request_id,
++                extracted_at=timestamp,
++            ))
++
++    # Pattern: "decided to X" or "decision: X"
++    decision_pattern = re.compile(
++        r"(?:decided?\s+to|decision:\s*)(.{5,100}?)(?:\.|$)",
++        re.IGNORECASE | re.MULTILINE,
++    )
++    for match in decision_pattern.finditer(text):
++        value = match.group(1).strip()
++        decisions.append(Decision(
++            key="llm.decision",
++            value=value,
++            source="agent",
++            confidence=0.5,
++            evidence_id=request_id,
++            extracted_at=timestamp,
++        ))
++
++    return decisions[:10]  # Cap heuristic extractions
+diff --git a/tests/test_context_injector.py b/tests/test_context_injector.py
+new file mode 100644
+index 0000000..e2bd79d
+--- /dev/null
++++ b/tests/test_context_injector.py
+@@ -0,0 +1,118 @@
++"""Tests for Context Injector — preamble building + message injection."""
++
++from __future__ import annotations
++
++from ao_kernel.context.context_injector import (
++    build_context_preamble,
++    inject_context_into_messages,
++)
++
++
++class TestBuildContextPreamble:
++    def test_empty_context_returns_empty(self):
++        assert build_context_preamble({}) == ""
++        assert build_context_preamble(None) == ""
++
++    def test_decisions_formatted(self):
++        context = {
++            "decisions": [
++                {"key": "runtime.python", "value": "3.11", "source": "agent", "created_at": "2026-01-01T00:00:00Z"},
++                {"key": "deploy.target", "value": "staging", "source": "user_chat", "created_at": "2026-01-02T00:00:00Z"},
++            ],
++        }
++        preamble = build_context_preamble(context)
++        assert "runtime.python" in preamble
++        assert "3.11" in preamble
++        assert "deploy.target" in preamble
++        assert "Prior Decisions" in preamble
++
++    def test_relevance_filter(self):
++        context = {
++            "decisions": [
++                {"key": "runtime.python", "value": "3.11", "created_at": "2026-01-01T00:00:00Z"},
++                {"key": "deploy.target", "value": "staging", "created_at": "2026-01-01T00:00:00Z"},
++            ],
++        }
++        preamble = build_context_preamble(context, relevance_filter="runtime.")
++        assert "runtime.python" in preamble
++        assert "deploy.target" not in preamble
++
++    def test_token_budget_enforced(self):
++        context = {
++            "decisions": [
++                {"key": f"key_{i}", "value": "x" * 100, "created_at": "2026-01-01T00:00:00Z"}
++                for i in range(100)
++            ],
++        }
++        preamble = build_context_preamble(context, max_tokens=50)
++        # 50 tokens * 4 chars = 200 chars max
++        assert len(preamble) <= 250  # some margin for truncation marker
++
++    def test_provider_state_included(self):
++        context = {
++            "provider_state": {
++                "conversation_id": "conv-123",
++                "last_response_id": "resp-456",
++                "memory_strategy": "hybrid",
++            },
++        }
++        preamble = build_context_preamble(context)
++        assert "conv-123" in preamble
++        assert "Session State" in preamble
++
++    def test_workspace_facts_plugin(self):
++        context = {"decisions": []}
++        facts = {
++            "facts": {
++                "runtime.python": {"value": "3.11", "confidence": 0.95},
++                "team.size": {"value": 5, "confidence": 0.8},
++            }
++        }
++        preamble = build_context_preamble(context, include_facts=facts)
++        assert "Workspace Facts" in preamble
++        assert "runtime.python" in preamble
++        assert "3.11" in preamble
++
++
++class TestInjectContextIntoMessages:
++    def test_prepend_to_existing_system(self):
++        messages = [
++            {"role": "system", "content": "You are helpful."},
++            {"role": "user", "content": "Hello"},
++        ]
++        context = {
++            "decisions": [
++                {"key": "mode", "value": "production", "created_at": "2026-01-01T00:00:00Z"},
++            ],
++        }
++        result = inject_context_into_messages(messages, context)
++        assert result[0]["role"] == "system"
++        assert "mode: production" in result[0]["content"]
++        assert "You are helpful." in result[0]["content"]
++        assert len(result) == 2
++
++    def test_insert_system_if_missing(self):
++        messages = [{"role": "user", "content": "Hello"}]
++        context = {
++            "decisions": [
++                {"key": "lang", "value": "en", "created_at": "2026-01-01T00:00:00Z"},
++            ],
++        }
++        result = inject_context_into_messages(messages, context)
++        assert len(result) == 2
++        assert result[0]["role"] == "system"
++        assert "lang: en" in result[0]["content"]
++
++    def test_no_context_returns_original(self):
++        messages = [{"role": "user", "content": "Hello"}]
++        result = inject_context_into_messages(messages, {})
++        assert result == messages
++
++    def test_does_not_mutate_input(self):
++        messages = [{"role": "system", "content": "Original"}]
++        context = {
++            "decisions": [{"key": "k", "value": "v", "created_at": "2026-01-01T00:00:00Z"}],
++        }
++        result = inject_context_into_messages(messages, context)
++        assert messages[0]["content"] == "Original"  # Not mutated
++        assert "k: v" in result[0]["content"]
+diff --git a/tests/test_decision_extractor.py b/tests/test_decision_extractor.py
+new file mode 100644
+index 0000000..e133747
+--- /dev/null
++++ b/tests/test_decision_extractor.py
+@@ -0,0 +1,88 @@
++"""Tests for Decision Extractor — JSON + heuristic extraction."""
++
++from __future__ import annotations
++
++import json
++
++from ao_kernel.context.decision_extractor import Decision, extract_decisions
++
++
++class TestJsonExtraction:
++    def test_extract_from_json_object(self):
++        output = json.dumps({"status": "approved", "version": "3.11", "count": 42})
++        decisions = extract_decisions(output, request_id="req-001")
++        assert len(decisions) >= 2
++        keys = {d.key for d in decisions}
++        assert "llm.status" in keys
++        assert "llm.version" in keys
++        assert all(d.confidence >= 0.8 for d in decisions)
++        assert all(d.evidence_id == "req-001" for d in decisions)
++
++    def test_extract_nested_json(self):
++        output = json.dumps({"config": {"python": "3.11", "strict": True}})
++        decisions = extract_decisions(output)
++        keys = {d.key for d in decisions}
++        assert "llm.config.python" in keys
++        assert "llm.config.strict" in keys
++
++    def test_skip_internal_keys(self):
++        output = json.dumps({"_internal": "x", "type": "response", "id": "123", "result": "ok"})
++        decisions = extract_decisions(output)
++        keys = {d.key for d in decisions}
++        assert "_internal" not in str(keys)
++        assert "llm.result" in keys
++
++    def test_json_embedded_in_text(self):
++        output = 'Here is the result:\n{"answer": "yes", "confidence": 0.95}\nDone.'
++        decisions = extract_decisions(output)
++        assert len(decisions) >= 1
++        assert any(d.key == "llm.answer" for d in decisions)
++
++    def test_empty_output_returns_empty(self):
++        assert extract_decisions("") == []
++        assert extract_decisions("   ") == []
++
++    def test_non_json_text_falls_to_heuristic(self):
++        output = "The Python version is 3.11. We decided to use strict mode."
++        decisions = extract_decisions(output)
++        # Heuristic may or may not extract — but should not crash
++        assert isinstance(decisions, list)
++
++    def test_max_cap_20_decisions(self):
++        obj = {f"key_{i}": f"value_{i}" for i in range(30)}
++        decisions = extract_decisions(json.dumps(obj))
++        assert len(decisions) <= 20
++
++
++class TestHeuristicExtraction:
++    def test_key_value_pattern(self):
++        output = "Status: approved\nVersion: 3.11\nMode: production"
++        decisions = extract_decisions(output)
++        assert len(decisions) >= 2
++        assert all(d.confidence <= 0.5 for d in decisions)
++
++    def test_decision_pattern(self):
++        output = "We decided to deploy the application to staging environment."
++        decisions = extract_decisions(output)
++        assert any("decision" in d.key for d in decisions)
++
++    def test_heuristic_cap_10(self):
++        lines = [f"Field_{i}: value_{i}" for i in range(20)]
++        decisions = extract_decisions("\n".join(lines))
++        assert len(decisions) <= 10
++
++
++class TestDecisionDataclass:
++    def test_to_dict(self):
++        d = Decision(key="test.key", value="test_value", source="agent", confidence=0.9, evidence_id="req-1")
++        as_dict = d.to_dict()
++        assert as_dict["key"] == "test.key"
++        assert as_dict["value"] == "test_value"
++        assert as_dict["confidence"] == 0.9
++        assert "extracted_at" in as_dict
++
++    def test_frozen(self):
++        d = Decision(key="k", value="v")
++        import pytest
++        with pytest.raises(AttributeError):
++            d.key = "new_key"
+-- 
+2.50.1 (Apple Git-155)
+

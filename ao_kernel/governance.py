@@ -239,7 +239,7 @@ def evaluate_quality(
         )]
 
     try:
-        from src.orchestrator.quality_gate import run_quality_gates
+        from ao_kernel._internal.orchestrator.quality_gate import run_quality_gates
 
         results = run_quality_gates(
             output={"text": output_text},

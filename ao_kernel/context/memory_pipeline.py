@@ -49,7 +49,7 @@ def process_turn(
         )
 
         # 2. Upsert each decision
-        from src.session.context_store import upsert_decision
+        from ao_kernel._internal.session.context_store import upsert_decision
 
         for decision in decisions:
             upsert_decision(
@@ -61,14 +61,14 @@ def process_turn(
 
         # 3. Prune expired decisions
         from datetime import datetime, timezone
-        from src.session.context_store import prune_expired_decisions
+        from ao_kernel._internal.session.context_store import prune_expired_decisions
 
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         prune_expired_decisions(context, now)
 
         # 4. Compact if threshold exceeded
         if workspace_root:
-            from src.session.compaction_engine import should_compact, compact_session_decisions
+            from ao_kernel._internal.session.compaction_engine import should_compact, compact_session_decisions
 
             if should_compact(context):
                 compact_session_decisions(

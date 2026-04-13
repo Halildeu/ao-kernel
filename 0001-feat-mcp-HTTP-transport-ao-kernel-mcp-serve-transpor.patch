@@ -1,0 +1,106 @@
+From 7692d2fb4e4e46488b886a9db8b93def3012c51c Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 17:20:03 +0300
+Subject: [PATCH] =?UTF-8?q?feat(mcp):=20HTTP=20transport=20=E2=80=94=20ao-?=
+ =?UTF-8?q?kernel=20mcp=20serve=20--transport=20http?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+New: serve_http(host, port) — Streamable HTTP MCP transport
+CLI: ao-kernel mcp serve --transport http --host 0.0.0.0 --port 8080
+Default: stdio (unchanged)
+
+Requires: mcp package + starlette + uvicorn
+
+396 tests passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/cli.py        | 16 +++++++++++++---
+ ao_kernel/mcp_server.py | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 49 insertions(+), 3 deletions(-)
+
+diff --git a/ao_kernel/cli.py b/ao_kernel/cli.py
+index 635744e..effb842 100644
+--- a/ao_kernel/cli.py
++++ b/ao_kernel/cli.py
+@@ -40,10 +40,17 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
+ 
+ 
+ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
++    transport = getattr(args, "transport", "stdio")
+     try:
+         import asyncio
+-        from ao_kernel.mcp_server import serve_stdio
+-        asyncio.run(serve_stdio())
++        if transport == "http":
++            from ao_kernel.mcp_server import serve_http
++            host = getattr(args, "host", "127.0.0.1")
++            port = getattr(args, "port", 8080)
++            asyncio.run(serve_http(host=host, port=port))
++        else:
++            from ao_kernel.mcp_server import serve_stdio
++            asyncio.run(serve_stdio())
+         return 0
+     except ImportError as e:
+         if "mcp" in str(e).lower():
+@@ -78,7 +85,10 @@ def _build_parser() -> argparse.ArgumentParser:
+ 
+     mcp_p = sub.add_parser("mcp", help="MCP server commands")
+     mcp_sub = mcp_p.add_subparsers(dest="mcp_command")
+-    mcp_sub.add_parser("serve", help="Start MCP server (stdio transport)")
++    serve_p = mcp_sub.add_parser("serve", help="Start MCP server")
++    serve_p.add_argument("--transport", choices=["stdio", "http"], default="stdio", help="Transport (default: stdio)")
++    serve_p.add_argument("--host", default="127.0.0.1", help="HTTP bind host (default: 127.0.0.1)")
++    serve_p.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
+ 
+     return parser
+ 
+diff --git a/ao_kernel/mcp_server.py b/ao_kernel/mcp_server.py
+index e58a08d..ee22bb8 100644
+--- a/ao_kernel/mcp_server.py
++++ b/ao_kernel/mcp_server.py
+@@ -559,3 +559,39 @@ async def serve_stdio():  # pragma: no cover — requires mcp package
+     server = create_mcp_server()
+     async with stdio_server() as (read_stream, write_stream):
+         await server.run(read_stream, write_stream, server.create_initialization_options())
++
++
++async def serve_http(  # pragma: no cover — requires mcp package
++    host: str = "127.0.0.1",
++    port: int = 8080,
++) -> None:
++    """Run MCP server over Streamable HTTP transport.
++
++    Requires `mcp` package with HTTP support: pip install ao-kernel[mcp]
++
++    Args:
++        host: Bind address (default: 127.0.0.1 for local only)
++        port: Listen port (default: 8080)
++    """
++    try:
++        from mcp.server.streamable_http import StreamableHTTPServerTransport
++    except ImportError:
++        raise ImportError(
++            "MCP HTTP transport requires the 'mcp' package with HTTP support. "
++            "Install with: pip install ao-kernel[mcp]"
++        )
++
++    from starlette.applications import Starlette
++    from starlette.routing import Mount
++    import uvicorn
++
++    server = create_mcp_server()
++    transport = StreamableHTTPServerTransport(server)
++
++    app = Starlette(
++        routes=[Mount("/mcp", app=transport.handle_request)],
++    )
++
++    config = uvicorn.Config(app, host=host, port=port, log_level="info")
++    srv = uvicorn.Server(config)
++    await srv.serve()
+-- 
+2.50.1 (Apple Git-155)
+

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 
-from src.prj_kernel_api.llm_request_builder import build_live_request
+from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
 
 
 class TestStreamRequestBuilder:

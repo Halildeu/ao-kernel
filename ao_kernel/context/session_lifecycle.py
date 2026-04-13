@@ -64,7 +64,7 @@ def end_session(
     session_id = context.get("session_id", "default")
 
     # Final compaction
-    from src.session.compaction_engine import compact_session_decisions
+    from ao_kernel._internal.session.compaction_engine import compact_session_decisions
     compact_session_decisions(
         context,
         workspace_root=ws,
@@ -73,7 +73,7 @@ def end_session(
 
     # Trigger distillation (async-safe — writes to workspace_facts)
     try:
-        from src.session.memory_distiller import run_distillation
+        from ao_kernel._internal.session.memory_distiller import run_distillation
         run_distillation(workspace_root=ws)
     except Exception:
         pass  # Distillation failure shouldn't block session close

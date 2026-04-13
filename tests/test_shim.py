@@ -1,50 +1,44 @@
-"""Behavioral tests for src/ compat shim — real function calls, real output validation."""
+"""Behavioral tests for ao_kernel._internal — real function calls, real output validation."""
 
 from __future__ import annotations
 
 import json
 import re
-import warnings
 from pathlib import Path
 
 import pytest
 
 
-class TestShimDeprecationWarning:
-    def test_src_import_emits_future_warning(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            import importlib
-            importlib.reload(importlib.import_module("src"))
-            future_warnings = [x for x in w if issubclass(x.category, FutureWarning)]
-            assert len(future_warnings) >= 1
-            assert "deprecated" in str(future_warnings[0].message).lower()
-            assert "ao_kernel" in str(future_warnings[0].message).lower()
+class TestInternalNamespace:
+    def test_internal_importable(self):
+        """v2.0.0: src.* removed, ao_kernel._internal is internal."""
+        import ao_kernel._internal
+        assert ao_kernel._internal is not None
 
 
 class TestSharedUtils:
     def test_load_json_parses_file(self, tmp_path: Path):
         f = tmp_path / "test.json"
         f.write_text('{"key": "value", "num": 42}')
-        from src.shared.utils import load_json
+        from ao_kernel._internal.shared.utils import load_json
         data = load_json(f)
         assert data["key"] == "value"
         assert data["num"] == 42
 
     def test_load_json_raises_on_missing(self, tmp_path: Path):
-        from src.shared.utils import load_json
+        from ao_kernel._internal.shared.utils import load_json
         with pytest.raises(FileNotFoundError):
             load_json(tmp_path / "nonexistent.json")
 
     def test_load_json_raises_on_invalid(self, tmp_path: Path):
         f = tmp_path / "bad.json"
         f.write_text("not json {{{")
-        from src.shared.utils import load_json
+        from ao_kernel._internal.shared.utils import load_json
         with pytest.raises(json.JSONDecodeError):
             load_json(f)
 
     def test_write_json_atomic_creates_file(self, tmp_path: Path):
-        from src.shared.utils import write_json_atomic
+        from ao_kernel._internal.shared.utils import write_json_atomic
         f = tmp_path / "output.json"
         write_json_atomic(f, {"written": True, "count": 7})
         content = json.loads(f.read_text())
@@ -52,20 +46,20 @@ class TestSharedUtils:
         assert content["count"] == 7
 
     def test_write_json_atomic_creates_parent_dirs(self, tmp_path: Path):
-        from src.shared.utils import write_json_atomic
+        from ao_kernel._internal.shared.utils import write_json_atomic
         f = tmp_path / "deep" / "nested" / "output.json"
         write_json_atomic(f, {"nested": True})
         assert f.exists()
         assert json.loads(f.read_text())["nested"] is True
 
     def test_now_iso8601_format(self):
-        from src.shared.utils import now_iso8601
+        from ao_kernel._internal.shared.utils import now_iso8601
         ts = now_iso8601()
         # Format: 2026-04-12T23:32:43Z or 2026-04-12T23:32:43.123456Z
         assert re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$", ts)
 
     def test_sha256_text_deterministic(self):
-        from src.shared.utils import sha256_text
+        from ao_kernel._internal.shared.utils import sha256_text
         h1 = sha256_text("hello")
         h2 = sha256_text("hello")
         h3 = sha256_text("world")
@@ -76,7 +70,7 @@ class TestSharedUtils:
 
 class TestSharedLogger:
     def test_get_logger_returns_logger(self):
-        from src.shared.logger import get_logger
+        from ao_kernel._internal.shared.logger import get_logger
         logger = get_logger("test_module")
         assert hasattr(logger, "info")
         assert hasattr(logger, "error")
@@ -85,13 +79,13 @@ class TestSharedLogger:
 
 class TestCircuitBreaker:
     def test_initial_state_closed(self):
-        from src.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker
+        from ao_kernel._internal.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker
         cb = ProviderCircuitBreaker(provider_id="test_cb")
         allowed, reason = cb.allow_request()
         assert allowed is True
 
     def test_failures_open_circuit(self):
-        from src.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker, CircuitBreakerConfig
+        from ao_kernel._internal.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker, CircuitBreakerConfig
         config = CircuitBreakerConfig(failure_threshold=2, recovery_timeout_seconds=60.0)
         cb = ProviderCircuitBreaker(provider_id="test_open", config=config)
         cb.record_failure(Exception("err1"))
@@ -100,7 +94,7 @@ class TestCircuitBreaker:
         assert allowed is False
 
     def test_success_resets_failures(self):
-        from src.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker, CircuitBreakerConfig
+        from ao_kernel._internal.prj_kernel_api.circuit_breaker import ProviderCircuitBreaker, CircuitBreakerConfig
         config = CircuitBreakerConfig(failure_threshold=3)
         cb = ProviderCircuitBreaker(provider_id="test_reset", config=config)
         cb.record_failure(Exception("err"))
@@ -111,13 +105,13 @@ class TestCircuitBreaker:
 
 class TestRateLimiter:
     def test_acquire_succeeds_initially(self):
-        from src.prj_kernel_api.rate_limiter import TokenBucketRateLimiter
+        from ao_kernel._internal.prj_kernel_api.rate_limiter import TokenBucketRateLimiter
         rl = TokenBucketRateLimiter(rps=10.0)
         acquired = rl.acquire()
         assert acquired is True
 
     def test_limiter_has_acquire_method(self):
-        from src.prj_kernel_api.rate_limiter import TokenBucketRateLimiter
+        from ao_kernel._internal.prj_kernel_api.rate_limiter import TokenBucketRateLimiter
         rl = TokenBucketRateLimiter(rps=1.0)
         assert hasattr(rl, "acquire")
         result = rl.acquire()
@@ -126,7 +120,7 @@ class TestRateLimiter:
 
 class TestRequestBuilder:
     def test_build_openai_request_structure(self):
-        from src.prj_kernel_api.llm_request_builder import build_live_request
+        from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
         req = build_live_request(
             provider_id="openai", model="gpt-4",
             messages=[{"role": "user", "content": "hello"}],
@@ -140,7 +134,7 @@ class TestRequestBuilder:
         assert "Authorization" in req["headers"]
 
     def test_build_anthropic_request_structure(self):
-        from src.prj_kernel_api.llm_request_builder import build_live_request
+        from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
         req = build_live_request(
             provider_id="claude", model="claude-3-opus",
             messages=[{"role": "user", "content": "hi"}],
@@ -153,7 +147,7 @@ class TestRequestBuilder:
 
 class TestResponseNormalizer:
     def test_normalize_openai_response(self):
-        from src.prj_kernel_api.llm_response_normalizer import normalize_response
+        from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import normalize_response
         resp = json.dumps({
             "choices": [{"message": {"content": "Hello world"}}],
             "usage": {"prompt_tokens": 5, "completion_tokens": 2},
@@ -165,7 +159,7 @@ class TestResponseNormalizer:
         assert result["provider_id"] == "openai"
 
     def test_normalize_anthropic_response(self):
-        from src.prj_kernel_api.llm_response_normalizer import normalize_response
+        from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import normalize_response
         resp = json.dumps({
             "content": [{"type": "text", "text": "Merhaba dunya"}],
             "usage": {"input_tokens": 10, "output_tokens": 3},
@@ -177,25 +171,25 @@ class TestResponseNormalizer:
 
 class TestResourceLoader:
     def test_load_policy_returns_valid_json(self):
-        from src.shared.resource_loader import load_resource
+        from ao_kernel._internal.shared.resource_loader import load_resource
         data = load_resource("policies", "policy_autonomy.v1.json")
         assert isinstance(data, dict)
         assert "version" in data or "enabled" in data or len(data) > 0
 
     def test_load_schema_returns_valid_json(self):
-        from src.shared.resource_loader import load_resource
+        from ao_kernel._internal.shared.resource_loader import load_resource
         data = load_resource("schemas", "active-context-profile.schema.v1.json")
         assert isinstance(data, dict)
         assert "$schema" in data or "type" in data or "properties" in data
 
     def test_load_operations_returns_valid_json(self):
-        from src.shared.resource_loader import load_resource
+        from ao_kernel._internal.shared.resource_loader import load_resource
         data = load_resource("operations", "llm_class_registry.v1.json")
         assert isinstance(data, dict)
         assert len(data) > 0
 
     def test_load_resource_path_returns_existing_file(self):
-        from src.shared.resource_loader import load_resource_path
+        from ao_kernel._internal.shared.resource_loader import load_resource_path
         path = load_resource_path("policies", "policy_autonomy.v1.json")
         if path is not None:
             assert path.is_file()

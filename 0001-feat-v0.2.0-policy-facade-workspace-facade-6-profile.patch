@@ -1,0 +1,396 @@
+From 74c03fee9a467c8bde70b2743ab74986c04aa0a7 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 15:43:51 +0300
+Subject: [PATCH] =?UTF-8?q?feat:=20v0.2.0=20=E2=80=94=20policy=20facade,?=
+ =?UTF-8?q?=20workspace=20facade,=206=20profiles,=20streaming=20supported?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+v0.2.0 sprint (Codex CNS-020):
+- ao_kernel.policy: check(), load(), list_policies()
+- ao_kernel.workspace: find_root(), load_config(), init(), doctor(), migrate()
+- Streaming: experimental → supported (6 providers)
+- 6 profiles complete: STARTUP, TASK_EXECUTION, REVIEW + EMERGENCY, ASSESSMENT, PLANNING
+- CI: extras install test (llm + otel)
+- Version bump: 0.1.0 → 0.2.0
+
+367 tests passing, all lint clean.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ .github/workflows/test.yml                    |  6 ++
+ ao_kernel/__init__.py                         |  2 +-
+ ao_kernel/context/profile_router.py           | 24 ++++++++
+ .../provider_capability_registry.v1.json      | 12 ++--
+ ao_kernel/policy.py                           | 46 +++++++++++++++
+ ao_kernel/workspace.py                        | 57 +++++++++++++++++++
+ pyproject.toml                                |  2 +-
+ tests/conftest.py                             |  3 +-
+ tests/test_cli.py                             |  2 +-
+ tests/test_config.py                          |  6 +-
+ tests/test_init_cmd.py                        |  2 +-
+ tests/test_mcp_server.py                      |  2 +-
+ tests/test_migrate_cmd.py                     |  2 +-
+ 13 files changed, 150 insertions(+), 16 deletions(-)
+ create mode 100644 ao_kernel/policy.py
+ create mode 100644 ao_kernel/workspace.py
+
+diff --git a/.github/workflows/test.yml b/.github/workflows/test.yml
+index ed528df..2013725 100644
+--- a/.github/workflows/test.yml
++++ b/.github/workflows/test.yml
+@@ -35,6 +35,12 @@ jobs:
+             --cov-report=xml \
+             --cov-report=term-missing
+ 
++      - name: Extras install test (Python 3.13 only)
++        if: matrix.python-version == '3.13'
++        run: |
++          pip install -e ".[llm]" && python -c "import tenacity; import tiktoken; print('llm OK')"
++          pip install -e ".[otel]" && python -c "import opentelemetry; print('otel OK')"
++
+       - name: Coverage gate (Python 3.13 only)
+         if: matrix.python-version == '3.13'
+         run: |
+diff --git a/ao_kernel/__init__.py b/ao_kernel/__init__.py
+index 11010fc..fa9da84 100644
+--- a/ao_kernel/__init__.py
++++ b/ao_kernel/__init__.py
+@@ -1,6 +1,6 @@
+ """ao-kernel — Governed AI orchestration runtime."""
+ 
+-__version__ = "0.1.0"
++__version__ = "0.2.0"
+ 
+ from ao_kernel.config import load_default, load_with_override, workspace_root
+ 
+diff --git a/ao_kernel/context/profile_router.py b/ao_kernel/context/profile_router.py
+index 49d8e54..b347df9 100644
+--- a/ao_kernel/context/profile_router.py
++++ b/ao_kernel/context/profile_router.py
+@@ -47,6 +47,27 @@ PROFILES: dict[str, ProfileConfig] = {
+         max_decisions=20,
+         max_tokens=2000,
+     ),
++    "EMERGENCY": ProfileConfig(
++        profile_id="EMERGENCY",
++        description="Incident response, urgent fix",
++        priority_prefixes=("error.", "incident.", "alert.", "hotfix.", "rollback."),
++        max_decisions=15,
++        max_tokens=2000,
++    ),
++    "ASSESSMENT": ProfileConfig(
++        profile_id="ASSESSMENT",
++        description="System assessment, maturity evaluation",
++        priority_prefixes=("assessment.", "maturity.", "metric.", "benchmark.", "score."),
++        max_decisions=25,
++        max_tokens=3000,
++    ),
++    "PLANNING": ProfileConfig(
++        profile_id="PLANNING",
++        description="Roadmap planning, sprint planning",
++        priority_prefixes=("plan.", "roadmap.", "sprint.", "milestone.", "priority."),
++        max_decisions=25,
++        max_tokens=3000,
++    ),
+ }
+ 
+ DEFAULT_PROFILE = "TASK_EXECUTION"
+@@ -55,6 +76,9 @@ DEFAULT_PROFILE = "TASK_EXECUTION"
+ _DETECTION_KEYWORDS: dict[str, list[str]] = {
+     "STARTUP": ["init", "setup", "install", "configure", "bootstrap", "workspace", "getting started"],
+     "REVIEW": ["review", "check", "audit", "inspect", "evaluate", "assess", "quality", "standard"],
++    "EMERGENCY": ["incident", "emergency", "urgent", "hotfix", "rollback", "outage", "down", "broken", "critical"],
++    "ASSESSMENT": ["assessment", "maturity", "benchmark", "evaluate", "score", "measure", "baseline"],
++    "PLANNING": ["plan", "roadmap", "sprint", "milestone", "priority", "schedule", "backlog"],
+     # TASK_EXECUTION is the default — no specific keywords needed
+ }
+ 
+diff --git a/ao_kernel/defaults/registry/provider_capability_registry.v1.json b/ao_kernel/defaults/registry/provider_capability_registry.v1.json
+index 0f05454..e59f2e7 100644
+--- a/ao_kernel/defaults/registry/provider_capability_registry.v1.json
++++ b/ao_kernel/defaults/registry/provider_capability_registry.v1.json
+@@ -32,7 +32,7 @@
+       "default_model": "claude-opus-4-5-20251101",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "unsupported",
+         "batch": "unsupported",
+@@ -60,7 +60,7 @@
+       "default_model": "gpt-4o-mini",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "unsupported",
+         "batch": "supported",
+@@ -89,7 +89,7 @@
+       "default_model": "gemini-2.0-flash",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "experimental",
+         "batch": "unsupported",
+@@ -117,7 +117,7 @@
+       "default_model": "deepseek-chat",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "unsupported",
+         "batch": "unsupported",
+@@ -146,7 +146,7 @@
+       "default_model": "qwen-plus",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "experimental",
+         "batch": "unsupported",
+@@ -174,7 +174,7 @@
+       "default_model": "grok-4-1-fast-reasoning",
+       "capabilities": {
+         "chat": "supported",
+-        "streaming": "experimental",
++        "streaming": "supported",
+         "tool_use": "unsupported",
+         "vision": "supported",
+         "batch": "unsupported",
+diff --git a/ao_kernel/policy.py b/ao_kernel/policy.py
+new file mode 100644
+index 0000000..300d2b3
+--- /dev/null
++++ b/ao_kernel/policy.py
+@@ -0,0 +1,46 @@
++"""ao_kernel.policy — Public policy management facade.
++
++Clean import path for policy operations.
++
++Usage:
++    from ao_kernel.policy import check, load, list_policies
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++
++
++def check(
++    policy_name: str,
++    action: dict[str, Any],
++    *,
++    workspace: Path | None = None,
++) -> dict[str, Any]:
++    """Check an action against a policy. Fail-closed.
++
++    Supports: autonomy, tool_calling, provider guardrails, generic rules.
++    Returns {allowed, decision, reason_codes, policy_ref, data}.
++    """
++    from ao_kernel.governance import check_policy
++    return check_policy(policy_name, action, workspace=workspace)
++
++
++def load(policy_name: str, *, workspace: Path | None = None) -> dict[str, Any]:
++    """Load a policy by name. Workspace override > bundled default."""
++    from ao_kernel.config import load_with_override
++    return load_with_override("policies", policy_name, workspace=workspace)
++
++
++def list_policies() -> list[str]:
++    """List all bundled policy filenames."""
++    from importlib.resources import files
++    policies_pkg = files("ao_kernel.defaults.policies")
++    return sorted(
++        item.name for item in policies_pkg.iterdir()
++        if item.name.endswith(".json") and not item.name.startswith("_")
++    )
++
++
++__all__ = ["check", "load", "list_policies"]
+diff --git a/ao_kernel/workspace.py b/ao_kernel/workspace.py
+new file mode 100644
+index 0000000..da7b9d5
+--- /dev/null
++++ b/ao_kernel/workspace.py
+@@ -0,0 +1,57 @@
++"""ao_kernel.workspace — Public workspace management facade.
++
++Clean import path for workspace operations.
++
++Usage:
++    from ao_kernel.workspace import init, doctor, migrate, find_root, load_config
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++
++
++def find_root(override: str | Path | None = None) -> Path | None:
++    """Find workspace root. Returns None in library mode."""
++    from ao_kernel.config import workspace_root
++    return workspace_root(override=override)
++
++
++def load_config(workspace: Path | None = None) -> dict[str, Any]:
++    """Load workspace.json from workspace root."""
++    from ao_kernel.config import load_workspace_json, workspace_root
++    ws = workspace or workspace_root()
++    if ws is None:
++        return {}
++    return load_workspace_json(ws)
++
++
++def init(workspace_root_override: str | None = None) -> int:
++    """Create .ao/ workspace. Returns exit code."""
++    from ao_kernel.init_cmd import run
++    return run(workspace_root_override=workspace_root_override)
++
++
++def doctor(workspace_root_override: str | None = None) -> int:
++    """Run workspace health check. Returns exit code."""
++    from ao_kernel.doctor_cmd import run
++    return run(workspace_root_override=workspace_root_override)
++
++
++def migrate(
++    workspace_root_override: str | None = None,
++    *,
++    dry_run: bool = False,
++    backup: bool = False,
++) -> int:
++    """Run workspace migration. Returns exit code."""
++    from ao_kernel.migrate_cmd import run
++    return run(
++        workspace_root_override=workspace_root_override,
++        dry_run=dry_run,
++        backup=backup,
++    )
++
++
++__all__ = ["find_root", "load_config", "init", "doctor", "migrate"]
+diff --git a/pyproject.toml b/pyproject.toml
+index 0c526f5..f4922bb 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "ao-kernel"
+-version = "0.1.0"
++version = "0.2.0"
+ description = "Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail"
+ readme = "README.md"
+ requires-python = ">=3.11"
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 25c237a..aca071b 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -33,8 +33,9 @@ def tmp_workspace(tmp_path: Path):
+     for d in ("policies", "schemas", "registry", "extensions"):
+         (ws / d).mkdir()
+     ws_json = ws / "workspace.json"
++    import ao_kernel
+     ws_json.write_text(json.dumps({
+-        "version": "0.1.0",
++        "version": ao_kernel.__version__,
+         "created_at": "2026-01-01T00:00:00Z",
+         "kind": "ao-workspace",
+     }) + "\n")
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 1043ba3..0c31865 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -47,7 +47,7 @@ class TestInit:
+     def test_workspace_json_has_required_fields(self, empty_dir):
+         main(["init"])
+         data = json.loads((empty_dir / ".ao" / "workspace.json").read_text())
+-        assert data["version"] == "0.1.0"
++        import ao_kernel; assert data["version"] == ao_kernel.__version__
+         assert data["kind"] == "ao-workspace"
+         assert "created_at" in data
+ 
+diff --git a/tests/test_config.py b/tests/test_config.py
+index c0b55f6..9c71279 100644
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -53,7 +53,7 @@ class TestWorkspaceRoot:
+         import os
+ 
+         (tmp_path / ".ao").mkdir()
+-        (tmp_path / ".ao" / "workspace.json").write_text('{"version":"0.1.0","kind":"ao-workspace"}')
++        (tmp_path / ".ao" / "workspace.json").write_text('{"version":"0.2.0","kind":"ao-workspace"}')
+         (tmp_path / ".cache" / "ws_customer_default").mkdir(parents=True)
+         old_cwd = os.getcwd()
+         os.chdir(tmp_path)
+@@ -68,7 +68,7 @@ class TestWorkspaceRoot:
+ class TestLoadWorkspaceJson:
+     def test_valid_workspace(self, tmp_workspace: Path):
+         data = load_workspace_json(tmp_workspace)
+-        assert data["version"] == "0.1.0"
++        assert data["version"] == "0.2.0"
+         assert data["kind"] == "ao-workspace"
+ 
+     def test_missing_workspace_json(self, tmp_path: Path):
+@@ -81,7 +81,7 @@ class TestLoadWorkspaceJson:
+             load_workspace_json(tmp_path)
+ 
+     def test_missing_required_field(self, tmp_path: Path):
+-        (tmp_path / "workspace.json").write_text('{"version": "0.1.0"}')
++        (tmp_path / "workspace.json").write_text('{"version": "0.2.0"}')
+         with pytest.raises(WorkspaceCorruptedError, match="missing required field"):
+             load_workspace_json(tmp_path)
+ 
+diff --git a/tests/test_init_cmd.py b/tests/test_init_cmd.py
+index 5be93e3..d411651 100644
+--- a/tests/test_init_cmd.py
++++ b/tests/test_init_cmd.py
+@@ -23,7 +23,7 @@ class TestInitCmd:
+     def test_workspace_json_content(self, empty_dir: Path):
+         run()
+         data = json.loads((empty_dir / ".ao" / "workspace.json").read_text())
+-        assert data["version"] == "0.1.0"
++        import ao_kernel; assert data["version"] == ao_kernel.__version__
+         assert data["kind"] == "ao-workspace"
+         assert "created_at" in data
+ 
+diff --git a/tests/test_mcp_server.py b/tests/test_mcp_server.py
+index d9be513..5779c37 100644
+--- a/tests/test_mcp_server.py
++++ b/tests/test_mcp_server.py
+@@ -153,7 +153,7 @@ class TestWorkspaceStatusGovernance:
+         result = handle_workspace_status({"workspace_root": str(tmp_workspace)})
+         assert result["allowed"] is True
+         assert result["data"]["status"] == "healthy"
+-        assert result["data"]["version"] == "0.1.0"
++        import ao_kernel; assert result["data"]["version"] == ao_kernel.__version__
+         assert result["data"]["kind"] == "ao-workspace"
+         assert result["data"]["mode"] == "workspace"
+ 
+diff --git a/tests/test_migrate_cmd.py b/tests/test_migrate_cmd.py
+index 897afb1..17d6778 100644
+--- a/tests/test_migrate_cmd.py
++++ b/tests/test_migrate_cmd.py
+@@ -55,7 +55,7 @@ class TestMigrateCmd:
+         assert "backup_path" in out
+ 
+         updated = json.loads(ws_json.read_text())
+-        assert updated["version"] == "0.1.0"
++        import ao_kernel; assert updated["version"] == ao_kernel.__version__
+         assert "migrated_at" in updated
+ 
+     def test_legacy_workspace_detected(self, legacy_workspace: Path, capsys):
+-- 
+2.50.1 (Apple Git-155)
+

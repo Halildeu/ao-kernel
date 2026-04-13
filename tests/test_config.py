@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import warnings
 from pathlib import Path
 
 import pytest
@@ -38,37 +37,17 @@ class TestWorkspaceRoot:
         result = workspace_root()
         assert result is None
 
-    def test_legacy_fallback_with_warning(self, legacy_workspace: Path):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result = workspace_root()
-            assert result is not None
-            assert "ws_customer_default" in str(result)
-            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
-            assert len(deprecation_warnings) >= 1
-            assert "legacy" in str(deprecation_warnings[0].message).lower()
-
-    def test_ao_takes_precedence_over_legacy(self, tmp_path: Path):
-        """If both .ao/ and .cache/ws_customer_default exist, .ao/ wins."""
-        import os
-
-        (tmp_path / ".ao").mkdir()
-        (tmp_path / ".ao" / "workspace.json").write_text('{"version":"0.2.0","kind":"ao-workspace"}')
-        (tmp_path / ".cache" / "ws_customer_default").mkdir(parents=True)
-        old_cwd = os.getcwd()
-        os.chdir(tmp_path)
-        try:
-            result = workspace_root()
-            assert result is not None
-            assert result.name == ".ao"
-        finally:
-            os.chdir(old_cwd)
+    def test_legacy_workspace_no_longer_found(self, legacy_workspace: Path):
+        """v2.0.0: Legacy .cache/ws_customer_default no longer supported."""
+        result = workspace_root()
+        assert result is None  # Legacy fallback removed in v2.0.0
 
 
 class TestLoadWorkspaceJson:
     def test_valid_workspace(self, tmp_workspace: Path):
         data = load_workspace_json(tmp_workspace)
-        assert data["version"] == "0.2.0"
+        import ao_kernel
+        assert data["version"] == ao_kernel.__version__
         assert data["kind"] == "ao-workspace"
 
     def test_missing_workspace_json(self, tmp_path: Path):
@@ -81,7 +60,7 @@ class TestLoadWorkspaceJson:
             load_workspace_json(tmp_path)
 
     def test_missing_required_field(self, tmp_path: Path):
-        (tmp_path / "workspace.json").write_text('{"version": "0.2.0"}')
+        (tmp_path / "workspace.json").write_text('{"version": "2.0.0"}')
         with pytest.raises(WorkspaceCorruptedError, match="missing required field"):
             load_workspace_json(tmp_path)
 

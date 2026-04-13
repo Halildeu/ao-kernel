@@ -1,0 +1,395 @@
+From 9cae21046d3f96f3a2ea129984275739b89a7221 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 16:23:02 +0300
+Subject: [PATCH] =?UTF-8?q?feat(streaming):=20tool=20streaming=20support?=
+ =?UTF-8?q?=20=E2=80=94=20stream+tools=20now=20allowed?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BREAKING: stream=True with tools no longer raises ValueError.
+
+llm_request_builder.py: removed fail-closed block for stream+tools
+llm_stream_normalizer.py: tool call delta reconstruction
+  - OpenAI: choices[0].delta.tool_calls → reconstructed function calls
+  - Anthropic: content_block_start/delta → reconstructed tool_use blocks
+  - Arguments concatenated from deltas → parsed JSON
+
+7 new tests (tool reconstruction: OpenAI single/multi, Anthropic, empty, text-only)
+Updated 2 existing tests (ValueError → allowed)
+
+386 tests total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ src/prj_kernel_api/llm_request_builder.py   |   8 +-
+ src/prj_kernel_api/llm_stream_normalizer.py | 113 ++++++++++++++++++--
+ tests/test_llm_facade.py                    |  20 ++--
+ tests/test_stream_request_builder.py        |  24 ++---
+ tests/test_tool_streaming.py                | 110 +++++++++++++++++++
+ 5 files changed, 238 insertions(+), 37 deletions(-)
+ create mode 100644 tests/test_tool_streaming.py
+
+diff --git a/src/prj_kernel_api/llm_request_builder.py b/src/prj_kernel_api/llm_request_builder.py
+index f65aa69..c1118b6 100644
+--- a/src/prj_kernel_api/llm_request_builder.py
++++ b/src/prj_kernel_api/llm_request_builder.py
+@@ -82,12 +82,8 @@ def build_live_request(
+                 Raises ValueError if stream=True and tools are provided
+                 (tool streaming not yet supported — fail-closed).
+     """
+-    if stream and tools:
+-        raise ValueError(
+-            "stream=True with tools is not supported in v0.2.0. "
+-            "Tool streaming will be added in v0.3.0. "
+-            "Use stream=False for tool-calling requests."
+-        )
++    # stream=True with tools is now supported (v0.3.0)
++    # Tool call deltas are reconstructed by llm_stream_normalizer
+     if provider_id == "claude":
+         system, anthropic_messages = to_anthropic_messages(messages)
+         req_body: dict[str, Any] = {
+diff --git a/src/prj_kernel_api/llm_stream_normalizer.py b/src/prj_kernel_api/llm_stream_normalizer.py
+index c53c3f5..64d10fc 100644
+--- a/src/prj_kernel_api/llm_stream_normalizer.py
++++ b/src/prj_kernel_api/llm_stream_normalizer.py
+@@ -3,6 +3,7 @@
+ Bridges streaming results into the same format as normalize_response() for
+ downstream consumers that expect the non-streaming contract.
+ 
++Includes tool call delta reconstruction for stream+tools support (v0.3.0).
+ For PARTIAL results: text is returned but quality gate evaluation is skipped.
+ """
+ 
+@@ -18,15 +19,18 @@ def normalize_stream_result(
+     """Convert StreamResult to normalize_response()-compatible dict.
+ 
+     Returns:
+-        {text, usage, tool_calls, raw_json, provider_id,
+-         stream_metadata: {status, complete, finish_reason, chunk_count,
+-                          elapsed_ms, first_token_ms}}
++        {text, usage, tool_calls, raw_json, provider_id, stream_metadata}
+     """
++    # Reconstruct tool calls from captured events
++    tool_calls = []
++    if result.events:
++        tool_calls = reconstruct_tool_calls(result.events, provider_id)
++
+     return {
+         "text": result.text,
+         "usage": result.usage,
+-        "tool_calls": [],  # Text-only streaming; tool calls not supported yet
+-        "raw_json": None,  # No single raw JSON for streaming
++        "tool_calls": tool_calls,
++        "raw_json": None,
+         "provider_id": provider_id,
+         "stream_metadata": {
+             "status": result.status,
+@@ -40,12 +44,103 @@ def normalize_stream_result(
+     }
+ 
+ 
+-def is_stream_complete(normalized: dict[str, Any]) -> bool:
+-    """Check if a normalized streaming response is complete.
++def reconstruct_tool_calls(
++    events: list[dict[str, Any]],
++    provider_id: str,
++) -> list[dict[str, Any]]:
++    """Reconstruct complete tool calls from streaming delta events.
+ 
+-    Downstream quality gate should skip evaluation for incomplete streams.
++    Streaming tool calls arrive as deltas:
++    - OpenAI: choices[0].delta.tool_calls[{index, id, function.name, function.arguments}]
++    - Anthropic: content_block_start(type=tool_use) + content_block_delta(partial_json)
++
++    Returns list of complete tool calls in normalized format.
+     """
++    if provider_id == "claude":
++        return _reconstruct_anthropic_tools(events)
++    return _reconstruct_openai_tools(events)
++
++
++def _reconstruct_openai_tools(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
++    """Reconstruct OpenAI tool calls from delta events."""
++    tools: dict[int, dict[str, Any]] = {}  # index → {id, name, arguments}
++
++    for event in events:
++        choices = event.get("choices", [])
++        if not choices:
++            continue
++        delta = choices[0].get("delta", {}) if isinstance(choices[0], dict) else {}
++        tool_deltas = delta.get("tool_calls", [])
++
++        for tc in tool_deltas:
++            if not isinstance(tc, dict):
++                continue
++            idx = tc.get("index", 0)
++            if idx not in tools:
++                tools[idx] = {"id": "", "name": "", "arguments": ""}
++
++            if tc.get("id"):
++                tools[idx]["id"] = tc["id"]
++            func = tc.get("function", {})
++            if isinstance(func, dict):
++                if func.get("name"):
++                    tools[idx]["name"] = func["name"]
++                if func.get("arguments"):
++                    tools[idx]["arguments"] += func["arguments"]
++
++    return [
++        {
++            "id": t["id"],
++            "type": "function",
++            "function": {"name": t["name"], "arguments": t["arguments"]},
++        }
++        for t in tools.values()
++        if t["name"]
++    ]
++
++
++def _reconstruct_anthropic_tools(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
++    """Reconstruct Anthropic tool calls from content blocks."""
++    tools: dict[int, dict[str, Any]] = {}
++
++    for event in events:
++        evt_type = event.get("type", "")
++
++        if evt_type == "content_block_start":
++            block = event.get("content_block", {})
++            if isinstance(block, dict) and block.get("type") == "tool_use":
++                idx = event.get("index", 0)
++                tools[idx] = {
++                    "id": block.get("id", ""),
++                    "name": block.get("name", ""),
++                    "input_json": "",
++                }
++
++        elif evt_type == "content_block_delta":
++            idx = event.get("index", 0)
++            delta = event.get("delta", {})
++            if isinstance(delta, dict) and delta.get("type") == "input_json_delta":
++                if idx in tools:
++                    tools[idx]["input_json"] += delta.get("partial_json", "")
++
++    import json
++    result = []
++    for t in tools.values():
++        try:
++            args = json.loads(t["input_json"]) if t["input_json"] else {}
++        except (json.JSONDecodeError, ValueError):
++            args = {}
++        result.append({
++            "id": t["id"],
++            "type": "function",
++            "function": {"name": t["name"], "arguments": json.dumps(args)},
++        })
++    return result
++
++
++def is_stream_complete(normalized: dict[str, Any]) -> bool:
++    """Check if a normalized streaming response is complete."""
+     meta = normalized.get("stream_metadata")
+     if meta is None:
+-        return True  # Non-streaming response, assume complete
++        return True
+     return bool(meta.get("complete", False))
+diff --git a/tests/test_llm_facade.py b/tests/test_llm_facade.py
+index e42e76b..d44a12e 100644
+--- a/tests/test_llm_facade.py
++++ b/tests/test_llm_facade.py
+@@ -4,7 +4,6 @@ from __future__ import annotations
+ 
+ import json
+ 
+-import pytest
+ 
+ 
+ class TestBuildRequest:
+@@ -57,16 +56,17 @@ class TestBuildRequest:
+         )
+         assert "stream" not in req["body_json"]
+ 
+-    def test_stream_with_tools_raises_valueerror(self):
++    def test_stream_with_tools_allowed(self):
+         from ao_kernel.llm import build_request
+-        with pytest.raises(ValueError, match="stream=True with tools"):
+-            build_request(
+-                provider_id="openai", model="gpt-4",
+-                messages=[{"role": "user", "content": "hi"}],
+-                base_url="https://api.openai.com/v1/chat/completions",
+-                api_key="sk-test", stream=True,
+-                tools=[{"type": "function", "function": {"name": "test"}}],
+-            )
++        req = build_request(
++            provider_id="openai", model="gpt-4",
++            messages=[{"role": "user", "content": "hi"}],
++            base_url="https://api.openai.com/v1/chat/completions",
++            api_key="sk-test", stream=True,
++            tools=[{"type": "function", "function": {"name": "test"}}],
++        )
++        assert req["body_json"]["stream"] is True
++        assert len(req["body_json"]["tools"]) == 1
+ 
+     def test_google_stream_changes_endpoint(self):
+         from ao_kernel.llm import build_request
+diff --git a/tests/test_stream_request_builder.py b/tests/test_stream_request_builder.py
+index 7054eaf..77a94b5 100644
+--- a/tests/test_stream_request_builder.py
++++ b/tests/test_stream_request_builder.py
+@@ -3,7 +3,6 @@
+ from __future__ import annotations
+ 
+ 
+-import pytest
+ 
+ from src.prj_kernel_api.llm_request_builder import build_live_request
+ 
+@@ -33,17 +32,18 @@ class TestStreamRequestBuilder:
+         body = req["body_json"]
+         assert "stream" not in body
+ 
+-    def test_stream_with_tools_raises(self):
+-        with pytest.raises(ValueError, match="stream=True with tools"):
+-            build_live_request(
+-                provider_id="openai",
+-                model="gpt-4",
+-                messages=[{"role": "user", "content": "hi"}],
+-                base_url="https://api.openai.com/v1/chat/completions",
+-                api_key="sk-test",
+-                stream=True,
+-                tools=[{"type": "function", "function": {"name": "test"}}],
+-            )
++    def test_stream_with_tools_allowed(self):
++        req = build_live_request(
++            provider_id="openai",
++            model="gpt-4",
++            messages=[{"role": "user", "content": "hi"}],
++            base_url="https://api.openai.com/v1/chat/completions",
++            api_key="sk-test",
++            stream=True,
++            tools=[{"type": "function", "function": {"name": "test"}}],
++        )
++        assert req["body_json"]["stream"] is True
++        assert len(req["body_json"]["tools"]) == 1
+ 
+     def test_google_stream_endpoint(self):
+         req = build_live_request(
+diff --git a/tests/test_tool_streaming.py b/tests/test_tool_streaming.py
+new file mode 100644
+index 0000000..e7a4214
+--- /dev/null
++++ b/tests/test_tool_streaming.py
+@@ -0,0 +1,110 @@
++"""Tests for tool streaming — stream+tools support (v0.3.0)."""
++
++from __future__ import annotations
++
++import json
++
++
++
++class TestStreamToolsAllowed:
++    def test_stream_with_tools_no_longer_raises(self):
++        from src.prj_kernel_api.llm_request_builder import build_live_request
++        req = build_live_request(
++            provider_id="openai",
++            model="gpt-4",
++            messages=[{"role": "user", "content": "hi"}],
++            base_url="https://api.openai.com/v1/chat/completions",
++            api_key="sk-test",
++            stream=True,
++            tools=[{"type": "function", "function": {"name": "get_weather"}}],
++        )
++        assert req["body_json"]["stream"] is True
++        assert len(req["body_json"]["tools"]) == 1
++
++    def test_facade_stream_tools_works(self):
++        from ao_kernel.llm import build_request
++        req = build_request(
++            provider_id="openai",
++            model="gpt-4",
++            messages=[{"role": "user", "content": "hi"}],
++            base_url="https://api.openai.com/v1/chat/completions",
++            api_key="sk-test",
++            stream=True,
++            tools=[{"type": "function", "function": {"name": "calc"}}],
++        )
++        assert req["body_json"]["stream"] is True
++
++
++class TestToolCallReconstruction:
++    def test_openai_tool_deltas(self):
++        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
++
++        events = [
++            {"choices": [{"delta": {"tool_calls": [
++                {"index": 0, "id": "call_1", "function": {"name": "get_weather", "arguments": ""}},
++            ]}}]},
++            {"choices": [{"delta": {"tool_calls": [
++                {"index": 0, "function": {"arguments": '{"city":'}},
++            ]}}]},
++            {"choices": [{"delta": {"tool_calls": [
++                {"index": 0, "function": {"arguments": '"London"}'}},
++            ]}}]},
++        ]
++
++        tools = reconstruct_tool_calls(events, "openai")
++        assert len(tools) == 1
++        assert tools[0]["function"]["name"] == "get_weather"
++        args = json.loads(tools[0]["function"]["arguments"])
++        assert args["city"] == "London"
++
++    def test_openai_multiple_tools(self):
++        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
++
++        events = [
++            {"choices": [{"delta": {"tool_calls": [
++                {"index": 0, "id": "call_1", "function": {"name": "tool_a", "arguments": '{"x":1}'}},
++            ]}}]},
++            {"choices": [{"delta": {"tool_calls": [
++                {"index": 1, "id": "call_2", "function": {"name": "tool_b", "arguments": '{"y":2}'}},
++            ]}}]},
++        ]
++
++        tools = reconstruct_tool_calls(events, "openai")
++        assert len(tools) == 2
++        names = {t["function"]["name"] for t in tools}
++        assert "tool_a" in names
++        assert "tool_b" in names
++
++    def test_anthropic_tool_blocks(self):
++        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
++
++        events = [
++            {"type": "content_block_start", "index": 1, "content_block": {
++                "type": "tool_use", "id": "toolu_1", "name": "search",
++            }},
++            {"type": "content_block_delta", "index": 1, "delta": {
++                "type": "input_json_delta", "partial_json": '{"query":',
++            }},
++            {"type": "content_block_delta", "index": 1, "delta": {
++                "type": "input_json_delta", "partial_json": '"test"}',
++            }},
++        ]
++
++        tools = reconstruct_tool_calls(events, "claude")
++        assert len(tools) == 1
++        assert tools[0]["function"]["name"] == "search"
++        args = json.loads(tools[0]["function"]["arguments"])
++        assert args["query"] == "test"
++
++    def test_empty_events_no_tools(self):
++        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
++        assert reconstruct_tool_calls([], "openai") == []
++        assert reconstruct_tool_calls([], "claude") == []
++
++    def test_text_only_events_no_tools(self):
++        from src.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
++        events = [
++            {"choices": [{"delta": {"content": "Hello"}}]},
++            {"choices": [{"delta": {"content": " world"}}]},
++        ]
++        assert reconstruct_tool_calls(events, "openai") == []
+-- 
+2.50.1 (Apple Git-155)
+

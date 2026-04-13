@@ -18,7 +18,7 @@ def new_context(
     ttl_seconds: int = 3600,
 ) -> dict[str, Any]:
     """Create a new session context."""
-    from src.session.context_store import new_context as _new
+    from ao_kernel._internal.session.context_store import new_context as _new
     return _new(
         session_id=session_id,
         workspace_root=str(workspace_root),
@@ -32,7 +32,7 @@ def save_context(
     session_id: str | None = None,
 ) -> None:
     """Save session context atomically."""
-    from src.session.context_store import save_context_atomic, SessionPaths
+    from ao_kernel._internal.session.context_store import save_context_atomic, SessionPaths
     sid = session_id or context.get("session_id", "default")
     paths = SessionPaths(workspace_root=Path(workspace_root), session_id=sid)
     save_context_atomic(paths.context_path, context)
@@ -43,7 +43,7 @@ def load_context(
     session_id: str = "default",
 ) -> dict[str, Any]:
     """Load session context from workspace."""
-    from src.session.context_store import load_context as _load, SessionPaths
+    from ao_kernel._internal.session.context_store import load_context as _load, SessionPaths
     paths = SessionPaths(workspace_root=Path(workspace_root), session_id=session_id)
     return _load(paths.context_path)
 
@@ -53,7 +53,7 @@ def distill_memory(
     distilled: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Consolidate session facts."""
-    from src.session.memory_distiller import consolidate_facts
+    from ao_kernel._internal.session.memory_distiller import consolidate_facts
     return consolidate_facts(
         workspace_root=Path(workspace_root),
         distilled=distilled or [],

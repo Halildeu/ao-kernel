@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from src.prj_kernel_api.llm_stream_transport import StreamResult, execute_stream_request
+from ao_kernel._internal.prj_kernel_api.llm_stream_transport import StreamResult, execute_stream_request
 
 
 class SSEHandler(BaseHTTPRequestHandler):
@@ -222,7 +222,7 @@ class TestStreamTransport:
 
 class TestStreamNormalizer:
     def test_normalize_ok_result(self):
-        from src.prj_kernel_api.llm_stream_normalizer import normalize_stream_result
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import normalize_stream_result
 
         result = StreamResult(
             status="OK", complete=True, text="Hello", finish_reason="stop",
@@ -234,7 +234,7 @@ class TestStreamNormalizer:
         assert normalized["tool_calls"] == []
 
     def test_partial_result_detection(self):
-        from src.prj_kernel_api.llm_stream_normalizer import is_stream_complete, normalize_stream_result
+        from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import is_stream_complete, normalize_stream_result
 
         result = StreamResult(
             status="PARTIAL", complete=False, text="partial",

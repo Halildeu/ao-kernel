@@ -1,0 +1,232 @@
+From 6773c3ca0c8cf21149f924299324ebd3e8edfab9 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 17:22:22 +0300
+Subject: [PATCH] feat(context): hot/warm/cold memory tier enforcement
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ao_kernel/context/memory_tiers.py:
+- classify_tier(): confidence + age → hot/warm/cold
+- enforce_tier_budgets(): cap each tier, overflow demotes to next
+- load_tier_policy(): from bundled policy_context_memory_tiers.v1.json
+
+Tiers:
+- HOT: confidence >= 0.7 AND age < 7 days (max 30)
+- WARM: confidence >= 0.4 OR age < 30 days (max 50)
+- COLD: everything else (max 100)
+
+10 new tests, 406 total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/context/memory_tiers.py | 117 ++++++++++++++++++++++++++++++
+ tests/test_memory_tiers.py        |  72 ++++++++++++++++++
+ 2 files changed, 189 insertions(+)
+ create mode 100644 ao_kernel/context/memory_tiers.py
+ create mode 100644 tests/test_memory_tiers.py
+
+diff --git a/ao_kernel/context/memory_tiers.py b/ao_kernel/context/memory_tiers.py
+new file mode 100644
+index 0000000..d406f3f
+--- /dev/null
++++ b/ao_kernel/context/memory_tiers.py
+@@ -0,0 +1,117 @@
++"""Memory tier enforcement — hot/warm/cold classification and budget limits.
++
++Tiers (from policy_context_memory_tiers.v1.json):
++    HOT:  always_load, max 30 rules — most recent, highest confidence
++    WARM: load_on_match, max 50 rules — relevant to current task
++    COLD: load_on_demand, archive after 30 sessions — historical
++
++Enforcement: context compiler respects tier budgets.
++Classification: based on recency + frequency + confidence.
++"""
++
++from __future__ import annotations
++
++from datetime import datetime, timezone
++from typing import Any
++
++
++# Default tier configuration (from bundled policy)
++DEFAULT_TIERS = {
++    "hot": {"max_rules": 30, "min_confidence": 0.7},
++    "warm": {"max_rules": 50, "min_confidence": 0.4},
++    "cold": {"max_rules": 100, "min_confidence": 0.0},
++}
++
++
++def classify_tier(
++    decision: dict[str, Any],
++    *,
++    now: str | None = None,
++) -> str:
++    """Classify a decision into hot/warm/cold tier.
++
++    Classification rules:
++    - HOT: confidence >= 0.7 AND age < 7 days
++    - WARM: confidence >= 0.4 OR age < 30 days
++    - COLD: everything else
++    """
++    confidence = decision.get("confidence", 0.5)
++    if isinstance(confidence, str):
++        try:
++            confidence = float(confidence)
++        except (ValueError, TypeError):
++            confidence = 0.5
++
++    age_days = _age_days(decision.get("created_at", decision.get("promoted_at", "")), now)
++
++    if confidence >= 0.7 and age_days < 7:
++        return "hot"
++    if confidence >= 0.4 or age_days < 30:
++        return "warm"
++    return "cold"
++
++
++def enforce_tier_budgets(
++    decisions: list[dict[str, Any]],
++    *,
++    tier_config: dict[str, Any] | None = None,
++) -> dict[str, list[dict[str, Any]]]:
++    """Classify decisions into tiers and enforce max budget per tier.
++
++    Returns {hot: [...], warm: [...], cold: [...]} with each tier
++    capped at max_rules. Excess decisions are demoted to next tier.
++    """
++    config = tier_config or DEFAULT_TIERS
++    tiers: dict[str, list[dict[str, Any]]] = {"hot": [], "warm": [], "cold": []}
++
++    for d in decisions:
++        tier = classify_tier(d)
++        tiers[tier].append(d)
++
++    # Enforce budgets — overflow demotes to next tier
++    hot_max = config.get("hot", {}).get("max_rules", 30)
++    warm_max = config.get("warm", {}).get("max_rules", 50)
++
++    if len(tiers["hot"]) > hot_max:
++        # Sort by confidence desc, demote lowest
++        tiers["hot"].sort(key=lambda d: d.get("confidence", 0), reverse=True)
++        overflow = tiers["hot"][hot_max:]
++        tiers["hot"] = tiers["hot"][:hot_max]
++        tiers["warm"].extend(overflow)
++
++    if len(tiers["warm"]) > warm_max:
++        tiers["warm"].sort(key=lambda d: d.get("confidence", 0), reverse=True)
++        overflow = tiers["warm"][warm_max:]
++        tiers["warm"] = tiers["warm"][:warm_max]
++        tiers["cold"].extend(overflow)
++
++    return tiers
++
++
++def load_tier_policy() -> dict[str, Any]:
++    """Load tier policy from bundled defaults."""
++    try:
++        from ao_kernel.config import load_default
++        return load_default("policies", "policy_context_memory_tiers.v1.json")
++    except Exception:
++        return {"tiers": DEFAULT_TIERS}
++
++
++def _age_days(timestamp: str, now: str | None = None) -> float:
++    """Calculate age in days from ISO timestamp."""
++    if not timestamp:
++        return 999.0
++    try:
++        dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
++        now_dt = datetime.now(timezone.utc)
++        return (now_dt - dt).total_seconds() / 86400
++    except (ValueError, TypeError):
++        return 999.0
++
++
++__all__ = [
++    "classify_tier",
++    "enforce_tier_budgets",
++    "load_tier_policy",
++    "DEFAULT_TIERS",
++]
+diff --git a/tests/test_memory_tiers.py b/tests/test_memory_tiers.py
+new file mode 100644
+index 0000000..fa0d459
+--- /dev/null
++++ b/tests/test_memory_tiers.py
+@@ -0,0 +1,72 @@
++"""Tests for memory tier enforcement — hot/warm/cold classification."""
++
++from __future__ import annotations
++
++from ao_kernel.context.memory_tiers import classify_tier, enforce_tier_budgets
++
++
++class TestClassifyTier:
++    def test_high_confidence_recent_is_hot(self):
++        d = {"confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"}
++        assert classify_tier(d) == "hot"
++
++    def test_medium_confidence_is_warm(self):
++        d = {"confidence": 0.5, "created_at": "2026-04-01T12:00:00Z"}
++        assert classify_tier(d) == "warm"
++
++    def test_old_low_confidence_is_cold(self):
++        d = {"confidence": 0.2, "created_at": "2025-01-01T12:00:00Z"}
++        assert classify_tier(d) == "cold"
++
++    def test_no_timestamp_defaults_cold(self):
++        d = {"confidence": 0.3}
++        assert classify_tier(d) == "cold"
++
++    def test_high_confidence_old_is_warm(self):
++        d = {"confidence": 0.8, "created_at": "2025-06-01T12:00:00Z"}
++        assert classify_tier(d) == "warm"
++
++
++class TestEnforceTierBudgets:
++    def test_within_budget_unchanged(self):
++        decisions = [
++            {"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"}
++            for i in range(5)
++        ]
++        tiers = enforce_tier_budgets(decisions)
++        assert len(tiers["hot"]) == 5
++        assert len(tiers["warm"]) == 0
++        assert len(tiers["cold"]) == 0
++
++    def test_hot_overflow_demotes_to_warm(self):
++        decisions = [
++            {"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"}
++            for i in range(35)
++        ]
++        tiers = enforce_tier_budgets(decisions, tier_config={"hot": {"max_rules": 30}, "warm": {"max_rules": 50}})
++        assert len(tiers["hot"]) == 30
++        assert len(tiers["warm"]) == 5  # overflow demoted
++
++    def test_warm_overflow_demotes_to_cold(self):
++        decisions = [
++            {"key": f"k{i}", "confidence": 0.5, "created_at": "2026-03-01T12:00:00Z"}
++            for i in range(60)
++        ]
++        tiers = enforce_tier_budgets(decisions, tier_config={"hot": {"max_rules": 30}, "warm": {"max_rules": 50}})
++        assert len(tiers["warm"]) <= 50
++        assert len(tiers["cold"]) >= 10
++
++    def test_empty_decisions(self):
++        tiers = enforce_tier_budgets([])
++        assert tiers == {"hot": [], "warm": [], "cold": []}
++
++    def test_mixed_tiers(self):
++        decisions = [
++            {"key": "hot1", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"},
++            {"key": "warm1", "confidence": 0.5, "created_at": "2026-03-01T12:00:00Z"},
++            {"key": "cold1", "confidence": 0.1, "created_at": "2025-01-01T12:00:00Z"},
++        ]
++        tiers = enforce_tier_budgets(decisions)
++        assert len(tiers["hot"]) == 1
++        assert len(tiers["warm"]) == 1
++        assert len(tiers["cold"]) == 1
+-- 
+2.50.1 (Apple Git-155)
+

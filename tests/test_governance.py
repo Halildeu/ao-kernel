@@ -74,7 +74,7 @@ class TestEvaluateQuality:
 
     def test_fail_closed_on_error(self):
         """If quality gate module fails, result must be DENY, not allow."""
-        with patch("src.orchestrator.quality_gate.run_quality_gates", side_effect=RuntimeError("broken")):
+        with patch("ao_kernel._internal.orchestrator.quality_gate.run_quality_gates", side_effect=RuntimeError("broken")):
             results = evaluate_quality("test output")
         assert len(results) >= 1
         assert results[0].passed is False

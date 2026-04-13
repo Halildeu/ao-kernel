@@ -33,7 +33,7 @@ def resolve_route(
 
     Returns dict with 'status' ('OK' or 'FAIL'), 'provider_id', 'model', etc.
     """
-    from src.prj_kernel_api.llm_router import resolve
+    from ao_kernel._internal.prj_kernel_api.llm_router import resolve
 
     return resolve(
         request={
@@ -93,7 +93,7 @@ def build_request(
     except (FileNotFoundError, ImportError):
         pass
 
-    from src.prj_kernel_api.llm_request_builder import build_live_request
+    from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
 
     return build_live_request(
         provider_id=provider_id,
@@ -122,7 +122,7 @@ def check_capabilities(
 
     Returns (ok, provider_id, missing_capability_names).
     """
-    from src.prj_kernel_api.llm_request_builder import check_capabilities_before_request
+    from ao_kernel._internal.prj_kernel_api.llm_request_builder import check_capabilities_before_request
 
     return check_capabilities_before_request(
         provider_id=provider_id,
@@ -141,7 +141,7 @@ def normalize_response(resp_bytes: bytes, *, provider_id: str) -> dict[str, Any]
     Returns: {text, usage, tool_calls, raw_json, provider_id}
     Handles Anthropic, OpenAI, Google, and compatible formats.
     """
-    from src.prj_kernel_api.llm_response_normalizer import (
+    from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import (
         normalize_response as _normalize,
     )
 
@@ -150,14 +150,14 @@ def normalize_response(resp_bytes: bytes, *, provider_id: str) -> dict[str, Any]
 
 def extract_text(resp_bytes: bytes) -> str:
     """Extract text content from provider response bytes."""
-    from src.prj_kernel_api.llm_response_normalizer import extract_llm_output_text
+    from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import extract_llm_output_text
 
     return extract_llm_output_text(resp_bytes)
 
 
 def extract_usage(resp_bytes: bytes) -> dict[str, Any] | None:
     """Extract token usage from provider response."""
-    from src.prj_kernel_api.llm_response_normalizer import (
+    from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import (
         extract_usage as _extract,
     )
 
@@ -182,7 +182,7 @@ def execute_request(
 
     Returns dict with: status, http_status, resp_bytes, elapsed_ms, error_code, etc.
     """
-    from src.prj_kernel_api.llm_transport import execute_http_request_with_resilience
+    from ao_kernel._internal.prj_kernel_api.llm_transport import execute_http_request_with_resilience
 
     return execute_http_request_with_resilience(
         url=url,
@@ -199,9 +199,9 @@ def execute_request(
 # ── Streaming ────────────────────────────────────────────────────────
 
 # Re-export streaming types for convenience
-from src.prj_kernel_api.llm_stream import StreamEvent  # noqa: E402
-from src.prj_kernel_api.llm_stream_transport import StreamResult  # noqa: E402
-from src.prj_kernel_api.llm_stream_transport import execute_stream_request as stream_request  # noqa: E402
+from ao_kernel._internal.prj_kernel_api.llm_stream import StreamEvent  # noqa: E402
+from ao_kernel._internal.prj_kernel_api.llm_stream_transport import StreamResult  # noqa: E402
+from ao_kernel._internal.prj_kernel_api.llm_stream_transport import execute_stream_request as stream_request  # noqa: E402
 
 
 # ── Resilience ───────────────────────────────────────────────────────
@@ -209,14 +209,14 @@ from src.prj_kernel_api.llm_stream_transport import execute_stream_request as st
 
 def get_circuit_breaker(provider_id: str):
     """Get or create per-provider circuit breaker."""
-    from src.prj_kernel_api.circuit_breaker import get_circuit_breaker as _get
+    from ao_kernel._internal.prj_kernel_api.circuit_breaker import get_circuit_breaker as _get
 
     return _get(provider_id)
 
 
 def get_rate_limiter(provider_id: str):
     """Get or create per-provider rate limiter."""
-    from src.prj_kernel_api.rate_limiter import get_rate_limiter as _get
+    from ao_kernel._internal.prj_kernel_api.rate_limiter import get_rate_limiter as _get
 
     return _get(provider_id)
 
@@ -234,14 +234,14 @@ def count_tokens(
 
     Returns dict with token count details.
     """
-    from src.providers.token_counter import count_tokens as _count
+    from ao_kernel._internal.providers.token_counter import count_tokens as _count
 
     return _count(messages, provider_id=provider_id, model=model)
 
 
 def count_tokens_heuristic(messages: list[dict[str, Any]]) -> int:
     """Fast heuristic token count for a message list."""
-    from src.providers.token_counter import count_tokens_heuristic as _count
+    from ao_kernel._internal.providers.token_counter import count_tokens_heuristic as _count
 
     return _count(messages)
 
@@ -351,7 +351,7 @@ def process_response_with_context(
     # Process tool results (extract_from_tool_result — was disconnected, now wired)
     if tool_results:
         from ao_kernel.context.decision_extractor import extract_from_tool_result
-        from src.session.context_store import upsert_decision
+        from ao_kernel._internal.session.context_store import upsert_decision
 
         for tr in tool_results:
             tool_name = tr.get("tool_name", tr.get("name", ""))

@@ -1,0 +1,297 @@
+From f6d9ec1833c1f08897713bbadd991b4fcc21b3f8 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 11:13:19 +0300
+Subject: [PATCH] =?UTF-8?q?feat(i18n):=20CLI=20localization=20=E2=80=94=20?=
+ =?UTF-8?q?English=20default=20+=20Turkish=20optional?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+New module ao_kernel/i18n.py:
+- msg(key, **kwargs): localized message lookup
+- Resolution: AO_KERNEL_LANG > LC_ALL > LC_MESSAGES > LANG > "en"
+- 2 locales: en (default), tr (Turkish)
+- 6 message keys: workspace_created, already_exists, errors, mcp, usage
+
+CLI files updated: init_cmd, migrate_cmd, cli.py — all use i18n.msg()
+Command names, flags, JSON keys remain English always.
+
+Design decision (Codex CNS-20260413-011):
+- English-first for open source (PyPI)
+- AO_KERNEL_LANG=tr for Turkish users
+- Only user-facing messages localized
+
+10 new tests (priority, fallback, env var override), 271 total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/cli.py         |  9 ++--
+ ao_kernel/i18n.py        | 79 +++++++++++++++++++++++++++++++++
+ ao_kernel/init_cmd.py    |  6 ++-
+ ao_kernel/migrate_cmd.py |  6 ++-
+ tests/test_i18n.py       | 96 ++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 187 insertions(+), 9 deletions(-)
+ create mode 100644 ao_kernel/i18n.py
+ create mode 100644 tests/test_i18n.py
+
+diff --git a/ao_kernel/cli.py b/ao_kernel/cli.py
+index 602f1e2..635744e 100644
+--- a/ao_kernel/cli.py
++++ b/ao_kernel/cli.py
+@@ -47,10 +47,8 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
+         return 0
+     except ImportError as e:
+         if "mcp" in str(e).lower():
+-            print(
+-                "Error: MCP server requires the 'mcp' package.\n"
+-                "Install with: pip install ao-kernel[mcp]"
+-            )
++            from ao_kernel.i18n import msg
++            print(msg("error_mcp_missing"))
+             return 1
+         raise
+ 
+@@ -106,7 +104,8 @@ def main(argv: list[str] | None = None) -> int:
+         mcp_cmd = getattr(args, "mcp_command", None)
+         if mcp_cmd == "serve":
+             return _cmd_mcp_serve(args)
+-        print("Usage: ao-kernel mcp serve")
++        from ao_kernel.i18n import msg
++        print(msg("usage_mcp_serve"))
+         return 1
+ 
+     handler = dispatch.get(cmd)
+diff --git a/ao_kernel/i18n.py b/ao_kernel/i18n.py
+new file mode 100644
+index 0000000..fd84a2c
+--- /dev/null
++++ b/ao_kernel/i18n.py
+@@ -0,0 +1,79 @@
++"""ao_kernel.i18n — CLI message localization.
++
++Resolution order: AO_KERNEL_LANG > LC_ALL > LC_MESSAGES > LANG > "en"
++
++Only user-facing CLI messages are localized. Command names, flags,
++JSON keys, and API responses are always English.
++
++Supported locales: en, tr
++"""
++
++from __future__ import annotations
++
++import os
++
++_MESSAGES: dict[str, dict[str, str]] = {
++    "en": {
++        "workspace_created": "Workspace created: {path}",
++        "workspace_already_exists": "Workspace already exists: {path}",
++        "error_no_workspace": "Error: No workspace found. Run 'ao-kernel init' first.",
++        "error_corrupted": "Error: {detail}",
++        "error_mcp_missing": (
++            "Error: MCP server requires the 'mcp' package.\n"
++            "Install with: pip install ao-kernel[mcp]"
++        ),
++        "usage_mcp_serve": "Usage: ao-kernel mcp serve",
++    },
++    "tr": {
++        "workspace_created": "Workspace oluşturuldu: {path}",
++        "workspace_already_exists": "Workspace zaten mevcut: {path}",
++        "error_no_workspace": "Hata: Workspace bulunamadı. Önce 'ao-kernel init' çalıştırın.",
++        "error_corrupted": "Hata: {detail}",
++        "error_mcp_missing": (
++            "Hata: MCP server için 'mcp' paketi gerekli.\n"
++            "Kurmak için: pip install ao-kernel[mcp]"
++        ),
++        "usage_mcp_serve": "Kullanım: ao-kernel mcp serve",
++    },
++}
++
++_resolved_locale: str | None = None
++
++
++def _resolve_locale() -> str:
++    """Resolve locale from environment. Cached after first call."""
++    global _resolved_locale
++    if _resolved_locale is not None:
++        return _resolved_locale
++
++    for var in ("AO_KERNEL_LANG", "LC_ALL", "LC_MESSAGES", "LANG"):
++        val = os.environ.get(var, "").strip().lower()
++        if val.startswith("tr"):
++            _resolved_locale = "tr"
++            return "tr"
++        if val.startswith("en"):
++            _resolved_locale = "en"
++            return "en"
++
++    _resolved_locale = "en"
++    return "en"
++
++
++def msg(key: str, **kwargs: str) -> str:
++    """Get a localized message by key.
++
++    Falls back to English if key not found in current locale.
++    """
++    locale = _resolve_locale()
++    messages = _MESSAGES.get(locale, _MESSAGES["en"])
++    template = messages.get(key) or _MESSAGES["en"].get(key, key)
++    try:
++        return template.format(**kwargs)
++    except (KeyError, IndexError):
++        return template
++
++
++def reset_locale() -> None:
++    """Reset cached locale (for testing)."""
++    global _resolved_locale
++    _resolved_locale = None
+diff --git a/ao_kernel/init_cmd.py b/ao_kernel/init_cmd.py
+index 34c6e8f..3425e0e 100644
+--- a/ao_kernel/init_cmd.py
++++ b/ao_kernel/init_cmd.py
+@@ -34,7 +34,8 @@ def run(workspace_root_override: str | None = None) -> int:
+     if target.is_dir():
+         ws_json = target / "workspace.json"
+         if ws_json.is_file():
+-            print(f"Workspace already exists: {target}")
++            from ao_kernel.i18n import msg
++            print(msg("workspace_already_exists", path=str(target)))
+             return 0
+ 
+     subdirs = ["policies", "schemas", "registry", "extensions"]
+@@ -51,5 +52,6 @@ def run(workspace_root_override: str | None = None) -> int:
+     if not ws_json.is_file():
+         _write_json_atomic(ws_json, ws_data)
+ 
+-    print(f"Workspace created: {target}")
++    from ao_kernel.i18n import msg
++    print(msg("workspace_created", path=str(target)))
+     return 0
+diff --git a/ao_kernel/migrate_cmd.py b/ao_kernel/migrate_cmd.py
+index fc5cfb0..b7f55a5 100644
+--- a/ao_kernel/migrate_cmd.py
++++ b/ao_kernel/migrate_cmd.py
+@@ -41,13 +41,15 @@ def run(
+     """Run workspace migration."""
+     ws = workspace_root(override=workspace_root_override)
+     if ws is None:
+-        print("Error: No workspace found. Run 'ao-kernel init' first.")
++        from ao_kernel.i18n import msg
++        print(msg("error_no_workspace"))
+         return 1
+ 
+     try:
+         ws_data = load_workspace_json(ws)
+     except WorkspaceCorruptedError as e:
+-        print(f"Error: {e}")
++        from ao_kernel.i18n import msg
++        print(msg("error_corrupted", detail=str(e)))
+         return 1
+ 
+     ws_version = ws_data.get("version", "0.0.0")
+diff --git a/tests/test_i18n.py b/tests/test_i18n.py
+new file mode 100644
+index 0000000..bbfadf3
+--- /dev/null
++++ b/tests/test_i18n.py
+@@ -0,0 +1,96 @@
++"""Tests for ao_kernel.i18n — CLI message localization."""
++
++from __future__ import annotations
++
++from ao_kernel.i18n import msg, reset_locale
++
++
++class TestDefaultEnglish:
++    def setup_method(self):
++        reset_locale()
++
++    def test_workspace_created_english(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        monkeypatch.delenv("LC_ALL", raising=False)
++        monkeypatch.delenv("LC_MESSAGES", raising=False)
++        monkeypatch.delenv("LANG", raising=False)
++        reset_locale()
++        result = msg("workspace_created", path="/tmp/test")
++        assert "Workspace created: /tmp/test" == result
++
++    def test_error_no_workspace_english(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        reset_locale()
++        result = msg("error_no_workspace")
++        assert "No workspace found" in result
++        assert "ao-kernel init" in result
++
++
++class TestTurkishOverride:
++    def setup_method(self):
++        reset_locale()
++
++    def test_workspace_created_turkish(self, monkeypatch):
++        monkeypatch.setenv("AO_KERNEL_LANG", "tr")
++        reset_locale()
++        result = msg("workspace_created", path="/tmp/test")
++        assert "oluşturuldu" in result
++        assert "/tmp/test" in result
++
++    def test_error_no_workspace_turkish(self, monkeypatch):
++        monkeypatch.setenv("AO_KERNEL_LANG", "tr")
++        reset_locale()
++        result = msg("error_no_workspace")
++        assert "bulunamadı" in result
++
++    def test_lc_all_turkish(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        monkeypatch.setenv("LC_ALL", "tr_TR.UTF-8")
++        reset_locale()
++        result = msg("workspace_created", path="/x")
++        assert "oluşturuldu" in result
++
++    def test_lang_turkish(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        monkeypatch.delenv("LC_ALL", raising=False)
++        monkeypatch.delenv("LC_MESSAGES", raising=False)
++        monkeypatch.setenv("LANG", "tr_TR")
++        reset_locale()
++        result = msg("workspace_created", path="/x")
++        assert "oluşturuldu" in result
++
++
++class TestPriority:
++    def setup_method(self):
++        reset_locale()
++
++    def test_ao_kernel_lang_overrides_lc(self, monkeypatch):
++        monkeypatch.setenv("AO_KERNEL_LANG", "en")
++        monkeypatch.setenv("LC_ALL", "tr_TR.UTF-8")
++        reset_locale()
++        result = msg("workspace_created", path="/x")
++        assert "Workspace created" in result
++
++    def test_ao_kernel_lang_tr_overrides_en_lc(self, monkeypatch):
++        monkeypatch.setenv("AO_KERNEL_LANG", "tr")
++        monkeypatch.setenv("LANG", "en_US.UTF-8")
++        reset_locale()
++        result = msg("workspace_created", path="/x")
++        assert "oluşturuldu" in result
++
++
++class TestFallback:
++    def setup_method(self):
++        reset_locale()
++
++    def test_unknown_key_returns_key(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        reset_locale()
++        result = msg("nonexistent_key_xyz")
++        assert result == "nonexistent_key_xyz"
++
++    def test_missing_format_arg_returns_template(self, monkeypatch):
++        monkeypatch.delenv("AO_KERNEL_LANG", raising=False)
++        reset_locale()
++        result = msg("workspace_created")  # missing path=
++        assert "Workspace created" in result
+-- 
+2.50.1 (Apple Git-155)
+

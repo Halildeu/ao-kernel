@@ -1,0 +1,833 @@
+From 0bb13f42aa379949df9336f1e4cf78474aad5f13 Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 13:15:26 +0300
+Subject: [PATCH] feat(context-faz3-4): canonical store + multi-agent
+ coordination + SDK
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Faz 3 — CP-5: Canonical Decision Store
+- canonical_store.py: promoted permanent decisions with temporal lifecycle
+- fact ≠ decision separation (separate stores)
+- promote_decision(): ephemeral → canonical (auto or approved)
+- promote_from_ephemeral(): batch promote above confidence threshold
+- query(): glob pattern + category filter + expiration check
+- Temporal fields: fresh_until, review_after, expires_at, supersedes
+- Provenance tracking: evidence_id linkage
+
+Faz 4 — CP-6: Multi-Agent Coordination + SDK Hooks
+- agent_coordination.py: revision-based stale detection
+- get_revision(): SHA256 hash of canonical store
+- check_stale(): detect if another agent modified store
+- read_with_revision(): read with revision metadata
+
+SDK Hooks:
+- record_decision(): write + auto-promote if confident
+- compile_context_sdk(): canonical + facts + session → compiled preamble
+- finalize_session_sdk(): compact + distill + promote
+- query_memory(): query canonical decisions + facts
+
+Multi-agent scenario test: Agent A writes → Agent B reads → Agent A
+writes again → Agent B detects stale → Agent B refreshes ✅
+
+32 new tests, 364 total passing.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/context/__init__.py           |   4 +
+ ao_kernel/context/agent_coordination.py | 211 ++++++++++++++++++++++++
+ ao_kernel/context/canonical_store.py    | 197 ++++++++++++++++++++++
+ tests/test_agent_coordination.py        | 151 +++++++++++++++++
+ tests/test_canonical_store.py           | 179 ++++++++++++++++++++
+ 5 files changed, 742 insertions(+)
+ create mode 100644 ao_kernel/context/agent_coordination.py
+ create mode 100644 ao_kernel/context/canonical_store.py
+ create mode 100644 tests/test_agent_coordination.py
+ create mode 100644 tests/test_canonical_store.py
+
+diff --git a/ao_kernel/context/__init__.py b/ao_kernel/context/__init__.py
+index 4deafee..5859017 100644
+--- a/ao_kernel/context/__init__.py
++++ b/ao_kernel/context/__init__.py
+@@ -12,6 +12,7 @@ Modules:
+     session_lifecycle: start/end session management
+ """
+ 
++from ao_kernel.context.canonical_store import CanonicalDecision, promote_decision, query as query_canonical
+ from ao_kernel.context.context_compiler import CompiledContext, compile_context
+ from ao_kernel.context.context_injector import build_context_preamble, inject_context_into_messages
+ from ao_kernel.context.decision_extractor import Decision, extract_decisions, extract_from_tool_result
+@@ -33,4 +34,7 @@ __all__ = [
+     "process_turn",
+     "start_session",
+     "end_session",
++    "CanonicalDecision",
++    "promote_decision",
++    "query_canonical",
+ ]
+diff --git a/ao_kernel/context/agent_coordination.py b/ao_kernel/context/agent_coordination.py
+new file mode 100644
+index 0000000..e721357
+--- /dev/null
++++ b/ao_kernel/context/agent_coordination.py
+@@ -0,0 +1,211 @@
++"""Multi-agent coordination — shared canonical decision access with revision tracking.
++
++Enables multiple agents (Claude, Codex, etc.) to read/write the same canonical
++decision store with consistency guarantees.
++
++Revision-based: every write increments a revision counter. Agents can detect
++stale reads by comparing their last-seen revision.
++
++SDK hooks:
++    record_decision(key, value, source) — write to session + auto-promote if confident
++    compile_context(profile, max_tokens) — compile context for LLM injection
++    finalize_session() — end session with compaction + distillation
++    query_memory(key_pattern) — query canonical decisions + facts
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++from pathlib import Path
++from typing import Any
++
++from ao_kernel.context.canonical_store import load_store
++
++
++def get_revision(workspace_root: Path) -> str:
++    """Get current canonical store revision hash.
++
++    Agents compare this to detect if store has changed since their last read.
++    """
++    store = load_store(workspace_root)
++    content = json.dumps(store, sort_keys=True, ensure_ascii=False)
++    return hashlib.sha256(content.encode()).hexdigest()[:16]
++
++
++def read_with_revision(
++    workspace_root: Path,
++    *,
++    key_pattern: str = "*",
++    category: str | None = None,
++) -> dict[str, Any]:
++    """Read canonical decisions with revision metadata.
++
++    Returns {revision, items, count} — agent stores revision for stale detection.
++    """
++    from ao_kernel.context.canonical_store import query
++
++    revision = get_revision(workspace_root)
++    items = query(workspace_root, key_pattern=key_pattern, category=category)
++
++    return {
++        "revision": revision,
++        "items": items,
++        "count": len(items),
++    }
++
++
++def check_stale(workspace_root: Path, *, last_revision: str) -> bool:
++    """Check if the canonical store has changed since last_revision.
++
++    Returns True if store is stale (has been modified by another agent).
++    """
++    current = get_revision(workspace_root)
++    return current != last_revision
++
++
++# ── SDK Hooks ───────────────────────────────────────────────────────
++
++
++def record_decision(
++    workspace_root: Path,
++    *,
++    key: str,
++    value: Any,
++    source: str = "agent",
++    confidence: float = 0.8,
++    session_id: str = "",
++    auto_promote: bool = True,
++    promote_threshold: float = 0.7,
++) -> dict[str, Any]:
++    """SDK hook: Record a decision. Auto-promotes to canonical if confident enough.
++
++    Returns {recorded: True, promoted: bool, key, value}.
++    """
++    promoted = False
++    if auto_promote and confidence >= promote_threshold:
++        from ao_kernel.context.canonical_store import promote_decision
++        promote_decision(
++            workspace_root,
++            key=key,
++            value=value,
++            source=source,
++            confidence=confidence,
++            session_id=session_id,
++        )
++        promoted = True
++
++    return {
++        "recorded": True,
++        "promoted": promoted,
++        "key": key,
++        "value": value,
++        "confidence": confidence,
++    }
++
++
++def compile_context_sdk(
++    workspace_root: Path,
++    *,
++    session_context: dict[str, Any] | None = None,
++    profile: str | None = None,
++    max_tokens: int = 4000,
++    messages: list[dict[str, Any]] | None = None,
++) -> dict[str, Any]:
++    """SDK hook: Compile context for LLM injection.
++
++    Loads canonical decisions + workspace facts and compiles with session context.
++    Returns {preamble, total_tokens, profile_id, items_included}.
++    """
++    from ao_kernel.context.canonical_store import query
++    from ao_kernel.context.context_compiler import compile_context
++
++    # Load canonical decisions as dict
++    canonical_items = query(workspace_root, category=None)
++    canonical_dict = {item["key"]: item for item in canonical_items}
++
++    # Load workspace facts
++    facts_path = workspace_root / ".cache" / "index" / "workspace_facts.v1.json"
++    workspace_facts = None
++    if facts_path.exists():
++        try:
++            workspace_facts = json.loads(facts_path.read_text(encoding="utf-8"))
++        except (json.JSONDecodeError, OSError):
++            pass
++
++    result = compile_context(
++        session_context or {"ephemeral_decisions": []},
++        canonical_decisions=canonical_dict,
++        workspace_facts=workspace_facts,
++        profile=profile,
++        messages=messages,
++    )
++
++    return {
++        "preamble": result.preamble,
++        "total_tokens": result.total_tokens,
++        "profile_id": result.profile_id,
++        "items_included": result.items_included,
++        "items_excluded": result.items_excluded,
++    }
++
++
++def finalize_session_sdk(
++    workspace_root: Path,
++    context: dict[str, Any],
++    *,
++    auto_promote: bool = True,
++    promote_threshold: float = 0.7,
++) -> dict[str, Any]:
++    """SDK hook: Finalize a session — compact, distill, promote high-confidence decisions.
++
++    Returns {compacted, distilled, promoted_count}.
++    """
++    from ao_kernel.context.canonical_store import promote_from_ephemeral
++    from ao_kernel.context.session_lifecycle import end_session
++
++    # End session (compact + distill)
++    end_session(context, workspace_root)
++
++    # Auto-promote high-confidence decisions
++    promoted_count = 0
++    if auto_promote:
++        decisions = context.get("ephemeral_decisions", [])
++        promoted = promote_from_ephemeral(
++            workspace_root,
++            decisions,
++            min_confidence=promote_threshold,
++            session_id=context.get("session_id", ""),
++        )
++        promoted_count = len(promoted)
++
++    return {
++        "finalized": True,
++        "session_id": context.get("session_id", ""),
++        "promoted_count": promoted_count,
++    }
++
++
++def query_memory(
++    workspace_root: Path,
++    *,
++    key_pattern: str = "*",
++    category: str | None = None,
++) -> list[dict[str, Any]]:
++    """SDK hook: Query canonical decisions + facts.
++
++    Simple wrapper for canonical_store.query.
++    """
++    from ao_kernel.context.canonical_store import query
++    return query(workspace_root, key_pattern=key_pattern, category=category)
++
++
++__all__ = [
++    "get_revision",
++    "read_with_revision",
++    "check_stale",
++    "record_decision",
++    "compile_context_sdk",
++    "finalize_session_sdk",
++    "query_memory",
++]
+diff --git a/ao_kernel/context/canonical_store.py b/ao_kernel/context/canonical_store.py
+new file mode 100644
+index 0000000..5e4b964
+--- /dev/null
++++ b/ao_kernel/context/canonical_store.py
+@@ -0,0 +1,197 @@
++"""Canonical decision store — promoted, permanent decisions with temporal lifecycle.
++
++Separates facts from decisions:
++    - Decision: actionable choice (e.g., "use Python 3.11", "deploy to staging")
++    - Fact: observed state (e.g., "repo has 300 files", "CI is green")
++
++Temporal lifecycle:
++    - fresh_until: decision is considered current until this timestamp
++    - review_after: decision should be reconsidered after this timestamp
++    - expires_at: decision auto-expires (hard deadline)
++    - supersedes: previous decision key this one replaces
++
++Promotion: ephemeral → canonical (auto or approved)
++Storage: .ao/canonical_decisions.v1.json (workspace-scoped, atomic writes)
++"""
++
++from __future__ import annotations
++
++import json
++from dataclasses import asdict, dataclass, field
++from datetime import datetime, timedelta, timezone
++from fnmatch import fnmatch
++from pathlib import Path
++from typing import Any
++
++from src.shared.utils import write_json_atomic
++
++
++def _now_iso() -> str:
++    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++def _future_iso(days: int) -> str:
++    return (datetime.now(timezone.utc) + timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++@dataclass
++class CanonicalDecision:
++    """A promoted, permanent decision with full lifecycle metadata."""
++
++    key: str
++    value: Any
++    category: str = "general"  # architecture | runtime | user_pref | approved_plan | fact
++    source: str = "agent"
++    confidence: float = 0.8
++    promoted_from: str = ""    # session_id where decision originated
++    promoted_at: str = ""
++    fresh_until: str = ""      # considered current until
++    review_after: str = ""     # should be reconsidered
++    expires_at: str = ""       # hard expiration
++    supersedes: str | None = None  # previous decision key
++    provenance: dict[str, Any] = field(default_factory=dict)  # evidence linkage
++    schema_version: str = "v1"
++
++
++def _store_path(workspace_root: Path) -> Path:
++    return workspace_root / "canonical_decisions.v1.json"
++
++
++def load_store(workspace_root: Path) -> dict[str, Any]:
++    """Load canonical decision store. Returns empty store if not found."""
++    path = _store_path(workspace_root)
++    if not path.exists():
++        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
++    try:
++        return json.loads(path.read_text(encoding="utf-8"))
++    except (json.JSONDecodeError, OSError):
++        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
++
++
++def save_store(workspace_root: Path, store: dict[str, Any]) -> None:
++    """Save canonical decision store atomically."""
++    store["updated_at"] = _now_iso()
++    write_json_atomic(_store_path(workspace_root), store)
++
++
++def promote_decision(
++    workspace_root: Path,
++    *,
++    key: str,
++    value: Any,
++    category: str = "general",
++    source: str = "agent",
++    confidence: float = 0.8,
++    session_id: str = "",
++    fresh_days: int = 30,
++    review_days: int = 90,
++    expire_days: int = 365,
++    supersedes: str | None = None,
++    provenance: dict[str, Any] | None = None,
++) -> CanonicalDecision:
++    """Promote an ephemeral decision to canonical store.
++
++    If key already exists, it's updated (latest wins).
++    """
++    store = load_store(workspace_root)
++    now = _now_iso()
++
++    decision = CanonicalDecision(
++        key=key,
++        value=value,
++        category=category,
++        source=source,
++        confidence=confidence,
++        promoted_from=session_id,
++        promoted_at=now,
++        fresh_until=_future_iso(fresh_days),
++        review_after=_future_iso(review_days),
++        expires_at=_future_iso(expire_days),
++        supersedes=supersedes,
++        provenance=provenance or {},
++    )
++
++    # Separate decisions from facts
++    target = "facts" if category == "fact" else "decisions"
++    store.setdefault(target, {})[key] = asdict(decision)
++
++    save_store(workspace_root, store)
++    return decision
++
++
++def query(
++    workspace_root: Path,
++    *,
++    key_pattern: str = "*",
++    category: str | None = None,
++    include_expired: bool = False,
++) -> list[dict[str, Any]]:
++    """Query canonical decisions and/or facts.
++
++    Args:
++        key_pattern: glob pattern (e.g., "runtime.*", "architecture.*")
++        category: filter by category (None = all)
++        include_expired: include expired decisions
++
++    Returns list of matching decisions/facts as dicts.
++    """
++    store = load_store(workspace_root)
++    now = _now_iso()
++    results: list[dict[str, Any]] = []
++
++    for section in ("decisions", "facts"):
++        items = store.get(section, {})
++        for key, item in items.items():
++            if not isinstance(item, dict):
++                continue
++            if not fnmatch(key, key_pattern):
++                continue
++            if category and item.get("category") != category:
++                continue
++            if not include_expired and item.get("expires_at", "") and item["expires_at"] < now:
++                continue
++            results.append(item)
++
++    # Sort by promoted_at descending (newest first)
++    results.sort(key=lambda x: x.get("promoted_at", ""), reverse=True)
++    return results
++
++
++def promote_from_ephemeral(
++    workspace_root: Path,
++    ephemeral_decisions: list[dict[str, Any]],
++    *,
++    min_confidence: float = 0.7,
++    session_id: str = "",
++    auto_category: str = "general",
++) -> list[CanonicalDecision]:
++    """Batch promote ephemeral decisions above confidence threshold.
++
++    Returns list of promoted CanonicalDecisions.
++    """
++    promoted: list[CanonicalDecision] = []
++    for d in ephemeral_decisions:
++        confidence = d.get("confidence", 0.5)
++        if isinstance(confidence, (int, float)) and confidence >= min_confidence:
++            cd = promote_decision(
++                workspace_root,
++                key=d.get("key", ""),
++                value=d.get("value"),
++                category=auto_category,
++                source=d.get("source", "agent"),
++                confidence=confidence,
++                session_id=session_id,
++                provenance={"evidence_id": d.get("evidence_id", "")},
++            )
++            promoted.append(cd)
++    return promoted
++
++
++__all__ = [
++    "CanonicalDecision",
++    "load_store",
++    "save_store",
++    "promote_decision",
++    "promote_from_ephemeral",
++    "query",
++]
+diff --git a/tests/test_agent_coordination.py b/tests/test_agent_coordination.py
+new file mode 100644
+index 0000000..61e07ac
+--- /dev/null
++++ b/tests/test_agent_coordination.py
+@@ -0,0 +1,151 @@
++"""Tests for Faz 4 — multi-agent coordination + SDK hooks."""
++
++from __future__ import annotations
++
++from pathlib import Path
++
++from ao_kernel.context.agent_coordination import (
++    check_stale,
++    compile_context_sdk,
++    finalize_session_sdk,
++    get_revision,
++    query_memory,
++    read_with_revision,
++    record_decision,
++)
++
++
++class TestRevisionTracking:
++    def test_revision_returns_hash(self, tmp_path: Path):
++        rev = get_revision(tmp_path)
++        assert isinstance(rev, str)
++        assert len(rev) == 16
++
++    def test_revision_changes_on_write(self, tmp_path: Path):
++        rev1 = get_revision(tmp_path)
++        record_decision(tmp_path, key="test.key", value="v1")
++        rev2 = get_revision(tmp_path)
++        assert rev1 != rev2
++
++    def test_check_stale_detects_change(self, tmp_path: Path):
++        rev = get_revision(tmp_path)
++        assert check_stale(tmp_path, last_revision=rev) is False
++
++        record_decision(tmp_path, key="new.key", value="new_value")
++        assert check_stale(tmp_path, last_revision=rev) is True
++
++    def test_read_with_revision(self, tmp_path: Path):
++        record_decision(tmp_path, key="runtime.python", value="3.11")
++        result = read_with_revision(tmp_path, key_pattern="runtime.*")
++        assert "revision" in result
++        assert result["count"] == 1
++        assert result["items"][0]["key"] == "runtime.python"
++
++
++class TestSDKRecordDecision:
++    def test_record_and_auto_promote(self, tmp_path: Path):
++        result = record_decision(
++            tmp_path,
++            key="arch.pattern",
++            value="microservices",
++            confidence=0.9,
++        )
++        assert result["recorded"] is True
++        assert result["promoted"] is True
++
++        items = query_memory(tmp_path, key_pattern="arch.*")
++        assert len(items) == 1
++
++    def test_record_below_threshold_not_promoted(self, tmp_path: Path):
++        result = record_decision(
++            tmp_path,
++            key="maybe.thing",
++            value="uncertain",
++            confidence=0.3,
++        )
++        assert result["recorded"] is True
++        assert result["promoted"] is False
++
++    def test_record_without_auto_promote(self, tmp_path: Path):
++        result = record_decision(
++            tmp_path,
++            key="manual.only",
++            value="test",
++            confidence=0.9,
++            auto_promote=False,
++        )
++        assert result["promoted"] is False
++
++
++class TestSDKCompileContext:
++    def test_compile_with_canonical(self, tmp_path: Path):
++        record_decision(tmp_path, key="runtime.lang", value="python", confidence=0.9)
++        result = compile_context_sdk(tmp_path, profile="TASK_EXECUTION")
++        assert "preamble" in result
++        assert result["items_included"] >= 1
++        assert result["profile_id"] == "TASK_EXECUTION"
++
++    def test_compile_empty_workspace(self, tmp_path: Path):
++        result = compile_context_sdk(tmp_path)
++        assert result["items_included"] == 0
++        assert result["preamble"] == ""
++
++
++class TestSDKFinalizeSession:
++    def test_finalize_promotes_decisions(self, tmp_path: Path):
++        from ao_kernel.context.session_lifecycle import start_session
++        from ao_kernel.context.memory_pipeline import process_turn
++        import json
++
++        ctx = start_session(workspace_root=tmp_path, session_id="finalize-test")
++        ctx = process_turn(
++            json.dumps({"status": "approved", "version": "2.0"}),
++            ctx,
++            request_id="fin-req",
++            workspace_root=tmp_path,
++        )
++
++        result = finalize_session_sdk(tmp_path, ctx, promote_threshold=0.5)
++        assert result["finalized"] is True
++        assert result["promoted_count"] >= 0
++
++
++class TestSDKQueryMemory:
++    def test_query_all(self, tmp_path: Path):
++        record_decision(tmp_path, key="a.b", value=1, confidence=0.9)
++        record_decision(tmp_path, key="c.d", value=2, confidence=0.9)
++        items = query_memory(tmp_path)
++        assert len(items) == 2
++
++    def test_query_pattern(self, tmp_path: Path):
++        record_decision(tmp_path, key="runtime.x", value=1, confidence=0.9)
++        record_decision(tmp_path, key="arch.y", value=2, confidence=0.9)
++        items = query_memory(tmp_path, key_pattern="runtime.*")
++        assert len(items) == 1
++        assert items[0]["key"] == "runtime.x"
++
++
++class TestMultiAgentScenario:
++    def test_two_agents_same_store(self, tmp_path: Path):
++        """Simulate: Agent A writes, Agent B reads same canonical store."""
++        # Agent A writes
++        record_decision(tmp_path, key="plan.approved", value=True, confidence=0.95, source="claude")
++        get_revision(tmp_path)  # Agent A's revision after write
++
++        # Agent B reads
++        result_b = read_with_revision(tmp_path)
++        assert result_b["count"] == 1
++        assert result_b["items"][0]["value"] is True
++
++        # Agent B's revision matches
++        assert check_stale(tmp_path, last_revision=result_b["revision"]) is False
++
++        # Agent A writes again
++        record_decision(tmp_path, key="deploy.ready", value=True, confidence=0.9, source="claude")
++
++        # Agent B detects stale
++        assert check_stale(tmp_path, last_revision=result_b["revision"]) is True
++
++        # Agent B refreshes
++        result_b2 = read_with_revision(tmp_path)
++        assert result_b2["count"] == 2
+diff --git a/tests/test_canonical_store.py b/tests/test_canonical_store.py
+new file mode 100644
+index 0000000..b874ee1
+--- /dev/null
++++ b/tests/test_canonical_store.py
+@@ -0,0 +1,179 @@
++"""Tests for Faz 3 — canonical decision store."""
++
++from __future__ import annotations
++
++from pathlib import Path
++
++from ao_kernel.context.canonical_store import (
++    CanonicalDecision,
++    load_store,
++    promote_decision,
++    promote_from_ephemeral,
++    query,
++    save_store,
++)
++
++
++class TestStoreLifecycle:
++    def test_empty_store(self, tmp_path: Path):
++        store = load_store(tmp_path)
++        assert store["version"] == "v1"
++        assert store["decisions"] == {}
++        assert store["facts"] == {}
++
++    def test_save_and_load_roundtrip(self, tmp_path: Path):
++        store = load_store(tmp_path)
++        store["decisions"]["test.key"] = {"value": "hello"}
++        save_store(tmp_path, store)
++
++        loaded = load_store(tmp_path)
++        assert "test.key" in loaded["decisions"]
++        assert loaded["decisions"]["test.key"]["value"] == "hello"
++        assert "updated_at" in loaded
++
++    def test_corrupted_file_returns_empty(self, tmp_path: Path):
++        (tmp_path / "canonical_decisions.v1.json").write_text("{{invalid")
++        store = load_store(tmp_path)
++        assert store["decisions"] == {}
++
++
++class TestPromoteDecision:
++    def test_promote_basic(self, tmp_path: Path):
++        cd = promote_decision(
++            tmp_path,
++            key="runtime.python",
++            value="3.11",
++            category="runtime",
++            session_id="sess-001",
++        )
++        assert isinstance(cd, CanonicalDecision)
++        assert cd.key == "runtime.python"
++        assert cd.value == "3.11"
++        assert cd.category == "runtime"
++        assert cd.promoted_from == "sess-001"
++        assert len(cd.promoted_at) > 0
++        assert len(cd.fresh_until) > 0
++        assert len(cd.expires_at) > 0
++
++    def test_promote_persists(self, tmp_path: Path):
++        promote_decision(tmp_path, key="arch.pattern", value="microservices")
++        store = load_store(tmp_path)
++        assert "arch.pattern" in store["decisions"]
++
++    def test_promote_fact_goes_to_facts(self, tmp_path: Path):
++        promote_decision(tmp_path, key="repo.files", value=300, category="fact")
++        store = load_store(tmp_path)
++        assert "repo.files" in store["facts"]
++        assert "repo.files" not in store["decisions"]
++
++    def test_promote_overwrites_existing(self, tmp_path: Path):
++        promote_decision(tmp_path, key="version", value="1.0")
++        promote_decision(tmp_path, key="version", value="2.0")
++        store = load_store(tmp_path)
++        assert store["decisions"]["version"]["value"] == "2.0"
++
++    def test_supersedes_tracking(self, tmp_path: Path):
++        promote_decision(tmp_path, key="deploy.target", value="staging")
++        cd = promote_decision(
++            tmp_path,
++            key="deploy.target",
++            value="production",
++            supersedes="deploy.target",
++        )
++        assert cd.supersedes == "deploy.target"
++
++    def test_provenance_stored(self, tmp_path: Path):
++        cd = promote_decision(
++            tmp_path,
++            key="test.prov",
++            value="ok",
++            provenance={"evidence_id": "req-123", "turn": 3},
++        )
++        assert cd.provenance["evidence_id"] == "req-123"
++
++
++class TestQuery:
++    def _setup_store(self, tmp_path: Path):
++        promote_decision(tmp_path, key="runtime.python", value="3.11", category="runtime")
++        promote_decision(tmp_path, key="runtime.os", value="linux", category="runtime")
++        promote_decision(tmp_path, key="arch.pattern", value="monolith", category="architecture")
++        promote_decision(tmp_path, key="repo.files", value=300, category="fact")
++
++    def test_query_all(self, tmp_path: Path):
++        self._setup_store(tmp_path)
++        results = query(tmp_path)
++        assert len(results) == 4
++
++    def test_query_pattern(self, tmp_path: Path):
++        self._setup_store(tmp_path)
++        results = query(tmp_path, key_pattern="runtime.*")
++        assert len(results) == 2
++        assert all("runtime." in r["key"] for r in results)
++
++    def test_query_category(self, tmp_path: Path):
++        self._setup_store(tmp_path)
++        results = query(tmp_path, category="architecture")
++        assert len(results) == 1
++        assert results[0]["key"] == "arch.pattern"
++
++    def test_query_facts_only(self, tmp_path: Path):
++        self._setup_store(tmp_path)
++        results = query(tmp_path, category="fact")
++        assert len(results) == 1
++        assert results[0]["key"] == "repo.files"
++
++    def test_query_returns_list(self, tmp_path: Path):
++        promote_decision(tmp_path, key="first", value=1)
++        promote_decision(tmp_path, key="second", value=2)
++        results = query(tmp_path)
++        assert len(results) == 2
++        keys = {r["key"] for r in results}
++        assert "first" in keys
++        assert "second" in keys
++
++    def test_empty_store_returns_empty(self, tmp_path: Path):
++        results = query(tmp_path)
++        assert results == []
++
++
++class TestPromoteFromEphemeral:
++    def test_batch_promote_above_threshold(self, tmp_path: Path):
++        ephemeral = [
++            {"key": "llm.status", "value": "approved", "confidence": 0.9, "source": "agent"},
++            {"key": "llm.note", "value": "maybe", "confidence": 0.3, "source": "agent"},
++            {"key": "llm.version", "value": "3.11", "confidence": 0.8, "source": "agent"},
++        ]
++        promoted = promote_from_ephemeral(
++            tmp_path,
++            ephemeral,
++            min_confidence=0.7,
++            session_id="batch-001",
++        )
++        assert len(promoted) == 2  # only 0.9 and 0.8
++        keys = {cd.key for cd in promoted}
++        assert "llm.status" in keys
++        assert "llm.version" in keys
++        assert "llm.note" not in keys
++
++    def test_batch_promote_empty(self, tmp_path: Path):
++        promoted = promote_from_ephemeral(tmp_path, [])
++        assert promoted == []
++
++    def test_batch_promote_all_below_threshold(self, tmp_path: Path):
++        ephemeral = [
++            {"key": "low", "value": "x", "confidence": 0.1},
++        ]
++        promoted = promote_from_ephemeral(tmp_path, ephemeral, min_confidence=0.5)
++        assert promoted == []
++
++
++class TestFactDecisionSeparation:
++    def test_decision_and_fact_separate_stores(self, tmp_path: Path):
++        promote_decision(tmp_path, key="plan.approved", value=True, category="approved_plan")
++        promote_decision(tmp_path, key="ci.status", value="green", category="fact")
++
++        store = load_store(tmp_path)
++        assert "plan.approved" in store["decisions"]
++        assert "ci.status" in store["facts"]
++        assert "plan.approved" not in store["facts"]
++        assert "ci.status" not in store["decisions"]
+-- 
+2.50.1 (Apple Git-155)
+

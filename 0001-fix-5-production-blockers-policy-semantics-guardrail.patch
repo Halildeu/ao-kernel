@@ -1,0 +1,289 @@
+From 6076da583b057c7a43500a4a62e36e817108e5ca Mon Sep 17 00:00:00 2001
+From: halildeu <halildeu@gmail.com>
+Date: Mon, 13 Apr 2026 15:30:40 +0300
+Subject: [PATCH] =?UTF-8?q?fix:=205=20production=20blockers=20=E2=80=94=20?=
+ =?UTF-8?q?policy=20semantics,=20guardrails,=20context=20wiring?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BLOCKERS FIXED (Codex CNS-019):
+
+#1: check_policy now evaluates real policy semantics:
+    - Autonomy policies: intent authorization + mode enforcement
+    - Tool calling policies: allowed/blocked tools + enabled check
+    - Provider guardrails: provider enabled + model allowlist
+    - Generic: required_fields, blocked_values, limits (existing)
+
+#2: MCP ToolGateway loads policy_tool_calling.v1.json (not hardcoded)
+    - MCP governance tools always enabled (they ARE governance)
+    - max_rounds from policy artifact
+
+#3: Provider guardrails enforced in build_request():
+    - Only workspace override policy (bundled defaults are reference-only)
+    - PROVIDER_DISABLED → ValueError (fail-closed)
+
+#4: build_request_with_context loads canonical + workspace_facts:
+    - Canonical decisions from canonical_store.query()
+    - Workspace facts from .cache/index/workspace_facts.v1.json
+    - Facts format normalized (list → dict)
+
+#5: end_session auto-promotes high-confidence decisions:
+    - promote_from_ephemeral(min_confidence=0.7) on session close
+
+367 tests passing, all lint clean.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+---
+ ao_kernel/context/session_lifecycle.py |  13 ++++
+ ao_kernel/governance.py                | 104 ++++++++++++++++++++++++-
+ ao_kernel/llm.py                       |  47 +++++++++++
+ ao_kernel/mcp_server.py                |  14 +++-
+ 4 files changed, 176 insertions(+), 2 deletions(-)
+
+diff --git a/ao_kernel/context/session_lifecycle.py b/ao_kernel/context/session_lifecycle.py
+index 4195092..0e4e628 100644
+--- a/ao_kernel/context/session_lifecycle.py
++++ b/ao_kernel/context/session_lifecycle.py
+@@ -78,6 +78,19 @@ def end_session(
+     except Exception:
+         pass  # Distillation failure shouldn't block session close
+ 
++    # Auto-promote high-confidence decisions to canonical store
++    try:
++        from ao_kernel.context.canonical_store import promote_from_ephemeral
++        decisions = context.get("ephemeral_decisions", [])
++        promote_from_ephemeral(
++            ws,
++            decisions,
++            min_confidence=0.7,
++            session_id=session_id,
++        )
++    except Exception:
++        pass  # Promotion failure shouldn't block session close
++
+     # Final save
+     from ao_kernel.session import save_context
+     save_context(context, workspace_root=ws, session_id=session_id)
+diff --git a/ao_kernel/governance.py b/ao_kernel/governance.py
+index d8fee71..9e56e60 100644
+--- a/ao_kernel/governance.py
++++ b/ao_kernel/governance.py
+@@ -87,7 +87,107 @@ def check_policy(
+ 
+ 
+ def _check_rules(policy: dict, action: dict) -> list[str]:
+-    """Check action against policy rules. Returns violation codes."""
++    """Check action against policy rules. Supports multiple policy types.
++
++    Policy types detected by structure:
++    - autonomy: has "intents" + "defaults.mode" → check intent authorization
++    - tool_calling: has "enabled" + "allowed_tools" → check tool authorization
++    - guardrails: has "defaults.enabled" + "providers" → check provider access
++    - generic: has "required_fields"/"blocked_values"/"limits" → field checks
++    """
++    violations = []
++
++    # Type 1: Autonomy policy (intent-based)
++    if "intents" in policy and isinstance(policy.get("intents"), dict):
++        violations.extend(_check_autonomy(policy, action))
++
++    # Type 2: Tool calling policy
++    if "allowed_tools" in policy or "blocked_tools" in policy:
++        violations.extend(_check_tool_calling(policy, action))
++
++    # Type 3: Provider guardrails
++    if "providers" in policy and isinstance(policy.get("providers"), dict):
++        violations.extend(_check_provider_guardrails(policy, action))
++
++    # Type 4: Generic rules (required_fields, blocked_values, limits)
++    violations.extend(_check_generic_rules(policy, action))
++
++    return violations
++
++
++def _check_autonomy(policy: dict, action: dict) -> list[str]:
++    """Check autonomy policy — intent authorization and mode enforcement."""
++    violations = []
++    defaults = policy.get("defaults", {})
++    default_mode = defaults.get("mode", "human_review")
++    intents = policy.get("intents", {})
++
++    intent = action.get("intent", "")
++    mode = action.get("mode", "")
++
++    if intent and intent in intents:
++        intent_config = intents[intent]
++        allowed_mode = intent_config.get("mode", default_mode)
++        if mode and mode != allowed_mode and mode == "full_auto" and allowed_mode == "human_review":
++            violations.append(f"AUTONOMY_MODE_DENIED:{intent}:requested={mode},allowed={allowed_mode}")
++    elif intent and intent not in intents:
++        # Unknown intent — check fail_action
++        fail_action = policy.get("fail_action", "block")
++        if fail_action == "block":
++            violations.append(f"AUTONOMY_UNKNOWN_INTENT:{intent}")
++
++    return violations
++
++
++def _check_tool_calling(policy: dict, action: dict) -> list[str]:
++    """Check tool calling policy — allowed/blocked tools."""
++    violations = []
++
++    if not policy.get("enabled", False):
++        tool = action.get("tool_name", action.get("tool", ""))
++        if tool:
++            violations.append(f"TOOL_CALLING_DISABLED:{tool}")
++        return violations
++
++    tool = action.get("tool_name", action.get("tool", ""))
++    if not tool:
++        return violations
++
++    blocked = set(policy.get("blocked_tools", []))
++    if tool in blocked:
++        violations.append(f"TOOL_BLOCKED:{tool}")
++
++    allowed = set(policy.get("allowed_tools", []))
++    if allowed and tool not in allowed:
++        violations.append(f"TOOL_NOT_ALLOWED:{tool}")
++    elif not allowed:
++        violations.append(f"TOOL_NO_ALLOWLIST:{tool}")
++
++    return violations
++
++
++def _check_provider_guardrails(policy: dict, action: dict) -> list[str]:
++    """Check provider guardrails — provider access control."""
++    violations = []
++    providers = policy.get("providers", {})
++    provider_id = action.get("provider_id", action.get("provider", ""))
++
++    if provider_id and provider_id in providers:
++        prov = providers[provider_id]
++        if isinstance(prov, dict) and not prov.get("enabled", True):
++            violations.append(f"PROVIDER_DISABLED:{provider_id}")
++
++        model = action.get("model", "")
++        if model and isinstance(prov, dict):
++            allow_models = prov.get("allow_models", [])
++            if allow_models and model not in allow_models and "*" not in allow_models:
++                violations.append(f"MODEL_NOT_ALLOWED:{provider_id}:{model}")
++
++    return violations
++
++
++def _check_generic_rules(policy: dict, action: dict) -> list[str]:
++    """Check generic policy rules — required fields, blocked values, limits."""
+     violations = []
+ 
+     required = policy.get("required_fields", [])
+@@ -114,6 +214,8 @@ def _check_rules(policy: dict, action: dict) -> list[str]:
+ 
+     return violations
+ 
++    return violations
++
+ 
+ def evaluate_quality(
+     output_text: str,
+diff --git a/ao_kernel/llm.py b/ao_kernel/llm.py
+index 1a77947..ec0c670 100644
+--- a/ao_kernel/llm.py
++++ b/ao_kernel/llm.py
+@@ -68,8 +68,31 @@ def build_request(
+     Returns dict with keys: url, headers, body_bytes, body_json.
+     Supports all 6 providers: claude, openai, google, deepseek, qwen, xai.
+ 
++    Provider guardrails are checked if policy is available (fail-closed on violation).
+     Raises ValueError if stream=True and tools are provided (fail-closed).
+     """
++    # Provider guardrails: enforced when workspace has explicit override policy
++    # Bundled defaults are reference-only (many providers disabled by default)
++    try:
++        from ao_kernel.config import workspace_root as _ws_root
++        from pathlib import Path as _Path
++        ws = _ws_root()
++        if ws:
++            guardrails_path = _Path(ws) / "policies" / "policy_llm_providers_guardrails.v1.json"
++            if guardrails_path.exists():
++                from ao_kernel.governance import check_policy
++                guardrails = check_policy(
++                    "policy_llm_providers_guardrails.v1.json",
++                    {"provider_id": provider_id, "model": model},
++                    workspace=_Path(ws),
++                )
++                if not guardrails.get("allowed", True):
++                    raise ValueError(
++                        f"Provider guardrails denied: {guardrails.get('reason_codes', [])}"
++                    )
++    except (FileNotFoundError, ImportError):
++        pass
++
+     from src.prj_kernel_api.llm_request_builder import build_live_request
+ 
+     return build_live_request(
+@@ -247,11 +270,35 @@ def build_request_with_context(
+     Falls back to plain build_request if no context available.
+     """
+     if session_context:
++        from pathlib import Path
+         from ao_kernel.context.context_compiler import compile_context
+         from ao_kernel.context.context_injector import inject_context_into_messages
+ 
++        # Load canonical decisions + workspace facts if workspace available
++        canonical_dict = None
++        workspace_facts = None
++        if workspace_root:
++            try:
++                from ao_kernel.context.canonical_store import query as query_canonical
++                import json
++                canonical_items = query_canonical(Path(workspace_root))
++                canonical_dict = {item["key"]: item for item in canonical_items} if canonical_items else None
++            except Exception:
++                pass
++            try:
++                facts_path = Path(workspace_root) / ".cache" / "index" / "workspace_facts.v1.json"
++                if facts_path.exists():
++                    workspace_facts = json.loads(facts_path.read_text(encoding="utf-8"))
++                    # Normalize facts format for compiler
++                    if isinstance(workspace_facts, list):
++                        workspace_facts = {"facts": {f.get("key", str(i)): f for i, f in enumerate(workspace_facts)}}
++            except Exception:
++                pass
++
+         compiled = compile_context(
+             session_context,
++            canonical_decisions=canonical_dict,
++            workspace_facts=workspace_facts,
+             profile=profile,
+             messages=messages,
+         )
+diff --git a/ao_kernel/mcp_server.py b/ao_kernel/mcp_server.py
+index e17b135..e58a08d 100644
+--- a/ao_kernel/mcp_server.py
++++ b/ao_kernel/mcp_server.py
+@@ -418,7 +418,19 @@ def create_tool_gateway():
+     """
+     from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy
+ 
+-    gateway = ToolGateway(policy=ToolCallPolicy(enabled=True, max_rounds=50))
++    # Load policy from bundled defaults
++    # MCP governance tools are ALWAYS enabled (they ARE the governance layer)
++    try:
++        from ao_kernel.config import load_default
++        tool_policy = load_default("policies", "policy_tool_calling.v1.json")
++        policy = ToolCallPolicy(
++            enabled=True,  # MCP governance tools always enabled
++            max_rounds=int(tool_policy.get("max_tool_rounds", 10)),
++        )
++    except Exception:
++        policy = ToolCallPolicy(enabled=True, max_rounds=10)
++
++    gateway = ToolGateway(policy=policy)
+ 
+     for td in TOOL_DEFINITIONS:
+         handler = TOOL_DISPATCH.get(td["name"])
+-- 
+2.50.1 (Apple Git-155)
+

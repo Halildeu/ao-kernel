@@ -13,7 +13,7 @@ class TestCrashRecovery:
 
     def test_save_atomic_no_partial_write(self, tmp_path: Path):
         """If save crashes mid-write, old file should be intact."""
-        from src.shared.utils import write_json_atomic
+        from ao_kernel._internal.shared.utils import write_json_atomic
 
         original = {"version": "original", "data": "safe"}
         f = tmp_path / "test.json"
@@ -29,7 +29,7 @@ class TestCrashRecovery:
 
     def test_tmp_file_cleanup(self, tmp_path: Path):
         """Atomic write should not leave .tmp files."""
-        from src.shared.utils import write_json_atomic
+        from ao_kernel._internal.shared.utils import write_json_atomic
 
         f = tmp_path / "clean.json"
         write_json_atomic(f, {"clean": True})
