@@ -33,7 +33,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "unsupported",
+        "tool_use": "experimental",
         "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
@@ -61,7 +61,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "unsupported",
+        "tool_use": "experimental",
         "vision": "unsupported",
         "batch": "supported",
         "continuation": "supported",
@@ -118,7 +118,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "unsupported",
+        "tool_use": "experimental",
         "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
@@ -147,7 +147,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "unsupported",
+        "tool_use": "experimental",
         "vision": "experimental",
         "batch": "unsupported",
         "continuation": "unsupported",
@@ -175,7 +175,7 @@
       "capabilities": {
         "chat": "supported",
         "streaming": "supported",
-        "tool_use": "unsupported",
+        "tool_use": "experimental",
         "vision": "supported",
         "batch": "unsupported",
         "continuation": "unsupported",

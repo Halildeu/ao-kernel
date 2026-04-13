@@ -1,0 +1,46 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260413-008",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "planning",
+  "question": {
+    "title": "3 yarım özelliği tam ayağa kaldırma planı — Tool Use, Roadmap Execution, Agent Coordination",
+    "body": "ao-kernel v2.1.1'de 3 yarım kalmış özellik var. Bunları production-ready yapma planı hazırladık. Planı değerlendir, itirazlarını ve eklemelerini bildir.\n\n## Mevcut Durum\n\n### Tool Use (%85 implement)\n- tool_calling.py: Claude + OpenAI format desteği var (build_tools_param, extract_tool_calls)\n- LLM facade: build_request tools parametresi kabul ediyor\n- Tool Gateway: policy-gated dispatch çalışıyor\n- SORUN 1: Provider registry tüm provider'ları \"tool_use\": \"unsupported\" gösteriyor — KOD İLE ÇELİŞİYOR\n- SORUN 2: client.llm_call() tools parametresini build_request_with_context'e geçirmiyor\n- SORUN 3: Client tool result extraction yapmıyor (sadece MCP server yapıyor)\n\n### Roadmap Execution (%100 implement, %7 test)\n- 17 step handler var, hepsi gerçek implementasyon (create_file, patch_file, run_cmd, ensure_dir...)\n- Compiler + executor tam çalışıyor\n- Core immutability policy, forbidden paths, SSOT allowlist enforcement var\n- Dry-run modu (simulate + readonly) var\n- Evidence collection (git hash, diff, manifest) var\n- SORUN: Test neredeyse yok (4 stub test, %7 coverage)\n\n### Agent Coordination (%70 implement)\n- 7 SDK fonksiyon var (record_decision, query_memory, compile_context_sdk, finalize_session_sdk, check_stale, get_revision, read_with_revision)\n- Revision-based stale detection çalışıyor\n- Multi-agent canonical store paylaşımı çalışıyor\n- SORUN 1: Client bu modülü KULLANMIYOR (self_edit_memory ile ayrı sistem)\n- SORUN 2: Stale detection client'a bağlı değil\n- SORUN 3: Concurrent write protection yok\n\n## Plan Özeti\n\nFaz 1: Tool Use → Registry güncelle + client'a tools bağla + test (6 test)\nFaz 2: Roadmap → Step handler + executor testleri (20 test)\nFaz 3: Agent Coord → Client entegrasyonu + stale detection (3 test)\n\n## Sorularım\n\n1. Tool Use: Registry'yi \"supported\" olarak güncellemek yeterli mi? Yoksa contract test de mi lazım (gerçek API çağrısı ile)?\n2. Roadmap: 17 step handler'ın hepsini test etmeli miyiz yoksa en kritik 5-6 tanesi yeterli mi?\n3. Agent Coordination: self_edit_memory ve agent_coordination iki ayrı sistem — birleştirilmeli mi yoksa iki katmanlı mı kalmalı?\n4. Concurrent write protection (optimistic locking) bu PR'a mı girmeli yoksa sonraya mı bırakılmalı?\n5. Eksik gördüğün başka bir şey var mı?",
+    "context_refs": [
+      "ao_kernel/_internal/prj_kernel_api/tool_calling.py",
+      "ao_kernel/defaults/registry/provider_capability_registry.v1.json",
+      "ao_kernel/client.py",
+      "ao_kernel/llm.py",
+      "ao_kernel/_internal/roadmap/exec_steps.py",
+      "ao_kernel/_internal/roadmap/step_templates.py",
+      "ao_kernel/context/agent_coordination.py",
+      "ao_kernel/context/self_edit_memory.py",
+      "ao_kernel/tool_gateway.py"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Planı onayla, hemen başla",
+        "pros": "3 özellik hızla ayağa kalkar",
+        "cons": "Concurrent write protection eksik kalır"
+      },
+      {
+        "option_id": "B",
+        "title": "Planı genişlet — contract test + optimistic locking ekle",
+        "pros": "Daha sağlam, production-ready",
+        "cons": "Scope büyür, süre uzar"
+      },
+      {
+        "option_id": "C",
+        "title": "Farklı öncelik sırası veya yaklaşım öner",
+        "pros": "Codex perspektifi farklı olabilir",
+        "cons": "—"
+      }
+    ]
+  },
+  "created_at": "2026-04-13T23:45:00+03:00",
+  "branch": "main",
+  "head_sha": "9607a6a"
+}
