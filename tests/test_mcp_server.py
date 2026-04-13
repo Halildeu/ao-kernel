@@ -10,6 +10,7 @@ from ao_kernel.mcp_server import (
     TOOL_DISPATCH,
     _decision_envelope,
     handle_policy_check,
+    handle_llm_call,
     handle_llm_route,
     handle_quality_gate,
     handle_workspace_status,
@@ -389,3 +390,41 @@ class TestToolRegistry:
             assert "decision" in result, f"{name} missing 'decision'"
             assert "tool" in result, f"{name} missing 'tool'"
             assert result["tool"] == name
+
+
+class TestHandleLLMCall:
+    def test_missing_messages_denied(self):
+        result = handle_llm_call({})
+        assert result["allowed"] is False
+        assert result["decision"] == "deny"
+        assert "MISSING_MESSAGES" in result["reason_codes"]
+
+    def test_invalid_messages_denied(self):
+        result = handle_llm_call({"messages": "not a list"})
+        assert result["allowed"] is False
+        assert "MISSING_MESSAGES" in result["reason_codes"]
+
+    def test_missing_api_key_denied(self):
+        import os
+        # Ensure no API key in env
+        old = os.environ.pop("OPENAI_API_KEY", None)
+        try:
+            result = handle_llm_call({
+                "messages": [{"role": "user", "content": "test"}],
+                "provider_id": "openai",
+                "model": "gpt-4",
+            })
+            assert result["allowed"] is False
+            assert "MISSING_API_KEY" in result["reason_codes"]
+        finally:
+            if old is not None:
+                os.environ["OPENAI_API_KEY"] = old
+
+    def test_tool_definitions_include_llm_call(self):
+        names = [td["name"] for td in TOOL_DEFINITIONS]
+        assert "ao_llm_call" in names
+        assert len(TOOL_DEFINITIONS) == 5
+
+    def test_dispatch_includes_llm_call(self):
+        assert "ao_llm_call" in TOOL_DISPATCH
+        assert TOOL_DISPATCH["ao_llm_call"] is handle_llm_call
