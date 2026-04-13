@@ -174,7 +174,7 @@ def process_stream_response(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     safe_req = _sanitize_name(str(request_id or "request"))
-    safe_prov = _sanitize_name(str(provider_id or "provider"))
+    safe_prov = _sanitize_name(str(provider_id or "provider"))  # noqa: F841
 
     # 1. Events JSONL (audit trail)
     if stream_result.events:

@@ -6,7 +6,6 @@ Runs 8 checks and reports OK/WARN/FAIL for each.
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 import ao_kernel
 from ao_kernel.config import workspace_root

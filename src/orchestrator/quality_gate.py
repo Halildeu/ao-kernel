@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -78,11 +78,9 @@ def _check_consistency(output: dict[str, Any], gate_cfg: dict[str, Any], previou
         return QualityGateResult(True, "consistency_check", "pass", "no_previous_decisions")
 
     # Check if output contradicts recent decisions
-    output_json = json.dumps(output, sort_keys=True, ensure_ascii=True)
     for pd in previous_decisions[-5:]:  # Check last 5
         if not isinstance(pd, dict):
             continue
-        pd_val = json.dumps(pd.get("value"), sort_keys=True, ensure_ascii=True)
         # Simple contradiction: same key, opposite boolean
         if isinstance(pd.get("value"), bool) and isinstance(output.get(pd.get("key", "")), bool):
             if pd["value"] != output.get(pd["key"]):

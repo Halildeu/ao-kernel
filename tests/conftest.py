@@ -16,7 +16,6 @@ from __future__ import annotations
 import ast
 import json
 import os
-import textwrap
 import warnings
 from pathlib import Path
 
@@ -105,7 +104,7 @@ def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:
             continue
 
         func_name = node.name
-        func_source = ast.get_source_segment(source, node) or ""
+        # source segment available via ast.get_source_segment(source, node)
 
         # BLK-001: assert callable(x)
         for child in ast.walk(node):

@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import io
-import json
 
-import pytest
 
 from src.prj_kernel_api.llm_stream import (
-    StreamEvent,
     _parse_sse_lines,
     extract_delta_text,
     extract_stream_usage,

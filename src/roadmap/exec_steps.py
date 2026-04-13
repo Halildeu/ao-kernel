@@ -12,7 +12,6 @@ from src.roadmap.exec_contracts import ChangeCounter, _CoreImmutabilityPolicy, _
 from src.roadmap.exec_evidence import _git_status_porcelain, _normalize_rel_path, _now_iso8601, _snapshot_tree
 from src.roadmap.step_templates import (
     RoadmapStepError,
-    VirtualFS,
     step_add_ci_gate_script,
     step_add_schema_file,
     step_assert_core_paths_exist,

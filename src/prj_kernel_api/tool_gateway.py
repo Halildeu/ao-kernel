@@ -11,10 +11,10 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 from src.shared.logger import get_logger
-from src.shared.utils import load_json, now_iso8601
+from src.shared.utils import load_json
 
 log = get_logger(__name__)
 

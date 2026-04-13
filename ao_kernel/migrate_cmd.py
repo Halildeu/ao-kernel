@@ -15,7 +15,7 @@ from pathlib import Path
 
 import ao_kernel
 from ao_kernel.config import load_workspace_json, workspace_root
-from ao_kernel.errors import WorkspaceCorruptedError, WorkspaceNotFoundError
+from ao_kernel.errors import WorkspaceCorruptedError
 
 
 def _now_iso() -> str:

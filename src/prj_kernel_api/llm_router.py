@@ -127,7 +127,7 @@ def resolve(
     class_registry_path, resolver_rules_path, provider_map_path, probe_state_path = _policy_paths(
         repo_root, workspace_root=workspace_root
     )
-    class_registry = _load_json(class_registry_path)
+    _load_json(class_registry_path)  # validate exists/parseable
     resolver_rules = _load_json(resolver_rules_path)
     provider_map = _load_json(provider_map_path)
     probe_state = _load_json(probe_state_path) if probe_state_path.exists() else {"classes": {}}

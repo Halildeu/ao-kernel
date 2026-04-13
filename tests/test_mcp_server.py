@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import re
-from pathlib import Path
 
-import pytest
 
 from ao_kernel.mcp_server import (
     TOOL_DEFINITIONS,
