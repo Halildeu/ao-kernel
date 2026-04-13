@@ -297,7 +297,7 @@ class TestProcessResponseWithContext:
         with (
             patch("ao_kernel.context.memory_pipeline.process_turn", return_value=session_ctx),
             patch("ao_kernel.context.decision_extractor.extract_from_tool_result", return_value=[mock_decision]),
-            patch("ao_kernel._internal.session.context_store.upsert_decision") as mock_upsert,
+            patch("ao_kernel._internal.session.context_store.upsert_decision"),
         ):
             result = process_response_with_context(
                 "Tool completed.",
