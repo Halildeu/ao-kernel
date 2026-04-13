@@ -197,8 +197,9 @@ def maybe_auto_compact_markdown(
     archive_path = reports_dir / f"session_compaction_{_safe_slug(session_id)}.original.v1.md"
     try:
         write_text_atomic(archive_path, markdown)
-    except Exception:
-        pass  # Non-critical: best-effort archive
+    except Exception as exc:
+        import logging
+        logging.getLogger("ao_kernel").warning("session archive write failed (best-effort): %s", exc)
 
     summary_path = reports_dir / f"session_compaction_{_safe_slug(session_id)}.v1.md"
     write_text_atomic(summary_path, summary_text)

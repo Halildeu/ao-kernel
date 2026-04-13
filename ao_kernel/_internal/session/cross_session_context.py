@@ -107,8 +107,9 @@ def build_cross_session_context(*, workspace_root: Path, session_name_filter: st
             if before != after:
                 try:
                     save_context_atomic(ctx_path, ctx)
-                except SessionContextError:
-                    pass
+                except SessionContextError as exc:
+                    import logging
+                    logging.getLogger("ao_kernel").warning("cross-session pruned context save failed: %s", exc)
 
             decisions = ctx.get("ephemeral_decisions") if isinstance(ctx.get("ephemeral_decisions"), list) else []
             provider_state = ctx.get("provider_state") if isinstance(ctx.get("provider_state"), dict) else {}

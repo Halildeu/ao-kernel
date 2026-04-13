@@ -147,8 +147,9 @@ def consolidate_facts(
         try:
             data = json.loads(facts_path.read_text(encoding="utf-8"))
             existing_facts = data.get("facts", []) if isinstance(data, dict) else []
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.getLogger("ao_kernel").warning("workspace facts load failed: %s", exc)
 
     # Merge: existing + distilled, latest wins on same key
     merged: dict[str, dict[str, Any]] = {}
@@ -185,8 +186,9 @@ def consolidate_facts(
         try:
             old = json.loads(facts_path.read_text(encoding="utf-8"))
             distillation_runs = int(old.get("distillation_runs", 0)) + 1
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.getLogger("ao_kernel").warning("distillation run counter read failed: %s", exc)
 
     store = {
         "version": "v1",

@@ -15,7 +15,11 @@ class VaultStubSecretsProvider(SecretsProvider):
             return None
         try:
             raw = json.loads(self._secrets_path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger("ao_kernel").error(
+                "secret retrieval failed for path=%s: %s", self._secrets_path, exc
+            )
             return None
         if not isinstance(raw, dict):
             return None

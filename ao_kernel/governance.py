@@ -214,8 +214,6 @@ def _check_generic_rules(policy: dict, action: dict) -> list[str]:
 
     return violations
 
-    return violations
-
 
 def evaluate_quality(
     output_text: str,

@@ -132,3 +132,113 @@ class TestMcpQualityGateFailClosed:
         result = handle_quality_gate({"output_text": ""})
         assert result["allowed"] is False
         assert "EMPTY_OUTPUT" in result["reason_codes"]
+
+
+class TestCheckAutonomy:
+    """Tests for _check_autonomy — intent authorization and mode enforcement."""
+
+    def test_known_intent_mode_match(self):
+        from ao_kernel.governance import _check_autonomy
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+        }
+        violations = _check_autonomy(policy, {"intent": "urn:core:deploy", "mode": "human_review"})
+        assert violations == []
+
+    def test_known_intent_mode_mismatch_denied(self):
+        from ao_kernel.governance import _check_autonomy
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+        }
+        violations = _check_autonomy(policy, {"intent": "urn:core:deploy", "mode": "full_auto"})
+        assert any("AUTONOMY_MODE_DENIED" in v for v in violations)
+
+    def test_unknown_intent_blocked(self):
+        from ao_kernel.governance import _check_autonomy
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+            "fail_action": "block",
+        }
+        violations = _check_autonomy(policy, {"intent": "urn:core:unknown_action"})
+        assert any("AUTONOMY_UNKNOWN_INTENT" in v for v in violations)
+
+    def test_unknown_intent_allowed_when_fail_action_allow(self):
+        from ao_kernel.governance import _check_autonomy
+        policy = {
+            "intents": {},
+            "defaults": {"mode": "human_review"},
+            "fail_action": "allow",
+        }
+        violations = _check_autonomy(policy, {"intent": "urn:core:anything"})
+        assert violations == []
+
+    def test_no_intent_field_no_violation(self):
+        from ao_kernel.governance import _check_autonomy
+        policy = {"intents": {}, "defaults": {"mode": "human_review"}}
+        violations = _check_autonomy(policy, {"mode": "full_auto"})
+        assert violations == []
+
+
+class TestCheckToolCalling:
+    """Tests for _check_tool_calling — allowed/blocked tools enforcement."""
+
+    def test_disabled_blocks_all_tools(self):
+        from ao_kernel.governance import _check_tool_calling
+        policy = {"enabled": False}
+        violations = _check_tool_calling(policy, {"tool_name": "any_tool"})
+        assert any("TOOL_CALLING_DISABLED" in v for v in violations)
+
+    def test_blocked_tool_denied(self):
+        from ao_kernel.governance import _check_tool_calling
+        policy = {"enabled": True, "blocked_tools": ["dangerous_tool"], "allowed_tools": []}
+        violations = _check_tool_calling(policy, {"tool_name": "dangerous_tool"})
+        assert any("TOOL_BLOCKED" in v for v in violations)
+
+    def test_not_in_allowlist_denied(self):
+        from ao_kernel.governance import _check_tool_calling
+        policy = {"enabled": True, "allowed_tools": ["safe_tool"], "blocked_tools": []}
+        violations = _check_tool_calling(policy, {"tool_name": "other_tool"})
+        assert any("TOOL_NOT_ALLOWED" in v for v in violations)
+
+    def test_in_allowlist_allowed(self):
+        from ao_kernel.governance import _check_tool_calling
+        policy = {"enabled": True, "allowed_tools": ["safe_tool"], "blocked_tools": []}
+        violations = _check_tool_calling(policy, {"tool_name": "safe_tool"})
+        assert violations == []
+
+    def test_no_allowlist_denies(self):
+        from ao_kernel.governance import _check_tool_calling
+        policy = {"enabled": True, "allowed_tools": [], "blocked_tools": []}
+        violations = _check_tool_calling(policy, {"tool_name": "any_tool"})
+        assert any("TOOL_NO_ALLOWLIST" in v for v in violations)
+
+
+class TestCheckProviderGuardrails:
+    """Tests for _check_provider_guardrails — provider and model access control."""
+
+    def test_provider_disabled_denied(self):
+        from ao_kernel.governance import _check_provider_guardrails
+        policy = {"providers": {"openai": {"enabled": False}}}
+        violations = _check_provider_guardrails(policy, {"provider_id": "openai"})
+        assert any("PROVIDER_DISABLED" in v for v in violations)
+
+    def test_model_not_in_allowlist_denied(self):
+        from ao_kernel.governance import _check_provider_guardrails
+        policy = {"providers": {"openai": {"enabled": True, "allow_models": ["gpt-4"]}}}
+        violations = _check_provider_guardrails(policy, {"provider_id": "openai", "model": "gpt-3.5-turbo"})
+        assert any("MODEL_NOT_ALLOWED" in v for v in violations)
+
+    def test_model_in_allowlist_allowed(self):
+        from ao_kernel.governance import _check_provider_guardrails
+        policy = {"providers": {"openai": {"enabled": True, "allow_models": ["gpt-4"]}}}
+        violations = _check_provider_guardrails(policy, {"provider_id": "openai", "model": "gpt-4"})
+        assert violations == []
+
+    def test_wildcard_model_allows_any(self):
+        from ao_kernel.governance import _check_provider_guardrails
+        policy = {"providers": {"openai": {"enabled": True, "allow_models": ["*"]}}}
+        violations = _check_provider_guardrails(policy, {"provider_id": "openai", "model": "any-model"})
+        assert violations == []

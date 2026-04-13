@@ -61,7 +61,9 @@ def extract_tool_calls_claude(resp_bytes: bytes) -> List[Dict[str, Any]]:
     """
     try:
         obj = json.loads(resp_bytes.decode("utf-8", errors="ignore"))
-    except Exception:
+    except Exception as exc:
+        import logging
+        logging.getLogger("ao_kernel").warning("tool_call extraction failed (claude): %s", exc)
         return []
 
     if not isinstance(obj, dict):
@@ -91,7 +93,9 @@ def extract_tool_calls_openai(resp_bytes: bytes) -> List[Dict[str, Any]]:
     """
     try:
         obj = json.loads(resp_bytes.decode("utf-8", errors="ignore"))
-    except Exception:
+    except Exception as exc:
+        import logging
+        logging.getLogger("ao_kernel").warning("tool_call extraction failed (openai): %s", exc)
         return []
 
     if not isinstance(obj, dict):
