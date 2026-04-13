@@ -1,10 +1,19 @@
-"""Tool Gateway — typed allowlist, permission enforcement, cycle detection, dispatch.
+"""DEPRECATED: Legacy tool gateway — use ao_kernel.tool_gateway instead.
 
-Fail-closed: tools must be explicitly allowed. Mutating tools require confirmation.
-Cycle detection prevents infinite loops from repeated identical calls.
+This file uses subprocess dispatch via src.ops.manage (not available in ao-kernel).
+The new ao_kernel/tool_gateway.py uses callable handlers with policy-gated dispatch.
+Will be removed in v2.0.0.
 """
+# ruff: noqa
 
 from __future__ import annotations
+
+import warnings
+warnings.warn(
+    "src.prj_kernel_api.tool_gateway is deprecated. Use ao_kernel.tool_gateway instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import json
 import subprocess
