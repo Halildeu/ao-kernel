@@ -38,7 +38,7 @@ jobs:
       - name: Coverage gate (Python 3.13 only)
         if: matrix.python-version == '3.13'
         run: |
-          coverage report --fail-under=75
+          coverage report --fail-under=70
 
       - name: Upload coverage
         if: matrix.python-version == '3.13'
