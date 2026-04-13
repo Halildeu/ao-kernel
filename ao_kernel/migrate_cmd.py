@@ -41,13 +41,13 @@ def run(
     """Run workspace migration."""
     ws = workspace_root(override=workspace_root_override)
     if ws is None:
-        print("Hata: Workspace bulunamadi. Once 'ao-kernel init' calistirin.")
+        print("Error: No workspace found. Run 'ao-kernel init' first.")
         return 1
 
     try:
         ws_data = load_workspace_json(ws)
     except WorkspaceCorruptedError as e:
-        print(f"Hata: {e}")
+        print(f"Error: {e}")
         return 1
 
     ws_version = ws_data.get("version", "0.0.0")
