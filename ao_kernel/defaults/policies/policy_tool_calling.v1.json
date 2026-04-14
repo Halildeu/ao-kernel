@@ -13,5 +13,10 @@
     "enabled": true,
     "max_identical_calls": 2
   },
-  "fail_action": "block"
+  "fail_action": "block",
+  "implicit_canonical_promote": {
+    "enabled": true,
+    "threshold": 0.8,
+    "source_prefix": "mcp:tool_result"
+  }
 }

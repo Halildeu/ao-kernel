@@ -3,24 +3,24 @@
 Exposes ao-kernel governance primitives as MCP tools and workspace content
 as MCP resources. Transport-agnostic handler design (stdio first, HTTP later).
 
-Tools (6):
+Tools (7):
     ao_policy_check    — validate an action against policy
     ao_llm_route       — resolve provider/model for an intent
     ao_llm_call        — governed LLM call — thin executor (route, build, execute, normalize)
     ao_quality_gate    — check output quality
     ao_workspace_status — workspace health report
     ao_memory_read     — read canonical decisions + workspace facts (policy-gated, fail-closed)
+    ao_memory_write    — promote a decision to the canonical store (policy-gated, fail-closed, server-side fixed confidence)
 
 Resources (3):
     ao://policies/{name}  — read-only policy JSON
     ao://schemas/{name}   — read-only schema JSON
     ao://registry/{name}  — read-only registry JSON
 
-Design decisions (Codex CNS-20260413-004):
-    - Fail-closed: policy violation → structured deny (not JSON-RPC error)
-    - Evidence: automatic side-effect of tool calls (not client-initiated)
-    - Decision envelope: all tools return {allowed, decision, reason_codes, ...}
-    - No global state: workspace_root passed explicitly per call
+Design decisions (Codex CNS-20260413-004): fail-closed policy
+violations (structured deny, not JSON-RPC error); automatic evidence
+side-effect; uniform decision envelope; no global state (workspace_root
+passed explicitly per call).
 """
 
 from __future__ import annotations
@@ -540,6 +540,21 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "ao_memory_write",
+        "description": "Promote a decision to canonical memory. Policy-gated, fail-closed, rate-limited; server-side fixed confidence (caller-supplied confidence ignored).",
+        "inputSchema": {
+            "type": "object",
+            "required": ["key", "value"],
+            "properties": {
+                "workspace_root": {"type": "string", "description": "Project root containing .ao/ (optional override)"},
+                "key": {"type": "string", "description": "Canonical decision key (must match one of allowed_key_prefixes)"},
+                "value": {"description": "Decision value (any JSON-serializable type; subject to max_value_bytes)"},
+                "source": {"type": "string", "description": "Source tag (must start with an allowed_source_prefix)", "default": "mcp:tool_write"},
+            },
+            "additionalProperties": False,
+        },
+    },
 ]
 
 def _with_evidence(tool_name: str, handler: Any) -> Any:
@@ -561,9 +576,8 @@ def _with_evidence(tool_name: str, handler: Any) -> Any:
         try:
             from ao_kernel._internal.evidence.mcp_event_log import record_mcp_event
             from ao_kernel._internal.mcp.memory_tools import _resolve_workspace_for_call
-            # Param-aware workspace resolution keeps evidence rooted in the
-            # same workspace the handler targeted, including MCP memory
-            # tools that accept an explicit ``workspace_root`` (CNS-011 B1).
+            # Param-aware resolution roots evidence in the same workspace
+            # the handler targeted (CNS-011 B1).
             ws = _resolve_workspace_for_call(params, fallback=_find_workspace_root)
             record_mcp_event(
                 ws,
@@ -579,10 +593,13 @@ def _with_evidence(tool_name: str, handler: Any) -> Any:
     return wrapped
 
 
-def _handle_memory_read_lazy(params: dict[str, Any]) -> dict[str, Any]:
-    """Lazy proxy — defers importing the helper module until first call."""
-    from ao_kernel._internal.mcp.memory_tools import handle_memory_read
-    return handle_memory_read(params)
+def _lazy_memory_handler(fn_name: str) -> Any:
+    """Factory: defers importing memory_tools until first call."""
+    def proxy(params: dict[str, Any]) -> dict[str, Any]:
+        from ao_kernel._internal.mcp import memory_tools
+        return getattr(memory_tools, fn_name)(params)  # type: ignore[no-any-return]
+    proxy.__name__ = fn_name
+    return proxy
 
 
 TOOL_DISPATCH = {
@@ -591,14 +608,15 @@ TOOL_DISPATCH = {
     "ao_llm_call": _with_evidence("ao_llm_call", handle_llm_call),
     "ao_quality_gate": _with_evidence("ao_quality_gate", handle_quality_gate),
     "ao_workspace_status": _with_evidence("ao_workspace_status", handle_workspace_status),
-    "ao_memory_read": _with_evidence("ao_memory_read", _handle_memory_read_lazy),
+    "ao_memory_read": _with_evidence("ao_memory_read", _lazy_memory_handler("handle_memory_read")),
+    "ao_memory_write": _with_evidence("ao_memory_write", _lazy_memory_handler("handle_memory_write")),
 }
 
 
 def create_tool_gateway() -> Any:
     """Create a ToolGateway pre-configured with MCP tools.
 
-    Returns a policy-gated gateway where all 6 tools are registered.
+    Returns a policy-gated gateway where all 7 tools are registered.
     Tool calls go through: authorize → handler → result.
     """
     from ao_kernel.tool_gateway import ToolGateway, ToolCallPolicy
@@ -690,30 +708,20 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
                     decision=decision,
                 )
 
-            # Wire tool result into context pipeline.
-            # Param-aware workspace + implicit-promotion denylist protect
-            # read-only tools (ao_memory_read) from self-referential writes
-            # while keeping the existing promotion path intact for the
-            # other governance tools (CNS-20260414-011 B1 + B2).
+            # Wire tool result into context pipeline via the
+            # implicit-promotion side-channel. Helper encapsulates
+            # param-aware workspace, skip list, workspace-aware policy
+            # threshold, and fail-open semantics
+            # (CNS-20260414-012 B1).
             try:
-                from ao_kernel.context.decision_extractor import extract_from_tool_result
-                from ao_kernel.context.canonical_store import promote_decision
                 from ao_kernel._internal.mcp.memory_tools import (
-                    _IMPLICIT_PROMOTE_SKIP,
                     _resolve_workspace_for_call,
+                    run_implicit_promote,
                 )
                 ws_root = _resolve_workspace_for_call(
                     arguments or {}, fallback=_find_workspace_root,
                 )
-                if ws_root is not None and name not in _IMPLICIT_PROMOTE_SKIP:
-                    decisions = extract_from_tool_result(name, result)
-                    for d in decisions:
-                        if d.confidence >= 0.8:
-                            promote_decision(
-                                ws_root,
-                                key=d.key, value=d.value, source="mcp_tool",
-                                confidence=d.confidence,
-                            )
+                run_implicit_promote(name, result, ws_root)
             except Exception:
                 pass  # Context wiring failure shouldn't block tool response
 
