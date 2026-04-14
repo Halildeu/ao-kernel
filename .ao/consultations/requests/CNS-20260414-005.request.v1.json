@@ -1,0 +1,55 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-005",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "plan",
+  "question": {
+    "title": "Faz 5 Consolidation Planı — Yetim özellikler, exception swallowing, ürünleşme hijyeni",
+    "body": "## Arka Plan\n\nÖnceki oturumun kapanış raporu 'master plan kapandı, yarım iş yok, v3.0.0 için yeni plan gerekli' dedi. Bu oturumda repo'yu dört eksende derin taradım (4 paralel Explore agent + grep doğrulaması). Bulgum: önceki rapor **PR düzeyinde doğru, pipeline düzeyinde eksik**. PR #55 Faz 4.1/4.2/4.3 scaffold'larını merge etti ama entegrasyonları bağlanmamış. Bu CNS-009 dersinin tekrarı: 'PR merge edildi' ≠ 'özellik entegre oldu'.\n\n## Koddan Doğrulanan Bulgular\n\n### 1. Yetim özellikler (grep ile kanıtlanmış)\n\nProduction code path'inde çağrılmayan Faz 4 scaffold'ları:\n\n- **VectorStoreBackend** (`ao_kernel/context/vector_store.py`, `vector_store_pgvector.py`): `semantic_retrieval.py` hâlâ pure-python cosine kullanıyor; abstraction'a bakmıyor. Import sayısı production'da: 0.\n- **Secrets factory** (`_internal/secrets/factory.py`, `hashicorp_vault_provider.py`): `create_provider()` çağıran yok. MCP tarafında env-var hardcoded map (`mcp_server.py:344-363`) kullanılıyor.\n- **Extension loader** (`extensions/loader.py`): `load_from_defaults()` / `find_by_entrypoint()` çağıran yok. 18 manifest register edilip duruyor, activation dispatch kodu eksik.\n- **EvidenceWriter** (`_internal/evidence/writer.py`): Client'ta çağrılıyor ama `client.py:388-389` ve `413-414`'te `except Exception: pass` ile yutuluyor. MCP tool'ları evidence hiç yazmıyor.\n- **agent_coordination yazma path'i** (`context/agent_coordination.py`): `record_decision()`, `finalize_session_sdk()` tanımlı ama dış tüketici yok.\n\nSağlam bağlı tek Faz 4 tranşı: **4.4 (roadmap checkpoint/resume)**.\n\n### 2. Exception swallowing\n\n- `client.py:388-389` — evidence write sessiz yutuluyor (JSONL audit trail core değer, CLAUDE.md §2 madde 2)\n- `client.py:413-414` — eval scorecard sessiz yutuluyor\n- `context/context_compiler.py:147-148` — telemetry span sessiz yutuluyor (opsiyonel ama pattern standardize değil)\n\nCLAUDE.md §7 fail-closed scope: governance strict deny, opsiyonel subsystem graceful fallback. Evidence **core değer**, opsiyonel değil — swallow etmek bu ilkeyi çiğniyor.\n\n### 3. Registry capability flag gerçeği\n\n`defaults/registry/provider_capability_registry.v1.json` flag'leri vs kod:\n- ✅ `tool_use`, `streaming` — tam implement\n- ❌ `vision`, `audio`, `structured_output`, `code_agentic` — sadece enum, provider impl sıfır\n\nKullanıcı provider'ın bu özelliği desteklediğini zannedebilir. Karar gerekli: implement veya registry'den remove.\n\n### 4. Ürünleşme gap'leri\n\n- Kökte 20 adet `.patch` dosyası (hepsi merge edilmiş, git log ile doğrulandı)\n- PyPI classifier `Development Status :: 3 - Alpha` (v2.1.1 ile uyumsuz, 'production teams' iddiasıyla uyumsuz)\n- `SECURITY.md` yok, `examples/` yok, `CONTRIBUTING.md` yok\n- MCP `ao_llm_call` thin executor (context/eval/telemetry yok) ama docstring'de uyarı yok — kullanıcı SDK zannedebilir\n\n### 5. Test zayıflıkları\n\n- `_internal/evidence/writer.py` %28 (audit trail!)\n- `workspace.py` %46 (her şeyin temeli!)\n- `_internal/session/context_store.py` %51 (160 satır miss)\n- Concurrency test, CLI subprocess test, performance bench yok\n\n## Önerdiğim Plan — Faz 5: Consolidation + Productization\n\n3 tranş halinde, her tranş bağımsız merge edilebilir PR:\n\n### Tranş A — Hygiene & Honesty (v2.2.0 hedef, ~3-4 saat)\nA1. `git rm *.patch` (20 dosya)\nA2. PyPI classifier `Alpha → Beta`\nA3. `client.py:388-389, 413-414` exception swallowing → `logger.warning(exc_info=e)`\nA4. MCP `ao_llm_call` docstring + README'de SDK↔MCP thin executor farkı tablosu\nA5. `SECURITY.md` (responsible disclosure + secrets best practices)\nA6. `examples/hello-llm/` minimal çalışan örnek\nA7. Memory düzeltme (`project_origin.md` — Faz 4 wiring borcu eklensin)\n\n### Tranş B — Faz 4 Wiring (v2.3.0 hedef, her biri mini-CNS gerektirebilir)\nB1. Vector store → `semantic_retrieval.py` entegrasyonu (backend seçimi env flag mi policy mi?)\nB2. Secrets factory → LLM transport (prj_kernel_api'de provider resolution nasıl inject edilecek? breaking change?)\nB3. Extension loader → startup path (lazy vs eager? activation dispatch nerede?)\nB4. Evidence writer robustness + MCP tool evidence (schema?)\nB5. Agent coordination write path SDK expose (public mi internal mı?)\n\n### Tranş C — Registry Truth + Coverage (v3.0.0 hazırlık)\nC1. Vision/audio/structured_output/code_agentic: implement mi remove mi? (kritik karar)\nC2. Evidence writer coverage %28 → %70\nC3. workspace.py coverage %46 → %80\nC4. context_store.py coverage %51 → %70\nC5. CLI subprocess test + session concurrency test\n\n## Sorularım\n\n1. **Plan teşhisi doğru mu?** Faz 4.1/4.2/4.3'ün 'yetim' olarak nitelendirilmesi adil mi, yoksa scaffold amaçlı tasarlanıp sonraki fazda bağlanması bilinçli bir yol haritası mıydı? Yetim demek haksız bir değerlendirme mi?\n\n2. **Tranş sıralaması ve release stratejisi:** A→B→C mi, yoksa A+C önce (hijyen + coverage), B sonra (feature wiring) mı? v2.2.0 ne zaman tag'lensin — A sonu mu, A+B sonu mu? Senin önerdiğin release ritmi nedir?\n\n3. **B1 (vector store entegrasyonu) tasarımı:** `semantic_retrieval.py` vector store'u nasıl tüketmeli? (a) `VectorStoreBackend` parametre olarak inject, default InMemory; (b) policy-driven seçim; (c) env flag `AO_KERNEL_VECTOR_BACKEND=pgvector`; (d) provider registry entegrasyonu. D8 fail-closed ve D14 auto-route normalize ilkeleriyle hangisi uyumlu?\n\n4. **B2 (secrets factory) breaking change:** LLM transport'un env-var hardcoded map'ini (`mcp_server.py:344-363`) factory'ye geçirmek geriye dönük kırıcı mı? Eski kullanıcıların `OPENAI_API_KEY` gibi direkt env-var kullanımı bozulur mu? Geçiş stratejisi (feature flag, dual-read, deprecation) önerin nedir?\n\n5. **C1 (registry flag gerçeği):** Vision/audio/structured_output/code_agentic kararı — (a) hepsini registry'den sil (v2.2.0'da yapılabilir, breaking minor), (b) 'unstable' flag'i ekle ve kullanıcıyı uyar, (c) v3.0.0'da implement et ve şimdi bekle. Hangisi D6 (policy-first) ve D8 (fail-closed) ile uyumlu? Bugün kullanıcı 'vision destekliyor' yazan provider seçerse ne oluyor — silent fail mi, error mı?\n\n6. **Exception swallowing (A3) scope:** `except: pass` kalıplarını değiştirmenin yan etkisi var mı? Evidence write hatası loglanırsa log noise riski? Hangi log seviyesi (warning vs debug) CLAUDE.md §7'ye uygun?\n\n7. **Mini-CNS stratejisi:** Tranş B'nin her adımı için ayrı CNS mi açalım (B1, B2, B3 bağımsız), yoksa tek 'B wiring design review' CNS mi? Senin tercih ettiğin istişare granularity nedir?\n\n8. **Atladığım bir kritik nokta var mı?** Bu planda görmediğim, senin koddan tespit edeceğin başka bir yetim/yarım/kopuk entegrasyon var mı? Özellikle `_internal/prj_kernel_api/` altında (benim derin bakmadığım alan) gözden kaçan bir borç?",
+    "context_refs": [
+      "ao_kernel/client.py",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/context/vector_store.py",
+      "ao_kernel/context/vector_store_pgvector.py",
+      "ao_kernel/context/semantic_retrieval.py",
+      "ao_kernel/context/agent_coordination.py",
+      "ao_kernel/extensions/loader.py",
+      "ao_kernel/_internal/secrets/factory.py",
+      "ao_kernel/_internal/evidence/writer.py",
+      "ao_kernel/defaults/registry/provider_capability_registry.v1.json",
+      "CLAUDE.md",
+      "pyproject.toml"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Plan olduğu gibi onaylanır — A → B → C sırası, v2.2.0 A sonu, v2.3.0 B sonu, v3.0.0 C sonu",
+        "pros": "Sıralı çalışma tercihi ile uyumlu, her tranş bağımsız merge edilebilir",
+        "cons": "B uzun sürerse release trenisi yavaşlar"
+      },
+      {
+        "option_id": "B",
+        "title": "Sıralama değişmeli — A+C paralel, B daha sonra; çünkü coverage ve hijyen feature wiring'den bağımsız kazanım",
+        "pros": "Low-risk kazanımlar hızlı toplanır, release ritmi hızlı",
+        "cons": "Eşzamanlı iki tranş sırasız çalışma olur"
+      },
+      {
+        "option_id": "C",
+        "title": "Plan yetersiz — kritik eksikler var, revize edilmeli",
+        "pros": "Gerçek tablo ortaya çıkar",
+        "cons": "Revize maliyeti"
+      },
+      {
+        "option_id": "D",
+        "title": "Plan doğru ama kapsam dar — Faz 5 öncesi başka bir ön-tranş gerekli (ör: prj_kernel_api audit, dep güncelleme)",
+        "pros": "Daha sağlam temel",
+        "cons": "Gecikir"
+      }
+    ]
+  },
+  "created_at": "2026-04-14T09:40:00+03:00",
+  "branch": "claude/wizardly-euclid",
+  "head_sha": "dc25cd2"
+}

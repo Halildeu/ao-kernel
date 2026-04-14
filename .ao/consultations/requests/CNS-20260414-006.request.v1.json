@@ -1,0 +1,48 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-006",
+  "status": "OPEN",
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "topic": "operational",
+  "question": {
+    "title": "A0 Safety Net — Kod kaybı / ezilme riskine karşı 3 katmanlı git koruma planı",
+    "body": "## Arka Plan\n\nKullanıcı şu somut endişeyi dile getirdi: 'merge edince main güncellenir, kod yazarken commit edilmeyen kodlar kaybolur, kod ezilmesi veya silinmelerini engelleyebilir miyiz?'. Bu mimari değil operasyonel bir konu, ama Faz 5 başlamadan önce (D0 ve Tranş A öncesi) çözülmesi gerektiğini düşünüyorum.\n\n## Koddan Doğrulanan Mevcut Durum\n\nAşağıdaki audit'i `gh api` ve `git config` ile yaptım:\n\n- **GitHub `main` branch protection YOK** — `gh api repos/Halildeu/ao-kernel/branches/main/protection` → 404 'Branch not protected'\n- **GitHub rulesets YOK** — `gh api repos/Halildeu/ao-kernel/rulesets` → `[]`\n- **Global git config kayıp önleyici ayarları YOK** — rerere, reflogExpire, push.default, pull.rebase hiçbiri set edilmemiş\n- **Local hook YOK** — `.git/hooks/` altında ne sample ne aktif\n- **`dc25cd2` direct main commit** (CHANGELOG docs update) — PR'dan geçmemiş, current workflow buna izin veriyor\n- **2 worktree aktif** — `main` ve `wizardly-euclid` (wizardly-euclid remote'a push edilmemiş, local-only)\n- **Kökte 20 `.patch` dosyası** — geçmişte kod kaybı endişesinin işareti olabilir\n- **GitHub Actions trusted publishing aktif** (publish.yml tag trigger) ama tag protection yok\n\n## Önerdiğim Plan — A0 Safety Net (~30 dk)\n\n### Katman 1 — GitHub server-side (en güçlü)\n`main` branch protection rules:\n- Require PR before merging (1 approval)\n- Require status checks (test.yml)\n- Require linear history\n- Block force pushes\n- Block deletions\n- Require conversation resolution\n- Include administrators\n- (Opsiyonel) Require signed commits\n\nTag protection: `v*` pattern için silme/force-update yasağı (supply chain güvenliği).\n\n### Katman 2 — Global git config (local, unutkanlığa kalkan)\n```\ngit config --global rerere.enabled true\ngit config --global gc.reflogExpire '365.days.ago'\ngit config --global gc.reflogExpireUnreachable '365.days.ago'\ngit config --global push.default current\ngit config --global push.followTags true\ngit config --global pull.rebase true\ngit config --global fetch.prune true\ngit config --global commit.verbose true\n```\n\n### Katman 3 — Repo-local hook'lar\n- **pre-commit**: secret pattern (api_key, OPENAI_API_KEY=sk-...) blokla, `.patch` dosyası ekleniyorsa uyar, 100MB+ blokla\n- **pre-push**: main'e local push'u blokla (katman 1 zaten yapar, ikinci güvenlik), WIP/fixup commit uyar\n- Worktree disiplin: `wizardly-euclid` remote'a push edilsin (local-only risk kaldır)\n\n### A0 Adımları\nA0.1 GitHub branch protection + tag protection (5 dk, gh CLI)\nA0.2 Global git config (5 dk, 8 satır)\nA0.3 Repo-local hook'lar (15 dk)\nA0.4 `wizardly-euclid` remote'a push (2 dk)\nA0.5 CONTRIBUTING.md + docs/git-workflow.md (opsiyonel)\n\nBunların tamamı Faz 5 D0 ve Tranş A'dan ÖNCE yapılmalı — çünkü D0 ve A kodu yazarken kaybolma riski olmamalı.\n\n## Sorularım\n\n1. **A0 tranche'i zamanlama:** D0 ve Tranş A öncesi mi, yoksa paralel mi (A0 ile D0 aynı oturumda)? Fail-closed ilkesi (CLAUDE.md §2 madde 1) operasyonel güvenliğe de uygulanmalı mı? Bence A0 ÖNCE olmalı çünkü kaybolma riski Faz 5 çalışmasını bizzat etkiler.\n\n2. **Branch protection stringency:** 'include administrators' true mu false mu? True yaparsak kullanıcı bile direct main'e commit edemez — `dc25cd2` gibi hotfix'ler nasıl yönetilecek? Emergency bypass mekanizması önerin var mı?\n\n3. **Signed commits (GPG/SSH):** Zorunlu mu, opsiyonel mi? GitHub 2022+ 'verified' rozeti için kullanışlı ama her push öncesi imzalama zorunluluğu CI robot'larını (publish.yml) kırabilir. Senin önerin?\n\n4. **Status check requirement:** test.yml matrix 3 Python versiyonu × ruff × mypy × coverage — hangileri 'required' olsun? Hepsi mi, sadece test (coverage gate dahil) mi? Coverage gate %70 şu an — artırılmalı mı?\n\n5. **Katman 2 global config riskleri:** `pull.rebase true` global'de set edilince KULLANICININ TÜM REPO'larında geçerli olur. Başka projelerde merge-based workflow kullanıyorsa sorun çıkar mı? Local-only (sadece bu repo) mu önersem, global mi? Hangileri güvenli global, hangileri repo-local olmalı?\n\n6. **Katman 3 hook'lar:** (a) `.git/hooks/` repo-local ama worktree'ler arasında paylaşılıyor mu? (b) Hook'ları `githooks/` dizinine koyup `core.hooksPath=githooks` ile versiyonlanabilir hale getirmek daha iyi mi? (c) `pre-commit framework` (https://pre-commit.com) kullanmak overkill mi, yoksa standart mı? Bu repo için önerin?\n\n7. **Tag protection `v*`:** Supply chain açısından şart. Ama publish.yml OIDC trusted publishing kullanıyor — tag silinse bile PyPI kaydı silinemez. Gerçek risk nedir, tag protection gerçekten kritik mi yoksa 'güzel olur' seviyesinde mi?\n\n8. **Worktree güvenlik:** `wizardly-euclid` local-only. ExitWorktree tool'u `discard_changes` flag ile çalışıyor. Ama kullanıcı bilinçsizce `git worktree remove --force` yapabilir. Worktree remove öncesi otomatik `git stash --include-untracked` alınması için bir wrapper/alias mantıklı mı?\n\n9. **`.patch` dosyaları:** Kökteki 20 adet patch dosyası. Bunlar muhtemelen geçmişte kayıp korkusuyla oluşturulmuş manual backup'lar. Tranş A1'de siliyoruz ama gerçekten gereksizler mi (hepsi git history'de mevcut — doğrulandı mı)? Silmek yerine `.archive/` klasörüne taşımak mı daha güvenli?\n\n10. **Atladığım güvenlik katmanı var mı?** GitHub secret scanning, Dependabot, CODEOWNERS, required reviewers from teams, environment protection rules (publish için)? Bu paket için hangileri öncelikli?\n\n## Önemli — Yanıt Formatı\n\nYanıtını **tek bir tam JSON objesi olarak** ver, son mesajın o olsun. Shell command çalıştırabilirsin (grep, git log, gh api), ama **son mesajın sadece JSON objesi** olmalı — başka metin ekleme. Bu 'codex exec -o' overwrite problemi için kritik. Format:\n\n```json\n{\n  \"version\": \"v1\",\n  \"consultation_id\": \"CNS-20260414-006\",\n  \"status\": \"ANSWERED\",\n  \"from_agent\": \"codex\",\n  \"to_agent\": \"claude\",\n  \"verdict\": \"A|B|C|D\",\n  \"rationale\": \"kısa özet\",\n  \"answers\": [{\"question_index\": 1, \"answer\": \"...\"}, ...],\n  \"recommendations\": [\"...\"],\n  \"risks_flagged\": [\"...\"],\n  \"created_at\": \"2026-04-14T...+03:00\",\n  \"head_sha\": \"dc25cd2\"\n}\n```",
+    "context_refs": [
+      ".github/workflows/test.yml",
+      ".github/workflows/publish.yml",
+      "pyproject.toml",
+      ".gitignore",
+      "CLAUDE.md"
+    ],
+    "options": [
+      {
+        "option_id": "A",
+        "title": "Plan olduğu gibi onaylanır — A0 Faz 5 öncesi, 3 katman + tag protection + signed commits opsiyonel",
+        "pros": "Katmanlı defense-in-depth, operasyonel risk büyük ölçüde kapanır",
+        "cons": "30+ dk ek iş, Faz 5'i geciktirir"
+      },
+      {
+        "option_id": "B",
+        "title": "A0 minimal — sadece GitHub branch protection (katman 1) + `.patch` temizlik, katman 2-3 sonraya",
+        "pros": "Hızlı, en kritik katman hemen aktif",
+        "cons": "Local riskler açık kalır (yanlış pull.rebase, secret commit riski)"
+      },
+      {
+        "option_id": "C",
+        "title": "A0'ı Tranş A içinde birleştir, ayrı tranche olmasın — A1'den önce A0 adımları çalıştır",
+        "pros": "Tek büyük 'hygiene + safety' release, Faz 5 Tranş A zaten hijyen odaklı",
+        "cons": "Tranş A scope büyür"
+      },
+      {
+        "option_id": "D",
+        "title": "A0 yetersiz — planda olmayan ek katman(lar) şart (CODEOWNERS, environment, Dependabot, vb.)",
+        "pros": "Daha sağlam",
+        "cons": "Daha uzun"
+      }
+    ]
+  },
+  "created_at": "2026-04-14T09:55:00+03:00",
+  "branch": "claude/wizardly-euclid",
+  "head_sha": "dc25cd2"
+}
