@@ -16,10 +16,11 @@ Sources:
     1. Bundled defaults (``ao_kernel/defaults/extensions/``) — always present
     2. Workspace extensions (``<project_root>/.ao/extensions/``) — override+merge
 
-Workspace-root contract (CNS-008 §next_iteration_asks #2):
+Workspace-root contract (CNS-008 → CNS-010 consensus):
     load_from_workspace(project_root) expects the PROJECT ROOT (the
     directory that CONTAINS ``.ao/``), NOT the ``.ao`` directory itself.
-    config.workspace_root() returns ``.ao``; callers normalize via .parent.
+    Use ``ao_kernel.workspace.project_root()`` (added in CNS-010) to
+    normalize a ``config.workspace_root()`` result before passing it in.
 """
 
 from __future__ import annotations

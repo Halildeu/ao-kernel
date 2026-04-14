@@ -33,20 +33,16 @@ _API_VERSION = "0.1.0"
 
 
 def _find_workspace_root() -> Path | None:
-    """Return the project root (directory that CONTAINS ``.ao/``), not ``.ao`` itself.
+    """Return the project root (directory that CONTAINS ``.ao/``).
 
-    ``config.workspace_root()`` returns the ``.ao`` directory by design, but
-    MCP context helpers (evidence, tool gateway, session save) all expect the
-    project root — the directory under which ``.ao/evidence/``, ``.ao/sessions/``,
-    and ``.ao/cache/`` live. Resolving to ``.parent`` once keeps the rest of
-    this module aligned with AoKernelClient.workspace_root semantics.
+    Thin shim over :func:`ao_kernel.workspace.project_root`. Per
+    CNS-20260414-010 consensus the project-root semantic is the single
+    source of truth across MCP, evidence, and tool-gateway code paths;
+    the helper centralizes the ``.ao`` -> parent normalization that used
+    to be sprinkled across this module.
     """
-    from ao_kernel.config import workspace_root
-    ws = workspace_root()
-    if ws is None:
-        return None
-    ws_path = Path(ws)
-    return ws_path.parent if ws_path.name == ".ao" else ws_path
+    from ao_kernel.workspace import project_root
+    return project_root()
 
 
 # ── Decision Envelope ───────────────────────────────────────────────
