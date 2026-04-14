@@ -48,8 +48,26 @@ def start_session(
 def end_session(
     context: dict[str, Any],
     workspace_root: str | Path,
+    *,
+    auto_promote: bool = True,
+    promote_threshold: float = 0.7,
 ) -> dict[str, Any]:
-    """End a session — final compact + distillation trigger.
+    """End a session — final compact + distillation trigger + optional promote.
+
+    Per CNS-20260414-009 consensus: this is the single finalize primitive.
+    ``agent_coordination.finalize_session_sdk`` now delegates here with its
+    params instead of running a second promotion pass (which caused double-
+    promotion and silently ignored the caller's ``auto_promote=False``).
+
+    Args:
+        context: Session context dict (mutated in place + saved).
+        workspace_root: Workspace root path.
+        auto_promote: When True (default), ephemeral decisions meeting the
+            confidence threshold are promoted to the canonical store.
+            Pass False for agent-coordination flows that want to persist
+            only ephemeral state without touching canonical.
+        promote_threshold: Minimum confidence for auto-promotion (0.0–1.0).
+            Only consulted when ``auto_promote`` is True.
 
     Returns finalized context.
     """
@@ -72,19 +90,20 @@ def end_session(
         import logging
         logging.getLogger("ao_kernel").warning("session distillation failed: %s", exc)
 
-    # Auto-promote high-confidence decisions to canonical store
-    try:
-        from ao_kernel.context.canonical_store import promote_from_ephemeral
-        decisions = context.get("ephemeral_decisions", [])  # session-scoped, NOT canonical_store decisions
-        promote_from_ephemeral(
-            ws,
-            decisions,
-            min_confidence=0.7,
-            session_id=session_id,
-        )
-    except Exception as exc:
-        import logging
-        logging.getLogger("ao_kernel").warning("session promotion failed: %s", exc)
+    # Auto-promote high-confidence decisions to canonical store (opt-out via flag).
+    if auto_promote:
+        try:
+            from ao_kernel.context.canonical_store import promote_from_ephemeral
+            decisions = context.get("ephemeral_decisions", [])  # session-scoped, NOT canonical_store decisions
+            promote_from_ephemeral(
+                ws,
+                decisions,
+                min_confidence=promote_threshold,
+                session_id=session_id,
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger("ao_kernel").warning("session promotion failed: %s", exc)
 
     # Final save
     from ao_kernel.session import save_context

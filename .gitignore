@@ -214,7 +214,8 @@ __marimo__/
 examples/*/.ao/
 examples/*/.cache/
 
-# Evidence trail artifacts (per-run / per-day JSONL emitted by MCP + workflow paths)
+# ao-kernel runtime workspace artefacts (tests + local runs emit these)
+.ao/canonical_decisions*.json
 .ao/evidence/
 .ao/sessions/
 .ao/cache/
