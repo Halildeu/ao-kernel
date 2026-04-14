@@ -360,10 +360,16 @@ def process_response_with_context(
     request_id: str = "",
     workspace_root: str | None = None,
     tool_results: list[dict[str, Any]] | None = None,
+    vector_store: Any | None = None,
+    embedding_config: Any | None = None,
 ) -> dict[str, Any]:
     """Process LLM response through context pipeline.
 
     Extracts decisions, processes tool results, runs memory pipeline.
+    When ``vector_store`` is provided, extracted decisions are also indexed
+    for semantic retrieval (write-path failures are non-blocking — see
+    semantic_indexer contract).
+
     Returns updated session context.
     """
     from pathlib import Path
@@ -378,6 +384,8 @@ def process_response_with_context(
         provider_id=provider_id,
         request_id=request_id,
         workspace_root=ws,
+        vector_store=vector_store,
+        embedding_config=embedding_config,
     )
 
     # Process tool results (extract_from_tool_result — was disconnected, now wired)

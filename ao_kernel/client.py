@@ -465,6 +465,8 @@ class AoKernelClient:
                 request_id=request_id,
                 workspace_root=ws_str,
                 tool_results=tool_results,
+                vector_store=self._vector_store,
+                embedding_config=self._embedding_config,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))
@@ -598,6 +600,8 @@ class AoKernelClient:
                 request_id=request_id,
                 workspace_root=ws_str,
                 tool_results=tool_results,
+                vector_store=self._vector_store,
+                embedding_config=self._embedding_config,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))

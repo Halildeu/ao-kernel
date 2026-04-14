@@ -25,6 +25,8 @@ def process_turn(
     provider_id: str = "",
     request_id: str = "",
     workspace_root: Path | None = None,
+    vector_store: Any | None = None,
+    embedding_config: Any | None = None,
 ) -> dict[str, Any]:
     """Process a single LLM turn — extract, prune, compact, save.
 
@@ -34,6 +36,10 @@ def process_turn(
         provider_id: LLM provider identifier
         request_id: Request ID for evidence linkage
         workspace_root: Workspace root (needed for compaction archive)
+        vector_store: Optional VectorStoreBackend — when provided, extracted
+            decisions are embedded and indexed for semantic retrieval.
+            Write-path failures are silently logged (never block the turn).
+        embedding_config: Optional EmbeddingConfig (overrides env/policy).
 
     Returns:
         Updated context dict (mutated in place and saved)
@@ -49,9 +55,10 @@ def process_turn(
         )
         record_decision_extraction(len(decisions), source="llm")
 
-        # 2. Upsert each decision
+        # 2. Upsert each decision (+ sidecar semantic index when enabled)
         from ao_kernel._internal.session.context_store import upsert_decision
 
+        session_id = context.get("session_id") if isinstance(context, dict) else None
         for decision in decisions:
             upsert_decision(
                 context,
@@ -59,6 +66,15 @@ def process_turn(
                 value=decision.value,
                 source=decision.source,
             )
+            if vector_store is not None:
+                _index_session_decision(
+                    key=decision.key,
+                    value=decision.value,
+                    source=decision.source,
+                    namespace=session_id,
+                    vector_store=vector_store,
+                    embedding_config=embedding_config,
+                )
 
         # 3. Prune expired decisions
         from datetime import datetime, timezone
@@ -95,3 +111,29 @@ def process_turn(
         )
 
     return context
+
+
+def _index_session_decision(
+    *,
+    key: str,
+    value: Any,
+    source: str,
+    namespace: str | None,
+    vector_store: Any,
+    embedding_config: Any | None,
+) -> None:
+    """Attempt to index a session decision in the vector store.
+
+    Failures are swallowed (debug-logged inside semantic_indexer). The
+    deterministic fallback contract (CNS-007) requires that a broken
+    embedding path NEVER blocks the main write pipeline.
+    """
+    from ao_kernel.context.semantic_indexer import index_decision
+    index_decision(
+        key=key,
+        value=value,
+        source=source or "session",
+        namespace=namespace,
+        vector_store=vector_store,
+        embedding_config=embedding_config,
+    )
