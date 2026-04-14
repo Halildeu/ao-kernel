@@ -133,7 +133,8 @@ omit = [
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 70
+# Tranş C ratchet: 70 (baseline) → 75 (C2 context_store) → 80 (C3 evidence/writer) → 85 (C4 workspace).
+fail_under = 75
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.",
