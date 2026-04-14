@@ -33,10 +33,20 @@ _API_VERSION = "0.1.0"
 
 
 def _find_workspace_root() -> Path | None:
-    """Find workspace root for context operations. Returns Path or None."""
+    """Return the project root (directory that CONTAINS ``.ao/``), not ``.ao`` itself.
+
+    ``config.workspace_root()`` returns the ``.ao`` directory by design, but
+    MCP context helpers (evidence, tool gateway, session save) all expect the
+    project root — the directory under which ``.ao/evidence/``, ``.ao/sessions/``,
+    and ``.ao/cache/`` live. Resolving to ``.parent`` once keeps the rest of
+    this module aligned with AoKernelClient.workspace_root semantics.
+    """
     from ao_kernel.config import workspace_root
     ws = workspace_root()
-    return Path(ws) if ws else None
+    if ws is None:
+        return None
+    ws_path = Path(ws)
+    return ws_path.parent if ws_path.name == ".ao" else ws_path
 
 
 # ── Decision Envelope ───────────────────────────────────────────────
@@ -525,12 +535,45 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
 ]
 
+def _with_evidence(tool_name: str, handler: Any) -> Any:
+    """Wrap a raw handler so every dispatched call records a JSONL event.
+
+    Direct handler imports (tests, SDK smoke code) bypass the wrapper and
+    therefore stay silent — evidence is only emitted when a tool is invoked
+    through TOOL_DISPATCH or the ToolGateway, i.e. on the real MCP path.
+    Evidence write failures never propagate (fail-open, §2 invariant #2).
+    """
+    import functools
+    import time
+
+    @functools.wraps(handler)
+    def wrapped(params: dict[str, Any]) -> dict[str, Any]:
+        start = time.monotonic()
+        envelope: dict[str, Any] = handler(params)
+        duration_ms = int((time.monotonic() - start) * 1000)
+        try:
+            from ao_kernel._internal.evidence.mcp_event_log import record_mcp_event
+            ws = _find_workspace_root()
+            record_mcp_event(
+                ws,
+                tool_name,
+                envelope,
+                params=params if isinstance(params, dict) else None,
+                duration_ms=duration_ms,
+            )
+        except Exception:  # noqa: BLE001 — evidence is side-channel
+            pass
+        return envelope
+
+    return wrapped
+
+
 TOOL_DISPATCH = {
-    "ao_policy_check": handle_policy_check,
-    "ao_llm_route": handle_llm_route,
-    "ao_llm_call": handle_llm_call,
-    "ao_quality_gate": handle_quality_gate,
-    "ao_workspace_status": handle_workspace_status,
+    "ao_policy_check": _with_evidence("ao_policy_check", handle_policy_check),
+    "ao_llm_route": _with_evidence("ao_llm_route", handle_llm_route),
+    "ao_llm_call": _with_evidence("ao_llm_call", handle_llm_call),
+    "ao_quality_gate": _with_evidence("ao_quality_gate", handle_quality_gate),
+    "ao_workspace_status": _with_evidence("ao_workspace_status", handle_workspace_status),
 }
 
 

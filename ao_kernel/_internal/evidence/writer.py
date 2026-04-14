@@ -2,6 +2,7 @@ from __future__ import annotations
 from ao_kernel._internal.shared.utils import write_text_atomic
 
 import json
+import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -35,13 +36,29 @@ def _now_iso() -> str:
 
 def _append_text(path: Path, text: str) -> None:
     normalized = text if text.endswith("\n") else (text + "\n")
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(normalized)
+        handle.flush()
+        try:
+            os.fsync(handle.fileno())
+        except OSError:
+            # fsync may be unsupported on the target filesystem (network FS,
+            # docker bind mounts). The write itself has already landed in the
+            # page cache; treat as non-fatal so integrity verification stays
+            # the authoritative check.
+            pass
 
 
 def _append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+        handle.flush()
+        try:
+            os.fsync(handle.fileno())
+        except OSError:
+            pass
 
 
 def _git_commit_and_dirty(workspace: Path) -> tuple[str, bool]:

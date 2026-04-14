@@ -491,7 +491,10 @@ class TestHandleLLMCall:
 
     def test_dispatch_includes_llm_call(self):
         assert "ao_llm_call" in TOOL_DISPATCH
-        assert TOOL_DISPATCH["ao_llm_call"] is handle_llm_call
+        # B4: dispatch entries are evidence-wrapped; verify the underlying
+        # handler via __wrapped__ (populated by functools.wraps).
+        dispatched = TOOL_DISPATCH["ao_llm_call"]
+        assert getattr(dispatched, "__wrapped__", dispatched) is handle_llm_call
 
 
 class TestQualityGatePreviousDecisions:
