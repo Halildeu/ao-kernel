@@ -87,6 +87,17 @@ target-version = "py311"
 [tool.mypy]
 python_version = "3.11"
 strict = true
+ignore_missing_imports = true
+# Exclude files under .archive/ (historical patch backups)
+exclude = ["^\\.archive/"]
+
+# _internal: D13 — aşamalı tip kapsamı, test coverage gate'i de omit ediyor.
+# _internal tipleri Tranş C'de sistemik olarak eklenecek. Şimdilik yalnızca bu
+# katman override ile geçiliyor; public facade (ao_kernel/*.py + context/) tam
+# strict mypy altında.
+[[tool.mypy.overrides]]
+module = "ao_kernel._internal.*"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -51,11 +51,11 @@ def remember(
         value=value,
         category="agent_memory",
         source=source,
-        confidence=config["confidence"],
+        confidence=float(config["confidence"]),
         session_id=session_id,
-        fresh_days=config["fresh_days"],
-        review_days=config["review_days"],
-        expire_days=config["expire_days"],
+        fresh_days=int(config["fresh_days"]),
+        review_days=int(config["review_days"]),
+        expire_days=int(config["expire_days"]),
         provenance={"method": "self_edit", "importance": importance},
     )
 

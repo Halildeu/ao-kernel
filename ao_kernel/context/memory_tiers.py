@@ -69,8 +69,8 @@ def enforce_tier_budgets(
         tiers[tier].append(d)
 
     # Enforce budgets — overflow demotes to next tier
-    hot_max = config.get("hot", {}).get("max_rules", 30)
-    warm_max = config.get("warm", {}).get("max_rules", 50)
+    hot_max = int(config.get("hot", {}).get("max_rules", 30))
+    warm_max = int(config.get("warm", {}).get("max_rules", 50))
 
     if len(tiers["hot"]) > hot_max:
         # Sort by confidence desc, demote lowest

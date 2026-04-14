@@ -48,7 +48,7 @@ def _check_otel() -> bool:
     return _OTEL_AVAILABLE
 
 
-def _get_tracer():
+def _get_tracer() -> Any:
     global _tracer
     if _tracer is not None:
         return _tracer
@@ -59,7 +59,7 @@ def _get_tracer():
     return _tracer
 
 
-def _get_meter():
+def _get_meter() -> Any:
     global _meter
     if _meter is not None:
         return _meter
@@ -84,7 +84,7 @@ class _NoOpSpan:
     def set_attribute(self, key: str, value: Any) -> None:
         pass
 
-    def add_event(self, name: str, attributes: dict | None = None) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         pass
 
     def set_status(self, status: Any, description: str | None = None) -> None:

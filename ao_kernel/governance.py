@@ -86,7 +86,7 @@ def check_policy(
     }
 
 
-def _check_rules(policy: dict, action: dict) -> list[str]:
+def _check_rules(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
     """Check action against policy rules. Supports multiple policy types.
 
     Policy types detected by structure:
@@ -115,7 +115,7 @@ def _check_rules(policy: dict, action: dict) -> list[str]:
     return violations
 
 
-def _check_autonomy(policy: dict, action: dict) -> list[str]:
+def _check_autonomy(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
     """Check autonomy policy — intent authorization and mode enforcement."""
     violations = []
     defaults = policy.get("defaults", {})
@@ -139,7 +139,7 @@ def _check_autonomy(policy: dict, action: dict) -> list[str]:
     return violations
 
 
-def _check_tool_calling(policy: dict, action: dict) -> list[str]:
+def _check_tool_calling(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
     """Check tool calling policy — allowed/blocked tools."""
     violations = []
 
@@ -166,7 +166,7 @@ def _check_tool_calling(policy: dict, action: dict) -> list[str]:
     return violations
 
 
-def _check_provider_guardrails(policy: dict, action: dict) -> list[str]:
+def _check_provider_guardrails(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
     """Check provider guardrails — provider access control."""
     violations = []
     providers = policy.get("providers", {})
@@ -186,7 +186,7 @@ def _check_provider_guardrails(policy: dict, action: dict) -> list[str]:
     return violations
 
 
-def _check_generic_rules(policy: dict, action: dict) -> list[str]:
+def _check_generic_rules(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
     """Check generic policy rules — required fields, blocked values, limits."""
     violations = []
 

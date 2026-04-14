@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from importlib.resources import files
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ao_kernel.errors import DefaultsNotFoundError, WorkspaceCorruptedError
 
@@ -64,15 +64,17 @@ def load_workspace_json(workspace: Path) -> dict[str, Any]:
             f"workspace.json is not valid JSON: {e}"
         ) from e
 
+    if not isinstance(data, dict):
+        raise WorkspaceCorruptedError("workspace.json must be a JSON object")
     for key in ("version", "kind"):
         if key not in data:
             raise WorkspaceCorruptedError(
                 f"workspace.json missing required field: {key!r}"
             )
-    return data
+    return cast(dict[str, Any], data)
 
 
-def load_default(resource_type: str, filename: str) -> Any:
+def load_default(resource_type: str, filename: str) -> dict[str, Any]:
     """Load a bundled default JSON file from ao_kernel/defaults/.
 
     Args:
@@ -82,7 +84,7 @@ def load_default(resource_type: str, filename: str) -> Any:
         filename: The JSON filename.
 
     Returns:
-        Parsed JSON content.
+        Parsed JSON object. Raises if the top-level JSON value is not an object.
     """
     base_type = resource_type.split("/")[0]
     if base_type not in _VALID_RESOURCE_TYPES:
@@ -98,21 +100,31 @@ def load_default(resource_type: str, filename: str) -> Any:
         raise DefaultsNotFoundError(
             f"Bundled default not found: {resource_type}/{filename}"
         ) from e
-    return json.loads(text)
+    parsed = json.loads(text)
+    if not isinstance(parsed, dict):
+        raise DefaultsNotFoundError(
+            f"Bundled default must be a JSON object: {resource_type}/{filename}"
+        )
+    return cast(dict[str, Any], parsed)
 
 
 def load_with_override(
     resource_type: str,
     filename: str,
     workspace: Path | None = None,
-) -> Any:
+) -> dict[str, Any]:
     """Load a JSON resource, preferring workspace override over bundled default.
 
     If workspace contains resource_type/filename, loads from there.
-    Otherwise falls back to the bundled default.
+    Otherwise falls back to the bundled default. Top-level JSON must be an object.
     """
     if workspace is not None:
         override_path = workspace / resource_type / filename
         if override_path.is_file():
-            return json.loads(override_path.read_text(encoding="utf-8"))
+            parsed = json.loads(override_path.read_text(encoding="utf-8"))
+            if not isinstance(parsed, dict):
+                raise DefaultsNotFoundError(
+                    f"Override must be a JSON object: {override_path}"
+                )
+            return cast(dict[str, Any], parsed)
     return load_default(resource_type, filename)

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import ao_kernel
 from ao_kernel.config import load_workspace_json, workspace_root
@@ -56,7 +57,7 @@ def run(
     pkg_version = ao_kernel.__version__
     legacy_ws = _detect_legacy_workspace()
 
-    mutations: list[dict] = []
+    mutations: list[dict[str, Any]] = []
     action_items: list[str] = []
 
     if ws_version != pkg_version:

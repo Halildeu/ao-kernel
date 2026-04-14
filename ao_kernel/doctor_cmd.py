@@ -6,13 +6,14 @@ Runs 8 checks and reports OK/WARN/FAIL for each.
 from __future__ import annotations
 
 import sys
+from typing import Callable
 
 import ao_kernel
 from ao_kernel.config import workspace_root
 from ao_kernel.errors import WorkspaceNotFoundError
 
 
-def _check(label: str, fn: callable) -> str:
+def _check(label: str, fn: Callable[[], object]) -> str:
     """Run a check function, return OK/WARN/FAIL."""
     try:
         result = fn()
