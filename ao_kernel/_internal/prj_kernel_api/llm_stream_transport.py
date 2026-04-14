@@ -91,7 +91,7 @@ def execute_stream_request(
     total_chars = 0
     chunk_count = 0
     usage: dict[str, int] | None = None
-    captured: list[dict[str, Any]] = [] if capture_events else None
+    captured: list[dict[str, Any]] | None = [] if capture_events else None
     error_code: str | None = None
     error_detail: str | None = None
     finish_reason = "unknown"
@@ -247,7 +247,7 @@ def _elapsed_ms_from(start: float, end: float) -> int:
     return int(round((end - start) * 1000.0))
 
 
-def _get_raw_socket(resp) -> socket.socket | None:
+def _get_raw_socket(resp: Any) -> socket.socket | None:
     """Extract underlying socket for idle timeout setting."""
     try:
         fp = getattr(resp, "fp", None)

@@ -45,7 +45,7 @@ class StreamEvent:
 # ── SSE Line Parser ─────────────────────────────────────────────────
 
 
-def _parse_sse_lines(response) -> Iterator[dict[str, str]]:
+def _parse_sse_lines(response: Any) -> Iterator[dict[str, str]]:
     """Parse raw SSE lines from a file-like HTTP response.
 
     Yields dicts with keys: 'event' (optional), 'data'.
@@ -116,7 +116,8 @@ def _extract_anthropic_delta(data: dict[str, Any]) -> str:
     if evt_type == "content_block_delta":
         delta = data.get("delta")
         if isinstance(delta, dict) and delta.get("type") == "text_delta":
-            return delta.get("text", "")
+            text_val = delta.get("text", "")
+            return text_val if isinstance(text_val, str) else ""
     return ""
 
 
@@ -152,7 +153,8 @@ def _extract_google_delta(data: dict[str, Any]) -> str:
     first_part = parts[0]
     if not isinstance(first_part, dict):
         return ""
-    return first_part.get("text", "")
+    text_val = first_part.get("text", "")
+    return text_val if isinstance(text_val, str) else ""
 
 
 # ── Usage Extraction ────────────────────────────────────────────────
@@ -221,7 +223,8 @@ def _classify_event(
             "message_delta": "usage",
             "message_stop": "done",
         }
-        return mapping.get(evt, evt)
+        mapped = mapping.get(evt, evt)
+        return mapped if isinstance(mapped, str) else str(mapped)
 
     # OpenAI-compatible
     choices = event_data.get("choices", [])
@@ -249,11 +252,13 @@ def _classify_event(
 def _extract_index(event_data: dict[str, Any], provider_id: str) -> int:
     """Extract content block index from event."""
     if provider_id == "claude":
-        return event_data.get("index", 0)
+        idx = event_data.get("index", 0)
+        return idx if isinstance(idx, int) else 0
     choices = event_data.get("choices", [])
     if isinstance(choices, list) and choices:
         first = choices[0] if isinstance(choices[0], dict) else {}
-        return first.get("index", 0)
+        idx = first.get("index", 0)
+        return idx if isinstance(idx, int) else 0
     return 0
 
 
@@ -261,7 +266,7 @@ def _extract_index(event_data: dict[str, Any], provider_id: str) -> int:
 
 
 def iter_stream_events(
-    response,
+    response: Any,
     provider_id: str,
     *,
     capture_raw: bool = True,
