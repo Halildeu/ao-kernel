@@ -46,8 +46,10 @@ def _load_quality_gate_policy(workspace_root: Path | None = None) -> dict[str, A
             schema_path = load_resource_path("schemas", "policy-quality-gates.schema.v1.json")
             try:
                 if schema_path:
-                    return load_policy_validated(ws_policy, schema_path)
-                return json.loads(ws_policy.read_text(encoding="utf-8"))
+                    validated: dict[str, Any] = load_policy_validated(ws_policy, schema_path)
+                    return validated
+                parsed: dict[str, Any] = json.loads(ws_policy.read_text(encoding="utf-8"))
+                return parsed
             except (ValueError, Exception) as exc:
                 import logging
                 logging.getLogger("ao_kernel").warning(
@@ -55,7 +57,8 @@ def _load_quality_gate_policy(workspace_root: Path | None = None) -> dict[str, A
                 )
 
     try:
-        return load_resource("policies", "policy_quality_gates.v1.json")
+        bundled: dict[str, Any] = load_resource("policies", "policy_quality_gates.v1.json")
+        return bundled
     except (FileNotFoundError, Exception) as exc:
         # Fail-closed: if policy can't load, enable restrictive defaults
         import logging
