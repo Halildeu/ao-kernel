@@ -80,6 +80,7 @@ def embed_decision(
     model: str = "text-embedding-3-small",
     base_url: str = "https://api.openai.com/v1",
     api_key: str = "",
+    embedding_config: Any | None = None,
 ) -> dict[str, Any]:
     """Embed a decision and attach embedding metadata.
 
@@ -88,13 +89,29 @@ def embed_decision(
         _embedding_model: str
         _embedding_hash: str (hash of input text)
 
-    Returns the decision (with embedding attached).
+    When ``embedding_config`` is provided, its fields (provider/model/base_url
+    and resolved api_key) take precedence over the positional parameters.
+
+    Returns the decision (with embedding attached, or unchanged if embedding
+    was unavailable).
     """
+    if embedding_config is not None:
+        provider_id = embedding_config.provider
+        model = embedding_config.model
+        base_url = embedding_config.base_url
+        resolved_key = embedding_config.resolve_api_key()
+        if resolved_key:
+            api_key = resolved_key
+
     text = f"{decision.get('key', '')}: {decision.get('value', '')}"
     text_hash = hashlib.sha256(text.encode()).hexdigest()[:16]
 
-    # Skip if already embedded with same hash
-    if decision.get("_embedding_hash") == text_hash and decision.get("_embedding"):
+    # Skip if already embedded with same hash and model
+    if (
+        decision.get("_embedding_hash") == text_hash
+        and decision.get("_embedding")
+        and decision.get("_embedding_model") == model
+    ):
         return decision
 
     embedding = embed_text(
@@ -122,6 +139,7 @@ def semantic_search(
     base_url: str = "https://api.openai.com/v1",
     api_key: str = "",
     vector_store: Any | None = None,
+    embedding_config: Any | None = None,
 ) -> list[dict[str, Any]]:
     """Search decisions by semantic similarity.
 
@@ -132,9 +150,23 @@ def semantic_search(
     Only considers decisions that have _embedding attached.
     Falls back to empty list if no embeddings available.
 
+    When ``embedding_config`` is provided (EmbeddingConfig instance), its
+    fields take precedence over the positional provider_id/model/base_url
+    parameters. The api_key is resolved via ``embedding_config.resolve_api_key()``
+    which checks the injected field then falls back to env (D11). The legacy
+    positional parameters remain for callers that have not migrated yet.
+
     Returns decisions sorted by similarity (highest first), with
     _similarity score attached.
     """
+    if embedding_config is not None:
+        provider_id = embedding_config.provider
+        model = embedding_config.model
+        base_url = embedding_config.base_url
+        resolved_key = embedding_config.resolve_api_key()
+        if resolved_key:
+            api_key = resolved_key
+
     # Get query embedding
     if query_embedding is None:
         query_embedding = embed_text(

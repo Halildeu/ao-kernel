@@ -32,7 +32,7 @@
     },
     "semantic_retrieval": {
       "type": "object",
-      "description": "Semantic retrieval feature gate. Backend instance is resolved via env/constructor; this policy controls enablement and fail-closed behavior.",
+      "description": "Semantic retrieval feature gate. Backend instance is resolved via env/constructor; this policy controls enablement, fail-closed behavior, and embedding provider/model (independent of chat route).",
       "additionalProperties": false,
       "required": ["enabled", "backend"],
       "properties": {
@@ -45,6 +45,17 @@
             "type": { "type": "string", "enum": ["inmemory", "pgvector", "disabled"] },
             "strict": { "type": "boolean" },
             "fail_action": { "type": "string", "enum": ["raise", "warn_fallback"] }
+          }
+        },
+        "embedding": {
+          "type": "object",
+          "description": "Embedding provider/model used for vector generation. Decoupled from chat route because most chat providers (Anthropic, DeepSeek, xAI) do not expose an embeddings endpoint.",
+          "additionalProperties": false,
+          "required": ["provider", "model"],
+          "properties": {
+            "provider": { "type": "string", "enum": ["openai", "google"] },
+            "model": { "type": "string", "minLength": 1 },
+            "base_url": { "type": "string", "format": "uri" }
           }
         }
       }
