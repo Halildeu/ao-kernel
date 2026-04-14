@@ -276,7 +276,6 @@ def build_request_with_context(
     if session_context:
         from pathlib import Path
         from ao_kernel.context.context_compiler import compile_context
-        from ao_kernel.context.context_injector import inject_context_into_messages
 
         # Load canonical decisions + workspace facts if workspace available
         canonical_dict = None
