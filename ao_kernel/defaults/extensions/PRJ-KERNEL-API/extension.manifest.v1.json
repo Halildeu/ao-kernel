@@ -18,9 +18,6 @@
     "cockpit_sections": [],
     "kernel_api_actions": [
       "doc_nav_check",
-      "intake_create_plan",
-      "intake_next",
-      "intake_status",
       "project_status",
       "roadmap_finish",
       "roadmap_follow",

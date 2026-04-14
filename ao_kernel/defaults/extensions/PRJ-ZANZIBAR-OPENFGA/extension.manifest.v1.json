@@ -1,4 +1,10 @@
 {
+  "version": "v1",
+  "extension_id": "PRJ-ZANZIBAR-OPENFGA",
+  "semver": "1.0.0",
+  "origin": "CORE",
+  "owner": "CORE",
+  "enabled": true,
   "ai_context_refs": [
     "AGENTS.md",
     "decisions/topics/zanzibar-openfga.v1.json",
@@ -12,10 +18,6 @@
     "core_min": "0.0.0",
     "notes": ["Cross-repo extension — dev repo is execution target"]
   },
-  "context_integration": {
-    "enabled": true,
-    "notes": "Zanzibar context integrated via decisions/topics/zanbibar-openfga.v1.json"
-  },
   "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-ZANZIBAR-OPENFGA",
   "entrypoints": {
     "cockpit_sections": [],
@@ -23,22 +25,22 @@
     "ops": [],
     "ops_single_gate": []
   },
-  "extension_id": "PRJ-ZANZIBAR-OPENFGA",
-  "isolation": {
-    "network_allowed": false,
-    "workspace_root": ".cache/extensions/PRJ-ZANZIBAR-OPENFGA"
+  "layer_contract": {
+    "write_roots_allowlist": [
+      ".cache/extensions/PRJ-ZANZIBAR-OPENFGA/"
+    ],
+    "read_roots_allowlist": [
+      "roadmaps/PROJECTS/PRJ-ZANZIBAR-OPENFGA/",
+      "decisions/topics/"
+    ],
+    "notes": ["Network access disabled; writes scoped to per-extension cache."]
   },
   "outputs": {
     "workspace_reports": []
   },
-  "schemas": [],
   "policies": [],
-  "status": "active",
-  "tests": {
-    "contract_tests": [
-      "tests/contract/test_zanzibar_extension.py"
-    ]
-  },
-  "title": "Zanzibar / OpenFGA Authorization Migration",
-  "version": "1.0.0"
+  "ui_surfaces": [],
+  "notes": [
+    "Zanzibar context integrated via decisions/topics/zanzibar-openfga.v1.json"
+  ]
 }
