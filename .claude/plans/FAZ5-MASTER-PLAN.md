@@ -603,7 +603,7 @@ Eğer preflight sonrası kritik bug bulunursa:
 | Gate | Onay veren | Ne onaylanır | Sonraki adım |
 |---|---|---|---|
 | G0 | Halil | Bu plan dosyası | Preflight P1'e başla |
-| G1 | Halil | Preflight sonu (P7 bitti) | Tranş A başla |
+| G1 | Halil | Preflight sonu (P7 bitti) ✅ 2026-04-14 merge d9e86be | Tranş A başla |
 | G2 | Halil + Codex (CNS-opsiyonel) | Tranş A PR hazır | Merge + v2.2.0 tag |
 | G3 | Halil | v2.2.0 release sonrası | Tranş B başla |
 | G4 | Codex (CNS-007) | B1 tasarımı | B1 implementasyonu |
@@ -668,6 +668,7 @@ Bu plan değişirse:
 | Tarih | Plan v | Değişiklik | Kaynak |
 |---|---|---|---|
 | 2026-04-14 | v1.0 | İlk taslak oluşturuldu | CNS-005 + CNS-006 sonuçları |
+| 2026-04-14 | v1.1 | Preflight tamamlandı ve v2.2.0-track açıldı. Yol üstünde kazanıldı: mypy 131→0, typecheck gerçek gate, client.save_checkpoint/resume_checkpoint real-bug fix, 18 dead __init__.py sildi. G1 merged @ d9e86be. | PR #56 merge |
 
 ---
 

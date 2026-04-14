@@ -119,13 +119,14 @@ with AoKernelClient(workspace_root=".") as client:
 ao-kernel runs as an MCP (Model Context Protocol) server, exposing governance tools:
 
 ```bash
-ao-kernel mcp serve  # stdio transport
+ao-kernel mcp serve                          # stdio transport (default)
+ao-kernel mcp serve --transport http --port 8080   # HTTP (needs ao-kernel[mcp-http])
 ```
 
 **Tools:**
 - `ao_policy_check` — Validate action against policy (allow/deny)
 - `ao_llm_route` — Resolve provider/model for intent
-- `ao_llm_call` — Execute governed LLM call
+- `ao_llm_call` — Execute governed LLM call (thin executor — see matrix below)
 - `ao_quality_gate` — Check output quality
 - `ao_workspace_status` — Workspace health
 
@@ -133,6 +134,29 @@ ao-kernel mcp serve  # stdio transport
 - `ao://policies/{name}` — Policy JSON
 - `ao://schemas/{name}` — Schema JSON
 - `ao://registry/{name}` — Registry JSON
+
+### SDK vs MCP — Which one should I use?
+
+`AoKernelClient` (SDK) runs the **full governed pipeline**. `ao_llm_call` (MCP) is a **thin executor** — by design, not a limitation. Pick the surface that matches your trust boundary.
+
+| Stage | `AoKernelClient.llm_call` (SDK) | MCP `ao_llm_call` |
+|---|:---:|:---:|
+| Route resolution (provider/model) | ✅ | ✅ |
+| Capability gap check | ✅ | ✅ (inside build) |
+| Context injection (3-lane compile) | ✅ | ❌ |
+| Transport + retry + circuit breaker | ✅ | ✅ |
+| Normalize (text/usage/tool_calls) | ✅ | ✅ |
+| Decision extraction + memory loop | ✅ | ❌ |
+| Evidence trail (JSONL) | ✅ | ❌ |
+| Eval scorecard (diagnostic) | ✅ | ❌ |
+| Quality gates (policy-enforced) | ✅ (`evaluate_quality`) | ✅ (`ao_quality_gate`) |
+| OTEL telemetry | ✅ | ❌ |
+
+**Rule of thumb:**
+- **SDK** — your own Python process runs the governed loop. Full context, full audit.
+- **MCP** — an external agent (Claude Desktop, Cursor, your own MCP client) delegates a single LLM call through the governance boundary. Context, memory, and telemetry stay in the caller's process, not in the server.
+
+Mixing is fine: an MCP client can call `ao_policy_check` and `ao_quality_gate` for governance decisions, run its own LLM, and call back for `ao_workspace_status`. The server stays thin on purpose.
 
 ## Context Management
 

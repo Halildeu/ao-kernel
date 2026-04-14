@@ -209,3 +209,7 @@ __marimo__/
 
 # Loose patch files at repo root — use .archive/patches/ for intentional backups
 /*.patch
+
+# Example projects: never commit the workspace state or secrets they create.
+examples/*/.ao/
+examples/*/.cache/

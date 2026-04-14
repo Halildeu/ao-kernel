@@ -1,0 +1,1 @@
+ao-kernel[llm]>=2.2.0

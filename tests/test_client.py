@@ -638,6 +638,78 @@ class TestEvidenceIntegration:
             mock_stream_ev.assert_not_called()
 
 
+class TestSwallowLoggingA3:
+    """A3 (FAZ5 Tranş A): Evidence/eval swallow paths emit warning logs
+    instead of bare `pass`. Failure MUST NOT block execution.
+    """
+
+    def test_nonstream_evidence_failure_logs_warning(self, tmp_workspace: Path, caplog):
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.execute_request", return_value={
+                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
+                "http_status": 200, "error_type": None, "error_detail": None,
+                "tls_cafile": None,
+            }),
+            patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
+            patch("ao_kernel.llm.extract_usage", return_value=None),
+            patch(
+                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_live_response",
+                side_effect=RuntimeError("disk full"),
+            ),
+        ):
+            with caplog.at_level("WARNING", logger="ao_kernel.client"):
+                result = client.llm_call(
+                    messages=[{"role": "user", "content": "test"}],
+                    provider_id="openai", model="gpt-4", api_key="k",
+                )
+            assert result["status"] == "OK"
+            assert any(
+                "evidence writer skipped" in r.message for r in caplog.records
+            ), f"expected warning, got: {[r.message for r in caplog.records]}"
+
+    def test_eval_scorecard_failure_logs_warning(self, tmp_workspace: Path, caplog):
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        with (
+            patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
+            patch("ao_kernel.llm.build_request_with_context", return_value={
+                "url": "u", "headers": {}, "body_bytes": b"{}",
+            }),
+            patch("ao_kernel.llm.execute_request", return_value={
+                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
+                "http_status": 200, "error_type": None, "error_detail": None,
+                "tls_cafile": None,
+            }),
+            patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
+            patch("ao_kernel.llm.extract_usage", return_value=None),
+            patch(
+                "ao_kernel._internal.orchestrator.eval_harness.run_eval_suite",
+                side_effect=RuntimeError("eval broken"),
+            ),
+        ):
+            with caplog.at_level("WARNING", logger="ao_kernel.client"):
+                result = client.llm_call(
+                    messages=[{"role": "user", "content": "test"}],
+                    provider_id="openai", model="gpt-4", api_key="k",
+                )
+            assert result["status"] == "OK"
+            assert any(
+                "eval scorecard skipped" in r.message for r in caplog.records
+            ), f"expected warning, got: {[r.message for r in caplog.records]}"
+
+
 class TestDoctor:
     def test_doctor_returns_dict(self, tmp_workspace: Path):
         ws_root = tmp_workspace.parent
