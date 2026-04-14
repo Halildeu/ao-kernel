@@ -41,11 +41,13 @@ def _load_schema() -> dict[str, Any]:
     """Load session context schema — tries repo root, falls back to bundled defaults."""
     repo_path = _repo_root() / "schemas" / "session-context.schema.json"
     if repo_path.exists():
-        return json.loads(repo_path.read_text(encoding="utf-8"))
+        schema: dict[str, Any] = json.loads(repo_path.read_text(encoding="utf-8"))
+        return schema
     # Fallback: bundled defaults
     try:
         from ao_kernel._internal.shared.resource_loader import load_resource
-        return load_resource("schemas", "session-context.schema.json")
+        bundled: dict[str, Any] = load_resource("schemas", "session-context.schema.json")
+        return bundled
     except (ImportError, FileNotFoundError):
         pass
     raise SessionContextError("SCHEMA_NOT_FOUND", "Missing session-context.schema.json")

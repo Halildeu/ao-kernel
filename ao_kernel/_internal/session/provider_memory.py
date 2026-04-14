@@ -18,6 +18,11 @@ from ao_kernel._internal.session.context_store import (
 from ao_kernel._internal.utils.budget import estimate_tokens
 
 
+def _asdict(value: Any) -> dict[str, Any]:
+    """Narrow an ``Any`` to ``dict[str, Any]``; returns ``{}`` otherwise."""
+    return value if isinstance(value, dict) else {}
+
+
 def _safe_slug(value: str) -> str:
     normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", str(value or "").strip())
     normalized = normalized.strip("-._")
@@ -69,7 +74,7 @@ def read_provider_session_state(
     memory_strategy = str(ctx.get("memory_strategy") or "local_only")
     payload["memory_strategy"] = memory_strategy
 
-    provider_state = ctx.get("provider_state") if isinstance(ctx.get("provider_state"), dict) else {}
+    provider_state = _asdict(ctx.get("provider_state"))
     payload["provider_state"] = provider_state
 
     continuation: dict[str, Any] = {}
@@ -93,7 +98,7 @@ def read_provider_session_state(
     payload["continuation"] = continuation
 
     # Include compaction summary ref if available (for context reuse)
-    compaction = ctx.get("compaction") if isinstance(ctx.get("compaction"), dict) else {}
+    compaction = _asdict(ctx.get("compaction"))
     if compaction.get("status") == "completed" and compaction.get("summary_ref"):
         payload["compaction_summary_ref"] = str(compaction["summary_ref"])
 
@@ -213,7 +218,7 @@ def maybe_auto_compact_markdown(
     if sp.context_path.exists():
         try:
             ctx = load_context(sp.context_path)
-            existing_state = ctx.get("provider_state") if isinstance(ctx.get("provider_state"), dict) else {}
+            existing_state = _asdict(ctx.get("provider_state"))
             mark_compaction(
                 ctx,
                 summary_ref=summary_ref,
@@ -261,7 +266,7 @@ def persist_provider_result(
 
     try:
         ctx = load_context(sp.context_path)
-        existing_state = ctx.get("provider_state") if isinstance(ctx.get("provider_state"), dict) else {}
+        existing_state = _asdict(ctx.get("provider_state"))
         upsert_provider_state(
             ctx,
             provider=provider,
