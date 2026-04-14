@@ -206,12 +206,12 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
 - **Kabul kriteri:** `gh api repos/Halildeu/ao-kernel/tags/protection` → `v*` rule görünür.
 - **Risk:** Yanlış tag atılırsa silmek zor. → Çözüm: tag atmadan önce `git tag --verify` disiplini.
 
-#### P7 — `.archive/patches/` Taşı (Codex Q9 önerisi)
+#### P7 — `.archive/patches/` Taşı (Codex Q9 önerisi) ✅ TAMAMLANDI (2026-04-14)
 - **Süre:** 2 dk
 - **Sorumlu:** Claude
 - **Açıklama:** Kökteki 20 `.patch` dosyası silinmez, `.archive/patches/` altına taşınır (psikolojik safety net).
-- **Ek:** `.gitignore`'a `*.patch` ekle (yeni backup'lar köke düşmesin).
-- **Kabul kriteri:** Kökte `.patch` yok, `.archive/patches/` altında 20 dosya, `git status` temiz.
+- **Ek:** `.gitignore`'a `/*.patch` ekle (yeni backup'lar köke düşmesin).
+- **Uygulanan:** 20 dosya `git mv` ile taşındı (rename olarak tracked), `.gitignore`'a `/*.patch` eklendi (yalnızca root), `.archive/patches/README.md` yazıldı.
 
 ### 6.2 Tranş A — Hijyen & Honesty (v2.2.0 hedef)
 
