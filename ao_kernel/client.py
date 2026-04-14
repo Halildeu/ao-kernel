@@ -21,9 +21,12 @@ All operations are policy-gated, fail-closed, and evidence-trail'ed.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class AoKernelClient:
@@ -388,8 +391,11 @@ class AoKernelClient:
                     request_id=request_id,
                     max_output_chars=2000,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "evidence writer skipped for request_id=%s provider=%s: %s",
+                    request_id, provider_id, e,
+                )
 
         # 6. Context pipeline (decision extraction + memory)
         decisions_extracted = 0
@@ -413,8 +419,11 @@ class AoKernelClient:
             from ao_kernel._internal.orchestrator.eval_harness import run_eval_suite, eval_scorecard
             eval_results = run_eval_suite(text)
             scorecard = eval_scorecard(eval_results)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(
+                "eval scorecard skipped for request_id=%s provider=%s: %s",
+                request_id, provider_id, e,
+            )
 
         # 8. Telemetry
         try:
@@ -498,8 +507,11 @@ class AoKernelClient:
             try:
                 from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
                 tool_calls = reconstruct_tool_calls(sr.events, provider_id)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "tool-call reconstruction skipped for request_id=%s provider=%s: %s",
+                    request_id, provider_id, e,
+                )
 
         # Evidence (stream events + summary)
         if ws_str:
@@ -512,8 +524,11 @@ class AoKernelClient:
                     workspace_root=ws_str,
                     request_id=request_id,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "stream evidence writer skipped for request_id=%s provider=%s: %s",
+                    request_id, provider_id, e,
+                )
 
         # Context pipeline
         decisions_extracted = 0

@@ -15,11 +15,14 @@ Every included item carries selection_reason metadata.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
 from ao_kernel.context.profile_router import ProfileConfig, get_profile
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -137,15 +140,15 @@ def compile_context(
         profile_config,
     )
 
-    # Telemetry
+    # Telemetry (optional subsystem per CLAUDE.md §7 — graceful fallback, debug log)
     try:
         from ao_kernel.telemetry import record_context_compile
         record_context_compile(
             included_count, len(items) - included_count,
             profile=profile_config.profile_id, total_tokens=used_chars // 4,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("context telemetry record skipped: %s", e)
 
     return CompiledContext(
         preamble=preamble,
