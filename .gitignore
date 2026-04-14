@@ -206,3 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 .ao/.cache/
+
+# Loose patch files at repo root — use .archive/patches/ for intentional backups
+/*.patch

@@ -186,10 +186,11 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
   - Test: dummy secret içeren commit bloke edilir, WIP push uyarısı gelir.
 - **Risk:** `core.hooksPath` repo-local set edilirse worktree'lerde çalışmayabilir. → Çözüm: doc'da clone sonrası manuel set talimatı (`CONTRIBUTING.md`'de). `pre-commit` framework overkill (Codex Q6c).
 
-#### P5 — Workflow Ayrıştırma
+#### P5 — Workflow Ayrıştırma ✅ TAMAMLANDI (2026-04-14, commit 7a3c129)
 - **Süre:** 20 dk
 - **Sorumlu:** Claude
 - **Açıklama:** `test.yml`'i `lint`, `test-3.11`, `test-3.12`, `test-3.13`, `typecheck`, `coverage` ayrı job'lara ayır — required check seçilebilsin (Codex Q4).
+- **Uygulanan:** 5 ayrı job (lint, test matrix, coverage, typecheck, extras-install). typecheck + extras-install `continue-on-error: true` (görünür ama required değil). Coverage gate %70 korundu. YAML syntax doğrulandı (`python3 -c "import yaml"`).
 - **Branch protection required list:**
   - ✅ `lint`, `test-3.11`, `test-3.12`, `test-3.13`, `coverage`
   - ⚠️ `typecheck` (mypy) — **required DEĞİL** (hâlâ `|| true` varsayımı, görünür olsun ama blocker olmasın — CNS-006 Q4)
@@ -197,10 +198,11 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
 - **Risk:** Job ayrımı test süresini uzatır (paralel çalışır ama setup overhead). → Ölçümle kabul et, gerekirse geri döndür.
 - **Rollback:** `git revert` ile eski `test.yml`'e dön.
 
-#### P6 — Tag Protection (opsiyonel ama önerilir)
+#### P6 — Tag Protection ✅ TAMAMLANDI (2026-04-14)
 - **Süre:** 3 dk
 - **Sorumlu:** Claude
 - **Açıklama:** `v*` pattern için tag silme/force-update yasağı (Codex Q7 orta-yüksek öncelik).
+- **Uygulanan:** Ruleset 15043973 (`gh api POST rulesets`) — `refs/tags/v*` için `deletion`, `non_fast_forward`, `update` rules, `bypass_actors: []`, `current_user_can_bypass: never`. Supply chain güvenliği aktif.
 - **Kabul kriteri:** `gh api repos/Halildeu/ao-kernel/tags/protection` → `v*` rule görünür.
 - **Risk:** Yanlış tag atılırsa silmek zor. → Çözüm: tag atmadan önce `git tag --verify` disiplini.
 
