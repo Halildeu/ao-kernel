@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ao:policy-context-memory-tiers:v1",
   "title": "Context Memory Tiers Policy",
-  "description": "Policy for HOT/WARM/COLD rule tier classification and autonomous evolution thresholds.",
+  "description": "Policy for HOT/WARM/COLD rule tier classification, autonomous evolution thresholds, and semantic retrieval backend configuration.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "tiers", "auto_evolution"],
@@ -28,6 +28,25 @@
         "auto_apply_with_rollback_threshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "manual_review_below": { "type": "number", "minimum": 0, "maximum": 1 },
         "dead_session_threshold": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "semantic_retrieval": {
+      "type": "object",
+      "description": "Semantic retrieval feature gate. Backend instance is resolved via env/constructor; this policy controls enablement and fail-closed behavior.",
+      "additionalProperties": false,
+      "required": ["enabled", "backend"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "strict", "fail_action"],
+          "properties": {
+            "type": { "type": "string", "enum": ["inmemory", "pgvector", "disabled"] },
+            "strict": { "type": "boolean" },
+            "fail_action": { "type": "string", "enum": ["raise", "warn_fallback"] }
+          }
+        }
       }
     }
   }
