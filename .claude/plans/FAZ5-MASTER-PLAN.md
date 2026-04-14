@@ -213,9 +213,24 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
 - **Ek:** `.gitignore`'a `/*.patch` ekle (yeni backup'lar köke düşmesin).
 - **Uygulanan:** 20 dosya `git mv` ile taşındı (rename olarak tracked), `.gitignore`'a `/*.patch` eklendi (yalnızca root), `.archive/patches/README.md` yazıldı.
 
-### 6.2 Tranş A — Hijyen & Honesty (v2.2.0 hedef)
+### 6.2 Tranş A — Hijyen & Honesty (v2.2.0 hedef) ✅ TAMAMLANDI (PR #57 @ 23b4302)
 
 Preflight bittikten sonra başlar. Her adım ayrı commit, bir PR içinde toplanır.
+
+**Tranş A commit zinciri:**
+- `a761956` A8 — release(v2.2.0): CHANGELOG + version bump + memory
+- `95f2074` A7 — fix(registry): downgrade unbacked capability flags + guard test
+- `242378e` A6 — feat(examples): add hello-llm quickstart
+- `f98be5c` A5 — docs(security): add SECURITY.md
+- `3640cf8` A4 — docs(readme): add SDK vs MCP capability matrix
+- `f43d5cc` A3 — fix(client): replace silent except-pass with structured warnings
+- `3207541` A2 — chore(release): bump PyPI classifier Alpha → Beta
+- `cafecf8` docs(plan): mark G1 + Tranş A kickoff
+
+**Release artifact'ları:**
+- PyPI: https://pypi.org/project/ao-kernel/2.2.0/ ✅
+- GitHub release: https://github.com/Halildeu/ao-kernel/releases/tag/v2.2.0 ✅
+- Main HEAD: `23b4302`
 
 #### A1 — `.patch` Arşivleme
 - P7 ile birleştirildi (yukarıda). İşaretleme: ✅ (Preflight'a taşındı).
@@ -604,7 +619,7 @@ Eğer preflight sonrası kritik bug bulunursa:
 |---|---|---|---|
 | G0 | Halil | Bu plan dosyası | Preflight P1'e başla |
 | G1 | Halil | Preflight sonu (P7 bitti) ✅ 2026-04-14 merge d9e86be | Tranş A başla |
-| G2 | Halil + Codex (CNS-opsiyonel) | Tranş A PR hazır | Merge + v2.2.0 tag |
+| G2 | Halil + Codex (CNS-opsiyonel) | Tranş A PR hazır ✅ 2026-04-14 merge 23b4302 → v2.2.0 tag → PyPI | Merge + v2.2.0 tag |
 | G3 | Halil | v2.2.0 release sonrası | Tranş B başla |
 | G4 | Codex (CNS-007) | B1 tasarımı | B1 implementasyonu |
 | G5 | Codex (CNS-008) | B3 tasarımı | B3 implementasyonu |
@@ -669,6 +684,7 @@ Bu plan değişirse:
 |---|---|---|---|
 | 2026-04-14 | v1.0 | İlk taslak oluşturuldu | CNS-005 + CNS-006 sonuçları |
 | 2026-04-14 | v1.1 | Preflight tamamlandı ve v2.2.0-track açıldı. Yol üstünde kazanıldı: mypy 131→0, typecheck gerçek gate, client.save_checkpoint/resume_checkpoint real-bug fix, 18 dead __init__.py sildi. G1 merged @ d9e86be. | PR #56 merge |
+| 2026-04-14 | v1.2 | Tranş A (A2-A8) tamamlandı. G2 merged @ 23b4302. v2.2.0 tag push → publish.yml OIDC → PyPI yayında (Development Status :: 4 - Beta). 758 test, mypy strict 0, 6 required CI check. GitHub release oluşturuldu. Sıradaki: Tranş B. | PR #57 merge + v2.2.0 release |
 
 ---
 
