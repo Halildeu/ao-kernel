@@ -8,6 +8,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- Faz 4: Semantic retrieval feature flag (default OFF, `AO_SEMANTIC_SEARCH=1` env var)
+- Faz 4: Secrets provider factory + HashiCorp Vault provider (KV v2 HTTP)
+- Faz 4: Extension loader + runtime registry (18 bundled manifests)
+- Faz 4: Vector store abstraction (InMemoryVectorStore + PgvectorBackend)
+- Faz 4: Roadmap checkpoint/resume (SHA256 integrity, JSONL step audit)
 - Faz 3: SecretsProvider ABC enforcement, MCP HTTP transport tests, memory distiller edge case tests
 - Faz 2: Tool use graduation (build_tools_param integration, registry supported), evidence writer client integration, compaction edge case tests
 
