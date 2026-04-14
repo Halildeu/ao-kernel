@@ -100,7 +100,6 @@ exclude = ["^\\.archive/"]
 [[tool.mypy.overrides]]
 module = [
     "ao_kernel._internal.utils.*",
-    "ao_kernel._internal.evidence.*",
     "ao_kernel._internal.session.*",
     "ao_kernel._internal.orchestrator.*",
     "ao_kernel._internal.prj_kernel_api.*",

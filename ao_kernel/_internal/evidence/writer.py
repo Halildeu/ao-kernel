@@ -109,16 +109,16 @@ class EvidenceWriter:
     def run_dir(self) -> Path:
         return self.out_dir / self.run_id
 
-    def write_request(self, envelope: dict) -> None:
+    def write_request(self, envelope: dict[str, Any]) -> None:
         save_json(self.run_dir / "request.json", envelope)
 
-    def write_summary(self, summary: dict) -> None:
+    def write_summary(self, summary: dict[str, Any]) -> None:
         save_json(self.run_dir / "summary.json", summary)
 
     def write_closeout(self, closeout: dict[str, Any]) -> None:
         save_json(self.run_dir / "closeout.v1.json", closeout)
 
-    def write_suspend(self, suspend: dict) -> None:
+    def write_suspend(self, suspend: dict[str, Any]) -> None:
         save_json(self.run_dir / "suspend.json", suspend)
 
     def write_resume_log(self, text: str) -> None:
