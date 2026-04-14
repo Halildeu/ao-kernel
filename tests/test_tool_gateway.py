@@ -148,17 +148,18 @@ class TestToolGatewayRegistry:
 
 
 class TestMcpToolGatewayIntegration:
-    def test_create_tool_gateway_has_5_tools(self):
+    def test_create_tool_gateway_has_6_tools(self):
         from ao_kernel.mcp_server import create_tool_gateway
         gw = create_tool_gateway()
         tools = gw.list_tools()
-        assert len(tools) == 5
+        assert len(tools) == 6
         names = {t["name"] for t in tools}
         assert "ao_policy_check" in names
         assert "ao_llm_route" in names
         assert "ao_llm_call" in names
         assert "ao_quality_gate" in names
         assert "ao_workspace_status" in names
+        assert "ao_memory_read" in names
 
     def test_gateway_dispatch_policy_check(self):
         from ao_kernel.mcp_server import create_tool_gateway

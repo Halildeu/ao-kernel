@@ -1,0 +1,78 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-011",
+  "status": "ANSWERED",
+  "iteration": 3,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "AGREE",
+  "rationale": "Repo doğrulaması plan v3'ün önceki iki blocker'ı kapattığını gösteriyor. `workspace.py::project_root()` override'ı bilinçli olarak gevşek kaldığı için MCP memory tarafında ayrı ve daha sıkı resolver gerekir; önerilen `key-absent only` fallback semantiği explicit bozuk `workspace_root` değerlerinin CWD workspace'ine kaymasını engeller. `mcp_server.py::call_tool()` bugün sonucu doğrudan `extract_from_tool_result()` ile promote ediyor ve aynı extractor `llm.py` akışında da kullanılıyor; bu yüzden shared extractor'a dokunmadan `ao_memory_read` için lokal skip en düşük riskli ve doğru çözüm. Ayrıca `decision_extractor.py` yalnız top-level scalar alanları topladığı için `data.count` zaten promote edilmez. Yeni blocker görmüyorum. Kalan konular implementasyon hijyeni: strict resolver'ı memory-path ile sınırlı tutmak, 5→6 tool ve MCP evidence dokümantasyon/test yüzeylerini aynı batchte eşitlemek, schema ref'ini repo konvansiyonuna uygun relative path ile yazmak. Bu seviyede plan v3 implementation-ready.",
+  "blocking_objections": [],
+  "warning_objections": [
+    {
+      "id": "W1",
+      "title": "Strict resolver kapsamı memory tool yollarıyla sınırlı tutulmalı",
+      "evidence": "ao_kernel/mcp_server.py:225-237; ao_kernel/workspace.py:27-56",
+      "recommendation": "`_resolve_workspace_for_call()` public `workspace.py` kontratına taşınmamalı ve mevcut tool'lara kör uygulanmamalı. Memory read/write handler'ı ile onun evidence/promote path'inde ortaklaştır; diğer tool'ların `workspace_root` semantiği ayrı audit edilirse genişlet."
+    },
+    {
+      "id": "W2",
+      "title": "C6a ile tool sayısı ve MCP evidence anlatımı birkaç yüzeyde aynı anda eskir",
+      "evidence": "README.md:126-150,211; CLAUDE.md:55; ao_kernel/mcp_server.py:6,576; tests/test_mcp_server.py:524",
+      "recommendation": "Aynı batchte 5→6 tool metinlerini, README MCP evidence matrisini ve testteki hard-coded tool count'u güncelle. Bu release blocker değil ama drift bırakılmamalı."
+    }
+  ],
+  "accepted_points": [
+    "B1 için `workspace_root` yalnız anahtar yoksa fallback'e düşsün; anahtar var ama değer bozuksa `None` dönüp deny üretilsin yaklaşımı doğru.",
+    "B2 için shared `decision_extractor.py` dokunulmadan `mcp_server.call_tool()` içinde lokal `_IMPLICIT_PROMOTE_SKIP = {\"ao_memory_read\"}` kullanmak doğru ve regresyon riskini kaldırıyor.",
+    "`decision_extractor.py` yalnız top-level scalar alanları promote ettiği için nested `data.count` bugün zaten canonical store'a yazılmaz.",
+    "`fnmatchcase(user_pattern, allowed_pattern)` yönü doğru; bunun yaklaşık subset kontrolü olduğu notu ve simple prefix-glob tavsiyesi yeterli.",
+    "W2 scope pivotu kabul: MCP evidence için iddia `JSONL append + fsync` olarak daraltılmalı; manifest workspace artifact hattında ayrı kalmalı.",
+    "W3 için `policy-mcp-memory.schema.v1.json` adlı schema + handler içinde explicit validated-load helper doğru seçim.",
+    "`ao_kernel/mcp_server.py` şu anda 756 satır olduğu için `_internal/mcp/memory_tools.py` benzeri private alt modüle bölmek bütçe açısından gerekçeli.",
+    "PR-level incremental ama release-level bundle stratejisi bu aşamada semver açısından daha temiz."
+  ],
+  "answers_per_question": [
+    {
+      "q": 1,
+      "a": "Kabul. `key absent -> fallback`, `key present but invalid -> None -> deny` ayrımı B1'i kapatıyor. Görülen tek küçük not: boşluklu stringlerde istemsiz hata yaşamamak için `raw = raw.strip()` yapıp sonra `Path(raw)` kurmak faydalı olur; onun dışında `resolve(strict=False)` + `.ao` normalize + `(candidate / '.ao').is_dir()` kontrolü yeterince fail-closed."
+    },
+    {
+      "q": 2,
+      "a": "C6a için evet, yalnız `ao_memory_read` skip edilmesi yeterli. `ao_policy_check` veya diğer mevcut tool'ları şimdi denylist'e almak daha geniş davranış değişikliği olur; repoda `extract_from_tool_result()`ın envelope scalar'larını yakalaması bilinçli ve `llm.py` ile paylaşılıyor. Yani shared davranışı C6a'da genişletmeyin. İsterseniz C6b sonrasında `ao_memory_write` dahil daha genel bir noise/allowlist kararı ayrıca ele alınabilir, ama bu PR'ın blocker'ı değil."
+    },
+    {
+      "q": 3,
+      "a": "W2 batch kabul. Manifest iddiası için çekirdek yüzeyler gerçekten `CLAUDE.md`, `ao_kernel/_internal/evidence/mcp_event_log.py` ve handoff debt tablosu. Bunun yanında repo genelinde ayrıca güncellenmesi gereken non-blocking yüzeyler var: `README.md` içindeki MCP tool listesi ve `Evidence trail (JSONL)` matrisi, `mcp_server.py` docstring/comment içindeki `5 tools` ifadeleri ve `tests/test_mcp_server.py` içindeki `len(TOOL_DEFINITIONS) == 5` assert'i."
+    },
+    {
+      "q": 4,
+      "a": "Schema adı doğru: `policy-mcp-memory.schema.v1.json`. Policy dosyasındaki ref için repo konvansiyonu relative path; en doğru biçim `\"$schema\": \"../schemas/policy-mcp-memory.schema.v1.json\"`. Bare filename uygun değil, `https://...` veya `file://...` da repo pratiğiyle uyumlu değil. Schema dosyasının kendi içinde de `\"$id\": \"urn:ao:policy-mcp-memory:v1\"` benzeri bir kimlik vermek iyi olur."
+    },
+    {
+      "q": 5,
+      "a": "Evet, `_internal/mcp/memory_tools.py` yaklaşımını kabul ediyorum. `mcp_server.py` zaten 756 LOC; C6a+C6b bunu belirgin biçimde bütçe dışına iter. Resolver'ı `workspace.py`a public taşımak layering'i karıştırır çünkü `project_root()` override kontratı bilinçli olarak permissive, memory resolver ise request-param doğrulayan strict bir helper olmak zorunda. Doğru sınır private/internal modül."
+    },
+    {
+      "q": 6,
+      "a": "Evet, PR-level incremental + bundle release yaklaşımını artık daha doğru buluyorum. Önceki iterasyondaki incremental release önerim güvenlik/scope açısından makuldü, ama mevcut durumda `Tranş C = v3.0.0` anlatısını korumak ve kullanıcıya 'read-only major, write-only minor' gibi karışık bir semver sinyali göndermemek daha iyi. Varsayılan plan bundle release olmalı; yalnız C6b ciddi gecikirse C6a tek başına tag hâlâ mümkündür."
+    },
+    {
+      "q": 7,
+      "a": "Evet, `read_with_revision` v3.0.0 dışında kalmalı. Mevcut `read_with_revision()` akışı `get_revision()` ve `query()`yi ayrı çağrılarla yapıyor; atomic snapshot garantisi vermiyor, yalnız advisory token döndürüyor. Bu yüzden C6a için `query_memory()` ile kalmak doğru. Revision yüzeyi ya açıkça advisory diye belgelensin ya da daha sonra locked snapshot tasarımıyla gelsin."
+    },
+    {
+      "q": 8,
+      "a": "Evet, plan v3 ile `final_plan_ready_for_impl: true` kilidi açılıyor. Kod yazmadan önce çözülmesi gereken yeni blocker görmüyorum. Kalanlar implementation hygiene: strict resolver'ı memory path'inde tutmak, relative `$schema` ref'i kullanmak, tool-count/evidence doküman-test eşitlemesini aynı batchte yapmak. Bunlar tasarım kilidi değil."
+    }
+  ],
+  "ready_for_impl": true,
+  "additional_recommendations": [
+    "`_resolve_workspace_for_call()` içinde `raw.strip()` ile normalize edip sonra `Path(raw)` kur; gereksiz whitespace footgun'ını kapatır.",
+    "Yeni private paket açılacaksa `ao_kernel/_internal/mcp/__init__.py` ekleyip import sınırını net tut.",
+    "C6b handoff metnindeki `policy_mcp_tool_calling.v1.json` adını mevcut repo ailesiyle hizala; büyük olasılıkla genişletilmesi gereken dosya `policy_tool_calling.v1.json` olacak.",
+    "C6b geldiğinde `ao_memory_write` sonucunun implicit promotion'a girip girmemesi response shape üzerinden yeniden değerlendirilsin; bu C6a blocker'ı değil ama metadata gürültüsünü azaltabilir."
+  ],
+  "created_at": "2026-04-14T18:48:29+03:00",
+  "head_sha": "4e7fe34"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "../schemas/policy-mcp-memory.schema.v1.json",
+  "version": "v1",
+  "_comment": "Fail-closed by default. Workspace override required to enable. For allowed_patterns/allowed_key_prefixes prefer simple prefix-glob entries; pattern-on-pattern checks are an approximate subset only, not a proof.",
+  "read": {
+    "enabled": false,
+    "allowed_patterns": ["*"]
+  },
+  "write": {
+    "enabled": false,
+    "allowed_key_prefixes": [],
+    "max_value_bytes": 4096,
+    "allowed_source_prefixes": ["mcp:"]
+  },
+  "rate_limit": {
+    "reads_per_minute": 60,
+    "writes_per_minute": 10
+  }
+}

@@ -521,7 +521,8 @@ class TestHandleLLMCall:
     def test_tool_definitions_include_llm_call(self):
         names = [td["name"] for td in TOOL_DEFINITIONS]
         assert "ao_llm_call" in names
-        assert len(TOOL_DEFINITIONS) == 5
+        assert "ao_memory_read" in names
+        assert len(TOOL_DEFINITIONS) == 6
 
     def test_dispatch_includes_llm_call(self):
         assert "ao_llm_call" in TOOL_DISPATCH
