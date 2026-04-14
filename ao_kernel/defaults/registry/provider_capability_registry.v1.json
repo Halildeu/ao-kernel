@@ -38,14 +38,14 @@
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "unsupported",
-        "code_agentic": "experimental",
+        "code_agentic": "unsupported",
         "embedding": "unsupported",
         "structured_output": "unsupported",
         "moderation": "unsupported",
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "Raw HTTP integration via urllib. SDK entegrasyonu yok. Streaming, tool_use, continuation icin Anthropic SDK gerekli."
+      "notes": "Raw HTTP integration via urllib. SDK entegrasyonu yok. Streaming, tool_use, continuation icin Anthropic SDK gerekli. code_agentic shipped as experimental prior to v2.2.0 without provider impl — now explicitly unsupported (CNS-005 R2)."
     },
     "openai": {
       "display_name": "OpenAI",
@@ -66,14 +66,14 @@
         "batch": "supported",
         "continuation": "supported",
         "extended_thinking": "unsupported",
-        "code_agentic": "supported",
+        "code_agentic": "unsupported",
         "embedding": "supported",
         "structured_output": "unsupported",
         "moderation": "unsupported",
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "Dedicated openai_provider.py mevcut. Continuation: previous_response_id + conversation_id. Batch lane aktif."
+      "notes": "Dedicated openai_provider.py mevcut. Continuation: previous_response_id + conversation_id. Batch lane aktif. code_agentic advertised as 'supported' pre-v2.2.0 without a real agentic loop — now explicitly unsupported (CNS-005 R2)."
     },
     "google": {
       "display_name": "Google Gemini",
@@ -91,7 +91,7 @@
         "chat": "supported",
         "streaming": "supported",
         "tool_use": "unsupported",
-        "vision": "experimental",
+        "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "unsupported",
@@ -102,7 +102,7 @@
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "Raw HTTP. Vision ve image generation icin ayri model ID'ler gerekli."
+      "notes": "Raw HTTP. Vision was flagged experimental pre-v2.2.0 but no provider-side integration existed — now unsupported until Faz 5+ vision work (CNS-005 R2)."
     },
     "deepseek": {
       "display_name": "DeepSeek",
@@ -148,7 +148,7 @@
         "chat": "supported",
         "streaming": "supported",
         "tool_use": "supported",
-        "vision": "experimental",
+        "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "experimental",
@@ -159,7 +159,7 @@
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision icin qwen3-vl-* gerekli."
+      "notes": "qwen3-*-thinking modelleri extended thinking destekler. Vision (qwen3-vl-*) flagged experimental pre-v2.2.0 without provider impl — now unsupported (CNS-005 R2)."
     },
     "xai": {
       "display_name": "xAI Grok",
@@ -176,18 +176,18 @@
         "chat": "supported",
         "streaming": "supported",
         "tool_use": "supported",
-        "vision": "supported",
+        "vision": "unsupported",
         "batch": "unsupported",
         "continuation": "unsupported",
         "extended_thinking": "supported",
-        "code_agentic": "supported",
+        "code_agentic": "unsupported",
         "embedding": "unsupported",
         "structured_output": "unsupported",
         "moderation": "unsupported",
         "audio": "unsupported",
         "image_gen": "unsupported"
       },
-      "notes": "grok-code-fast-1 code agentic destekler. grok-2-vision-1212 vision destekler. OpenAI-compatible API."
+      "notes": "OpenAI-compatible API. Pre-v2.2.0 the registry flagged grok-code-fast-1 code_agentic and grok-2-vision vision as supported without a provider-side integration path — now unsupported until those lanes are wired (CNS-005 R2)."
     }
   },
   "capability_levels": {
