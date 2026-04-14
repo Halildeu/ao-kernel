@@ -1,0 +1,103 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-008",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "DISAGREE",
+  "rationale": "Ana itirazım D7 değil; D7 korunarak da gerçek aktivasyon yapılabilir. Sorun, önerinin B3’ü başka bir ölü abstraction’a çevirmesi. Master plan B3 DoD en az bir extension’ın gerçekten aktive olmasını istiyor; repo da bunu destekleyen explicit registration kalıbına zaten sahip (`ToolGateway.register_handler`, MCP `create_tool_gateway`). Mevcut loader ayrıca şema-kör ve kayıplı: manifestin owner/ui_surfaces/compat/docs_ref/ai_context_refs/content_hash gibi alanlarını taşımıyor, invalid dict’leri default’larla sessizce kabul ediyor, ve workspace kökü semantiği client ile çelişiyor. Pasif-only startup registry bu haliyle doğru discovery değil, yanlış güven duygusu üretir. Tavsiyem: D7’yi koru, ama B3’te küçük fakat gerçek bir aktivasyon yüzeyi seç; manifest discovery + explicit code-owned dispatch + workspace root normalization + schema/compat validation birlikte gelsin.",
+  "counter_arguments": [
+    {
+      "claude_claim": "Activation dispatch B3 scope’u dışında kalmalı; capability advertisement şimdilik yeter.",
+      "codex_objection": "Bu, B3’ü üretim path’ine bağlanan ama iş yapmayan ikinci bir yetim abstraction’a çevirir. Üstelik kendi master planın bunu reddediyor: B3 DoD açıkça en az bir extension’ın gerçekten aktive olmasını istiyor.",
+      "evidence": "B3 planı `Activation dispatch için yeni bir entry point tanımı` ve `En az 1 örnek extension gerçekten aktive olur` diyor (.claude/plans/FAZ5-MASTER-PLAN.md:339-344). Repo zaten explicit code-owned dispatch modeline sahip: `ToolGateway.register_handler` (ao_kernel/tool_gateway.py:61-105) ve MCP `create_tool_gateway()` içinde statik handler kaydı yapılıyor (ao_kernel/mcp_server.py:580-608).",
+      "severity": "blocking"
+    },
+    {
+      "claude_claim": "Passive registry discovery/documentation için yeterli bir ilk adım.",
+      "codex_objection": "Mevcut loader discovery için gerekli metadata’nın büyük kısmını kaybediyor; bu nedenle pasif registry bile dürüst bir registry değil. Kullanıcıya sadece action listesi verip owner, compat, manifest_path, ui_surfaces, docs_ref, ai_context_refs, policy_files, outputs gibi alanları düşürmek discovery’yi sakatlar.",
+      "evidence": "Loader yalnızca 9 alanı tutuyor ve varsayılanlarla dolduruyor (ao_kernel/extensions/loader.py:18-45). Oysa manifest şeması ve extension-registry şeması owner/ui_surfaces/compat/manifest_path/content_hash vb. alanları bekliyor (ao_kernel/defaults/schemas/extension-manifest.schema.v1.json:7-18, 59-135; ao_kernel/defaults/schemas/extension-registry.schema.v1.json:40-97).",
+      "severity": "blocking"
+    },
+    {
+      "claude_claim": "Manifest parse error -> warn + skip yeter; fail-closed gerekmez.",
+      "codex_objection": "JSON parse failure ile structural invalidity aynı şey değil. Loader bugün yalnızca JSON bozuksa skip ediyor; JSON geçerli ama şemaya aykırı dict’leri default’larla sessizce kabul ediyor. Bu, deterministik registry yerine sessiz veri bozulması üretir.",
+      "evidence": "`_parse_manifest()` eksik alanları `\"\"`, `\"UNKNOWN\"`, `{}` ve `[]` ile dolduruyor (ao_kernel/extensions/loader.py:33-45). `load_from_defaults/load_from_workspace` yalnızca `JSONDecodeError/OSError` yakalıyor; şema doğrulaması yok (ao_kernel/extensions/loader.py:70-78, 97-104).",
+      "severity": "blocking"
+    },
+    {
+      "claude_claim": "Policy gating ve compat alanları B3’te informational kalabilir.",
+      "codex_objection": "Bu alanlar zaten runtime sözleşmesinin parçası. `kernel_api_actions` policy allowlist ve request schema içinde gerçek aksiyon isimleri olarak yaşıyor; ayrıca manifest collision var. Bunları informational diye bırakmak, ‘ilan edildi ama seçilemez/çakışmalı’ durumu üretir.",
+      "evidence": "`project_status/system_status/doc_nav_check/intake_*` gibi action’lar policy allowlist’te (ao_kernel/defaults/policies/policy_kernel_api_guardrails.v1.json:14-37) ve request schema enum’unda (ao_kernel/defaults/schemas/kernel-api-request.schema.v1.json:16-39). 18 manifest envanterinde 3 duplicate `kernel_api_actions` var: `intake_create_plan`, `intake_next`, `intake_status` hem `PRJ-KERNEL-API` hem `PRJ-WORK-INTAKE` tarafından ilan ediliyor.",
+      "severity": "blocking"
+    },
+    {
+      "claude_claim": "Workspace override’ı `workspace_root` verilirse çağırmak basit bir wiring işi.",
+      "codex_objection": "Burada gizli bir path-semantic bug var. Loader `.ao/extensions` bekliyor; fakat `AoKernelClient` explicit root verildiğinde proje kökünü döndürüyor, auto-discover’da ise `.ao` dönebiliyor. Aynı API farklı path anlamları taşıyor; loader entegrasyonu override’ları sessizce kaçırabilir.",
+      "evidence": "Loader docstring’i ve implementasyonu workspace source’u `.ao/extensions` kabul ediyor (ao_kernel/extensions/loader.py:3-7, 81-87). `AoKernelClient._resolve_workspace()` explicit root için proje kökünü döndürüyor (ao_kernel/client.py:98-113). `config.workspace_root()` ise auto-discover’da `.ao` dizinini döndürüyor (ao_kernel/config.py:28-44). Testler bu tutarsızlığı kabul ediyor: `workspace_root() returns the .ao/ dir itself or its parent` (tests/test_client.py:34-42), fixture gerçek workspace’i `.ao/extensions` altında kuruyor (tests/conftest.py:29-34). MCP tarafı da bu yüzden ekstra normalize helper yazmış (ao_kernel/mcp_server.py:35-42).",
+      "severity": "blocking"
+    },
+    {
+      "claude_claim": "Library mode’da bundled manifestleri eager yüklemek zararsız; capability advertisement için iyi default.",
+      "codex_objection": "Bundled manifestlerde package içinde bulunmayan repo-path referansları var. Bunları library mode’da advertise etmek, kullanıcıya kullanamayacağı docs/tests/source path’leri sunar; discovery doğru ama yardımcı değil, hatta yanıltıcı olur.",
+      "evidence": "`PRJ-KERNEL-API` manifesti `src/prj_kernel_api/adapter.py` ve `extensions/PRJ-KERNEL-API/tests/contract_test.py` gibi referanslar taşıyor (ao_kernel/defaults/extensions/PRJ-KERNEL-API/extension.manifest.v1.json:2-33). Bu çalışma ağacında bu yollar mevcut değil (`test -e` sonucu: `MISSING src/prj_kernel_api/adapter.py`, `MISSING extensions/PRJ-KERNEL-API`).",
+      "severity": "warning"
+    }
+  ],
+  "accepted_points": [
+    "D7 korunmalı; setuptools/packaging `entry_points` tabanlı plugin discovery açılmamalı.",
+    "Registry client-scoped olmalı; global singleton doğru yön değil.",
+    "Bundled defaults + workspace override/merge semantiği, workspace opt-in-only yaklaşımdan daha doğru.",
+    "18 manifest okumanın performans maliyeti ana risk değil; asıl risk anlamsal doğruluk ve entegrasyon semantiği."
+  ],
+  "answers_per_question": [
+    {
+      "q": 1,
+      "a": "Ana itirazım passive-only tasarımın yetersiz olması. Çünkü mevcut repo düzeninde entrypoint isimleri zaten gerçek runtime sözleşmelerine bağlı: policy allowlist’lerde, request schema’larda ve explicit dispatch pattern’lerinde yaşıyorlar. Bu yüzden B3’te en az bir gerçek aktivasyon yüzeyi olmadan `client.extensions` eklemek, üretim yoluna bağlanmış ama hâlâ iş yapmayan bir envanter objesi üretir."
+    },
+    {
+      "q": 2,
+      "a": "Pasif-only kalacaksan lazy daha dürüst; constructor’a ölü iş ve olası warning eklemez. Gerçek aktivasyon ve doğru validation eklersen eager kabul edilebilir, çünkü 18 JSON parse maliyeti ihmal edilebilir. Yani burada karar perf değil semantik değer üzerinden verilmeli."
+    },
+    {
+      "q": 3,
+      "a": "Benim tercihim (b): explicit, code-owned dispatch/registration. Manifest discovery manifest-only kalır; aktivasyon ise kod içindeki statik mapping veya `register_handler` API’siyle yapılır. Manifestin kendisinin `python_module` verip import tetiklemesi, setuptools `entry_points` olmasa bile D7’nin ruhunu aşındırır; discovery’yi tekrar execution binding’e dönüştürür."
+    },
+    {
+      "q": 4,
+      "a": "B3’te tam policy enforcement şart değil, ama `policies` alanını sırf dekor olarak bırakmak yanlış. Registry sorgusu en azından `activation_requires_policy`, `policy_refs`, `compat_status`, `activation_blockers` gibi sinyalleri vermeli. Enforcement mevcut governance/tool gate yolunda kalsın; fakat registry ‘bu extension çağrılabilir mi, neden çağrılamaz?’ bilgisini taşısın."
+    },
+    {
+      "q": 5,
+      "a": "Merge + override doğru. Workspace’te manifest yoksa bundled extension aktif kalmalı; disable davranışı yalnızca explicit workspace override ile (`enabled:false`) gelmeli. Fakat bunu uygulamadan önce tek bir workspace-root sözleşmesi seçmen şart; aksi halde `.ao/extensions` ile `<project>/extensions` sessizce karışacak."
+    },
+    {
+      "q": 6,
+      "a": "B3’te MCP’ye tam wiring yapmak scope creep olabilir, ama dispatch mantığını yalnız client içine gömmek de ikinci bir dead-end yaratır. Doğru orta yol: ortak bir explicit dispatch modülü çıkar; client bunu hemen kullansın, MCP ise aynı modülü sonraki küçük wiring ile bağlasın. Böylece mapping tek kaynak olur."
+    },
+    {
+      "q": 7,
+      "a": "D7’yi revize etmene gerek yok. Manifest-only discovery + explicit `register_handler`/dispatch table yeterli. Gelecekte plugin ekosistemi isteyen kullanıcı, kendi uygulama kodunda plugin modülünü import edip handler kaydeder; kernel core packaging `entry_points` okuyup otomatik keşif yapmaz. Bu sınır D7’yi korur."
+    },
+    {
+      "q": 8,
+      "a": "Client integration test’e ek olarak şunlar gerekli: workspace-root normalization testi, schema-invalid manifest -> warning+skip testi, duplicate entrypoint determinism testi, `compat` mismatch testi ve en az bir gerçek aktivasyon E2E testi. Sadece `client.extensions.list_enabled()` testi B3 için yetersiz; çünkü asıl risk entegrasyonun işe yaramaması, parse edilmesi değil."
+    },
+    {
+      "q": 9,
+      "a": "Benchmark zorunlu görünmüyor; 18 manifest için parse maliyeti muhtemelen ms seviyesinde. Ama şema doğrulama, content-hash veya logging eklersen küçük bir micro-benchmark faydalı olabilir. Yine de cold-start’tan büyük risk constructor yan etkisi ve yanlış root semantiği."
+    },
+    {
+      "q": 10,
+      "a": "Atlanan kritikler: manifest schema validation eksikliği, `compat.core_min/core_max` filtresi yokluğu, duplicate entrypoint conflict resolution, workspace-root normalization bug’ı, lossy registry modeli ve library mode’da kırık path referansları. Bunlar çözülmeden pasif startup registry ‘harmless metadata’ değil, yanlış yönlendiren metadata olur."
+    }
+  ],
+  "next_iteration_asks": [
+    "İlk gerçek activation yüzeyini seç: `kernel_api_actions` mı, `ops` mu? Birini seçmeden B3 kapsamı muğlak kalıyor.",
+    "Tek workspace kökü sözleşmesini yazılı hale getir: loader/client/MCP proje kökü mü kullanacak, `.ao/` kökü mü? Bu normalize edilmeden override semantiği güvenilmez.",
+    "Manifest validation contractını netleştir: schema failure, compat mismatch ve duplicate entrypoint durumunda karar `skip`, `warn`, `deny`, `shadow`, `error` hangisi olacak?"
+  ],
+  "created_at": "2026-04-14T15:06:13+03:00",
+  "head_sha": "f7e6d0f"
+}
