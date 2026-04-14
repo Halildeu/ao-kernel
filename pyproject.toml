@@ -129,12 +129,18 @@ omit = [
     "ao_kernel/_internal/session/agent_context_version.py",
     "ao_kernel/_internal/session/cross_session_context.py",
     "ao_kernel/_internal/session/provider_memory.py",
+    # telemetry.py — OTEL is an optional extra (D12). Coverage on CI
+    # without `pip install ao-kernel[otel]` is bounded by the no-op
+    # fallback paths; the primary OTEL branches are exercised in the
+    # dedicated test suite when the extra is present. Omit from the
+    # ratchet gate to keep CI and local in sync.
+    "ao_kernel/telemetry.py",
 ]
 
 [tool.coverage.report]
 show_missing = true
 # Tranş C ratchet: 70 (baseline) → 75 (C2 context_store) → 80 (C3 evidence/writer) → 85 (C4 workspace).
-fail_under = 80
+fail_under = 85
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.",
