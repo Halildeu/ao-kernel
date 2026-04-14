@@ -64,15 +64,18 @@ class TestCorruption:
         with pytest.raises(WorkspaceCorruptedError):
             load_workspace_json(ws)
 
-    def test_corrupted_canonical_store_returns_empty(self, tmp_path: Path):
+    def test_corrupted_canonical_store_raises_fail_closed(self, tmp_path: Path):
+        """CNS-010 iter-2 blocking fix: canonical store corruption is now
+        fail-closed. Previous silent-empty fallback masked data loss."""
+        import pytest
         from ao_kernel.context.canonical_store import load_store
+        from ao_kernel.errors import CanonicalStoreCorruptedError
 
         (tmp_path / ".ao").mkdir()
         (tmp_path / ".ao" / "canonical_decisions.v1.json").write_text("not json!")
 
-        store = load_store(tmp_path)
-        assert store["decisions"] == {}
-        assert store["facts"] == {}
+        with pytest.raises(CanonicalStoreCorruptedError):
+            load_store(tmp_path)
 
     def test_corrupted_session_raises_fail_closed(self, tmp_path: Path):
         """Corrupted session must raise SessionCorruptedError (fail-closed)."""

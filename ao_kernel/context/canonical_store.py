@@ -22,14 +22,21 @@ temporary decisions. The promotion flow is:
 
 from __future__ import annotations
 
+import hashlib
 import json
+import warnings
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
+from ao_kernel._internal.shared.lock import file_lock, lock_supported
 from ao_kernel._internal.shared.utils import write_json_atomic
+from ao_kernel.errors import (
+    CanonicalRevisionConflict,
+    CanonicalStoreCorruptedError,
+)
 
 
 def _now_iso() -> str:
@@ -67,24 +74,201 @@ def _store_path(workspace_root: Path) -> Path:
     return workspace_root / "canonical_decisions.v1.json"
 
 
+def _lock_path(workspace_root: Path) -> Path:
+    """Sidecar lockfile path for CAS writes."""
+    return _store_path(workspace_root).with_suffix(".v1.json.lock")
+
+
+def _empty_store() -> dict[str, Any]:
+    return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+
+
+def store_revision(store: dict[str, Any]) -> str:
+    """Return the canonical revision token for a store snapshot.
+
+    Full SHA-256 hex digest of the sort-key JSON serialization. Callers
+    treat the value as opaque. Same contract as
+    :func:`ao_kernel.context.agent_coordination.get_revision`.
+    """
+    payload = json.dumps(store, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def load_store(workspace_root: Path) -> dict[str, Any]:
-    """Load canonical decision store. Returns empty store if not found."""
+    """Load canonical decision store.
+
+    Empty-store semantics:
+        - File absent -> return a fresh empty store (normal first-write path).
+        - File present but unreadable / unparseable / wrong shape -> raise
+          :class:`CanonicalStoreCorruptedError`.
+
+    CNS-20260414-010 iter-2 blocking: the previous silent-empty fallback
+    masked data loss. Callers that truly want empty-on-corruption must
+    catch the exception explicitly and decide whether to repair, archive,
+    or reset.
+    """
     path = _store_path(workspace_root)
     if not path.exists():
-        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+        return _empty_store()
     try:
-        parsed = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise CanonicalStoreCorruptedError(
+            f"Cannot read canonical store at {path}: {exc}"
+        ) from exc
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise CanonicalStoreCorruptedError(
+            f"Canonical store JSON at {path} is invalid: {exc}"
+        ) from exc
     if not isinstance(parsed, dict):
-        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+        raise CanonicalStoreCorruptedError(
+            f"Canonical store at {path} must be a JSON object, got {type(parsed).__name__}"
+        )
     return parsed
 
 
 def save_store(workspace_root: Path, store: dict[str, Any]) -> None:
-    """Save canonical decision store atomically."""
+    """Legacy save — unconditional overwrite, no CAS, no lock.
+
+    Deprecated since v3.0.0. New code should use :func:`save_store_cas`
+    or rely on the mutator helpers (``promote_decision``, ``forget``, ...)
+    which route through the locked + CAS-aware path. Scheduled for
+    removal in v4.0.0.
+    """
+    warnings.warn(
+        "save_store() is deprecated since v3.0.0; use save_store_cas() "
+        "or the canonical_store mutator helpers instead. Scheduled for "
+        "removal in v4.0.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     store["updated_at"] = _now_iso()
     write_json_atomic(_store_path(workspace_root), store)
+
+
+def save_store_cas(
+    workspace_root: Path,
+    store: dict[str, Any],
+    *,
+    expected_revision: str | None,
+    allow_overwrite: bool = False,
+) -> str:
+    """Atomically save the store under an exclusive lock with CAS check.
+
+    The write pipeline is:
+        1. Acquire the sidecar filesystem lock (:mod:`lock`).
+        2. Re-read the on-disk store INSIDE the lock.
+        3. If ``expected_revision`` is not None, compare against the freshly
+           loaded revision. Mismatch raises :class:`CanonicalRevisionConflict`
+           unless ``allow_overwrite=True``.
+        4. Stamp ``updated_at`` and write atomically via ``write_json_atomic``.
+        5. Return the post-write revision token.
+
+    Args:
+        workspace_root: Project root containing ``.ao/``.
+        store: The full store dict to persist.
+        expected_revision: Revision the caller believes the store is at.
+            ``None`` skips the CAS check; the caller must still pass
+            ``allow_overwrite=True`` for a no-expectation write.
+        allow_overwrite: Bypass both the CAS and the None-revision check.
+            Used by the deprecated ``save_store`` shim and internal
+            bootstrap paths only.
+
+    Returns:
+        The SHA-256 revision token of the newly written store.
+
+    Raises:
+        CanonicalRevisionConflict: Fresh revision differs from
+            ``expected_revision`` and ``allow_overwrite`` is False.
+        LockPlatformNotSupported: On Windows (until Tranche D).
+        LockTimeoutError: Lock acquisition timed out.
+    """
+    path = _store_path(workspace_root)
+    lockfile = _lock_path(workspace_root)
+
+    # Windows still lands on the existing (non-locked) path until Tranche D;
+    # raising here instead of falling back avoids a silent downgrade.
+    if not lock_supported():
+        from ao_kernel._internal.shared.lock import LockPlatformNotSupported
+        raise LockPlatformNotSupported(
+            "save_store_cas requires POSIX fcntl locking; Windows support "
+            "is tracked in Tranche D (v3.1.0)."
+        )
+
+    with file_lock(lockfile):
+        current = _load_store_locked(workspace_root)
+        current_rev = store_revision(current)
+        if not allow_overwrite and expected_revision is not None:
+            if current_rev != expected_revision:
+                raise CanonicalRevisionConflict(
+                    f"Revision mismatch: expected {expected_revision}, "
+                    f"store is at {current_rev}"
+                )
+        store["updated_at"] = _now_iso()
+        write_json_atomic(path, store)
+        return store_revision(store)
+
+
+def _load_store_locked(workspace_root: Path) -> dict[str, Any]:
+    """Load the store while the caller already holds the lock.
+
+    Missing file -> empty store (first write), corruption propagates.
+    Split from ``load_store`` so the public helper does not re-enter the
+    lock on every read.
+    """
+    path = _store_path(workspace_root)
+    if not path.exists():
+        return _empty_store()
+    try:
+        parsed = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise CanonicalStoreCorruptedError(
+            f"Canonical store JSON at {path} is invalid: {exc}"
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise CanonicalStoreCorruptedError(
+            f"Canonical store at {path} must be a JSON object"
+        )
+    return parsed
+
+
+def _mutate_with_cas(
+    workspace_root: Path,
+    mutator: Callable[[dict[str, Any]], None],
+    *,
+    expected_revision: str | None,
+    allow_overwrite: bool,
+) -> str:
+    """Lock + read-modify-write helper used by every canonical mutator.
+
+    ``mutator`` receives the current store and mutates it in place. The
+    helper handles revision comparison, stamping, atomic write, and
+    returning the new revision.
+    """
+    lockfile = _lock_path(workspace_root)
+
+    if not lock_supported():
+        from ao_kernel._internal.shared.lock import LockPlatformNotSupported
+        raise LockPlatformNotSupported(
+            "canonical mutators require POSIX fcntl locking; "
+            "Windows support is tracked in Tranche D (v3.1.0)."
+        )
+
+    with file_lock(lockfile):
+        current = _load_store_locked(workspace_root)
+        current_rev = store_revision(current)
+        if not allow_overwrite and expected_revision is not None:
+            if current_rev != expected_revision:
+                raise CanonicalRevisionConflict(
+                    f"Revision mismatch: expected {expected_revision}, "
+                    f"store is at {current_rev}"
+                )
+        mutator(current)
+        current["updated_at"] = _now_iso()
+        write_json_atomic(_store_path(workspace_root), current)
+        return store_revision(current)
 
 
 def promote_decision(
@@ -103,6 +287,8 @@ def promote_decision(
     provenance: dict[str, Any] | None = None,
     vector_store: Any | None = None,
     embedding_config: Any | None = None,
+    expected_revision: str | None = None,
+    allow_overwrite: bool = True,
 ) -> CanonicalDecision:
     """Promote an ephemeral decision to canonical store.
 
@@ -111,10 +297,18 @@ def promote_decision(
     When ``vector_store`` is provided, the promoted decision is also
     embedded and indexed for semantic retrieval. Write-path failures
     are silently logged (never block promotion).
-    """
-    store = load_store(workspace_root)
-    now = _now_iso()
 
+    CAS parameters (CNS-20260414-010 iter-3 migration stage A):
+        expected_revision: Opt-in revision guard. When supplied together
+            with ``allow_overwrite=False``, a concurrent writer that
+            moved the store past this revision will cause the call to
+            raise :class:`CanonicalRevisionConflict`. ``None`` + the
+            default ``allow_overwrite=True`` preserves the v2.x behavior.
+        allow_overwrite: Default ``True`` for backward compatibility.
+            v4.0.0 will flip this to ``False`` and require callers to
+            opt in to overwriting stale revisions.
+    """
+    now = _now_iso()
     decision = CanonicalDecision(
         key=key,
         value=value,
@@ -129,12 +323,17 @@ def promote_decision(
         supersedes=supersedes,
         provenance=provenance or {},
     )
-
-    # Separate decisions from facts
     target = "facts" if category == "fact" else "decisions"
-    store.setdefault(target, {})[key] = asdict(decision)
 
-    save_store(workspace_root, store)
+    def _apply(store: dict[str, Any]) -> None:
+        store.setdefault(target, {})[key] = asdict(decision)
+
+    _mutate_with_cas(
+        workspace_root,
+        _apply,
+        expected_revision=expected_revision,
+        allow_overwrite=allow_overwrite,
+    )
 
     try:
         from ao_kernel.telemetry import record_canonical_promote
@@ -240,6 +439,8 @@ __all__ = [
     "CanonicalDecision",
     "load_store",
     "save_store",
+    "save_store_cas",
+    "store_revision",
     "promote_decision",
     "promote_from_ephemeral",
     "query",
