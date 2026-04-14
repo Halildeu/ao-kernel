@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# ao-kernel pre-push hook
+# Guards: (a) direct push to main (second defense after GitHub protection),
+#         (b) WIP / fixup! / squash! commits
+# Bypass: `git push --no-verify` (strongly discouraged for main)
+
+set -e
+
+red() { printf '\033[31m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+
+remote="$1"
+url="$2"
+FAIL=0
+
+# stdin format: <local_ref> <local_sha> <remote_ref> <remote_sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -z "$local_ref" ] && continue
+    # zero-sha means branch deletion — ignore here
+    [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+
+    # ---- Guard 1: direct push to main ----
+    case "$remote_ref" in
+        refs/heads/main|refs/heads/master)
+            red "✗ Direct push to $remote_ref blocked."
+            red "  Open a pull request instead (branch protection would also reject this)."
+            FAIL=1
+            continue
+            ;;
+    esac
+
+    # ---- Guard 2: WIP / fixup / squash commits ----
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # New branch — scan all local commits reachable from local_sha not on remote
+        range="$local_sha"
+        commits=$(git rev-list --no-merges "$range" 2>/dev/null | head -200)
+    else
+        range="${remote_sha}..${local_sha}"
+        commits=$(git rev-list --no-merges "$range" 2>/dev/null)
+    fi
+
+    suspicious=""
+    for c in $commits; do
+        msg=$(git log -1 --format=%s "$c" 2>/dev/null || echo "")
+        case "$msg" in
+            WIP*|wip*|'fixup!'*|'squash!'*)
+                suspicious="$suspicious\n  $(git log -1 --format='%h %s' "$c")"
+                ;;
+        esac
+    done
+    if [ -n "$suspicious" ]; then
+        yellow "⚠ Suspicious commit message(s) in this push:"
+        printf "$suspicious\n"
+        yellow "  Consider rebase -i to clean up before pushing. If intentional, use --no-verify."
+        # Warn only — do not fail
+    fi
+done
+
+if [ "$FAIL" -eq 0 ]; then
+    green "✓ pre-push: OK"
+    exit 0
+else
+    exit 1
+fi
