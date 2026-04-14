@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -44,25 +45,64 @@ def write_json_atomic(path: Path, data: Any, *, indent: int = 2) -> None:
 
 
 def write_text_atomic(path: Path, content: str) -> None:
-    """Write *content* to *path* atomically via tmp-file + fsync + rename."""
+    """Write *content* to *path* atomically via unique tmp-file + fsync + rename.
+
+    Uses ``tempfile.mkstemp`` so each writer gets a process-unique tmp name
+    (``<stem>.<pid>.<random>.tmp``) inside the target directory. Prevents
+    the concurrent-writer collision that a fixed ``.tmp`` suffix would
+    allow — CNS-20260414-010 iter-1 blocking-1.
+
+    The fsync + rename semantics are unchanged: ``os.replace`` is atomic on
+    POSIX within the same filesystem, so readers never observe a partial
+    write.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
-        f.write(content)
-        f.flush()
-        os.fsync(f.fileno())
-    tmp.replace(path)
+    tmp_fd, tmp_name = tempfile.mkstemp(
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=str(path.parent),
+    )
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        # Best-effort cleanup; rename failed so the tmp file is still ours.
+        try:
+            tmp.unlink()
+        except FileNotFoundError:
+            pass
+        raise
 
 
 def write_bytes_atomic(path: Path, data: bytes) -> None:
-    """Write *data* bytes to *path* atomically via tmp-file + fsync + rename."""
+    """Write *data* bytes to *path* atomically via unique tmp-file + fsync + rename.
+
+    See :func:`write_text_atomic` for the concurrency rationale; identical
+    mechanism, bytes mode.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("wb") as f:
-        f.write(data)
-        f.flush()
-        os.fsync(f.fileno())
-    tmp.replace(path)
+    tmp_fd, tmp_name = tempfile.mkstemp(
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=str(path.parent),
+    )
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(tmp_fd, "wb") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            tmp.unlink()
+        except FileNotFoundError:
+            pass
+        raise
 
 
 # ── Time ──────────────────────────────────────────────────────────────

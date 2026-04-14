@@ -31,10 +31,18 @@ class TestStoreLifecycle:
         assert loaded["decisions"]["test.key"]["value"] == "hello"
         assert "updated_at" in loaded
 
-    def test_corrupted_file_returns_empty(self, tmp_path: Path):
+    def test_corrupted_file_raises(self, tmp_path: Path):
+        """CNS-010 iter-2 blocking fix: silent-empty fallback removed.
+
+        A corrupted store is a data-loss hazard, not a normal path. Callers
+        that want to recover catch CanonicalStoreCorruptedError explicitly
+        and invoke a repair workflow.
+        """
+        import pytest
+        from ao_kernel.errors import CanonicalStoreCorruptedError
         (tmp_path / "canonical_decisions.v1.json").write_text("{{invalid")
-        store = load_store(tmp_path)
-        assert store["decisions"] == {}
+        with pytest.raises(CanonicalStoreCorruptedError):
+            load_store(tmp_path)
 
 
 class TestPromoteDecision:
