@@ -1,0 +1,111 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-012",
+  "status": "ANSWERED",
+  "iteration": 2,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "AGREE",
+  "rationale": "Repo yeniden tarandı; requestteki 11 `context_refs` yolunun tamamı mevcut. C6a’dan kalan resolver/policy-loader deseni zaten `ao_kernel/_internal/mcp/memory_tools.py` içinde kurulmuş durumda ve plan v2 bunu doğal biçimde genişletiyor. `decision_extractor` hâlâ yalnız top-level scalar alanları promote ediyor; dolayısıyla `ao_memory_write` için skip gerçekten gerekli ve gerekçesi de artık doğru ifade edilmiş. `promote_decision` default confidence/overwrite semantiği 0.8/True olduğundan planın 0.8 hizası ve explicit write çağrısı repo ile tutarlı. En kritik önceki blocker da kapanıyor: workspace override’ı gerçekten okuyabilen tek yol `load_with_override(...)`, önerilen `_load_tool_calling_policy_validated(ws)` helper’ı bunu `.ao` bridge ile doğru yere koyuyor. Yeni blocker görmedim; plan implementation-ready. İki düşük seviye uyarı kaldı: evidence testi yalnız kayıt mevcudiyetine değil `allowed`/`decision` alanlarına da bakmalı; ayrıca aynı `policy_tool_calling.v1.json` ailesi gateway tarafında bundled-only, implicit promote tarafında workspace-aware okunacaksa bu ayrım yorum/docstring ile açıklaştırılmalı. Not: request `c3fedd1` diyor, aktif HEAD `3473ed1`; scoped referanslarda material drift sinyali çıkmadı.",
+  "blocking_objections": [],
+  "warning_objections": [
+    {
+      "id": "W1",
+      "title": "Evidence JSONL testi sadece kayıt mevcudiyetine bakarsa zayıf kalır",
+      "evidence": [
+        "`record_mcp_event()` event içine `tool`, `allowed`, `decision` alanlarını zaten yazıyor (`ao_kernel/_internal/evidence/mcp_event_log.py:148-158`).",
+        "Mevcut read testi yalnız `tool == ao_memory_read` mevcudiyetini assert ediyor (`tests/test_mcp_memory_read.py:212-225`)."
+      ],
+      "impact": "Yanlış workspace’e yazılmış veya deny/event karışmış bir kayıt presence-check ile kaçabilir. `allowed=True` ve `decision='executed'` assert’i testi daha anlamlı yapar."
+    },
+    {
+      "id": "W2",
+      "title": "`policy_tool_calling` ailesi iki farklı yükleme semantiğiyle kullanılacak; bu ayrım açık dokümante edilmeli",
+      "evidence": [
+        "Gateway bugün bundled-only load yapıyor: `load_default(... policy_tool_calling.v1.json)` (`ao_kernel/mcp_server.py:606-612`).",
+        "`ToolCallPolicy.from_dict()` yalnız birkaç alanı tüketiyor; ekstra alanlar parser'ı bozmaz (`ao_kernel/tool_gateway.py:41-47`).",
+        "Önerilen helper ise workspace-aware `load_with_override(...)` kullanacak; mevcut memory policy loader deseni bu (`ao_kernel/_internal/mcp/memory_tools.py:125-147`, `ao_kernel/config.py:111-130`)."
+      ],
+      "impact": "Operatör aynı JSON dosyasının tüm MCP davranışını workspace override ile yönettiğini sanabilir. Bu C6b için blocker değil, ama yorum/docstring ile sınır netleştirilmeli."
+    }
+  ],
+  "accepted_points": [
+    "`_load_tool_calling_policy_validated(ws)` helper’ını `ao_kernel/_internal/mcp/memory_tools.py` içine koymak doğru; mevcut private MCP helper modülü zaten resolver, rate limit ve validated policy loader barındırıyor (`ao_kernel/_internal/mcp/memory_tools.py:1-23`, `125-147`).",
+    "`ao_memory_write` için `_IMPLICIT_PROMOTE_SKIP` genişletmesi gerekli; çünkü extractor top-level scalar envelope alanlarını promote ediyor (`ao_kernel/context/decision_extractor.py:92-100`), gerçek gürültü nested `data.*` değil `api_version/tool/allowed/decision` metadata’sı.",
+    "Server-side confidence’ı 0.8’e çekmek repo default’u ile hizalı; hem `CanonicalDecision.confidence` hem `promote_decision(... confidence=...)` default’u 0.8 (`ao_kernel/context/canonical_store.py:56-58`, `280-291`).",
+    "`implicit_canonical_promote` alanını `policy_tool_calling.v1.json` ailesinde tutmak doğru; bu davranış memory policy’ye özgü değil, genel MCP tool-result -> canonical promote hattının davranışı.",
+    "Test matrisi 14’e çıkınca önceki boşluklar kapanıyor: absent/invalid workspace deny, evidence JSONL, non-serializable value ve canonical store üzerinden skip doğrulaması artık kapsanmış olacak.",
+    "`context_refs` doğrulandı; requestte listelenen tüm yollar repo içinde mevcut."
+  ],
+  "answers_per_question": [
+    {
+      "question": 1,
+      "answer": "Evet, `_load_tool_calling_policy_validated(ws)` helper’ını `ao_kernel/_internal/mcp/memory_tools.py` içine koymak doğru seçim.",
+      "because": "Bu modül zaten memory tool’ların strict workspace resolver’ını, rate-limit registry’sini ve validated memory policy loader’ını taşıyor. Aynı private MCP helper yüzeyine ikinci policy loader’ı eklemek C6a pattern’iyle tutarlı; ayrı `tool_calling_policy.py` şu aşamada premature split olur.",
+      "evidence": [
+        "`ao_kernel/_internal/mcp/memory_tools.py:1-23`",
+        "`ao_kernel/_internal/mcp/memory_tools.py:51-89`",
+        "`ao_kernel/_internal/mcp/memory_tools.py:125-147`"
+      ]
+    },
+    {
+      "question": 2,
+      "answer": "Evet, implicit promote için fail-open ayrımı kabul edilebilir; ready-for-impl kararını bozacak bir blocker görmüyorum.",
+      "because": "Bu path ana MCP response değil, side-channel canonical wiring. Bugün zaten `call_tool()` içindeki tüm context wiring bloğu geniş `try/except` ile fail-open çalışıyor. Helper load/validation hatasında default davranışa dönmek, tool response’u bozup deny üretmekten daha tutarlı. Yalnız bu fail-open kararının sadece policy load/validate/coercion kısmıyla sınırlı olduğu yorumda açık yazılmalı.",
+      "evidence": [
+        "`ao_kernel/mcp_server.py:693-718`",
+        "`ao_kernel/mcp_server.py:606-614`"
+      ]
+    },
+    {
+      "question": 3,
+      "answer": "`implicit_canonical_promote` optional olmalı; required yapmak yanlış olur.",
+      "because": "`load_with_override()` deep-merge yapmıyor; override dosyası varsa onu bütün olarak döndürüyor. Bu yüzden legacy workspace override’larında yeni alanı zorunlu kılmak gereksiz kırıcı olur. Optional object + runtime defaults tam doğru yaklaşım.",
+      "evidence": [
+        "`ao_kernel/config.py:111-130`",
+        "`ao_kernel/defaults/policies/policy_tool_calling.v1.json:1-17`",
+        "`ao_kernel/defaults/schemas/policy-tool-calling.schema.v1.json:1-70`"
+      ]
+    },
+    {
+      "question": 4,
+      "answer": "Evet, bundled `policy_tool_calling.v1.json` içine `implicit_canonical_promote` bloğunu ekleyin; kod default’unu da legacy override’lar için koruyun.",
+      "because": "Davranışın yalnız kodda saklı kalması debug ve operatör görünürlüğünü zayıflatır. Bundled default’a bloğu koymak niyeti görünür kılar. Parser tarafında bu yeni blok güvenli; `ToolCallPolicy.from_dict()` yalnız `enabled`, `max_tool_rounds`, `allow_unknown` alanlarını tüketiyor.",
+      "evidence": [
+        "`ao_kernel/defaults/policies/policy_tool_calling.v1.json:1-17`",
+        "`ao_kernel/mcp_server.py:606-612`",
+        "`ao_kernel/tool_gateway.py:41-47`"
+      ]
+    },
+    {
+      "question": 5,
+      "answer": "Sadece mevcudiyet yeterli değil; `tool == 'ao_memory_write'`, `allowed is True` ve `decision == 'executed'` de assert edilmeli.",
+      "because": "Evidence event formatı bu alanları zaten taşıyor. Presence-only assertion yanlış event’i veya deny kaydını da yanlışlıkla kabul edebilir. Daha ileri gitmeye gerek yok; `params_shape` ya da `data_shape` assert’i bu test için şart değil.",
+      "evidence": [
+        "`ao_kernel/_internal/evidence/mcp_event_log.py:148-162`",
+        "`tests/test_mcp_memory_read.py:212-225`"
+      ]
+    },
+    {
+      "question": 6,
+      "answer": "Evet, plan v2 ile `ready_for_impl=true` diyebiliyorum; yeni blocker bulmadım.",
+      "because": "B1 gerçekten kapanıyor çünkü önerilen helper workspace override-aware tek doğru loader’ı kullanıyor. Skip gerekçesi repo gerçekliğiyle hizalı, confidence 0.8 canonical default’la tutarlı, schema genişletmesi backward-compatible kurulabiliyor ve test matrisi önceki boşlukları dolduruyor. Kalanlar implementation hygiene seviyesinde.",
+      "evidence": [
+        "`ao_kernel/config.py:111-130`",
+        "`ao_kernel/_internal/mcp/memory_tools.py:125-147`",
+        "`ao_kernel/context/decision_extractor.py:92-100`",
+        "`ao_kernel/context/canonical_store.py:280-291`"
+      ]
+    }
+  ],
+  "ready_for_impl": true,
+  "additional_recommendations": [
+    "`implicit_canonical_promote` schema’sında alt alanları required yapmayın; optional object + optional subfields + runtime default kombinasyonu legacy override’lar için daha güvenli.",
+    "Fail-open branch’te yorum satırına açıkça `revert to bundled/default implicit behavior` notu düşülmeli; aksi halde policy disable beklentisiyle karışabilir.",
+    "`_SERVER_SIDE_CONFIDENCE = 0.8` sabitini handler yanında isimli constant olarak tanımlayın; hem testlerde hem review’de literal aramayı kolaylaştırır.",
+    "`source` etiketi `mcp_tool` yerine `mcp:tool_result` olacaksa aynı batchte grep yapıp doc/test tarafında bu stringe bağlı bir beklenti kalmadığını doğrulayın.",
+    "Metadata notu: request `head_sha` alanı `c3fedd1`, aktif worktree HEAD ise `3473ed1`; scoped dosyalarda review sonucunu değiştirecek drift görmedim, ama consultation kaydı bunu not düşebilir."
+  ],
+  "created_at": "2026-04-14T19:55:46+03:00",
+  "head_sha": "3473ed1"
+}

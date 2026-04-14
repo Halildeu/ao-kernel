@@ -66,6 +66,28 @@
       "type": "string",
       "enum": ["block", "warn", "log"],
       "description": "Action on policy violation."
+    },
+    "implicit_canonical_promote": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Side-channel wiring: every MCP tool envelope may be scanned for high-confidence decisions and promoted to the canonical store. Subfields optional so legacy workspace overrides remain valid.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Master switch for the implicit promote path. Default true."
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Minimum decision confidence required before promotion."
+        },
+        "source_prefix": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source tag written for implicitly-promoted decisions."
+        }
+      }
     }
   }
 }

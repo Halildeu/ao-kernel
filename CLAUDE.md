@@ -52,7 +52,7 @@ Tüm public metotlar ve imzaları için: `client.py`
 
 Thin executor pipeline: route → build → execute → normalize. Context injection, eval, quality gate ve telemetry **YOKTUR** — SDK'dan daha hafif bir yüzeydir.
 
-6 governance tool (`ao_policy_check`, `ao_llm_route`, `ao_llm_call`, `ao_quality_gate`, `ao_workspace_status`, `ao_memory_read`) + 3 resource (`ao://policies/{name}`, `ao://schemas/{name}`, `ao://registry/{name}`). Transport: stdio (varsayılan) + HTTP (`pip install ao-kernel[mcp-http]`).
+7 governance tool (`ao_policy_check`, `ao_llm_route`, `ao_llm_call`, `ao_quality_gate`, `ao_workspace_status`, `ao_memory_read`, `ao_memory_write`) + 3 resource (`ao://policies/{name}`, `ao://schemas/{name}`, `ao://registry/{name}`). Transport: stdio (varsayılan) + HTTP (`pip install ao-kernel[mcp-http]`).
 
 Tool spec'leri ve inputSchema'lar için: `mcp_server.py`
 
@@ -78,7 +78,7 @@ ao_kernel/                ← PUBLIC FACADE
   config.py                ← Workspace resolver + defaults loader
   session.py, policy.py, workspace.py, roadmap.py  ← Domain facades
   tool_gateway.py          ← Policy-gated tool dispatch (ToolSpec, ToolGateway, ToolCallResult)
-  mcp_server.py            ← MCP server (6 tool + 3 resource)
+  mcp_server.py            ← MCP server (7 tool + 3 resource)
   _internal/mcp/           ← Private MCP helper modules (memory_tools, ...)
   telemetry.py             ← OTEL adapter (lazy, no-op fallback)
   errors.py                ← Typed exceptions (SessionCorruptedError, WorkspaceNotFoundError, ...)

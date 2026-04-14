@@ -1,15 +1,18 @@
-# Tranche C — Mid-Session Handoff (2026-04-14)
+# Tranche C — Late-Session Handoff (2026-04-14)
 
 ## TL;DR
 
-**Tranche C is in progress.** CNS-20260414-010 closed with
-`final_plan_ready_for_impl: true` after 3 iterations. Three PRs already
-merged into main (C0, C5a, C5b). Five more PRs + coverage + release
-remain. Everything is unblocked — the next session can open `PR-C6a`
+**Tranche C is in progress.** CNS-20260414-010 (plan level) and
+CNS-20260414-011 (PR-C6a implementation level) both closed with
+`ready_for_impl: true` after 3 iterations each. **Four PRs merged**
+into main: C0, C5a, C5b, **C6a** (#70, `c3fedd1`). Test baseline
+**935/935 green**. Four more PRs + coverage + release remain.
+Everything is unblocked — the next session can open `PR-C6b`
 against `origin/main` and keep going.
 
 Previous handoff (post v2.3.0): `SESSION-HANDOFF-2026-04-14-v2.md`.
-This doc covers Tranche C progress since then.
+This doc covers Tranche C progress since then — now extended past
+C6a with CNS-011 deltas folded in.
 
 ---
 
@@ -28,24 +31,30 @@ thesis (all in the consensus doc):
 3. Implicit promote policy in **general MCP/tool** scope (not `policy_mcp_memory`)
 4. Minimal CAS API surface (no duplicate `*_cas` public helpers)
 
-### Merged this session (3 PRs)
+### Merged so far (4 PRs)
 
 | PR | Scope | Key deliverables |
 |---|---|---|
 | **#66** C0 | `workspace.project_root()` single source of truth | helper + cross-surface alignment (client / MCP / extension loader) + 8 tests |
 | **#67** C5a | CAS mutators + FS lock + unique tmp + fail-closed load | `save_store_cas`, `_mutate_with_cas`, POSIX `file_lock`, `CanonicalStoreCorruptedError`, `CanonicalRevisionConflict` + 13 tests |
 | **#68** C5b | `forget()` routes through CAS helper | bypass closed, matching CAS args + 5 tests |
+| **#70** C6a | `ao_memory_read` MCP tool + policy + param-aware resolver | `_internal/mcp/memory_tools.py`, `policy_mcp_memory.v1.json` + schema, batch docs update, 13 tests — see CNS-011 consensus |
 
-**Main HEAD after PR-C5b:** test suite 922/922 green.
+**Main HEAD after PR-C6a:** `c3fedd1`, test suite **935/935 green**.
 
-### Still open (5 PRs + release)
+### Still open (4 PRs + release)
 
 Order and scope below. Each assumes branch from latest `origin/main`,
 M2 merge pattern (protection approval=0 → merge → approval=1), CI 7/7 first try.
 
-#### PR-C6a — Memory read MCP tool (~200 LOC)
+#### ✅ PR-C6a — Memory read MCP tool (MERGED #70, 2026-04-14)
 
-Scope: `ao_memory_read` MCP tool. Read-only, built on existing SDK hooks.
+**Status:** merged; tests 935/935 green. Implementation details below kept
+for reference; actual deltas differ slightly from iter-1 sketch — see
+`.ao/consultations/CNS-20260414-011.consensus.md` for the final plan and
+`.claude/plans/PR-C6a-IMPLEMENTATION-PLAN.md` for the file-level layout.
+
+Scope (merged): `ao_memory_read` MCP tool. Read-only, built on existing SDK hooks.
 
 - New module `ao_kernel/defaults/policies/policy_mcp_memory.v1.json`
   - Schema: `{read: {enabled: false, allowed_patterns: ["*"]}, write: {...}, rate_limit: {reads_per_minute: 60, writes_per_minute: 10}}`
@@ -65,7 +74,24 @@ Scope: `ao_memory_read` MCP tool. Read-only, built on existing SDK hooks.
   - Rate limit triggers after N reads
   - Evidence trail captures read events
 
-#### PR-C6b — Memory write MCP tool (~300 LOC)
+#### ✅ PR-C6b — Memory write MCP tool (landed in the same branch as C6a)
+
+**Status:** Implementation shipped under CNS-20260414-012 (2-iter AGREE,
+`ready_for_impl=true`). Consensus: `.ao/consultations/CNS-20260414-012.consensus.md`.
+Implementation plan: `.claude/plans/PR-C6b-IMPLEMENTATION-PLAN.md`. Deltas
+from the iter-1 sketch:
+- `implicit_canonical_promote` block lives in `policy_tool_calling.v1.json`
+  (mevcut family), not a new file
+- `_IMPLICIT_PROMOTE_SKIP` extends to `{ao_memory_read, ao_memory_write}`
+- Server-side fixed confidence = **0.8** (aligned with `promote_decision`
+  default; caller-supplied value IGNORED — CNS-010 iter-3 Q9)
+- Implicit-promote wiring extracted into
+  `memory_tools.run_implicit_promote()` to keep `mcp_server.py` under the
+  800-LOC budget
+
+Original iter-1 scope text retained below for reference.
+
+Scope: `ao_memory_write` + write policy + reconciliation with existing implicit auto-promote.
 
 Scope: `ao_memory_write` + write policy + reconciliation with existing implicit auto-promote.
 
@@ -148,22 +174,25 @@ becomes real. Priority per CNS-010 iter-1 Q6:
 
 ### 1. Verify state
 ```bash
-git log -1 --format="%h %s"           # 7afed04 or newer — PR-C5b merge
+git log -1 --format="%h %s"           # c3fedd1 or newer — PR-C6a merge
 git status --short                     # empty
-python3 -m pytest --co -q | tail -1    # 922 tests
+python3 -m pytest --co -q | tail -1    # 935 tests
 mypy ao_kernel/ 2>&1 | tail -1         # Success
 ruff check ao_kernel/ tests/           # All checks passed
-gh pr list --state merged --limit 3    # #68, #67, #66
+gh pr list --state merged --limit 4    # #70, #68, #67, #66
 ```
 
-### 2. Open PR-C6a
+### 2. Open PR-C6b
 ```bash
 git fetch origin main --quiet
-git checkout -b claude/tranche-c-c6a origin/main
-# Implement per scope above
+git checkout -b claude/tranche-c-c6b origin/main
+# Implement per C6b scope below. Extend existing
+# policy_tool_calling.v1.json with implicit_canonical_promote
+# block (NOT a new policy_mcp_tool_calling.v1.json file — repo
+# family is policy_tool_calling.v1.json per CNS-011 iter-3 note 3).
 ```
 
-### 3. After PR-C6a merged, repeat for C6b → C1 batches → C2/C3/C4 → C7 → C8 → release
+### 3. After PR-C6b merged, repeat for C1 batches → C2/C3/C4 → C7 → C8 → release
 
 ---
 
@@ -184,10 +213,11 @@ git checkout -b claude/tranche-c-c6a origin/main
 | 007 (B1) | PARTIAL | 4 | 3 | 1 |
 | 008 (B3) | DISAGREE | 5 | 1 | 1 |
 | 009 (B5) | DISAGREE | 3 | 3 | 1 |
-| **010 (C-master)** | PARTIAL (3 iter) | **10** | **7** | **3** |
-| **Total** | — | **22** | **14** | **6** |
+| 010 (C-master plan) | PARTIAL→AGREE (3 iter) | 10 | 7 | 3 |
+| **011 (C6a impl)** | PARTIAL→AGREE (3 iter) | **5** | **9** | **3** |
+| **Total** | — | **27** | **23** | **9** |
 
-Claude's first thesis: **0/6 survived untouched**. The "grep before
+Claude's first thesis: **0/9 survived untouched**. The "grep before
 accepting" rule (project memory) triggered every time.
 
 ---
@@ -203,4 +233,35 @@ accepting" rule (project memory) triggered every time.
 
 ---
 
-**Session closed cleanly. Next agent opens PR-C6a and keeps going — no blockers, no ambiguity.**
+**Session closed cleanly. Next agent opens PR-C6b and keeps going — no blockers, no ambiguity.**
+
+---
+
+## PR-C6a Post-Merge Reference (2026-04-14)
+
+Final C6a consensus / implementation differs from iter-1 sketch at
+four points; these are load-bearing for C6b:
+
+1. **`_resolve_workspace_for_call` fallback = key-absent only.**
+   Present-but-invalid → explicit deny (no silent CWD fallback). Scope:
+   memory tools + `_with_evidence` + `call_tool` implicit promote only —
+   NOT broadcast to the pre-existing governance tools (CNS-011 iter-3 W1).
+2. **`_IMPLICIT_PROMOTE_SKIP` is a `mcp_server.call_tool()`-local denylist.**
+   Shared `decision_extractor.py` is UNCHANGED to avoid regressing the
+   `llm.py` tool-results path (`test_memory_pipeline.py:121-132` locks
+   the existing extraction behaviour).
+3. **MCP evidence = JSONL append + fsync only.** No SHA256 manifest.
+   The manifest machinery is reserved for workspace artefacts; the
+   MCP manifest is deferred to Tranche D. `CLAUDE.md` §2 and
+   `mcp_event_log.py` docstring reflect this.
+4. **`_internal/mcp/memory_tools.py`** is a private sub-module. C6b's
+   `handle_memory_write` lands in the same file so `mcp_server.py` stays
+   under the 800-LOC budget (CLAUDE.md §12).
+
+For C6b, the implicit-promote hardcoded threshold currently lives at
+`mcp_server.py:668-685`. Surface decision from CNS-010 iter-3 warning-4
+still stands: move the threshold into the **general**
+`policy_tool_calling.v1.json` (**NOT** a new `policy_mcp_tool_calling`
+file — repo family is `policy_tool_calling.v1.json`; iter-3 note 3)
+as an `implicit_canonical_promote` block. `ao_memory_write` itself
+lives alongside `handle_memory_read` in `_internal/mcp/memory_tools.py`.

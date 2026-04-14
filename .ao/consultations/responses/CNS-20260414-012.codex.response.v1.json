@@ -1,0 +1,155 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-012",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Tezin ana yönü doğru: `ao_memory_write` aynı private helper modülüne eklenmeli, write policy fail-closed kalmalı, implicit promote eşiği için doğru aile `policy_tool_calling.v1.json`. Ancak plan v1 henüz implementation-ready değil. Tek blocker şu: threshold’u policy’ye taşıma önerisi örnek kodda `load_default(...)` ile yapılıyor; bu loader workspace override okumuyor (`ao_kernel/config.py:77-108`), override-aware yol `load_with_override(...)` (`ao_kernel/config.py:111-130`). Bu yüzden tezde ima edilen workspace-specific threshold ve buna dayanan test #9 bu haliyle çalışmaz. Ayrıca `ao_memory_write` için skip gerçekten gerekli; fakat gerekçe nested `data.*` alanları değil, extractor’ın envelope’daki top-level scalar alanları (`api_version`, `tool`, `allowed`, `decision`) promote etmesidir (`ao_kernel/context/decision_extractor.py:92-100`, `ao_kernel/mcp_server.py:708-716`). İncelediğim worktree HEAD `3473ed1`; istekteki `c3fedd1` ile review kapsamındaki dosyalarda diff çıkmadı.",
+  "blocking_objections": [
+    {
+      "id": "B1",
+      "title": "Implicit promote policy refactor örnek kodu workspace override'ı fiilen kırıyor",
+      "evidence": [
+        "Plan pseudo-code `tool_policy = load_default(\"policies\", \"policy_tool_calling.v1.json\")` diyor.",
+        "`load_default()` sadece bundled default okur; workspace override yolu yok (`ao_kernel/config.py:77-108`).",
+        "Override destekleyen tek loader `load_with_override()` (`ao_kernel/config.py:111-130`).",
+        "Mevcut gateway de aynı bundled-only yolu kullanıyor (`ao_kernel/mcp_server.py:609-611`)."
+      ],
+      "why_blocking": "Soru 3 ve test #9 bağlamında bahsedilen threshold override bu haliyle uygulanamaz. Yani policy'ye taşıma varmış gibi görünür ama davranış global/bundled kalır.",
+      "required_change": "Threshold okumayı resolved workspace üzerinden yap; memory policy'deki gibi `.ao` bridge kullanıp `load_with_override(\"policies\", \"policy_tool_calling.v1.json\", workspace=policy_workspace)` çağır. Tercihen schema validation da ekle."
+    }
+  ],
+  "warning_objections": [
+    {
+      "id": "W1",
+      "title": "`ao_memory_write` skip gerekçesi doğru, ama dayanağı yanlış ifade edilmiş",
+      "evidence": [
+        "`extract_from_tool_result()` top-level scalar alanları decision'a çeviriyor (`ao_kernel/context/decision_extractor.py:92-100`).",
+        "`call_tool()` bu decision'ları confidence >= 0.8 ise promote ediyor (`ao_kernel/mcp_server.py:708-716`).",
+        "Memory envelope'ları top-level `api_version`, `tool`, `allowed`, `decision` alanlarını taşıyor (`ao_kernel/mcp_server.py:64-69`, `ao_kernel/_internal/mcp/memory_tools.py:157-173`, `243-247`)."
+      ],
+      "impact": "Skip olmasa esas gürültü `data.key/confidence/promoted_at` değil, `tool.ao_memory_write.allowed`, `tool.ao_memory_write.decision` gibi envelope metadata olur. Gerekçe metni buna göre düzeltilmeli."
+    },
+    {
+      "id": "W2",
+      "title": "Server-side fixed confidence için 0.75 zayıf ve repo default'u ile hizasız",
+      "evidence": [
+        "`promote_decision()` default confidence'ı 0.8 (`ao_kernel/context/canonical_store.py:281`).",
+        "`CanonicalDecision` default confidence alanı da 0.8 (`ao_kernel/context/canonical_store.py:57-58`).",
+        "`ao_memory_write` skip'e girecekse implicit threshold ile 'bilerek altında kalma' gibi bir gerekçe de kalmıyor."
+      ],
+      "impact": "0.75 çalışır ama keyfi kalır; explicit, policy-gated write için 0.8 daha tutarlı bir baseline."
+    },
+    {
+      "id": "W3",
+      "title": "`policy_tool_calling` yeni alanı için runtime schema validation şu an yok",
+      "evidence": [
+        "`create_tool_gateway()` JSON'u yükleyip doğrudan `ToolCallPolicy.from_dict()` çağırıyor (`ao_kernel/mcp_server.py:606-612`).",
+        "Repo içinde `policy_tool_calling.v1.json` için `jsonschema.validate(...)` kullanan bir load path bulamadım; grep yalnız memory policy validation'ı gösteriyor (`ao_kernel/_internal/mcp/memory_tools.py:135-146`).",
+        "Schema dosyası mevcut ve `additionalProperties: false` top-level'de etkin (`ao_kernel/defaults/schemas/policy-tool-calling.schema.v1.json:7-9`), ama runtime enforce edilmiyor."
+      ],
+      "impact": "Yanlış tipte threshold/source değeri sessizce geçebilir veya ancak call-time patlar. Blocker değil ama hygiene eksiği."
+    },
+    {
+      "id": "W4",
+      "title": "Test matrisi write tarafında birkaç kritik regressions path'i kaçırıyor",
+      "evidence": [
+        "C6a'da workspace resolver/evidence path'i blocker olmuştu; write planındaki 10 testte `workspace_root` absent/present-invalid deny ve evidence JSONL doğrulaması yok.",
+        "Write handler taslağı `json.dumps(value)` ile serializasyon gate ekliyor; ama `value_not_serializable` testi listede yok.",
+        "Double-write testinin gerçek assertion'ı skip üyeliği değil, canonical store'a `tool.ao_memory_write.*` metadata yazılmadığını doğrulamak olmalı."
+      ],
+      "impact": "Plan uygulanır ama regresyon yakalama gücü eksik kalır."
+    }
+  ],
+  "accepted_points": [
+    "`ao_memory_write` handler'ının `ao_kernel/_internal/mcp/memory_tools.py` içine eklenmesi doğru; C6a consensus/handoff aynı dosyayı C6b landing zone olarak işaret ediyor.",
+    "Implicit promote config için ayrı `policy_mcp_implicit_promote.v1.json` yerine mevcut `policy_tool_calling.v1.json` ailesini genişletmek doğru; bu, CNS-011 ve handoff notlarıyla uyumlu.",
+    "`promote_decision()` üzerinden gitmek ve ayrı public CAS helper yüzeyi açmamak doğru; mevcut imza/backward-compat tasarımı bunu destekliyor.",
+    "`allow_overwrite=True` semantiğini korumak doğru; aksi halde `expected_revision=None` ile her write conflict üretir.",
+    "`max_value_bytes` için JSON-encoded byte ölçümü doğru; store fiilen JSON yazdığı için semantik ölçüm bu."
+  ],
+  "answers_per_question": [
+    {
+      "question": 1,
+      "answer": "Evet, `_IMPLICIT_PROMOTE_SKIP` içine `ao_memory_write` eklemek doğru ve pratikte gerekli.",
+      "because": "Gerekçe nested `data.key/confidence/promoted_at` değil; extractor top-level scalar envelope alanlarını decision'a çeviriyor. Skip olmazsa `tool.ao_memory_write.api_version`, `tool.ao_memory_write.tool`, `tool.ao_memory_write.allowed`, `tool.ao_memory_write.decision` gibi self-referential gürültü yazılır.",
+      "evidence": [
+        "`ao_kernel/context/decision_extractor.py:92-100`",
+        "`ao_kernel/mcp_server.py:708-716`"
+      ]
+    },
+    {
+      "question": 2,
+      "answer": "`policy_tool_calling.v1.json` genişletmesi doğru; ayrı `policy_mcp_implicit_promote.v1.json` açmaya gerek yok.",
+      "because": "Bu davranış memory tool'a özgü değil, genel MCP tool result -> canonical promote hattının davranışı. Handoff ve CNS-011 de doğru family'nin `policy_tool_calling.v1.json` olduğunu açıkça söylüyor.",
+      "evidence": [
+        "`.claude/plans/SESSION-HANDOFF-TRANCHE-C-MID.md:244-249`",
+        "`.ao/consultations/CNS-20260414-011.consensus.md:239`"
+      ]
+    },
+    {
+      "question": 3,
+      "answer": "0.75 önermiyorum; 0.8 daha doğru baseline.",
+      "because": "`ao_memory_write` skip'e alınacaksa implicit threshold ile 'çakışmasın' diye daha düşük confidence vermek gerekmiyor. Repo default'u zaten 0.8. 0.9 ise semantic doğrulama yapmayan server için fazla iddialı.",
+      "evidence": [
+        "`ao_kernel/context/canonical_store.py:57-58`",
+        "`ao_kernel/context/canonical_store.py:281`"
+      ]
+    },
+    {
+      "question": 4,
+      "answer": "CAS semantiğinde default `allow_overwrite=True` korunmalı; istersen çağrıda explicit geçebilirsin ama davranış değişmesin.",
+      "because": "Mevcut API bunu backward-compat için özellikle böyle tanımlıyor. `expected_revision=None` ile `allow_overwrite=False` kombinasyonu write tool'u gereksiz conflict üreten bir araca çevirir.",
+      "evidence": [
+        "`ao_kernel/context/canonical_store.py:290-307`"
+      ]
+    },
+    {
+      "question": 5,
+      "answer": "Şimdilik denylist büyütme stratejisi yeterli; inverse allowlist şu aşamada over-engineering.",
+      "because": "Bugünkü kod zaten local denylist modelinde çalışıyor ve C6a consensus bunu kabul etti. Inverse allowlist fail-closed görünür ama mevcut tool-result semantics'ini gereksizce daraltır ve yeni faydalı tool'larda manuel opt-in yükü getirir. Üçüncü self-mutating tool geldiğinde yeniden değerlendirilebilir.",
+      "evidence": [
+        "`.ao/consultations/CNS-20260414-011.consensus.md:112-118`",
+        "`ao_kernel/mcp_server.py:701-708`"
+      ]
+    },
+    {
+      "question": 6,
+      "answer": "Bu PR'da `revision` alanı eklemeyin; C6c'ye erteleyin.",
+      "because": "`CanonicalDecision` revision taşımıyor ve `promote_decision()` yalnız `CanonicalDecision` döndürüyor. Revision döndürmek için API genişletmesi veya ek store read gerekir; bu C6b kapsamını gereksiz büyütür.",
+      "evidence": [
+        "`ao_kernel/context/canonical_store.py:50-66`",
+        "`ao_kernel/context/canonical_store.py:274-336`"
+      ]
+    },
+    {
+      "question": 7,
+      "answer": "`max_value_bytes` kontrolü JSON-encoded byte uzunluğu üzerinden yapılmalı.",
+      "because": "Store JSON yazıyor ve `value` tipi `Any`. `str(value)` uzunluğu dict/list için anlamsız, sadece string'e zorlamak da gereksiz daraltma olur. 4KB / 10 rpm ölçeğinde bir ek `json.dumps` maliyeti ihmal edilebilir.",
+      "evidence": [
+        "`ao_kernel/context/canonical_store.py:278-329`",
+        "`ao_kernel/defaults/policies/policy_mcp_memory.v1.json:9-15`"
+      ]
+    },
+    {
+      "question": 8,
+      "answer": "10 test iyi başlangıç ama yeterli değil.",
+      "because": "En az şu ekler gerekli: write-side `workspace_root` absent/present-invalid deny; evidence JSONL param-aware workspace; `value_not_serializable`; ve skip'in üyelik değil canonical store'da `tool.ao_memory_write.*` yazılmadığı üzerinden doğrulanması. Threshold test #9 ise blocker düzeltilmeden gerçekçi değil.",
+      "evidence": [
+        "`tests/test_mcp_memory_read.py:93-225`",
+        "`ao_kernel/config.py:111-130`"
+      ]
+    }
+  ],
+  "ready_for_impl": false,
+  "additional_recommendations": [
+    "Yeni kodu `call_tool()` içine yaymak yerine memory policy loader'ına benzer bir private helper düşün: ör. `_load_tool_calling_policy_validated(ws)`; böylece override + schema validation + default coercion tek yerde olur.",
+    "Schema'da `implicit_canonical_promote` objesine `additionalProperties: false` ekle ve `threshold` için `minimum: 0.0`, `maximum: 1.0` tanımla.",
+    "Write tool için skip testini iki seviyede yaz: önce `_IMPLICIT_PROMOTE_SKIP` üyeliği, sonra gerçek dispatch sonrası canonical store içinde `tool.ao_memory_write.*` anahtarlarının yokluğu.",
+    "Worktree HEAD şu anda `3473ed1`; consult isteğindeki `c3fedd1` ile review kapsamındaki dosyalarda diff çıkmadı, ama PR notlarında SHA sabitlemesi yapılacaksa bunu netleştirmen iyi olur."
+  ],
+  "created_at": "2026-04-14T19:47:57+03:00",
+  "head_sha": "3473ed1"
+}
