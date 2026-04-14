@@ -61,7 +61,8 @@ jobs:
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
-    continue-on-error: true  # Visible but not required (mypy still || true territory — see CNS-006 Q4)
+    # CNS-006 Q4: after the 131-error cleanup (PR #56), typecheck is a real
+    # gate. _internal/* is still under per-module ignore (D13).
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,7 +71,7 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev,llm]"
       - name: Mypy
-        run: mypy ao_kernel/ --ignore-missing-imports
+        run: mypy ao_kernel/
 
   extras-install:
     name: extras-install
