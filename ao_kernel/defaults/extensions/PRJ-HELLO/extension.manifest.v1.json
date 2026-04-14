@@ -1,0 +1,50 @@
+{
+  "version": "v1",
+  "extension_id": "PRJ-HELLO",
+  "semver": "1.0.0",
+  "origin": "CORE",
+  "owner": "CORE",
+  "enabled": true,
+  "layer_contract": {
+    "write_roots_allowlist": [],
+    "read_roots_allowlist": [],
+    "notes": ["Reference extension used as the B3 activation smoke target (CNS-008)."]
+  },
+  "entrypoints": {
+    "ops": [],
+    "ops_single_gate": [],
+    "kernel_api_actions": ["hello_world"],
+    "cockpit_sections": [],
+    "tests": []
+  },
+  "tests_entrypoints": [],
+  "tests_policy": {
+    "network_allowed": false,
+    "notes": ["hello extension is offline — handler is pure function"]
+  },
+  "policies": [],
+  "policy_files": [],
+  "ui_surfaces": [],
+  "docs_ref": "",
+  "ai_context_refs": [],
+  "outputs": {
+    "workspace_reports": []
+  },
+  "gates": {
+    "required": []
+  },
+  "compat": {
+    "core_min": "0.0.0",
+    "core_max": "",
+    "notes": ["compatible with all ao-kernel versions"]
+  },
+  "guardrails": {
+    "offline": true,
+    "network_default": false
+  },
+  "notes": [
+    "Reference hello-world extension per CNS-20260414-008 B3f DoD. Provides the",
+    "kernel_api_action 'hello_world' so Tranche B's activation dispatch has at",
+    "least one end-to-end verified path."
+  ]
+}

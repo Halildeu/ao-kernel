@@ -81,6 +81,7 @@ class AoKernelClient:
             owns_vector_store if owns_vector_store is not None else resolver_owned
         )
         self._embedding_config = self._resolve_embedding_config(embedding_config)
+        self._extensions, self._action_registry = self._bootstrap_extensions()
 
     @property
     def workspace_root(self) -> Path | None:
@@ -96,6 +97,26 @@ class AoKernelClient:
     def embedding_config(self) -> Any:
         """Resolved embedding configuration (EmbeddingConfig)."""
         return self._embedding_config
+
+    @property
+    def extensions(self) -> Any:
+        """Client-scoped ExtensionRegistry (CNS-008)."""
+        return self._extensions
+
+    @property
+    def action_registry(self) -> Any:
+        """Client-scoped ActionRegistry for kernel_api_actions dispatch."""
+        return self._action_registry
+
+    def call_action(self, action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Invoke a registered kernel_api_action handler.
+
+        Unknown actions raise LookupError — this is an SDK surface, callers
+        should know the action name they are invoking. Wrap in try/except
+        for fail-open semantics.
+        """
+        result: dict[str, Any] = self._action_registry.invoke(action, params or {})
+        return result
 
     @property
     def session_id(self) -> str:
@@ -142,6 +163,40 @@ class AoKernelClient:
             workspace=self._workspace_root,
             injected=injected,
         )
+
+    def _bootstrap_extensions(self) -> tuple[Any, Any]:
+        """Load manifests + wire bundled handlers. Returns (extensions, actions).
+
+        Failures in any individual manifest or handler do NOT raise — the
+        loader/bootstrap modules log at WARNING and continue. Startup never
+        fails because an extension is misconfigured.
+        """
+        from ao_kernel.extensions.bootstrap import register_default_handlers
+        from ao_kernel.extensions.dispatch import ActionRegistry
+        from ao_kernel.extensions.loader import ExtensionRegistry
+
+        extensions = ExtensionRegistry()
+        refs_base = self._workspace_root
+        try:
+            extensions.load_from_defaults(refs_base=refs_base)
+        except Exception as exc:  # noqa: BLE001 — manifest path is best-effort
+            logger.warning("extension defaults load failed: %s", exc)
+        if self._workspace_root is not None:
+            try:
+                extensions.load_from_workspace(
+                    self._workspace_root,
+                    refs_base=self._workspace_root,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("workspace extension load failed: %s", exc)
+
+        actions = ActionRegistry()
+        try:
+            register_default_handlers(actions, extensions=extensions)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("extension handler bootstrap failed: %s", exc)
+
+        return extensions, actions
 
     @staticmethod
     def _resolve_workspace(

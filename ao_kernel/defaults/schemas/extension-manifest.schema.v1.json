@@ -2,8 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/schemas/extension-manifest.schema.v1.json",
   "title": "Extension Manifest",
+  "description": "additionalProperties is permissive (true) so vendor-specific manifest extensions do not block the registry. Required fields and enum-validated fields remain strictly enforced.",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "required": [
     "version",
     "extension_id",
