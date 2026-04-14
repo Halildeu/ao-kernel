@@ -480,9 +480,43 @@ class TestHandleLLMCall:
             })
             assert result["allowed"] is False
             assert "MISSING_API_KEY" in result["reason_codes"]
+            # B2: error message must surface the env candidates that were checked
+            # so operators know which variable to set (dual-read visibility).
+            assert "OPENAI_API_KEY" in result["error"]
         finally:
             if old is not None:
                 os.environ["OPENAI_API_KEY"] = old
+
+    def test_missing_api_key_reports_all_candidates(self, monkeypatch):
+        """B2: claude provider should mention both ANTHROPIC_API_KEY and CLAUDE_API_KEY."""
+        for name in ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"):
+            monkeypatch.delenv(name, raising=False)
+        result = handle_llm_call({
+            "messages": [{"role": "user", "content": "test"}],
+            "provider_id": "claude",
+            "model": "claude-3-5-sonnet-latest",
+        })
+        assert result["allowed"] is False
+        assert "MISSING_API_KEY" in result["reason_codes"]
+        assert "ANTHROPIC_API_KEY" in result["error"]
+        assert "CLAUDE_API_KEY" in result["error"]
+
+    def test_legacy_claude_env_var_accepted(self, monkeypatch):
+        """B2: pre-D0.3 deployments using CLAUDE_API_KEY must keep working."""
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setenv("CLAUDE_API_KEY", "sk-legacy-abc")
+        # The call will still fail at build/execute since we are not wired up
+        # to a live provider, but it must NOT fail with MISSING_API_KEY —
+        # the resolver found the alternate env name and passed it through.
+        result = handle_llm_call({
+            "messages": [{"role": "user", "content": "test"}],
+            "provider_id": "claude",
+            "model": "claude-3-5-sonnet-latest",
+        })
+        # Either the call succeeds, or it fails at a later stage (network,
+        # auth rejection, etc.). Anything EXCEPT MISSING_API_KEY proves the
+        # dual-read path served the legacy env name.
+        assert "MISSING_API_KEY" not in result.get("reason_codes", [])
 
     def test_tool_definitions_include_llm_call(self):
         names = [td["name"] for td in TOOL_DEFINITIONS]

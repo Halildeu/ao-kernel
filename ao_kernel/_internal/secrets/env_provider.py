@@ -5,8 +5,20 @@ from collections.abc import Mapping
 
 from ao_kernel._internal.secrets.provider import SecretsProvider
 
+# Canonical secret IDs are the env variable names themselves. Callers pass
+# ``OPENAI_API_KEY`` and the provider returns ``os.environ["OPENAI_API_KEY"]``.
+# Keeping the map explicit (rather than identity) lets future providers route
+# through alternative env names without breaking existing callers.
 _SECRET_ID_TO_ENV: dict[str, str] = {
     "OPENAI_API_KEY": "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY": "ANTHROPIC_API_KEY",
+    "CLAUDE_API_KEY": "CLAUDE_API_KEY",
+    "GOOGLE_API_KEY": "GOOGLE_API_KEY",
+    "GEMINI_API_KEY": "GEMINI_API_KEY",
+    "DEEPSEEK_API_KEY": "DEEPSEEK_API_KEY",
+    "DASHSCOPE_API_KEY": "DASHSCOPE_API_KEY",
+    "QWEN_API_KEY": "QWEN_API_KEY",
+    "XAI_API_KEY": "XAI_API_KEY",
 }
 
 
