@@ -1,8 +1,19 @@
 """MCP tool-call evidence log — append-only JSONL, one event per handler invocation.
 
-Per CLAUDE.md §2 invariant #2: "Her side-effect JSONL append-only log."
-Pre-B4 the five MCP tools returned envelopes but wrote NO evidence trail;
+Per CLAUDE.md §2 invariant #2, evidence comes in two forms:
+
+* **MCP events** (this module) — JSONL append-only log, fsync'd,
+  daily-rotated. **No SHA256 integrity manifest.** The manifest
+  machinery is reserved for workspace artefacts (canonical
+  decisions, checkpoints, evidence run directories) where files
+  live long enough for periodic integrity audits to matter.
+* **Workspace artefacts** — JSONL + SHA256 integrity manifest.
+
+Pre-B4 the MCP tools returned envelopes but wrote NO evidence trail;
 operators had no way to audit what ran, when, or with what decision.
+The manifest gap is a deliberate scope decision recorded in the
+Tranche C handoff's technical-debt table — adding an MCP manifest is
+queued for Tranche D (v3.1.0+), not C.
 
 Contract:
     - Library mode (no .ao/) => no-op. Evidence is a workspace feature.
@@ -14,7 +25,7 @@ Contract:
       correct choice under this invariant because the MCP response
       itself is already delivered by the time we log.
     - fsync after every append so a process crash cannot produce a
-      truncated JSONL line (integrity manifest would otherwise flag it).
+      truncated JSONL line.
     - Daily rotation keeps a single file per UTC day; concurrent writers
       on the same process append through the same open-and-close pattern
       to minimize overlap.

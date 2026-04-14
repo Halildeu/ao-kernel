@@ -13,7 +13,7 @@
 Bu ilkeler versiyon fark etmez, her zaman geçerlidir:
 
 1. **Fail-closed:** Policy violation → block. Corrupt session → `SessionCorruptedError`. Policy load error → deny. Ama session resume graceful fallback yapar (yeni session açar).
-2. **Evidence:** Her side-effect JSONL append-only log + SHA256 integrity manifest.
+2. **Evidence:** İki form. MCP events → JSONL append-only log (fsync'li, günlük rotasyon, manifest yok). Workspace artefaktları (canonical_decisions, checkpoint, evidence run_dir) → JSONL + SHA256 integrity manifest. Her iki formda da write failure fail-open side-channel'dir; ana akışı bloklamaz.
 3. **Secrets:** ASLA log'a yazılmaz, ASLA MCP parametresi olarak geçilmez, sadece env-var resolution.
 4. **Atomic writes:** tmp + fsync + rename — yarım yazılmış dosya oluşmaz.
 5. **Sync SDK yüzey:** `AoKernelClient` sync API. Chunk-level streaming: `llm.stream_request()` kullan.
@@ -52,7 +52,7 @@ Tüm public metotlar ve imzaları için: `client.py`
 
 Thin executor pipeline: route → build → execute → normalize. Context injection, eval, quality gate ve telemetry **YOKTUR** — SDK'dan daha hafif bir yüzeydir.
 
-5 governance tool (`ao_policy_check`, `ao_llm_route`, `ao_llm_call`, `ao_quality_gate`, `ao_workspace_status`) + 3 resource (`ao://policies/{name}`, `ao://schemas/{name}`, `ao://registry/{name}`). Transport: stdio (varsayılan) + HTTP (`pip install ao-kernel[mcp-http]`).
+6 governance tool (`ao_policy_check`, `ao_llm_route`, `ao_llm_call`, `ao_quality_gate`, `ao_workspace_status`, `ao_memory_read`) + 3 resource (`ao://policies/{name}`, `ao://schemas/{name}`, `ao://registry/{name}`). Transport: stdio (varsayılan) + HTTP (`pip install ao-kernel[mcp-http]`).
 
 Tool spec'leri ve inputSchema'lar için: `mcp_server.py`
 
@@ -78,7 +78,8 @@ ao_kernel/                ← PUBLIC FACADE
   config.py                ← Workspace resolver + defaults loader
   session.py, policy.py, workspace.py, roadmap.py  ← Domain facades
   tool_gateway.py          ← Policy-gated tool dispatch (ToolSpec, ToolGateway, ToolCallResult)
-  mcp_server.py            ← MCP server (5 tool + 3 resource)
+  mcp_server.py            ← MCP server (6 tool + 3 resource)
+  _internal/mcp/           ← Private MCP helper modules (memory_tools, ...)
   telemetry.py             ← OTEL adapter (lazy, no-op fallback)
   errors.py                ← Typed exceptions (SessionCorruptedError, WorkspaceNotFoundError, ...)
   cli.py, i18n.py          ← CLI + localization

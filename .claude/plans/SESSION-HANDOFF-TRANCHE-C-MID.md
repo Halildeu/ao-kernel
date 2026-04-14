@@ -198,7 +198,8 @@ accepting" rule (project memory) triggered every time.
 |---|---|---|
 | Windows FS lock support | `lock.py::file_lock` raises | Tranche D (v3.1.0) |
 | CLAUDE.md §3 contract language update | — | Release v3.0.0 docs pass |
-| `policy_mcp_memory.v1.json` schema validation | new file coming in C6a | Added in C6a |
+| `policy_mcp_memory.v1.json` schema validation | new file coming in C6a | ✅ Added in C6a (CNS-011) |
+| MCP evidence SHA256 integrity manifest | `_internal/evidence/mcp_event_log.py` — JSONL+fsync only | Tranche D (v3.1.0+) — scope pivot from CNS-20260414-011 B3 |
 
 ---
 

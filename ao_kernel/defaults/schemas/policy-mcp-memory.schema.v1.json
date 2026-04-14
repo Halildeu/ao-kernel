@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-mcp-memory:v1",
+  "title": "AO Kernel MCP Memory Policy v1",
+  "description": "Schema for policy_mcp_memory.v1.json — gate for ao_memory_read / ao_memory_write MCP tools.",
+  "type": "object",
+  "required": ["version", "read", "write", "rate_limit"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "_comment": {"type": "string"},
+    "version": {"const": "v1"},
+    "read": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "allowed_patterns": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "write": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "allowed_key_prefixes": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "max_value_bytes": {"type": "integer", "minimum": 0},
+        "allowed_source_prefixes": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "rate_limit": {
+      "type": "object",
+      "properties": {
+        "reads_per_minute": {"type": "integer", "minimum": 1},
+        "writes_per_minute": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

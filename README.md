@@ -129,6 +129,7 @@ ao-kernel mcp serve --transport http --port 8080   # HTTP (needs ao-kernel[mcp-h
 - `ao_llm_call` — Execute governed LLM call (thin executor — see matrix below)
 - `ao_quality_gate` — Check output quality
 - `ao_workspace_status` — Workspace health
+- `ao_memory_read` — Read canonical decisions + workspace facts (policy-gated, fail-closed, read-only)
 
 **Resources:**
 - `ao://policies/{name}` — Policy JSON
@@ -208,7 +209,7 @@ ao_kernel/              <- Public facade (clean API)
   client.py             <- AoKernelClient — unified SDK
   llm.py                <- LLM routing, building, normalization
   governance.py         <- Policy SSOT (4 policy types, fail-closed)
-  mcp_server.py         <- MCP server (5 tools, 3 resources)
+  mcp_server.py         <- MCP server (6 tools, 3 resources)
   context/              <- Context pipeline (compile, inject, extract, promote)
   _internal/            <- Private implementation (do not import directly)
   defaults/             <- 338 bundled JSON (policies, schemas, registry, extensions)
