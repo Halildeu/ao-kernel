@@ -133,10 +133,19 @@ def resolve_vector_store(
                 f"{_ENV_BACKEND}=pgvector requires {_ENV_DSN} (connection string)."
             )
         try:
+            from ao_kernel.context.embedding_config import resolve_embedding_config
             from ao_kernel.context.vector_store_pgvector import PgvectorBackend
             dimension = _parse_dimension(os.environ.get(_ENV_DIMENSION))
             table = os.environ.get(_ENV_TABLE, "ao_embeddings")
-            backend = PgvectorBackend(dsn=dsn, table_name=table, dimension=dimension)
+            # Bind the backend to the currently-configured embedding model so
+            # mismatched vectors cannot be stored or matched across models.
+            embedding_model = resolve_embedding_config(workspace=workspace).model
+            backend = PgvectorBackend(
+                dsn=dsn,
+                table_name=table,
+                dimension=dimension,
+                embedding_model=embedding_model,
+            )
             return backend, True
         except VectorStoreConfigError:
             raise
