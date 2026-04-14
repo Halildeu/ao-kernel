@@ -351,25 +351,22 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
         provider_id = provider_id or route.get("provider_id", route.get("selected_provider", "openai"))
         model = model or route.get("model", route.get("selected_model", "gpt-4"))
 
-    # Resolve API key from environment (never from params)
-    import os
-    api_key_env_map = {
-        "openai": "OPENAI_API_KEY",
-        "claude": "ANTHROPIC_API_KEY",
-        "google": "GOOGLE_API_KEY",
-        "deepseek": "DEEPSEEK_API_KEY",
-        "qwen": "DASHSCOPE_API_KEY",
-        "xai": "XAI_API_KEY",
-    }
-    env_var = api_key_env_map.get(provider_id, f"{provider_id.upper()}_API_KEY")
-    api_key = os.environ.get(env_var, "")
+    # Resolve API key via dual-read (factory > env fallback, D11/D0.3).
+    # Never accept api_key as a tool parameter — it stays an env/secret concern.
+    from ao_kernel._internal.secrets.api_key_resolver import (
+        env_names_for,
+        resolve_api_key,
+    )
+    api_key = resolve_api_key(provider_id)
     if not api_key:
+        env_candidates = env_names_for(provider_id)
+        env_hint = " or ".join(env_candidates)
         return _decision_envelope(
             tool="ao_llm_call",
             allowed=False,
             decision="deny",
             reason_codes=["MISSING_API_KEY"],
-            error=f"API key not found in environment variable {env_var}",
+            error=f"API key not found (checked: {env_hint}).",
         )
 
     # Build + execute
