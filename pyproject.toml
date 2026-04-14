@@ -91,12 +91,24 @@ ignore_missing_imports = true
 # Exclude files under .archive/ (historical patch backups)
 exclude = ["^\\.archive/"]
 
-# _internal: D13 — aşamalı tip kapsamı, test coverage gate'i de omit ediyor.
-# _internal tipleri Tranş C'de sistemik olarak eklenecek. Şimdilik yalnızca bu
-# katman override ile geçiliyor; public facade (ao_kernel/*.py + context/) tam
-# strict mypy altında.
+# _internal: D13 — aşamalı tip kapsamı. Tranş C içinde her submodule
+# strict'e opt-in ediyor; public facade (ao_kernel/*.py + context/) zaten
+# strict altında. Aşağıdaki override listesi, henüz strict'e geçmemiş
+# submodule'leri saklar. Strict'e alınan submodule'ler listeden silinir.
+# Opt-in sırası: providers (Tranş C / C1.1), shared, secrets, evidence,
+# session, orchestrator, prj_kernel_api (son).
 [[tool.mypy.overrides]]
-module = "ao_kernel._internal.*"
+module = [
+    "ao_kernel._internal.shared.*",
+    "ao_kernel._internal.utils.*",
+    "ao_kernel._internal.secrets.*",
+    "ao_kernel._internal.evidence.*",
+    "ao_kernel._internal.session.*",
+    "ao_kernel._internal.orchestrator.*",
+    "ao_kernel._internal.prj_kernel_api.*",
+    "ao_kernel._internal.roadmap.*",
+    "ao_kernel._internal.mcp.*",
+]
 ignore_errors = true
 
 [tool.pytest.ini_options]

@@ -79,7 +79,8 @@ def load_capability_registry(repo_root: Path | str | None = None) -> Dict[str, A
 
     for path in candidates:
         if path.exists():
-            return load_json(path)
+            loaded: Dict[str, Any] = load_json(path)
+            return loaded
 
     # Fallback to bundled defaults (importlib.resources)
     try:
