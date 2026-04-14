@@ -203,7 +203,14 @@ class AoKernelClient:
         root: str | Path | None,
         auto_init: bool,
     ) -> Path | None:
-        from ao_kernel.workspace import find_root
+        """Resolve the project root the client will operate against.
+
+        Per CNS-20260414-010 consensus: project root = the directory that
+        CONTAINS ``.ao/`` (not ``.ao`` itself). Auto-discovery delegates
+        to ``workspace.project_root`` so the contract is uniform with
+        the MCP server, evidence writers, and extension loader.
+        """
+        from ao_kernel.workspace import project_root
 
         if root is not None:
             ws = Path(root)
@@ -220,7 +227,7 @@ class AoKernelClient:
                     os.chdir(old_cwd)
                 return ws
             return ws  # library mode — no .ao/ required
-        return find_root()
+        return project_root()
 
     # ── Agent-coordination SDK (CNS-20260414-009) ───────────────────
 
