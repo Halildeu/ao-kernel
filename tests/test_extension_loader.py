@@ -69,23 +69,73 @@ class TestBundledDefaults:
         results = reg.find_by_entrypoint("airunner-run")
         assert "PRJ-AIRUNNER" in [r.extension_id for r in results]
 
-    def test_duplicate_entrypoints_recorded(self):
-        """Bundled set has known duplicates: intake_* shared by PRJ-KERNEL-API / PRJ-WORK-INTAKE."""
+    def test_no_duplicate_entrypoints_in_bundled_set(self):
+        """PR-C7a removed the intake_* duplicates between PRJ-KERNEL-API
+        and PRJ-WORK-INTAKE; the bundled registry must now be conflict-free."""
         reg = ExtensionRegistry()
         reg.load_from_defaults()
-        conflicts = reg.find_conflicts()
-        entrypoints = {c.entrypoint for c in conflicts}
-        assert "intake_create_plan" in entrypoints
+        assert reg.find_conflicts() == []
 
     def test_first_wins_is_deterministic(self):
-        """Sorted iteration guarantees the same winner across runs."""
+        """Sorted iteration guarantees deterministic registration order, even
+        when no conflicts are present — we still compare the registered
+        extension IDs between two independent loads."""
         r1 = ExtensionRegistry()
         r1.load_from_defaults()
         r2 = ExtensionRegistry()
         r2.load_from_defaults()
-        w1 = {c.entrypoint: c.winner for c in r1.find_conflicts()}
-        w2 = {c.entrypoint: c.winner for c in r2.find_conflicts()}
-        assert w1 == w2
+        ids1 = sorted(r1.find_by_entrypoint("intake_create_plan") or [], key=lambda e: e.extension_id)
+        ids2 = sorted(r2.find_by_entrypoint("intake_create_plan") or [], key=lambda e: e.extension_id)
+        assert [e.extension_id for e in ids1] == [e.extension_id for e in ids2]
+
+    def test_intake_actions_owned_by_work_intake(self):
+        """After PR-C7a, intake_* entrypoints belong to PRJ-WORK-INTAKE alone."""
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        for name in ("intake_create_plan", "intake_next", "intake_status"):
+            matches = reg.find_by_entrypoint(name)
+            ids = [m.extension_id for m in matches]
+            assert ids == ["PRJ-WORK-INTAKE"], f"{name!r} should be owned solely by PRJ-WORK-INTAKE, got {ids}"
+
+    def test_workspace_override_reintroduces_conflict(self, tmp_path: Path):
+        """Loading a workspace extension that re-adds intake_create_plan
+        must trigger find_conflicts() again — proves the detector is not
+        silently bypassed after PR-C7a."""
+        ext_dir = tmp_path / ".ao" / "extensions" / "PRJ-CUSTOMER-INTAKE"
+        ext_dir.mkdir(parents=True)
+        (ext_dir / "extension.manifest.v1.json").write_text(
+            json.dumps({
+                "version": "v1",
+                "extension_id": "PRJ-CUSTOMER-INTAKE",
+                "semver": "0.1.0",
+                "origin": "CUSTOMER",
+                "owner": "CUSTOMER",
+                "entrypoints": {
+                    "ops": [], "kernel_api_actions": ["intake_create_plan"],
+                    "cockpit_sections": [],
+                },
+                "layer_contract": {"write_roots_allowlist": []},
+                "policies": [], "ui_surfaces": [],
+                "compat": {"core_min": "0.0.0", "core_max": "", "notes": []},
+            }),
+            encoding="utf-8",
+        )
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        reg.load_from_workspace(tmp_path)
+        conflicts = reg.find_conflicts()
+        entrypoints = {c.entrypoint for c in conflicts}
+        assert "intake_create_plan" in entrypoints
+
+    def test_zanzibar_openfga_manifest_valid_after_hygiene(self):
+        """PR-C7a filled in semver/origin/owner/layer_contract/ui_surfaces."""
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        zanzibar = reg.get("PRJ-ZANZIBAR-OPENFGA")
+        assert zanzibar is not None
+        assert zanzibar.semver == "1.0.0"
+        assert zanzibar.origin == "CORE"
+        assert zanzibar.owner == "CORE"
 
 
 class TestWorkspaceOverride:
