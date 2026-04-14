@@ -105,25 +105,41 @@ def forget(
     workspace_root: Path,
     *,
     key: str,
+    expected_revision: str | None = None,
+    allow_overwrite: bool = True,
 ) -> dict[str, Any]:
     """Agent explicitly removes a memory.
 
     Doesn't physically delete — marks as expired (audit trail preserved).
+
+    Routes through the canonical CAS helper (CNS-20260414-010 Stage A),
+    so the lock and revision guards are shared with ``promote_decision``.
+    ``expected_revision`` / ``allow_overwrite`` match the pattern: default
+    ``allow_overwrite=True`` preserves v2.x behavior until v4.0.0 flips the
+    default.
     """
     full_key = f"memory.{key}" if not key.startswith("memory.") else key
 
-    from ao_kernel.context.canonical_store import load_store, save_store
+    # Lazy import avoids a module-level cycle with canonical_store.
+    from ao_kernel.context.canonical_store import _mutate_with_cas
 
-    store = load_store(workspace_root)
-    found = False
-    for section in ("decisions", "facts"):
-        if full_key in store.get(section, {}):
-            store[section][full_key]["expires_at"] = "2000-01-01T00:00:00Z"
-            store[section][full_key]["_forgotten"] = True
-            found = True
+    found: list[bool] = [False]
 
-    if found:
-        save_store(workspace_root, store)
+    def _apply(store: dict[str, Any]) -> None:
+        for section in ("decisions", "facts"):
+            if full_key in store.get(section, {}):
+                store[section][full_key]["expires_at"] = "2000-01-01T00:00:00Z"
+                store[section][full_key]["_forgotten"] = True
+                found[0] = True
+
+    _mutate_with_cas(
+        workspace_root,
+        _apply,
+        expected_revision=expected_revision,
+        allow_overwrite=allow_overwrite,
+    )
+
+    if found[0]:
         return {"forgotten": True, "key": full_key}
     return {"forgotten": False, "error": "MEMORY_NOT_FOUND", "key": full_key}
 
