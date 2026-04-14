@@ -126,18 +126,20 @@ Faz 5 bu 5 işi **kapsam dışı** bırakır, v3.0.0+ için uzun vadeli:
 
 Kod işine başlanmadan **tamamı** bitmiş olmalı.
 
-#### P1 — Upstream Hijyeni
+#### P1 — Upstream Hijyeni ✅ TAMAMLANDI (2026-04-14, commit 8df56d0)
 - **Süre:** 2 dk
 - **Sorumlu:** Claude
 - **Açıklama:** `claude/wizardly-euclid` branch'i şu an `origin/main` track ediyor (CNS-006 Q8 doğrulaması). Ya kendi remote branch'ine push edilir + upstream güncellenir, ya da upstream tamamen kaldırılır.
-- **Kabul kriteri:** `git config branch.claude/wizardly-euclid.merge` → `refs/heads/main` **değil**, ya kendi branch'i ya da tanımsız.
+- **Uygulanan:** Branch `origin/claude/wizardly-euclid`'e push edildi, upstream kendi branch'ine çevrildi.
+- **Kabul kriteri:** `git config branch.claude/wizardly-euclid.merge` → `refs/heads/claude/wizardly-euclid` ✅
 - **Risk:** Bu adım yapılmadan `git pull` / `git push` main'i etkiler.
 - **Rollback:** `git config branch.claude/wizardly-euclid.merge refs/heads/main` (upstream geri)
 
-#### P2 — GitHub Branch Protection
+#### P2 — GitHub Branch Protection ✅ TAMAMLANDI (2026-04-14)
 - **Süre:** 10 dk
 - **Sorumlu:** Claude (gh CLI)
 - **Açıklama:** `main` için protection rules aktifleştirilir.
+- **Uygulanan:** `gh api PUT repos/Halildeu/ao-kernel/branches/main/protection` ile tüm kurallar aktif. `required_status_checks` null (P5 sonrası eklenecek). Doğrulama: `allow_force_pushes.enabled=false`, `enforce_admins.enabled=true`, `required_linear_history.enabled=false`.
 - **Kurallar:**
   - ✅ Require PR before merging (1 approval)
   - ✅ Require status checks (test.yml — required list P5'te netleşir)
@@ -151,10 +153,11 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
 - **Risk:** Acil hotfix gerekirse disiplin sürtünmesi. → `hotfix/*` PR akışı (RCA: CNS-006 Q2).
 - **Rollback:** `gh api --method DELETE repos/Halildeu/ao-kernel/branches/main/protection`
 
-#### P3 — Dar Global Git Config
+#### P3 — Dar Global Git Config ✅ TAMAMLANDI (2026-04-14)
 - **Süre:** 3 dk
 - **Sorumlu:** Claude
 - **Açıklama:** SADECE güvenli-global ayarlar set edilir.
+- **Uygulanan:** `rerere.enabled=true`, `gc.reflogExpire=365.days.ago`, `gc.reflogExpireUnreachable=365.days.ago`, `fetch.prune=true`, `push.followTags=true`. `pull.rebase` ve `push.default` global'e SET EDİLMEDİ.
 - **Komutlar:**
   ```bash
   git config --global rerere.enabled true
@@ -169,10 +172,11 @@ Kod işine başlanmadan **tamamı** bitmiş olmalı.
 - **Kabul kriteri:** `git config --global --list | grep -E "rerere|reflogExpire|fetch\.prune|push\.followTags"` → 5 satır.
 - **Risk:** Yok (geriye dönük uyumlu, sadece ekleme).
 
-#### P4 — Versioned `.githooks/`
+#### P4 — Versioned `.githooks/` ✅ TAMAMLANDI (2026-04-14, commit 91fbc84)
 - **Süre:** 15 dk
 - **Sorumlu:** Claude
 - **Açıklama:** Repo içinde `.githooks/` dizini oluştur, `core.hooksPath=.githooks` ayarla. Hook'lar versioned, review edilebilir, worktree'ler arasında tutarlı (Codex Q6).
+- **Uygulanan:** `.githooks/pre-commit` (secret/patch/100MB), `.githooks/pre-push` (main block, WIP warn), `.githooks/README.md`. `core.hooksPath=.githooks`. Smoke test: dummy secret → commit blocked as expected. Commit sırasında hook kendini çalıştırdı: `✓ pre-commit: OK`.
 - **Hook'lar:**
   - `pre-commit`: (a) secret pattern blokla (`sk-[A-Za-z0-9]{20,}`, `api_key\s*=\s*["'].*["']`), (b) `.patch` ekleme uyarısı, (c) 100MB+ dosya blokla
   - `pre-push`: (a) direct-main push blokla (branch protection ikinci güvenlik), (b) `WIP`/`fixup!` commit varsa uyar
