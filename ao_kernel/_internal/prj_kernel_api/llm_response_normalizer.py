@@ -61,8 +61,9 @@ def extract_llm_output_text(resp_bytes: bytes) -> str:
                             parts.append(text)
                     if parts:
                         return "\n".join(parts).strip()
-            if isinstance(first.get("text"), str):
-                return first.get("text", "").strip()
+            first_text = first.get("text")
+            if isinstance(first_text, str):
+                return first_text.strip()
 
     # OpenAI Responses API: {"output":[{"content":[{"text":"..."}]}]}
     output = obj.get("output")

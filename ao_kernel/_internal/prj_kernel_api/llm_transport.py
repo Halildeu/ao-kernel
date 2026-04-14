@@ -187,7 +187,7 @@ def execute_http_request_with_resilience(
             "tls_cafile": None,
         }
 
-    retry_evidence: list[dict] = []
+    retry_evidence: list[dict[str, Any]] = []
 
     def _on_retry(attempt: int, wait: float, exc: Exception) -> None:
         retry_evidence.append({

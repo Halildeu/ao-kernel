@@ -59,13 +59,13 @@ def load_env_presence(
     env_mode: str = "dotenv",
 ) -> Dict[str, object]:
     if env_mode == "process":
-        keys = sorted(expected_keys) if expected_keys else []
-        present_keys = {k for k in keys if os.environ.get(k)}
-        missing_expected = [k for k in keys if k not in present_keys]
+        proc_keys = sorted(expected_keys) if expected_keys else []
+        proc_present: set[str] = {k for k in proc_keys if os.environ.get(k)}
+        proc_missing = [k for k in proc_keys if k not in proc_present]
         return {
-            "present_keys": present_keys,
-            "missing_expected_keys": missing_expected,
-            "source_used": "process_env" if present_keys else "none",
+            "present_keys": proc_present,
+            "missing_expected_keys": proc_missing,
+            "source_used": "process_env" if proc_present else "none",
             "parse_errors": [],
         }
 

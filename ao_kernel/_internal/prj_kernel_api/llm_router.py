@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 def _load_json(path: Path) -> Dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    loaded: Dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    return loaded
 
 
 def _parse_ts(ts: Optional[str]) -> Optional[datetime]:
@@ -43,10 +44,11 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
 def _load_operations_json(filename: str, repo_root: Path) -> Dict[str, Any]:
     """Load operations JSON — tries repo-root first, falls back to bundled defaults."""
     from ao_kernel._internal.shared.resource_loader import load_resource
-    return load_resource("operations", filename)
+    payload: Dict[str, Any] = load_resource("operations", filename)
+    return payload
 
 
-def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path, Path, Path, Path]:
+def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path | None, Path | None, Path | None, Path]:
     """Return probe_state path only. Operations loaded via _load_operations_json()."""
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
     probe_state = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
@@ -56,7 +58,7 @@ def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> 
 
 def _merge_state(provider_map: Dict[str, Any], probe_state: Dict[str, Any]) -> Dict[str, Any]:
     """Merge runtime probe state into provider_map (without mutating input)."""
-    merged = json.loads(json.dumps(provider_map))
+    merged: Dict[str, Any] = json.loads(json.dumps(provider_map))
     state_classes = probe_state.get("classes", {})
     for cls, cls_data in state_classes.items():
         mp_cls = merged.get("classes", {}).get(cls)
