@@ -49,6 +49,9 @@ class AoKernelClient:
         session_id: str | None = None,
         auto_init: bool = False,
         provider_priority: list[str] | None = None,
+        vector_store: Any | None = None,
+        owns_vector_store: bool | None = None,
+        embedding_config: Any | None = None,
     ):
         """Initialize the client.
 
@@ -57,17 +60,42 @@ class AoKernelClient:
             session_id: Explicit session ID (generated if None).
             auto_init: Create .ao/ workspace if not found.
             provider_priority: LLM provider preference order.
+            vector_store: Optional pre-instantiated VectorStoreBackend.
+                If provided, skips env/policy resolution. Caller retains
+                ownership by default (override with owns_vector_store=True).
+            owns_vector_store: Whether the client should close() the backend
+                on __exit__. Defaults: True for env-resolved backends,
+                False for injected ones. Pass explicitly to override.
+            embedding_config: Optional EmbeddingConfig for semantic retrieval.
+                Decoupled from chat route because most chat providers do not
+                expose an embeddings endpoint. Resolved via constructor >
+                policy > env > default when omitted.
         """
         self._workspace_root = self._resolve_workspace(workspace_root, auto_init)
         self._session_id = session_id or f"sdk-{uuid.uuid4().hex[:12]}"
         self._provider_priority = provider_priority or []
         self._context: dict[str, Any] | None = None
         self._session_active = False
+        self._vector_store, resolver_owned = self._resolve_vector_store(vector_store)
+        self._owns_vector_store = (
+            owns_vector_store if owns_vector_store is not None else resolver_owned
+        )
+        self._embedding_config = self._resolve_embedding_config(embedding_config)
 
     @property
     def workspace_root(self) -> Path | None:
         """Resolved workspace root, or None in library mode."""
         return self._workspace_root
+
+    @property
+    def vector_store(self) -> Any | None:
+        """Resolved vector store backend, or None if semantic retrieval is disabled."""
+        return self._vector_store
+
+    @property
+    def embedding_config(self) -> Any:
+        """Resolved embedding configuration (EmbeddingConfig)."""
+        return self._embedding_config
 
     @property
     def session_id(self) -> str:
@@ -87,6 +115,33 @@ class AoKernelClient:
         return self._context
 
     # ── Workspace ───────────────────────────────────────────────────
+
+    def _resolve_vector_store(
+        self, injected: Any | None
+    ) -> tuple[Any | None, bool]:
+        """Delegate to resolver — env + policy + injected precedence.
+
+        Resolver raises VectorStoreConfigError/VectorStoreConnectError under
+        strict mode; those propagate (fail-closed). Non-strict config errors
+        still raise — only connect failures downgrade to deterministic fallback.
+        """
+        from ao_kernel.context.vector_store_resolver import resolve_vector_store
+        return resolve_vector_store(
+            workspace=self._workspace_root,
+            injected=injected,
+        )
+
+    def _resolve_embedding_config(self, injected: Any | None) -> Any:
+        """Delegate to resolver — constructor > policy > env > default.
+
+        Never raises — missing values fall through to defaults. The api_key
+        is resolved lazily at call time from env (D11), not stored.
+        """
+        from ao_kernel.context.embedding_config import resolve_embedding_config
+        return resolve_embedding_config(
+            workspace=self._workspace_root,
+            injected=injected,
+        )
 
     @staticmethod
     def _resolve_workspace(
@@ -319,6 +374,8 @@ class AoKernelClient:
                 stream=stream,
                 tools=tools,
                 response_format=response_format,
+                embedding_config=self._embedding_config,
+                vector_store=self._vector_store,
             )
         else:
             from ao_kernel.llm import build_request
@@ -408,6 +465,8 @@ class AoKernelClient:
                 request_id=request_id,
                 workspace_root=ws_str,
                 tool_results=tool_results,
+                vector_store=self._vector_store,
+                embedding_config=self._embedding_config,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))
@@ -541,6 +600,8 @@ class AoKernelClient:
                 request_id=request_id,
                 workspace_root=ws_str,
                 tool_results=tool_results,
+                vector_store=self._vector_store,
+                embedding_config=self._embedding_config,
             )
             decisions_extracted = len(
                 self._context.get("ephemeral_decisions", self._context.get("decisions", []))
@@ -749,8 +810,32 @@ class AoKernelClient:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """End session on context manager exit."""
-        self.end_session(save=exc_type is None)
+        """End session and release owned resources on context manager exit."""
+        try:
+            self.end_session(save=exc_type is None)
+        finally:
+            self._close_owned_vector_store()
+
+    def _close_owned_vector_store(self) -> None:
+        """Close the backend if the client owns it (resolver-created).
+
+        Uses hasattr probe so that InMemoryVectorStore (no close() method)
+        and third-party backends without a close hook are both safe.
+        Exceptions during close are logged, never propagated — cleanup is
+        best-effort and must not mask the original control-flow.
+        """
+        backend = self._vector_store
+        if backend is None or not self._owns_vector_store:
+            return
+        close = getattr(backend, "close", None)
+        if not callable(close):
+            return
+        try:
+            close()
+        except Exception as exc:  # noqa: BLE001 — cleanup best-effort
+            logger.warning(
+                "vector_store close failed during __exit__: %s", exc
+            )
 
     # ── Repr ────────────────────────────────────────────────────────
 

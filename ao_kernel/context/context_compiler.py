@@ -58,6 +58,8 @@ def compile_context(
     profile: str | None = None,
     messages: list[dict[str, Any]] | None = None,
     enable_semantic_search: bool | None = None,
+    embedding_config: Any | None = None,
+    vector_store: Any | None = None,
 ) -> CompiledContext:
     """Compile context from 3 lanes with relevance scoring and budget enforcement.
 
@@ -69,6 +71,10 @@ def compile_context(
         messages: Conversation messages (for profile auto-detection)
         enable_semantic_search: Enable semantic reranking (None = use profile/env).
             Default OFF. Set AO_SEMANTIC_SEARCH=1 env var to enable globally.
+        embedding_config: Optional EmbeddingConfig passed to semantic_search.
+            Decoupled from chat route (chat provider may not support embeddings).
+        vector_store: Optional VectorStoreBackend. When provided, semantic_search
+            delegates to the backend for scale; otherwise in-memory path is used.
 
     Returns:
         CompiledContext with preamble, metrics, and selection log.
@@ -104,7 +110,14 @@ def compile_context(
     items.sort(key=lambda x: x.relevance_score, reverse=True)
 
     # Semantic reranking (opt-in, default OFF)
-    _apply_semantic_reranking(items, messages, profile_config, enable_semantic_search)
+    _apply_semantic_reranking(
+        items,
+        messages,
+        profile_config,
+        enable_semantic_search,
+        embedding_config=embedding_config,
+        vector_store=vector_store,
+    )
 
     # Budget enforcement
     budget = profile_config.max_tokens * 4  # ~4 chars per token
@@ -248,6 +261,9 @@ def _apply_semantic_reranking(
     messages: list[dict[str, Any]] | None,
     profile_config: ProfileConfig,
     enable_override: bool | None,
+    *,
+    embedding_config: Any | None = None,
+    vector_store: Any | None = None,
 ) -> None:
     """Optionally rerank items by semantic similarity to user query.
 
@@ -258,6 +274,10 @@ def _apply_semantic_reranking(
 
     Modifies items in-place (blends semantic score into relevance_score).
     Fails silently if embedding API unavailable — deterministic fallback preserved.
+
+    ``embedding_config`` (EmbeddingConfig) supplies provider/model/api_key
+    decoupled from the chat route. ``vector_store`` (VectorStoreBackend),
+    when provided, is used by semantic_search to query the embedding index.
     """
     import os
 
@@ -302,6 +322,8 @@ def _apply_semantic_reranking(
             decisions_for_search,
             top_k=len(items),
             min_similarity=0.2,
+            embedding_config=embedding_config,
+            vector_store=vector_store,
         )
 
         if not results:

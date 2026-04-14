@@ -274,12 +274,19 @@ def build_request_with_context(
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | None = None,
     response_format: dict[str, Any] | None = None,
+    embedding_config: Any | None = None,
+    vector_store: Any | None = None,
 ) -> dict[str, Any]:
     """Build LLM request with context injection.
 
     If session_context is provided, compiles context and injects into messages.
     Falls back to plain build_request if no context available.
     Propagates tools, tool_choice, and response_format to the underlying request.
+
+    ``embedding_config`` (EmbeddingConfig) and ``vector_store`` (VectorStoreBackend)
+    are threaded through to compile_context for semantic reranking. Both are
+    optional — when omitted, the compiler falls back to the deterministic
+    scoring contract (no regression).
     """
     if session_context:
         from pathlib import Path
@@ -312,6 +319,8 @@ def build_request_with_context(
             workspace_facts=workspace_facts,
             profile=profile,
             messages=messages,
+            embedding_config=embedding_config,
+            vector_store=vector_store,
         )
         if compiled.preamble:
             # Use compiled preamble directly — it includes all 3 lanes
@@ -351,10 +360,16 @@ def process_response_with_context(
     request_id: str = "",
     workspace_root: str | None = None,
     tool_results: list[dict[str, Any]] | None = None,
+    vector_store: Any | None = None,
+    embedding_config: Any | None = None,
 ) -> dict[str, Any]:
     """Process LLM response through context pipeline.
 
     Extracts decisions, processes tool results, runs memory pipeline.
+    When ``vector_store`` is provided, extracted decisions are also indexed
+    for semantic retrieval (write-path failures are non-blocking — see
+    semantic_indexer contract).
+
     Returns updated session context.
     """
     from pathlib import Path
@@ -369,6 +384,8 @@ def process_response_with_context(
         provider_id=provider_id,
         request_id=request_id,
         workspace_root=ws,
+        vector_store=vector_store,
+        embedding_config=embedding_config,
     )
 
     # Process tool results (extract_from_tool_result — was disconnected, now wired)

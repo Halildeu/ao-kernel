@@ -12,5 +12,18 @@
     "auto_apply_with_rollback_threshold": 0.7,
     "manual_review_below": 0.7,
     "dead_session_threshold": 30
+  },
+  "semantic_retrieval": {
+    "enabled": false,
+    "backend": {
+      "type": "inmemory",
+      "strict": false,
+      "fail_action": "warn_fallback"
+    },
+    "embedding": {
+      "provider": "openai",
+      "model": "text-embedding-3-small",
+      "base_url": "https://api.openai.com/v1"
+    }
   }
 }

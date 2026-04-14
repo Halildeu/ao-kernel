@@ -101,10 +101,16 @@ def promote_decision(
     expire_days: int = 365,
     supersedes: str | None = None,
     provenance: dict[str, Any] | None = None,
+    vector_store: Any | None = None,
+    embedding_config: Any | None = None,
 ) -> CanonicalDecision:
     """Promote an ephemeral decision to canonical store.
 
     If key already exists, it's updated (latest wins).
+
+    When ``vector_store`` is provided, the promoted decision is also
+    embedded and indexed for semantic retrieval. Write-path failures
+    are silently logged (never block promotion).
     """
     store = load_store(workspace_root)
     now = _now_iso()
@@ -135,6 +141,21 @@ def promote_decision(
         record_canonical_promote(category=category)
     except Exception:
         pass
+
+    if vector_store is not None:
+        try:
+            from ao_kernel.context.semantic_indexer import index_decision
+            index_decision(
+                key=key,
+                value=value,
+                source=f"canonical:{category}",
+                namespace=str(workspace_root),
+                vector_store=vector_store,
+                embedding_config=embedding_config,
+                extra_metadata={"confidence": confidence, "session_id": session_id},
+            )
+        except Exception:  # noqa: BLE001 — write-path best-effort
+            pass
 
     return decision
 

@@ -22,3 +22,15 @@ class SessionCorruptedError(RuntimeError):
     schema mismatch, hash verification failure). Callers should decide whether
     to create a fresh session or propagate the error.
     """
+
+
+class VectorStoreConfigError(ValueError):
+    """Vector store configuration is invalid (missing DSN, bad backend name, etc.)."""
+
+
+class VectorStoreConnectError(RuntimeError):
+    """Vector store backend instantiation failed (connect error, driver missing).
+
+    Only raised under strict mode. Non-strict mode falls back to deterministic
+    ordering with a warning.
+    """
