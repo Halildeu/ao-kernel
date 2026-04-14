@@ -63,13 +63,17 @@ jobs:
     runs-on: ubuntu-latest
     # CNS-006 Q4: after the 131-error cleanup (PR #56), typecheck is a real
     # gate. _internal/* is still under per-module ignore (D13).
+    #
+    # Install `mcp` extra too: some ignores depend on the mcp SDK being
+    # importable (untyped decorators on server.list_tools etc). Without mcp
+    # those decorators resolve to Any and the ignores become "unused".
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm]"
+        run: pip install -e ".[dev,llm,mcp]"
       - name: Mypy
         run: mypy ao_kernel/
 
