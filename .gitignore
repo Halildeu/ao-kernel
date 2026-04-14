@@ -213,3 +213,10 @@ __marimo__/
 # Example projects: never commit the workspace state or secrets they create.
 examples/*/.ao/
 examples/*/.cache/
+
+# Evidence trail artifacts (per-run / per-day JSONL emitted by MCP + workflow paths)
+.ao/evidence/
+.ao/sessions/
+.ao/cache/
+# Smoke-test / dev artefact — never commit a nested .ao
+.ao/.ao/
