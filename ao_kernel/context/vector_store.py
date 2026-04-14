@@ -14,7 +14,15 @@ from ao_kernel.context.semantic_retrieval import cosine_similarity
 
 
 class VectorStoreBackend(abc.ABC):
-    """Abstract interface for vector storage backends."""
+    """Abstract interface for vector storage backends.
+
+    Subclasses MUST implement store/search/delete/count. close() is a
+    non-abstract hook with a default no-op body so that:
+        - Backward-compatible: existing subclasses need no change.
+        - Forward-compatible: network-backed backends (pgvector, etc.)
+          override close() to release connections, and AoKernelClient
+          can safely call hasattr-free `backend.close()` at __exit__.
+    """
 
     @abc.abstractmethod
     def store(self, key: str, embedding: list[float], *, metadata: dict[str, Any] | None = None) -> None:
@@ -44,6 +52,14 @@ class VectorStoreBackend(abc.ABC):
     def count(self) -> int:
         """Return number of stored embeddings."""
         ...
+
+    def close(self) -> None:
+        """Release backend resources. Default: no-op (memory-only backends).
+
+        Network-backed subclasses override this to close connections.
+        Safe to call multiple times. Must not raise on already-closed state.
+        """
+        return None
 
 
 class InMemoryVectorStore(VectorStoreBackend):
