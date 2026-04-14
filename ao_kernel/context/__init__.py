@@ -12,6 +12,16 @@ Modules:
     session_lifecycle: start/end session management
 """
 
+from ao_kernel.context.agent_coordination import (
+    check_stale,
+    compile_context_sdk,
+    finalize_session_sdk,
+    get_revision,
+    has_changed,
+    query_memory,
+    read_with_revision,
+    record_decision,
+)
 from ao_kernel.context.canonical_store import CanonicalDecision, promote_decision, query as query_canonical
 from ao_kernel.context.context_compiler import CompiledContext, compile_context
 from ao_kernel.context.context_injector import build_context_preamble, inject_context_into_messages
@@ -37,4 +47,13 @@ __all__ = [
     "CanonicalDecision",
     "promote_decision",
     "query_canonical",
+    # Agent-coordination SDK (CNS-20260414-009 facade expose)
+    "record_decision",
+    "query_memory",
+    "get_revision",
+    "has_changed",
+    "check_stale",
+    "read_with_revision",
+    "compile_context_sdk",
+    "finalize_session_sdk",
 ]

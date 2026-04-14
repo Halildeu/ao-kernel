@@ -222,6 +222,135 @@ class AoKernelClient:
             return ws  # library mode — no .ao/ required
         return find_root()
 
+    # ── Agent-coordination SDK (CNS-20260414-009) ───────────────────
+
+    def _require_workspace(self) -> Path:
+        """Return self._workspace_root or raise — SDK memory ops need durable storage."""
+        if self._workspace_root is None:
+            raise RuntimeError(
+                "This operation requires a workspace; "
+                "construct AoKernelClient(workspace_root=...) first."
+            )
+        return self._workspace_root
+
+    def record_decision(
+        self,
+        key: str,
+        value: Any,
+        *,
+        source: str = "agent",
+        confidence: float = 0.8,
+        auto_promote: bool = True,
+        promote_threshold: float = 0.7,
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Record a decision. Delegates to ``agent_coordination.record_decision``.
+
+        The client's session_id is threaded through automatically so canonical
+        provenance (``promoted_from``) is never empty for client-driven writes.
+        When ``context`` is omitted and the client has an active session, the
+        session context is supplied so below-threshold decisions land in
+        ephemeral storage instead of being dropped.
+        """
+        from ao_kernel.context.agent_coordination import record_decision
+        effective_context = context if context is not None else self._context
+        return record_decision(
+            self._require_workspace(),
+            key=key,
+            value=value,
+            source=source,
+            confidence=confidence,
+            session_id=self._session_id,
+            auto_promote=auto_promote,
+            promote_threshold=promote_threshold,
+            context=effective_context,
+        )
+
+    def query_memory(
+        self,
+        key_pattern: str = "*",
+        category: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Query canonical decisions + facts."""
+        from ao_kernel.context.agent_coordination import query_memory
+        return query_memory(
+            self._require_workspace(),
+            key_pattern=key_pattern,
+            category=category,
+        )
+
+    def get_revision(self) -> str:
+        """Opaque revision token for the canonical store."""
+        from ao_kernel.context.agent_coordination import get_revision
+        return get_revision(self._require_workspace())
+
+    def has_changed(self, last_revision: str) -> bool:
+        """True when the canonical store has moved past ``last_revision``.
+
+        ADVISORY — see ``agent_coordination`` module docstring.
+        """
+        from ao_kernel.context.agent_coordination import has_changed
+        return has_changed(self._require_workspace(), last_revision=last_revision)
+
+    def read_with_revision(
+        self,
+        key_pattern: str = "*",
+        category: str | None = None,
+    ) -> dict[str, Any]:
+        """Read canonical decisions together with the current revision token."""
+        from ao_kernel.context.agent_coordination import read_with_revision
+        return read_with_revision(
+            self._require_workspace(),
+            key_pattern=key_pattern,
+            category=category,
+        )
+
+    def compile_context_sdk(
+        self,
+        *,
+        session_context: dict[str, Any] | None = None,
+        profile: str | None = None,
+        messages: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Build a context preamble WITHOUT issuing an LLM call.
+
+        Useful for preflight prompt auditing, handoff between agents, or
+        populating a prompt cache before firing multiple requests with the
+        same context. If ``session_context`` is omitted and the client has
+        an active session, that session's context is used.
+        """
+        from ao_kernel.context.agent_coordination import compile_context_sdk
+        return compile_context_sdk(
+            self._require_workspace(),
+            session_context=session_context if session_context is not None else self._context,
+            profile=profile,
+            messages=messages,
+        )
+
+    def finalize_session(
+        self,
+        *,
+        auto_promote: bool = True,
+        promote_threshold: float = 0.7,
+    ) -> dict[str, Any]:
+        """End the active session and return a promotion summary.
+
+        Unlike ``end_session``, this SDK surface is explicit about the
+        promotion contract and returns the delta count. Raises when no
+        session is active.
+        """
+        if self._context is None:
+            raise RuntimeError("No active session to finalize.")
+        from ao_kernel.context.agent_coordination import finalize_session_sdk
+        summary = finalize_session_sdk(
+            self._require_workspace(),
+            self._context,
+            auto_promote=auto_promote,
+            promote_threshold=promote_threshold,
+        )
+        self._session_active = False
+        return summary
+
     def doctor(self) -> dict[str, Any]:
         """Run workspace health check. Returns check results."""
         from ao_kernel.doctor_cmd import run as _doctor_run
