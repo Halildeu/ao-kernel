@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# ao-kernel pre-commit hook
+# Guards: (a) secret patterns, (b) .patch files in root, (c) large files (>=100MB)
+# Bypass: `git commit --no-verify` (discouraged — document any use)
+
+set -e
+
+red() { printf '\033[31m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+
+FAIL=0
+
+# Collect staged files (Added, Copied, Modified, Renamed — skip Deleted)
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# ---- Guard 1: secret patterns ----
+# Detect obvious leaks. False positives are possible; use --no-verify consciously.
+secret_patterns='(sk-[A-Za-z0-9]{20,}|xoxb-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|(api[_-]?key|secret|password|token)\s*[:=]\s*["'\''][^"'\''[:space:]]{16,}["'\''])'
+
+while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    [ ! -f "$f" ] && continue
+    # Skip binary + common safe paths
+    case "$f" in
+        *.lock|*.png|*.jpg|*.jpeg|*.gif|*.pdf|*.ico|*.woff*|*.ttf) continue;;
+        .ao/consultations/*|.claude/*) continue;;  # consultation/plan artifacts
+    esac
+    if git show ":$f" 2>/dev/null | grep -E -i --binary-files=without-match "$secret_patterns" >/dev/null 2>&1; then
+        red "✗ Possible secret in: $f"
+        FAIL=1
+    fi
+done <<< "$staged"
+
+# ---- Guard 2: .patch files in repo root ----
+patch_in_root=$(echo "$staged" | grep -E '^[^/]+\.patch$' || true)
+if [ -n "$patch_in_root" ]; then
+    yellow "⚠ .patch file(s) staged at repo root (use .archive/patches/ instead):"
+    echo "$patch_in_root" | sed 's/^/  - /'
+    yellow "  If intentional, run with --no-verify."
+    FAIL=1
+fi
+
+# ---- Guard 3: large files (>=100MB) ----
+while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    [ ! -f "$f" ] && continue
+    size=$(wc -c < "$f" 2>/dev/null || echo 0)
+    if [ "$size" -ge 104857600 ]; then
+        red "✗ Large file (>=100MB): $f ($size bytes). Use git-lfs or exclude."
+        FAIL=1
+    fi
+done <<< "$staged"
+
+if [ "$FAIL" -eq 0 ]; then
+    green "✓ pre-commit: OK"
+else
+    red "✗ pre-commit: blocked. Fix the issues above or use --no-verify consciously."
+    exit 1
+fi

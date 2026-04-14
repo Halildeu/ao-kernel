@@ -73,9 +73,12 @@ def load_store(workspace_root: Path) -> dict[str, Any]:
     if not path.exists():
         return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        parsed = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+    if not isinstance(parsed, dict):
+        return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+    return parsed
 
 
 def save_store(workspace_root: Path, store: dict[str, Any]) -> None:

@@ -127,9 +127,12 @@ class AoKernelClient:
 
         output = buf.getvalue()
         try:
-            return json.loads(output)
+            parsed = json.loads(output)
         except (json.JSONDecodeError, ValueError):
             return {"exit_code": rc, "output": output}
+        if not isinstance(parsed, dict):
+            return {"exit_code": rc, "output": output}
+        return parsed
 
     # ── Session Lifecycle ───────────────────────────────────────────
 
@@ -638,10 +641,10 @@ class AoKernelClient:
 
     # ── Checkpoint/Resume ───────────────────────────────────────────
 
-    def save_checkpoint(self, label: str = "") -> dict[str, Any]:
+    def save_checkpoint(self, session_id: str | None = None) -> dict[str, Any]:
         """Save current session as a checkpoint.
 
-        Returns checkpoint metadata.
+        Returns a dict with saved=True and path, or saved=False with error code.
         """
         if not self._session_active or not self._context:
             return {"saved": False, "error": "NO_ACTIVE_SESSION"}
@@ -649,24 +652,25 @@ class AoKernelClient:
             return {"saved": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.checkpoint import save_checkpoint
-        return save_checkpoint(
+        path = save_checkpoint(
             self._context,
             workspace_root=self._workspace_root,
-            label=label,
+            session_id=session_id,
         )
+        return {"saved": True, "path": path}
 
-    def resume_checkpoint(self, checkpoint_id: str) -> dict[str, Any]:
-        """Resume session from a checkpoint.
+    def resume_checkpoint(self, session_id: str) -> dict[str, Any]:
+        """Resume session from a checkpoint by session_id.
 
-        Returns resumed session context.
+        Returns a dict with resumed=True and session_id, or resumed=False with error code.
         """
         if not self._workspace_root:
             return {"resumed": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.checkpoint import resume_checkpoint
         self._context = resume_checkpoint(
-            checkpoint_id,
             workspace_root=self._workspace_root,
+            session_id=session_id,
         )
         self._session_active = True
         self._session_id = self._context.get("session_id", self._session_id)

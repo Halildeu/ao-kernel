@@ -101,14 +101,15 @@ class PgvectorBackend(VectorStoreBackend):
     def delete(self, key: str) -> bool:
         with self._conn.cursor() as cur:
             cur.execute(f"DELETE FROM {self._table} WHERE key = %s", (key,))
-            deleted = cur.rowcount > 0
+            deleted: bool = cur.rowcount > 0
             self._conn.commit()
             return deleted
 
     def count(self) -> int:
         with self._conn.cursor() as cur:
             cur.execute(f"SELECT COUNT(*) FROM {self._table}")
-            return cur.fetchone()[0]
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
 
     def close(self) -> None:
         """Close database connection."""

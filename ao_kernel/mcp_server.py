@@ -26,14 +26,14 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 _API_VERSION = "0.1.0"
 
 
-def _find_workspace_root():
+def _find_workspace_root() -> Path | None:
     """Find workspace root for context operations. Returns Path or None."""
-    from pathlib import Path
     from ao_kernel.config import workspace_root
     ws = workspace_root()
     return Path(ws) if ws else None
@@ -443,7 +443,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
 # ── MCP Server (requires `mcp` package) ────────────────────────────
 
 
-TOOL_DEFINITIONS = [
+TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "ao_policy_check",
         "description": "Validate an action against an ao-kernel policy. Returns allow/deny decision.",
@@ -534,7 +534,7 @@ TOOL_DISPATCH = {
 }
 
 
-def create_tool_gateway():
+def create_tool_gateway() -> Any:
     """Create a ToolGateway pre-configured with MCP tools.
 
     Returns a policy-gated gateway where all 5 tools are registered.
@@ -567,7 +567,7 @@ def create_tool_gateway():
     return gateway
 
 
-def create_mcp_server():  # pragma: no cover — requires mcp package
+def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
     """Create and configure the MCP server instance.
 
     Requires `mcp` package: pip install ao-kernel[mcp]
@@ -583,8 +583,8 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
 
     server = Server("ao-kernel")
 
-    @server.list_tools()
-    async def list_tools():
+    @server.list_tools()  # type: ignore[no-untyped-call,untyped-decorator]
+    async def list_tools() -> list[Any]:
         return [
             Tool(
                 name=td["name"],
@@ -594,8 +594,8 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
             for td in TOOL_DEFINITIONS
         ]
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict):
+    @server.call_tool()  # type: ignore[untyped-decorator]
+    async def call_tool(name: str, arguments: dict[str, Any]) -> list[Any]:
         import time as _time
         from ao_kernel.telemetry import span as otel_span, record_mcp_tool_call, record_policy_check
 
@@ -633,33 +633,35 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
             try:
                 from ao_kernel.context.decision_extractor import extract_from_tool_result
                 from ao_kernel.context.canonical_store import promote_decision
-                decisions = extract_from_tool_result(name, result)
-                for d in decisions:
-                    if d.confidence >= 0.8:
-                        promote_decision(
-                            _find_workspace_root(),
-                            key=d.key, value=d.value, source="mcp_tool",
-                            confidence=d.confidence,
-                        )
+                ws_root = _find_workspace_root()
+                if ws_root is not None:
+                    decisions = extract_from_tool_result(name, result)
+                    for d in decisions:
+                        if d.confidence >= 0.8:
+                            promote_decision(
+                                ws_root,
+                                key=d.key, value=d.value, source="mcp_tool",
+                                confidence=d.confidence,
+                            )
             except Exception:
                 pass  # Context wiring failure shouldn't block tool response
 
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
-    @server.list_resources()
-    async def list_resources():
+    @server.list_resources()  # type: ignore[no-untyped-call,untyped-decorator]
+    async def list_resources() -> list[Any]:
         resources = []
         for rtype in ("policies", "schemas", "registry"):
             resources.append(Resource(
-                uri=f"ao://{rtype}/",
+                uri=f"ao://{rtype}/",  # type: ignore[arg-type]
                 name=f"ao-kernel {rtype}",
                 description=f"Bundled {rtype} JSON files",
                 mimeType="application/json",
             ))
         return resources
 
-    @server.read_resource()
-    async def read_resource(uri: str):
+    @server.read_resource()  # type: ignore[no-untyped-call,untyped-decorator]
+    async def read_resource(uri: str) -> str:
         data = handle_resource(str(uri))
         if data is None:
             raise ValueError(f"Resource not found: {uri}")
@@ -668,7 +670,7 @@ def create_mcp_server():  # pragma: no cover — requires mcp package
     return server
 
 
-async def serve_stdio():  # pragma: no cover — requires mcp package
+async def serve_stdio() -> None:  # pragma: no cover — requires mcp package
     """Run MCP server over stdio transport."""
     try:
         from mcp.server.stdio import stdio_server

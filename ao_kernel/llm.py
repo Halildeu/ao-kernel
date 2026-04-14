@@ -207,15 +207,23 @@ from ao_kernel._internal.prj_kernel_api.llm_stream_transport import execute_stre
 # ── Resilience ───────────────────────────────────────────────────────
 
 
-def get_circuit_breaker(provider_id: str):
-    """Get or create per-provider circuit breaker."""
+def get_circuit_breaker(provider_id: str) -> Any:
+    """Get or create per-provider circuit breaker.
+
+    Returns the breaker instance from the internal module (typed as Any because
+    the internal type is not part of the public API).
+    """
     from ao_kernel._internal.prj_kernel_api.circuit_breaker import get_circuit_breaker as _get
 
     return _get(provider_id)
 
 
-def get_rate_limiter(provider_id: str):
-    """Get or create per-provider rate limiter."""
+def get_rate_limiter(provider_id: str) -> Any:
+    """Get or create per-provider rate limiter.
+
+    Returns the limiter instance from the internal module (typed as Any because
+    the internal type is not part of the public API).
+    """
     from ao_kernel._internal.prj_kernel_api.rate_limiter import get_rate_limiter as _get
 
     return _get(provider_id)
@@ -276,7 +284,6 @@ def build_request_with_context(
     if session_context:
         from pathlib import Path
         from ao_kernel.context.context_compiler import compile_context
-        from ao_kernel.context.context_injector import inject_context_into_messages
 
         # Load canonical decisions + workspace facts if workspace available
         canonical_dict = None

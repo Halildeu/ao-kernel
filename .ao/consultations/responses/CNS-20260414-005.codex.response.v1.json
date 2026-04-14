@@ -1,0 +1,5 @@
+Yanıt JSON olarak yazıldı: [CNS-20260414-005.codex.response.v1.json](/Users/halilkocoglu/Documents/ao-kernel/.claude/worktrees/wizardly-euclid/.ao/consultations/responses/CNS-20260414-005.codex.response.v1.json)
+
+Net verdict `D` verdim: plan yön olarak doğru, ama Faz 5 öncesi kısa bir `D0` pre-tranche gerekli. Bunu özellikle üç kanıt taşıdı: `client.py`/`mcp_server.py` ile `build_request()` arasında endpoint `base_url` uyumsuzluğu, provider continuation state’in request path’ine hiç bağlanmaması ve secrets factory geçişinin bugünkü `EnvSecretsProvider` ile güvenli olmaması. Ayrıca iki talep bulgusunu düzelttim: `EvidenceWriter` client production path’inde değil, `llm_post_processors` kullanılıyor; `ao_llm_call` thin-executor uyarısı da kodda ve `CLAUDE.md` içinde zaten mevcut.
+
+JSON sentaksını `jq` ile doğruladım.
