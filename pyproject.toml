@@ -99,7 +99,6 @@ exclude = ["^\\.archive/"]
 # session, orchestrator, prj_kernel_api (son).
 [[tool.mypy.overrides]]
 module = [
-    "ao_kernel._internal.shared.*",
     "ao_kernel._internal.utils.*",
     "ao_kernel._internal.secrets.*",
     "ao_kernel._internal.evidence.*",
