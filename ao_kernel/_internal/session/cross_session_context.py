@@ -16,6 +16,16 @@ from ao_kernel._internal.session.context_store import (
 from ao_kernel._internal.shared.utils import write_json_atomic
 
 
+def _asdict(value: Any) -> dict[str, Any]:
+    """Narrow an ``Any`` to ``dict[str, Any]``; returns ``{}`` otherwise."""
+    return value if isinstance(value, dict) else {}
+
+
+def _aslist(value: Any) -> list[Any]:
+    """Narrow an ``Any`` to ``list[Any]``; returns ``[]`` otherwise."""
+    return value if isinstance(value, list) else []
+
+
 def _now_iso8601() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -111,8 +121,8 @@ def build_cross_session_context(*, workspace_root: Path, session_name_filter: st
                     import logging
                     logging.getLogger("ao_kernel").warning("cross-session pruned context save failed: %s", exc)
 
-            decisions = ctx.get("ephemeral_decisions") if isinstance(ctx.get("ephemeral_decisions"), list) else []
-            provider_state = ctx.get("provider_state") if isinstance(ctx.get("provider_state"), dict) else {}
+            decisions = _aslist(ctx.get("ephemeral_decisions"))
+            provider_state = _asdict(ctx.get("provider_state"))
             if isinstance(provider_state.get("provider"), str) and str(provider_state.get("provider")).strip():
                 provider_rows.append(
                     {
@@ -125,7 +135,7 @@ def build_cross_session_context(*, workspace_root: Path, session_name_filter: st
                         "summary_ref": str(provider_state.get("summary_ref") or ""),
                     }
                 )
-            compaction = ctx.get("compaction") if isinstance(ctx.get("compaction"), dict) else {}
+            compaction = _asdict(ctx.get("compaction"))
             if isinstance(compaction.get("status"), str) and str(compaction.get("status")).strip() not in {"", "idle"}:
                 try:
                     approx_input_tokens = int(compaction.get("approx_input_tokens") or 0)

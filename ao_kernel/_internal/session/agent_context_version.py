@@ -142,6 +142,7 @@ def load_agent_context_version(*, workspace_root: Path) -> dict[str, Any] | None
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        return payload
     except Exception:
         return None
