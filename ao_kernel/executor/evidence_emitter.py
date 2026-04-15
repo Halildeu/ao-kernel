@@ -19,7 +19,7 @@ Plan v2 (CNS-20260415-022 iter-1) decisions:
 - **Manifest NOT updated here.** The SHA-256 integrity manifest is
   generated on demand by the PR-A5 evidence-timeline CLI. PR-A3 is
   append-only (B4; see ``docs/EVIDENCE-TIMELINE.md §5`` revised).
-- **Kind whitelist.** Events outside the 17-kind taxonomy raise
+- **Kind whitelist.** Events outside the 18-kind taxonomy raise
   ``ValueError``. The closed set matches
   ``docs/EVIDENCE-TIMELINE.md §2``.
 - **Redaction at emission.** String values in ``payload`` that match
@@ -54,6 +54,10 @@ _KINDS: Final[frozenset[str]] = frozenset({
     "adapter_returned",
     "diff_previewed",
     "diff_applied",
+    # PR-A4 addition: rollback of a previously applied patch. Idempotent
+    # at the driver layer; emitted only when an actual reverse-diff apply
+    # occurs (not on idempotent_skip no-ops).
+    "diff_rolled_back",
     "approval_requested",
     "approval_granted",
     "approval_denied",
@@ -107,7 +111,7 @@ def emit_event(
     """Append one event to the per-run JSONL under a per-run file lock.
 
     Raises:
-    - ``ValueError`` when ``kind`` is outside the 17-event taxonomy.
+    - ``ValueError`` when ``kind`` is outside the 18-event taxonomy.
     - ``EvidenceEmitError`` on lock / write / fsync failure.
     """
     if kind not in _KINDS:

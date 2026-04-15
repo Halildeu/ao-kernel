@@ -27,9 +27,17 @@ _EXPECTED_TRANSITIONS: dict[str, frozenset[str]] = {
         {"interrupted", "waiting_approval", "applying", "failed", "cancelled"}
     ),
     "interrupted": frozenset({"running", "failed", "cancelled"}),
-    "waiting_approval": frozenset({"applying", "failed", "cancelled"}),
+    # PR-A4: waiting_approval -> running added for governance-gate
+    # approval granted flows (non-patch resume).
+    "waiting_approval": frozenset(
+        {"applying", "running", "failed", "cancelled"}
+    ),
     "applying": frozenset({"verifying", "failed", "cancelled"}),
-    "verifying": frozenset({"completed", "failed", "cancelled"}),
+    # PR-A4: verifying -> waiting_approval added for post-CI governance
+    # gate (workflow step_def.gate=post_ci).
+    "verifying": frozenset(
+        {"completed", "waiting_approval", "failed", "cancelled"}
+    ),
     "completed": frozenset(),
     "failed": frozenset(),
     "cancelled": frozenset(),

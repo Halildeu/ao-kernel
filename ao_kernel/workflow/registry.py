@@ -69,6 +69,11 @@ class StepDefinition:
     timeout_seconds: int | None
     human_interrupt_allowed: bool
     gate: str | None
+    # PR-A4a (Plan v2 B7/CNS-023 iter-2 absorb): internal primitive identifier
+    # for actor in {ao-kernel, system}. Schema guarantees presence when
+    # required via conditional allOf. Forbidden for actor in {adapter, human}.
+    # None by default for adapter/human steps.
+    operation: str | None = None
 
 
 @dataclass(frozen=True)
@@ -91,16 +96,32 @@ class WorkflowDefinition:
 @dataclass(frozen=True)
 class CrossRefIssue:
     """Structured cross-reference violation between a workflow definition
-    and an adapter manifest registry.
+    and an adapter manifest registry OR an internal consistency rule.
 
-    ``kind`` distinguishes missing-adapter issues from capability-gap
-    issues so callers can triage differently.
+    ``kind`` distinguishes:
+    - ``missing_adapter`` — an ``expected_adapter_refs`` entry or a
+      step's ``adapter_id`` is absent from the adapter registry.
+    - ``capability_gap`` — a step's ``required_capabilities`` are not
+      all advertised by the bound adapter.
+    - ``operation_required`` (PR-A4a) — a step with ``actor`` in
+      ``{ao-kernel, system}`` has no ``operation`` value. Internal
+      primitive dispatch requires an explicit operation identifier
+      (fail-closed).
+    - ``invalid_on_failure_for_operation`` (PR-A4a) — a step with
+      ``actor=ao-kernel AND operation=patch_apply AND
+      on_failure=escalate_to_human``. Partial index/worktree state must
+      not enter governance wait; patch conflict → ``failed`` terminal.
     """
 
-    kind: Literal["missing_adapter", "capability_gap"]
+    kind: Literal[
+        "missing_adapter",
+        "capability_gap",
+        "operation_required",
+        "invalid_on_failure_for_operation",
+    ]
     workflow_id: str
     step_name: str | None
-    adapter_id: str
+    adapter_id: str | None = None
     missing_capabilities: frozenset[str] = frozenset()
 
 
@@ -429,6 +450,35 @@ class WorkflowRegistry:
                         adapter_id=adapter_id,
                         missing_capabilities=frozenset(gap),
                     ))
+
+        # PR-A4a: operation_required for actor in {ao-kernel, system}.
+        # Schema allOf conditional enforces this at validation time, but we
+        # emit the CrossRefIssue for callers that want structured diagnostics
+        # (e.g., loader warnings) or programmatic audit.
+        for step in definition.steps:
+            if step.actor in {"ao-kernel", "system"} and step.operation is None:
+                issues.append(CrossRefIssue(
+                    kind="operation_required",
+                    workflow_id=definition.workflow_id,
+                    step_name=step.step_name,
+                ))
+
+        # PR-A4a: invalid_on_failure_for_operation — patch_apply forbids
+        # escalate_to_human (partial index/worktree state must not enter
+        # governance wait; CNS-023 iter-1 B3 + iter-2 MV2 absorb). Schema
+        # should also reject this via conditional allOf; this guard is
+        # defence-in-depth with typed diagnostic.
+        for step in definition.steps:
+            if (
+                step.actor == "ao-kernel"
+                and step.operation == "patch_apply"
+                and step.on_failure == "escalate_to_human"
+            ):
+                issues.append(CrossRefIssue(
+                    kind="invalid_on_failure_for_operation",
+                    workflow_id=definition.workflow_id,
+                    step_name=step.step_name,
+                ))
         return issues
 
 
@@ -470,6 +520,7 @@ def _parse_step(raw: Mapping[str, Any]) -> StepDefinition:
         timeout_seconds=raw.get("timeout_seconds"),
         human_interrupt_allowed=bool(raw.get("human_interrupt_allowed", False)),
         gate=raw.get("gate"),
+        operation=raw.get("operation"),
     )
 
 

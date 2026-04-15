@@ -195,7 +195,13 @@
         },
         "output_ref": {
           "type": "string",
-          "description": "Pointer to step output (e.g., adapter output_envelope serialization, CI result JSON)."
+          "description": "Pointer to step output (e.g., adapter output_envelope serialization, CI result JSON, patch artifact path). PR-A4 requires this field to be populated for actor in {adapter, ao-kernel, system} steps that produce durable outputs (diff content, reverse-diff paths, CI result JSON) so crash-recovery can find the canonical artifact."
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Step execution attempt number. 1 for first attempt; 2 when step.on_failure=retry_once triggers a re-execution. Append-only semantics: a retry produces a NEW step_record with the same step_name, a fresh step_id, and attempt=2. Only the terminal (highest attempt) step_record for a given step_name is authoritative for run-level state transitions. Crash-safety: if an attempt=2 step_record is absent and the prior attempt=1 is failed with on_failure=retry_once, the driver MUST resume by creating attempt=2 (not treat retry as consumed). Introduced in PR-A4."
         },
         "evidence_event_ids": {
           "type": "array",

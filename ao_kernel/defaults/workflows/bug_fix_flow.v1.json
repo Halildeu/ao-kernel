@@ -8,6 +8,7 @@
     {
       "step_name": "compile_context",
       "actor": "ao-kernel",
+      "operation": "context_compile",
       "policy_refs": [
         "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
       ],
@@ -28,11 +29,13 @@
     {
       "step_name": "preview_diff",
       "actor": "ao-kernel",
+      "operation": "patch_preview",
       "on_failure": "transition_to_failed"
     },
     {
       "step_name": "ci_gate",
       "actor": "system",
+      "operation": "ci_pytest",
       "on_failure": "transition_to_failed",
       "timeout_seconds": 600
     },
@@ -45,6 +48,7 @@
     {
       "step_name": "apply_patch",
       "actor": "ao-kernel",
+      "operation": "patch_apply",
       "on_failure": "retry_once"
     },
     {

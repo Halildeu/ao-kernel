@@ -26,9 +26,9 @@ The timeline replaces ad-hoc log reading and makes governance auditable: a revie
 
 ---
 
-## 2. Event Taxonomy — 17 Event Types, 8 Categories
+## 2. Event Taxonomy — 18 Event Types, 8 Categories
 
-Every event carries a `kind` field from this closed set. Additional kinds may appear in FAZ-B+ (for ops hardening and cron workflows) but FAZ-A ships exactly these 17.
+Every event carries a `kind` field from this closed set. Additional kinds may appear in FAZ-B+ (for ops hardening and cron workflows) but FAZ-A ships exactly these 18 (PR-A0 initial 17 + PR-A4 `diff_rolled_back`).
 
 ### Workflow lifecycle (3)
 
@@ -53,12 +53,13 @@ Every event carries a `kind` field from this closed set. Additional kinds may ap
 | `adapter_invoked` | Worktree executor has resolved policy, started the subprocess or HTTP request, and the adapter now owns the turn. | `ao-kernel` |
 | `adapter_returned` | Adapter has produced `output_envelope` (regardless of `status`). | `adapter` (via ao-kernel) |
 
-### Diff (2)
+### Diff (3)
 
 | Kind | Emitted when | Actor |
 |---|---|---|
 | `diff_previewed` | Adapter's `output_envelope.diff` has been rendered for human or CI review. | `ao-kernel` |
 | `diff_applied` | Diff has been applied to the worktree (commit not yet created). | `ao-kernel` |
+| `diff_rolled_back` | A previously applied patch has been reverted via its reverse-diff artefact (`{run_dir}/patches/{patch_id}.revdiff`). Idempotent skip cases do NOT emit this event. Introduced in PR-A4. | `ao-kernel` |
 
 ### Approval (3)
 
@@ -87,7 +88,7 @@ Every event carries a `kind` field from this closed set. Additional kinds may ap
 | `policy_checked` | A policy check evaluated (both allow and deny outcomes emit this in `report_only` mode; in `block` mode, denies emit `policy_denied` instead). | `ao-kernel` |
 | `policy_denied` | A policy check denied an operation in `block` mode. Run transitions to `failed` with `error.category: "policy_denied"`. | `ao-kernel` |
 
-> **Total: 17 events across 8 categories.** This is the closed set for FAZ-A.
+> **Total: 18 events across 8 categories.** This is the closed set for FAZ-A (PR-A0 initial 17 + PR-A4 `diff_rolled_back`).
 
 ---
 
@@ -117,12 +118,12 @@ Every event is a single JSON object on one line of JSONL. The envelope shape is:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `event_id` | string (ULID) | ✓ | Unique event identifier, monotonically sortable. |
+| `event_id` | string (URL-safe token) | ✓ | Opaque per-event identifier produced via `secrets.token_urlsafe(48)` (PR-A3). Consumers MUST NOT assume monotonicity; use the `seq` field for ordering. |
 | `run_id` | UUIDv4 | ✓ | The workflow run this event belongs to. |
 | `step_id` | string | — | Step identifier if the event is tied to a specific step. Absent for workflow-lifecycle events. |
 | `ts` | ISO-8601 | ✓ | Wall-clock timestamp of event emission. |
 | `actor` | string | ✓ | One of `adapter`, `ao-kernel`, `human`, `system`. |
-| `kind` | string | ✓ | One of the 17 event kinds. |
+| `kind` | string | ✓ | One of the 18 event kinds. |
 | `payload` | object | ✓ | Event-specific payload. Redacted per `policy_worktree_profile.evidence_redaction`. |
 | `payload_hash` | hex string (SHA-256) | ✓ | Hash of the (redacted) payload, for integrity manifest. |
 | `replay_safe` | boolean | — | True if the event is deterministic under replay (see §6). |
@@ -145,7 +146,7 @@ Three distinct evidence surfaces live under `.ao/evidence/`:
 ### 4.2 Workflow timeline events (new in PR-A5)
 
 - Path: `.ao/evidence/workflows/{run_id}/events.jsonl`
-- Scope: the 17 event kinds described in §2 for one workflow run.
+- Scope: the 18 event kinds described in §2 for one workflow run.
 - Integrity: JSONL + SHA-256 manifest (see §5). Workspace artefact convention.
 - Rotation: per-run (one file per workflow run).
 
@@ -199,7 +200,7 @@ Workflow run artefacts (events.jsonl + adapter logs) carry a SHA-256 integrity m
 }
 ```
 
-The manifest is updated on every event append (atomic write: tmp + fsync + rename, CLAUDE.md §2). Replay verifies the manifest SHA-256s before trusting the stream.
+The manifest is **generated on demand** by the PR-A5 `ao-kernel evidence timeline --verify-manifest` CLI (see §7), not updated per-event. PR-A3 emits events append-only (lock + fsync) without maintaining a manifest file; the CLI re-hashes the stream at query time so the hot write path stays free of cross-file coordination. Replay tooling verifies the manifest SHA-256s before trusting the stream.
 
 **MCP events do NOT carry a manifest** (per CLAUDE.md §2, Tranche D scope). The dual-form evidence contract is: workspace artefacts have manifests, MCP events are fsync'd JSONL only.
 
