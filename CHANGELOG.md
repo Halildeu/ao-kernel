@@ -16,6 +16,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Adversarial consensus: CNS-20260415-019 iter-1 PARTIAL (2 blocking + 18 warning) → iter-2 AGREE (`ready_for_impl: true`). All blocking and 14 high-value warnings absorbed into plan v2 before implementation; 4 warnings relocated as scope / defer decisions.
 - Foundation for FAZ-A governed demo MVP (v3.1.0 ship target). Implementation lands in Tranche A PR-A1 through PR-A6.
 
+### Added — FAZ-A PR-A1 (workflow state machine + run store)
+
+- `ao_kernel/workflow/` package: public facade for workflow run lifecycle. Seven modules, narrow re-export surface (private helpers `_mutate_with_cas`, `_run_path`, `_lock_path`, `_get_validator`, `load_workflow_run_schema` intentionally hidden).
+- State machine (`state_machine.py`): 9-state transition table from PR-A0 `workflow-run.schema.v1.json` as pure functions + immutable `TRANSITIONS` mapping. Literal expected-table test (no schema-narrative parsing) covers all 9 × 9 transition pairs.
+- Run store (`run_store.py`): CAS-backed CRUD mirroring `canonical_store.py` pattern. POSIX `file_lock` held for the whole load-mutate-write cycle. Atomic writes via `write_text_atomic` (tempfile + fsync + `os.replace`). `run_revision` hashes a projection of the record with the `revision` field omitted (self-reference-free content addressing). `_mutate_with_cas(workspace_root, run_id, *, mutator, expected_revision=None, allow_overwrite=False) -> tuple[dict, str]` is the single canonical write path (CNS-20260414-010 invariant). `create_run`, `save_run_cas`, and `update_run` all route through it. `run_id` validated as UUIDv4 (explicit `parsed.version == 4`) before use as a path component — path-traversal guard.
+- Budget (`budget.py`): immutable `Budget` + `BudgetAxis` dataclasses. `cost_usd` tracked as `Decimal` internally for precision; serialized as `float` on persist per schema `type: number`. `fail_closed_on_exhaust: true` raises `WorkflowBudgetExhaustedError` when the post-spend `remaining` would be strictly negative; spending exactly the remaining amount is valid (next positive spend raises).
+- Primitives (`primitives.py`): `InterruptRequest` / `Approval` dataclasses with separate `mint_interrupt_token` / `mint_approval_token` functions (distinct HITL vs governance audit domains). Tokens are `secrets.token_urlsafe(48)` (64-char URL-safe, stdlib — no new core dep). Resume operations are idempotent for repeat calls with identical payload; payload mismatch raises `WorkflowTokenInvalidError`.
+- Typed errors (`errors.py`): `WorkflowError` hierarchy + `WorkflowRunIdInvalidError` for path-traversal guard + `WorkflowSchemaValidationError.errors: list[dict]` with `json_path`, `message`, `validator` (utils.py pattern).
+- Schema validator (`schema_validator.py`): Draft 2020-12 wrapper around `workflow-run.schema.v1.json`; schema + validator cached via `functools.lru_cache`. Validation runs only at load / save boundaries (perf-safe).
+- Tests: 180 new tests across 6 files + 1 fixture (`tests/fixtures/workflow_bug_fix_stub.json`). Per-module coverage: `state_machine`, `primitives`, `schema_validator`, `__init__` at 100%; `errors` 97%, `budget` 94%, `run_store` 89%. Package total 95%.
+- Adversarial consensus: CNS-20260415-020 iter-1 PARTIAL (7 blocking + 11 warning absorbed) → iter-2 AGREE (`ready_for_impl=true`, `pr_split_recommendation=single_pr`). Residual impl-time fixes applied in this PR: lock-path `with_name`, UUIDv4 version check, post-stamp validation order, canonicalization aligned with `canonical_store.store_revision`.
+
 ## [3.0.0] - 2026-04-14
 
 **Tranche C release.** Ships the memory MCP surface (read + write),
