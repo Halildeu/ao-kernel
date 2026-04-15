@@ -7,6 +7,117 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-04-14
+
+**Tranche C release.** Ships the memory MCP surface (read + write),
+finishes the CAS-based write path, opts every `_internal` submodule
+into strict mypy, raises the coverage gate to 85, and declares
+POSIX-only support. Every PR passed through an adversarial Codex
+consultation (CNS-20260414-010 / 011 / 012); 16 blocking + 22 warning
+objections were grep-verified and absorbed.
+
+### Breaking changes
+
+- **POSIX-only contract.** `pyproject.toml` classifier flipped to
+  `Operating System :: POSIX`. `ao_kernel/_internal/shared/lock.py`
+  raises `LockPlatformNotSupported` on Windows. Windows support
+  remains a Tranche D follow-up.
+- **`CanonicalStoreCorruptedError`** is now raised when the canonical
+  store file cannot be parsed (previously the reader returned an
+  empty default). Callers that relied on the silent fallback must
+  catch the new error or restore a healthy file.
+- **`save_store` deprecated.** Production write paths must route
+  through `save_store_cas(...)` or the `canonical_store` mutator
+  helpers; `save_store()` emits a `DeprecationWarning` since v3.0.0
+  and will be removed in v4.0.0.
+- **Evidence contract clarified.** CLAUDE.md §2 now documents the
+  dual form: MCP events land in JSONL (fsync-only, daily-rotated),
+  while workspace artefacts keep the SHA256 integrity manifest. The
+  MCP manifest is deferred to Tranche D.
+
+### Added — Memory MCP surface (C6a + C6b, CNS-20260414-011 / 012)
+
+- `ao_memory_read` MCP tool. Policy-gated, fail-closed, read-only
+  canonical / fact query with per-workspace rate limiting and a
+  param-aware workspace resolver.
+- `ao_memory_write` MCP tool. Policy-gated, server-side fixed
+  confidence (caller-supplied `confidence` is ignored per CNS-010
+  iter-3 Q9), JSON-encoded value size guard, prefix allowlists.
+- `ao_kernel/_internal/mcp/memory_tools.py` private sub-module
+  carries both handlers, the strict resolver, the per-workspace
+  rate-limit registry, and the validated policy loaders.
+- `policy_mcp_memory.v1.json` + matching JSON schema (fail-closed
+  defaults).
+- `policy_tool_calling.v1.json` gains an optional
+  `implicit_canonical_promote` block so operators can tune the
+  promotion threshold + source prefix per workspace without code
+  changes; the hard-coded 0.8 threshold was removed.
+
+### Added — CAS write path (C5a / C5b, CNS-20260414-010)
+
+- `canonical_store.save_store_cas(...)` public low-level writer.
+- `canonical_store._mutate_with_cas(...)` private helper — **the**
+  canonical write path; every mutator routes through it.
+- POSIX FS lock (`ao_kernel/_internal/shared/lock.py::file_lock`).
+- `write_text_atomic` now uses unique temp names (`mkstemp`) to
+  eliminate the old fixed-suffix race.
+
+### Added — Workspace contract (C0, CNS-20260414-010)
+
+- `ao_kernel/workspace.py::project_root()` single source of truth;
+  `mcp_server._find_workspace_root` delegates. Project root = the
+  directory that contains `.ao/`, **not** `.ao/` itself.
+
+### Changed — Strict typing & coverage (C1 / C2 / C3 / C4)
+
+- Every `_internal/*` submodule opted into strict mypy (D13 staged
+  plan completed): providers, shared, secrets, evidence, session,
+  orchestrator, prj_kernel_api.
+- Branch-coverage gate ratcheted 70 → 75 → 80 → 85 alongside new
+  tests for `_internal/session/context_store`,
+  `_internal/evidence/writer`, and `ao_kernel/workspace`.
+- `ao_kernel/telemetry.py` moved into the coverage omit list — OTEL
+  stays optional (D12), so CI without the `[otel]` extra cannot
+  exercise the observability branches.
+
+### Changed — Extension manifests (C7a)
+
+- `intake_*` entrypoints now live solely on `PRJ-WORK-INTAKE`;
+  `PRJ-KERNEL-API` no longer duplicates them.
+- `PRJ-ZANZIBAR-OPENFGA` manifest rewritten to satisfy the
+  extension-manifest schema (`semver`, `origin`, `owner`,
+  `layer_contract`, `policies`, `ui_surfaces`, corrected `version`
+  enum).
+- `ExtensionRegistry.find_conflicts()` now returns `[]` on the
+  bundled set (regression test added).
+
+### Added — CLI + concurrency invariants (C8)
+
+- `tests/test_cli_concurrency.py` exercises
+  - `doctor` from a sub-directory (C0 / `project_root()` invariant)
+  - `init` + `migrate --dry-run` happy path
+  - parallel `promote_decision` through `_mutate_with_cas` FS lock
+
+### Docs
+
+- CLAUDE.md §2 invariant rewritten (evidence dual form).
+- CLAUDE.md §5 architecture section updated for 7 MCP tools and
+  the new `_internal/mcp/` package.
+- README MCP-tool matrix expanded to 7 tools.
+- Handoff + plan files under `.claude/plans/` track each PR.
+
+### Adversarial consensus — Tranche C stats
+
+| CNS | Topic | Iterations | Blocking | Warning |
+|---|---|---|---|---|
+| 010 | master plan + C0/C5/C6 | 3 | 10 | 7 |
+| 011 | C6a implementation | 3 | 5 | 9 |
+| 012 | C6b implementation | 2 | 1 | 6 |
+
+Claude's first thesis survived 0/8 times — the "grep before
+accepting" rule (see `feedback_codex_consultations.md`) fired on
+every iteration.
+
 ## [2.3.0] - 2026-04-14
 
 **Faz 4 Wiring release.** Closes Tranche B — every scaffold that shipped
