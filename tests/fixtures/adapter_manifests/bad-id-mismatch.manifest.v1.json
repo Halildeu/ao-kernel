@@ -1,0 +1,21 @@
+{
+  "adapter_id": "some-other-id",
+  "adapter_kind": "custom-cli",
+  "version": "1.0.0",
+  "capabilities": ["read_repo"],
+  "invocation": {
+    "transport": "cli",
+    "command": "true",
+    "args": [],
+    "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+    "cwd_policy": "per_run_worktree",
+    "stdin_mode": "none"
+  },
+  "input_envelope": {
+    "task_prompt": "x",
+    "run_id": "00000000-0000-4000-8000-000000000002"
+  },
+  "output_envelope": {"status": "ok"},
+  "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+  "evidence_refs": [".ao/evidence/workflows/x/adapter-x.jsonl"]
+}

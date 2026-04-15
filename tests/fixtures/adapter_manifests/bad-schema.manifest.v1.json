@@ -1,0 +1,5 @@
+{
+  "adapter_id": "bad-schema",
+  "adapter_kind": "not_a_valid_kind",
+  "version": "1.0.0"
+}

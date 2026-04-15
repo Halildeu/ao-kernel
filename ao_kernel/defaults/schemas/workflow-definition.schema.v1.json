@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:workflow-definition:v1",
+  "title": "Workflow Definition",
+  "description": "Contract schema for durable workflow DEFINITIONS (as opposed to workflow runs). A workflow definition declares: the workflow_id + workflow_version identity, a sequence of step definitions (each with an actor, optional adapter binding, required capabilities, on_failure semantic, and optional governance gate), the expected set of adapters the run will invoke, default policies to apply at run start, and intent-classifier tags. Run-time cross-reference validation with the adapter manifest registry is opt-in via WorkflowRegistry.validate_cross_refs; PR-A3 executor is the canonical fail-closed consumer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_id",
+    "workflow_version",
+    "display_name",
+    "description",
+    "steps",
+    "expected_adapter_refs",
+    "default_policy_refs",
+    "created_at"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "$id": {"type": "string"},
+    "workflow_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "description": "Workflow identifier. Same pattern as workflow-run.schema.v1.json::workflow_id for cross-reference alignment. Drift regression test asserts pattern equality."
+    },
+    "workflow_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?(?:\\+[\\w.-]+)?$",
+      "description": "SemVer 2.0. Same pattern as workflow-run.schema.v1.json::workflow_version."
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable label shown in CLI and docs."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Markdown-safe long-form description."
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/step_def"},
+      "description": "Ordered step sequence. Executor (PR-A3) drives steps in declared order, branching per on_failure semantic."
+    },
+    "expected_adapter_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{2,63}$"
+      },
+      "uniqueItems": true,
+      "description": "Adapter IDs this workflow expects to invoke. Pattern matches agent-adapter-contract.schema.v1.json::adapter_id. Cross-reference validation checks every adapter manifest exists and satisfies required_capabilities."
+    },
+    "default_policy_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "description": "Policies automatically attached to runs of this workflow at run start. Typically includes policy_worktree_profile.v1.json."
+    },
+    "required_capabilities": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/capability_enum"},
+      "uniqueItems": true,
+      "description": "Workflow-level capability requirements (union over all adapter steps). Cross-ref check: at least one expected adapter must supply each listed capability."
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "description": "Intent-classifier hints. Rules matching these tags boost classification confidence."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 creation timestamp."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 most-recent mutation timestamp."
+    }
+  },
+  "$defs": {
+    "capability_enum": {
+      "type": "string",
+      "enum": [
+        "read_repo",
+        "write_diff",
+        "run_tests",
+        "open_pr",
+        "human_interrupt",
+        "stream_output"
+      ],
+      "description": "Mirrors agent-adapter-contract.schema.v1.json::$defs/capability_enum. Drift regression test asserts set equality."
+    },
+    "step_def": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_name", "actor", "on_failure"],
+      "properties": {
+        "step_name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+          "description": "Step identifier within this workflow. Unique within steps[] (loader enforces; not JSON-Schema representable)."
+        },
+        "actor": {
+          "type": "string",
+          "enum": ["adapter", "ao-kernel", "human", "system"],
+          "description": "Who performs this step. adapter: external coding agent. ao-kernel: internal orchestrator. human: HITL gate. system: automated infra (CI, timeouts)."
+        },
+        "adapter_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "description": "Adapter bound to this step. Required when actor=adapter (schema conditional below). Must be in workflow.expected_adapter_refs (loader-level cross-ref)."
+        },
+        "required_capabilities": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/capability_enum"},
+          "uniqueItems": true,
+          "description": "Capabilities the bound adapter must advertise. Subset check at cross-reference validation."
+        },
+        "policy_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true,
+          "description": "Additional policies active only for this step (union with workflow.default_policy_refs at run start)."
+        },
+        "on_failure": {
+          "type": "string",
+          "enum": ["transition_to_failed", "retry_once", "escalate_to_human"],
+          "description": "Failure handling policy. transition_to_failed: move run to terminal failed state with error.category mapped to the failure kind. retry_once: exactly one immediate retry, NO backoff, same input envelope; if the retry also fails, transition_to_failed applies. escalate_to_human: open a HITL approval gate with diagnostic payload; human may grant retry or deny (which transitions to failed). PR-A2 v1 enum is closed; retry_with_backoff, branch_to_alternative, continue_on_error, and custom are intentionally NOT included (FAZ-D #9 native branching scope)."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Step-level wall-clock deadline. Executor computes effective_deadline = min(timeout_seconds, remaining run-level budget.time_seconds). On step-level miss: error.category='timeout'. On run-level budget miss: error.category='budget_exhausted'. Absent → only run-level budget applies."
+        },
+        "human_interrupt_allowed": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the bound adapter may raise an interrupt_request mid-step. Requires the adapter capability human_interrupt."
+        },
+        "gate": {
+          "type": "string",
+          "enum": ["pre_diff", "pre_apply", "pre_pr", "pre_merge", "post_ci", "custom"],
+          "description": "Governance gate BEFORE this step executes. Run transitions to waiting_approval; resume via approval_token (separate from adapter interrupt_token domain)."
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"actor": {"const": "adapter"}}, "required": ["actor"]},
+          "then": {"required": ["adapter_id"]}
+        }
+      ]
+    }
+  }
+}

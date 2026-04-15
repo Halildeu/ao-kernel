@@ -1,0 +1,100 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-021",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Planın modül sınırları ve PR-A2 kapsamı genel olarak doğru; load-boundary validation, narrow facade ve PR-A3 dışı invocation ayrımı korunmuş. Ancak kodlamaya başlamadan önce kapatılması gereken 7 blocking spec boşluğu var: workflow-definition şemasının kapalı sözleşme olmaması, cross-ref enforcement yüzeyi, versionless intent→workflow çözümü, intent fallback/determinism çelişkileri, adapter filename-fixture uyumsuzluğu ve capability gap raporunun type-erased olması. Bunlar alan ekleme/şema davranışı/LoadReport kontratı kararları olduğu için implementasyondan önce netleşmeli. Warning düzeyindekiler belge, test kapsamı ve edge-case takviyesiyle çözülebilir.",
+  "question_verdicts": [
+    {
+      "question_id": "Q1",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "workflow-definition kapalı sözleşme olarak tanımlanmamış: PR-A0 workflow-run top-level `additionalProperties:false` kullanıyor (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json:6-7`) ve nested objelerde de aynı disiplin var (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json:132-156`, `:246-249`). PR-A2 §4 yalnızca alan listesini ve step örneğini veriyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:115-144`) ama top-level ve `$defs/step_def` için `additionalProperties:false` demiyor. Bu kodlamayı bloklar; v1 schema frozen olacağı için unknown fields kabul edilmemeli.",
+        "Cross-ref enforcement yüzeyi çelişkili/eksik: plan teslimatta registry'nin cross-reference doğruladığını söylüyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:25`), API ise `validate_cross_refs(...) -> list[str]` ve caller-opt-in tasarlıyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:248-253`, `:274`). PR-A1 `create_run` sadece `workflow_id`, `workflow_version`, `adapter_refs` değerlerini persist ediyor (`ao_kernel/workflow/run_store.py:124-160`) ve schema validation yapısal kalıyor (`ao_kernel/workflow/run_store.py:313-316`). PR-A2 başlamadan fail-closed çağrı yüzeyi netleşmeli: load-time zorunlu değilse bile `validate_cross_refs_or_raise` veya run-start/integration acceptance zorunlu olmalı."
+      ],
+      "warnings": [
+        "workflow_id/workflow_version pattern kopyası düşük risk ama drift testi şart: PR-A0 patternleri `workflow_id` için `^[a-z][a-z0-9_]{1,63}$`, `workflow_version` için SemVer (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json:28-36`); PR-A2 aynılarını manuel yazmayı planlıyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:120-121`) ve risk tablosu bunu sadece düşük risk sayıyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:558`)."
+      ],
+      "additions": [
+        "workflow-definition schema top-level, `step_def` ve nested policy/capability yapılarında `additionalProperties:false` ekle.",
+        "`expected_adapter_refs` ve `steps[*].adapter_id` item patternlerini PR-A0 adapter id patterniyle eşitle: `^[a-z][a-z0-9-]{2,63}$` (`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json:20-23`), ayrıca `uniqueItems:true` ekle.",
+        "Cross-ref methodu opt-in kalabilir, fakat PR-A2 integration testinde intent→registry→adapter cross-ref validation fail-closed akışı zorunlu olmalı; PR-A3 executor bunun tek resmi tüketicisi olarak belgelenmeli."
+      ]
+    },
+    {
+      "question_id": "Q2",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "`timeout_seconds` ile run-level budget önceliği belgelenmemiş: plan step timeout'u optional wall-clock diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:140-142`) ve run-level budget'ın zaten kapsadığını söylüyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:158`); PR-A0 workflow-run ise `budget.time_seconds` için tüm run'ı, HITL bekleme dahil, kapsar diyor (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json:261-270`). Executor için `effective_deadline = min(step_timeout, remaining_run_budget)` ve hata kategorisi (`timeout` vs `budget_exhausted`) açık yazılmalı.",
+        "`retry_once` kabul edilebilir ama semantik not eksik: plan enumu kilitliyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:140`, `:231`) ve PR-A4'te honor edileceğini söylüyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:588`), PR-A3 executor ise registry/adapter tüketicisi (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:587`). `retry_once = exactly one immediate retry, no backoff, same input envelope` şeklinde açıklanmalı.",
+        "`custom` escape hatch eklenmemeli: FAZ-D #9 native branching ayrı build kalemi (`.claude/plans/TRANCHE-STRATEGY-V2.md:135`, `:187`) ve workflow-run şimdiden branching için `skipped` step state'ini taşıyor (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json:181-183`). PR-A2'de `custom` fail-closed recovery politikasını zayıflatır."
+      ],
+      "additions": [
+        "Üç değerli `on_failure` enum PR-A2 için yeterli: `transition_to_failed`, `retry_once`, `escalate_to_human`.",
+        "Her enum değeri için schema `description` veya `$comment` ekle; özellikle `retry_once` backoff içermediğini söylesin.",
+        "Negatif test: `retry_with_backoff`, `branch_to_alternative`, `continue_on_error`, `custom` PR-A2 v1 şemasında reddedilmeli."
+      ]
+    },
+    {
+      "question_id": "Q3",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Versionless intent→workflow kararı implementasyondan önce tek anlama indirilmeli: registry `get(id, version=None)` için highest semver diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:245-246`, `:273`), IntentRouter sonucu ise sadece `workflow_id` taşıyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:365-370`) ve PR-A1 `create_run` mutlaka `workflow_version` istiyor (`ao_kernel/workflow/run_store.py:124-130`). Ya intent rules v1'e opsiyonel `workflow_version` eklenmeli ya da v1 kontratı açıkça `version=None => highest semver across bundled+workspace; source precedence only same key` demeli. Alan ekleme ihtimali olduğu için bu karar kodlamayı bloklar."
+      ],
+      "warnings": [
+        "`Workspace > Bundled` ifadesi fazla geniş: plan aynı `(workflow_id, workflow_version)` için workspace override diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:272`) ama farklı versiyonlarda highest semver diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:273`). Workspace 0.9.0 + bundled 1.0.0 durumunda bundled 1.0.0'ın dönmesi intentional ise audit notu/testi gerekli; `workspace_overrides_bundled` bu durumu kapsamaz (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:265`).",
+        "`duplicate_id` reason belirsiz: multiple versions allowed ve index `(workflow_id, workflow_version)` (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:273`) iken skipped reason sadece `duplicate_id` (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:263-266`). Reason adı `duplicate_workflow_key` olmalı veya `details` içinde key kesinlikle `(id, version)` olarak yazılmalı."
+      ],
+      "additions": [
+        "`bundled_overrides_workspace` reason gerekmez; load order workspace'i sonra işletiyorsa bu durum unreachable olmalı, unreachable olduğuna dair test yeterli.",
+        "Core dep değişmeyeceği için (`pyproject.toml:26`) highest SemVer sıralaması yerel comparator ile yapılmalı; `packaging`/`semver` runtime dependency eklenmemeli.",
+        "Test matrisi: same key workspace override, workspace 0.9.0 vs bundled 1.0.0, duplicate same key in bundled, duplicate same key in workspace, invalid semver schema rejection."
+      ]
+    },
+    {
+      "question_id": "Q4",
+      "assessment": "FAIL",
+      "blocking_objections": [
+        "No-match davranışı çelişkili: schema anlatımı `default_workflow_id` null ise no match ve classify raises \"AMBIGUOUS\" diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:173`), API doc ise `fallback_strategy=error_on_no_match` için `None` döner diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:377-383`). Ayrıca `use_default` + null/default eksik kombinasyonu tanımsız. PR-A2 başlamadan tek davranış seçilmeli; öneri: `error_on_no_match => None`, `use_default => default_workflow_id required`, `llm_fallback => NotImplementedError`.",
+        "Rule determinism için duplicate `rule_id` rejection planlanmış ama uygulanabilir şema/loader kontratı yok: deterministic tie-break `rule_id` lexical (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:402-405`) ve aday notu duplicate rule_id schema-rejected diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:577`), fakat §5 rules array sadece `minItems` ve örnek alanları veriyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:172-188`). JSON Schema `uniqueItems` property-level uniqueness sağlamaz; loader'da explicit duplicate `rule_id` check ve typed failure reason tanımlanmalı."
+      ],
+      "warnings": [
+        "Keyword whole-word semantiği net değil: plan sadece case-insensitive whole-word diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:191-195`). `bug-fix`, `bug_fix`, `bug.fix`, Türkçe/Unicode boundary ve `issue`/`issuer` ayrımı için ASCII tokenization veya regex boundary kuralı açık yazılmalı.",
+        "`llm_fallback` için PR-A2'de ABC/Protocol eklemek şart değil: plan NotImplementedError diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:197`, `:383`) ve `[llm]` extra zaten optional (`pyproject.toml:33-37`), core dep yalnız `jsonschema` (`pyproject.toml:26`). PR-A6'da constructor'a callback/protocol eklenebilir; PR-A2 yalnız schema ve deterministic rule path'i kilitlemeli."
+      ],
+      "additions": [
+        "Schema/loader conditional validation ekle: `match_type=keyword|combined` ise `keywords` non-empty; `match_type=regex|combined` ise `regex_any` non-empty ve regex compile load-time'da fail-closed.",
+        "`default_workflow_id` için `null` kabul edilecekse schema type `['string','null']` olmalı; `use_default` için `oneOf/if/then` ile non-null zorlanmalı veya loader reject etmeli.",
+        "Fallback default sonucu için `matched_rule_id='__default__'` gibi deterministic sentinel veya `matched_rule_id: str | None` kararı verilmeli."
+      ]
+    },
+    {
+      "question_id": "Q5",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Filename strict match ile fixture planı çakışıyor: plan `.ao/adapters/<adapter_id>.manifest.v1.json` ve mismatch reject diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:27`, `:353`); adapter ids dash patternlidir (`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json:20-23`) ve bundled workflow `codex-stub`, `gh-cli-pr` bekliyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:426-433`), fakat fixture dosyaları underscore ile yazılmış (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:496-498`). Bu haliyle happy fixtures `adapter_id_mismatch` olarak reject edilir. Dosya adları dash'li olmalı veya normalization açıkça kaldırılmalı.",
+        "Capability gap reporting type-erased: `AdapterRegistry.supports_capabilities(...) -> bool` (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:338-342`) ve `WorkflowRegistry.validate_cross_refs(...) -> list[str]` (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:248-253`) adapter missing ile capability gap'i aynı string listesine koyuyor. Fail-closed/audit hedefi `LoadReport.skipped + evidence loggable` (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:65`) olduğundan PR-A2 kodlamadan önce structured `CrossRefIssue(kind, workflow_id, step_name, adapter_id, missing_capabilities)` veya eşdeğer rapor tipi tanımlanmalı."
+      ],
+      "warnings": [
+        "Adapter loader `LoadReport` kontratı eksik: §7 `load_workspace(...) -> LoadReport` diyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:328-332`) ama `SkippedManifest`/reason taxonomy tanımlamıyor; sadece exception reasonları `json_decode`, `schema_invalid`, `adapter_id_mismatch` var (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:301-306`). Extension loader örneği read/json/schema/parse/duplicate nedenlerini somut skip olarak tutuyor (`ao_kernel/extensions/loader.py:356-399`). Adapter tarafında `read_error`, `not_an_object`, `duplicate_adapter_id` da tanımlanmalı.",
+        "Test hedefi iyimser: plan schema/module LOC bütçeleri kabaca 1200-1530 LOC aralığı veriyor (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:111-112`, `:164-165`, `:203-204`, `:296-297`, `:359-360`) ama total test hedefi 80-100 (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:486-491`). Coverage hedefleri ≥90/95 olduğundan (`.claude/plans/PR-A2-IMPLEMENTATION-PLAN.md:474-480`) 110-140 bandı daha gerçekçi; en azından acceptance `≥80` kalıp riskli branchler fixture/parametrize ile kapatılmalı."
+      ],
+      "additions": [
+        "Discovery semantiği: `*.manifest.v1.json` globla, expected id = filename'dan `.manifest.v1.json` suffix'i çıkarılmış değer; `raw['adapter_id']` ile exact compare et, underscore↔dash normalization yapma.",
+        "Fixture setini 7-10'a çıkar: cli positive, http positive, capability gap, duplicate adapter id, read/json/schema/mismatch negative.",
+        "`missing_capabilities(adapter_id, required) -> frozenset[str]` API'si eklenirse `supports_capabilities` bool helper olarak onun üstüne kurulabilir."
+      ]
+    }
+  ],
+  "aggregate_blocking_count": 7,
+  "aggregate_warning_count": 10,
+  "ready_for_impl": false,
+  "next_iteration_required": true,
+  "created_at": "2026-04-15T17:35:28+03:00",
+  "head_sha": "2245a1d",
+  "request_head_sha": "2245a1d"
+}

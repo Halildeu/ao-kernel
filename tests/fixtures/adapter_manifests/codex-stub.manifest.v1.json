@@ -1,0 +1,28 @@
+{
+  "adapter_id": "codex-stub",
+  "adapter_kind": "codex-stub",
+  "version": "1.0.0",
+  "capabilities": ["read_repo", "write_diff"],
+  "invocation": {
+    "transport": "cli",
+    "command": "python3",
+    "args": ["-m", "ao_kernel.fixtures.codex_stub", "--run-id", "{run_id}"],
+    "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+    "cwd_policy": "per_run_worktree",
+    "stdin_mode": "none",
+    "exit_code_map": {"0": "ok"}
+  },
+  "input_envelope": {
+    "task_prompt": "<stubbed>",
+    "run_id": "<uuid>"
+  },
+  "output_envelope": {
+    "status": "ok"
+  },
+  "policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "evidence_refs": [
+    ".ao/evidence/workflows/{run_id}/adapter-codex-stub.jsonl"
+  ]
+}

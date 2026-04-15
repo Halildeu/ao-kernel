@@ -97,7 +97,6 @@
     },
     "invocation": {
       "type": "object",
-      "additionalProperties": false,
       "required": ["transport"],
       "properties": {
         "transport": {

@@ -1,0 +1,69 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "bug_fix_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Bug Fix Flow",
+  "description": "Issue -> context compile -> coding agent -> diff preview -> CI gate -> approval -> apply -> PR. Demo-tier workflow; uses the codex-stub adapter for deterministic CI and gh-cli-pr for typed PR creation. Mirrors the DEMO-SCRIPT.md 11-step flow collapsed to orchestrator granularity.",
+  "steps": [
+    {
+      "step_name": "compile_context",
+      "actor": "ao-kernel",
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "invoke_coding_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "write_diff"],
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 900,
+      "human_interrupt_allowed": false
+    },
+    {
+      "step_name": "preview_diff",
+      "actor": "ao-kernel",
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "ci_gate",
+      "actor": "system",
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 600
+    },
+    {
+      "step_name": "await_approval",
+      "actor": "human",
+      "gate": "pre_apply",
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "apply_patch",
+      "actor": "ao-kernel",
+      "on_failure": "retry_once"
+    },
+    {
+      "step_name": "open_pr",
+      "actor": "adapter",
+      "adapter_id": "gh-cli-pr",
+      "required_capabilities": ["open_pr"],
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 60
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub", "gh-cli-pr"],
+  "default_policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "required_capabilities": ["read_repo", "write_diff", "open_pr"],
+  "tags": ["bug", "fix", "issue", "defect"],
+  "created_at": "2026-04-15T00:00:00+00:00"
+}
