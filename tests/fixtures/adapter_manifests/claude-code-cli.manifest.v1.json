@@ -1,0 +1,38 @@
+{
+  "adapter_id": "claude-code-cli",
+  "adapter_kind": "claude-code-cli",
+  "version": "1.0.0",
+  "capabilities": ["read_repo", "write_diff", "run_tests", "stream_output"],
+  "invocation": {
+    "transport": "cli",
+    "command": "claude",
+    "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+    "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+    "cwd_policy": "per_run_worktree",
+    "stdin_mode": "none",
+    "exit_code_map": {"0": "ok", "1": "failed", "2": "declined"}
+  },
+  "input_envelope": {
+    "task_prompt": "<issue body>",
+    "run_id": "<uuid>",
+    "context_pack_ref": ".ao/runs/{run_id}/context.md",
+    "workspace_view": {
+      "allowlist_globs": ["**/*.py", "**/*.md", "pyproject.toml"]
+    },
+    "budget": {
+      "tokens": {"limit": 100000, "spent": 0, "remaining": 100000},
+      "time_seconds": {"limit": 600.0, "spent": 0.0, "remaining": 600.0},
+      "fail_closed_on_exhaust": true
+    }
+  },
+  "output_envelope": {
+    "status": "ok"
+  },
+  "policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+    "ao_kernel/defaults/policies/policy_secrets.v1.json"
+  ],
+  "evidence_refs": [
+    ".ao/evidence/workflows/{run_id}/adapter-claude-code-cli.jsonl"
+  ]
+}

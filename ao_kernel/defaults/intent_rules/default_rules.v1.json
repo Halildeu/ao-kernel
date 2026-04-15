@@ -1,0 +1,16 @@
+{
+  "$schema": "urn:ao:intent-classifier-rules:v1",
+  "rules": [
+    {
+      "rule_id": "bug_fix_keywords",
+      "workflow_id": "bug_fix_flow",
+      "priority": 100,
+      "match_type": "keyword",
+      "keywords": ["fix", "bug", "issue", "defect", "broken"],
+      "confidence": 0.82,
+      "description": "Common bug-fix vocabulary. Matches natural-language issue bodies referencing defects. Workspace overrides can extend or raise the confidence."
+    }
+  ],
+  "default_workflow_id": null,
+  "fallback_strategy": "error_on_no_match"
+}

@@ -1,0 +1,32 @@
+{
+  "adapter_id": "custom-http-example",
+  "adapter_kind": "custom-http",
+  "version": "0.1.0",
+  "capabilities": ["read_repo", "write_diff", "stream_output"],
+  "invocation": {
+    "transport": "http",
+    "endpoint": "https://agent.example.invalid/v1/runs/{run_id}",
+    "auth_secret_id_ref": "EXAMPLE_AGENT_TOKEN",
+    "headers_allowlist": ["Content-Type", "Accept"],
+    "request_body_template": {
+      "prompt": "{task_prompt}"
+    },
+    "response_parse": {
+      "diff_jsonpath": "$.result.diff",
+      "status_jsonpath": "$.result.status"
+    }
+  },
+  "input_envelope": {
+    "task_prompt": "<prompt>",
+    "run_id": "<uuid>"
+  },
+  "output_envelope": {
+    "status": "ok"
+  },
+  "policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "evidence_refs": [
+    ".ao/evidence/workflows/{run_id}/adapter-custom-http-example.jsonl"
+  ]
+}

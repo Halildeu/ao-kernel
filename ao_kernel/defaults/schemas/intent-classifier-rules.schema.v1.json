@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:intent-classifier-rules:v1",
+  "title": "Intent Classifier Rules",
+  "description": "Contract schema for rule-based intent classification configuration. Rules are evaluated in priority DESC order; the first match returns a ClassificationResult. Schema enforces structural invariants; loader enforces semantic invariants (duplicate rule_id rejection, regex compile validation) not expressible in JSON Schema alone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rules", "fallback_strategy"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "$id": {"type": "string"},
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/rule"},
+      "description": "Priority-ordered rule set. Loader reorders by priority DESC. Duplicate rule_id values are rejected at load time (not JSON Schema representable)."
+    },
+    "default_workflow_id": {
+      "type": ["string", "null"],
+      "description": "Fallback workflow when use_default strategy is selected. Schema conditional below enforces non-null when fallback_strategy=use_default."
+    },
+    "fallback_strategy": {
+      "type": "string",
+      "enum": ["error_on_no_match", "use_default", "llm_fallback"],
+      "description": "Behaviour when no rule matches the input. error_on_no_match: classify() returns None. use_default: requires default_workflow_id non-null; classify() returns ClassificationResult(default_workflow_id, confidence=0.0, matched_rule_id='__default__', match_type='default'). llm_fallback: classify() raises NotImplementedError in PR-A2; implementation ships in PR-A6 under the optional [llm] extra."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"fallback_strategy": {"const": "use_default"}},
+        "required": ["fallback_strategy"]
+      },
+      "then": {
+        "properties": {
+          "default_workflow_id": {"type": "string", "minLength": 1}
+        },
+        "required": ["default_workflow_id"]
+      }
+    }
+  ],
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "workflow_id", "priority", "match_type", "confidence"],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier within the rules array. Loader rejects duplicates with IntentRulesCorruptedError(reason='duplicate_rule_id')."
+        },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "description": "Target workflow for this rule. Matches workflow-definition.schema.v1.json::workflow_id pattern."
+        },
+        "workflow_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?(?:\\+[\\w.-]+)?$",
+          "description": "Optional SemVer pin. When absent, registry resolution uses highest SemVer across bundled+workspace (source precedence only for identical keys)."
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Higher value evaluated first. Loader sorts rules DESC by priority; same-priority rules MUST have distinct rule_id (enforced by uniqueness). Two rules at identical priority both matching the input surface as IntentRulesCorruptedError(reason='duplicate_priority_match') at runtime."
+        },
+        "match_type": {
+          "type": "string",
+          "enum": ["keyword", "regex", "combined"],
+          "description": "Match strategy. keyword: ASCII whole-word match against input (case-insensitive via re.IGNORECASE). regex: any pattern in regex_any matches. combined: both keyword hit AND regex match required. Unicode boundary follows Python re.UNICODE default (documented limitation for v1)."
+        },
+        "keywords": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true,
+          "description": "Required when match_type in [keyword, combined] (schema conditional below)."
+        },
+        "regex_any": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true,
+          "description": "Required when match_type in [regex, combined]. Patterns compiled at load with re.IGNORECASE; compile failure raises IntentRulesCorruptedError(reason='regex_compile')."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score propagated to ClassificationResult when this rule matches."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable rationale; not used in matching."
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"match_type": {"enum": ["keyword", "combined"]}}, "required": ["match_type"]},
+          "then": {"required": ["keywords"], "properties": {"keywords": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"match_type": {"enum": ["regex", "combined"]}}, "required": ["match_type"]},
+          "then": {"required": ["regex_any"], "properties": {"regex_any": {"minItems": 1}}}
+        }
+      ]
+    }
+  }
+}

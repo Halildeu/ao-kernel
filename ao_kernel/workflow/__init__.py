@@ -31,8 +31,12 @@ from ao_kernel.workflow.budget import (
     record_spend,
 )
 from ao_kernel.workflow.errors import (
+    IntentRulesCorruptedError,
     WorkflowBudgetExhaustedError,
     WorkflowCASConflictError,
+    WorkflowDefinitionCorruptedError,
+    WorkflowDefinitionCrossRefError,
+    WorkflowDefinitionNotFoundError,
     WorkflowError,
     WorkflowRunCorruptedError,
     WorkflowRunIdInvalidError,
@@ -40,6 +44,21 @@ from ao_kernel.workflow.errors import (
     WorkflowSchemaValidationError,
     WorkflowTokenInvalidError,
     WorkflowTransitionError,
+)
+from ao_kernel.workflow.intent_router import (
+    ClassificationResult,
+    IntentRouter,
+    IntentRule,
+    compile_rules_from_dict,
+    load_default_rules,
+)
+from ao_kernel.workflow.registry import (
+    CrossRefIssue,
+    LoadReport,
+    SkippedDefinition,
+    StepDefinition,
+    WorkflowDefinition,
+    WorkflowRegistry,
 )
 from ao_kernel.workflow.primitives import (
     Approval,
@@ -69,7 +88,7 @@ from ao_kernel.workflow.state_machine import (
 )
 
 __all__ = [
-    # Errors
+    # Errors (PR-A1 + PR-A2 additions)
     "WorkflowError",
     "WorkflowTransitionError",
     "WorkflowRunNotFoundError",
@@ -79,6 +98,10 @@ __all__ = [
     "WorkflowSchemaValidationError",
     "WorkflowTokenInvalidError",
     "WorkflowRunIdInvalidError",
+    "WorkflowDefinitionNotFoundError",
+    "WorkflowDefinitionCorruptedError",
+    "WorkflowDefinitionCrossRefError",
+    "IntentRulesCorruptedError",
     # State machine
     "WorkflowState",
     "TERMINAL_STATES",
@@ -110,4 +133,17 @@ __all__ = [
     "save_run_cas",
     "update_run",
     "run_revision",
+    # Registry (PR-A2)
+    "WorkflowDefinition",
+    "StepDefinition",
+    "CrossRefIssue",
+    "SkippedDefinition",
+    "LoadReport",
+    "WorkflowRegistry",
+    # Intent router (PR-A2)
+    "IntentRule",
+    "ClassificationResult",
+    "IntentRouter",
+    "load_default_rules",
+    "compile_rules_from_dict",
 ]

@@ -220,3 +220,102 @@ class WorkflowRunIdInvalidError(WorkflowError):
         super().__init__(
             f"run_id {run_id!r} is not a valid UUID; refusing to build path"
         )
+
+
+# ---------------------------------------------------------------------------
+# PR-A2 additions — workflow registry + intent router errors.
+# ---------------------------------------------------------------------------
+
+
+class WorkflowDefinitionNotFoundError(WorkflowError):
+    """Registry has no workflow matching the requested (workflow_id, version).
+
+    Raised by ``WorkflowRegistry.get`` when the key does not exist.
+    ``version=None`` lookups raise when no entry for ``workflow_id`` exists
+    at all; explicit-version lookups raise when the pinned version is
+    missing even if other versions of the same id are loaded.
+    """
+
+    def __init__(self, *, workflow_id: str, version: str | None) -> None:
+        self.workflow_id = workflow_id
+        self.version = version
+        pinned = f" (version={version!r})" if version is not None else ""
+        super().__init__(
+            f"Workflow {workflow_id!r} not found in registry{pinned}"
+        )
+
+
+class WorkflowDefinitionCorruptedError(WorkflowError):
+    """Workflow definition file fails JSON decode or schema validation.
+
+    ``reason`` enumerates the load-time failure mode.
+    """
+
+    _REASONS = frozenset({
+        "json_decode",
+        "schema_invalid",
+        "duplicate_workflow_key",
+        "read_error",
+    })
+
+    def __init__(self, *, source_path: str, reason: str, details: str = "") -> None:
+        self.source_path = source_path
+        self.reason = reason
+        self.details = details
+        super().__init__(
+            f"Workflow definition at {source_path!r} corrupted "
+            f"({reason}): {details}"
+        )
+
+
+class WorkflowDefinitionCrossRefError(WorkflowError):
+    """Raised when cross-reference validation surfaces non-empty issues.
+
+    Callers that want structured access use
+    ``WorkflowRegistry.validate_cross_refs`` which returns a
+    ``list[CrossRefIssue]``. This exception is for fail-closed consumers
+    (e.g. PR-A3 executor) that want a single raise with the aggregated
+    issue list attached.
+    """
+
+    def __init__(self, *, workflow_id: str, issues: tuple[object, ...]) -> None:
+        self.workflow_id = workflow_id
+        self.issues = issues
+        super().__init__(
+            f"Cross-reference validation failed for workflow {workflow_id!r}: "
+            f"{len(issues)} issue(s)"
+        )
+
+
+class IntentRulesCorruptedError(WorkflowError):
+    """Intent classifier rules fail load-time invariants.
+
+    ``reason`` enumerates the failure mode. Schema-level violations
+    (missing fields, wrong types, unknown enum values, conditional
+    validation misses) surface as ``schema_invalid``; loader-level
+    invariants (duplicate rule_id, regex compile failure) have their
+    own reasons so audit logs can distinguish.
+    """
+
+    _REASONS = frozenset({
+        "schema_invalid",
+        "duplicate_rule_id",
+        "regex_compile",
+        "duplicate_priority_match",
+        "read_error",
+    })
+
+    def __init__(
+        self,
+        *,
+        source_path: str | None,
+        reason: str,
+        details: str = "",
+    ) -> None:
+        self.source_path = source_path
+        self.reason = reason
+        self.details = details
+        where = f" at {source_path!r}" if source_path else ""
+        super().__init__(
+            f"Intent rules{where} corrupted ({reason}): {details}"
+        )

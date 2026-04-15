@@ -1,0 +1,29 @@
+{
+  "adapter_id": "gh-cli-pr",
+  "adapter_kind": "gh-cli-pr",
+  "version": "1.0.0",
+  "capabilities": ["open_pr"],
+  "invocation": {
+    "transport": "cli",
+    "command": "gh",
+    "args": ["pr", "create", "--title", "{task_prompt}", "--body-file", "{context_pack_ref}"],
+    "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+    "cwd_policy": "per_run_worktree",
+    "stdin_mode": "none",
+    "exit_code_map": {"0": "ok", "1": "failed"}
+  },
+  "input_envelope": {
+    "task_prompt": "<PR title>",
+    "run_id": "<uuid>"
+  },
+  "output_envelope": {
+    "status": "ok"
+  },
+  "policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+    "ao_kernel/defaults/policies/policy_secrets.v1.json"
+  ],
+  "evidence_refs": [
+    ".ao/evidence/workflows/{run_id}/adapter-gh-cli-pr.jsonl"
+  ]
+}
