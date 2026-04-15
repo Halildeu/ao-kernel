@@ -1,0 +1,92 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-019",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Planın yönü doğru: PR-A0 docs-first/spec-only kalmalı, ana DAG genel olarak doğru ve FAZ-A foundation kapsamı yerinde. Ancak yazıma başlamadan önce iki bloklayıcı netleştirilmeli: artefakt/CHANGELOG muhasebesi plan içinde çelişkili ve worktree policy hem schema/default enforcement hem demo secret/env akışı açısından kendi kendini bozuyor. Diğer noktalar enum/capability sınırı, workflow cross-reference semantiği, redaction kapsamı ve PR bölme stratejisi gibi non-blocking uyarılar. Python loader PR-A0'a girmemeli; gerekirse PR-A0b validation/fixture PR'ı açılmalı.",
+  "question_verdicts": [
+    {
+      "question_id": "Q1",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Artefakt ve CHANGELOG muhasebesi PR-A0 yazımını blokluyor: plan aynı anda 7 ve 8 artefakt söylüyor, ayrıca CHANGELOG kapsamı kendi içinde çelişkili. Kanıt: `.claude/plans/PR-A0-DRAFT-PLAN.md:12` '7 artefakt', `:34-37` '2 yeni JSON schema' + '1 yeni policy' + '5 yeni markdown' (=8), `:86` 'toplam 7 artefakt + CHANGELOG', `:500` '7 artefakt + CHANGELOG'. CHANGELOG için `:38` 'tek satır' derken `:488-493` başlık + 5 bullet öneriyor. Request'teki doğru muhasebe 8 artefakt + tek CHANGELOG notu olarak sabitlenmeden acceptance eksik/yanlış PR'ı geçirebilir."
+      ],
+      "warnings": [
+        "DAG bağımlılığı genel olarak doğru ve conservative: `PR-A0-DRAFT-PLAN.md:64-82` adapter schema → workflow-run → policy → evidence → demo, competitor parallel, ADAPTERS+WORKTREE-PROFILE birleşik diyor. `:299-324` evidence temelini `:341-353` demo referanslıyor; bu sıra doğru. Küçük not: `WORKTREE-PROFILE.md` policy sonrası yazılabilir, `:79` ile demo sonrasını beklemek zorunda değil.",
+        "Evidence taxonomy sayımı kaymış: `PR-A0-DRAFT-PLAN.md:299` '10 standart event type' diyor, `:300-307` fiilen 17 event adı listeliyor. Bu bloklayıcı değil ama EVIDENCE-TIMELINE yazılırken sayı veya liste düzeltilmeli."
+      ],
+      "additions": [
+        "Plan metninde '6 deliverable' sadece handoff/strateji muhasebesi olarak kalsın; PR-A0 implementasyon planı her yerde '8 artefakt + CHANGELOG' demeli. Bundled deliverable açıklaması ayrıca verilebilir: adapter docs+schema ve worktree docs+policy tek deliverable ailesidir."
+      ]
+    },
+    {
+      "question_id": "Q2",
+      "assessment": "PARTIAL",
+      "blocking_objections": [],
+      "warnings": [
+        "gh CLI PR path adapter sınırı net değil: FAZ-A gate `TRANCHE-STRATEGY-V2.md:281-282` '3 adapter examples ... gh CLI PR path' diyor; ADAPTERS iskeleti `PR-A0-DRAFT-PLAN.md:428-431` 'gh CLI PR Path Adapter' diyor; fakat `adapter_kind` enum `:103` içinde explicit `gh-cli`/`pr-cli` yok. Non-blocking çözüm: bunu `custom-cli` typed VCS/PR connector olarak yaz ve 'full coding agent değildir' de; yoksa explicit enum ekle.",
+        "Capability sınırı yazılmalı: enum `PR-A0-DRAFT-PLAN.md:105` sadece `read_repo`, `write_diff`, `run_tests`, `open_pr`, `human_interrupt`, `stream_output` içeriyor; demo `:349-351` apply+PR, strateji `TRANCHE-STRATEGY-V2.md:240` git commit+PR istiyor. Eğer git/commit/branch ao-kernel sorumluluğundaysa `commit_write`/`branch_create` eklenmesin; ama ADAPTERS bu boundary'yi açıkça söylemeli.",
+        "`mcp_tool_call` capability yokken ADAPTERS policy binding `PR-A0-DRAFT-PLAN.md:444-447` `policy_tool_calling` ve `policy_mcp_memory` opsiyonel diyor. Bunu capability olarak ekle ya da 'capabilities agent output yetenekleri, MCP/tool access policy_refs ile gate edilir' diye narrative'e bağla.",
+        "`timeout` v1 top-level output status olmamalı; `PR-A0-DRAFT-PLAN.md:129` status enum zaten `failed`/`partial` içeriyor. Mevcut repo precedenti timeout'u alt sınıf yapıyor: `tests/test_stream_post_processors.py:100-115` `status='PARTIAL'`, `finish_reason='timeout'`; `tests/test_client.py:395-416` aynı pattern'i client seviyesinde doğruluyor. Adapter timeout için `error.category='timeout'` veya partial `finish_reason` yeterli.",
+        "aider/devin/windsurf explicit enum'u PR-A0 için şart değil: `PR-A0-DRAFT-PLAN.md:389` Aider/Sweep/Devin'i comparison-only gösteriyor ve `:103` `custom-cli`/`custom-http` escape hatch sağlıyor. ADAPTERS'e explicit enum'a terfi kriteri eklemek yeterli."
+      ],
+      "additions": [
+        "`context_pack_read` ayrı capability olmasın: `PR-A0-DRAFT-PLAN.md:122` `context_pack_ref` input envelope alanı olarak geliyor; adapter'a verilmiş compiled context'i okuma ayrı privilege değil. Canonical memory erişimi gerekiyorsa `policy_mcp_memory` ref'iyle bağlanmalı."
+      ]
+    },
+    {
+      "question_id": "Q3",
+      "assessment": "PARTIAL",
+      "blocking_objections": [],
+      "warnings": [
+        "Cross-reference semantiği narrative/pattern olarak yazılmalı, `$ref` ile instance identity validate ediliyormuş gibi sunulmamalı. Kanıt: `PR-A0-DRAFT-PLAN.md:203` `adapter_refs[*]` → `agent-adapter-contract.schema.v1.json::adapter_id` diyor; `:503-505` acceptance cross-reference consistency istiyor; fakat PR-A0 scope'unda registry/loader yok. JSON Schema shape validate eder, başka manifest instance'ındaki `adapter_id` değerinin varlığını PR-A0'da kanıtlamaz.",
+        "State enum kabul edilebilir ama transition table eksik kalırsa replay ve implementation drift riski doğar. Kanıt: `PR-A0-DRAFT-PLAN.md:163` 9 state'i listeliyor; demo `:349-357` verifying/approval/apply/failure akışını anlatıyor; evidence replay contract `:317-320` deterministic replay diyor. Schema/docs en azından allowed transition tablosunu narrative olarak vermeli.",
+        "`interrupted` vs `waiting_approval` ayrımı doğru, fakat token dili bulanık: `PR-A0-DRAFT-PLAN.md:191-192` approval `token` alanını `interrupt_contract` ile map ediyor. Adapter HITL interrupt token'ı ile governance approval token'ı farklı domain olarak dokümante edilmeli."
+      ],
+      "additions": [
+        "Revision convention doğru bağlanmış: workflow schema `PR-A0-DRAFT-PLAN.md:165` 64-char SHA256 diyor; `ao_kernel/context/agent_coordination.py:45-55` full SHA256 döndürüyor; `tests/test_agent_coordination.py:30-34` bunu test ediyor.",
+        "`budget.fail_closed_on_exhaust: true` yönü doğru: `PR-A0-DRAFT-PLAN.md:194-199` budget fail-closed diyor ve strateji `TRANCHE-STRATEGY-V2.md:89` hard budget cap fail-closed olarak konumlandırıyor."
+      ]
+    },
+    {
+      "question_id": "Q4",
+      "assessment": "FAIL",
+      "blocking_objections": [
+        "Worktree policy PR-A0 yazımını bloklayan üç bağlı çelişki içeriyor. Birincisi schema: snippet `PR-A0-DRAFT-PLAN.md:218` `$schema` ile `policy-worktree-profile.schema.v1.json` referanslıyor, ama scope `:35` sadece 2 schema diyor ve `:284-286` '$schema yazılmaz' diyor; mevcut `$schema` precedenti `ao_kernel/defaults/policies/policy_mcp_memory.v1.json:1-3` gerçek schema dosyasıyla geliyor. İkincisi enforcement: `PR-A0-DRAFT-PLAN.md:220` `enabled:false` ve `:268-270` `mode_default:report_only`, ama `:358`, `:472-475`, `TRANCHE-STRATEGY-V2.md:207` ve `:285` violation'ların denied/aborted olmasını gate yapıyor. Üçüncüsü demo secret/env: `PR-A0-DRAFT-PLAN.md:230-234` sadece 8 env key allow ediyor ve unknown deny ediyor; `:237-241` secret allowlist boş; fakat demo prereq `:336-340` `ANTHROPIC_API_KEY`, `GH_TOKEN` istiyor. Çözüm: bundled default disabled ise 'execution denied unless workspace override' semantiğini yaz, demo override'ı `enabled:true` + `mode:block` yap, `$schema` kararını tekleştir ve secret_id→env mapping modelini ekle."
+      ],
+      "warnings": [
+        "Secret exposure modeli belirsiz: CLI branch `PR-A0-DRAFT-PLAN.md:116` `stdin_mode` içeriyor, ama secrets `:240-241` yalnız `exposure_modes:['env']` ve `deny_on_any_other_exposure:true` diyor. `argv`, `stdin`, `file`, `http_header` açıkça denied mı yoksa uninspected mı, dokümante edilmeli.",
+        "Env allowlist auth/git değişkenlerini kapsamıyor: `PR-A0-DRAFT-PLAN.md:231` sadece `PATH, HOME, USER, LANG, LC_ALL, TZ, SHELL, TMPDIR`; strateji `TRANCHE-STRATEGY-V2.md:240` git commit+PR istiyor. SSH auth desteklenecekse `SSH_AUTH_SOCK` workspace override gerektirir; desteklenmeyecekse GH token secret mapping tek yol olarak yazılmalı.",
+        "Command allowlist hem eksik hem geniş: `PR-A0-DRAFT-PLAN.md:245-247` exact command'lar ve `/usr/bin/`, `/usr/local/bin/` prefix'leri var. macOS Apple Silicon `/opt/homebrew/bin/` yok; öte yandan bütün `/usr/local/bin/` prefix'i exact allowlist'i gevşetebilir. En azından resolved command policy ve operator override guidance eklenmeli.",
+        "Evidence redaction FAZ-A'da en az demo provider'larını kapsamalı: `PR-A0-DRAFT-PLAN.md:259` sadece `sk-`, `ghp_`, `xoxb-`; demo `:340` Anthropic/GitHub env istiyor. `sk-ant-`, generic `Bearer`, `Basic` P0'a alınmalı; AWS/Google/xAI gibi daha geniş katalog FAZ-B'ye bırakılabilir ama PR-A0 docs bunu açıkça sınırlamalı."
+      ],
+      "additions": [
+        "Mevcut `policy_secrets.v1.json:4-8` allowed secret IDs + `fail_action:'block'` pattern'i var. Worktree policy bu policy ile çakışmak yerine ona bağlanmalı veya neden ayrı secret gate tuttuğunu açıklamalı."
+      ]
+    },
+    {
+      "question_id": "Q5",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "Minimal loader PR-A0'a girmemeli. Kanıt: `PR-A0-DRAFT-PLAN.md:42-43` Python kodu ve test yok diyor; `SESSION-HANDOFF-STRATEGIC-COMMIT.md:67` ve `:142` PR-A0 docs+spec, not code diyor. `pyproject.toml:26` zaten `jsonschema>=4.23.0` içerdiği için PR-A0'da manuel schema validation komutu/PR checklist yeterli; loader + fixtures gerekiyorsa PR-A0b daha temiz.",
+        "Demo script future extra'yı yanlış anlaşılabilir biçimde kullanıyor: `PR-A0-DRAFT-PLAN.md:337` `ao-kernel[llm,mcp,coding]` diyor; scope `:44` pyproject extras genişletilmez diyor; `pyproject.toml:33-45` optional deps içinde `coding` yok. Bunu 'FAZ-A PR-A6 itibarıyla' diye etiketle veya mevcut install komutuna indir.",
+        "Tek PR boyutu kabul edilebilir ama blockers fix sonrası. Handoff `SESSION-HANDOFF-STRATEGIC-COMMIT.md:69-76` zaten 6 bundled deliverable olarak tek PR-A0 scope'u veriyor. Eğer docs 2500 satırı belirgin aşarsa en doğal split schemas/policy önce, docs ikinci PR olur.",
+        "İterasyon beklentisi CNS-011 pattern'ına yakın: plan `PR-A0-DRAFT-PLAN.md:531-533` CNS-019 için 2-3 iter bekliyor. Bu iterasyonda iki grouped blocker absorbe edilirse iter-2 AGREE gerçekçi; CNS-018 gibi tek iter AGREE bu draft için fazla iyimser."
+      ],
+      "additions": [
+        "PR-A0 acceptance'a kod eklemeden şu kanıtlar konabilir: `python -m json.tool` policy parse, `jsonschema.validators.Draft202012Validator.check_schema(...)` iki schema için local manual check, ve docs cross-reference grep listesi."
+      ]
+    }
+  ],
+  "aggregate_blocking_count": 2,
+  "aggregate_warning_count": 18,
+  "ready_for_impl": false,
+  "next_iteration_required": true,
+  "created_at": "2026-04-15T12:15:12+03:00",
+  "head_sha": "99bf057",
+  "request_head_sha": "99bf057"
+}

@@ -7,6 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-A PR-A0 (docs + spec, no code)
+
+- Agent adapter contract schema (`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json`). Defines how external coding agent runtimes (Claude Code CLI, Codex, Cursor background agent, GitHub Copilot cloud agent, gh CLI PR connector, custom CLI/HTTP) integrate with ao-kernel. 8 `adapter_kind` variants + 6 `capabilities` + `cli`/`http` invocation + input/output envelopes + evidence/policy refs. Referential integrity with workflow-run and worktree policy is narrative at PR-A0; loader-level validation lands in Tranche A PR-A2.
+- Workflow run canonical state schema (`ao_kernel/defaults/schemas/workflow-run.schema.v1.json`). Durable 9-state machine with CAS revision token, checkpoint refs, budget (fail-closed on exhaust), HITL interrupt + governance approval tokens as separate domains, and allowed-transition table documented inline.
+- Worktree execution profile policy (`ao_kernel/defaults/policies/policy_worktree_profile.v1.json`). CNS-016 D4 expanded minimum — per-agent worktree + sanitized env allowlist + secret deny-by-default with explicit `allowlist_secret_ids` + command allowlist (POSIX prefixes incl. Apple Silicon `/opt/homebrew/bin/`) + cwd confinement + evidence redaction (6 P0 patterns: `sk-`, `sk-ant-`, `ghp_`, `xoxb-`, `Bearer`, `Basic`). Three rollout tiers: dormant (bundled default) / report_only / block. SSH agent forwarding, network/egress OS sandbox, and extended redaction catalog (AWS / Google / xAI / structured JWT) deferred to FAZ-A PR-A5 or FAZ-B.
+- Docs: `docs/ADAPTERS.md` (adapter contract human-readable + 3 walkthroughs), `docs/WORKTREE-PROFILE.md` (operator-facing sandbox guide + demo override example), `docs/EVIDENCE-TIMELINE.md` (17-event taxonomy across 8 categories + replay contract + JSONL layout), `docs/DEMO-SCRIPT.md` (FAZ-A release-gate 11-step end-to-end demo), `docs/COMPETITOR-MATRIX.md` (9-row live competitor / adapter matrix per CNS-016 W3, prevents "rakipsiz" regression).
+- Adversarial consensus: CNS-20260415-019 iter-1 PARTIAL (2 blocking + 18 warning) → iter-2 AGREE (`ready_for_impl: true`). All blocking and 14 high-value warnings absorbed into plan v2 before implementation; 4 warnings relocated as scope / defer decisions.
+- Foundation for FAZ-A governed demo MVP (v3.1.0 ship target). Implementation lands in Tranche A PR-A1 through PR-A6.
+
 ## [3.0.0] - 2026-04-14
 
 **Tranche C release.** Ships the memory MCP surface (read + write),

@@ -1,0 +1,471 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:agent-adapter-contract:v1",
+  "title": "Agent Adapter Contract",
+  "description": "Contract schema for external coding agent runtimes (Claude Code CLI, Codex, Cursor, GitHub Copilot cloud agent, gh CLI PR connector, custom CLI/HTTP) integrating with ao-kernel. An adapter is the bridge between ao-kernel workflows and an agent runtime. This contract defines the invocation envelope, input/output shapes, capability declaration, interrupt semantics, and policy/evidence wiring. Referential integrity with workflow-run (run_id) and policy_worktree_profile (policy_refs) is narrative at PR-A0; loader-level validation lands in Tranche A PR-A2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "adapter_id",
+    "adapter_kind",
+    "version",
+    "capabilities",
+    "invocation",
+    "input_envelope",
+    "output_envelope",
+    "policy_refs",
+    "evidence_refs"
+  ],
+  "properties": {
+    "adapter_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,63}$",
+      "description": "Unique adapter slug. Lowercase letter, followed by 2-63 lowercase letters, digits, or dashes. Must be unique within a workspace's adapter registry."
+    },
+    "adapter_kind": {
+      "$ref": "#/$defs/adapter_kind_enum"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?(?:\\+[\\w.-]+)?$",
+      "description": "Adapter package version in SemVer 2.0 format (e.g. '1.0.0', '2.3.0-rc.1')."
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/capability_enum"},
+      "description": "Declared capabilities the adapter supports. Subset of: read_repo, write_diff, run_tests, open_pr, human_interrupt, stream_output. Note: commit_write and branch_create are NOT capabilities — git commit and branch operations are ao-kernel's responsibility (worktree executor + PR orchestrator). MCP/tool access is NOT a capability — it is policy-gated via policy_refs."
+    },
+    "invocation": {
+      "$ref": "#/$defs/invocation",
+      "description": "Transport-specific invocation specification. Either 'cli' (subprocess-based) or 'http' (network-based)."
+    },
+    "input_envelope": {
+      "$ref": "#/$defs/input_envelope",
+      "description": "Shape of the payload ao-kernel sends to the adapter when invoking it."
+    },
+    "output_envelope": {
+      "$ref": "#/$defs/output_envelope",
+      "description": "Shape of the payload the adapter returns to ao-kernel after completing or partially completing the task."
+    },
+    "interrupt_contract": {
+      "$ref": "#/$defs/interrupt_contract",
+      "description": "Optional. Defines how the adapter surfaces human-in-the-loop requests mid-run. Required if capabilities includes 'human_interrupt'."
+    },
+    "policy_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Workspace-relative references to policy files that must be loaded before this adapter is invoked. Must include 'ao_kernel/defaults/policies/policy_worktree_profile.v1.json' at minimum. Optional: policy_tool_calling.v1.json (if adapter invokes MCP tools), policy_mcp_memory.v1.json (if adapter reads canonical memory)."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "JSONL path patterns where adapter invocations emit evidence events. Standard pattern: '.ao/evidence/workflows/{run_id}/adapter-{adapter_id}.jsonl'. Multiple patterns allowed for adapters that write to additional evidence surfaces (e.g., SHA256 integrity manifest paths under '.ao/evidence/workflows/{run_id}/manifest.json')."
+    }
+  },
+  "$defs": {
+    "adapter_kind_enum": {
+      "type": "string",
+      "enum": [
+        "claude-code-cli",
+        "codex-cli",
+        "codex-stub",
+        "github-copilot-cloud",
+        "cursor-bg",
+        "gh-cli-pr",
+        "custom-cli",
+        "custom-http"
+      ],
+      "description": "Adapter category. 'claude-code-cli': Anthropic Claude Code CLI subprocess. 'codex-cli': OpenAI Codex CLI. 'codex-stub': in-process deterministic stub for tests/demos. 'github-copilot-cloud': GitHub Copilot cloud agent (HTTP). 'cursor-bg': Cursor background agent (HTTP). 'gh-cli-pr': typed VCS/PR connector wrapping 'gh' CLI for PR creation — NOT a full coding agent. 'custom-cli' / 'custom-http': escape hatch for user-defined adapters. Promotion criteria for new enum values: (a) a bundled adapter manifest ships in ao_kernel/defaults/, OR (b) 3+ independent user requests without workspace override. Candidates currently routed via custom-* escape hatch: aider-cli, devin-http, windsurf-cascade."
+    },
+    "capability_enum": {
+      "type": "string",
+      "enum": [
+        "read_repo",
+        "write_diff",
+        "run_tests",
+        "open_pr",
+        "human_interrupt",
+        "stream_output"
+      ],
+      "description": "Atomic capability the adapter can perform. read_repo: adapter may read files from the workspace view. write_diff: adapter may produce a unified diff as output. run_tests: adapter may execute the workspace test suite in its worktree. open_pr: adapter may itself create a PR (e.g., GitHub Copilot cloud agent); if absent, ao-kernel opens the PR via gh-cli-pr adapter. human_interrupt: adapter may mid-run request human input via interrupt_contract. stream_output: adapter streams partial output chunks rather than returning a single response."
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport"],
+      "properties": {
+        "transport": {
+          "type": "string",
+          "enum": ["cli", "http"],
+          "description": "Invocation transport. 'cli': subprocess-based. 'http': network endpoint. grpc/websocket are out of scope at v1 — promotion gated by 2 bundled adapters or explicit demand."
+        }
+      },
+      "oneOf": [
+        {"$ref": "#/$defs/invocation_cli"},
+        {"$ref": "#/$defs/invocation_http"}
+      ],
+      "description": "Transport-dispatched invocation spec. Exactly one branch (cli or http) must validate."
+    },
+    "invocation_cli": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "command", "args", "env_allowlist_ref", "cwd_policy", "stdin_mode"],
+      "properties": {
+        "transport": {"const": "cli"},
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Executable to invoke. Must resolve under policy_worktree_profile.command_allowlist (exact or prefix match)."
+        },
+        "args": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Argument template. Placeholders like '{task_prompt}', '{context_pack_ref}', '{run_id}' are substituted at invocation time. Secrets are NOT substituted into args (policy_worktree_profile.secrets.denied_exposure_modes includes 'argv')."
+        },
+        "env_allowlist_ref": {
+          "type": "string",
+          "description": "Pointer to policy_worktree_profile.env_allowlist keys. Typically '#/env_allowlist/allowed_keys' (entire list) or a subset."
+        },
+        "cwd_policy": {
+          "type": "string",
+          "enum": ["per_run_worktree", "shared_readonly"],
+          "description": "Working directory policy. per_run_worktree: fresh worktree per run (default). shared_readonly: shared repo read-only mount (for analysis-only adapters)."
+        },
+        "stdin_mode": {
+          "type": "string",
+          "enum": ["none", "prompt_only", "multipart"],
+          "description": "stdin usage. none: no stdin. prompt_only: task_prompt written to stdin (non-secret). multipart: structured JSONL on stdin (input_envelope). Secrets NEVER written to stdin (policy_worktree_profile.secrets.denied_exposure_modes includes 'stdin')."
+        },
+        "exit_code_map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["ok", "declined", "failed", "partial"]
+          },
+          "description": "Optional map from adapter exit code (as string key) to output_envelope.status. Default: 0 -> ok, non-zero -> failed."
+        }
+      }
+    },
+    "invocation_http": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "endpoint", "auth_secret_id_ref"],
+      "properties": {
+        "transport": {"const": "http"},
+        "endpoint": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HTTP endpoint URL template. May contain placeholders like '{run_id}'."
+        },
+        "auth_secret_id_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Secret ID referenced in policy_worktree_profile.secrets.allowlist_secret_ids. The resolved secret value is injected only into HTTP headers (not URL, not body) via the provider's documented auth scheme. policy_worktree_profile.secrets.denied_exposure_modes prohibits http_header default; http adapters must set exposure_modes to include 'http_header' explicitly under workspace override."
+        },
+        "headers_allowlist": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Non-auth header names the adapter is allowed to set. Auth header is derived from auth_secret_id_ref; other secrets must not appear."
+        },
+        "request_body_template": {
+          "type": "object",
+          "description": "JSON body template. Placeholders like '{task_prompt}', '{context_pack_ref}' substituted at invocation.",
+          "additionalProperties": true
+        },
+        "response_parse": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "diff_jsonpath": {"type": "string", "description": "JSONPath to unified diff in response body."},
+            "status_jsonpath": {"type": "string", "description": "JSONPath to status value."},
+            "error_jsonpath": {"type": "string", "description": "JSONPath to error payload (on non-ok response)."}
+          },
+          "description": "Optional response parsing hints for HTTP adapters whose payload shape differs from output_envelope."
+        }
+      }
+    },
+    "input_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_prompt", "run_id"],
+      "properties": {
+        "task_prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Natural-language task description (e.g., the issue body, spec markdown, or bug report). Non-secret by construction."
+        },
+        "context_pack_ref": {
+          "type": "string",
+          "description": "Workspace-relative path to the compiled context pack (canonical decisions + session transcript + workspace facts). Adapter reads this file directly; adapter does NOT need context_pack_read capability — context delivery is via input envelope, not a privilege."
+        },
+        "workspace_view": {
+          "$ref": "#/$defs/workspace_view",
+          "description": "Optional file allowlist defining what the adapter may read from the worktree."
+        },
+        "budget": {
+          "$ref": "#/$defs/budget",
+          "description": "Per-invocation budget ceiling. fail_closed_on_exhaust enforced."
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Workflow run UUID. Narrative reference to workflow-run.schema.v1.json::run_id; registry-level validation lands in Tranche A PR-A2."
+        }
+      }
+    },
+    "workspace_view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowlist_globs"],
+      "properties": {
+        "allowlist_globs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "description": "Glob patterns the adapter may read. Default recommendation: ['**/*.py', '**/*.md', 'pyproject.toml'] for Python projects."
+        },
+        "denylist_globs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Globs explicitly excluded. Applied after allowlist. Default recommendation: ['.ao/**', '.git/**', '**/.env*', '**/secrets.*']."
+        },
+        "max_bytes_per_file": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 524288,
+          "description": "Per-file read budget (bytes). Default 512 KiB."
+        },
+        "max_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 16777216,
+          "description": "Total read budget across all workspace view reads (bytes). Default 16 MiB."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fail_closed_on_exhaust"],
+      "properties": {
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "integer", "minimum": 1},
+            "spent": {"type": "integer", "minimum": 0},
+            "remaining": {"type": "integer", "minimum": 0}
+          },
+          "description": "LLM token ceiling (adapter input + output tokens combined)."
+        },
+        "time_seconds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "number", "exclusiveMinimum": 0},
+            "spent": {"type": "number", "minimum": 0},
+            "remaining": {"type": "number", "minimum": 0}
+          },
+          "description": "Wall-clock time ceiling (seconds)."
+        },
+        "cost_usd": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "number", "exclusiveMinimum": 0},
+            "spent": {"type": "number", "minimum": 0},
+            "remaining": {"type": "number", "minimum": 0}
+          },
+          "description": "Estimated USD cost ceiling."
+        },
+        "fail_closed_on_exhaust": {
+          "type": "boolean",
+          "const": true,
+          "description": "MUST be true. When any budget axis reaches its limit, further invocation is denied (CNS-007 fail-closed pattern; TRANCHE-STRATEGY-V2.md §3 hard budget cap)."
+        }
+      }
+    },
+    "output_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["ok", "declined", "interrupted", "failed", "partial"],
+          "description": "Top-level outcome. ok: adapter returned a valid response. declined: adapter refused (policy, safety, scope). interrupted: adapter requested human input mid-run (interrupt_token set). failed: invocation or parse error (error field set). partial: adapter streamed some output but did not finish (finish_reason set). Note: 'timeout' is NOT a top-level status — timeouts surface as status=partial with finish_reason=timeout, or status=failed with error.category=timeout (repo precedent: tests/test_stream_post_processors.py, tests/test_client.py)."
+        },
+        "diff": {
+          "type": "string",
+          "description": "Unified diff (git format) when status in [ok, partial] and capabilities includes write_diff. Empty string when no change proposed."
+        },
+        "commands_executed": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/command_record"},
+          "description": "Per-command execution records. Subject to policy_worktree_profile.evidence_redaction rules."
+        },
+        "logs_ref": {
+          "type": "string",
+          "description": "Workspace-relative path to the adapter's redacted log JSONL. Matches evidence_refs pattern."
+        },
+        "evidence_events": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidence_event_ref"},
+          "description": "Evidence events the adapter wants ao-kernel to emit to the workflow timeline."
+        },
+        "error": {
+          "$ref": "#/$defs/error_record",
+          "description": "Populated only when status=failed. category enumerates recoverable vs terminal failure modes."
+        },
+        "finish_reason": {
+          "type": "string",
+          "enum": ["normal", "timeout", "max_tokens", "stop_sequence", "tool_call", "filtered"],
+          "description": "Applies to status in [ok, partial]. Mirrors provider-native finish_reason semantics."
+        },
+        "interrupt_token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Populated only when status=interrupted. Opaque token used by ao-kernel to resume the adapter. Distinct from governance approval_token (separate domain)."
+        },
+        "cost_actual": {
+          "$ref": "#/$defs/cost_record",
+          "description": "Actual resource consumption reported by the adapter."
+        }
+      }
+    },
+    "command_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "exit_code", "started_at", "completed_at"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1, "description": "Executable that was invoked (post-redaction)."},
+        "args_shape": {"type": "string", "description": "Redacted argument shape description (e.g., '<path> <hash>'). Raw args are NEVER logged if they may contain secrets."},
+        "exit_code": {"type": "integer"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "completed_at": {"type": "string", "format": "date-time"},
+        "stdout_ref": {"type": "string", "description": "Path to redacted stdout JSONL, if captured."},
+        "stderr_ref": {"type": "string", "description": "Path to redacted stderr JSONL, if captured."}
+      }
+    },
+    "evidence_event_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "payload_hash"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "One of the 17 event kinds defined in docs/EVIDENCE-TIMELINE.md §2."
+        },
+        "event_id": {
+          "type": "string",
+          "description": "ULID. If absent, ao-kernel mints one at emission."
+        },
+        "payload_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hex digest of the event payload (for integrity)."
+        },
+        "payload_ref": {
+          "type": "string",
+          "description": "Pointer to the full payload if too large to inline (JSONL offset, file path, etc.)."
+        }
+      }
+    },
+    "error_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "category"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1, "description": "Machine-readable error code (e.g., 'ADAPTER_TIMEOUT', 'PATCH_PARSE_FAIL')."},
+        "message": {"type": "string", "minLength": 1, "description": "Human-readable error message. Subject to redaction rules."},
+        "category": {
+          "type": "string",
+          "enum": [
+            "timeout",
+            "invocation_failed",
+            "output_parse_failed",
+            "policy_denied",
+            "budget_exhausted",
+            "adapter_crash",
+            "other"
+          ],
+          "description": "Failure category. Consumers key recovery logic off this, not the code. timeout: wall-clock or provider-side deadline exceeded. invocation_failed: command could not start (PATH miss, port closed, auth failed). output_parse_failed: adapter returned malformed payload. policy_denied: pre-invocation policy check refused. budget_exhausted: any budget axis ran out mid-run. adapter_crash: process terminated abnormally (signal, OOM)."
+        }
+      }
+    },
+    "interrupt_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resume_protocol"],
+      "properties": {
+        "resume_protocol": {
+          "type": "string",
+          "enum": ["subprocess_stdin", "http_continuation", "replay_with_reply"],
+          "description": "How ao-kernel resumes the adapter. subprocess_stdin: write resume payload to adapter stdin (same process). http_continuation: POST resume payload to endpoint with interrupt_token header. replay_with_reply: adapter is re-invoked with resume_payload appended to input_envelope.task_prompt."
+        },
+        "resume_payload_schema_ref": {
+          "type": "string",
+          "description": "Optional ref to a sub-schema describing the expected resume payload shape."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How long ao-kernel holds the interrupt open before transitioning workflow-run.state to failed (category=timeout)."
+        }
+      }
+    },
+    "interrupt_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interrupt_id", "interrupt_token", "emitted_at", "question_payload"],
+      "properties": {
+        "interrupt_id": {"type": "string", "minLength": 1},
+        "interrupt_token": {"type": "string", "minLength": 1, "description": "Opaque resume token. Distinct from governance approval_token."},
+        "emitted_at": {"type": "string", "format": "date-time"},
+        "resumed_at": {"type": "string", "format": "date-time"},
+        "adapter_id": {"type": "string", "minLength": 1},
+        "question_payload": {"type": "object", "description": "Adapter-defined question shape (redacted)."},
+        "response_payload": {"type": "object", "description": "Human-supplied response shape (redacted)."}
+      }
+    },
+    "cost_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tokens_input": {"type": "integer", "minimum": 0},
+        "tokens_output": {"type": "integer", "minimum": 0},
+        "time_seconds": {"type": "number", "minimum": 0},
+        "cost_usd": {"type": "number", "minimum": 0}
+      },
+      "description": "Adapter-reported actual resource consumption. Reconciled against budget on return."
+    },
+    "diff_patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "payload"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["unified", "git"],
+          "description": "Diff format. 'unified': POSIX unified diff. 'git': git-format patch with commit metadata (prefer when open_pr capability is declared)."
+        },
+        "payload": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Raw diff text."
+        },
+        "base_revision": {
+          "type": "string",
+          "description": "Optional base git SHA the diff was computed against."
+        }
+      },
+      "description": "Structured diff container. output_envelope.diff may carry the raw payload directly; this $def is for adapters that want to send metadata alongside the patch."
+    }
+  }
+}
