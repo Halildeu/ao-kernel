@@ -43,6 +43,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `agent-adapter-contract.schema.v1.json`: removed `additionalProperties: false` from the top-level `invocation` object so the `oneOf` discriminator over `invocation_cli` / `invocation_http` can validate transport-specific fields. The branch schemas retain their own `additionalProperties: false`, so extras at each branch level are still rejected. Bug surfaced the first time PR-A2 tests ran a real manifest through the validator; shipping alongside PR-A2.
 
+### Added — FAZ-A PR-A3 (worktree executor + policy enforcement + adapter invocation)
+
+- `ao_kernel/executor/` new public facade package: `Executor.run_step` is the single-step primitive that orchestrates worktree creation, runtime policy enforcement, adapter invocation (CLI or HTTP), evidence emission, and run record CAS update. Consumers: PR-A4 multi-step driver.
+- **Worktree builder** (`worktree_builder.py`): creates per-run git worktrees under `.ao/runs/{run_id}/worktree/` with `chmod 0o700`; POSIX-only; idempotent cleanup via git-native `worktree remove` + filesystem fallback.
+- **Policy enforcer** (`policy_enforcer.py`): runtime validation against `policy_worktree_profile.v1.json`. PATH hardening (plan v2 B1): resolved command realpath must be under a policy-declared path prefix — basename allowlist alone does NOT authorize an arbitrary filesystem location; `inherit_from_parent=False` (default) strictly disables host env passthrough; explicit_additions override; HTTP adapters with `auth_secret_id_ref` require `"http_header"` in `exposure_modes` or are pre-flight denied.
+- **Evidence emitter** (`evidence_emitter.py`): per-run file lock (`events.jsonl.lock`) + monotonic `seq` field (the replay ordering key) + `secrets.token_urlsafe(48)` opaque `event_id`. 17-kind taxonomy whitelist. Redaction at emission via 6 P0 patterns inherited from `policy.evidence_redaction`. Manifest generation deferred to PR-A5 CLI (docs/EVIDENCE-TIMELINE.md §5 revised).
+- **Adapter invoker** (`adapter_invoker.py`): CLI via `subprocess.run` (hermetic env, no host leakage); HTTP via `urllib.request` (stdlib only, no new runtime dep). JSON-first output parse; minimal dotted JSONPath subset (`$.key(.key)*`, no indices/wildcards) for `response_parse`; text/plain fallback guarded by content-type + unified diff marker + `write_diff` capability triple; exit-code mapping; timeout handling (partial + `finish_reason=timeout`); budget accounting via PR-A1 `record_spend`.
+- **Executor orchestrator** (`executor.py`): single-step primitive contract (plan v2 Q1 add): validates `step_def` is part of pinned workflow definition; rejects duplicate completed steps; cross-reference validation re-runs per adapter step (no cache, plan v2 B8). Canonical event emission order: `step_started → policy_checked → (policy_denied ⇒ abort) → adapter_invoked → adapter_returned → step_completed|step_failed → run state CAS`.
+- **Typed errors** (`errors.py`): `PolicyViolation` structured record + `PolicyViolationError`, `AdapterInvocationFailedError`, `AdapterOutputParseError`, `WorktreeBuilderError`, `EvidenceEmitError`.
+- **Bundled deterministic stub** (`ao_kernel/fixtures/codex_stub.py`): canonical `output_envelope` JSON on stdout; used by CI integration and the DEMO-SCRIPT.md flow to exercise the full CLI transport without an LLM provider. `ao_kernel.fixtures` ships as a runtime package (setuptools-discoverable via `__init__.py`); stability note: fixture behaviour preserved within semver minor, not a production adapter authoring API.
+- Tests: 5 new test files with ≥ 55 new tests exercising PATH poisoning denial, env hermeticity, seq monotonicity, redaction, JSONPath subset, text/plain fallback triple gate, cross-reference per-call, primitive contract (foreign step + duplicate step rejection), worktree chmod 0o700, idempotent cleanup, and end-to-end codex-stub adapter invocation via real subprocess.
+- Adversarial consensus: CNS-20260415-022 via MCP iter-1 PARTIAL (8 blocking + 9 warning absorbed in plan v2) → iter-2 AGREE (`ready_for_impl=true`, `pr_split_recommendation=single_pr`). First plan review conducted over Codex MCP transport instead of `codex exec`.
+
+### Fixed — PR-A3
+
+- `docs/EVIDENCE-TIMELINE.md §5`: clarified that the SHA-256 integrity manifest is generated on demand by the PR-A5 evidence-timeline CLI, not updated per-event by PR-A3. PR-A3 writes events append-only with per-run lock + fsync.
+
 ## [3.0.0] - 2026-04-14
 
 **Tranche C release.** Ships the memory MCP surface (read + write),

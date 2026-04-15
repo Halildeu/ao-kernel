@@ -1,0 +1,127 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-022",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d9214-9200-75a0-be8e-ff1ec265351c",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Genel yön doğru: single-step primitive, stdlib transport, fail-closed policy ve gerçek subprocess smoke testi PR-A3 için uygun. Ancak implementasyona başlamadan plan v2'de netleşmesi gereken blocker'lar var: host PATH ile exact basename allowlist bypass riski, evidence ordering/manifest/ULID sözleşmesi, HTTP JSONPath ve text/plain fallback belirsizliği, cross-ref validasyonunun single-step çağrılarda stale kalması. Stub'un wheel'e ship edilmesi ve JSON-first parse kabul edilebilir; bunlar daha çok sözleşme netliği ve test matrisi uyarısı seviyesinde.",
+  "question_verdicts": [
+    {
+      "question_id": "Q1",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "Single-step kararını destekliyorum, fakat schema anlatımıyla plan dili çelişiyor: plan multi-step'i scope dışına alıyor ve run_step'i tek adım yapıyor; grep: .claude/plans/PR-A3-IMPLEMENTATION-PLAN.md:50,512,672. Buna karşı workflow-definition schema PR-A3 executor için declared order drive ifadesini taşıyor; grep: ao_kernel/defaults/schemas/workflow-definition.schema.v1.json:41-45."
+      ],
+      "additions": [
+        "Plan v2'ye açık sözleşme ekle: PR-A3 Executor.run_step sadece primitive'dir; PR-A4 loop owner'dır. run_step, verilen step_def'in run record'daki workflow_id/workflow_version ile uyumlu tanımdan geldiğini ve completed step tekrarını append etmeyeceğini doğrulamalı.",
+        "Acceptance'a negatif test ekle: aynı step_name ikinci kez çalıştırılmaya çalışılırsa veya run'ın workflow tanımında olmayan step verilirse fail-closed hata dönmeli."
+      ]
+    },
+    {
+      "question_id": "Q2",
+      "assessment": "FAIL",
+      "blocking_objections": [
+        "Host PATH kaynaklı çözüm güvenli değil. Plan, parent env'den allowed key'leri geçirip shutil.which(command, path=env_vars[PATH]) ile resolve ediyor ve ardından basename exact match kabul ediyor. Zehirlenmiş PATH üzerindeki /tmp/python3 basename exact ile geçebilir.",
+        "inherit_from_parent=false semantiği plan ve policy/docs arasında net değil. Docs resolution passthrough'u inherit true veya explicit_additions ile sınırlar; plan ise inherit false iken bile parent'tan explicitly allowed keys tutulur diyor."
+      ],
+      "warnings": [
+        "Docs exact-only üretim önerisini anlatıyor. Bu model ancak PATH operator-controlled ise güvenli. Parent PATH fallback'i exact-only hardening'i fiilen zayıflatır."
+      ],
+      "additions": [
+        "Plan v2 kararı: defaultta host PATH devralınmasın. PATH command_allowlist.prefixes + env_allowlist.explicit_additions.PATH üzerinden inşa edilsin; host PATH yalnız inherit_from_parent=true ise ve ayrıca path entry'leri prefix/realpath policy filtresinden geçirilirse kullanılabilsin.",
+        "Validation kuralı: exact basename tek başına yeterli olmasın; resolved realpath ya policy-derived PATH entry'si altında olmalı ya da workspace override ile bilinçli izin verilmiş olmalı. Test: PATH'e tmp içindeki sahte python3 başa konduğunda invocation denied."
+      ]
+    },
+    {
+      "question_id": "Q3",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Emit-as-we-go doğru yön, fakat ordering atomikliği tanımlı değil. Plan fsync append diyor; mevcut evidence writer _append_jsonl lock veya sequence kullanmıyor. Run store CAS lock sadece state dosyasını koruyor.",
+        "Plan manifest'i PR-A5'e bırakıyor; fakat evidence contract workflow artefact manifest'inin event append başına atomik güncellendiğini söylüyor. PR-A3 workflow evidence yazıyorsa bu sözleşme ya uygulanmalı ya da contract/plan açıkça revize edilmeli.",
+        "Plan ULID minting via secrets.token_urlsafe diyor; token_urlsafe ULID değildir ve monoton sortable garanti vermez; evidence contract event_id için monoton sortable ULID diyor."
+      ],
+      "warnings": [
+        "Crash anında event yazılmış ama state CAS update henüz olmamış olabilir; plan ordering'i replay açısından nasıl yorumlanacağını belirtmiyor."
+      ],
+      "additions": [
+        "Emit-as-we-go kalsın, batch'e dönülmesin; audit trail için adapter başlamadan adapter_invoked diske düşmeli. Ancak per-run evidence lock, monoton seq veya event_index, fsync ve isteğe bağlı manifest update tek helper içinde olmalı.",
+        "Plan v2'de canonical order yazılsın: step_started -> policy allow/deny events -> adapter_invoked -> adapter log capture -> adapter_returned -> terminal step event -> run state CAS. Replay line order + seq kullanmalı; event_id ordering'e tek başına güvenmemeli."
+      ]
+    },
+    {
+      "question_id": "Q4",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "HTTP response_parse JSONPath gerektiriyor ama plan stdlib-only ve yeni dep yok ilkesini koruyor. Schema diff_jsonpath/status_jsonpath/error_jsonpath diyor. JSONPath subset'i implement edilmeyecekse hints uygulanamaz.",
+        "text/plain fallback planı yok. Docs HTTP için canonical output_envelope veya response_parse JSON shape anlatıyor. Non-JSON diff kabul edilecekse content-type ve heuristic kuralı fail-closed tanımlanmalı."
+      ],
+      "warnings": [
+        "HTTP auth header default policy'de yasak. Plan auth header üretimini anlatıyor. Exposure mode override yoksa HTTP adapter policy_denied olmalı."
+      ],
+      "additions": [
+        "Plan v2 parse order: önce JSON parse + canonical output_envelope validate; değilse response_parse ile sadece dokümante edilmiş minimal JSONPath subset'i ($.a.b, gerekirse array index yok) uygulanır; subset dışı path output_parse_failed.",
+        "text/plain fallback: yalnız Content-Type: text/plain veya JSON parse failure sonrası body açık unified diff marker'larıyla başlıyorsa ve adapter write_diff capability taşıyorsa {status: ok, diff: body} sentezlensin; embedded prose + diff ambiguous kabul edilip fail-closed olsun."
+      ]
+    },
+    {
+      "question_id": "Q5",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Single-step API'de before first adapter step cache semantiği stale kalır. Plan sadece ilk adapter step öncesi cross-ref re-run diyor. Workflow definition contract PR-A3 executor'ı canonical fail-closed consumer yapıyor. Adapter manifest registry step bazında get/missing_capabilities ile doğrulanıyor."
+      ],
+      "warnings": [
+        "Planın schema validation loaded once per run, cached; no per-invocation re-validate ilkesi cross-ref validasyonuyla karışabilir. Schema validation cache edilebilir, registry cross-ref runtime capability kontrolü ayrı ele alınmalı."
+      ],
+      "additions": [
+        "PR-A3 için karar: her run_step adapter invocation öncesi pinned workflow definition + current adapter_registry cross-ref yeniden doğrulansın. PR-A4 isterse definition revision + adapter manifest fingerprint persist ederek cache optimizasyonu ekleyebilir; fingerprint yoksa per-call fail-closed en doğru davranış."
+      ]
+    },
+    {
+      "question_id": "Q6",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "Wheel'e ship etmek mevcut docs ve fixture manifestleriyle uyumlu. Ancak setuptools package discovery için ao_kernel/fixtures/__init__.py gerektiği plan acceptance'ta açık yazılmalı."
+      ],
+      "additions": [
+        "ao_kernel.fixtures runtime package olarak ship edilsin ama public facade'a re-export edilmesin. Stability note: codex_stub test/demo adapter'dır; davranışı deterministic ve semver içinde korunur, fakat production adapter API yüzeyi değildir."
+      ]
+    },
+    {
+      "question_id": "Q7",
+      "assessment": "PARTIAL",
+      "blocking_objections": [],
+      "warnings": [
+        "JSON-first doğru karar; schema canonical output_envelope'i object olarak tanımlıyor. Fakat free-text içinde embedded diff için escape hatch yok; plan risk tablosu ambiguity fail diyor.",
+        "codex_stub açıklaması kendi içinde çelişiyor: önce deterministic unified diff stdout diyor, sonra canned output_envelope JSON diyor. Test fixture manifest stdout parse beklentisini JSON mu diff mi yapacağını netleştirmeli."
+      ],
+      "additions": [
+        "Parse rule: stdout tamamen JSON ise JSON-first ve schema validate; değilse stdout yalnız clear unified diff ise synthetic envelope; free text + embedded diff ambiguous ve output_parse_failed.",
+        "Escape hatch PR-A3'te schema değiştirmeden dokümante edilsin: custom CLI adapter'lar prose üretmemeli; JSON envelope üretmeli. Embedded diff extraction gelecekte manifest-level parse hint gerektirir, PR-A3 scope dışı."
+      ]
+    },
+    {
+      "question_id": "Q8",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "En az bir gerçek subprocess testi kabul edilebilir, fakat kapsam sınırlı kalmalı. Plan hem adapter_invoker happy path hem integration acceptance içinde gerçek subprocess istiyor. 10-30s ek yük hedef olmamalı; python3 -m ao_kernel.fixtures.codex_stub smoke testi normalde saniye altı olmalı."
+      ],
+      "additions": [
+        "CI stratejisi: bir adet unmocked CLI happy-path integration, bir adet env hermeticity helper subprocess testi yeterli; timeout/crash/non-zero/HTTP yolları mock veya tiny local helper ile kalsın. Her subprocess testinde kısa timeout ve tmp git repo fixture kullanılmalı."
+      ]
+    }
+  ],
+  "aggregate_blocking_count": 8,
+  "aggregate_warning_count": 9,
+  "ready_for_impl": false,
+  "next_iteration_required": true,
+  "created_at": "2026-04-15T20:00:05+03:00",
+  "head_sha": "e68b655",
+  "request_head_sha": "e68b655"
+}

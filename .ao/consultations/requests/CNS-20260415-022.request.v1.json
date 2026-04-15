@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-022",
+  "status": "OPEN",
+  "iteration": 1,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "pr_a3_executor_plan_v1_review",
+  "mode": "adversarial_implementation_review",
+  "question": {
+    "title": "PR-A3 executor + policy enforcement + adapter invocation — implementation plan v1 adversarial review (iter 1)",
+    "body": "PR-A3 (FAZ-A Tranche A 4/6) plan v1: 6 executor modules + fixtures/codex_stub.py + 5 tests. Scope: ilk kez subprocess/HTTP adapter invocation + policy_worktree_profile runtime enforcement + evidence events JSONL emission.\n\n8 spec-level soru (plan §16):\nQ1 Single-step vs multi-step API scope\nQ2 Subprocess hermeticity + PATH source\nQ3 Evidence event ordering + manifest + ULID\nQ4 HTTP response handling + text/plain fallback\nQ5 Cross-ref re-validation timing\nQ6 fixtures/codex_stub.py package location\nQ7 Adapter output parse order\nQ8 Testing philosophy (unmocked subprocess CI budget)\n\nBozulmaz ilkeler: POSIX-only, CAS tek yazma yolu, core dep değişmez (jsonschema only), fail-closed, narrow facade.\n\nContext refs: .claude/plans/PR-A3-IMPLEMENTATION-PLAN.md (v1, 735 LOC), ao_kernel/defaults/schemas/{agent-adapter-contract,workflow-run,workflow-definition}.schema.v1.json, ao_kernel/defaults/policies/policy_worktree_profile.v1.json, ao_kernel/workflow/run_store.py, ao_kernel/workflow/registry.py, ao_kernel/adapters/manifest_loader.py, ao_kernel/_internal/evidence/writer.py, ao_kernel/_internal/prj_kernel_api/llm_transport.py, ao_kernel/_internal/roadmap/step_templates.py, docs/WORKTREE-PROFILE.md, docs/EVIDENCE-TIMELINE.md, docs/ADAPTERS.md, CLAUDE.md."
+  },
+  "context_refs": [
+    ".claude/plans/PR-A3-IMPLEMENTATION-PLAN.md",
+    "ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json",
+    "ao_kernel/defaults/schemas/workflow-run.schema.v1.json",
+    "ao_kernel/defaults/schemas/workflow-definition.schema.v1.json",
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+    "ao_kernel/workflow/run_store.py",
+    "ao_kernel/workflow/registry.py",
+    "ao_kernel/adapters/manifest_loader.py",
+    "ao_kernel/_internal/evidence/writer.py",
+    "ao_kernel/_internal/prj_kernel_api/llm_transport.py",
+    "ao_kernel/_internal/roadmap/step_templates.py",
+    "docs/WORKTREE-PROFILE.md",
+    "docs/EVIDENCE-TIMELINE.md",
+    "docs/ADAPTERS.md",
+    "CLAUDE.md"
+  ],
+  "mcp_thread_id": "019d9214-9200-75a0-be8e-ff1ec265351c",
+  "created_at": "2026-04-15T19:55:00+03:00",
+  "branch": "claude/tranche-a-pr-a3-preview",
+  "head_sha": "e68b655"
+}
