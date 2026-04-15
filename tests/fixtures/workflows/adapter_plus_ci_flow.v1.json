@@ -1,0 +1,30 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "adapter_plus_ci_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Adapter + CI Flow",
+  "description": "Adapter invocation followed by a CI ruff check.",
+  "steps": [
+    {
+      "step_name": "invoke_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "write_diff"],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 30,
+      "human_interrupt_allowed": false
+    },
+    {
+      "step_name": "lint_check",
+      "actor": "system",
+      "operation": "ci_ruff",
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 60
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub"],
+  "default_policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+  "required_capabilities": ["read_repo", "write_diff"],
+  "tags": ["integration"],
+  "created_at": "2026-04-16T00:00:00+00:00"
+}

@@ -1,0 +1,44 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-024",
+  "iteration": 2,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d92fd-acf3-71d0-bffe-2d4b51e3c531",
+  "overall_verdict": "AGREE",
+  "rationale": "Plan v2, iter-1'deki 5 blocker'ın mimari özünü absorbe etmiş: Executor dual-mode ile driver on_failure ownership çakışması kapanmış; driver entry matrix artık crash/resume/terminal durumlarını ayırıyor; retry persistence sırası append-only ve crash-safe hale gelmiş; schema-legal error.category mapping tanımlanmış; approval idempotency PR-A1 kontratına decision-only olarak geri çekilmiş. W1-W7 de implementation-time seviyesinde yeterince netleşmiş. Dosyada hâlâ bazı v1 anlatım kalıntıları var (payload_hash, eski Budget method pseudocode'u, §4 signature'da driver_managed eksikliği, changelog'da approval full-payload hash). Bunlar yeni CNS iterasyonu gerektiren blocker değil; implementasyon sırasında §2 invariants #22-#29 ve §10 absorption map authoritative kabul edilmeli.",
+  "micro_fix_verdicts": [
+    {"id": "B1", "fixed": true, "note": "Executor driver_managed=True dual-mode tasarımı blocker'ı kapatıyor. Default driver_managed=False ile A3 single-step contract korunuyor; A4b driver-managed path'te step_record/run-level CAS driver'a ait."},
+    {"id": "B2", "fixed": true, "note": "Entry matrix doğru: created, running, token-required states ve terminal states ayrılmış. running resume'de workflow_started tekrar emit edilmemesi kabul."},
+    {"id": "B3", "fixed": true, "note": "Retry persistence sırası artık doğru: failed attempt=1 terminal CAS, sonra attempt=2 placeholder CAS, sonra invocation, sonra placeholder update. Resume'de running attempt=2 placeholder varsa attempt=3 yaratılmaması kritik."},
+    {"id": "B4", "fixed": true, "note": "Schema error.category enum'u korunuyor; internal driver sebepleri category, code, message, evidence reason ayrımıyla taşınıyor."},
+    {"id": "B5", "fixed": true, "note": "Approval idempotency decision-only olarak PR-A1 primitive/scheme kontratına geri çekilmiş. notes sadece event payload metadata'sı."},
+    {"id": "W1", "fixed": true, "note": "Authoritative invariant #22 doğru: adapter_returned payload alanları output_ref, output_sha256, attempt; event envelope payload_hash ayrı."},
+    {"id": "W2", "fixed": true, "note": "ao_kernel/executor/artifacts.py package-private helper yaklaşımı doğru."},
+    {"id": "W3", "fixed": true, "note": "Functional Budget API kararı doğru: is_exhausted(budget) ve record_spend(...) -> Budget."},
+    {"id": "W4", "fixed": true, "note": "State map netleşmiş: pre-apply patch_preview ve ci_pytest/ci_ruff run state'i running bırakır; patch_apply running -> applying; post-apply CI applying -> verifying; post-CI gate verifying -> waiting_approval."},
+    {"id": "W5", "fixed": true, "note": "context_compile stub görünürlüğü yeterli: yeni event kind eklemeden step_completed.payload.stub=true."},
+    {"id": "W6", "fixed": true, "note": "Artifact content shape normalized InvocationResult dict; raw adapter envelope değil. Replay determinism için doğru."},
+    {"id": "W7", "fixed": true, "note": "ci_mypy driver'da explicit unsupported operation path'e gidiyor."}
+  ],
+  "mv_answers": [
+    {"id": "MV1", "answer": "Dual-mode acceptable. A3 contract değiştirmemek doğru: default driver_managed=False mevcut adapter-failure-terminalize yolunu korur ve PR-A3 testleri güncellenmeden çalışır. A4b driver her adapter çağrısında explicit driver_managed=True kullanmalı."},
+    {"id": "MV2", "answer": "Evet, placeholder step_record.state=running schema-legal. workflow-run.schema.v1.json::$defs/step_record.state enum run-level state'leri artı skipped içeriyor; running kabul ediliyor. Placeholder kaydında schema-required alanlar (step_id, step_name, state, actor, started_at) bulunmalı; attempt=2 eklenmeli. Terminal state'e CAS ile update edilmeli, ikinci record append edilmemeli."},
+    {"id": "MV3", "answer": "category=other yoğunluğu A4b için kabul. Schema v1'i genişletmek gereksiz ve breaking drift üretir. Operator UI: coarse filter error.category, precise machine discriminator error.code, timeline debug evidence payload reason."},
+    {"id": "MV4", "answer": "İdempotent terminal return içeriği yeterli, mutasyonsuz olmalı ve evidence emit etmemeli. final_state, steps_executed (highest-attempt completed), steps_failed (highest-attempt failed), steps_retried (attempt>=2 step_name'ler), budget_consumed, resume_token=None, resume_token_kind=None doğru. duration_seconds için persisted timestamps fallback."}
+  ],
+  "new_blocking_objections": [],
+  "residual_warnings": [
+    {"id": "RW1", "title": "Authoritative section ile stale snippet'lar senkron değil", "body": "§2 invariants #22-#29 ve §10 absorption map implementasyon için authoritative kabul edilmeli. §1/Scope'ta adapter_returned ... payload_hash, §4 API code-block'ta eksik driver_managed, §5 budget pseudocode'unda method-style API ve §11 changelog'da approval full-payload hash kalıntıları var. CNS iterasyonu gerektirmez ama plan polish sırasında temizlenmeli."},
+    {"id": "RW2", "title": "_next_attempt_number placeholder ile çakışmasın", "body": "Planın eski helper açıklaması max(attempt)+1 diyor; invariant #27 ise running attempt=2 placeholder varsa attempt=3 yaratılmayacağını söylüyor. Implementasyonda _current_attempt_record veya _next_or_existing_attempt mantığı: non-terminal highest attempt varsa onu resume et, yalnız terminal failed attempt=1 + retry_once durumunda attempt=2 placeholder yarat."},
+    {"id": "RW3", "title": "Yeni driver error sınıfları export/test listesine eklenmeli", "body": "DriverTokenRequiredError, DriverStateInconsistencyError, WorkflowStateCorruptedError public surface olacaksa executor/__init__.py re-export ve unit tests'e eklenmeli; internal kalacaksa underscore/internal boundary net olsun."},
+    {"id": "RW4", "title": "Acceptance metninde final-state/event ayrımı korunmalı", "body": "Evidence kind whitelist'te workflow_cancelled yok; denial path acceptance'ı final_state=cancelled ve mevcut approval_denied/terminal state CAS üzerinden test edilmeli. Yeni event kind eklenmemeli."}
+  ],
+  "ready_for_impl": true,
+  "next_iteration_required": false,
+  "pr_split_recommendation": "single_pr",
+  "created_at": "2026-04-16T00:26:28+03:00",
+  "head_sha": "9368e97",
+  "request_head_sha": "9368e97"
+}

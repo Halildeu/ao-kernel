@@ -39,6 +39,7 @@ from ao_kernel.executor.adapter_invoker import (
     invoke_cli,
     invoke_http,
 )
+from ao_kernel.executor.artifacts import write_artifact
 from ao_kernel.executor.errors import PolicyViolation, PolicyViolationError
 from ao_kernel.executor.evidence_emitter import emit_event
 from ao_kernel.executor.policy_enforcer import (
@@ -100,7 +101,28 @@ class Executor:
         step_def: StepDefinition,
         *,
         parent_env: Mapping[str, str] | None = None,
+        attempt: int = 1,
+        driver_managed: bool = False,
+        step_id: str | None = None,
     ) -> ExecutionResult:
+        """Execute one workflow step.
+
+        PR-A4b kwargs (CNS-024 iter-2 absorb):
+        - ``attempt``: attempt number for the retry_once append-only
+          model. 1 on first invocation; driver passes 2 on retry.
+        - ``driver_managed``: when True (MultiStepDriver mode), this
+          primitive emits evidence + writes output_ref artifacts but
+          does NOT append step_record or transition run state. The
+          caller owns those CAS mutations. Adapter failure returns an
+          ``ExecutionResult(step_state="failed", ...)`` instead of
+          moving the run to terminal ``failed``. Default ``False``
+          preserves the PR-A3 single-step contract.
+        - ``step_id``: when the driver appends a placeholder attempt=2
+          record ahead of invocation, it passes the placeholder's
+          ``step_id`` here so events + artifacts reference the
+          placeholder instead of creating a new one. Default ``None``
+          falls back to ``step_def.step_name`` (A3 behaviour).
+        """
         parent_env = dict(parent_env or {})
         record, _ = load_run(self._workspace_root, run_id)
 
@@ -126,15 +148,20 @@ class Executor:
             )
 
         # Pre-flight 4: step has not already completed
-        for prior in record.get("steps", ()):
-            if (
-                prior.get("step_name") == step_def.step_name
-                and prior.get("state") == "completed"
-            ):
-                raise ValueError(
-                    f"step_name={step_def.step_name!r} already completed "
-                    f"for run {run_id!r}"
-                )
+        # In driver-managed mode the driver owns step_record identity;
+        # the pre-flight completed-skip check is delegated to the driver
+        # (which uses highest-attempt semantics). In default (A3) mode,
+        # Executor keeps the original guard.
+        if not driver_managed:
+            for prior in record.get("steps", ()):
+                if (
+                    prior.get("step_name") == step_def.step_name
+                    and prior.get("state") == "completed"
+                ):
+                    raise ValueError(
+                        f"step_name={step_def.step_name!r} already completed "
+                        f"for run {run_id!r}"
+                    )
 
         # Pre-flight 5: for adapter steps, run cross-ref per-call (no cache)
         if step_def.actor == "adapter":
@@ -154,9 +181,15 @@ class Executor:
                 record=record,
                 step_def=step_def,
                 parent_env=parent_env,
+                attempt=attempt,
+                driver_managed=driver_managed,
+                step_id_override=step_id,
             )
         # Non-adapter actors are PR-A4+; emit placeholder events and
-        # record the step as completed.
+        # record the step as completed. In driver-managed mode the
+        # driver handles ao-kernel / system / human actors directly
+        # (via patch + ci primitives / waiting_approval gates); the
+        # Executor placeholder path is never called there.
         return self._run_placeholder_step(
             run_id=run_id,
             record=record,
@@ -174,6 +207,9 @@ class Executor:
         record: Mapping[str, Any],
         step_def: StepDefinition,
         parent_env: Mapping[str, str],
+        attempt: int = 1,
+        driver_managed: bool = False,
+        step_id_override: str | None = None,
     ) -> ExecutionResult:
         if step_def.adapter_id is None:
             raise ValueError(
@@ -181,6 +217,10 @@ class Executor:
                 f"no adapter_id"
             )
         manifest = self._adapter_registry.get(step_def.adapter_id)
+        # PR-A4b: driver passes a placeholder step_id for retry attempts
+        # so events + artifacts for attempt=2 reference the placeholder
+        # record rather than creating a parallel step_id.
+        step_id_for_events = step_id_override or step_def.step_name
 
         evidence_event_ids: list[str] = []
 
@@ -194,8 +234,9 @@ class Executor:
                 "step_name": step_def.step_name,
                 "adapter_id": step_def.adapter_id,
                 "actor": step_def.actor,
+                "attempt": attempt,
             },
-            step_id=step_def.step_name,
+            step_id=step_id_for_events,
         )
         evidence_event_ids.append(started.event_id)
 
@@ -314,6 +355,25 @@ class Executor:
                     run_id=run_id,
                 )
 
+            # PR-A4b (CNS-024 W6 absorb): normalized InvocationResult
+            # → canonical JSON artifact under the run's evidence dir.
+            # adapter_returned event carries output_ref + output_sha256
+            # + attempt so the replay tool can correlate events with
+            # artifacts without stateful backtracking.
+            step_id_for_events = step_id_override or step_def.step_name
+            run_dir = (
+                self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
+            )
+            artifact_payload = _normalize_invocation_for_artifact(
+                invocation_result, adapter_id=manifest.adapter_id,
+            )
+            output_ref, output_sha256 = write_artifact(
+                run_dir=run_dir,
+                step_id=step_id_for_events,
+                attempt=attempt,
+                payload=artifact_payload,
+            )
+
             # adapter_returned (v2 note: actor is adapter-sourced, reported by orchestrator)
             returned = emit_event(
                 self._workspace_root,
@@ -325,8 +385,11 @@ class Executor:
                     "adapter_id": manifest.adapter_id,
                     "status": invocation_result.status,
                     "finish_reason": invocation_result.finish_reason,
+                    "output_ref": output_ref,
+                    "output_sha256": output_sha256,
+                    "attempt": attempt,
                 },
-                step_id=step_def.step_name,
+                step_id=step_id_for_events,
             )
             evidence_event_ids.append(returned.event_id)
         finally:
@@ -335,7 +398,7 @@ class Executor:
                     worktree_created, workspace_root=self._workspace_root
                 )
 
-        # Map adapter status → new workflow state
+        # Map adapter status → new workflow state (A3 default)
         new_state, step_state = _map_invocation_to_state(
             current_state=record["state"],
             invocation_result=invocation_result,
@@ -353,18 +416,31 @@ class Executor:
             payload={
                 "step_name": step_def.step_name,
                 "final_state": step_state,
+                "attempt": attempt,
             },
-            step_id=step_def.step_name,
+            step_id=step_id_for_events,
         )
         evidence_event_ids.append(terminal.event_id)
 
-        # CAS update run
+        # Driver-managed mode: skip CAS update. Driver owns step_record
+        # append + run-level transitions (B1 absorb). Executor returns
+        # the normalized result so the driver can dispatch on_failure.
+        if driver_managed:
+            return ExecutionResult(
+                new_state=record["state"],  # unchanged; driver mutates
+                step_state=step_state,
+                invocation_result=invocation_result,
+                evidence_event_ids=tuple(evidence_event_ids),
+                budget_after=budget_to_dict(budget_after),
+            )
+
+        # CAS update run (A3 default path)
         def _mutator(current: dict[str, Any]) -> dict[str, Any]:
             validate_transition(current["state"], new_state)
             current["state"] = new_state
             steps = list(current.get("steps", []))
             step_record = {
-                "step_id": step_def.step_name,
+                "step_id": step_id_for_events,
                 "step_name": step_def.step_name,
                 "state": step_state,
                 "actor": step_def.actor,
@@ -372,6 +448,8 @@ class Executor:
                 "started_at": started.ts,
                 "completed_at": terminal.ts,
                 "evidence_event_ids": list(evidence_event_ids),
+                "attempt": attempt,
+                "output_ref": output_ref,
             }
             steps.append(step_record)
             current["steps"] = steps
@@ -559,6 +637,33 @@ def _map_invocation_to_state(
         return "failed", "failed"
     # status == "failed"
     return "failed", "failed"
+
+
+def _normalize_invocation_for_artifact(
+    invocation_result: Any,  # InvocationResult from adapter_invoker
+    *,
+    adapter_id: str,
+) -> dict[str, Any]:
+    """Convert an InvocationResult into canonical JSON-safe artifact payload.
+
+    Replay determinism (CNS-024 iter-1 W6 absorb): the artifact is a
+    normalized dict (not the raw adapter envelope). Shape is stable
+    across adapter kinds so PR-A5 timeline / replay tools correlate on
+    well-known keys.
+    """
+    return {
+        "adapter_id": adapter_id,
+        "status": invocation_result.status,
+        "diff": invocation_result.diff,
+        "error": invocation_result.error,
+        "finish_reason": invocation_result.finish_reason,
+        "commands_executed": list(invocation_result.commands_executed or ()),
+        "cost_actual": invocation_result.cost_actual,
+        # Tail refs are stdout/stderr path references (tail-capped);
+        # the raw content lives under the adapter's own log path.
+        "stdout_tail_ref": getattr(invocation_result, "stdout_tail_ref", None),
+        "stderr_tail_ref": getattr(invocation_result, "stderr_tail_ref", None),
+    }
 
 
 def _load_bundled_policy() -> Mapping[str, Any]:

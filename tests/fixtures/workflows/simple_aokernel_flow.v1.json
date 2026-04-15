@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "simple_aokernel_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Simple ao-kernel Flow",
+  "description": "Two ao-kernel steps with no adapter invocations. Exercises dispatch + step_completed events without requiring subprocess adapters.",
+  "steps": [
+    {
+      "step_name": "compile_ctx",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "final_ctx",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "on_failure": "transition_to_failed"
+    }
+  ],
+  "expected_adapter_refs": [],
+  "default_policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+  "required_capabilities": [],
+  "tags": ["test", "simple"],
+  "created_at": "2026-04-16T00:00:00+00:00"
+}

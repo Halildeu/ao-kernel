@@ -32,6 +32,15 @@ from ao_kernel.executor.evidence_emitter import (
     emit_event,
 )
 from ao_kernel.executor.executor import Executor, ExecutionResult
+from ao_kernel.executor.multi_step_driver import (
+    DriverBudgetExhaustedError,
+    DriverResult,
+    DriverStateConflictError,
+    DriverStateInconsistencyError,
+    DriverTokenRequiredError,
+    MultiStepDriver,
+    WorkflowStateCorruptedError,
+)
 from ao_kernel.executor.policy_enforcer import (
     RedactionConfig,
     SandboxedEnvironment,
@@ -79,4 +88,12 @@ __all__ = [
     # Orchestrator
     "Executor",
     "ExecutionResult",
+    # Multi-step driver (PR-A4b)
+    "MultiStepDriver",
+    "DriverResult",
+    "DriverStateConflictError",
+    "DriverBudgetExhaustedError",
+    "DriverTokenRequiredError",
+    "DriverStateInconsistencyError",
+    "WorkflowStateCorruptedError",
 ]

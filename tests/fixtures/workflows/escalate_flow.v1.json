@@ -1,0 +1,29 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "escalate_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Escalate To Human Flow",
+  "description": "Two-step flow where step1 has on_failure=escalate_to_human (A4b test fixture).",
+  "steps": [
+    {
+      "step_name": "invoke_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "write_diff"],
+      "on_failure": "escalate_to_human",
+      "timeout_seconds": 30,
+      "human_interrupt_allowed": false
+    },
+    {
+      "step_name": "finalize",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "on_failure": "transition_to_failed"
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub"],
+  "default_policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+  "required_capabilities": ["read_repo", "write_diff"],
+  "tags": ["test", "escalate"],
+  "created_at": "2026-04-16T00:00:00+00:00"
+}
