@@ -140,12 +140,18 @@ def build_test_sandbox(
       ``PYTHONPATH`` if set) so the commands actually resolve.
     - Advertise common system prefixes in ``allowed_command_prefixes``
       so PR-A3 ``validate_command`` accepts the resolved realpath.
+    - **Auto-include the current interpreter's base directory** so
+      tests pass on both developer laptops and CI hosted runners
+      (e.g. GitHub Actions' ``/opt/hostedtoolcache/Python/.../bin``).
     - Use no redaction (tests don't carry secrets).
 
     Callers may narrow ``allowed_commands_exact`` / ``allowed_prefixes``
     to exercise negative paths (e.g. PATH-poisoning tests that drop
     ``python3`` from the allowlist).
     """
+    import shutil
+    import sys
+
     from ao_kernel.executor.policy_enforcer import (  # local import to avoid
         RedactionConfig,  # circular concerns at module load time
         SandboxedEnvironment,
@@ -163,12 +169,26 @@ def build_test_sandbox(
     if extra_env:
         env_vars.update(extra_env)
 
+    # Auto-detect per-interpreter prefix so CI hosted runners (which
+    # place python3 under /opt/hostedtoolcache/Python/...) pass the
+    # policy prefix check without hard-coding every vendor layout.
+    dynamic_prefixes: list[str] = []
+    for candidate in (sys.executable, shutil.which("git")):
+        if not candidate:
+            continue
+        real = os.path.realpath(candidate)
+        parent = os.path.dirname(real)
+        if parent and parent not in dynamic_prefixes:
+            dynamic_prefixes.append(parent)
+
     prefixes = allowed_prefixes if allowed_prefixes is not None else (
         "/usr/bin",
         "/usr/local/bin",
         "/opt/homebrew/bin",
         "/Library/Frameworks/Python.framework/Versions",
         "/opt/local/bin",
+        "/opt/hostedtoolcache/Python",
+        *dynamic_prefixes,
     )
     exact = allowed_commands_exact if allowed_commands_exact is not None else (
         frozenset({"git", "python", "python3", "pytest", "ruff", "mypy"})
