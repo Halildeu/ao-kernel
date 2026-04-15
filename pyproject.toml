@@ -135,6 +135,11 @@ omit = [
     # dedicated test suite when the extra is present. Omit from the
     # ratchet gate to keep CI and local in sync.
     "ao_kernel/telemetry.py",
+    # fixtures/codex_stub.py is exercised via subprocess in PR-A3
+    # integration tests; coverage tool cannot attribute the subprocess
+    # run to this file. Behavioural coverage via the integration test
+    # suite is the effective gate here.
+    "ao_kernel/fixtures/codex_stub.py",
 ]
 
 [tool.coverage.report]

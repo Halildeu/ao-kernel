@@ -175,7 +175,9 @@ Three distinct evidence surfaces live under `.ao/evidence/`:
 
 ## 5. Integrity Manifest
 
-Workflow run artefacts (events.jsonl + adapter logs) carry a SHA-256 integrity manifest at `.ao/evidence/workflows/{run_id}/manifest.json`:
+**Scope note (PR-A3 revision):** The integrity manifest is **generated on demand by the PR-A5 evidence-timeline CLI** after a run completes (or at user request). PR-A3 (worktree executor) writes events to JSONL append-only with a per-run lock + fsync; it does NOT maintain a manifest file. The manifest is a separate PR-A5 artefact that re-hashes the artefacts at query time, so PR-A3 stays free of cross-file coordination cost.
+
+Workflow run artefacts (events.jsonl + adapter logs) carry a SHA-256 integrity manifest at `.ao/evidence/workflows/{run_id}/manifest.json` (generated on demand):
 
 ```json
 {
