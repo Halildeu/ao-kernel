@@ -127,6 +127,39 @@ class TestPreviewTimeout:
             assert exc.reason in {"timeout", "subprocess_error"}
 
 
+class TestPreviewPatchIdConsistency:
+    """Preview and apply share the same patch_id rejection surface
+    (CNS-023 iter-4 W3 absorb). Empty string must be rejected the
+    same way in both, not silently replaced with a generated token."""
+
+    def test_preview_rejects_empty_patch_id(self, tmp_path: Path) -> None:
+        init_repo(tmp_path)
+        with pytest.raises(ValueError):
+            preview_diff(
+                tmp_path, "\n", build_test_sandbox(tmp_path),
+                patch_id="",
+            )
+
+    def test_preview_rejects_traversal_patch_id(self, tmp_path: Path) -> None:
+        init_repo(tmp_path)
+        with pytest.raises(ValueError):
+            preview_diff(
+                tmp_path, "\n", build_test_sandbox(tmp_path),
+                patch_id="../escape",
+            )
+
+    def test_preview_generates_when_patch_id_is_none(self, tmp_path: Path) -> None:
+        init_repo(tmp_path)
+        patch = make_patch_from_changes(
+            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
+        )
+        preview = preview_diff(
+            tmp_path, patch, build_test_sandbox(tmp_path),
+            patch_id=None,
+        )
+        assert len(preview.patch_id) >= 40
+
+
 class TestPreviewResultShape:
     def test_diff_preview_is_frozen(self, tmp_path: Path) -> None:
         init_repo(tmp_path)

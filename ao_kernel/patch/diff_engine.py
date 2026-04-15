@@ -71,7 +71,12 @@ def preview_diff(
     primitive now enforces command preflight instead of trusting the
     caller).
     """
-    assigned_patch_id = patch_id or secrets.token_urlsafe(32)
+    # None → generate; everything else (including empty string) passes
+    # through ``validate_patch_id`` so preview + apply share the same id
+    # rejection surface (CNS-023 iter-4 W3 absorb).
+    assigned_patch_id = (
+        secrets.token_urlsafe(32) if patch_id is None else patch_id
+    )
     validate_patch_id(assigned_patch_id)
     start = time.monotonic()
 

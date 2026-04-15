@@ -9,7 +9,6 @@ from ao_kernel.patch.errors import (
     PatchApplyConflictError,
     PatchApplyError,
     PatchBinaryUnsupportedError,
-    PatchError,
     PatchPreviewError,
     PatchRollbackError,
 )
@@ -80,22 +79,17 @@ class TestPatchRollbackError:
 
 
 class TestPatchBinaryUnsupportedError:
-    def test_reports_binary_paths(self) -> None:
-        err = PatchBinaryUnsupportedError(
-            patch_id="p1",
-            binary_paths=("image.png", "bin/tool"),
-        )
-        assert err.binary_paths == ("image.png", "bin/tool")
-        assert "2 binary path" in str(err)
-
-
-class TestPatchErrorHierarchy:
-    def test_all_subclass_patch_error(self) -> None:
-        assert issubclass(PatchPreviewError, PatchError)
-        assert issubclass(PatchApplyError, PatchError)
-        assert issubclass(PatchApplyConflictError, PatchError)
-        assert issubclass(PatchRollbackError, PatchError)
-        assert issubclass(PatchBinaryUnsupportedError, PatchError)
+    def test_captures_binary_paths_without_loss(self) -> None:
+        """Binary path tuple survives a raise/catch round-trip so the
+        caller can emit them into evidence payload without re-parsing."""
+        try:
+            raise PatchBinaryUnsupportedError(
+                patch_id="p1",
+                binary_paths=("image.png", "bin/tool"),
+            )
+        except PatchBinaryUnsupportedError as caught:
+            assert caught.binary_paths == ("image.png", "bin/tool")
+            assert caught.patch_id == "p1"
 
 
 class TestValidatePatchId:

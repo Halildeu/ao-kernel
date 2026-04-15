@@ -10,6 +10,17 @@ On conflict, a forensic tarball of dirty paths and ``.rej`` contents is
 captured under ``{run_dir}/artifacts/rejected/{patch_id}.tgz`` BEFORE
 a ``git reset --hard HEAD`` cleanup, so post-mortem evidence is
 preserved (Plan v2 invariant #18; CNS-023 iter-1 B6 absorb).
+
+**Primitive-scoped command preflight** (CNS-023 iter-4 W4 absorb):
+``apply_patch`` validates the ``git`` binary via
+``policy_enforcer.validate_command`` ONCE at entry. The internal
+helpers ``_git_porcelain``, ``_cleanup_worktree``,
+``_generate_reverse_diff``, and ``_git_rev_parse_head`` reuse the same
+sandbox ``PATH`` and therefore the same resolved ``git`` realpath;
+they do NOT re-validate per call. The policy model is primitive-scoped
+(each public entry point is a trust boundary), not per-subprocess.
+Callers that need per-command policy must invoke through a higher-level
+orchestrator that brokers individual primitives.
 """
 
 from __future__ import annotations

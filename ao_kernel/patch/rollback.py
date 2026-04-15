@@ -6,6 +6,14 @@
 reverse-diff content itself (CNS-023 iter-1 W3 absorb) because
 ``git diff --cached --name-only`` often returns empty after rollback
 (index cleared).
+
+**Primitive-scoped command preflight** (CNS-023 iter-4 W4 absorb):
+``rollback_patch`` validates the ``git`` binary via
+``policy_enforcer.validate_command`` ONCE at entry. Internal helpers
+``_unrelated_dirty_paths`` and ``_index_tree_sha`` reuse the same
+sandbox ``PATH`` and therefore the same resolved ``git`` realpath;
+they do NOT re-validate per call. The policy model is primitive-scoped
+(each public entry point is a trust boundary), not per-subprocess.
 """
 
 from __future__ import annotations
