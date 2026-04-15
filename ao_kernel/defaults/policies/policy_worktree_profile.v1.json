@@ -1,0 +1,92 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means no logging and no blocking — the policy simply does not engage. Workspace override required to engage (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
+
+  "worktree": {
+    "strategy": "new_per_run",
+    "base_dir_template": ".ao/runs/{run_id}/worktree",
+    "cleanup_on_completion": true,
+    "max_concurrent": 4,
+    "_strategy_note": "new_per_run: create a fresh git worktree per workflow run (default, strongest isolation). Alternatives at Tranche A PR-A3 impl: reuse_per_agent (one worktree per adapter_id, faster for repeated invocations), shared_readonly (mount-point analysis, no writes)."
+  },
+
+  "env_allowlist": {
+    "allowed_keys": ["PATH", "HOME", "USER", "LANG", "LC_ALL", "TZ", "SHELL", "TMPDIR"],
+    "inherit_from_parent": false,
+    "explicit_additions": {},
+    "deny_on_unknown": true,
+    "_env_note": "env_allowlist covers NON-SECRET environment variables only. Secrets (API keys, tokens) are handled via the secrets block below, NOT added here. deny_on_unknown=true: any env key not explicitly in allowed_keys or explicit_additions is stripped before adapter invocation. SSH agent forwarding (SSH_AUTH_SOCK) is NOT in the default allowlist; FAZ-A demos use HTTP-token auth via secrets.allowlist_secret_ids. SSH support is deferred to FAZ-A PR-A5 (evidence CLI) or later."
+  },
+
+  "secrets": {
+    "deny_by_default": true,
+    "allowlist_secret_ids": [],
+    "exposure_modes": ["env"],
+    "denied_exposure_modes": ["argv", "stdin", "file", "http_header"],
+    "_secret_note": "deny_by_default=true: no secret is available to the adapter unless its secret_id is explicitly added to allowlist_secret_ids. Resolution model mirrors policy_secrets.v1.json (allowed_secret_ids + fail_action). exposure_modes=['env'] means allowed secrets are injected ONLY as exported environment variables. denied_exposure_modes lists channels where secrets MUST NOT appear: argv (command arguments — visible in process listings), stdin (adapter prompt payload — captured in evidence), file (on-disk — accidental commit risk), http_header (HTTP adapter requests — requires explicit workspace override of exposure_modes to include 'http_header'). ao-kernel worktree executor (Tranche A PR-A3) enforces this at invocation time."
+  },
+
+  "command_allowlist": {
+    "exact": ["git", "python", "python3", "pytest", "ruff", "mypy"],
+    "prefixes": ["/usr/bin/", "/usr/local/bin/", "/opt/homebrew/bin/"],
+    "deny_if_not_in_list": true,
+    "_command_note": "exact: unqualified command names resolved via PATH within env_allowlist. prefixes: absolute path prefixes — any command under these directories is allowed. '/opt/homebrew/bin/' covers macOS Apple Silicon Homebrew. Production-tier workspaces should override to prefixes=[] and maintain an exact-only list. deny_if_not_in_list=true: any command not matched by exact or prefixes is denied (policy_checked + policy_denied evidence events emitted when mode=block)."
+  },
+
+  "cwd_confinement": {
+    "root_template": "{worktree_base}",
+    "allowed_subdirs": ["*"],
+    "deny_absolute_paths_outside_root": true,
+    "deny_parent_escape": true,
+    "_cwd_note": "root_template: per-run worktree root. allowed_subdirs=['*']: adapter may cd into any subdirectory under the root. deny_parent_escape=true: 'cd ..' past root, symlink escapes, and absolute paths outside root are all denied. Enforcement via chroot-like path normalization at Tranche A PR-A3."
+  },
+
+  "evidence_redaction": {
+    "env_keys_matching": ["(?i).*(token|secret|key|password|credential).*"],
+    "stdout_patterns": [
+      "sk-[A-Za-z0-9]{20,}",
+      "sk-ant-[A-Za-z0-9_-]{30,}",
+      "ghp_[A-Za-z0-9]{20,}",
+      "xoxb-[A-Za-z0-9-]+",
+      "Bearer\\s+[A-Za-z0-9._~+/=-]+",
+      "Basic\\s+[A-Za-z0-9+/=]+"
+    ],
+    "_redaction_scope_note": "P0 pattern coverage: OpenAI (sk-), Anthropic (sk-ant-), GitHub PAT (ghp_), Slack bot (xoxb-), generic OAuth Bearer, HTTP Basic. FAZ-B extended catalog: AWS access key (AKIA...), Google API key (AIza...), xAI (xai-...), structured JWT payloads, private key blocks. Redaction replaces matches with '***REDACTED***' in JSONL evidence; redaction is unreachable for secret values in denied_exposure_modes (they never reach a logged surface).",
+    "file_content_patterns": []
+  },
+
+  "deferred_to_faz_b": {
+    "network_egress_sandbox": {
+      "status": "planned",
+      "target": "FAZ-B",
+      "_note": "OS-level network confinement (cgroups, firejail, nsjail, or OS-native jails) — multi-OS surface, requires per-platform testing."
+    },
+    "os_sandbox": {
+      "status": "planned",
+      "options": ["cgroups", "firejail", "nsjail"],
+      "target": "FAZ-B"
+    },
+    "extended_redaction_catalog": {
+      "status": "planned",
+      "target": "FAZ-B",
+      "_note": "AWS / Google / xAI / structured JWT / private key block patterns."
+    },
+    "ssh_agent_forwarding": {
+      "status": "deferred",
+      "target": "FAZ-A_PR-A5_or_later",
+      "_note": "SSH_AUTH_SOCK env inheritance and agent forwarding are NOT supported in FAZ-A demo tier. Use HTTP-token auth via secrets.allowlist_secret_ids instead."
+    }
+  },
+
+  "rollout": {
+    "mode_default": "report_only",
+    "_mode_note": "Only meaningful when enabled=true. Three tiers: (1) enabled=false -> policy dormant (no log, no block). (2) enabled=true + mode_default=report_only -> violations emit 'policy_checked' evidence events but execution is not blocked (warmup tier). (3) enabled=true + mode_default=block -> violations emit 'policy_denied' events AND deny the operation (production tier). promote_to_block_on list is ONLY evaluated in block mode.",
+    "promote_to_block_on": [
+      "secret_leak_detected",
+      "cwd_escape_attempted",
+      "command_not_in_allowlist",
+      "unknown_env_key"
+    ]
+  }
+}

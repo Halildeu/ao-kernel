@@ -1,0 +1,395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:workflow-run:v1",
+  "title": "Workflow Run",
+  "description": "Canonical state schema for a durable workflow run. A workflow run is the top-level unit of governed agent execution in ao-kernel: it threads an intent (issue / spec / prompt) through a sequence of steps (context compile, adapter invocation, diff preview, CI gate, human approval, patch apply, PR open, evidence replay), with CAS-backed revision tokens, durable checkpoints, fail-closed budget, and JSONL evidence events. PR-A0 defines the shape; state machine implementation lands in Tranche A PR-A1. Referential integrity with agent-adapter-contract (adapter_refs) and policy files (policy_refs) is narrative at PR-A0; loader-level validation lands in Tranche A PR-A2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "workflow_id",
+    "workflow_version",
+    "state",
+    "created_at",
+    "revision",
+    "intent",
+    "steps",
+    "policy_refs",
+    "adapter_refs",
+    "evidence_refs",
+    "budget"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique workflow run identifier (UUIDv4). Referenced by agent-adapter-contract.input_envelope.run_id and all evidence paths under '.ao/evidence/workflows/{run_id}/'."
+    },
+    "workflow_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$",
+      "description": "Workflow registry identifier (e.g., 'bug_fix_flow', 'review_ai_flow'). snake_case, 2-64 chars. Registry is populated at Tranche A PR-A2."
+    },
+    "workflow_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?(?:\\+[\\w.-]+)?$",
+      "description": "Registered workflow version in SemVer 2.0. Pins the workflow definition revision at run start; migrations across versions are handled at workflow registry level."
+    },
+    "state": {
+      "$ref": "#/$defs/state_enum"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when the run was registered in the canonical store."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when state transitioned from 'created' to 'running'. Absent until first transition."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of the most recent state mutation. Updated on every CAS write."
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when state transitioned to a terminal value (completed / failed / cancelled). Absent for non-terminal runs."
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "CAS revision token: 64-char SHA-256 hex digest of the canonical run record. Callers treat as opaque (ao_kernel/context/agent_coordination.py::get_revision convention; canonical_store._mutate_with_cas write path)."
+    },
+    "intent": {
+      "$ref": "#/$defs/intent",
+      "description": "Input specification. One of: issue URL, markdown file path, or inline prompt."
+    },
+    "steps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/step_record"},
+      "description": "Sequential step records. Append-only: steps append as the run progresses. Mutation of a completed step is forbidden (enforced by CAS)."
+    },
+    "checkpoint": {
+      "$ref": "#/$defs/checkpoint",
+      "description": "Most recent durable checkpoint. Absent until first step completes. Compatible with ao_kernel/_internal/session/context_store and roadmap/checkpoint patterns."
+    },
+    "policy_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "Workspace-relative policy files referenced at run start. Must include 'ao_kernel/defaults/policies/policy_worktree_profile.v1.json' when any adapter invocation is expected. Other policies: policy_tool_calling.v1.json, policy_mcp_memory.v1.json, policy_secrets.v1.json."
+    },
+    "adapter_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{2,63}$"
+      },
+      "description": "adapter_id values used in this run. Narrative cross-reference to agent-adapter-contract.schema.v1.json::adapter_id (value match, not JSON Schema $ref). Registry validation at Tranche A PR-A2."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "JSONL paths where evidence events for this run are emitted. Standard patterns: '.ao/evidence/workflows/{run_id}/events.jsonl' (workflow timeline), '.ao/evidence/workflows/{run_id}/adapter-{adapter_id}.jsonl' (adapter logs), '.ao/evidence/workflows/{run_id}/manifest.json' (SHA-256 integrity manifest, workspace artefact convention per CLAUDE.md §2)."
+    },
+    "budget": {
+      "$ref": "#/$defs/budget",
+      "description": "Run-level budget. Aggregated over all adapter invocations. fail_closed_on_exhaust enforced."
+    },
+    "approvals": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/approval"},
+      "description": "Governance approval events (HITL gate on CI/diff/PR). Separate domain from adapter interrupt_request ($defs/interrupt_request): approvals are orchestrator-mediated, interrupts are adapter-mediated."
+    },
+    "error": {
+      "$ref": "#/$defs/error_record",
+      "description": "Populated only when state=failed. Mirrors agent-adapter-contract.output_envelope.error structure for category consistency."
+    }
+  },
+  "$defs": {
+    "state_enum": {
+      "type": "string",
+      "enum": [
+        "created",
+        "running",
+        "interrupted",
+        "waiting_approval",
+        "applying",
+        "verifying",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "description": "Workflow run lifecycle state. created: record exists, not started. running: adapter or step in progress. interrupted: agent requested HITL via adapter interrupt_token (resume via adapter). waiting_approval: governance gate requires human approval (resume via approval_token). applying: diff is being applied to worktree. verifying: CI / test gate is running. completed / failed / cancelled: terminal. Allowed transitions (narrative; enforced at Tranche A PR-A1 impl): created -> [running, cancelled]; running -> [interrupted, waiting_approval, applying, failed, cancelled]; interrupted -> [running, failed, cancelled]; waiting_approval -> [applying, failed, cancelled]; applying -> [verifying, failed, cancelled]; verifying -> [completed, failed, cancelled]; completed/failed/cancelled -> (terminal). Note on distinction: 'interrupted' = agent-initiated (adapter output_envelope.status=interrupted, interrupt_token); 'waiting_approval' = governance-initiated (policy_refs trigger HITL gate, approval_token). Two separate token domains; see $defs/approval and $defs/interrupt_request."
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "payload"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["issue_url", "markdown_file", "inline_prompt", "spec_ref"],
+          "description": "Intent shape discriminator. issue_url: GitHub/GitLab issue URL. markdown_file: path to spec / issue body markdown. inline_prompt: raw prompt text. spec_ref: reference to a registered spec document."
+        },
+        "payload": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Intent content: URL, path, raw text, or spec ID. Interpreted according to 'kind'."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Optional. Labels, priority, source system identifiers.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "step_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "step_name", "state", "actor", "started_at"],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+          "description": "Unique step identifier within the run. Stable across replay."
+        },
+        "step_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable step label (e.g., 'compile_context', 'invoke_adapter:claude-code-cli', 'ci_gate')."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "created",
+            "running",
+            "interrupted",
+            "waiting_approval",
+            "applying",
+            "verifying",
+            "completed",
+            "failed",
+            "cancelled",
+            "skipped"
+          ],
+          "description": "Per-step state. Mirrors run-level state enum plus 'skipped' (for conditional-skipped steps in branching flows, FAZ-D native #9 branching)."
+        },
+        "actor": {
+          "type": "string",
+          "enum": ["adapter", "ao-kernel", "human", "system"],
+          "description": "Who executed this step. adapter: external agent invocation. ao-kernel: internal orchestrator (context compile, diff apply, PR open). human: HITL approval / interrupt response. system: automated infrastructure (CI gate result, timeout)."
+        },
+        "started_at": {"type": "string", "format": "date-time"},
+        "completed_at": {"type": "string", "format": "date-time"},
+        "input_ref": {
+          "type": "string",
+          "description": "Pointer to step input (e.g., a context pack path, an adapter input_envelope serialization)."
+        },
+        "output_ref": {
+          "type": "string",
+          "description": "Pointer to step output (e.g., adapter output_envelope serialization, CI result JSON)."
+        },
+        "evidence_event_ids": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "ULID event_ids emitted during this step. Cross-reference to events.jsonl for replay."
+        },
+        "error": {
+          "$ref": "#/$defs/error_record",
+          "description": "Populated only when step state=failed."
+        },
+        "adapter_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "description": "Adapter invoked in this step (when actor=adapter). Cross-reference to agent-adapter-contract."
+        },
+        "interrupt_request": {
+          "$ref": "#/$defs/interrupt_request",
+          "description": "Populated only when step state=interrupted."
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint_id", "sha256", "jsonl_pointer", "created_at", "step_completed_up_to"],
+      "properties": {
+        "checkpoint_id": {
+          "type": "string",
+          "description": "Unique checkpoint identifier within the run."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hex digest of the canonical run record at checkpoint time. Matches workspace integrity manifest per CLAUDE.md §2."
+        },
+        "jsonl_pointer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Workspace-relative path to the JSONL progress log at checkpoint time (e.g., '.ao/runs/{run_id}/checkpoint-{n}.jsonl')."
+        },
+        "created_at": {"type": "string", "format": "date-time"},
+        "step_completed_up_to": {
+          "type": "string",
+          "description": "step_id of the most recently completed step at checkpoint time. Resume from the next step."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fail_closed_on_exhaust"],
+      "properties": {
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "integer", "minimum": 1},
+            "spent": {"type": "integer", "minimum": 0},
+            "remaining": {"type": "integer", "minimum": 0}
+          },
+          "description": "LLM token ceiling, aggregated across all adapter invocations in this run."
+        },
+        "time_seconds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "number", "exclusiveMinimum": 0},
+            "spent": {"type": "number", "minimum": 0},
+            "remaining": {"type": "number", "minimum": 0}
+          },
+          "description": "Wall-clock budget ceiling (seconds). Applies to the whole run including HITL wait time (so long-running approvals count)."
+        },
+        "cost_usd": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "number", "exclusiveMinimum": 0},
+            "spent": {"type": "number", "minimum": 0},
+            "remaining": {"type": "number", "minimum": 0}
+          },
+          "description": "USD cost ceiling, aggregated across adapter invocations using the provider price catalog (FAZ-B extension)."
+        },
+        "fail_closed_on_exhaust": {
+          "type": "boolean",
+          "const": true,
+          "description": "MUST be true. When any budget axis reaches its limit, state transitions to failed with error.category=budget_exhausted. CNS-007 fail-closed pattern; TRANCHE-STRATEGY-V2.md §3 hard budget cap."
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_id", "approval_token", "requested_at", "actor", "gate"],
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique approval identifier within the run."
+        },
+        "approval_token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque resume token handed to the approver. Distinct from adapter interrupt_token ($defs/interrupt_request.interrupt_token) — separate domain. Presented to ao-kernel on resume to transition state from waiting_approval to applying (granted) or cancelled (denied)."
+        },
+        "gate": {
+          "type": "string",
+          "enum": ["pre_diff", "pre_apply", "pre_pr", "pre_merge", "post_ci", "custom"],
+          "description": "Which orchestrator gate triggered this approval. pre_diff: before showing adapter's diff preview. pre_apply: before applying diff to worktree. pre_pr: before opening PR. pre_merge: before merging PR (if ao-kernel orchestrates merge). post_ci: after CI result surfaces. custom: policy-defined gate."
+        },
+        "requested_at": {"type": "string", "format": "date-time"},
+        "responded_at": {"type": "string", "format": "date-time"},
+        "decision": {
+          "type": "string",
+          "enum": ["granted", "denied", "timeout"],
+          "description": "Outcome. granted: proceed. denied: run transitions to cancelled. timeout: no response within gate deadline (treated as denied by fail-closed default)."
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human identifier (GitHub login, email, or internal actor ID) of the approver."
+        },
+        "payload": {
+          "type": "object",
+          "description": "Gate-specific context: diff summary, CI report pointer, risk flags. Subject to policy_worktree_profile.evidence_redaction.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "interrupt_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interrupt_id", "interrupt_token", "emitted_at", "adapter_id", "question_payload"],
+      "properties": {
+        "interrupt_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique interrupt identifier within the run."
+        },
+        "interrupt_token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque resume token minted by the adapter. Distinct from governance approval_token ($defs/approval.approval_token) — separate domain. Presented on adapter resume to continue the paused invocation."
+        },
+        "emitted_at": {"type": "string", "format": "date-time"},
+        "resumed_at": {"type": "string", "format": "date-time"},
+        "adapter_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,63}$",
+          "description": "Which adapter raised the interrupt."
+        },
+        "question_payload": {
+          "type": "object",
+          "description": "Adapter-defined question shape. Subject to redaction.",
+          "additionalProperties": true
+        },
+        "response_payload": {
+          "type": "object",
+          "description": "Human-supplied response shape. Populated only after resumed_at. Subject to redaction.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "error_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "category"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Machine-readable error code (e.g., 'RUN_BUDGET_EXHAUSTED', 'ADAPTER_TIMEOUT', 'APPROVAL_DENIED')."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable error message. Subject to evidence_redaction."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "timeout",
+            "invocation_failed",
+            "output_parse_failed",
+            "policy_denied",
+            "budget_exhausted",
+            "adapter_crash",
+            "approval_denied",
+            "ci_failed",
+            "apply_conflict",
+            "other"
+          ],
+          "description": "Failure category. Extends agent-adapter-contract error.category with run-level categories: approval_denied (governance gate refused), ci_failed (test/lint gate blocked), apply_conflict (diff could not be cleanly applied)."
+        }
+      }
+    }
+  }
+}
