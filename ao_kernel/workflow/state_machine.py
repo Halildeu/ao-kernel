@@ -77,9 +77,18 @@ def _build_transition_table() -> Mapping[str, frozenset[str]]:
             "cancelled",
         }),
         "interrupted": frozenset({"running", "failed", "cancelled"}),
-        "waiting_approval": frozenset({"applying", "failed", "cancelled"}),
+        # PR-A4 addition: `running` — approval granted by governance gate
+        # before the run's next internal step (patch apply or CI run)
+        # resumes. Distinct from `applying` (which is the diff-apply step
+        # itself); `running` re-entry lets the driver dispatch to the next
+        # step by actor/operation.
+        "waiting_approval": frozenset({"applying", "running", "failed", "cancelled"}),
         "applying": frozenset({"verifying", "failed", "cancelled"}),
-        "verifying": frozenset({"completed", "failed", "cancelled"}),
+        # PR-A4 addition: `waiting_approval` — post-CI governance gate
+        # (workflow-definition step_def.gate=post_ci). Allows a human
+        # approval step to follow a verifying/CI outcome before the run
+        # terminates.
+        "verifying": frozenset({"completed", "waiting_approval", "failed", "cancelled"}),
         "completed": frozenset(),
         "failed": frozenset(),
         "cancelled": frozenset(),

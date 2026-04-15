@@ -147,12 +147,46 @@
           "type": "string",
           "enum": ["pre_diff", "pre_apply", "pre_pr", "pre_merge", "post_ci", "custom"],
           "description": "Governance gate BEFORE this step executes. Run transitions to waiting_approval; resume via approval_token (separate from adapter interrupt_token domain)."
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "context_compile",
+            "patch_preview",
+            "patch_apply",
+            "patch_rollback",
+            "ci_pytest",
+            "ci_ruff",
+            "ci_mypy"
+          ],
+          "description": "Internal primitive identifier for actor=ao-kernel (context_compile, patch_*) or actor=system (ci_*) steps. REQUIRED when actor in {ao-kernel, system}; NOT ALLOWED when actor in {adapter, human}. context_compile runs the PR-A? context pipeline (start_session + compile_context + process_turn / DEMO-SCRIPT step 3). patch_preview validates via `git apply --check --3way --index -` without side effects. patch_apply runs `git apply --3way --index -` and writes a reverse-diff to {run_dir}/patches/{patch_id}.revdiff via atomic write. patch_rollback replays the reverse diff; idempotent when the worktree is already clean. ci_pytest / ci_ruff / ci_mypy invoke hermetic subprocesses under policy_worktree_profile.v1 env/command/cwd guards. Introduced in PR-A4."
         }
       },
       "allOf": [
         {
           "if": {"properties": {"actor": {"const": "adapter"}}, "required": ["actor"]},
           "then": {"required": ["adapter_id"]}
+        },
+        {
+          "if": {"properties": {"actor": {"enum": ["ao-kernel", "system"]}}, "required": ["actor"]},
+          "then": {"required": ["operation"]}
+        },
+        {
+          "if": {"properties": {"actor": {"enum": ["adapter", "human"]}}, "required": ["actor"]},
+          "then": {"not": {"required": ["operation"]}}
+        },
+        {
+          "if": {
+            "allOf": [
+              {"properties": {"actor": {"const": "ao-kernel"}}, "required": ["actor"]},
+              {"properties": {"operation": {"const": "patch_apply"}}, "required": ["operation"]}
+            ]
+          },
+          "then": {
+            "properties": {
+              "on_failure": {"enum": ["transition_to_failed", "retry_once"]}
+            }
+          }
         }
       ]
     }

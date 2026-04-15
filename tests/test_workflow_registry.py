@@ -46,6 +46,7 @@ def _minimal_definition(
             {
                 "step_name": "run",
                 "actor": "ao-kernel",
+                "operation": "context_compile",
                 "on_failure": "transition_to_failed",
             }
         ],
