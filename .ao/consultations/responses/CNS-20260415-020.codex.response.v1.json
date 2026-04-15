@@ -1,0 +1,97 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-020",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Planın ana yönü doğru: public workflow package, pure state-machine, POSIX file_lock ve schema-boundary validation mevcut repo ilkeleriyle uyumlu. Ancak implementasyona başlamadan önce birkaç sözleşme netleşmeli: run revision self-hash, _mutate_with_cas/save_run_cas imza tutarlılığı, schema-valid create_run alanları ve format/path güvenliği. Q4’te token ve Decimal/budget exhaust kararı da kodu doğrudan etkiliyor. Bu yüzden iter-1 PARTIAL; dar plan revizyonuyla AGREE’ye yakın.",
+  "question_verdicts": [
+    {
+      "question_id": "Q1",
+      "assessment": "PASS",
+      "blocking_objections": [],
+      "warnings": [
+        "Schema narrative parse testi fragile: plan TRANSITIONS constant'ını description narrative ile eşleştirmeyi ve description parse etmeyi öneriyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:176-188, .claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:607-608); canonical kaynak tek prose string (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:117-130). PR-A1 acceptance schema değişikliğini yasakladığı için (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:592) explicit transitions field eklemek PR-A1 için doğru değil; literal expected table ile test daha sağlam.",
+        "Public facade kabul edilebilir ama yüzey dar tutulmalı: mevcut policy/session facade'ları küçük public API verir (ao_kernel/policy.py:15-46, ao_kernel/session.py:15-69); plan __init__ içinde geniş re-export listesi öneriyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:470-521). _mutate_with_cas, path helpers ve düşük seviye converters export edilmemeli."
+      ],
+      "additions": [
+        "Pure function state-machine savunulabilir: plan stateless immutable table gerekçesini açıkça yazıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:199-202). Class tabanlı WorkflowRun şu aşamada davranış kapsüllemiyor; PR-A3 executor gelince gerekirse wrapper eklenebilir.",
+        "canonical_store hibriti burada birebir gerekli değil: CanonicalDecision dataclass domain kaydı için var (ao_kernel/context/canonical_store.py:50-67), state machine ise sadece transition validation. Budget/primitive dataclass'ları yeterli hibrit noktası."
+      ]
+    },
+    {
+      "question_id": "Q2",
+      "assessment": "FAIL",
+      "blocking_objections": [
+        "run_revision sözleşmesi self-referential kalıyor. Schema revision alanını required yapıyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:8-20) ve 'canonical run record' hash'i olarak tanımlıyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:61-64); plan run_revision(record) için aynı şeyi söylüyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:379-380). Hash input'una revision alanı dahilse stable CAS token üretilemez. Plan, hash'in revision omitted/blank normalized projection üzerinden hesaplanacağını açıkça belirtmeli.",
+        "CAS tek yazma yolu ile helper imzası çelişiyor. save_run_cas expected_revision alıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:401-410) ve update_run tüm yazıların _mutate_with_cas üzerinden geçeceğini söylüyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:412-422); fakat plan helper imzasında expected_revision/allow_overwrite yok (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:430-439). canonical_store helper bu parametrelerle lock içinde compare ediyor (ao_kernel/context/canonical_store.py:237-243, ao_kernel/context/canonical_store.py:259-268). Bu düzeltilmeden implementasyon ya write-path çoğaltır ya CAS'ı atlar."
+      ],
+      "warnings": [
+        "Canonicalization yöntemi RFC 8785'e upgrade edilmemeli; repo sözleşmesi sort-key JSON dump. canonical_store store_revision json.dumps(sort_keys=True, ensure_ascii=False) kullanıyor (ao_kernel/context/canonical_store.py:86-94), get_revision aynı yolu izliyor (ao_kernel/context/agent_coordination.py:45-55), write_json_atomic disk formatını ayrıca pretty-print ediyor (ao_kernel/_internal/shared/utils.py:38-41). Plan 'canonicalized JSON' ifadesini bu mevcut yöntemle netleştirmeli.",
+        "update_run(max_retries=3) + backoff eksikliği non-blocking ama semantik bulanık. canonical_store promote_decision tek locked attempt yapıyor (ao_kernel/context/canonical_store.py:331-336); file_lock zaten timeout/poll_interval ile bekliyor (ao_kernel/_internal/shared/lock.py:57-62, ao_kernel/_internal/shared/lock.py:95-108). Helper bütün load-mutate-write döngüsünü lock altında tutarsa update_run içinde CAS conflict çoğu durumda beklenen bir retry durumu değildir."
+      ],
+      "additions": [
+        "Önerilen helper: _mutate_with_cas(workspace_root, run_id, *, mutator, expected_revision=None, allow_overwrite=False) -> tuple[dict[str, Any], str]. save_run_cas expected_revision ile, create_run ise exists/overwrite guard ile aynı helper'ı kullanmalı.",
+        "Windows fail-closed semantiği aynen mirror edilmeli: file_lock Windows'ta LockPlatformNotSupported raise ediyor (ao_kernel/_internal/shared/lock.py:82-86), canonical_store ayrıca lock_supported guard koyuyor (ao_kernel/context/canonical_store.py:252-257)."
+      ]
+    },
+    {
+      "question_id": "Q3",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "Format/path guard eksik. Schema run_id için format uuid kullanıyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:23-26) ve timestamp alanları date-time formatında (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:41-59); plan sadece Draft202012Validator wrapper diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:218-225). jsonschema format'ı FormatChecker olmadan enforcement değildir. run_path raw run_id'yi path component yapıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:373-374); bu yüzden UUID parse veya explicit safe path-component guard implementasyon öncesi plana girmeli."
+      ],
+      "warnings": [
+        "Validator caching plan metninde API seviyesinde net değil: load_workflow_run_schema her çağrıda resource okuyacak gibi duruyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:218-236), risk tablosu ise compiled validator once-per-process diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:609). @lru_cache ile schema ve Draft202012Validator cache edilmeli.",
+        "check_schema runtime startup'ta zorunlu olmamalı. Plan bunu test stratejisine ve acceptance'a koymuş (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:244, .claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:585); bundled schema PR-A0 frozen olduğu ve wheel resource olduğu için her load/save'de meta-validation over-engineering olur.",
+        "Validation error formatı sadece message listesi olmamalı. Plan exception comment'inde sadece messages diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:146-149), fakat test stratejisi wrong-type field için path bekliyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:240-243). Mevcut shared validator pattern'i json_path + message formatlıyor (ao_kernel/_internal/shared/utils.py:181-186)."
+      ],
+      "additions": [
+        "validate_workflow_run iter_errors sonucunu json_path'e göre sort etmeli ve her item için en az json_path, message, validator bilgisi taşımalı; __str__ kısa özet üretebilir.",
+        "load/save boundary kararı doğru: plan validation'ı load/save ile sınırlıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:228-232), bu performans açısından yeterli."
+      ]
+    },
+    {
+      "question_id": "Q4",
+      "assessment": "FAIL",
+      "blocking_objections": [
+        "ULID + sha256 token planı dependency/posture ile uyumsuz. Plan opaque 64-char ULID+sha suffix diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:309-312), fakat core dependency yalnız jsonschema (pyproject.toml:26) ve tranche planı core dep unchanged diyor (.claude/plans/TRANCHE-STRATEGY-V2.md:162-166). ULID stdlib değil; yeni core dep veya hand-rolled ULID gerektirir. secrets.token_urlsafe(48) stdlib ile 64 char URL-safe opaque token sağlar ve schema yalnız minLength ister (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:298-301, ao_kernel/defaults/schemas/workflow-run.schema.v1.json:337-340).",
+        "Budget Decimal/float/JSON serileştirme kararı implementasyonu bloklayacak kadar belirsiz. Plan BudgetAxis için Decimal|int veriyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:256-267), record_spend cost_usd için float alıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:272-278) ve Decimal for cost gerekçesi yazıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:286-290). Schema cost_usd/time_seconds JSON number bekliyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:261-279), mevcut write_json_atomic ise plain json.dumps kullanıyor ve Decimal serialize etmez (ao_kernel/_internal/shared/utils.py:38-41). Internal Decimal + explicit numeric serialization politikası plana girmeli.",
+        "fail_closed_on_exhaust eşik semantiği çelişkili. Schema 'any budget axis reaches its limit' durumunda failed transition diyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:281-285). Plan docstring 'exceeds' diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:272-280), design 'would exhaust' diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:286-290), test ise spend equal to remaining sonrası yalnız is_exhausted true, bir sonraki spend raise diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:292-296). Equality durumunda fail-closed davranış netleşmeden budget.py kodlanmamalı."
+      ],
+      "warnings": [
+        "Primitive resume single-shot tasarımı network retry için kırılgan. Plan second resume raises diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:356-362); schema response_payload ve decision alanlarını kalıcı tutuyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:310-314, ao_kernel/defaults/schemas/workflow-run.schema.v1.json:354-357). Aynı token + aynı response hash için idempotent success, farklı hash için error daha operasyonel olur."
+      ],
+      "additions": [
+        "Token domain separation için ayrı mint_interrupt_token/mint_approval_token fonksiyonları yeterli; internal implementation secrets.token_urlsafe(48) olabilir. Cross-domain rejection yine token registry/record lookup ile test edilmeli.",
+        "Budget için öneri: tokens int kalmalı; time_seconds float kabul edilebilir; cost_usd internal Decimal(str(value)) ile hesaplanıp JSON'a schema-compatible number olarak explicit quantization/float policy ile çıkmalı veya precision claim kaldırılmalı.",
+        "Exhaustion önerisi: post-spend remaining <= 0 ise WorkflowBudgetExhaustedError raise edilmeli ve caller aynı CAS mutation içinde state=failed + error.category=budget_exhausted yazmalı."
+      ]
+    },
+    {
+      "question_id": "Q5",
+      "assessment": "PARTIAL",
+      "blocking_objections": [
+        "create_run param contract schema-valid record üretemiyor veya plan bunu söylemiyor: schema adapter_refs alanını required yapıyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:8-20) ve adapter_refs property tanımlı (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:86-94); plan create_run imzasında run_id/workflow_id/workflow_version/intent/budget/policy_refs/evidence_refs var ama adapter_refs yok (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:382-392). PR-A1 adapter invocation yapmasa bile adapter_refs=[] default'u veya explicit param plana eklenmeli."
+      ],
+      "warnings": [
+        "workflow_definition_hash PR-A1'e eklenmemeli. Schema additionalProperties=false diyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:6-7), workflow_version açıklaması SemVer'in registry definition revision'ı pinlediğini söylüyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:33-37), plan schema değişikliğini yasaklıyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:592). Immutable hash ihtiyacı PR-A2 registry schema/migration konusu olmalı.",
+        "Integration test stub yaklaşımı under-specified. Plan yalnız 'stub full lifecycle' diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:546-547); schema step_record required alanları step_id/step_name/state/actor/started_at olarak belirliyor (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:154-158). Inline fixture mi fixture JSON mu, adapter_refs boşken adapter step nasıl simüle edilecek, testte netleşmeli.",
+        "Atomic crash testi planı fazla iddialı/fragile: plan 'kill fsync call' diyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:459-460), mevcut atomic helper tmp+fsync+replace yapıyor (ao_kernel/_internal/shared/utils.py:47-78). Monkeypatch write_text_atomic/os.replace failure ile old-or-new invariant test etmek yeterli; subprocess crash testleri PR-A1'i gereksiz yavaşlatabilir."
+      ],
+      "additions": [
+        "Coverage hedefi gerçekçi ama özellikle run_store branch coverage için I/O failure, lock timeout, corrupted JSON, stale revision ve schema rejection testleri küçük ve deterministik tutulmalı. Repo branch coverage gate'i aktif (pyproject.toml:115-143), plan run_store için ~85% hedefliyor (.claude/plans/PR-A1-IMPLEMENTATION-PLAN.md:528-537).",
+        "create_run adapter_refs: Sequence[str] = () eklemeli; PR-A2 geldiğinde registry bu listeyi doldurur. evidence_refs ve policy_refs minItems=1 olduğu için test fixture'ları boş liste vermemeli (ao_kernel/defaults/schemas/workflow-run.schema.v1.json:79-100)."
+      ]
+    }
+  ],
+  "aggregate_blocking_count": 7,
+  "aggregate_warning_count": 11,
+  "ready_for_impl": false,
+  "next_iteration_required": true,
+  "created_at": "2026-04-15T14:28:08+03:00",
+  "head_sha": "238ed1f",
+  "request_head_sha": "238ed1f"
+}

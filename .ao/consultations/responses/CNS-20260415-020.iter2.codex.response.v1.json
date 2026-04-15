@@ -1,0 +1,120 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-020",
+  "status": "ANSWERED",
+  "iteration": 2,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "AGREE",
+  "rationale": "Plan v2, iter-1’deki 7 blocker + 11 warning için gerekli sözleşmeleri artık satır seviyesinde içeriyor: revision self-hash kırılmış, CAS helper imzası ve routing net, path traversal UUID guard ile kapanmış, ULID/Decimal/budget/create_run scope hataları absorbe edilmiş. Test stratejisi de narrative parse, check_schema runtime, atomic subprocess ve fixture minItems risklerini kapatıyor. Yeni implementasyon blocker’ı görmedim; sadece lock path suffix ve revision validation sırası gibi uygulama notları var. PR-A1 tek PR olarak yönetilebilir.",
+  "micro_fix_verdicts": [
+    {
+      "id": "NB1a",
+      "fixed": true,
+      "note": "Kanıt: rg 'run_revision|projection =' -> plan:419-426; özellikle plan:423 `revision` dışlanıyor, plan:420-422 self-reference avoided diyor."
+    },
+    {
+      "id": "NB1b",
+      "fixed": true,
+      "note": "Kanıt: rg '_mutate_with_cas|expected_revision|allow_overwrite' -> plan:453-460; tek yazma yolu plan:60, save/create/update routing plan:482-524 ve plan:679; canonical_store referansı ao_kernel/context/canonical_store.py:237-243,259-268."
+    },
+    {
+      "id": "NB2",
+      "fixed": true,
+      "note": "Kanıt: rg 'WorkflowRunIdInvalidError|_run_path|uuid.UUID|../etc/passwd' -> plan:139-147,434-441,542-543; join öncesi parse var, _run_path/_lock_path private ve re-export dışı plan:448,609-621."
+    },
+    {
+      "id": "NB3a",
+      "fixed": true,
+      "note": "Kanıt: rg 'token_urlsafe|ULID|core dep' -> plan:334-342,389,68,724; pyproject.toml:26 yalnız `jsonschema>=4.23.0`, yeni ULID dep yok."
+    },
+    {
+      "id": "NB3b",
+      "fixed": true,
+      "note": "Kanıt: rg 'Decimal(str|budget_to_dict|sub-cent' -> plan:279-305; schema number kontratı ao_kernel/defaults/schemas/workflow-run.schema.v1.json:271-278, write_json_atomic json.dumps yolu ao_kernel/_internal/shared/utils.py:38-41."
+    },
+    {
+      "id": "NB3c",
+      "fixed": true,
+      "note": "Kanıt: rg 'remaining < 0|Exact limit|next spend' -> plan:63,292-295,306-309,314-316,680; equality valid, is_exhausted informational, sonraki pozitif spend raise."
+    },
+    {
+      "id": "NB4",
+      "fixed": true,
+      "note": "Kanıt: rg 'adapter_refs' -> plan:482-493 ve plan:657; policy/evidence minItems uyumu plan:496,657-659; PR-A2 registry/adapters scope dışı plan:49-50,729,737."
+    },
+    {
+      "id": "NB5a",
+      "fixed": true,
+      "note": "Kanıt: rg 'Literal expected table|narrative' -> plan:189-192 ve test dosyası kapsamı plan:643; schema narrative parse kaldırılmış."
+    },
+    {
+      "id": "NB5b",
+      "fixed": true,
+      "note": "Kanıt: rg 'not re-exported|_mutate_with_cas|_run_path|load_workflow_run_schema|_get_validator' -> plan:553-621; private helper/path/schema loader __init__ facade dışında."
+    },
+    {
+      "id": "NB5c",
+      "fixed": true,
+      "note": "Kanıt: rg 'separators=|NOT RFC' -> plan:412-425; canonical_store pattern atfı var, RFC 8785/JCS yapılmıyor. Not: canonical_store.py:93 byte-level separators kullanmıyor, bu sadece pattern-level match."
+    },
+    {
+      "id": "NB5d",
+      "fixed": true,
+      "note": "Kanıt: rg 'max_retries|file_lock is the wait primitive' -> plan:464,514-523; default 1 ve lock bekleme primitive’i açık."
+    },
+    {
+      "id": "NB5e",
+      "fixed": true,
+      "note": "Kanıt: rg 'lru_cache|load_workflow_run_schema|_get_validator' -> plan:203-216 ve cache testi plan:250; schema ve validator per-process cache."
+    },
+    {
+      "id": "NB5f",
+      "fixed": true,
+      "note": "Kanıt: rg 'check_schema|test-only|Acceptance' -> plan:249 ve plan:688-704; runtime acceptance’tan çıkarılmış, meta-validation test-only kalmış."
+    },
+    {
+      "id": "NB5g",
+      "fixed": true,
+      "note": "Kanıt: rg 'WorkflowSchemaValidationError|json_path|validator' -> plan:131-146,218-228; shared utils pattern ao_kernel/_internal/shared/utils.py:181-186."
+    },
+    {
+      "id": "NB5h",
+      "fixed": true,
+      "note": "Kanıt: rg 'resume_interrupt|idempotent|different payload|different decision' -> plan:368-384,391-393,400-402; interrupt payload hash mismatch ve approval decision mismatch WorkflowTokenInvalidError."
+    },
+    {
+      "id": "NB5i",
+      "fixed": true,
+      "note": "Kanıt: rg 'workflow_bug_fix_stub|step_id|step_name|started_at' -> plan:652-660; schema required step fields ao_kernel/defaults/schemas/workflow-run.schema.v1.json:154-158."
+    },
+    {
+      "id": "NB5j",
+      "fixed": true,
+      "note": "Kanıt: rg 'os.replace|subprocess' -> plan:547 ve plan:14; atomic test monkeypatch os.replace, NO subprocess crash."
+    },
+    {
+      "id": "NB5k",
+      "fixed": true,
+      "note": "Kanıt: rg 'policy_refs|evidence_refs|minItems' -> plan:657-659; schema minItems ao_kernel/defaults/schemas/workflow-run.schema.v1.json:79-100."
+    },
+    {
+      "id": "NB6",
+      "fixed": true,
+      "note": "Yeni blocker yok. PR-A1 hazır; 7 modül + 76-101 test plan:73-96,639-650 tek PR için kabul edilebilir. CNS-020 iter-3 gerekmiyor; residual warning’ler implementasyon notu."
+    }
+  ],
+  "new_blocking_objections": [],
+  "residual_warnings": [
+    "Plan:445 `_run_path(...).with_suffix('.v1.json.lock')`, `state.v1.json` için `state.v1.v1.json.lock` üretir; plan:530 ise `state.v1.json.lock` dokümante ediyor. Implementasyonda `with_name('state.v1.json.lock')` veya string append kullan.",
+    "Plan:469 ilk `validate_workflow_run(new_record)` çağrısını revision stamp öncesine koyuyor; schema revision required/pattern ao_kernel/defaults/schemas/workflow-run.schema.v1.json:8-20,61-64. Create path’inde placeholder revision veya sadece post-stamp validation açık seçilmeli.",
+    "Plan:140 ve plan:435 UUIDv4 diyor, kod örneği plan:438 yalnız `_uuid.UUID(run_id)` parse ediyor. Traversal guard için yeterli; gerçekten UUIDv4 kontratı istenirse `parsed.version == 4` kontrolü eklenmeli.",
+    "Plan:414 canonical_store ile match diyor ama canonical_store.py:93 compact `separators` kullanmıyor. Determinizm açısından sorun değil; byte-level eşdeğerlik iddiası yapılmamalı."
+  ],
+  "ready_for_impl": true,
+  "next_iteration_required": false,
+  "pr_split_recommendation": "single_pr",
+  "created_at": "2026-04-15T14:51:28+03:00",
+  "head_sha": "238ed1f",
+  "request_head_sha": "238ed1f"
+}

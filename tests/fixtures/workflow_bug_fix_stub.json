@@ -1,0 +1,139 @@
+{
+  "run_id": "00000000-0000-4000-8000-000000000001",
+  "workflow_id": "bug_fix_flow",
+  "workflow_version": "1.0.0",
+  "state": "completed",
+  "created_at": "2026-04-15T12:00:00+03:00",
+  "started_at": "2026-04-15T12:00:01+03:00",
+  "updated_at": "2026-04-15T12:05:10+03:00",
+  "completed_at": "2026-04-15T12:05:10+03:00",
+  "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "intent": {
+    "kind": "markdown_file",
+    "payload": "/tmp/issue.md",
+    "metadata": {"priority": "p1"}
+  },
+  "steps": [
+    {
+      "step_id": "setup_worktree",
+      "step_name": "setup_worktree",
+      "state": "completed",
+      "actor": "ao-kernel",
+      "started_at": "2026-04-15T12:00:02+03:00",
+      "completed_at": "2026-04-15T12:00:03+03:00",
+      "evidence_event_ids": ["01HFIXTURE000000000SETUP"]
+    },
+    {
+      "step_id": "compile_context",
+      "step_name": "compile_context",
+      "state": "completed",
+      "actor": "ao-kernel",
+      "started_at": "2026-04-15T12:00:03+03:00",
+      "completed_at": "2026-04-15T12:00:05+03:00",
+      "evidence_event_ids": ["01HFIXTURE000000000CTX01"]
+    },
+    {
+      "step_id": "invoke_adapter_codex_stub",
+      "step_name": "invoke_adapter:codex-stub",
+      "state": "completed",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "started_at": "2026-04-15T12:00:05+03:00",
+      "completed_at": "2026-04-15T12:01:00+03:00",
+      "evidence_event_ids": [
+        "01HFIXTURE00000000ADAPT1",
+        "01HFIXTURE00000000ADAPT2"
+      ]
+    },
+    {
+      "step_id": "preview_diff",
+      "step_name": "preview_diff",
+      "state": "completed",
+      "actor": "ao-kernel",
+      "started_at": "2026-04-15T12:01:00+03:00",
+      "completed_at": "2026-04-15T12:01:02+03:00",
+      "evidence_event_ids": ["01HFIXTURE00000000DIFF01"]
+    },
+    {
+      "step_id": "ci_gate",
+      "step_name": "ci_gate",
+      "state": "completed",
+      "actor": "system",
+      "started_at": "2026-04-15T12:01:02+03:00",
+      "completed_at": "2026-04-15T12:02:30+03:00",
+      "evidence_event_ids": ["01HFIXTURE000000000CI001"]
+    },
+    {
+      "step_id": "await_approval",
+      "step_name": "await_approval",
+      "state": "completed",
+      "actor": "human",
+      "started_at": "2026-04-15T12:02:30+03:00",
+      "completed_at": "2026-04-15T12:03:00+03:00",
+      "evidence_event_ids": [
+        "01HFIXTURE000000000APR01",
+        "01HFIXTURE000000000APR02"
+      ]
+    },
+    {
+      "step_id": "apply_patch",
+      "step_name": "apply_patch",
+      "state": "completed",
+      "actor": "ao-kernel",
+      "started_at": "2026-04-15T12:03:00+03:00",
+      "completed_at": "2026-04-15T12:03:10+03:00",
+      "evidence_event_ids": ["01HFIXTURE00000000APPLY1"]
+    },
+    {
+      "step_id": "open_pr",
+      "step_name": "open_pr",
+      "state": "completed",
+      "actor": "adapter",
+      "adapter_id": "gh-cli-pr",
+      "started_at": "2026-04-15T12:03:10+03:00",
+      "completed_at": "2026-04-15T12:05:10+03:00",
+      "evidence_event_ids": [
+        "01HFIXTURE000000000PR001",
+        "01HFIXTURE000000000PR002"
+      ]
+    }
+  ],
+  "checkpoint": {
+    "checkpoint_id": "fixture-ckpt-0",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "jsonl_pointer": ".ao/runs/00000000-0000-4000-8000-000000000001/checkpoint-0.jsonl",
+    "created_at": "2026-04-15T12:05:10+03:00",
+    "step_completed_up_to": "open_pr"
+  },
+  "policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+    "ao_kernel/defaults/policies/policy_secrets.v1.json"
+  ],
+  "adapter_refs": ["codex-stub", "gh-cli-pr"],
+  "evidence_refs": [
+    ".ao/evidence/workflows/00000000-0000-4000-8000-000000000001/events.jsonl",
+    ".ao/evidence/workflows/00000000-0000-4000-8000-000000000001/adapter-codex-stub.jsonl",
+    ".ao/evidence/workflows/00000000-0000-4000-8000-000000000001/adapter-gh-cli-pr.jsonl"
+  ],
+  "budget": {
+    "tokens": {"limit": 100000, "spent": 12345, "remaining": 87655},
+    "time_seconds": {"limit": 600.0, "spent": 310.0, "remaining": 290.0},
+    "cost_usd": {"limit": 5.0, "spent": 0.42, "remaining": 4.58},
+    "fail_closed_on_exhaust": true
+  },
+  "approvals": [
+    {
+      "approval_id": "fixture-approval-0",
+      "approval_token": "fixture-approval-token-0-opaque-placeholder-abc123",
+      "gate": "pre_apply",
+      "requested_at": "2026-04-15T12:02:30+03:00",
+      "responded_at": "2026-04-15T12:03:00+03:00",
+      "decision": "granted",
+      "actor": "halildeu",
+      "payload": {
+        "diff_summary": "3 files changed, 24 insertions(+), 8 deletions(-)",
+        "ci_summary": "pytest: 1080 passed, ruff: clean, mypy: 0 errors"
+      }
+    }
+  ]
+}
