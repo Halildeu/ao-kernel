@@ -1,0 +1,428 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-014",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Claude matrisi yön olarak doğru: state machine, intent router, handoff, diff, cost, HITL ve approval gibi control-plane parçaları ao-kernel'in ayırt edici çekirdeği olmalı; tree-sitter, dashboard, SSO ve metrics gibi commodity alanlar opsiyonel extras olmalı. Ancak matris implementation-ready değil. Birincisi sayı/taksonomi hatalı: WRITE-LITE tablosu 5 feature içeriyor ama 4 yazıyor; #1 iki satıra bölününce 30 feature muhasebesi bulanıyor. İkincisi bazı OSS seçimleri repo prensibiyle çatışıyor: pygit2 GPLv2 linking exception + libgit2, PyGithub/python-gitlab LGPL, python3-saml eski/xmlsec riskli, GitPython maintenance mode, LangGraph hızlı API churn. Üçüncüsü ADOPT+WRAP tarafı fazla agresif: LangGraph/Zep/Cognee runtime'a bağlanmak ao-kernel'i governed orchestration runtime yerine ecosystem wrapper gibi gösterir. Daha sağlam strateji: core sadece jsonschema kalır; Git, graph, cost routing, model budget, residency ve patch/apply governed native kontratlar olarak build edilir; ağır ekosistemler sadece import/export veya subprocess adapter olarak lazy optional kalır.",
+  "repo_evidence": [
+    "CLAUDE.md: core dependency tek zorunlu dep olarak jsonschema>=4.23.0; extras monolith+optional kararına bağlı.",
+    "pyproject.toml: mevcut extras sadece llm, mcp, mcp-http, otel, pgvector, dev; core dependencies=[jsonschema>=4.23.0].",
+    "ao_kernel/context/vector_store_resolver.py: constructor > policy > env resolver, kırık backend döndürmeme, optional pgvector lazy import örüntüsü.",
+    "ao_kernel/_internal/prj_kernel_api/llm_router.py: deterministik registry/manifest routing; cost routing için LiteLLM yerine mevcut router genişletilebilir.",
+    "ao_kernel/_internal/prj_kernel_api/rate_limiter.py: küçük module-level registry + token bucket örüntüsü; budget/cost enforcement için benzer lightweight core uygun.",
+    "ao_kernel/context/agent_coordination.py: mevcut concurrency advisory; #4 handoff için gerçek CAS/lock primitive build gerektirir."
+  ],
+  "blocking_objections": [
+    {
+      "id": "B1",
+      "title": "Matris muhasebesi implementation-ready değil",
+      "evidence": "Claude tablosunda WRITE-LITE 4 denmiş ama #16, #18, #22, #23, #29 olmak üzere 5 satır var; #1 de 1a/1b diye bölünerek 30 feature listesi 31 karar satırına dönüşüyor.",
+      "recommendation": "Karar matrisi orijinal 30 feature üzerinden tek karar kaydı tutmalı; #1 içinde parser, lexical/FTS ve vector backend alt-kararları nested tutulmalı."
+    },
+    {
+      "id": "B2",
+      "title": "Git/PR SDK önerileri lisans ve binary risk taşıyor",
+      "evidence": "pygit2 PyPI metadata lisansı GPLv2 with linking exception ve libgit2 binary bağımlılığı; PyGithub LGPL; python-gitlab LGPL-3.0-or-later. GitPython BSD olsa da kendi PyPI açıklaması maintenance mode ve long-running process resource leak uyarısı içeriyor.",
+      "recommendation": "#5 Git primitive için Python SDK alma; POSIX git CLI üstünde allowlisted subprocess wrapper build et. #19 için GitHub/GitLab REST veya gh/glab CLI wrap kullan; SDK'ları ancak ayrı legal-approved extra yap."
+    },
+    {
+      "id": "B3",
+      "title": "LangGraph/Zep/Cognee runtime'a bağlanmak stratejik pozisyonu zayıflatır",
+      "evidence": "LangGraph aktif ve MIT fakat hızlı release/churn var; LangChain/LangGraph ekosisteminde yakın tarihli güvenlik haberleri supply-chain riskini büyütüyor. Zep CE artık desteklenmeyip Graphiti'ye odaklanmış; zep-python son PyPI release'i 2024-09-26, zep-cloud ise SaaS SDK.",
+      "recommendation": "#8/#9 için ao-native governed graph/state DSL build et; LangGraph sadece import/export adapter olsun. #13 native temporal fact schema olsun; #27 için ilk tercih Graphiti optional adapter, Cognee deneysel kalsın."
+    },
+    {
+      "id": "B4",
+      "title": "Core dep prensibi her yeni kararın birinci gate'i olmalı",
+      "evidence": "CLAUDE.md ve pyproject core'u sadece jsonschema olarak kilitliyor. tree-sitter, FastAPI, Authlib, LiteLLM, LangGraph gibi tüm seçenekler opsiyonel lazy import olmazsa bu ilkeyi kırar.",
+      "recommendation": "Yeni pyproject dependency eklenmeyecek; tüm yeni paketler extras altında, adapter modüllerinde lazy import, ImportError install hint, dedicated CI extra smoke test ve constraints lock ile yönetilecek."
+    }
+  ],
+  "warning_objections": [
+    {
+      "id": "W1",
+      "title": "LiteLLM cost routing için fazla geniş yüzey",
+      "recommendation": "#21'i build et: mevcut llm_router'a local pricing table, budget ledger ve fail-closed policy ekle; LiteLLM sadece ileride provider-price sync için opsiyonel adapter olabilir."
+    },
+    {
+      "id": "W2",
+      "title": "FastAPI dashboard gereğinden ağır olabilir",
+      "recommendation": "Mevcut mcp-http stack zaten starlette+uvicorn kullanıyor; #24 için Starlette + server-rendered HTML + htmx daha küçük ve tutarlı. FastAPI ancak public REST/OpenAPI yüzeyi şartsa seçilmeli."
+    },
+    {
+      "id": "W3",
+      "title": "python3-saml güvenlik ve bakım açısından ayrı tutulmalı",
+      "recommendation": "SSO extra Authlib/OIDC merkezli olsun; SAML ayrı [saml] extra ve security review gerektirsin. XML signature/xmlsec test fixture'ları olmadan enterprise meta-extra'ya dahil edilmesin."
+    },
+    {
+      "id": "W4",
+      "title": "Tantivy ilk dalga için premature",
+      "recommendation": "Tree-sitter + stdlib/sqlite/pure lexical index + mevcut pgvector yeterli. Tantivy Rust binary wheel ve license metadata doğrulaması tamamlanana kadar [code-search] deneysel extra olmalı."
+    },
+    {
+      "id": "W5",
+      "title": "Aider import dependency Python sürüm stratejisiyle çatışıyor",
+      "recommendation": "aider-chat PyPI 0.86.2 Python <3.13 istiyor; ao-kernel 3.13 destekliyor. Aider'ı library import olarak alma; sadece external CLI/subprocess veya format/pattern compatibility yap."
+    }
+  ],
+  "accepted_points": [
+    "Durable workflow state machine, intent router, handoff, diff/rollback, cost caps, HITL ve approval build sınıfında kalmalı.",
+    "tree-sitter code-index için doğru temel ama kesinlikle core dependency olmamalı.",
+    "OTEL/pgvector örüntüsündeki lazy optional adapter yaklaşımı yeni entegrasyonlar için doğru model.",
+    "Prometheus metrics ve web dashboard enterprise/adoption için mantıklı opsiyonel yüzeyler.",
+    "Compliance/data residency gibi konular evidence ve policy etrafında ele alınmalı; SaaS bağımlılığına yaslanmamalı."
+  ],
+  "answers_per_question": [
+    {
+      "q": 1,
+      "a": "8 build feature eksik ve kısmen yanlış. #26 compliance reporting build değil WRITE-LITE olmalı; evidence JSONL -> report formatter ilk sürümde core competency değil. Buna karşılık #5 git primitives, #8 graph execution, #9 conditional branching, #16 patch apply/revert, #21 cost-aware model routing ve #29 data residency policy build tarafına çekilmeli. Bunlar library dependency değil, governed control-plane kontratlarıdır."
+    },
+    {
+      "q": 2,
+      "a": "12 integrate seçeneği fazla geniş. tree-sitter uygun ve MIT, prebuilt wheels var; core'a girmemeli. GitPython maintenance mode olduğu için daemon/runtime için zayıf; pygit2 lisans/binary açısından daha riskli. LiteLLM aktif ama çok hızlı churn ve büyük attack surface; cost routing için gereksiz. FastAPI yerine mevcut Starlette/uvicorn çizgisini reuse etmek daha pragmatik. PyGithub/python-gitlab LGPL yüzünden default olmamalı."
+    },
+    {
+      "q": 3,
+      "a": "ADOPT+WRAP seçimi fazla iddialı. LangGraph compat layer değerli olabilir ama runtime dependency yapılırsa maintenance ve mesajlaşma riski yüksek. Zep artık açık kaynak ağırlığını Graphiti'ye taşımış; Zep Cloud buy/API, Zep CE deprecated. Cognee aktif ve Apache ama v1.0 çok yeni, extras yüzeyi büyük. Temporal reasoning için native lightweight build; knowledge graph için Graphiti optional adapter daha doğru."
+    },
+    {
+      "q": 4,
+      "a": "WRITE-LITE az değil, yanlış sayılmış: tabloda 5 satır var. #20 commit AI kesinlikle WRITE-LITE; ao_llm_call + git diff context + conventional commit prompt yeterli. #18 review step, #22 docs, #23 hardening guide, #26 compliance report ve #28 merge conflict workflow de ilk sürümde WRITE-LITE olmalı."
+    },
+    {
+      "q": 5,
+      "a": "Claude dağılımı commodity entegrasyonlara fazla yaslanıyor. Codex önerisi yaklaşık BUILD 14, INTEGRATE 6, ADOPT_WRAP 4, WRITE_LITE 6. Bu yüksek build oranı implementasyonun her şeyi sıfırdan yazacağı anlamına gelmiyor; Git CLI, external LSP, gh/glab, Graphiti/LangGraph gibi şeyler boundary'de kalır, ao-kernel ise policy/evidence/state kontratını build eder."
+    },
+    {
+      "q": 6,
+      "a": "Lisans özeti: tree-sitter MIT; tree-sitter-python MIT; pygls Apache-2.0; GitPython BSD-3; FastAPI MIT; Authlib BSD-3; python3-saml MIT; prometheus-client Apache-2.0 AND BSD-2-Clause; LangGraph MIT; aider-chat Apache; graphiti-core Apache-2.0; Cognee Apache-2.0; FalkorDB Python client MIT. Riskli/orta: pygit2 GPLv2 with linking exception, PyGithub LGPL, python-gitlab LGPL-3.0-or-later, psycopg2-binary LGPL with exceptions, Memgraph CE BSL, zep-cloud PyPI license metadata yok."
+    },
+    {
+      "q": 7,
+      "a": "Bakım sağlığı karışık. Aktif ve sağlıklı görünenler: LangGraph, LiteLLM, FastAPI, pygls, PyGithub, python-gitlab, prometheus-client, Authlib, Cognee, Graphiti. Dikkat: GitPython aktif release alsa da maintenance mode; python-lsp-jsonrpc 2023'ten beri düşük hareketli; python3-saml 2023 release'iyle eski; zep-python 2024 release'iyle Zep Cloud/Graphiti yönüne göre geride."
+    },
+    {
+      "q": 8,
+      "a": "Binary/transitive risk gerçek ama POSIX hedefiyle yönetilebilir. tree-sitter ve language wheels C/ABI içeriyor ama cp310+ geniş wheel desteği var. pgvector mevcut extra psycopg2-binary/libpq operational risk taşıyor; prod için psycopg3/source build opsiyonu düşünülmeli. pygit2/libgit2 bu yüzden kaçınılmalı. Tantivy Rust wheel ayrı deneysel tutulmalı."
+    },
+    {
+      "q": 9,
+      "a": "LangGraph version drift reel ve tahmin edilebilir ama pahalıdır. LangGraph 1.0 sonrası aktif release alıyor; compat layer sadece import/export JSON veya adapter smoke test düzeyinde tutulursa maliyet düşük. Runtime parity, checkpointer, streaming, subgraph ve HITL semantiklerini birebir taşımaya çalışmak yüksek maliyetli ve stratejik olarak yanlış."
+    },
+    {
+      "q": 10,
+      "a": "12 yeni extras attack surface'i büyütür. Strateji: pyproject'te geniş ama bounded specifiers, repo içinde constraints/<extra>.txt ile pip-compile --generate-hashes, CI'da --require-hashes smoke matrix, pip-audit/license scan, trusted publishing, Dependabot grouped PR, yanked-release denylist, import-time network ban testleri. Library olarak hard pin yapma, ama release/test constraints'ı hash'le."
+    },
+    {
+      "q": 11,
+      "a": "[coding] meta-extra mantıklı ama dar olmalı: [llm]+[code-index]+[lsp]+[metrics] gibi. [git] eklemek gereksiz çünkü git CLI external prerequisite olmalı, Python dep değil. [coding] içine LangGraph, Aider, SAML, Cognee gibi ağır/deneysel paketler girmemeli."
+    },
+    {
+      "q": 12,
+      "a": "[enterprise] yararlı ama güvenli varsayılanla: [otel]+[metrics]+[dashboard]+[sso]+[pgvector]. SAML ve knowledge-graph enterprise'a otomatik girmesin; [saml] ve [knowledge-graph] ayrı explicit seçim olmalı. Enterprise branding net, fakat 'tek komutta her şey' dependency hell yaratmamalı."
+    },
+    {
+      "q": 13,
+      "a": "[all] kullanıcı dokümanlarında önerilmemeli. CI ve maintainer smoke test için olabilir; high-risk extras'ı [all-experimental] gibi ayrı tutmak daha sağlıklı. Aksi halde Python 3.13 desteği, binary wheels, XML security, LangChain churn ve DB backends aynı install çözümünde çakışır."
+    },
+    {
+      "q": 14,
+      "a": "İsimler genel olarak tutarlı: [code-index], [lsp], [dashboard], [metrics], [sso] iyi. [github]/[gitlab] yerine [vcs-github]/[vcs-gitlab] daha doğru çünkü GitHub sadece VCS değil ama bu feature PR/VCS bağlamında. [routing] ekleme; #21 core/router data. [git] ekleme; git CLI dependency docs/doctor check olmalı."
+    },
+    {
+      "q": 15,
+      "a": "İlk hamle build-first ama dar: #2 state machine + #3 intent registry skeleton + #5 git CLI wrapper + #6 diff/apply dry-run. #1 tree-sitter index bunu takip eder. LangGraph adopt-first olmamalı; ekosistem pull için önce ao-native workflow contract oluşmalı, sonra import/export adapter anlam kazanır."
+    },
+    {
+      "q": 16,
+      "a": "Buy/SaaS yerine OSS veya native kalması gereken 3 alan: cost tracking (#7) için Helicone/Langfuse sadece export olabilir, fail-closed budget core ledger olmalı; PR automation (#19) için GitHub/GitLab SaaS API wrap edilir ama state/evidence bizim olur; temporal memory (#13) için Zep Cloud'a veri göndermek data residency riskidir, native temporal facts + optional Graphiti daha iyi."
+    },
+    {
+      "q": 17,
+      "a": "Build kategorisindeki fazla bariz aday #26 compliance reporting. İlk sürümde evidence JSONL, manifest ve policy kararlarından markdown/json/html rapor üretmek formatter işi; WRITE-LITE. Ayrıca #10/#17 build kalmalı ama aynı interrupt/approval primitive üstünde ortaklaştırılmalı; iki ayrı engine olmamalı."
+    },
+    {
+      "q": 18,
+      "a": "Evet, ADOPT+WRAP tehlikeli olabilir. LangGraph'a fazla bağlanmak ao-kernel'i LangGraph wrapper gibi gösterir ve CLAUDE.md'deki farklılaşmayı zayıflatır. Cesur pozisyon: ao-native governed workflow/state/evidence engine; LangGraph import/export opsiyonel. Böylece ecosystem compat var ama core identity korunur."
+    },
+    {
+      "q": 19,
+      "a": "Codex matrisi aşağıda codex_matrix_proposal içinde 30 feature'ın tamamı için yeniden sınıflandırıldı. Ana değişiklikler: #5, #8, #9, #16, #21, #29 build'e alındı; #20, #26, #28 write-lite'a çekildi; #11/#12 import dependency değil external/pattern compat yapıldı; #13 native temporal build, #27 Graphiti optional adopt-wrap oldu."
+    },
+    {
+      "q": 20,
+      "a": "strategic_dependency_commit_ready=false. En kritik 3 değişiklik: 1) 30 feature muhasebesini düzelt ve #1 alt kararlarını nested yap; 2) Git/PR/LSP/SSO için lisans-riskli SDK'ları default öneriden çıkar, CLI/REST/lazy adapter stratejisine geç; 3) LangGraph/Zep/Cognee için runtime dependency yerine ao-native core + optional compat/import-export sınırı koy."
+    }
+  ],
+  "codex_matrix_proposal": {
+    "build": [
+      "#2 — Durable workflow state machine: ao-native, canonical/evidence-backed, policy-gated; yeni dep yok.",
+      "#3 — Intent router + workflow registry: declarative JSON/YAML registry + rule-first resolver; LLM fallback [llm] ile optional.",
+      "#4 — Multi-agent handoff + capability matrix: CAS claim, TTL, stale detection, capability registry; mevcut advisory coordination üstüne gerçek lock/CAS build.",
+      "#5 — Git integration primitives: GitPython/pygit2 değil; allowlisted POSIX git CLI wrapper + evidence + policy checks; Python dep yok.",
+      "#6 — Diff preview + apply + rollback: governed patch transaction, manifest, dry-run, rollback bundle; core niche.",
+      "#7 — Cost tracking + budget caps: local usage ledger, pricing table, fail-closed budget policy; LiteLLM yok.",
+      "#8 — Agent graph execution: minimal ao workflow graph DSL; LangGraph parity hedeflenmez.",
+      "#9 — Conditional branching: #2/#8 engine içinde deterministic predicates + policy-visible branch evidence.",
+      "#10 — Human-in-the-loop resumable interrupt: checkpoint/resume + approval token + evidence; core.",
+      "#13 — Temporal reasoning: canonical facts için valid_at/invalid_at/observed_at schema ve retrieval semantics; Zep/Cognee dependency yok.",
+      "#16 — Patch apply/revert primitive: #6 üstünde LLM-orchestrated ama deterministic apply/revert contract; yeni dep yok.",
+      "#17 — Approval workflows: HITL interrupt, sign-off envelope, policy gate ve evidence manifest; core.",
+      "#21 — Model routing by cost: mevcut llm_router/provider registry üstüne price/latency/budget scoring; LiteLLM sadece opsiyonel veri kaynağı olabilir.",
+      "#29 — Data residency policies: workspace policy JSON + provider/vector/evidence region enforcement; docs-only kalmamalı."
+    ],
+    "integrate": [
+      "#1 — OSS: tree-sitter 0.25.2 + tree-sitter-python 0.25.0 — lisans: MIT/MIT — extras: [code-index]; pgvector 0.4.2 mevcut [pgvector] ile optional vector backend; Tantivy ilk sürümde deneysel/kapalı.",
+      "#14 — OSS: pygls 2.1.1 — lisans: Apache-2.0 — extras: [lsp]; sadece server/test harness için, external LSP client stdio JSON-RPC thin wrapper in-house; python-lsp-jsonrpc kaçınılır.",
+      "#15 — OSS/data format: tree-sitter query packs + SCIP-compatible export format — lisans: MIT/Apache doğrulamalı — extras: [code-index]; cross-file graph model ao-native.",
+      "#24 — OSS: starlette>=0.36 + uvicorn>=0.27 + htmx.org 2.0.7 static asset — lisans: BSD/MIT/0BSD — extras: [dashboard]; FastAPI ancak public OpenAPI şart olursa.",
+      "#25 — OSS: Authlib 1.6.9 — lisans: BSD-3-Clause — extras: [sso]; SAML için python3-saml ayrı [saml] ve security review.",
+      "#30 — OSS: prometheus-client 0.25.0 — lisans: Apache-2.0 AND BSD-2-Clause — extras: [metrics]; mevcut [otel] ile bridge."
+    ],
+    "adopt_wrap": [
+      "#11 — ecosystem: Aider/Cursor Composer edit protocol patterns — strategy: library import yok; external executor/subprocess adapter + ao patch contract.",
+      "#12 — ecosystem: Aider/Cline-style plan->apply->verify — strategy: ao-native primitive, optional CLI compatibility; aider-chat Python <3.13 olduğu için dependency yapılmaz.",
+      "#19 — ecosystem: GitHub/GitLab REST + gh/glab CLI — strategy: PR state/evidence ao-native; PyGithub/python-gitlab LGPL yüzünden default dependency değil, legal-approved [vcs-github]/[vcs-gitlab] adapter opsiyonel.",
+      "#27 — ecosystem: Graphiti first, Cognee experimental, FalkorDB/Neo4j backends explicit — strategy: [knowledge-graph] optional adapter; Memgraph DB license nedeniyle bundle edilmez."
+    ],
+    "write_lite": [
+      "#18 — Code review AI workflow step: ao_llm_call review prompt + quality gate + evidence; yeni dep yok.",
+      "#20 — Commit AI: git diff summary + ao_llm_call conventional commit prompt; WRITE-LITE, integrate değil.",
+      "#22 — Tutorial/onboarding docs: MkDocs/Sphinx bile zorunlu runtime dep olmaz; docs/dev extra içinde kalır.",
+      "#23 — On-prem/air-gapped hardening: deployment guide, env matrix, offline constraints, docker-compose examples; runtime dep yok.",
+      "#26 — Compliance reporting: evidence JSONL/manifest -> JSON/Markdown/HTML formatter; ilk sürümde no-dep WRITE-LITE.",
+      "#28 — Merge conflict resolution AI: git conflict detector + LLM suggestion workflow; Aider benzeri heavy solver değil, guarded assistive primitive."
+    ]
+  },
+  "extras_grouping_proposal": {
+    "primary_extras": [
+      "[llm]",
+      "[mcp]",
+      "[mcp-http]",
+      "[otel]",
+      "[pgvector]",
+      "[dev]"
+    ],
+    "new_extras": [
+      "[code-index] = tree-sitter + selected tree-sitter language wheels; no vector DB included.",
+      "[lsp] = pygls/lsprotocol-facing test/server utilities; external LSP client remains thin stdlib wrapper where possible.",
+      "[dashboard] = starlette + uvicorn + bundled or pinned htmx static asset; avoid FastAPI unless OpenAPI is required.",
+      "[metrics] = prometheus-client; OTEL remains [otel].",
+      "[sso] = Authlib/OIDC/OAuth.",
+      "[saml] = python3-saml only after XML signature/security review; not part of safe enterprise default.",
+      "[knowledge-graph] = graphiti-core with backend-specific extras explicitly documented.",
+      "[langgraph-compat] = LangGraph import/export adapter only; not used by core runtime.",
+      "[vcs-github] and [vcs-gitlab] = optional API SDK adapters only if LGPL/legal posture accepted; default path should be REST/CLI."
+    ],
+    "meta_extras": [
+      "[coding] = [llm] + [code-index] + [lsp] + [metrics]; git remains external CLI prerequisite checked by doctor.",
+      "[enterprise] = [otel] + [metrics] + [dashboard] + [sso] + [pgvector]; excludes [saml], [knowledge-graph], [langgraph-compat] by default.",
+      "[all] = CI/maintainer smoke-test only; user docs should prefer targeted extras. Consider [all-experimental] for SAML/LangGraph/KG."
+    ],
+    "extras_to_reject_or_defer": [
+      "[git] rejected: use system git CLI, not Python git SDK.",
+      "[routing] rejected: cost routing is core/router data, not external package.",
+      "[github]/[gitlab] renamed/deferred: use [vcs-github]/[vcs-gitlab] only if API SDK dependency is approved.",
+      "[temporal-memory] renamed/deferred: native temporal facts first; Graphiti/Zep under [knowledge-graph] or explicit adapter."
+    ]
+  },
+  "license_risk_summary": [
+    {
+      "lib": "tree-sitter",
+      "license": "MIT",
+      "risk": "LOW",
+      "note": "Uygun [code-index] parser; C/ABI wheel riski optional extra ile kabul edilebilir."
+    },
+    {
+      "lib": "tree-sitter-python",
+      "license": "MIT",
+      "risk": "LOW",
+      "note": "Language wheel ayrı tutulmalı; sadece gereken diller install edilmeli."
+    },
+    {
+      "lib": "tantivy",
+      "license": "PyPI metadata içinde açık license görünmedi; upstream doğrulama gerekli",
+      "risk": "MEDIUM",
+      "note": "Rust binary wheel + license metadata belirsizliği nedeniyle ilk sürümde defer."
+    },
+    {
+      "lib": "GitPython",
+      "license": "BSD-3-Clause",
+      "risk": "MEDIUM",
+      "note": "Lisans uygun ama proje kendi açıklamasında maintenance mode/resource leak uyarıyor; long-running runtime için default olmamalı."
+    },
+    {
+      "lib": "pygit2",
+      "license": "GPLv2 with linking exception",
+      "risk": "HIGH",
+      "note": "libgit2 binary dependency ve copyleft review gerektirir; kaçınılmalı."
+    },
+    {
+      "lib": "pygls",
+      "license": "Apache-2.0",
+      "risk": "LOW",
+      "note": "Aktif ve uygun; fakat LSP server framework, external LS client ihtiyacını tek başına çözmez."
+    },
+    {
+      "lib": "python-lsp-jsonrpc",
+      "license": "MIT",
+      "risk": "MEDIUM",
+      "note": "Son release 2023; pygls veya stdlib thin JSON-RPC tercih edilmeli."
+    },
+    {
+      "lib": "PyGithub",
+      "license": "LGPL",
+      "risk": "MEDIUM",
+      "note": "Aktif ama LGPL nedeniyle default dependency yapılmamalı; REST/gh CLI daha temiz."
+    },
+    {
+      "lib": "python-gitlab",
+      "license": "LGPL-3.0-or-later",
+      "risk": "MEDIUM_HIGH",
+      "note": "Aktif ama LGPLv3+ enterprise/legal review gerektirir."
+    },
+    {
+      "lib": "LiteLLM",
+      "license": "MIT for core package; commercial features ayrıca",
+      "risk": "MEDIUM_HIGH",
+      "note": "Çok aktif ve geniş provider surface; cost routing core için fazla ağır."
+    },
+    {
+      "lib": "FastAPI",
+      "license": "MIT",
+      "risk": "LOW_MEDIUM",
+      "note": "Lisans güvenli; transitive Pydantic/Starlette yüzeyi dashboard extra içinde kabul edilebilir, ama mevcut Starlette çizgisi daha hafif."
+    },
+    {
+      "lib": "htmx.org",
+      "license": "0BSD",
+      "risk": "LOW",
+      "note": "Dashboard için küçük, dependency-free asset; SRI veya vendored asset pin edilmeli."
+    },
+    {
+      "lib": "Authlib",
+      "license": "BSD-3-Clause",
+      "risk": "LOW",
+      "note": "OIDC/OAuth için iyi aday; SAML yerine OIDC default."
+    },
+    {
+      "lib": "python3-saml",
+      "license": "MIT",
+      "risk": "HIGH",
+      "note": "Son release 2023, XML signature/xmlsec hassasiyeti; ayrı [saml] ve security test şart."
+    },
+    {
+      "lib": "prometheus-client",
+      "license": "Apache-2.0 AND BSD-2-Clause",
+      "risk": "LOW",
+      "note": "Resmi client; [metrics] için uygun."
+    },
+    {
+      "lib": "LangGraph",
+      "license": "MIT",
+      "risk": "MEDIUM_HIGH",
+      "note": "Aktif ve production-grade; API/semantik churn ve supply-chain risk nedeniyle compat adapter sınırında tutulmalı."
+    },
+    {
+      "lib": "aider-chat",
+      "license": "Apache Software License",
+      "risk": "MEDIUM",
+      "note": "Python <3.13 kısıtı ao-kernel 3.13 desteğiyle çatışıyor; library dependency değil external compat."
+    },
+    {
+      "lib": "zep-python / zep-cloud",
+      "license": "zep-python GitHub Apache-2.0 görünüyor; PyPI license metadata eksik; zep-cloud metadata eksik",
+      "risk": "HIGH",
+      "note": "Zep CE deprecated, Zep Cloud SaaS/data residency riski; temporal core için default olamaz."
+    },
+    {
+      "lib": "graphiti-core",
+      "license": "Apache-2.0",
+      "risk": "MEDIUM",
+      "note": "Temporal KG için en iyi optional aday; pre-1.0/churn ve backend extras dikkatle pinlenmeli."
+    },
+    {
+      "lib": "cognee",
+      "license": "Apache-2.0",
+      "risk": "MEDIUM_HIGH",
+      "note": "Aktif ama v1.0 çok yeni, extras yüzeyi geniş; experimental adapter."
+    },
+    {
+      "lib": "Memgraph DB / GQLAlchemy",
+      "license": "Memgraph CE BSL; GQLAlchemy Apache-2.0",
+      "risk": "HIGH",
+      "note": "Client güvenli olsa da DB lisansı bundling/redistribution için riskli; optional external service olarak kalmalı."
+    },
+    {
+      "lib": "FalkorDB Python client",
+      "license": "MIT",
+      "risk": "MEDIUM",
+      "note": "Client lisansı uygun; server lisansı/deployment modeli ayrıca doğrulanmadan bundle edilmemeli."
+    },
+    {
+      "lib": "pgvector + psycopg2-binary",
+      "license": "pgvector PyPI license metadata eksik; psycopg2-binary LGPL with exceptions",
+      "risk": "MEDIUM",
+      "note": "Mevcut [pgvector] extra korunabilir; prod docs psycopg3/source-build alternatifi ve libpq riskini anlatmalı."
+    }
+  ],
+  "maintenance_cost_top3": [
+    "LangGraph/LangChain compat parity: graph semantics, checkpointer, streaming, HITL ve subgraph yüzeyi hızlı değiştiği için en yüksek sürekli bakım maliyeti.",
+    "Code index + LSP + cross-file refs: tree-sitter grammar versiyonları, external language server davranış farkları ve SCIP/export mapping uzun vadeli test matrisi gerektirir.",
+    "Enterprise auth + temporal KG: SAML/XML güvenliği, Authlib/OIDC konfigürasyon varyantları, Graphiti/Cognee/backend lisansları ve data residency testleri yüksek operasyonel bakım ister."
+  ],
+  "strategic_dependency_commit_ready": false,
+  "critical_changes_before_commit": [
+    "Matris sayımını düzelt: 30 feature üzerinden tekil karar tut; #1 alt bileşenlerini nested parser/search/vector kararları olarak yaz.",
+    "Riskli SDK varsayımlarını kaldır: pygit2, PyGithub, python-gitlab, python3-saml, LiteLLM ve LangGraph core veya default extra olmasın; lazy optional adapter veya CLI/REST wrapper stratejisi kullan.",
+    "ao-native core sınırını netleştir: #8/#9 graph, #13 temporal facts, #21 cost routing, #29 residency policy build; ekosistem sadece import/export/compat olsun."
+  ],
+  "additional_recommendations": [
+    "Her extra için owner, license status, import smoke test, min/max Python version, binary-wheel support ve security-audit status içeren extras manifest dosyası ekle.",
+    "Doctor komutunu genişlet: git CLI, gh/glab, tree-sitter language wheels, pgvector DSN, dashboard port, Authlib config ve SAML xmlsec durumunu extra-aware kontrol etsin.",
+    "pyproject optional deps'e doğrudan çok sayıda paket eklemeden önce constraints/ dizini ve CI extra matrix'i kur; release artifacts hash-locked constraints ile doğrulansın.",
+    "Adapter modüllerinin tamamında mevcut pgvector/mcp örüntüsü uygulanmalı: lazy import, açık Install with: pip install ao-kernel[extra] hatası, no-op/fail-closed ayrımı ve policy gate.",
+    "LangGraph ve Graphiti için ilk hedef runtime değil, lossless-ish import/export contract testleri olsun; ao-kernel'in canonical evidence/state modeli kaynak otorite olarak kalsın."
+  ],
+  "source_refs": [
+    "local: CLAUDE.md",
+    "local: pyproject.toml",
+    "local: ao_kernel/_internal/prj_kernel_api/llm_router.py",
+    "local: ao_kernel/_internal/prj_kernel_api/rate_limiter.py",
+    "local: ao_kernel/context/vector_store_resolver.py",
+    "local: ao_kernel/context/vector_store_pgvector.py",
+    "local: ao_kernel/context/agent_coordination.py",
+    "https://pypi.org/project/tree-sitter/",
+    "https://pypi.org/project/tree-sitter-python/",
+    "https://pypi.org/project/GitPython/",
+    "https://pypi.org/project/pygit2/",
+    "https://pypi.org/project/pygls/",
+    "https://pypi.org/project/python-lsp-jsonrpc/",
+    "https://pypi.org/project/PyGithub/",
+    "https://pypi.org/project/python-gitlab/",
+    "https://pypi.org/project/litellm/",
+    "https://pypi.org/project/fastapi/",
+    "https://www.npmjs.com/package/htmx.org",
+    "https://pypi.org/project/Authlib/",
+    "https://pypi.org/project/python3-saml/",
+    "https://pypi.org/project/prometheus-client/",
+    "https://pypi.org/project/langgraph/",
+    "https://pypi.org/project/aider-chat/",
+    "https://pypi.org/project/graphiti-core/",
+    "https://pypi.org/project/cognee/",
+    "https://pypi.org/project/zep-python/",
+    "https://pypi.org/project/zep-cloud/",
+    "https://blog.getzep.com/announcing-a-new-direction-for-zeps-open-source-strategy/",
+    "https://memgraph.com/legal",
+    "https://pypi.org/project/FalkorDB/",
+    "https://pypi.org/project/GQLAlchemy/",
+    "https://pypi.org/project/psycopg2-binary/",
+    "https://pypi.org/project/pgvector/"
+  ],
+  "created_at": "2026-04-15T10:06:41+03:00",
+  "head_sha": "315b205",
+  "request_head_sha": "7b44822"
+}

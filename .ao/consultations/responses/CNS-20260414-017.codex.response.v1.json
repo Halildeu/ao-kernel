@@ -1,0 +1,119 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-017",
+  "status": "ANSWERED",
+  "iteration": 3,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Plan v2.1 ana stratejik yönü ve warning absorpsiyonunu büyük ölçüde doğru uygulamış: #8/#9 operatif tabloda ayrılmış, P0 worktree execution profile genişletilmiş, W1/W2/W3/W4 success/audit gate'lerine bağlanmış. Ancak dosyanın kendisi hâlâ commit-ready değil. §5 eski divergence metni #8/#9 ve sandbox kararlarını ters yönde anlatmaya devam ediyor; §6 kabul maddesinde hâlâ FAZ-C için 'week 16' yazıyor; §4 matrix ise 40 item envanterindeki NEW:metrics export öğesini toplam muhasebeye katmadığı için 39'da kalıyor. Bunlar yeni stratejik tartışma gerektirmiyor, fakat strategic_commit_ready=true kilidi bu haliyle açılamaz. Gerekli olan dar v2.1.1 metin düzeltmesi; iter-4 büyük danışma turu değil.",
+  "correction_verdicts": [
+    {
+      "id": "B1",
+      "applied_correctly": false,
+      "note": "Operatif yerler doğru: FAZ-D tablosunda #8 adopt+wrap, #9 build; §4 matrix #9'u build sayıyor; §10 FAZ-D native #9 branch replay test'i eklenmiş. Fakat §5 Divergence 2 hâlâ '#8 agent graph and #9 branching should stay adopt+wrap, not build' diyor. Bu residual çelişki kaldırılmadan B1 tam uygulanmış sayılamaz."
+    },
+    {
+      "id": "B2",
+      "applied_correctly": false,
+      "note": "FAZ-A P0 satırı ve §10 testleri doğru minimumu içeriyor: per-agent worktree, sanitized env allowlist, secret deny-by-default, command allowlist, cwd confinement, evidence redaction. Fakat §5 Divergence 4 hâlâ Claude pozisyonunu 'per-agent worktree + secret redaction only' diye anlatıyor. Operatif karar doğru, plan metni tutarsız."
+    },
+    {
+      "id": "B3",
+      "applied_correctly": false,
+      "note": "Roadmap cumulative week aritmetiği doğru: A=8, B=12, C=19, D=24, E=29. Build-new count da 13 core + 9 NEW = 22 olarak düzeltilmiş. Ancak §6 kabul maddesi hâlâ 'FAZ-C end, week 16' diyor. Ayrıca total accounting 39 kalmış; 40 item envanterindeki NEW:metrics export matrix toplamında kayıp."
+    },
+    {
+      "id": "W1",
+      "absorbed_correctly": true,
+      "note": "§2 toplam satırı '29 weeks target' ve '+2-4 weeks contingency buffer' diyor; estimate commitment değil optimistic lower bound olarak işaretlenmiş."
+    },
+    {
+      "id": "W2",
+      "absorbed_correctly": true,
+      "note": "§2 ve §10 FAZ-C'yi C0 migration/breaking track ve C1 optional code-index/LSP/editing payload olarak ayırıyor. §10'da C0 release blocker, C1 ise C0'ı bloke etmeyen optional payload olarak tanımlanmış."
+    },
+    {
+      "id": "W3",
+      "absorbed_correctly": true,
+      "note": "§10 FAZ-A success criteria içine 'Competitor / adapter matrix live doc published' release gate'i eklenmiş. Bu, 'rakipsiz' regression riskini doğru yerde kapatıyor."
+    },
+    {
+      "id": "W4",
+      "absorbed_correctly": true,
+      "note": "§12 audit trail request_head_sha=7b44822 ve observed_head_sha=315b205 ayrımını kaydediyor ve FAZ-A PR-A0 branch'inde strategic commit target SHA pin'lenmesini istiyor. Bu CNS-016 housekeeping uyarısını karşılıyor."
+    }
+  ],
+  "new_blocking_objections": [
+    {
+      "id": "NB1",
+      "title": "Residual stale divergence text contradicts resolved outcomes",
+      "evidence": "§5 Divergence 2 hâlâ #8/#9 birlikte adopt+wrap savunuyor; §5 Divergence 4 hâlâ sandbox için worktree + secret redaction only pozisyonunu anlatıyor. Bunlar §3, §4 ve §10 ile çelişiyor.",
+      "required_fix": "§5'i historical pre-CNS-016 divergence yerine resolved outcome metnine çevir: D2 split, D4 expanded worktree execution profile."
+    },
+    {
+      "id": "NB2",
+      "title": "Week 16 stale reference remains",
+      "evidence": "§6 accepted point 6 hâlâ 'v4.0 breaking early (FAZ-C end, week 16)' diyor; §2 ise doğru olarak week 19 diyor.",
+      "required_fix": "§6 kabul maddesini 'FAZ-C end, week 19' olarak düzelt veya bu eski accepted-points bölümünü CNS-016 sonrası outcome listesiyle değiştir."
+    },
+    {
+      "id": "NB3",
+      "title": "Matrix total accounting drops NEW:metrics export",
+      "evidence": "Feature inventory 30 original + 10 new = 40 diyor. §4 toplamı 22 build + 7 integrate + 4 adopt+wrap + 6 write-lite = 39. NEW: Metrics export (Prometheus / OTEL) P1-FAZ-B'de integrate olarak listelenmiş, fakat §4 integrate count/list içine girmemiş.",
+      "required_fix": "Ya integrate satırını 8'e çıkarıp NEW:metrics-export'u ekle ve total=40 yap, ya da metrics export'u #30 Team analytics altında birleştirip inventory'deki ayrı NEW item'ı kaldır."
+    }
+  ],
+  "remaining_warnings": [
+    {
+      "id": "RW1",
+      "note": "Plan audit trail target branch'i main olarak yazıyor; yerel incelemede current_branch claude/release-v3.0.0 ve HEAD 315b205. Bu W4'ü bozmaz, fakat PR-A0 başlamadan target branch/SHA pin'i gerçekten yapılmalı."
+    }
+  ],
+  "answers_per_question": [
+    {
+      "q": 1,
+      "a": "Kısmen. FAZ-D tablosu, build/integrate matrix ve FAZ-D branch replay gate'i Codex iter-2 önerisiyle uyumlu: #8 LangGraph import adapter/adopt+wrap, #9 native deterministic predicates/build. Ancak §5 Divergence 2 eski pozisyonu koruduğu için doküman içi çelişki var. Uygulama yönü doğru, metin commit-ready değil."
+    },
+    {
+      "q": 2,
+      "a": "Operatif kapsam yeterli: worktree + sanitized env allowlist + secret deny-by-default + command allowlist + cwd confinement + evidence redaction FAZ-A demo-tier için doğru minimum. Network/egress cgroups/firejail/nsjail FAZ-B'ye kalabilir. Fakat §5 Divergence 4 eski 'worktree + redaction only' metniyle çeliştiği için plan temizlenmeli."
+    },
+    {
+      "q": 3,
+      "a": "Aritmetik doğru: 8 + 4 + 7 = FAZ-C end week 19; D=24, E=29 tutarlı. Ama §6 kabul maddesinde hâlâ 'week 16' kaldığı için B3 tam kapanmamış. Bu tek satırlık mekanik düzeltme yapılmalı."
+    },
+    {
+      "q": 4,
+      "a": "Build-new count kendi içinde doğru: 13 original build + 9 NEW build = 22. Fakat genel muhasebe tutarlı değil. Envanter 40 item diyor; §4 toplamı 39. Kayıp item NEW:metrics export. Doğru muhasebe ya 22 build + 8 integrate + 4 adopt+wrap + 6 write-lite = 40 olmalı ya da metrics export ayrı NEW item olmaktan çıkarılmalı."
+    },
+    {
+      "q": 5,
+      "a": "Evet. FAZ-C two-track ayrımı Codex iter-2 önerisine uygun. C0 breaking contract freeze, migration guide ve migration tests release blocker; C1 code-index/LSP/editing optional payload ve C0 migration correctness'ını bloke etmiyor. Bu warning düzgün absorbe edilmiş."
+    },
+    {
+      "q": 6,
+      "a": "Evet. Competitor / adapter matrix live doc FAZ-A success criteria içinde doğru yerde. Bu gate, niche söyleminin tekrar 'rakipsiz' iddiasına dönmesini release öncesinde yakalayacak yeterli kontrol."
+    },
+    {
+      "q": 7,
+      "a": "+2-4 hafta contingency stratejik planlama için yeterli; şu aşamada +4-6'ya büyütmek gerekmez. Ancak FAZ-A golden path ilk 2-3 haftada demo script + adapter contract + evidence CLI smoke test çıkaramazsa buffer yeniden +4-6 hafta olarak revize edilmeli."
+    },
+    {
+      "q": 8,
+      "a": "Hayır, bu dosya haliyle strategic_commit_ready kilidi açılamıyor. Büyük iter-4 gerekmiyor; kalan endişeler spesifik ve mekanik: §5 stale D2/D4 metni, §6 week 16 satırı, §4 total accounting içinde NEW:metrics export kaybı. Bunlar düzeltilirse strategic_commit_ready=true verilebilir."
+    }
+  ],
+  "strategic_commit_ready": false,
+  "if_false_what_is_needed": "v2.1.1 dar metin düzeltmesi yap: §5'i CNS-016 sonrası resolved divergences olarak güncelle; §6 accepted point 6'daki week 16'yı week 19 yap; §4 matrix'e NEW:metrics export'u integrate olarak ekleyip total=40 yap veya inventory'den ayrı NEW item olarak kaldır. Bu düzeltmelerden sonra yeni strateji tartışması gerekmeden kilit açılabilir.",
+  "additional_recommendations": [
+    "§5 başlığını 'Pre-CNS-016 Divergences' olarak bırakmak yerine 'Resolved CNS-016 Divergence Outcomes' yap; aksi halde uygulayıcılar hangi bölümün authoritative olduğunu karıştırır.",
+    "Matrix'te her NEW item için category ve phase'i tek satırlık canonical listede göster; böylece 39/40 drift'i tekrar oluşmaz.",
+    "PR-A0 başlamadan plan target SHA'yı gerçekten pin'le ve mevcut inceleme branch'i ile hedef branch ayrımını audit trail'e ekle."
+  ],
+  "created_at": "2026-04-15T10:54:49+03:00",
+  "head_sha": "315b205",
+  "request_head_sha": "7b44822",
+  "current_branch": "claude/release-v3.0.0",
+  "plan_target_branch": "main"
+}

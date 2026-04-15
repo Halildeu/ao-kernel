@@ -1,0 +1,148 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260414-016",
+  "status": "ANSWERED",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "overall_verdict": "PARTIAL",
+  "rationale": "Plan v2, CNS-013/014/015'teki ana blokajların çoğunu doğru absorbe etmiş: niche artık savunulabilir, P0 governance akışına çekilmiş, #1 code-index P1 optional extra olmuş, docs/HITL/approval P0'a alınmış, POSIX git CLI ve lazy extras çizgisi korunmuş. Ancak strategic_commit_ready için hâlâ iki gerçek blokaj var. D2'de #8 agent graph adopt+wrap olabilir, fakat #9 conditional branching policy-visible deterministik predicate olarak #2 workflow engine'in build parçası olmalı; ikisini birlikte adopt+wrap sınıfına koymak governance çekirdeğini zayıflatır. D4'te worktree + secret redaction tek başına sandbox değildir; FAZ-A'da en az env allowlist/secret deny-by-default, command allowlist ve dış komut profili gerekir. D3 koşullu kabul edilebilir: v4.0 breaking + code-intelligence bundle ürün sinyali açısından mantıklı, ama migration track ve optional dependency track ayrılmalı. D1'de 87 PR / 29 hafta savunulabilir fakat alt sınır gibi ele alınmalı. Ayrıca plan içinde FAZ-C bitiş haftası, build-new count ve sandbox kapsamı arasında tutarsızlık var. Bu yüzden iter-3 büyük strateji turu değil, dar düzeltme pass'i gerekir.",
+  "divergence_verdicts": [
+    {
+      "id": "D1",
+      "claude_wins": true,
+      "reasoning": "87 PR / 29 hafta ile 96 PR / 30 hafta arasındaki fark stratejik olarak küçük ve savunulabilir. #10+#17 tek interrupt/approval primitive, #6+#16 tek diff/patch engine olarak birleşirse 9 PR azaltım makul. Ancak bu tahmin median değil optimistic lower bound olarak yazılmalı; FAZ-A adapter/docs/CI/evidence entegrasyonunda 2-3 haftalık slip olasılığı gerçek."
+    },
+    {
+      "id": "D2",
+      "claude_wins": false,
+      "reasoning": "#8 agent graph için LangGraph import/export veya backend adapter doğru olabilir; ao-kernel graph runtime rekabetine girmemeli. Fakat #9 conditional branching başka: policy-visible predicate, branch evidence, replay determinism ve dry-run semantiği workflow state machine'in native kontratına ait. Bu yüzden doğru split: #8 adopt+wrap, #9 build. İkisini birlikte adopt+wrap yazmak daha önceki 'ao-native governed workflow contract' uyarısını tam çözmüyor."
+    },
+    {
+      "id": "D3",
+      "claude_wins": true,
+      "reasoning": "v4.0'ın sadece deprecated API removal release'i olması kullanıcı sinyali açısından zayıf olur. Breaking cleanup ile code intelligence'ı aynı major release'te toplamak kabul edilebilir; major release zaten migration beklentisi yaratır. Şart: FAZ-C içinde iki ayrı track tanımlansın: önce breaking contract freeze + migration guide, sonra optional [code-index]/[lsp] payload. Code intelligence failure'ı v4.0 migration correctness'ını bloke etmemeli."
+    },
+    {
+      "id": "D4",
+      "claude_wins": false,
+      "reasoning": "Full OS-level sandboxing'i FAZ-A'ya almak fazla ağır; bu noktada Claude'un itirazı doğru. Ama önerilen 'worktree + secret redaction only' demo-tier güvenlik profili yetersiz. Redaction exfiltration'ı önlemez, sadece kanıt logunu temizler. FAZ-A minimumu worktree isolation + env allowlist/secret deny-by-default + command allowlist + cwd confinement + network policy'nin açıkça unsupported/disabled profile olarak belgelenmesi olmalı. Full egress/cgroups/nsjail FAZ-B'ye kalabilir."
+    }
+  ],
+  "blocking_objections": [
+    {
+      "id": "B1",
+      "title": "#8/#9 aynı adopt+wrap kovasına konmamalı",
+      "evidence": "Plan v2 §3 FAZ-D'de #8 agent graph execution ve #9 conditional branching adopt+wrap yazıyor; §5 D2 bunu LangGraph adapter + custom-lite fallback diye gerekçelendiriyor. Önceki CNS-014 ise conditional branching için deterministic predicates + policy-visible branch evidence gerektiğini söyledi.",
+      "recommendation": "D2'yi split et: #8 adopt+wrap under [langgraph-compat], #9 build under durable workflow state machine. FAZ-D release gate'e 'branch predicate evidence + replay determinism' ekle."
+    },
+    {
+      "id": "B2",
+      "title": "Sandbox demo-tier kapsamı güvenlik iddiasıyla tutarsız",
+      "evidence": "Plan v2 P0 satırında sandbox için 'per-agent worktree, env allowlist, secret redaction' yazıyor; D4 açıklamasında ise demo-tier 'per-agent worktree + secret redaction only' deniyor. Bu iki ifade çelişiyor ve ikincisi test/agent komut çalıştıran demo için zayıf.",
+      "recommendation": "FAZ-A demo-tier'i yeniden adlandır: 'worktree execution profile'. Minimum kapsam: per-agent worktree, sanitized env allowlist, secret deny-by-default, command allowlist, cwd confinement, evidence redaction. Network/egress OS sandboxing FAZ-B'ye taşınabilir."
+    },
+    {
+      "id": "B3",
+      "title": "Plan v2'de commit öncesi düzeltilmesi gereken sayım ve hafta tutarsızlıkları var",
+      "evidence": "Roadmap tablosunda FAZ-A 8 + FAZ-B 4 + FAZ-C 7 olduğundan v4.0 FAZ-C sonu hafta 19 eder; §6 kabul maddesi hâlâ 'week 16' diyor. Build matrix '12 + 7 NEW' yazıyor ama listelenen NEW build kalemleri 9: adapter, CI, sandbox, evidence-CLI, policy-sim, price-catalog, agent-benchmark, multi-tenant, cron.",
+      "recommendation": "Commit öncesi plan metnini mekanik olarak düzelt: v4.0 end week = 19 veya FAZ-C tekrar 4 hafta; build-new count = 9; P0 sandbox satırı D4 ile aynı kapsamı kullanmalı."
+    }
+  ],
+  "warning_objections": [
+    {
+      "id": "W1",
+      "title": "87 PR / 29 hafta planı baseline değil optimistic bound olmalı",
+      "recommendation": "Plan tablosuna 'target estimate' ve '+2-4 hafta contingency' ekle. Özellikle FAZ-A adapter/docs/CI/evidence dogfood akışı için acceptance test sayısı PR sayısından daha iyi takip metriği olur."
+    },
+    {
+      "id": "W2",
+      "title": "FAZ-C bundle kabul edilebilir ama release train riski yüksek",
+      "recommendation": "FAZ-C'yi tek release altında iki milestone'a böl: C0 breaking contract freeze/migration, C1 optional code-index/LSP/editing. Code-index optional extra bozulursa v4.0 migration release'i tutulmamalı."
+    },
+    {
+      "id": "W3",
+      "title": "Competitor matrix kabul maddesi release gate'e bağlanmamış",
+      "recommendation": "FAZ-A docs gate'e 'competitor/adapters matrix live doc published' maddesi ekle. Bu, CNS-013'teki 'rakipsiz' söylemi riskinin tekrar dönmesini engeller."
+    },
+    {
+      "id": "W4",
+      "title": "Head SHA uyuşmazlığı karar kaydı için hâlâ risk",
+      "recommendation": "CNS-016 request head_sha 7b44822, yerel HEAD gözlemi 315b205. Stratejik karar kaydında hem request_head_sha hem observed_head_sha yazılsın; implementasyon PR'ı başlamadan hedef branch/SHA sabitlensin."
+    }
+  ],
+  "accepted_points": [
+    "Niche cümlesi artık doğru yönde: self-hosted, tool-agnostic governance and evidence control-plane for AI coding agents.",
+    "GitHub/Cursor/Codex/Claude Code'u salt rakip değil adapter target olarak konumlandırmak stratejik olarak doğru.",
+    "FAZ-A'nın issue/spec -> workflow -> agent -> diff -> test -> approval -> PR -> evidence tek akışına bağlanması önceki P0 eleştirisini çözüyor.",
+    "#22 docs, #10 HITL ve #17 approval P0'a alınmış; #1 code indexing P1 optional extra olmuş. Bu, CNS-013 ile uyumlu.",
+    "POSIX git CLI wrapper ve gh/glab CLI + REST yaklaşımı, GitPython/pygit2/PyGithub/python-gitlab lisans/bakım risklerini doğru azaltıyor.",
+    "Core dependency invariant'ı korunuyor: jsonschema core, ağır paketler extras/lazy import altında.",
+    "[saml] ayrı tutulmuş; [enterprise] içine otomatik alınmamış. Bu, CNS-014 güvenlik uyarısıyla uyumlu.",
+    "Cost ledger thin slice P0, full price catalog/model routing FAZ-B ayrımı doğru.",
+    "FAZ-B'de lease/fencing, policy simulation, metrics export ve benchmark'ın yer alması governance ürününü güçlendiriyor.",
+    "v4.0 breaking'in graph/enterprise fazından önce yapılması doğru; sadece FAZ-C süresi ve bundle semantiği netleştirilmeli."
+  ],
+  "answers_per_question": [
+    {
+      "q": 1,
+      "a": "Divergence 1 defansibl ama iyimser. 87 PR / 29 hafta, birleşen primitive'ler gerçekten tek engine olarak uygulanırsa mümkün: #10+#17, #6+#16, #7 thin/full ayrımı gibi. Fakat FAZ-A'nın 14 item'ı entegrasyon yoğun; docs, adapter examples, CI gate, evidence CLI ve dogfood script'i birlikte kapanacak. Bu nedenle plan estimate olarak kabul edilebilir, commitment olarak '29 hafta hedef, 31-33 hafta contingency' yazılmalı."
+    },
+    {
+      "q": 2,
+      "a": "Divergence 2 bu haliyle doğru değil. LangGraph adapter #8 için yeterli; ao-kernel graph runtime parity kovalamamalı. Ama #9 conditional branching native olmalı çünkü policy-visible predicate, branch decision evidence, replay/dry-run ve fail-closed behavior dış runtime'a bırakılamaz. Önerilen sınıflama: #8 adopt+wrap, #9 build."
+    },
+    {
+      "q": 3,
+      "a": "Divergence 3 doğru çağrı, ama disiplin ister. v4.0 breaking + code intelligence bundle ürün sinyali açısından sağlıklı; major release'e migration burden yanında görünür değer ekler. Risk, migration guide'ın code-index/LSP gürültüsünde kaybolması. Çözüm: FAZ-C release gate önce breaking checklist + migration tests, sonra optional code intelligence smoke testleri şeklinde iki track olsun."
+    },
+    {
+      "q": 4,
+      "a": "Divergence 4 bu haliyle eksik. Full network/egress sandbox P0 için fazla ağır; bunu FAZ-B'ye almak makul. Ancak worktree + secret redaction yeterli değil. FAZ-A demo-tier minimumu env allowlist, secret deny-by-default, command allowlist ve cwd confinement içermeli. Network policy P1 olabilir; env ve command kontrolü P0 olmalı."
+    },
+    {
+      "q": 5,
+      "a": "10 kabul noktası ana hatlarıyla tam. Eksik kalan iki ayrıntı var: competitor matrix live doc release gate'e bağlanmamış; #4 multi-agent lease/fencing için alan-level contract henüz sadece isim olarak var. Bunlar stratejik yönü bozmaz ama FAZ-A/FAZ-B ilk PR spec'lerinde açıkça yazılmalı."
+    },
+    {
+      "q": 6,
+      "a": "P0 listesi yön olarak doğru ama 14 bağımsız item gibi yönetilmemeli. FAZ-A için şart olan paketler: docs+demo script, workflow/router/state, HITL+approval, diff+patch, git+PR, adapter contract, CI gate, evidence CLI, thin cost cap, sandbox execution profile. #6/#16 ve #10/#17 tek deliverable sayılmalı; aksi halde P0 tracker şişer."
+    },
+    {
+      "q": 7,
+      "a": "Build/Integrate matrix büyük ölçüde doğru. #29 data residency build kalmalı; write-lite olursa enterprise promise boşalır. Ancak #29 FAZ-E'de enforcement olarak dar tanımlanmalı: workspace policy, provider/vector/evidence region assertions, deny-on-unknown. Full legal/compliance narrative write-lite #26 altında kalabilir."
+    },
+    {
+      "q": 8,
+      "a": "Yeni extras posture core jsonschema invariant'ını koruyor, şartlı olarak doğru. Her extra lazy import + install hint + smoke CI + constraints lock gerektirir. [all] user-facing önerilmemeli; sadece maintainer smoke. [langgraph-compat], [knowledge-graph], [saml] enterprise meta-extra dışında explicit opt-in kalmalı."
+    },
+    {
+      "q": 9,
+      "a": "Release cadence kullanıcı sinyali açısından net: v3.1 demo, v3.2 ops hardening, v4.0 breaking+code intelligence, v4.1 graph/temporal, v4.2 enterprise preview. Ancak hafta sinyali tutarsız: FAZ-C 7 haftaysa v4.0 week 19 olur, week 16 değil. Bu düzeltilmeden roadmap commit edilmemeli."
+    },
+    {
+      "q": 10,
+      "a": "FAZ-A demo flow 8 haftada kapanabilir ama yalnızca 'tek golden path' olarak scope'lanırsa. Multi-provider generality, full sandbox, broad PR provider matrix, model routing optimizasyonu ve code indexing FAZ-A dışı kalmalı. Üç adapter example hedefi de gerçekçi tutulmalı: Claude Code CLI, Codex adapter stub/CLI, gh CLI PR path."
+    },
+    {
+      "q": 11,
+      "a": "Success criteria iyi başlangıç ama birkaç gate eksik. FAZ-A'ya sandbox execution profile test'i ve CI gate deny/allow fixture'ı eklenmeli. FAZ-B'ye lease/fencing race test'i eklenmeli. FAZ-C'ye 'migration guide examples verified by tests' eklenmeli. FAZ-D için LangGraph import/export kadar native #9 branch replay test'i de olmalı."
+    },
+    {
+      "q": 12,
+      "a": "Bu haliyle strategic_commit_ready=false. Büyük strateji yönü doğru, iter-3 geniş tartışma gerektirmiyor; dar revizyon yeterli. Gerekli düzeltmeler: D2 split (#8 adopt+wrap, #9 build), D4 minimum sandbox profile'ı güçlendirme, FAZ-C week/count tutarsızlıklarını düzeltme, build-new count düzeltme, success criteria'ya sandbox/branch/lease migration gates ekleme."
+    }
+  ],
+  "strategic_commit_ready": false,
+  "additional_recommendations": [
+    "Plan v2.1 olarak küçük bir düzeltme pass'i yap: divergence sonuçlarını tabloya işle, sonra FAZ-A PR-A0 başlayabilir.",
+    "PR-A0 kapsamını koddan önce docs/spec olarak tut: adapter contract, workflow run schema, evidence timeline contract, sandbox execution profile ve demo acceptance script.",
+    "P0 tracker'ı feature ID listesi yerine 6 workstream olarak yönet: adoption docs, workflow core, governed change, VCS/PR, safety/cost, evidence replay.",
+    "FAZ-B başlamadan #4 lease/fencing için ayrı mini-CNS veya design note yaz: claim_id, owner_agent_id, fencing_token, expires_at, heartbeat, takeover, CAS expected_revision, evidence event.",
+    "FAZ-C için release branch policy belirle: breaking changes ve code-index optional extra aynı release'te olabilir, fakat migration correctness optional dependency'lere bağlı olmamalı.",
+    "CNS karar kaydında request_head_sha=7b44822 ve observed_head_sha=315b205 ayrımını açık tut; mevcut plan/response dosyaları yerelde untracked görünüyor."
+  ],
+  "created_at": "2026-04-15T11:20:00+03:00",
+  "head_sha": "315b205",
+  "request_head_sha": "7b44822"
+}
