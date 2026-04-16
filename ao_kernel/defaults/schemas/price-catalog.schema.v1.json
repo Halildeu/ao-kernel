@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:price-catalog:v1",
+  "title": "LLM Price Catalog",
+  "description": "Versioned, checksum-protected snapshot of provider/model unit prices. Bundled starter ships at ao_kernel/defaults/catalogs/price-catalog.v1.json; operators override at .ao/cost/catalog.v1.json in their workspace. See docs/COST-MODEL.md §2 for object shape + field semantics. Runtime (checksum verification + stale-freshness gate + cost-aware routing) lands in FAZ-B PR-B2/B3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["catalog_version", "generated_at", "source", "stale_after", "checksum", "entries"],
+  "properties": {
+    "catalog_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Schema-pinned version literal. Full snapshot replacement; no append-only growth. Breaking changes ship as price-catalog.schema.v2.json."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp the catalog was produced (scraping time for source=vendor_api, authoring time for manual/bundled)."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["bundled", "vendor_api", "manual"],
+      "description": "Catalog origin. Controls vendor_model_id conditional requirement (W8v4 absorb — see allOf below)."
+    },
+    "stale_after": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp after which the catalog is considered stale. Default rule if operators omit: generated_at + 90 days. Stale handling: default warn (policy_cost_tracking.strict_freshness=false); opt-in fail-closed (strict_freshness=true)."
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA-256 over entries[] array serialised as canonical JSON (sort_keys=True, ensure_ascii=False, separators=(\",\",\":\")), prefixed 'sha256:'. Loader recomputes and compares; mismatch raises PriceCatalogChecksumError."
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"},
+      "description": "List of (provider_id, model) unit price records. At least one entry required — empty catalogs are rejected (a catalog with no entries is indistinguishable from catalog-missing at the B2 routing layer)."
+    }
+  },
+  "allOf": [
+    {
+      "description": "W8v4 + W2''v5 conditional: when the catalog's top-level source is vendor_api, every entry MUST carry a vendor_model_id (audit requirement). For bundled/manual sources, vendor_model_id stays optional — hand-curated catalogs should not be gated on knowing vendor-specific identifiers.",
+      "if": {"properties": {"source": {"const": "vendor_api"}}, "required": ["source"]},
+      "then": {
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {"required": ["vendor_model_id"]}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "model",
+        "input_cost_per_1k",
+        "output_cost_per_1k",
+        "currency",
+        "billing_unit",
+        "effective_date"
+      ],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Provider slug matching ao-kernel's provider_capability_registry (e.g. 'anthropic', 'openai', 'google', 'deepseek')."
+        },
+        "vendor_model_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Vendor canonical identifier used for billing + audit (e.g. 'claude-3-5-sonnet-20241022'). Required when catalog-level source=vendor_api; optional otherwise."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Short routing key that ao_kernel.llm.resolve_route() matches against (e.g. 'claude-3-5-sonnet'). Decoupled from vendor_model_id so routing + billing can evolve independently."
+        },
+        "input_cost_per_1k": {
+          "type": "number",
+          "minimum": 0,
+          "description": "USD per 1000 prompt tokens."
+        },
+        "output_cost_per_1k": {
+          "type": "number",
+          "minimum": 0,
+          "description": "USD per 1000 completion tokens."
+        },
+        "cached_input_cost_per_1k": {
+          "type": "number",
+          "minimum": 0,
+          "description": "USD per 1000 cached prompt tokens. Absent means 'no caching discount' rather than 'same as input'."
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["USD"],
+          "description": "v1: USD only. Non-USD currencies deferred to FAZ-E enterprise scope (residency + multi-currency)."
+        },
+        "billing_unit": {
+          "type": "string",
+          "enum": ["per_1k_tokens"],
+          "description": "v1: per_1k_tokens only. Per-request + per-image billing deferred to FAZ-D+."
+        },
+        "effective_date": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO-8601 date the prices in this entry took effect at the vendor."
+        }
+      }
+    }
+  }
+}

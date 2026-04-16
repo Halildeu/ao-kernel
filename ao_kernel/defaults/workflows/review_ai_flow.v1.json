@@ -1,0 +1,43 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "review_ai_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Review AI Flow",
+  "description": "Issue/PR -> context compile -> review agent emits typed review-findings artifact -> human acknowledges. Contract pin for the governed_review benchmark (docs/BENCHMARK-SUITE.md §2). B0 ships only the workflow definition; the runtime (adapter dispatch, review-findings artifact materialisation via adapter_invoker output_parse walker, benchmark scoring) lands in FAZ-B PR-B6. expected_adapter_refs declares 'codex-stub' as a placeholder — workspaces that run the review flow will point it at a real review-capable adapter whose manifest declares review_findings in capabilities[] and carries an output_parse rule pointing at review-findings.schema.v1.json.",
+  "steps": [
+    {
+      "step_name": "compile_context",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "invoke_review_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "review_findings"],
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 600,
+      "human_interrupt_allowed": false
+    },
+    {
+      "step_name": "await_acknowledgement",
+      "actor": "human",
+      "gate": "custom",
+      "on_failure": "transition_to_failed"
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub"],
+  "default_policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "required_capabilities": ["read_repo", "review_findings"],
+  "tags": ["review", "audit", "inspection"],
+  "created_at": "2026-04-16T00:00:00+00:00"
+}

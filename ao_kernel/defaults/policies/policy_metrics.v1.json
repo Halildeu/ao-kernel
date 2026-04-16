@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "_comment": "Bundled default DORMANT: enabled=false means ao-kernel emits no Prometheus metrics — the ao-kernel metrics export CLI (PR-B5) produces an empty textfile when this policy is off. Operator override: drop a workspace copy at {project_root}/.ao/policies/policy_metrics.v1.json with enabled=true to turn metrics on. labels_advanced.enabled=false keeps the cardinality-safe baseline (provider/direction/outcome/final_state labels only). To opt into per-model or per-agent dimensions: set labels_advanced.enabled=true and list the dimensions to expose in labels_advanced.allowlist — the schema closed enum rejects typos at load time. Defence in depth: both switches + non-empty allowlist must align for advanced labels to appear. See docs/METRICS.md §3.",
+  "labels_advanced": {
+    "enabled": false,
+    "allowlist": []
+  }
+}

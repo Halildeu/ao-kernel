@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-coordination-claims:v1",
+  "title": "Coordination Claims Policy",
+  "description": "Validates ao_kernel/defaults/policies/policy_coordination_claims.v1.json (and any workspace override). Policy knobs cover heartbeat cadence, expiry window, takeover grace, per-agent quota, and resource allowlist. See docs/COORDINATION.md §8 for semantics + defaults.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "heartbeat_interval_seconds", "expiry_seconds", "takeover_grace_period_seconds", "max_claims_per_agent", "claim_resource_patterns", "evidence_redaction"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Policy schema version literal."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Bundled default: false (dormant). Operator opt-in required to activate coordination runtime."
+    },
+    "_comment": {
+      "type": "string",
+      "description": "Free-form explanatory comment (pattern: policy_worktree_profile._comment)."
+    },
+    "heartbeat_interval_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Recommended cadence for caller-driven claim.heartbeat() calls. Advisory — the coordination runtime does not auto-heartbeat; callers that do not meet this cadence risk expiry + takeover."
+    },
+    "expiry_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Window after heartbeat_at during which the claim stays live (effective_expires_at = heartbeat_at + expiry_seconds)."
+    },
+    "takeover_grace_period_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Additional window after effective_expires_at during which the owner can still revive via heartbeat and during which a second agent's acquire attempt yields CLAIM_CONFLICT_GRACE rather than takeover."
+    },
+    "max_claims_per_agent": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Per-agent quota. Counts NON-EXPIRED claims only (expired but uncleaned entries in _index.v1.json are not counted). Zero disables the quota (unlimited)."
+    },
+    "claim_resource_patterns": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Allowlist of glob patterns. resource_id must match at least one pattern to be acquirable. Default ['*'] (allow all) for the bundled dormant policy."
+    },
+    "evidence_redaction": {
+      "type": "object",
+      "description": "Mirrors policy_worktree_profile.evidence_redaction shape. Redaction rules applied to claim event payloads (owner_agent_id, resource_id patterns that might encode secrets, etc).",
+      "additionalProperties": true
+    }
+  }
+}
