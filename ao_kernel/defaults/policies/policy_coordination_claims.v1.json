@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "_comment": "Bundled default DORMANT: enabled=false means the coordination runtime does not engage; claim/fencing primitives in ao_kernel/coordination/ (PR-B1) are inert and no claims.lock / .ao/claims/* artefacts are created unless an operator opts in. Operator override: drop a workspace copy at {project_root}/.ao/policies/policy_coordination_claims.v1.json with enabled=true and tune the knobs below to taste. Defaults target a 30s cadence + 90s expiry + 15s grace (so a well-behaved agent has a 1-minute late-window before takeover becomes possible, and a 15s revival window). max_claims_per_agent=5 is a sanity limit; workspaces with many parallel agents should raise it. claim_resource_patterns=['*'] intentionally allows anything for the dormant default — operators that enable coordination should narrow this to their actual resource namespace. Rationale + full semantics: docs/COORDINATION.md (especially §6 Expiry Authority).",
+  "heartbeat_interval_seconds": 30,
+  "expiry_seconds": 90,
+  "takeover_grace_period_seconds": 15,
+  "max_claims_per_agent": 5,
+  "claim_resource_patterns": ["*"],
+  "evidence_redaction": {
+    "patterns": []
+  }
+}

@@ -180,6 +180,62 @@ class TestCliHappyPath:
         assert "+hello world" in result.diff
 
 
+class TestBundledCodexStubEndToEnd:
+    """CNS-028v2 iter-7 blocker fix: a real subprocess invocation that
+    goes through the BUNDLED codex-stub manifest (not a hand-built
+    _manifest_cli() helper) must succeed — the bundled manifest
+    declares an output_parse rule for review_findings, so the stub
+    runtime emits the payload and the rule walker extracts it without
+    tripping output_parse_failed."""
+
+    def test_bundled_manifest_invocation_extracts_review_findings(
+        self, tmp_path: Path
+    ) -> None:
+        import os as _os
+        from ao_kernel.adapters import AdapterRegistry
+
+        rid = "00000000-0000-4000-8000-0000000b0001"
+
+        # Load the BUNDLED manifest (same one that ships in the wheel).
+        adapters = AdapterRegistry()
+        adapters.load_bundled()
+        manifest = adapters.get("codex-stub")
+        # Sanity: bundled manifest has the output_parse rule (else the
+        # blocker condition never arises).
+        assert manifest.output_parse is not None
+        assert "review_findings" in manifest.capabilities
+
+        sandbox = _sandbox(
+            tmp_path,
+            env={
+                "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin",
+                "PYTHONPATH": _os.getcwd(),
+                "HOME": "/tmp/fake-home",
+            },
+        )
+        worktree = _worktree(tmp_path, rid)
+        budget = _budget()
+
+        result, _budget_after = invoke_cli(
+            manifest=manifest,
+            input_envelope={"task_prompt": "review this", "run_id": rid},
+            sandbox=sandbox,
+            worktree=worktree,
+            budget=budget,
+            workspace_root=tmp_path,
+            run_id=rid,
+        )
+
+        # Invocation succeeded (not output_parse_failed).
+        assert result.status == "ok"
+        # The walker extracted review_findings via the bundled rule.
+        assert "review_findings" in result.extracted_outputs
+        payload = result.extracted_outputs["review_findings"]
+        assert payload["schema_version"] == "1"
+        assert payload["findings"] == []
+        assert "codex-stub" in payload["summary"].lower()
+
+
 class TestCliEnvHermeticity:
     def test_env_only_contains_sandbox_keys(self, tmp_path: Path) -> None:
         """Subprocess env must match sandbox.env_vars exactly; host env
@@ -442,3 +498,518 @@ class TestHttpInvoke:
                     workspace_root=tmp_path,
                     run_id=rid,
                 )
+
+
+# ---------------------------------------------------------------------------
+# PR-B0: output_parse rule walker + InvocationResult.extracted_outputs
+# ---------------------------------------------------------------------------
+
+
+def _manifest_with_output_parse(
+    *,
+    adapter_id: str = "review-stub",
+    output_parse: dict[str, Any] | None = None,
+    capabilities: tuple[str, ...] = ("read_repo", "review_findings"),
+) -> AdapterManifest:
+    # Start from _manifest_cli (CLI transport; no real subprocess —
+    # extraction is tested via _invocation_from_envelope directly).
+    base = _manifest_cli(adapter_id=adapter_id, capabilities=capabilities)
+    return AdapterManifest(
+        adapter_id=base.adapter_id,
+        adapter_kind=base.adapter_kind,
+        version=base.version,
+        capabilities=base.capabilities,
+        invocation=base.invocation,
+        input_envelope_shape=base.input_envelope_shape,
+        output_envelope_shape=base.output_envelope_shape,
+        interrupt_contract=base.interrupt_contract,
+        policy_refs=base.policy_refs,
+        evidence_refs=base.evidence_refs,
+        source_path=base.source_path,
+        output_parse=output_parse,
+    )
+
+
+class TestInvocationResultBackwardsCompat:
+    """Existing callers must continue to work without constructing
+    ``extracted_outputs``; default is empty mapping."""
+
+    def test_default_extracted_outputs_empty(self, tmp_path: Path) -> None:
+        from ao_kernel.executor.adapter_invoker import InvocationResult
+
+        r = InvocationResult(
+            status="ok",
+            diff=None,
+            evidence_events=(),
+            commands_executed=(),
+            error=None,
+            finish_reason=None,
+            interrupt_token=None,
+            cost_actual={},
+            stdout_path=tmp_path / "log.jsonl",
+            stderr_path=None,
+        )
+        assert dict(r.extracted_outputs) == {}
+
+    def test_invocation_from_envelope_no_manifest_is_noop(self, tmp_path: Path) -> None:
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        envelope = {"status": "ok", "diff": "", "review_findings": {"x": 1}}
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.1,
+            command="python3",
+            manifest=None,
+        )
+        assert result.status == "ok"
+        assert dict(result.extracted_outputs) == {}
+
+
+class TestOutputParseExtraction:
+    """PR-B0 output_parse rule walker — happy path + four Q6 edge cases."""
+
+    def test_extraction_happy_path(self, tmp_path: Path) -> None:
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.review_findings",
+                        "capability": "review_findings",
+                        "schema_ref": "review-findings.schema.v1.json",
+                    }
+                ]
+            },
+        )
+        envelope = {
+            "status": "ok",
+            "review_findings": {
+                "schema_version": "1",
+                "findings": [
+                    {
+                        "severity": "warning",
+                        "message": "Possible off-by-one in loop bound.",
+                        "file": "foo.py",
+                        "line": 42,
+                    }
+                ],
+                "summary": "Reviewed 1 file; found 1 warning.",
+                "score": 0.7,
+            },
+        }
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.2,
+            command="python3",
+            manifest=manifest,
+        )
+        assert "review_findings" in result.extracted_outputs
+        payload = result.extracted_outputs["review_findings"]
+        assert payload["summary"].startswith("Reviewed")
+        assert len(payload["findings"]) == 1
+
+    def test_edge_case_1_multi_rule_same_capability_is_loader_concern_not_runtime(
+        self, tmp_path: Path
+    ) -> None:
+        """The rule walker itself does not enforce uniqueness — the
+        loader does (see TestDuplicateCapabilityLoaderCheck). If a
+        manifest with duplicate capabilities bypassed the loader, the
+        walker would overwrite by order; this test documents runtime
+        behaviour as defensive fallback.
+        """
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {"json_path": "$.a", "capability": "dupe", "schema_ref": None},
+                    {"json_path": "$.b", "capability": "dupe", "schema_ref": None},
+                ]
+            },
+        )
+        envelope = {"status": "ok", "a": {"first": True}, "b": {"second": True}}
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.1,
+            command="python3",
+            manifest=manifest,
+        )
+        # Later rule wins at runtime; loader should have rejected at load.
+        assert dict(result.extracted_outputs["dupe"]) == {"second": True}
+
+    def test_edge_case_2_unresolvable_schema_ref_fails_closed(self, tmp_path: Path) -> None:
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.payload",
+                        "capability": "review_findings",
+                        "schema_ref": "does-not-exist.schema.v1.json",
+                    }
+                ]
+            },
+        )
+        envelope = {"status": "ok", "payload": {"x": 1}}
+        with pytest.raises(AdapterOutputParseError) as excinfo:
+            _invocation_from_envelope(
+                envelope,
+                log_path=tmp_path / "log.jsonl",
+                elapsed=0.1,
+                command="python3",
+                manifest=manifest,
+            )
+        assert "schema_ref" in str(excinfo.value).lower()
+        assert "does-not-exist" in str(excinfo.value)
+
+    def test_edge_case_3a_null_payload_rejected_when_schema_disallows(
+        self, tmp_path: Path
+    ) -> None:
+        """``review-findings.schema.v1.json`` requires ``findings`` +
+        ``summary``; a bare ``null`` payload fails validation."""
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.review_findings",
+                        "capability": "review_findings",
+                        "schema_ref": "review-findings.schema.v1.json",
+                    }
+                ]
+            },
+        )
+        envelope = {"status": "ok", "review_findings": None}
+        with pytest.raises(AdapterOutputParseError) as excinfo:
+            _invocation_from_envelope(
+                envelope,
+                log_path=tmp_path / "log.jsonl",
+                elapsed=0.1,
+                command="python3",
+                manifest=manifest,
+            )
+        # "validation failed" phrase is stable in our error wording.
+        assert "validation failed" in str(excinfo.value).lower()
+
+    def test_edge_case_3b_null_payload_accepted_when_schema_allows(
+        self, tmp_path: Path
+    ) -> None:
+        """When no ``schema_ref`` is declared, a null envelope field is
+        walked but not keyed (rule walker stores dict-shaped payloads
+        only) — extracted_outputs stays empty, no error."""
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.review_findings",
+                        "capability": "review_findings",
+                        # no schema_ref → validation skipped
+                    }
+                ]
+            },
+        )
+        envelope = {"status": "ok", "review_findings": None}
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.1,
+            command="python3",
+            manifest=manifest,
+        )
+        # null is not a mapping → not stored; no error raised.
+        assert dict(result.extracted_outputs) == {}
+
+    def test_edge_case_4_missing_json_path_fails_closed(self, tmp_path: Path) -> None:
+        """``json_path`` does not resolve in envelope → fail-closed.
+        Edge case #4 inverse: a declared rule whose target key is missing
+        must raise, not silently ignore."""
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.review_findings",
+                        "capability": "review_findings",
+                        "schema_ref": "review-findings.schema.v1.json",
+                    }
+                ]
+            },
+        )
+        envelope = {"status": "ok"}  # no review_findings key
+        with pytest.raises(AdapterOutputParseError) as excinfo:
+            _invocation_from_envelope(
+                envelope,
+                log_path=tmp_path / "log.jsonl",
+                elapsed=0.1,
+                command="python3",
+                manifest=manifest,
+            )
+        assert "did not resolve" in str(excinfo.value)
+
+    def test_edge_case_5_envelope_field_without_rule_is_silent_ignore(
+        self, tmp_path: Path
+    ) -> None:
+        """Envelope carries a payload for which the manifest has no rule
+        — silently ignored. Extraction is opt-in, never surprise."""
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={"rules": [
+                {"json_path": "$.x", "capability": "x", "schema_ref": None}
+            ]},
+        )
+        envelope = {
+            "status": "ok",
+            "x": {"wanted": True},
+            "review_findings": {"unwanted": True},  # no rule targets this
+        }
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.1,
+            command="python3",
+            manifest=manifest,
+        )
+        assert set(result.extracted_outputs.keys()) == {"x"}
+
+    def test_schema_validation_failure_surfaces_as_output_parse_error(
+        self, tmp_path: Path
+    ) -> None:
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.review_findings",
+                        "capability": "review_findings",
+                        "schema_ref": "review-findings.schema.v1.json",
+                    }
+                ]
+            },
+        )
+        envelope = {
+            "status": "ok",
+            "review_findings": {
+                # Missing required fields: ``findings`` and ``summary``.
+                "schema_version": "1",
+            },
+        }
+        with pytest.raises(AdapterOutputParseError) as excinfo:
+            _invocation_from_envelope(
+                envelope,
+                log_path=tmp_path / "log.jsonl",
+                elapsed=0.1,
+                command="python3",
+                manifest=manifest,
+            )
+        assert "validation failed" in str(excinfo.value).lower()
+
+    def test_rule_without_capability_walks_but_does_not_store(self, tmp_path: Path) -> None:
+        """Rules without ``capability`` key serve as schema guards only;
+        the payload is validated but not added to ``extracted_outputs``."""
+        from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
+
+        manifest = _manifest_with_output_parse(
+            output_parse={
+                "rules": [
+                    {
+                        "json_path": "$.meta",
+                        # no capability — descriptive-only rule
+                    }
+                ]
+            },
+        )
+        envelope = {"status": "ok", "meta": {"anything": 1}}
+        result = _invocation_from_envelope(
+            envelope,
+            log_path=tmp_path / "log.jsonl",
+            elapsed=0.1,
+            command="python3",
+            manifest=manifest,
+        )
+        assert dict(result.extracted_outputs) == {}
+
+
+class TestDuplicateCapabilityLoaderCheck:
+    """Edge case #1 proper: multi-rule same-capability is rejected at
+    manifest load time, before the walker ever runs."""
+
+    def test_duplicate_capability_fails_at_load_time(self, tmp_path: Path) -> None:
+        from ao_kernel.adapters.manifest_loader import AdapterRegistry
+
+        manifest_dir = tmp_path / ".ao" / "adapters"
+        manifest_dir.mkdir(parents=True)
+        manifest_path = manifest_dir / "dupe-stub.manifest.v1.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "adapter_id": "dupe-stub",
+                    "adapter_kind": "custom-cli",
+                    "version": "1.0.0",
+                    "capabilities": ["read_repo", "review_findings"],
+                    "invocation": {
+                        "transport": "cli",
+                        "command": "python3",
+                        "args": ["--help"],
+                        "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+                        "cwd_policy": "per_run_worktree",
+                        "stdin_mode": "none",
+                    },
+                    "input_envelope": {
+                        "task_prompt": "x",
+                        "run_id": "11111111-1111-4111-8111-111111111111",
+                    },
+                    "output_envelope": {"status": "ok"},
+                    "policy_refs": [
+                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+                    ],
+                    "evidence_refs": [
+                        ".ao/evidence/workflows/{run_id}/adapter-dupe-stub.jsonl"
+                    ],
+                    "output_parse": {
+                        "rules": [
+                            {
+                                "json_path": "$.a",
+                                "capability": "review_findings",
+                            },
+                            {
+                                "json_path": "$.b",
+                                "capability": "review_findings",  # duplicate
+                            },
+                        ]
+                    },
+                }
+            )
+        )
+        registry = AdapterRegistry()
+        report = registry.load_workspace(tmp_path)
+        assert len(report.loaded) == 0
+        assert len(report.skipped) == 1
+        skipped = report.skipped[0]
+        assert skipped.reason == "schema_invalid"
+        assert "review_findings" in skipped.details
+        assert "duplicate" in skipped.details.lower()
+
+
+class TestCapabilityCrossRefLoaderCheck:
+    """CNS-028v2 iter-6 W2 post-impl fix: output_parse.rules[*].capability
+    must appear in the adapter's top-level capabilities[] declaration.
+    Extraction rules advertise typed payload surface; that surface cannot
+    bypass the top-level capability advertisement."""
+
+    def test_unadvertised_capability_in_rule_fails_at_load(
+        self, tmp_path: Path
+    ) -> None:
+        from ao_kernel.adapters.manifest_loader import AdapterRegistry
+
+        manifest_dir = tmp_path / ".ao" / "adapters"
+        manifest_dir.mkdir(parents=True)
+        manifest_path = manifest_dir / "sneaky-stub.manifest.v1.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "adapter_id": "sneaky-stub",
+                    "adapter_kind": "custom-cli",
+                    "version": "1.0.0",
+                    # NOTE: top-level capabilities does NOT include
+                    # review_findings, but output_parse rule does.
+                    "capabilities": ["read_repo"],
+                    "invocation": {
+                        "transport": "cli",
+                        "command": "python3",
+                        "args": ["--help"],
+                        "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+                        "cwd_policy": "per_run_worktree",
+                        "stdin_mode": "none",
+                    },
+                    "input_envelope": {
+                        "task_prompt": "x",
+                        "run_id": "11111111-1111-4111-8111-111111111111",
+                    },
+                    "output_envelope": {"status": "ok"},
+                    "policy_refs": [
+                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+                    ],
+                    "evidence_refs": [
+                        ".ao/evidence/workflows/{run_id}/adapter-sneaky-stub.jsonl"
+                    ],
+                    "output_parse": {
+                        "rules": [
+                            {
+                                "json_path": "$.review_findings",
+                                # Capability not in capabilities[] — must fail.
+                                "capability": "review_findings",
+                            },
+                        ]
+                    },
+                }
+            )
+        )
+        registry = AdapterRegistry()
+        report = registry.load_workspace(tmp_path)
+        assert len(report.loaded) == 0
+        assert len(report.skipped) == 1
+        skipped = report.skipped[0]
+        assert skipped.reason == "schema_invalid"
+        assert "review_findings" in skipped.details
+        assert "not listed" in skipped.details.lower() or "capabilities" in skipped.details
+
+    def test_rule_without_capability_does_not_need_cross_ref(
+        self, tmp_path: Path
+    ) -> None:
+        """Rules without a ``capability`` key are descriptive-only schema
+        guards; they do not participate in the cross-ref check (there is
+        nothing to cross-ref)."""
+        from ao_kernel.adapters.manifest_loader import AdapterRegistry
+
+        manifest_dir = tmp_path / ".ao" / "adapters"
+        manifest_dir.mkdir(parents=True)
+        manifest_path = manifest_dir / "guard-only-stub.manifest.v1.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "adapter_id": "guard-only-stub",
+                    "adapter_kind": "custom-cli",
+                    "version": "1.0.0",
+                    "capabilities": ["read_repo"],
+                    "invocation": {
+                        "transport": "cli",
+                        "command": "python3",
+                        "args": ["--help"],
+                        "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+                        "cwd_policy": "per_run_worktree",
+                        "stdin_mode": "none",
+                    },
+                    "input_envelope": {
+                        "task_prompt": "x",
+                        "run_id": "11111111-1111-4111-8111-111111111111",
+                    },
+                    "output_envelope": {"status": "ok"},
+                    "policy_refs": [
+                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+                    ],
+                    "evidence_refs": [
+                        ".ao/evidence/workflows/{run_id}/adapter-guard-only-stub.jsonl"
+                    ],
+                    "output_parse": {
+                        "rules": [
+                            {"json_path": "$.meta"},  # no capability — OK
+                        ]
+                    },
+                }
+            )
+        )
+        registry = AdapterRegistry()
+        report = registry.load_workspace(tmp_path)
+        assert len(report.loaded) == 1
+        assert len(report.skipped) == 0

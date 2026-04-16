@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 4,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "overall_verdict": "PARTIAL",
+  "ready_for_impl": false,
+  "blockers": [
+    {
+      "id": "B4''''",
+      "topic": "output_parse zinciri hâlâ veri taşıyıcısını pinlemiyor",
+      "finding": "Plan extract/validate işini Executor.run_step(driver_managed=True) katmanına koyuyor ama mevcut çağrı zincirinde Executor sadece InvocationResult görüyor. InvocationResult ham envelope veya extracted payload taşımıyor. _invocation_from_envelope bilinmeyen alanları atıp yalnız sabit alanları map ediyor. Bu yüzden Executor aşamasında $.review_findings yürümek için veri artık elde değil. Kontrat bir adım daha kilitlenmeli: ya InvocationResult içine raw_envelope veya extracted_outputs eklenmeli, ya da output_parse yürüyüşü adapter_invoker içinde yapılıp sonucu InvocationResult ile taşınmalı. Bu netleşmeden Q13 tam kapanmış değil."
+    }
+  ],
+  "warnings": [
+    {"id": "W1'''", "topic": "output_parse ile mevcut response_parse terminolojisi çakışmaya açık. Repo bugün HTTP tarafında response_parse kullanıyor. Yeni output_parse top-level/post-parse kuralı mantıklı olabilir ama planda 'response_parse = transport-level canonical envelope extraction, output_parse = capability-specific artifact extraction' ayrımı bir cümleyle açıkça yazılmalı."},
+    {"id": "W2'''", "topic": "Plan metni AdapterOutputParseError(category=output_parse_failed) diyor ama mevcut exception'ın category alanı yok. Doğru ifade 'workflow/run error.category output_parse_failed olarak map edilir' olmalı."},
+    {"id": "W3'''", "topic": "Muhasebe satırı hâlâ tam senkron değil. Amaç özetinde '2 enum delta' deniyor, scope tablosu doğru olarak üçüncü delta output_parse[] genişletmesini ayrıca sayıyor."},
+    {"id": "W4'''", "topic": "'Adapter envelope JSON'unda review_findings field schema-validated' ifadesi fazla güçlü. output_envelope kapalı şekil olarak bırakıldığı için schema-valid olan şey envelope'un tamamı değil, extract edilen payload'ın schema_ref ile doğrulanmış hali. Wording daraltılmalı."}
+  ]
+}

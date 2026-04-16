@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:fencing-state:v1",
+  "title": "Fencing Token Persistent State",
+  "description": "Per-resource monotonic fencing-token state. Survives claim release (the claim record is deleted on release, but this state file is retained so the token authority for a resource outlives any single claim lifetime). See docs/COORDINATION.md §4 Fencing Token.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "resources"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Schema version literal. Breaking changes ship as fencing-state.schema.v2.json."
+    },
+    "resources": {
+      "type": "object",
+      "description": "Map of resource_id → per-resource token state. Keys are claim resource_ids (same validation surface as claim.schema.v1.json::resource_id).",
+      "additionalProperties": {"$ref": "#/$defs/resource_state"}
+    }
+  },
+  "$defs": {
+    "resource_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["next_token"],
+      "properties": {
+        "next_token": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Next token to issue on the next acquire or takeover of this resource. Strictly monotonic; never reset; never wraps (unbounded Python int). After issuing, incremented and CAS-written."
+        },
+        "last_owner_agent_id": {
+          "type": ["string", "null"],
+          "maxLength": 128,
+          "description": "Agent that most recently released or lost the claim. Audit-only; NOT consulted for authority decisions."
+        },
+        "last_released_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO-8601 timestamp of the most recent release (either owner-initiated or takeover). Audit-only."
+        }
+      }
+    }
+  }
+}

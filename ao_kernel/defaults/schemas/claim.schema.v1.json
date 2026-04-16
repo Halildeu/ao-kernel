@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:claim:v1",
+  "title": "Coordination Claim",
+  "description": "Durable per-resource lease record. The SSOT for who owns a shared workspace resource (git worktree, evidence run directory, workflow run record) at any given time. See docs/COORDINATION.md for lifecycle + 'Expiry Authority' semantics. Runtime implementation in FAZ-B PR-B1 (ao_kernel/coordination/).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claim_id",
+    "owner_agent_id",
+    "resource_id",
+    "fencing_token",
+    "acquired_at",
+    "heartbeat_at",
+    "revision"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUIDv4. Unique per claim instance; two successive claims on the same resource have different claim_ids (whereas fencing_token increases monotonically per resource — see fencing-state.schema.v1.json)."
+    },
+    "owner_agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Agent that holds the claim. Matches the identifier used by the caller (typically the adapter_id of the invoking adapter or a workflow-level agent identifier)."
+    },
+    "resource_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Resource being claimed. Callers MUST NOT encode path separators or wildcards; the policy's claim_resource_patterns allowlist decides what shapes are permitted. v1: single resource per claim (multi-resource atomic acquire is deferred to FAZ-C per CNS-028v2 iter-2 absorb)."
+    },
+    "fencing_token": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Per-resource monotonic token. Read from (and advanced in) fencing-state.v1.json on every acquire and takeover. Never reset, never wraps (Python int is unbounded). Stale-token detection at run_step entry raises ClaimStaleFencingError."
+    },
+    "acquired_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when this claim instance was first acquired (does NOT reset on heartbeat)."
+    },
+    "heartbeat_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Source-of-truth liveness timestamp. effective_expires_at = heartbeat_at + policy.expiry_seconds (computed at evaluation time). See docs/COORDINATION.md §6 Expiry Authority."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "DERIVED field. Mutators populate this for validation/debug visibility but it is NOT the source of truth — source = heartbeat_at + policy.expiry_seconds. Readers must recompute rather than trust this field past a heartbeat."
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "CAS revision hash, computed over the canonical JSON projection of the claim record with this field omitted (mirrors canonical_store.store_revision pattern). Mutators pass expected_revision to guard against concurrent writes."
+    }
+  }
+}

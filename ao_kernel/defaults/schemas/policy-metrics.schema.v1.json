@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-metrics:v1",
+  "title": "Metrics Export Policy",
+  "description": "Validates ao_kernel/defaults/policies/policy_metrics.v1.json (and any workspace override). Policy knobs cover top-level enable + opt-in advanced label allowlist. See docs/METRICS.md §3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "labels_advanced"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Policy schema version literal."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Master switch for metric emission. Bundled default: false (dormant). Operator opt-in to activate Prometheus textfile export at ao-kernel metrics export."
+    },
+    "_comment": {
+      "type": "string"
+    },
+    "labels_advanced": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "allowlist"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Advanced-label master switch. When false, only the default low-cardinality label set is emitted."
+        },
+        "allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["model", "agent_id"]
+          },
+          "uniqueItems": true,
+          "description": "Operator-selected subset of advanced labels to emit. Unknown values fail schema validation at load; typos do not silently enable anything. Default: empty list (no advanced labels even when labels_advanced.enabled=true — defence in depth)."
+        }
+      }
+    }
+  }
+}

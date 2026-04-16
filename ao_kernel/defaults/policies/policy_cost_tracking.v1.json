@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "enabled": false,
+  "_comment": "Bundled default DORMANT: enabled=false means the cost runtime does not engage; no spend ledger is written, catalog staleness is not evaluated, and llm.resolve_route() does not consult the catalog. Operator override: drop a workspace copy at {project_root}/.ao/policies/policy_cost_tracking.v1.json with enabled=true to activate. fail_closed_on_exhaust is locked to true per CNS-007 — attempting to set it false fails schema validation. strict_freshness=false (the default) emits a warn log when the catalog is past stale_after but does NOT block invocation; set strict_freshness=true to fail-closed instead. routing_by_cost.enabled=false means B3's cost-aware fallback is inert even when the policy is enabled — flip it on when the workspace is ready to handle automatic model downgrades. See docs/COST-MODEL.md for full semantics.",
+  "price_catalog_path": ".ao/cost/catalog.v1.json",
+  "spend_ledger_path": ".ao/cost/spend.jsonl",
+  "fail_closed_on_exhaust": true,
+  "strict_freshness": false,
+  "routing_by_cost": {
+    "enabled": false
+  }
+}

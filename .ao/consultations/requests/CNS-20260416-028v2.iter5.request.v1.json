@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 5,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "pr_b0_plan_v6_iter4_absorption_verification_expected_agree",
+  "mode": "adversarial_implementation_review",
+  "question": {
+    "title": "CNS-028v2 iter-5 — plan v6 absorption of iter-4 1B''''+4W''' (extraction layer pin to adapter_invoker; expected AGREE)",
+    "body": "Plan v6 absorption of iter-4 verdict PARTIAL (1B'''' + 4W'''):\n\nB4'''' (extraction layer pin): Çözüm adapter_invoker._invocation_from_envelope içinde output_parse rule walking + InvocationResult.extracted_outputs field. adapter_invoker.py ~30 satır code delta. Çağrı zinciri 5 adım:\n1. Adapter envelope JSON'unda review_findings field döner (envelope kendisi schema-validated DEĞİL, schema-valid olan extract edilen payload).\n2. adapter_invoker._invocation_from_envelope output_parse rule walker çalıştırır: json_path extract → schema_ref validate → fail ise AdapterOutputParseError raise. Error category mapping: workflow runtime exception'ı yakalayıp workflow-run.schema::error.category enum'unda 'output_parse_failed' değerine map eder; exception'ın kendisinde category field yok.\n3. Validation pass ise extracted payload InvocationResult.extracted_outputs[capability] field'ında Executor'a taşınır (default dict[str, dict] = {}, backwards compat).\n4. Executor.run_step(driver_managed=True) result.extracted_outputs[capability] doğrudan alır → artifacts.write_artifact() canonical JSON yazar → step_record.output_ref doldurur.\n5. Pointer workflow-run.schema::step_record.output_ref üstünden — capability schema validation output_parse[].schema_ref üstünden.\n\nLayer separation: adapter_invoker = transport + capability-aware extraction (zaten transport-layer parse var); Executor = artifact write + step_record CAS (schema-agnostic kalır, PR-A4b pattern korunur).\n\nInvocationResult shape change: opsiyonel extracted_outputs field eklenir, default empty dict, type-safe dict[capability_name, payload_object]. Mevcut field'lar değişmez (backwards compat).\n\nW1''' (response_parse vs output_parse): Plan §2.4'e bir cümle eklendi: 'response_parse = transport-level canonical envelope extraction (HTTP body → envelope shape); output_parse = capability-specific typed artifact extraction (envelope → schema-validated payload).'\n\nW2''' (error category map): Düzeltildi — exception'da category field yok; workflow runtime error.category=output_parse_failed map eder.\n\nW3''' (header schema delta sayısı): '2 enum delta' → '3 schema delta (2 enum + 1 output_parse extension)'.\n\nW4''' (envelope vs payload schema-validation): Wording daraltıldı — envelope kendisi schema-validated DEĞİL, schema-valid olan extract edilen payload.\n\nPlan v6 final: 4 docs + 8 schemas (5 data yeni + 3 policy yeni) + 3 schema delta + 3 policies + 2 bundled + 2 code delta (config.py + adapter_invoker.py) + ~40 test, ~1760 satır.\n\niter-5 tek teyit sorusu Q14: InvocationResult.extracted_outputs opsiyonel field + layer separation (invoker = transport + extraction, executor = artifact write + CAS), review_findings capability'sinin adaptörden artifact'a kadar olan zincirini tam pin'liyor mu? B6 runtime impl için yeterli kontrat surface'i var mı?"
+  },
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "created_at": "2026-04-16T19:00:00+03:00",
+  "branch": "claude/tranche-b-pr-b0",
+  "head_sha": "b3b1dce"
+}

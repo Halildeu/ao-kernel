@@ -1,0 +1,102 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260415-023",
+  "status": "OPEN",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d928f-978f-7ac2-91cb-b0f286798cbd",
+  "overall_verdict": "PARTIAL",
+  "rationale": "PR-A4 hedefi doğru yönde: PR-A3 tek-adım executor üstüne patch, CI ve multi-step orchestration katmanı gerekli. Ancak plan v1 mevcut PR-A1/A2/A3 sözleşmeleriyle birkaç kritik noktada uyumsuz: state_machine transition tablosu planın varsaydığı geçişleri tanımıyor; workflow-run schema retry_counter/current_step_index/completed_steps alanlarını kabul etmiyor; evidence taxonomy 17 kind ile kapalı ve plan yeni kind kullanıyor; Executor.run_step zaten state CAS yapıyor, failure path'lerini sahipleniyor ve worktree'yi temizliyor; adapter output/diff kalıcı artifact olarak yazılmadığı için crash-resume sonrası patch/CI devam edemez. Bu yüzden implementasyona geçmeden plan v2 gerekir.",
+  "question_verdicts": [
+    {
+      "id": "Q1",
+      "verdict": "PARTIAL",
+      "blocker": true,
+      "objection": "Happy path'in tek run_workflow çağrısında ardışık koşması kabul edilebilir; gate/HITL noktasında return + resume doğru. Ama planın `completed_steps` listesi mevcut workflow-run schema'da yok. `current_step_index` de yok ve eklenirse schema değişikliği gerekir. Ayrıca Executor adapter output diff'ini kalıcı output_ref/artifact olarak yazmadığı için crash sonrası hangi patch'in preview/apply edileceği kaybolur.",
+      "recommendation": "Yeni `current_step_index` ekleme. Resume konumunu `definition.steps` sırası + `run_record.steps[]` içindeki terminal `completed` step kayıtlarından türet. Crash recovery için her adapter output envelope ve patch content atomik artifact olarak `{run_dir}/artifacts/` veya `{run_dir}/patches/` altına yazılsın; step_record.output_ref ve evidence payload hash ile referanslansın. Mid-step crash durumunda terminal step_record yoksa fail-closed recovery policy açık yazılsın."
+    },
+    {
+      "id": "Q2",
+      "verdict": "REJECT",
+      "blocker": true,
+      "objection": "`running -> running` transition mevcut `ao_kernel/workflow/state_machine.py` tablosunda yok. `retry_counter` mevcut `workflow-run.schema.v1.json` step_record içinde yok; additionalProperties=false olduğu için persist edilemez. Ayrıca dış subprocess invocation bir CAS içinde atomik olamaz; CAS yalnızca retry intent/attempt kaydını atomik yapabilir.",
+      "recommendation": "Retry semantiğini iki fazlı yap: önce schema-uyumlu şekilde retry intent/attempt kaydını persist et, sonra attempt=2 invocation çalıştır. Crash `retry_counter=1` benzeri bir iz bıraktıysa bir sonraki resume 'retry harcandı, no-op' dememeli; attempt=2 için terminal kayıt yoksa attempt=2'yi çalıştırmalı veya explicit recovery-failed'a gitmeli. Bunu desteklemek için ya workflow-run schema'ya attempt/retry alanları ekle ya da aynı step_name için append-only attempt step_record modelini tanımla."
+    },
+    {
+      "id": "Q3",
+      "verdict": "PARTIAL",
+      "blocker": true,
+      "objection": "PR-A4 scope'unda conflict human-resolve yoksa `PatchApplyConflictError` için varsayılan terminal `failed` doğru. Ancak planın patch preflight/apply akışı conflict davranışını netleştirmeden `escalate_to_human` açarsa partial index/worktree state'i governance beklemesine taşıyabilir. Ayrıca `git apply --check` plain çalışırsa `--3way` ile çözülebilecek durumlar apply'a hiç ulaşmaz.",
+      "recommendation": "A4'te patch conflict default olarak `failed` olsun. `on_failure=escalate_to_human` patch_apply için ya schema/loader seviyesinde reddedilsin ya da sadece partial side-effect olmadığı kanıtlanan durumda diagnostic approval olarak açılsın. Preflight check apply stratejisiyle aynı option setini kullanmalı: örneğin `git apply --check --3way --index -`. Apply failure sonrası index/worktree/.rej cleanup veya fail-closed dirty-state kaydı zorunlu olsun."
+    },
+    {
+      "id": "Q4",
+      "verdict": "ACCEPT",
+      "blocker": false,
+      "objection": "Double-check performans açısından gereksiz olabilir ama güvenlik/regresyon açısından kabul edilebilir. PR-A3 invariant 'Executor.run_step içinde cross-ref per adapter step, no cache' olarak ship edilmiş.",
+      "recommendation": "Executor içindeki cross-ref bypass/cache ekleme. Driver başlangıcındaki workflow-level cross-ref ek kontrol olarak kalabilir; bu kontrol sadece erken fail ve daha iyi error UX sağlar. Adapter registry mutable olduğu için cache PR-A4'e alınmamalı."
+    },
+    {
+      "id": "Q5",
+      "verdict": "PARTIAL",
+      "blocker": true,
+      "objection": "`PYTHONPATH=worktree_root` tek başına pytest binary/module availability problemini çözmez; `--rootdir` de import path garantisi değildir, özellikle src-layout projelerde yetmez. Strict `inherit_from_parent=False` altında venv/GitHub Actions Python path'i default command prefixes dışında kalabilir. Ayrıca plan `policy_env.validate_command(...)` metodu varsayıyor; mevcut API fonksiyon: `validate_command(command, resolved_args, sandbox, secret_values)`.",
+      "recommendation": "Default CI command için `python3 -m pytest` ve `python3 -m ruff check .` tercih et; böylece sadece python interpreter allowlist/prefix kontrolünden geçer. Test edilen proje import'u için runner env'ine policy-controlled explicit `PYTHONPATH` ekle: en az `worktree_root`, varsa `worktree_root/src`. Toolchain path'i policy override ile açıkça allowlanmalı; bundled default'un pytest/ruff içermesine güvenme. `run_pytest/run_ruff` validate_command fonksiyonunu doğru imzayla çağırmalı ve secret_values boş mapping olsa bile geçmeli."
+    },
+    {
+      "id": "Q6",
+      "verdict": "PARTIAL",
+      "blocker": false,
+      "objection": "`CIResult.status='timeout'` dönmek driver fail-closed akışı için doğru. Ama plan aynı anda `CITimeoutError`'ın 'caller run_pytest doğrudan çağırırsa' raise edileceğini söylüyor; run_pytest'i doğrudan çağıran herkes aynı API'yı kullanır, bu ayrım belirsiz.",
+      "recommendation": "Varsayılan API hiçbir non-zero/timeout için raise etmesin; `CIResult(status='fail'|'timeout')` dönsün. Sadece command resolution/policy preflight gibi subprocess başlamadan önceki durumlar exception olsun. `CITimeoutError` ya kaldırılmalı ya da `raise_on_timeout=True` gibi explicit opt-in parametreye bağlanmalı."
+    },
+    {
+      "id": "Q7",
+      "verdict": "ACCEPT",
+      "blocker": false,
+      "objection": "Ortak run-level budget pool mevcut schema ile uyumlu tek seçenek. `subprocess_seconds` gibi yeni axis schema değişikliği gerektirir ve PR-A4 için gereksiz.",
+      "recommendation": "Patch ve CI elapsed sürelerini mevcut `time_seconds` axis'ine spend yaz. Per-step quota FAZ-B #7'ye kalsın. Sadece bir uyarı: workflow-run schema açıklaması HITL bekleme süresini de `time_seconds` kapsamına alıyor; PR-A4 aktif subprocess süresi ile wall-clock gate bekleme süresi arasındaki farkı açık dokümante etmeli."
+    },
+    {
+      "id": "Q8",
+      "verdict": "ACCEPT",
+      "blocker": true,
+      "objection": "Mevcut `workflow-definition.schema.v1.json` `operation` alanı içermiyor ve `additionalProperties=false`. `actor=ao-kernel/system` için step_name convention fail-closed değil; required_capabilities üzerinden `_patch_apply` gibi internal capability eklemek adapter capability enum'unu kirletir.",
+      "recommendation": "Seçenek B seçilmeli: `step.operation` additive enum ekle. Ancak 'opsiyonel' sadece backward compatibility için olmalı; runtime/loader `actor in {ao-kernel, system}` için operation missing ise fail-closed reddetmeli. Registry `StepDefinition` dataclass, parser, fixtures ve schema drift testleri güncellenmeli. Eğer v1.1 dosyası açılacaksa registry multi-schema load etmeli; daha düşük riskli yol mevcut v1 schema'ya additive property ekleyip kontrat değişikliğini plan v2'de audit etmek."
+    },
+    {
+      "id": "Q9",
+      "verdict": "REJECT",
+      "blocker": false,
+      "objection": "Önerilen A4a(patch+ci) / A4b(driver) split iyi yönde ama eksik: driver'dan önce state/schema/evidence/Executor ownership sözleşmeleri düzeltilmeden patch+ci primitives tek başına güvenli entegre edilemez.",
+      "recommendation": "Tek PR yapma. `split_other` öneriyorum: A4a-contract/lifecycle repair (operation schema, evidence kind uyumu, state transition planı, Executor worktree/output ownership kontratı), A4b patch+ci primitives unit tests, A4c multi_step_driver integration. Eğer iki PR zorunluysa A4a'ya contract repair + patch/ci primitives, A4b'ye driver + integration tests koy."
+    }
+  ],
+  "new_blocking_objections": [
+    {"id": "B1", "title": "State machine ve schema planın varsaydığı lifecycle'ı desteklemiyor", "body": "Mevcut TRANSITIONS tablosunda `running -> running`, `waiting_approval -> running` ve `verifying -> waiting_approval` yok. workflow-run schema'da `retry_counter`, `completed_steps`, `current_step_index` yok. Plan bu alanları ve geçişleri kullanırsa PR-A1 invariant ve schema validation kırılır."},
+    {"id": "B2", "title": "Evidence taxonomy kapalı; plan yeni kind kullanıyor", "body": "PR-A3 EvidenceEmitter whitelist'i ve docs/EVIDENCE-TIMELINE 17 kind ile kapalı. Plan `workflow_interrupted`, `workflow_waiting_approval`, `diff_rolled_back` gibi mevcut olmayan kind'ları scope içine alıyor. 'Yeni kind yok' iddiası bu haliyle yanlış."},
+    {"id": "B3", "title": "Executor.run_step ile MultiStepDriver state/worktree ownership çakışıyor", "body": "PR-A3 Executor.run_step zaten evidence emit ediyor, run state CAS yapıyor, bazı failure path'lerinde run'ı failed'a taşıyor ve adapter worktree'yi finally içinde temizliyor. PR-A4 driver ise per-step CAS, retry_once ve patch/CI için devam eden worktree varsayıyor. Bu kontrat ayrıştırılmadan driver doğru çalışmaz."},
+    {"id": "B4", "title": "Adapter output ve patch content durable değil", "body": "Executor ExecutionResult içinde diff memory'de dönebilir, fakat run_record step output_ref yazmıyor ve adapter_returned event payload'ı diff'i taşımıyor. Crash sonrası diff_preview/apply için canonical patch content bulunamaz. PR-A4, adapter output envelope ve patch artifact'lerini atomic write + hash + output_ref ile persist etmeli."},
+    {"id": "B5", "title": "retry_once crash-safety schema-uyumlu değil", "body": "Plan `steps[step_name].retry_counter` gibi map tabanlı bir yapı varsayıyor; mevcut run schema `steps` array ve step_record closed object. Dış invocation CAS içinde atomik olamaz. Retry intent/attempt persistence modeli plan v2'de yeniden yazılmalı."},
+    {"id": "B6", "title": "Patch apply preflight ve conflict atomicity yetersiz", "body": "Plain `git apply --check` sonrası `git apply --3way --index` planı 3-way'in amacını zayıflatır; preflight apply ile aynı strateji flag'lerini kullanmalı. Conflict/non-zero apply sonrası index/worktree/.rej yan etkileri için cleanup veya dirty-state fail-closed protokolü yok."},
+    {"id": "B7", "title": "Internal step dispatch explicit operation olmadan fail-closed değil", "body": "`actor=ao-kernel/system` için step_name convention kırılgan ve schema tarafından enforce edilmiyor. `operation` alanı ve registry parsing eklenmeden patch/CI internal primitive dispatch güvenli değil."},
+    {"id": "B8", "title": "CI hermetic toolchain resolution eksik", "body": "Strict sandbox altında `python3 -m pytest` interpreter'ı pytest modülünü bulamayabilir; `ruff` için de aynı risk var. `PYTHONPATH` proje import'unu çözer ama tool availability'yi çözmez. Policy-controlled toolchain path ve validate_command API kullanımı plan v2'de netleşmeli."}
+  ],
+  "residual_warnings": [
+    {"id": "W1", "title": "Bundled policy hakkında plan stale", "body": "Plan `pytest`/`ruff` allowlist'e eklenebilir diyor; mevcut `policy_worktree_profile.v1.json` zaten `git`, `python`, `python3`, `pytest`, `ruff`, `mypy` içeriyor. Asıl risk allowlist exact değil, resolved realpath prefix ve venv path uyumu."},
+    {"id": "W2", "title": "run_store public API tercihi netleşmeli", "body": "Plan özel `_mutate_with_cas` kullanımını örnekliyor. PR-A1'de public `update_run` ve `save_run_cas` var; doğrudan private helper'a bağlanmak yerine expected_revision gerektiren küçük public helper mı eklenecek, yoksa `save_run_cas` mı kullanılacak netleşmeli."},
+    {"id": "W3", "title": "Rollback result files_reverted yanlış ölçülebilir", "body": "Rollback success sonrası `git diff --cached --name-only` çoğu happy path'te boş döner; çünkü reverse diff index'i temizlemiştir. files_reverted listesi reverse apply öncesi revdiff parse'ından veya apply öncesi changed-file snapshot'ından hesaplanmalı."},
+    {"id": "W4", "title": "workflow-run docs ve EvidenceEmitter arasında küçük drift var", "body": "docs/EVIDENCE-TIMELINE.md halen event_id için ULID/monotonic ve manifest append wording kalıntıları taşıyor; PR-A3 code ise opaque token_urlsafe + seq ve manifest PR-A5 diyor. PR-A4 changelog/docs update bu drift'i düzeltmeli."},
+    {"id": "W5", "title": "StepDefinition field adı plan pseudocode'da drift ediyor", "body": "Plan yer yer `step_def.name` kullanıyor; mevcut dataclass field'ı `step_name`. Küçük ama implementation sırasında test kaçıran bug üretir."},
+    {"id": "W6", "title": "Approval primitive payload modeli sınırlı", "body": "PR-A1 `resume_approval` sadece decision alıyor; arbitrary payload/notes idempotency modeli interrupt'taki payload hash ile aynı değil. PR-A4 resume_workflow payload sözleşmesi approval için ayrıca netleşmeli."},
+    {"id": "W7", "title": "CIResult error sınıfları sadeleştirilebilir", "body": "Fail/timeout sonuçları normal CI outcome ise exception sınıfları çoğalıyor. Runner API status döndürüp sadece preflight/runner-not-found gibi çalıştırılamayan durumları exception yaparsa driver daha deterministik kalır."}
+  ],
+  "ready_for_impl": false,
+  "next_iteration_required": true,
+  "pr_split_recommendation": "split_other",
+  "created_at": "2026-04-15T22:16:16+03:00",
+  "head_sha": "c5d0ff0",
+  "request_head_sha": "c5d0ff0"
+}

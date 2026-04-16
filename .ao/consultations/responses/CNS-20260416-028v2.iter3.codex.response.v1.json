@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 3,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "overall_verdict": "PARTIAL",
+  "ready_for_impl": false,
+  "blockers": [
+    {
+      "id": "B3'''",
+      "topic": "review_findings artefact'ının sisteme giriş noktası hâlâ sözleşme seviyesinde pinlenmiş değil",
+      "finding": "Plan pointer tarafını doğru yere (step_record.output_ref) taşıyor, ama giriş tarafında 'adapter envelope review_findings payload döner, mevcut output_envelope.output semantiği içinde' diyor. Mevcut adapter contract'ta böyle bir output veya review_findings alanı yok. InvocationResult da böyle bir payload taşımıyor. Parser yalnız sabit alanları map ediyor. output_ref tarafı düzeldi ama review_findings verisinin adaptörden orchestrator'a nasıl geçtiği hâlâ kontratsız."
+    }
+  ],
+  "warnings": [
+    {"id": "W2''", "topic": "vendor_model_id conditional ifadesi kendi içinde kayıyor: source catalog-level metadata, ama şema açıklaması 'if entries[*].source == vendor_api' diyor. entries[*] içinde source yok. 'top-level source == vendor_api ise her entry'de vendor_model_id zorunlu' diye netleştirilmeli."},
+    {"id": "W3''", "topic": "load_default('catalogs', 'price-catalog') gereksiz özel durum yaratıyor. Mevcut API tam dosya adı bekliyor. Full filename kullan: load_default('catalogs', 'price-catalog.v1.json')"},
+    {"id": "W4''", "topic": "W4 absorb'a rağmen scope tablosunda hâlâ eski singular metin kalmış: load_default('catalog', ...)"},
+    {"id": "W5''", "topic": "v2 absorb bloğu iki kez tekrar ediyor (satır 20 ve 25). Plan hijyeni açısından temizlenmeli."}
+  ],
+  "non_blocking_answers": [
+    {"q": "Q8", "answer": "v1'de allow_revival_in_grace eklememek daha iyi. Revival davranışı yeni kilitlendi; hemen policy knob'a çevirmek state surface'ini gereksiz büyütür."},
+    {"q": "Q9", "answer": "load_default('catalogs', ...) warning seviyesinde public API değişikliği; breaking değil."},
+    {"q": "Q11", "answer": "FAZ-C defer mantıklı, FAZ-D'ye itmeye gerek yok."},
+    {"q": "Q12", "answer": "(a) doğru seçim. Mevcut driver_managed=True akışı adapter dönüşünden hemen sonra artefact yazıyor. Review için de aynı single-pass pattern'i kullanmak en tutarlı yol."}
+  ]
+}

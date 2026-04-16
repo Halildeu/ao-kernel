@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:spend-ledger-event:v1",
+  "title": "Spend Ledger Event",
+  "description": "One line of {project_root}/.ao/cost/spend.jsonl. Append-only; each billable LLM call emits one event. Keys the event to the run + step that produced it so the cost can be reconciled against the PR-A1 Budget. See docs/COST-MODEL.md §3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "step_id",
+    "provider_id",
+    "model",
+    "tokens_input",
+    "tokens_output",
+    "cost_usd",
+    "ts"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Workflow run UUID (matches workflow-run.schema.v1.json::run_id)."
+    },
+    "step_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Step within the workflow run. Opaque identifier assigned by the driver; uniqueness within a single run is the driver's responsibility."
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Matches price-catalog.schema.v1.json::entries[*].provider_id."
+    },
+    "vendor_model_id": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Vendor canonical model identifier for billing/audit reconciliation. Optional for ledger events from adapters that do not surface the vendor ID (self-hosted local models, for instance)."
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Short routing key matching price-catalog.schema.v1.json::entries[*].model."
+    },
+    "tokens_input": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Prompt tokens consumed (includes cached tokens — cached_tokens is a subset)."
+    },
+    "tokens_output": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Completion tokens generated."
+    },
+    "cached_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Prompt tokens served from cache (subset of tokens_input). Used by B2 cost runtime to apply cached_input_cost_per_1k rather than input_cost_per_1k to this portion."
+    },
+    "cost_usd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total USD cost for this invocation: (tokens_input - cached_tokens) * input_cost_per_1k/1000 + cached_tokens * cached_input_cost_per_1k/1000 + tokens_output * output_cost_per_1k/1000. B2 runtime computes this; operators should not manually author ledger events."
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when the invocation completed (not when the ledger line was written)."
+    }
+  }
+}

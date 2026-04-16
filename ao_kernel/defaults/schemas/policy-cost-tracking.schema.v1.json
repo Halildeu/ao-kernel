@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-cost-tracking:v1",
+  "title": "Cost Tracking Policy",
+  "description": "Validates ao_kernel/defaults/policies/policy_cost_tracking.v1.json (and any workspace override). Policy knobs cover catalog pointer, ledger pointer, strict-freshness gate, fail-closed-on-exhaust, and cost-aware routing enable flag. See docs/COST-MODEL.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "price_catalog_path", "spend_ledger_path", "fail_closed_on_exhaust", "strict_freshness", "routing_by_cost"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Policy schema version literal."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Bundled default: false (dormant). Operator opt-in to activate cost tracking runtime."
+    },
+    "_comment": {
+      "type": "string"
+    },
+    "price_catalog_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Workspace-relative path to the price catalog override. Default '.ao/cost/catalog.v1.json'. Loader: if present + valid, used in place of bundled ao_kernel/defaults/catalogs/price-catalog.v1.json."
+    },
+    "spend_ledger_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Workspace-relative path to the append-only spend ledger JSONL. Default '.ao/cost/spend.jsonl'."
+    },
+    "fail_closed_on_exhaust": {
+      "type": "boolean",
+      "const": true,
+      "description": "MUST be true. CNS-007 fail-closed pattern: when a budget axis is exhausted, the next invocation is blocked and BudgetExhaustedError is raised."
+    },
+    "strict_freshness": {
+      "type": "boolean",
+      "description": "When false (default): a stale catalog (now > stale_after) emits a warn-level log but is still served. When true: stale catalog raises PriceCatalogStaleError and blocks cost-dependent invocations. CNS-028v2 iter-1 W1 absorb."
+    },
+    "routing_by_cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "When true (PR-B3 runtime), llm.resolve_route consults the catalog to estimate cost and may fall back to a cheaper model when the remaining budget cannot cover the preferred model. When false, routing ignores the catalog."
+        }
+      }
+    }
+  }
+}
