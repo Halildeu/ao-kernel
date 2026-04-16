@@ -1,0 +1,43 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 1,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "overall_verdict": "PARTIAL",
+  "ready_for_impl": false,
+  "blockers": [
+    {
+      "id": "B1",
+      "topic": "Plan internal drift (array→object price-catalog + strict_freshness + fencing-state inventory)",
+      "finding": "B3 absorb (object shape) §1 line 8 + §2 line 52'de doğru ama §3 schema bölümü line 97 hâlâ 'array of {...}'. strict_freshness davranışı dokümanda var ama policy schema/field listesinde yok. fencing-state.schema.v1.json scope table'da var ama schema inventory'de düşmüş. B0 tek kontrat değil, çelişen iki kontrat üretiyor."
+    },
+    {
+      "id": "B2",
+      "topic": "Lease/fencing kontratı expiry otoritesini pinlemiyor",
+      "finding": "Claim shape expires_at içeriyor, takeover kuralı heartbeat_at + expiry + grace üzerinden. expires_at mı otoriter? Grace içinde ikinci talep CLAIM_CONFLICT mı? Owner grace içinde heartbeat ile revive edebilir mi? In-flight step takeover sonrası ne yapar? max_claims_per_agent sayımı non-expired'den mi? Multi-resource atomic acquire scope içinde mi unsupported mu? B1 race testleri deterministik olmaz."
+    },
+    {
+      "id": "B3",
+      "topic": "Benchmark contract repo gerçekliğine uymuyor",
+      "finding": "Plan 'review_ai_flow + bug_fix_flow (existing)' diyor; ama bundled workflow tarafında fiilen yalnız bug_fix_flow.v1.json var. Mevcut adapter output contract review bulgusunu typed artifact olarak taşımıyor. Yeni capability zorunlu değil, ama B6/B7 için review çıktısının workflow-artifact contract'ı gerekiyor."
+    }
+  ],
+  "warnings": [
+    {"id": "W1", "topic": "Metrics default label set mantıklı ama policy_metrics.labels_advanced.enabled switch'i dokümanda var, scope'ta böyle policy/schema yok"},
+    {"id": "W2", "topic": "Bundled price-catalog.v1.json konumu B2'de loader kararı açtırabilir. config.load_default yalnız policies/schemas/registry/extensions/operations tiplerini tanıyor"}
+  ],
+  "axis_verdicts": [
+    {"axis": "schema_closed_shape", "verdict": "PARTIAL", "note": "root-level kapalı şekil doğru ama B0 plan'ı kendi içinde çelişkili olduğu için kilit pratikte kurulmuş değil"},
+    {"axis": "policy_dormant_by_default", "verdict": "AGREE", "note": "policy_worktree_profile.v1.json rollout mantığıyla uyumlu"},
+    {"axis": "lease_fencing_spec", "verdict": "DISAGREE", "note": "4 karar eksik (expiry authority + grace conflict + expired heartbeat + max_claims semantics)"},
+    {"axis": "price_catalog_format", "verdict": "PARTIAL", "note": "metadata kabuğu doğru; checksum/source enum/vendor_model_id/region/billing_unit eksik"},
+    {"axis": "metrics_label_cardinality", "verdict": "PARTIAL", "note": "default düşük kardinalite set yeterli ama control plane tanımsız"},
+    {"axis": "benchmark_contract", "verdict": "DISAGREE", "note": "typed artifact contract eksik"},
+    {"axis": "b0_b1_dependency", "verdict": "PARTIAL", "note": "3 blocker çözülürse geri dönüş ihtimali düşük"},
+    {"axis": "test_scope", "verdict": "PARTIAL", "note": "~30 yeterli olabilir ama eksik kategoriler var"}
+  ]
+}

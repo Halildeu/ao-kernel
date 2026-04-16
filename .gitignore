@@ -221,3 +221,15 @@ examples/*/.cache/
 .ao/cache/
 # Smoke-test / dev artefact — never commit a nested .ao
 .ao/.ao/
+
+# macOS
+.DS_Store
+
+# Worktrees (Claude Code multi-worktree workflow)
+.claude/worktrees/
+
+# Test scratch directories
+pytest-of-*/
+tmp[a-z0-9]*/
+# Stale src/ dir (removed in v2.0.0; gets re-created by some editor cache)
+/src/

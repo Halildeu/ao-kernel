@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 2,
+  "from_agent": "codex",
+  "to_agent": "claude",
+  "transport": "mcp",
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "overall_verdict": "PARTIAL",
+  "ready_for_impl": false,
+  "blockers": [
+    {
+      "id": "B1'",
+      "topic": "workflow-definition.schema capability_enum drift",
+      "finding": "agent-adapter-contract.schema::capabilities[] enum'a review_findings eklendi ama workflow-definition.schema::capability_enum aynı kapalı kümeyi taşıyor ve repo test_workflow_registry.py:407'de iki enum'un eşitliğini drift testiyle zorluyor. Bu delta eklenmezse review_ai_flow.v1.json schema-valid olmayacak."
+    },
+    {
+      "id": "B2'",
+      "topic": "Typed artifact pointer için seçilen alan closed adapter contract'ta yok",
+      "finding": "Plan review artefact'ının output_envelope.output_ref ile taşınacağını söylüyor ama output_envelope bugün kapalı şekil ve böyle alan içermiyor. Repo'da mevcut durable artifact pointer alanı workflow-run.step_record.output_ref. İki yoldan biri pinlenmeli: ya adapter contract'a gerçekten output_ref eklenecek, ya da adapter dönüşünden sonra orchestrator step_record.output_ref dolduracak."
+    }
+  ],
+  "warnings": [
+    {"id": "W4", "topic": "Lease/fencing absorb yeterli (B2 blocker olmaktan çıktı)"},
+    {"id": "W5", "topic": "load_default('catalog', ...) tek tip isimlendirme kullanmıyor — mevcut kinds plural (policies/schemas/registry/...); scope stem-based çağrı getirmek sebepsiz farklılık"},
+    {"id": "W6", "topic": "Acceptance 'aynı object döner' yanlış hedef; mevcut load_default her çağrıda yeni dict üretir; aranması gereken deterministic equality, identity değil"},
+    {"id": "W7", "topic": "Header muhasebe drift: amaç '4 docs + 6 schemas' diyor, scope tablosu 8 schema sayıyor"},
+    {"id": "W8", "topic": "severity için critical ekleme gereksiz; error|warning|info|note benchmark skorlaması için yeterli"},
+    {"id": "W9", "topic": "vendor_model_id için 'opsiyonel değil, ama açık semantik' yerine conditional: manual+bundled opsiyonel, vendor_api zorunlu"}
+  ],
+  "resolved_axes": [
+    {"axis": "lease_fencing_spec", "verdict": "AGREE", "note": "iter-2'de blocker olmaktan çıktı; B1'i açtıracak kadar belirsizlik yok"}
+  ]
+}

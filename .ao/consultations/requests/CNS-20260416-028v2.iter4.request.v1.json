@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260416-028v2",
+  "status": "OPEN",
+  "iteration": 4,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "pr_b0_plan_v5_iter3_absorption_verification",
+  "mode": "adversarial_implementation_review",
+  "question": {
+    "title": "CNS-028v2 iter-4 — plan v5 absorption of iter-3 1B'''+4W'' (5 absorbs, output_parse rule extension as new contract surface)",
+    "body": "Plan v5 absorption of iter-3 verdict PARTIAL (1B''' + 4W''):\n\nB3''' adapter→orchestrator typed payload kontratı: Çözüm output_parse rule extension. agent-adapter-contract.schema::output_parse[] rule item shape genişlemesi (~25 satır): {json_path, capability?, schema_ref?} — backwards compatible (eski rules capability/schema_ref olmadan da geçerli). Capability-aware typed payload extraction. Mevcut PR-A3 JSONPath subset ($.key(.key)*, no indices/wildcards) korunur.\n\nÇağrı zinciri (driver-managed mode, PR-A4b yerleşik pattern reuse, single-pass): Adapter envelope'da review_findings field döner → Executor.run_step(driver_managed=True) output_parse rules walk eder → json_path extract → schema_ref validate → fail ise AdapterOutputParseError(category=output_parse_failed) → pass ise artifacts.write_artifact() → step_record.output_ref.\n\nW2'' (price-catalog conditional semantik): 'top-level source == vendor_api ise her entries[*] için vendor_model_id zorunlu' (catalog-level conditional).\n\nW3'' (load_default full filename): load_default('catalogs', 'price-catalog.v1.json') — mevcut config.py:77 pattern uyumlu.\n\nW4'' (scope table singular drift): 'kind=catalog' singular metin plural'a çevrildi.\n\nW5'' (v2 absorb duplicate): İkinci tekrar silindi (verify: grep -c 'v2 key absorb' → 1).\n\nPlan v5 final boyutlar: 4 docs + 8 schemas + 3 schema delta (2 enum + 1 output_parse extension) + 3 policies + 2 bundled + 1 config delta + ~35 test, ~1730 satır. Yeni evidence kind: 0. Yeni adapter capability: 1. Yeni core dep: 0.\n\niter-4 tek teyit sorusu Q13: output_parse rule item shape extension review_findings için typed payload kontratını gerçekten kilitliyor mu? B6 runtime'da rule walker bu shape üzerinden extract+validate yapacak. Eksik bir şey var mı?"
+  },
+  "mcp_thread_id": "019d962d-1592-76b3-8702-b86322b83a6a",
+  "created_at": "2026-04-16T18:30:00+03:00",
+  "branch": "claude/tranche-b-pr-b0",
+  "head_sha": "b3b1dce"
+}
