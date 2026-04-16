@@ -182,9 +182,10 @@ Workflow run artefacts (events.jsonl + adapter logs) carry a SHA-256 integrity m
 
 ```json
 {
-  "version": "v1",
+  "version": "1",
   "run_id": "a1b2c3d4-e5f6-4789-9012-3456789abcde",
-  "artefacts": [
+  "generated_at": "2026-04-16T12:45:00+00:00",
+  "files": [
     {
       "path": "events.jsonl",
       "sha256": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
@@ -194,13 +195,24 @@ Workflow run artefacts (events.jsonl + adapter logs) carry a SHA-256 integrity m
       "path": "adapter-claude-code-cli.jsonl",
       "sha256": "a3f5c9e0...",
       "bytes": 12408
+    },
+    {
+      "path": "artifacts/invoke_coding_agent-attempt1.json",
+      "sha256": "b4d2e1f0...",
+      "bytes": 1024
+    },
+    {
+      "path": "patches/patch-abc.revdiff",
+      "sha256": "c5e3f2a1...",
+      "bytes": 512
     }
-  ],
-  "last_updated": "2026-04-15T12:45:00+03:00"
+  ]
 }
 ```
 
-The manifest is **generated on demand** by the PR-A5 `ao-kernel evidence timeline --verify-manifest` CLI (see §7), not updated per-event. PR-A3 emits events append-only (lock + fsync) without maintaining a manifest file; the CLI re-hashes the stream at query time so the hot write path stays free of cross-file coordination. Replay tooling verifies the manifest SHA-256s before trusting the stream.
+**Manifest scope (PR-A5):** `events.jsonl` + `adapter-*.jsonl` + `artifacts/**/*.json` + `patches/*.revdiff`. Excludes: `manifest.json`, `*.lock`, `*.tmp`.
+
+The manifest is **generated on demand** by `ao-kernel evidence generate-manifest --run <run_id>`. PR-A3 emits events append-only (lock + fsync) without maintaining a manifest file; the CLI re-hashes the artefacts at command time so the hot write path stays free of cross-file coordination. `ao-kernel evidence verify-manifest --run <run_id>` recomputes SHA-256s and exits non-zero on mismatch (exit 1), outdated manifest (exit 2), or missing manifest (exit 3). Replay tooling verifies the manifest SHA-256s before trusting the stream.
 
 **MCP events do NOT carry a manifest** (per CLAUDE.md §2, Tranche D scope). The dual-form evidence contract is: workspace artefacts have manifests, MCP events are fsync'd JSONL only.
 
@@ -249,22 +261,35 @@ Redaction is a defense-in-depth layer. The primary defense is `policy_worktree_p
 
 ---
 
-## 8. CLI Plan — `ao-kernel evidence timeline` (Tranche A PR-A5)
+## 8. CLI Reference — `ao-kernel evidence` (PR-A5 shipped)
 
-The evidence CLI is part of FAZ-A's release gate. Command surface (to be implemented in PR-A5, not PR-A0):
+Four subcommands:
 
 ```bash
+# Timeline — chronological event table or NDJSON
 ao-kernel evidence timeline --run <run_id>
 ao-kernel evidence timeline --run <run_id> --format json
-ao-kernel evidence timeline --run <run_id> --replay inspect
-ao-kernel evidence timeline --run <run_id> --replay dry-run
-ao-kernel evidence timeline --run <run_id> --filter-kind adapter_invoked,adapter_returned
-ao-kernel evidence timeline --run <run_id> --verify-manifest
+ao-kernel evidence timeline --run <run_id> --filter-kind step_started,step_completed
+ao-kernel evidence timeline --run <run_id> --filter-actor adapter
+ao-kernel evidence timeline --run <run_id> --limit 20
+
+# Replay — inferred state trace + replay_safe annotation
+ao-kernel evidence replay --run <run_id> --mode inspect
+ao-kernel evidence replay --run <run_id> --mode dry-run
+
+# Manifest — on-demand SHA-256 generation
+ao-kernel evidence generate-manifest --run <run_id>
+
+# Verify — recompute + compare
+ao-kernel evidence verify-manifest --run <run_id>
+ao-kernel evidence verify-manifest --run <run_id> --generate-if-missing
 ```
 
-Default output is a chronological, human-readable summary: each event on one line with `ts`, `kind`, `actor`, and a one-line payload summary. Secrets are already redacted in the source JSONL; the CLI does not re-redact.
+**Timeline default output:** `seq | ts | kind | actor | step_id | payload_summary` (96-char payload truncation). `--format json` emits full event NDJSON. Secrets are already redacted in the source JSONL; the CLI does not re-redact.
 
-`--verify-manifest` recomputes SHA-256s for every artefact in the manifest and exits non-zero on mismatch.
+**Replay:** produces an **inferred state trace** — not an exact recorded state. `state_source` per transition is `event` (explicit like `workflow_started → running`), `inferred` (e.g., `diff_applied → applying`), or `synthetic` (driver CAS chain with no matching evidence event). Illegal transitions produce warnings, not hard failures.
+
+**Verify exit codes:** `0` = all match; `1` = hash mismatch or missing listed file; `2` = manifest outdated (new in-scope file); `3` = `manifest.json` missing.
 
 ---
 

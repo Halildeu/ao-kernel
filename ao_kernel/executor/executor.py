@@ -313,7 +313,7 @@ class Executor:
                 policy=self._policy,
             )
 
-            # adapter_invoked
+            # adapter_invoked (B2 absorb: replay_safe=False — adapter invocation is non-deterministic)
             invoked = emit_event(
                 self._workspace_root,
                 run_id=run_id,
@@ -325,6 +325,7 @@ class Executor:
                     "transport": manifest.invocation.get("transport"),
                 },
                 step_id=step_def.step_name,
+                replay_safe=False,
             )
             evidence_event_ids.append(invoked.event_id)
 
@@ -374,7 +375,7 @@ class Executor:
                 payload=artifact_payload,
             )
 
-            # adapter_returned (v2 note: actor is adapter-sourced, reported by orchestrator)
+            # adapter_returned (B2 absorb: replay_safe=False — adapter response is non-deterministic)
             returned = emit_event(
                 self._workspace_root,
                 run_id=run_id,
@@ -390,6 +391,7 @@ class Executor:
                     "attempt": attempt,
                 },
                 step_id=step_id_for_events,
+                replay_safe=False,
             )
             evidence_event_ids.append(returned.event_id)
         finally:
