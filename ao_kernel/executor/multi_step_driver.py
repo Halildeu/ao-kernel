@@ -1528,12 +1528,17 @@ class MultiStepDriver:
         *,
         step_id: str | None = None,
         actor: str = "ao-kernel",
+        replay_safe: bool = True,
     ) -> None:
+        # B2 absorb: approval_granted/denied are non-deterministic
+        if kind in ("approval_granted", "approval_denied"):
+            replay_safe = False
         try:
             emit_event(
                 self._workspace_root,
                 run_id=run_id, kind=kind, actor=actor,
                 payload=dict(payload), step_id=step_id,
+                replay_safe=replay_safe,
             )
         except Exception:  # noqa: BLE001 - evidence write is best-effort side-channel
             # Evidence emission failure must not block the main flow

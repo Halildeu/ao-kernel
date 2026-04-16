@@ -83,6 +83,29 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("doctor", help="Workspace health check")
 
+    # Evidence subcommands (PR-A5)
+    ev_p = sub.add_parser("evidence", help="Evidence timeline + replay + manifest")
+    ev_sub = ev_p.add_subparsers(dest="evidence_command")
+
+    tl_p = ev_sub.add_parser("timeline", help="Show evidence event timeline")
+    tl_p.add_argument("--run", dest="run_id", required=True, help="Run ID (UUID)")
+    tl_p.add_argument("--format", choices=["table", "json"], default="table")
+    tl_p.add_argument("--filter-kind", default=None, help="Comma-separated kind filter")
+    tl_p.add_argument("--filter-actor", default=None, help="Actor filter")
+    tl_p.add_argument("--limit", type=int, default=None, help="Last N events")
+
+    rp_p = ev_sub.add_parser("replay", help="Replay event stream (inspect/dry-run)")
+    rp_p.add_argument("--run", dest="run_id", required=True, help="Run ID (UUID)")
+    rp_p.add_argument("--mode", choices=["inspect", "dry-run"], default="inspect")
+
+    gm_p = ev_sub.add_parser("generate-manifest", help="Generate SHA-256 manifest")
+    gm_p.add_argument("--run", dest="run_id", required=True, help="Run ID (UUID)")
+
+    vm_p = ev_sub.add_parser("verify-manifest", help="Verify SHA-256 manifest")
+    vm_p.add_argument("--run", dest="run_id", required=True, help="Run ID (UUID)")
+    vm_p.add_argument("--generate-if-missing", action="store_true",
+                       help="Generate manifest first if absent")
+
     mcp_p = sub.add_parser("mcp", help="MCP server commands")
     mcp_sub = mcp_p.add_subparsers(dest="mcp_command")
     serve_p = mcp_sub.add_parser("serve", help="Start MCP server")
@@ -108,6 +131,27 @@ def main(argv: list[str] | None = None) -> int:
     if cmd is None:
         parser.print_help()
         return 0
+
+    # Evidence subcommand (PR-A5)
+    if cmd == "evidence":
+        from ao_kernel._internal.evidence.cli_handlers import (
+            cmd_generate_manifest,
+            cmd_replay,
+            cmd_timeline,
+            cmd_verify_manifest,
+        )
+        ev_dispatch = {
+            "timeline": cmd_timeline,
+            "replay": cmd_replay,
+            "generate-manifest": cmd_generate_manifest,
+            "verify-manifest": cmd_verify_manifest,
+        }
+        ev_cmd = getattr(args, "evidence_command", None)
+        handler = ev_dispatch.get(ev_cmd) if ev_cmd else None
+        if handler is None:
+            print("Usage: ao-kernel evidence {timeline|replay|generate-manifest|verify-manifest}")
+            return 1
+        return handler(args)
 
     # MCP subcommand
     if cmd == "mcp":
