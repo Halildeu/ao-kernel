@@ -31,6 +31,7 @@ from ao_kernel.workflow.budget import (
     record_spend,
 )
 from ao_kernel.workflow.errors import (
+    IntentClassificationError,
     IntentRulesCorruptedError,
     WorkflowBudgetExhaustedError,
     WorkflowCASConflictError,
@@ -101,6 +102,7 @@ __all__ = [
     "WorkflowDefinitionNotFoundError",
     "WorkflowDefinitionCorruptedError",
     "WorkflowDefinitionCrossRefError",
+    "IntentClassificationError",
     "IntentRulesCorruptedError",
     # State machine
     "WorkflowState",

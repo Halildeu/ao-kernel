@@ -112,12 +112,33 @@ class AdapterRegistry:
     def __init__(self) -> None:
         self._by_id: dict[str, AdapterManifest] = {}
 
+    def load_bundled(self) -> LoadReport:
+        """Load bundled adapter manifests from package defaults (PR-A6).
+
+        Uses ``importlib.resources`` so manifests are wheel-safe.
+        Workspace manifests override bundled ones for the same
+        ``adapter_id`` — call ``load_bundled()`` BEFORE
+        ``load_workspace()`` to get the correct precedence.
+        """
+        loaded: list[AdapterManifest] = []
+        skipped: list[SkippedManifest] = []
+        try:
+            pkg = resources.files("ao_kernel.defaults.adapters")
+        except (ModuleNotFoundError, TypeError):
+            return LoadReport(loaded=(), skipped=())
+        for item in sorted(pkg.iterdir(), key=lambda i: i.name):
+            if not item.name.endswith(_MANIFEST_SUFFIX):
+                continue
+            with resources.as_file(item) as path:
+                self._ingest(source_path=path, loaded=loaded, skipped=skipped)
+        return LoadReport(loaded=tuple(loaded), skipped=tuple(skipped))
+
     def load_workspace(self, workspace_root: Path) -> LoadReport:
         """Scan ``<workspace_root>/.ao/adapters/*.manifest.v1.json``.
 
-        Deterministic load order (sorted by filename). Duplicate
-        ``adapter_id`` across two files rejects the later arrival with
-        ``duplicate_adapter_id``.
+        Deterministic load order (sorted by filename). Workspace
+        manifests override bundled ones for the same ``adapter_id``
+        (PR-A6 B3 absorb — workspace > bundled precedence).
         """
         loaded: list[AdapterManifest] = []
         skipped: list[SkippedManifest] = []
@@ -125,7 +146,10 @@ class AdapterRegistry:
         if not dir_path.is_dir():
             return LoadReport(loaded=(), skipped=())
         for source_path in sorted(dir_path.glob(f"*{_MANIFEST_SUFFIX}")):
-            self._ingest(source_path=source_path, loaded=loaded, skipped=skipped)
+            self._ingest(
+                source_path=source_path, loaded=loaded, skipped=skipped,
+                allow_override=True,
+            )
         return LoadReport(loaded=tuple(loaded), skipped=tuple(skipped))
 
     def _ingest(
@@ -134,6 +158,7 @@ class AdapterRegistry:
         source_path: Path,
         loaded: list[AdapterManifest],
         skipped: list[SkippedManifest],
+        allow_override: bool = False,
     ) -> None:
         expected_id = _expected_id_from_filename(source_path)
 
@@ -192,15 +217,19 @@ class AdapterRegistry:
             return
 
         if raw_id in self._by_id:
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="duplicate_adapter_id",
-                details=(
-                    f"adapter_id={raw_id!r} already registered from "
-                    f"{self._by_id[raw_id].source_path}"
-                ),
-            ))
-            return
+            if allow_override:
+                # Workspace > bundled precedence (PR-A6 B3)
+                pass  # fall through to overwrite
+            else:
+                skipped.append(SkippedManifest(
+                    source_path=source_path,
+                    reason="duplicate_adapter_id",
+                    details=(
+                        f"adapter_id={raw_id!r} already registered from "
+                        f"{self._by_id[raw_id].source_path}"
+                    ),
+                ))
+                return
 
         manifest = _parse_manifest(raw, source_path=source_path)
         self._by_id[manifest.adapter_id] = manifest

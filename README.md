@@ -64,6 +64,18 @@ stream_request = build_req(
 | `ao-kernel migrate [--dry-run] [--backup]` | Version migration |
 | `ao-kernel version` | Print version |
 | `ao-kernel mcp serve` | Start MCP server (stdio) |
+| `ao-kernel evidence timeline --run <id>` | Chronological event timeline (table or `--format json`) |
+| `ao-kernel evidence replay --run <id>` | Inferred state trace replay (`--mode inspect\|dry-run`) |
+| `ao-kernel evidence generate-manifest --run <id>` | On-demand SHA-256 manifest |
+| `ao-kernel evidence verify-manifest --run <id>` | Recompute + verify manifest integrity |
+
+### Quick Demo
+
+```bash
+python3 examples/demo_bugfix.py --workspace-root .
+```
+
+Runs the governed bug-fix workflow end-to-end with a deterministic stub adapter (no LLM required). See `docs/DEMO-SCRIPT.md` for the full 11-step acceptance flow.
 
 ## Python API
 
