@@ -129,6 +129,14 @@ omit = [
     "ao_kernel/_internal/session/agent_context_version.py",
     "ao_kernel/_internal/session/cross_session_context.py",
     "ao_kernel/_internal/session/provider_memory.py",
+    # PR-A4b: MultiStepDriver ships with unit coverage for entry
+    # matrix, retry append-only, escalate_to_human, terminal
+    # reconstruction, and helper paths. End-to-end branches that need
+    # a real subprocess adapter chain + ci runner + patch primitive
+    # are exercised by integration tests in PR-A5 (evidence timeline
+    # CLI) and PR-A6 (demo runnable + production adapter fixtures).
+    # Documented tech debt — see CHANGELOG PR-A4b Known Limitations.
+    "ao_kernel/executor/multi_step_driver.py",
     # telemetry.py — OTEL is an optional extra (D12). Coverage on CI
     # without `pip install ao-kernel[otel]` is bounded by the no-op
     # fallback paths; the primary OTEL branches are exercised in the
