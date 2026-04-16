@@ -75,6 +75,16 @@ class AdapterManifest:
     policy_refs: tuple[str, ...]
     evidence_refs: tuple[str, ...]
     source_path: Path
+    output_parse: Mapping[str, Any] | None = None
+    """Optional capability-aware extraction surface (PR-B0 net-new).
+
+    Shape: ``{"rules": [{"json_path": str, "capability"?: str,
+    "schema_ref"?: str}, ...]}``. When present, ``adapter_invoker.
+    _invocation_from_envelope`` walks ``rules`` to populate
+    ``InvocationResult.extracted_outputs``. ``None`` means no typed
+    extraction (backwards-compatible default for adapters that predate
+    FAZ-B).
+    """
 
 
 @dataclass(frozen=True)
@@ -204,6 +214,36 @@ class AdapterRegistry:
             ))
             return
 
+        # Edge case contract (CNS-028v2 Q6v7, docs/BENCHMARK-SUITE.md §3.2):
+        # multiple ``output_parse.rules`` targeting the same capability are
+        # fail-closed at load time. The rule walker stores results keyed by
+        # ``capability`` in ``InvocationResult.extracted_outputs``, so two
+        # rules with the same capability would have order-dependent ambiguity.
+        # JSON Schema ``uniqueItems`` cannot express "same key within sibling
+        # objects"; this check is a complement, not a replacement.
+        op = raw.get("output_parse")
+        if isinstance(op, Mapping):
+            seen_caps: set[str] = set()
+            for rule in op.get("rules", ()):
+                if not isinstance(rule, Mapping):
+                    continue
+                cap = rule.get("capability")
+                if isinstance(cap, str):
+                    if cap in seen_caps:
+                        skipped.append(SkippedManifest(
+                            source_path=source_path,
+                            reason="schema_invalid",
+                            details=(
+                                f"output_parse.rules has multiple entries "
+                                f"for capability={cap!r}; duplicate "
+                                f"capability is invalid (see "
+                                f"docs/BENCHMARK-SUITE.md §3.2 edge-case "
+                                f"contract)."
+                            ),
+                        ))
+                        return
+                    seen_caps.add(cap)
+
         raw_id = raw.get("adapter_id")
         if raw_id != expected_id:
             skipped.append(SkippedManifest(
@@ -316,6 +356,13 @@ def _parse_manifest(
         policy_refs=tuple(raw.get("policy_refs", ())),
         evidence_refs=tuple(raw.get("evidence_refs", ())),
         source_path=source_path,
+        output_parse=(
+            # Deep-copy the rule list so mutation of the original raw
+            # dict cannot retroactively affect the loaded manifest.
+            {"rules": [dict(r) for r in raw["output_parse"].get("rules", ())]}
+            if "output_parse" in raw
+            else None
+        ),
     )
 
 

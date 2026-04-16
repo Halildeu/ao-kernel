@@ -26,14 +26,18 @@ Plan v2 (CNS-20260415-022 iter-1) decisions:
 
 from __future__ import annotations
 
+import importlib.resources
 import json
 import subprocess
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Literal, Mapping
+
+from jsonschema import Draft202012Validator
 
 from ao_kernel.adapters import AdapterManifest
 from ao_kernel.executor.errors import (
@@ -50,6 +54,8 @@ _SENTINEL_MISSING: object = object()
 
 _DIFF_MARKERS = ("---", "+++", "@@")
 
+_EMPTY_EXTRACTED: Mapping[str, Mapping[str, Any]] = MappingProxyType({})
+
 
 @dataclass(frozen=True)
 class InvocationResult:
@@ -63,6 +69,22 @@ class InvocationResult:
     cost_actual: Mapping[str, Any]
     stdout_path: Path | None
     stderr_path: Path | None
+    extracted_outputs: Mapping[str, Mapping[str, Any]] = field(
+        default_factory=lambda: _EMPTY_EXTRACTED
+    )
+    """Capability-keyed, schema-validated payloads extracted from the
+    adapter envelope by the ``output_parse`` rule walker (PR-B0, net-new).
+
+    Default: empty (``MappingProxyType({})``). Adapters without an
+    ``output_parse`` manifest field, and legacy callers that construct
+    :class:`InvocationResult` directly, see the empty default — no
+    behaviour change for pre-FAZ-B callers.
+
+    Keys are capability names (e.g. ``"review_findings"``). Values are
+    the extracted payloads after schema validation against each rule's
+    ``schema_ref``. See :func:`_walk_output_parse` and
+    ``docs/BENCHMARK-SUITE.md`` §3.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -356,7 +378,7 @@ def _parse_cli_stdout(
         parsed = None
 
     if isinstance(parsed, dict) and "status" in parsed:
-        return _invocation_from_envelope(parsed, log_path, elapsed, command)
+        return _invocation_from_envelope(parsed, log_path, elapsed, command, manifest=manifest)
 
     # text/plain fallback triple-gate (CLI side: no content-type, so
     # use (diff markers + write_diff capability + no prose) as the
@@ -418,6 +440,7 @@ def _parse_http_response(
                     log_path,
                     elapsed,
                     command=invocation.get("endpoint", "http"),
+                    manifest=manifest,
                 )
             raise AdapterOutputParseError(
                 raw_excerpt=stripped[:120],
@@ -493,6 +516,7 @@ def _invocation_from_envelope(
     log_path: Path,
     elapsed: float,
     command: str,
+    manifest: AdapterManifest | None = None,
 ) -> InvocationResult:
     status = envelope.get("status")
     if status not in {"ok", "declined", "interrupted", "failed", "partial"}:
@@ -500,6 +524,7 @@ def _invocation_from_envelope(
             raw_excerpt=json.dumps(envelope)[:120],
             detail=f"output_envelope.status invalid: {status!r}",
         )
+    extracted = _walk_output_parse(envelope, manifest) if manifest else _EMPTY_EXTRACTED
     return InvocationResult(
         status=status,
         diff=envelope.get("diff"),
@@ -516,6 +541,121 @@ def _invocation_from_envelope(
         cost_actual=envelope.get("cost_actual", {"time_seconds": elapsed}),
         stdout_path=log_path,
         stderr_path=None,
+        extracted_outputs=extracted,
+    )
+
+
+def _walk_output_parse(
+    envelope: Mapping[str, Any],
+    manifest: AdapterManifest,
+) -> Mapping[str, Mapping[str, Any]]:
+    """Walk ``manifest.output_parse.rules`` and populate extracted outputs.
+
+    Contract (CNS-028v2 iter-5 B4''''; docs/BENCHMARK-SUITE.md §3.2):
+
+    - No ``output_parse`` field on the manifest → empty mapping.
+    - Each rule's ``json_path`` is evaluated against the envelope with the
+      PR-A3 minimal JSONPath subset (``$.key(.key)*``).
+    - Missing key along the path fails fast with
+      :class:`AdapterOutputParseError` (edge case: json_path unresolvable).
+    - Extracted payload is validated against the rule's ``schema_ref``
+      (bundled ``ao_kernel/defaults/schemas/<name>`` preferred;
+      ``.ao/schemas/<name>`` fallback when a workspace override exists).
+    - Missing ``schema_ref`` on disk → :class:`AdapterOutputParseError`
+      (edge case: unresolvable schema_ref fail-closed).
+    - ``null`` payload: accepted if the schema accepts ``null``; otherwise
+      the schema validator rejects it (edge case: null payload
+      schema-decided).
+    - Rules without a ``capability`` key are walked and validated but not
+      stored — they serve as schema guards only.
+    """
+    if manifest.output_parse is None:
+        return _EMPTY_EXTRACTED
+    rules = manifest.output_parse.get("rules", ())
+    if not rules:
+        return _EMPTY_EXTRACTED
+    out: dict[str, Mapping[str, Any]] = {}
+    for rule in rules:
+        json_path = rule.get("json_path", "")
+        capability = rule.get("capability")
+        schema_ref = rule.get("schema_ref")
+        value = _jsonpath_dotted(envelope, json_path)
+        if value is _SENTINEL_MISSING:
+            raise AdapterOutputParseError(
+                raw_excerpt=json.dumps(envelope)[:120],
+                detail=(
+                    f"output_parse rule json_path={json_path!r} did not "
+                    f"resolve in adapter envelope (key absent)."
+                ),
+            )
+        if schema_ref:
+            schema = _resolve_schema_ref(schema_ref, manifest.source_path)
+            errors = list(Draft202012Validator(schema).iter_errors(value))
+            if errors:
+                summary = "; ".join(
+                    f"{list(e.absolute_path)}: {e.message}" for e in errors[:3]
+                )
+                raise AdapterOutputParseError(
+                    raw_excerpt=json.dumps(value)[:120],
+                    detail=(
+                        f"output_parse rule schema_ref={schema_ref!r} "
+                        f"validation failed: {summary}"
+                    ),
+                )
+        if capability and isinstance(value, Mapping):
+            out[capability] = value
+    return MappingProxyType(out) if out else _EMPTY_EXTRACTED
+
+
+def _resolve_schema_ref(
+    schema_ref: str,
+    manifest_source: Path,
+) -> Mapping[str, Any]:
+    """Resolve an ``output_parse`` rule's schema reference.
+
+    Resolution order:
+
+    1. Bundled ``ao_kernel/defaults/schemas/<schema_ref>`` (via
+       :mod:`importlib.resources` — wheel-safe, D4 invariant).
+    2. Workspace override: walk the manifest's source path upward looking
+       for ``.ao/schemas/<schema_ref>`` (matches the ``ao_kernel.adapters``
+       workspace-discovery pattern).
+
+    Raises :class:`AdapterOutputParseError` if neither location carries the
+    schema. Fail-closed per CNS-028v2 edge-case contract #2.
+    """
+    bundled_root = importlib.resources.files("ao_kernel.defaults.schemas")
+    bundled = bundled_root / schema_ref
+    try:
+        if bundled.is_file():
+            loaded: Mapping[str, Any] = json.loads(bundled.read_text(encoding="utf-8"))
+            return loaded
+    except (FileNotFoundError, OSError):
+        pass
+
+    # Walk upward from the manifest source looking for a workspace
+    # ``.ao/schemas/`` override. The manifest itself lives under
+    # ``<workspace>/.ao/adapters/`` in a configured workspace, so ``.ao``
+    # is one directory up.
+    probe = manifest_source.resolve().parent
+    for _ in range(5):
+        candidate = probe / ".ao" / "schemas" / schema_ref
+        if candidate.is_file():
+            loaded_override: Mapping[str, Any] = json.loads(
+                candidate.read_text(encoding="utf-8")
+            )
+            return loaded_override
+        if probe.parent == probe:
+            break
+        probe = probe.parent
+
+    raise AdapterOutputParseError(
+        raw_excerpt=schema_ref,
+        detail=(
+            f"output_parse rule schema_ref={schema_ref!r} could not be "
+            f"resolved under bundled ao_kernel/defaults/schemas/ or any "
+            f"workspace .ao/schemas/ override."
+        ),
     )
 
 
