@@ -92,7 +92,8 @@
         "run_tests",
         "open_pr",
         "human_interrupt",
-        "stream_output"
+        "stream_output",
+        "review_findings"
       ],
       "description": "Mirrors agent-adapter-contract.schema.v1.json::$defs/capability_enum. Drift regression test asserts set equality."
     },

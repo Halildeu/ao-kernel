@@ -66,6 +66,10 @@
       "uniqueItems": true,
       "items": {"type": "string", "minLength": 1},
       "description": "JSONL path patterns where adapter invocations emit evidence events. Standard pattern: '.ao/evidence/workflows/{run_id}/adapter-{adapter_id}.jsonl'. Multiple patterns allowed for adapters that write to additional evidence surfaces (e.g., SHA256 integrity manifest paths under '.ao/evidence/workflows/{run_id}/manifest.json')."
+    },
+    "output_parse": {
+      "$ref": "#/$defs/output_parse",
+      "description": "Optional, capability-aware typed-payload extraction surface (FAZ-B PR-B0). NET-NEW contract surface, distinct from invocation_http.response_parse. response_parse is transport-level: it maps an HTTP response body into the output_envelope shape. output_parse is orchestrator-level: after the envelope is in hand, the rule walker in adapter_invoker._invocation_from_envelope extracts named payloads from the envelope and validates each against a capability-specific schema. Adapters that do not declare output_parse behave as before; adapters that declare it advertise a typed extraction contract the orchestrator honours at invocation time. See docs/BENCHMARK-SUITE.md §3 for the rule shape and edge-case contracts."
     }
   },
   "$defs": {
@@ -91,9 +95,10 @@
         "run_tests",
         "open_pr",
         "human_interrupt",
-        "stream_output"
+        "stream_output",
+        "review_findings"
       ],
-      "description": "Atomic capability the adapter can perform. read_repo: adapter may read files from the workspace view. write_diff: adapter may produce a unified diff as output. run_tests: adapter may execute the workspace test suite in its worktree. open_pr: adapter may itself create a PR (e.g., GitHub Copilot cloud agent); if absent, ao-kernel opens the PR via gh-cli-pr adapter. human_interrupt: adapter may mid-run request human input via interrupt_contract. stream_output: adapter streams partial output chunks rather than returning a single response."
+      "description": "Atomic capability the adapter can perform. read_repo: adapter may read files from the workspace view. write_diff: adapter may produce a unified diff as output. run_tests: adapter may execute the workspace test suite in its worktree. open_pr: adapter may itself create a PR (e.g., GitHub Copilot cloud agent); if absent, ao-kernel opens the PR via gh-cli-pr adapter. human_interrupt: adapter may mid-run request human input via interrupt_contract. stream_output: adapter streams partial output chunks rather than returning a single response. review_findings: adapter produces a typed review-findings artifact (see review-findings.schema.v1.json) extracted via the output_parse rule-walker in adapter_invoker; required for the governed_review benchmark workflow."
     },
     "invocation": {
       "type": "object",
@@ -465,6 +470,41 @@
         }
       },
       "description": "Structured diff container. output_envelope.diff may carry the raw payload directly; this $def is for adapters that want to send metadata alongside the patch."
+    },
+    "output_parse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules"],
+      "properties": {
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/output_parse_rule"},
+          "description": "Ordered list of capability-aware extraction rules. The orchestrator (adapter_invoker._invocation_from_envelope) walks this list after the envelope is in hand and populates InvocationResult.extracted_outputs[capability] with each rule's validated payload. Multiple rules targeting the same capability MUST be rejected as invalid-manifest at load-time (edge-case contract: docs/BENCHMARK-SUITE.md §3.2); this uniqueness is enforced by loader validation, not schema-level constraint (closed-enum + uniqueItems does not cover 'same capability value across different rule objects')."
+        }
+      },
+      "description": "Net-new typed-payload extraction surface (PR-B0). Optional; adapters that omit it behave as before."
+    },
+    "output_parse_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["json_path"],
+      "properties": {
+        "json_path": {
+          "type": "string",
+          "pattern": "^\\$(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)+$",
+          "description": "JSONPath pointing into the adapter's output envelope. PR-A3 minimal subset ONLY: '$.key(.key)*'; no array indices, no wildcards, no filters. Non-conforming paths fail schema validation at manifest load. Matches the subset the existing adapter_invoker._jsonpath_dotted already honours."
+        },
+        "capability": {
+          "$ref": "#/$defs/capability_enum",
+          "description": "Optional. If present, the rule MUST match one of the capabilities the adapter also declares at top-level 'capabilities[]' (loader cross-ref); the extractor keys results by this name in InvocationResult.extracted_outputs. If absent, the rule is descriptive-only — the orchestrator extracts the payload but does not key it by a capability, and downstream artifact-write logic treats the rule as unnamed (informational)."
+        },
+        "schema_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional. Path to a JSON Schema for typed payload validation. Resolution order: (1) bundled 'ao_kernel/defaults/schemas/<name>', (2) workspace override '.ao/schemas/<name>'. Unresolvable schema_ref MUST fail-closed: preferred at manifest load-time (AdapterManifestCorruptedError); worst case at invocation path (AdapterOutputParseError → workflow error.category=output_parse_failed). Validation failure on the extracted payload raises the same output_parse_failed category. Edge cases — null payload, missing json_path, duplicate capability, envelope-has-field-but-no-rule — are contract-pinned in docs/BENCHMARK-SUITE.md §3.2."
+        }
+      }
     }
   }
 }

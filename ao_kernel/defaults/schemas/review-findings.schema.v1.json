@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:review-findings:v1",
+  "title": "Review Findings Artifact",
+  "description": "Typed artifact produced by an adapter that declares the review_findings capability. Transported via adapter envelope → output_parse rule walker (in adapter_invoker._invocation_from_envelope) → InvocationResult.extracted_outputs['review_findings'] → Executor.run_step(driver_managed=True) → artifacts.write_artifact() → workflow-run.step_record.output_ref. The envelope itself is NOT schema-validated against this shape; this schema validates the EXTRACTED payload, which the rule walker produces after navigating the output_parse rule's json_path into the adapter's envelope body. Consumers: FAZ-B PR-B6 review_ai_flow runtime + PR-B7 governed_review benchmark harness. See docs/BENCHMARK-SUITE.md §2 for the full transport chain and objective scoring.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "findings", "summary"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Artifact schema version. Locked to '1' for the v1 contract; breaking changes would ship as review-findings.schema.v2.json."
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"},
+      "description": "List of review findings. Empty array is legal (meaning: 'reviewed with no issues'); this is distinct from the adapter not returning a review-findings payload at all (which would fail extraction). The benchmark harness scores empty findings as a successful review run with no actionable issues."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable one-line summary of the review. Subject to evidence redaction rules when copied into audit stream."
+    },
+    "score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Optional. Reviewer self-confidence or coverage score, caller-defined semantics in [0.0, 1.0]. The governed_review benchmark harness may consume this as a threshold gate (e.g., 'reject run if score < 0.5'); absence is not a failure signal by itself."
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "message"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Workspace-relative path the finding applies to. Optional — findings may be file-agnostic (e.g., 'test coverage < threshold across the module')."
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-indexed line number inside 'file'. Optional; only meaningful if 'file' is also set."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning", "info", "note"],
+          "description": "Closed enum. 'error': blocking issue (must-fix). 'warning': should-fix concern. 'info': context or acknowledgement. 'note': inline annotation without verdict. 'critical' is deliberately NOT included (see CNS-20260416-028v2 iter-2 W7): adding a value that does not trigger a distinct policy/gate behaviour only inflates taxonomy; operators can filter by severity= ['error'] for the same effect."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable finding body. Subject to evidence redaction rules when copied into the audit stream."
+        },
+        "suggestion": {
+          "type": "string",
+          "description": "Optional. Proposed remediation or rewrite sketch. Not a diff — for a diff, use the adapter's write_diff capability instead."
+        }
+      }
+    }
+  }
+}
