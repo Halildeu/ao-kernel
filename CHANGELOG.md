@@ -7,6 +7,109 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B0 (docs + schemas + dormant policies + extraction layer)
+
+**FAZ-B Tranche B 1/9 — foundation only; runtime primitives for lease/
+fencing (PR-B1), cost tracking (PR-B2/B3), policy simulation (PR-B4),
+metrics export (PR-B5), review/commit AI workflows (PR-B6), and the
+benchmark suite (PR-B7) consume the contracts pinned here.**
+
+- **Four new operator-facing docs**:
+  - `docs/COORDINATION.md` — lease/fencing spec. Includes the locked
+    "Expiry Authority" table (`effective_expires_at = heartbeat_at +
+    expiry_seconds`; `CLAIM_CONFLICT_GRACE` distinct from
+    `CLAIM_CONFLICT`; in-grace revival; caller-driven cleanup).
+  - `docs/COST-MODEL.md` — object-shape price catalog (with checksum +
+    stale_after + source enum + `vendor_model_id` conditional) + spend
+    ledger + cost-aware routing. Budget axis extension
+    (`tokens_input` / `tokens_output`) described for PR-B2 runtime.
+  - `docs/METRICS.md` — Prometheus default low-cardinality label set
+    (`provider` / `direction` / `outcome` / `final_state`) + advanced
+    label opt-in via `policy_metrics.labels_advanced`.
+  - `docs/BENCHMARK-SUITE.md` — typed artifact transport chain and
+    five edge-case contracts (multi-rule fail-closed; unresolvable
+    `schema_ref` fail-closed; null payload schema-decided; missing
+    `json_path` fail-closed; envelope field without rule silently
+    ignored).
+- **Eight new JSON schemas** under `ao_kernel/defaults/schemas/`:
+  data: `claim.schema.v1.json`, `fencing-state.schema.v1.json`,
+  `price-catalog.schema.v1.json`, `spend-ledger.schema.v1.json`,
+  `review-findings.schema.v1.json`; policy:
+  `policy-coordination-claims.schema.v1.json`,
+  `policy-cost-tracking.schema.v1.json`,
+  `policy-metrics.schema.v1.json`.
+- **Three schema deltas** on pre-existing schemas:
+  - `agent-adapter-contract.schema.v1.json::$defs.capability_enum`
+    gains `review_findings` (seventh value).
+  - `agent-adapter-contract.schema.v1.json` gains a NEW top-level
+    `output_parse` contract surface (NET-NEW — distinct from
+    `invocation_http.response_parse`, which handles HTTP-transport
+    body→envelope parsing). `output_parse` is orchestrator-level
+    envelope→typed-payload extraction; rules shape
+    `{json_path, capability?, schema_ref?}`, JSONPath minimal subset
+    `$.key(.key)*` preserved from PR-A3. Adapters that do not declare
+    `output_parse` behave as before.
+  - `workflow-definition.schema.v1.json::$defs.capability_enum` gains
+    `review_findings` (drift parity —
+    `test_workflow_registry.py::TestPatternDriftGuard` asserts set
+    equality).
+- **Three bundled dormant policies** (all `enabled: false`; operator
+  opt-in via workspace override required): `policy_coordination_claims.
+  v1.json` (30s heartbeat, 90s expiry, 15s grace, 5 claims/agent,
+  allow-all resource pattern); `policy_cost_tracking.v1.json`
+  (`fail_closed_on_exhaust: true` locked, `strict_freshness: false`
+  default, `routing_by_cost` off); `policy_metrics.v1.json`
+  (defence-in-depth: both `enabled` and `labels_advanced.enabled` off,
+  allowlist closed enum `model | agent_id`).
+- **Two bundled defaults**:
+  `ao_kernel/defaults/catalogs/price-catalog.v1.json` (starter
+  catalog, 6 entries — anthropic × 3, openai × 2, google × 1,
+  canonical-JSON SHA-256 checksum over `entries[]`); operators
+  override at `.ao/cost/catalog.v1.json`.
+  `ao_kernel/defaults/workflows/review_ai_flow.v1.json` — contract
+  pin for the `governed_review` benchmark (B6 runtime impl).
+
+### Changed — FAZ-B PR-B0
+
+- `ao_kernel/config.py::load_default` accepts a new `"catalogs"`
+  resource type alongside the existing plural kinds
+  (`policies/schemas/registry/extensions/operations`). Full-filename
+  convention preserved; call site
+  `load_default("catalogs", "price-catalog.v1.json")`.
+- `ao_kernel/executor/adapter_invoker.py::_invocation_from_envelope`
+  gains an optional `manifest` parameter. When the manifest carries
+  an `output_parse` section, its rule walker populates
+  `InvocationResult.extracted_outputs` (new optional field, default
+  `MappingProxyType({})`). Layer separation: `adapter_invoker` =
+  transport + capability-aware extraction; `Executor` stays
+  schema-agnostic and still owns artifact write + `step_record` CAS.
+- `InvocationResult` (public via `ao_kernel.executor.__init__.__all__`)
+  gains one new **optional** field `extracted_outputs:
+  Mapping[str, Mapping[str, Any]]`; existing fields are unchanged in
+  name, order, and type. Pre-FAZ-B callers do not need to pass the
+  new field. Semver handled as a minor bump, targeted at `v3.2.0` at
+  the end of FAZ-B.
+- `ao_kernel/adapters/manifest_loader.py::AdapterManifest` gains one
+  new optional field `output_parse: Mapping | None = None` and the
+  registry loader now rejects manifests with duplicate `capability`
+  values across `output_parse.rules` as
+  `SkippedManifest(reason="schema_invalid")` — edge-case contract #1
+  enforcement at load time.
+
+### Adversarial Consensus
+
+- **CNS-20260416-028v2** (5 iterations, MCP thread
+  `019d962d-1592-76b3-8702-b86322b83a6a`): plan-time review of PR-B0
+  reached AGREE at iter 5 with `ready_for_impl: true`. Seven blockers
+  + fourteen warnings absorbed across iters 1–4; iter 5 returned two
+  non-blocking hardening warnings, both absorbed into plan v7 before
+  implementation. Codex write-order advisory (Q1–Q6) absorbed as
+  plan §3 (contract-first risk-first 7-step write order + 5-commit
+  DAG + test-file sahiplik-bazlı dağıtım + CHANGELOG semver stance +
+  four locked edge-case contracts).
+- Consensus document: `.ao/consultations/CNS-20260416-028v2.
+  consensus.md`.
+
 ## [3.1.0] - 2026-04-16
 
 **FAZ-A Governed Demo MVP ship.** End-to-end governed workflow: intent → workflow → adapter → diff → CI → approval → PR → evidence. 8 PRs (A0–A6), 28 Codex adversarial iterations, 1500+ tests, 85%+ coverage.
