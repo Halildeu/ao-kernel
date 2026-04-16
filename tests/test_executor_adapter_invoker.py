@@ -180,6 +180,62 @@ class TestCliHappyPath:
         assert "+hello world" in result.diff
 
 
+class TestBundledCodexStubEndToEnd:
+    """CNS-028v2 iter-7 blocker fix: a real subprocess invocation that
+    goes through the BUNDLED codex-stub manifest (not a hand-built
+    _manifest_cli() helper) must succeed — the bundled manifest
+    declares an output_parse rule for review_findings, so the stub
+    runtime emits the payload and the rule walker extracts it without
+    tripping output_parse_failed."""
+
+    def test_bundled_manifest_invocation_extracts_review_findings(
+        self, tmp_path: Path
+    ) -> None:
+        import os as _os
+        from ao_kernel.adapters import AdapterRegistry
+
+        rid = "00000000-0000-4000-8000-0000000b0001"
+
+        # Load the BUNDLED manifest (same one that ships in the wheel).
+        adapters = AdapterRegistry()
+        adapters.load_bundled()
+        manifest = adapters.get("codex-stub")
+        # Sanity: bundled manifest has the output_parse rule (else the
+        # blocker condition never arises).
+        assert manifest.output_parse is not None
+        assert "review_findings" in manifest.capabilities
+
+        sandbox = _sandbox(
+            tmp_path,
+            env={
+                "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin",
+                "PYTHONPATH": _os.getcwd(),
+                "HOME": "/tmp/fake-home",
+            },
+        )
+        worktree = _worktree(tmp_path, rid)
+        budget = _budget()
+
+        result, _budget_after = invoke_cli(
+            manifest=manifest,
+            input_envelope={"task_prompt": "review this", "run_id": rid},
+            sandbox=sandbox,
+            worktree=worktree,
+            budget=budget,
+            workspace_root=tmp_path,
+            run_id=rid,
+        )
+
+        # Invocation succeeded (not output_parse_failed).
+        assert result.status == "ok"
+        # The walker extracted review_findings via the bundled rule.
+        assert "review_findings" in result.extracted_outputs
+        payload = result.extracted_outputs["review_findings"]
+        assert payload["schema_version"] == "1"
+        assert payload["findings"] == []
+        assert "codex-stub" in payload["summary"].lower()
+
+
 class TestCliEnvHermeticity:
     def test_env_only_contains_sandbox_keys(self, tmp_path: Path) -> None:
         """Subprocess env must match sandbox.env_vars exactly; host env

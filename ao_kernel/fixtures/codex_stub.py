@@ -17,7 +17,18 @@ Output (stdout; single line JSON):
      "commands_executed":[],
      "evidence_events":[],
      "finish_reason":"normal",
-     "cost_actual":{"tokens_input":0,"tokens_output":0,"time_seconds":0.0}}
+     "cost_actual":{"tokens_input":0,"tokens_output":0,"time_seconds":0.0},
+     "review_findings":{"schema_version":"1","findings":[],
+                        "summary":"codex-stub: deterministic review (no issues)."}}
+
+The bundled manifest ``ao_kernel/defaults/adapters/codex-stub.manifest.v1.json``
+advertises the ``review_findings`` capability and pins an
+``output_parse`` rule pointing at ``review-findings.schema.v1.json``.
+The rule walker in ``adapter_invoker._walk_output_parse`` extracts
+``$.review_findings`` on every invocation, so the stub always emits
+a schema-valid (empty findings) payload — bundled-path invocations
+never fail with ``output_parse_failed``. The payload is trivially
+valid; the stub does not actually review anything.
 
 Exit code ``0`` on success; non-zero reserved for simulated crashes
 (test fixtures may configure alternate behaviour via env vars).
@@ -73,7 +84,9 @@ def main(argv: list[str] | None = None) -> int:
             pass
 
     # Deterministic: the stub ignores prompt content and always emits
-    # the canned diff.
+    # the canned diff + an empty-findings review payload. The latter
+    # keeps the bundled output_parse rule green end-to-end on every
+    # invocation without the stub needing to do any actual reviewing.
     envelope = {
         "status": "ok",
         "diff": _CANNED_DIFF,
@@ -84,6 +97,11 @@ def main(argv: list[str] | None = None) -> int:
             "tokens_input": 0,
             "tokens_output": 0,
             "time_seconds": 0.0,
+        },
+        "review_findings": {
+            "schema_version": "1",
+            "findings": [],
+            "summary": "codex-stub: deterministic review (no issues).",
         },
     }
     sys.stdout.write(json.dumps(envelope))
