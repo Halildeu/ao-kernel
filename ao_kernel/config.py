@@ -22,7 +22,14 @@ _VALID_RESOURCE_TYPES = frozenset({
     "registry",
     "extensions",
     "operations",
+    "catalogs",
 })
+# "catalogs" added in FAZ-B PR-B0 (CNS-028v2 iter-5 W2/W4 absorb):
+# bundled ao_kernel/defaults/catalogs/*.v1.json carry reference data
+# (e.g. price-catalog.v1.json) that has the same wheel-safe discovery
+# need as policies/schemas but is content-versioned data rather than
+# enforcement policy. Loader path follows the existing plural kind
+# convention; callers use full filename per test_config.py:70 pattern.
 
 
 def workspace_root(override: str | Path | None = None) -> Path | None:

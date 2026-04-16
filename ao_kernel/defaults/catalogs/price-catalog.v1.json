@@ -1,0 +1,69 @@
+{
+  "catalog_version": "1",
+  "generated_at": "2026-04-16T00:00:00+00:00",
+  "source": "bundled",
+  "stale_after": "2026-07-16T00:00:00+00:00",
+  "checksum": "sha256:5029b3a828c479a99daa937e1b06f23a314f4713e0e28e29de901a44d9299e81",
+  "entries": [
+    {
+      "provider_id": "anthropic",
+      "model": "claude-3-5-sonnet",
+      "input_cost_per_1k": 0.003,
+      "output_cost_per_1k": 0.015,
+      "cached_input_cost_per_1k": 0.0003,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-10-22"
+    },
+    {
+      "provider_id": "anthropic",
+      "model": "claude-3-5-haiku",
+      "input_cost_per_1k": 0.0008,
+      "output_cost_per_1k": 0.004,
+      "cached_input_cost_per_1k": 8e-05,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-11-04"
+    },
+    {
+      "provider_id": "anthropic",
+      "model": "claude-3-opus",
+      "input_cost_per_1k": 0.015,
+      "output_cost_per_1k": 0.075,
+      "cached_input_cost_per_1k": 0.0015,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-02-29"
+    },
+    {
+      "provider_id": "openai",
+      "model": "gpt-4o",
+      "input_cost_per_1k": 0.0025,
+      "output_cost_per_1k": 0.01,
+      "cached_input_cost_per_1k": 0.00125,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-08-06"
+    },
+    {
+      "provider_id": "openai",
+      "model": "gpt-4o-mini",
+      "input_cost_per_1k": 0.00015,
+      "output_cost_per_1k": 0.0006,
+      "cached_input_cost_per_1k": 7.5e-05,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-07-18"
+    },
+    {
+      "provider_id": "google",
+      "model": "gemini-1.5-pro",
+      "input_cost_per_1k": 0.00125,
+      "output_cost_per_1k": 0.005,
+      "cached_input_cost_per_1k": 0.0003125,
+      "currency": "USD",
+      "billing_unit": "per_1k_tokens",
+      "effective_date": "2024-09-24"
+    }
+  ]
+}

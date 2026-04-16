@@ -87,6 +87,46 @@ class TestLoadDefault:
         data = load_default("operations", "llm_class_registry.v1.json")
         assert isinstance(data, dict)
 
+    def test_load_catalog(self):
+        """PR-B0: bundled price catalog under catalogs/ resource type."""
+        data = load_default("catalogs", "price-catalog.v1.json")
+        assert isinstance(data, dict)
+        assert data["catalog_version"] == "1"
+        assert data["source"] == "bundled"
+        assert isinstance(data["entries"], list)
+        assert len(data["entries"]) >= 4
+        # Each entry carries provider/model/unit pricing
+        for e in data["entries"]:
+            assert "provider_id" in e and "model" in e
+            assert e["currency"] == "USD"
+            assert e["billing_unit"] == "per_1k_tokens"
+
+    def test_load_catalog_checksum_valid(self):
+        """Bundled catalog's checksum must match the canonical-JSON
+        SHA-256 of its entries[] array (the verification the PR-B2
+        runtime will perform at load)."""
+        import hashlib
+        import json as _json
+
+        data = load_default("catalogs", "price-catalog.v1.json")
+        canonical = _json.dumps(
+            data["entries"],
+            sort_keys=True,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        expected = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        assert data["checksum"] == expected
+
+    def test_load_default_deterministic_equality(self):
+        """Two consecutive ``load_default`` calls return objects that
+        compare equal by value (identity is NOT asserted — each call
+        parses fresh JSON; W5''v5 absorb in CNS-028v2)."""
+        a = load_default("catalogs", "price-catalog.v1.json")
+        b = load_default("catalogs", "price-catalog.v1.json")
+        assert a == b  # value equality
+        assert a is not b  # but fresh dict each time (no shared-mutable cache)
+
     def test_invalid_resource_type(self):
         with pytest.raises(ValueError, match="resource_type"):
             load_default("invalid_type", "file.json")
