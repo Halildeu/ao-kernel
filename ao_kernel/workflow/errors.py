@@ -319,3 +319,28 @@ class IntentRulesCorruptedError(WorkflowError):
         super().__init__(
             f"Intent rules{where} corrupted ({reason}): {details}"
         )
+
+
+class IntentClassificationError(WorkflowError):
+    """Runtime intent classification failed (PR-A6 B4).
+
+    Raised by ``IntentRouter.classify`` when the ``llm_fallback``
+    strategy cannot produce a valid workflow_id (LLM response
+    outside available ids, transport error, or ``[llm]`` extra not
+    installed). Distinct from ``IntentRulesCorruptedError`` which
+    is a load-time validation failure.
+    """
+
+    def __init__(
+        self,
+        *,
+        intent_text: str,
+        reason: str,
+        details: str = "",
+    ) -> None:
+        self.intent_text = intent_text
+        self.reason = reason
+        self.details = details
+        super().__init__(
+            f"Intent classification failed ({reason}): {details}"
+        )

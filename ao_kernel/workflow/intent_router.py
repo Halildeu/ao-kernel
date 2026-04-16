@@ -73,7 +73,7 @@ class ClassificationResult:
     workflow_version: str | None
     confidence: float
     matched_rule_id: str
-    match_type: Literal["keyword", "regex", "combined", "default"]
+    match_type: Literal["keyword", "regex", "combined", "default", "llm_fallback"]
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +273,7 @@ class IntentRouter:
             r for r in self._rules if _rule_matches(r, input_text)
         ]
         if not matching:
-            return self._fallback_result()
+            return self._fallback_result(input_text)
 
         top_priority = matching[0].priority
         tied = [r for r in matching if r.priority == top_priority]
@@ -295,7 +295,7 @@ class IntentRouter:
             match_type=winner.match_type,
         )
 
-    def _fallback_result(self) -> ClassificationResult | None:
+    def _fallback_result(self, input_text: str = "") -> ClassificationResult | None:
         if self._fallback_strategy == "error_on_no_match":
             return None
         if self._fallback_strategy == "use_default":
@@ -310,13 +310,97 @@ class IntentRouter:
                 match_type="default",
             )
         if self._fallback_strategy == "llm_fallback":
-            raise NotImplementedError(
-                "[llm] fallback is not implemented in PR-A2; "
-                "implementation ships in PR-A6 under the [llm] extra"
-            )
+            return self._llm_classify(input_text)
         # Unreachable per schema enum; loud fail for safety.
         raise RuntimeError(
             f"Unknown fallback_strategy: {self._fallback_strategy!r}"
+        )
+
+    def _llm_classify(self, input_text: str) -> ClassificationResult:
+        """LLM-based intent classification fallback (PR-A6 B4 absorb).
+
+        Requires ``ao-kernel[llm]`` (tenacity + tiktoken). Lazy import
+        so the core package does not pull in LLM deps.
+
+        Prompt: ask the model to return one workflow_id from available ids.
+        Parse: exact match against available ids. Fail-closed on any
+        mismatch, transport error, or missing ``[llm]`` extra.
+        """
+        from ao_kernel.workflow.errors import IntentClassificationError
+
+        try:
+            from ao_kernel.llm import build_request, execute_request, normalize_response
+        except ImportError as exc:
+            raise IntentClassificationError(
+                intent_text=input_text,
+                reason="llm_extra_missing",
+                details="llm_fallback requires ao-kernel[llm]",
+            ) from exc
+
+        available_ids = sorted(self._available_workflow_ids)
+        if not available_ids:
+            raise IntentClassificationError(
+                intent_text=input_text,
+                reason="no_available_workflows",
+                details="no workflow ids registered for llm_fallback to choose from",
+            )
+
+        prompt = (
+            f"Given the following intent text, return ONLY one of these "
+            f"workflow IDs (nothing else): {', '.join(available_ids)}.\n\n"
+            f"Intent: {input_text}\n\nWorkflow ID:"
+        )
+        messages = [{"role": "user", "content": prompt}]
+
+        try:
+            # Use default route — caller should have env vars set
+            from ao_kernel.llm import resolve_route
+            route = resolve_route(intent="FAST_TEXT")
+            req = build_request(
+                provider_id=route.get("provider_id", "openai"),
+                model=route.get("model", "gpt-4"),
+                messages=messages,
+                base_url=route.get("base_url", ""),
+                api_key=route.get("api_key", ""),
+            )
+            raw_result = execute_request(
+                url=req["url"],
+                headers=req["headers"],
+                body_bytes=req["body_bytes"],
+                timeout_seconds=30.0,
+                provider_id=route.get("provider_id", "openai"),
+                request_id="llm_fallback",
+            )
+            resp_bytes = raw_result.get("resp_bytes", b"")
+            resp = normalize_response(resp_bytes, provider_id=route.get("provider_id", "openai"))
+            candidate = resp.get("text", "").strip()
+        except Exception as exc:
+            raise IntentClassificationError(
+                intent_text=input_text,
+                reason="llm_transport_error",
+                details=str(exc),
+            ) from exc
+
+        if candidate not in available_ids:
+            raise IntentClassificationError(
+                intent_text=input_text,
+                reason="llm_invalid_response",
+                details=f"LLM returned {candidate!r}, not in {available_ids}",
+            )
+
+        return ClassificationResult(
+            workflow_id=candidate,
+            workflow_version=None,
+            confidence=0.5,  # LLM classification → lower confidence
+            matched_rule_id="__llm_fallback__",
+            match_type="llm_fallback",
+        )
+
+    @property
+    def _available_workflow_ids(self) -> frozenset[str]:
+        """Collect workflow_ids from all registered rules."""
+        return frozenset(
+            r.workflow_id for r in self._rules if r.workflow_id
         )
 
 

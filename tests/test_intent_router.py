@@ -215,13 +215,18 @@ class TestFallback:
         assert result.matched_rule_id == "__default__"
         assert result.match_type == "default"
 
-    def test_llm_fallback_raises_not_implemented(self) -> None:
+    def test_llm_fallback_raises_classification_error_when_llm_missing(self) -> None:
+        """PR-A6: llm_fallback now tries to call LLM; without [llm]
+        extra installed in test env it raises IntentClassificationError
+        (not NotImplementedError)."""
+        from ao_kernel.workflow.errors import IntentClassificationError
+
         rule = _rule(rule_id="r1", keywords=("fix",))
         router = IntentRouter(
             rules=[rule],
             fallback_strategy="llm_fallback",
         )
-        with pytest.raises(NotImplementedError, match=r"\[llm\]"):
+        with pytest.raises(IntentClassificationError):
             router.classify("unrelated text")
 
 

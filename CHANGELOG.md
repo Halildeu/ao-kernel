@@ -7,6 +7,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-04-16
+
+**FAZ-A Governed Demo MVP ship.** End-to-end governed workflow: intent → workflow → adapter → diff → CI → approval → PR → evidence. 8 PRs (A0–A6), 28 Codex adversarial iterations, 1500+ tests, 85%+ coverage.
+
+### Added — FAZ-A PR-A6 (demo + adapters + meta-extra + v3.1.0)
+
+- `examples/demo_bugfix.py` — runnable end-to-end demo with codex-stub adapter, programmatic auto-approval, evidence timeline + manifest verify.
+- `ao_kernel/defaults/adapters/` — 3 bundled adapter manifests (claude-code-cli, codex-stub, gh-cli-pr) discoverable via `importlib.resources`. `AdapterRegistry.load_bundled()` new method; workspace > bundled precedence on same `adapter_id`.
+- `ao_kernel/fixtures/gh_pr_stub.py` — deterministic PR-creation stub (no real `gh` CLI invocation; exercises CLI transport for demos).
+- `ao_kernel/workflow/intent_router.py` — `llm_fallback` strategy concrete: lazy-import `ao_kernel.llm` (requires `[llm]` extra); prompt-based classification returning workflow_id; fail-closed `IntentClassificationError` on invalid response, transport error, or missing extra.
+- `ao_kernel/workflow/errors.py` — `IntentClassificationError` typed exception for runtime classification failures (distinct from `IntentRulesCorruptedError` load-time validation).
+- `pyproject.toml` — `[coding]` meta-extra (`[llm]` placeholder; code-index/LSP/metrics land in FAZ-C); `[enterprise]` placeholder.
+- Version bump `3.0.0` → `3.1.0` (pyproject.toml + `ao_kernel.__init__.__version__`).
+- `README.md` — CLI reference expanded with 4 evidence subcommands + demo quickstart section.
+
+### Added — FAZ-A PR-A5 (evidence timeline CLI + SHA-256 manifest + replay)
+
+Moved from [Unreleased]:
+
 ### Added — FAZ-A PR-A0 (docs + spec, no code)
 
 - Agent adapter contract schema (`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json`). Defines how external coding agent runtimes (Claude Code CLI, Codex, Cursor background agent, GitHub Copilot cloud agent, gh CLI PR connector, custom CLI/HTTP) integrate with ao-kernel. 8 `adapter_kind` variants + 6 `capabilities` + `cli`/`http` invocation + input/output envelopes + evidence/policy refs. Referential integrity with workflow-run and worktree policy is narrative at PR-A0; loader-level validation lands in Tranche A PR-A2.
