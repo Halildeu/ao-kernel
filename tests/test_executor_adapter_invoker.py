@@ -843,3 +843,117 @@ class TestDuplicateCapabilityLoaderCheck:
         assert skipped.reason == "schema_invalid"
         assert "review_findings" in skipped.details
         assert "duplicate" in skipped.details.lower()
+
+
+class TestCapabilityCrossRefLoaderCheck:
+    """CNS-028v2 iter-6 W2 post-impl fix: output_parse.rules[*].capability
+    must appear in the adapter's top-level capabilities[] declaration.
+    Extraction rules advertise typed payload surface; that surface cannot
+    bypass the top-level capability advertisement."""
+
+    def test_unadvertised_capability_in_rule_fails_at_load(
+        self, tmp_path: Path
+    ) -> None:
+        from ao_kernel.adapters.manifest_loader import AdapterRegistry
+
+        manifest_dir = tmp_path / ".ao" / "adapters"
+        manifest_dir.mkdir(parents=True)
+        manifest_path = manifest_dir / "sneaky-stub.manifest.v1.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "adapter_id": "sneaky-stub",
+                    "adapter_kind": "custom-cli",
+                    "version": "1.0.0",
+                    # NOTE: top-level capabilities does NOT include
+                    # review_findings, but output_parse rule does.
+                    "capabilities": ["read_repo"],
+                    "invocation": {
+                        "transport": "cli",
+                        "command": "python3",
+                        "args": ["--help"],
+                        "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+                        "cwd_policy": "per_run_worktree",
+                        "stdin_mode": "none",
+                    },
+                    "input_envelope": {
+                        "task_prompt": "x",
+                        "run_id": "11111111-1111-4111-8111-111111111111",
+                    },
+                    "output_envelope": {"status": "ok"},
+                    "policy_refs": [
+                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+                    ],
+                    "evidence_refs": [
+                        ".ao/evidence/workflows/{run_id}/adapter-sneaky-stub.jsonl"
+                    ],
+                    "output_parse": {
+                        "rules": [
+                            {
+                                "json_path": "$.review_findings",
+                                # Capability not in capabilities[] — must fail.
+                                "capability": "review_findings",
+                            },
+                        ]
+                    },
+                }
+            )
+        )
+        registry = AdapterRegistry()
+        report = registry.load_workspace(tmp_path)
+        assert len(report.loaded) == 0
+        assert len(report.skipped) == 1
+        skipped = report.skipped[0]
+        assert skipped.reason == "schema_invalid"
+        assert "review_findings" in skipped.details
+        assert "not listed" in skipped.details.lower() or "capabilities" in skipped.details
+
+    def test_rule_without_capability_does_not_need_cross_ref(
+        self, tmp_path: Path
+    ) -> None:
+        """Rules without a ``capability`` key are descriptive-only schema
+        guards; they do not participate in the cross-ref check (there is
+        nothing to cross-ref)."""
+        from ao_kernel.adapters.manifest_loader import AdapterRegistry
+
+        manifest_dir = tmp_path / ".ao" / "adapters"
+        manifest_dir.mkdir(parents=True)
+        manifest_path = manifest_dir / "guard-only-stub.manifest.v1.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "adapter_id": "guard-only-stub",
+                    "adapter_kind": "custom-cli",
+                    "version": "1.0.0",
+                    "capabilities": ["read_repo"],
+                    "invocation": {
+                        "transport": "cli",
+                        "command": "python3",
+                        "args": ["--help"],
+                        "env_allowlist_ref": "#/env_allowlist/allowed_keys",
+                        "cwd_policy": "per_run_worktree",
+                        "stdin_mode": "none",
+                    },
+                    "input_envelope": {
+                        "task_prompt": "x",
+                        "run_id": "11111111-1111-4111-8111-111111111111",
+                    },
+                    "output_envelope": {"status": "ok"},
+                    "policy_refs": [
+                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+                    ],
+                    "evidence_refs": [
+                        ".ao/evidence/workflows/{run_id}/adapter-guard-only-stub.jsonl"
+                    ],
+                    "output_parse": {
+                        "rules": [
+                            {"json_path": "$.meta"},  # no capability — OK
+                        ]
+                    },
+                }
+            )
+        )
+        registry = AdapterRegistry()
+        report = registry.load_workspace(tmp_path)
+        assert len(report.loaded) == 1
+        assert len(report.skipped) == 0

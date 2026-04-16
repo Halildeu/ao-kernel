@@ -49,19 +49,21 @@ Per [CNS-20260416-028v2 B4'''' resolution](../.ao/consultations/CNS-20260416-028
 ```
 adapter envelope.review_findings        # free-form field in open envelope body
          ↓
-adapter_invoker._invocation_from_envelope walks output_parse rules
+adapter_invoker._invocation_from_envelope walks output_parse rules    [B0: shipped]
          ↓ (json_path extract → schema_ref validate)
-InvocationResult.extracted_outputs["review_findings"] = {...}
+InvocationResult.extracted_outputs["review_findings"] = {...}          [B0: shipped]
          ↓
-Executor.run_step(driver_managed=True) reads extracted_outputs
+Executor.run_step(driver_managed=True) reads extracted_outputs          [B6: runtime]
          ↓
-artifacts.write_artifact() → step_record.output_ref
+artifacts.write_artifact() → step_record.output_ref                     [B6: runtime]
 ```
 
-Two hard invariants:
+**Stage note.** B0 ships the **upper half** of this chain: the rule walker, typed validation, and `InvocationResult.extracted_outputs` population are real and covered by `tests/test_executor_adapter_invoker.py::TestOutputParseExtraction`. The **lower half** — `Executor.run_step(driver_managed=True)` reading `extracted_outputs` and calling `artifacts.write_artifact()` to populate `step_record.output_ref` — is pinned as contract here but implemented in PR-B6 alongside the `review_ai_flow` runtime. B0's `Executor` sees the new field but does not act on it; pre-FAZ-B callers are unaffected.
+
+Two hard invariants (enforced by B0 code, not just pinned by docs):
 
 - **Adapter contract `output_envelope` is NOT touched.** The envelope stays a closed shape; the capability payload lives in a free-form field and schema validation happens after extraction, not on the envelope itself.
-- **Extraction is transport-layer, not orchestrator-layer.** `adapter_invoker` owns the rule walker; `Executor` is schema-agnostic and just writes the artifact it receives.
+- **Extraction is transport-layer, not orchestrator-layer.** `adapter_invoker` owns the rule walker; `Executor` is schema-agnostic and will just forward the artifact it receives once B6 wires the lower half.
 
 Contract surface for capability-aware extraction is the NEW `output_parse` rule on the adapter manifest (§3).
 
@@ -97,7 +99,7 @@ Adapters that do not declare `output_parse` are unaffected; the field is net-new
 |---|---|---|
 | Multiple rules target the same `capability` | Invalid manifest, fail-closed at manifest load-time | `AdapterManifestCorruptedError` |
 | `schema_ref` resolves to no schema (not bundled, not in workspace override) | Fail-closed; preferred at load-time, worst case at invocation | `AdapterManifestCorruptedError` (load-time) or `AdapterOutputParseError` → workflow `error.category=output_parse_failed` (invocation) |
-| `json_path` resolves but payload is JSON `null` | No special prohibition — schema decides. If `schema_ref` accepts `null`, payload is written as-is; if not, validation fails normally. | `AdapterOutputParseError` (if schema rejects null) |
+| `json_path` resolves but payload is JSON `null` | Schema decides whether the value itself is rejected. Separately, the rule walker keys results into `InvocationResult.extracted_outputs` **only when the extracted value is a `Mapping`**; a `null` payload that the schema accepts therefore passes validation and is NOT stored (extracted_outputs stays empty for that capability), rather than being written as `None`. Rationale: downstream `artifacts.write_artifact()` expects dict-shaped JSON payloads; a keyed `None` would be indistinguishable from "capability not extracted" for readers. Adapters that need to communicate "reviewed with no findings" should return a valid `review-findings` object with `findings: []`, not a null payload. | `AdapterOutputParseError` only if `schema_ref` rejects `null`; silent non-storage otherwise |
 | `json_path` does not resolve (key absent in envelope) | Fail-closed — `AdapterOutputParseError` → `error.category=output_parse_failed` | Same as schema failure |
 | Envelope contains a capability payload field but the manifest has no `output_parse` rule for it | Silently ignored — extraction is opt-in | (none) |
 

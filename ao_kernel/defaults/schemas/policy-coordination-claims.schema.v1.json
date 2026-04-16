@@ -46,9 +46,40 @@
       "description": "Allowlist of glob patterns. resource_id must match at least one pattern to be acquirable. Default ['*'] (allow all) for the bundled dormant policy."
     },
     "evidence_redaction": {
+      "$ref": "#/$defs/evidence_redaction"
+    }
+  },
+  "$defs": {
+    "evidence_redaction": {
       "type": "object",
-      "description": "Mirrors policy_worktree_profile.evidence_redaction shape. Redaction rules applied to claim event payloads (owner_agent_id, resource_id patterns that might encode secrets, etc).",
-      "additionalProperties": true
+      "additionalProperties": false,
+      "description": "Closed-shape redaction configuration applied to claim event payloads (owner_agent_id, resource_id patterns that might encode secrets, etc). Pattern mirrors policy_worktree_profile.evidence_redaction. Plan v7 §2.5 closed-shape discipline; post-impl fix per CNS-028v2 iter-6 W5.",
+      "properties": {
+        "env_keys_matching": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Regex patterns matched against env key names; matching values are replaced with '***REDACTED***' before the event is written. Case-insensitive; authored with (?i) as in policy_worktree_profile."
+        },
+        "stdout_patterns": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Regex patterns matched against stdout-like free-text fields in coordination event payloads. Overlap with policy_worktree_profile.stdout_patterns is expected — both layers redact independently."
+        },
+        "file_content_patterns": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Regex patterns matched against inline file-content-like payloads (rarely used for coordination events; present for shape parity)."
+        },
+        "patterns": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Bundled-policy convenience field: a single flat list of regex patterns applied to any string value in the coordination event payload. Dormant default ships with an empty list."
+        },
+        "_redaction_scope_note": {
+          "type": "string",
+          "description": "Free-form explanatory comment (pattern: policy_worktree_profile._redaction_scope_note)."
+        }
+      }
     }
   }
 }

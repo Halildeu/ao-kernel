@@ -2,7 +2,7 @@
   "adapter_id": "codex-stub",
   "adapter_kind": "codex-stub",
   "version": "1.0.0",
-  "capabilities": ["read_repo", "write_diff"],
+  "capabilities": ["read_repo", "write_diff", "review_findings"],
   "invocation": {
     "transport": "cli",
     "command": "python3",
@@ -18,6 +18,15 @@
   },
   "output_envelope": {
     "status": "ok"
+  },
+  "output_parse": {
+    "rules": [
+      {
+        "json_path": "$.review_findings",
+        "capability": "review_findings",
+        "schema_ref": "review-findings.schema.v1.json"
+      }
+    ]
   },
   "policy_refs": [
     "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"

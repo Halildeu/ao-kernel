@@ -221,8 +221,19 @@ class AdapterRegistry:
         # rules with the same capability would have order-dependent ambiguity.
         # JSON Schema ``uniqueItems`` cannot express "same key within sibling
         # objects"; this check is a complement, not a replacement.
+        #
+        # Second check (CNS-028v2 iter-6 W2 post-impl fix): every rule's
+        # ``capability`` value — when present — must also appear in the
+        # adapter's top-level ``capabilities[]`` declaration. The adapter
+        # advertises what it supports; extraction rules reference that
+        # advertised surface. A rule referencing an un-advertised capability
+        # would silently expand the adapter's effective surface via the
+        # extraction side channel, which defeats the point of
+        # ``capabilities[]`` as the source of truth. Fail-closed at load
+        # time; matches the rationale in the output_parse schema description.
         op = raw.get("output_parse")
         if isinstance(op, Mapping):
+            advertised_caps = frozenset(raw.get("capabilities", ()))
             seen_caps: set[str] = set()
             for rule in op.get("rules", ()):
                 if not isinstance(rule, Mapping):
@@ -243,6 +254,20 @@ class AdapterRegistry:
                         ))
                         return
                     seen_caps.add(cap)
+                    if cap not in advertised_caps:
+                        skipped.append(SkippedManifest(
+                            source_path=source_path,
+                            reason="schema_invalid",
+                            details=(
+                                f"output_parse.rules references capability="
+                                f"{cap!r} that is not listed in top-level "
+                                f"capabilities={sorted(advertised_caps)!r}; "
+                                f"extraction rules may only reference "
+                                f"advertised capabilities (CNS-028v2 iter-6 "
+                                f"W2)."
+                            ),
+                        ))
+                        return
 
         raw_id = raw.get("adapter_id")
         if raw_id != expected_id:

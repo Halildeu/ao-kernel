@@ -125,6 +125,34 @@ class TestBundledDefaultsValidate:
         # Declared capability requirement references the new enum value.
         assert "review_findings" in flow["required_capabilities"]
 
+    def test_bundled_review_ai_flow_cross_ref_valid_against_bundled_adapters(
+        self,
+    ) -> None:
+        """CNS-028v2 iter-6 W3 post-impl fix: the bundled review_ai_flow
+        references codex-stub for its review step; the bundled codex-stub
+        manifest must advertise review_findings (and carry an output_parse
+        rule pointing at review-findings.schema.v1.json) so
+        WorkflowRegistry.validate_cross_refs() returns no capability_gap.
+
+        This is the test the plan vaat-etti ama commit 1 ship-etmedi;
+        it lands here as part of the commit-6 hardening sweep.
+        """
+        from ao_kernel.adapters import AdapterRegistry
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        adapters = AdapterRegistry()
+        adapters.load_bundled()
+
+        workflows = WorkflowRegistry()
+        workflows.load_bundled()
+
+        flow = workflows.get("review_ai_flow")
+        issues = workflows.validate_cross_refs(flow, adapters)
+        assert issues == [], (
+            f"review_ai_flow must be cross-ref-valid against bundled adapters; "
+            f"got {[(i.kind, i.step_name, i.missing_capabilities) for i in issues]}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Rollout stance — all three B0 policies ship dormant
