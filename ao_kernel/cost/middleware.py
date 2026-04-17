@@ -228,6 +228,7 @@ def post_response_reconcile(
     est_cost: Decimal,
     raw_response_bytes: bytes,
     policy: CostTrackingPolicy,
+    elapsed_ms: float | None = None,
 ) -> None:
     """Post-response usage extract + reconcile + ledger append.
 
@@ -244,7 +245,20 @@ def post_response_reconcile(
          Per plan Q5 iter-1: reservation holds on transport error
          (middleware never reaches this function in that case).
        - record_spend (billing_digest computed).
-       - emit llm_spend_recorded.
+       - emit llm_spend_recorded (+``duration_ms`` when
+         ``elapsed_ms`` passthrough present — PR-B5 C2b absorb).
+
+    Parameters:
+        elapsed_ms: Transport wall-clock duration in milliseconds,
+            captured by :func:`execute_request` and threaded through
+            :func:`ao_kernel.llm.governed_call`. Emitted as
+            ``llm_spend_recorded.duration_ms`` so PR-B5 metrics
+            derivation can populate ``ao_llm_call_duration_seconds``
+            from the canonical LLM-facade timing rather than the
+            generic adapter lifecycle events (plan v4 iter-2 fix).
+            ``None`` (default) preserves pre-B5 backward compat: the
+            emitted event omits ``duration_ms`` entirely and the
+            metric histogram skips this call.
     """
     from ao_kernel._internal.prj_kernel_api.llm_response_normalizer import (
         extract_usage_strict,
@@ -422,24 +436,30 @@ def post_response_reconcile(
     )
     record_spend(workspace_root, event, policy=policy)
 
+    # PR-B5 C2b: emit ``duration_ms`` when transport elapsed is known.
+    # Canonical source for ``ao_llm_call_duration_seconds`` histogram;
+    # omitted on legacy callers (backward-compat per plan v4 R13).
+    payload: dict[str, Any] = {
+        "run_id": run_id,
+        "step_id": step_id,
+        "attempt": attempt,
+        "provider_id": provider_id,
+        "model": model,
+        "tokens_input": tokens_input,
+        "tokens_output": tokens_output,
+        "cached_tokens": cached,
+        "cost_usd": float(actual),
+        "est_cost_usd": float(est_cost),
+        "delta_usd": float(delta),
+        "ts": _iso_now(),
+    }
+    if elapsed_ms is not None:
+        payload["duration_ms"] = round(float(elapsed_ms), 3)
     _safe_emit(
         workspace_root,
         run_id,
         "llm_spend_recorded",
-        {
-            "run_id": run_id,
-            "step_id": step_id,
-            "attempt": attempt,
-            "provider_id": provider_id,
-            "model": model,
-            "tokens_input": tokens_input,
-            "tokens_output": tokens_output,
-            "cached_tokens": cached,
-            "cost_usd": float(actual),
-            "est_cost_usd": float(est_cost),
-            "delta_usd": float(delta),
-            "ts": _iso_now(),
-        },
+        payload,
     )
 
 
