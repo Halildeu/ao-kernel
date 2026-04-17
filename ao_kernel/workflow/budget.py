@@ -69,10 +69,13 @@ class Budget:
       kwargs auto-adjusts the aggregate.
     - Writer invariant (v5 iter-4 B3): ``tokens_input`` always emitted
       when configured; ``tokens_output=None`` → OMIT (absent key, no
-      ``null``); aggregate ``tokens`` always emitted.
-    - Reader back-compat: legacy records with only ``tokens`` →
-      ``tokens_input = BudgetAxis(copy of tokens)``, ``tokens_output =
-      None`` (conservative legacy-to-granular mapping).
+      ``null``); aggregate ``tokens`` always emitted (synthesized from
+      granular axes when not set in-memory, CNS-032 iter-1 absorb).
+    - Reader back-compat (CNS-032 iter-2 absorb): legacy records with
+      only aggregate ``tokens`` stay aggregate-only in-memory; the
+      granular axes remain ``None``. Middleware's reconcile routes
+      legacy spend through the aggregate path (case 2) — no divergence
+      between a synthesized granular axis and the aggregate.
     """
 
     tokens: BudgetAxis | None
@@ -89,12 +92,13 @@ def budget_from_dict(record: Mapping[str, Any]) -> Budget:
     Enforces ``fail_closed_on_exhaust == True`` at the boundary;
     raises ``ValueError`` if absent or False.
 
-    Back-compat (PR-B2 v3 iter-2 B3 absorb): when the record has
-    ``tokens`` but not ``tokens_input`` / ``tokens_output``, the reader
-    populates ``tokens_input`` as a copy of ``tokens`` and leaves
-    ``tokens_output = None``. Conservative legacy-to-granular mapping
-    — pre-B2 records are treated as "all prompt, no completion cap"
-    which fails-closed rather than opens a gap.
+    Back-compat (CNS-032 iter-2 absorb, refined from PR-B2 v3 iter-2
+    B3): records with ONLY an aggregate ``tokens`` axis stay
+    aggregate-only in-memory; reader does NOT synthesize granular
+    axes from the aggregate. Middleware ``_reconcile_mutator`` routes
+    legacy spend through the aggregate path (case 2) so output
+    tokens are counted correctly. Granular axes appear only when the
+    wire record declares them explicitly.
     """
     fail_closed = record.get("fail_closed_on_exhaust", False)
     if fail_closed is not True:
@@ -156,8 +160,8 @@ def budget_to_dict(budget: Budget) -> dict[str, Any]:
     # CNS-032 iter-1 absorb (aggregate recompute sanity): when the
     # Budget has granular axes but no aggregate tokens axis, writer
     # synthesizes the aggregate from the sum so readers always see a
-    # coherent `tokens` view. Symmetric to the reader's back-compat
-    # mapping (legacy tokens → tokens_input).
+    # coherent `tokens` view. This carries the "aggregate always
+    # emitted" invariant from plan v7 §2.5 forward.
     if (
         "tokens" not in out
         and budget.tokens_input is not None

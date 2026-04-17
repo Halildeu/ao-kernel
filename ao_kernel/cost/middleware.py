@@ -350,12 +350,12 @@ def post_response_reconcile(
         # run's budget. Unconfigured axes MUST NOT be spent on —
         # _spend_axis raises ValueError for None axes.
         #
-        # CNS-032 iter-1 blocker absorb: legacy workflow-run records
-        # with aggregate `tokens` only trigger the reader's back-compat
-        # synthesis (tokens_input = copy(tokens), tokens_output = None).
-        # For these, the middleware MUST route token spend through the
-        # aggregate axis (tokens=input+output) so completion tokens are
-        # actually counted. Three cases emerge:
+        # CNS-032 iter-1 blocker absorb (refined iter-2): legacy
+        # workflow-run records with aggregate `tokens` only stay
+        # aggregate-only in-memory (no synthesized granular axes). The
+        # middleware MUST route legacy token spend through the
+        # aggregate axis so completion tokens are actually counted.
+        # Three cases emerge:
         #
         # 1. Full granular (both tokens_input + tokens_output set):
         #    spend granular; aggregate auto-adjusts in record_budget_spend.
