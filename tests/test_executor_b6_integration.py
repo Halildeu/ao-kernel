@@ -316,6 +316,110 @@ class TestBackwardCompatPreB6:
         assert errors != [], "uppercase capability key should be rejected"
 
 
+class TestCapabilityRefsPersistAcrossRetry:
+    """PR-B6 plan v4 §5 zorunlu regression guard — `capability_output_refs`
+    MUST be threaded into BOTH completion paths so retry-success does
+    not silently drop the map.
+
+    Source-level audit: `_record_step_completion` + `_update_placeholder_to_completed`
+    helpers both widened with `capability_output_refs` kwarg; mutators
+    write the map when truthy. This test pins the contract at the
+    source level (structural guard) since end-to-end retry-success
+    through full MultiStepDriver.run_workflow() with B6-capable
+    manifests is B7 scope.
+    """
+
+    def test_record_step_completion_accepts_capability_output_refs(
+        self,
+    ) -> None:
+        """First-attempt success path accepts the kwarg."""
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        sig = inspect.signature(MultiStepDriver._record_step_completion)
+        assert "capability_output_refs" in sig.parameters
+        assert sig.parameters["capability_output_refs"].default is None
+
+    def test_update_placeholder_to_completed_accepts_capability_output_refs(
+        self,
+    ) -> None:
+        """Retry-success path accepts the kwarg (regression against
+        iter-3 blocker)."""
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        sig = inspect.signature(MultiStepDriver._update_placeholder_to_completed)
+        assert "capability_output_refs" in sig.parameters
+        assert sig.parameters["capability_output_refs"].default is None
+
+    def test_both_mutators_write_map_to_step_record(self) -> None:
+        """Source-level pin: both helpers write
+        `step_record["capability_output_refs"] = dict(...)` when
+        truthy."""
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        src_record = inspect.getsource(
+            MultiStepDriver._record_step_completion
+        )
+        src_retry = inspect.getsource(
+            MultiStepDriver._update_placeholder_to_completed
+        )
+        # Both mutators must assign to step_record["capability_output_refs"]
+        assert "capability_output_refs" in src_record
+        assert "capability_output_refs" in src_retry
+        # And convert the kwarg to dict (not reference-copy a Mapping)
+        assert "dict(capability_output_refs)" in src_record or (
+            'updated["capability_output_refs"]' in src_record
+        )
+        assert "dict(capability_output_refs)" in src_retry or (
+            'updated["capability_output_refs"]' in src_retry
+        )
+
+
+class TestDriverErrorTranslationSource:
+    """Plan v4 §2.2 iter-2 B2 absorb — 3 error translations pinned at
+    source level (full integration requires subprocess fixture with
+    specific failure modes, deferred to B7)."""
+
+    def test_adapter_invocation_failed_three_case_mapping(self) -> None:
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        src = inspect.getsource(MultiStepDriver._run_adapter_step)
+        # AdapterInvocationFailedError translation present
+        assert "AdapterInvocationFailedError" in src
+        # 3-case reason → category mapping
+        assert '"timeout"' in src and '"http_timeout"' in src
+        assert '"subprocess_crash"' in src
+        assert "invocation_failed" in src
+        assert "adapter_crash" in src
+
+    def test_output_parse_failed_translation_present(self) -> None:
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        src = inspect.getsource(MultiStepDriver._run_adapter_step)
+        assert "AdapterOutputParseError" in src
+        assert "OUTPUT_PARSE_FAILED" in src
+        assert "output_parse_failed" in src
+
+    def test_capability_artifact_write_fail_translation(self) -> None:
+        import inspect
+
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        src = inspect.getsource(MultiStepDriver._run_adapter_step)
+        assert "CAPABILITY_ARTIFACT_WRITE_FAILED" in src
+        # Artifact-write failure lifts to _StepFailed with output_parse_failed
+        assert "output_parse_failed" in src
+
+
 class TestArtifactWriteFailClosed:
     """Artifact write failure maps to output_parse_failed (plan §2.3
     error plumbing)."""
