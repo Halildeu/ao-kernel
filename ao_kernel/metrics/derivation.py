@@ -1,12 +1,17 @@
 """Evidence events → Prometheus metric population (PR-B5 C3).
 
-Stateless, read-only scan of ``.ao/evidence/workflows/*/events.jsonl``
-files plus two small facade reads (coordination live-count + run_store
-terminal scan). Fail-closed on malformed JSONL per
-:class:`EvidenceSourceCorruptedError` (mirrors the ``timeline.py``
-internal pattern). No filtering / windowing — plan v4 §2.3 dropped
-``run_id_filter`` / ``since_ts`` from the default textfile mode
-because Prometheus counter semantics require cumulative full scans.
+Evidence / run_store / coordination-SSOT read pipeline. Fail-closed
+on malformed JSONL per :class:`EvidenceSourceCorruptedError` (mirrors
+the ``timeline.py`` internal pattern). No filtering / windowing —
+plan v4 §2.3 dropped ``run_id_filter`` / ``since_ts`` from the
+default textfile mode because Prometheus counter semantics require
+cumulative full scans.
+
+.. note::
+   The :func:`ao_kernel.coordination.registry.live_claims_count` hook
+   acquires ``claims.lock`` to read the claim SSOT; on a workspace
+   with coordination enabled, the lockfile is created on first
+   metrics scrape. No claim files are mutated.
 
 The one-way flow is:
 

@@ -55,6 +55,26 @@ def cmd_metrics_export(args: Any) -> int:
     # operator without failing the export.
     cost_dormant = _is_cost_dormant(workspace)
 
+    # Post-impl review CNS-036 iter-1 A2 absorb: dormant policy →
+    # banner-only textfile, no body. Skip registry construction
+    # entirely so `prometheus_client` cannot synthesize zero samples
+    # for label-less families (Gauge / scalar Counter emit `0.0`
+    # even without observations, which the docs and tests promised
+    # would be absent).
+    if not metrics_policy.enabled:
+        payload = _banner_only_textfile(
+            metrics_dormant=True,
+            cost_dormant=cost_dormant,
+        )
+        try:
+            _emit_output(payload, args)
+        except (OSError, PermissionError) as exc:
+            print(
+                f"error: output write failed — {exc}", file=sys.stderr,
+            )
+            return 1
+        return 0
+
     # Build registry. LLM families skipped when cost-dormant so they
     # cannot appear in the textfile even as metadata (plan v4 §2
     # invariant).
@@ -68,7 +88,7 @@ def cmd_metrics_export(args: Any) -> int:
         if not is_metrics_available():
             payload = generate_textfile(
                 built=None,
-                metrics_dormant=not metrics_policy.enabled,
+                metrics_dormant=False,
                 cost_dormant=cost_dormant,
             )
             _emit_output(payload, args)
@@ -88,12 +108,13 @@ def cmd_metrics_export(args: Any) -> int:
         print(f"error: corrupt evidence JSONL — {exc}", file=sys.stderr)
         return 2
 
-    # Serialize. Dormant / cost-dormant banners prepend naturally via
-    # the export helper; callers rely on the resulting text being
-    # Prometheus-parseable even with comments attached.
+    # Serialize. Cost-dormant banner prepends naturally via the export
+    # helper; the body carries Prometheus-parseable samples for the
+    # non-LLM families (always present) + LLM families (present only
+    # when cost tracking is active).
     payload = generate_textfile(
         built,
-        metrics_dormant=not metrics_policy.enabled,
+        metrics_dormant=False,
         cost_dormant=cost_dormant,
     )
 
@@ -104,6 +125,29 @@ def cmd_metrics_export(args: Any) -> int:
         return 1
 
     return 0
+
+
+def _banner_only_textfile(
+    *, metrics_dormant: bool, cost_dormant: bool
+) -> str:
+    """Emit just the banner comments, no metric body.
+
+    Used by the dormant branch (post-impl review CNS-036 iter-1 A2
+    absorb). Keeps the textfile a valid Prometheus exposition — the
+    `# `-prefixed lines parse as comments — while ensuring zero
+    synthetic samples leak out when the policy is off.
+    """
+    from ao_kernel.metrics.export import (
+        _COST_DORMANT_BANNER,
+        _DORMANT_BANNER,
+    )
+
+    header = ""
+    if metrics_dormant:
+        header += _DORMANT_BANNER
+    if cost_dormant:
+        header += _COST_DORMANT_BANNER
+    return header
 
 
 def _emit_output(payload: str, args: Any) -> None:
@@ -122,7 +166,13 @@ def _emit_output(payload: str, args: Any) -> None:
 def _resolve_workspace(args: Any) -> Path:
     """Resolve workspace root from ``--workspace-root`` or CWD lookup.
 
-    Mirrors :func:`ao_kernel._internal.evidence.cli_handlers._resolve_workspace`.
+    :func:`ao_kernel.config.workspace_root` returns the ``.ao/``
+    directory itself; downstream consumers (``metrics/policy.py``,
+    ``cost/policy.py``, ``metrics/derivation.py``) prepend ``.ao``
+    themselves. We therefore normalize to the parent of ``.ao`` so
+    ``workspace_root / ".ao" / ...`` builds a real path instead of
+    the doubled ``.ao/.ao/...`` (post-impl review CNS-20260417-036
+    iter-1 A1 absorb).
     """
     ws = getattr(args, "workspace_root", None)
     if ws:
@@ -133,6 +183,8 @@ def _resolve_workspace(args: Any) -> Path:
     if resolved is None:
         print("error: no .ao/ workspace found", file=sys.stderr)
         sys.exit(1)
+    if resolved.name == ".ao":
+        return resolved.parent
     return resolved
 
 

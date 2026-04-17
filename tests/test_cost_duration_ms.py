@@ -232,6 +232,90 @@ class TestDurationMsPrecision:
         assert payload["duration_ms"] == 123.457
 
 
+class TestDurationMsGovernedCallPassthrough:
+    """Post-impl review CNS-036 iter-1 A4 absorb: the canonical e2e
+    chain is `governed_call` → `execute_request()` → `elapsed_ms`
+    capture → `post_response_reconcile(..., elapsed_ms=...)` →
+    emitted `llm_spend_recorded.duration_ms`. The direct middleware
+    tests cover the emit contract; this test pins the wrapper flow
+    end-to-end with a monkey-patched transport so real HTTP is not
+    required."""
+
+    def test_governed_call_threads_elapsed_ms_to_event(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import ao_kernel.llm as llm_mod
+
+        run_id = _create_run_with_budget(tmp_path)
+
+        # Workspace-scoped cost policy override: enabled=true. Using
+        # the same shape as PR #100's test_cost_governed_call_e2e.py
+        # (which relies on the bundled price catalog at
+        # ao_kernel/defaults/catalogs/price-catalog.v1.json).
+        (tmp_path / ".ao" / "policies").mkdir(parents=True, exist_ok=True)
+        (
+            tmp_path / ".ao" / "policies" / "policy_cost_tracking.v1.json"
+        ).write_text(
+            json.dumps({
+                "version": "v1",
+                "enabled": True,
+                "price_catalog_path": ".ao/cost/catalog.v1.json",
+                "spend_ledger_path": ".ao/cost/spend.jsonl",
+                "fail_closed_on_exhaust": True,
+                "strict_freshness": False,
+                "fail_closed_on_missing_usage": True,
+                "idempotency_window_lines": 1000,
+                "routing_by_cost": {"enabled": False},
+            }),
+            encoding="utf-8",
+        )
+
+        # Stub transport: return a success envelope with a specific
+        # `elapsed_ms` so we can pin it in the emitted event.
+        def _fake_execute_request(**kwargs):
+            return {
+                "status": "OK",
+                "http_status": 200,
+                "resp_bytes": json.dumps({
+                    "text": "mock response",
+                    "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 50,
+                    },
+                }).encode("utf-8"),
+                "elapsed_ms": 987.654,
+            }
+
+        monkeypatch.setattr(
+            llm_mod, "execute_request", _fake_execute_request,
+        )
+        monkeypatch.setattr(
+            "ao_kernel.llm.check_capabilities",
+            lambda **_: (True, "anthropic", []),
+        )
+
+        result = llm_mod.governed_call(
+            [{"role": "user", "content": "hello"}],
+            provider_id="anthropic",
+            model="claude-3-5-sonnet",
+            api_key="test-key",
+            base_url="https://api.anthropic.test/v1",
+            request_id="req-e2e-1",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="step-alpha",
+            attempt=1,
+        )
+        assert result["status"] == "OK"
+
+        spends = _spend_events(tmp_path, run_id)
+        assert len(spends) == 1
+        payload = spends[0].get("payload", spends[0])
+        # `elapsed_ms` from the stubbed transport must round-trip
+        # into the event as `duration_ms` (3-decimal precision).
+        assert payload["duration_ms"] == 987.654
+
+
 class TestDurationMsAbsentInUsageMissingPath:
     def test_usage_missing_event_has_no_duration_ms(
         self, tmp_path: Path

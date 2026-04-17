@@ -196,6 +196,12 @@ def _summarize(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _resolve_workspace(args: Any) -> Path:
+    """Mirror of :func:`ao_kernel._internal.metrics.cli_handlers._resolve_workspace`.
+
+    Normalizes the ``.ao/`` directory returned by
+    :func:`ao_kernel.config.workspace_root` to its parent so downstream
+    evidence-path composers build the correct nested directory.
+    """
     ws = getattr(args, "workspace_root", None)
     if ws:
         return Path(ws)
@@ -205,6 +211,8 @@ def _resolve_workspace(args: Any) -> Path:
     if resolved is None:
         print("error: no .ao/ workspace found", file=sys.stderr)
         sys.exit(1)
+    if resolved.name == ".ao":
+        return resolved.parent
     return resolved
 
 

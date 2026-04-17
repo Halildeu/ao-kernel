@@ -1228,6 +1228,17 @@ def live_claims_count(workspace_root: Path) -> dict[str, int]:
     claim file is a real problem the operator must address via
     ``ao-kernel doctor`` before metrics can be trusted.
 
+    .. note::
+       This helper acquires ``claims.lock`` — the same lockfile the
+       writing path uses — so it will **create** the lock file on
+       first read if the workspace has never acquired a claim. The
+       coordination module treats this as intentional: the "read-
+       only" label applies to the claim SSOT (no claim file is
+       mutated), not to the lockfile. Metrics scrape cadence is slow
+       (minutes) so lock contention with writers is negligible in
+       practice, but operators should know reads and writes share
+       a single lock.
+
     Mirrors :meth:`ClaimRegistry.list_agent_claims` structurally but
     iterates the full index rather than a single agent.
     """
