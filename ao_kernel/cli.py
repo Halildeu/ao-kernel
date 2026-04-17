@@ -113,6 +113,66 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--host", default="127.0.0.1", help="HTTP bind host (default: 127.0.0.1)")
     serve_p.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
 
+    # Metrics subcommands (PR-B5)
+    metrics_p = sub.add_parser(
+        "metrics",
+        help="Prometheus textfile export + debug query",
+    )
+    metrics_sub = metrics_p.add_subparsers(dest="metrics_command")
+
+    export_p = metrics_sub.add_parser(
+        "export",
+        help="Emit cumulative Prometheus textfile",
+    )
+    export_p.add_argument(
+        "--format",
+        choices=["prometheus"],
+        default="prometheus",
+        help="Output format (only 'prometheus' for textfile mode)",
+    )
+    export_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
+
+    # PR-B5 C3b: debug-query — non-Prometheus JSON query surface.
+    from ao_kernel._internal.metrics.debug_query import parse_iso8601_strict
+
+    debug_p = metrics_sub.add_parser(
+        "debug-query",
+        help=(
+            "Ad-hoc JSON query over evidence events "
+            "(never Prometheus textfile; for operator debugging)"
+        ),
+    )
+    debug_p.add_argument(
+        "--since",
+        type=parse_iso8601_strict,
+        default=None,
+        help=(
+            "Filter events at or after this ISO-8601 timestamp; "
+            "timezone required (use 'Z' or '+HH:MM')"
+        ),
+    )
+    debug_p.add_argument(
+        "--run",
+        dest="run",
+        default=None,
+        help="Limit to a single run_id",
+    )
+    debug_p.add_argument(
+        "--format",
+        choices=["json"],
+        default="json",
+        help="Output format (only 'json' for debug-query)",
+    )
+    debug_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
+
     return parser
 
 
@@ -161,6 +221,26 @@ def main(argv: list[str] | None = None) -> int:
         from ao_kernel.i18n import msg
         print(msg("usage_mcp_serve"))
         return 1
+
+    # Metrics subcommand (PR-B5)
+    if cmd == "metrics":
+        from ao_kernel._internal.metrics.cli_handlers import (
+            cmd_metrics_export,
+        )
+        from ao_kernel._internal.metrics.debug_query import (
+            cmd_metrics_debug_query,
+        )
+
+        metrics_cmd = getattr(args, "metrics_command", None)
+        metrics_dispatch = {
+            "export": cmd_metrics_export,
+            "debug-query": cmd_metrics_debug_query,
+        }
+        handler = metrics_dispatch.get(metrics_cmd) if metrics_cmd else None
+        if handler is None:
+            print("Usage: ao-kernel metrics {export|debug-query}")
+            return 1
+        return handler(args)
 
     handler = dispatch.get(cmd)
     if handler is None:

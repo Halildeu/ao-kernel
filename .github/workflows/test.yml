@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pip install -e ".[dev,llm]"
+        run: pip install -e ".[dev,llm,metrics]"
       - name: Run tests
         run: pytest tests/ -v --cov=ao_kernel --cov-branch --cov-report=term-missing
 
@@ -47,7 +47,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm]"
+        run: pip install -e ".[dev,llm,metrics]"
       - name: Run tests with coverage gate
         run: |
           pytest tests/ --cov=ao_kernel --cov-branch --cov-report=xml --cov-report=term-missing
@@ -73,7 +73,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,mcp]"
+        run: pip install -e ".[dev,llm,mcp,metrics]"
       - name: Mypy
         run: mypy ao_kernel/
 
@@ -92,3 +92,4 @@ jobs:
           pip install -e ".[otel]"     && python -c "import opentelemetry; print('otel OK')"
           pip install -e ".[mcp]"      && python -c "import mcp; print('mcp OK')"
           pip install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
+          pip install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"

@@ -577,6 +577,11 @@ def governed_call(
             if isinstance(workspace_root, Path)
             else Path(str(workspace_root))
         )
+        # PR-B5 C2b: thread transport ``elapsed_ms`` into the
+        # reconcile → emit path so ``llm_spend_recorded`` carries
+        # ``duration_ms`` for the PR-B5 metrics derivation. Pure
+        # transport time; reserve/normalize/reconcile overhead is
+        # explicitly excluded (plan v4 iter-2 correction).
         post_response_reconcile(
             workspace_root=ws_path,
             run_id=str(run_id),
@@ -588,6 +593,7 @@ def governed_call(
             est_cost=est_cost if est_cost is not None else Decimal("0"),
             raw_response_bytes=transport_result["resp_bytes"],
             policy=cost_policy,
+            elapsed_ms=transport_result.get("elapsed_ms"),
         )
         # Raises LLMUsageMissingError when policy.fail_closed_on_missing_usage
         # AND usage absent. Ledger audit entry always recorded first.

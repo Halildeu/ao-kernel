@@ -61,12 +61,15 @@ pgvector = [
     "pgvector",
     "psycopg2-binary",
 ]
-# Meta-extras (PR-A6)
+metrics = [
+    "prometheus-client>=0.20.0",
+]
+# Meta-extras (PR-A6, widened in PR-B5 for metrics)
 coding = [
     "ao-kernel[llm]",
 ]
 enterprise = [
-    "ao-kernel[otel,mcp,pgvector]",
+    "ao-kernel[otel,mcp,pgvector,metrics]",
 ]
 
 [project.scripts]

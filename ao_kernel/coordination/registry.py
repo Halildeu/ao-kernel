@@ -1203,3 +1203,63 @@ class ClaimRegistry:
                 "now": now.isoformat(),
             },
         )
+
+
+# ---------------------------------------------------------------------------
+# PR-B5 C3 — live claim count helper (module-level read-only snapshot)
+# ---------------------------------------------------------------------------
+
+
+def live_claims_count(workspace_root: Path) -> dict[str, int]:
+    """Return ``{agent_id: count}`` of currently-held live claims.
+
+    Plan v4 Q1 A: the canonical source of truth for the
+    ``ao_claim_active_total`` Prometheus gauge. An evidence-derived
+    net-count (``acquired - released - expired``) would race with the
+    takeover / grace path and can report negative values; querying
+    the registry's on-disk SSOT under the ``claims.lock`` produces a
+    consistent snapshot.
+
+    Dormant policy → empty dict (no raise). The metrics subsystem
+    treats this as "gauge stays at 0" which matches operator
+    expectations when coordination is disabled.
+
+    Corrupt SSOT (``ClaimCorruptedError``) propagates: a corrupted
+    claim file is a real problem the operator must address via
+    ``ao-kernel doctor`` before metrics can be trusted.
+
+    .. note::
+       This helper acquires ``claims.lock`` — the same lockfile the
+       writing path uses — so it will **create** the lock file on
+       first read if the workspace has never acquired a claim. The
+       coordination module treats this as intentional: the "read-
+       only" label applies to the claim SSOT (no claim file is
+       mutated), not to the lockfile. Metrics scrape cadence is slow
+       (minutes) so lock contention with writers is negligible in
+       practice, but operators should know reads and writes share
+       a single lock.
+
+    Mirrors :meth:`ClaimRegistry.list_agent_claims` structurally but
+    iterates the full index rather than a single agent.
+    """
+    policy = load_coordination_policy(workspace_root)
+    if not policy.enabled:
+        return {}
+    _claims_dir(workspace_root).mkdir(parents=True, exist_ok=True)
+    reg = ClaimRegistry(workspace_root)
+    with file_lock(_claims_lock_path(workspace_root)):
+        reg._ensure_index_consistent()
+        index = reg._load_index()
+        now = datetime.now(timezone.utc)
+        counts: dict[str, int] = {}
+        for agent_id, resource_ids in index.agents.items():
+            live = 0
+            for resource_id in resource_ids:
+                claim = reg._load_claim_if_exists(resource_id)
+                if claim is None:
+                    continue
+                if reg._claim_is_live(claim, policy, now):
+                    live += 1
+            if live > 0:
+                counts[agent_id] = live
+        return counts

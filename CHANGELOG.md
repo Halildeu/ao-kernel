@@ -7,6 +7,113 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B5 (metrics export — Prometheus textfile + `[metrics]` extra)
+
+**FAZ-B Tranche B 5/9 — evidence-derived metrics export. Stateless
+CLI scans `events.jsonl` + run_store + coordination registry →
+eight Prometheus metric families. Dormant-by-default; opt-in via
+`policy_metrics.v1.json`. `[metrics]` optional extra keeps
+prometheus-client out of the core dependency tree.**
+
+- New `ao_kernel.metrics/` public package:
+  * `policy.py` — `MetricsPolicy` frozen dataclass + `load_metrics_policy`
+    with bundled-default + workspace-override resolution +
+    `InvalidLabelAllowlistError` runtime defence against
+    programmatic schema bypass.
+  * `registry.py` — lazy `prometheus_client` adapter (mirrors
+    `telemetry._check_otel` pattern). `build_registry(policy,
+    include_llm_metrics=True)` returns a `BuiltRegistry` container
+    with the eight metric families or `None` when the extra is
+    missing.
+  * `derivation.py` — `derive_metrics_from_evidence(ws, built, policy)`
+    scans `.ao/evidence/workflows/*/events.jsonl`, dispatches events
+    to metric populators, reads `state.v1.json.completed_at` for
+    cancelled runs (plan v4 Q3 A), and queries
+    `coordination.registry.live_claims_count()` for the active gauge
+    (plan v4 Q1 A). Fail-closed on corrupt JSONL
+    (`EvidenceSourceCorruptedError`).
+  * `export.py` — `generate_textfile(built, metrics_dormant,
+    cost_dormant)` serializes with banner comments for dormant /
+    cost-dormant / extra-missing paths.
+  * `errors.py` — five typed errors inheriting from `MetricsError`
+    base.
+
+- **Eight metric families** (`ao_llm_call_duration_seconds` histogram,
+  `ao_llm_tokens_used_total` counter, `ao_llm_cost_usd_total`
+  counter, `ao_llm_usage_missing_total` counter, `ao_policy_check_total`
+  counter, `ao_workflow_duration_seconds` histogram,
+  `ao_claim_active_total` gauge, `ao_claim_takeover_total` counter).
+  LLM duration source canonicalized to
+  `llm_spend_recorded.duration_ms` — the cost middleware emits the
+  transport-layer `elapsed_ms` value (plan v4 iter-2 fix; reserve /
+  normalize / reconcile overhead excluded).
+
+- **`llm_spend_recorded.duration_ms` B2 event extension** (additive,
+  backward-compatible). `ao_kernel/llm.py::governed_call` threads
+  `transport_result["elapsed_ms"]` into `post_response_reconcile`,
+  which emits the field only when present. Pre-B5 callers that omit
+  the kwarg retain the legacy payload shape (plan v4 R13).
+
+- **`coordination.registry.live_claims_count(workspace_root)` helper**
+  — module-level read-only snapshot. Dormant policy → empty dict;
+  otherwise loads the `_index` + each per-resource SSOT under
+  `claims.lock` and applies the liveness predicate. The gauge
+  source that prevents evidence-derived net-count races (plan v4
+  Q1 A).
+
+- **`workflow.run_store.list_terminal_runs(workspace_root)` helper**
+  — internal read-only scan of `.ao/runs/*/state.v1.json` for
+  terminal records (completed / failed / cancelled). No CAS lock or
+  schema validation; malformed files are skipped silently (tolerates
+  concurrent writer drift).
+
+- **CLI surface** (`ao-kernel metrics …`):
+  * `metrics export` — cumulative Prometheus textfile; atomic
+    `--output` write via `write_text_atomic`. Exit codes: 0 success
+    / dormant-graceful, 1 user error, 2 internal (corrupt JSONL),
+    3 `[metrics]` extra missing informational.
+  * `metrics debug-query` — non-Prometheus JSON query for operator
+    debugging. `--since` is timezone-strict (`parse_iso8601_strict`
+    rejects naive input); `--run` filters to a single run directory.
+    Never emits Prometheus textfile.
+
+- **Cost-disjunction invariant**: when
+  `policy_cost_tracking.v1.json.enabled=false`, the metrics export
+  builds the registry with `include_llm_metrics=False` and the
+  `ao_llm_*` family is **absent** from the textfile (no metadata,
+  no zero-synthetic samples). Operator banner:
+  `# ao-kernel metrics: cost tracking dormant …`.
+
+- **Cardinality hard-warning** in `docs/METRICS.md` §6.6: `agent_id`
+  and `model` advanced labels must be bounded enumerations, not
+  ephemeral / per-request strings. Schema closed-enum constrains
+  names, not values — documented so operators avoid storage bombs.
+
+- **Bundled Grafana dashboard** (`docs/grafana/ao_kernel_default.v1.json`):
+  Grafana 10+ schema, 8 panels, `DS_PROMETHEUS` template variable,
+  panel→metric matrix test guards the drift between dashboard and
+  runtime. `docs/grafana/README.md` provides four import recipes
+  (UI / file provisioning / K8s ConfigMap / HTTP API).
+
+- **`[metrics]` optional extra** — `prometheus-client>=0.20.0` via
+  `pip install ao-kernel[metrics]`. `enterprise` meta-extra widened
+  to include it.
+
+- **Tests** (~65 new across 6 files):
+  * `test_metrics_policy.py` (13)
+  * `test_metrics_registry.py` (13)
+  * `test_cost_duration_ms.py` (4)
+  * `test_metrics_derivation.py` (13)
+  * `test_metrics_export.py` (6)
+  * `test_metrics_cli.py` (4)
+  * `test_metrics_helpers.py` (5)
+  * `test_metrics_debug_query.py` (12)
+  * `test_grafana_dashboard_shape.py` (8)
+
+- Plan trace: CNS-20260417-035 (thread `019d9cec`), 3-iter plan-time
+  absorb (REVISE → PARTIAL → AGREE). Full plan at
+  [`.claude/plans/PR-B5-IMPLEMENTATION-PLAN.md`](../.claude/plans/PR-B5-IMPLEMENTATION-PLAN.md).
+
 ### Added — FAZ-B PR-B6 (review AI + commit AI workflow runtime — thin, driver-owned)
 
 **FAZ-B Tranche B 6/9 — runtime for the B0-pinned review/commit AI
