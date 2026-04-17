@@ -53,12 +53,21 @@ adapter_invoker._invocation_from_envelope walks output_parse rules    [B0: shipp
          ↓ (json_path extract → schema_ref validate)
 InvocationResult.extracted_outputs["review_findings"] = {...}          [B0: shipped]
          ↓
-Executor.run_step(driver_managed=True) reads extracted_outputs          [B6: runtime]
+MultiStepDriver._run_adapter_step reads extracted_outputs               [B6: shipped]
          ↓
-artifacts.write_artifact() → step_record.output_ref                     [B6: runtime]
+artifacts.write_capability_artifact() per capability                    [B6: shipped]
+         ↓
+step_record.capability_output_refs = {capability: ref}                  [B6: shipped]
 ```
 
-**Stage note.** B0 ships the **upper half** of this chain: the rule walker, typed validation, and `InvocationResult.extracted_outputs` population are real and covered by `tests/test_executor_adapter_invoker.py::TestOutputParseExtraction`. The **lower half** — `Executor.run_step(driver_managed=True)` reading `extracted_outputs` and calling `artifacts.write_artifact()` to populate `step_record.output_ref` — is pinned as contract here but implemented in PR-B6 alongside the `review_ai_flow` runtime. B0's `Executor` sees the new field but does not act on it; pre-FAZ-B callers are unaffected.
+**Stage note (PR-B6 shipped 2026-04-17).** B0 shipped the **upper half** (rule walker, typed validation, `InvocationResult.extracted_outputs` population) covered by `tests/test_executor_adapter_invoker.py::TestOutputParseExtraction`. PR-B6 ships the **lower half** — but **driver-owned** rather than executor-owned:
+
+- `MultiStepDriver._run_adapter_step` iterates `invocation_result.extracted_outputs` (after `exec_result.step_state == "completed"`).
+- For each `(capability, payload)`, calls `artifacts.write_capability_artifact(run_dir, step_id, attempt, capability, payload)`.
+- Collected refs persist as `step_record.capability_output_refs: map<capability, run-relative path>` (additive schema widen; pre-B6 records parse cleanly without the field).
+- Executor stays **schema-agnostic** — `_normalize_invocation_for_artifact()` and `ExecutionResult` are unchanged.
+- `step_record.output_ref` still points at the normalized invocation artifact (pre-B6 shape preserved). Per-capability typed artifacts are a **new** parallel surface under `capability_output_refs`, NOT a replacement for `output_ref`.
+- Artifact write failure fails-closed: `_StepFailed(category="output_parse_failed")` → standard PR-A4b step_failed handler.
 
 Two hard invariants (enforced by B0 code, not just pinned by docs):
 
@@ -130,7 +139,7 @@ Both modes exercise the full `MultiStepDriver` + `Executor.run_step` + `adapter_
 
 - `workflow_completed` evidence event fires.
 - Adapter returns an envelope with `status: "ok"` AND an `output_parse`-extractable payload that validates against `review-findings.schema.v1.json`.
-- `step_record.output_ref` points at a non-empty, schema-valid `review-findings` artifact.
+- `step_record.capability_output_refs["review_findings"]` points at a non-empty, schema-valid `review-findings` artifact (PR-B6 shipped; `output_ref` still carries the normalized invocation artifact as a separate pre-B6 surface).
 - `cost_usd` axis stays within the seeded budget.
 - **Objective scoring:** the benchmark harness inspects `findings.severity` distribution and optional `score`; caller-supplied threshold decides pass/fail.
 

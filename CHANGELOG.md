@@ -7,6 +7,124 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B6 (review AI + commit AI workflow runtime — thin, driver-owned)
+
+**FAZ-B Tranche B 6/9 — runtime for the B0-pinned review/commit AI
+write-lite workflows. Closes the `output_parse`-walker lower half
+(B0 shipped the walker + typed validation; B6 ships driver-owned
+per-capability artifact materialization). Executor stays schema-
+agnostic; MultiStepDriver owns the capability loop. New `commit_message`
+capability + bundled `commit_ai_flow` workflow.**
+
+- New `ao_kernel.executor.artifacts.write_capability_artifact(run_dir,
+  step_id, attempt, capability, payload) -> (output_ref, output_sha256)`
+  helper — mirrors the existing `write_artifact()` pattern (atomic
+  tmp+fsync+rename, canonical JSON, SHA-256). Filename template
+  `{step_id}-{capability}-attempt{n}.json` with capability key
+  validated against `^[a-z][a-z0-9_]{0,63}$` (schema contract for
+  `step_record.capability_output_refs`).
+
+- `MultiStepDriver._run_adapter_step` now iterates
+  `invocation_result.extracted_outputs` after `exec_result.step_state
+  == "completed"` and writes one typed artifact per capability via
+  `write_capability_artifact()`. Refs persist on
+  `step_record.capability_output_refs` through both completion helpers:
+  * `_record_step_completion` — ilk-attempt success path
+  * `_update_placeholder_to_completed` — retry-success path
+  Both widened with optional `capability_output_refs` kwarg; empty map
+  → absent key (schema additionalProperties: false respected).
+
+- Driver error translations widened (plan v3 iter-2 B2 absorb):
+  * `AdapterInvocationFailedError` — transport-layer fail:
+    - reason ∈ {timeout, http_timeout} → category=timeout
+    - reason == subprocess_crash → category=adapter_crash
+    - else → category=invocation_failed
+  * `AdapterOutputParseError` (walker fail) → category=output_parse_failed
+  * Capability artifact write failure → category=output_parse_failed,
+    code=CAPABILITY_ARTIFACT_WRITE_FAILED
+  All fail-closed via existing PR-A4b `_StepFailed` / `_handle_step_failure`
+  error handler chain (no new emit path; step_failed evidence + CAS
+  step_record.state="failed" unchanged).
+
+- **`_LEGAL_CATEGORIES` schema parity sync** (plan v4 iter-2 B4 absorb)
+  — pre-B6 drift between runtime set and
+  `workflow-run.schema.v1.json::error.category.enum` eliminated:
+  * Runtime had `adapter_error` (NOT in schema) — removed.
+  * Schema had `invocation_failed`, `output_parse_failed`,
+    `adapter_crash` (NOT in runtime) — added.
+  * Final set: 10 values byte-identical across runtime + schema.
+  * `test_error_category_parity.py` regression guard pins the
+    invariant.
+
+- **New typed artifact schema** `commit-message.schema.v1.json`
+  (object-shape; required: schema_version + subject; optional: body,
+  breaking_change, trailers). Subject max 72 chars (git soft limit).
+  commit AI produces the MESSAGE ARTIFACT only; operator downstream
+  applies the actual git commit. `commit_write` capability remains
+  prohibited (agent-adapter-contract invariant preserved).
+
+- **Adapter capability enum widen** (2 schemas, drift-test-guarded):
+  `agent-adapter-contract.schema.v1.json` + `workflow-definition.schema.v1.json`
+  `$defs/capability_enum += "commit_message"`.
+
+- **`codex-stub` manifest updates**: capabilities += `"commit_message"`;
+  output_parse gains a 2nd rule for `$.commit_message` →
+  `commit-message.schema.v1.json`. Fixture (`ao_kernel.fixtures.codex_stub`)
+  emits a deterministic object-shape commit_message payload so the
+  walker's Mapping check accepts it (iter-1 caught v1 subagent's
+  string-placeholder mistake).
+
+- **New bundled workflow** `commit_ai_flow.v1.json` — 2-step flow
+  (context_compile → invoke_commit_agent). Full schema compliance:
+  default_policy_refs, created_at, step-level `on_failure` as STRING
+  enum `"transition_to_failed"` (plan v3 iter-2 B1 absorb — NOT the
+  object shape v2 incorrectly proposed).
+
+- **Schema additive widen** `workflow-run.schema.v1.json::step_record`
+  + `capability_output_refs` field (object with
+  `patternProperties["^[a-z][a-z0-9_]{0,63}$"]`, `additionalProperties:
+  false`). Pre-B6 run records parse cleanly without the field; new
+  records include it when the adapter produced typed outputs.
+
+- **BENCHMARK-SUITE.md narrative update**: "output_ref = review
+  artifact" narrative (B0 pin that never shipped) replaced with
+  "capability_output_refs map for per-capability typed artifacts;
+  output_ref still carries the normalized invocation artifact as a
+  pre-B6 parallel surface." `governed_review` release gate (§5.2)
+  now references `capability_output_refs["review_findings"]` as the
+  artifact pointer.
+
+- **Locked invariants / contracts**:
+  - Executor invariant preserved: `_normalize_invocation_for_artifact()`
+    + `ExecutionResult` unchanged; materialization driver-owned.
+  - `step_record.output_ref` pre-B6 shape preserved (normalized
+    invocation artifact); capability artifacts are a new PARALLEL
+    surface under `capability_output_refs`.
+  - `_LEGAL_CATEGORIES` ⊆ schema error.category.enum (parity
+    regression-test-enforced).
+  - `commit_write` capability prohibition preserved — commit AI
+    produces message artifact; operator downstream commits.
+
+- **Out of scope** (per CNS-030 + CNS-033 advisory, B7 deferred):
+  - `tests/benchmarks/` runner + `governed_review` scoring
+  - `price-catalog` lookup in `cost_actual`
+  - `score` threshold gate
+  - Actual `git commit` application
+  - Benchmark scenario fixtures
+
+- **Adversarial consensus**: 5-commit DAG (squash-on-merge) shipped
+  after CNS-20260417-033 `ready_for_impl=true` across 4 adversarial
+  plan iterations (v1 subagent draft → v4 AGREE). Plan
+  `.claude/plans/PR-B6-IMPLEMENTATION-PLAN.md` documents the absorb
+  trail: 5 v1 findings (walker kontrat, driver error plumbing, executor
+  invariant, naming, SHA refresh), 4 iter-2 findings (on_failure
+  enum, AdapterInvocationFailedError translation, adapter_returned
+  invariant, parity drift), 2 iter-3 findings (completion plumbing
+  retry path, stale "schema widen" dili).
+
+- **Gate status on merge**: ruff + mypy clean; pytest 1884 passed,
+  3 skipped (+56 net tests from pre-B6 baseline 1828; 0 regressions).
+
 ### Added — FAZ-B PR-B2 (cost runtime — price catalog + spend ledger + governed_call)
 
 **FAZ-B Tranche B 3/9 — runtime for the B0-pinned cost contract. LLM
