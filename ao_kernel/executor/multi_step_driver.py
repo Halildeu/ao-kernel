@@ -416,8 +416,26 @@ class MultiStepDriver:
         attempt: int,
         step_id: str,
         context_preamble: str | None,
+        fencing_token: int | None = None,
+        fencing_resource_id: str | None = None,
     ) -> tuple[dict[str, Any], Any]:
-        """Delegate to Executor.run_step(driver_managed=True)."""
+        """Delegate to Executor.run_step(driver_managed=True).
+
+        PR-B1 fencing integration (absorbed from CNS-20260416-029v4
+        post-impl blocker #2): callers passing ``fencing_token`` +
+        ``fencing_resource_id`` forward them to the executor's entry
+        check. :class:`ClaimStaleFencingError` is translated into the
+        driver's :class:`_StepFailed` flow with
+        ``category="other"``, ``code="STALE_FENCING"`` so
+        ``step_record.state="failed"`` + ``step_failed`` evidence emit
+        run through the existing PR-A4b error handler pattern. Callers
+        that do not opt in leave both kwargs ``None``; pre-B1
+        behaviour preserved.
+        """
+        # Import locally to avoid pulling the coordination package into
+        # the driver's import graph when callers do not enable it.
+        from ao_kernel.coordination.errors import ClaimStaleFencingError
+
         try:
             exec_result = self._executor.run_step(
                 run_id=run_id,
@@ -426,6 +444,8 @@ class MultiStepDriver:
                 attempt=attempt,
                 driver_managed=True,
                 step_id=step_id,
+                fencing_token=fencing_token,
+                fencing_resource_id=fencing_resource_id,
             )
         except PolicyViolationError as exc:
             raise _StepFailed(
@@ -433,6 +453,20 @@ class MultiStepDriver:
                 attempt=attempt,
                 category="other",
                 code="POLICY_VIOLATION",
+            ) from exc
+        except ClaimStaleFencingError as exc:
+            # PR-B1 W1v5: executor emits nothing on stale-fencing; the
+            # driver owns the step_failed emission + step_record CAS
+            # transition (PR-A4b error handler contract).
+            raise _StepFailed(
+                reason=(
+                    f"stale fencing: resource_id={exc.resource_id} "
+                    f"supplied_token={exc.supplied_token} "
+                    f"live_token={exc.live_token}"
+                ),
+                attempt=attempt,
+                category="other",
+                code="STALE_FENCING",
             ) from exc
 
         if exec_result.step_state != "completed":

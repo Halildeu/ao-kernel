@@ -7,6 +7,149 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B1 (coordination runtime — lease / fencing / takeover)
+
+**FAZ-B Tranche B 2/9 — runtime for the B0-pinned coordination contract
+(`docs/COORDINATION.md` + `claim.schema.v1.json` +
+`fencing-state.schema.v1.json` +
+`policy_coordination_claims.v1.json`). Multi-agent coding-agent
+workflows can now safely share workspace resources (git worktrees,
+evidence run directories, workflow run records) via
+`.ao/claims/`-rooted lease primitives. Dormant by default; operators
+opt in via workspace override.**
+
+- **New public package `ao_kernel/coordination/`** — six modules:
+  - `claim.py` — `Claim` frozen dataclass mirroring
+    `claim.schema.v1.json`; `claim_revision()` canonical-JSON hash
+    (`canonical_store.store_revision` pattern); `claim_from_dict` /
+    `claim_to_dict` with schema validation + revision-hash verification
+    (detects silent on-disk edits); `save_claim_cas(expected_revision)`
+    CAS helper.
+  - `fencing.py` — `FencingState` / `ResourceFencingState` frozen
+    dataclasses mirroring `fencing-state.schema.v1.json`; pure
+    `next_token` / `update_on_release` / `set_next_token` mutators;
+    exact-equality `validate_fencing_token` (both stale and
+    future/fabricated tokens raise); runtime-only
+    `fencing_state_revision()` out-of-band CAS hash (B0 schema is
+    closed, revision field NOT persisted);
+    `save_fencing_state_cas(expected_revision)` atomic write.
+  - `policy.py` — `CoordinationPolicy` + nested `EvidenceRedaction`
+    frozen dataclasses; `load_coordination_policy(workspace_root, *,
+    override=None)` three-stage resolution (inline → workspace
+    override → bundled default); `match_resource_pattern` glob
+    allowlist matcher. Fail-closed on malformed override JSON /
+    schema violation.
+  - `registry.py` — `ClaimRegistry(workspace_root, *,
+    evidence_sink=None)` workspace-scoped orchestrator. Public API:
+    `acquire_claim`, `heartbeat(resource_id, claim_id,
+    owner_agent_id)`, `release_claim(resource_id, claim_id,
+    owner_agent_id)`, `takeover_claim`, `get_claim`,
+    `validate_fencing_token`, `prune_expired_claims(policy=None, *,
+    max_batch=None)`, `list_agent_claims`. Thread-safe via POSIX
+    `claims.lock`.
+  - `errors.py` — 13 typed exceptions: `CoordinationError` base plus
+    `ClaimConflictError` / `ClaimConflictGraceError` (both carry
+    `current_fencing_token` for master plan §10 race test),
+    `ClaimStaleFencingError`, `ClaimOwnershipError`,
+    `ClaimRevisionConflictError`, `ClaimQuotaExceededError`,
+    `ClaimResourcePatternError`, `ClaimResourceIdInvalidError`,
+    `ClaimCoordinationDisabledError`, `ClaimCorruptedError` (SSOT
+    only), `ClaimAlreadyReleasedError`, `ClaimNotFoundError`.
+  - `__init__.py` — stable public surface; private helpers stay
+    out of `__all__`.
+- **Storage layout** under `{workspace_root}/.ao/claims/`:
+  - Per-resource SSOT: `{resource_id}.v1.json` (source of truth;
+    parse / schema / revision-hash failure raises
+    `ClaimCorruptedError` fail-closed).
+  - Fencing state SSOT: `_fencing.v1.json` (CAS via runtime-only
+    `fencing_state_revision()` out-of-band hash; fail-closed).
+  - Derived cache: `_index.v1.json` (`agent_id → [resource_id, ...]`
+    reverse index; rebuilt silently on drift — fail-open for derived
+    state).
+  - Lock file: `claims.lock` (POSIX `fcntl` advisory; Windows raises
+    `LockPlatformNotSupported`).
+- **Evidence taxonomy 18 → 24** in
+  `ao_kernel/executor/evidence_emitter.py::_KINDS`: additive
+  expansion with six `claim_*` kinds (`claim_acquired`,
+  `claim_released`, `claim_heartbeat`, `claim_expired`,
+  `claim_takeover`, `claim_conflict`). PR-A 18 kinds preserved
+  verbatim; `claim_acquired` and `claim_takeover` are mutually
+  exclusive (W1v2 pin — a single acquire/takeover path emits
+  exactly one).
+
+### Changed — FAZ-B PR-B1
+
+- `ao_kernel/executor/executor.py::Executor.__init__` gains an
+  optional `claim_registry: Any = None` parameter. When supplied and
+  the caller passes both `fencing_token` and `fencing_resource_id`
+  kwargs to `run_step`, the executor validates the fencing token at
+  entry (BEFORE any evidence emit, worktree build, or adapter
+  invoke). Stale-fencing raises `ClaimStaleFencingError` which
+  propagates to the caller — `MultiStepDriver` catches and applies
+  its existing `step_failed` emission with
+  `error_category="other"`, `code="STALE_FENCING"`. Canonical event
+  order (`step_started` → ... → `step_failed`) intact. Partial
+  fencing-pair supply or fencing without a `claim_registry` raises
+  `ValueError`. Pre-PR-B1 callers unaffected (both kwargs default
+  `None`).
+
+### Locked invariants (B0 contract surface, enforced by B1 runtime)
+
+- **Expiry authority:** `effective_expires_at = heartbeat_at +
+  policy.expiry_seconds` computed at evaluation; `expires_at` on
+  the claim shape is a DERIVED debug field, NOT source of truth.
+- **Takeover threshold:** `now > heartbeat_at + expiry_seconds +
+  takeover_grace_period_seconds`. Public `takeover_claim` enforces
+  the gate — live / in-grace attempts raise `ClaimConflictError` /
+  `ClaimConflictGraceError` with `claim_conflict` emit (audit
+  symmetry with acquire).
+- **Forward-only fencing:** reconcile computes `new_next_token =
+  max(current_next_token, max_claim_fencing_token + 1)`; fencing
+  state NEVER decreases.
+- **Quota unlimited when `limit=0`:** enforcement line is
+  `if limit > 0 and count >= limit: raise`. Live-count only —
+  expired-but-unpruned claims are filtered out.
+- **Validator runs before pattern allowlist:** `_validate_resource_id`
+  regex `^[A-Za-z0-9][A-Za-z0-9._-]*$` rejects path separators /
+  wildcards / whitespace / leading non-alphanumeric BEFORE the
+  glob allowlist runs.
+- **Release second-call raise:** absent claim on release raises
+  `ClaimAlreadyReleasedError` rather than silent no-op (surfaces
+  stale-caller bugs).
+- **Release / prune fail-closed order:** fencing state loaded +
+  validated BEFORE claim file delete, so corrupt fencing raises
+  while the claim is still recoverable on disk.
+- **Evidence fail-open:** `_safe_emit_coordination_event` wraps the
+  caller-injected sink in try/except; emit failures are logged at
+  `warning` level. Coordination correctness NEVER depends on
+  emission success (CLAUDE.md §2 side-channel contract).
+- **SSOT fail-closed:** `{resource_id}.v1.json` and `_fencing.v1.json`
+  corruption (parse / schema / hash mismatch) raises
+  `ClaimCorruptedError` and propagates. `_index.v1.json` corruption
+  is handled fail-open (silent rebuild from SSOT scan).
+
+### Adversarial Consensus
+
+- **CNS-20260416-029** family (4 MCP threads across context expiry;
+  current thread `019d99eb-6208-78c3-b5be-070b401f56d6`): plan-time
+  adversarial review reached AGREE + `ready_for_impl: true` on
+  iteration v3-iter-2 (`/Users/halilkocoglu/Documents/ao-kernel/
+  .claude/plans/PR-B1-IMPLEMENTATION-PLAN.md` v5). Cumulative
+  absorption across v1 → v5: 15 blockers + 17 warnings. Key
+  absorbed issues: takeover live/grace gate bypass (B1v5), claim
+  CAS `save_claim_cas(expected_revision)` helper (B2v5), release /
+  prune fail-closed order (B3v5), fencing exact-equality (B2v3),
+  forward-only monotonic reconcile (B3v3), evidence-sink
+  injection API (B4v3), resource_id validator on both
+  acquire and takeover (B5v3), quota SSOT-reconciled
+  live-count (B1v2 + W3v5), CLAIM_CONFLICT `current_fencing_token`
+  payload (B6v2), `_index` fail-open scope narrowed (W2v2),
+  event mutual exclusion `claim_acquired` vs `claim_takeover`
+  (W1v2), release second-call raise (W5v2),
+  `ClaimNotFoundError` for public takeover on absent resource
+  (B1v5), evidence redaction binding via
+  `build_coordination_sink` wrapper pattern (W2v5).
+
 ### Added — FAZ-B PR-B0 (docs + schemas + dormant policies + extraction layer)
 
 **FAZ-B Tranche B 1/9 — foundation only; runtime primitives for lease/
