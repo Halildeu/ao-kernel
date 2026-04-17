@@ -48,6 +48,12 @@ from ao_kernel.coordination.fencing import (
     update_on_release,
     validate_fencing_token,
 )
+from ao_kernel.coordination.policy import (
+    CoordinationPolicy,
+    EvidenceRedaction,
+    load_coordination_policy,
+    match_resource_pattern,
+)
 
 
 __all__ = [
@@ -68,6 +74,11 @@ __all__ = [
     "set_next_token",
     "update_on_release",
     "validate_fencing_token",
+    # Policy
+    "CoordinationPolicy",
+    "EvidenceRedaction",
+    "load_coordination_policy",
+    "match_resource_pattern",
     # Errors
     "ClaimAlreadyReleasedError",
     "ClaimConflictError",
