@@ -19,6 +19,13 @@ See ``docs/COST-MODEL.md`` for the contract walk-through.
 
 from __future__ import annotations
 
+from ao_kernel.cost.catalog import (
+    PriceCatalog,
+    PriceCatalogEntry,
+    clear_catalog_cache,
+    find_entry,
+    load_price_catalog,
+)
 from ao_kernel.cost.cost_math import (
     compute_cost,
     estimate_cost,
@@ -44,6 +51,12 @@ from ao_kernel.cost.policy import (
 
 
 __all__ = [
+    # Catalog
+    "PriceCatalog",
+    "PriceCatalogEntry",
+    "clear_catalog_cache",
+    "find_entry",
+    "load_price_catalog",
     # Cost math
     "compute_cost",
     "estimate_cost",
