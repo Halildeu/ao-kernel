@@ -7,6 +7,59 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B2 (cost runtime — price catalog + spend ledger + governed_call)
+
+**FAZ-B Tranche B 3/9 — runtime for the B0-pinned cost contract. LLM
+calls now run through `ao_kernel.llm.governed_call` — a non-streaming
+composition wrapper with optional cost governance (pre-dispatch
+estimate + budget cap fail-closed + post-response reconcile +
+canonical billing digest idempotent ledger). Dormant by default;
+operators opt in via workspace policy override + adding a `cost_usd`
+axis to workflow-run budgets.**
+
+- New public package `ao_kernel/cost/` — six modules: errors (9
+  typed classes), cost_math (Decimal-stable formula + estimate +
+  `min(max_tokens, est_in*0.25)` output estimate), catalog (checksum
+  verify + stale gate + 300s LRU), ledger (canonical billing digest
+  idempotency + bounded tail-scan), policy (typed loader + 2 new
+  knobs), middleware (pre_dispatch_reserve + post_response_reconcile
+  with CAS-retried budget mutations).
+- New `ao_kernel.llm.governed_call` facade — non-streaming LLM
+  composer with rich `{status, normalized, resp_bytes, transport_result,
+  elapsed_ms, request_id}` success dict; CAPABILITY_GAP + TRANSPORT_ERROR
+  envelopes preserve pre-B2 caller contract. Cost-layer errors raise
+  (BudgetExhausted, CostTrackingConfig, PriceCatalogNotFound,
+  LLMUsageMissing). Streaming stays on existing `_execute_stream`
+  path.
+- `build_request_with_context` additive `injected_messages` return
+  field for cost-estimate accuracy.
+- 3 caller entrypoints wired through `governed_call`:
+  `AoKernelClient.llm_call(run_id, step_id, attempt)` opt-in;
+  `mcp_server.handle_llm_call(ao_run_id, ao_step_id, ao_attempt)`
+  opt-in + MCP tool schema widen;
+  `workflow.intent_router._llm_classify` bypass-only (standalone
+  classifier, not a budget anchor).
+- Budget granular axes `tokens_input` + `tokens_output` (additive
+  BudgetAxis fields with back-compat reader + writer invariants).
+- Normalizer strict helper `extract_usage_strict → UsagePresence`
+  with None-sentinel; existing `extract_usage` (0-fallback) preserved.
+- Schema additive widens: workflow-run budget +2 integer axes;
+  spend-ledger +3 fields (attempt, usage_missing, billing_digest);
+  policy-cost-tracking +2 knobs (fail_closed_on_missing_usage,
+  idempotency_window_lines).
+- Evidence taxonomy +3 (24 → 27): `llm_cost_estimated`,
+  `llm_spend_recorded`, `llm_usage_missing` — all fail-open emits.
+- Streaming cost tracking: FAZ-C deferred (documented gap in
+  docs/COST-MODEL.md §9).
+- Adversarial consensus: 7-commit DAG shipped after Codex CNS-
+  20260417-031 `ready_for_impl=true` across 7 adversarial plan
+  iterations (v1→v7). Plan `.claude/plans/PR-B2-IMPLEMENTATION-PLAN.md`
+  documents the absorb trail.
+- Gate status on merge: ruff + mypy clean; pytest 1823 passed /
+  3 skipped (+121 net tests; 0 regressions — PR-B1 `_KINDS` exact-24
+  assertion replaced by `>= 24` floor to stay regression-free across
+  additive evidence kinds).
+
 ### Added — FAZ-B PR-B1 (coordination runtime — lease / fencing / takeover)
 
 **FAZ-B Tranche B 2/9 — runtime for the B0-pinned coordination contract
