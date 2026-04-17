@@ -74,6 +74,12 @@ _KINDS: Final[frozenset[str]] = frozenset({
     "claim_expired",      # prune_expired_claims cleaned a past-grace claim
     "claim_takeover",     # past-grace reclaim by a different agent (distinct from claim_acquired)
     "claim_conflict",     # acquire/takeover blocked by live or in-grace owner
+    # PR-B2 additions (cost runtime, 24 → 27 kinds). Additive; neither
+    # renames nor re-semanticises any existing kind. See
+    # docs/COST-MODEL.md §5 + PR-B2 plan v7 §2.8 for payload contracts.
+    "llm_cost_estimated",   # pre-dispatch estimate emitted (governed_call step 4)
+    "llm_spend_recorded",   # post-response actual cost computed + ledger appended
+    "llm_usage_missing",    # adapter response missing tokens_input/output (audit flag)
 })
 
 _REDACTED: Final[str] = "***REDACTED***"

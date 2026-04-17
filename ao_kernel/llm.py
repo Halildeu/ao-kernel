@@ -14,6 +14,7 @@ This module provides the stable public API surface.
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 # ── Routing ──────────────────────────────────────────────────────────
@@ -336,7 +337,7 @@ def build_request_with_context(
                 new_messages.insert(0, {"role": "system", "content": compiled.preamble})
             messages = new_messages
 
-    return build_request(
+    req = build_request(
         provider_id=provider_id,
         model=model,
         messages=messages,
@@ -350,6 +351,244 @@ def build_request_with_context(
         tool_choice=tool_choice,
         response_format=response_format,
     )
+    # PR-B2 v5 iter-4 B4 absorb: additive return field carrying the
+    # context-injected effective messages. Used by cost middleware to
+    # compute pre-dispatch token estimate over the real prompt rather
+    # than the caller-supplied raw messages. Pre-B2 callers ignore this
+    # field — backward compat.
+    req["injected_messages"] = messages
+    return req
+
+
+def governed_call(
+    messages: list[dict[str, Any]],
+    *,
+    # Core routing (required):
+    provider_id: str,
+    model: str,
+    api_key: str,
+    base_url: str,
+    request_id: str,
+    # Call shape (optional):
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | None = None,
+    response_format: dict[str, Any] | None = None,
+    # Context-aware build (PR-B2 v4 iter-3 B1 absorb):
+    session_context: dict[str, Any] | None = None,
+    workspace_root_str: str | None = None,
+    profile: str | None = None,
+    embedding_config: Any | None = None,
+    vector_store: Any | None = None,
+    # Cost-tracking identity (PR-B2 v3 iter-2 B2 — all 4 required for
+    # cost-active path; None → transparent bypass):
+    workspace_root: Any | None = None,
+    run_id: str | None = None,
+    step_id: str | None = None,
+    attempt: int | None = None,
+) -> dict[str, Any]:
+    """Composed LLM call with optional cost governance.
+
+    **STREAMING BOUNDARY (v5 iter-4 B2 absorb)**: NON-STREAMING ONLY.
+    Callers with ``stream=True`` intent MUST NOT call ``governed_call``;
+    they stay on the existing build + ``_execute_stream`` path in
+    client.py. Streaming cost tracking is FAZ-C scope (chunk-level
+    tokenization + partial ledger deferred).
+
+    **Activation gate**: all of (``workspace_root``, ``run_id``,
+    ``step_id``, ``attempt``) must be non-None AND
+    ``policy.enabled=true``; any missing kwarg → transparent bypass.
+    Bypass path behaves exactly like pre-B2 flow (build + execute +
+    normalize) with zero cost hooks.
+
+    **Return shape (v5 iter-4 B1 absorb — rich internal dict)**:
+
+    - On ``CAPABILITY_GAP``: ``{"status": "CAPABILITY_GAP", "missing":
+      [...], "provider_id", "model", "request_id", "text": ""}`` —
+      caller envelope-ready (mirrors client.py:531-547 pre-B2 shape).
+    - On ``TRANSPORT_ERROR``: ``{"status": "TRANSPORT_ERROR",
+      "error_code", "http_status", "provider_id", "model", "request_id",
+      "text": "", "elapsed_ms"}`` — caller envelope-ready (mirrors
+      client.py:608-618).
+    - On normal success: ``{"status": "OK", "normalized": <dict>,
+      "resp_bytes": bytes, "transport_result": <dict>, "elapsed_ms": int,
+      "request_id": str}``. Caller (client.py / mcp_server.py) unwraps:
+      ``normalized`` for response text/usage/tool_calls, ``resp_bytes``
+      + ``transport_result`` for evidence/telemetry, ``elapsed_ms``
+      for final envelope. **Mevcut post-call pipeline (decision
+      extraction, scorecard, telemetry) caller'da kalır; governed_call
+      içinde duplicate EDİLMEZ.**
+
+    **Cost-layer errors RAISE** (not envelope):
+    :class:`BudgetExhaustedError`, :class:`CostTrackingConfigError`,
+    :class:`PriceCatalogNotFoundError`, :class:`LLMUsageMissingError`.
+    Caller decides propagate or try/except wrap.
+
+    See plan v7 §2.6 for the full flow spec.
+    """
+    # 1. Capability check (BEFORE cost, BEFORE transport).
+    cap_ok, _, missing = check_capabilities(
+        provider_id=provider_id,
+        model=model,
+        has_tools=bool(tools),
+        has_response_format=bool(response_format),
+    )
+    if not cap_ok and missing:
+        return {
+            "status": "CAPABILITY_GAP",
+            "text": "",
+            "missing": missing,
+            "provider_id": provider_id,
+            "model": model,
+            "request_id": request_id,
+        }
+
+    # 2. Cost gate — all 4 identity + ws + policy.enabled.
+    cost_active = all(
+        [workspace_root, run_id, step_id, attempt is not None]
+    )
+    cost_policy = None
+    if cost_active:
+        from pathlib import Path
+        from ao_kernel.cost.policy import load_cost_policy
+
+        ws_path = (
+            workspace_root
+            if isinstance(workspace_root, Path)
+            else Path(str(workspace_root))
+        )
+        cost_policy = load_cost_policy(ws_path)
+        cost_active = cost_policy.enabled
+
+    # 3. Build request (context-aware branch).
+    if session_context is not None:
+        req = build_request_with_context(
+            messages=messages,
+            provider_id=provider_id,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            session_context=session_context,
+            workspace_root=workspace_root_str,
+            profile=profile,
+            embedding_config=embedding_config,
+            vector_store=vector_store,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            request_id=request_id,
+            tools=tools,
+            tool_choice=tool_choice,
+            response_format=response_format,
+        )
+        # injected_messages field added in v5 iter-4 B4 absorb.
+        effective_messages = req.get("injected_messages", messages)
+    else:
+        req = build_request(
+            messages=messages,
+            provider_id=provider_id,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            request_id=request_id,
+            tools=tools,
+            tool_choice=tool_choice,
+            response_format=response_format,
+        )
+        effective_messages = messages
+
+    # 4. Cost reserve (if active).
+    est_cost = None
+    catalog_entry = None
+    if cost_active and cost_policy is not None:
+        from pathlib import Path
+        from ao_kernel.cost.middleware import pre_dispatch_reserve
+
+        ws_path = (
+            workspace_root
+            if isinstance(workspace_root, Path)
+            else Path(str(workspace_root))
+        )
+        est_cost, catalog_entry = pre_dispatch_reserve(
+            workspace_root=ws_path,
+            run_id=str(run_id),
+            step_id=str(step_id),
+            attempt=int(attempt) if attempt is not None else 1,
+            provider_id=provider_id,
+            model=model,
+            prompt_messages=list(effective_messages),
+            max_tokens=max_tokens,
+            policy=cost_policy,
+        )
+        # Raises: BudgetExhaustedError, CostTrackingConfigError,
+        # PriceCatalogNotFoundError — caller decides.
+
+    # 5. Transport (existing execute_request).
+    transport_result = execute_request(
+        url=req["url"],
+        headers=req["headers"],
+        body_bytes=req["body_bytes"],
+        timeout_seconds=30.0,
+        provider_id=provider_id,
+        request_id=request_id,
+    )
+
+    # 6. Transport envelope preserve.
+    if transport_result.get("status") != "OK":
+        # Reservation HOLDS per Q5 iter-1 (no refund on error).
+        return {
+            "status": "TRANSPORT_ERROR",
+            "text": "",
+            "error_code": transport_result.get("error_code", "UNKNOWN"),
+            "http_status": transport_result.get("http_status"),
+            "provider_id": provider_id,
+            "model": model,
+            "request_id": request_id,
+            "elapsed_ms": transport_result.get("elapsed_ms", 0),
+        }
+
+    # 7. Normalize.
+    normalized = normalize_response(
+        transport_result["resp_bytes"],
+        provider_id=provider_id,
+    )
+
+    # 8. Cost reconcile + record (if active).
+    if cost_active and cost_policy is not None and catalog_entry is not None:
+        from pathlib import Path
+        from ao_kernel.cost.middleware import post_response_reconcile
+
+        ws_path = (
+            workspace_root
+            if isinstance(workspace_root, Path)
+            else Path(str(workspace_root))
+        )
+        post_response_reconcile(
+            workspace_root=ws_path,
+            run_id=str(run_id),
+            step_id=str(step_id),
+            attempt=int(attempt) if attempt is not None else 1,
+            provider_id=provider_id,
+            model=model,
+            catalog_entry=catalog_entry,
+            est_cost=est_cost if est_cost is not None else Decimal("0"),
+            raw_response_bytes=transport_result["resp_bytes"],
+            policy=cost_policy,
+        )
+        # Raises LLMUsageMissingError when policy.fail_closed_on_missing_usage
+        # AND usage absent. Ledger audit entry always recorded first.
+
+    # 9. Rich internal success dict (v5 iter-4 B1).
+    return {
+        "status": "OK",
+        "normalized": normalized,
+        "resp_bytes": transport_result["resp_bytes"],
+        "transport_result": transport_result,
+        "elapsed_ms": transport_result.get("elapsed_ms", 0),
+        "request_id": request_id,
+    }
 
 
 def process_response_with_context(

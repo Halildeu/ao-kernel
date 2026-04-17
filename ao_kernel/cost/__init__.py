@@ -35,6 +35,10 @@ from ao_kernel.cost.ledger import (
     SpendEvent,
     record_spend,
 )
+from ao_kernel.cost.middleware import (
+    post_response_reconcile,
+    pre_dispatch_reserve,
+)
 from ao_kernel.cost.errors import (
     BudgetExhaustedError,
     CostTrackingConfigError,
@@ -68,6 +72,9 @@ __all__ = [
     # Ledger
     "SpendEvent",
     "record_spend",
+    # Middleware
+    "pre_dispatch_reserve",
+    "post_response_reconcile",
     # Policy
     "CostTrackingPolicy",
     "RoutingByCost",
