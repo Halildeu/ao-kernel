@@ -80,12 +80,12 @@ B1 extends the PR-A evidence taxonomy from 18 kinds to 24 with six coordination-
 
 | Event kind | Fired when |
 |---|---|
-| `claim_acquired` | Successful `acquire_claim` (new or post-takeover) |
+| `claim_acquired` | Successful fresh `acquire_claim` — new resource OR reclaim-of-released. NOT emitted on post-takeover (see `claim_takeover` below). |
 | `claim_released` | Successful `release_claim` (owner-initiated) |
-| `claim_heartbeat` | `claim.heartbeat()` update |
-| `claim_expired` | Cleanup scan detects stale claim past grace |
-| `claim_takeover` | Successful takeover by a different agent |
-| `claim_conflict` | Attempted acquire/takeover blocked by live owner (`CLAIM_CONFLICT`) or grace (`CLAIM_CONFLICT_GRACE`); payload distinguishes the two |
+| `claim_heartbeat` | `heartbeat()` update. Audit only — the liveness decision is the claim record's `heartbeat_at`, never the event. |
+| `claim_expired` | `prune_expired_claims` detects stale claim past grace |
+| `claim_takeover` | Past-grace reclaim by a different agent. Mutually exclusive with `claim_acquired` — a single acquire/takeover path emits exactly one of the two. |
+| `claim_conflict` | Attempted acquire/takeover blocked by live owner (`CLAIM_CONFLICT`) or grace window (`CLAIM_CONFLICT_GRACE`); payload includes `current_fencing_token` (B6v2 for FAZ-B master plan §10 race test). |
 
 ## 8. Policy Binding
 
@@ -106,6 +106,79 @@ B1 extends the PR-A evidence taxonomy from 18 kinds to 24 with six coordination-
 - Schemas: [`claim.schema.v1.json`](../ao_kernel/defaults/schemas/claim.schema.v1.json), [`fencing-state.schema.v1.json`](../ao_kernel/defaults/schemas/fencing-state.schema.v1.json), [`policy-coordination-claims.schema.v1.json`](../ao_kernel/defaults/schemas/policy-coordination-claims.schema.v1.json).
 - Adversarial review: [CNS-20260416-028v2 consensus](../.ao/consultations/CNS-20260416-028v2.consensus.md), especially §B2 / B2' / Expiry Authority resolution.
 
-## 10. Document Status
+## 10. Runtime Impl Notes (PR-B1)
 
-Skeleton in PR-B0 commit 1. Edge-case examples, operator override walkthrough, and failure recovery runbook land in PR-B0 commit 5 (docs final pass).
+The B0-pinned contract above is implemented by `ao_kernel/coordination/` (PR-B1 shipped with commits `150b508`, `d7b23d2`, `3230edc`, `bf948a3`). Operators using this runtime should know the following invariants the implementation honours so debugging + extension remain predictable.
+
+### 10.1 Public API surface
+
+```python
+from ao_kernel.coordination import ClaimRegistry
+
+registry = ClaimRegistry(workspace_root, evidence_sink=None)
+
+# Acquire / lifecycle
+claim = registry.acquire_claim(resource_id, owner_agent_id, policy=None)
+registry.heartbeat(resource_id, claim_id, owner_agent_id)
+registry.release_claim(resource_id, claim_id, owner_agent_id)
+
+# Takeover (explicit past-grace reclaim)
+new_claim = registry.takeover_claim(resource_id, new_owner_agent_id, policy=None)
+
+# Read / validate / list
+registry.get_claim(resource_id)                # -> Claim | None
+registry.validate_fencing_token(resource_id, token)  # -> raises on mismatch
+registry.list_agent_claims(owner_agent_id)     # live-count only
+
+# Admin
+registry.prune_expired_claims(policy=None, *, max_batch=None)
+```
+
+Callers **MUST** hold onto the `Claim` dataclass returned by `acquire_claim` (or `takeover_claim`) — `heartbeat` and `release_claim` take both `resource_id` and `claim_id` (plus `owner_agent_id`) as arguments so the registry does O(1) direct file lookup rather than maintaining a reverse index.
+
+### 10.2 Fail-closed vs fail-open
+
+- **Fail-closed (raise, never silently absorb):**
+  - Policy load errors (malformed JSON, schema violation in workspace override).
+  - `resource_id` validation (`_validate_resource_id` regex; no path separators, wildcards, whitespace, leading non-alphanumeric).
+  - `claim_resource_patterns` allowlist denial.
+  - SSOT corruption — `{resource_id}.v1.json` or `_fencing.v1.json` parse / schema / revision-hash mismatch raises `ClaimCorruptedError` and propagates. The on-disk file is NOT repaired or overwritten; operator intervention required.
+  - Dormant-policy gate — `policy.enabled=false` raises `ClaimCoordinationDisabledError` on every public API call.
+
+- **Fail-open (log warning, keep going):**
+  - Evidence emission. `_safe_emit_coordination_event` wraps the caller-injected sink in try/except; emit failures are logged at `warning` level with `{"coordination_kind": kind, "error": repr(e)}` in `extra` for parseability. Coordination correctness **never** depends on emission success — this is CLAUDE.md §2 side-channel contract.
+  - Derived `_index.v1.json` cache. Corrupt or drifted index triggers silent rebuild from the per-resource SSOT scan under `claims.lock`. Rebuild never masks SSOT corruption — errors during the rebuild scan still raise `ClaimCorruptedError`.
+
+### 10.3 Write ordering + atomicity
+
+Every mutation acquires `claims.lock` (POSIX `fcntl` via `ao_kernel._internal.shared.lock.file_lock`) for the full read-mutate-write cycle. Inside the lock:
+
+- **Acquire / takeover:** `_fencing.v1.json` (CAS) → `{resource_id}.v1.json` (atomic write) → `_index.v1.json` (derived last).
+- **Release / prune:** load + validate `_fencing.v1.json` (pre-delete fail-closed check) → delete `{resource_id}.v1.json` → CAS-write `_fencing.v1.json` audit update → remove from `_index.v1.json`.
+
+The release order ensures a corrupt fencing state raises `ClaimCorruptedError` while the claim file is still recoverable on disk; callers can restore the fencing artefact and retry release.
+
+### 10.4 Fencing-token validation
+
+`validate_fencing_token(resource_id, token)` implements **exact-equality** semantics. The currently-live issued token is `next_token - 1`; the supplied token must match it exactly. Both stale tokens (agent-victim of takeover) and future / fabricated tokens raise `ClaimStaleFencingError`. This is stricter than a one-sided "at least as recent" check and catches programmer errors that would otherwise slip through.
+
+### 10.5 Forward-only fencing reconcile
+
+`_reconcile_fencing_with_claims_locked()` (internal ops helper) recomputes fencing `next_token` per resource as `max(state.resources[rid].next_token, max_claim_fencing_token + 1)`. Fencing state **never decreases**; if the state already advanced past what the persisted claims would suggest (e.g. after a series of acquire/release cycles whose claim files were released), the reconcile preserves the advance rather than rewinding. Callers that want to force a full recovery run the helper under `claims.lock`.
+
+### 10.6 Quota semantics (`max_claims_per_agent`)
+
+- `max_claims_per_agent = 0` ⇒ **unlimited** (quota disabled). The enforcement line is `if limit > 0 and count >= limit: raise`, so `limit=0` bypasses the check regardless of count.
+- Count is **live-count** only — expired-but-unpruned claims (still on disk past grace) are excluded. The registry loads each claim file referenced in `_index.v1.json` and applies the liveness predicate; stale index entries are tolerated.
+- Quota check runs on **both** `acquire_claim` and `takeover_claim` paths (the takeover path previously skipped it; B1v5 fixed that).
+
+### 10.7 Executor fencing entry
+
+`Executor(claim_registry=…).run_step(fencing_token=…, fencing_resource_id=…)` delegates to `ClaimRegistry.validate_fencing_token` at entry, BEFORE any evidence emit, worktree build, or adapter invoke. On stale fencing the `ClaimStaleFencingError` propagates to the caller (typically `MultiStepDriver`), which applies its own `step_failed` emission + `error_category="other"` + `code="STALE_FENCING"` mapping per the PR-A4b handler. Canonical event order (`step_started` → `adapter_invoked` → ... → `step_completed` | `step_failed`) stays intact — the executor itself emits nothing on the stale-fencing path.
+
+Passing only one of the fencing pair raises `ValueError`. Supplying fencing kwargs without `claim_registry` injected at construction also raises.
+
+## 11. Document Status
+
+- Contract surface pinned in PR-B0 commit 1 (schemas + dormant policy + docs skeleton).
+- Runtime shipped in PR-B1 commits `150b508` → `bf948a3` (plan §3 Write Order 7 steps across 5 commits). Operator override walkthrough + failure recovery runbook expand further in PR-B5 (metrics + observability) scope.
