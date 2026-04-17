@@ -1,11 +1,13 @@
 {
   "version": "v1",
   "enabled": false,
-  "_comment": "Bundled default DORMANT: enabled=false means the cost runtime does not engage; no spend ledger is written, catalog staleness is not evaluated, and llm.resolve_route() does not consult the catalog. Operator override: drop a workspace copy at {project_root}/.ao/policies/policy_cost_tracking.v1.json with enabled=true to activate. fail_closed_on_exhaust is locked to true per CNS-007 — attempting to set it false fails schema validation. strict_freshness=false (the default) emits a warn log when the catalog is past stale_after but does NOT block invocation; set strict_freshness=true to fail-closed instead. routing_by_cost.enabled=false means B3's cost-aware fallback is inert even when the policy is enabled — flip it on when the workspace is ready to handle automatic model downgrades. See docs/COST-MODEL.md for full semantics.",
+  "_comment": "Bundled default DORMANT: enabled=false means the cost runtime does not engage; no spend ledger is written, catalog staleness is not evaluated, and llm.resolve_route() does not consult the catalog. Operator override: drop a workspace copy at {project_root}/.ao/policies/policy_cost_tracking.v1.json with enabled=true to activate. fail_closed_on_exhaust is locked to true per CNS-007 — attempting to set it false fails schema validation. strict_freshness=false (the default) emits a warn log when the catalog is past stale_after but does NOT block invocation; set strict_freshness=true to fail-closed instead. fail_closed_on_missing_usage=true (the default) raises LLMUsageMissingError when adapter responses omit tokens_input/tokens_output; set false for warn-log in audit-only environments (PR-B2 v2 iter-2 B4 absorb). idempotency_window_lines=1000 bounds the ledger tail-scan window for (run_id, step_id, attempt) duplicate detection; operators with very long runs can raise up to 100000 (PR-B2 v2 iter-2 B2 absorb). routing_by_cost.enabled=false means B3's cost-aware fallback is inert even when the policy is enabled — flip it on when the workspace is ready to handle automatic model downgrades. See docs/COST-MODEL.md for full semantics.",
   "price_catalog_path": ".ao/cost/catalog.v1.json",
   "spend_ledger_path": ".ao/cost/spend.jsonl",
   "fail_closed_on_exhaust": true,
   "strict_freshness": false,
+  "fail_closed_on_missing_usage": true,
+  "idempotency_window_lines": 1000,
   "routing_by_cost": {
     "enabled": false
   }
