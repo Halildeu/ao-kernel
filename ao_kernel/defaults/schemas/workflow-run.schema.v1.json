@@ -197,6 +197,14 @@
           "type": "string",
           "description": "Pointer to step output (e.g., adapter output_envelope serialization, CI result JSON, patch artifact path). PR-A4 requires this field to be populated for actor in {adapter, ao-kernel, system} steps that produce durable outputs (diff content, reverse-diff paths, CI result JSON) so crash-recovery can find the canonical artifact."
         },
+        "capability_output_refs": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z][a-z0-9_]{0,63}$": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false,
+          "description": "Map<capability, run-relative artifact path>. Per-capability typed artifacts written by MultiStepDriver from InvocationResult.extracted_outputs (walker output_parse rules). Absent for pre-B6 runs and for adapters without output_parse manifest rules. PR-B6 additive widen; plan v4 §2.2 driver-owned materialization."
+        },
         "attempt": {
           "type": "integer",
           "minimum": 1,

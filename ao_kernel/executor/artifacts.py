@@ -107,3 +107,91 @@ def write_artifact(
 
     output_ref = f"artifacts/{filename}"
     return output_ref, digest
+
+
+def write_capability_artifact(
+    run_dir: Path,
+    step_id: str,
+    attempt: int,
+    capability: str,
+    payload: Mapping[str, Any],
+) -> tuple[str, str]:
+    """Serialise + write + fsync a per-capability typed ``payload`` from
+    ``InvocationResult.extracted_outputs``.
+
+    PR-B6 v4 §2.1 absorb — driver-owned materialization of the walker's
+    ``output_parse`` rule output (adapter_invoker._walk_output_parse).
+    Complements ``write_artifact()`` which writes the normalized
+    invocation envelope; this variant writes each capability's typed
+    payload as its own artifact for replay determinism + schema-targeted
+    lookup.
+
+    Returns ``(output_ref, output_sha256)`` where:
+    - ``output_ref`` — run-relative path
+      ``"artifacts/{step_id}-{capability}-attempt{attempt}.json"``
+    - ``output_sha256`` — hex digest of the canonical JSON bytes
+
+    Raises:
+    - ``ValueError`` if ``attempt < 1`` or ``capability`` does not match
+      the pattern ``^[a-z][a-z0-9_]{0,63}$`` (schema contract for
+      ``step_record.capability_output_refs`` keys).
+    - ``OSError`` if the directory cannot be created or rename fails.
+
+    Atomic write pattern: mirrors ``write_artifact()`` — tempfile in
+    same directory → fsync → os.replace → fsync parent dir.
+    """
+    import re
+
+    if attempt < 1:
+        raise ValueError(f"attempt must be >= 1, got {attempt}")
+    if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", capability):
+        raise ValueError(
+            f"capability must match ^[a-z][a-z0-9_]{{0,63}}$, got {capability!r}"
+        )
+
+    artifacts_dir = run_dir / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+    filename = f"{step_id}-{capability}-attempt{attempt}.json"
+    target = artifacts_dir / filename
+
+    serialized = json.dumps(
+        payload,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    body = serialized.encode("utf-8")
+    digest = hashlib.sha256(body).hexdigest()
+
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=filename + ".",
+        suffix=".tmp",
+        dir=artifacts_dir,
+    )
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(body)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_path, target)
+    except Exception:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+        raise
+
+    try:
+        dir_fd = os.open(str(artifacts_dir), os.O_RDONLY)
+    except OSError:
+        dir_fd = None
+    if dir_fd is not None:
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+
+    output_ref = f"artifacts/{filename}"
+    return output_ref, digest

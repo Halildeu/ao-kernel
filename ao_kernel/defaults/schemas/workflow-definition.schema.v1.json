@@ -93,9 +93,10 @@
         "open_pr",
         "human_interrupt",
         "stream_output",
-        "review_findings"
+        "review_findings",
+        "commit_message"
       ],
-      "description": "Mirrors agent-adapter-contract.schema.v1.json::$defs/capability_enum. Drift regression test asserts set equality."
+      "description": "Mirrors agent-adapter-contract.schema.v1.json::$defs/capability_enum. Drift regression test asserts set equality. commit_message added in PR-B6 for write-lite commit AI workflows."
     },
     "step_def": {
       "type": "object",
