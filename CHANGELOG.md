@@ -87,12 +87,19 @@ capability + bundled `commit_ai_flow` workflow.**
   records include it when the adapter produced typed outputs.
 
 - **BENCHMARK-SUITE.md narrative update**: "output_ref = review
-  artifact" narrative (B0 pin that never shipped) replaced with
-  "capability_output_refs map for per-capability typed artifacts;
-  output_ref still carries the normalized invocation artifact as a
-  pre-B6 parallel surface." `governed_review` release gate (§5.2)
-  now references `capability_output_refs["review_findings"]` as the
-  artifact pointer.
+  artifact" narrative (B0 pin that never shipped) replaced.
+  `capability_output_refs` is the **B6-guaranteed** surface for
+  per-capability typed artifacts. `output_ref` on the driver-managed
+  adapter path remains a **legacy / non-guaranteed** surface: pre-B6
+  the executor wrote the normalized invocation artifact but never
+  threaded `output_ref` through `ExecutionResult`, so the driver
+  completion helpers see no field and persist nothing. B6 preserves
+  this pre-existing empty-stays-empty behavior; adapter-path
+  `output_ref` persistence is NOT B6 scope and is NOT auto-assumed
+  for B7 — it requires a dedicated follow-up (FAZ-C or explicit
+  scope) and an `ExecutionResult` widen. `governed_review` release
+  gate (§5.2) now mandates `capability_output_refs["review_findings"]`
+  as the artifact pointer.
 
 - **Locked invariants / contracts**:
   - Executor invariant preserved: `_normalize_invocation_for_artifact()`

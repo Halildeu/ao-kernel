@@ -66,7 +66,8 @@ step_record.capability_output_refs = {capability: ref}                  [B6: shi
 - For each `(capability, payload)`, calls `artifacts.write_capability_artifact(run_dir, step_id, attempt, capability, payload)`.
 - Collected refs persist as `step_record.capability_output_refs: map<capability, run-relative path>` (additive schema widen; pre-B6 records parse cleanly without the field).
 - Executor stays **schema-agnostic** — `_normalize_invocation_for_artifact()` and `ExecutionResult` are unchanged.
-- `step_record.output_ref` still points at the normalized invocation artifact (pre-B6 shape preserved). Per-capability typed artifacts are a **new** parallel surface under `capability_output_refs`, NOT a replacement for `output_ref`.
+- **`step_record.capability_output_refs` is the B6-guaranteed surface** for per-capability typed artifacts (populated whenever the walker extracted non-empty payloads).
+- **`step_record.output_ref` is a legacy / non-guaranteed surface** for the driver-managed adapter path. Pre-B6 the executor wrote the normalized invocation artifact via `write_artifact()` but did NOT thread the resulting `output_ref` through `ExecutionResult` — driver completion helpers see an absent field and persist nothing. B6 preserves this pre-existing behavior (empty stays empty on the adapter path). If a future PR (FAZ-C or dedicated follow-up) wants `output_ref` populated for adapter steps, `ExecutionResult` must gain an `output_ref` field — that is NOT B6 scope.
 - Artifact write failure fails-closed: `_StepFailed(category="output_parse_failed")` → standard PR-A4b step_failed handler.
 
 Two hard invariants (enforced by B0 code, not just pinned by docs):
@@ -139,7 +140,7 @@ Both modes exercise the full `MultiStepDriver` + `Executor.run_step` + `adapter_
 
 - `workflow_completed` evidence event fires.
 - Adapter returns an envelope with `status: "ok"` AND an `output_parse`-extractable payload that validates against `review-findings.schema.v1.json`.
-- `step_record.capability_output_refs["review_findings"]` points at a non-empty, schema-valid `review-findings` artifact (PR-B6 shipped; `output_ref` still carries the normalized invocation artifact as a separate pre-B6 surface).
+- `step_record.capability_output_refs["review_findings"]` points at a non-empty, schema-valid `review-findings` artifact (PR-B6 B6-guaranteed surface). `output_ref` is legacy/non-guaranteed on the adapter path and may be absent — benchmarks MUST read from `capability_output_refs`.
 - `cost_usd` axis stays within the seeded budget.
 - **Objective scoring:** the benchmark harness inspects `findings.severity` distribution and optional `score`; caller-supplied threshold decides pass/fail.
 
