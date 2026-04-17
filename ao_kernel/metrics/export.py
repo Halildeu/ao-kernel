@@ -123,10 +123,14 @@ def _serialize(registry: Any) -> str:
     Imported inside the function so importing this module does not
     pull in ``prometheus_client`` unconditionally (respects the
     lazy-import contract mirrored from :mod:`ao_kernel.telemetry`).
+    ``generate_latest`` is typed as ``bytes`` in the shipped stubs;
+    the explicit ``str`` annotation here pins our decoded contract
+    for downstream callers.
     """
     from prometheus_client import generate_latest
 
-    return generate_latest(registry).decode("utf-8")
+    decoded: str = generate_latest(registry).decode("utf-8")
+    return decoded
 
 
 __all__ = [
