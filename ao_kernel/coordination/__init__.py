@@ -54,6 +54,11 @@ from ao_kernel.coordination.policy import (
     load_coordination_policy,
     match_resource_pattern,
 )
+from ao_kernel.coordination.registry import (
+    AgentClaimIndex,
+    ClaimRegistry,
+    EvidenceSink,
+)
 
 
 __all__ = [
@@ -79,6 +84,10 @@ __all__ = [
     "EvidenceRedaction",
     "load_coordination_policy",
     "match_resource_pattern",
+    # Registry
+    "AgentClaimIndex",
+    "ClaimRegistry",
+    "EvidenceSink",
     # Errors
     "ClaimAlreadyReleasedError",
     "ClaimConflictError",
