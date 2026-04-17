@@ -62,9 +62,25 @@ def _bundled_policy() -> dict[str, Any]:
 
 @dataclass(frozen=True)
 class RoutingByCost:
-    """Cost-aware routing toggle (PR-B3 runtime)."""
+    """Cost-aware routing knobs (PR-B3 runtime).
+
+    - ``enabled``: master switch. When false, routing ignores the
+      catalog regardless of other fields (bundled default).
+    - ``priority``: selection strategy. ``"provider_priority"``
+      (default) preserves pre-B3 fallback order. ``"lowest_cost"``
+      partitions providers into known-cost / unknown-cost buckets;
+      if any provider has a catalog entry, sort ascending by price
+      and drop unknowns; if none have entries, fall back to the
+      original provider_priority order without elimination.
+    - ``fail_closed_on_catalog_missing``: when active mode is on
+      (``enabled=True`` + ``priority="lowest_cost"``) and the price
+      catalog fails to load, raise ``RoutingCatalogMissingError``.
+      When false, warn-log and fall back to provider_priority.
+    """
 
     enabled: bool
+    priority: str = "provider_priority"
+    fail_closed_on_catalog_missing: bool = True
 
 
 @dataclass(frozen=True)
@@ -91,7 +107,13 @@ class CostTrackingPolicy:
 def _from_dict(doc: Mapping[str, Any]) -> CostTrackingPolicy:
     """Map a schema-valid policy dict to :class:`CostTrackingPolicy`."""
     routing_raw = doc.get("routing_by_cost") or {"enabled": False}
-    routing = RoutingByCost(enabled=bool(routing_raw.get("enabled", False)))
+    routing = RoutingByCost(
+        enabled=bool(routing_raw.get("enabled", False)),
+        priority=str(routing_raw.get("priority", "provider_priority")),
+        fail_closed_on_catalog_missing=bool(
+            routing_raw.get("fail_closed_on_catalog_missing", True)
+        ),
+    )
     return CostTrackingPolicy(
         enabled=bool(doc["enabled"]),
         price_catalog_path=str(doc["price_catalog_path"]),

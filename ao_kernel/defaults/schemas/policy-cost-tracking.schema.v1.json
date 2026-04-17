@@ -57,7 +57,18 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "When true (PR-B3 runtime), llm.resolve_route consults the catalog to estimate cost and may fall back to a cheaper model when the remaining budget cannot cover the preferred model. When false, routing ignores the catalog."
+          "description": "When true (PR-B3 runtime), llm.resolve_route consults the price catalog to select the cheapest eligible model within the target class. When false, routing ignores the catalog."
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["provider_priority", "lowest_cost"],
+          "default": "provider_priority",
+          "description": "Selection strategy. 'provider_priority' (default, pre-B3 behavior) preserves llm_resolver_rules.fallback_order_by_class. 'lowest_cost' partitions providers into known-cost and unknown-cost buckets; if any provider has a catalog entry, sort ascending by price and drop unknowns; if none have catalog entries, fall back to original provider_priority without elimination."
+        },
+        "fail_closed_on_catalog_missing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Active mode (enabled=true + priority=lowest_cost) + catalog load failure → RoutingCatalogMissingError. When false, falls back to provider_priority semantics with warn-log."
         }
       }
     }
