@@ -1,0 +1,37 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "commit_ai_flow",
+  "workflow_version": "1.0.0",
+  "display_name": "Commit AI Flow",
+  "description": "Context compile -> commit-message generation adapter -> typed artifact (commit-message.schema.v1.json). PR-B6 write-lite runtime for master plan item #20. The bundled flow produces the TYPED COMMIT MESSAGE ARTIFACT only; applying the actual git commit is an operator-downstream concern. ao-kernel NEVER executes git commit itself (commit_write capability is prohibited in agent-adapter-contract.schema.v1.json). expected_adapter_refs declares 'codex-stub' for deterministic CI; production workspaces point at a real commit-message-capable adapter whose manifest declares commit_message in capabilities[] and carries an output_parse rule pointing at commit-message.schema.v1.json.",
+  "steps": [
+    {
+      "step_name": "compile_context",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "invoke_commit_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "commit_message"],
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 300,
+      "human_interrupt_allowed": false
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub"],
+  "default_policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "required_capabilities": ["read_repo", "commit_message"],
+  "tags": ["commit", "message", "write-lite"],
+  "created_at": "2026-04-17T00:00:00+00:00"
+}
