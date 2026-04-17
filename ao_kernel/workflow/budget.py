@@ -105,17 +105,19 @@ def budget_from_dict(record: Mapping[str, Any]) -> Budget:
     tokens_axis = _parse_int_axis(record.get("tokens"))
     tokens_input_raw = record.get("tokens_input")
     tokens_output_raw = record.get("tokens_output")
-    if tokens_input_raw is None and tokens_output_raw is None and tokens_axis is not None:
-        # Legacy record: copy aggregate into tokens_input for back-compat.
-        tokens_input_axis: BudgetAxis | None = BudgetAxis(
-            limit=tokens_axis.limit,
-            spent=tokens_axis.spent,
-            remaining=tokens_axis.remaining,
-        )
-        tokens_output_axis: BudgetAxis | None = None
-    else:
-        tokens_input_axis = _parse_int_axis(tokens_input_raw)
-        tokens_output_axis = _parse_int_axis(tokens_output_raw)
+    # CNS-032 iter-2 absorb: legacy workflow-run records with only the
+    # aggregate ``tokens`` axis leave both granular fields as None on
+    # read. Earlier plan v7 §2.5 "conservative mapping" synthesized
+    # ``tokens_input = copy(tokens)`` but that synthesized axis diverged
+    # from the aggregate after reconcile (reconcile routes legacy spend
+    # through the aggregate path, not the synthesized granular axis).
+    # The cleaner contract: legacy aggregate-only records stay
+    # aggregate-only in-memory; granular axes appear only when the
+    # wire record declares them explicitly. The middleware's legacy
+    # path (case 2 in _reconcile_mutator) already routes spend through
+    # the aggregate axis correctly.
+    tokens_input_axis = _parse_int_axis(tokens_input_raw)
+    tokens_output_axis = _parse_int_axis(tokens_output_raw)
     return Budget(
         tokens=tokens_axis,
         tokens_input=tokens_input_axis,

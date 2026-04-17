@@ -51,8 +51,11 @@ def _granular_budget(
 
 
 class TestBackCompatReader:
-    def test_legacy_tokens_only_populates_tokens_input(self) -> None:
-        """Plan v7 §2.5: reader copies aggregate into tokens_input."""
+    def test_legacy_tokens_only_stays_aggregate_only(self) -> None:
+        """CNS-032 iter-2 absorb: reader does NOT synthesize
+        tokens_input from legacy aggregate. Legacy aggregate-only
+        records stay aggregate-only (middleware's aggregate path
+        handles spend correctly)."""
         raw: dict[str, Any] = {
             "tokens": {"limit": 500, "spent": 50, "remaining": 450},
             "fail_closed_on_exhaust": True,
@@ -60,10 +63,8 @@ class TestBackCompatReader:
         b = budget_from_dict(raw)
         assert b.tokens is not None
         assert b.tokens.limit == 500
-        assert b.tokens_input is not None
-        assert b.tokens_input.limit == 500
-        assert b.tokens_input.spent == 50
-        assert b.tokens_input.remaining == 450
+        # No synthesis — both granular axes remain None.
+        assert b.tokens_input is None
         assert b.tokens_output is None
 
     def test_granular_record_populates_all(self) -> None:

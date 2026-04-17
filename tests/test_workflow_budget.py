@@ -87,26 +87,27 @@ class TestParse:
 
 
 class TestSerialize:
-    def test_roundtrip_legacy_tokens_adds_granular_input(self) -> None:
-        """PR-B2 v3 iter-2 B3 absorb: legacy records with only aggregate
-        ``tokens`` are conservatively mapped to granular on read. Reader
-        copies ``tokens`` into ``tokens_input``; writer emits both.
-        This is a documented semantic widening; legacy wire round-trip
-        is no longer byte-identical but the legacy fields remain
-        present and unchanged.
+    def test_roundtrip_legacy_tokens_stays_aggregate_only(self) -> None:
+        """CNS-032 iter-2 absorb (refined from PR-B2 v3 iter-2 B3):
+        legacy records with only the aggregate ``tokens`` axis
+        round-trip WITHOUT synthesizing a granular ``tokens_input``
+        axis.
+
+        Earlier plan v7 §2.5 "conservative mapping" synthesized
+        ``tokens_input = copy(tokens)`` on read, but that synthesized
+        axis diverged from the aggregate after reconcile. Cleaner
+        contract: legacy aggregate-only records stay aggregate-only;
+        granular axes appear only when the wire record declares them.
+        The middleware's aggregate path (case 2) handles legacy spend
+        correctly via the ``tokens=`` kwarg.
         """
         raw: dict[str, Any] = {
             "tokens": {"limit": 100, "spent": 10, "remaining": 90},
             "fail_closed_on_exhaust": True,
         }
         out = budget_to_dict(budget_from_dict(raw))
-        # Aggregate preserved byte-identical
-        assert out["tokens"] == raw["tokens"]
-        assert out["fail_closed_on_exhaust"] is True
-        # New: tokens_input appears as a copy of tokens (conservative mapping)
-        assert out["tokens_input"] == raw["tokens"]
-        # tokens_output remains absent (None → OMIT invariant)
-        assert "tokens_output" not in out
+        # Legacy wire round-trip is byte-identical again (no synth).
+        assert out == raw
 
     def test_roundtrip_granular_preserved(self) -> None:
         """When the record declares granular axes explicitly, round-trip
