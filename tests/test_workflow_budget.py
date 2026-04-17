@@ -87,9 +87,34 @@ class TestParse:
 
 
 class TestSerialize:
-    def test_roundtrip_tokens(self) -> None:
+    def test_roundtrip_legacy_tokens_adds_granular_input(self) -> None:
+        """PR-B2 v3 iter-2 B3 absorb: legacy records with only aggregate
+        ``tokens`` are conservatively mapped to granular on read. Reader
+        copies ``tokens`` into ``tokens_input``; writer emits both.
+        This is a documented semantic widening; legacy wire round-trip
+        is no longer byte-identical but the legacy fields remain
+        present and unchanged.
+        """
         raw: dict[str, Any] = {
             "tokens": {"limit": 100, "spent": 10, "remaining": 90},
+            "fail_closed_on_exhaust": True,
+        }
+        out = budget_to_dict(budget_from_dict(raw))
+        # Aggregate preserved byte-identical
+        assert out["tokens"] == raw["tokens"]
+        assert out["fail_closed_on_exhaust"] is True
+        # New: tokens_input appears as a copy of tokens (conservative mapping)
+        assert out["tokens_input"] == raw["tokens"]
+        # tokens_output remains absent (None → OMIT invariant)
+        assert "tokens_output" not in out
+
+    def test_roundtrip_granular_preserved(self) -> None:
+        """When the record declares granular axes explicitly, round-trip
+        preserves them as-is (no back-compat synthesis)."""
+        raw: dict[str, Any] = {
+            "tokens": {"limit": 150, "spent": 0, "remaining": 150},
+            "tokens_input": {"limit": 100, "spent": 0, "remaining": 100},
+            "tokens_output": {"limit": 50, "spent": 0, "remaining": 50},
             "fail_closed_on_exhaust": True,
         }
         out = budget_to_dict(budget_from_dict(raw))

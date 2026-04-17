@@ -54,15 +54,30 @@ class BudgetAxis:
 
 @dataclass(frozen=True)
 class Budget:
-    """Aggregate budget: up to three axes + fail-closed flag.
+    """Aggregate budget: up to five axes + fail-closed flag.
 
     Any axis may be ``None`` (not configured for this run). At least one
     axis should be present for a budget to be meaningful; the schema
     enforces no minimum at the ``$defs/budget`` level, so this module
     accepts all-None as a valid edge case.
+
+    PR-B2 v3 iter-2 B3 absorb (additive widen):
+
+    - ``tokens_input`` + ``tokens_output`` granular token axes
+      augment the aggregate ``tokens`` axis. When the B2 cost pipeline
+      is active, ``record_spend`` with ``tokens_input=/tokens_output=``
+      kwargs auto-adjusts the aggregate.
+    - Writer invariant (v5 iter-4 B3): ``tokens_input`` always emitted
+      when configured; ``tokens_output=None`` → OMIT (absent key, no
+      ``null``); aggregate ``tokens`` always emitted.
+    - Reader back-compat: legacy records with only ``tokens`` →
+      ``tokens_input = BudgetAxis(copy of tokens)``, ``tokens_output =
+      None`` (conservative legacy-to-granular mapping).
     """
 
     tokens: BudgetAxis | None
+    tokens_input: BudgetAxis | None
+    tokens_output: BudgetAxis | None
     time_seconds: BudgetAxis | None
     cost_usd: BudgetAxis | None
     fail_closed_on_exhaust: bool
@@ -73,6 +88,13 @@ def budget_from_dict(record: Mapping[str, Any]) -> Budget:
 
     Enforces ``fail_closed_on_exhaust == True`` at the boundary;
     raises ``ValueError`` if absent or False.
+
+    Back-compat (PR-B2 v3 iter-2 B3 absorb): when the record has
+    ``tokens`` but not ``tokens_input`` / ``tokens_output``, the reader
+    populates ``tokens_input`` as a copy of ``tokens`` and leaves
+    ``tokens_output = None``. Conservative legacy-to-granular mapping
+    — pre-B2 records are treated as "all prompt, no completion cap"
+    which fails-closed rather than opens a gap.
     """
     fail_closed = record.get("fail_closed_on_exhaust", False)
     if fail_closed is not True:
@@ -80,8 +102,24 @@ def budget_from_dict(record: Mapping[str, Any]) -> Budget:
             "Budget must have fail_closed_on_exhaust=True "
             f"(got {fail_closed!r})"
         )
+    tokens_axis = _parse_int_axis(record.get("tokens"))
+    tokens_input_raw = record.get("tokens_input")
+    tokens_output_raw = record.get("tokens_output")
+    if tokens_input_raw is None and tokens_output_raw is None and tokens_axis is not None:
+        # Legacy record: copy aggregate into tokens_input for back-compat.
+        tokens_input_axis: BudgetAxis | None = BudgetAxis(
+            limit=tokens_axis.limit,
+            spent=tokens_axis.spent,
+            remaining=tokens_axis.remaining,
+        )
+        tokens_output_axis: BudgetAxis | None = None
+    else:
+        tokens_input_axis = _parse_int_axis(tokens_input_raw)
+        tokens_output_axis = _parse_int_axis(tokens_output_raw)
     return Budget(
-        tokens=_parse_int_axis(record.get("tokens")),
+        tokens=tokens_axis,
+        tokens_input=tokens_input_axis,
+        tokens_output=tokens_output_axis,
         time_seconds=_parse_float_axis(record.get("time_seconds")),
         cost_usd=_parse_decimal_axis(record.get("cost_usd")),
         fail_closed_on_exhaust=True,
@@ -102,6 +140,12 @@ def budget_to_dict(budget: Budget) -> dict[str, Any]:
     }
     if budget.tokens is not None:
         out["tokens"] = _int_axis_to_dict(budget.tokens)
+    # PR-B2 v5 iter-4 B3 writer invariant: tokens_input always emitted
+    # when configured; tokens_output omitted when None (no null in wire).
+    if budget.tokens_input is not None:
+        out["tokens_input"] = _int_axis_to_dict(budget.tokens_input)
+    if budget.tokens_output is not None:
+        out["tokens_output"] = _int_axis_to_dict(budget.tokens_output)
     if budget.time_seconds is not None:
         out["time_seconds"] = _float_axis_to_dict(budget.time_seconds)
     if budget.cost_usd is not None:
@@ -113,6 +157,8 @@ def record_spend(
     budget: Budget,
     *,
     tokens: int | None = None,
+    tokens_input: int | None = None,
+    tokens_output: int | None = None,
     time_seconds: float | None = None,
     cost_usd: _AxisNum | None = None,
     run_id: str | None = None,
@@ -126,12 +172,57 @@ def record_spend(
 
     Raises ``ValueError`` if asked to spend on an unconfigured axis
     (``budget.<axis> is None``).
+
+    PR-B2 v3 iter-2 B3 absorb (additive widen):
+
+    - ``tokens_input`` + ``tokens_output`` kwargs spend on granular axes
+      when configured. Aggregate ``tokens`` auto-adjusts by the sum:
+      ``spend_on_tokens = (tokens_input or 0) + (tokens_output or 0)``.
+    - Explicit ``tokens=`` kwarg + granular kwargs on the same call
+      raises ``ValueError`` (double-count guard).
+    - If the run has aggregate-only budget (granular axes None), the
+      caller should pass ``tokens=`` explicitly for legacy flows.
     """
+    # Double-count guard (PR-B2 v3 iter-2 B3 writer invariant).
+    if tokens is not None and (tokens_input is not None or tokens_output is not None):
+        raise ValueError(
+            "record_spend: pass EITHER aggregate 'tokens' OR granular "
+            "'tokens_input'/'tokens_output', not both (double-count risk)"
+        )
+
+    # Compute implicit aggregate spend from granular kwargs.
+    implicit_tokens = 0
+    if tokens_input is not None:
+        implicit_tokens += int(tokens_input)
+    if tokens_output is not None:
+        implicit_tokens += int(tokens_output)
+
+    # Spend on granular axes first (if configured).
+    new_tokens_input = (
+        _spend_axis(
+            budget.tokens_input, "tokens_input", int(tokens_input), run_id,
+        )
+        if tokens_input is not None
+        else budget.tokens_input
+    )
+    new_tokens_output = (
+        _spend_axis(
+            budget.tokens_output, "tokens_output", int(tokens_output), run_id,
+        )
+        if tokens_output is not None
+        else budget.tokens_output
+    )
+
+    # Aggregate tokens: explicit kwarg XOR implicit from granular.
+    effective_tokens = tokens if tokens is not None else (
+        implicit_tokens if implicit_tokens > 0 else None
+    )
     new_tokens = (
-        _spend_axis(budget.tokens, "tokens", int(tokens), run_id)
-        if tokens is not None
+        _spend_axis(budget.tokens, "tokens", int(effective_tokens), run_id)
+        if effective_tokens is not None and budget.tokens is not None
         else budget.tokens
     )
+
     new_time = (
         _spend_axis(
             budget.time_seconds, "time_seconds", float(time_seconds), run_id
@@ -148,6 +239,8 @@ def record_spend(
     )
     return Budget(
         tokens=new_tokens,
+        tokens_input=new_tokens_input,
+        tokens_output=new_tokens_output,
         time_seconds=new_time,
         cost_usd=new_cost,
         fail_closed_on_exhaust=budget.fail_closed_on_exhaust,
@@ -163,6 +256,8 @@ def is_exhausted(budget: Budget) -> tuple[bool, str | None]:
     """
     for name, axis in (
         ("tokens", budget.tokens),
+        ("tokens_input", budget.tokens_input),
+        ("tokens_output", budget.tokens_output),
         ("time_seconds", budget.time_seconds),
         ("cost_usd", budget.cost_usd),
     ):

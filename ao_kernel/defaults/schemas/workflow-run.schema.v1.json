@@ -262,7 +262,27 @@
             "spent": {"type": "integer", "minimum": 0},
             "remaining": {"type": "integer", "minimum": 0}
           },
-          "description": "LLM token ceiling, aggregated across all adapter invocations in this run."
+          "description": "LLM token ceiling, aggregated across all adapter invocations in this run. When tokens_input + tokens_output are also configured (PR-B2), aggregate equals sum of granular axes."
+        },
+        "tokens_input": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "integer", "minimum": 1},
+            "spent": {"type": "integer", "minimum": 0},
+            "remaining": {"type": "integer", "minimum": 0}
+          },
+          "description": "Prompt (input) token ceiling — granular breakdown of tokens aggregate (PR-B2 additive widen). Writer always emits when configured; reader populates from legacy 'tokens' axis when absent."
+        },
+        "tokens_output": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "limit": {"type": "integer", "minimum": 1},
+            "spent": {"type": "integer", "minimum": 0},
+            "remaining": {"type": "integer", "minimum": 0}
+          },
+          "description": "Completion (output) token ceiling — granular breakdown of tokens aggregate (PR-B2 additive widen). Writer omits when not configured (null serialization is invalid)."
         },
         "time_seconds": {
           "type": "object",
