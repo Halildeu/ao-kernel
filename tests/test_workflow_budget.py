@@ -87,9 +87,35 @@ class TestParse:
 
 
 class TestSerialize:
-    def test_roundtrip_tokens(self) -> None:
+    def test_roundtrip_legacy_tokens_stays_aggregate_only(self) -> None:
+        """CNS-032 iter-2 absorb (refined from PR-B2 v3 iter-2 B3):
+        legacy records with only the aggregate ``tokens`` axis
+        round-trip WITHOUT synthesizing a granular ``tokens_input``
+        axis.
+
+        Earlier plan v7 §2.5 "conservative mapping" synthesized
+        ``tokens_input = copy(tokens)`` on read, but that synthesized
+        axis diverged from the aggregate after reconcile. Cleaner
+        contract: legacy aggregate-only records stay aggregate-only;
+        granular axes appear only when the wire record declares them.
+        The middleware's aggregate path (case 2) handles legacy spend
+        correctly via the ``tokens=`` kwarg.
+        """
         raw: dict[str, Any] = {
             "tokens": {"limit": 100, "spent": 10, "remaining": 90},
+            "fail_closed_on_exhaust": True,
+        }
+        out = budget_to_dict(budget_from_dict(raw))
+        # Legacy wire round-trip is byte-identical again (no synth).
+        assert out == raw
+
+    def test_roundtrip_granular_preserved(self) -> None:
+        """When the record declares granular axes explicitly, round-trip
+        preserves them as-is (no back-compat synthesis)."""
+        raw: dict[str, Any] = {
+            "tokens": {"limit": 150, "spent": 0, "remaining": 150},
+            "tokens_input": {"limit": 100, "spent": 0, "remaining": 100},
+            "tokens_output": {"limit": 50, "spent": 0, "remaining": 50},
             "fail_closed_on_exhaust": True,
         }
         out = budget_to_dict(budget_from_dict(raw))

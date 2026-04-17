@@ -68,6 +68,20 @@
       "type": "string",
       "format": "date-time",
       "description": "ISO-8601 timestamp when the invocation completed (not when the ledger line was written)."
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "PR-A1 step_record retry counter (v2 iter-2 B2 absorb). Forms the ledger idempotency key with (run_id, step_id). Same-key + same billing_digest is idempotent no-op; different digest raises SpendLedgerDuplicateError."
+    },
+    "usage_missing": {
+      "type": "boolean",
+      "description": "True when the adapter's normalize_response did not surface tokens_input/tokens_output; cost_usd=0 in that case. Audit-only ledger entry; reconcile is skipped. v2 iter-2 B4 absorb."
+    },
+    "billing_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Canonical SHA-256 over the billing-relevant fields (provider_id, model, vendor_model_id, tokens_input, tokens_output, cached_tokens, str(Decimal(cost_usd)), usage_missing). Serialized as 'sha256:<hex>'. v2 iter-2 high-risk absorb: Decimal-stable idempotency comparison."
     }
   }
 }

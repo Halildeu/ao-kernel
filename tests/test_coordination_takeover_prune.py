@@ -369,8 +369,12 @@ class TestEvidenceKindsExpansion:
         }
         assert required_pr_a.issubset(_KINDS)
 
-    def test_total_kind_count_is_twenty_four(self) -> None:
-        assert len(_KINDS) == 24
+    def test_total_kind_count_at_least_twenty_four(self) -> None:
+        """PR-B1 introduced 24 kinds. Subsequent PRs (B2 +3 cost kinds)
+        are additive; this regression guard pins the floor, not the
+        exact count, to avoid churn on every cost/metrics/etc. kind
+        addition."""
+        assert len(_KINDS) >= 24
 
 
 # ---------------------------------------------------------------------------

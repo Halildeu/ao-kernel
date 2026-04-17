@@ -38,6 +38,18 @@
       "type": "boolean",
       "description": "When false (default): a stale catalog (now > stale_after) emits a warn-level log but is still served. When true: stale catalog raises PriceCatalogStaleError and blocks cost-dependent invocations. CNS-028v2 iter-1 W1 absorb."
     },
+    "fail_closed_on_missing_usage": {
+      "type": "boolean",
+      "default": true,
+      "description": "When true (default): adapter responses missing tokens_input/tokens_output trigger LLMUsageMissingError after ledger audit entry. When false: warn-log and continue (estimate stays reserved, no reconcile). Audit-only deployments with out-of-band billing reconciliation set false. PR-B2 v2 iter-2 B4 absorb."
+    },
+    "idempotency_window_lines": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 100000,
+      "default": 1000,
+      "description": "Tail window (in lines) the ledger writer scans for (run_id, step_id, attempt) duplicates before append. Bounded for performance; operators with more than 1000 LLM calls per run can raise. PR-B2 v2 iter-2 B2 absorb."
+    },
     "routing_by_cost": {
       "type": "object",
       "additionalProperties": false,

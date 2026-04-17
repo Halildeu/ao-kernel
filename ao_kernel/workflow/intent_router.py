@@ -317,7 +317,7 @@ class IntentRouter:
         )
 
     def _llm_classify(self, input_text: str) -> ClassificationResult:
-        """LLM-based intent classification fallback (PR-A6 B4 absorb).
+        """LLM-based intent classification fallback (PR-A6 B4; PR-B2 v7 iter-6 absorb).
 
         Requires ``ao-kernel[llm]`` (tenacity + tiktoken). Lazy import
         so the core package does not pull in LLM deps.
@@ -325,11 +325,19 @@ class IntentRouter:
         Prompt: ask the model to return one workflow_id from available ids.
         Parse: exact match against available ids. Fail-closed on any
         mismatch, transport error, or missing ``[llm]`` extra.
+
+        PR-B2 v7 iter-6 absorb: the three-call sequence
+        (build_request + execute_request + normalize_response) is
+        replaced by ``governed_call`` so all LLM invocations compose
+        through the single cost-aware wrapper. ``intent_router`` stays
+        COST-BYPASS ONLY — the classifier is standalone and not
+        anchored to a workflow-run budget. All cost + context kwargs
+        remain None.
         """
         from ao_kernel.workflow.errors import IntentClassificationError
 
         try:
-            from ao_kernel.llm import build_request, execute_request, normalize_response
+            from ao_kernel.llm import governed_call, resolve_route
         except ImportError as exc:
             raise IntentClassificationError(
                 intent_text=input_text,
@@ -353,33 +361,43 @@ class IntentRouter:
         messages = [{"role": "user", "content": prompt}]
 
         try:
-            # Use default route — caller should have env vars set
-            from ao_kernel.llm import resolve_route
             route = resolve_route(intent="FAST_TEXT")
-            req = build_request(
+            result = governed_call(
+                messages=messages,
                 provider_id=route.get("provider_id", "openai"),
                 model=route.get("model", "gpt-4"),
-                messages=messages,
-                base_url=route.get("base_url", ""),
                 api_key=route.get("api_key", ""),
-            )
-            raw_result = execute_request(
-                url=req["url"],
-                headers=req["headers"],
-                body_bytes=req["body_bytes"],
-                timeout_seconds=30.0,
-                provider_id=route.get("provider_id", "openai"),
+                base_url=route.get("base_url", ""),
                 request_id="llm_fallback",
+                # Bypass-only: cost + context kwargs all None.
+                session_context=None,
+                workspace_root_str=None,
+                profile=None,
+                embedding_config=None,
+                vector_store=None,
+                workspace_root=None,
+                run_id=None,
+                step_id=None,
+                attempt=None,
             )
-            resp_bytes = raw_result.get("resp_bytes", b"")
-            resp = normalize_response(resp_bytes, provider_id=route.get("provider_id", "openai"))
-            candidate = resp.get("text", "").strip()
         except Exception as exc:
             raise IntentClassificationError(
                 intent_text=input_text,
                 reason="llm_transport_error",
                 details=str(exc),
             ) from exc
+
+        # governed_call rich dict unwrap (v5 iter-4 B1).
+        status = result.get("status", "OK")
+        if status != "OK":
+            cause = result.get("error_code") or status
+            raise IntentClassificationError(
+                intent_text=input_text,
+                reason="llm_transport_error",
+                details=f"governed_call returned {status!r} (cause={cause!r})",
+            )
+        normalized = result.get("normalized") or {}
+        candidate = (normalized.get("text") or "").strip()
 
         if candidate not in available_ids:
             raise IntentClassificationError(

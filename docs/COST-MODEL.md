@@ -126,12 +126,102 @@ estimated_cost = (est_tokens_input  * input_cost_per_1k  / 1000)
 
 Routing failure is explicit; there is no silent "use the cheapest thing that fits" downgrade unless the operator opts into routing.
 
-## 7. Cross-References
+## 7. Runtime — PR-B2 Integration (shipped)
+
+### 7.1 `llm.governed_call` wrapper
+
+B2 introduces `ao_kernel.llm.governed_call(messages, *, ...)` — a **non-streaming** composition wrapper around `build_request` + `execute_request` + `normalize_response` with optional cost governance.
+
+Activation gate: cost pipeline engages only when **all four** kwargs are set AND `policy.enabled=true`:
+- `workspace_root: Path`
+- `run_id: str`
+- `step_id: str`
+- `attempt: int`
+
+Any missing kwarg → transparent bypass (pre-B2 behavior).
+
+Return contract (plan v5 iter-4 B1):
+- On `CAPABILITY_GAP`: envelope `{status, missing, provider_id, model, request_id, text=""}` — caller envelope-ready.
+- On `TRANSPORT_ERROR`: envelope `{status, error_code, http_status, elapsed_ms, ...}` — caller envelope-ready.
+- On `OK`: rich dict `{status="OK", normalized, resp_bytes, transport_result, elapsed_ms, request_id}` — caller unwraps and runs its own post-call pipeline (decision extraction, eval scorecard, telemetry).
+
+Cost-layer errors **raise** (not envelope): `BudgetExhaustedError`, `CostTrackingConfigError`, `PriceCatalogNotFoundError`, `LLMUsageMissingError`.
+
+### 7.2 Identity threading — 3 caller entrypoints
+
+| Caller | Identity source | Cost activation |
+|---|---|---|
+| `AoKernelClient.llm_call(run_id=, step_id=, attempt=)` | SDK user passes explicitly | opt-in (3 kwargs optional, default None → bypass) |
+| `mcp_server.handle_llm_call(params={"ao_run_id", "ao_step_id", "ao_attempt"})` | MCP tool params (optional) | opt-in |
+| `workflow.intent_router._llm_classify` | — | **bypass-only** (standalone classifier, not a workflow-run budget anchor) |
+
+### 7.3 18-step pipeline (pre-dispatch → reconcile)
+
+1. Capability check → envelope on gap.
+2. Cost gate (identity + policy.enabled).
+3. Build (context-aware if `session_context`; plain otherwise). `build_request_with_context` returns `injected_messages` additive field.
+4. `pre_dispatch_reserve`: catalog lookup → `estimate_cost` over `effective_messages` → emit `llm_cost_estimated` → CAS-reserve budget (update_run max_retries=3).
+5. Transport.
+6. Transport error → envelope (reservation HOLDS per plan Q5 iter-1 — no refund on failure).
+7. Normalize.
+8. `post_response_reconcile`: `extract_usage_strict` → on usage gap, `record_spend(usage_missing=true)` + emit `llm_usage_missing` + optional raise. Success path: `compute_cost(actual)` → CAS-reconcile (delta = actual − estimate) → `record_spend` with `billing_digest` → emit `llm_spend_recorded`.
+9. Return rich dict.
+
+### 7.4 Evidence taxonomy
+
+3 additive kinds (24 → 27):
+- `llm_cost_estimated` — pre-dispatch estimate, always emitted before transport.
+- `llm_spend_recorded` — post-response actual, emitted after ledger append.
+- `llm_usage_missing` — adapter response missing tokens_input/output; audit-only ledger entry precedes the raise when fail-closed.
+
+Emits are **fail-open** (wrapper swallows + warn-logs); ledger writes are **fail-closed** (raise on failure).
+
+## 8. Identity Threading — `(run_id, step_id, attempt)`
+
+The ledger idempotency key is `(run_id, step_id, attempt)`. Retry semantics:
+
+- Same key + same `billing_digest` → silent no-op with warn log (operator-visible but non-raising).
+- Same key + different `billing_digest` → `SpendLedgerDuplicateError` (caller bug: the retry produced a distinct billable payload).
+- Distinct `attempt` for the same `(run_id, step_id)` → separate ledger lines (normal retry path).
+
+The `attempt` field aligns with `step_record.attempt` from PR-A1 (already append-only per retry). Workflow drivers thread all three identity values; SDK users do so when they want cost tracking for arbitrary calls.
+
+## 9. Streaming — Deferred to FAZ-C
+
+`governed_call` is **non-streaming only**. Callers with `stream=True` intent stay on the pre-B2 build + `_execute_stream` path; no cost hooks run. Chunk-level tokenization and partial-ledger semantics are FAZ-C scope.
+
+Operators running streaming workloads should scope cost tracking to non-streaming calls only, or accept that streaming consumption lies outside the `spend.jsonl` audit trail until FAZ-C lands.
+
+A process-level `logger.warning(...)` may be emitted on the first streaming call after `policy.enabled=true` to surface this gap to operators (implementation detail; not a policy knob).
+
+## 10. Migration from v3.1.0 → v3.2.0
+
+### 10.1 Opt-in sequence
+
+1. Keep `policy_cost_tracking.enabled: false` initially (bundled default — no runtime change).
+2. Add `budget.cost_usd` axis to your workflow specs (required by `policy.enabled=true` per Option A fail-closed guard — `CostTrackingConfigError` fires at first LLM call otherwise).
+3. Optionally add granular `budget.tokens_input` / `budget.tokens_output` axes for per-direction caps.
+4. Drop a workspace override at `{project_root}/.ao/policies/policy_cost_tracking.v1.json` with `enabled: true`.
+5. Ensure the bundled price catalog covers your routed (provider, model) pairs — add a workspace override at `{project_root}/.ao/cost/catalog.v1.json` for models not in the bundled starter.
+6. Confirm the workspace has write access to `{project_root}/.ao/cost/` (auto-created with `mode=0o700`).
+
+### 10.2 Back-compat invariants
+
+- Legacy workflow-run records with only aggregate `tokens` axis → loader synthesizes `tokens_input = BudgetAxis(copy)`, `tokens_output = None` (conservative legacy-to-granular mapping; plan v7 §2.5).
+- Legacy `spend.jsonl` files without `attempt` / `usage_missing` / `billing_digest` fields parse cleanly (additive schema widen; pre-B2 tools still read them).
+- `extract_usage` (PR-A callers, 0-fallback default) unchanged; B2 middleware uses the new `extract_usage_strict` (None-sentinel) variant internally.
+
+### 10.3 Cross-References
 
 - Schemas: [`price-catalog.schema.v1.json`](../ao_kernel/defaults/schemas/price-catalog.schema.v1.json), [`spend-ledger.schema.v1.json`](../ao_kernel/defaults/schemas/spend-ledger.schema.v1.json), [`policy-cost-tracking.schema.v1.json`](../ao_kernel/defaults/schemas/policy-cost-tracking.schema.v1.json).
-- Runtime (scope out of B0): PR-B2 (`ao_kernel/cost/`), PR-B3 (`ao_kernel/llm.py` cost-aware routing).
-- Metrics exposure: [METRICS.md](METRICS.md) (`ao_llm_tokens_used_total`, optional `ao_llm_call_cost_usd_total` under advanced labels).
+- Runtime (shipped): PR-B2 `ao_kernel/cost/` package; facade `ao_kernel.llm.governed_call`.
+- Downstream: PR-B3 (cost-aware routing) consumes `policy.routing_by_cost.enabled`; ledger rotation is a separate FAZ-B follow-up (out of B2 scope).
+- Metrics exposure: [METRICS.md](METRICS.md) — derivation-based, consumes ledger events, independent of the `[otel]` extra.
 
-## 8. Document Status
+## 11. Document Status
 
-Skeleton in PR-B0 commit 1. Worked examples (operator override walkthrough, vendor_api scraping template, ledger query recipes) land in PR-B0 commit 5 (docs final pass).
+Skeleton in PR-B0 commit 1 (dormant contract pin). Runtime notes
+(§7-§10) land in PR-B2 commit 6 alongside the 7-commit DAG merge.
+Plan: `.claude/plans/PR-B2-IMPLEMENTATION-PLAN.md` v7 (Codex
+CNS-20260417-031 thread 019d9aa8 AGREE, ready_for_impl=true after
+7 adversarial iters).

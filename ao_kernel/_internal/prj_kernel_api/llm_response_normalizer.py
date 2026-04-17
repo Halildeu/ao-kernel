@@ -8,6 +8,7 @@ usage info, and (future) tool calls into a normalized dict.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Dict
 
 
@@ -172,6 +173,81 @@ def extract_embeddings(resp_bytes: bytes, *, provider_id: str) -> list[float] | 
         if isinstance(embedding, list):
             return embedding
     return None
+
+
+@dataclass(frozen=True)
+class UsagePresence:
+    """Strict usage extraction result (PR-B2 v3 iter-1 B3 absorb).
+
+    None means "adapter did not surface this field" (distinct from 0
+    = "actual zero tokens"). The cost middleware's fail-closed
+    ``LLMUsageMissingError`` fires only when one of these is None;
+    zero-token responses (rare but valid) flow through normally.
+    """
+
+    tokens_input: int | None
+    tokens_output: int | None
+    cached_tokens: int | None
+
+
+def extract_usage_strict(resp_bytes: bytes) -> UsagePresence:
+    """Strict variant of ``extract_usage``: preserves None for absent fields.
+
+    The existing ``extract_usage`` (above) is kept for PR-A callers
+    that tolerate the 0-fallback behavior. B2 cost middleware uses
+    this strict variant so the fail-closed
+    ``LLMUsageMissingError`` contract works.
+
+    Provider variants handled:
+    - Anthropic: ``input_tokens`` / ``output_tokens`` /
+      ``cache_read_input_tokens``
+    - OpenAI: ``prompt_tokens`` / ``completion_tokens`` /
+      ``cached_tokens`` (in some newer payloads)
+
+    Non-int values in these fields → treated as absent (None) — the
+    schema contract is int; anything else is a provider bug we treat
+    conservatively.
+    """
+    try:
+        obj = json.loads(resp_bytes.decode("utf-8", errors="ignore"))
+    except Exception:
+        return UsagePresence(
+            tokens_input=None,
+            tokens_output=None,
+            cached_tokens=None,
+        )
+
+    if not isinstance(obj, dict):
+        return UsagePresence(
+            tokens_input=None,
+            tokens_output=None,
+            cached_tokens=None,
+        )
+
+    usage = obj.get("usage")
+    if not isinstance(usage, dict):
+        return UsagePresence(
+            tokens_input=None,
+            tokens_output=None,
+            cached_tokens=None,
+        )
+
+    # Prefer provider-canonical keys with fallbacks.
+    ti = usage.get("input_tokens")
+    if ti is None:
+        ti = usage.get("prompt_tokens")
+    to = usage.get("output_tokens")
+    if to is None:
+        to = usage.get("completion_tokens")
+    cached = usage.get("cached_tokens")
+    if cached is None:
+        cached = usage.get("cache_read_input_tokens")
+
+    return UsagePresence(
+        tokens_input=ti if isinstance(ti, int) else None,
+        tokens_output=to if isinstance(to, int) else None,
+        cached_tokens=cached if isinstance(cached, int) else None,
+    )
 
 
 def extract_moderation(resp_bytes: bytes) -> Dict[str, Any] | None:

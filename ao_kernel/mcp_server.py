@@ -340,6 +340,12 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
     temperature = params.get("temperature")
     max_tokens = params.get("max_tokens")
     ws = params.get("workspace_root")
+    # PR-B2 v5 iter-4 absorb: optional cost identity params. When all
+    # three present AND workspace_root points at a workspace with cost
+    # policy.enabled=true, the call runs through the cost pipeline.
+    ao_run_id = params.get("ao_run_id")
+    ao_step_id = params.get("ao_step_id")
+    ao_attempt = params.get("ao_attempt")
 
     # Route if provider/model not specified
     if not provider_id or not model:
@@ -371,7 +377,8 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
     request_id = f"mcp-{uuid.uuid4().hex[:12]}"
 
     try:
-        from ao_kernel.llm import build_request, execute_request, normalize_response
+        from pathlib import Path
+        from ao_kernel.llm import governed_call
 
         base_url_map = {
             "openai": "https://api.openai.com/v1",
@@ -382,43 +389,68 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
             "xai": "https://api.x.ai/v1",
         }
 
-        req = build_request(
+        # PR-B2 v5 iter-4 B1 absorb: route through governed_call so cost
+        # hooks and context injection compose uniformly. MCP stays a
+        # "thin executor" — no session context passed (MCP callers do not
+        # maintain ao-kernel session state); cost opt-in via ao_* params.
+        ws_path: Path | None = Path(ws) if ws else None
+        result = governed_call(
+            messages=messages,
             provider_id=provider_id,
             model=model,
-            messages=messages,
-            base_url=base_url_map.get(provider_id, ""),
             api_key=api_key,
+            base_url=base_url_map.get(provider_id, ""),
+            request_id=request_id,
             temperature=temperature,
             max_tokens=max_tokens,
-            request_id=request_id,
+            # Context injection NOT applicable in the MCP thin-executor
+            # surface (MCP callers manage their own context out-of-band).
+            session_context=None,
+            workspace_root_str=str(ws_path) if ws_path else None,
+            profile=None,
+            embedding_config=None,
+            vector_store=None,
+            # Cost identity kwargs (v5 iter-4 B2 absorb). All four
+            # (ws + run_id + step_id + attempt) required for cost-active;
+            # any missing → transparent bypass.
+            workspace_root=ws_path,
+            run_id=ao_run_id,
+            step_id=ao_step_id,
+            attempt=ao_attempt,
         )
 
-        transport_result = execute_request(
-            url=req["url"],
-            headers=req["headers"],
-            body_bytes=req["body_bytes"],
-            timeout_seconds=30.0,
-            provider_id=provider_id,
-            request_id=request_id,
-        )
-
-        if transport_result.get("status") != "OK":
+        # Envelope pass-through for error statuses — preserves mcp_server
+        # pre-B2 decision envelope contract.
+        status = result.get("status")
+        if status == "CAPABILITY_GAP":
+            return _decision_envelope(
+                tool="ao_llm_call",
+                allowed=False,
+                decision="deny",
+                reason_codes=["CAPABILITY_GAP"],
+                data={
+                    "missing": result.get("missing", []),
+                    "provider_id": provider_id,
+                    "model": model,
+                    "request_id": request_id,
+                },
+            )
+        if status == "TRANSPORT_ERROR":
             return _decision_envelope(
                 tool="ao_llm_call",
                 allowed=True,
                 decision="error",
                 reason_codes=["TRANSPORT_ERROR"],
                 data={
-                    "error_code": transport_result.get("error_code", "UNKNOWN"),
-                    "http_status": transport_result.get("http_status"),
-                    "elapsed_ms": transport_result.get("elapsed_ms", 0),
+                    "error_code": result.get("error_code", "UNKNOWN"),
+                    "http_status": result.get("http_status"),
+                    "elapsed_ms": result.get("elapsed_ms", 0),
                     "request_id": request_id,
                 },
             )
 
-        resp_bytes = transport_result.get("resp_bytes", b"")
-        normalized = normalize_response(resp_bytes, provider_id=provider_id)
-
+        # Status == "OK" — unwrap rich dict and build executed envelope.
+        normalized = result.get("normalized") or {}
         return _decision_envelope(
             tool="ao_llm_call",
             allowed=True,
@@ -429,7 +461,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
                 "provider_id": provider_id,
                 "model": model,
                 "request_id": request_id,
-                "elapsed_ms": transport_result.get("elapsed_ms", 0),
+                "elapsed_ms": result.get("elapsed_ms", 0),
                 "api_key_present": True,
             },
         )
@@ -496,6 +528,19 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "temperature": {"type": "number"},
                 "max_tokens": {"type": "integer"},
                 "workspace_root": {"type": "string"},
+                "ao_run_id": {
+                    "type": "string",
+                    "description": "PR-B2 cost identity: workflow run UUIDv4. Optional; required together with ao_step_id and ao_attempt to activate cost tracking (policy.enabled must also be true on the workspace).",
+                },
+                "ao_step_id": {
+                    "type": "string",
+                    "description": "PR-B2 cost identity: step id within the run. Optional; see ao_run_id.",
+                },
+                "ao_attempt": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "PR-B2 cost identity: retry attempt number (≥1). Forms the ledger idempotency key with (ao_run_id, ao_step_id). Optional.",
+                },
             },
         },
     },
