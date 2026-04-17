@@ -31,6 +31,10 @@ from ao_kernel.cost.cost_math import (
     estimate_cost,
     estimate_output_tokens,
 )
+from ao_kernel.cost.ledger import (
+    SpendEvent,
+    record_spend,
+)
 from ao_kernel.cost.errors import (
     BudgetExhaustedError,
     CostTrackingConfigError,
@@ -61,6 +65,9 @@ __all__ = [
     "compute_cost",
     "estimate_cost",
     "estimate_output_tokens",
+    # Ledger
+    "SpendEvent",
+    "record_spend",
     # Policy
     "CostTrackingPolicy",
     "RoutingByCost",
