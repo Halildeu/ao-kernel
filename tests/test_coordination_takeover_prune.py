@@ -444,6 +444,68 @@ class TestExecutorFencingEntry:
                 fencing_resource_id="worktree-a",
             )
 
+    def test_driver_translates_stale_fencing_to_step_failed(
+        self, tmp_path: Path,
+    ) -> None:
+        """CNS-029v4 iter-3 blocker #2 fix: MultiStepDriver's adapter
+        step helper forwards fencing kwargs to Executor.run_step and
+        translates ``ClaimStaleFencingError`` into ``_StepFailed`` with
+        ``category="other"`` + ``code="STALE_FENCING"``. The driver
+        owns the ``step_failed`` emission + ``step_record.state=
+        "failed"`` CAS transition per PR-A4b error handler contract."""
+        _write_workspace_policy(tmp_path, _enabled_policy())
+        from ao_kernel.adapters import AdapterRegistry
+        from ao_kernel.executor import Executor
+        from ao_kernel.executor.multi_step_driver import _StepFailed
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        wf_reg = WorkflowRegistry()
+        wf_reg.load_bundled()
+        ad_reg = AdapterRegistry()
+        ad_reg.load_bundled()
+        registry = ClaimRegistry(tmp_path)
+        exe = Executor(
+            tmp_path,
+            workflow_registry=wf_reg,
+            adapter_registry=ad_reg,
+            claim_registry=registry,
+        )
+        # Instantiate a driver pointing at the executor; we call its
+        # private adapter-step helper directly with fencing kwargs
+        # rather than orchestrate the full workflow.
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        driver = MultiStepDriver(
+            tmp_path,
+            registry=wf_reg,
+            adapter_registry=ad_reg,
+            executor=exe,
+        )
+        definition = wf_reg.get("bug_fix_flow")
+        adapter_step = next(s for s in definition.steps if s.actor == "adapter")
+
+        # No acquire performed — validate_fencing_token will raise
+        # ClaimStaleFencingError (missing resource entry sentinel).
+        # The driver's helper expects a (run_id, record, step_def)
+        # positional chain; we pass an empty record because the
+        # stale-fencing raise fires before the helper touches it.
+        with pytest.raises(_StepFailed) as excinfo:
+            driver._run_adapter_step(
+                "00000000-0000-4000-8000-0000000b1004",
+                {},
+                adapter_step,
+                attempt=1,
+                step_id="00000000-0000-4000-8000-0000000b1004",
+                context_preamble=None,
+                fencing_token=0,
+                fencing_resource_id="worktree-a",
+            )
+        assert excinfo.value.category == "other"
+        assert excinfo.value.code == "STALE_FENCING"
+        # Error reason carries the structured fields for audit
+        assert "worktree-a" in excinfo.value.reason
+        assert "supplied_token=0" in excinfo.value.reason
+
     def test_stale_fencing_propagates_before_any_side_effects(
         self, tmp_path: Path,
     ) -> None:

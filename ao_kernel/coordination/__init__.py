@@ -58,6 +58,7 @@ from ao_kernel.coordination.registry import (
     AgentClaimIndex,
     ClaimRegistry,
     EvidenceSink,
+    build_coordination_sink,
 )
 
 
@@ -88,6 +89,7 @@ __all__ = [
     "AgentClaimIndex",
     "ClaimRegistry",
     "EvidenceSink",
+    "build_coordination_sink",
     # Errors
     "ClaimAlreadyReleasedError",
     "ClaimConflictError",

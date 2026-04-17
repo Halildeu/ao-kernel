@@ -71,6 +71,58 @@ class TestDormantDefault:
         with pytest.raises(ClaimCoordinationDisabledError):
             registry.acquire_claim("worktree-a", "agent-alpha")
 
+    def test_heartbeat_dormant_refuses(self, tmp_path: Path) -> None:
+        """Plan §5 'any public API' — heartbeat gated by dormant
+        policy check (CNS-029v4 iter-3 blocker #1 fix)."""
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.heartbeat(
+                "worktree-a",
+                "11111111-1111-4111-8111-111111111111",
+                "agent-alpha",
+            )
+
+    def test_release_dormant_refuses(self, tmp_path: Path) -> None:
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.release_claim(
+                "worktree-a",
+                "11111111-1111-4111-8111-111111111111",
+                "agent-alpha",
+            )
+
+    def test_takeover_dormant_refuses(self, tmp_path: Path) -> None:
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.takeover_claim("worktree-a", "agent-beta")
+
+    def test_get_claim_dormant_refuses(self, tmp_path: Path) -> None:
+        """Even read-only introspection is gated — dormant means the
+        registry is dormant full-stop, not 'read-only mode'."""
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.get_claim("worktree-a")
+
+    def test_validate_fencing_token_dormant_refuses(
+        self, tmp_path: Path,
+    ) -> None:
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.validate_fencing_token("worktree-a", 0)
+
+    def test_list_agent_claims_dormant_refuses(self, tmp_path: Path) -> None:
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.list_agent_claims("agent-alpha")
+
+    def test_prune_dormant_refuses(self, tmp_path: Path) -> None:
+        """Prune is a mutation pathway — dormant mode must refuse it
+        (mirrors acquire / release / takeover gating, not read-only
+        exception)."""
+        registry = ClaimRegistry(tmp_path)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.prune_expired_claims()
+
 
 # ---------------------------------------------------------------------------
 # resource_id validator + pattern allowlist

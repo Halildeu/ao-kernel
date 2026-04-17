@@ -189,6 +189,73 @@ def _compute_index_revision(agents: Mapping[str, tuple[str, ...]]) -> str:
     return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def build_coordination_sink(
+    workspace_root: Path,
+    policy: CoordinationPolicy,
+    *,
+    run_id: str,
+    actor: str = "ao-kernel",
+) -> EvidenceSink:
+    """Build a coordination :class:`EvidenceSink` wired to the ao-kernel
+    evidence emitter with policy-bound redaction (W2v5).
+
+    Callers wrap the returned callable into
+    ``ClaimRegistry(..., evidence_sink=...)`` to have claim events flow
+    through the standard ``ao_kernel.executor.evidence_emitter.emit_event``
+    pipeline under a specific ``run_id`` / ``actor`` context. The helper
+    explicitly binds ``policy.evidence_redaction`` to the emitter's
+    redaction argument so the coordination event payloads are scrubbed
+    according to the coordination policy rather than the worktree
+    profile (which is a separate concern).
+
+    Why a helper instead of leaving it to the caller:
+      - Ensures every coordination sink picks up
+        ``policy.evidence_redaction`` (previously easy to forget).
+      - Centralises the ``run_id`` / ``actor`` context binding so the
+        call site at :meth:`ClaimRegistry.__init__` stays short.
+      - The sink closure is a plain function, so ``Callable[[str,
+        Mapping[str, Any]], Any]`` typing works under strict mypy.
+
+    Parameters are all keyword-only (``run_id``, ``actor``) except the
+    positional ``workspace_root`` + ``policy``. ``actor`` defaults to
+    ``"ao-kernel"`` since coordination events are orchestration-level
+    rather than adapter-level by construction.
+    """
+    from ao_kernel.executor.evidence_emitter import emit_event
+    from ao_kernel.executor.policy_enforcer import RedactionConfig
+
+    # Translate the policy's EvidenceRedaction dataclass into the
+    # RedactionConfig shape the emitter expects. The worktree profile
+    # uses the same pattern; we mirror it here so operators can author
+    # regex lists in policy_coordination_claims.v1.json with the same
+    # semantics.
+    import re
+
+    redaction = RedactionConfig(
+        env_keys_matching=tuple(
+            re.compile(p) for p in policy.evidence_redaction.env_keys_matching
+        ),
+        stdout_patterns=tuple(
+            re.compile(p) for p in policy.evidence_redaction.stdout_patterns
+        ),
+        file_content_patterns=tuple(
+            re.compile(p) for p in policy.evidence_redaction.file_content_patterns
+        ),
+    )
+
+    def _sink(kind: str, payload: Mapping[str, Any]) -> Any:
+        return emit_event(
+            workspace_root,
+            run_id=run_id,
+            kind=kind,
+            actor=actor,
+            payload=payload,
+            redaction=redaction,
+        )
+
+    return _sink
+
+
 def _safe_emit_coordination_event(
     sink: EvidenceSink | None,
     kind: str,
@@ -307,7 +374,14 @@ class ClaimRegistry:
         :class:`ClaimAlreadyReleasedError` — the owner lost the
         revival window and must re-acquire. Absent claim also raises
         :class:`ClaimAlreadyReleasedError` (W5v2: second-call RAISE).
+
+        Dormant-policy gate: when ``policy.enabled=false`` the call
+        raises :class:`ClaimCoordinationDisabledError` before any
+        filesystem access (plan §5 "any public API" contract).
         """
+        policy = load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
         _validate_resource_id(resource_id)
         _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         with file_lock(_claims_lock_path(self._workspace_root)):
@@ -329,8 +403,12 @@ class ClaimRegistry:
 
         Second release (claim file already absent) raises
         :class:`ClaimAlreadyReleasedError` (W5v2). Ownership mismatch
-        raises :class:`ClaimOwnershipError`.
+        raises :class:`ClaimOwnershipError`. Dormant policy →
+        :class:`ClaimCoordinationDisabledError`.
         """
+        policy = load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
         _validate_resource_id(resource_id)
         _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         with file_lock(_claims_lock_path(self._workspace_root)):
@@ -344,8 +422,13 @@ class ClaimRegistry:
         ``{resource_id}.v1.json`` still raises
         :class:`ClaimCorruptedError` (SSOT fail-closed) — silent-None
         would mask on-disk damage. ``None`` is returned only when the
-        file is genuinely absent.
+        file is genuinely absent. Dormant policy → raises
+        :class:`ClaimCoordinationDisabledError` per plan §5
+        "any public API" contract.
         """
+        policy = load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
         _validate_resource_id(resource_id)
         return self._load_claim_if_exists(resource_id)
 
@@ -355,8 +438,12 @@ class ClaimRegistry:
         Raises :class:`ClaimStaleFencingError` on exact-equality
         mismatch (covers both stale takeover-victim tokens and
         fabricated / future tokens). Used by ``Executor.run_step``
-        entry check in commit 4.
+        entry check. Dormant policy → raises
+        :class:`ClaimCoordinationDisabledError`.
         """
+        policy = load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
         _validate_resource_id(resource_id)
         _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         with file_lock(_claims_lock_path(self._workspace_root)):
@@ -371,10 +458,13 @@ class ClaimRegistry:
         silently rebuilt (fail-open). Live-count filter applies: claims
         whose ``heartbeat_at + policy.expiry_seconds + grace`` has
         passed are excluded even if still present on disk (they are
-        candidates for ``prune_expired_claims``).
+        candidates for ``prune_expired_claims``). Dormant policy →
+        raises :class:`ClaimCoordinationDisabledError`.
         """
-        _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         policy = load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
+        _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         with file_lock(_claims_lock_path(self._workspace_root)):
             self._ensure_index_consistent()
             index = self._load_index()
@@ -446,8 +536,14 @@ class ClaimRegistry:
 
         Warning: callers should schedule prune outside hot acquire
         paths (long-held lock contention delays acquire latency).
+
+        Dormant policy → raises :class:`ClaimCoordinationDisabledError`
+        (plan §5 "any public API" contract; prune is a mutation
+        pathway, not a read, so dormant mode must refuse).
         """
         policy = policy or load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
         _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         pruned: list[str] = []
         with file_lock(_claims_lock_path(self._workspace_root)):
