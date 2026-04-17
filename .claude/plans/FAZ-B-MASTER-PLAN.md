@@ -36,7 +36,7 @@
 | **B2** | Cost tracking full (#7) + price catalog (NEW) + spend ledger (NEW): `ao_kernel/cost/` package | B0 | ~1500 |
 | **B3** | Model routing by cost (#21): `ao_kernel/llm.py` resolve_route cost-aware + cost policy | B2 | ~800 |
 | **B4** | Policy simulation harness (NEW): `ao_kernel/policy_sim/` — mid-depth simulator reusing `governance.check_policy` + executor policy primitives (`build_sandbox`, `resolve_allowed_secrets`, `check_http_header_exposure`) **without worktree/adapter side-effects**. Dry-run policy change → deny/allow diff report. | — | ~1200 |
-| **B5** | Metrics export (NEW): `ao_kernel/metrics/` + `[metrics]` extra (prometheus-client / OTEL mapping) | — | ~1000 |
+| **B5** | Metrics export (NEW): `ao_kernel/metrics/` + `[metrics]` extra. **Prometheus textfile export as primary surface** (low-cardinality default labels; advanced labels schema-gated via `policy_metrics.v1.json`). OTEL bridge is NOT in scope — `[metrics]` and `[otel]` extras stay independent per `docs/METRICS.md` §5 ("does not read OTEL spans or attempt bridge translation"). Corrected in pre-B2 docfix (CNS-030 Q3 absorb). | — | ~1000 |
 | **B6** | Code review AI workflow step (#18) + commit AI (#20): 2 write-lite bundled workflows + adapter step definitions | B1 | ~800 |
 | **B7** | Agent benchmark / regression suite (NEW): `tests/benchmarks/` framework + governed-review + governed-bugfix scenarios | B1, B2, B6 | ~1000 |
 | ~~B8~~ | ~~OS-level network sandbox~~ | ~~B1~~ | ~~stretch/deferred to v3.2.x or FAZ-C (CNS-027 B1: 4-week timeline risk)~~ |
