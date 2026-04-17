@@ -364,3 +364,49 @@ def _now_iso() -> str:
     ``Z`` and explicit offset).
     """
     return datetime.now(timezone.utc).isoformat()
+
+
+_TERMINAL_STATES: frozenset[str] = frozenset({"completed", "failed", "cancelled"})
+
+
+def list_terminal_runs(workspace_root: Path) -> list[dict[str, Any]]:
+    """Return the records of every workflow run in a terminal state.
+
+    Plan v4 Q3 A: the ``ao_workflow_duration_seconds`` histogram needs
+    cancelled run durations, but the runtime never emits a
+    ``workflow_cancelled`` event (denial path emits ``approval_denied``
+    + transitions run state). The PR-B5 derivation layer uses this
+    helper to read ``state.v1.json.{created_at, completed_at}`` for
+    cancelled runs without introducing a new event kind.
+
+    The helper is read-only: no CAS lock, no schema validation. Corrupt
+    or partially-written state files are skipped silently — the
+    caller (metrics derivation) treats a missing / malformed state file
+    as "run absent from histogram" rather than raising, because
+    the export CLI must not abort on transient run-store drift while
+    a workflow is concurrently writing.
+
+    Internal scope: the helper is returned from the module but is not
+    part of the facade re-export surface in
+    :mod:`ao_kernel.workflow.__init__`. Callers outside the metrics
+    derivation layer should use :func:`load_run` instead.
+    """
+    runs_dir = workspace_root / ".ao" / "runs"
+    if not runs_dir.is_dir():
+        return []
+    results: list[dict[str, Any]] = []
+    for run_dir in sorted(runs_dir.iterdir()):
+        if not run_dir.is_dir():
+            continue
+        state_path = run_dir / "state.v1.json"
+        if not state_path.is_file():
+            continue
+        try:
+            record = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(record, dict):
+            continue
+        if record.get("state") in _TERMINAL_STATES:
+            results.append(record)
+    return results

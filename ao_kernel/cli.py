@@ -113,6 +113,29 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--host", default="127.0.0.1", help="HTTP bind host (default: 127.0.0.1)")
     serve_p.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
 
+    # Metrics subcommands (PR-B5)
+    metrics_p = sub.add_parser(
+        "metrics",
+        help="Prometheus textfile export + debug query",
+    )
+    metrics_sub = metrics_p.add_subparsers(dest="metrics_command")
+
+    export_p = metrics_sub.add_parser(
+        "export",
+        help="Emit cumulative Prometheus textfile",
+    )
+    export_p.add_argument(
+        "--format",
+        choices=["prometheus"],
+        default="prometheus",
+        help="Output format (only 'prometheus' for textfile mode)",
+    )
+    export_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
+
     return parser
 
 
@@ -161,6 +184,20 @@ def main(argv: list[str] | None = None) -> int:
         from ao_kernel.i18n import msg
         print(msg("usage_mcp_serve"))
         return 1
+
+    # Metrics subcommand (PR-B5)
+    if cmd == "metrics":
+        from ao_kernel._internal.metrics.cli_handlers import cmd_metrics_export
+
+        metrics_cmd = getattr(args, "metrics_command", None)
+        metrics_dispatch = {
+            "export": cmd_metrics_export,
+        }
+        handler = metrics_dispatch.get(metrics_cmd) if metrics_cmd else None
+        if handler is None:
+            print("Usage: ao-kernel metrics {export}")
+            return 1
+        return handler(args)
 
     handler = dispatch.get(cmd)
     if handler is None:
