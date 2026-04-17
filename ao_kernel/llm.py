@@ -427,6 +427,18 @@ def governed_call(
 
     See plan v7 §2.6 for the full flow spec.
     """
+    # 0. Fail-fast validation of optional cost-identity kwargs
+    # (CNS-032 iter-1 absorb): if caller provides `attempt`, it must
+    # satisfy the ledger schema's `minimum: 1` constraint. We catch
+    # invalid values here — before any capability / transport /
+    # ledger work — so the error surface is transparent and the run
+    # state never diverges from the ledger schema.
+    if attempt is not None and attempt < 1:
+        raise ValueError(
+            f"attempt must be >= 1 (got {attempt!r}); "
+            f"ledger idempotency schema constraint"
+        )
+
     # 1. Capability check (BEFORE cost, BEFORE transport).
     cap_ok, _, missing = check_capabilities(
         provider_id=provider_id,

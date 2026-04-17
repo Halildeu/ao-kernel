@@ -150,6 +150,28 @@ def budget_to_dict(budget: Budget) -> dict[str, Any]:
         out["time_seconds"] = _float_axis_to_dict(budget.time_seconds)
     if budget.cost_usd is not None:
         out["cost_usd"] = _float_axis_to_dict(budget.cost_usd)
+
+    # CNS-032 iter-1 absorb (aggregate recompute sanity): when the
+    # Budget has granular axes but no aggregate tokens axis, writer
+    # synthesizes the aggregate from the sum so readers always see a
+    # coherent `tokens` view. Symmetric to the reader's back-compat
+    # mapping (legacy tokens → tokens_input).
+    if (
+        "tokens" not in out
+        and budget.tokens_input is not None
+    ):
+        limit = int(budget.tokens_input.limit)
+        spent = int(budget.tokens_input.spent)
+        remaining = int(budget.tokens_input.remaining)
+        if budget.tokens_output is not None:
+            limit += int(budget.tokens_output.limit)
+            spent += int(budget.tokens_output.spent)
+            remaining += int(budget.tokens_output.remaining)
+        out["tokens"] = {
+            "limit": limit,
+            "spent": spent,
+            "remaining": remaining,
+        }
     return out
 
 

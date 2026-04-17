@@ -346,26 +346,46 @@ def post_response_reconcile(
                 details="run.budget.cost_usd dropped between reserve and reconcile",
             )
 
-        # Compose spend kwargs only for axes that are actually configured
-        # on this run's budget. Unconfigured axes MUST NOT be spent on —
+        # Compose spend kwargs only for axes actually configured on this
+        # run's budget. Unconfigured axes MUST NOT be spent on —
         # _spend_axis raises ValueError for None axes.
+        #
+        # CNS-032 iter-1 blocker absorb: legacy workflow-run records
+        # with aggregate `tokens` only trigger the reader's back-compat
+        # synthesis (tokens_input = copy(tokens), tokens_output = None).
+        # For these, the middleware MUST route token spend through the
+        # aggregate axis (tokens=input+output) so completion tokens are
+        # actually counted. Three cases emerge:
+        #
+        # 1. Full granular (both tokens_input + tokens_output set):
+        #    spend granular; aggregate auto-adjusts in record_budget_spend.
+        # 2. Legacy or partial-with-aggregate (tokens set AND
+        #    tokens_output is None): spend the SUM on aggregate — the
+        #    tokens_input axis (a back-compat synth or partial config)
+        #    is not considered billable-tracking in this mode.
+        # 3. Partial granular-only input (tokens_input set but
+        #    tokens_output + aggregate both None): track only input.
         spend_kwargs: dict[str, Any] = {"run_id": run_id}
         if delta != 0:
             spend_kwargs["cost_usd"] = delta
-        if budget.tokens_input is not None:
+
+        has_full_granular = (
+            budget.tokens_input is not None
+            and budget.tokens_output is not None
+        )
+        if has_full_granular:
             spend_kwargs["tokens_input"] = tokens_input
-        if budget.tokens_output is not None:
             spend_kwargs["tokens_output"] = tokens_output
-        # Aggregate-only path: if granular axes are None but aggregate
-        # tokens is configured, spend the sum on the aggregate axis.
-        # (When granular axes are configured, record_budget_spend
-        # auto-adjusts the aggregate.)
-        if (
-            budget.tokens is not None
-            and budget.tokens_input is None
-            and budget.tokens_output is None
-        ):
+        elif budget.tokens is not None:
+            # Legacy aggregate-only (or partial granular + aggregate) —
+            # aggregate path. Total tokens = input + output.
             spend_kwargs["tokens"] = tokens_input + tokens_output
+        elif budget.tokens_input is not None:
+            # Partial granular without aggregate: input-only tracking.
+            # tokens_output is intentionally unconfigured; operator
+            # accepts that output tokens are untracked in this mode.
+            spend_kwargs["tokens_input"] = tokens_input
+        # else: no token axes anywhere → no token spend.
 
         # If no axis needs adjustment, skip the call entirely.
         spendable = any(
