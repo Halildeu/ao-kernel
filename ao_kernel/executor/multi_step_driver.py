@@ -358,8 +358,16 @@ class MultiStepDriver:
                 attempt = self._next_attempt_number(mutable_record, step_def.step_name)
                 step_id = self._step_id_for_attempt(step_def.step_name, attempt)
 
+                # PR-B6 v4 §2.2: capability_output_refs populated only by
+                # adapter path (driver-owned materialization). Other
+                # dispatch paths default to empty map.
+                capability_output_refs: dict[str, str] = {}
                 if step_def.actor == "adapter":
-                    mutable_record, exec_result = self._run_adapter_step(
+                    (
+                        mutable_record,
+                        exec_result,
+                        capability_output_refs,
+                    ) = self._run_adapter_step(
                         run_id, mutable_record, step_def,
                         attempt=attempt, step_id=step_id,
                         context_preamble=context_preamble,
@@ -389,10 +397,14 @@ class MultiStepDriver:
                     completed=completed, retried=retried,
                 )
 
-            # Step succeeded — record completion
+            # Step succeeded — record completion.
+            # PR-B6 v4 §2.2: capability_output_refs threaded into the
+            # completion helper so step_record persists the per-capability
+            # artifact map. Empty for non-adapter paths (default).
             mutable_record = self._record_step_completion(
                 run_id, mutable_record, step_def, exec_result,
                 attempt=attempt, step_id=step_id,
+                capability_output_refs=capability_output_refs,
             )
             completed.add(step_def.step_name)
 
@@ -418,23 +430,39 @@ class MultiStepDriver:
         context_preamble: str | None,
         fencing_token: int | None = None,
         fencing_resource_id: str | None = None,
-    ) -> tuple[dict[str, Any], Any]:
-        """Delegate to Executor.run_step(driver_managed=True).
+    ) -> tuple[dict[str, Any], Any, dict[str, str]]:
+        """Delegate to Executor.run_step(driver_managed=True) + materialize
+        per-capability artifacts.
 
-        PR-B1 fencing integration (absorbed from CNS-20260416-029v4
-        post-impl blocker #2): callers passing ``fencing_token`` +
-        ``fencing_resource_id`` forward them to the executor's entry
-        check. :class:`ClaimStaleFencingError` is translated into the
-        driver's :class:`_StepFailed` flow with
-        ``category="other"``, ``code="STALE_FENCING"`` so
-        ``step_record.state="failed"`` + ``step_failed`` evidence emit
-        run through the existing PR-A4b error handler pattern. Callers
-        that do not opt in leave both kwargs ``None``; pre-B1
-        behaviour preserved.
+        PR-B1 fencing integration: ``fencing_token`` + ``fencing_resource_id``
+        forward to executor's entry check; :class:`ClaimStaleFencingError`
+        → driver-owned ``_StepFailed(category="other", code="STALE_FENCING")``.
+
+        PR-B6 v4 §2.2 absorb: after a successful ``exec_result`` (but
+        BEFORE record completion), iterate ``invocation_result.extracted_outputs``
+        and write one typed artifact per capability via
+        :func:`write_capability_artifact`. Returns a third element —
+        ``capability_output_refs: map<capability, run-relative path>``
+        — that the driver's completion helpers persist on ``step_record``.
+
+        New exception translations (PR-B6 v4 iter-2 B2 absorb):
+        - :class:`AdapterInvocationFailedError` (transport layer):
+          * reason ∈ {``timeout``, ``http_timeout``} → ``timeout``
+          * reason == ``subprocess_crash`` → ``adapter_crash``
+          * other → ``invocation_failed``
+        - :class:`AdapterOutputParseError` (walker layer):
+          * → ``output_parse_failed``
+        - Capability artifact write failure:
+          * → ``output_parse_failed`` + ``code="CAPABILITY_ARTIFACT_WRITE_FAILED"``
         """
         # Import locally to avoid pulling the coordination package into
         # the driver's import graph when callers do not enable it.
         from ao_kernel.coordination.errors import ClaimStaleFencingError
+        from ao_kernel.executor.artifacts import write_capability_artifact
+        from ao_kernel.executor.errors import (
+            AdapterInvocationFailedError,
+            AdapterOutputParseError,
+        )
 
         try:
             exec_result = self._executor.run_step(
@@ -468,6 +496,31 @@ class MultiStepDriver:
                 category="other",
                 code="STALE_FENCING",
             ) from exc
+        except AdapterInvocationFailedError as exc:
+            # PR-B6 v4 iter-2 B2 absorb (Codex semantic pin):
+            # - timeout/http_timeout → category=timeout
+            # - subprocess_crash → category=adapter_crash
+            # - other transport-layer → category=invocation_failed
+            if exc.reason in ("timeout", "http_timeout"):
+                category = "timeout"
+            elif exc.reason == "subprocess_crash":
+                category = "adapter_crash"
+            else:
+                category = "invocation_failed"
+            raise _StepFailed(
+                reason=f"adapter invocation failed: {exc!s}",
+                attempt=attempt,
+                category=category,
+                code=exc.reason.upper() if exc.reason else "INVOCATION_FAILED",
+            ) from exc
+        except AdapterOutputParseError as exc:
+            # PR-B6 v4 §2.2: walker layer parse failure.
+            raise _StepFailed(
+                reason=f"output_parse walker failed: {exc!s}",
+                attempt=attempt,
+                category="output_parse_failed",
+                code="OUTPUT_PARSE_FAILED",
+            ) from exc
 
         if exec_result.step_state != "completed":
             raise _StepFailed(
@@ -477,9 +530,49 @@ class MultiStepDriver:
                 code="ADAPTER_FAILED",
             )
 
+        # PR-B6 v4 §2.2 absorb: driver-owned per-capability artifact
+        # materialization. Runs AFTER exec_result.step_state == "completed"
+        # but BEFORE completion record is written so any artifact-write
+        # failure fails-closed via _StepFailed (output_parse_failed
+        # category).
+        capability_output_refs: dict[str, str] = {}
+        run_dir = (
+            self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
+        )
+        invocation_result = getattr(exec_result, "invocation_result", None)
+        extracted = (
+            getattr(invocation_result, "extracted_outputs", None)
+            if invocation_result is not None
+            else None
+        )
+        if extracted:
+            for capability, payload in extracted.items():
+                try:
+                    cap_ref, _cap_sha = write_capability_artifact(
+                        run_dir=run_dir,
+                        step_id=step_id,
+                        attempt=attempt,
+                        capability=capability,
+                        payload=payload,
+                    )
+                    capability_output_refs[capability] = cap_ref
+                except Exception as exc:
+                    # Fail-closed: artifact write must not be silently
+                    # dropped. _LEGAL_CATEGORIES includes
+                    # output_parse_failed (parity sync).
+                    raise _StepFailed(
+                        reason=(
+                            f"capability artifact write failed for "
+                            f"{capability!r}: {exc!s}"
+                        ),
+                        attempt=attempt,
+                        category="output_parse_failed",
+                        code="CAPABILITY_ARTIFACT_WRITE_FAILED",
+                    ) from exc
+
         # Refresh record so completion update sees the latest CAS state
         refreshed, _ = load_run(self._workspace_root, run_id)
-        return dict(refreshed), exec_result
+        return dict(refreshed), exec_result, capability_output_refs
 
     def _run_aokernel_step(
         self,
@@ -975,9 +1068,16 @@ class MultiStepDriver:
                 run_id, record, step_def,
                 step_id=placeholder_step_id, attempt=2,
             )
+            # PR-B6 v4 §2.2: retry-success capability_output_refs map
+            # (populated by adapter path; empty for others).
+            capability_output_refs: dict[str, str] = {}
             try:
                 if step_def.actor == "adapter":
-                    record, exec_result = self._run_adapter_step(
+                    (
+                        record,
+                        exec_result,
+                        capability_output_refs,
+                    ) = self._run_adapter_step(
                         run_id, record, step_def, attempt=2,
                         step_id=placeholder_step_id, context_preamble=None,
                     )
@@ -1011,6 +1111,7 @@ class MultiStepDriver:
                 )
             record = self._update_placeholder_to_completed(
                 run_id, record, placeholder_step_id, exec_result, attempt=2,
+                capability_output_refs=capability_output_refs,
             )
             completed.add(step_def.step_name)
 
@@ -1209,7 +1310,13 @@ class MultiStepDriver:
         exec_result: Any,
         *,
         attempt: int,
+        capability_output_refs: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
+        """PR-B6 v4 §2.2 absorb: retry-success path for per-capability
+        artifact refs. ``capability_output_refs`` is threaded from
+        ``_run_adapter_step`` retry return tuple and persisted on the
+        step_record, ensuring the map does not silently drop on
+        attempt=2 success."""
         now = _now_iso()
         output_ref = getattr(exec_result, "output_ref", None)
         if output_ref is None and isinstance(exec_result, Mapping):
@@ -1224,6 +1331,10 @@ class MultiStepDriver:
                     updated["completed_at"] = now
                     if output_ref:
                         updated["output_ref"] = output_ref
+                    if capability_output_refs:
+                        updated["capability_output_refs"] = dict(
+                            capability_output_refs
+                        )
                     steps[i] = updated
                     break
             cur["steps"] = steps
@@ -1264,8 +1375,16 @@ class MultiStepDriver:
         *,
         attempt: int,
         step_id: str,
+        capability_output_refs: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
-        """Append or update a step_record for a successful step."""
+        """Append or update a step_record for a successful step.
+
+        PR-B6 v4 §2.2 absorb: ``capability_output_refs`` (optional) maps
+        capability name → run-relative artifact path for each per-capability
+        typed artifact written by the driver (only the adapter dispatch
+        path populates this; other actors pass the default empty/None).
+        When non-empty, persisted on ``step_record["capability_output_refs"]``.
+        """
         now = _now_iso()
         # Emit step_completed for ao-kernel / system dispatches (adapter
         # path already emits step_completed via Executor.run_step when
@@ -1302,6 +1421,10 @@ class MultiStepDriver:
                     updated["completed_at"] = now
                     if output_ref:
                         updated["output_ref"] = output_ref
+                    if capability_output_refs:
+                        updated["capability_output_refs"] = dict(
+                            capability_output_refs
+                        )
                     steps[i] = updated
                     cur["steps"] = steps
                     return cur
@@ -1322,6 +1445,13 @@ class MultiStepDriver:
                 record_entry["adapter_id"] = step_def.adapter_id
             if output_ref:
                 record_entry["output_ref"] = output_ref
+            if capability_output_refs:
+                # PR-B6 v4 §2.2: persist per-capability artifact refs when
+                # the adapter dispatch populated them. Empty map absent
+                # (schema additionalProperties: false respected).
+                record_entry["capability_output_refs"] = dict(
+                    capability_output_refs
+                )
             steps.append(record_entry)
             cur["steps"] = steps
             return cur
@@ -1585,9 +1715,25 @@ class MultiStepDriver:
 # ---------------------------------------------------------------------------
 
 
+# PR-B6 v4 iter-2 B4 absorb: `_LEGAL_CATEGORIES` is the runtime source
+# of truth for driver-side error category coercion and MUST stay
+# byte-identical with `workflow-run.schema.v1.json::error.category.enum`.
+# Prior drift (pre-B6): runtime had `adapter_error` which schema did
+# NOT carry; schema had `invocation_failed`, `output_parse_failed`,
+# `adapter_crash` which runtime did NOT carry. `_legal_error_category`
+# fallback to "other" masked the drift for drivers emitting new
+# categories. Parity is now required + test-enforced.
 _LEGAL_CATEGORIES = {
-    "timeout", "policy_denied", "adapter_error", "budget_exhausted",
-    "ci_failed", "apply_conflict", "approval_denied", "other",
+    "timeout",
+    "invocation_failed",        # transport-layer adapter fail
+    "output_parse_failed",      # walker fail or capability artifact write fail
+    "policy_denied",
+    "budget_exhausted",
+    "adapter_crash",            # subprocess crash
+    "approval_denied",
+    "ci_failed",
+    "apply_conflict",
+    "other",
 }
 
 
