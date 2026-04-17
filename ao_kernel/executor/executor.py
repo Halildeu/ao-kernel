@@ -87,13 +87,27 @@ class Executor:
         workflow_registry: WorkflowRegistry,
         adapter_registry: AdapterRegistry,
         policy_loader: Mapping[str, Any] | None = None,
+        claim_registry: Any = None,
     ) -> None:
+        """Construct an Executor.
+
+        ``claim_registry`` is a PR-B1 opt-in parameter. When a caller
+        supplies both ``fencing_token`` and ``fencing_resource_id`` to
+        ``run_step``, the executor routes the stale-fencing check to
+        ``claim_registry.validate_fencing_token`` before any side
+        effects (worktree build, adapter invoke). The parameter is
+        typed as ``Any`` rather than ``ClaimRegistry`` to keep the
+        coordination package an optional soft dependency for callers
+        that do not use it; runtime duck-typing enforces the interface
+        at the validation call site.
+        """
         self._workspace_root = workspace_root
         self._workflow_registry = workflow_registry
         self._adapter_registry = adapter_registry
         self._policy: Mapping[str, Any] = (
             policy_loader or _load_bundled_policy()
         )
+        self._claim_registry = claim_registry
 
     def run_step(
         self,
@@ -104,6 +118,8 @@ class Executor:
         attempt: int = 1,
         driver_managed: bool = False,
         step_id: str | None = None,
+        fencing_token: int | None = None,
+        fencing_resource_id: str | None = None,
     ) -> ExecutionResult:
         """Execute one workflow step.
 
@@ -122,7 +138,42 @@ class Executor:
           ``step_id`` here so events + artifacts reference the
           placeholder instead of creating a new one. Default ``None``
           falls back to ``step_def.step_name`` (A3 behaviour).
+
+        PR-B1 kwargs (CNS-029v2 iter-2 absorb, W1v5 no-emit entry check):
+        - ``fencing_token`` / ``fencing_resource_id``: optional
+          pair. When both supplied, ``run_step`` delegates to
+          ``self._claim_registry.validate_fencing_token`` BEFORE any
+          evidence emit, worktree build, or adapter invoke.
+          ``ClaimStaleFencingError`` propagates to the caller
+          (typically ``MultiStepDriver``) which applies its own
+          ``step_failed`` emission + ``step_record.state="failed"``
+          flow per the existing PR-A4b error handler contract. This
+          keeps the canonical event order (``step_started`` →
+          ... → ``step_failed``) intact — no events are emitted here.
+          Passing only one of the pair raises ``ValueError`` (partial
+          fencing context is a programmer error). Supplying fencing
+          kwargs without a ``claim_registry`` injected at construction
+          also raises ``ValueError``.
         """
+        # PR-B1 fencing entry check (W1v5 no-emit, pre-everything).
+        if (fencing_token is None) != (fencing_resource_id is None):
+            raise ValueError(
+                "fencing_token and fencing_resource_id must be passed "
+                "together or both omitted"
+            )
+        if fencing_token is not None:
+            if self._claim_registry is None:
+                raise ValueError(
+                    "fencing kwargs supplied but Executor has no "
+                    "claim_registry injected"
+                )
+            # Raises ClaimStaleFencingError on mismatch; propagates to
+            # MultiStepDriver which handles the step_failed emission +
+            # error_category="other" + code="STALE_FENCING" mapping.
+            self._claim_registry.validate_fencing_token(
+                fencing_resource_id, fencing_token,
+            )
+
         parent_env = dict(parent_env or {})
         record, _ = load_run(self._workspace_root, run_id)
 

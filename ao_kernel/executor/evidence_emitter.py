@@ -65,6 +65,15 @@ _KINDS: Final[frozenset[str]] = frozenset({
     "pr_opened",
     "policy_checked",
     "policy_denied",
+    # PR-B1 additions (coordination runtime, 18 → 24 kinds). Additive:
+    # the PR-A invariants stay intact; no existing kind is renamed or
+    # re-semanticised. See docs/COORDINATION.md §7 for payload contracts.
+    "claim_acquired",     # fresh acquire (new resource or reclaim-of-released)
+    "claim_released",     # owner-initiated release
+    "claim_heartbeat",    # liveness keep-alive (audit only, not used for decisions)
+    "claim_expired",      # prune_expired_claims cleaned a past-grace claim
+    "claim_takeover",     # past-grace reclaim by a different agent (distinct from claim_acquired)
+    "claim_conflict",     # acquire/takeover blocked by live or in-grace owner
 })
 
 _REDACTED: Final[str] = "***REDACTED***"

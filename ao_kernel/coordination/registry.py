@@ -69,10 +69,14 @@ from ao_kernel.coordination.errors import (
     ClaimConflictGraceError,
     ClaimCoordinationDisabledError,
     ClaimCorruptedError,
+    ClaimNotFoundError,
     ClaimOwnershipError,
     ClaimQuotaExceededError,
     ClaimResourceIdInvalidError,
     ClaimResourcePatternError,
+)
+from ao_kernel.coordination.fencing import (
+    FencingState,
 )
 from ao_kernel.coordination.fencing import (
     empty_fencing_revision,
@@ -385,6 +389,121 @@ class ClaimRegistry:
                 claims.append(claim)
             return claims
 
+    def takeover_claim(
+        self,
+        resource_id: str,
+        new_owner_agent_id: str,
+        policy: CoordinationPolicy | None = None,
+    ) -> Claim:
+        """Reclaim a past-grace claim for a new agent.
+
+        B1v5 live/grace gate: ``_takeover_locked`` refuses unless
+        ``now > heartbeat_at + expiry + grace``. Live claim → raises
+        :class:`ClaimConflictError` + emits ``claim_conflict`` (per
+        audit-symmetry decision: caller's explicit takeover attempt on
+        a live claim is visible in the audit trail). In-grace claim →
+        raises :class:`ClaimConflictGraceError` + same emit. Absent
+        resource → raises :class:`ClaimNotFoundError`.
+
+        Preamble mirrors ``acquire_claim`` exactly (B5v3 validator
+        parity): dormant check, path-traversal guard, pattern
+        allowlist, then locked delegate.
+        """
+        policy = policy or load_coordination_policy(self._workspace_root)
+        if not policy.enabled:
+            raise ClaimCoordinationDisabledError()
+        _validate_resource_id(resource_id)
+        if not match_resource_pattern(policy, resource_id):
+            raise ClaimResourcePatternError(
+                resource_id=resource_id,
+                patterns=policy.claim_resource_patterns,
+            )
+        _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
+        with file_lock(_claims_lock_path(self._workspace_root)):
+            return self._takeover_locked(
+                resource_id, new_owner_agent_id, policy, skip_gate=False,
+            )
+
+    def prune_expired_claims(
+        self,
+        policy: CoordinationPolicy | None = None,
+        *,
+        max_batch: int | None = None,
+    ) -> list[str]:
+        """Clean up past-grace claims (caller-driven, not a daemon).
+
+        Returns the list of pruned ``resource_id`` values. Per B3v5
+        fail-closed order each prune iteration loads + validates the
+        fencing state before deleting the claim file; a corrupt
+        fencing state raises :class:`ClaimCorruptedError` mid-batch
+        with the partial result committed.
+
+        ``max_batch`` caps the number of claims pruned per invocation
+        so long prune scans do not hold ``claims.lock`` indefinitely
+        in workspaces with many stale claims (Q7v2 caller-driven
+        pacing). Callers repaginate by invoking the method again
+        until the returned list is empty.
+
+        Warning: callers should schedule prune outside hot acquire
+        paths (long-held lock contention delays acquire latency).
+        """
+        policy = policy or load_coordination_policy(self._workspace_root)
+        _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
+        pruned: list[str] = []
+        with file_lock(_claims_lock_path(self._workspace_root)):
+            claims_dir = _claims_dir(self._workspace_root)
+            if not claims_dir.is_dir():
+                return pruned
+            now = datetime.now(timezone.utc)
+            for path in sorted(claims_dir.glob("*.v1.json")):
+                if max_batch is not None and len(pruned) >= max_batch:
+                    break
+                name = path.name
+                if name.startswith("_"):
+                    continue
+                resource_id = name[: -len(".v1.json")]
+                claim = self._load_claim_if_exists(resource_id)
+                if claim is None:
+                    continue
+                grace_end = _parse_iso(claim.heartbeat_at) + timedelta(
+                    seconds=policy.expiry_seconds
+                    + policy.takeover_grace_period_seconds,
+                )
+                if now <= grace_end:
+                    continue
+                # B3v5 fail-closed order (same as release_claim):
+                # fencing load + validate BEFORE delete.
+                fencing_state = load_fencing_state(self._workspace_root)
+                current_fencing_rev = fencing_state_revision(
+                    fencing_state.to_dict(),
+                )
+                expired_at = now.isoformat()
+                new_state = update_on_release(
+                    fencing_state,
+                    resource_id,
+                    claim.owner_agent_id,
+                    expired_at,
+                )
+                path.unlink()
+                save_fencing_state_cas(
+                    self._workspace_root,
+                    new_state,
+                    expected_revision=current_fencing_rev,
+                )
+                self._remove_from_index(resource_id, claim.owner_agent_id)
+                _safe_emit_coordination_event(
+                    self._evidence_sink,
+                    "claim_expired",
+                    {
+                        "resource_id": resource_id,
+                        "last_owner_agent_id": claim.owner_agent_id,
+                        "last_heartbeat_at": claim.heartbeat_at,
+                        "expired_at": expired_at,
+                    },
+                )
+                pruned.append(resource_id)
+        return pruned
+
     # -- Locked helpers (caller holds claims.lock) --------------------------
 
     def _acquire_locked(
@@ -429,11 +548,12 @@ class ClaimRegistry:
                     current_owner_agent_id=current.owner_agent_id,
                     current_fencing_token=current.fencing_token,
                 )
-            # Past-grace handling lands in commit 4 (_takeover_locked).
-            # Until then, signal unmistakably rather than silently acquire.
-            raise NotImplementedError(
-                "past-grace takeover path lands in PR-B1 commit 4; "
-                "acquire on a past-grace claim is currently not handled"
+            # Past-grace → delegate to _takeover_locked; outer helper
+            # does NOT emit (W3v4 single-emit contract). The delegate
+            # bypasses its own live/grace gate (skip_gate=True) because
+            # the gate check above already proved past-grace status.
+            return self._takeover_locked(
+                resource_id, owner_agent_id, policy, skip_gate=True,
             )
 
         # Absent — fresh acquire
@@ -546,6 +666,178 @@ class ClaimRegistry:
                 "released_at": released_at,
             },
         )
+
+    def _takeover_locked(
+        self,
+        resource_id: str,
+        new_owner_agent_id: str,
+        policy: CoordinationPolicy,
+        *,
+        skip_gate: bool,
+    ) -> Claim:
+        """Reclaim a claim for a new agent (B1v5 gate + B1v3 quota).
+
+        ``skip_gate=True`` is set by ``_acquire_locked`` when it has
+        already verified past-grace status from the outer
+        conflict-dispatch logic (W3v4 single-emit: the outer helper
+        does not re-emit after delegating). ``skip_gate=False`` is the
+        public ``takeover_claim`` entry — it enforces the gate here.
+
+        Audit-symmetry: when a public takeover hits a live or in-grace
+        claim, we emit ``claim_conflict`` (matching the acquire
+        dispatch path) before raising, so the caller's intent to
+        reclaim is recorded in the trail.
+        """
+        prev = self._load_claim_if_exists(resource_id)
+        if prev is None:
+            raise ClaimNotFoundError(resource_id=resource_id)
+
+        now = datetime.now(timezone.utc)
+        if not skip_gate:
+            effective_expires = _parse_iso(prev.heartbeat_at) + timedelta(
+                seconds=policy.expiry_seconds,
+            )
+            if now <= effective_expires:
+                self._emit_conflict(
+                    resource_id,
+                    requesting_agent_id=new_owner_agent_id,
+                    current=prev,
+                    conflict_kind="CLAIM_CONFLICT",
+                    now=now,
+                )
+                raise ClaimConflictError(
+                    resource_id=resource_id,
+                    current_owner_agent_id=prev.owner_agent_id,
+                    current_fencing_token=prev.fencing_token,
+                )
+            grace_end = effective_expires + timedelta(
+                seconds=policy.takeover_grace_period_seconds,
+            )
+            if now <= grace_end:
+                self._emit_conflict(
+                    resource_id,
+                    requesting_agent_id=new_owner_agent_id,
+                    current=prev,
+                    conflict_kind="CLAIM_CONFLICT_GRACE",
+                    now=now,
+                )
+                raise ClaimConflictGraceError(
+                    resource_id=resource_id,
+                    current_owner_agent_id=prev.owner_agent_id,
+                    current_fencing_token=prev.fencing_token,
+                )
+
+        # B1v3 quota enforcement on takeover path (same SSOT-reconciled
+        # live-count as acquire).
+        self._ensure_index_consistent()
+        count = self._count_agent_claims_live(new_owner_agent_id, policy)
+        if policy.max_claims_per_agent > 0 and count >= policy.max_claims_per_agent:
+            raise ClaimQuotaExceededError(
+                owner_agent_id=new_owner_agent_id,
+                current_count=count,
+                limit=policy.max_claims_per_agent,
+            )
+
+        # B2v2 write order: fencing → claim → index.
+        fencing_state = load_fencing_state(self._workspace_root)
+        current_fencing_rev = fencing_state_revision(fencing_state.to_dict())
+        new_token, new_fencing_state = next_token(fencing_state, resource_id)
+        save_fencing_state_cas(
+            self._workspace_root,
+            new_fencing_state,
+            expected_revision=current_fencing_rev,
+        )
+        new_claim_dict = {
+            "claim_id": str(uuid.uuid4()),
+            "owner_agent_id": new_owner_agent_id,
+            "resource_id": resource_id,
+            "fencing_token": new_token,
+            "acquired_at": now.isoformat(),
+            "heartbeat_at": now.isoformat(),
+            "expires_at": (
+                now + timedelta(seconds=policy.expiry_seconds)
+            ).isoformat(),
+        }
+        new_claim_dict["revision"] = claim_revision(new_claim_dict)
+        write_text_atomic(
+            claim_path(self._workspace_root, resource_id),
+            json.dumps(new_claim_dict, sort_keys=True, ensure_ascii=False),
+        )
+        # Index: remove previous owner entry, add new. Using the
+        # granular helpers keeps the index consistent across the owner
+        # flip without a full rebuild.
+        self._remove_from_index(resource_id, prev.owner_agent_id)
+        self._add_to_index(new_owner_agent_id, resource_id)
+
+        # W1v2 distinct event; W3v4 single-emit path (only here).
+        _safe_emit_coordination_event(
+            self._evidence_sink,
+            "claim_takeover",
+            {
+                "resource_id": resource_id,
+                "new_owner_agent_id": new_owner_agent_id,
+                "prev_owner_agent_id": prev.owner_agent_id,
+                "new_claim_id": new_claim_dict["claim_id"],
+                "prev_claim_id": prev.claim_id,
+                "new_fencing_token": new_token,
+                "prev_fencing_token": prev.fencing_token,
+                "takeover_at": now.isoformat(),
+            },
+        )
+        return claim_from_dict(new_claim_dict)
+
+    def _reconcile_fencing_with_claims_locked(self) -> None:
+        """Recover fencing state from per-resource claim file scan.
+
+        Called by callers (ops tooling or integration tests) when they
+        suspect fencing / claim drift. Forward-only (B3v3): fencing
+        state's ``next_token`` never decreases. Algorithm:
+
+        1. Load current ``FencingState`` (``_fencing.v1.json``). This
+           itself will raise ``ClaimCorruptedError`` on SSOT damage.
+        2. Scan ``.ao/claims/`` for per-resource claim files. For each
+           resource, compute ``recovered_next = max(claim.fencing_token
+           for claim in resource_claims) + 1``.
+        3. Set the new ``next_token`` to ``max(state.resources[rid].
+           next_token, recovered_next)`` — the forward-only guarantee.
+           If the current state's value already exceeds the recovered
+           value (fencing advanced ahead of any persisted claim), we
+           preserve the current value rather than rewind.
+        4. Persist the reconciled state under CAS.
+
+        Caller holds ``claims.lock`` for the full cycle.
+        """
+        state = load_fencing_state(self._workspace_root)
+        current_rev = fencing_state_revision(state.to_dict())
+        claims_dir = _claims_dir(self._workspace_root)
+        # Gather per-resource claim files (there is at most one at
+        # steady state; the scan tolerates stray siblings defensively).
+        new_state: FencingState = state
+        if claims_dir.is_dir():
+            for path in sorted(claims_dir.glob("*.v1.json")):
+                name = path.name
+                if name.startswith("_"):
+                    continue
+                resource_id = name[: -len(".v1.json")]
+                claim = self._load_claim_if_exists(resource_id)
+                if claim is None:
+                    continue
+                recovered_next = claim.fencing_token + 1
+                existing = new_state.resources.get(resource_id)
+                current_next = existing.next_token if existing else 0
+                # Forward-only: never decrease.
+                if recovered_next > current_next:
+                    from ao_kernel.coordination.fencing import set_next_token
+                    new_state = set_next_token(
+                        new_state, resource_id, recovered_next,
+                    )
+        # Only persist if there was a change.
+        if new_state is not state:
+            save_fencing_state_cas(
+                self._workspace_root,
+                new_state,
+                expected_revision=current_rev,
+            )
 
     # -- Internals ----------------------------------------------------------
 
