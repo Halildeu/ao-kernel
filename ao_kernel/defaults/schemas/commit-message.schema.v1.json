@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:commit-message:v1",
+  "title": "Commit Message Artifact",
+  "description": "Typed artifact for the commit_message capability (PR-B6). Commit AI adapters emit this payload; operator downstream applies the actual git commit. ao-kernel never executes git commit itself (agent-adapter-contract.schema.v1.json::capabilities[] prohibits commit_write). object-shape is mandatory so InvocationResult.extracted_outputs walker accepts the payload (adapter_invoker._walk_output_parse Mapping check).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "subject"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Schema-pinned version literal. Breaking changes ship as commit-message.schema.v2.json."
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 72,
+      "description": "Commit subject line. Conventional Commits format encouraged (type(scope): summary); max length mirrors git's soft limit for subject."
+    },
+    "body": {
+      "type": "string",
+      "description": "Optional multi-line commit body. May be blank; Markdown-style paragraphs typical."
+    },
+    "breaking_change": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag Conventional Commits BREAKING CHANGE. When true, operator downstream should add '!' to the commit type or include 'BREAKING CHANGE:' trailer per CC spec."
+    },
+    "trailers": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Conventional Commits trailers (Co-Authored-By, Signed-off-by, Refs:, etc.). Each item is the full trailer line (e.g., 'Co-Authored-By: alice <alice@example.com>')."
+    }
+  }
+}

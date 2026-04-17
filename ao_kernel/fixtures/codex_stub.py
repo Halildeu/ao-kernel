@@ -103,6 +103,17 @@ def main(argv: list[str] | None = None) -> int:
             "findings": [],
             "summary": "codex-stub: deterministic review (no issues).",
         },
+        # PR-B6: commit_message capability — object-shape payload so
+        # adapter_invoker._walk_output_parse Mapping check accepts the
+        # value. Deterministic placeholder subject; operator downstream
+        # applies the actual git commit (ao-kernel never runs git commit).
+        "commit_message": {
+            "schema_version": "1",
+            "subject": "chore: codex-stub deterministic commit",
+            "body": "",
+            "breaking_change": False,
+            "trailers": [],
+        },
     }
     sys.stdout.write(json.dumps(envelope))
     sys.stdout.write("\n")

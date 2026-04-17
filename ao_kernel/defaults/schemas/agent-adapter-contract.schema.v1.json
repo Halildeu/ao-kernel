@@ -96,9 +96,10 @@
         "open_pr",
         "human_interrupt",
         "stream_output",
-        "review_findings"
+        "review_findings",
+        "commit_message"
       ],
-      "description": "Atomic capability the adapter can perform. read_repo: adapter may read files from the workspace view. write_diff: adapter may produce a unified diff as output. run_tests: adapter may execute the workspace test suite in its worktree. open_pr: adapter may itself create a PR (e.g., GitHub Copilot cloud agent); if absent, ao-kernel opens the PR via gh-cli-pr adapter. human_interrupt: adapter may mid-run request human input via interrupt_contract. stream_output: adapter streams partial output chunks rather than returning a single response. review_findings: adapter produces a typed review-findings artifact (see review-findings.schema.v1.json) extracted via the output_parse rule-walker in adapter_invoker; required for the governed_review benchmark workflow."
+      "description": "Atomic capability the adapter can perform. read_repo: adapter may read files from the workspace view. write_diff: adapter may produce a unified diff as output. run_tests: adapter may execute the workspace test suite in its worktree. open_pr: adapter may itself create a PR (e.g., GitHub Copilot cloud agent); if absent, ao-kernel opens the PR via gh-cli-pr adapter. human_interrupt: adapter may mid-run request human input via interrupt_contract. stream_output: adapter streams partial output chunks rather than returning a single response. review_findings: adapter produces a typed review-findings artifact (see review-findings.schema.v1.json) extracted via the output_parse rule-walker in adapter_invoker; required for the governed_review benchmark workflow. commit_message: adapter produces a typed commit-message artifact (see commit-message.schema.v1.json) PR-B6; operator downstream applies the actual git commit — ao-kernel NEVER executes git commit itself (NOT `commit_write`)."
     },
     "invocation": {
       "type": "object",
