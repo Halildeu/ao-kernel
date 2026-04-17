@@ -554,3 +554,79 @@ class TestExecutorFencingEntry:
             evidence_dir / "workflows"
             / "00000000-0000-4000-8000-000000000001"
         ).exists()
+
+    def test_driver_fencing_optout_behaves_as_pre_b1(
+        self, tmp_path: Path,
+    ) -> None:
+        """CNS-029v4 iter-4 absorb: callers that leave fencing kwargs
+        as ``None`` on ``_run_adapter_step`` must retain pre-B1
+        behaviour — no fencing validation, no ``ClaimStaleFencingError``
+        raise. When fencing kwargs are omitted, the driver's
+        ClaimStaleFencingError catch block never fires — any exception
+        that surfaces is a pre-B1 error path (run record not found,
+        adapter registry miss, etc.), not a coordination failure.
+        The pinning assertion here is: whatever exception bubbles up,
+        it is **not** ``ClaimStaleFencingError`` and it is not a
+        ``_StepFailed`` carrying ``STALE_FENCING``."""
+        _write_workspace_policy(tmp_path, _enabled_policy())
+        from ao_kernel.adapters import AdapterRegistry
+        from ao_kernel.coordination.errors import ClaimStaleFencingError
+        from ao_kernel.executor import Executor
+        from ao_kernel.executor.multi_step_driver import (
+            MultiStepDriver,
+            _StepFailed,
+        )
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        wf_reg = WorkflowRegistry()
+        wf_reg.load_bundled()
+        ad_reg = AdapterRegistry()
+        ad_reg.load_bundled()
+        registry = ClaimRegistry(tmp_path)
+        exe = Executor(
+            tmp_path,
+            workflow_registry=wf_reg,
+            adapter_registry=ad_reg,
+            claim_registry=registry,
+        )
+        driver = MultiStepDriver(
+            tmp_path,
+            registry=wf_reg,
+            adapter_registry=ad_reg,
+            executor=exe,
+        )
+        definition = wf_reg.get("bug_fix_flow")
+        adapter_step = next(s for s in definition.steps if s.actor == "adapter")
+
+        # Leave both fencing kwargs omitted. The driver must NOT raise
+        # ClaimStaleFencingError nor a _StepFailed(code=STALE_FENCING);
+        # any other exception (run record not found, adapter miss) is
+        # fine and validates the pre-B1 pass-through behaviour.
+        raised: BaseException | None = None
+        try:
+            driver._run_adapter_step(
+                "00000000-0000-4000-8000-0000000b1005",
+                {},
+                adapter_step,
+                attempt=1,
+                step_id="00000000-0000-4000-8000-0000000b1005",
+                context_preamble=None,
+                # fencing_token + fencing_resource_id intentionally
+                # left at their None defaults.
+            )
+        except BaseException as exc:  # noqa: BLE001 — test pin
+            raised = exc
+
+        # A raise occurred (the tmp_path workspace has no run record);
+        # assert the raise is NOT a coordination-layer stale-fencing
+        # signal. If fencing had been opted in by mistake, we would see
+        # ClaimStaleFencingError or _StepFailed(STALE_FENCING).
+        assert raised is not None, (
+            "expected some exception when run record is absent; "
+            "got None — this regresses the pre-B1 driver contract"
+        )
+        assert not isinstance(raised, ClaimStaleFencingError), (
+            "fencing-kwargs-None path must not invoke fencing validation"
+        )
+        if isinstance(raised, _StepFailed):
+            assert raised.code != "STALE_FENCING"

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -122,6 +123,51 @@ class TestDormantDefault:
         registry = ClaimRegistry(tmp_path)
         with pytest.raises(ClaimCoordinationDisabledError):
             registry.prune_expired_claims()
+
+    def test_dormant_gate_fires_before_evidence_sink(
+        self, tmp_path: Path,
+    ) -> None:
+        """CNS-029v4 iter-4 absorb: dormant gate must raise *before*
+        the evidence sink is invoked — a dormant registry never emits
+        claim events. We install a recording sink and assert it is
+        never called when the 7 public APIs refuse under the dormant
+        default policy."""
+        calls: list[tuple[str, Mapping[str, Any]]] = []
+
+        def recording_sink(kind: str, payload: Mapping[str, Any]) -> None:
+            calls.append((kind, dict(payload)))
+
+        registry = ClaimRegistry(tmp_path, evidence_sink=recording_sink)
+
+        # Each call refuses; the sink must not be touched.
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.acquire_claim("worktree-a", "agent-alpha")
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.heartbeat(
+                "worktree-a",
+                "11111111-1111-4111-8111-111111111111",
+                "agent-alpha",
+            )
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.release_claim(
+                "worktree-a",
+                "11111111-1111-4111-8111-111111111111",
+                "agent-alpha",
+            )
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.takeover_claim("worktree-a", "agent-beta")
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.get_claim("worktree-a")
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.validate_fencing_token("worktree-a", 0)
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.list_agent_claims("agent-alpha")
+        with pytest.raises(ClaimCoordinationDisabledError):
+            registry.prune_expired_claims()
+
+        # No emits: plan §5 dormant-policy contract + W2v5 redaction
+        # scope narrowed to "registry emits only under enabled policy".
+        assert calls == []
 
 
 # ---------------------------------------------------------------------------

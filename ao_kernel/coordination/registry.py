@@ -229,15 +229,27 @@ def build_coordination_sink(
     # uses the same pattern; we mirror it here so operators can author
     # regex lists in policy_coordination_claims.v1.json with the same
     # semantics.
+    #
+    # Schema semantic (CNS-029v4 iter-4 absorb): the coordination
+    # policy's ``patterns`` field is a *convenience* flat list meaning
+    # "apply to any string value in the payload". The emitter's
+    # ``_redact_text`` implementation applies ``stdout_patterns``
+    # against every payload string value via ``_redact_payload`` —
+    # exactly the same scope. Concatenating ``patterns`` into
+    # ``stdout_patterns`` is therefore the faithful translation.
+    # (``file_content_patterns`` is kept for schema parity with the
+    # worktree profile; the emitter does not currently consume it.)
     import re
+
+    combined_stdout = tuple(
+        policy.evidence_redaction.stdout_patterns
+    ) + tuple(policy.evidence_redaction.patterns)
 
     redaction = RedactionConfig(
         env_keys_matching=tuple(
             re.compile(p) for p in policy.evidence_redaction.env_keys_matching
         ),
-        stdout_patterns=tuple(
-            re.compile(p) for p in policy.evidence_redaction.stdout_patterns
-        ),
+        stdout_patterns=tuple(re.compile(p) for p in combined_stdout),
         file_content_patterns=tuple(
             re.compile(p) for p in policy.evidence_redaction.file_content_patterns
         ),
