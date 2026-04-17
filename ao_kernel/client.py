@@ -485,6 +485,13 @@ class AoKernelClient:
         tool_results: list[dict[str, Any]] | None = None,
         response_format: dict[str, Any] | None = None,
         profile: str | None = None,
+        # PR-B2 v5 iter-4 B2 cost identity kwargs. All four must be set
+        # (non-None) for the cost pipeline to activate; any missing kwarg
+        # → transparent bypass (pre-B2 behaviour). Workflow-driven
+        # callers pass these automatically; SDK users opt in.
+        run_id: str | None = None,
+        step_id: str | None = None,
+        attempt: int | None = None,
     ) -> dict[str, Any]:
         """Make a governed LLM call with full pipeline.
 
@@ -528,64 +535,49 @@ class AoKernelClient:
         if not base_url:
             base_url = self._default_base_url(provider_id)
 
-        # 2. Capability check
-        from ao_kernel.llm import check_capabilities
-        cap_ok, _, missing = check_capabilities(
-            provider_id=provider_id,
-            model=model,
-            has_tools=bool(tools),
-            has_response_format=bool(response_format),
-        )
-        if not cap_ok and missing:
-            return {
-                "status": "CAPABILITY_GAP",
-                "text": "",
-                "missing": missing,
-                "provider_id": provider_id,
-                "model": model,
-                "request_id": request_id,
-            }
-
-        # 3. Build request (with context injection if session active)
+        # PR-B2: streaming path stays on the pre-B2 build + _execute_stream
+        # pipeline (governed_call is non-streaming only per plan v5 iter-4 B2).
+        # Non-streaming path is routed through governed_call so cost hooks
+        # and context injection compose from a single wrapper.
         ws_str = str(self._workspace_root) if self._workspace_root else None
-        if self._session_active and self._context:
-            from ao_kernel.llm import build_request_with_context
-            req = build_request_with_context(
-                provider_id=provider_id,
-                model=model,
-                messages=messages,
-                base_url=base_url,
-                api_key=api_key,
-                session_context=self._context,
-                workspace_root=ws_str,
-                profile=profile,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                request_id=request_id,
-                stream=stream,
-                tools=tools,
-                response_format=response_format,
-                embedding_config=self._embedding_config,
-                vector_store=self._vector_store,
-            )
-        else:
-            from ao_kernel.llm import build_request
-            req = build_request(
-                provider_id=provider_id,
-                model=model,
-                messages=messages,
-                base_url=base_url,
-                api_key=api_key,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                request_id=request_id,
-                tools=tools,
-                response_format=response_format,
-                stream=stream,
-            )
 
-        # 4. Execute (streaming or blocking)
         if stream:
+            # Build + stream dispatch — unchanged from pre-B2.
+            if self._session_active and self._context:
+                from ao_kernel.llm import build_request_with_context
+                req = build_request_with_context(
+                    provider_id=provider_id,
+                    model=model,
+                    messages=messages,
+                    base_url=base_url,
+                    api_key=api_key,
+                    session_context=self._context,
+                    workspace_root=ws_str,
+                    profile=profile,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    request_id=request_id,
+                    stream=True,
+                    tools=tools,
+                    response_format=response_format,
+                    embedding_config=self._embedding_config,
+                    vector_store=self._vector_store,
+                )
+            else:
+                from ao_kernel.llm import build_request
+                req = build_request(
+                    provider_id=provider_id,
+                    model=model,
+                    messages=messages,
+                    base_url=base_url,
+                    api_key=api_key,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    request_id=request_id,
+                    tools=tools,
+                    response_format=response_format,
+                    stream=True,
+                )
             return self._execute_stream(
                 req=req,
                 provider_id=provider_id,
@@ -595,32 +587,46 @@ class AoKernelClient:
                 tool_results=tool_results,
             )
 
-        from ao_kernel.llm import execute_request
-        transport_result = execute_request(
-            url=req["url"],
-            headers=req["headers"],
-            body_bytes=req["body_bytes"],
-            timeout_seconds=30.0,
+        # Non-streaming: delegate to governed_call (v5 iter-4 B1 rich dict).
+        from ao_kernel.llm import governed_call
+
+        result = governed_call(
+            messages=messages,
             provider_id=provider_id,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
             request_id=request_id,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=tools,
+            response_format=response_format,
+            # Context-aware build (plan v4 iter-3 B1 absorb):
+            session_context=self._context if self._session_active else None,
+            workspace_root_str=ws_str,
+            profile=profile,
+            embedding_config=self._embedding_config,
+            vector_store=self._vector_store,
+            # Cost identity kwargs (plan v5 iter-4 B2 absorb): opt-in.
+            # All four must be non-None + policy.enabled for cost active.
+            workspace_root=self._workspace_root,
+            run_id=run_id,
+            step_id=step_id,
+            attempt=attempt,
         )
 
-        if transport_result.get("status") != "OK":
-            return {
-                "status": "TRANSPORT_ERROR",
-                "text": "",
-                "error_code": transport_result.get("error_code", "UNKNOWN"),
-                "http_status": transport_result.get("http_status"),
-                "provider_id": provider_id,
-                "model": model,
-                "request_id": request_id,
-                "elapsed_ms": transport_result.get("elapsed_ms", 0),
-            }
+        # Envelope pass-through for error statuses.
+        status = result.get("status")
+        if status == "CAPABILITY_GAP":
+            return result
+        if status == "TRANSPORT_ERROR":
+            return result
 
-        # 5. Normalize response
-        resp_bytes = transport_result.get("resp_bytes", b"")
-        from ao_kernel.llm import normalize_response, extract_usage
-        normalized = normalize_response(resp_bytes, provider_id=provider_id)
+        # Status == "OK" — unwrap rich dict for post-call pipeline.
+        normalized = result.get("normalized") or {}
+        resp_bytes: bytes = result.get("resp_bytes", b"")
+        transport_result = result.get("transport_result") or {}
+        from ao_kernel.llm import extract_usage
         usage = extract_usage(resp_bytes)
 
         text = normalized.get("text", "")
