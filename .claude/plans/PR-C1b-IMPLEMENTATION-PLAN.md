@@ -1,4 +1,12 @@
-# PR-C1b Implementation Plan v2 — Full Bundled bug_fix_flow E2E Benchmark
+# PR-C1b Implementation Plan v3 — Full Bundled bug_fix_flow E2E Benchmark
+
+**v3 absorb (iter-2 PARTIAL — 1 blocker + 1 warning)**: Canned envelope `review_findings` + `commit_message` schema-valid shape (Codex citation: `review-findings.schema.v1.json:6-24` + `commit-message.schema.v1.json:5-19`); `bench_policy_override` simplified — `inherit_from_parent` reliance drop (driver `parent_env={}`), PATH prefix synth + command allowlist yeterli.
+
+---
+
+# (v2 retained for history)
+
+## PR-C1b Implementation Plan v2 — Full Bundled bug_fix_flow E2E Benchmark
 
 **Scope**: FAZ-C runtime closure 2. track. C1a altyapısı üzerine bug_fix_flow 7-step full bundled E2E benchmark. Patch plumbing top-level `diff` fallback. `gh-cli-pr` manifest input_envelope declarative fix (hem bundled hem fixture parity).
 
@@ -137,31 +145,38 @@ Runtime behavior DEĞİŞMEZ; bu declarative parity fix. Context.md body MVP (co
 - Git init + initial commit (baseline state).
 - C1a `build_driver(tmp_path, policy_loader=bench_policy_override)` (forward policy).
 
-**`bench_policy_override` fixture** (yeni):
+**`bench_policy_override` fixture** (yeni, v3 simplified):
+
+Driver `_build_sandbox()` her zaman `parent_env={}` geçiriyor (`multi_step_driver.py:1820-1829`), bu yüzden `inherit_from_parent=True` reliance gerçekten çalışmaz. PATH prefix synth + command allowlist yeterli:
+
 ```python
 @pytest.fixture
 def bench_policy_override():
-    """Policy with PATH/PYTHONPATH/python3 allowlist for benchmark
-    subprocess runs. gh allowlist gereksiz — gh-cli-pr mock'lanır."""
+    """Minimal policy for benchmark subprocess: PATH prefix synth
+    + python3/pytest/git command allowlist. gh gereksiz (mock)."""
     return {
-        "env_allowlist": {
-            "allowed_keys": ["PATH", "PYTHONPATH", "PYTHONHOME"],
-            "inherit_from_parent": True,
-            "deny_on_unknown": False,
-        },
         "command_allowlist": {
             "exact": ["python3", "pytest", "git"],
-            "prefixes": ["/usr/bin/", "/usr/local/bin/", "/opt/homebrew/bin/"],
+            "prefixes": [
+                "/usr/bin/",
+                "/usr/local/bin/",
+                "/opt/homebrew/bin/",
+            ],
         },
         "secrets": {"allowlist_secret_ids": [], "exposure_modes": []},
-        # ... mirror policy_worktree_profile.v1.json defaults
+        # Other keys mirror policy_worktree_profile.v1.json defaults.
     }
 ```
+
+PATH değeri `allowed_prefixes` üzerinden synthesize edilir (`policy_enforcer.py:135-141`); driver parent_env={} olsa da subprocess PATH = `/usr/bin:/usr/local/bin:/opt/homebrew/bin` olur.
 
 **Canned adapter envelopes**:
 
 codex-stub (top-level diff, hardcoded — W3 absorb):
 ```python
+# v3: review_findings + commit_message schema-valid shape per
+# review-findings.schema.v1.json:6-24 + commit-message.schema.v1.json:5-19
+# (output_parse rules on codex-stub manifest validate these).
 CODEX_STUB_ENVELOPE = {
     "status": "ok",
     "diff": """--- a/src/__init__.py
@@ -169,8 +184,17 @@ CODEX_STUB_ENVELOPE = {
 @@ -0,0 +1,1 @@
 +# C1b benchmark: cosmetic docstring added by codex-stub
 """,
-    "review_findings": {"findings": [], "score": 1.0},
-    "commit_message": "docs: add module docstring",
+    "review_findings": {
+        "schema_version": "1",
+        "findings": [],
+        "summary": "C1b benchmark: no review issues.",
+        "score": 1.0,
+    },
+    "commit_message": {
+        "schema_version": "1",
+        "subject": "docs: add module docstring",
+        "body": "",
+    },
     "cost_actual": {
         "tokens_input": 100,
         "tokens_output": 50,
@@ -275,7 +299,9 @@ Mevcut dosyada `TestHappyPath` varsa (B7 skeleton'dan), `TestFullBundledBugFixFl
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`5f3b1b2`) |
 | iter-1 (thread `019d9ff8`) | 2026-04-18 | **PARTIAL** — 2 blocker (workflow sırası yanlış, extracted_outputs.diff yanlış) + 4 warning |
 | **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit. Happy-path = baseline green + cosmetic diff; top-level `diff` fallback; bench_policy_override fixture; manifest parity; install_bundled_workflow drop. |
-| iter-2 | TBD | AGREE expected (concrete 2-blocker + 4-warning absorb; dar scope) |
+| iter-2 | 2026-04-18 | **PARTIAL** — 1 blocker (canned envelope review_findings/commit_message schema-invalid) + 1 warning (bench_policy_override inherit_from_parent driver parent_env={} ile çalışmaz) |
+| **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3. Canned envelope schema-valid shape (schema_version + findings + summary + score; object commit_message) + bench_policy_override simplified. |
+| iter-3 | TBD | AGREE expected (minimal text-level fix; Codex explicit AGREE yolu gösterdi) |
 
 ### Plan revision history
 
