@@ -60,6 +60,80 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
         raise
 
 
+def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
+    """PR-C6 CLI: preview a step's effects without side-effects."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.adapters import AdapterRegistry
+    from ao_kernel.executor import Executor
+    from ao_kernel.workflow.registry import WorkflowRegistry
+    from ao_kernel.workflow.run_store import load_run
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+
+    wreg = WorkflowRegistry()
+    wreg.load_bundled()
+    wreg.load_workspace(project_root)
+    areg = AdapterRegistry()
+    areg.load_bundled()
+    areg.load_workspace(project_root)
+
+    try:
+        record, _ = load_run(project_root, args.run_id)
+    except Exception as exc:
+        print(f"run not found: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        definition = wreg.get(
+            record["workflow_id"],
+            version=record["workflow_version"],
+        )
+    except Exception as exc:
+        print(f"workflow not resolvable: {exc}", file=sys.stderr)
+        return 1
+
+    step_def = next(
+        (s for s in definition.steps if s.step_name == args.step_name),
+        None,
+    )
+    if step_def is None:
+        print(
+            f"step_name={args.step_name!r} not in workflow "
+            f"{record['workflow_id']}@{record['workflow_version']}",
+            file=sys.stderr,
+        )
+        return 1
+
+    executor = Executor(
+        workspace_root=project_root,
+        workflow_registry=wreg,
+        adapter_registry=areg,
+    )
+    result = executor.dry_run_step(
+        args.run_id, step_def, attempt=args.attempt,
+    )
+    if args.format == "json":
+        out = {
+            "predicted_events": [
+                {"kind": k, "payload": dict(p)}
+                for k, p in result.predicted_events
+            ],
+            "policy_violations": list(result.policy_violations),
+            "simulated_budget_after": dict(result.simulated_budget_after),
+            "simulated_outputs": dict(result.simulated_outputs),
+        }
+        print(_json.dumps(out, indent=2, sort_keys=True))
+    else:
+        print(
+            f"predicted_events: {len(result.predicted_events)}\n"
+            f"policy_violations: {len(result.policy_violations)}\n"
+            f"simulated_outputs: {len(result.simulated_outputs)}"
+        )
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ao-kernel",
@@ -239,6 +313,42 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root for adapter discovery (default: cwd)",
     )
 
+    # PR-C6: executor dry-run subcommand
+    executor_p = sub.add_parser(
+        "executor",
+        help="Executor primitives (dry-run preview, etc.)",
+    )
+    executor_sub = executor_p.add_subparsers(dest="executor_command")
+    dry_run_p = executor_sub.add_parser(
+        "dry-run",
+        help="Preview a step's predicted effects without side-effects",
+    )
+    dry_run_p.add_argument(
+        "run_id",
+        help="Run identifier (UUID) from a seeded workflow run",
+    )
+    dry_run_p.add_argument(
+        "step_name",
+        help="Step name (must be part of the pinned workflow definition)",
+    )
+    dry_run_p.add_argument(
+        "--attempt",
+        type=int,
+        default=1,
+        help="Attempt number for retry-aware dry-run (default 1)",
+    )
+    dry_run_p.add_argument(
+        "--format",
+        choices=["json", "text"],
+        default="json",
+        help="Report format (default: json)",
+    )
+    dry_run_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root (default: cwd)",
+    )
+
     return parser
 
 
@@ -286,6 +396,14 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_mcp_serve(args)
         from ao_kernel.i18n import msg
         print(msg("usage_mcp_serve"))
+        return 1
+
+    # Executor subcommand (PR-C6)
+    if cmd == "executor":
+        ex_cmd = getattr(args, "executor_command", None)
+        if ex_cmd == "dry-run":
+            return _cmd_executor_dry_run(args)
+        print("Usage: ao-kernel executor {dry-run}", file=sys.stderr)
         return 1
 
     # Policy-sim subcommand (PR-B4)
