@@ -1,4 +1,15 @@
-# PR-C6 Implementation Plan v2 — Executor.dry_run_step (Refactored Shared Pre-flight)
+# PR-C6 Implementation Plan v3 — Explicit Policy-Denied Branch + CLI Registry API Fix
+
+**v3 absorb (iter-2 PARTIAL — 1 blocker + 2 warning)**:
+1. **Policy-denied branch explicit**: Dry-run adapter dispatch içinde `PolicyViolationError` caught + `policy_checked` + `policy_denied` + `step_failed` events recorder'a yazılır; `DryRunResult.policy_violations` dolar; exception dışarı çıkmaz.
+2. **CLI registry API kwargs**: `workflow_registry.get(workflow_id, version=workflow_version)` — keyword-only. Registry `load_bundled()` + `load_workspace(project_root)` ile populate.
+3. **Adapter log absent**: Test pin — `adapter-<id>.jsonl` dry-run sonrası YOK (mock boundary tam kapandığı kanıtı).
+
+---
+
+# (v2 retained for history)
+
+## PR-C6 Implementation Plan v2 — Executor.dry_run_step (Refactored Shared Pre-flight)
 
 **Scope**: FAZ-C runtime closure. `Executor.dry_run_step(run_id, step_def, ...) -> DryRunResult` — **shared pre-flight extracted**, separate dry-run tail (no CAS, no write_artifact, no update_run). Mock boundary: `emit_event` + worktree + `invoke_cli`/`invoke_http` via executor alias-patch. CLI `ao-kernel executor dry-run <run_id> <step_name>`.
 
@@ -116,24 +127,41 @@ def dry_run_step(
         self._workspace_root, run_id,
     ) as recorder:
         # Dry-run dispatch: call actor branch but bypass CAS/artifact.
-        # Policy check still runs real (see policy_enforcer calls inside
-        # the mock'd invoke_cli path) so violations surface.
-        if step_def.actor == "adapter":
-            self._dry_run_adapter_dispatch(
-                run_id=run_id,
-                record=record,
-                step_def=step_def,
-                parent_env=parent_env or {},
-                attempt=attempt,
-                recorder=recorder,
-            )
-        else:
-            self._dry_run_placeholder(
-                run_id=run_id,
-                record=record,
-                step_def=step_def,
-                recorder=recorder,
-            )
+        # v3 (iter-2 B1 absorb): policy evaluation runs inside adapter
+        # dispatch; PolicyViolationError caught here records the full
+        # step_started → policy_checked → policy_denied → step_failed
+        # event sequence and returns violations in DryRunResult without
+        # raising.
+        try:
+            if step_def.actor == "adapter":
+                self._dry_run_adapter_dispatch(
+                    run_id=run_id,
+                    record=record,
+                    step_def=step_def,
+                    parent_env=parent_env or {},
+                    attempt=attempt,
+                    recorder=recorder,
+                )
+            else:
+                self._dry_run_placeholder(
+                    run_id=run_id,
+                    record=record,
+                    step_def=step_def,
+                    recorder=recorder,
+                )
+        except PolicyViolationError as exc:
+            # Mock'd emit_event already captured step_started +
+            # policy_checked; record policy_denied + step_failed
+            # here to match real executor's denial sequence.
+            recorder.record_policy_violation(str(exc))
+            recorder.predicted_events.append((
+                "policy_denied",
+                {"step_name": step_def.step_name, "reason": str(exc)},
+            ))
+            recorder.predicted_events.append((
+                "step_failed",
+                {"step_name": step_def.step_name, "reason": "policy_violation"},
+            ))
 
     return DryRunResult(
         predicted_events=tuple(recorder.predicted_events),
@@ -213,12 +241,14 @@ ao-kernel executor dry-run \
     --format json
 ```
 
-Handler:
-1. `load_run(run_id)` → record + workflow_id + workflow_version.
-2. `workflow_registry.get(workflow_id, workflow_version)` → definition.
-3. `step_def = next(s for s in definition.steps if s.step_name == step_name)` — not found → error exit.
-4. `Executor(...).dry_run_step(run_id, step_def, attempt=args.attempt)`.
-5. Print `DryRunResult` JSON/text.
+Handler (v3 — registry API kwarg fix):
+1. Registry populate: `wreg = WorkflowRegistry(); wreg.load_bundled(); wreg.load_workspace(project_root)`.
+2. Adapter registry populate similarly.
+3. `load_run(project_root, run_id)` → record with `workflow_id` + `workflow_version`.
+4. `definition = wreg.get(workflow_id, version=workflow_version)` (**v3 kwarg; registry.py:362 kontratı**).
+5. `step_def = next((s for s in definition.steps if s.step_name == step_name), None)` — None → error exit.
+6. `Executor(project_root, workflow_registry=wreg, adapter_registry=areg, policy_loader=...).dry_run_step(run_id, step_def, attempt=args.attempt)`.
+7. Print `DryRunResult` JSON/text.
 
 ---
 
@@ -240,6 +270,8 @@ Handler:
 - `test_read_only_invariant_full_record_unchanged` — record dict byte-for-byte + revision + steps length + error unchanged.
 - `test_no_evidence_file_written` — events.jsonl absent post-dry_run.
 - `test_no_artifact_directory_written` — run_dir/artifacts/ absent or empty.
+- `test_no_adapter_log_written` (v3 W3 absorb) — `adapter-<id>.jsonl` absent post-dry_run (mock boundary tam kapandı kanıtı).
+- `test_policy_denied_records_full_event_sequence` (v3 B1 absorb) — bad policy adapter step → DryRunResult.policy_violations non-empty + predicted_events içinde `step_started` + `policy_checked` + `policy_denied` + `step_failed` 4'lü sıra (exception DIŞARI çıkmaz).
 
 **Shared pre-flight refactor regression** (2):
 - `test_run_step_preflight_behavior_unchanged` — existing run_step callers pass existing behavior (load_run + guards).
@@ -296,4 +328,6 @@ Handler:
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`4cc4232`) |
 | iter-1 (thread `019da099`) | 2026-04-18 | **PARTIAL** — 3 blocker (write_artifact kaçak, update_run coupling, CLI workflow_id mismatch) + 4 warning |
 | **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2. Shared pre-flight refactor + separate dry-run tail + 5 mock nokta (write_artifact added) + CLI run_id-based + stub EvidenceEvent + (InvocationResult, Budget) tuple. |
-| iter-2 | TBD | AGREE expected |
+| iter-2 | 2026-04-18 | **PARTIAL** — 1 blocker (policy-denied branch explicit gerekli) + 2 warning (CLI registry kwarg + adapter log absent test) |
+| **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3. Policy-denied try/except explicit recorder events + CLI `wreg.get(id, version=...)` + adapter log absent pin. |
+| iter-3 | TBD | AGREE expected |
