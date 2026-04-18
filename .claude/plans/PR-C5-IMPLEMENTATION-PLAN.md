@@ -1,4 +1,17 @@
-# PR-C5 Implementation Plan v1 — RFC 7396 Merge-Patch Policy-Sim
+# PR-C5 Implementation Plan v2 — RFC 7396 Merge-Patch Policy-Sim
+
+**v2 absorb (Codex iter-1 PARTIAL — 4 fix + 1 type contract)**:
+1. **Filename contract reversible**: `policy_name.v1.patch.json` → `policy_name.v1.json` (version suffix korunur).
+2. **Mutex `is not None`**: `proposed_policies={}` (empty dict) + `proposed_policy_patches={...}` kombinasyonu geçerli; sadece her ikisi `is not None` olduğunda `ValueError`.
+3. **Parser-level CLI mutex test**: `argparse.mutually_exclusive_group(required=False)` + parser-level reject test eklendi.
+4. **Unknown/new policy patch semantic**: **Fail-fast** seçildi — `resolve_target_policy` baseline bulamazsa `TargetPolicyNotFoundError` propagate (typo protection; scope-down alternative ret).
+5. **`apply_merge_patch` type contract**: Narrow to **policy-doc object patch only** — imza `Mapping → dict`; non-Mapping top-level patch (list/scalar) desteklenmez. RFC 7396 "top-level=null" case (delete whole doc) **out of scope**.
+
+---
+
+# (v1 retained for history — see original plan body below)
+
+## PR-C5 Implementation Plan v1 — RFC 7396 Merge-Patch Policy-Sim
 
 **Scope**: FAZ-C strategic extension (bağımsız). `apply_merge_patch` stdlib-only RFC 7396 impl + `simulate_policy_change::proposed_policy_patches` additive kwarg (mutex with `proposed_policies`) + CLI `--proposed-patches <dir>` + edge-case test suite.
 
@@ -24,19 +37,27 @@ def apply_merge_patch(
     baseline: Mapping[str, Any],
     patch: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """RFC 7396 JSON Merge Patch. Returns a new dict — baseline
-    NOT mutated.
+    """RFC 7396 JSON Merge Patch — policy-doc object patch only.
     
-    Rules:
-    - `patch[k] is None`: delete key `k` from baseline.
-    - `isinstance(patch[k], Mapping) AND isinstance(baseline.get(k), Mapping)`:
-      recurse (nested merge).
-    - Else: replace baseline[k] with patch[k] (arrays, scalars,
-      object-replacing-scalar all handled by straight replace).
-    - Keys present only in baseline (not in patch): preserved.
+    Returns a new dict; baseline + patch arg'ları MUTATE EDILMEZ.
+    
+    Scope-narrow (v2 Codex iter-1 note): imza `Mapping → dict`;
+    top-level non-object patch (list/scalar/null) DESTEKLENMEZ —
+    policy documents her zaman object-typed. Operator top-level
+    null (whole-doc delete) isterse `proposed_policies` API'sini
+    kullansın.
+    
+    Rules (RFC 7396 subset):
+    - `patch[k] is None` → delete key `k` from baseline.
+    - Both baseline[k] and patch[k] Mapping → recurse.
+    - Else → replace baseline[k] with patch[k].
+    - Keys only in baseline → preserved.
     """
     if not isinstance(patch, Mapping):
-        return dict(patch) if isinstance(patch, (list, dict)) else patch
+        raise TypeError(
+            "apply_merge_patch: patch must be a Mapping "
+            "(policy-doc object patch only)"
+        )
     out = dict(baseline) if isinstance(baseline, Mapping) else {}
     for key, pval in patch.items():
         if pval is None:
@@ -87,8 +108,11 @@ def simulate_policy_change(
     proposed policies. Mutex with ``proposed_policies``:
     caller must supply at most one of the two.
     """
-    # Mutex guard
-    if proposed_policies and proposed_policy_patches:
+    # Mutex guard — v2 `is not None` (empty dict farklı truthiness'a sahip):
+    if (
+        proposed_policies is not None
+        and proposed_policy_patches is not None
+    ):
         raise ValueError(
             "proposed_policies and proposed_policy_patches are mutually "
             "exclusive — supply at most one."
@@ -131,7 +155,7 @@ ao-kernel policy-sim run \
 
 `<dir>` içindeki her `*.patch.json` → `{policy_name: patch_dict}`. Mutex CLI-level: `--proposed-patches` + `--proposed-policies` bir arada verilirse error.
 
-Filename convention: `<policy_name>.patch.json` (ör. `policy_worktree_profile.patch.json` → patches `policy_worktree_profile.v1.json`).
+Filename convention (v2 reversible): `<policy_filename>.patch.json` → `<policy_filename>.json` (version suffix korunur). Örnek: `policy_worktree_profile.v1.patch.json` → patches `policy_worktree_profile.v1.json`. Loader helper `load_policy_patches_from_dir(dir: Path) -> dict[str, dict]` yeni modülde; mevcut loader resolve mantığından ayrı.
 
 ### 2.4 Edge-case test suite
 
@@ -147,8 +171,11 @@ Filename convention: `<policy_name>.patch.json` (ör. `policy_worktree_profile.p
 
 **`tests/test_simulate_policy_patches.py`** (integration):
 - `test_mutex_raises_value_error` — `proposed_policies=dict` + `proposed_policy_patches=dict` aynı anda → `ValueError`.
-- `test_patches_apply_against_baseline` — `proposed_policy_patches={"policy_x": {"enabled": True}}` + baseline `enabled=False` → simulator effective proposed = merged.
-- `test_both_none_allowed` — `proposed_policies=None` + `proposed_policy_patches=None` → baseline-only run (existing behavior contract).
+- `test_empty_dict_proposed_with_patches_allowed` — `proposed_policies={}` + `proposed_policy_patches={...}` → `ValueError` YOK (v2 fix: `is not None` guard; empty dict normalize edilir patch tarafında).
+- `test_patches_apply_against_baseline` — `proposed_policy_patches={"policy_x.v1": {"enabled": True}}` + baseline `enabled=False` → simulator effective proposed = merged.
+- `test_unknown_policy_patch_fails_fast` — v2 **fail-fast**: `proposed_policy_patches={"nonexistent.v1": {...}}` → `TargetPolicyNotFoundError` (typo protection).
+- `test_both_none_allowed` — `proposed_policies=None` + `proposed_policy_patches=None` → baseline-only run (existing behavior).
+- `test_cli_parser_mutex` (parser-level, v2 fix): `ao-kernel policy-sim run --proposed-policies x --proposed-patches y` → argparse `SystemExit` (mutually_exclusive_group enforced).
 
 ---
 
@@ -212,6 +239,9 @@ Filename convention: `<policy_name>.patch.json` (ör. `policy_worktree_profile.p
 
 | Iter | Date | Verdict |
 |---|---|---|
-| v1 (Claude draft) | 2026-04-18 | Pre-Codex iter-1 submit |
+| v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`4288d36`) |
+| iter-1 (thread `019da04c`) | 2026-04-18 | **PARTIAL** — 4 fix (filename reversible + mutex is-not-None + CLI parser test + unknown patch semantic) + 1 type contract narrow |
+| **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2. Filename versioned; `is not None` mutex; parser-level CLI mutex test; fail-fast unknown policy; `apply_merge_patch` policy-doc-only. |
+| iter-2 | TBD | AGREE expected (4 concrete fix'ler + explicit type contract) |
 
-**Codex thread**: Yeni (C5-specific).
+**Codex thread**: `019da04c-a05e-7bf2-a27c-dc267d791367` (C5-specific).
