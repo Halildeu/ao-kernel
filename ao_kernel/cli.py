@@ -113,6 +113,76 @@ def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
     return 0 if not result.errors else 1
 
 
+def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
+    """v3.4.0 #3 CLI: compact `cost_reconciled` markers to archive."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.cost.marker_compaction import (
+        compact_all_terminal_runs,
+        compact_run_markers,
+    )
+
+    if bool(args.run_id) == bool(args.all_terminal):
+        print(
+            "error: pass exactly one of --run-id or --all-terminal",
+            file=sys.stderr,
+        )
+        return 2
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+    dry_run = bool(args.dry_run)
+
+    if args.run_id:
+        res = compact_run_markers(project_root, args.run_id, dry_run=dry_run)
+        if args.output == "json":
+            payload = {
+                "run_id": res.run_id,
+                "markers_archived": res.markers_archived,
+                "archive_path": (
+                    str(res.archive_path.relative_to(project_root))
+                    if res.archive_path else None
+                ),
+                "already_compact": res.already_compact,
+                "dry_run": dry_run,
+            }
+            print(_json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            status = "dry-run" if dry_run else "applied"
+            if res.already_compact:
+                print(f"run {res.run_id}: already compact (no markers)")
+            else:
+                print(
+                    f"run {res.run_id} [{status}]: archived "
+                    f"{res.markers_archived} marker(s) → "
+                    f"{res.archive_path}"
+                )
+        return 0
+
+    bulk = compact_all_terminal_runs(project_root, dry_run=dry_run)
+    if args.output == "json":
+        payload = {
+            "runs_scanned": bulk.runs_scanned,
+            "runs_compacted": bulk.runs_compacted,
+            "markers_archived_total": bulk.markers_archived_total,
+            "errors": list(bulk.errors),
+            "dry_run": dry_run,
+        }
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        mode = "dry-run" if dry_run else "applied"
+        print(
+            f"Compaction [{mode}]: scanned={bulk.runs_scanned} "
+            f"compacted={bulk.runs_compacted} "
+            f"markers_total={bulk.markers_archived_total}"
+        )
+        if bulk.errors:
+            print("Errors:")
+            for err in bulk.errors:
+                print(f"  - {err}")
+    return 0 if not bulk.errors else 1
+
+
 def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
     """PR-C6 CLI: preview a step's effects without side-effects."""
     import json as _json
@@ -484,6 +554,49 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root (default: cwd)",
     )
 
+    # v3.4.0 #3: cost compact-markers subcommand
+    compact_p = cost_sub.add_parser(
+        "compact-markers",
+        help=(
+            "Archive `cost_reconciled` markers for a run (or all "
+            "terminal runs) to .ao/cost/markers-archive/{run_id}.jsonl "
+            "and clear the in-record list. Keeps state.v1.json lean "
+            "on long-lived workspaces. Idempotent (empty → no-op)."
+        ),
+    )
+    compact_p.add_argument(
+        "--run-id",
+        default=None,
+        help=(
+            "Compact a single run by id. Mutually exclusive with "
+            "--all-terminal."
+        ),
+    )
+    compact_p.add_argument(
+        "--all-terminal",
+        action="store_true",
+        help=(
+            "Compact every on-disk run in a terminal state "
+            "(completed / failed / cancelled)."
+        ),
+    )
+    compact_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report scope without mutating anything.",
+    )
+    compact_p.add_argument(
+        "--output",
+        choices=["json", "human"],
+        default="human",
+        help="Output format (default: human)",
+    )
+    compact_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root (default: cwd)",
+    )
+
     return parser
 
 
@@ -553,12 +666,17 @@ def main(argv: list[str] | None = None) -> int:
         print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
         return 1
 
-    # Cost subcommand (v3.4.0 #1 — reconciler)
+    # Cost subcommand (v3.4.0 #1 reconciler + #3 compact-markers)
     if cmd == "cost":
         cost_cmd = getattr(args, "cost_command", None)
         if cost_cmd == "reconcile":
             return _cmd_cost_reconcile(args)
-        print("Usage: ao-kernel cost {reconcile}", file=sys.stderr)
+        if cost_cmd == "compact-markers":
+            return _cmd_cost_compact_markers(args)
+        print(
+            "Usage: ao-kernel cost {reconcile|compact-markers}",
+            file=sys.stderr,
+        )
         return 1
 
     # Metrics subcommand (PR-B5)
