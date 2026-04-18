@@ -1,4 +1,26 @@
-# PR-C3 Implementation Plan v3 — Narrow Fail-Open + Recovery Spec
+# PR-C3 Implementation Plan v4 — Driver Catch Matrix + Recovery Filter
+
+**v4 absorb (iter-3 PARTIAL — 1 blocker + 2 warning)**:
+
+1. **Driver catch matrix extend**: `MultiStepDriver._run_adapter_step:467` mevcut catch seti — `PolicyViolationError`, `ClaimStaleFencingError`, `AdapterInvocationFailedError`, `AdapterOutputParseError`. v4 eklenecek:
+   - `CostTrackingConfigError` → `_StepFailed(category="other", code="COST_CONFIG_ERROR")`
+   - `SpendLedgerDuplicateError` → `_StepFailed(category="other", code="LEDGER_DUPLICATE")`
+   - `SpendLedgerCorruptedError` → `_StepFailed(category="other", code="LEDGER_CORRUPTED")`
+   `_LEGAL_CATEGORIES` set zaten "other" taşıyor.
+
+2. **Recovery filter specificity**: docs/COST-MODEL.md §7.5 recovery query daha dar:
+   - `cost_policy.enabled=true` AND
+   - `cost_actual` mevcut (invocation_result'ta) AND
+   - NE `llm_spend_recorded` NE `llm_usage_missing` evidence event
+   - → manual reconcile candidate. Diğer filtreler false-positive üretirdi.
+
+3. **Plan body rewrite**: v3 summary header'da ama gövdesi hâlâ v2 snippets. v4'te plan body fully rewritten olmalı (non-blocking impl time; spec-reader'lar yanlış bloğu okumasın).
+
+---
+
+# (v3 retained for history)
+
+## PR-C3 Implementation Plan v3 — Narrow Fail-Open + Recovery Spec
 
 **v3 absorb (iter-2 PARTIAL — 2 blocker + 3 warning)**:
 
