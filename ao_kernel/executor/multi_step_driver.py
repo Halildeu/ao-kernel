@@ -1893,20 +1893,34 @@ class MultiStepDriver:
 
         # Adapter-only parity; non-adapter defer to executor fallback
         # (CLI routes them there explicitly; inner API call is strict).
-        if step_def.actor != "adapter":
-            raise NotImplementedError(
-                f"driver dry-run parity implemented for adapter actors "
-                f"only; got actor={step_def.actor!r}. Fall back to "
-                "Executor.dry_run_step directly for non-adapter steps "
-                "(CLI --executor-only or default dispatch for "
-                "non-adapter actors)"
+        # v3.4.0 #4: actor-aware fidelity branches. Adapter actors keep
+        # the full envelope + parent_env derivation; `system` actors
+        # (ci-runner / patch-apply subprocess steps) use the sandbox
+        # parent_env (allowlist MINUS secrets); `ao-kernel` actors
+        # (internal steps — context_compile, checkpoint, etc.) need
+        # neither — they run in-process and have no sandbox surface.
+        # Unknown actor values continue to raise so schema additions
+        # surface explicitly in tests.
+        if step_def.actor == "adapter":
+            envelope = self._build_adapter_envelope_with_context(
+                run_id, step_def, record,
             )
-
-        # Adapter envelope + parent_env — same derivation as real path
-        envelope = self._build_adapter_envelope_with_context(
-            run_id, step_def, record,
-        )
-        parent_env = self._compute_adapter_parent_env(self._policy)
+            parent_env: Mapping[str, str] | None = (
+                self._compute_adapter_parent_env(self._policy)
+            )
+        elif step_def.actor == "system":
+            envelope = None
+            parent_env = self._compute_sandbox_parent_env(self._policy)
+        elif step_def.actor == "ao-kernel":
+            envelope = None
+            parent_env = None  # in-process execution, no env surface
+        else:
+            raise NotImplementedError(
+                f"driver dry-run parity not implemented for "
+                f"actor={step_def.actor!r}; schema lists "
+                f"{{adapter, system, ao-kernel, human}} — human steps "
+                "are interactive and do not dry-run"
+            )
 
         return self._executor.dry_run_step(
             run_id,
