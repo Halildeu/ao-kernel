@@ -540,6 +540,39 @@ class MultiStepDriver:
                 category="output_parse_failed",
                 code="OUTPUT_PARSE_FAILED",
             ) from exc
+        except Exception as exc:
+            # PR-C3: cost-layer exceptions from post_adapter_reconcile
+            # must translate to _StepFailed so the step_failed +
+            # workflow_failed event sequence stays intact.
+            from ao_kernel.cost.errors import (
+                CostTrackingConfigError,
+                SpendLedgerCorruptedError,
+                SpendLedgerDuplicateError,
+            )
+
+            if isinstance(exc, CostTrackingConfigError):
+                raise _StepFailed(
+                    reason=f"cost config error: {exc!s}",
+                    attempt=attempt,
+                    category="other",
+                    code="COST_CONFIG_ERROR",
+                ) from exc
+            if isinstance(exc, SpendLedgerDuplicateError):
+                raise _StepFailed(
+                    reason=f"ledger duplicate digest: {exc!s}",
+                    attempt=attempt,
+                    category="other",
+                    code="LEDGER_DUPLICATE",
+                ) from exc
+            if isinstance(exc, SpendLedgerCorruptedError):
+                raise _StepFailed(
+                    reason=f"ledger corrupted: {exc!s}",
+                    attempt=attempt,
+                    category="other",
+                    code="LEDGER_CORRUPTED",
+                ) from exc
+            # Not a cost error → let it propagate.
+            raise
 
         if exec_result.step_state != "completed":
             raise _StepFailed(

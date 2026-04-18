@@ -571,6 +571,30 @@ class Executor:
                     worktree_created, workspace_root=self._workspace_root
                 )
 
+        # PR-C3: adapter cost reconcile — BEFORE terminal event so a
+        # reconcile failure surfaces as step_failed rather than a
+        # post-hoc state inconsistency. Fail-closed: cost-layer errors
+        # propagate to the driver catch matrix (driver_managed=True
+        # path) or to the caller's exception handling (A3 default).
+        try:
+            from ao_kernel.cost.middleware import post_adapter_reconcile
+            from ao_kernel.cost.policy import load_cost_policy
+
+            cost_policy = load_cost_policy(self._workspace_root)
+            if cost_policy.enabled:
+                post_adapter_reconcile(
+                    workspace_root=self._workspace_root,
+                    run_id=run_id,
+                    step_id=step_id_for_events,
+                    attempt=attempt,
+                    provider_id=manifest.adapter_kind,
+                    model=manifest.adapter_id,
+                    cost_actual=invocation_result.cost_actual,
+                    policy=cost_policy,
+                )
+        except ImportError:  # pragma: no cover — optional cost module
+            pass
+
         # Map adapter status → new workflow state (A3 default)
         new_state, step_state = _map_invocation_to_state(
             current_state=record["state"],
