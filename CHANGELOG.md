@@ -55,6 +55,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Cross-adapter reconciliation / audit replay keyed on `vendor_model_id`
 - Multi-vendor cost compare in routing decisions
 
+### Added — PR-C6.1 adapter-step dry-run parity
+
+**Context.** v3.3.0 CLI `ao-kernel executor dry-run` routed directly through `Executor.dry_run_step`, which used a bare task-prompt envelope and an empty `parent_env` — driver-layer `context_pack_ref` + `parent_env` derivation was bypassed, so the preview did not match real adapter execution. Codex CNS-20260418-034 adversarial plan (5 iterations → AGREE) isolated the fix: add a driver entry point, widen the executor signature to pass through driver-managed context, and route adapter steps through the driver by default from the CLI.
+
+**Changes.**
+
+- **New driver method** `MultiStepDriver.dry_run_step(run_id, step_name, *, attempt=None)` — resolves the pinned workflow definition, applies 5 guards, and delegates to `Executor.dry_run_step` with the same `context_pack_ref` + `parent_env` the real `_run_adapter_step` path computes.
+- **`Executor.dry_run_step` signature widen** — additive `input_envelope_override`, `step_id`, `driver_managed` kwargs forwarded to `run_step`. Backward compat preserved.
+- **CLI actor-aware dispatch** — `ao-kernel executor dry-run` defaults to driver path for adapter actors; non-adapter actors (`aokernel`, `ci-runner`, `patch-apply`) use executor-only fallback (v3.3.0 behavior preserved). New `--executor-only` flag forces executor path. `--attempt` default flipped from `1` to `None` so the driver derives.
+
+**Gating guards** (all `ValueError` except non-adapter → `NotImplementedError`):
+1. Run-state guard: only `created` / `running`; terminal / `waiting_approval` / `interrupted` blocked.
+2. Completed-step guard: highest-attempt `completed` blocks even with explicit `attempt=`.
+3. Attempt validation: supplied `attempt` must equal `_next_attempt_number(record, step_name)`.
+4. Running-placeholder reuse: highest attempt in `running` state at derived attempt → existing `step_id` reused.
+5. Adapter-only (inner API): non-adapter raises `NotImplementedError`; CLI routes non-adapters to executor fallback.
+
+**Test baseline.** 2250 → **2262** (+10 new in `tests/test_dry_run_driver.py`). Backward compat: 8/8 `test_dry_run_step.py` still pass.
+
+**Scope boundary.** `v3.3.1` claim is **adapter-step parity**. Non-adapter full-fidelity, workflow-wide replay, canary runs, reverse-diff preview → v3.4.0.
+
 ### Deferred — out of v3.3.1 scope (v3.4.0)
 
 - Full reconciliation daemon / API (`reconcile_orphan_spends`)

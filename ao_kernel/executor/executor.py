@@ -288,6 +288,9 @@ class Executor:
         step_def: StepDefinition,
         *,
         parent_env: Mapping[str, str] | None = None,
+        input_envelope_override: Mapping[str, Any] | None = None,
+        step_id: str | None = None,
+        driver_managed: bool = False,
         attempt: int = 1,
     ) -> Any:  # DryRunResult imported lazily; Any avoids TYPE_CHECKING cycle.
         """Preview a step's effects without real side-effects.
@@ -299,6 +302,13 @@ class Executor:
         record is NOT mutated. Policy violations surface in the
         returned :class:`DryRunResult` rather than as raised
         exceptions (PR-C6 v3 B1 absorb).
+
+        PR-C6.1: the ``input_envelope_override``, ``step_id`` and
+        ``driver_managed`` passthrough kwargs let ``MultiStepDriver.
+        dry_run_step`` inject the same ``context_pack_ref`` /
+        ``parent_env`` derivation the real execution path uses —
+        closing the adapter-step parity gap where executor-only
+        preview used a bare task-prompt envelope.
 
         See ``ao_kernel/executor/dry_run.py`` for the recorder +
         context manager contract.
@@ -323,7 +333,9 @@ class Executor:
                     step_def,
                     parent_env=parent_env,
                     attempt=attempt,
-                    driver_managed=False,
+                    driver_managed=driver_managed,
+                    input_envelope_override=input_envelope_override,
+                    step_id=step_id,
                 )
             except PolicyViolationError as exc:
                 # Real executor emits step_started + policy_checked

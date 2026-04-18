@@ -111,9 +111,32 @@ def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
         workflow_registry=wreg,
         adapter_registry=areg,
     )
-    result = executor.dry_run_step(
-        args.run_id, step_def, attempt=args.attempt,
-    )
+    # PR-C6.1: actor-aware dispatch. Default behavior for adapter
+    # steps routes through MultiStepDriver.dry_run_step so
+    # context_pack_ref + parent_env derivation matches the real
+    # execution path. Non-adapter actors continue to use the
+    # executor-only path (placeholder envelope) — scope pinned to
+    # adapter parity in v3.3.1 (full-actor parity: v3.4.0).
+    # ``--executor-only`` flag forces executor path for debugging /
+    # backward compat regardless of actor.
+    executor_only = getattr(args, "executor_only", False)
+    use_driver = (not executor_only) and step_def.actor == "adapter"
+    if use_driver:
+        from ao_kernel.executor.multi_step_driver import MultiStepDriver
+
+        driver = MultiStepDriver(
+            workspace_root=project_root,
+            registry=wreg,
+            adapter_registry=areg,
+            executor=executor,
+        )
+        result = driver.dry_run_step(
+            args.run_id, args.step_name, attempt=args.attempt,
+        )
+    else:
+        result = executor.dry_run_step(
+            args.run_id, step_def, attempt=args.attempt or 1,
+        )
     if args.format == "json":
         out = {
             "predicted_events": [
@@ -334,8 +357,22 @@ def _build_parser() -> argparse.ArgumentParser:
     dry_run_p.add_argument(
         "--attempt",
         type=int,
-        default=1,
-        help="Attempt number for retry-aware dry-run (default 1)",
+        default=None,
+        help=(
+            "Attempt number for retry-aware dry-run. When omitted, the "
+            "driver derives the next legal attempt; when supplied, must "
+            "match that value (PR-C6.1)."
+        ),
+    )
+    dry_run_p.add_argument(
+        "--executor-only",
+        action="store_true",
+        help=(
+            "PR-C6.1 debug opt-out: force Executor.dry_run_step directly "
+            "instead of the actor-aware dispatch. Useful for debugging "
+            "driver-layer derivation gaps or for actors that don't have "
+            "driver parity yet (non-adapter actors route here by default)."
+        ),
     )
     dry_run_p.add_argument(
         "--format",
