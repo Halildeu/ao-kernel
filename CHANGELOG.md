@@ -7,6 +7,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.5.0 D1 Consultation path canonicalization
+
+**Context.** Repo practice has treated `.ao/consultations/` as the canonical CNS (adversarial agent consultation) artefact directory since early FAZ-C, but `policy_agent_consultation.v1.json` still pointed at the pre-v3.5 `.cache/...` paths. v3.5.0 D1 closes the drift: policy + resolver + migration script now share one source of truth under `.ao/consultations/`, with the legacy `.cache/...` directories preserved as read-only fallbacks until cut-over.
+
+**Changes.**
+
+- **Policy widen** `policy_agent_consultation.v1.json::paths` — canonical `.ao/consultations/*` entries, `legacy_fallbacks` map holding the pre-v3.5 `.cache/...` paths
+- **New module** `ao_kernel/consultation/paths.py`:
+  - `ConsultationPaths` dataclass + `load_consultation_paths(policy, *, workspace_root)` loader
+  - `resolve_consultation_dir(policy, artefact, *, workspace_root, prefer_legacy=False)` — canonical by default, legacy fallback on read
+  - `FileClassification` enum: `VALID_CURRENT` / `LEGACY_SHAPE` / `INVALID_JSON` — Codex iter-2 advice: responses are classified, not strict-validated
+  - `iter_consultation_files` walks canonical + legacy; request/response classifiers applied based on artefact type
+- **New module** `ao_kernel/consultation/migrate.py`:
+  - `migrate_consultations(policy, *, workspace_root, dry_run=False, force=False, include_invalid=False)` — copy-forward (not in-place move), non-destructive by default, manifest written under `.ao/consultations/.migration_backup/migration-{timestamp}.json`
+- **New CLI** `ao-kernel consultation migrate [--dry-run] [--force] [--include-invalid] [--output json|human]`
+
+**Scope.** Paths + classify + migration only. Evidence emit + normalization + canonical promotion land in D2a/D2b.
+
+**Test baseline.** +13 new pins in `tests/test_consultation_paths.py`: policy asserts canonical paths, resolver prefers-legacy fallback, request/response classifiers (valid / legacy / invalid), iter walks both origins, migration dry-run / apply / idempotent.
+
+
 ## [3.4.0] — 2026-04-18
 
 **v3.4.0 — Cost Runtime Maturity + Routing Extensibility**. Seven follow-ups landed in one session: reconciler daemon for orphan spends, evidence payload enrichment, marker compaction, full-actor dry-run parity, multi-step downgrade chain, per-workspace routing overrides, and a real-crash test harness. All backward compatible.
