@@ -1,88 +1,69 @@
-# PR-C3 Implementation Plan v1 — post_adapter_reconcile (Cost Runtime)
+# PR-C3 Implementation Plan v2 — post_adapter_reconcile (Scope-Narrow)
 
-**Scope**: FAZ-C runtime closure. `post_adapter_reconcile` middleware — adapter path için `post_response_reconcile` pattern'ının kardeşi. Atomic lock-first: scan_tail duplicate check → fresh path budget drain + ledger append + emit. Reuse `llm_spend_recorded` kind with `source: "adapter_path"` discriminator.
+**Scope**: FAZ-C cost runtime reconcile. `post_adapter_reconcile` middleware — adapter-path cost drain via **second CAS cycle** after executor's budget_after write. Scope-narrowed per Codex iter-1: no catalog lookup, minimal wire contract (cost_actual.tokens_*), usage_missing → `llm_usage_missing` event (not llm_spend_recorded).
 
-**Base**: `main 9e0be80` (PR #116 C1b.1 merged). **Branch**: `feat/pr-c3-post-adapter-reconcile`.
+**Base**: `main 9e0be80`. **Branch**: `feat/pr-c3-post-adapter-reconcile`.
 
-**Master plan v5 §C3 referans**: iter-6 AGREE'ye yakın spec (atomic lock-first + llm_spend_recorded reuse + cost_actual.tokens_* wire + on-demand catalog lookup).
-
-**Status**: Pre-Codex iter-1 submit. Bu plan master plan v5 §C3 detayları üzerine kurulu + C3 iter-6'da tespit edilen failure-atomicity sorununa pragmatic v1 yaklaşım.
+**Status**: iter-1 PARTIAL absorb → iter-2 submit. Codex thread `019da0fc-a2e1-7121-b824-b6b40c5712de`.
 
 ---
 
-## 1. Problem
+## v2 absorb summary (Codex iter-1 PARTIAL — 3 blocker + 4 warning)
 
-Adapter path (codex-stub, claude-code-cli, gh-cli-pr) `invoke_cli`/`invoke_http` dönüşünde `cost_actual.{tokens_input, tokens_output, cost_usd}` içerir ama:
-- `workflow-run.budget.cost_usd` drenaj edilmez (real reconcile YOK; only B7.1 benchmark shim vardı).
-- `spend.jsonl` ledger'a yazılmaz.
-- `llm_spend_recorded` event emit edilmez.
+| # | iter-1 bulgu | v2 fix |
+|---|---|---|
+| **B1** (budget overwrite) | Executor `update_run(_mutator)` line 633 `current["budget"] = budget_to_dict(budget_after)` koşulsuz yazar. Default (A3) path'te post_adapter_reconcile'ın cost drain'i ezilir. | v2: `post_adapter_reconcile` executor'un mutator'undan AYRI **ikinci CAS cycle** — executor's update_run COMPLETES first (A3 default), THEN post_adapter_reconcile reads latest state + applies cost drain. Driver-managed (B6+) path executor mutator skip'ler (line 595-602) → tek CAS. |
+| **B2** (error catch matrix) | Yeni `SpendLedgerDuplicateError` executor/driver catch'te yok → terminal event akışı yarım kalır. | v2: `post_adapter_reconcile` içinde try/except ile fail-open wrap — duplicate → warn log + return. Exception dışarı propagate etmez. |
+| **B3** (usage_missing event drift) | v1 `llm_spend_recorded` emit ediyor usage_missing için; mevcut runtime `llm_usage_missing` emit eder. | v2: usage_missing → `llm_usage_missing` event (source="adapter_path"). `llm_spend_recorded` sadece success path. |
 
-Sonuç: adapter-path cost tracking bozuk. B7.1 shim var ama "benchmark-only" (mock_transport layer).
+### v2 absorb warnings
+
+- **W1** (provider_id/model mapping) → **v2 drop catalog lookup**. `vendor_model_id=None` always; `find_entry` silindi. Catalog attribution v3.3.1+ follow-up (adapter manifest widen gerek).
+- **W2** (call-site gate status) → v2: gate `cost_actual is not None` — status='ok' şart değil; declined/interrupted/partial da cost_actual taşıyorsa reconcile eder.
+- **W3** (cached_tokens wire contract) → v2: builder `cached_tokens` OKUMAZ (schema'da yok).
+- **W4** (`_adapter_mutator` silent skip) → v2: budget/cost_usd None → `CostTrackingConfigError` raise (existing post_response_reconcile pattern mirror).
 
 ---
 
-## 2. Scope (atomic deliverable)
+## 1. Scope v2 (atomic deliverable — narrow)
 
-### 2.1 `_build_adapter_spend_event` builder
+### 1.1 `_build_adapter_spend_event` (cost/middleware.py yeni)
 
-**Yeni** (`ao_kernel/cost/middleware.py`):
+**v2 signature**: `cost_actual: Mapping` (NOT envelope wrapper; Q2 absorb).
 ```python
 def _build_adapter_spend_event(
-    envelope: Mapping[str, Any],
+    cost_actual: Mapping[str, Any],
     *,
     run_id: str,
     step_id: str,
     attempt: int,
     provider_id: str,
     model: str,
-    workspace_root: Path,
 ) -> SpendEvent:
-    """Adapter envelope → SpendEvent.
-    
-    Wire format (master plan v5 iter-5 B3 absorb): tokens under
-    ``cost_actual.tokens_input/tokens_output`` (NOT ``usage.*``).
-    """
-    cost_actual = envelope.get("cost_actual") or {}
-    tokens_in_raw = cost_actual.get("tokens_input")
-    tokens_out_raw = cost_actual.get("tokens_output")
-    cost_raw = cost_actual.get("cost_usd", 0)
-    
-    usage_missing = (
-        tokens_in_raw is None or tokens_out_raw is None
-    )
-    
-    # On-demand catalog lookup for vendor_model_id
-    vendor_model_id = None
-    try:
-        from ao_kernel.cost.policy import load_cost_policy
-        cost_policy = load_cost_policy(workspace_root)
-        catalog = load_price_catalog(workspace_root, policy=cost_policy)
-        entry = find_entry(catalog, provider_id=provider_id, model=model)
-        if entry is not None:
-            vendor_model_id = entry.vendor_model_id
-    except Exception:
-        # Unknown/new model → vendor_model_id None (audit-only path).
-        pass
-    
+    """Adapter cost_actual → SpendEvent (v2: no catalog lookup)."""
+    tokens_in = cost_actual.get("tokens_input")
+    tokens_out = cost_actual.get("tokens_output")
+    cost = cost_actual.get("cost_usd", 0)
+    usage_missing = tokens_in is None or tokens_out is None
     return SpendEvent(
         run_id=run_id,
         step_id=step_id,
         attempt=attempt,
         provider_id=provider_id,
         model=model,
-        tokens_input=int(tokens_in_raw or 0),
-        tokens_output=int(tokens_out_raw or 0),
-        cost_usd=Decimal(str(cost_raw)),
+        tokens_input=int(tokens_in or 0),
+        tokens_output=int(tokens_out or 0),
+        cost_usd=Decimal(str(cost)),
         ts=_iso_now(),
-        vendor_model_id=vendor_model_id,
-        cached_tokens=cost_actual.get("cached_tokens"),
+        vendor_model_id=None,  # v2 W1: catalog attribution deferred
+        cached_tokens=None,  # v2 W3: not in wire contract
         usage_missing=usage_missing,
     )
 ```
 
-### 2.2 `post_adapter_reconcile` middleware
+### 1.2 `post_adapter_reconcile` (cost/middleware.py yeni)
 
-**Yeni** (`ao_kernel/cost/middleware.py`):
+**v2 signature + flow**:
 ```python
 def post_adapter_reconcile(
     *,
@@ -92,63 +73,82 @@ def post_adapter_reconcile(
     attempt: int,
     provider_id: str,
     model: str,
-    envelope: Mapping[str, Any],
+    cost_actual: Mapping[str, Any] | None,
     policy: CostTrackingPolicy,
     elapsed_ms: float | None = None,
 ) -> None:
-    """Adapter-path cost reconcile. Mirrors post_response_reconcile
-    but for adapter envelope inputs.
+    """Adapter-path cost reconcile. v2 scope-narrow: no catalog
+    lookup; fail-open error handling (SpendLedgerDuplicateError
+    warn-log + return, not propagate); usage_missing emits
+    llm_usage_missing not llm_spend_recorded.
     
-    Atomic lock-first order (master plan v5 iter-6):
-    1. Acquire ledger file_lock.
-    2. Scan ledger tail for duplicate (run_id, step_id, attempt).
-    3. If duplicate same-digest: silent warn + return (budget NOT
-       drained again; ledger already has the record).
-    4. If duplicate different-digest: SpendLedgerDuplicateError.
-    5. Fresh path: validate event + append ledger (atomic fsync).
-    6. Release lock.
-    7. Update budget via CAS (update_run mutator + record_budget_spend).
-    8. Emit llm_spend_recorded with source="adapter_path".
+    Order:
+    1. Guard: policy.enabled + cost_actual available (Q2 absorb:
+       any status if cost_actual present).
+    2. Build SpendEvent.
+    3. Atomic lock-first ledger append (reuses cost.ledger helpers).
+    4. Post-lock: update_run mutator (SECOND CAS cycle; reads latest
+       state after executor's budget_after write — B1 absorb).
+    5. Emit llm_spend_recorded (source=adapter_path) OR
+       llm_usage_missing (source=adapter_path) per event.usage_missing.
     
-    Crash-window note (v1 acceptance): if process crashes between
-    step 5 (append) and step 7 (update_run), ledger has the event
-    but budget not yet drained. Retry: scan finds duplicate → skip
-    both append AND budget drain → ghost-charge (ledger says
-    spent, budget not deducted). v1 documents this; comprehensive
-    fix (adapter_drained_digests schema widen) deferred to
-    v3.3.1 or v3.4.0.
-    
-    This is the INVERSE of the C3 iter-6 concern (double-drain):
-    ledger-first ordering avoids double-drain at the cost of
-    possible ghost-charge. Ghost-charge is operationally easier
-    to detect (ledger as source-of-truth; operator reconciles
-    manually via budget audit).
+    Fail-open boundary (B2 absorb):
+    - SpendLedgerDuplicateError → logger.warning + return.
+    - Any other ledger/budget exception → logger.warning + return.
+    Exceptions NEVER propagate to executor/driver catch matrix.
     """
-    # Import ledger helpers lazily to keep import cycle clean
+    if not policy.enabled:
+        return
+    if cost_actual is None:
+        return
+    
+    event = _build_adapter_spend_event(
+        cost_actual,
+        run_id=run_id, step_id=step_id, attempt=attempt,
+        provider_id=provider_id, model=model,
+    )
+    
+    # Usage-missing path (B3 absorb): llm_usage_missing, NOT llm_spend_recorded.
+    if event.usage_missing:
+        # Audit-only ledger entry (cost_usd=0).
+        try:
+            record_spend(workspace_root, event, policy=policy)
+        except Exception as exc:
+            logger.warning(
+                "adapter reconcile usage_missing ledger write failed "
+                "(fail-open): %s", exc,
+            )
+        _safe_emit(
+            workspace_root, run_id, "llm_usage_missing",
+            {
+                "source": "adapter_path",
+                "run_id": run_id,
+                "step_id": step_id,
+                "attempt": attempt,
+                "provider_id": provider_id,
+                "model": model,
+                "missing_fields": [
+                    f for f, v in [
+                        ("tokens_input", cost_actual.get("tokens_input")),
+                        ("tokens_output", cost_actual.get("tokens_output")),
+                    ] if v is None
+                ],
+                "ts": event.ts,
+            },
+        )
+        return
+    
+    # Success path: atomic lock-first ledger append + separate CAS drain.
     from ao_kernel.cost.ledger import (
-        _append_with_fsync,
-        _compute_billing_digest,
-        _event_to_dict,
-        _find_duplicate,
-        _ledger_lock_path,
-        _ledger_path,
-        _scan_tail,
-        _validate_event,
+        _append_with_fsync, _compute_billing_digest,
+        _event_to_dict, _find_duplicate, _ledger_lock_path,
+        _ledger_path, _scan_tail, _validate_event,
     )
     from ao_kernel._internal.shared.lock import file_lock
     from ao_kernel.cost.errors import SpendLedgerDuplicateError
     from dataclasses import replace
     import json as _json
     
-    if not policy.enabled:
-        return  # dormant
-    
-    event = _build_adapter_spend_event(
-        envelope,
-        run_id=run_id, step_id=step_id, attempt=attempt,
-        provider_id=provider_id, model=model,
-        workspace_root=workspace_root,
-    )
     digest = event.billing_digest or _compute_billing_digest(event)
     event = replace(event, billing_digest=digest)
     
@@ -158,44 +158,59 @@ def post_adapter_reconcile(
     lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     
     appended = False
-    with file_lock(lock_path):
-        window = _scan_tail(ledger_path, policy.idempotency_window_lines)
-        existing = _find_duplicate(
-            window, run_id=run_id, step_id=step_id, attempt=attempt,
-        )
-        if existing is not None:
-            existing_digest = str(existing.get("billing_digest", ""))
-            if existing_digest == digest:
+    try:
+        with file_lock(lock_path):
+            window = _scan_tail(
+                ledger_path, policy.idempotency_window_lines,
+            )
+            existing = _find_duplicate(
+                window, run_id=run_id, step_id=step_id, attempt=attempt,
+            )
+            if existing is not None:
+                existing_digest = str(existing.get("billing_digest", ""))
+                if existing_digest == digest:
+                    logger.warning(
+                        "adapter reconcile idempotent no-op (same digest)",
+                    )
+                    return
+                # v2 B2: fail-open on different-digest duplicate
                 logger.warning(
-                    "adapter reconcile idempotent no-op: "
-                    "(run_id=%s, step_id=%s, attempt=%d) same-digest",
+                    "adapter reconcile digest mismatch (run=%s step=%s "
+                    "attempt=%d) — fail-open skip",
                     run_id, step_id, attempt,
                 )
-                return  # Silent no-op (budget already drained at prior call)
-            raise SpendLedgerDuplicateError(
-                run_id=run_id, step_id=step_id, attempt=attempt,
-                existing_digest=existing_digest, new_digest=digest,
-            )
-        # Fresh path: validate + append inside lock
-        doc = _event_to_dict(event)
-        _validate_event(doc)
-        line = _json.dumps(doc, sort_keys=True, ensure_ascii=False,
-                           separators=(",", ":"))
-        _append_with_fsync(ledger_path, line)
-        appended = True
+                return
+            doc = _event_to_dict(event)
+            _validate_event(doc)
+            line = _json.dumps(doc, sort_keys=True, ensure_ascii=False,
+                                separators=(",", ":"))
+            _append_with_fsync(ledger_path, line)
+            appended = True
+    except Exception as exc:
+        logger.warning(
+            "adapter reconcile ledger write failed (fail-open): %s",
+            exc,
+        )
+        return
     
-    # CRASH WINDOW — ledger has event, budget not yet drained.
-    
-    if appended and not event.usage_missing and event.cost_usd > 0:
-        # Budget drain via CAS
+    # Second CAS cycle (B1 absorb): budget drain post-executor-write.
+    if appended and event.cost_usd > 0:
         def _adapter_mutator(record: dict[str, Any]) -> dict[str, Any]:
             budget_dict = record.get("budget")
             if budget_dict is None:
-                # No budget configured — skip silently
-                return record
+                # W4: fail-closed mirror post_response_reconcile
+                raise CostTrackingConfigError(
+                    run_id=run_id,
+                    details="run.budget dropped between adapter return "
+                            "and reconcile",
+                )
             budget = budget_from_dict(budget_dict)
             if budget.cost_usd is None:
-                return record
+                raise CostTrackingConfigError(
+                    run_id=run_id,
+                    details="run.budget.cost_usd dropped between adapter "
+                            "return and reconcile",
+                )
             new_budget = record_budget_spend(
                 budget, cost_usd=event.cost_usd, run_id=run_id,
             )
@@ -209,142 +224,103 @@ def post_adapter_reconcile(
             )
         except Exception as exc:
             logger.warning(
-                "adapter reconcile budget drain failed (ledger "
-                "entry remains; operator reconcile required): %s",
+                "adapter reconcile budget drain failed (ledger entry "
+                "remains; operator reconcile required): %s",
                 exc,
             )
     
-    if appended:
-        payload: dict[str, Any] = {
-            "source": "adapter_path",
-            "run_id": run_id,
-            "step_id": step_id,
-            "attempt": attempt,
-            "provider_id": provider_id,
-            "model": model,
-            "tokens_input": event.tokens_input,
-            "tokens_output": event.tokens_output,
-            "cost_usd": float(event.cost_usd),
-            "usage_missing": event.usage_missing,
-            "ts": event.ts,
-        }
-        if elapsed_ms is not None:
-            payload["duration_ms"] = round(float(elapsed_ms), 3)
-        _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)
+    # Success emit (B3 absorb: llm_spend_recorded only for real cost).
+    payload: dict[str, Any] = {
+        "source": "adapter_path",
+        "run_id": run_id,
+        "step_id": step_id,
+        "attempt": attempt,
+        "provider_id": provider_id,
+        "model": model,
+        "tokens_input": event.tokens_input,
+        "tokens_output": event.tokens_output,
+        "cost_usd": float(event.cost_usd),
+        "ts": event.ts,
+    }
+    if elapsed_ms is not None:
+        payload["duration_ms"] = round(float(elapsed_ms), 3)
+    _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)
 ```
 
-### 2.3 Call site `Executor.invoke_cli/invoke_http` dönüşü
+### 1.3 Call site (`executor.py`)
 
-**executor.py:510-520** adapter path:
+**v2**: AFTER executor's `update_run(_mutator)` (line 633) — second CAS cycle:
 ```python
-invocation_result, budget_after = invoke_cli(...)  # OR invoke_http
-# ... existing artifact write + adapter_returned emit ...
+# ... existing adapter path: invoke_cli → write_artifact → adapter_returned emit ...
+# ... existing update_run(_mutator) writes budget_to_dict(budget_after) ...
 
-# PR-C3: adapter cost reconcile
-if policy.enabled and invocation_result.status == "ok":
-    envelope_dict = _envelope_from_invocation_result(invocation_result)
-    post_adapter_reconcile(
-        workspace_root=self._workspace_root,
-        run_id=run_id,
-        step_id=step_id_for_events,
-        attempt=attempt,
-        provider_id=manifest.adapter_kind,  # or field mapping
-        model=manifest.adapter_id,
-        envelope=envelope_dict,
-        policy=cost_policy,  # load_cost_policy(workspace_root)
-    )
+update_run(self._workspace_root, run_id, mutator=_mutator)
+
+# PR-C3: adapter cost reconcile (second CAS cycle; fail-open)
+cost_policy = load_cost_policy(self._workspace_root)
+if cost_policy.enabled:
+    cost_actual = invocation_result.cost_actual
+    if cost_actual:
+        # W2 absorb: any status if cost_actual present
+        post_adapter_reconcile(
+            workspace_root=self._workspace_root,
+            run_id=run_id,
+            step_id=step_id_for_events,
+            attempt=attempt,
+            provider_id=manifest.adapter_kind,  # or map to catalog later
+            model=manifest.adapter_id,
+            cost_actual=cost_actual,
+            policy=cost_policy,
+        )
+
+return ExecutionResult(...)
 ```
 
-`_envelope_from_invocation_result` helper: `InvocationResult.cost_actual` var; map to envelope shape.
+Driver-managed (line 482-488) path'te `update_run` skip edilir (mutator skip'li return); post_adapter_reconcile orada DA çalışır (executor return öncesi). Her iki path'te de cost drain happens.
 
-### 2.4 B7.1 shim removal
+### 1.4 B7.1 shim removal
 
-`tests/benchmarks/mock_transport.py::_maybe_consume_budget` silinir. `test_cost_usd_drained_after_happy_review` real path üzerinden pass eder (post_adapter_reconcile runs inside mock_transport canned envelope path).
-
-### 2.5 `llm_spend_recorded` payload discriminator
-
-`source: "adapter_path"` veya `"llm_call"` (existing post_response_reconcile). `docs/evidence-event.schema.v1.json` yoksa documentation-level; `_KINDS` değişmez (reuse).
+`tests/benchmarks/mock_transport.py::_maybe_consume_budget` silinir. `test_cost_usd_drained_after_happy_review` real path (post_adapter_reconcile) üzerinden pass eder.
 
 ---
 
-## 3. Test Plan
+## 2. Test Plan v2 (8 new, +1 default-path integration)
 
-### 3.1 Yeni test (`tests/test_post_adapter_reconcile.py`):
+- `test_happy_path_drains_budget_via_second_cas_cycle` — A3 default path: ledger append + budget drain + emit.
+- `test_driver_managed_path_drain` — B6 driver-managed: same outcome.
+- `test_idempotent_same_digest_silent_no_op` — double call → 1 entry, 1 drain.
+- `test_different_digest_fail_open_skip` — different digest → warn log, no raise (B2 absorb).
+- `test_usage_missing_emits_llm_usage_missing_not_spend_recorded` — B3 absorb.
+- `test_dormant_policy_no_op` — policy.enabled=false.
+- `test_source_discriminator_on_both_events` — source="adapter_path" on `llm_spend_recorded` AND `llm_usage_missing`.
+- `test_cost_actual_wire_format_no_cached_tokens` — W3: cached_tokens not read.
 
-- `test_happy_path_drains_budget_and_ledger` — envelope with cost → ledger append + budget drain + emit.
-- `test_idempotent_same_digest_silent_no_op` — double call → ledger 1 entry + budget single drain.
-- `test_different_digest_raises_duplicate_error` — same key different payload → SpendLedgerDuplicateError.
-- `test_usage_missing_skips_drain` — cost_actual.tokens_input yok → usage_missing=True, budget untouched.
-- `test_dormant_policy_no_op` — policy.enabled=false → skip entirely.
-- `test_source_discriminator_on_emit` — llm_spend_recorded payload'ta source="adapter_path".
-- `test_cost_actual_wire_format` — envelope.cost_actual.tokens_input NOT envelope.usage.*.
+**Default Executor.run_step() integration test** (Codex iter-1 test gap):
+- `test_default_executor_run_step_triggers_adapter_reconcile` — driver-managed=False flow; verify ledger entry + budget drained after executor returns.
 
-### 3.2 B7.1 shim removal
-
-- `tests/benchmarks/mock_transport.py::_maybe_consume_budget` silinir.
-- `tests/benchmarks/test_governed_review.py::test_cost_usd_drained_after_happy_review` pass eder (real path).
-
-### 3.3 Regression
-
-- 2203 + ~8 new = ~2211 green.
+**B7.1 regression**: `test_cost_usd_drained_after_happy_review` pass eder.
 
 ---
 
-## 4. Out of Scope
+## 3. Out of Scope
 
-- **Crash-window ghost-charge fix**: `adapter_drained_digests` schema widen → v3.3.1 or v3.4.0 follow-up (master plan v5 iter-6 blocker; v1 accepts documented failure window).
-- C6 parity fixup — separate PR.
-- C4.1 runtime activation — separate PR.
-- C8 release — last.
-
----
-
-## 5. Risk Register
-
-| Risk | L | I | Mitigation |
-|---|---|---|---|
-| R1 Crash window ghost-charge | L | M | Documented in docstring; operator reconcile via ledger audit. v1 acceptance. |
-| R2 `_build_adapter_spend_event` catalog lookup fail-open | L | L | Try/except → vendor_model_id=None (audit-only). Test covers. |
-| R3 `record_spend` iç lock'un dışında ayrı lock | M | H | Direct helper reuse (_scan_tail, _append_with_fsync) without record_spend's lock. Test: no deadlock + atomic guarantee. |
-| R4 B7.1 shim removal test_cost_usd_drained_after_happy_review kırar | L | H | Regression gate: mock_transport envelope path'i post_adapter_reconcile tetikler. |
+- **Catalog attribution** (`vendor_model_id` resolve): v2 drops. Follow-up needs adapter manifest widen.
+- **Crash window ghost-charge**: ledger-first acceptance; documented; `adapter_drained_digests` schema widen → v3.3.1+.
+- C6 parity / C4.1 / C8 — separate PRs.
 
 ---
 
-## 6. Codex iter-1 için Açık Sorular
+## 4. LOC Estimate
 
-**Q1 — Ledger-first crash window acceptable mi**: v1 ledger-first → ghost-charge riski. Alternative: schema widen (`adapter_drained_digests`) + idempotent mutator → tam atomic. v1 document + defer kabul edilebilir mi?
-
-**Q2 — `_envelope_from_invocation_result` helper**: `InvocationResult.cost_actual` mevcut (adapter_invoker.py:69); envelope shape'ine map direct mi, yoksa ayrı builder mi?
-
-**Q3 — `provider_id`/`model` mapping**: Adapter manifest `adapter_id` + `adapter_kind` var; hangisi `provider_id` hangisi `model`? Cost catalog'daki `provider_id`/`model` alanlarıyla nasıl eşleşir?
-
-**Q4 — Call site policy check**: `executor.invoke_cli` dönüşünde `if policy.enabled` check — `load_cost_policy` her çağrıda mı? Yoksa Executor init'te cache?
-
-**Q5 — `llm_spend_recorded` `source` discriminator**: payload'a eklemek yeterli mi, yoksa schema delta gerekli? (Codex master plan v5 iter-6 notu: shipped event schema dosyası yok; `_KINDS` + docs + metrics üzerinden yaşıyor.)
+~650 satır (middleware +280, executor integration +40, shim remove -30, 9 test +360).
 
 ---
 
-## 7. Implementation Order
-
-1. `_build_adapter_spend_event` + imports.
-2. `post_adapter_reconcile` middleware.
-3. Executor invoke_cli/http return site integration.
-4. B7.1 shim removal.
-5. 7 yeni test.
-6. Regression + commit + post-impl + PR.
-
----
-
-## 8. LOC Estimate
-
-~700 satır (middleware fn +250, builder +80, executor integration +40, shim remove -30, 7 test +360).
-
----
-
-## 9. Audit Trail
+## 5. Audit Trail
 
 | Iter | Date | Verdict |
 |---|---|---|
-| v1 (Claude draft) | 2026-04-18 | Pre-Codex iter-1. Master plan v5 §C3 iter-6 spec temel alındı. |
-
-**Codex thread**: Yeni (C3-specific). Master plan thread `019d9f75` historik referans.
+| v1 | 2026-04-18 | Pre-Codex submit `8532e33` |
+| iter-1 (thread `019da0fc`) | 2026-04-18 | **PARTIAL** — 3 blocker (budget overwrite, error catch, usage_missing drift) + 4 warning (provider/model mapping, call gate, cached_tokens, mutator fail-closed) |
+| **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit. Second CAS cycle + fail-open errors + llm_usage_missing parity + drop catalog lookup + wire scope narrow. |
+| iter-2 | TBD | AGREE expected |
