@@ -189,10 +189,22 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Scenario file or directory; omit for bundled fixtures",
     )
-    run_p.add_argument(
+    # PR-C5: exactly one of --proposed-policies | --proposed-patches
+    # is required. The mutex is enforced at the parser level so the
+    # handler never sees both together.
+    _proposed_group = run_p.add_mutually_exclusive_group(required=True)
+    _proposed_group.add_argument(
         "--proposed-policies",
-        required=True,
+        default=None,
         help="Directory containing proposed policy JSON files",
+    )
+    _proposed_group.add_argument(
+        "--proposed-patches",
+        default=None,
+        help=(
+            "Directory containing RFC 7396 JSON Merge Patch files "
+            "(<name>.v1.patch.json → patches <name>.v1.json)"
+        ),
     )
     run_p.add_argument(
         "--baseline-source",

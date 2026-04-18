@@ -16,7 +16,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Literal, Sequence, cast
+from typing import Any, Literal, Mapping, Sequence, cast
 
 from ao_kernel.policy_sim.errors import (
     PolicySimReentrantError,
@@ -56,11 +56,34 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
         print(f"scenario load failed: {exc}", file=sys.stderr)
         return _EXIT_USER_ERROR
 
-    try:
-        proposed = load_policies_from_dir(Path(args.proposed_policies))
-    except json.JSONDecodeError as exc:
-        print(f"invalid JSON in --proposed-policies: {exc}", file=sys.stderr)
-        return _EXIT_USER_ERROR
+    # PR-C5: exactly one of --proposed-policies | --proposed-patches
+    # is supplied (parser enforces the mutex). Handler branches once.
+    proposed: Mapping[str, Mapping[str, Any]] | None = None
+    proposed_patches: Mapping[str, Mapping[str, Any]] | None = None
+    if getattr(args, "proposed_policies", None) is not None:
+        try:
+            proposed = load_policies_from_dir(Path(args.proposed_policies))
+        except json.JSONDecodeError as exc:
+            print(
+                f"invalid JSON in --proposed-policies: {exc}",
+                file=sys.stderr,
+            )
+            return _EXIT_USER_ERROR
+    elif getattr(args, "proposed_patches", None) is not None:
+        from ao_kernel.policy_sim.merge_patch import (
+            load_policy_patches_from_dir,
+        )
+
+        try:
+            proposed_patches = load_policy_patches_from_dir(
+                Path(args.proposed_patches)
+            )
+        except (FileNotFoundError, json.JSONDecodeError, TypeError) as exc:
+            print(
+                f"invalid patches directory: {exc}",
+                file=sys.stderr,
+            )
+            return _EXIT_USER_ERROR
 
     baseline_source_value = getattr(args, "baseline_source", "bundled")
     try:
@@ -96,6 +119,7 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
             project_root=project_root,
             scenarios=scenarios,
             proposed_policies=proposed,
+            proposed_policy_patches=proposed_patches,
             baseline_source=baseline_source,
             baseline_overrides=baseline_overrides,
             include_host_fs_probes=bool(
