@@ -22,7 +22,9 @@ other preconditions hold.
 
 from __future__ import annotations
 
+import json
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -155,7 +157,7 @@ def fake_ops(monkeypatch: pytest.MonkeyPatch):
         "llm_class_registry.v1.json": _fake_class_registry(),
     }
 
-    def _fake_loader(filename: str, _repo_root):
+    def _fake_loader(filename: str, _repo_root, *, workspace_root=None):
         return state[filename]
 
     monkeypatch.setattr(llm_router, "_load_operations_json", _fake_loader)
@@ -783,6 +785,90 @@ class TestMultiStepDowngradeChain:
         # now also exposes the chain shape
         if result["downgrade_applied"]:
             assert len(result["downgrade_chain"]) == 1
+
+
+class TestWorkspaceOverride:
+    """v3.4.0 #6: operators place workspace-specific routing rules
+    under ``.ao/operations/`` to override bundled defaults without
+    forking the package."""
+
+    def test_workspace_override_takes_priority(
+        self, tmp_path: Path,
+    ) -> None:
+        from ao_kernel._internal.prj_kernel_api import llm_router
+
+        ops_dir = tmp_path / ".ao" / "operations"
+        ops_dir.mkdir(parents=True, exist_ok=True)
+        override_rules = {
+            "policy_version": "v0.1-ws",
+            "intent_to_class": {"CUSTOM_INTENT": "CUSTOM_CLASS"},
+            "fallback_order_by_class": {"CUSTOM_CLASS": ["openai"]},
+            "ttl_hours_default": 72,
+        }
+        (ops_dir / "llm_resolver_rules.v1.json").write_text(
+            json.dumps(override_rules), encoding="utf-8",
+        )
+        (ops_dir / "llm_class_registry.v1.json").write_text(
+            json.dumps({"classes": []}), encoding="utf-8",
+        )
+        (ops_dir / "llm_provider_map.v1.json").write_text(
+            json.dumps({
+                "classes": {
+                    "CUSTOM_CLASS": {
+                        "providers": {
+                            "openai": {
+                                "pinned_model_id": "stub-model",
+                                "models": [{
+                                    "model_id": "stub-model",
+                                    "stage": "verified",
+                                    "probe_status": "ok",
+                                    "probe_last_at": "2099-01-01T00:00:00+00:00",
+                                    "verified_at": "2099-01-01T00:00:00+00:00",
+                                }],
+                            },
+                        },
+                    },
+                },
+            }),
+            encoding="utf-8",
+        )
+
+        llm_router._reset_resolver_rules_cache()
+        try:
+            from ao_kernel.llm import resolve_route
+
+            result = resolve_route(
+                intent="CUSTOM_INTENT",
+                workspace_root=str(tmp_path),
+            )
+            assert result["status"] == "OK"
+            assert result["selected_class"] == "CUSTOM_CLASS"
+        finally:
+            llm_router._reset_resolver_rules_cache()
+
+    def test_malformed_override_fails_closed(
+        self, tmp_path: Path,
+    ) -> None:
+        from ao_kernel._internal.prj_kernel_api import llm_router
+
+        ops_dir = tmp_path / ".ao" / "operations"
+        ops_dir.mkdir(parents=True, exist_ok=True)
+        (ops_dir / "llm_resolver_rules.v1.json").write_text(
+            "{this is not valid json",
+            encoding="utf-8",
+        )
+
+        llm_router._reset_resolver_rules_cache()
+        try:
+            from ao_kernel.llm import resolve_route
+
+            with pytest.raises(json.JSONDecodeError):
+                resolve_route(
+                    intent="DISCOVERY",
+                    workspace_root=str(tmp_path),
+                )
+        finally:
+            llm_router._reset_resolver_rules_cache()
 
 
 class TestSchemaValidation:

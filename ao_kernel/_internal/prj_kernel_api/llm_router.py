@@ -41,11 +41,36 @@ def _resolve_workspace_root(repo_root: Path, workspace_root: str | Path | None) 
     return ws_root
 
 
-def _load_operations_json(filename: str, repo_root: Path) -> Dict[str, Any]:
-    """Load operations JSON — tries repo-root first, falls back to bundled defaults."""
+def _load_operations_json(
+    filename: str,
+    repo_root: Path,
+    *,
+    workspace_root: str | Path | None = None,
+) -> Dict[str, Any]:
+    """Load operations JSON with workspace override → repo-root → bundled.
+
+    Priority order (v3.4.0 #6):
+    1. Workspace override at ``{workspace_root}/.ao/operations/{filename}``
+       (operators override routing rules per-workspace without
+       forking the bundled defaults)
+    2. Repo root (editable install path)
+    3. Bundled defaults inside the wheel
+
+    Malformed workspace override (invalid JSON) surfaces as
+    ``json.JSONDecodeError`` — fail-closed on the operator's explicit
+    override rather than silently falling back.
+    """
+    if workspace_root is not None:
+        ws_path = Path(workspace_root)
+        override = ws_path / ".ao" / "operations" / filename
+        if override.is_file():
+            payload: Dict[str, Any] = json.loads(
+                override.read_text(encoding="utf-8"),
+            )
+            return payload
     from ao_kernel._internal.shared.resource_loader import load_resource
-    payload: Dict[str, Any] = load_resource("operations", filename)
-    return payload
+    resource_payload: Dict[str, Any] = load_resource("operations", filename)
+    return resource_payload
 
 
 _RESOLVER_RULES_SCHEMA_VALIDATED = False
@@ -177,10 +202,19 @@ def resolve(
     _, _, _, probe_state_path = _policy_paths(repo_root, workspace_root=workspace_root)
 
     # Load operations via resource_loader (bundled defaults fallback)
-    _load_operations_json("llm_class_registry.v1.json", repo_root)  # validate
-    resolver_rules = _load_operations_json("llm_resolver_rules.v1.json", repo_root)
+    _load_operations_json(
+        "llm_class_registry.v1.json", repo_root,
+        workspace_root=workspace_root,
+    )  # validate
+    resolver_rules = _load_operations_json(
+        "llm_resolver_rules.v1.json", repo_root,
+        workspace_root=workspace_root,
+    )
     _validate_resolver_rules_once(resolver_rules)
-    provider_map = _load_operations_json("llm_provider_map.v1.json", repo_root)
+    provider_map = _load_operations_json(
+        "llm_provider_map.v1.json", repo_root,
+        workspace_root=workspace_root,
+    )
     probe_state = _load_json(probe_state_path) if probe_state_path.exists() else {"classes": {}}
 
     merged_map = _merge_state(provider_map, probe_state)
