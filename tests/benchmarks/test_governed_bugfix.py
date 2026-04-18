@@ -11,8 +11,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-import pytest
-
 from ao_kernel.workflow.run_store import load_run
 
 from tests._driver_helpers import _GIT_CFG
@@ -161,63 +159,6 @@ def _install_mini_repo(workspace_root: Path) -> None:
     )
 
 
-@pytest.fixture
-def bench_policy_override():
-    """PR-C1b benchmark policy — mirrors bundled
-    policy_worktree_profile.v1.json DORMANT default (``enabled: false``)
-    so the benchmark exercises workflow orchestration E2E without
-    engaging the policy engine. C1a ``build_driver(policy_loader=...)``
-    forward kontratı ayrıca ``test_driver_helpers_policy_loader.py``'de
-    pin'li; bu fixture sadece bundled-equivalent override kanıtı."""
-    return {
-        "version": "v1",
-        "enabled": False,
-        "worktree": {
-            "strategy": "new_per_run",
-            "base_dir_template": ".ao/runs/{run_id}/worktree",
-            "cleanup_on_completion": True,
-            "max_concurrent": 4,
-        },
-        "env_allowlist": {
-            "allowed_keys": [
-                "PATH", "HOME", "USER", "LANG", "LC_ALL", "TZ",
-                "SHELL", "TMPDIR",
-            ],
-            "inherit_from_parent": False,
-            "explicit_additions": {},
-            "deny_on_unknown": True,
-        },
-        "secrets": {
-            "deny_by_default": True,
-            "allowlist_secret_ids": [],
-            "exposure_modes": ["env"],
-            "denied_exposure_modes": [
-                "argv", "stdin", "file", "http_header",
-            ],
-        },
-        "command_allowlist": {
-            "exact": ["git", "python3", "pytest", "gh"],
-            "prefixes": [
-                "/usr/bin/",
-                "/usr/local/bin/",
-                "/opt/homebrew/bin/",
-            ],
-            "deny_if_not_in_list": True,
-        },
-        "cwd_confinement": {
-            "root_template": "{worktree_base}",
-            "allowed_subdirs": ["*"],
-            "deny_absolute_paths_outside_root": True,
-        },
-        "evidence_redaction": {
-            "env_keys_matching": [],
-            "stdout_patterns": [],
-            "file_content_patterns": [],
-        },
-        "_c1b_sentinel": "benchmark_override_forward_via_build_driver",
-    }
-
-
 class TestFullBundledBugFixFlow:
     """PR-C1b: Full 7-step bundled bug_fix_flow E2E benchmark.
 
@@ -236,13 +177,16 @@ class TestFullBundledBugFixFlow:
     Full 7-step E2E policy tuning gerekince follow-up PR'da ele alınır.
     """
 
-    def test_bug_fix_flow_workflow_loads(
+    def test_bug_fix_flow_workflow_loads_with_exact_step_order(
         self,
         workspace_root: Path,
     ) -> None:
-        """Bundled bug_fix_flow workflow registry'ye yüklenir +
-        manifest parity (gh-cli-pr context_pack_ref declare) hem
-        bundled hem fixture'da tutarlı."""
+        """Bundled bug_fix_flow workflow registry'ye yüklenir with
+        exact step order preserved (post-impl review W1 absorb —
+        previously asserted as set, hiding ordering bugs).
+
+        Also pins manifest parity: gh-cli-pr context_pack_ref
+        declaration present in bundled + fixture manifests."""
         from ao_kernel.workflow.registry import WorkflowRegistry
         import json as _json
 
@@ -250,11 +194,19 @@ class TestFullBundledBugFixFlow:
         wreg.load_workspace(workspace_root)
         wf = wreg.get("bug_fix_flow", version="1.0.0")
         assert wf is not None
-        step_names = {s.step_name for s in wf.steps}
-        assert step_names == {
-            "compile_context", "invoke_coding_agent", "preview_diff",
-            "ci_gate", "await_approval", "apply_patch", "open_pr",
-        }
+        # Exact sequence (post-impl cleanup — order matters, Codex
+        # iter-1 B1 absorb: ci_gate is pre-commit sanity, apply_patch
+        # comes after approval).
+        step_order = [s.step_name for s in wf.steps]
+        assert step_order == [
+            "compile_context",
+            "invoke_coding_agent",
+            "preview_diff",
+            "ci_gate",
+            "await_approval",
+            "apply_patch",
+            "open_pr",
+        ], f"unexpected step order: {step_order!r}"
         # Manifest parity check (C1b W4 absorb)
         gh_manifest_path = (
             workspace_root / ".ao" / "adapters"
@@ -265,17 +217,21 @@ class TestFullBundledBugFixFlow:
             "gh-cli-pr input_envelope must declare context_pack_ref"
         )
 
-    def test_codex_stub_adapter_returns_diff_artifact(
+    def test_adapter_artifact_has_top_level_diff_contract(
         self,
         workspace_root: Path,
         seeded_run,
         benchmark_driver,
     ) -> None:
-        """PR-C1b: codex-stub adapter mock envelope ile çalışır;
-        ExecutionResult.output_ref (C1a contract) canonical artifact
-        JSON'a işaret eder + JSON top-level ``diff`` field dolu.
-        Bu artifact ``_load_pending_patch_content(workspace_root=...)``
-        fallback path'inin tükettiği yerdir."""
+        """Generic adapter-artifact contract test (post-impl rename):
+        codex-stub mock envelope → ExecutionResult.output_ref (C1a
+        contract) → canonical JSON with top-level ``diff`` field.
+
+        Pins the C1b patch-fallback input contract: `_load_pending
+        _patch_content(workspace_root=...)` reads `artifact.get("diff")`
+        (NOT extracted_outputs.diff — Codex iter-1 B2 absorb). Uses
+        the bench variant (``governed_bugfix_bench``) since the full
+        bundled bug_fix_flow E2E is deferred to post-C2."""
         _install_mini_repo(workspace_root)
         run_id = seeded_run(
             _WORKFLOW_ID, version=_WORKFLOW_VERSION,
