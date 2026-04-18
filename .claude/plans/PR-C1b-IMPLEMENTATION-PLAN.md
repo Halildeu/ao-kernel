@@ -1,26 +1,44 @@
-# PR-C1b Implementation Plan v1 — Full Bundled bug_fix_flow E2E Benchmark
+# PR-C1b Implementation Plan v2 — Full Bundled bug_fix_flow E2E Benchmark
 
-**Scope**: FAZ-C runtime closure 2. track. C1a'nın adapter artifact surface + context_compile materialisation + envelope plumbing altyapısı üzerine bug_fix_flow 7-step full bundled E2E benchmark. Patch plumbing fallback (`_load_pending_patch_content`) artifact-based. `gh-cli-pr` manifest tutarsızlık fix (C1a iter-1 W1 follow-up).
+**Scope**: FAZ-C runtime closure 2. track. C1a altyapısı üzerine bug_fix_flow 7-step full bundled E2E benchmark. Patch plumbing top-level `diff` fallback. `gh-cli-pr` manifest input_envelope declarative fix (hem bundled hem fixture parity).
 
 **Base**: `main cba3e2e` (PR #109 C1a merged). **Branch**: `feat/pr-c1b-bug-fix-flow-e2e`.
 
-**Status**: Pre-Codex iter-1 submit. Master plan v5 §C1b scope'u bu PR'a decouple ediliyor.
+**Status**: iter-1 PARTIAL absorb → iter-2 submit. Codex thread `019d9ff8-fb83-7c41-bb35-872f730587f1`.
+
+---
+
+## v2 absorb summary (Codex iter-1 PARTIAL — 2 blocker + 4 warning)
+
+Iter-1 kod-okumasıyla v1'de 2 tasarım yanlışı + 4 tutarlılık eksiği:
+
+| # | iter-1 bulgu | v2 fix |
+|---|---|---|
+| **B1** | v1 happy-path "failing test → patch → green" workflow sırasıyla mümkün değil. `bug_fix_flow` sırası `preview_diff → ci_gate → await_approval → apply_patch` (`bug_fix_flow.v1.json:29-53`). `ci_gate` patch'ten ÖNCE çalışır; unpatched kodu test eder. | v2 happy-path semantiği: repo **baseline GREEN**; codex-stub kozmetik diff üretir (comment/docstring); `ci_gate` baseline'da green; approval; `apply_patch` diff'i uygular; `open_pr`. CI gate = pre-commit sanity check, post-patch verification DEĞİL. |
+| **B2** | v1 `extracted_outputs.diff` yanlış — codex-stub top-level `diff` üretiyor (`fixtures/codex_stub.py:90-117`); manifest `output_parse` rule'u yalnız `review_findings` + `commit_message` için (`codex-stub.manifest.v1.json:22-35`); executor artifact top-level `diff` yazar (`executor.py:706-730`). Diskte `extracted_outputs.diff` YOK. | v2 fallback: `artifact.get("diff", "")` top-level. `extracted_outputs` path drop. Benchmark canned envelope top-level `diff` + `review_findings` + `commit_message` + `cost_actual` taşır. |
+
+### v2 absorb warnings
+
+- **W1** (iter-1): `install_bundled_workflow` helper gereksiz — `tests/benchmarks/conftest.py:38-57` zaten bundled workflow ve adapter'ları `.ao/` altına kopyalıyor. v2 §2.4 drop; benchmark test doğrudan bundled'ı bekler.
+- **W2** (iter-1): `bench_policy_override` fixture hazır değil; wiring gerek. `gh` allowlist gereksiz (mock); kritik olan `PATH`/`PYTHONPATH`/`python3`. v2 §2.3 explicit fixture tanımı.
+- **W3** (iter-1): Patch üretim path sorunu — benchmark repo `.ao/**` dosyalarıyla dirty. Naive `git add -N .` tabanlı diff `.ao/**` dahil eder. v2: **canonical diff hardcoded** benchmark envelope'da (küçük cosmetic patch string), git-based generation YOK.
+- **W4** (iter-1): gh-cli-pr Option A runtime unblocker değil, declarative. Runtime substitution manifest shape'ine bakmıyor; envelope'da key varsa çalışıyor. Ama parity drift engellemek için hem bundled (`ao_kernel/defaults/adapters/gh-cli-pr.manifest.v1.json:15-18`) hem test fixture (`tests/fixtures/adapter_manifests/gh-cli-pr.manifest.v1.json:15-18`) birlikte güncellenmeli.
 
 ---
 
 ## 1. Problem
 
-C1a adapter-path output_ref garantisi + context_compile materialisation + `context_pack_ref` plumbing kurdu. Ama:
+C1a (merged `cba3e2e`) adapter-path output_ref + context_compile materialisation + context_pack_ref envelope plumbing kurdu. C1b:
 
-1. **bug_fix_flow.v1.json** (`ao_kernel/defaults/workflows/bug_fix_flow.v1.json`) 7-step full demo workflow, ama benchmark test yok → full-flow regression gate eksik.
-2. **`_load_pending_patch_content`** (`multi_step_driver.py:1749-1763`) yalnız `record.intent.payload.patches[step_name]` okuyor — fixture-only MVP. Adapter-path (codex-stub'ın diff'i output_ref'te) fallback yok. Dolayısıyla gerçek full-flow'da `apply_patch` step'i boş patch alır.
-3. **`gh-cli-pr` manifest tutarsızlığı** (`gh-cli-pr.manifest.v1.json:9,15`): `args` `{context_pack_ref}` kullanıyor (`--body-file`) ama `input_envelope` shape sadece `task_prompt` + `run_id` deklare ediyor. Codex iter-1 W1: "C1a envelope resolver `context_pack_ref` plumbing yaptı ama `gh-cli-pr` için body içeriği ≠ context.md — semantic mismatch". Resolver mantığı manifest input_envelope shape'iyle hizasız.
+1. **bug_fix_flow bundled E2E benchmark YOK** — 7-step full-flow regression gate eksik.
+2. **`_load_pending_patch_content`** (`multi_step_driver.py:1749-1763`) fixture-only MVP; adapter-path fallback yok → `apply_patch` step'i boş patch alır.
+3. **`gh-cli-pr` manifest** (`gh-cli-pr.manifest.v1.json:9,15`) `args` `{context_pack_ref}` kullanıyor ama `input_envelope` shape deklare etmiyor. Declarative parity eksik (runtime çalışıyor ama tutarlılık kayıp).
 
 ---
 
 ## 2. Scope (atomic deliverable)
 
-### 2.1 `_load_pending_patch_content` artifact fallback
+### 2.1 `_load_pending_patch_content` top-level diff fallback
 
 **Before** (`multi_step_driver.py:1749-1763`):
 ```python
@@ -37,7 +55,7 @@ def _load_pending_patch_content(
     return ""
 ```
 
-**After** (v1 — fallback to prior adapter step's artifact):
+**After** (v2 — top-level diff artifact fallback):
 ```python
 def _load_pending_patch_content(
     record: Mapping[str, Any],
@@ -46,12 +64,13 @@ def _load_pending_patch_content(
     workspace_root: Path | None = None,
 ) -> str:
     """Load pending patch content from (in order):
-    1. record.intent.payload.patches[step_name]  — fixture/override.
-    2. Prior adapter step's artifact JSON → extracted diff.
+    1. record.intent.payload.patches[step_name] — fixture/override.
+    2. Prior adapter step's artifact JSON → top-level `diff` field.
     
     PR-C1b: step 2 closes adapter-path for full bundled bug_fix_flow.
+    Canonical diff location = top-level `artifact["diff"]` per
+    codex-stub fixture + executor artifact writer contract.
     """
-    # 1. Fixture/override path (existing behavior).
     intent_payload = record.get("intent", {}).get("payload", {})
     if isinstance(intent_payload, Mapping):
         patches = intent_payload.get("patches", {}) or {}
@@ -59,8 +78,6 @@ def _load_pending_patch_content(
         if isinstance(content, str):
             return content
     
-    # 2. Artifact fallback (PR-C1b): scan steps for last completed
-    #    adapter step with output_ref → parse artifact JSON → extract diff.
     if workspace_root is None:
         return ""
     run_id = record.get("run_id")
@@ -79,23 +96,27 @@ def _load_pending_patch_content(
                     artifact = json.loads(artifact_path.read_text())
                 except (OSError, json.JSONDecodeError):
                     return ""
-                # Adapter output canonical shape: extracted_outputs.diff
-                # (capability_output_refs path) or top-level diff field.
-                extracted = artifact.get("extracted_outputs", {}) or {}
-                diff = extracted.get("diff") or artifact.get("diff", "")
+                diff = artifact.get("diff", "")
                 if isinstance(diff, str):
                     return diff
             return ""
     return ""
 ```
 
-Caller site `multi_step_driver.py:738` güncelleme: `_load_pending_patch_content(record, step_def.step_name, workspace_root=self._workspace_root)`.
+**Caller update** (`multi_step_driver.py:738`):
+```python
+patch_content = _load_pending_patch_content(
+    record, step_def.step_name, workspace_root=self._workspace_root,
+)
+```
 
-### 2.2 `gh-cli-pr` manifest fix
+Additive `workspace_root` kwarg default None → fixture-only path (backwards-compat).
 
-Codex iter-1 W1 flag: manifest `args` `{context_pack_ref}` kullanıyor ama `input_envelope` declarative shape'te yok. İki opsiyon:
+### 2.2 `gh-cli-pr` manifest input_envelope widen (parity)
 
-**Option A — Declarative input_envelope widen** (minimal):
+Hem bundled hem fixture manifest aynı anda güncellenir (W4 absorb):
+
+**`ao_kernel/defaults/adapters/gh-cli-pr.manifest.v1.json`** + **`tests/fixtures/adapter_manifests/gh-cli-pr.manifest.v1.json`** (her ikisi):
 ```json
 "input_envelope": {
     "task_prompt": "<PR title>",
@@ -103,73 +124,119 @@ Codex iter-1 W1 flag: manifest `args` `{context_pack_ref}` kullanıyor ama `inpu
     "context_pack_ref": "<path to PR body markdown>"
 }
 ```
-Envelope resolver zaten C1a'dan beri `context_pack_ref` plumbing yapıyor; sadece manifest'in shape deklarasyonu eksikti.
 
-**Option B — Different placeholder** (`patch_path` veya `pr_body_path`):
-```json
-"args": ["pr", "create", "--title", "{task_prompt}", "--body-file", "{pr_body_path}"],
-"input_envelope": {"task_prompt": "<PR title>", "run_id": "<uuid>", "pr_body_path": "<path>"}
+Runtime behavior DEĞİŞMEZ; bu declarative parity fix. Context.md body MVP (context profile + session/canonical/facts sections); "gerçek prod farklı PR body" gelecek PR'da kendi workflow step'iyle handle edilir.
+
+### 2.3 Full bundled bug_fix_flow E2E benchmark
+
+**Dosya**: `tests/benchmarks/test_governed_bugfix.py::TestFullBundledBugFixFlow`.
+
+**Fixture setup** (mini_repo baseline green):
+- `mini_repo/test_smoke.py` — tek assert `assert 1 + 1 == 2` (pass eder).
+- `mini_repo/src/__init__.py` — boş.
+- Git init + initial commit (baseline state).
+- C1a `build_driver(tmp_path, policy_loader=bench_policy_override)` (forward policy).
+
+**`bench_policy_override` fixture** (yeni):
+```python
+@pytest.fixture
+def bench_policy_override():
+    """Policy with PATH/PYTHONPATH/python3 allowlist for benchmark
+    subprocess runs. gh allowlist gereksiz — gh-cli-pr mock'lanır."""
+    return {
+        "env_allowlist": {
+            "allowed_keys": ["PATH", "PYTHONPATH", "PYTHONHOME"],
+            "inherit_from_parent": True,
+            "deny_on_unknown": False,
+        },
+        "command_allowlist": {
+            "exact": ["python3", "pytest", "git"],
+            "prefixes": ["/usr/bin/", "/usr/local/bin/", "/opt/homebrew/bin/"],
+        },
+        "secrets": {"allowlist_secret_ids": [], "exposure_modes": []},
+        # ... mirror policy_worktree_profile.v1.json defaults
+    }
 ```
-Ayrı placeholder + resolver genişletme gerekir.
 
-**v1 karar**: **Option A** (minimal). C1a resolver zaten `context_pack_ref`'i plumb ediyor; gh-cli-pr manifest declaration'ı fix etmek yeterli. PR body olarak context.md mantıklı (run context = PR summary candidate). Eğer gerçek prod'da farklı body gerekiyorsa, bu workflow-level concern (bug_fix_flow'a extra `prepare_pr_body` step eklenebilir — C1b scope dışı, future PR).
+**Canned adapter envelopes**:
 
-### 2.3 Bundled `bug_fix_flow` E2E benchmark test
+codex-stub (top-level diff, hardcoded — W3 absorb):
+```python
+CODEX_STUB_ENVELOPE = {
+    "status": "ok",
+    "diff": """--- a/src/__init__.py
++++ b/src/__init__.py
+@@ -0,0 +1,1 @@
++# C1b benchmark: cosmetic docstring added by codex-stub
+""",
+    "review_findings": {"findings": [], "score": 1.0},
+    "commit_message": "docs: add module docstring",
+    "cost_actual": {
+        "tokens_input": 100,
+        "tokens_output": 50,
+        "cost_usd": 0.001,
+        "time_seconds": 1.5,
+    },
+}
+```
 
-**Dosya**: `tests/benchmarks/test_governed_bugfix.py` (B7 scope'unda benchmark skeleton vardı; C1b full bundled TestClass ekler).
+gh-cli-pr (mock PR open):
+```python
+GH_CLI_PR_ENVELOPE = {
+    "status": "ok",
+    "pr_url": "https://github.com/test/mock/pull/1",
+    "cost_actual": {"time_seconds": 0.5, "cost_usd": 0.0},
+}
+```
 
-**Scope**:
-- Fixture: `mini_repo` with real `test_smoke.py` (single failing test → codex-stub diff patches it → re-run passes).
-- Adapter mock: codex-stub canned envelope with `extracted_outputs.diff` (a canonical patch that fixes the failing test).
-- Adapter mock: gh-cli-pr canned envelope with `status=ok` + mock PR URL.
-- Drive 7-step flow: compile_context → invoke_coding_agent → preview_diff → ci_gate → await_approval (resume via token) → apply_patch → open_pr.
-- Assertions:
-  - All steps completed (state per step).
-  - Artifact chain: compile_context.output_ref → context.md (C1a contract) → codex-stub invocation → diff artifact → apply_patch reads via `_load_pending_patch_content` fallback → patch applied to worktree.
-  - `open_pr` adapter_returned event with `status=ok`.
-  - Final workflow_completed event.
-  - `capability_output_refs` on relevant steps (PR-B6 contract preserved).
+**7-step drive**:
+1. `compile_context` — C1a real materialisation (empty canonical/facts → MVP preamble).
+2. `invoke_coding_agent` — mock_adapter_transport yields CODEX_STUB_ENVELOPE.
+3. `preview_diff` — ao-kernel patch_preview reads via `_load_pending_patch_content` fallback → artifact top-level `diff`.
+4. `ci_gate` — real pytest subprocess in worktree (baseline green).
+5. `await_approval` — resume_token grant.
+6. `apply_patch` — applies hardcoded diff to worktree.
+7. `open_pr` — mock_adapter_transport yields GH_CLI_PR_ENVELOPE.
 
-**Bench workspace policy override**: `build_driver(tmp_path, policy_loader=bench_policy_override)` (C1a forward). Dummy git + pytest allowlist + gh allowlist (CI-safe, subprocess actually runs pytest).
+**Assertions**:
+- `final_state == "completed"`.
+- Artifact chain: `compile_context.output_ref` exists, context.md file exists.
+- codex-stub `invocation_result.status == "ok"`, `output_ref` canonical JSON has `diff` field.
+- apply_patch step_record.state == "completed" (patch applied successfully).
+- open_pr adapter_returned event `status == "ok"`.
+- B6 `capability_output_refs` plumbing preserved (review_findings + commit_message capability refs populated on codex-stub step).
 
-### 2.4 Minor: bug_fix_flow workflow fixture exposure
+### 2.4 ~~install_bundled_workflow helper~~ — DROP (W1 absorb)
 
-`bug_fix_flow.v1.json` bundled default'ta (`ao_kernel/defaults/workflows/`), `tests/fixtures/workflows/` altında değil. Benchmark test için `copy_workflow_fixture` varsayımı kırılır. İki opsiyon:
-- Benchmark test bundled default'u doğrudan load (`_load_ao_workflows(workspace_root)` scan `ao_kernel/defaults/workflows/` fallback).
-- Benchmark test bundled default'u `tmp_path/.ao/workflows/`'a kopyalar.
-
-**v1 karar**: İkinci (explicit copy) — benchmark helper fonksiyonuna `install_bundled_workflow("bug_fix_flow")` ekle.
+`tests/benchmarks/conftest.py:38-57` zaten bundled workflow + adapter'ları kopyalıyor. Yeni helper gerekmez.
 
 ---
 
 ## 3. Test Plan
 
-### 3.1 Yeni testler
+### 3.1 Yeni testler (`tests/benchmarks/test_governed_bugfix.py`)
 
-- `tests/benchmarks/test_governed_bugfix.py::TestFullBundledBugFixFlow`:
-  - `test_happy_path_bug_fix_flow_completes` — 7 step green + patch applied + PR opened.
-  - `test_patch_artifact_fallback` — patches={} olduğunda prior adapter output_ref'ten diff okunur.
-  - `test_ci_gate_failure_blocks_flow` — CI fail → flow `failed`, apply_patch skip.
+Mevcut dosyada `TestHappyPath` varsa (B7 skeleton'dan), `TestFullBundledBugFixFlow` yeni class olarak eklenir:
 
-### 3.2 Updated tests
+- `test_happy_path_bug_fix_flow_completes` — 7 step green + patch applied + mock PR opened.
+- `test_patch_artifact_fallback` — `record.intent.payload.patches={}` boş; fallback prior adapter artifact'tan diff okur.
+- `test_ci_gate_failure_blocks_flow` — mini_repo'da failing `test_smoke.py` → ci_gate fail → workflow `failed`, apply_patch skip.
 
-- Mevcut `tests/benchmarks/test_governed_bugfix.py` (varsa) — C1b ekleme.
+### 3.2 Regression gate
 
-### 3.3 Regression gate
-
-- `pytest tests/ -x` — 2151 + 3 new = 2154 green.
-- Özellikle `test_patch_errors.py` ve `test_multi_step_driver.py` — `_load_pending_patch_content` yeni fallback pattern backwards-compat.
+- `pytest tests/ -x` — 2151 + 3 = 2154 green.
+- `tests/test_patch_errors.py` ve `tests/test_multi_step_driver.py` — `_load_pending_patch_content` additive kwarg backwards-compat.
 
 ---
 
 ## 4. Out of Scope
 
-- **C2** (parent_env union) — paralel PR.
-- **C3** (post_adapter_reconcile) — paralel PR.
-- **C6** (dry_run_step) — paralel PR.
-- Real `gh pr create` subprocess invocation — mock kalır (CI no-secrets constraint).
-- Real `claude-code-cli` subprocess — mock (codex-stub kullanılır).
-- Schema changes / new adapter manifest fields — hiçbiri.
+- **C2** (parent_env union) / **C3** (post_adapter_reconcile) / **C6** (dry_run_step) — paralel.
+- Real `gh pr create` subprocess — mock (CI no-secrets).
+- Real `claude-code-cli` subprocess — codex-stub mock.
+- "Failing test → patch → green" narrative — **bug_fix_flow workflow sırası bunu desteklemiyor** (ci_gate patch-öncesi). Ayrı workflow (ör. `refactor_flow`) yaratmak istersek future PR.
+- Real PR body generation (diff + summary markdown) — context.md MVP yeterli; prod body ayrı PR.
+- Schema delta yok.
 
 ---
 
@@ -177,50 +244,44 @@ Ayrı placeholder + resolver genişletme gerekir.
 
 | Risk | L | I | Mitigation |
 |---|---|---|---|
-| R1 `_load_pending_patch_content` yeni `workspace_root` kwarg caller'ları kırar | L | M | Additive optional kwarg, default None → fixture-only path (existing behavior) |
-| R2 Artifact JSON'da `extracted_outputs.diff` vs top-level `diff` yerleşimi belirsiz | M | M | İki field'ı da dene (fallback chain); Codex iter-1'de pin'le |
-| R3 bug_fix_flow bundled default'u workflow registry scan'e girmiyor | M | M | Explicit `install_bundled_workflow` helper + tmp_path kopyalama |
-| R4 Bench mini_repo real pytest subprocess CI'da flaky | M | M | Minimal smoke (single file, single assert); isolated tmp_path worktree |
-| R5 gh-cli-pr manifest A opsiyonu body=context.md semantik olarak doğru mu | L | L | Documented: C1b MVP; gerçek prod farklı body için ayrı PR |
+| R1 `_load_pending_patch_content` yeni kwarg caller'ları kırar | L | M | Additive default None; backward-compat kanıtı test |
+| R2 Hardcoded diff git apply'de uyumsuz (line ending, path) | M | M | Minimal patch (tek yeni dosya satır); `git apply --check` ön-doğrulama |
+| R3 pytest subprocess CI'da flaky | L | L | Single-file minimal smoke; timeout 60s |
+| R4 Bench conftest bundled copy adapter manifest parity (bundled vs fixture) kayması | M | L | Aynı commit'te her iki manifest güncelleme |
+| R5 gh-cli-pr mock envelope output canonical JSON'a yazılırken hangi field capture | L | L | Executor `_normalize_invocation_for_artifact` shape korunur; mock envelope shape yeterli |
 
 ---
 
-## 6. Codex iter-1 için Açık Sorular
+## 6. Implementation Order
 
-**Q1 — Artifact JSON diff yerleşimi**: `codex-stub` adapter'ın output canonical JSON'unda diff nerede — `extracted_outputs.diff`, top-level `diff`, yoksa başka bir field mi? `fixtures/codex_stub.py` kaynak doğrulaması gerek.
-
-**Q2 — `gh-cli-pr` Option A body semantiği**: context.md run context (role/constraints/references) PR body olarak doğru mu, yoksa bug_fix_flow için farklı bir body template mı gerek? (ör. diff + summary)
-
-**Q3 — Bench mini_repo real pytest**: `test_smoke.py` tek assert + codex-stub diff ile patch → test pass. Patch content deterministic mi yoksa fixture-specific mi? Subprocess timeout concern?
-
-**Q4 — `copy_workflow_fixture` vs `install_bundled_workflow`**: bundled workflow'u bench'te kopyalamak için yeni helper vs mevcut `copy_workflow_fixture` extend — hangisi convention'a uyar?
-
-**Q5 — `workspace_root` kwarg additive**: `_load_pending_patch_content(record, step_name, *, workspace_root=None)` default None → fallback skip. Mevcut test callers dokunulmaz mı? (Fact-check: grep `_load_pending_patch_content` callers.)
+1. `gh-cli-pr` manifest input_envelope widen — **bundled + fixture parity** (1-key JSON update ×2).
+2. `_load_pending_patch_content` artifact fallback + caller update.
+3. `bench_policy_override` fixture + benchmark test class.
+4. 3 test + regression.
+5. Commit + post-impl Codex review + PR #110.
 
 ---
 
-## 7. Implementation Order
+## 7. LOC Estimate
 
-1. `gh-cli-pr` manifest input_envelope widen (1-line JSON).
-2. `_load_pending_patch_content` artifact fallback (+ `workspace_root` kwarg + caller update).
-3. Bench helper `install_bundled_workflow("bug_fix_flow")`.
-4. `tests/benchmarks/test_governed_bugfix.py::TestFullBundledBugFixFlow` (3 test).
-5. Regression `pytest tests/ -x`.
-6. Commit + post-impl Codex review + PR #110 + admin merge.
+~550 satır (plumbing fallback +50, manifest +4, bench fixture +30, benchmark class +350, regression ~115).
 
 ---
 
-## 8. LOC Estimate
-
-~600 satır (plumbing fallback +40, manifest +2, bench helper +30, benchmark class +400, regression ~130).
-
----
-
-## 9. Audit Trail
+## 8. Audit Trail
 
 | Iter | Date | Verdict |
 |---|---|---|
-| v1 (Claude draft) | 2026-04-18 | Pre-Codex iter-1 submit |
-| iter-1 | TBD | Adversarial plan-review beklenir |
+| v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`5f3b1b2`) |
+| iter-1 (thread `019d9ff8`) | 2026-04-18 | **PARTIAL** — 2 blocker (workflow sırası yanlış, extracted_outputs.diff yanlış) + 4 warning |
+| **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit. Happy-path = baseline green + cosmetic diff; top-level `diff` fallback; bench_policy_override fixture; manifest parity; install_bundled_workflow drop. |
+| iter-2 | TBD | AGREE expected (concrete 2-blocker + 4-warning absorb; dar scope) |
 
-**Codex thread**: Yeni thread (C1b-specific).
+### Plan revision history
+
+| Ver | Change |
+|---|---|
+| v1 | 3 scope + 5 Q; extracted_outputs.diff yanlış + "failing test → green" semantik hatası |
+| **v2** | iter-1 absorb: happy-path baseline-green + cosmetic diff (ci_gate pre-commit sanity); artifact top-level `diff` kontratı; bench_policy_override explicit fixture; bundled + fixture manifest parity; install_bundled_workflow drop. |
+
+**Status**: Plan v2 hazır. Codex thread `019d9ff8` iter-2 submit için hazır. Dar scope revisions; AGREE beklenir.
