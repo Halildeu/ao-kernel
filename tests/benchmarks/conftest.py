@@ -9,86 +9,135 @@ from __future__ import annotations
 
 import json
 import shutil
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Mapping
 
 import pytest
+
+from tests._driver_helpers import build_driver, install_workspace
 
 
 _BUNDLED_ROOT = Path(__file__).resolve().parents[2] / "ao_kernel" / "defaults"
 
 
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
-    """Materialise a tmp workspace with `.ao/` skeleton + bundled
-    policies + bundled workflows copied in so the driver /
-    governance path has a real filesystem to read from."""
-    ws = tmp_path / "ws"
-    (ws / ".ao" / "policies").mkdir(parents=True, exist_ok=True)
-    (ws / ".ao" / "workflows").mkdir(parents=True, exist_ok=True)
-    (ws / ".ao" / "adapters").mkdir(parents=True, exist_ok=True)
-    (ws / ".ao" / "evidence" / "workflows").mkdir(parents=True, exist_ok=True)
+    """Materialise a tmp workspace with `.ao/` + git skeleton and
+    bundled policies / workflows / adapters copied in, so the
+    driver + governance path reads a real filesystem.
 
-    # Copy bundled policies so `governance.check_policy` resolves
-    # via workspace override (the loader falls back to bundled
-    # anyway, but some scenarios parametrise a local copy).
+    `install_workspace` from the shared driver helpers does the git
+    init + base `.ao/` dirs; we layer the bundled defaults on top.
+    """
+    install_workspace(tmp_path)
+    ao = tmp_path / ".ao"
+    # `install_workspace` creates workflows/adapters/evidence/runs
+    # but not policies — create it before copying bundled files.
+    (ao / "policies").mkdir(parents=True, exist_ok=True)
     for policy in (_BUNDLED_ROOT / "policies").glob("policy_*.v1.json"):
-        shutil.copy2(policy, ws / ".ao" / "policies" / policy.name)
+        shutil.copy2(policy, ao / "policies" / policy.name)
     for workflow in (_BUNDLED_ROOT / "workflows").glob("*.v1.json"):
-        shutil.copy2(workflow, ws / ".ao" / "workflows" / workflow.name)
+        shutil.copy2(workflow, ao / "workflows" / workflow.name)
     for adapter in (_BUNDLED_ROOT / "adapters").glob("*.manifest.v1.json"):
-        shutil.copy2(adapter, ws / ".ao" / "adapters" / adapter.name)
-    return ws
+        shutil.copy2(adapter, ao / "adapters" / adapter.name)
+
+    # Benchmark-specific workflow fixtures (B7 v1 — bundled
+    # bug_fix_flow needs git/pytest workspace allowlist; simpler
+    # bench variant deferred from that tuning).
+    bench_workflows = Path(__file__).resolve().parent / "fixtures" / "workflows"
+    if bench_workflows.is_dir():
+        for workflow in bench_workflows.glob("*.v1.json"):
+            shutil.copy2(workflow, ao / "workflows" / workflow.name)
+    return tmp_path
 
 
 @pytest.fixture
-def seeded_budget() -> dict[str, dict[str, float]]:
+def seeded_budget() -> dict[str, Any]:
     """Canonical budget axes the benchmark runs assume.
 
-    Returned as a plain dict so callers pass it through to
-    `run_store.create_run(..., budget=...)` exactly as received.
+    `fail_closed_on_exhaust=True` mirrors the real budget guard.
+    `cost_usd` reconcile is deferred to B7.1 — the assertion layer
+    only verifies the axis was seeded, not that spend landed on it.
     """
     return {
-        "cost_usd": {"limit": 10.0, "consumed": 0.0, "remaining": 10.0},
-        "tokens": {"limit": 50_000.0, "consumed": 0.0, "remaining": 50_000.0},
-        "time_seconds": {
-            "limit": 600.0,
-            "consumed": 0.0,
-            "remaining": 600.0,
-        },
+        "fail_closed_on_exhaust": True,
+        "cost_usd": {"limit": 10.0, "remaining": 10.0},
+        "tokens": {"limit": 50_000, "remaining": 50_000},
+        "time_seconds": {"limit": 600, "remaining": 600},
     }
 
 
-@pytest.fixture
-def bundled_adapter_registry(workspace_root: Path):
-    """Adapter registry populated with bundled + workspace manifests.
+def seed_benchmark_run(
+    workspace_root: Path,
+    workflow_id: str,
+    *,
+    workflow_version: str = "1.0.0",
+    budget: Mapping[str, Any],
+) -> str:
+    """Write a schema-minimal run record with `budget` seeded so
+    `assert_budget_axis_seeded` can verify the axis later.
 
-    Taken BEFORE any purity context would apply (simulator-style
-    guard not active in benchmarks) — but the resulting snapshot
-    is the same shape policy_sim uses: `{adapter_id: manifest}`.
+    Returns the new run_id.
     """
-    from ao_kernel.adapters import AdapterRegistry
+    from ao_kernel.workflow.run_store import run_revision
 
-    reg = AdapterRegistry()
-    reg.load_bundled()
-    try:
-        reg.load_workspace(workspace_root)
-    except Exception:
-        # Workspace adapters optional; the bundled set covers
-        # `codex-stub` + `gh-cli-pr` used by both scenarios.
-        pass
-    return reg
+    run_id = str(uuid.uuid4())
+    run_dir = workspace_root / ".ao" / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    record: dict[str, Any] = {
+        "run_id": run_id,
+        "workflow_id": workflow_id,
+        "workflow_version": workflow_version,
+        "state": "created",
+        "created_at": _now_iso(),
+        "revision": "0" * 64,
+        "intent": {
+            "kind": "inline_prompt",
+            "payload": f"benchmark {workflow_id}",
+        },
+        "steps": [],
+        "policy_refs": [
+            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+        ],
+        "adapter_refs": [],
+        "evidence_refs": [
+            f".ao/evidence/workflows/{run_id}/events.jsonl",
+        ],
+        "budget": dict(budget),
+    }
+    record["revision"] = run_revision(record)
+    (run_dir / "state.v1.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return run_id
 
 
 @pytest.fixture
-def write_adapter_override(workspace_root: Path):
-    """Factory fixture — writes an override manifest JSON into
-    `<ws>/.ao/adapters/`. Useful when a scenario needs a relaxed
-    or altered adapter contract without editing bundled defaults."""
+def seeded_run(workspace_root: Path, seeded_budget: dict[str, Any]):
+    """Factory — returns a callable that seeds a run for a named
+    workflow and returns the run_id."""
 
-    def _writer(filename: str, manifest: dict) -> Path:
-        path = workspace_root / ".ao" / "adapters" / filename
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(manifest), encoding="utf-8")
-        return path
+    def _seed(workflow_id: str, *, version: str = "1.0.0") -> str:
+        return seed_benchmark_run(
+            workspace_root,
+            workflow_id,
+            workflow_version=version,
+            budget=seeded_budget,
+        )
 
-    return _writer
+    return _seed
+
+
+@pytest.fixture
+def benchmark_driver(workspace_root: Path):
+    """Driver bound to the bundled workspace (covers `codex-stub`
+    + `gh-cli-pr` for both scenarios)."""
+    return build_driver(workspace_root)

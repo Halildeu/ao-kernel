@@ -1,0 +1,43 @@
+{
+  "$schema": "urn:ao:workflow-definition:v1",
+  "workflow_id": "governed_bugfix_bench",
+  "workflow_version": "1.0.0",
+  "display_name": "Governed Bugfix (B7 Benchmark Variant)",
+  "description": "B7 v1 minimal benchmark variant of bug_fix_flow. Exercises compile_context + codex-stub adapter invocation + human ack gate. Full bundled bug_fix_flow (patch_preview + ci_pytest + apply_patch + gh-cli-pr) requires workspace sandbox allowlist tuning for git/pytest — deferred to B7.1 follow-up per docs/BENCHMARK-SUITE.md §8.",
+  "steps": [
+    {
+      "step_name": "compile_context",
+      "actor": "ao-kernel",
+      "operation": "context_compile",
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed"
+    },
+    {
+      "step_name": "invoke_coding_agent",
+      "actor": "adapter",
+      "adapter_id": "codex-stub",
+      "required_capabilities": ["read_repo", "write_diff"],
+      "policy_refs": [
+        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+      ],
+      "on_failure": "transition_to_failed",
+      "timeout_seconds": 900,
+      "human_interrupt_allowed": false
+    },
+    {
+      "step_name": "await_acknowledgement",
+      "actor": "human",
+      "gate": "custom",
+      "on_failure": "transition_to_failed"
+    }
+  ],
+  "expected_adapter_refs": ["codex-stub"],
+  "default_policy_refs": [
+    "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+  ],
+  "required_capabilities": ["read_repo", "write_diff"],
+  "tags": ["benchmark", "bugfix"],
+  "created_at": "2026-04-18T00:00:00+00:00"
+}

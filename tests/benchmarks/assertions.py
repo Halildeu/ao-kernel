@@ -30,6 +30,13 @@ def assert_workflow_failed(
     *,
     expected_category: str,
 ) -> None:
+    """Assert a `workflow_failed` evidence event fired with the
+    given error category. The event payload carries
+    `{category, code, failed_step, reason}`; callers supply the
+    expected `category` enum value from the runtime mapping
+    (`timeout`, `invocation_failed`, `output_parse_failed`,
+    `policy_denied`, `budget_exhausted`, `adapter_crash`,
+    `other`)."""
     events = _iter_events(run_dir)
     terminal = [
         event for event in events if event.get("kind") == "workflow_failed"
@@ -38,18 +45,24 @@ def assert_workflow_failed(
         f"expected workflow_failed event in {run_dir / 'events.jsonl'!s}"
     )
     last = terminal[-1]
-    category = last.get("error", {}).get("category") or last.get("category")
+    payload = last.get("payload") or {}
+    category = payload.get("category") or (
+        last.get("error", {}) or {}
+    ).get("category")
     assert category == expected_category, (
         f"expected error.category={expected_category!r}; got {category!r}"
     )
 
 
 def assert_adapter_ok(step_record: Mapping[str, Any]) -> None:
-    result = step_record.get("invocation_result") or {}
-    status = result.get("status")
-    assert status == "ok", (
-        f"expected invocation_result.status=='ok' for step "
-        f"{step_record.get('step_id')!r}; got {status!r}"
+    """Assert the step completed successfully. Run-store records
+    carry a `state` field ("completed" on success); the
+    transport-layer "status=ok" signal is separately preserved in
+    the evidence event stream via the `adapter_returned` payload."""
+    state = step_record.get("state")
+    assert state == "completed", (
+        f"expected step state=='completed' for step "
+        f"{step_record.get('step_name')!r}; got {state!r}"
     )
 
 
