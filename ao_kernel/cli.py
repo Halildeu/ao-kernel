@@ -183,6 +183,103 @@ def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
     return 0 if not bulk.errors else 1
 
 
+def _cmd_consultation_archive(args: argparse.Namespace) -> int:
+    """v3.5 D2a CLI: scan CNS corpus, snapshot into
+    `.ao/evidence/consultations/<CNS-ID>/`, emit events, build
+    resolution record, refresh integrity manifest + archive-meta.
+    Idempotent. `--verify` validates existing manifests without
+    mutation."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.config import load_with_override
+    from ao_kernel.consultation.archive import archive_all
+    from ao_kernel.consultation.integrity import (
+        verify_consultation_manifest,
+    )
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+    policy = load_with_override(
+        "policies", "policy_agent_consultation.v1.json",
+        workspace=project_root / ".ao",
+    )
+
+    # --verify path: no mutation, integrity-only
+    if getattr(args, "verify", False):
+        evidence_root = (
+            project_root / ".ao" / "evidence" / "consultations"
+        )
+        verify_results: list[tuple[str, bool, list[str]]] = []
+        overall_ok = True
+        if evidence_root.is_dir():
+            for cns_dir in sorted(evidence_root.iterdir()):
+                if not cns_dir.is_dir():
+                    continue
+                if cns_dir.name.startswith("."):
+                    continue
+                ok, errors = verify_consultation_manifest(cns_dir)
+                if not ok:
+                    overall_ok = False
+                verify_results.append((cns_dir.name, ok, errors))
+        if args.output == "json":
+            payload = {
+                "ok": overall_ok,
+                "scanned": len(verify_results),
+                "results": [
+                    {"cns_id": name, "ok": ok, "errors": list(errs)}
+                    for name, ok, errs in verify_results
+                ],
+            }
+            print(_json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(
+                f"Consultation verify: scanned={len(verify_results)} "
+                f"ok={overall_ok}"
+            )
+            for name, ok, errs in verify_results:
+                if not ok:
+                    print(f"  - {name}:")
+                    for err in errs:
+                        print(f"      • {err}")
+        return 0 if overall_ok else 1
+
+    summary = archive_all(
+        policy,
+        workspace_root=project_root,
+        dry_run=bool(args.dry_run),
+        renormalize=bool(args.renormalize),
+    )
+
+    if args.output == "json":
+        payload = {
+            "dry_run": summary.dry_run,
+            "scanned_cns": summary.scanned_cns,
+            "archived": summary.archived,
+            "errors_total": summary.errors_total,
+            "results": [
+                {
+                    "cns_id": r.cns_id,
+                    "evidence_dir": str(r.evidence_dir),
+                    "events_appended": r.events_appended,
+                    "record_written": r.record_written,
+                    "manifest_written": r.manifest_written,
+                    "errors": list(r.errors),
+                }
+                for r in summary.results
+            ],
+        }
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        mode = "dry-run" if summary.dry_run else "applied"
+        print(
+            f"Consultation archive [{mode}]: "
+            f"scanned={summary.scanned_cns} "
+            f"archived={summary.archived} "
+            f"errors={summary.errors_total}"
+        )
+    return 0 if summary.errors_total == 0 else 1
+
+
 def _cmd_consultation_migrate(args: argparse.Namespace) -> int:
     """v3.5 D1 CLI: copy-forward legacy consultation artefacts to the
     canonical `.ao/consultations/` layout."""
@@ -651,6 +748,44 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root (default: cwd)",
     )
 
+    # v3.5 D2a: consultation archive subcommand
+    archive_cons_p = consult_sub.add_parser(
+        "archive",
+        help=(
+            "Scan CNS corpus and archive into "
+            "`.ao/evidence/consultations/<CNS-ID>/` "
+            "(snapshots + events + resolution record + integrity "
+            "manifest). Idempotent — repeat runs skip duplicate events."
+        ),
+    )
+    archive_cons_p.add_argument(
+        "--dry-run", action="store_true",
+        help="Report scope without touching disk.",
+    )
+    archive_cons_p.add_argument(
+        "--renormalize", action="store_true",
+        help=(
+            "Force resolution record rebuild even if digest matches. "
+            "Use after normalizer_version upgrade to backfill historical "
+            "CNS records."
+        ),
+    )
+    archive_cons_p.add_argument(
+        "--verify", action="store_true",
+        help=(
+            "Verify integrity manifests for all existing evidence "
+            "directories under `.ao/evidence/consultations/`. No "
+            "snapshot or record mutations; non-zero exit on any "
+            "digest mismatch or missing file."
+        ),
+    )
+    archive_cons_p.add_argument(
+        "--output", choices=["json", "human"], default="human",
+    )
+    archive_cons_p.add_argument(
+        "--project-root", default=None,
+    )
+
     # v3.4.0 #3: cost compact-markers subcommand
     compact_p = cost_sub.add_parser(
         "compact-markers",
@@ -763,12 +898,17 @@ def main(argv: list[str] | None = None) -> int:
         print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
         return 1
 
-    # Consultation subcommand (v3.5 D1 — migrate)
+    # Consultation subcommand (v3.5 D1 migrate + D2a archive)
     if cmd == "consultation":
         cns_cmd = getattr(args, "consultation_command", None)
         if cns_cmd == "migrate":
             return _cmd_consultation_migrate(args)
-        print("Usage: ao-kernel consultation {migrate}", file=sys.stderr)
+        if cns_cmd == "archive":
+            return _cmd_consultation_archive(args)
+        print(
+            "Usage: ao-kernel consultation {migrate|archive}",
+            file=sys.stderr,
+        )
         return 1
 
     # Cost subcommand (v3.4.0 #1 reconciler + #3 compact-markers)
