@@ -464,6 +464,12 @@ class MultiStepDriver:
             AdapterOutputParseError,
         )
 
+        # PR-C1a: resolve context_pack_ref from prior context_compile step's
+        # artifact; None → Executor default envelope (backwards-compat).
+        envelope_override = self._build_adapter_envelope_with_context(
+            run_id, step_def, record,
+        )
+
         try:
             exec_result = self._executor.run_step(
                 run_id=run_id,
@@ -474,6 +480,7 @@ class MultiStepDriver:
                 step_id=step_id,
                 fencing_token=fencing_token,
                 fencing_resource_id=fencing_resource_id,
+                input_envelope_override=envelope_override,
             )
         except PolicyViolationError as exc:
             raise _StepFailed(
@@ -574,6 +581,73 @@ class MultiStepDriver:
         refreshed, _ = load_run(self._workspace_root, run_id)
         return dict(refreshed), exec_result, capability_output_refs
 
+    def _build_adapter_envelope_with_context(
+        self,
+        run_id: str,
+        step_def: StepDefinition,
+        record: Mapping[str, Any],
+    ) -> dict[str, Any] | None:
+        """Resolve context_pack_ref from most recent completed
+        context_compile step's artifact JSON.
+
+        Returns envelope override dict with absolute context_pack_ref
+        OR ``None`` if no prior context is available (caller falls
+        back to Executor's default envelope — backwards-compat for
+        workflows without context_compile steps).
+        """
+        import json as _json
+
+        workflow_id = record.get("workflow_id")
+        workflow_version = record.get("workflow_version")
+        if not workflow_id or not workflow_version:
+            # Partial / malformed record (e.g. fencing-test fixtures).
+            # Fall back silently so executor's default envelope applies.
+            return None
+
+        workflow_def = self._registry.get(
+            workflow_id,
+            version=workflow_version,
+        )
+        compile_step_names = {
+            sd.step_name for sd in workflow_def.steps
+            if sd.operation == "context_compile"
+        }
+        if not compile_step_names:
+            return None
+
+        compile_record = None
+        for prior in reversed(record.get("steps", [])):
+            if (
+                prior.get("step_name") in compile_step_names
+                and prior.get("state") == "completed"
+                and prior.get("output_ref")
+            ):
+                compile_record = prior
+                break
+        if compile_record is None:
+            return None
+
+        run_dir = (
+            self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
+        )
+        artifact_path = run_dir / compile_record["output_ref"]
+        if not artifact_path.is_file():
+            return None
+
+        try:
+            artifact = _json.loads(artifact_path.read_text(encoding="utf-8"))
+        except (OSError, _json.JSONDecodeError):
+            return None
+        context_path = artifact.get("context_path")
+        if not context_path:
+            return None
+
+        return {
+            "task_prompt": record.get("intent", {}).get("payload", ""),
+            "run_id": run_id,
+            "context_pack_ref": context_path,
+        }
+
     def _run_aokernel_step(
         self,
         run_id: str,
@@ -592,11 +666,69 @@ class MultiStepDriver:
             step_id=step_id)
 
         if op == "context_compile":
-            # A4b stub (W5 absorb): signal via payload
+            # PR-C1a: real materialisation replacing A4b stub. Uses
+            # existing compile_context() pipeline; writes markdown to
+            # evidence dir with absolute path for adapter subprocess.
+            from ao_kernel.context.context_compiler import compile_context
+            from ao_kernel.context.canonical_store import query as _canonical_query
+            from ao_kernel._internal.shared.utils import write_text_atomic
+            import json as _json
+
+            # MVP: session_context = {} (workflow-run schema top-level
+            # değişmez; session bridge ayrı PR'a bırakılır).
+            session_context: dict[str, Any] = {}
+
+            # Canonical: query (workspace_root: Path) returns list; wrap
+            # as dict keyed by 'key' field (CanonicalDecision.key) so
+            # compile_context().canonical_decisions .items() works.
+            # Corrupt store → degrade silently to empty (mirror the
+            # agent_coordination.py:208-214 tolerance pattern so run
+            # state doesn't escape with a raw exception).
+            try:
+                canonical_list = _canonical_query(self._workspace_root)
+            except Exception:  # noqa: BLE001
+                canonical_list = []
+            canonical = {
+                item.get("key", f"_idx_{idx}"): item
+                for idx, item in enumerate(canonical_list)
+            }
+
+            # Workspace facts: direct JSON read; corrupt file → {}
+            facts_path = (
+                self._workspace_root / ".cache" / "index"
+                / "workspace_facts.v1.json"
+            )
+            facts: dict[str, Any] = {}
+            if facts_path.is_file():
+                try:
+                    facts = _json.loads(facts_path.read_text())
+                except (OSError, _json.JSONDecodeError):
+                    facts = {}
+
+            compiled = compile_context(
+                session_context,
+                canonical_decisions=canonical,
+                workspace_facts=facts,
+                profile="TASK_EXECUTION",
+            )
+
+            # Absolute path for adapter subprocess (C1a B3 absorb).
+            context_path = (
+                run_dir / f"context-{step_id}-attempt{attempt}.md"
+            )
+            write_text_atomic(context_path, compiled.preamble)
+
             payload = {
                 "operation": "context_compile",
-                "stub": True,
-                "context_preamble_bytes": 0,
+                "stub": False,
+                "context_preamble_bytes": len(
+                    compiled.preamble.encode("utf-8")
+                ),
+                "context_path": str(context_path),
+                "total_tokens": compiled.total_tokens,
+                "items_included": compiled.items_included,
+                "items_excluded": compiled.items_excluded,
+                "profile_id": compiled.profile_id,
             }
             output_ref, output_sha256 = write_artifact(
                 run_dir=run_dir, step_id=step_id, attempt=attempt, payload=payload,
@@ -606,6 +738,11 @@ class MultiStepDriver:
                 "output_ref": output_ref,
                 "output_sha256": output_sha256,
                 "operation": op,
+                # PR-C1a propagate to _record_step_completion
+                "context_preamble_bytes": len(
+                    compiled.preamble.encode("utf-8")
+                ),
+                "context_path": str(context_path),
             }
 
         if op in ("patch_preview", "patch_apply", "patch_rollback"):
@@ -1390,7 +1527,7 @@ class MultiStepDriver:
         # path already emits step_completed via Executor.run_step when
         # driver_managed=True propagates a completed status).
         if step_def.actor in ("ao-kernel", "system"):
-            stub_flag = (
+            is_context_compile = (
                 isinstance(exec_result, Mapping)
                 and exec_result.get("operation") == "context_compile"
             )
@@ -1399,10 +1536,19 @@ class MultiStepDriver:
                 "final_state": "completed",
                 "attempt": attempt,
             }
-            if stub_flag:
-                payload["stub"] = True
+            if is_context_compile and isinstance(exec_result, Mapping):
+                # PR-C1a: context_compile real materialisation — read
+                # actual values from handler return dict. Empty fixture
+                # yields bytes=0 (no canonical + no facts + no session);
+                # stub=False regardless since handler wrote markdown.
+                payload["stub"] = False
                 payload["operation"] = "context_compile"
-                payload["context_preamble_bytes"] = 0
+                payload["context_preamble_bytes"] = exec_result.get(
+                    "context_preamble_bytes", 0
+                )
+                ctx_path = exec_result.get("context_path")
+                if ctx_path is not None:
+                    payload["context_path"] = ctx_path
             self._emit(run_id, "step_completed", payload, step_id=step_id)
 
         output_ref = None
