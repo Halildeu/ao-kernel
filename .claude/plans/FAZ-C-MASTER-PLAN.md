@@ -1,4 +1,23 @@
-# FAZ-C Master Plan v3 — Runtime Closure (v3.3.0)
+# FAZ-C Master Plan v4 — Runtime Closure (v3.3.0)
+
+## v4 absorb summary (Codex iter-4 PARTIAL — 4 blocker + 3 warning)
+
+Gerçek kod okumasıyla v3 spec'teki 4 hata giderildi (Codex iter-4 citation doğrulaması: `ao_kernel/cost/ledger.py:63-91`, `ao_kernel/cost/middleware.py:202-437`, `ao_kernel/llm.py:23-46`, `ao_kernel/executor/policy_enforcer.py:90-170, 302-329`, `ao_kernel/executor/executor.py:294-307`).
+
+| # | v3 bulgu | v4 fix |
+|---|---|---|
+| **B1** | C3 SpendEvent önerisi gerçek şema ile uyumsuz — plan "model_id/time_seconds/timestamp" kullanıyordu; gerçek şema token-based: `{run_id, step_id, attempt, provider_id, model, tokens_input, tokens_output, cost_usd, ts, vendor_model_id?, cached_tokens?, usage_missing, billing_digest}` (`cost/ledger.py:63-91`). `record_spend_event` helper gerek yok — mevcut `record_spend(workspace_root, event, *, policy)` zaten event-based API. | C3 body'de yeni helper iddiası silindi. Mevcut `SpendEvent` dataclass + `record_spend` kullanılır. Adapter path için envelope → `SpendEvent` builder: `cost.middleware._build_adapter_spend_event(envelope, run_id, step_id, attempt, catalog_entry)` fonksiyonu envelope.cost_actual + usage'i okuyup `SpendEvent` üretir. Helper yeri `cost/middleware.py`, post-adapter reconcile path'iyle aynı modülde. |
+| **B2** | C3 bütçe drenajı yalnız `record_spend` ile olmaz — ledger append bütçeyi azaltmaz; gerçek path (`post_response_reconcile`, `cost/middleware.py:219-437`) üçlü: `update_run(mutator=_reconcile_mutator)` + `record_budget_spend(cost_usd=delta)` + `record_spend(event)`. | C3 scope'a yeni middleware: `post_adapter_reconcile(*, workspace_root, run_id, step_id, attempt, provider_id, model, envelope, policy)` — `post_response_reconcile` pattern'ini mirror eder: `update_run(mutator=_adapter_reconcile_mutator)` (budget.cost_usd axis drenajı `record_budget_spend(cost_usd=envelope.cost_usd)` üzerinden) + `record_spend(event, policy)` ledger append + `_safe_emit("adapter_spend_recorded")`. Tanım yeri `cost/middleware.py`. Çağrı sitesi `executor/executor.py::invoke_cli/invoke_http` dönüşünde (envelope `cost_actual.cost_usd` mevcutsa). |
+| **B3** | C2 `resolve_allowed_secrets()` widen yanlış katman — resolver `allowlist_secret_ids` secret-only; `env_allowlist.allowed_keys` passthrough `build_sandbox()` içinde farklı semantikle çalışıyor. İkisini resolver'da birleştirmek audit riski. | C2 fix caller'a taşındı: `multi_step_driver._run_adapter_step`'te `parent_env = {k: os.environ[k] for k in (set(policy.secrets.allowlist_secret_ids) \| set(policy.env_allowlist.allowed_keys)) if k in os.environ}`. Bu `parent_env` hem `resolve_allowed_secrets(policy, parent_env)` hem `build_sandbox(..., parent_env=parent_env)` çağrılarına beslenir. Resolver secret-only (allowlist_secret_ids) kalır; sandbox env passthrough `env_allowlist.allowed_keys` üzerinden. `resolve_allowed_secrets()` + `build_sandbox()` signature'ları DOKUNULMAZ. |
+| **B4** | C4 `resolve_route` widen önerisi `(provider_pref, kind, *, cross_class_downgrade, soft_degrade)` — mevcut imza (`llm.py:23-29`) `(*, intent, perspective, provider_priority, workspace_root)` ile 4 caller'ı kırar (`mcp_server.py:150, 353`, `client.py:842`, `intent_router.py:364`). | C4 additive: mevcut keyword-only imza DOKUNULMAZ. Yeni opsiyonel kwarg'lar eklenir — `budget_remaining: Budget \| None = None`, `cross_class_downgrade: bool = False` (runtime-only knob), `soft_degrade: bool = False`. Default-off → mevcut callers etkilenmez. Internal `resolve()` (`_internal/prj_kernel_api/llm_router.py`) yeni kwarg'ları tüketir: `budget_remaining + cross_class_downgrade` aktifse `soft_degrade.rules` iterate. `_KINDS` 27→28 `route_cross_class_downgrade` kind eklenir (v3'teki gibi korunur). |
+
+### v4 absorb warnings
+
+- **W1** (iter-4): **Plan dosyası workspace'te gerçekten v4'e güncellendi** — iter-3/iter-4 absorption artık prompt-only değil dosyaya yansıdı (`.claude/plans/FAZ-C-MASTER-PLAN.md`).
+- **W2** (iter-4): C5 impl-time C4'ten bağımsız. Sadece `docs/POLICY-SIM.md`'deki `cross_class_downgrade` knob dokümantasyonu C4 merge sonrası anlamlı. Merge sırası: C4 → C5 (dokümantasyon için); impl paralel olabilir.
+- **W3** (iter-4): LOC tahmini revise — C3 yeni middleware (adapter reconcile + envelope→SpendEvent builder + evidence emit) + C4 facade additive kwarg + test'ler hesaba katılınca ~6000-6500 LOC (5500 iyimserdi).
+
+---
 
 ## v3 absorb summary (Codex iter-2 PARTIAL — 2 blocker + 3 warning)
 
@@ -91,14 +110,14 @@ FAZ-B v3.2.0 LIVE + B7.1 `e16e8d8` merged (main HEAD). FAZ-C hedef: **4 runtime 
 |---|---|---|---|---|
 | **C1a** | Adapter artifact surface + output_ref adapter-path guarantee + context_compile `.ao/runs/{run_id}/context.md` materialisation + `build_driver` policy_loader forward | Runtime closure | ~700 | none |
 | **C1b** | Full bundled `bug_fix_flow` E2E — patch plumbing fallback + benchmark `TestFullBundled` class | Runtime closure | ~600 | C1a |
-| **C2** | Real-adapter full mode — `--benchmark-mode=full` + env-gated + `secrets.allowlist_secret_ids + exposure_modes=['env']` + `context_pack_ref` resolve + env parity | Runtime closure | ~800 | C1a |
-| **C3** | `cost_usd` runtime reconcile: `record_spend` idempotency key + adapter transport `_spend_cost` helper | Runtime closure | ~600 | B2 (merged), C1a nice |
-| **C4** | Cross-class cost routing: `soft_degrade` runtime consumer + `routing_by_cost.cross_class_downgrade` knob + `route_cross_class_downgrade` evidence kind (`_KINDS` 27→28) | Strategic ext | ~900 | B3 (merged) |
-| **C5** | Merge-patch policy-sim (RFC 7396): `apply_merge_patch` + `proposed_policy_patches` arg + CLI `--proposed-patches` | Strategic ext | ~700 | B4 (merged) |
+| **C2** | Real-adapter full mode — `--benchmark-mode=full` + env-gated + union parent_env (`allowlist_secret_ids ∪ env_allowlist.allowed_keys`) + `context_pack_ref` resolve + env parity | Runtime closure | ~900 | C1a |
+| **C3** | `cost_usd` runtime reconcile: `post_adapter_reconcile` middleware (budget drain + ledger append + evidence emit) + envelope→SpendEvent builder + B7.1 shim removal | Runtime closure | ~800 | B2 (merged), C1a nice |
+| **C4** | Cross-class cost routing: additive `resolve_route` kwargs (`budget_remaining`, `cross_class_downgrade`, `soft_degrade`) + `_KINDS` 27→28 `route_cross_class_downgrade` kind | Strategic ext | ~800 | B3 (merged) |
+| **C5** | Merge-patch policy-sim (RFC 7396): `apply_merge_patch` + `proposed_policy_patches` arg + CLI `--proposed-patches`. Impl-time bağımsız C4'ten (W2). | Strategic ext | ~700 | B4 (merged) |
 | **C6** | `Executor.dry_run_step` — ayrı `dry_run_execution_context` (emit_event + worktree + invoke_cli/http mock) + `DryRunResult` | Runtime closure | ~1000 | C1a |
 | **C8** | Release v3.3.0 (includes B7.1 CHANGELOG) | Release | ~200 | all |
 
-**Toplam**: ~5500 LOC / 8 PR / ~7-8 hafta.
+**Toplam**: ~6100 LOC / 8 PR / ~7-8 hafta. (v4 revise: +600 C2/C3 yeni middleware + test; −100 C4 additive vs signature migration tasarrufu.)
 
 **~~C7 vision/audio~~** → v3.4.0.
 
@@ -169,57 +188,91 @@ C8 (release) ← all
 
 **LOC**: ~600.
 
-### C2 — Real-adapter full mode (v3: parent_env plumbing)
+### C2 — Real-adapter full mode (v4: union parent_env plumbing)
 
-**Problem v3 (Codex iter-2 B2 absorb)**: Driver adapter step'e `parent_env={}` sabit (`multi_step_driver.py:467-476`). `resolve_allowed_secrets(policy, all_env)` host env okur ama `all_env` boş → secrets çözülemez. C2'nin "real full mode" vaadi kırık.
+**Problem v4 (Codex iter-4 B3 absorb)**: v3 fix `parent_env = {... env_allowlist.allowed_keys ...}` subset `GH_TOKEN`/`ANTHROPIC_API_KEY`'ı dışarıda bırakıyor (bu anahtarlar `policy.secrets.allowlist_secret_ids`'te, `env_allowlist.allowed_keys`'te değil). Resolver secret-only; sandbox env passthrough allowlist-only. İkisinin birleşimi driver katmanında gereklidir.
 
 **Scope**:
-- `ao_kernel.executor.multi_step_driver._run_adapter_step` — `parent_env = {k: os.environ[k] for k in policy.env_allowlist.allowed_keys if k in os.environ}`. Sandbox allowlist zaten filtrelemeye yapacak; driver tedarik katmanı eksikti.
+- `ao_kernel.executor.multi_step_driver._run_adapter_step` — `parent_env = {k: os.environ[k] for k in (set(policy.secrets.allowlist_secret_ids) | set(policy.env_allowlist.allowed_keys)) if k in os.environ}`. Union kuralı: secrets + allowlist-env birleşimi caller katmanında. `resolve_allowed_secrets(policy, parent_env)` ve `build_sandbox(..., parent_env=parent_env)` ikisi de aynı union'dan beslenir; resolver + sandbox builder signature'ları değişmez.
 - `tests/benchmarks/conftest.py::pytest_addoption` `--benchmark-mode=fast|full`.
 - `tests/benchmarks/full_mode.py` — env gate + per-adapter required vars (`ANTHROPIC_API_KEY`, `GH_TOKEN`).
-- `Executor.run_step` — `secrets.allowlist_secret_ids + exposure_modes=['env']` integration (`build_sandbox` shipped contract). Parent_env forward sonrası contract düzgün çalışır.
+- `Executor.run_step` — `secrets.allowlist_secret_ids + exposure_modes=['env']` integration (`build_sandbox` shipped contract). Union parent_env sonrası contract düzgün çalışır.
 - Cost cap env (`AO_BENCHMARK_COST_CAP_USD`, default 0.50).
 - Evidence redaction verify (secrets not leaked in evidence logs).
+- Yeni test `test_parent_env_secret_union.py`: policy fixture'da `allowlist_secret_ids=['GH_TOKEN']` + `env_allowlist.allowed_keys=['PATH']` → driver `_run_adapter_step` builds `parent_env={'GH_TOKEN': ..., 'PATH': ...}`, her iki downstream (`resolve_allowed_secrets` + `build_sandbox`) doğru key seti görür.
 
-**LOC**: ~800.
+**LOC**: ~900 (v4: +100 union test + evidence redaction extension).
 
-### C3 — `cost_usd` runtime reconcile (v3: cost.ledger idempotency)
+### C3 — `cost_usd` runtime reconcile (v4: adapter reconcile middleware)
 
-**Problem v3 (Codex iter-2 B1 absorb)**: `workflow.budget.record_spend` saf fonksiyon + `Budget` dataclass `additionalProperties:false` → idempotency key state tutamaz. **v3 karar**: idempotency `ao_kernel.cost.ledger` katmanında — `SpendLedgerDuplicateError` (canonical billing_digest) zaten var. Budget dataclass/schema DOKUNULMAZ.
+**Problem v4 (Codex iter-4 B1+B2 absorb)**:
 
-**Scope**:
-- `ao_kernel.executor.adapter_invoker.invoke_cli/invoke_http` — envelope `cost_actual.cost_usd` mevcutsa `ao_kernel.cost.ledger.record_spend_event(run_id, step_id, attempt, cost_usd=..., provider_id=..., model=...)` çağrısı. Canonical billing_digest otomatik — duplicate call silent warn + skip.
-- `ao_kernel.cost.middleware.post_response_reconcile` — aynı ledger path; duplicate-by-digest protection ile double-record engellenir.
-- Test: double-call test (`governed_call` + adapter transport aynı step) → tek ledger entry + budget drain tek sefer.
-- B7.1 benchmark shim removed; `assert_cost_consumed` runtime path üzerinden pass eder.
+1. v3 "record_spend_event helper ekle" iddiası yanlış — mevcut `SpendEvent` dataclass + `record_spend(workspace_root, event, *, policy)` zaten event-based (`cost/ledger.py:63-91, 238-329`). Yeni helper gerekmez.
+2. v3 "transport-level `_spend_cost` ledger call" iddiası eksik — ledger append bütçeyi azaltmaz. Gerçek path `post_response_reconcile` (`cost/middleware.py:219-437`) üçlü atar: `update_run(mutator=_reconcile_mutator)` → `record_budget_spend(cost_usd=delta)` → `record_spend(event, policy)`.
 
-**LOC**: ~600.
-
-### C4 — Cross-class cost routing + soft_degrade runtime (v3: facade widen)
-
-**v3 fix (Codex iter-2 W1/W2 absorb)**: Public facade `ao_kernel.llm.resolve_route` bugün `budget_remaining` almıyor; ana çağıranlar facade kullanıyor (`mcp_server.py:149-155`, `client.py:841-846`). Facade widen C4 scope'a explicit.
+**v4 karar**: Adapter path için parallel middleware fonksiyonu `post_adapter_reconcile` — `post_response_reconcile` pattern'inin adapter variant'ı. Aynı üçlü sıra: CAS mutator budget drenajı + ledger append + evidence emit. Budget dataclass/schema DOKUNULMAZ.
 
 **Scope**:
-- `ao_kernel._internal.prj_kernel_api.llm_router.resolve` — yeni optional `budget_remaining` parametresi.
-- **`ao_kernel.llm.resolve_route` facade widen** — same `budget_remaining: Budget | None` kwarg; internal resolver'a pass-through.
-- Call-site update: `ao_kernel.mcp_server` + `ao_kernel.client` opt-in `budget_remaining` forward.
-- Eğer `cost_policy.routing_by_cost.cross_class_downgrade=true` AND `budget_remaining.cost_usd < estimate_preferred_class_cost` → `soft_degrade.rules` iterate.
-- `soft_degrade` runtime consumer eklenir (mevcut JSON bloğu şu an parse edilmiyor).
-- `policy_cost_tracking.v1.json::routing_by_cost.cross_class_downgrade` schema delta (dormant default).
+- `ao_kernel.cost.middleware._build_adapter_spend_event(envelope, *, run_id, step_id, attempt, catalog_entry) -> SpendEvent`: envelope.cost_actual.cost_usd + envelope.usage (tokens_input/output) + catalog_entry.vendor_model_id'den `SpendEvent` üretir (`ts = now()`, `billing_digest = ""` writer fills). Envelope usage missing ise `usage_missing=True` + `tokens_{in,out}=0 + cost_usd=0` audit-only path.
+- `ao_kernel.cost.middleware.post_adapter_reconcile(*, workspace_root, run_id, step_id, attempt, provider_id, model, envelope, catalog_entry, policy) -> None`: 
+  1. `event = _build_adapter_spend_event(envelope, ...)`.
+  2. `def _adapter_reconcile_mutator(record)`: `budget = budget_from_dict(record['budget'])`; `new_budget = record_budget_spend(budget, cost_usd=envelope.cost_usd, run_id=run_id)`; return `{**record, 'budget': budget_to_dict(new_budget)}`.
+  3. `update_run(workspace_root, run_id, mutator=_adapter_reconcile_mutator, max_retries=3)`.
+  4. `record_spend(workspace_root, event, policy=policy)` (mevcut idempotency: same-digest silent noop, different-digest `SpendLedgerDuplicateError`).
+  5. `_safe_emit(workspace_root, run_id, 'adapter_spend_recorded', {...})`.
+- `ao_kernel.executor.executor.invoke_cli / invoke_http` — dönüşte envelope `cost_actual.cost_usd` mevcutsa `post_adapter_reconcile(...)` çağrısı. Envelope yoksa no-op (benchmark negative case).
+- `ao_kernel.executor.adapter_invoker._invocation_from_envelope` — envelope extract zaten mevcut; `InvocationResult` `cost_actual` field'ı varsa middleware'e forward.
+- Test:
+  - `test_post_adapter_reconcile.py`: happy path (envelope with cost → budget drained exactly, ledger appended, event emitted).
+  - `test_adapter_reconcile_idempotency.py`: double-call same `(run_id, step_id, attempt)` + same digest → silent warn + single ledger line + single budget drain.
+  - `test_adapter_reconcile_digest_conflict.py`: same key + different digest → `SpendLedgerDuplicateError` raise.
+  - `test_adapter_reconcile_usage_missing.py`: envelope.usage missing → `usage_missing=True` event, budget not drained.
+  - `test_benchmark_shim_removal.py`: B7.1 `_maybe_consume_budget` shim silinir; `test_cost_usd_drained_after_happy_review` real path üzerinden pass eder.
+- B7.1 `tests/benchmarks/mock_transport._maybe_consume_budget` silinir; `_TransportError` sentinel + envelope dispatch korunur.
+
+**LOC**: ~800 (v4: +200 yeni middleware fn + builder + 5 test).
+
+### C4 — Cross-class cost routing + soft_degrade runtime (v4: additive facade)
+
+**v4 fix (Codex iter-4 B4 absorb)**: Mevcut `ao_kernel.llm.resolve_route` imzası `(*, intent, perspective, provider_priority, workspace_root)` (`llm.py:23-29`). 4 caller kullanıyor: `mcp_server.py:150, 353`, `client.py:842`, `intent_router.py:364`. Signature'ı değiştirmek hepsini kırar. v4: **additive kwarg** stratejisi — mevcut imza dokunulmaz, yeni opsiyonel kwarg'lar eklenir.
+
+**Scope**:
+- `ao_kernel.llm.resolve_route` facade additive widen:
+  ```python
+  def resolve_route(
+      *,
+      intent: str,
+      perspective: str | None = None,
+      provider_priority: list[str] | None = None,
+      workspace_root: str | None = None,
+      # v4 yeni eklemeler (default-off, backwards-compatible):
+      budget_remaining: "Budget | None" = None,
+      cross_class_downgrade: bool = False,
+      soft_degrade: bool = False,
+  ) -> dict[str, Any]: ...
+  ```
+- `ao_kernel._internal.prj_kernel_api.llm_router.resolve` — yeni kwarg'ları tüketir. `cross_class_downgrade=True AND budget_remaining.cost_usd < estimate_preferred_class_cost` → `soft_degrade.rules` iterate + downgraded class seç.
+- Mevcut call-sites (`mcp_server.py:150,353`, `client.py:842`, `intent_router.py:364`) **dokunulmaz**. Default-off davranış korunur.
+- `policy_cost_tracking.v1.json::routing_by_cost.cross_class_downgrade` schema delta (dormant default: false).
 - `_KINDS` 27 → 28: yeni `route_cross_class_downgrade` kind.
 - `test_policy_sim_integration.py::TestKindsInvariant` 27 → 28.
-- **`docs/POLICY-SIM.md:49-51`** exact-count metni 27 → 28 (Codex W2).
-- Docs `docs/COST-MODEL.md §7` + `docs/MODEL-ROUTING.md §6`.
+- `docs/POLICY-SIM.md:49-51` exact-count metni 27 → 28.
+- `docs/COST-MODEL.md §7` + `docs/MODEL-ROUTING.md §6`.
+- Yeni test `test_resolve_route_defaults_off.py`: mevcut callers behavior değişmez (kanıt: default kwargs ile karşılaştır).
+- Yeni test `test_cross_class_downgrade.py`: `cross_class_downgrade=True + budget_remaining.cost_usd < threshold` → downgraded class + `route_cross_class_downgrade` evidence event.
 
-**LOC**: ~900.
+**LOC**: ~800 (v4: additive yaklaşım −100 signature migration'dan tasarruf, +100 invariant test).
 
 ### C5 — Merge-patch policy-sim (RFC 7396)
+
+**v4 clarification (Codex iter-4 W2 absorb)**: C5 impl-time **C4'ten bağımsız** — merge-patch algoritması + CLI + test suite C4 olmadan çalışır ve shippable. Sadece `docs/POLICY-SIM.md`'de `cross_class_downgrade` knob'a referans C4 merge sonrası anlamlı; dokümantasyon sırası C4 → C5 bölümü (dokümantasyon-level). Impl paralel ve bağımsız.
 
 **Scope**:
 - `ao_kernel.policy_sim.loader::apply_merge_patch(baseline, patch)` stdlib-only RFC 7396 impl.
 - `simulate_policy_change::proposed_policy_patches: Mapping[str, Mapping] | None` new kwarg; mutex with `proposed_policies`.
 - CLI `ao-kernel policy-sim run --proposed-patches <dir>`.
 - Edge-case test suite: null-delete, array-replace, recursive, absent-preserve, scalar-object replace, baseline immutability.
+- `docs/POLICY-SIM.md` update (C4 merge sonrası C5 dokümantasyon PR'ı ile; C5 impl PR C4 merge beklemez).
 
 **LOC**: ~700.
 
@@ -291,15 +344,22 @@ v1 Q1-Q6 hepsi iter-1'de cevaplandı ve v2 absorb edildi (C7 defer, v3.2.1 skip,
 | Iter | Date | Verdict |
 |---|---|---|
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex iter-1 submit |
-| **iter-1** (CNS-20260418-041, thread `019d9f75`) | 2026-04-18 | **REVISE** — 6 blocker (C1 split + `Executor(policy_loader)` already exists + context_compile stub + record_spend duplicate + soft_degrade runtime gap + C7 defer) + 5 warning + Q1-Q6 cevaplar |
+| **iter-1** (CNS-20260418-041, thread `019d9f75`) | 2026-04-18 | **REVISE** — 6 blocker + 5 warning + Q1-Q6 cevaplar |
 | **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit |
-| iter-2 | TBD | AGREE expected |
+| iter-2 | 2026-04-18 | **PARTIAL** — 2 blocker (`record_spend(idempotency_key)` state tutamaz, driver `parent_env={}` plumbing) + 3 warning |
+| **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3 submit |
+| iter-3 | 2026-04-18 | **PARTIAL** — 2 blocker sürmekte: v3 C3 SpendEvent şema uyumsuz + C2 secret source env_allowlist subset yanlış; 3 warning |
+| **iter-4 (v3 revize prompt-only)** | 2026-04-18 | **PARTIAL** — 4 blocker (C3 SpendEvent fields, C3 budget drain design, C2 layer, C4 API regression) + 3 warning (plan file not yet updated, C5 coupling, LOC optimistic) |
+| **v4 (iter-4 absorb)** | 2026-04-18 | Pre-iter-5 submit. Plan file gerçekten workspace'te v4'e güncellendi (W1 absorb); kod-okuma ile fact-check yapıldı (`cost/ledger.py`, `cost/middleware.py`, `llm.py`, `policy_enforcer.py`, `executor.py`). |
+| iter-5 | TBD | AGREE expected |
 
 ### Plan revision history
 
 | Ver | Change |
 |---|---|
 | v1 | 8 PR breakdown; 4 workstream; C7 vision/audio included; 6 Q for Codex |
-| **v2** | **iter-1 REVISE absorb** (6 blocker + 5 warning + Q1-Q6): C1 split (C1a altyapı + C1b E2E); Executor.policy_loader mevcut → forward/materialization scope; context_compile `.ao/runs/{run_id}/context.md` write; record_spend idempotency_key `(run_id, step_id, attempt, spend_kind)`; soft_degrade runtime consumer + modül adı düzeltme; `_KINDS` 27→28 bump + invariant test update; C6 ayrı `dry_run_execution_context`; C7 → **v3.4.0 defer**; v3.2.1 skip (B7.1 3.3.0'a göm); release aşamalı alpha/rc/final. |
+| **v2** | iter-1 REVISE absorb (6 blocker + 5 warning + Q1-Q6): C1 split (C1a+C1b); Executor.policy_loader mevcut → forward/materialization scope; context_compile write; record_spend idempotency_key `(run_id, step_id, attempt, spend_kind)`; soft_degrade runtime + modül adı düzeltme; `_KINDS` 27→28; C6 ayrı dry_run_execution_context; C7 → v3.4.0 defer; v3.2.1 skip; alpha/rc/final release. |
+| **v3** | iter-2 PARTIAL absorb (2 blocker + 3 warning): idempotency `cost.ledger` katmanına taşındı (SpendLedgerDuplicateError + billing_digest mevcut); C2 driver `parent_env` plumbing eklendi; C4 public facade `resolve_route` widen explicit; `_KINDS` docs update. |
+| **v4** | iter-4 PARTIAL absorb (4 blocker + 3 warning): C3 helper yanlış iddiası silindi (mevcut `record_spend(event)` API kullanılır); C3'e yeni `post_adapter_reconcile` middleware eklendi (CAS mutator + ledger + emit üçlü); C2 union caller katmanına taşındı (resolver+sandbox imzaları dokunulmaz); C4 signature DOKUNULMAZ → additive kwargs; W1 plan dosyası gerçekten v4'e güncellendi; W2 C5 impl-time bağımsız netleşti; W3 LOC revise ~6100. |
 
-**Status**: Plan v2 hazır. Codex thread `019d9f75` iter-2 submit için hazır. AGREE beklenir.
+**Status**: Plan v4 hazır. Codex thread `019d9f75` iter-5 submit için hazır. Kod-doğrulanmış fact-check bu iter'i sağlamlaştırıyor; AGREE beklenir.
