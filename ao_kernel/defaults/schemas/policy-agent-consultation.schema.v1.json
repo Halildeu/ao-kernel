@@ -88,6 +88,18 @@
     "fail_action": {
       "type": "string",
       "enum": ["block", "warn", "log"]
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "description": "v3.5 D2b: opt-in canonical promotion of resolved AGREE/PARTIAL consultations.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Default false. Operator flips to true after warm-up window. CLI `--force` bypasses this gate for ad-hoc runs."
+        }
+      }
     }
   }
 }

@@ -37,5 +37,8 @@
     "transitions": ["OPEN->CLAIMED", "CLAIMED->RUNNING", "RUNNING->ANSWERED", "RUNNING->FAILED", "FAILED->CLAIMED", "FAILED->CLOSED", "ANSWERED->CLOSED"],
     "terminal": ["CLOSED"]
   },
-  "fail_action": "warn"
+  "fail_action": "warn",
+  "promotion": {
+    "enabled": false
+  }
 }
