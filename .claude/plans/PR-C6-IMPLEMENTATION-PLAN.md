@@ -1,81 +1,75 @@
-# PR-C6 Implementation Plan v1 — Executor.dry_run_step (Runtime Closure)
+# PR-C6 Implementation Plan v2 — Executor.dry_run_step (Refactored Shared Pre-flight)
 
-**Scope**: FAZ-C runtime closure. `Executor.dry_run_step(step_name, ...) -> DryRunResult` — ayrı `dry_run_execution_context` ile mock sınır: `emit_event` + worktree (`create_worktree`/`cleanup_worktree`) + `invoke_cli`/`invoke_http`. `DryRunResult{predicted_events, policy_violations, simulated_budget_after, simulated_outputs}`. CLI `ao-kernel executor dry-run <workflow_id> <step_name>`.
+**Scope**: FAZ-C runtime closure. `Executor.dry_run_step(run_id, step_def, ...) -> DryRunResult` — **shared pre-flight extracted**, separate dry-run tail (no CAS, no write_artifact, no update_run). Mock boundary: `emit_event` + worktree + `invoke_cli`/`invoke_http` via executor alias-patch. CLI `ao-kernel executor dry-run <run_id> <step_name>`.
 
 **Base**: `main 11c54cf` (PR #113 C5 merged). **Branch**: `feat/pr-c6-dry-run-step`.
 
-**Status**: Pre-Codex iter-1 submit.
+**Status**: iter-1 PARTIAL absorb → iter-2 submit. Codex thread `019da099-e692-7fa1-b2f4-e429a6beb0de`.
+
+---
+
+## v2 absorb summary (Codex iter-1 PARTIAL — 3 blocker + 4 warning)
+
+| # | iter-1 bulgu | v2 fix |
+|---|---|---|
+| **B1** (`write_artifact` kaçak) | `run_step` adapter path `write_artifact` (`executor.py:422`) çağırır — `invoke_cli` mock'u onu kapsamıyor. Black-box reuse artifact yazar. | v2: `run_step` reuse DEĞİL. Shared pre-flight fn (pre-flight + step resolution + policy check) + ayrı `_dry_run_tail` (no write_artifact, no update_run, no artifact write). |
+| **B2** (update_run + placeholder coupling) | `run_step` 3 update_run call-site'ı (success `:512`, placeholder `:583`, fail `_fail_run:647`). `driver_managed=True` sadece success CAS skip eder + duplicate-completed guard kaybolur. | v2: Dry-run kendi tail'i; `update_run` hiç çağırmaz. Duplicate-completed guard preflight'ta reuse edilir (shared fn). |
+| **B3** (CLI workflow_id mismatch) | Method `run_id` + `step_def` alır; CLI `workflow_id` + `step_name` alır. İkisi farklı context. | v2: CLI `run_id` bazlı — `ao-kernel executor dry-run <run_id> <step_name>`. `workflow_id` run_id'den türetilir (`load_run(run_id).workflow_id`). |
+
+### v2 absorb warnings
+
+- **W1** (alias patch site) → v2 §2.2: 4 mock nokta executor module alias: `ao_kernel.executor.executor.emit_event`, `invoke_cli`, `invoke_http`, `create_worktree`, `cleanup_worktree`.
+- **W2** (`emit_event` stub shape) → v2 §2.2: Stub `EvidenceEvent`-benzeri obje döner (`.event_id`, `.ts`, `.seq` attrs). Dummy UUID + iso timestamp.
+- **W3** (`invoke_cli` canned shape) → v2 §2.2: `(InvocationResult, Budget)` tuple. `InvocationResult` 10 required field (`status, diff, evidence_events, commands_executed, error, finish_reason, interrupt_token, cost_actual, stdout_path, stderr_path`) + optional `extracted_outputs={}`. Budget real obje — `budget_from_dict(record["budget"])`.
+- **W4** (read-only invariant weak) → v2 §3.1 test pinleri güçlendirildi: full record dict byte-for-byte unchanged + `revision` unchanged + `steps` length unchanged + `error` unchanged + `events.jsonl` absent + `artifacts/` dir empty.
 
 ---
 
 ## 1. Problem
 
-Operator bir step'i **gerçekten çalıştırmadan** policy violation / budget impact / expected events preview etmek istiyor. Mevcut `Executor.run_step` side-effect-heavy (evidence emit + worktree build + subprocess invoke). Policy-sim workflow-level benzer bir rol oynuyor ama step-level granularity + mock'lanmış execution surface yok.
-
-**Master plan v5 §C6 + Codex Q4 absorb**: Policy-sim guard **EXTEND DEĞİL** — ayrı `dry_run_execution_context` gerekli. Policy-sim scenario-oriented; dry-run step-oriented. Boundary: `emit_event`, `create_worktree`/`cleanup_worktree`, `invoke_cli`/`invoke_http` mock.
+(Aynı, v1'den.)
 
 ---
 
-## 2. Scope (atomic deliverable)
+## 2. Scope v2 (atomic deliverable — refactored)
 
 ### 2.1 `DryRunResult` dataclass
 
-**Yeni** (`ao_kernel/executor/dry_run.py` yeni modül):
+`ao_kernel/executor/dry_run.py` yeni modül — aynı v1 tanımı.
+
+### 2.2 Shared pre-flight + dry-run tail
+
+**`Executor._preflight_and_resolve(run_id, step_def)` yeni private method** (refactor out of `run_step`):
 ```python
-@dataclass(frozen=True)
-class DryRunResult:
-    """PR-C6: step-level dry-run result. Capture predicted effects
-    without executing real side-effects.
-
-    - predicted_events: tuple of (kind, payload_summary) — evidence
-      events that WOULD have been emitted.
-    - policy_violations: tuple of policy violation strings detected
-      during pre-flight (worktree build + command validate).
-    - simulated_budget_after: mock budget state if policy check passed
-      (actual budget mutation NOT persisted).
-    - simulated_outputs: per-capability artifact paths that WOULD
-      have been written (NOT actually materialized).
-    """
-    predicted_events: tuple[tuple[str, Mapping[str, Any]], ...]
-    policy_violations: tuple[str, ...]
-    simulated_budget_after: Mapping[str, Any]
-    simulated_outputs: Mapping[str, str]
-```
-
-### 2.2 `dry_run_execution_context` — mock boundary
-
-**Yeni** (`ao_kernel/executor/dry_run.py`):
-```python
-@contextmanager
-def dry_run_execution_context(
-    workspace_root: Path,
+def _preflight_and_resolve(
+    self,
     run_id: str,
-) -> Iterator[_DryRunRecorder]:
-    """Patch side-effect-producing callables to capture-and-skip
-    semantics for the duration of the block. Four callables patched:
-
-    1. ``ao_kernel.executor.executor.emit_event`` — record call args
-       instead of writing evidence.
-    2. ``ao_kernel.executor.worktree_builder.create_worktree`` +
-       ``cleanup_worktree`` — return a tmp-dir handle without
-       invoking git.
-    3. ``ao_kernel.executor.executor.invoke_cli`` + ``invoke_http``
-       — return a canned ``InvocationResult(status="ok", extracted_outputs={})``
-       simulating a successful adapter call.
-
-    The recorder captures predicted events + simulated_outputs so the
-    caller can build a ``DryRunResult``.
+    step_def: StepDefinition,
+    *,
+    attempt: int,
+    driver_managed: bool,
+    fencing_token: int | None,
+    fencing_resource_id: str | None,
+) -> tuple[Mapping[str, Any], WorkflowDefinition]:
+    """Shared pre-flight — called by BOTH run_step and dry_run_step.
+    
+    Runs (in order):
+    1. Fencing entry check (if token supplied).
+    2. load_run — fails on missing run_id.
+    3. Terminal-state guard.
+    4. Resolve pinned definition.
+    5. step_def-in-definition guard.
+    6. Duplicate-completed guard (skipped in driver_managed=True).
+    7. Adapter cross-ref validation for adapter steps.
+    
+    Returns ``(record, definition)`` — no side-effects beyond
+    read-only disk I/O for load_run.
     """
-    # Implementation: unittest.mock.patch.multiple in stacked
-    # context managers; recorder is a small dataclass with append
-    # methods.
 ```
 
-`_DryRunRecorder` accumulates: `predicted_events: list[(kind, payload)]`, `simulated_outputs: dict[capability, path]`.
+`run_step` mevcut pre-flight body'sini `_preflight_and_resolve` çağrısıyla değiştirir (refactor, behavior unchanged).
 
-### 2.3 `Executor.dry_run_step` public method
-
-**Executor** (`ao_kernel/executor/executor.py:83+`):
+**`Executor.dry_run_step`** method:
 ```python
 def dry_run_step(
     self,
@@ -85,145 +79,221 @@ def dry_run_step(
     parent_env: Mapping[str, str] | None = None,
     attempt: int = 1,
 ) -> DryRunResult:
-    """Dry-run a single step: execute the pre-flight + policy checks
-    + record predicted events, but MOCK side-effect boundary
-    (no evidence write, no worktree build, no subprocess invoke).
+    """Dry-run: shared pre-flight + separate dry-run tail.
 
-    Returns ``DryRunResult`` with predicted events + policy violations
-    + simulated budget + simulated outputs. Run state NOT mutated.
-    Policy check still runs full — so policy violations surface the
-    same way they would in a real run.
+    Contract:
+    - Run record NOT mutated (no update_run).
+    - No evidence file written (emit_event mocked).
+    - No worktree built (create_worktree mocked).
+    - No adapter subprocess (invoke_cli/http mocked).
+    - No artifact file written (write_artifact mocked).
+    - Policy violations + predicted events surface in DryRunResult.
     """
     from ao_kernel.executor.dry_run import (
         DryRunResult,
         dry_run_execution_context,
     )
-    
-    # Read run record for budget + policy derivation (read-only).
-    record, _ = load_run(self._workspace_root, run_id)
-    
+
+    try:
+        record, definition = self._preflight_and_resolve(
+            run_id, step_def,
+            attempt=attempt,
+            driver_managed=False,
+            fencing_token=None,
+            fencing_resource_id=None,
+        )
+    except PolicyViolationError as exc:
+        return DryRunResult(
+            predicted_events=(),
+            policy_violations=(str(exc),),
+            simulated_budget_after=dict(
+                record.get("budget", {}) if "record" in dir() else {}
+            ),
+            simulated_outputs={},
+        )
+
     with dry_run_execution_context(
         self._workspace_root, run_id,
     ) as recorder:
-        # Pre-flight guards run real (policy violations must be
-        # observable). Dispatch through run_step but the mock
-        # boundary captures all side-effects.
-        try:
-            _ = self.run_step(
-                run_id,
-                step_def,
-                parent_env=parent_env,
+        # Dry-run dispatch: call actor branch but bypass CAS/artifact.
+        # Policy check still runs real (see policy_enforcer calls inside
+        # the mock'd invoke_cli path) so violations surface.
+        if step_def.actor == "adapter":
+            self._dry_run_adapter_dispatch(
+                run_id=run_id,
+                record=record,
+                step_def=step_def,
+                parent_env=parent_env or {},
                 attempt=attempt,
-                driver_managed=False,  # single-step dry-run
+                recorder=recorder,
             )
-        except PolicyViolationError as exc:
-            recorder.record_policy_violation(str(exc))
-    
+        else:
+            self._dry_run_placeholder(
+                run_id=run_id,
+                record=record,
+                step_def=step_def,
+                recorder=recorder,
+            )
+
     return DryRunResult(
         predicted_events=tuple(recorder.predicted_events),
         policy_violations=tuple(recorder.policy_violations),
-        simulated_budget_after=recorder.simulated_budget_after,
+        simulated_budget_after=dict(record.get("budget", {})),
         simulated_outputs=dict(recorder.simulated_outputs),
     )
 ```
 
-Pre-flight guards (load_run + workflow_registry.get + step_def validation + policy_check) run REAL — operator sees actual policy violations. Only side-effect-producing boundary mocked.
+**`_dry_run_adapter_dispatch`** + **`_dry_run_placeholder`** — ayrı tail'ler; CAS mutations, write_artifact, update_run hiç çağrılmaz. Sadece mock'd `invoke_cli`, `emit_event`, `create_worktree`, `cleanup_worktree` çağrılır (recorder'a yazılır).
 
-### 2.4 CLI `ao-kernel executor dry-run <workflow_id> <step_name>`
+### 2.3 `dry_run_execution_context` — 5 mock nokta (v2: +1 write_artifact)
 
-**`cli.py`**:
+```python
+@contextmanager
+def dry_run_execution_context(
+    workspace_root: Path,
+    run_id: str,
+) -> Iterator[_DryRunRecorder]:
+    """5-patch boundary. All patches target executor module aliases
+    per W1 absorb."""
+    from unittest.mock import patch
+    
+    recorder = _DryRunRecorder()
+    
+    def _mock_emit(ws, run_id, kind, actor, payload, **kwargs):
+        recorder.predicted_events.append((kind, dict(payload)))
+        # Return EvidenceEvent-like stub (W2 absorb)
+        return _StubEvidenceEvent(
+            event_id=f"dry-run-{len(recorder.predicted_events)}",
+            ts=datetime.now(timezone.utc).isoformat(),
+            seq=len(recorder.predicted_events),
+        )
+    
+    def _mock_invoke_cli(*, manifest, input_envelope, sandbox,
+                         worktree, budget, workspace_root, run_id):
+        # (InvocationResult, Budget) tuple per W3 absorb
+        return (_canned_invocation_result(manifest), budget)
+    
+    def _mock_invoke_http(*args, **kwargs):
+        return _mock_invoke_cli(*args, **kwargs)
+    
+    def _mock_create_worktree(*args, **kwargs):
+        return _DummyWorktree(path=workspace_root / ".dry-run-stub")
+    
+    def _mock_cleanup_worktree(*args, **kwargs):
+        return None
+    
+    def _mock_write_artifact(*, run_dir, step_id, attempt, payload):
+        # B1 absorb: write_artifact patched too — recorder captures
+        # would-be path; no disk write.
+        stub_ref = f"artifacts/{step_id}-attempt{attempt}.json"
+        recorder.simulated_outputs[step_id] = stub_ref
+        stub_sha = "dry-run-sha256-stub"
+        return (stub_ref, stub_sha)
+    
+    with patch.multiple(
+        "ao_kernel.executor.executor",
+        emit_event=_mock_emit,
+        invoke_cli=_mock_invoke_cli,
+        invoke_http=_mock_invoke_http,
+        create_worktree=_mock_create_worktree,
+        cleanup_worktree=_mock_cleanup_worktree,
+        write_artifact=_mock_write_artifact,
+    ):
+        yield recorder
+```
+
+### 2.4 CLI `ao-kernel executor dry-run <run_id> <step_name>`
+
+**CLI v2**: run_id bazlı (B3 absorb):
 ```bash
-ao-kernel executor dry-run bug_fix_flow invoke_coding_agent \
-    --run-id abc-123 \
+ao-kernel executor dry-run \
+    <run_id> \
+    <step_name> \
     --attempt 1 \
     --format json
 ```
 
-- `workflow_id` + `step_name` positional.
-- `--run-id` opsiyonel (default: create temporary UUID).
-- `--attempt` default 1.
-- `--format` json|text.
-
-CLI handler builds Executor + loads `step_def` from workflow registry + calls `dry_run_step` + prints DryRunResult as JSON/text.
+Handler:
+1. `load_run(run_id)` → record + workflow_id + workflow_version.
+2. `workflow_registry.get(workflow_id, workflow_version)` → definition.
+3. `step_def = next(s for s in definition.steps if s.step_name == step_name)` — not found → error exit.
+4. `Executor(...).dry_run_step(run_id, step_def, attempt=args.attempt)`.
+5. Print `DryRunResult` JSON/text.
 
 ---
 
-## 3. Test Plan
+## 3. Test Plan v2
 
 ### 3.1 Yeni test (`tests/test_dry_run_step.py`):
 
-**Context manager unit** (3):
-- `test_emit_event_captured_not_written` — mock emit_event call + verify no evidence file written.
-- `test_worktree_not_built` — mock create_worktree return + no git subprocess executed.
-- `test_invoke_cli_returns_canned` — mock invoke_cli → InvocationResult(status="ok"), no subprocess.
+**Context manager unit** (5, W1-W3 absorb):
+- `test_emit_event_captured_not_written` — mock emit call + returns EvidenceEvent-like stub + no events.jsonl write.
+- `test_invoke_cli_returns_canned_tuple` — canned (InvocationResult, Budget) tuple; all 10 required fields present.
+- `test_worktree_mock_returns_stub` — create_worktree returns DummyWorktree; no git subprocess.
+- `test_write_artifact_captured_not_written` — write_artifact mock returns stub_ref; artifacts/ dir empty.
+- `test_emit_event_stub_has_required_attrs` — event.event_id + event.ts attrs (executor.py:292, 501).
 
-**dry_run_step integration** (4):
-- `test_returns_dry_run_result` — happy path: adapter step → DryRunResult with predicted events.
-- `test_policy_violation_surfaces` — step with bad command_allowlist → policy_violations non-empty.
-- `test_budget_not_mutated` — run record's budget unchanged after dry_run_step.
-- `test_no_evidence_file_written` — events.jsonl not created.
+**dry_run_step integration** (6, B2+W4 absorb):
+- `test_adapter_step_returns_dry_run_result` — happy path.
+- `test_placeholder_step_returns_dry_run_result` — non-adapter actor.
+- `test_policy_violation_surfaces` — bad policy → violations tuple non-empty.
+- `test_read_only_invariant_full_record_unchanged` — record dict byte-for-byte + revision + steps length + error unchanged.
+- `test_no_evidence_file_written` — events.jsonl absent post-dry_run.
+- `test_no_artifact_directory_written` — run_dir/artifacts/ absent or empty.
+
+**Shared pre-flight refactor regression** (2):
+- `test_run_step_preflight_behavior_unchanged` — existing run_step callers pass existing behavior (load_run + guards).
+- `test_duplicate_completed_guard_preserved` — A3 mode duplicate-completed ValueError hâlâ raise.
 
 **CLI** (2):
-- `test_cli_dry_run_json_format` — smoke test: subprocess parse JSON output.
-- `test_cli_unknown_step_error` — step_def lookup fail → error exit.
+- `test_cli_dry_run_by_run_id_json` — `ao-kernel executor dry-run <run_id> <step> --format json` subprocess smoke.
+- `test_cli_unknown_step_error_exit` — step_name not in workflow → error exit.
 
 ---
 
 ## 4. Out of Scope
 
-- **Multi-step DAG dry-run** (sequential step chain) — bu PR tek-step. Multi-step dry-run future PR.
-- **Semantic semi-execution** (ör. gerçek tokenize edilmiş LLM call ama response mock) — out of scope.
-- **Budget projection accuracy**: simulated_budget_after = record.budget copy (no cost estimate computation). C3 merge sonrası gerçek cost estimate entegrasyonu mümkün.
-- C3 (post_adapter_reconcile) — paralel PR.
+- Multi-step DAG dry-run — v1 tek step.
+- Cost estimate computation (C3 merge sonrası integration mümkün).
+- `update_run` dry-run mock — hiç çağrılmaz kontrat. Mock yerine code path avoidance.
+- C3/C4.1/C8 — paralel.
 
 ---
 
-## 5. Risk Register
+## 5. Risk Register v2
 
 | Risk | L | I | Mitigation |
 |---|---|---|---|
-| R1 Mock boundary eksik — unmocked side-effect dry-run sırasında çalışır | M | H | 4 mock noktasını stacked context + integration test "no evidence file written" |
-| R2 Policy check real path dry_run'da başarısız olabilir | L | M | Policy violations zaten captured; beklenen behavior. Test pozitif case |
-| R3 `invoke_cli` return shape mock vs real farklı | M | M | Canned `InvocationResult` contract real shape'i mirror eder |
-| R4 CLI dry-run workflow_id lookup mevcut değilse | L | L | `WorkflowDefinitionNotFoundError` surface — CLI error exit |
+| R1 Shared preflight refactor mevcut run_step testlerini kırar | M | H | Regression test: `test_run_step_preflight_behavior_unchanged` pin. 16 mevcut run_step test suite preserve edilir. |
+| R2 `update_run` dry-run'da hâlâ çağrılır | L | H | Separate tail; mock'da update_run YOK (unlike emit_event vs). Test: record dict unchanged pin. |
+| R3 `_dry_run_adapter_dispatch` gerçek adapter invocation path'inden sapar | M | M | Mock boundary Codex iter-1 aliases. Test: 5 context-level test + integration test policy+event predictions. |
+| R4 CLI `load_run(run_id)` fail gracefully (bad run_id) | L | L | Error exit code + stderr msg |
 
 ---
 
-## 6. Codex iter-1 için Açık Sorular
+## 6. Implementation Order
 
-**Q1 — `run_step` vs custom dispatch**: dry_run_step mevcut `run_step`'i MOCK sınırda çağırmalı (pre-flight + dispatch reuse) mi, yoksa ayrı `_dry_run_dispatch` kurmalı mı? v1 reuse (simpler); ayrı dispatch gerekmiyor gibi.
-
-**Q2 — `emit_event` patch site**: Module-level (`executor.evidence_emitter.emit_event`) mi, executor import site mı? C1a'daki `mock_transport` pattern'i executor-alias patching kullandı.
-
-**Q3 — `invoke_cli` canned shape**: `InvocationResult(status="ok", extracted_outputs={}, stdout=b"", stderr=b"", ...)` — real shape'in tüm required field'ları nelerse. Exact shape fact-check gerekecek.
-
-**Q4 — Budget simulation**: `simulated_budget_after = dict(record.get("budget", {}))` — yani raw copy. Cost estimate hesabı C3'e bırakılır (v1 MVP). Acceptable mi?
-
-**Q5 — Run record read-only**: `load_run` read; `update_run` ÇAĞRILMAZ. Mock context manager hiç CAS mutasyonu yapmaz. Bu kontrat test ile pin'lenmeli mi (evet — test_budget_not_mutated).
+1. `_preflight_and_resolve` extract (refactor `run_step`).
+2. `DryRunResult` + `_DryRunRecorder` + `_StubEvidenceEvent` + `_canned_invocation_result` helpers (`dry_run.py`).
+3. `dry_run_execution_context` (5 mock patch.multiple).
+4. `Executor.dry_run_step` + `_dry_run_adapter_dispatch` + `_dry_run_placeholder`.
+5. CLI `executor dry-run` + handler.
+6. 15 test (5 context + 6 integration + 2 refactor regression + 2 CLI).
+7. Regression full suite + commit + post-impl review + PR #114.
 
 ---
 
-## 7. Implementation Order
+## 7. LOC Estimate v2
 
-1. `DryRunResult` dataclass + `_DryRunRecorder`.
-2. `dry_run_execution_context` (4 mock nokta).
-3. `Executor.dry_run_step` public method.
-4. CLI `executor dry-run` command + handler.
-5. 9 test (3 context + 4 integration + 2 CLI).
-6. Regression + commit + post-impl review + PR #114.
+~900 satır (refactor +50, dry_run.py +200, executor dry_run_step +80, cli +40, handler +70, 15 test +460).
 
 ---
 
-## 8. LOC Estimate
-
-~750 satır (dry_run.py +150, executor.py +30, cli.py +30, cli_handlers.py +60, 9 test +400, docs +80).
-
----
-
-## 9. Audit Trail
+## 8. Audit Trail
 
 | Iter | Date | Verdict |
 |---|---|---|
-| v1 (Claude draft) | 2026-04-18 | Pre-Codex iter-1 submit |
-
-**Codex thread**: Yeni (C6-specific).
+| v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`4cc4232`) |
+| iter-1 (thread `019da099`) | 2026-04-18 | **PARTIAL** — 3 blocker (write_artifact kaçak, update_run coupling, CLI workflow_id mismatch) + 4 warning |
+| **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2. Shared pre-flight refactor + separate dry-run tail + 5 mock nokta (write_artifact added) + CLI run_id-based + stub EvidenceEvent + (InvocationResult, Budget) tuple. |
+| iter-2 | TBD | AGREE expected |
