@@ -7,6 +7,60 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B3 (cost-aware model routing)
+
+**FAZ-B Tranche B 3/9 — opt-in cost-aware selection. When operators
+set `policy_cost_tracking.routing_by_cost.{enabled: true, priority:
+"lowest_cost"}`, the LLM router sorts the eligible provider set for
+the target intent class ascending by price-catalog
+input+output-per-1k average before iterating. Dormant default
+preserves pre-B3 `fallback_order_by_class` semantics.**
+
+- New `ao_kernel.cost.routing` module:
+  * `_PROVIDER_ALIAS_MAP` normalizes router short names (`claude`,
+    `openai`, ...) to catalog vendor names (`anthropic`, `openai`,
+    ...) for catalog lookups.
+  * `compute_model_cost_per_1k(entry)` — simple input+output
+    per-1k average. Routing decisions ignore
+    `cached_input_cost_per_1k`; billing continues to honor it.
+  * `sort_providers_by_cost(provider_order, *, providers_map,
+    catalog)` — partition helper returning `(known_cost_sorted,
+    unknown_list)`. Router applies drop-if-any-known /
+    fallback-if-none-known semantics (plan v5 §2.4 tek semantik).
+- Extended `ao_kernel.cost.policy.RoutingByCost` dataclass with
+  `priority` (closed-enum `provider_priority` | `lowest_cost`,
+  default `provider_priority`) and
+  `fail_closed_on_catalog_missing` (default `true`). Schema is
+  additive — existing workspace overrides remain valid.
+- New `RoutingCatalogMissingError(CostTrackingError)` raised when
+  the cost-aware branch is active, catalog load fails, and
+  `fail_closed_on_catalog_missing=true`. Preserves underlying
+  cause as `__cause__` for operator drill-down.
+- `llm_router.resolve` loader-trusted: no `try/except` around
+  `load_cost_policy`. Missing workspace override → bundled
+  dormant fallback (no raise); malformed →
+  `json.JSONDecodeError` / `jsonschema.ValidationError`
+  natural-propagates (honors the fail-closed contract in
+  `cost/policy.py::_validate` + `load_cost_policy`).
+- Explicit `provider_priority` caller arg bypasses cost sort
+  (plan v5 Yüksek 2 invariant — caller intent wins over
+  cost-aware re-ordering).
+- `docs/COST-MODEL.md` §6 rewritten for the PR-B3 cost-aware
+  contract (replaces the pre-B3 budget-aware fallback draft).
+- `docs/MODEL-ROUTING.md` new — router resolution flow + PR-B3
+  integration notes + extension guidance.
+
+**Locked invariants**:
+- Helper is partition-only; unknowns are dropped or preserved by
+  the router, not the helper (plan v5 §2.3).
+- Model aliasing intentionally out of scope in v1 — uncovered
+  models use the unknown-bucket semantics (FAZ-C scope).
+- Bundled dormant path unchanged: zero B2 / B5 / B6 test
+  regression (full suite 2029+ passed).
+- Router never swallows policy loader exceptions; fail-closed
+  contract honored end-to-end (`llm.py::resolve_route`
+  "Fail-closed" docstring).
+
 ### Added — FAZ-B PR-B5 (metrics export — Prometheus textfile + `[metrics]` extra)
 
 **FAZ-B Tranche B 5/9 — evidence-derived metrics export. Stateless

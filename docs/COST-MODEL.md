@@ -10,7 +10,7 @@ Cost tracking in ao-kernel has three collaborating contracts:
 2. **Spend ledger** — append-only JSONL log of every billable LLM call, keyed by run/step, carrying provider, model, tokens, and USD cost.
 3. **Budget axes** — extended [`Budget`](../ao_kernel/workflow/budget.py) (PR-A1) with granular token axes (`tokens_input` / `tokens_output`) in addition to the existing `cost_usd` / `tokens` / `time_seconds` axes; fail-closed pre-invocation check.
 
-Cost-aware model routing (PR-B3) reads the catalog to estimate call cost before dispatch and falls back to a cheaper model if the remaining budget cannot cover the estimate.
+Cost-aware model routing (PR-B3) reads the catalog to re-order the target intent class's eligible provider set ascending by price-catalog cost before the router iterates — operators opt into cost-aware selection without changing any code. Full contract in §6.
 
 All behaviour described here is dormant until `policy_cost_tracking.v1.json::enabled: true`; defaults are operator-facing, not automatic.
 
@@ -117,14 +117,77 @@ estimated_cost = (est_tokens_input  * input_cost_per_1k  / 1000)
 
 ## 6. Cost-Aware Routing (PR-B3)
 
-`llm.resolve_route(intent, budget_remaining)` extends PR-A routing with a catalog lookup. When `policy_cost_tracking.routing_by_cost.enabled: true`:
+When operators opt in, the LLM router (`resolve_route`) sorts the eligible provider set for the target intent class ascending by price-catalog cost before iterating. The dormant default preserves pre-B3 `llm_resolver_rules.fallback_order_by_class` order unchanged.
 
-1. Compute `estimated_cost` for the preferred model.
-2. If `budget_remaining.cost_usd >= estimated_cost`, return preferred.
-3. Otherwise, iterate the same intent class's fallback list (ordered cheapest-first in the catalog) until one fits.
-4. If none fits, raise `BudgetExhaustedError`.
+### 6.1 Activation
 
-Routing failure is explicit; there is no silent "use the cheapest thing that fits" downgrade unless the operator opts into routing.
+Three fields in `policy_cost_tracking.v1.json::routing_by_cost`:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `enabled` | `false` | Master switch for the cost-aware branch. |
+| `priority` | `"provider_priority"` | Selection strategy. `"lowest_cost"` triggers the sort-by-price path; `"provider_priority"` preserves pre-B3 behavior. |
+| `fail_closed_on_catalog_missing` | `true` | When active mode + catalog load failure: `true` raises `RoutingCatalogMissingError`; `false` warn-logs + falls back to `provider_priority`. |
+
+Gate: the cost-aware path engages only when all three of `policy_cost_tracking.enabled=true`, `routing_by_cost.enabled=true`, and `routing_by_cost.priority="lowest_cost"` hold simultaneously.
+
+### 6.2 Selection Semantics — Tek Semantik (Plan v5 §2.4)
+
+> If at least one provider in `provider_order` has a catalog cost entry, sort ascending and **drop unknowns**. If no provider has a catalog entry, **fall back** to the original `provider_order` without elimination.
+
+Exhaustive matrix:
+
+| Condition | Resulting order |
+|---|---|
+| Explicit `provider_priority` caller arg | Caller-supplied (cost bypass — caller intent wins) |
+| `policy.enabled=false` | Pre-B3 fallback order |
+| `routing_by_cost.enabled=false` | Pre-B3 fallback order |
+| `priority="provider_priority"` | Pre-B3 fallback order |
+| `priority="lowest_cost"` + catalog OK + ≥1 known-cost provider | Ascending cost; unknowns DROPPED |
+| `priority="lowest_cost"` + catalog OK + all unknown | Original order (fallback, no elimination) |
+| Catalog load fails + `fail_closed_on_catalog_missing=true` | `RoutingCatalogMissingError` raised |
+| Catalog load fails + `fail_closed_on_catalog_missing=false` | Warn-log + provider_priority fallback |
+
+### 6.3 Cost Metric
+
+Routing decisions use a simple input+output per-1k average:
+
+```
+routing_cost_per_1k = (input_cost_per_1k + output_cost_per_1k) / 2
+```
+
+`cached_input_cost_per_1k` is **deliberately ignored** at routing time — cache hits are a per-call property, not a per-model property. Billing continues to use actual token counts via `compute_cost` (which honors the cached-rate path).
+
+### 6.4 Provider Namespace Alias
+
+The router uses short provider names (`claude`, `openai`, `google`, `deepseek`, `qwen`, `xai`); the catalog uses vendor names. Lookups go through a fixed alias map:
+
+| Router | Catalog |
+|---|---|
+| `claude` | `anthropic` |
+| `openai` | `openai` |
+| `google` | `google` |
+| `deepseek` | `deepseek` (no bundled entries) |
+| `qwen` | `qwen` (no bundled entries) |
+| `xai` | `xai` (no bundled entries) |
+
+Providers without a bundled catalog entry flow through the unknown bucket and are handled by the drop-or-fallback branch above. **Model aliasing is out of scope for v1**; uncovered (provider, model) pairs resolve to unknown. FAZ-C revisits this.
+
+### 6.5 Loader Fail-Closed Contract
+
+The router does **not** swallow `load_cost_policy` exceptions:
+
+- Missing workspace override → bundled dormant fallback (no raise).
+- Malformed override (invalid JSON) → `json.JSONDecodeError` propagates.
+- Schema-invalid override → `jsonschema.ValidationError` propagates.
+
+This matches the `cost/policy.py::_validate` + `load_cost_policy` fail-closed contract (the loader validates before returning and raises on any schema or JSON error) and `llm.py::resolve_route`'s "Fail-closed" docstring.
+
+For catalog loading the router uses a narrower wrapper: failures in strict mode raise `RoutingCatalogMissingError` (preserving the underlying cause as `__cause__` — `PriceCatalogChecksumError`, `PriceCatalogStaleError`, `JSONDecodeError`, `ValidationError`, etc.) so operators can drill down to the specific remediation.
+
+### 6.6 Known Limit — Catalog Cache Key
+
+The catalog loader caches by `workspace_root.resolve()` only. Swapping `policy_cost_tracking.price_catalog_path` mid-run does not invalidate the 300-second cache. Operators who rotate catalog files should either bump `workspace_root` or wait for cache expiry. FAZ-C scope.
 
 ## 7. Runtime — PR-B2 Integration (shipped)
 

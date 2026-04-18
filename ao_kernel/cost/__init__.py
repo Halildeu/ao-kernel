@@ -48,6 +48,7 @@ from ao_kernel.cost.errors import (
     PriceCatalogChecksumError,
     PriceCatalogNotFoundError,
     PriceCatalogStaleError,
+    RoutingCatalogMissingError,
     SpendLedgerCorruptedError,
     SpendLedgerDuplicateError,
 )
@@ -55,6 +56,10 @@ from ao_kernel.cost.policy import (
     CostTrackingPolicy,
     RoutingByCost,
     load_cost_policy,
+)
+from ao_kernel.cost.routing import (
+    compute_model_cost_per_1k,
+    sort_providers_by_cost,
 )
 
 
@@ -79,6 +84,9 @@ __all__ = [
     "CostTrackingPolicy",
     "RoutingByCost",
     "load_cost_policy",
+    # Routing (PR-B3)
+    "compute_model_cost_per_1k",
+    "sort_providers_by_cost",
     # Errors
     "CostTrackingError",
     "CostTrackingDisabledError",
@@ -90,4 +98,5 @@ __all__ = [
     "SpendLedgerCorruptedError",
     "LLMUsageMissingError",
     "BudgetExhaustedError",
+    "RoutingCatalogMissingError",
 ]

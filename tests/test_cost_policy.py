@@ -47,6 +47,8 @@ class TestLoadBundledDefault:
         assert policy.fail_closed_on_missing_usage is True
         assert policy.idempotency_window_lines == 1000
         assert policy.routing_by_cost.enabled is False
+        assert policy.routing_by_cost.priority == "provider_priority"
+        assert policy.routing_by_cost.fail_closed_on_catalog_missing is True
 
 
 class TestWorkspaceOverride:
@@ -162,3 +164,68 @@ class TestRoutingByCost:
             override=_valid_policy_dict(routing_by_cost={"enabled": True}),
         )
         assert policy.routing_by_cost.enabled is True
+
+    def test_priority_defaults_provider_priority(self, tmp_path: Path) -> None:
+        """PR-B3: pre-B3 behavior preserved when operator omits priority."""
+        policy = load_cost_policy(
+            tmp_path,
+            override=_valid_policy_dict(routing_by_cost={"enabled": True}),
+        )
+        assert policy.routing_by_cost.priority == "provider_priority"
+
+    def test_operator_enables_lowest_cost(self, tmp_path: Path) -> None:
+        """Operator opts into cost-aware selection."""
+        policy = load_cost_policy(
+            tmp_path,
+            override=_valid_policy_dict(
+                routing_by_cost={
+                    "enabled": True,
+                    "priority": "lowest_cost",
+                    "fail_closed_on_catalog_missing": False,
+                },
+            ),
+        )
+        assert policy.routing_by_cost.enabled is True
+        assert policy.routing_by_cost.priority == "lowest_cost"
+        assert policy.routing_by_cost.fail_closed_on_catalog_missing is False
+
+    def test_priority_invalid_enum_raises(self, tmp_path: Path) -> None:
+        """Schema closed-enum rejects typos at load time."""
+        with pytest.raises(ValidationError):
+            load_cost_policy(
+                tmp_path,
+                override=_valid_policy_dict(
+                    routing_by_cost={"enabled": True, "priority": "cheapest"},
+                ),
+            )
+
+    def test_override_omits_optional_fields_uses_defaults(self, tmp_path: Path) -> None:
+        """Optional new fields (priority + fail_closed_on_catalog_missing)
+        may be omitted; loader applies bundled defaults."""
+        policy = load_cost_policy(
+            tmp_path,
+            override=_valid_policy_dict(routing_by_cost={"enabled": True}),
+        )
+        assert policy.routing_by_cost.priority == "provider_priority"
+        assert policy.routing_by_cost.fail_closed_on_catalog_missing is True
+
+
+class TestFailClosedOnCatalogMissing:
+    def test_defaults_true(self, tmp_path: Path) -> None:
+        """PR-B3 default: fail-closed when active mode + catalog missing."""
+        policy = load_cost_policy(tmp_path)
+        assert policy.routing_by_cost.fail_closed_on_catalog_missing is True
+
+    def test_operator_can_relax(self, tmp_path: Path) -> None:
+        """Operators can downgrade to warn-log fallback."""
+        policy = load_cost_policy(
+            tmp_path,
+            override=_valid_policy_dict(
+                routing_by_cost={
+                    "enabled": True,
+                    "priority": "lowest_cost",
+                    "fail_closed_on_catalog_missing": False,
+                },
+            ),
+        )
+        assert policy.routing_by_cost.fail_closed_on_catalog_missing is False

@@ -9,6 +9,8 @@
   "fail_closed_on_missing_usage": true,
   "idempotency_window_lines": 1000,
   "routing_by_cost": {
-    "enabled": false
+    "enabled": false,
+    "priority": "provider_priority",
+    "fail_closed_on_catalog_missing": true
   }
 }

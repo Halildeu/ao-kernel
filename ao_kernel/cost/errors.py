@@ -240,6 +240,38 @@ class BudgetExhaustedError(CostTrackingError):
         )
 
 
+class RoutingCatalogMissingError(CostTrackingError):
+    """Raised when cost-aware routing is active (``routing_by_cost.enabled=true``
+    + ``priority="lowest_cost"``) AND the price catalog cannot be
+    loaded AND ``fail_closed_on_catalog_missing=true``.
+
+    Fail-closed: the router refuses to fall back to
+    ``provider_priority`` silently when the operator has opted into
+    strict catalog-backed selection. Operators who want warn-log
+    fallback flip ``fail_closed_on_catalog_missing=false``.
+
+    Wraps the underlying catalog load failure as ``__cause__``
+    (``PriceCatalogNotFoundError``, ``PriceCatalogChecksumError``,
+    ``PriceCatalogStaleError``, JSON decode error, schema error,
+    etc.) so operators can drill down to the exact remediation.
+    """
+
+    def __init__(
+        self,
+        provider_order: list[str],
+        target_class: str,
+        workspace_root: str,
+    ) -> None:
+        self.provider_order = provider_order
+        self.target_class = target_class
+        self.workspace_root = workspace_root
+        super().__init__(
+            f"routing_by_cost active but price catalog load failed "
+            f"(class={target_class!r}, providers={provider_order!r}, "
+            f"workspace={workspace_root!r})"
+        )
+
+
 __all__ = [
     "CostTrackingError",
     "CostTrackingDisabledError",
@@ -251,4 +283,5 @@ __all__ = [
     "SpendLedgerCorruptedError",
     "LLMUsageMissingError",
     "BudgetExhaustedError",
+    "RoutingCatalogMissingError",
 ]
