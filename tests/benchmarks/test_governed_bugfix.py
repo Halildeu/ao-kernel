@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from ao_kernel.workflow.run_store import load_run
 
@@ -21,7 +20,6 @@ from tests.benchmarks.assertions import (
     assert_workflow_completed,
     assert_workflow_failed,
     read_awaiting_human_token,
-    resume_past_approval_gate,
 )
 from tests.benchmarks.fixtures import bug_envelopes
 from tests.benchmarks.mock_transport import (

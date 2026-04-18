@@ -23,7 +23,6 @@ from tests.benchmarks.assertions import (
     assert_workflow_completed,
     assert_workflow_failed,
     read_awaiting_human_token,
-    resume_past_approval_gate,
 )
 from tests.benchmarks.fixtures import review_envelopes
 from tests.benchmarks.mock_transport import mock_adapter_transport
