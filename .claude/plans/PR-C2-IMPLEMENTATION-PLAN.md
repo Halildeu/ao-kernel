@@ -1,4 +1,15 @@
-# PR-C2 Implementation Plan v2 — parent_env Union (Security-Split)
+# PR-C2 Implementation Plan v3 — parent_env Union (Security-Hardened)
+
+**v3 absorb (iter-2 PARTIAL — 2 sec hardening + 1 forwarding test)**:
+1. `_compute_sandbox_parent_env` explicit `allowed_keys - secret_ids` differ (operator misuse korunur).
+2. `_build_sandbox` `resolved_secrets = {}` yazılır kodda (security intent data flow üzerinden okunur).
+3. `test_build_driver_forwards_policy_to_both_driver_and_executor` eklenir (B2 regression lock).
+
+---
+
+# (v2 retained for history)
+
+## PR-C2 Implementation Plan v2 — parent_env Union (Security-Split)
 
 **Scope**: FAZ-C runtime closure 3. track. Driver parent_env={} sabit'leri iki farklı güvenlik sınırıyla doldurulur:
 - **Adapter path** (`_run_adapter_step`): UNION `allowlist_secret_ids ∪ env_allowlist.allowed_keys` — adapter'ın GH_TOKEN/ANTHROPIC_API_KEY gibi secret'lara ihtiyacı var.
@@ -71,13 +82,22 @@ def _compute_adapter_parent_env(
 def _compute_sandbox_parent_env(
     policy: Mapping[str, Any],
 ) -> dict[str, str]:
-    """PR-C2 CI/patch sandbox parent_env — env_allowlist only.
+    """PR-C2 CI/patch sandbox parent_env — env_allowlist MINUS secrets.
     Secret'lar DEĞİL — `ci_pytest`/`ci_ruff`/`patch_*` subprocess'leri
-    least-privilege (GH_TOKEN sızdırmaz)."""
+    least-privilege (GH_TOKEN sızdırmaz).
+
+    v3 HARDENING (Codex iter-2): explicit ``allowed_keys - secret_ids``
+    differ. Operator yanlışlıkla `GH_TOKEN`'ı hem allowlist_secret_ids
+    hem env_allowlist.allowed_keys'e yazarsa yine de sandbox env'e
+    sızmaz — yapısal koruma convention değil.
+    """
     import os as _os
+    secrets_spec = policy.get("secrets", {}) or {}
     env_spec = policy.get("env_allowlist", {}) or {}
+    secret_ids = set(secrets_spec.get("allowlist_secret_ids", ()) or ())
     allowed_keys = set(env_spec.get("allowed_keys", ()) or ())
-    return {k: _os.environ[k] for k in allowed_keys if k in _os.environ}
+    safe_keys = allowed_keys - secret_ids  # v3 HARDENING
+    return {k: _os.environ[k] for k in safe_keys if k in _os.environ}
 ```
 
 ### 2.2 `_run_adapter_step` — adapter UNION
@@ -117,26 +137,25 @@ def _build_sandbox(self, run_id: str) -> SandboxedEnvironment:
     return sandbox
 ```
 
-**After** (v2 — secret bypass):
+**After** (v3 — explicit secret=={}):
 ```python
 def _build_sandbox(self, run_id: str) -> SandboxedEnvironment:
     ...
     sandbox_parent_env = self._compute_sandbox_parent_env(self._policy)
-    # resolve_allowed_secrets(policy, parent_env) — parent_env secret
-    # içermediği için resolved={} döner (secret_id'ler env'de yok).
-    resolved_secrets, _ = resolve_allowed_secrets(
-        self._policy, sandbox_parent_env,
-    )
+    # v3 HARDENING (Codex iter-2): security intent explicit code'da.
+    # CI/patch için secret resolution BYPASS — resolve_allowed_secrets
+    # çağrısı yapılmaz; resolved_secrets sabit {}.
+    resolved_secrets: Mapping[str, str] = {}
     sandbox, _ = build_sandbox(
         policy=self._policy,
         worktree_root=worktree,
-        resolved_secrets=resolved_secrets,  # {} expected
+        resolved_secrets=resolved_secrets,  # {} explicit
         parent_env=sandbox_parent_env,
     )
     return sandbox
 ```
 
-Güvenlik invariantı: `resolved_secrets=={}` CI/patch için. Test ile pin'li (B3 absorb).
+Güvenlik invariantı: `resolved_secrets=={}` CI/patch için — data flow'dan okunur, convention değil. Test ile pin'li (B3 absorb).
 
 ### 2.4 `build_driver` policy_config forward
 
@@ -203,13 +222,17 @@ Backwards-compat: `policy_loader=None` → driver `policy_config={}` (mevcut dav
 - `test_run_adapter_step_forwards_union_parent_env` — mock executor.run_step; `parent_env` arg union içerir (hem secret hem env).
 - `test_build_sandbox_uses_env_only_parent_env` — `_build_sandbox` çağrısı sonrası `resolve_allowed_secrets` ikinci arg env_allowlist-only (secret yok).
 
-**Security regression** (2):
+**Security regression** (3):
 - `test_ci_sandbox_does_not_leak_secret` — negatif test: policy `allowlist_secret_ids=['GH_TOKEN']` + env'de GH_TOKEN var → `_build_sandbox` sonrası sandbox.env_vars içinde GH_TOKEN YOK.
 - `test_adapter_sandbox_includes_secret` — positive test: aynı policy + adapter path → executor call'a parent_env'de GH_TOKEN VAR.
+- `test_sandbox_parent_env_excludes_operator_misuse_overlap` — v3 HARDENING: `allowlist_secret_ids=['GH_TOKEN']` + `env_allowlist.allowed_keys=['GH_TOKEN', 'PATH']` (operator yanlışlıkla overlap) → sandbox_parent_env'de GH_TOKEN YOK, PATH VAR.
+
+**Build_driver forwarding** (1 — v3):
+- `test_build_driver_forwards_policy_to_both_driver_and_executor` — B2 regression lock: `build_driver(root, policy_loader=custom)` → hem `driver._policy==custom` hem `executor._policy==custom`; driver-side `_build_sandbox` ve executor-side `_run_adapter_step` aynı policy'i görür.
 
 ### 3.2 Regression gate
 
-- `pytest tests/ -x` — 2153 + 8 = 2161 green.
+- `pytest tests/ -x` — 2153 + 9 (v3: 8 + forwarding + misuse overlap) = 2162 green.
 - Özellikle `test_executor_integration.py` (policy_loader testleri) + `test_driver_helpers_policy_loader.py` — build_driver policy_config forward yeni davranışı kırılan test'i olmamalı.
 
 ---
@@ -259,4 +282,6 @@ Backwards-compat: `policy_loader=None` → driver `policy_config={}` (mevcut dav
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`1f9a4a0`) |
 | iter-1 (thread `019da01e`) | 2026-04-18 | **PARTIAL** — 3 blocker (B1 HIGH SEC: sandbox union secret leak, B2 driver/executor policy split, B3 test coverage) + Q1-Q5 net |
 | **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit. Security-split: adapter UNION, sandbox env-only + driver policy_config forward + negatif test. |
-| iter-2 | TBD | AGREE expected (dar scope security-aware revision) |
+| iter-2 | 2026-04-18 | **PARTIAL** — 2 sec hardening (allowed_keys-secret_ids explicit differ + _build_sandbox resolved_secrets={} in code) + 1 forwarding test missing |
+| **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3. Security intent kod akışında; misuse overlap test + build_driver forwarding test. |
+| iter-3 | TBD | AGREE expected (Codex explicit path verdi) |
