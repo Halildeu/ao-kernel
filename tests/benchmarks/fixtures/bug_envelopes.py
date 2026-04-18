@@ -45,6 +45,7 @@ def coding_agent_happy() -> dict[str, Any]:
             "tokens_input": 120,
             "tokens_output": 45,
             "time_seconds": 2.3,
+            "cost_usd": 0.05,
         },
     }
 

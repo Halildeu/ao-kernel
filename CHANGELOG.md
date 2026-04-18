@@ -7,6 +7,43 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B7.1 (benchmark harness follow-up)
+
+**Minor follow-up to PR-B7 (v3.2.0). Test + docs layer only;
+runtime LOC unchanged.**
+
+- `tests/benchmarks/mock_transport.py::_maybe_consume_budget` —
+  benchmark-only shim that drains the run-state
+  `budget.cost_usd.remaining` by the envelope's
+  `cost_actual.cost_usd`. Docstring labels the shim explicitly
+  and points at the real reconcile path
+  (`ao_kernel.cost.middleware.post_response_reconcile` behind
+  `ao_kernel.llm.governed_call`); closing that integration gap
+  inside the adapter transport path (`invoke_cli` /
+  `invoke_http`) is routed to **FAZ-C PR-C3**.
+- `tests/benchmarks/assertions.py::assert_cost_consumed` — helper
+  returns consumed amount + asserts `>= min_consumed`.
+- `tests/benchmarks/test_governed_review.py::TestCostReconcile`
+  pins the shim contract (0.12 USD envelope → 0.12 drain).
+- `tests/benchmarks/fixtures/review_envelopes.py` +
+  `tests/benchmarks/fixtures/bug_envelopes.py` — `cost_actual`
+  now carries a `cost_usd` field on happy envelopes.
+- `docs/BENCHMARK-SUITE.md §8.3` rewritten to route full bundled
+  `bug_fix_flow` E2E → **FAZ-C PR-C1**, real-adapter full mode
+  → **FAZ-C PR-C2**, and cost_usd runtime reconcile → **FAZ-C
+  PR-C3**. The walker contract pin (cf8b30e) is reconciled with
+  docs §3.2 and the missing-payload test is noted as unskipped.
+- `docs/BENCHMARK-SUITE.md §9` new — 6-step "Adding a New
+  Benchmark Scenario" recipe.
+
+**Locked invariants**:
+- Zero production `ao_kernel/` delta.
+- Shim noop when `cost_actual.cost_usd` or `state.v1.json`
+  absent; run-state schema round-trip preserved via
+  `run_revision()` recompute.
+- B7 v1 tests (6/6) pass unchanged; one new cost-reconcile
+  test brings the benchmark total to 7.
+
 ## [3.2.0] — 2026-04-18
 
 **FAZ-B — Ops Hardening**: 10 PRs landed across 6 workstreams
