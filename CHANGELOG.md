@@ -7,6 +7,46 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.5.0 D2a Consultation archive + normalization + integrity manifest
+
+**Context.** D1 canonicalized CNS paths. D2a walks the corpus, snapshots request/response files under a dedicated consultation evidence surface (`.ao/evidence/consultations/<CNS-ID>/`), normalizes heterogeneous verdicts into a 5-bucket enum, builds a **source-stable** resolution record (digest unchanged across re-runs with unchanged sources), emits events with persistent dedupe, and refreshes an SHA-256 integrity manifest. Archive/backfill only — live dual-write (MCP intercept of CNS writers) deferred to v3.6. Codex plan-time CNS: 4 iterations → AGREE.
+
+**Changes.**
+
+- **New modules**:
+  - `ao_kernel/consultation/normalize.py` — `NormalizedVerdict` enum (AGREE / PARTIAL / REVISE / REJECT / UNCLASSIFIED), verdict mapping matrix covering string + `option_id` object variants (body heuristics deliberately excluded), `ResolutionRecord` dataclass with request revisions first-class + source-derived `resolved_at` (no `config_digest` — archive-time metadata separated).
+  - `ao_kernel/consultation/evidence.py` — `ConsultationEventKind` (5 kinds: OPENED / REQUEST_REVISED / RESPONSE_RECEIVED / NORMALIZED / INVALID), per-kind identity dedupe (source-based vs record-digest-based), `preload_event_identities` for persistent dedupe across process restarts.
+  - `ao_kernel/consultation/integrity.py` — consultation-specific SHA-256 manifest (`integrity.manifest.v1.json`) covering request + response snapshots + `events.jsonl` + `resolution.record.v1.json`. Excludes `archive-meta.json` (archive-time drift tolerated) and the manifest itself. `write_archive_meta` produces a separate `archive-meta.json` with `config_digest` + `archived_at`.
+  - `ao_kernel/consultation/archive.py` — orchestrator. `archive_all(policy, *, workspace_root, dry_run=False, renormalize=False)`. Per-CNS `file_lock` via `_internal/shared/lock.py`.
+- **New CLI** `ao-kernel consultation archive [--dry-run] [--renormalize] [--output json|human] [--project-root PATH]`.
+
+**Idempotency guarantees** (Codex iter-4 AGREE):
+
+- Same source + same `normalizer_version` → event append skipped (persistent dedupe via `events.jsonl` preload)
+- Same `resolution_record_digest` → normalized event skipped
+- Resolution record overwrite only when content digest changes
+- Snapshot copies overwritten idempotently
+- `--renormalize` forces record rebuild after `normalizer_version` upgrades (prevents automatic churn)
+
+**Evidence surface layout**:
+```
+.ao/evidence/consultations/<CNS-ID>/
+├── requests/<CNS-ID>[.iterN].request.v1.json    (snapshots)
+├── responses/<CNS-ID>[.iterN].<agent>.response.v1.json
+├── events.jsonl
+├── resolution.record.v1.json                    (source-stable)
+├── archive-meta.json                            (archive-time metadata)
+└── integrity.manifest.v1.json
+```
+
+**Scope boundary**:
+- IN: archive/backfill + normalize + manifest + CLI
+- OUT (D2b): canonical decision promotion
+- OUT (v3.6): live dual-write via writer intercept, abandonment TTL determination, dual-read cut-over
+- OUT (v3.6+): normalizer version migration (explicit `--renormalize` only)
+
+**Test baseline.** +25 new pins in `tests/test_consultation_d2a.py` across 5 classes: verdict normalization (10 pins including object variants + UNCLASSIFIED fallback), record source stability (5), per-kind dedupe (3), integrity manifest (4), iteration parsing (3).
+
 ### Added — v3.5.0 D1 Consultation path canonicalization
 
 **Context.** Repo practice has treated `.ao/consultations/` as the canonical CNS (adversarial agent consultation) artefact directory since early FAZ-C, but `policy_agent_consultation.v1.json` still pointed at the pre-v3.5 `.cache/...` paths. v3.5.0 D1 closes the drift: policy + resolver + migration script now share one source of truth under `.ao/consultations/`, with the legacy `.cache/...` directories preserved as read-only fallbacks until cut-over.
