@@ -180,17 +180,26 @@ CI integrates these through the `benchmark-fast` job in `.github/workflows/test.
 
 `test_governed_review.py` parametrises the `review_findings.score` minimum against a default of 0.5. Tests include both a high-score pass (0.9 against 0.8 threshold) and a low-score negative (0.4 against 0.5 threshold) so the scoring helper itself is exercised. Raise the threshold to enforce tighter reviewer confidence; lower it to accept noisier adapter output.
 
-### 8.3 B7 v1 scope + deferred work
-
-PR-B7 v1 ships a trimmed scope:
+### 8.3 Scope + deferred work (post-B7.1)
 
 - **`governed_review`** exercises the bundled `review_ai_flow.v1.json` end-to-end — the three-step flow (compile + invoke review agent + await_acknowledgement) plays nicely with the default worktree-profile sandbox.
-- **`governed_bugfix`** uses a stripped-down bench variant (`tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json`) — the full bundled `bug_fix_flow` (`patch_preview` + `ci_pytest` + `apply_patch` + `gh-cli-pr`) needs workspace sandbox allowlist tuning for `git` and `pytest` invocations and is deferred to **B7.1**.
-- **Missing-payload walker behaviour** — a negative test is shipped as `pytest.mark.skip` pending a docs/runtime reconciliation of `_walk_output_parse` missing-key semantics; see `tests/benchmarks/test_governed_review.py::TestMissingPayload`.
-- **Full-mode real adapter dispatch**, **`cost_usd` reconcile assertion**, and **retry/branch variants** are deferred to **B7.1 / FAZ-C**. The current harness seeds the budget axis and asserts the seed; real spend reconciliation requires a follow-up to `record_spend` wiring inside the adapter transport path.
+- **`governed_bugfix`** uses a stripped-down bench variant (`tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json`). The full bundled `bug_fix_flow` (`patch_preview` + `ci_pytest` + `apply_patch` + `gh-cli-pr`) needs patch plumbing + input_envelope + policy_loader injection — routed to **FAZ-C PR-C1**.
+- **Missing-payload walker behaviour** — `_walk_output_parse` surfaces `AdapterOutputParseError` fail-closed when the canned envelope omits a declared `output_parse` field. `test_missing_review_findings_fails_workflow` exercises this end-to-end and is unskipped (docs §3.2 matches runtime).
+- **`cost_usd` reconcile** — B7.1 ships a benchmark-only shim (`mock_transport._maybe_consume_budget`) that drains the run-state `budget.cost_usd` axis so `assert_cost_consumed` can observe drain; the runtime gap (adapter transport reconcile inside `invoke_cli`/`invoke_http`) is routed to **FAZ-C PR-C3**.
+- **Real-adapter full mode** (`--benchmark-mode=full` + env-gated secrets + `context_pack_ref` input_envelope) is routed to **FAZ-C PR-C2**.
+- **Retry/branch variants**, **statistical perf tracking**, and **chaos-mode** remain post-FAZ-C.
 
 ### 8.4 Mock transport boundary
 
 The mock patches `ao_kernel.executor.executor.invoke_cli` + `invoke_http` at the executor's local-alias import site (not at `adapter_invoker` module level — the executor binds local references at load time). Orchestrator + driver + executor + adapter_invoker call chain stays real; only the final wrapper is substituted for tests. Canned envelopes delegate to the real `adapter_invoker._invocation_from_envelope` walker so `output_parse` contracts are exercised against the shipping code, not a mock approximation.
 
 See `tests/benchmarks/mock_transport.py` for `MockEnvelopeNotFoundError` (fixture/mock drift — a test-side bug signal) vs the `_TransportError` sentinel (deliberate `AdapterInvocationFailedError(reason="subprocess_crash")` negative path).
+
+## 9. Adding a New Benchmark Scenario
+
+1. **Workflow definition**: Use a bundled workflow when available; otherwise drop a `<scenario>_bench.v1.json` under `tests/benchmarks/fixtures/workflows/` (follow the `governed_bugfix_bench` pattern — minimal adapter + human-gate steps that stay within the default worktree-profile sandbox).
+2. **Canned envelopes**: Add `tests/benchmarks/fixtures/<scenario>_envelopes.py` with happy + transport-error variants. Envelope shape follows the adapter manifest's `output_envelope` plus every `output_parse` rule the manifest declares (for `codex-stub` that means both `review_findings` and `commit_message`).
+3. **Test module**: Create `tests/benchmarks/test_<scenario>.py` with `TestHappyPath` + `TestTransportError` classes. Mock lookup uses the `(scenario_id, adapter_id, attempt)` key pattern; reuse the shared fixtures (`workspace_root`, `seeded_run`, `benchmark_driver`).
+4. **Assertions**: Lean on the helpers in `tests/benchmarks/assertions.py` (`assert_workflow_completed`, `assert_capability_artifact`, `assert_cost_consumed`, `assert_review_score`, `assert_budget_axis_seeded`). Add new ones sparingly; the current set is meant to cover every success-criteria line above.
+5. **Local run**: `pytest tests/benchmarks/test_<scenario>.py -q`. The benchmark harness is fast-mode-only in the current release — it must exit green inside a few seconds against the mock transport.
+6. **CI**: The `benchmark-fast` job runs `pytest tests/benchmarks/ -q`, so pytest discovery picks up the new module automatically — no workflow edit needed.
