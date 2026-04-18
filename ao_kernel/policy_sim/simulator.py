@@ -39,6 +39,8 @@ from ao_kernel.policy_sim.diff import (
     make_scenario_delta,
 )
 from ao_kernel.policy_sim.errors import (
+    PolicySimReentrantError,
+    PolicySimSideEffectError,
     ScenarioAdapterMissingError,
     TargetPolicyNotFoundError,
 )
@@ -145,6 +147,11 @@ def _run_executor_primitive(
         # args wiring). host_fs_probes=True surfaces a fingerprint
         # on the report but does not yet add violations.
         _ = include_host_fs_probes
+    except (PolicySimSideEffectError, PolicySimReentrantError):
+        # Purity-guard violations are structural simulator bugs —
+        # propagate so the CLI returns exit code 2 instead of
+        # masking them as per-scenario errors.
+        raise
     except Exception as exc:
         return SimulationResult(
             scenario_id=scenario.scenario_id,
@@ -271,6 +278,10 @@ def _run_governance_policy(
             action_dict,
             workspace=_SENTINEL_WORKSPACE,
         )
+    except (PolicySimSideEffectError, PolicySimReentrantError):
+        # See _run_executor_primitive — propagate purity-guard
+        # violations so the CLI can return exit code 2.
+        raise
     except Exception as exc:
         return SimulationResult(
             scenario_id=scenario.scenario_id,
@@ -333,18 +344,44 @@ def _evaluate_scenario(
     if scenario.kind == "governance_policy":
         with policy_override_context(active_policy_map):
             return _run_governance_policy(scenario, target_policy_name)
-    # kind == "combined": run both over the first target policy
-    # that is executor-targeted and first governance-targeted.
-    with policy_override_context(active_policy_map):
-        gov = _run_governance_policy(scenario, target_policy_name)
-    exec_ = _run_executor_primitive(
-        scenario, policy, adapter_manifest, include_host_fs_probes
+
+    # kind == "combined": distribute targets across the two
+    # primitive kinds. Convention (plan v3 §2.3): names containing
+    # 'worktree' → executor primitive target; any other name →
+    # governance_policy target. Aggregate violations union.
+    exec_target, gov_target = _split_combined_targets(scenario)
+    exec_policy = (
+        active_policy_map.get(exec_target, policy) if exec_target else None
     )
-    combined_violations = tuple(exec_.violation_kinds) + tuple(
-        gov.violation_kinds
+    exec_result = (
+        _run_executor_primitive(
+            scenario,
+            exec_policy,
+            adapter_manifest,
+            include_host_fs_probes,
+        )
+        if exec_policy is not None
+        else None
     )
-    decision: str
-    if exec_.decision == "error" or gov.decision == "error":
+    if gov_target:
+        with policy_override_context(active_policy_map):
+            gov_result = _run_governance_policy(scenario, gov_target)
+    else:
+        gov_result = None
+
+    results = [r for r in (exec_result, gov_result) if r is not None]
+    combined_violations: tuple[str, ...] = ()
+    error_details = []
+    any_error = False
+    for r in results:
+        combined_violations = combined_violations + tuple(r.violation_kinds)
+        if r.decision == "error":
+            any_error = True
+            if r.error_detail:
+                error_details.append(r.error_detail)
+    if not results:
+        decision = "error"
+    elif any_error:
         decision = "error"
     elif combined_violations:
         decision = "deny"
@@ -354,8 +391,27 @@ def _evaluate_scenario(
         scenario_id=scenario.scenario_id,
         decision=decision,  # type: ignore[arg-type]
         violation_kinds=combined_violations,
-        error_detail=(exec_.error_detail or gov.error_detail),
+        error_detail="; ".join(error_details),
     )
+
+
+def _split_combined_targets(scenario: Scenario) -> tuple[str, str]:
+    """Distribute a ``combined`` scenario's ``target_policy_names``
+    across the executor and governance primitive targets.
+
+    Convention: names containing ``"worktree"`` route to the
+    executor primitive; all other names route to
+    ``governance.check_policy``. Missing side returns an empty
+    string so ``_evaluate_scenario`` knows to skip that primitive.
+    """
+    exec_t = ""
+    gov_t = ""
+    for name in scenario.target_policy_names:
+        if "worktree" in name:
+            exec_t = name
+        else:
+            gov_t = name
+    return exec_t, gov_t
 
 
 def _policy_for_scenario(scenario: Scenario) -> str:
@@ -417,6 +473,7 @@ def simulate_policy_change(
             baseline_map[policy_name] = resolve_target_policy(
                 policy_name=policy_name,
                 scenario_id=scenario.scenario_id,
+                project_root=project_root,
                 proposed_policies=proposed_policies,
                 baseline_source=baseline_source,
                 baseline_overrides=baseline_overrides,

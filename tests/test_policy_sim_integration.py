@@ -45,7 +45,7 @@ class TestBundledFixtureEndToEnd:
         proposed = {
             "policy_autonomy.v1.json": {
                 "version": "v1",
-                "intents": ["AUTONOMY_UNKNOWN_INTENT"],
+                "intents": {"AUTONOMY_UNKNOWN_INTENT": {"mode": "allow"}},
                 "defaults": {"mode": "allow"},
             }
         }

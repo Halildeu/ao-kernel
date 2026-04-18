@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 **FAZ-B Tranche B 4/9 — dry-run evaluation of proposed policy
 changes. The simulator reuses `governance.check_policy` + the
-executor's policy primitives under a 23-sentinel purity guard
+executor's policy primitives under a 24-sentinel purity guard
 that fail-closes on any side effect. Operators point it at a
 scenario set + a `proposed_policies` dict and receive a
 `DiffReport` with per-scenario transitions, per-policy
@@ -22,7 +22,7 @@ breakdown, and canonical policy hashes.**
     (purity violations, reentrancy, scenario validation,
     adapter discovery, target policy lookup, proposed policy
     shape, aggregate abort, report serialisation).
-  * `_purity.py` — 23-sentinel monkey-patch context manager:
+  * `_purity.py` — 24-sentinel monkey-patch context manager:
     4 `emit_event` paths (incl. public facade re-export),
     `worktree_builder.create_worktree`, 4 subprocess entry
     points, 4 pathlib Path writes, 4 os mutations, 4 tempfile

@@ -161,9 +161,21 @@ def load_scenario_file(path: Path) -> Scenario:
 
 
 def load_scenarios_from_dir(directory: Path) -> tuple[Scenario, ...]:
-    """Load every ``*.json`` file under ``directory`` (sorted)."""
-    files = sorted(directory.glob("*.json"))
-    return tuple(load_scenario_file(f) for f in files)
+    """Load every scenario file under ``directory`` (sorted).
+
+    Non-JSON extensions are rejected by :func:`load_scenario_file`
+    per the JSON-only invariant (plan v3 Q1 absorb). Dotfiles
+    (``.DS_Store`` etc.) are silently skipped. Every remaining
+    entry must therefore be a ``.json`` scenario document.
+    """
+    scenarios: list[Scenario] = []
+    for path in sorted(directory.iterdir()):
+        if not path.is_file():
+            continue
+        if path.name.startswith("."):
+            continue
+        scenarios.append(load_scenario_file(path))
+    return tuple(scenarios)
 
 
 def load_bundled_scenarios() -> tuple[Scenario, ...]:

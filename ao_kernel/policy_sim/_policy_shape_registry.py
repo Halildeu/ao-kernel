@@ -92,8 +92,12 @@ POLICY_SHAPE_REGISTRY: Mapping[str, tuple[PolicyShapeEntry, ...]] = {
                 ("intents",),
                 ("defaults", "mode"),
             ),
+            # governance.check_policy consumes `intents` as a dict
+            # (bundled default `policy_autonomy.v1.json` is a dict);
+            # iter-3 post-impl absorb switches this contract from
+            # list → dict so valid autonomy policies pass validation.
             type_contracts={
-                ("intents",): list,
+                ("intents",): dict,
                 ("defaults", "mode"): str,
             },
         ),

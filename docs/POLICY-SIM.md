@@ -1,6 +1,6 @@
 # Policy Simulation Harness
 
-`ao_kernel.policy_sim` runs dry-run evaluations of proposed policy changes against a set of scenario fixtures. It reuses the real `governance.check_policy` code path and the executor's policy primitives, but executes them under a 23-sentinel purity guard that fail-closes on any side effect (evidence emit, worktree creation, subprocess spawn, filesystem write, network I/O, tempfile allocation, importlib resource extraction).
+`ao_kernel.policy_sim` runs dry-run evaluations of proposed policy changes against a set of scenario fixtures. It reuses the real `governance.check_policy` code path and the executor's policy primitives, but executes them under a 24-sentinel purity guard that fail-closes on any side effect (evidence emit, worktree creation, subprocess spawn, filesystem write, network I/O, tempfile allocation, importlib resource extraction).
 
 The harness answers operator questions like:
 

@@ -88,6 +88,7 @@ def resolve_target_policy(
     *,
     policy_name: str,
     scenario_id: str,
+    project_root: Any = None,
     proposed_policies: Mapping[str, Mapping[str, Any]],
     baseline_source: BaselineSource,
     baseline_overrides: Mapping[str, Mapping[str, Any]] | None,
@@ -96,16 +97,25 @@ def resolve_target_policy(
 
     Precedence follows ``baseline_source``:
 
-    - ``EXPLICIT``: ``baseline_overrides[policy_name]`` wins; falls
-      back to bundled if absent only when the scenario can't find
-      one anywhere.
-    - ``WORKSPACE_OVERRIDE``: use
-      :func:`ao_kernel.config.load_with_override` (disk read).
-    - ``BUNDLED``: :func:`ao_kernel.config.load_default` directly.
+    - ``EXPLICIT``: ``baseline_overrides[policy_name]`` wins;
+      falls back to bundled if absent only when the scenario
+      can't find one anywhere.
+    - ``WORKSPACE_OVERRIDE``: call
+      :func:`ao_kernel.config.load_with_override` with
+      ``workspace=project_root`` so the loader reads
+      ``<project_root>/.ao/policies/<name>``. Missing override
+      file (``FileNotFoundError``) falls through to bundled;
+      malformed JSON + schema validation errors propagate
+      (fail-closed per the loader contract).
+    - ``BUNDLED``: :func:`ao_kernel.config.load_default`
+      directly.
 
-    Raises :class:`TargetPolicyNotFoundError` when no source
-    has a policy with the requested name.
+    Raises :class:`TargetPolicyNotFoundError` when no source has
+    a policy with the requested name AND the policy is not
+    supplied via ``proposed_policies``.
     """
+    from ao_kernel.config import DefaultsNotFoundError
+
     if baseline_source is BaselineSource.EXPLICIT and baseline_overrides:
         explicit = baseline_overrides.get(policy_name)
         if explicit is not None:
@@ -118,23 +128,27 @@ def resolve_target_policy(
         from ao_kernel import config as _cfg
 
         try:
-            return _cfg.load_with_override("policies", policy_name)
-        except Exception:
-            pass  # fall back to bundled
+            return _cfg.load_with_override(
+                "policies", policy_name, workspace=project_root
+            )
+        except FileNotFoundError:
+            # Missing workspace override → fall through to bundled.
+            pass
+        # Other exceptions (JSONDecodeError, ValidationError, etc.)
+        # propagate as-is — fail-closed per plan v3 invariant 5.
 
     # Bundled fallback for any path that didn't short-circuit.
     try:
         return load_default("policies", policy_name)
-    except Exception as exc:
-        # If even bundled defaults miss the name AND proposed_policies
-        # doesn't have it either, the scenario is mis-targeted.
+    except DefaultsNotFoundError as exc:
+        # Bundled defaults miss the name. Fall back to the
+        # proposed dict itself when the operator is introducing a
+        # brand-new policy file.
         if policy_name not in proposed_policies:
             raise TargetPolicyNotFoundError(
                 scenario_id=scenario_id,
                 policy_name=policy_name,
             ) from exc
-        # Proposed-only policy: baseline is the proposed dict itself
-        # (operator is introducing a brand-new policy file).
         return dict(proposed_policies[policy_name])
 
 
