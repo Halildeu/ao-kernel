@@ -277,7 +277,13 @@ class TestCASRetryExhaustion:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Same contract on the reconcile side — CAS exhaustion
-        during budget reconcile raises through the middleware."""
+        during budget reconcile raises through the middleware.
+
+        PR-C3.2: the update_run call now lives inside the shared helper
+        ``ao_kernel.cost._reconcile.apply_spend_with_marker``; patch
+        target updated accordingly.
+        """
+        from ao_kernel.cost import _reconcile as _reconcile_mod
         from ao_kernel.cost import middleware
         from ao_kernel.cost.catalog import PriceCatalogEntry
 
@@ -309,7 +315,7 @@ class TestCASRetryExhaustion:
                 actual_revision="actual",
             )
 
-        monkeypatch.setattr(middleware, "update_run", _always_conflict)
+        monkeypatch.setattr(_reconcile_mod, "update_run", _always_conflict)
 
         entry = PriceCatalogEntry(
             provider_id="anthropic",

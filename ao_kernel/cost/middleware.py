@@ -26,6 +26,7 @@ flow spec.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as _dt
 import logging
 from decimal import Decimal
@@ -48,9 +49,10 @@ from ao_kernel.cost.errors import (
     LLMUsageMissingError,
     PriceCatalogNotFoundError,
 )
+from ao_kernel.cost._reconcile import apply_spend_with_marker
 from ao_kernel.cost.ledger import (
     SpendEvent,
-    record_spend,
+    compute_billing_digest,
 )
 from ao_kernel.cost.policy import CostTrackingPolicy
 from ao_kernel.workflow.budget import (
@@ -273,7 +275,11 @@ def post_response_reconcile(
         missing_fields.append("tokens_output")
 
     if missing_fields:
-        # Usage-missing path: audit-only ledger entry + emit + optional raise.
+        # Usage-missing path: audit-only ledger entry + marker + emit +
+        # optional raise. PR-C3.2: marker-guarded so duplicate reconcile
+        # calls (retry / crash-recovery) don't re-emit evidence; the
+        # fail-closed raise still fires unconditionally (the caller
+        # treats the error as terminal regardless of marker state).
         event = SpendEvent(
             run_id=run_id,
             step_id=step_id,
@@ -287,21 +293,36 @@ def post_response_reconcile(
             vendor_model_id=catalog_entry.vendor_model_id,
             usage_missing=True,
         )
-        record_spend(workspace_root, event, policy=policy)
-        _safe_emit(
+        event = dataclasses.replace(
+            event, billing_digest=compute_billing_digest(event),
+        )
+
+        def _usage_missing_mutator(record: dict[str, Any]) -> dict[str, Any]:
+            return record  # audit-only path: no budget mutation
+
+        committed = apply_spend_with_marker(
             workspace_root,
             run_id,
-            "llm_usage_missing",
-            {
-                "run_id": run_id,
-                "step_id": step_id,
-                "attempt": attempt,
-                "provider_id": provider_id,
-                "model": model,
-                "missing_fields": list(missing_fields),
-                "ts": _iso_now(),
-            },
+            event,
+            policy=policy,
+            source="usage_missing",
+            budget_mutator=_usage_missing_mutator,
         )
+        if committed:
+            _safe_emit(
+                workspace_root,
+                run_id,
+                "llm_usage_missing",
+                {
+                    "run_id": run_id,
+                    "step_id": step_id,
+                    "attempt": attempt,
+                    "provider_id": provider_id,
+                    "model": model,
+                    "missing_fields": list(missing_fields),
+                    "ts": _iso_now(),
+                },
+            )
         if policy.fail_closed_on_missing_usage:
             raise LLMUsageMissingError(
                 run_id=run_id,
@@ -338,88 +359,11 @@ def post_response_reconcile(
     )
     delta = actual - est_cost
 
-    # Reconcile: add (actual - est) to cost_usd.spent. Negative delta
-    # (actual < est) is a refund; record_spend supports negative spend
-    # via Decimal arithmetic. Token axes are spent only when configured
-    # on the run's budget — unconfigured axes would raise ValueError in
-    # _spend_axis.
-    def _reconcile_mutator(record: dict[str, Any]) -> dict[str, Any]:
-        budget_dict = record.get("budget")
-        if budget_dict is None:
-            # Middleware already validated on pre_dispatch_reserve; this
-            # branch is defensive for CAS-racy mid-reconcile record
-            # reshape.
-            raise CostTrackingConfigError(
-                run_id=run_id,
-                details="run.budget dropped between reserve and reconcile",
-            )
-        budget = budget_from_dict(budget_dict)
-        if budget.cost_usd is None:
-            raise CostTrackingConfigError(
-                run_id=run_id,
-                details="run.budget.cost_usd dropped between reserve and reconcile",
-            )
-
-        # Compose spend kwargs only for axes actually configured on this
-        # run's budget. Unconfigured axes MUST NOT be spent on —
-        # _spend_axis raises ValueError for None axes.
-        #
-        # CNS-032 iter-1 blocker absorb (refined iter-2): legacy
-        # workflow-run records with aggregate `tokens` only stay
-        # aggregate-only in-memory (no synthesized granular axes). The
-        # middleware MUST route legacy token spend through the
-        # aggregate axis so completion tokens are actually counted.
-        # Three cases emerge:
-        #
-        # 1. Full granular (both tokens_input + tokens_output set):
-        #    spend granular; aggregate auto-adjusts in record_budget_spend.
-        # 2. Legacy or partial-with-aggregate (tokens set AND
-        #    tokens_output is None): spend the SUM on aggregate — the
-        #    tokens_input axis (a back-compat synth or partial config)
-        #    is not considered billable-tracking in this mode.
-        # 3. Partial granular-only input (tokens_input set but
-        #    tokens_output + aggregate both None): track only input.
-        spend_kwargs: dict[str, Any] = {"run_id": run_id}
-        if delta != 0:
-            spend_kwargs["cost_usd"] = delta
-
-        has_full_granular = (
-            budget.tokens_input is not None
-            and budget.tokens_output is not None
-        )
-        if has_full_granular:
-            spend_kwargs["tokens_input"] = tokens_input
-            spend_kwargs["tokens_output"] = tokens_output
-        elif budget.tokens is not None:
-            # Legacy aggregate-only (or partial granular + aggregate) —
-            # aggregate path. Total tokens = input + output.
-            spend_kwargs["tokens"] = tokens_input + tokens_output
-        elif budget.tokens_input is not None:
-            # Partial granular without aggregate: input-only tracking.
-            # tokens_output is intentionally unconfigured; operator
-            # accepts that output tokens are untracked in this mode.
-            spend_kwargs["tokens_input"] = tokens_input
-        # else: no token axes anywhere → no token spend.
-
-        # If no axis needs adjustment, skip the call entirely.
-        spendable = any(
-            k in spend_kwargs
-            for k in ("cost_usd", "tokens_input", "tokens_output", "tokens")
-        )
-        if spendable:
-            new_budget = record_budget_spend(budget, **spend_kwargs)
-        else:
-            new_budget = budget
-        return {**record, "budget": budget_to_dict(new_budget)}
-
-    update_run(
-        workspace_root,
-        run_id,
-        mutator=_reconcile_mutator,
-        max_retries=3,
-    )
-
-    # Ledger append with canonical billing digest.
+    # PR-C3.2: build SpendEvent + precompute billing_digest BEFORE the
+    # reconcile apply. Ledger-first ordering is enforced by
+    # apply_spend_with_marker; marker key = (source, step_id, attempt,
+    # billing_digest) — caller must precompute digest, helper raises
+    # ValueError on empty digest.
     event = SpendEvent(
         run_id=run_id,
         step_id=step_id,
@@ -434,33 +378,95 @@ def post_response_reconcile(
         cached_tokens=cached if cached > 0 else None,
         usage_missing=False,
     )
-    record_spend(workspace_root, event, policy=policy)
+    event = dataclasses.replace(
+        event, billing_digest=compute_billing_digest(event),
+    )
+
+    # Governed-call budget mutator: delta + token axes. Preserves the
+    # CNS-032 legacy aggregate-path handling verbatim — path-specific
+    # concerns stay in the callback, helper owns idempotency envelope.
+    def _governed_budget_mutator(record: dict[str, Any]) -> dict[str, Any]:
+        budget_dict = record.get("budget")
+        if budget_dict is None:
+            raise CostTrackingConfigError(
+                run_id=run_id,
+                details="run.budget dropped between reserve and reconcile",
+            )
+        budget = budget_from_dict(budget_dict)
+        if budget.cost_usd is None:
+            raise CostTrackingConfigError(
+                run_id=run_id,
+                details="run.budget.cost_usd dropped between reserve and reconcile",
+            )
+
+        # Compose spend kwargs only for axes actually configured on this
+        # run's budget. Three cases per CNS-032 iter-2:
+        # 1. Full granular → spend granular; aggregate auto-adjusts.
+        # 2. Legacy aggregate-only → spend SUM on aggregate.
+        # 3. Partial granular-only input → track only input.
+        spend_kwargs: dict[str, Any] = {"run_id": run_id}
+        if delta != 0:
+            spend_kwargs["cost_usd"] = delta
+
+        has_full_granular = (
+            budget.tokens_input is not None
+            and budget.tokens_output is not None
+        )
+        if has_full_granular:
+            spend_kwargs["tokens_input"] = tokens_input
+            spend_kwargs["tokens_output"] = tokens_output
+        elif budget.tokens is not None:
+            spend_kwargs["tokens"] = tokens_input + tokens_output
+        elif budget.tokens_input is not None:
+            spend_kwargs["tokens_input"] = tokens_input
+
+        spendable = any(
+            k in spend_kwargs
+            for k in ("cost_usd", "tokens_input", "tokens_output", "tokens")
+        )
+        if spendable:
+            new_budget = record_budget_spend(budget, **spend_kwargs)
+        else:
+            new_budget = budget
+        return {**record, "budget": budget_to_dict(new_budget)}
+
+    committed = apply_spend_with_marker(
+        workspace_root,
+        run_id,
+        event,
+        policy=policy,
+        source="governed_call",
+        budget_mutator=_governed_budget_mutator,
+    )
 
     # PR-B5 C2b: emit ``duration_ms`` when transport elapsed is known.
     # Canonical source for ``ao_llm_call_duration_seconds`` histogram;
     # omitted on legacy callers (backward-compat per plan v4 R13).
-    payload: dict[str, Any] = {
-        "run_id": run_id,
-        "step_id": step_id,
-        "attempt": attempt,
-        "provider_id": provider_id,
-        "model": model,
-        "tokens_input": tokens_input,
-        "tokens_output": tokens_output,
-        "cached_tokens": cached,
-        "cost_usd": float(actual),
-        "est_cost_usd": float(est_cost),
-        "delta_usd": float(delta),
-        "ts": _iso_now(),
-    }
-    if elapsed_ms is not None:
-        payload["duration_ms"] = round(float(elapsed_ms), 3)
-    _safe_emit(
-        workspace_root,
-        run_id,
-        "llm_spend_recorded",
-        payload,
-    )
+    # PR-C3.2: emit guarded on marker commit — duplicate reconcile
+    # skips evidence to prevent audit-replay dupes.
+    if committed:
+        payload: dict[str, Any] = {
+            "run_id": run_id,
+            "step_id": step_id,
+            "attempt": attempt,
+            "provider_id": provider_id,
+            "model": model,
+            "tokens_input": tokens_input,
+            "tokens_output": tokens_output,
+            "cached_tokens": cached,
+            "cost_usd": float(actual),
+            "est_cost_usd": float(est_cost),
+            "delta_usd": float(delta),
+            "ts": _iso_now(),
+        }
+        if elapsed_ms is not None:
+            payload["duration_ms"] = round(float(elapsed_ms), 3)
+        _safe_emit(
+            workspace_root,
+            run_id,
+            "llm_spend_recorded",
+            payload,
+        )
 
 
 def _build_adapter_spend_event(
@@ -553,83 +559,107 @@ def post_adapter_reconcile(
         model=model,
     )
 
-    # Usage-missing: audit-only ledger entry + llm_usage_missing emit
-    # (mirror post_response_reconcile contract).
+    # PR-C3.2: precompute billing_digest so the shared helper can use
+    # it as the marker key. Required by apply_spend_with_marker
+    # contract (ValueError on empty digest).
+    event = dataclasses.replace(
+        event, billing_digest=compute_billing_digest(event),
+    )
+
+    # Usage-missing: audit-only ledger entry + marker + llm_usage_missing
+    # emit (mirror post_response_reconcile contract, now marker-guarded).
     if event.usage_missing:
-        record_spend(workspace_root, event, policy=policy)
         missing_fields = [
             f for f, v in (
                 ("tokens_input", cost_actual.get("tokens_input")),
                 ("tokens_output", cost_actual.get("tokens_output")),
             ) if v is None
         ]
-        _safe_emit(
+
+        def _usage_missing_mutator(record: dict[str, Any]) -> dict[str, Any]:
+            return record  # audit-only path: no budget mutation
+
+        committed = apply_spend_with_marker(
             workspace_root,
             run_id,
-            "llm_usage_missing",
-            {
-                "source": "adapter_path",
-                "run_id": run_id,
-                "step_id": step_id,
-                "attempt": attempt,
-                "provider_id": provider_id,
-                "model": model,
-                "missing_fields": missing_fields,
-                "ts": event.ts,
-            },
+            event,
+            policy=policy,
+            source="usage_missing",
+            budget_mutator=_usage_missing_mutator,
         )
+        if committed:
+            _safe_emit(
+                workspace_root,
+                run_id,
+                "llm_usage_missing",
+                {
+                    "source": "adapter_path",
+                    "run_id": run_id,
+                    "step_id": step_id,
+                    "attempt": attempt,
+                    "provider_id": provider_id,
+                    "model": model,
+                    "missing_fields": missing_fields,
+                    "ts": event.ts,
+                },
+            )
         return
 
-    # Success path: record spend (idempotent per ledger digest) +
-    # CAS-drained budget. Cost errors propagate (fail-closed).
-    record_spend(workspace_root, event, policy=policy)
-
-    if event.cost_usd > 0:
-        def _adapter_mutator(record: dict[str, Any]) -> dict[str, Any]:
-            budget_dict = record.get("budget")
-            if budget_dict is None:
-                raise CostTrackingConfigError(
-                    run_id=run_id,
-                    details=(
-                        "run.budget dropped between adapter return "
-                        "and reconcile"
-                    ),
-                )
-            budget = budget_from_dict(budget_dict)
-            if budget.cost_usd is None:
-                raise CostTrackingConfigError(
-                    run_id=run_id,
-                    details=(
-                        "run.budget.cost_usd dropped between adapter "
-                        "return and reconcile"
-                    ),
-                )
-            new_budget = record_budget_spend(
-                budget, cost_usd=event.cost_usd, run_id=run_id,
+    # Success path: shared helper runs record_spend FIRST (ledger-first
+    # ordering), then CAS-wraps the per-path budget mutator with the
+    # marker guard. Duplicate calls return committed=False → caller
+    # skips evidence emit (prevents audit-replay dupes — v3.3.0 bug).
+    def _adapter_budget_mutator(record: dict[str, Any]) -> dict[str, Any]:
+        if event.cost_usd <= 0:
+            return record  # zero-cost: marker stamp only, budget untouched
+        budget_dict = record.get("budget")
+        if budget_dict is None:
+            raise CostTrackingConfigError(
+                run_id=run_id,
+                details=(
+                    "run.budget dropped between adapter return "
+                    "and reconcile"
+                ),
             )
-            return {**record, "budget": budget_to_dict(new_budget)}
-
-        update_run(
-            workspace_root, run_id,
-            mutator=_adapter_mutator,
-            max_retries=3,
+        budget = budget_from_dict(budget_dict)
+        if budget.cost_usd is None:
+            raise CostTrackingConfigError(
+                run_id=run_id,
+                details=(
+                    "run.budget.cost_usd dropped between adapter "
+                    "return and reconcile"
+                ),
+            )
+        new_budget = record_budget_spend(
+            budget, cost_usd=event.cost_usd, run_id=run_id,
         )
+        return {**record, "budget": budget_to_dict(new_budget)}
 
-    payload: dict[str, Any] = {
-        "source": "adapter_path",
-        "run_id": run_id,
-        "step_id": step_id,
-        "attempt": attempt,
-        "provider_id": provider_id,
-        "model": model,
-        "tokens_input": event.tokens_input,
-        "tokens_output": event.tokens_output,
-        "cost_usd": float(event.cost_usd),
-        "ts": event.ts,
-    }
-    if elapsed_ms is not None:
-        payload["duration_ms"] = round(float(elapsed_ms), 3)
-    _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)
+    committed = apply_spend_with_marker(
+        workspace_root,
+        run_id,
+        event,
+        policy=policy,
+        source="adapter_path",
+        budget_mutator=_adapter_budget_mutator,
+    )
+
+    if committed:
+        payload: dict[str, Any] = {
+            "source": "adapter_path",
+            "run_id": run_id,
+            "step_id": step_id,
+            "attempt": attempt,
+            "provider_id": provider_id,
+            "model": model,
+            "tokens_input": event.tokens_input,
+            "tokens_output": event.tokens_output,
+            "cost_usd": float(event.cost_usd),
+            "ts": event.ts,
+        }
+        if elapsed_ms is not None:
+            payload["duration_ms"] = round(float(elapsed_ms), 3)
+        _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)
 
 
 __all__ = [

@@ -262,6 +262,10 @@ class TestIdempotency:
         )
         # Ledger still has exactly ONE entry.
         assert len(_read_ledger(tmp_path)) == 1
+        # PR-C3.2: budget drained ONCE (the pre-fix v3.3.0 bug would
+        # have drained twice — 0.05 → 9.90 remaining).
+        budget = _read_run_budget(tmp_path, run_id)
+        assert budget["cost_usd"]["remaining"] == pytest.approx(9.95)
 
     def test_different_digest_raises_duplicate(
         self, tmp_path: Path,

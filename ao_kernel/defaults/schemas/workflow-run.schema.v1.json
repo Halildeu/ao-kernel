@@ -103,6 +103,26 @@
       "$ref": "#/$defs/budget",
       "description": "Run-level budget. Aggregated over all adapter invocations. fail_closed_on_exhaust enforced."
     },
+    "cost_reconciled": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "step_id", "attempt", "billing_digest", "recorded_at"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["adapter_path", "governed_call", "usage_missing"],
+            "description": "Reconcile path discriminator. Keyed with (step_id, attempt, billing_digest) to prevent cross-path marker suppression."
+          },
+          "step_id": {"type": "string", "minLength": 1},
+          "attempt": {"type": "integer", "minimum": 1},
+          "billing_digest": {"type": "string", "minLength": 1},
+          "recorded_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "description": "PR-C3.2 marker-driven idempotency cursor. Each entry stamps a single successful post-reconcile apply (ledger append + budget CAS). Used by ao_kernel.cost._reconcile.apply_spend_with_marker to decide whether a given (source, step_id, attempt, billing_digest) tuple has already been applied — duplicate calls (retry, crash-recovery) skip both budget drain AND evidence emit. Absent for pre-v3.3.1 runs; loader treats missing field as empty list. Unbounded in v3.3.1 (compaction deferred to v3.4.0)."
+    },
     "approvals": {
       "type": "array",
       "items": {"$ref": "#/$defs/approval"},

@@ -31,11 +31,16 @@ from ao_kernel.cost.cost_math import (
     estimate_cost,
     estimate_output_tokens,
 )
+from ao_kernel.cost._reconcile import (
+    apply_spend_with_marker,
+)
 from ao_kernel.cost.ledger import (
     SpendEvent,
+    compute_billing_digest,
     record_spend,
 )
 from ao_kernel.cost.middleware import (
+    post_adapter_reconcile,
     post_response_reconcile,
     pre_dispatch_reserve,
 )
@@ -76,10 +81,14 @@ __all__ = [
     "estimate_output_tokens",
     # Ledger
     "SpendEvent",
+    "compute_billing_digest",
     "record_spend",
+    # Reconcile helper (PR-C3.2)
+    "apply_spend_with_marker",
     # Middleware
     "pre_dispatch_reserve",
     "post_response_reconcile",
+    "post_adapter_reconcile",
     # Policy
     "CostTrackingPolicy",
     "RoutingByCost",
