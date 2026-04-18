@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Claude Code runtime artifacts
+.claude/scheduled_tasks.lock
+
 # C extensions
 *.so
 

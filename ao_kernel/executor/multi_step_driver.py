@@ -1780,6 +1780,144 @@ class MultiStepDriver:
     # Helpers
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # PR-C6.1: Driver-level dry-run (adapter-step parity)
+    # ------------------------------------------------------------------
+
+    def dry_run_step(
+        self,
+        run_id: str,
+        step_name: str,
+        *,
+        attempt: int | None = None,
+    ) -> Any:  # DryRunResult — avoid type import cycle.
+        """Driver-level dry-run preview with adapter-step parity.
+
+        Mirrors the real execution path for adapter actors by wiring
+        the same ``context_pack_ref`` + ``parent_env`` derivation that
+        ``_run_adapter_step`` uses, then delegating to
+        :meth:`Executor.dry_run_step`. This closes the v3.3.0 gap
+        where executor-only preview used a bare task-prompt envelope.
+
+        Semantics (Codex CNS-20260418-034 iter-5 absorb):
+
+        * Run-state guard: preview only allowed on ``created`` /
+          ``running`` runs; terminal / waiting_approval / interrupted
+          states raise ``ValueError`` (driver would never invoke a
+          step in those states either).
+        * Completed-step guard: if ``step_name``'s highest-attempt
+          record is ``completed``, raise ``ValueError`` — the real
+          driver never re-executes a completed step_name and dry-run
+          MUST NOT synthesize an execution path production cannot
+          reach.
+        * ``attempt`` validation: when supplied, must equal the
+          driver-derived ``_next_attempt_number``; mismatches raise
+          ``ValueError`` to prevent previewing fictional retry paths.
+        * Running-placeholder reuse: if a highest-attempt record
+          exists in state ``running`` with the derived attempt, its
+          existing ``step_id`` is reused (mirrors driver resume
+          path); otherwise a fresh step_id is minted via
+          ``_step_id_for_attempt``.
+        * Adapter-only fidelity: for non-adapter actors
+          (``aokernel``, ``ci-runner``, ``patch-apply``) this method
+          raises ``NotImplementedError`` — CLI default dispatch
+          falls back to ``Executor.dry_run_step`` directly for
+          backward compat (v3.4.0 extends parity).
+        """
+        if attempt is not None and attempt < 1:
+            raise ValueError("attempt must be >= 1")
+
+        record, _ = load_run(self._workspace_root, run_id)
+
+        # Run-state guard: only runnable states
+        run_state = record.get("state")
+        if run_state not in ("created", "running"):
+            raise ValueError(
+                f"dry-run requires run in 'created' or 'running' state; "
+                f"current state={run_state!r}"
+            )
+
+        # Completed-step guard
+        completed = self._completed_step_names(record)
+        if step_name in completed:
+            raise ValueError(
+                f"step {step_name!r} highest attempt already completed; "
+                "dry-run cannot preview a step that will never re-execute"
+            )
+
+        # Resolve step_def from pinned workflow
+        workflow_id = record.get("workflow_id")
+        workflow_version = record.get("workflow_version")
+        if not workflow_id or not workflow_version:
+            raise ValueError(
+                f"run {run_id!r} lacks workflow_id/workflow_version"
+            )
+        definition = self._registry.get(
+            workflow_id, version=workflow_version,
+        )
+        step_def = next(
+            (s for s in definition.steps if s.step_name == step_name),
+            None,
+        )
+        if step_def is None:
+            raise KeyError(
+                f"step_name {step_name!r} not in workflow "
+                f"{workflow_id}@{workflow_version}"
+            )
+
+        # Attempt derivation + validation
+        legal_attempt = self._next_attempt_number(record, step_name)
+        if attempt is not None and attempt != legal_attempt:
+            raise ValueError(
+                f"attempt={attempt} does not match driver-derived "
+                f"next_attempt={legal_attempt}; dry-run preview must "
+                "match the path the real driver would take"
+            )
+        attempt = legal_attempt
+
+        # step_id: reuse running placeholder OR mint fresh
+        placeholder_step_id: str | None = None
+        for sr in record.get("steps", []):
+            if (
+                sr.get("step_name") == step_name
+                and sr.get("attempt", 1) == attempt
+                and sr.get("state") == "running"
+            ):
+                placeholder_step_id = sr.get("step_id")
+                break
+        step_id = (
+            placeholder_step_id
+            if placeholder_step_id
+            else self._step_id_for_attempt(step_name, attempt)
+        )
+
+        # Adapter-only parity; non-adapter defer to executor fallback
+        # (CLI routes them there explicitly; inner API call is strict).
+        if step_def.actor != "adapter":
+            raise NotImplementedError(
+                f"driver dry-run parity implemented for adapter actors "
+                f"only; got actor={step_def.actor!r}. Fall back to "
+                "Executor.dry_run_step directly for non-adapter steps "
+                "(CLI --executor-only or default dispatch for "
+                "non-adapter actors)"
+            )
+
+        # Adapter envelope + parent_env — same derivation as real path
+        envelope = self._build_adapter_envelope_with_context(
+            run_id, step_def, record,
+        )
+        parent_env = self._compute_adapter_parent_env(self._policy)
+
+        return self._executor.dry_run_step(
+            run_id,
+            step_def,
+            input_envelope_override=envelope,
+            parent_env=parent_env,
+            step_id=step_id,
+            driver_managed=True,
+            attempt=attempt,
+        )
+
     def _completed_step_names(self, record: Mapping[str, Any]) -> set[str]:
         """step_name's whose highest-attempt step_record.state == completed."""
         by_name: dict[str, dict[str, Any]] = {}
