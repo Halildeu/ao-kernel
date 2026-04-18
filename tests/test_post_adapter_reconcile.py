@@ -295,6 +295,181 @@ class TestIdempotency:
             )
 
 
+class TestVendorModelIdAttribution:
+    """PR-C3.1 adapter-path catalog attribution.
+
+    Adapter-supplied ``cost_actual.vendor_model_id`` propagates to
+    the spend ledger. Blank strings normalize to ``None``. Schema
+    accepts the field optionally with ``minLength: 1``.
+    """
+
+    def test_vendor_model_id_propagates_to_ledger(
+        self, tmp_path: Path,
+    ) -> None:
+        run_id = "00000000-0000-4000-8000-0000c31a0001"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                "vendor_model_id": "claude-3-5-sonnet-20241022",
+            },
+            policy=_policy(),
+        )
+        ledger = _read_ledger(tmp_path)
+        assert len(ledger) == 1
+        assert ledger[0]["vendor_model_id"] == "claude-3-5-sonnet-20241022"
+
+    def test_vendor_model_id_absent_defaults_to_none(
+        self, tmp_path: Path,
+    ) -> None:
+        run_id = "00000000-0000-4000-8000-0000c31a0002"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                # no vendor_model_id key
+            },
+            policy=_policy(),
+        )
+        ledger = _read_ledger(tmp_path)
+        # omitted from ledger when None (per _event_to_dict)
+        assert "vendor_model_id" not in ledger[0]
+
+    def test_vendor_model_id_blank_string_normalized_to_none(
+        self, tmp_path: Path,
+    ) -> None:
+        """Defensive middleware normalization — adapter bug emits empty
+        string, ledger stores None (not empty)."""
+        run_id = "00000000-0000-4000-8000-0000c31a0003"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                "vendor_model_id": "   ",  # whitespace only → normalized
+            },
+            policy=_policy(),
+        )
+        ledger = _read_ledger(tmp_path)
+        assert "vendor_model_id" not in ledger[0]
+
+    def test_usage_missing_preserves_vendor_model_id(
+        self, tmp_path: Path,
+    ) -> None:
+        """Adapter reports vendor but no tokens → usage_missing path
+        still carries the attribution for audit."""
+        run_id = "00000000-0000-4000-8000-0000c31a0004"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "cost_usd": 0.0,
+                "vendor_model_id": "claude-3-5-sonnet-20241022",
+            },
+            policy=_policy(),
+        )
+        ledger = _read_ledger(tmp_path)
+        assert ledger[0]["vendor_model_id"] == "claude-3-5-sonnet-20241022"
+        assert ledger[0]["usage_missing"] is True
+
+    def test_different_vendor_same_tokens_raises_duplicate(
+        self, tmp_path: Path,
+    ) -> None:
+        """Digest includes vendor_model_id → same tokens/cost but
+        different vendor raise SpendLedgerDuplicateError on re-reconcile."""
+        run_id = "00000000-0000-4000-8000-0000c31a0005"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100, "tokens_output": 50, "cost_usd": 0.05,
+                "vendor_model_id": "v1",
+            },
+            policy=_policy(),
+        )
+        with pytest.raises(SpendLedgerDuplicateError):
+            post_adapter_reconcile(
+                workspace_root=tmp_path, run_id=run_id, step_id="s1",
+                attempt=1, provider_id="codex", model="stub",
+                cost_actual={
+                    "tokens_input": 100, "tokens_output": 50, "cost_usd": 0.05,
+                    "vendor_model_id": "v2",
+                },
+                policy=_policy(),
+            )
+
+
+class TestCostRecordSchema:
+    def test_cost_record_accepts_vendor_model_id(self) -> None:
+        """Schema additive widen: cost_record validates with vendor_model_id."""
+        from jsonschema import Draft202012Validator
+        from ao_kernel.config import load_default
+
+        schema = load_default(
+            "schemas", "agent-adapter-contract.schema.v1.json",
+        )
+        cost_record_schema = schema["$defs"]["cost_record"]
+        validator = Draft202012Validator(cost_record_schema)
+        doc = {
+            "tokens_input": 100,
+            "tokens_output": 50,
+            "cost_usd": 0.05,
+            "vendor_model_id": "claude-3-5-sonnet-20241022",
+        }
+        errors = list(validator.iter_errors(doc))
+        assert errors == []  # no validation issues
+
+    def test_cost_record_accepts_without_vendor_model_id(self) -> None:
+        """Backward-compat: cost_record valid without the new field."""
+        from jsonschema import Draft202012Validator
+        from ao_kernel.config import load_default
+
+        schema = load_default(
+            "schemas", "agent-adapter-contract.schema.v1.json",
+        )
+        cost_record_schema = schema["$defs"]["cost_record"]
+        validator = Draft202012Validator(cost_record_schema)
+        doc = {
+            "tokens_input": 100,
+            "tokens_output": 50,
+            "cost_usd": 0.05,
+        }
+        errors = list(validator.iter_errors(doc))
+        assert errors == []
+
+    def test_cost_record_rejects_empty_vendor_model_id(self) -> None:
+        """minLength:1 at contract boundary prevents empty strings
+        from entering the wire."""
+        from jsonschema import Draft202012Validator, ValidationError
+        from ao_kernel.config import load_default
+
+        schema = load_default(
+            "schemas", "agent-adapter-contract.schema.v1.json",
+        )
+        cost_record_schema = schema["$defs"]["cost_record"]
+        validator = Draft202012Validator(cost_record_schema)
+        with pytest.raises(ValidationError):
+            validator.validate({
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                "vendor_model_id": "",  # empty → violates minLength:1
+            })
+
+
 class TestWireFormat:
     def test_cost_actual_wire_format_not_usage(
         self, tmp_path: Path,
