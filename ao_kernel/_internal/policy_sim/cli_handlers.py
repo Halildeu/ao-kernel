@@ -16,7 +16,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence, cast
 
 from ao_kernel.policy_sim.errors import (
     PolicySimReentrantError,
@@ -117,7 +117,8 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
         print(f"simulation aborted: {exc}", file=sys.stderr)
         return _EXIT_INTERNAL
 
-    fmt = getattr(args, "format", "json")
+    fmt_raw = getattr(args, "format", "json")
+    fmt = cast(Literal["json", "text"], fmt_raw)
     rendered = render(report, fmt)
 
     output_path = getattr(args, "output", None)

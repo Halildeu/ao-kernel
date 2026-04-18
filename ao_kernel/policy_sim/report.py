@@ -17,11 +17,14 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Iterable, Literal, Mapping
+from typing import Any, Iterable, Literal, Mapping
 
+# `TransitionKind` annotated in the typed tuples below so mypy
+# narrows `.get()` without per-call casts.
 from ao_kernel.policy_sim.diff import (
     DiffReport,
     ScenarioDelta,
+    TransitionKind as _TransitionKind,
     dump_json,
 )
 
@@ -29,7 +32,23 @@ from ao_kernel.policy_sim.diff import (
 ReportFormat = Literal["json", "text"]
 
 
-_TIGHTENING_KINDS = ("allow_to_deny",)
+_KIND_LABELS_OVERALL: tuple[tuple[_TransitionKind, str], ...] = (
+    ("allow_to_allow", "allow→allow"),
+    ("deny_to_deny", "deny→deny"),
+    ("allow_to_deny", "allow→deny  ⚠ tightening"),
+    ("deny_to_allow", "deny→allow  ⚠ loosening"),
+    ("error", "error"),
+)
+
+_KIND_LABELS_PER_POLICY: tuple[tuple[_TransitionKind, str], ...] = (
+    ("allow_to_allow", "allow→allow"),
+    ("allow_to_deny", "allow→deny"),
+    ("deny_to_allow", "deny→allow"),
+    ("deny_to_deny", "deny→deny"),
+    ("error", "error"),
+)
+
+_TIGHTENING_KINDS: tuple[_TransitionKind, ...] = ("allow_to_deny",)
 
 
 def render(report: DiffReport, fmt: ReportFormat) -> str:
@@ -80,14 +99,8 @@ def _render_policies_section(report: DiffReport) -> Iterable[str]:
 
 def _render_transitions_overall(report: DiffReport) -> Iterable[str]:
     yield "Transitions (all):"
-    for kind, label in (
-        ("allow_to_allow", "allow→allow"),
-        ("deny_to_deny", "deny→deny"),
-        ("allow_to_deny", "allow→deny  ⚠ tightening"),
-        ("deny_to_allow", "deny→allow  ⚠ loosening"),
-        ("error", "error"),
-    ):
-        count = report.transitions.get(kind, 0)  # type: ignore[arg-type]
+    for kind, label in _KIND_LABELS_OVERALL:
+        count = report.transitions.get(kind, 0)
         yield f"  {label}: {count}"
 
 
@@ -98,13 +111,7 @@ def _render_transitions_per_policy(report: DiffReport) -> Iterable[str]:
         total = sum(counts.values())
         parts = [
             f"{label}={counts.get(kind, 0)}"
-            for kind, label in (
-                ("allow_to_allow", "allow→allow"),
-                ("allow_to_deny", "allow→deny"),
-                ("deny_to_allow", "deny→allow"),
-                ("deny_to_deny", "deny→deny"),
-                ("error", "error"),
-            )
+            for kind, label in _KIND_LABELS_PER_POLICY
             if counts.get(kind, 0)
         ]
         summary = ", ".join(parts) if parts else "no transitions"
@@ -133,7 +140,7 @@ def has_tightening(report: DiffReport) -> bool:
     """Return True iff the report carries at least one
     ``allow_to_deny`` transition — triggers CLI exit code 3."""
     return any(
-        report.transitions.get(kind, 0) > 0  # type: ignore[arg-type]
+        report.transitions.get(kind, 0) > 0
         for kind in _TIGHTENING_KINDS
     )
 
@@ -154,7 +161,9 @@ def write_atomic(output_path: Path, content: str) -> None:
     os.replace(tmp_path, output_path)
 
 
-def load_policies_from_dir(directory: Path) -> Mapping[str, Mapping]:
+def load_policies_from_dir(
+    directory: Path,
+) -> Mapping[str, Mapping[str, Any]]:
     """Load every ``*.json`` file in ``directory`` as
     ``{filename: parsed_dict}``.
 
@@ -162,7 +171,7 @@ def load_policies_from_dir(directory: Path) -> Mapping[str, Mapping]:
     ``--baseline-overrides`` arguments into the Mapping shapes
     ``simulate_policy_change`` expects.
     """
-    mapping: dict[str, Mapping] = {}
+    mapping: dict[str, Mapping[str, Any]] = {}
     if not directory.exists():
         return mapping
     for path in sorted(directory.glob("*.json")):
@@ -173,13 +182,9 @@ def load_policies_from_dir(directory: Path) -> Mapping[str, Mapping]:
 
 __all__ = [
     "ReportFormat",
+    "ScenarioDelta",
     "has_tightening",
     "load_policies_from_dir",
     "render",
     "write_atomic",
 ]
-
-
-# Reference silence for helper that would otherwise be reported
-# as unused by some lint passes; kept inline for discoverability.
-_ = sorted([ScenarioDelta])

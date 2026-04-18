@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import datetime as _dt
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Literal, Mapping, Sequence
 
 from ao_kernel.policy_sim._purity import pure_execution_context
 from ao_kernel.policy_sim.diff import (
@@ -159,10 +159,10 @@ def _run_executor_primitive(
             error_detail=f"{type(exc).__name__}: {exc}",
         )
 
-    decision = "deny" if violations else "allow"
+    decision_lit: Literal["allow", "deny"] = "deny" if violations else "allow"
     return SimulationResult(
         scenario_id=scenario.scenario_id,
-        decision=decision,
+        decision=decision_lit,
         violation_kinds=tuple(violations),
     )
 
@@ -175,7 +175,7 @@ def _safe_resolve_secrets(
     """Call ``resolve_allowed_secrets(policy, all_env)``. Returns
     ``(resolved_secrets_dict, violation_codes)``. Empty outputs on
     any signature mismatch so the simulator keeps running."""
-    fn: Callable[..., Any] = getattr(enforcer, "resolve_allowed_secrets", None)
+    fn: Callable[..., Any] | None = getattr(enforcer, "resolve_allowed_secrets", None)
     if fn is None:
         return ({}, ())
     try:
@@ -191,7 +191,7 @@ def _safe_build_sandbox(
     parent_env: Mapping[str, str],
     resolved_secrets: Mapping[str, str],
 ) -> Sequence[str]:
-    fn: Callable[..., Any] = getattr(enforcer, "build_sandbox", None)
+    fn: Callable[..., Any] | None = getattr(enforcer, "build_sandbox", None)
     if fn is None:
         return ()
     try:
@@ -211,7 +211,7 @@ def _safe_check_http_header(
     policy: Mapping[str, Any],
     adapter_manifest: Any | None,
 ) -> Sequence[str]:
-    fn: Callable[..., Any] = getattr(enforcer, "check_http_header_exposure", None)
+    fn: Callable[..., Any] | None = getattr(enforcer, "check_http_header_exposure", None)
     if fn is None or adapter_manifest is None:
         return ()
     invocation = getattr(adapter_manifest, "invocation", None)
@@ -291,7 +291,6 @@ def _run_governance_policy(
 
     allowed = _extract_allowed_flag(result)
     reason_codes = _extract_reason_codes(result)
-    decision = "allow" if allowed else "deny"
     # governance.check_policy returns informational codes (like
     # "POLICY_PASSED") alongside the allowed=True flag. They are
     # not denial reasons, so `violation_kinds` only records codes
@@ -299,9 +298,12 @@ def _run_governance_policy(
     # aggregator's "any violations → deny" semantics honest
     # (iter-3 combined-semantic blocker absorb).
     violations = reason_codes if not allowed else ()
+    gov_decision: Literal["allow", "deny"] = (
+        "allow" if allowed else "deny"
+    )
     return SimulationResult(
         scenario_id=scenario.scenario_id,
-        decision=decision,
+        decision=gov_decision,
         violation_kinds=violations,
     )
 
@@ -311,8 +313,11 @@ def _extract_allowed_flag(result: Any) -> bool:
         if "allowed" in result:
             return bool(result["allowed"])
         if "decision" in result:
-            return result["decision"] == "allow"
-    return bool(result)
+            decision_val = result["decision"]
+            return isinstance(decision_val, str) and decision_val == "allow"
+    if result:
+        return True
+    return False
 
 
 def _extract_reason_codes(result: Any) -> tuple[str, ...]:
@@ -386,17 +391,18 @@ def _evaluate_scenario(
             any_error = True
             if r.error_detail:
                 error_details.append(r.error_detail)
+    combined_decision: Literal["allow", "deny", "error"]
     if not results:
-        decision = "error"
+        combined_decision = "error"
     elif any_error:
-        decision = "error"
+        combined_decision = "error"
     elif combined_violations:
-        decision = "deny"
+        combined_decision = "deny"
     else:
-        decision = "allow"
+        combined_decision = "allow"
     return SimulationResult(
         scenario_id=scenario.scenario_id,
-        decision=decision,  # type: ignore[arg-type]
+        decision=combined_decision,
         violation_kinds=combined_violations,
         error_detail="; ".join(error_details),
     )

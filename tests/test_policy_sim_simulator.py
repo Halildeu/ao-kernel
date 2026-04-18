@@ -12,7 +12,6 @@ import pytest
 from ao_kernel import config as _config
 from ao_kernel.policy_sim import (
     BaselineSource,
-    DiffReport,
     ScenarioSet,
     SimulationResult,
     canonical_policy_hash,

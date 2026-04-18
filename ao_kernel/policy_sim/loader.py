@@ -114,7 +114,11 @@ def resolve_target_policy(
     a policy with the requested name AND the policy is not
     supplied via ``proposed_policies``.
     """
-    from ao_kernel.config import DefaultsNotFoundError
+    # DefaultsNotFoundError is exported from the module but not
+    # listed in __all__; keep the import explicit + typed-ignored.
+    from ao_kernel.config import (  # type: ignore[attr-defined]
+        DefaultsNotFoundError,
+    )
 
     if baseline_source is BaselineSource.EXPLICIT and baseline_overrides:
         explicit = baseline_overrides.get(policy_name)
@@ -186,11 +190,11 @@ def policy_override_context(
             return dict(override)
         return original(resource_type, filename, workspace=workspace)
 
-    _config.load_with_override = _patched  # type: ignore[assignment]
+    _config.load_with_override = _patched
     try:
         yield
     finally:
-        _config.load_with_override = original  # type: ignore[assignment]
+        _config.load_with_override = original
 
 
 __all__ = [
