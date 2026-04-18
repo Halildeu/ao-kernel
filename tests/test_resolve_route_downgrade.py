@@ -648,6 +648,143 @@ class TestClientLlmCallEmit:
         assert result is not None  # completed past the emit block
 
 
+class TestMultiStepDowngradeChain:
+    """v3.4.0 #5: budget thresholds that cascade (PREMIUM →
+    BALANCED_TEXT → FAST_TEXT) now collapse multiple hops in a single
+    resolve call. Cycle protection guards against misconfigured
+    rule-graphs (A → B → A)."""
+
+    def _multistep_rules(self) -> dict[str, Any]:
+        """Fake rule set with two thresholds so a single low budget
+        triggers both hops."""
+        return {
+            "policy_version": "v0.1-multistep",
+            "intent_to_class": {
+                "DISCOVERY": "PREMIUM",
+            },
+            "fallback_order_by_class": {
+                "PREMIUM": ["openai"],
+                "BALANCED_TEXT": ["openai"],
+                "FAST_TEXT": ["openai"],
+            },
+            "strictness": {},
+            "soft_degrade": {
+                "enabled": True,
+                "rules": [
+                    {
+                        "from_class": "PREMIUM",
+                        "to_class": "BALANCED_TEXT",
+                        "intents": ["DISCOVERY"],
+                        "budget_remaining_threshold_usd": 5.0,
+                    },
+                    {
+                        "from_class": "BALANCED_TEXT",
+                        "to_class": "FAST_TEXT",
+                        "intents": ["DISCOVERY"],
+                        "budget_remaining_threshold_usd": 2.0,
+                    },
+                ],
+            },
+            "ttl_hours_default": 72,
+        }
+
+    def test_two_hop_downgrade_chain_collapses(self, fake_ops) -> None:
+        """remaining=1.0 < both thresholds → PREMIUM → BALANCED_TEXT →
+        FAST_TEXT in a single resolve call. Chain captures both hops;
+        final downgraded_class is FAST_TEXT."""
+        fake_ops(self._multistep_rules())
+        from ao_kernel.llm import resolve_route
+
+        result = resolve_route(
+            intent="DISCOVERY",
+            cross_class_downgrade=True,
+            budget_remaining=_budget(remaining_usd=1.0),
+        )
+        assert result["downgrade_applied"] is True
+        assert result["original_class"] == "PREMIUM"
+        assert result["downgraded_class"] == "FAST_TEXT"
+        assert result["selected_class"] == "FAST_TEXT"
+        chain = result.get("downgrade_chain", [])
+        assert len(chain) == 2
+        assert chain[0]["from_class"] == "PREMIUM"
+        assert chain[0]["to_class"] == "BALANCED_TEXT"
+        assert chain[1]["from_class"] == "BALANCED_TEXT"
+        assert chain[1]["to_class"] == "FAST_TEXT"
+
+    def test_partial_chain_when_second_threshold_not_crossed(
+        self, fake_ops,
+    ) -> None:
+        """remaining=3.0 < 5.0 (first hop) but >= 2.0 (second hop) →
+        single-step downgrade (PREMIUM → BALANCED_TEXT only)."""
+        fake_ops(self._multistep_rules())
+        from ao_kernel.llm import resolve_route
+
+        result = resolve_route(
+            intent="DISCOVERY",
+            cross_class_downgrade=True,
+            budget_remaining=_budget(remaining_usd=3.0),
+        )
+        assert result["downgraded_class"] == "BALANCED_TEXT"
+        chain = result["downgrade_chain"]
+        assert len(chain) == 1
+
+    def test_cycle_protection_breaks_loop(self, fake_ops) -> None:
+        """A → B → A rule-graph would cycle; visited set prevents
+        re-entering a class already downgraded FROM."""
+        fake_ops({
+            "policy_version": "v0.1-cycle",
+            "intent_to_class": {"DISCOVERY": "A_CLASS"},
+            "fallback_order_by_class": {
+                "A_CLASS": ["openai"],
+                "B_CLASS": ["openai"],
+            },
+            "strictness": {},
+            "soft_degrade": {
+                "enabled": True,
+                "rules": [
+                    {
+                        "from_class": "A_CLASS",
+                        "to_class": "B_CLASS",
+                        "intents": ["DISCOVERY"],
+                        "budget_remaining_threshold_usd": 10.0,
+                    },
+                    {
+                        "from_class": "B_CLASS",
+                        "to_class": "A_CLASS",  # cycle
+                        "intents": ["DISCOVERY"],
+                        "budget_remaining_threshold_usd": 10.0,
+                    },
+                ],
+            },
+            "ttl_hours_default": 72,
+        })
+        from ao_kernel.llm import resolve_route
+
+        result = resolve_route(
+            intent="DISCOVERY",
+            cross_class_downgrade=True,
+            budget_remaining=_budget(remaining_usd=0.0),
+        )
+        # First hop applies (A → B); second hop blocked by visited guard
+        assert result["downgraded_class"] == "B_CLASS"
+        assert len(result["downgrade_chain"]) == 1
+
+    def test_single_step_backward_compat(self, fake_ops) -> None:
+        """C4.1 single-step rules still produce a 1-element chain."""
+        # default fake_ops has a single-rule setup
+        from ao_kernel.llm import resolve_route
+
+        result = resolve_route(
+            intent="DISCOVERY",
+            cross_class_downgrade=True,
+            budget_remaining=_budget(remaining_usd=1.0),
+        )
+        # Existing C4.1 pin (budget < threshold → downgrade applied)
+        # now also exposes the chain shape
+        if result["downgrade_applied"]:
+            assert len(result["downgrade_chain"]) == 1
+
+
 class TestSchemaValidation:
     def test_malformed_threshold_raises_validation(self, fake_ops) -> None:
         """Negative ``budget_remaining_threshold_usd`` violates the

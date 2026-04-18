@@ -154,6 +154,7 @@ def resolve(
         "matched_rule_index": None,
         "threshold_usd": None,
         "budget_remaining_usd": None,
+        "downgrade_chain": [],  # v3.4.0 #5 — multi-step chain history
     }
 
     if "model" in request:
@@ -230,25 +231,75 @@ def resolve(
                 if remaining_val is not None:
                     remaining_usd = float(remaining_val)
                     _c4_meta["budget_remaining_usd"] = remaining_usd
-                    for idx, rule in enumerate(soft_degrade_rules):
-                        if not isinstance(rule, dict):
-                            continue
-                        threshold = rule.get("budget_remaining_threshold_usd")
-                        if threshold is None:
-                            continue  # inert in C4.1
-                        if rule.get("from_class") != requested_class:
-                            continue
-                        intents_list = rule.get("intents", []) or []
-                        if intent not in intents_list:
-                            continue
-                        if remaining_usd < float(threshold):
-                            target_class = rule["to_class"]
-                            _c4_meta["downgrade_applied"] = True
-                            _c4_meta["original_class"] = requested_class
-                            _c4_meta["downgraded_class"] = target_class
-                            _c4_meta["matched_rule_index"] = idx
-                            _c4_meta["threshold_usd"] = float(threshold)
+
+                    # v3.4.0 #5: multi-step downgrade chain. Each
+                    # iteration picks the first rule matching the
+                    # current effective class; once matched, re-enter
+                    # the loop against the newly-effective class so a
+                    # cascade (PREMIUM → BALANCED → FAST) applies when
+                    # the budget undershoots several thresholds. Cycle
+                    # protection via the visited set prevents a
+                    # misconfigured rule-graph (e.g. A → B → A) from
+                    # looping. Strictness.degrade_allowed is checked
+                    # per step so an intermediate class that denies
+                    # degrade halts the chain.
+                    visited: set[str] = {requested_class}
+                    downgrade_chain: list[dict[str, Any]] = []
+                    while True:
+                        matched = False
+                        for idx, rule in enumerate(soft_degrade_rules):
+                            if not isinstance(rule, dict):
+                                continue
+                            threshold = rule.get(
+                                "budget_remaining_threshold_usd",
+                            )
+                            if threshold is None:
+                                continue
+                            if rule.get("from_class") != target_class:
+                                continue
+                            intents_list = rule.get("intents", []) or []
+                            if intent not in intents_list:
+                                continue
+                            if remaining_usd >= float(threshold):
+                                continue
+                            to_class = rule["to_class"]
+                            if to_class in visited:
+                                # cycle guard — do not re-enter a class
+                                # we've already downgraded FROM
+                                continue
+                            next_strict = strictness.get(to_class, {})
+                            if not next_strict.get(
+                                "degrade_allowed", True,
+                            ):
+                                # target class itself is absolute-deny;
+                                # halt chain at current target
+                                continue
+                            downgrade_chain.append({
+                                "from_class": target_class,
+                                "to_class": to_class,
+                                "rule_index": idx,
+                                "threshold_usd": float(threshold),
+                            })
+                            visited.add(to_class)
+                            target_class = to_class
+                            matched = True
                             break
+                        if not matched:
+                            break
+
+                    if downgrade_chain:
+                        _c4_meta["downgrade_applied"] = True
+                        _c4_meta["original_class"] = requested_class
+                        _c4_meta["downgraded_class"] = target_class
+                        # Final hop metadata (backwards-compat with C4.1)
+                        last = downgrade_chain[-1]
+                        _c4_meta["matched_rule_index"] = last["rule_index"]
+                        _c4_meta["threshold_usd"] = last["threshold_usd"]
+                        # Full chain preserved for audit / multi-hop
+                        # visibility. Single-step downgrades produce a
+                        # 1-element list, so C4.1 consumers that
+                        # ignore this key continue to work.
+                        _c4_meta["downgrade_chain"] = downgrade_chain
 
     ttl_default = resolver_rules.get("ttl_hours_default", 72)
     ttl_by_class = resolver_rules.get("ttl_hours_by_class", {})
