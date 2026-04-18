@@ -1,4 +1,12 @@
-# PR-C1a Implementation Plan v4 — Adapter Artifact Surface + Context Compile Materialisation
+# PR-C1a Implementation Plan v5 — Adapter Artifact Surface + Context Compile Materialisation
+
+**v5 absorb (iter-4 PARTIAL — 3 blocker + 2 warning, all text-level)**: `exec_result` (not `step_state`) in `_record_step_completion`; canonical key is `"key"` (not `"decision_id"`); `parent_env` removed from `_run_adapter_step` example (stays `{}` — scope unchanged); test `>= 0` consistency; `_build_adapter_envelope_with_context` rename sync throughout.
+
+---
+
+# (v4 retained for history)
+
+## PR-C1a Implementation Plan v4 — Adapter Artifact Surface + Context Compile Materialisation
 
 **Scope**: FAZ-C critical-path seri başı. Adapter-path output_ref garantisi + `context_compile` step real materialisation + `build_driver(policy_loader=...)` forward + `context_pack_ref` plumbing. Downstream PR'lar (C1b/C2/C3/C6) bu altyapıya bağımlı.
 
@@ -179,7 +187,7 @@ if op == "context_compile":
     # returns list; compile_context() expects dict with .items() so wrap.
     canonical_list = query(self._workspace_root)
     canonical = {
-        item.get("decision_id", f"_idx_{idx}"): item
+        item.get("key", f"_idx_{idx}"): item
         for idx, item in enumerate(canonical_list)
     }
     
@@ -240,17 +248,17 @@ if step_def.operation == "context_compile":
 if step_def.operation == "context_compile":
     # Step handler dönüş dict'inden gerçek değerler
     # Handler artifact JSON yazdı; burada artifact'ı re-read etmek
-    # yerine step_state dict'inden (handler return'dan) çekeriz.
+    # yerine exec_result dict'inden (handler return'dan) çekeriz.
     # Handler return dict'i zaten output_ref içeriyor; ek metadata
     # için artifact JSON parse edilebilir ama daha pahalı.
-    # Minimal çözüm: step_state dict'ine payload alanlarını ekle
+    # Minimal çözüm: handler return dict'ine payload alanlarını ekle
     # (handler zaten yaratıyor; sadece propagate edilir).
     payload = {
         "stub": False,
-        "context_preamble_bytes": step_state.get(
+        "context_preamble_bytes": exec_result.get(
             "context_preamble_bytes", 0
         ),
-        "context_path": step_state.get("context_path"),
+        "context_path": exec_result.get("context_path"),
     }
 ```
 
@@ -376,7 +384,8 @@ envelope_override = self._build_adapter_envelope_with_context(
 execution_result = self._executor.run_step(
     run_id,
     step_def,
-    parent_env=parent_env,
+    # parent_env kept as {} per current contract (C2 scope widens later).
+    parent_env={},
     attempt=attempt,
     driver_managed=True,  # v4 B1 absorb: driver contract
     input_envelope_override=envelope_override,  # None | dict
@@ -405,7 +414,7 @@ execution_result = self._executor.run_step(
   - `context_compile` step → `.ao/evidence/workflows/{run_id}/context-{step_id}-attempt1.md` yazılır.
   - İçerik: `compile_context()` preamble (session_context + canonical + facts).
   - Atomic: tmp file process crash olsa kalmaz.
-  - Canonical evidence JSON `stub: false` + `context_preamble_bytes > 0` + `context_path` absolute.
+  - Canonical evidence JSON `stub: false` + `context_preamble_bytes >= 0` (empty-fixture tolerant) + `context_path` absolute + `Path(context_path).is_file()`.
 - `tests/test_context_pack_ref_plumbing.py`:
   - 2-step run: `context_compile` → `invoke_adapter`.
   - Adapter envelope `context_pack_ref` = prior step `context_path` (absolute).
@@ -442,7 +451,7 @@ execution_result = self._executor.run_step(
 | Risk | L | I | Mitigation |
 |---|---|---|---|
 | R1 `compile_context()` pipeline B6/B7 benchmark testlerinde unbounded side-effect üretir | M | M | `profile="TASK_EXECUTION"` bounded token budget + existing pipeline'a smoke test |
-| R2 `_build_adapter_input_envelope` scan prior steps performans concern (N-step run'larda O(N)) | L | L | Reverse iteration + early break — FAZ-C workflow'ları ≤10 step |
+| R2 `_build_adapter_envelope_with_context` scan prior steps performans concern (N-step run'larda O(N)) | L | L | Reverse iteration + early break — FAZ-C workflow'ları ≤10 step |
 | R3 `write_text_atomic` tmp dosyası concurrency'de çakışma | L | M | Per-(run_id, step_id, attempt) dosya adı UUID-scoped — çakışma teorik yok |
 | R4 B6 `capability_output_refs` plumbing C1a `ExecutionResult.output_ref` ekleme ile kırılır | M | H | Regression gate: `test_governed_review.py` green. B6 `getattr` pattern field eklemeyi tolere eder |
 | R5 `context_compile` step olmayan workflow'larda adapter envelope placeholder literal kalır → prod adapter `--prompt-file` okuyamaz | M | H | Placeholder literal = explicit "no context" kontrat; documented in C1a scope. C1b + C2'de real adapter manifest `--prompt-file` conditional (context varsa geçir) |
@@ -454,7 +463,7 @@ execution_result = self._executor.run_step(
 1. **`ExecutionResult.output_ref` field** — dataclass delta + Executor adapter + driver-managed branch populate.
 2. **`build_driver(policy_loader=)` forward** — tek satır.
 3. **`context_compile` step materialisation** — `compile_context()` integration + `write_text_atomic` + metadata evidence.
-4. **`_build_adapter_input_envelope` context_pack_ref resolver** — prior steps scan + envelope key populate.
+4. **`_build_adapter_envelope_with_context` context_pack_ref resolver** — prior steps scan + envelope key populate.
 5. **4 yeni test + regression (`pytest -x`)**.
 6. **Commit + Codex post-impl review (thread `019d9fc3`) + PR #109 open + admin merge (after CI green + Codex AGREE)**.
 
@@ -473,7 +482,7 @@ execution_result = self._executor.run_step(
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`c2b61d9`) |
 | iter-1 (thread `019d9fc3`) | 2026-04-18 | **PARTIAL** — 3 blocker (InvocationResult.output_ref yanlış, context_spec/input_envelope_template yok, relative path runtime'da çözmez) + 3 warning + Q1-Q5 net cevaplar |
 | v2 (iter-1 absorb) | 2026-04-18 | `734b81f` commit |
-| iter-2 | 2026-04-18 | **PARTIAL** — 3 blocker (step_record schema `operation`/`context_path` persist etmiyor, `_build_adapter_input_envelope` çağrı zincirinde yok + `step_def.task_prompt` yok, `_record_step_completion` stub hardcode) + 3 warning (helper names, master plan drift, gh-cli-pr disclaimer) |
+| iter-2 | 2026-04-18 | **PARTIAL** — 3 blocker (step_record schema `operation`/`context_path` persist etmiyor, `_build_adapter_envelope_with_context` çağrı zincirinde yok + `step_def.task_prompt` yok, `_record_step_completion` stub hardcode) + 3 warning (helper names, master plan drift, gh-cli-pr disclaimer) |
 | **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3 submit. Artifact JSON read resolver + `input_envelope_override` widen + `_record_step_completion` hardcode absorb + helper names (canonical_store.query) + session_context={} MVP. |
 | iter-3 | TBD | AGREE expected (3 blocker concrete fix'ler + warnings netleşti) |
 
