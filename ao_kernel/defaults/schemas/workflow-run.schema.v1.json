@@ -121,7 +121,17 @@
           "recorded_at": {"type": "string", "format": "date-time"}
         }
       },
-      "description": "PR-C3.2 marker-driven idempotency cursor. Each entry stamps a single successful post-reconcile apply (ledger append + budget CAS). Used by ao_kernel.cost._reconcile.apply_spend_with_marker to decide whether a given (source, step_id, attempt, billing_digest) tuple has already been applied — duplicate calls (retry, crash-recovery) skip both budget drain AND evidence emit. Absent for pre-v3.3.1 runs; loader treats missing field as empty list. Unbounded in v3.3.1 (compaction deferred to v3.4.0)."
+      "description": "PR-C3.2 marker-driven idempotency cursor. Each entry stamps a single successful post-reconcile apply (ledger append + budget CAS). Used by ao_kernel.cost._reconcile.apply_spend_with_marker to decide whether a given (source, step_id, attempt, billing_digest) tuple has already been applied — duplicate calls (retry, crash-recovery) skip both budget drain AND evidence emit. Absent for pre-v3.3.1 runs; loader treats missing field as empty list. v3.4.0 #3 provides operator-triggered compaction via `ao_kernel.cost.marker_compaction.compact_run_markers`; compacted runs retain an empty list plus the `cost_reconciled_archive_ref` pointer."
+    },
+    "cost_reconciled_archive_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "v3.4.0 #3: workspace-relative path to the append-only JSONL archive holding the run's historical `cost_reconciled` markers after compaction (standard: `.ao/cost/markers-archive/{run_id}.jsonl`). Absent on runs that were never compacted. Reconciler + audit tooling join this with the in-record list to recover the full marker history."
+    },
+    "cost_reconciled_compacted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "v3.4.0 #3: ISO-8601 timestamp of the most recent compaction pass. Rewritten on every successful compact_run_markers call."
     },
     "approvals": {
       "type": "array",
