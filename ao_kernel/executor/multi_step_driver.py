@@ -38,6 +38,7 @@ idempotency key, NOT persisted to schema.
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -53,7 +54,6 @@ from ao_kernel.executor.executor import Executor
 from ao_kernel.executor.policy_enforcer import (
     SandboxedEnvironment,
     build_sandbox,
-    resolve_allowed_secrets,
 )
 
 # NOTE: ao_kernel.ci and ao_kernel.patch are imported lazily inside the
@@ -470,11 +470,13 @@ class MultiStepDriver:
             run_id, step_def, record,
         )
 
+        # PR-C2: adapter sandbox UNION parent_env (secret_ids + env_keys)
+        adapter_parent_env = self._compute_adapter_parent_env(self._policy)
         try:
             exec_result = self._executor.run_step(
                 run_id=run_id,
                 step_def=step_def,
-                parent_env={},
+                parent_env=adapter_parent_env,
                 attempt=attempt,
                 driver_managed=True,
                 step_id=step_id,
@@ -1819,16 +1821,59 @@ class MultiStepDriver:
                 return dict(i)
         return None
 
+    @staticmethod
+    def _compute_adapter_parent_env(
+        policy: Mapping[str, Any],
+    ) -> dict[str, str]:
+        """PR-C2: adapter sandbox parent_env — UNION
+        ``allowlist_secret_ids ∪ env_allowlist.allowed_keys``.
+
+        Adapter runtime (codex-stub, claude-code-cli, gh-cli-pr)
+        GH_TOKEN / ANTHROPIC_API_KEY gibi secret'lara ihtiyaç duyar;
+        ayrıca PATH gibi non-secret env key'leri de gerekir.
+        """
+        secrets_spec = policy.get("secrets", {}) or {}
+        env_spec = policy.get("env_allowlist", {}) or {}
+        secret_ids = set(secrets_spec.get("allowlist_secret_ids", ()) or ())
+        allowed_keys = set(env_spec.get("allowed_keys", ()) or ())
+        union = secret_ids | allowed_keys
+        return {k: os.environ[k] for k in union if k in os.environ}
+
+    @staticmethod
+    def _compute_sandbox_parent_env(
+        policy: Mapping[str, Any],
+    ) -> dict[str, str]:
+        """PR-C2: CI/patch sandbox parent_env — env_allowlist MINUS
+        secret_ids (least-privilege).
+
+        ``ci_pytest`` / ``ci_ruff`` / ``patch_*`` subprocess'leri
+        sandbox'ında GH_TOKEN gibi secret'lar olmamalı. Operator
+        yanlışlıkla aynı key'i hem ``allowlist_secret_ids`` hem
+        ``env_allowlist.allowed_keys``'e koyarsa bile structural
+        guard (set difference) sızıntıyı engeller.
+        """
+        secrets_spec = policy.get("secrets", {}) or {}
+        env_spec = policy.get("env_allowlist", {}) or {}
+        secret_ids = set(secrets_spec.get("allowlist_secret_ids", ()) or ())
+        allowed_keys = set(env_spec.get("allowed_keys", ()) or ())
+        safe_keys = allowed_keys - secret_ids  # v3 HARDENING explicit differ
+        return {k: os.environ[k] for k in safe_keys if k in os.environ}
+
     def _build_sandbox(self, run_id: str) -> SandboxedEnvironment:
         worktree = self._workspace_root / ".ao" / "runs" / run_id / "worktree"
         if not worktree.exists():
             worktree = self._workspace_root
-        resolved_secrets, _ = resolve_allowed_secrets(self._policy, {})
+        sandbox_parent_env = self._compute_sandbox_parent_env(self._policy)
+        # PR-C2 security intent: CI/patch path için secret resolution
+        # BYPASS — data flow'dan okunur (convention değil). Adapter
+        # path secret'ını _run_adapter_step forward eder (_compute
+        # _adapter_parent_env via Executor.run_step).
+        resolved_secrets: Mapping[str, str] = {}
         sandbox, _violations = build_sandbox(
             policy=self._policy,
             worktree_root=worktree,
             resolved_secrets=resolved_secrets,
-            parent_env={},
+            parent_env=sandbox_parent_env,
         )
         return sandbox
 
