@@ -43,6 +43,11 @@
               "intents": {
                 "type": "array",
                 "items": { "type": "string" }
+              },
+              "budget_remaining_threshold_usd": {
+                "type": "number",
+                "minimum": 0,
+                "description": "PR-C4.1 additive: when present, rule is a budget-aware downgrade trigger — evaluated only when caller supplies budget_remaining AND remaining < threshold (STRICT less-than). Absent → rule is inert in C4.1 runtime (preserves pre-v3.3.1 dormant behavior for the bundled cost-agnostic rules)."
               }
             },
             "additionalProperties": true

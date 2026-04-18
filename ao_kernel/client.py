@@ -526,11 +526,57 @@ class AoKernelClient:
 
         # 1. Route (normalize: router returns selected_provider/selected_model)
         if not provider_id or not model:
-            route = self._route(intent)
+            route = self._route(intent, run_id=run_id)
             provider_id = provider_id or route.get("provider_id", route.get("selected_provider", "openai"))
             model = model or route.get("model", route.get("selected_model", "gpt-4"))
             base_url = base_url or route.get("base_url", "")
             api_key = api_key or route.get("api_key", "")
+
+            # PR-C4.1: evidence emit on budget-triggered class downgrade.
+            # Fail-open wrap — evidence I/O problem must never cascade
+            # into a routing outage. Auto-route path only (caller-side
+            # override bypasses this block entirely).
+            if (
+                route.get("downgrade_applied")
+                and self._workspace_root is not None
+                and run_id is not None
+            ):
+                try:
+                    import datetime as _dt
+
+                    from ao_kernel.executor.evidence_emitter import emit_event
+
+                    emit_event(
+                        self._workspace_root,
+                        run_id=run_id,
+                        kind="route_cross_class_downgrade",
+                        actor="ao-kernel",
+                        payload={
+                            "intent": intent,
+                            "original_class": route.get("original_class"),
+                            "downgraded_class": route.get("downgraded_class"),
+                            "selected_class": route.get("selected_class"),
+                            "matched_rule_index": route.get(
+                                "matched_rule_index",
+                            ),
+                            "threshold_usd": route.get("threshold_usd"),
+                            "budget_remaining_usd": route.get(
+                                "budget_remaining_usd",
+                            ),
+                            "provider_id": provider_id,
+                            "model": model,
+                            "ts": _dt.datetime.now(
+                                _dt.timezone.utc,
+                            ).isoformat(),
+                        },
+                    )
+                except Exception as exc:
+                    import logging as _logging
+
+                    _logging.getLogger(__name__).warning(
+                        "route_cross_class_downgrade emit failed "
+                        "(fail-open): %s", exc,
+                    )
 
         if not base_url:
             base_url = self._default_base_url(provider_id)
@@ -835,15 +881,63 @@ class AoKernelClient:
             "decisions_extracted": decisions_extracted,
         }
 
-    def _route(self, intent: str) -> dict[str, Any]:
-        """Resolve provider/model for intent."""
+    def _route(
+        self,
+        intent: str,
+        *,
+        run_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Resolve provider/model for intent.
+
+        PR-C4.1: when ``run_id`` + ``workspace_root`` are both set, load
+        the run's budget snapshot and opt into
+        ``cross_class_downgrade=True`` so the router can evaluate
+        ``soft_degrade.rules[]`` with budget awareness. Snapshot-load
+        failures are silent (warn-log + no-downgrade fallback) — cost
+        routing is an optional feature, not on the core route path.
+        """
+        budget_snap = None
+        if run_id is not None and self._workspace_root is not None:
+            try:
+                from ao_kernel.workflow.budget import budget_from_dict
+                from ao_kernel.workflow.run_store import load_run
+
+                record, _ = load_run(self._workspace_root, run_id)
+                budget_dict = record.get("budget")
+                if budget_dict:
+                    budget_snap = budget_from_dict(budget_dict)
+            except Exception as exc:
+                import logging as _logging
+
+                _logging.getLogger(__name__).warning(
+                    "C4.1 budget snapshot load failed "
+                    "(run=%s): %s; no-downgrade fallback",
+                    run_id,
+                    exc,
+                )
+        # PR-C4.1: schema / config errors from resolve_route MUST
+        # propagate (fail-closed). Wider catch only for benign runtime
+        # issues (network, disk) that legitimately warrant a default
+        # provider fallback. `jsonschema.ValidationError` indicates a
+        # malformed resolver rule — silently falling back would defeat
+        # the whole point of the inline schema validation.
+        from jsonschema import ValidationError
+
         try:
             from ao_kernel.llm import resolve_route
+
             return resolve_route(
                 intent=intent,
                 provider_priority=self._provider_priority,
-                workspace_root=str(self._workspace_root) if self._workspace_root else None,
+                workspace_root=(
+                    str(self._workspace_root)
+                    if self._workspace_root else None
+                ),
+                cross_class_downgrade=budget_snap is not None,
+                budget_remaining=budget_snap,
             )
+        except ValidationError:
+            raise  # fail-closed: malformed rules surface to the caller
         except Exception:
             return {"provider_id": "openai", "model": "gpt-4", "base_url": ""}
 
