@@ -126,6 +126,7 @@ def build_driver(
         registry=wreg,
         adapter_registry=areg,
         executor=executor,
+        policy_config=policy_loader,  # PR-C2: forward to driver
     )
 
 
