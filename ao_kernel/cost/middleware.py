@@ -459,6 +459,13 @@ def post_response_reconcile(
             "delta_usd": float(delta),
             "ts": _iso_now(),
         }
+        # v3.4.0 #2: attribution enrichment — concrete vendor model id
+        # (e.g. 'claude-3-5-sonnet-20241022') flows from the price
+        # catalog into the evidence payload so downstream audit / cost
+        # compare tooling can attribute spend without rebuilding the
+        # (provider_id, model) → catalog mapping.
+        if catalog_entry.vendor_model_id:
+            payload["vendor_model_id"] = catalog_entry.vendor_model_id
         if elapsed_ms is not None:
             payload["duration_ms"] = round(float(elapsed_ms), 3)
         _safe_emit(
@@ -671,6 +678,13 @@ def post_adapter_reconcile(
             "cost_usd": float(event.cost_usd),
             "ts": event.ts,
         }
+        # v3.4.0 #2: adapter-reported vendor_model_id (via PR-C3.1
+        # `cost_record.vendor_model_id` → `SpendEvent.vendor_model_id`)
+        # now flows into the evidence payload as well, so audit tooling
+        # has full attribution without having to cross-reference the
+        # ledger.
+        if event.vendor_model_id:
+            payload["vendor_model_id"] = event.vendor_model_id
         if elapsed_ms is not None:
             payload["duration_ms"] = round(float(elapsed_ms), 3)
         _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)

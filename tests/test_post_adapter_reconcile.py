@@ -235,6 +235,58 @@ class TestUsageMissing:
         assert budget["cost_usd"]["remaining"] == pytest.approx(10.0)
 
 
+class TestSpendEvidenceVendorEnrichment:
+    """v3.4.0 #2: vendor_model_id propagates into `llm_spend_recorded`
+    evidence payload so audit tooling has full attribution without
+    having to cross-reference the ledger."""
+
+    def test_vendor_model_id_on_llm_spend_recorded_emit(
+        self, tmp_path: Path,
+    ) -> None:
+        run_id = "00000000-0000-4000-8000-0000e34a0001"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                "vendor_model_id": "claude-3-5-sonnet-20241022",
+            },
+            policy=_policy(),
+        )
+        events = _read_events(tmp_path, run_id)
+        spend_events = [e for e in events if e.get("kind") == "llm_spend_recorded"]
+        assert len(spend_events) == 1
+        assert spend_events[0]["payload"]["vendor_model_id"] == (
+            "claude-3-5-sonnet-20241022"
+        )
+
+    def test_vendor_model_id_absent_when_adapter_omits(
+        self, tmp_path: Path,
+    ) -> None:
+        """Adapter that doesn't populate vendor_model_id → evidence
+        payload omits the key (not null)."""
+        run_id = "00000000-0000-4000-8000-0000e34a0002"
+        _seed_run(tmp_path, run_id)
+        post_adapter_reconcile(
+            workspace_root=tmp_path, run_id=run_id, step_id="s1",
+            attempt=1, provider_id="codex", model="stub",
+            cost_actual={
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
+                # no vendor_model_id
+            },
+            policy=_policy(),
+        )
+        events = _read_events(tmp_path, run_id)
+        spend_events = [e for e in events if e.get("kind") == "llm_spend_recorded"]
+        assert len(spend_events) == 1
+        assert "vendor_model_id" not in spend_events[0]["payload"]
+
+
 class TestIdempotency:
     def test_same_digest_silent_no_op_on_second_call(
         self, tmp_path: Path,
