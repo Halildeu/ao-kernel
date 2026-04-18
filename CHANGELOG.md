@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.3.1] — 2026-04-18
+
+**v3.3.1 — v3.3.0 Follow-Ups Closed**. Four known limitations documented in v3.3.0 CHANGELOG are addressed: the adapter-path double-drain bug, runtime activation of cross-class downgrade plumbing, adapter vendor_model_id attribution, and dry-run driver-layer parity. Backward compatible; no schema migration required.
+
+Shipped PRs (all merged in one session, Codex adversarial consensus per PR):
+
+| # | PR | Scope |
+|---|---|---|
+| 1 | [#119](https://github.com/Halildeu/ao-kernel/pull/119) | C3.2 post-reconcile crash-window + double-drain (marker-driven idempotency, 5 plan iterations) |
+| 2 | [#120](https://github.com/Halildeu/ao-kernel/pull/120) | C4.1 cross-class downgrade runtime activation (4 plan iterations + 2 BLOCK post-impl absorbs) |
+| 3 | [#121](https://github.com/Halildeu/ao-kernel/pull/121) | C3.1 adapter vendor_model_id attribution (1 plan iteration → AGREE) |
+| 4 | [#122](https://github.com/Halildeu/ao-kernel/pull/122) | C6.1 adapter-step dry-run driver parity (5 plan iterations → AGREE) |
+
+Test baseline: v3.3.0 `2210` → v3.3.1 **`2262`** (+52 new). Ruff + mypy clean across all 189 source files. All 8 CI gates green on each PR.
+
 ### Fixed — PR-C3.2 crash-window double-drain fix
 
 **Context.** v3.3.0 shipped a post-reconcile idempotency bug: when `post_adapter_reconcile` / `post_response_reconcile` were invoked twice with the same `(run_id, step_id, attempt, billing_digest)`, `record_spend` correctly no-op'd (same-digest silent warn-log) but the subsequent `update_run` budget CAS ran unconditionally — a second identical reconcile double-drained the budget. Codex CNS-20260418-033 adversarial plan review (5 iterations) pinned the root cause; the refactor below closes it.
