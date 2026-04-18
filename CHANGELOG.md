@@ -7,23 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added — v3.4.0 #3 `cost_reconciled` marker compaction
+### Added — v3.4.0 #5 Multi-step downgrade chain (cascaded budget-aware routing)
 
-**Context.** v3.3.1 PR-C3.2 introduced the `cost_reconciled` idempotency marker; long-lived runs accumulate one entry per reconcile call. Run records are copied whole on every CAS write, so a 1000-entry marker array materially bloats `state.v1.json` and every serialization path that touches it. v3.4.0 #3 provides operator-triggered compaction: markers move to an append-only JSONL archive, the in-record list clears, and a pointer field preserves the audit trail.
+**Context.** v3.3.1 C4.1 applied exactly one downgrade hop — first matching rule → `break`. A catalog like `PREMIUM → BALANCED_TEXT → FAST_TEXT` configured with two thresholds (`5.0` and `2.0`) would only hop once even when budget undershoots both. v3.4.0 #5 collapses the cascade into a single `resolve` call and exposes the full chain in the response.
 
 **Changes.**
 
-- **New module** `ao_kernel/cost/marker_compaction.py`:
-  - `compact_run_markers(workspace_root, run_id, *, dry_run=False)` — two-phase: durable archive append first, then CAS clears in-record list and stamps `cost_reconciled_archive_ref` + `cost_reconciled_compacted_at` pointer fields
-  - `compact_all_terminal_runs(workspace_root, *, dry_run=False)` — bulk helper; only touches runs in terminal states (`completed` / `failed` / `cancelled`); safe for cron
-- **New CLI** `ao-kernel cost compact-markers [--run-id ID | --all-terminal] [--dry-run] [--output json|human]` — wires both paths
-- **Schema widen** `workflow-run.schema.v1.json` — two optional additive fields (`cost_reconciled_archive_ref`, `cost_reconciled_compacted_at`); reconciler + audit tooling join these with the in-record marker list to recover history
+- `llm_router.resolve()` — rule loop wrapped in a `while True` that re-scans against the current effective class after each successful hop. Cycle protection via a `visited` set prevents misconfigured rule-graphs (e.g. `A → B → A`) from looping. Intermediate-class `strictness.degrade_allowed=false` halts the chain at the current class.
+- Response additive field `downgrade_chain: list[{from_class, to_class, rule_index, threshold_usd}]` — captures the hop history. Single-step downgrades produce a 1-element list; C4.1 consumers that don't inspect the field continue to work.
+- `matched_rule_index` + `threshold_usd` now reflect the FINAL hop (backward-compat with C4.1 single-hop behavior).
 
-**Idempotency.** Already-empty marker lists no-op without touching the archive. Archive is content-addressable via `billing_digest`, so a failed CAS after a successful archive append is safe to retry. Late retry/replay after compaction would re-stamp a fresh marker (then reconcile_daemon surfaces that as an orphan → operators re-run compaction on cadence).
-
-**Scope boundary.** IN: operator-triggered compaction (explicit call / CLI). OUT (deferred): automatic compaction on run finalize (Codex C3.2 iter-3 advice still stands — late retry/replay could re-apply spend if markers are purged eagerly).
-
-**Test baseline.** +7 new pins in `tests/test_marker_compaction.py`: populated-markers archive, idempotent no-op on empty, dry-run no-mutate, missing run raises, bulk skips non-terminal runs, bulk empty workspace, bulk dry-run surveys without mutating.
+**Test baseline.** +4 new pins in `tests/test_resolve_route_downgrade.py::TestMultiStepDowngradeChain`: two-hop cascade, partial chain, cycle protection, single-step backward-compat.
 
 ### Added — v3.4.0 #2 `llm_spend_recorded` vendor_model_id enrichment
 
