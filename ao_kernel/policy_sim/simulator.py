@@ -458,10 +458,13 @@ def simulate_policy_change(
     *,
     project_root: Path,
     scenarios: ScenarioSet | Sequence[Scenario],
-    proposed_policies: Mapping[str, Mapping[str, Any]],
+    proposed_policies: Mapping[str, Mapping[str, Any]] | None = None,
     baseline_source: BaselineSource = BaselineSource.BUNDLED,
     baseline_overrides: Mapping[str, Mapping[str, Any]] | None = None,
     include_host_fs_probes: bool = False,
+    proposed_policy_patches: (
+        Mapping[str, Mapping[str, Any]] | None
+    ) = None,
 ) -> DiffReport:
     """Evaluate each scenario twice (baseline + proposed) under
     the purity contract and return a ``DiffReport``.
@@ -471,7 +474,48 @@ def simulate_policy_change(
     shape registry before simulation begins; structurally-broken
     proposed policies raise :class:`ProposedPolicyInvalidError`
     before any scenario runs.
+
+    PR-C5: ``proposed_policy_patches`` accepts RFC 7396 JSON
+    Merge Patches applied against resolved baselines to produce
+    effective proposed policies. Mutex with ``proposed_policies``:
+    supplying both (``is not None`` on each) raises ``ValueError``.
+    ``None`` means "argument not provided"; ``{}`` means
+    "explicitly empty" — the two are different semantically.
     """
+    # PR-C5: Mutex guard — explicit-semantic `is not None`
+    if (
+        proposed_policies is not None
+        and proposed_policy_patches is not None
+    ):
+        raise ValueError(
+            "proposed_policies and proposed_policy_patches are mutually "
+            "exclusive — supply at most one."
+        )
+
+    # PR-C5: apply patches against resolved baselines to produce
+    # effective proposed_policies (fail-fast on unknown policy).
+    if proposed_policy_patches is not None:
+        from ao_kernel.policy_sim.merge_patch import apply_merge_patch
+
+        effective_proposed: dict[str, Mapping[str, Any]] = {}
+        for policy_name, patch in proposed_policy_patches.items():
+            baseline = resolve_target_policy(
+                policy_name=policy_name,
+                scenario_id="_merge_patch_resolve",
+                project_root=project_root,
+                proposed_policies={},  # no short-circuit
+                baseline_source=baseline_source,
+                baseline_overrides=baseline_overrides,
+            )
+            effective_proposed[policy_name] = apply_merge_patch(
+                baseline, patch,
+            )
+        proposed_policies = effective_proposed
+
+    # Normalize to empty dict for downstream code that indexes it.
+    if proposed_policies is None:
+        proposed_policies = {}
+
     # Structural shape validation runs OUTSIDE the purity context
     # because it emits no I/O and we want fail-fast errors.
     for name, policy in proposed_policies.items():
