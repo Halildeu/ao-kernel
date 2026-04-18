@@ -1,8 +1,19 @@
-# PR-C5 Implementation Plan v2 — RFC 7396 Merge-Patch Policy-Sim
+# PR-C5 Implementation Plan v3 — RFC 7396 Merge-Patch Policy-Sim
+
+**v3 absorb (iter-2 PARTIAL — 2 consistency fix + 1 exact-filename hygiene)**:
+1. **Mutex semantic tekleştirildi**: `None = arg-not-provided`, `{}` = explicitly-provided-empty. `proposed_policies={}` + `proposed_policy_patches={...}` → `ValueError` (both explicit). `is not None` guard tek semantik. "Empty dict + patches OK" iddiası SİLİNDİ.
+2. **CLI mutex `required=True`**: Mevcut CLI davranışı korunur — exactly one of `--proposed-policies | --proposed-patches` zorunlu. "Neither" yolu yok (baseline-only CLI out-of-scope).
+3. **Test anahtarları exact filename**: `policy_x.v1.json` / `nonexistent.v1.json` (loader resolution convention).
+
+---
+
+# (v2 retained for history)
+
+## PR-C5 Implementation Plan v2 — RFC 7396 Merge-Patch Policy-Sim
 
 **v2 absorb (Codex iter-1 PARTIAL — 4 fix + 1 type contract)**:
 1. **Filename contract reversible**: `policy_name.v1.patch.json` → `policy_name.v1.json` (version suffix korunur).
-2. **Mutex `is not None`**: `proposed_policies={}` (empty dict) + `proposed_policy_patches={...}` kombinasyonu geçerli; sadece her ikisi `is not None` olduğunda `ValueError`.
+2. **Mutex `is not None`** (v3 korundu): Her ikisi de `is not None` → `ValueError`. `None` = kwarg verilmedi; `{}` = explicitly empty (provided). **İkisi birlikte verilirse hata** (explicitness semantic).
 3. **Parser-level CLI mutex test**: `argparse.mutually_exclusive_group(required=False)` + parser-level reject test eklendi.
 4. **Unknown/new policy patch semantic**: **Fail-fast** seçildi — `resolve_target_policy` baseline bulamazsa `TargetPolicyNotFoundError` propagate (typo protection; scope-down alternative ret).
 5. **`apply_merge_patch` type contract**: Narrow to **policy-doc object patch only** — imza `Mapping → dict`; non-Mapping top-level patch (list/scalar) desteklenmez. RFC 7396 "top-level=null" case (delete whole doc) **out of scope**.
@@ -153,7 +164,7 @@ ao-kernel policy-sim run \
     --proposed-patches path/to/patches_dir/
 ```
 
-`<dir>` içindeki her `*.patch.json` → `{policy_name: patch_dict}`. Mutex CLI-level: `--proposed-patches` + `--proposed-policies` bir arada verilirse error.
+`<dir>` içindeki her `*.patch.json` → `{policy_name: patch_dict}`. Mutex CLI-level (v3: `argparse.add_mutually_exclusive_group(required=True)`): exactly ONE of `--proposed-policies | --proposed-patches` zorunlu. Mevcut CLI davranışı korunur (previously `--proposed-policies` tek required flag'ti).
 
 Filename convention (v2 reversible): `<policy_filename>.patch.json` → `<policy_filename>.json` (version suffix korunur). Örnek: `policy_worktree_profile.v1.patch.json` → patches `policy_worktree_profile.v1.json`. Loader helper `load_policy_patches_from_dir(dir: Path) -> dict[str, dict]` yeni modülde; mevcut loader resolve mantığından ayrı.
 
@@ -171,11 +182,12 @@ Filename convention (v2 reversible): `<policy_filename>.patch.json` → `<policy
 
 **`tests/test_simulate_policy_patches.py`** (integration):
 - `test_mutex_raises_value_error` — `proposed_policies=dict` + `proposed_policy_patches=dict` aynı anda → `ValueError`.
-- `test_empty_dict_proposed_with_patches_allowed` — `proposed_policies={}` + `proposed_policy_patches={...}` → `ValueError` YOK (v2 fix: `is not None` guard; empty dict normalize edilir patch tarafında).
-- `test_patches_apply_against_baseline` — `proposed_policy_patches={"policy_x.v1": {"enabled": True}}` + baseline `enabled=False` → simulator effective proposed = merged.
-- `test_unknown_policy_patch_fails_fast` — v2 **fail-fast**: `proposed_policy_patches={"nonexistent.v1": {...}}` → `TargetPolicyNotFoundError` (typo protection).
+- `test_empty_dict_with_patches_also_raises` (v3): `proposed_policies={}` + `proposed_policy_patches={...}` → `ValueError` (v3 explicit semantic: `{}` = provided, `is not None`).
+- `test_patches_apply_against_baseline` (v3 exact filename) — `proposed_policy_patches={"policy_worktree_profile.v1.json": {"enabled": True}}` + baseline `enabled=False` → simulator effective proposed = merged.
+- `test_unknown_policy_patch_fails_fast` (v3 exact filename): `proposed_policy_patches={"nonexistent.v1.json": {...}}` → `TargetPolicyNotFoundError`.
 - `test_both_none_allowed` — `proposed_policies=None` + `proposed_policy_patches=None` → baseline-only run (existing behavior).
-- `test_cli_parser_mutex` (parser-level, v2 fix): `ao-kernel policy-sim run --proposed-policies x --proposed-patches y` → argparse `SystemExit` (mutually_exclusive_group enforced).
+- `test_cli_parser_mutex_both_flags` (parser-level): `--proposed-policies x --proposed-patches y` → argparse `SystemExit` (mutually_exclusive_group).
+- `test_cli_parser_requires_one_of_group` (v3): neither flag → argparse `SystemExit` (required=True preservation).
 
 ---
 
