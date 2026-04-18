@@ -1,4 +1,28 @@
-# PR-C3 Implementation Plan v4 — Driver Catch Matrix + Recovery Filter
+# PR-C3 Implementation Plan v5 — Reconcile-Before-Terminal (Impl-First)
+
+**Strategic pivot**: 4 Codex plan iter → implementation-first path. v5 chooses Codex's Option A (reconcile BEFORE terminal event) architecturally correct; executor flow restructure needed. Impl + post-impl Codex review.
+
+**v5 order (executor.py adapter path)**:
+
+1. `invoke_cli/http` → `(invocation_result, budget_after)`.
+2. `write_artifact` + `adapter_returned` emit.
+3. **`post_adapter_reconcile`** — BEFORE terminal event. Fail-closed; exception propagates.
+4. `_map_invocation_to_state` + terminal event (`step_completed` | `step_failed`).
+5. `update_run(_mutator)` — step_record + budget_after merged with cost_drain state.
+
+**Cost error handling**:
+- Default path: reconcile raises → executor catch → `_fail_run(..., error_category="other", error_detail=...)` → emits `step_failed` (not `step_completed`) + terminal run state.
+- Driver-managed path: raises → driver's catch matrix extended (v4 absorb; 3 new exceptions → `_StepFailed`).
+
+**Budget overwrite B1 resolution**: `_mutator` preserves cost drain from reconcile's separate `update_run`. `current["budget"]` read inside mutator has latest state (post-reconcile cost_usd + time_budget_after's time_seconds merged). Implementation detail: reconcile writes cost, mutator reads and updates time without overwriting cost.
+
+Actually simpler: mutator uses `budget_from_dict(current.get("budget"))` which reads post-reconcile state, then applies time_seconds delta from `budget_after`. No overwrite.
+
+---
+
+# (v4 retained for history)
+
+## PR-C3 Implementation Plan v4 — Driver Catch Matrix + Recovery Filter
 
 **v4 absorb (iter-3 PARTIAL — 1 blocker + 2 warning)**:
 
