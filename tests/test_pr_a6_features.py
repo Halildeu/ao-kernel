@@ -91,9 +91,9 @@ class TestLlmFallback:
 
 
 class TestVersionBump:
-    def test_version_is_3_1_0(self) -> None:
+    def test_version_is_3_2_0(self) -> None:
         import ao_kernel
-        assert ao_kernel.__version__ == "3.1.0"
+        assert ao_kernel.__version__ == "3.2.0"
 
     def test_pyproject_version_matches(self) -> None:
         import tomllib
@@ -102,7 +102,7 @@ class TestVersionBump:
             pyproject = Path(__file__).parent.parent / "pyproject.toml"
         with open(pyproject, "rb") as f:
             data = tomllib.load(f)
-        assert data["project"]["version"] == "3.1.0"
+        assert data["project"]["version"] == "3.2.0"
 
 
 class TestMetaExtras:
