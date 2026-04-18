@@ -232,12 +232,14 @@ Cost-layer errors **raise** (not envelope): `BudgetExhaustedError`, `CostTrackin
 
 ### 7.4 Evidence taxonomy
 
-3 additive kinds (24 → 27):
+3 additive kinds emitted by cost runtime (24 → 27):
 - `llm_cost_estimated` — pre-dispatch estimate, always emitted before transport.
 - `llm_spend_recorded` — post-response actual, emitted after ledger append.
 - `llm_usage_missing` — adapter response missing tokens_input/output; audit-only ledger entry precedes the raise when fail-closed.
 
 Emits are **fail-open** (wrapper swallows + warn-logs); ledger writes are **fail-closed** (raise on failure).
+
+**PR-C4 reservation (27 → 28)**: `route_cross_class_downgrade` is added to the `_KINDS` frozenset but **not emitted** by cost runtime or the route layer in this release. The kind is reserved for the C4.1 follow-up PR, which wires the runtime consumer (threshold schema widen + `soft_degrade.rules` directional filter). Total shipped emit kinds stay at **3** for cost runtime.
 
 ## 8. Identity Threading — `(run_id, step_id, attempt)`
 
