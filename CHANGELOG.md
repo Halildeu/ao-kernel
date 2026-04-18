@@ -7,6 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.4.0 #7 Subprocess crash-kill test harness
+
+**Context.** Mock-based idempotency tests (`test_cost_marker_idempotency`, `test_reconcile_daemon`) cover the exception-handling branches but cannot catch issues that only surface when the OS really terminates an interpreter mid-write — unflushed buffers, fsync gaps, open-file leaks. v3.4.0 #7 adds a stdlib-only harness that spawns a fresh Python subprocess, runs partial work up to a chosen checkpoint, and calls `os._exit` so finalizers never run. The parent process then inspects surviving on-disk state and runs recovery.
+
+**Changes.**
+
+- **New helper** `tests/_subprocess_crash_helper.py::run_crash_scenario(*, script, workspace_root, expected_exit_code=77, timeout_seconds=30.0)` — runs the supplied script in a subprocess with `workspace_root` as `sys.argv[1]`; asserts the process exits with the expected code. Returns `CompletedProcess` for diagnostic inspection.
+- **New test** `tests/test_reconciler_crash_injection.py::TestReconcilerRealCrashRecovery` — end-to-end pin: real crash between ledger append (fsynced) and marker CAS leaves the ledger on disk, leaves `cost_reconciled` empty, and the reconcile daemon recovers in a parent-process scan (idempotent on second pass).
+
+**Scope.** One helper + one end-to-end pin. Additional crash scenarios (marker stamp → emit gap, compaction mid-write, etc.) can follow the same pattern when motivated; the harness itself is reusable with no framework dependencies beyond stdlib + pytest.
+
 ### Added — v3.4.0 #4 Non-adapter dry-run fidelity (system + ao-kernel actors)
 
 **Context.** v3.3.1 PR-C6.1 routed only `adapter` actors through `MultiStepDriver.dry_run_step`; `system` (ci-runner / patch-apply) and `ao-kernel` (context_compile / checkpoint) actors fell back to executor-only preview with no `parent_env` derivation. The CLI raised `NotImplementedError` for non-adapter via the driver entry point. v3.4.0 #4 closes that scope — all non-human actors now share a driver-managed dry-run path so the preview mirrors the real execution surface.
