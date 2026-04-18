@@ -1,4 +1,22 @@
-# PR-C3 Implementation Plan v2 — post_adapter_reconcile (Scope-Narrow)
+# PR-C3 Implementation Plan v3 — Narrow Fail-Open + Recovery Spec
+
+**v3 absorb (iter-2 PARTIAL — 2 blocker + 3 warning)**:
+
+1. **Narrow fail-open**: v2 broad fail-open W4'ü fiilen geri alıyordu. **v3 fail-open SADECE evidence emit** (`_safe_emit`'in kendisi). Cost-layer errors — `CostTrackingConfigError`, `SpendLedgerCorruptedError`, digest mismatch, budget update_run failures — **propagate**. Mevcut repo contract'ı (docs/COST-MODEL.md §7.2 + ledger.py:251 fail-closed corrupt) mirror.
+
+2. **"Lost spend after completed step" recovery spec**: Second-CAS ordering'in açtığı failure mode (crash between executor's step_completed CAS and post_adapter_reconcile) explicit kabul + recovery prosedürü. Comprehensive fix (atomic single-CAS via mutator restructure) v3.3.1+. v3 scope: docs/COST-MODEL.md §7.5 yeni bölüm + docstring note.
+
+3. `ExecutionResult.budget_after` stale risk: v3 post-reconcile state re-read → ExecutionResult refresh.
+
+4. `load_cost_policy()` pre-dispatch sequencing: v3 policy load'ı `invoke_cli` öncesine taşı — persisted step completed state'inden sonra config hatası ortaya çıkmasın.
+
+5. `cost_actual is not None` gate: `if cost_actual is not None` (empty `{}` usage_missing path'ine düşer, truthy değil).
+
+---
+
+# (v2 retained for history)
+
+## PR-C3 Implementation Plan v2 — post_adapter_reconcile (Scope-Narrow)
 
 **Scope**: FAZ-C cost runtime reconcile. `post_adapter_reconcile` middleware — adapter-path cost drain via **second CAS cycle** after executor's budget_after write. Scope-narrowed per Codex iter-1: no catalog lookup, minimal wire contract (cost_actual.tokens_*), usage_missing → `llm_usage_missing` event (not llm_spend_recorded).
 
