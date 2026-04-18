@@ -463,7 +463,177 @@ def post_response_reconcile(
     )
 
 
+def _build_adapter_spend_event(
+    cost_actual: Mapping[str, Any],
+    *,
+    run_id: str,
+    step_id: str,
+    attempt: int,
+    provider_id: str,
+    model: str,
+) -> SpendEvent:
+    """Adapter ``cost_actual`` → :class:`SpendEvent` (PR-C3).
+
+    Wire format (master plan v5 iter-5 B3 absorb): tokens live under
+    ``cost_actual.tokens_input`` / ``cost_actual.tokens_output`` — NOT
+    ``usage.*``. Catalog attribution deferred (v3.3.1+; adapter manifest
+    lacks a reliable provider/model → catalog mapping), so
+    ``vendor_model_id`` defaults to ``None``. ``cached_tokens`` is NOT
+    part of ``agent-adapter-contract.schema.v1.json::cost_record`` —
+    builder doesn't read it.
+    """
+    tokens_in = cost_actual.get("tokens_input")
+    tokens_out = cost_actual.get("tokens_output")
+    cost_raw = cost_actual.get("cost_usd", 0)
+    usage_missing = tokens_in is None or tokens_out is None
+    return SpendEvent(
+        run_id=run_id,
+        step_id=step_id,
+        attempt=attempt,
+        provider_id=provider_id,
+        model=model,
+        tokens_input=int(tokens_in or 0),
+        tokens_output=int(tokens_out or 0),
+        cost_usd=Decimal(str(cost_raw)),
+        ts=_iso_now(),
+        vendor_model_id=None,
+        cached_tokens=None,
+        usage_missing=usage_missing,
+    )
+
+
+def post_adapter_reconcile(
+    *,
+    workspace_root: Path,
+    run_id: str,
+    step_id: str,
+    attempt: int,
+    provider_id: str,
+    model: str,
+    cost_actual: Mapping[str, Any] | None,
+    policy: CostTrackingPolicy,
+    elapsed_ms: float | None = None,
+) -> None:
+    """PR-C3: adapter-path cost reconcile.
+
+    Mirrors :func:`post_response_reconcile` for adapter envelopes.
+    Called from :meth:`Executor._run_adapter_step` BEFORE the terminal
+    ``step_completed``/``step_failed`` event (v5 plan reconcile-before-
+    terminal ordering), so a reconcile failure surfaces as a step_failed
+    rather than a post-hoc state inconsistency.
+
+    Contract:
+
+    - ``cost_actual is None`` → no-op (adapter did not report usage).
+    - ``policy.enabled=false`` → no-op (dormant).
+    - ``event.usage_missing=True`` → audit-only ledger entry via
+      :func:`record_spend` + ``llm_usage_missing`` evidence emit.
+    - Success path: ``record_spend`` (same-digest idempotent) +
+      budget CAS (``update_run`` mutator drains ``cost_usd``) +
+      ``llm_spend_recorded`` emit with ``source="adapter_path"``.
+    - Fail-closed: ledger / budget / config errors propagate
+      (:class:`CostTrackingConfigError`, :class:`SpendLedgerDuplicateError`,
+      :class:`SpendLedgerCorruptedError` per
+      ``docs/COST-MODEL.md`` §7.2); the caller / driver catch
+      matrix translates these to ``_StepFailed(category="other")``.
+    - Fail-open boundary: ``_safe_emit`` (evidence wrapper)
+      remains fail-open — missing evidence doesn't block spend.
+    """
+    if not policy.enabled:
+        return
+    if cost_actual is None:
+        return
+
+    event = _build_adapter_spend_event(
+        cost_actual,
+        run_id=run_id,
+        step_id=step_id,
+        attempt=attempt,
+        provider_id=provider_id,
+        model=model,
+    )
+
+    # Usage-missing: audit-only ledger entry + llm_usage_missing emit
+    # (mirror post_response_reconcile contract).
+    if event.usage_missing:
+        record_spend(workspace_root, event, policy=policy)
+        missing_fields = [
+            f for f, v in (
+                ("tokens_input", cost_actual.get("tokens_input")),
+                ("tokens_output", cost_actual.get("tokens_output")),
+            ) if v is None
+        ]
+        _safe_emit(
+            workspace_root,
+            run_id,
+            "llm_usage_missing",
+            {
+                "source": "adapter_path",
+                "run_id": run_id,
+                "step_id": step_id,
+                "attempt": attempt,
+                "provider_id": provider_id,
+                "model": model,
+                "missing_fields": missing_fields,
+                "ts": event.ts,
+            },
+        )
+        return
+
+    # Success path: record spend (idempotent per ledger digest) +
+    # CAS-drained budget. Cost errors propagate (fail-closed).
+    record_spend(workspace_root, event, policy=policy)
+
+    if event.cost_usd > 0:
+        def _adapter_mutator(record: dict[str, Any]) -> dict[str, Any]:
+            budget_dict = record.get("budget")
+            if budget_dict is None:
+                raise CostTrackingConfigError(
+                    run_id=run_id,
+                    details=(
+                        "run.budget dropped between adapter return "
+                        "and reconcile"
+                    ),
+                )
+            budget = budget_from_dict(budget_dict)
+            if budget.cost_usd is None:
+                raise CostTrackingConfigError(
+                    run_id=run_id,
+                    details=(
+                        "run.budget.cost_usd dropped between adapter "
+                        "return and reconcile"
+                    ),
+                )
+            new_budget = record_budget_spend(
+                budget, cost_usd=event.cost_usd, run_id=run_id,
+            )
+            return {**record, "budget": budget_to_dict(new_budget)}
+
+        update_run(
+            workspace_root, run_id,
+            mutator=_adapter_mutator,
+            max_retries=3,
+        )
+
+    payload: dict[str, Any] = {
+        "source": "adapter_path",
+        "run_id": run_id,
+        "step_id": step_id,
+        "attempt": attempt,
+        "provider_id": provider_id,
+        "model": model,
+        "tokens_input": event.tokens_input,
+        "tokens_output": event.tokens_output,
+        "cost_usd": float(event.cost_usd),
+        "ts": event.ts,
+    }
+    if elapsed_ms is not None:
+        payload["duration_ms"] = round(float(elapsed_ms), 3)
+    _safe_emit(workspace_root, run_id, "llm_spend_recorded", payload)
+
+
 __all__ = [
     "pre_dispatch_reserve",
     "post_response_reconcile",
+    "post_adapter_reconcile",
 ]
