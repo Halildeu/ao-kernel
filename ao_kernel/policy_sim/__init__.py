@@ -33,6 +33,20 @@ from ao_kernel.policy_sim.errors import (
     SimulationAbortedError,
     TargetPolicyNotFoundError,
 )
+from ao_kernel.policy_sim.diff import (
+    DiffReport,
+    ScenarioDelta,
+    SimulationResult,
+    TransitionKind,
+    ViolationDiff,
+    canonical_policy_hash,
+    dump_json,
+)
+from ao_kernel.policy_sim.loader import (
+    BaselineSource,
+    policy_override_context,
+    validate_proposed_policy,
+)
 from ao_kernel.policy_sim.scenario import (
     ExpectedBaseline,
     Scenario,
@@ -43,6 +57,7 @@ from ao_kernel.policy_sim.scenario import (
     load_scenario_file,
     load_scenarios_from_dir,
 )
+from ao_kernel.policy_sim.simulator import simulate_policy_change
 
 
 __all__ = [
@@ -65,4 +80,16 @@ __all__ = [
     "load_bundled_scenarios",
     "load_scenario_file",
     "load_scenarios_from_dir",
+    # Simulator + diff + loader (C3)
+    "BaselineSource",
+    "DiffReport",
+    "ScenarioDelta",
+    "SimulationResult",
+    "TransitionKind",
+    "ViolationDiff",
+    "canonical_policy_hash",
+    "dump_json",
+    "policy_override_context",
+    "simulate_policy_change",
+    "validate_proposed_policy",
 ]
