@@ -7,6 +7,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed — PR-C3.2 crash-window double-drain fix
+
+**Context.** v3.3.0 shipped a post-reconcile idempotency bug: when `post_adapter_reconcile` / `post_response_reconcile` were invoked twice with the same `(run_id, step_id, attempt, billing_digest)`, `record_spend` correctly no-op'd (same-digest silent warn-log) but the subsequent `update_run` budget CAS ran unconditionally — a second identical reconcile double-drained the budget. Codex CNS-20260418-033 adversarial plan review (5 iterations) pinned the root cause; the refactor below closes it.
+
+**Changes.**
+
+- **New shared helper** `ao_kernel/cost/_reconcile.py::apply_spend_with_marker()` — unifies both cost reconcile paths (adapter + governed_call) behind a ledger-first + marker-guarded contract. Returns `True` when a NEW marker was committed; callers use the signal to gate evidence emit.
+- **Marker schema** `workflow-run.cost_reconciled` (additive field on `workflow-run.schema.v1.json`) — array of `{source, step_id, attempt, billing_digest, recorded_at}`. Keyed by 4-tuple to avoid cross-path / cross-step suppression. Source enum: `adapter_path | governed_call | usage_missing`.
+- **Order unification** — `post_response_reconcile` (governed_call path) now runs `record_spend` BEFORE `update_run`; previously budget-CAS ran first. `post_adapter_reconcile` was already ledger-first but now uses the shared helper. Crash semantics: ledger entry may exist without a marker (retry recovers), but NEVER the reverse.
+- **Evidence emit guard** — `llm_spend_recorded` and `llm_usage_missing` events are emitted only when the helper commits a new marker. Duplicate reconcile calls produce no duplicate audit events. On the governed_call path, the `fail_closed_on_missing_usage` raise still fires regardless of marker state (terminal error per caller contract); on the adapter_path, usage-missing returns silently after the audit emit (existing contract — adapter callers handle the terminal error via the driver catch matrix).
+- **Public digest helper** `ao_kernel.cost.compute_billing_digest()` — promoted from private `_compute_billing_digest`. Backward-compat alias retained. Callers invoke before `apply_spend_with_marker` to populate the marker key; helper raises `ValueError` on empty digest (Codex iter-5 precondition).
+- **New exports** `ao_kernel.cost.{apply_spend_with_marker, compute_billing_digest, post_adapter_reconcile}`.
+
+**Test baseline.** 2210 → **2222** (+12 new in `tests/test_cost_marker_idempotency.py`). Existing `test_same_digest_silent_no_op_on_second_call` extended with budget assertion — the v3.3.0 bug would have shown 9.90 remaining (double drain), now pinned to 9.95. Ruff + mypy clean. Scope explicitly excludes tam duplicate `governed_call` idempotency (reserve-phase problem, v3.4.0 follow-up); this PR closes post-reconcile phase only.
+
+### Deferred — out of v3.3.1 scope (v3.4.0)
+
+- Full reconciliation daemon / API (`reconcile_orphan_spends`)
+- Startup hook / CLI `ao-kernel cost reconcile`
+- `cost_reconciled` array compaction (unbounded in v3.3.1 — Codex iter-3 advice: safer not to purge on finalize because late retry/replay could re-apply spend)
+- Subprocess crash-kill test suite (mock-based crash coverage is sufficient for v3.3.1; subprocess tests pair with the reconciler daemon)
+
 ## [3.3.0] — 2026-04-18
 
 **FAZ-C Runtime Closure + Strategic Extensions**. 9 PRs shipped in one session (#109 through #117) + B7.1 absorb.

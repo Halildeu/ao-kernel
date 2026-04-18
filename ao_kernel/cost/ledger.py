@@ -91,8 +91,15 @@ class SpendEvent:
     billing_digest: str = ""  # computed by writer if empty
 
 
-def _compute_billing_digest(event: SpendEvent) -> str:
-    """Canonical SHA-256 over billing-relevant fields.
+def compute_billing_digest(event: SpendEvent) -> str:
+    """Canonical SHA-256 over billing-relevant fields (public helper).
+
+    Callers that need the digest BEFORE :func:`record_spend` (e.g. to key
+    a run-state idempotency marker — see PR-C3.2 marker-driven reconcile)
+    MUST precompute via this helper and pass the :class:`SpendEvent` with
+    ``billing_digest`` populated. ``record_spend`` itself will recompute
+    via :func:`_compute_billing_digest` when ``billing_digest == ""``, so
+    legacy callers still work.
 
     Decimal-stable: ``cost_usd`` is canonicalized via ``str(Decimal(...))``
     so float serialization round-trips do not break the comparison.
@@ -114,6 +121,12 @@ def _compute_billing_digest(event: SpendEvent) -> str:
         separators=(",", ":"),
     )
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+# Backward-compat alias — legacy private name retained for existing
+# import sites (internal uses + test suite). PR-C3.2 promotes the
+# public spelling; both resolve to the same function object.
+_compute_billing_digest = compute_billing_digest
 
 
 def _event_to_dict(event: SpendEvent) -> dict[str, Any]:

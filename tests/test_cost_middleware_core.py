@@ -280,6 +280,89 @@ class TestPostResponseReconcileHappyPath:
         assert lines[0]["usage_missing"] is False
         assert "billing_digest" in lines[0]
 
+    def test_duplicate_reconcile_single_drain_single_emit(
+        self, tmp_path: Path,
+    ) -> None:
+        """PR-C3.2 governed-path regression pin: 2× post_response_reconcile
+        with identical (run_id, step_id, attempt) + identical raw response
+        → budget drained once, single ledger entry, single marker,
+        single ``llm_spend_recorded`` emit.
+
+        The v3.3.0 bug would drain the budget twice; marker-guarded
+        ``apply_spend_with_marker`` prevents the second drain / emit.
+        """
+        run_id = _create_run_with_cost_budget(tmp_path)
+        policy = _policy()
+
+        est_cost, entry = pre_dispatch_reserve(
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="step",
+            attempt=1,
+            provider_id="anthropic",
+            model="claude-3-5-sonnet",
+            prompt_messages=[{"role": "user", "content": "hello world"}],
+            max_tokens=100,
+            policy=policy,
+        )
+        raw = _ok_response(input_tokens=1000, output_tokens=500)
+
+        reconcile_kwargs: dict[str, Any] = dict(
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="step",
+            attempt=1,
+            provider_id="anthropic",
+            model="claude-3-5-sonnet",
+            catalog_entry=entry,
+            est_cost=est_cost,
+            raw_response_bytes=raw,
+            policy=policy,
+        )
+
+        post_response_reconcile(**reconcile_kwargs)
+        record_after_first, _ = load_run(tmp_path, run_id)
+        spent_after_first = Decimal(
+            str(record_after_first["budget"]["cost_usd"]["spent"])
+        )
+
+        post_response_reconcile(**reconcile_kwargs)
+        record_after_second, _ = load_run(tmp_path, run_id)
+        spent_after_second = Decimal(
+            str(record_after_second["budget"]["cost_usd"]["spent"])
+        )
+
+        # Budget: drained exactly once — spent is unchanged between calls
+        assert spent_after_second == spent_after_first
+
+        # Marker: single governed_call entry
+        markers = record_after_second.get("cost_reconciled", [])
+        assert len(markers) == 1
+        assert markers[0]["source"] == "governed_call"
+        assert markers[0]["step_id"] == "step"
+        assert markers[0]["attempt"] == 1
+
+        # Ledger: single entry (same-digest silent no-op on 2nd)
+        ledger = tmp_path / ".ao" / "cost" / "spend.jsonl"
+        lines = [
+            line for line in ledger.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        assert len(lines) == 1
+
+        # Events: single llm_spend_recorded emit
+        events_path = (
+            tmp_path / ".ao" / "evidence" / "workflows"
+            / run_id / "events.jsonl"
+        )
+        events = [
+            json.loads(line)
+            for line in events_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        spend_emits = [e for e in events if e.get("kind") == "llm_spend_recorded"]
+        assert len(spend_emits) == 1
+
     def test_refund_when_actual_less_than_estimate(self, tmp_path: Path) -> None:
         """actual < estimate → delta negative → budget refunded."""
         run_id = _create_run_with_cost_budget(tmp_path)
