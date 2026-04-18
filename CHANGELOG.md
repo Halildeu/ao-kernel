@@ -7,6 +7,85 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B4 (policy simulation harness)
+
+**FAZ-B Tranche B 4/9 — dry-run evaluation of proposed policy
+changes. The simulator reuses `governance.check_policy` + the
+executor's policy primitives under a 23-sentinel purity guard
+that fail-closes on any side effect. Operators point it at a
+scenario set + a `proposed_policies` dict and receive a
+`DiffReport` with per-scenario transitions, per-policy
+breakdown, and canonical policy hashes.**
+
+- New `ao_kernel.policy_sim/` public package:
+  * `errors.py` — 9 typed errors rooted at `PolicySimError`
+    (purity violations, reentrancy, scenario validation,
+    adapter discovery, target policy lookup, proposed policy
+    shape, aggregate abort, report serialisation).
+  * `_purity.py` — 23-sentinel monkey-patch context manager:
+    4 `emit_event` paths (incl. public facade re-export),
+    `worktree_builder.create_worktree`, 4 subprocess entry
+    points, 4 pathlib Path writes, 4 os mutations, 4 tempfile
+    allocators, 2 socket operations,
+    `importlib.resources.as_file`. Not re-entrant — nested
+    entry raises `PolicySimReentrantError`.
+  * `_policy_shape_registry.py` — centralised primitive
+    key-read introspection; validators aggregate
+    `required_top_keys` and `type_contracts` across every
+    registered consumer.
+  * `scenario.py` — frozen dataclasses + loader +
+    bundled-fixture helper. Per-scenario `target_policy_name`
+    supports multi-policy ScenarioSets in a single run.
+  * `diff.py` — `SimulationResult`, `ScenarioDelta`,
+    `DiffReport` frozen dataclasses + canonical policy hash
+    (aligned with `executor/artifacts.py`).
+    `DiffReport.to_dict()` normalises `Path`, `frozenset`,
+    `re.Pattern`, and manifest `source_path` for stable JSON
+    output.
+  * `loader.py` — `BaselineSource` enum (`BUNDLED` |
+    `WORKSPACE_OVERRIDE` | `EXPLICIT`) +
+    `validate_proposed_policy` +
+    `policy_override_context` monkey-patch of
+    `ao_kernel.config.load_with_override`.
+  * `simulator.py` — public entrypoint
+    `simulate_policy_change(*, project_root, scenarios,
+    proposed_policies, baseline_source, baseline_overrides,
+    include_host_fs_probes)`. Adapter snapshot taken BEFORE
+    entering the purity context.
+  * `report.py` — JSON + text formatters, atomic file writer,
+    policies-from-dir loader.
+- `ao-kernel policy-sim run` CLI — new subcommand with full
+  `--scenarios`, `--proposed-policies`,
+  `--baseline-source`, `--baseline-overrides`, `--format`,
+  `--output`, `--enable-host-fs-probes`, `--project-root`
+  flags. Exit codes: 0 (success), 1 (user error), 2 (internal),
+  3 (tightening detected).
+- Bundled JSON scenarios under
+  `ao_kernel/defaults/policies/policy_sim_scenarios/`:
+  `adapter_http_with_secret.v1.json`,
+  `autonomy_unknown_intent.v1.json`,
+  `path_poisoned_python.v1.json`, plus a manifest pointing at
+  them.
+- New JSON schema `policy-sim-scenario.schema.v1.json` with
+  draft-2020-12 `allOf` branches enforcing the
+  `target_policy_name` XOR `target_policy_names` invariant.
+- `docs/POLICY-SIM.md` new — operator-facing contract,
+  scenario model, public API walkthrough, CLI reference, report
+  shape.
+
+**Locked invariants**:
+- Purity guard NOT re-entrant; originals always restored in
+  `finally` (exception-safe).
+- Model + adapter snapshot pre-captured outside the purity
+  context so bundled fixtures do not trip
+  `importlib.resources.as_file`.
+- `_KINDS == 27` preserved (`executor/evidence_emitter.py:46`)
+  — the simulator emits no new evidence kinds.
+- Canonical policy hash bytes match `executor/artifacts.py`;
+  cross-module drift surfaces as a contract-test failure.
+- JSON-only scenarios in v1 (YAML deferred to an optional
+  extra).
+
 ### Added — FAZ-B PR-B3 (cost-aware model routing)
 
 **FAZ-B Tranche B 3/9 — opt-in cost-aware selection. When operators
