@@ -146,6 +146,53 @@ def resolve(
     cls_entry = merged_map.get("classes", {}).get(target_class, {})
     providers = cls_entry.get("providers", {}) if isinstance(cls_entry, dict) else {}
 
+    # PR-B3 cost-aware routing injection (plan v5 §2.4).
+    # Loader fail-closes on malformed override (cost/policy.py:142-143);
+    # missing workspace override returns bundled dormant policy (no raise).
+    # Router does NOT swallow loader exceptions — malformed cost policy
+    # propagates naturally to the caller (fail-closed per llm.py:32-33).
+    explicit_provider_priority = bool(request.get("provider_priority"))
+    ws_root_for_cost = _resolve_workspace_root(repo_root, workspace_root)
+
+    from ao_kernel.cost.policy import load_cost_policy
+    cost_policy = load_cost_policy(ws_root_for_cost)
+
+    cost_route_active = (
+        cost_policy.enabled
+        and cost_policy.routing_by_cost.enabled
+        and cost_policy.routing_by_cost.priority == "lowest_cost"
+    )
+
+    if cost_route_active and not explicit_provider_priority:
+        try:
+            from ao_kernel.cost.catalog import load_price_catalog
+            catalog = load_price_catalog(ws_root_for_cost, policy=cost_policy)
+        except Exception as exc:
+            if cost_policy.routing_by_cost.fail_closed_on_catalog_missing:
+                from ao_kernel.cost.errors import RoutingCatalogMissingError
+                raise RoutingCatalogMissingError(
+                    provider_order=list(order),
+                    target_class=target_class,
+                    workspace_root=str(ws_root_for_cost),
+                ) from exc
+            import logging as _logging
+            _logging.getLogger(__name__).warning(
+                "cost-aware routing: price catalog load failed; "
+                "fail_closed_on_catalog_missing=false — falling back to "
+                "provider_priority (class=%s, error=%r)",
+                target_class,
+                exc,
+            )
+        else:
+            from ao_kernel.cost.routing import sort_providers_by_cost
+            known_cost_sorted, _unknown = sort_providers_by_cost(
+                provider_order=order,
+                providers_map=providers,
+                catalog=catalog,
+            )
+            if known_cost_sorted:
+                order = known_cost_sorted
+
     for prov in order:
         prov_entry = providers.get(prov)
         if not isinstance(prov_entry, dict):
