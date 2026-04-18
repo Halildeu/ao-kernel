@@ -7,6 +7,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.4.0 #1 Cost reconciliation daemon + CLI (`ao-kernel cost reconcile`)
+
+**Context.** v3.3.1 (PR-C3.2) shipped marker-driven idempotency — `apply_spend_with_marker` writes the ledger entry BEFORE stamping `cost_reconciled` on the run record. A crash between those two steps produces an "orphan ledger entry": the spend is audited but the marker is missing. Normal retries recover automatically when the caller re-invokes reconcile, but long-lived runs can accumulate orphans that never get a natural retry. v3.4.0 #1 closes the recovery gap with an out-of-band scanner + CLI.
+
+**Changes.**
+
+- **New module** `ao_kernel/cost/reconcile_daemon.py`:
+  - `OrphanSpend` — typed record of a ledger entry without a matching marker
+  - `ScanResult` — summary of a scan pass (found / fixed / skipped / errors / cursor offset before/after)
+  - `find_orphan_spends(workspace_root, policy, *, start_offset=0)` — streaming iterator yielding orphans
+  - `fix_orphan(workspace_root, orphan, *, policy)` — idempotent marker-only recovery via `apply_spend_with_marker` with no-op budget mutator (budget was already drained in the original pre-crash call)
+  - `scan_and_fix(workspace_root, policy, *, dry_run=False, cursor_reset=False)` — daemon entry point; cursor-based incremental scanning
+  - `load_cursor` / `save_cursor` — version-pinned JSON state at `.ao/cost/reconciler-cursor.json` (atomic write)
+- **New CLI** `ao-kernel cost reconcile [--dry-run] [--cursor-reset] [--output json|human] [--project-root PATH]` — wires `scan_and_fix` with human-readable or JSON output. Safe to run repeatedly (e.g. via cron).
+
+**Recovery semantics.** The fix path re-runs `apply_spend_with_marker` with a no-op budget mutator: `record_spend` silently no-ops on matching digest (ledger already has the entry), and the marker CAS stamps the missing row. The budget was already drained in the original pre-crash call — marker-only recovery preserves accounting integrity. Dry-run mode reports orphans without stamping or advancing the cursor.
+
+**Cursor mechanics.** `last_scanned_line_offset` lets subsequent scans skip already-walked ledger tail; `--cursor-reset` forces a full re-scan from offset 0. File-lock on `reconciler-cursor.json.lock` serializes concurrent daemon invocations. Version mismatch on load → auto-reset (forward-compat, no schema-drift bugs).
+
+**Scope boundary.** IN: orphan detection + fix + cursor + CLI. OUT (deferred further): automatic startup hook in `AoKernelClient.__init__`, streaming/push alerts, cross-workspace federation.
+
+**Test baseline.** 2260 → **2270** (+10 new in `tests/test_reconcile_daemon.py`): no-orphans cursor tick, orphan detected + fixed, dry-run no-mutate, corrupt-line survives, missing-run skipped, cursor-reset behavior, cursor load/save roundtrip, fix_orphan idempotency.
+
 ## [3.3.1] — 2026-04-18
 
 **v3.3.1 — v3.3.0 Follow-Ups Closed**. Four known limitations documented in v3.3.0 CHANGELOG are addressed: the adapter-path double-drain bug, runtime activation of cross-class downgrade plumbing, adapter vendor_model_id attribution, and dry-run driver-layer parity. Backward compatible; no schema migration required.

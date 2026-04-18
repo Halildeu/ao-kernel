@@ -60,6 +60,59 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
         raise
 
 
+def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
+    """v3.4.0 CLI: scan ledger for orphan spend entries and stamp
+    missing markers. Idempotent + cursor-based."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.cost.policy import load_cost_policy
+    from ao_kernel.cost.reconcile_daemon import scan_and_fix
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+    policy = load_cost_policy(project_root)
+    if not policy.enabled:
+        print(
+            "cost tracking policy is disabled; nothing to reconcile",
+            file=sys.stderr,
+        )
+        return 0
+
+    result = scan_and_fix(
+        project_root,
+        policy,
+        dry_run=bool(args.dry_run),
+        cursor_reset=bool(args.cursor_reset),
+    )
+
+    if args.output == "json":
+        payload = {
+            "dry_run": bool(args.dry_run),
+            "orphans_found": result.orphans_found,
+            "orphans_fixed": result.orphans_fixed,
+            "orphans_skipped": result.orphans_skipped,
+            "cursor_offset_before": result.cursor_offset_before,
+            "cursor_offset_after": result.cursor_offset_after,
+            "errors": list(result.errors),
+        }
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        mode = "dry-run" if args.dry_run else "apply"
+        print(
+            f"Reconciler {mode}: found={result.orphans_found} "
+            f"fixed={result.orphans_fixed} skipped={result.orphans_skipped}"
+        )
+        print(
+            f"Cursor: offset {result.cursor_offset_before} → "
+            f"{result.cursor_offset_after}"
+        )
+        if result.errors:
+            print("Errors:")
+            for err in result.errors:
+                print(f"  - {err}")
+    return 0 if not result.errors else 1
+
+
 def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
     """PR-C6 CLI: preview a step's effects without side-effects."""
     import json as _json
@@ -386,6 +439,51 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root (default: cwd)",
     )
 
+    # v3.4.0 #1: cost subcommand — reconciler daemon
+    cost_p = sub.add_parser(
+        "cost",
+        help="Cost runtime ops (reconciliation daemon, etc.)",
+    )
+    cost_sub = cost_p.add_subparsers(dest="cost_command")
+    reconcile_p = cost_sub.add_parser(
+        "reconcile",
+        help=(
+            "Scan the spend ledger for orphan entries (ledger present "
+            "without a matching cost_reconciled marker) and stamp the "
+            "missing markers. Idempotent + cursor-based; safe to run "
+            "repeatedly (e.g. via cron)."
+        ),
+    )
+    reconcile_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Report orphans without stamping markers or advancing the "
+            "cursor. Useful to preview pending recovery before a real "
+            "pass."
+        ),
+    )
+    reconcile_p.add_argument(
+        "--cursor-reset",
+        action="store_true",
+        help=(
+            "Ignore any existing reconciler cursor and scan the entire "
+            "ledger from offset 0. The cursor is rewritten at the end "
+            "of a non-dry-run pass."
+        ),
+    )
+    reconcile_p.add_argument(
+        "--output",
+        choices=["json", "human"],
+        default="human",
+        help="Output format (default: human)",
+    )
+    reconcile_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root (default: cwd)",
+    )
+
     return parser
 
 
@@ -453,6 +551,14 @@ def main(argv: list[str] | None = None) -> int:
         if ps_cmd == "run":
             return cmd_policy_sim_run(args)
         print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
+        return 1
+
+    # Cost subcommand (v3.4.0 #1 — reconciler)
+    if cmd == "cost":
+        cost_cmd = getattr(args, "cost_command", None)
+        if cost_cmd == "reconcile":
+            return _cmd_cost_reconcile(args)
+        print("Usage: ao-kernel cost {reconcile}", file=sys.stderr)
         return 1
 
     # Metrics subcommand (PR-B5)
