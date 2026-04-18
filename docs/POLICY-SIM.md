@@ -46,9 +46,12 @@ The harness answers operator questions like:
   discoverable without tripping the
   `importlib.resources.as_file` sentinel (plan v3 iter-2
   blocker absorb).
-- `_KINDS == 27` in `executor/evidence_emitter.py:46` is
+- `_KINDS == 28` in `executor/evidence_emitter.py:46` is
   preserved — simulation emits no new evidence kinds (plan v3
-  bulgu 6 absorb).
+  bulgu 6 absorb). PR-C4 bumped the total from 27 to 28 by
+  reserving `route_cross_class_downgrade` for the C4.1 runtime
+  consumer; the new kind is part of the taxonomy but is NOT
+  emitted by policy-sim or by the cost runtime in this release.
 
 ## 3. Scenario Model
 

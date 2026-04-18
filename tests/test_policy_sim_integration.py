@@ -99,15 +99,17 @@ class TestBundledFixtureEndToEnd:
 
 
 class TestKindsInvariant:
-    def test_kinds_is_27(self) -> None:
+    def test_kinds_is_28(self) -> None:
         """Policy-sim emits ZERO new evidence kinds; the
-        executor's `_KINDS` count must stay at 27 after the
-        package lands (plan v3 §2.1 + §8)."""
+        executor's `_KINDS` count must stay exact (PR-C4 bumped
+        27 → 28 with reserved ``route_cross_class_downgrade`` kind,
+        C4.1 runtime consumer pending — plan v3 §2.1 + §8 + C4 v2)."""
         from ao_kernel.executor import evidence_emitter
 
         kinds = getattr(evidence_emitter, "_KINDS", None)
         assert kinds is not None, "evidence_emitter._KINDS missing"
-        assert len(kinds) == 27
+        assert len(kinds) == 28
+        assert "route_cross_class_downgrade" in kinds
 
 
 class TestCliEndToEnd:
