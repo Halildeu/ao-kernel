@@ -15,7 +15,10 @@ This module provides the stable public API surface.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from ao_kernel.workflow import Budget  # noqa: F401  (used in annotations)
 
 # ── Routing ──────────────────────────────────────────────────────────
 
@@ -26,13 +29,20 @@ def resolve_route(
     perspective: str | None = None,
     provider_priority: list[str] | None = None,
     workspace_root: str | None = None,
+    budget_remaining: "Budget | None" = None,
+    cross_class_downgrade: bool = False,
 ) -> dict[str, Any]:
     """Resolve the best provider/model for an LLM intent.
 
     Deterministic routing: intent → class → provider → model.
     Verified-only, TTL-gated. Fail-closed.
 
-    Returns dict with 'status' ('OK' or 'FAIL'), 'provider_id', 'model', etc.
+    Returns dict with 'status' ('OK' or 'FAIL'), 'provider_id', 'model',
+    and (PR-C4 plumbing) 'downgrade_applied', 'original_class',
+    'downgraded_class'. The latter three are always ``False``/``None``
+    in this PR — PR-C4 v1 is plumbing-only; runtime downgrade lands
+    in C4.1 follow-up (threshold schema widen + soft_degrade rules
+    directional filter).
     """
     from ao_kernel._internal.prj_kernel_api.llm_router import resolve
 
@@ -41,6 +51,9 @@ def resolve_route(
             "intent": intent,
             "perspective": perspective,
             "provider_priority": provider_priority or [],
+            # PR-C4 additive (plumbing-only — dormant in v1):
+            "budget_remaining": budget_remaining,
+            "cross_class_downgrade": cross_class_downgrade,
         },
         workspace_root=workspace_root,
     )

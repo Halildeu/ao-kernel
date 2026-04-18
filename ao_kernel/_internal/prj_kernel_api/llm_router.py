@@ -111,10 +111,31 @@ def resolve(
     repo_root = repo_root or Path(__file__).resolve().parents[2]
     now = now or datetime.now(timezone.utc)
 
+    # PR-C4 dormant plumbing (plumbing-only; runtime no-op in v1):
+    # Additive response fields are the single source of truth for
+    # the downgrade contract shape across all return paths below.
+    _c4_dormant: Dict[str, Any] = {
+        "downgrade_applied": False,
+        "original_class": None,
+        "downgraded_class": None,
+    }
+    # Read + ignore (consumed in C4.1 follow-up — threshold schema
+    # widen + directional rule filter).
+    _ = request.get("budget_remaining")
+    _ = bool(request.get("cross_class_downgrade", False))
+
     if "model" in request:
-        return {"status": "FAIL", "reason": "MODEL_OVERRIDE_NOT_ALLOWED"}
+        return {
+            "status": "FAIL",
+            "reason": "MODEL_OVERRIDE_NOT_ALLOWED",
+            **_c4_dormant,
+        }
     if "params_override" in request:
-        return {"status": "FAIL", "reason": "PROFILE_PARAM_OVERRIDE_NOT_ALLOWED"}
+        return {
+            "status": "FAIL",
+            "reason": "PROFILE_PARAM_OVERRIDE_NOT_ALLOWED",
+            **_c4_dormant,
+        }
 
     intent = request.get("intent")
     perspective = request.get("perspective")
@@ -131,7 +152,11 @@ def resolve(
     merged_map = _merge_state(provider_map, probe_state)
     intent_map = resolver_rules["intent_to_class"]
     if intent not in intent_map:
-        return {"status": "FAIL", "reason": "UNKNOWN_INTENT"}
+        return {
+            "status": "FAIL",
+            "reason": "UNKNOWN_INTENT",
+            **_c4_dormant,
+        }
     target_class = intent_map[intent]
 
     ttl_default = resolver_rules.get("ttl_hours_default", 72)
@@ -238,6 +263,7 @@ def resolve(
             "reason": reason,
             "selected_class": target_class,
             "provider_attempts": attempts,
+            **_c4_dormant,
         }
 
     sel_provider, sel_model_id, sel_model = selected
@@ -253,6 +279,7 @@ def resolve(
         "ttl_remaining_hours": None,  # compute optionally
         "intent": intent,
         "perspective": perspective,
+        **_c4_dormant,
     }
     return manifest
 
