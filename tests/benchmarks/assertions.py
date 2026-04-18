@@ -1,0 +1,180 @@
+"""Success-criteria assertions for PR-B7 benchmarks.
+
+Helpers map `docs/BENCHMARK-SUITE.md §5` contracts onto pytest
+asserts. `cost_usd` reconcile is deferred to B7.1 — v1 only
+verifies that the budget axis was seeded on the run (not that
+actual spend landed on the axis).
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Iterable, Mapping
+
+
+_SEVERITY_ENUM = frozenset({"error", "warning", "info", "note"})
+
+
+def assert_workflow_completed(run_dir: Path) -> None:
+    events = _iter_events(run_dir)
+    kinds = [event.get("kind") for event in events]
+    assert "workflow_completed" in kinds, (
+        "expected workflow_completed event in "
+        f"{run_dir / 'events.jsonl'!s}; saw: {kinds[-5:]!r}"
+    )
+
+
+def assert_workflow_failed(
+    run_dir: Path,
+    *,
+    expected_category: str,
+) -> None:
+    events = _iter_events(run_dir)
+    terminal = [
+        event for event in events if event.get("kind") == "workflow_failed"
+    ]
+    assert terminal, (
+        f"expected workflow_failed event in {run_dir / 'events.jsonl'!s}"
+    )
+    last = terminal[-1]
+    category = last.get("error", {}).get("category") or last.get("category")
+    assert category == expected_category, (
+        f"expected error.category={expected_category!r}; got {category!r}"
+    )
+
+
+def assert_adapter_ok(step_record: Mapping[str, Any]) -> None:
+    result = step_record.get("invocation_result") or {}
+    status = result.get("status")
+    assert status == "ok", (
+        f"expected invocation_result.status=='ok' for step "
+        f"{step_record.get('step_id')!r}; got {status!r}"
+    )
+
+
+def assert_capability_artifact(
+    step_record: Mapping[str, Any],
+    capability: str,
+    run_dir: Path,
+    schema_path: Path | None = None,
+) -> dict[str, Any]:
+    refs = step_record.get("capability_output_refs") or {}
+    ref = refs.get(capability)
+    assert ref, (
+        f"step {step_record.get('step_id')!r} missing "
+        f"capability_output_refs[{capability!r}]; saw keys {list(refs)!r}"
+    )
+    artifact_path = run_dir / ref
+    assert artifact_path.is_file(), (
+        f"capability artifact file missing: {artifact_path!s}"
+    )
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if schema_path is not None:
+        _validate_json_schema(payload, schema_path)
+    return payload
+
+
+def assert_review_score(
+    review_findings: Mapping[str, Any],
+    *,
+    expected_min_score: float = 0.5,
+) -> None:
+    findings = review_findings.get("findings") or []
+    assert isinstance(findings, list)
+    for finding in findings:
+        severity = finding.get("severity")
+        assert severity in _SEVERITY_ENUM, (
+            f"unexpected severity {severity!r}; "
+            f"must be one of {sorted(_SEVERITY_ENUM)!r}"
+        )
+    score = review_findings.get("score")
+    if score is None:
+        return
+    assert isinstance(score, (int, float))
+    assert float(score) >= expected_min_score, (
+        f"review score {score!r} below threshold {expected_min_score!r}"
+    )
+
+
+def assert_budget_axis_seeded(
+    run_state: Mapping[str, Any],
+    axis: str,
+    expected_limit: float,
+) -> None:
+    budget = run_state.get("budget") or {}
+    axis_data = budget.get(axis) or {}
+    limit = axis_data.get("limit")
+    assert limit is not None, (
+        f"budget axis {axis!r} missing limit; run_state budget={budget!r}"
+    )
+    assert float(limit) == float(expected_limit), (
+        f"budget axis {axis!r} limit {limit!r} != {expected_limit!r}"
+    )
+
+
+def resume_past_approval_gate(
+    driver: Any,
+    run_id: str,
+    resume_token: str,
+    payload: Mapping[str, Any] | None = None,
+) -> None:
+    """Wrap `driver.resume_workflow(run_id, resume_token, payload=...)`
+    so benchmark tests do not tangle directly with the real API
+    signature if it evolves."""
+    driver.resume_workflow(run_id, resume_token, payload=payload or {})
+
+
+def read_awaiting_human_token(run_dir: Path) -> str:
+    """Scan `events.jsonl` for the latest awaiting-human-gate event
+    and return its `resume_token` so tests can feed it to
+    `resume_past_approval_gate`. Raises if not found."""
+    events = _iter_events(run_dir)
+    for event in reversed(list(events)):
+        if event.get("kind") in (
+            "human_gate_awaited",
+            "workflow_awaiting_human",
+            "step_awaiting_human",
+        ):
+            token = event.get("resume_token") or event.get("token")
+            if isinstance(token, str):
+                return token
+    raise AssertionError(
+        f"no awaiting-human-gate event with resume_token in "
+        f"{run_dir / 'events.jsonl'!s}"
+    )
+
+
+def _iter_events(run_dir: Path) -> list[dict[str, Any]]:
+    path = run_dir / "events.jsonl"
+    if not path.is_file():
+        return []
+    events: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            events.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return events
+
+
+def _validate_json_schema(payload: Any, schema_path: Path) -> None:
+    from jsonschema import Draft202012Validator
+
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    Draft202012Validator(schema).validate(payload)
+
+
+__all__ = [
+    "assert_adapter_ok",
+    "assert_budget_axis_seeded",
+    "assert_capability_artifact",
+    "assert_review_score",
+    "assert_workflow_completed",
+    "assert_workflow_failed",
+    "read_awaiting_human_token",
+    "resume_past_approval_gate",
+]

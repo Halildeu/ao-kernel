@@ -1,0 +1,209 @@
+"""Mock transport for PR-B7 benchmarks.
+
+Public-function boundary: `ao_kernel.executor.executor.invoke_cli`
+and `invoke_http` are patched at the executor's local import site
+(the executor binds `from adapter_invoker import invoke_cli` at
+module load, so patching the executor alias is the only place an
+unittest.mock hook actually intercepts). Orchestrator + driver +
+executor + adapter_invoker call site chain stays real; only the
+final wrapper fn is substituted for tests.
+
+- Missing key → `MockEnvelopeNotFoundError` (fixture/mock drift,
+  test bug).
+- `canned[key] is _TransportError` → dispatcher raises
+  `AdapterInvocationFailedError(reason="subprocess_crash")` so the
+  driver walks the `AdapterInvocationFailedError` →
+  `error.category="adapter_crash"` mapping in
+  `multi_step_driver._run_adapter_step`.
+- Envelope dict → dispatcher synthesises an `InvocationResult` via
+  the real walker (`adapter_invoker._invocation_from_envelope`) so
+  missing-`review_findings` negative tests pin the actual
+  `output_parse` contract, not a mock-side approximation.
+"""
+
+from __future__ import annotations
+
+import json
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Iterator, Mapping
+from unittest.mock import patch
+
+from ao_kernel.executor.adapter_invoker import (
+    AdapterInvocationFailedError,
+    AdapterManifest,
+    AdapterOutputParseError,
+    InvocationResult,
+    _invocation_from_envelope,
+)
+
+
+CannedKey = tuple[str, str, int]
+"""(scenario_id, adapter_id, attempt) — mock dispatcher lookup."""
+
+
+class MockEnvelopeNotFoundError(Exception):
+    """Raised by the dispatcher when the canned dict has no entry for
+    the current (scenario_id, adapter_id, attempt) key. Signals that
+    the fixture and the scenario test drifted — treat as a test-bug
+    rather than as a simulated transport failure."""
+
+
+class _TransportError:
+    """Sentinel — `canned[key] = _TransportError` tells the
+    dispatcher to raise `AdapterInvocationFailedError` instead of
+    returning an envelope. Deliberately-failing fixture path,
+    distinct from the `MockEnvelopeNotFoundError` drift surface."""
+
+
+@contextmanager
+def mock_adapter_transport(
+    canned: Mapping[CannedKey, object],
+    scenario_id: str,
+) -> Iterator[None]:
+    """Patch `invoke_cli` + `invoke_http` at the executor's local
+    import site for the duration of the block.
+
+    Per-adapter attempt counters are scoped to the context so
+    sequenced canned entries resolve correctly; exiting the
+    block restores the original implementations (and also clears
+    counters for the next test)."""
+    counters: dict[str, int] = {}
+
+    def _next_attempt(adapter_id: str) -> int:
+        counters[adapter_id] = counters.get(adapter_id, 0) + 1
+        return counters[adapter_id]
+
+    def _dispatch(
+        *,
+        manifest: AdapterManifest,
+        input_envelope: Mapping[str, Any],
+        log_path: Path,
+    ) -> InvocationResult:
+        adapter_id = manifest.adapter_id
+        attempt = _next_attempt(adapter_id)
+        key: CannedKey = (scenario_id, adapter_id, attempt)
+
+        if key not in canned:
+            raise MockEnvelopeNotFoundError(
+                f"no canned envelope for {key!r} — "
+                "fixture / mock drift (test-side bug)"
+            )
+
+        value = canned[key]
+        if value is _TransportError:
+            raise AdapterInvocationFailedError(
+                reason="subprocess_crash",
+                detail=f"benchmark negative fixture for {key!r}",
+            )
+
+        if not isinstance(value, Mapping):
+            raise AssertionError(
+                f"canned envelope for {key!r} must be a dict; "
+                f"got {type(value).__name__}"
+            )
+
+        envelope_dict: Mapping[str, Any] = value
+        # Delegate to the real walker so missing-payload tests pin
+        # the actual output_parse contract.
+        return _invocation_from_envelope(
+            envelope_dict,
+            log_path=log_path,
+            elapsed=float(envelope_dict.get("cost_actual", {}).get(
+                "time_seconds", 0.0,
+            )),
+            command=f"benchmark-mock[{adapter_id}]",
+            manifest=manifest,
+        )
+
+    def _cli_dispatcher(
+        *,
+        manifest: AdapterManifest,
+        input_envelope: Mapping[str, Any],
+        sandbox: Any,
+        worktree: Any,
+        budget: Any,
+        workspace_root: Path,
+        run_id: str,
+    ) -> tuple[InvocationResult, Any]:
+        log_path = _benchmark_log_path(workspace_root, run_id, manifest.adapter_id)
+        _ensure_log_parent(log_path)
+        _write_empty_log(log_path)
+        try:
+            result = _dispatch(
+                manifest=manifest,
+                input_envelope=input_envelope,
+                log_path=log_path,
+            )
+        except AdapterOutputParseError:
+            raise
+        except AdapterInvocationFailedError:
+            raise
+        return result, budget
+
+    def _http_dispatcher(
+        *,
+        manifest: AdapterManifest,
+        input_envelope: Mapping[str, Any],
+        sandbox: Any,
+        worktree: Any,
+        budget: Any,
+        workspace_root: Path,
+        run_id: str,
+    ) -> tuple[InvocationResult, Any]:
+        # Shares counters with the CLI dispatcher — a single
+        # adapter may stream responses across transports in theory;
+        # the bundled benchmark suite doesn't exercise that path.
+        return _cli_dispatcher(
+            manifest=manifest,
+            input_envelope=input_envelope,
+            sandbox=sandbox,
+            worktree=worktree,
+            budget=budget,
+            workspace_root=workspace_root,
+            run_id=run_id,
+        )
+
+    with patch(
+        "ao_kernel.executor.executor.invoke_cli",
+        side_effect=_cli_dispatcher,
+    ):
+        with patch(
+            "ao_kernel.executor.executor.invoke_http",
+            side_effect=_http_dispatcher,
+        ):
+            yield
+
+
+def _benchmark_log_path(
+    workspace_root: Path, run_id: str, adapter_id: str,
+) -> Path:
+    return (
+        workspace_root
+        / ".ao"
+        / "evidence"
+        / "workflows"
+        / run_id
+        / f"adapter-{adapter_id}.stdout.log"
+    )
+
+
+def _ensure_log_parent(log_path: Path) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _write_empty_log(log_path: Path) -> None:
+    # Keep the file present — some downstream artefact helpers
+    # stat the path; real adapters always leave non-empty output.
+    log_path.write_text(
+        json.dumps({"_benchmark_mock": True}),
+        encoding="utf-8",
+    )
+
+
+__all__ = [
+    "CannedKey",
+    "MockEnvelopeNotFoundError",
+    "_TransportError",
+    "mock_adapter_transport",
+]
