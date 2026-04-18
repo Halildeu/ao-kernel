@@ -1,10 +1,30 @@
-# PR-C1a Implementation Plan v2 — Adapter Artifact Surface + Context Compile Materialisation
+# PR-C1a Implementation Plan v3 — Adapter Artifact Surface + Context Compile Materialisation
 
 **Scope**: FAZ-C critical-path seri başı. Adapter-path output_ref garantisi + `context_compile` step real materialisation + `build_driver(policy_loader=...)` forward + `context_pack_ref` plumbing. Downstream PR'lar (C1b/C2/C3/C6) bu altyapıya bağımlı.
 
 **Base**: `main 5fb7f31` (PR #108 tooling merged). **Branch**: `feat/pr-c1a-adapter-surface`.
 
-**Status**: iter-1 PARTIAL absorb → iter-2 submit için hazır. Codex thread `019d9fc3-1b0b-76b2-b425-0f3dfd6efc66`.
+**Status**: iter-2 PARTIAL absorb → iter-3 submit için hazır. Codex thread `019d9fc3-1b0b-76b2-b425-0f3dfd6efc66`.
+
+---
+
+## v3 absorb summary (Codex iter-2 PARTIAL — 3 blocker + 3 warning)
+
+Iter-2 kod-okuması ile v2'de kaçırdığım 3 coupling hatası:
+
+| # | iter-2 bulgu | v3 fix |
+|---|---|---|
+| **B1** | v2 resolver `record["steps"]` üzerinde `operation` + `context_path` aradı — ama `step_record` schema `additionalProperties=false` (`workflow-run.schema.v1.json:154`), bu field'lar persist edilmiyor (`multi_step_driver.py:1414`). | v3: Resolver **artifact JSON read** — workflow_def'ten `operation=="context_compile"` step_name bul → `record.steps[step_name].output_ref` oku → o canonical JSON'un `context_path` field'ını parse et. Schema widen YOK. |
+| **B2** | v2 `_build_adapter_input_envelope()` mevcut çağrı zincirine bağlı değil. Envelope bugün `Executor.run_step()` içinde üretiliyor (`executor.py:383`); driver override vermiyor. Ayrıca `step_def.task_prompt` yok — kaynak `record.intent.payload` (`executor.py:384`). | v3: `Executor.run_step(..., input_envelope_override: Mapping \| None = None)` **additive kwarg** widen. Driver pre-compute + override pass. `task_prompt` kaynağı `record.intent.payload` pin (schema+kod contract). |
+| **B3** | v2 `context_compile` gerçek hale gelse bile `_record_step_completion()` `operation=="context_compile"` gördüğünde `payload.stub=True` + `context_preamble_bytes=0` hardcode ediyor (`multi_step_driver.py:1392`). Test bunu assert ediyor (`test_multi_step_driver.py:55`). | v3: §3 `_record_step_completion` hardcode absorb — step handler dönüş dict'inden gerçek değerler okunur. `test_context_compile_stub_emits_stub_marker` testi güncellenir (stub=False, bytes>0, context_path). |
+
+### v3 absorb warnings
+
+- **W1** (iter-2): v2 helper isimleri `load_canonical_decisions` / `load_workspace_facts` yok. Gerçek: `ao_kernel.context.canonical_store::query/load_store` (`agent_coordination.py:202` pattern) + workspace facts `.cache/index/workspace_facts.v1.json` direct JSON read. Run schema top-level `session_context` taşımıyor (`workflow-run.schema.v1.json:22`) → MVP `session_context={}`. v3 §2.3 code örneği düzeltildi.
+- **W2** (iter-2): Master plan v5 hâlâ `".ao/runs/{run_id}/context.md"` diyor (`FAZ-C-MASTER-PLAN.md:129`); C1a plan absolute evidence-dir path kullanıyor. Drift var. **Çözüm**: C1a merge ile birlikte master plan v6 ayrı commit — bu PR'dan sonra ya da paralel docs PR. C1a PR description'da drift not edilir.
+- **W3** (iter-2): `gh-cli-pr` manifest tutarsızlığı C1a out-of-scope. PR description'a explicit disclaimer: "C1a closes adapter artifact surface + context materialisation; `open_pr` chain full-flow proof C1b'de".
+
+---
 
 ---
 
@@ -128,20 +148,29 @@ if op == "context_compile":
 ```python
 if op == "context_compile":
     from ao_kernel.context.context_compiler import compile_context
-    from ao_kernel.context.canonical_store import load_canonical_decisions
-    from ao_kernel.context.workspace_facts import load_workspace_facts
+    from ao_kernel.context.canonical_store import load_store, query
     from ao_kernel._internal.shared.utils import write_text_atomic
+    import json as _json
     
-    # Load 3-lane context (existing pipeline)
-    session_context = dict(record.get("session_context") or {})
-    canonical = load_canonical_decisions(self._workspace_root)
-    facts = load_workspace_facts(self._workspace_root)
+    # MVP: session_context = {} (workflow-run schema top-level taşımıyor;
+    # session bridge ayrı PR'a bırakılır).
+    session_context: dict[str, Any] = {}
+    
+    # Canonical decisions: existing pipeline (agent_coordination.py:202 pattern).
+    canonical_store = load_store(self._workspace_root)
+    canonical = query(canonical_store, limit=100)
+    
+    # Workspace facts: direct JSON read (`.cache/index/workspace_facts.v1.json`).
+    facts_path = (
+        self._workspace_root / ".cache" / "index" / "workspace_facts.v1.json"
+    )
+    facts = _json.loads(facts_path.read_text()) if facts_path.is_file() else {}
     
     compiled = compile_context(
         session_context,
         canonical_decisions=canonical,
         workspace_facts=facts,
-        profile="TASK_EXECUTION",  # default; future: from step_def
+        profile="TASK_EXECUTION",
     )
     
     # Write markdown preamble (absolute path for adapter subprocess)
@@ -150,7 +179,7 @@ if op == "context_compile":
     )
     write_text_atomic(context_path, compiled.preamble)
     
-    # Canonical evidence JSON (existing pattern, now with real metadata)
+    # Canonical evidence JSON with real metadata (stub=False)
     payload = {
         "operation": "context_compile",
         "stub": False,
@@ -169,9 +198,47 @@ if op == "context_compile":
         "output_ref": output_ref,
         "output_sha256": output_sha256,
         "operation": op,
-        "context_path": str(context_path),  # downstream plumbing için
     }
 ```
+
+**`_record_step_completion` hardcode absorb (iter-2 B3)**:
+
+`multi_step_driver.py:1392` mevcut kod context_compile için stub=True hardcode ediyor. v3 değişikliği:
+```python
+# Before (multi_step_driver.py:1392-1400):
+if step_def.operation == "context_compile":
+    payload = {"stub": True, "context_preamble_bytes": 0}
+
+# After (v3):
+if step_def.operation == "context_compile":
+    # Step handler dönüş dict'inden gerçek değerler
+    # Handler artifact JSON yazdı; burada artifact'ı re-read etmek
+    # yerine step_state dict'inden (handler return'dan) çekeriz.
+    # Handler return dict'i zaten output_ref içeriyor; ek metadata
+    # için artifact JSON parse edilebilir ama daha pahalı.
+    # Minimal çözüm: step_state dict'ine payload alanlarını ekle
+    # (handler zaten yaratıyor; sadece propagate edilir).
+    payload = {
+        "stub": False,
+        "context_preamble_bytes": step_state.get(
+            "context_preamble_bytes", 0
+        ),
+        "context_path": step_state.get("context_path"),
+    }
+```
+
+Bu değişiklik test `test_context_compile_stub_emits_stub_marker` kontratını günceller — artık assertion:
+```python
+# Before
+assert payload["stub"] is True
+assert payload["context_preamble_bytes"] == 0
+# After  
+assert payload["stub"] is False
+assert payload["context_preamble_bytes"] > 0
+assert payload["context_path"].endswith(".md")
+```
+
+Step handler return dict'i `context_preamble_bytes` + `context_path` taşır (handler kendi payload'unda yazar; propagate için step_state'e de eklenir).
 
 **Path semantics (iter-1 B3 absorb)**: `context_path` **absolute path** (`{workspace_root}/.ao/evidence/workflows/{run_id}/context-{step_id}-attempt{attempt}.md`). Adapter subprocess worktree cwd'sinde çalışsa bile absolute path okunur. `run_dir` zaten `_run_ao_kernel_step` içinde hesaplanmış (line 588).
 
@@ -183,37 +250,103 @@ if op == "context_compile":
 
 **Before**: Workflow step zincirinde `context_compile` step çıkışı → sonraki adapter step envelope'ında `context_pack_ref` resolver'ı yok. Envelope `{context_pack_ref}` placeholder literal kalır.
 
-**After** (minimum viable plumbing):
+**After** (v3 — artifact JSON read + Executor override widen):
 
-`multi_step_driver` içinde adapter step envelope builder:
+**B1.1 — `Executor.run_step` additive `input_envelope_override` kwarg** (`executor.py:383`):
 ```python
-def _build_adapter_input_envelope(
-    self, run_id: str, step_def: StepDefinition, record: Mapping[str, Any],
-) -> dict[str, Any]:
-    """Build input_envelope for adapter step; resolve context_pack_ref
-    from most recent completed context_compile step in the run."""
-    envelope = {
-        "task_prompt": step_def.task_prompt or "",
-        "run_id": run_id,
-    }
-    # context_pack_ref resolution: scan prior completed steps for
-    # `operation == "context_compile"` → take the most recent
-    # `context_path`. If none → placeholder stays literal (backwards-
-    # compat: zero-prior-context-compile runs still work).
-    for prior in reversed(record.get("steps", [])):
-        if (
-            prior.get("state") == "completed"
-            and prior.get("operation") == "context_compile"
-            and prior.get("context_path")
-        ):
-            envelope["context_pack_ref"] = prior["context_path"]
-            break
-    return envelope
+def run_step(
+    self,
+    run_id: str,
+    step_def: StepDefinition,
+    *,
+    parent_env: Mapping[str, str] | None = None,
+    attempt: int = 1,
+    driver_managed: bool = False,
+    input_envelope_override: Mapping[str, Any] | None = None,  # YENI
+    ...
+) -> ExecutionResult:
+    ...
+    if input_envelope_override is not None:
+        input_envelope = dict(input_envelope_override)
+    else:
+        # Existing behavior: task_prompt = record.intent.payload 
+        input_envelope = {
+            "task_prompt": record.get("intent", {}).get("payload", ""),
+            "run_id": run_id,
+        }
+    ...
 ```
 
-**Resolver semantiği (iter-1 Q3 + B3 absorb)**: Adapter envelope'una `context_pack_ref` key'i konulursa, `_substitute_args` (`adapter_invoker.py:702`) plain string replace ile `"{context_pack_ref}"` → absolute path'ı literal geçirir. Key yoksa placeholder literal kalır (zero-prior-context-compile test case — backwards-compat).
+Backwards-compat: `input_envelope_override=None` → mevcut davranış. Mevcut caller'lar etkilenmez.
 
-**StepDefinition değişmez (iter-1 B2 absorb)**: `context_spec` yeni field yok. `input_envelope_template` yok. Envelope builder workflow record steps history'sinden türetir.
+**B1.2 — Driver resolver `MultiStepDriver._build_adapter_envelope_with_context` (yeni method)**:
+```python
+def _build_adapter_envelope_with_context(
+    self, run_id: str, step_def: StepDefinition, record: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    """Resolve context_pack_ref from prior context_compile step's artifact.
+    Returns envelope override dict OR None if no context to inject
+    (caller falls back to Executor default envelope)."""
+    # 1. Workflow tanımından context_compile step_name'ini bul
+    workflow_def = self._workflow_registry.get(
+        record["workflow_id"], record["workflow_version"],
+    )
+    compile_step_names = [
+        sd.step_name for sd in workflow_def.steps
+        if sd.operation == "context_compile"
+    ]
+    if not compile_step_names:
+        return None
+    
+    # 2. En son tamamlanan context_compile step_record'unu bul
+    compile_step_name = compile_step_names[0]  # Workflow'larda typically 1 tane
+    compile_record = record.get("steps", {}).get(compile_step_name)
+    if not compile_record or compile_record.get("state") != "completed":
+        return None
+    
+    output_ref = compile_record.get("output_ref")
+    if not output_ref:
+        return None
+    
+    # 3. Artifact JSON'dan context_path çek
+    artifact_path = self._workspace_root / output_ref
+    if not artifact_path.is_file():
+        return None
+    
+    artifact = _json.loads(artifact_path.read_text())
+    context_path = artifact.get("context_path")
+    if not context_path:
+        return None
+    
+    # 4. Envelope (task_prompt kaynak: record.intent.payload — iter-2 B2 pin)
+    return {
+        "task_prompt": record.get("intent", {}).get("payload", ""),
+        "run_id": run_id,
+        "context_pack_ref": context_path,  # absolute
+    }
+```
+
+**B1.3 — Driver `_run_adapter_step` override forward** (`multi_step_driver.py:467`):
+```python
+# Inside _run_adapter_step (before executor.run_step call)
+envelope_override = self._build_adapter_envelope_with_context(
+    run_id, step_def, record,
+)
+execution_result = self._executor.run_step(
+    run_id,
+    step_def,
+    parent_env=parent_env,
+    attempt=attempt,
+    driver_managed=False,
+    input_envelope_override=envelope_override,  # None | dict
+)
+```
+
+**Resolver semantiği (iter-1 Q3 + iter-2 B1 absorb)**: Adapter envelope'una `context_pack_ref` absolute path konulursa, `_substitute_args` (`adapter_invoker.py:702`) plain string replace ile `"{context_pack_ref}"` → absolute path'ı literal geçirir. Resolver `None` dönerse Executor default envelope kullanılır (placeholder literal kalır — zero-prior-context-compile test case).
+
+**StepDefinition değişmez (iter-1 B2 absorb)**: `context_spec` + `input_envelope_template` icat yok. `step_record` schema değişmez (iter-2 B1 absorb): `operation` / `context_path` alanları eklenmez. Context path discovery artifact JSON'dan türetilir (step_record.output_ref pointer).
+
+**`task_prompt` kaynağı pin (iter-2 B2 absorb)**: `record.intent.payload` — mevcut kontrat (`executor.py:384`).
 
 ---
 
@@ -297,15 +430,18 @@ def _build_adapter_input_envelope(
 | Iter | Date | Verdict |
 |---|---|---|
 | v1 (Claude draft) | 2026-04-18 | Pre-Codex submit (`c2b61d9`) |
-| iter-1 (thread `019d9fc3`) | 2026-04-18 | **PARTIAL** — 3 blocker (InvocationResult.output_ref yanlış kaynak, context_spec/input_envelope_template yok, relative path runtime'da çözmez) + 3 warning (gh-cli-pr manifest inconsistency, build_driver scope wording, existing context pipeline alignment) + Q1-Q5 net cevaplar |
-| **v2 (iter-1 absorb)** | 2026-04-18 | Pre-iter-2 submit. Executor-side output_ref + explicit context_compile step + absolute path + existing compile_context() reuse. |
-| iter-2 | TBD | AGREE expected (3 blocker + 3 warning tam absorb; dar scope revisions) |
+| iter-1 (thread `019d9fc3`) | 2026-04-18 | **PARTIAL** — 3 blocker (InvocationResult.output_ref yanlış, context_spec/input_envelope_template yok, relative path runtime'da çözmez) + 3 warning + Q1-Q5 net cevaplar |
+| v2 (iter-1 absorb) | 2026-04-18 | `734b81f` commit |
+| iter-2 | 2026-04-18 | **PARTIAL** — 3 blocker (step_record schema `operation`/`context_path` persist etmiyor, `_build_adapter_input_envelope` çağrı zincirinde yok + `step_def.task_prompt` yok, `_record_step_completion` stub hardcode) + 3 warning (helper names, master plan drift, gh-cli-pr disclaimer) |
+| **v3 (iter-2 absorb)** | 2026-04-18 | Pre-iter-3 submit. Artifact JSON read resolver + `input_envelope_override` widen + `_record_step_completion` hardcode absorb + helper names (canonical_store.query) + session_context={} MVP. |
+| iter-3 | TBD | AGREE expected (3 blocker concrete fix'ler + warnings netleşti) |
 
 ### Plan revision history
 
 | Ver | Change |
 |---|---|
 | v1 | 4 gap + 5 Q for Codex; InvocationResult.output_ref varsayımı + context_spec icat + relative path |
-| **v2** | iter-1 PARTIAL absorb: output_ref kaynağı Executor `write_artifact` (InvocationResult dokunulmaz), context_compile step handler scope (StepDefinition değişmez), absolute path semantic, mevcut `compile_context()` reuse (role/constraints/references drop), build_driver scope "Executor-only" daraltıldı. |
+| v2 | iter-1 absorb: output_ref kaynağı Executor write_artifact (InvocationResult dokunulmaz), context_compile step handler scope, absolute path, compile_context() reuse, build_driver Executor-only daraltıldı |
+| **v3** | iter-2 absorb: resolver artifact JSON read (step_record schema değişmez), `Executor.run_step(input_envelope_override=None)` additive widen, driver `_build_adapter_envelope_with_context` yeni method, `task_prompt` = `record.intent.payload` pin, `_record_step_completion` stub hardcode absorb + `test_context_compile_stub_emits_stub_marker` test kontrat güncellenir, helper names `canonical_store.query/load_store`, workspace_facts direct JSON read, `session_context={}` MVP (workflow-run schema genişletme gerekmez). |
 
-**Status**: Plan v2 hazır. Codex thread `019d9fc3` iter-2 submit için hazır. 3 blocker tam absorb; 3 warning netleşti. AGREE beklenir.
+**Status**: Plan v3 hazır. Codex thread `019d9fc3` iter-3 submit için hazır. 3 blocker concrete fix'ler (artifact read, envelope override, stub absorb); 3 warning netleşti. AGREE beklenir.
