@@ -431,6 +431,20 @@ class TestSimulatePolicyChange:
             report.baseline_policy_hashes["policy_autonomy.v1.json"]
             != report.proposed_policy_hashes["policy_autonomy.v1.json"]
         )
+        # Combined decision semantics (iter-3 blocker absorb):
+        # baseline autonomy denies AUTONOMY_UNKNOWN_INTENT → deny;
+        # proposed autonomy allows it → allow. Combined kind must
+        # reflect the governance flip despite the executor primitive
+        # returning allow in both cases.
+        delta = report.deltas[0]
+        assert delta.scenario_id == "combined_smoke"
+        assert delta.transition == "deny_to_allow"
+        assert delta.baseline.decision == "deny"
+        assert delta.proposed.decision == "allow"
+        # Proposed has no violation_kinds when check_policy returned
+        # allowed=True — informational `POLICY_PASSED` stays out of
+        # the aggregator input.
+        assert delta.proposed.violation_kinds == ()
 
     def test_scenario_adapter_missing_raises(self, tmp_path: Path) -> None:
         """Synthesise a scenario referencing an adapter the

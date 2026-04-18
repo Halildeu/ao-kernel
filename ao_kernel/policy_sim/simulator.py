@@ -290,8 +290,15 @@ def _run_governance_policy(
         )
 
     allowed = _extract_allowed_flag(result)
-    violations = _extract_reason_codes(result)
+    reason_codes = _extract_reason_codes(result)
     decision = "allow" if allowed else "deny"
+    # governance.check_policy returns informational codes (like
+    # "POLICY_PASSED") alongside the allowed=True flag. They are
+    # not denial reasons, so `violation_kinds` only records codes
+    # when the policy actually denied — keeping the combined-kind
+    # aggregator's "any violations → deny" semantics honest
+    # (iter-3 combined-semantic blocker absorb).
+    violations = reason_codes if not allowed else ()
     return SimulationResult(
         scenario_id=scenario.scenario_id,
         decision=decision,
