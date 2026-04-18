@@ -7,6 +7,51 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.3.0] — 2026-04-18
+
+**FAZ-C Runtime Closure + Strategic Extensions**. 9 PRs shipped in one session (#109 through #117) + B7.1 absorb.
+
+### Added — FAZ-C Runtime Closure
+
+- **PR-C1a (#109) `cba3e2e` — Adapter artifact surface + context_compile materialisation**. `ExecutionResult.output_ref` additive field; `context_compile` writes real markdown preamble; `Executor.run_step(input_envelope_override=None)`; driver resolver for `context_pack_ref`.
+- **PR-C1b (#110) `7c3449a` — Patch plumbing + manifest parity**. `_load_pending_patch_content(workspace_root=...)` top-level `diff` fallback; `gh-cli-pr` manifest `input_envelope.context_pack_ref`.
+- **PR-C2 (#111) `a581fb5` — parent_env security-split**. Adapter UNION `allowlist_secret_ids ∪ env_allowlist.allowed_keys`; sandbox env-only MINUS secrets (structural guard); `build_driver(policy_loader=...)` forwards to both.
+- **PR-C2.1 (#115) `2201a6b` — Driver default bundled policy fallback**. `MultiStepDriver` uses `policy_config or _load_bundled_policy()` truthiness parity.
+- **PR-C3 (#117) `fb72ac9` — post_adapter_reconcile cost runtime**. Reconcile-before-terminal-event ordering; fail-closed cost errors propagate; `source="adapter_path"` discriminator on `llm_spend_recorded`; wire: `cost_actual.{tokens_input,tokens_output,cost_usd}`.
+- **PR-C6 (#114) `65d5250` — Executor.dry_run_step + CLI**. `DryRunResult`; `dry_run_execution_context` with 7 executor alias mocks; CLI `ao-kernel executor dry-run <run_id> <step_name>`.
+
+### Added — FAZ-C Strategic Extensions
+
+- **PR-C4 (#112) `41e110a` — resolve_route additive kwargs + `_KINDS` 27→28**. `budget_remaining`, `cross_class_downgrade` additive kwargs; response dict widen (`downgrade_applied`, `original_class`, `downgraded_class`). **Runtime dormant** — C4.1 follow-up for activation.
+- **PR-C5 (#113) `11c54cf` — RFC 7396 JSON Merge Patch policy-sim**. `apply_merge_patch` + `simulate_policy_change(proposed_policy_patches=...)` + CLI `--proposed-patches`. Reversible filename: `<name>.v1.patch.json` → `<name>.v1.json`.
+
+### Added — Test Infrastructure
+
+- **PR-C1b.1 (#116) `9e0be80` — Full 7-step bundled bug_fix_flow E2E**. Validates C2.1 unblock claim. Platform-tolerant `pytest.skip` on runners without bundled prefix match.
+
+### Changed
+
+- `_KINDS` 27 → 28 with `route_cross_class_downgrade` reserved (not emitted in v3.3.0).
+- `llm.resolve_route` return dict carries dormant `downgrade_applied`, `original_class`, `downgraded_class` on all success + FAIL paths.
+- `_load_pending_patch_content` additive `workspace_root` kwarg.
+- `simulate_policy_change` additive `proposed_policy_patches` kwarg (mutex with `proposed_policies`).
+- `build_driver` additive `policy_loader` kwarg (forwards to Executor + MultiStepDriver).
+- `Executor.run_step` additive `input_envelope_override` kwarg.
+- `MultiStepDriver` catch matrix extended with 3 cost exceptions (`CostTrackingConfigError`, `SpendLedgerDuplicateError`, `SpendLedgerCorruptedError`).
+
+### Known limitations — v3.3.1+ follow-ups
+
+1. **Bundled `command_allowlist.prefixes` platform-specific** (`/usr/bin/`, `/usr/local/bin/`, `/opt/homebrew/bin/`). GitHub Actions runner Python at `/opt/hostedtoolcache/...` falls outside. Users on non-standard environments must supply custom policy override.
+2. **C4.1 runtime activation deferred** — `resolve_route(cross_class_downgrade=True)` plumbing exists but runtime no-op. Threshold schema widen + directional `soft_degrade.rules` filter + evidence emit → v3.3.1.
+3. **C3 catalog attribution deferred** — `vendor_model_id=None` always on adapter-path spend events. Adapter manifest widen needed → v3.3.1.
+4. **C3 crash-window "lost spend after completed step"** — if process crashes between ledger append and budget CAS, ledger has spend but budget not drained. Recovery: operator scans for `cost_policy.enabled=true` + `cost_actual` present + no `llm_spend_recorded`/`llm_usage_missing` events. Atomic single-CAS restructure → v3.3.1.
+5. **C6 parity fixup (dry_run driver wiring)** — `Executor.dry_run_step` bypasses driver-layer `context_pack_ref` + `parent_env` derivation. CLI provides executor-only preview. Full fidelity → v3.3.1.
+6. **`_load_pending_patch_content` single-adapter scan** — helper stops at first completed adapter with `output_ref`; doesn't try older artifacts. v3.4.0+.
+
+### Test baseline
+
+**2210 tests passed** (2142 at v3.2.0 → **+68 new in this release**). Ruff + mypy clean. CI 8/8 green (lint + typecheck + Python 3.11/3.12/3.13 + coverage + extras-install + benchmark-fast).
+
 ### Added — FAZ-B PR-B7.1 (benchmark harness follow-up)
 
 **Minor follow-up to PR-B7 (v3.2.0). Test + docs layer only;
