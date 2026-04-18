@@ -377,6 +377,61 @@ class TestSimulatePolicyChange:
         )
         assert report.host_fs_dependent is True
 
+    def test_combined_kind_splits_targets(self, tmp_path: Path) -> None:
+        """Combined scenarios evaluate executor primitive against
+        the worktree target AND governance primitive against the
+        autonomy target in the same pass (plan v3 bulgu 1 + iter-2
+        multi-target absorb)."""
+        from ao_kernel.policy_sim.scenario import (
+            ExpectedBaseline,
+            Scenario,
+            ScenarioInputs,
+        )
+
+        combined = Scenario(
+            scenario_id="combined_smoke",
+            kind="combined",
+            inputs=ScenarioInputs(
+                adapter_manifest_ref="codex-stub",
+                parent_env={"PATH": "/usr/bin"},
+                action="AUTONOMY_UNKNOWN_INTENT",
+            ),
+            expected_baseline=ExpectedBaseline(decision_expected="deny"),
+            target_policy_names=(
+                "policy_worktree_profile.v1.json",
+                "policy_autonomy.v1.json",
+            ),
+        )
+
+        # Proposed autonomy allows the intent → governance flips.
+        proposed = {
+            "policy_autonomy.v1.json": {
+                "version": "v1",
+                "intents": {"AUTONOMY_UNKNOWN_INTENT": {"mode": "allow"}},
+                "defaults": {"mode": "allow"},
+            }
+        }
+        report = simulate_policy_change(
+            project_root=tmp_path,
+            scenarios=[combined],
+            proposed_policies=proposed,
+        )
+        assert report.scenarios_evaluated == 1
+
+        # Both target policies must appear in the baseline + proposed
+        # hash maps — the preload fix from absorb iter-2 ensures
+        # secondary targets are materialised.
+        assert (
+            "policy_worktree_profile.v1.json" in report.baseline_policy_hashes
+        )
+        assert "policy_autonomy.v1.json" in report.baseline_policy_hashes
+        assert "policy_autonomy.v1.json" in report.proposed_policy_hashes
+        # Proposed autonomy differs from bundled → hashes diverge.
+        assert (
+            report.baseline_policy_hashes["policy_autonomy.v1.json"]
+            != report.proposed_policy_hashes["policy_autonomy.v1.json"]
+        )
+
     def test_scenario_adapter_missing_raises(self, tmp_path: Path) -> None:
         """Synthesise a scenario referencing an adapter the
         snapshot has never seen."""

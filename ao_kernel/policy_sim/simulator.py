@@ -9,7 +9,7 @@ breakdowns.
 Guiding invariants (plan v3 §2.3):
 
 - No workspace writes, no evidence emits, no subprocess spawns,
-  no network — the 23-sentinel purity guard fails closed on any
+  no network — the 24-sentinel purity guard fails closed on any
   accidental side effect.
 - Adapter manifest resolution happens **before** entering the
   purity context so bundled adapters do not trip the
@@ -395,6 +395,19 @@ def _evaluate_scenario(
     )
 
 
+def _scenario_policy_names(scenario: Scenario) -> tuple[str, ...]:
+    """Return the full ordered list of policy names the scenario
+    references (primary target plus combined targets), with
+    duplicates preserved in their first-seen position."""
+    names: list[str] = []
+    if scenario.target_policy_name:
+        names.append(scenario.target_policy_name)
+    for name in scenario.target_policy_names:
+        if name and name not in names:
+            names.append(name)
+    return tuple(names)
+
+
 def _split_combined_targets(scenario: Scenario) -> tuple[str, str]:
     """Distribute a ``combined`` scenario's ``target_policy_names``
     across the executor and governance primitive targets.
@@ -465,24 +478,29 @@ def simulate_policy_change(
     adapter_manifests: dict[str, Any | None] = {}
 
     for scenario in scenario_list:
-        policy_name = _policy_for_scenario(scenario)
         adapter_manifests[scenario.scenario_id] = _resolve_adapter_manifest(
             scenario, adapter_snapshot
         )
-        if policy_name not in baseline_map:
-            baseline_map[policy_name] = resolve_target_policy(
-                policy_name=policy_name,
-                scenario_id=scenario.scenario_id,
-                project_root=project_root,
-                proposed_policies=proposed_policies,
-                baseline_source=baseline_source,
-                baseline_overrides=baseline_overrides,
-            )
-        if policy_name not in proposed_map:
-            proposed_map[policy_name] = dict(
-                proposed_policies.get(policy_name)
-                or baseline_map[policy_name]
-            )
+        # Preload every policy the scenario references. Combined
+        # kind carries multiple names in `target_policy_names`;
+        # collapsing to the first entry (iter-1 bug) meant the
+        # governance override context never saw the secondary
+        # target and proposed overrides for that policy never
+        # reached the simulation.
+        for name in _scenario_policy_names(scenario):
+            if name not in baseline_map:
+                baseline_map[name] = resolve_target_policy(
+                    policy_name=name,
+                    scenario_id=scenario.scenario_id,
+                    project_root=project_root,
+                    proposed_policies=proposed_policies,
+                    baseline_source=baseline_source,
+                    baseline_overrides=baseline_overrides,
+                )
+            if name not in proposed_map:
+                proposed_map[name] = dict(
+                    proposed_policies.get(name) or baseline_map[name]
+                )
 
     deltas: list[ScenarioDelta] = []
     with pure_execution_context():

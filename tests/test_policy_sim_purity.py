@@ -1,4 +1,4 @@
-"""Tests for ``ao_kernel.policy_sim._purity`` — the 23-sentinel
+"""Tests for ``ao_kernel.policy_sim._purity`` — the 24-sentinel
 no-side-effects guard (PR-B4 plan v3 §2.1)."""
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ class TestSentinelCoverage:
     def test_at_least_22_sentinels(self) -> None:
         """Plan v3 invariant: 22+ sentinel surface.
 
-        Actual count is 23 (4 emit_event paths + 1 worktree + 4
+        Actual count is 24 (4 emit_event paths + 1 worktree + 4
         subprocess + 4 pathlib + 4 os + 4 tempfile + 2 socket +
         1 importlib)."""
         assert len(PATCHED_SENTINEL_NAMES) >= 22

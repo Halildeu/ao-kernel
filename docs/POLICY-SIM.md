@@ -27,7 +27,7 @@ The harness answers operator questions like:
 
 ## 2. Invariants
 
-- **No side effects** during simulation. `_purity.py` patches 23
+- **No side effects** during simulation. `_purity.py` patches 24
   sentinels spanning subprocess, filesystem, tempfile, socket,
   `importlib.resources.as_file`, and every evidence-emit
   re-export path. Any trip raises `PolicySimSideEffectError`
