@@ -51,6 +51,7 @@ def review_agent_happy(
             "tokens_input": 320,
             "tokens_output": 180,
             "time_seconds": 4.1,
+            "cost_usd": 0.12,
         },
     }
 

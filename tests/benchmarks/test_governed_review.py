@@ -19,6 +19,7 @@ from ao_kernel.workflow.run_store import load_run
 from tests.benchmarks.assertions import (
     assert_adapter_ok,
     assert_capability_artifact,
+    assert_cost_consumed,
     assert_review_score,
     assert_workflow_completed,
     assert_workflow_failed,
@@ -142,6 +143,46 @@ class TestHappyPath:
         else:
             with pytest.raises(AssertionError, match="below threshold"):
                 assert_review_score(artifact, expected_min_score=min_threshold)
+
+
+class TestCostReconcile:
+    """PR-B7.1: verify the benchmark-only cost shim drains the
+    `cost_usd` axis. The real adapter transport path does not
+    reconcile cost_usd (FAZ-C PR-C3); this test pins the
+    benchmark-layer contract instead."""
+
+    def test_cost_usd_drained_after_happy_review(
+        self,
+        workspace_root: Path,
+        seeded_run,
+        benchmark_driver,
+    ) -> None:
+        run_id = seeded_run(_WORKFLOW_ID, version=_WORKFLOW_VERSION)
+        canned = {
+            (_SCENARIO_ID, "codex-stub", 1): review_envelopes.review_agent_happy(
+                score=0.85,
+            ),
+        }
+
+        with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
+            first = benchmark_driver.run_workflow(
+                run_id, _WORKFLOW_ID, _WORKFLOW_VERSION,
+            )
+            token = first.resume_token or read_awaiting_human_token(
+                _run_dir(workspace_root, run_id),
+            )
+            benchmark_driver.resume_workflow(
+                run_id, token, payload={"decision": "granted"},
+            )
+
+        record, _ = load_run(workspace_root, run_id)
+        consumed = assert_cost_consumed(record, "cost_usd", min_consumed=0.0)
+        # The envelope reports 0.12 USD; the shim should drain by
+        # exactly that amount (no other adapter call for this
+        # scenario).
+        assert abs(consumed - 0.12) < 1e-9, (
+            f"unexpected cost_usd consumption: {consumed}"
+        )
 
 
 class TestMissingPayload:

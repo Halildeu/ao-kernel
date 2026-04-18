@@ -36,6 +36,7 @@ from ao_kernel.executor.adapter_invoker import (
     InvocationResult,
     _invocation_from_envelope,
 )
+from ao_kernel.workflow.run_store import run_revision
 
 
 CannedKey = tuple[str, str, int]
@@ -129,6 +130,13 @@ def mock_adapter_transport(
         log_path = _benchmark_log_path(workspace_root, run_id, manifest.adapter_id)
         _ensure_log_parent(log_path)
         _write_empty_log(log_path)
+        # PR-B7.1 cost shim: pull the envelope back out (canned
+        # under the dispatcher key) so the budget axis update
+        # happens exactly when the adapter "returns" from the
+        # benchmark's perspective.
+        adapter_id = manifest.adapter_id
+        current_attempt = counters.get(adapter_id, 0) + 1
+        canned_entry = canned.get((scenario_id, adapter_id, current_attempt))
         try:
             result = _dispatch(
                 manifest=manifest,
@@ -139,6 +147,8 @@ def mock_adapter_transport(
             raise
         except AdapterInvocationFailedError:
             raise
+        if isinstance(canned_entry, Mapping):
+            _maybe_consume_budget(workspace_root, run_id, canned_entry)
         return result, budget
 
     def _http_dispatcher(
@@ -173,6 +183,50 @@ def mock_adapter_transport(
             side_effect=_http_dispatcher,
         ):
             yield
+
+
+def _maybe_consume_budget(
+    workspace_root: Path,
+    run_id: str,
+    envelope: Mapping[str, Any],
+) -> None:
+    """BENCHMARK-ONLY SHIM — drain ``budget.cost_usd.remaining``
+    by the envelope's ``cost_actual.cost_usd`` value.
+
+    The real reconcile path lives in
+    :func:`ao_kernel.cost.middleware.post_response_reconcile`,
+    which only runs behind :func:`ao_kernel.llm.governed_call`.
+    The adapter transport path (:func:`invoke_cli` /
+    :func:`invoke_http`) does not reconcile ``cost_usd`` — it
+    only accrues ``time_seconds``. Until **FAZ-C PR-C3** closes
+    that integration gap, this shim is what lets benchmark
+    assertions (`assert_cost_consumed`) observe budget drain
+    end-to-end.
+
+    Bypass note: this shim writes `state.v1.json` directly
+    rather than going through
+    :func:`ao_kernel.workflow.run_store.save_run`. Benchmark
+    scenarios are strictly single-threaded under pytest, so the
+    absence of `write_text_atomic` + file-lock is acceptable;
+    a real concurrency scenario would need the full store path.
+    """
+    cost_usd = (envelope.get("cost_actual") or {}).get("cost_usd")
+    if cost_usd is None:
+        return
+    state_path = workspace_root / ".ao" / "runs" / run_id / "state.v1.json"
+    if not state_path.is_file():
+        return
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    axis = (state.get("budget") or {}).get("cost_usd")
+    if not isinstance(axis, dict):
+        return
+    remaining = float(axis.get("remaining", 0.0)) - float(cost_usd)
+    axis["remaining"] = max(0.0, remaining)
+    state["revision"] = run_revision(state)
+    state_path.write_text(
+        json.dumps(state, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
 
 
 def _benchmark_log_path(

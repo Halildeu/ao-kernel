@@ -110,6 +110,36 @@ def assert_review_score(
     )
 
 
+def assert_cost_consumed(
+    run_state: Mapping[str, Any],
+    axis: str = "cost_usd",
+    *,
+    min_consumed: float = 0.0,
+) -> float:
+    """Assert that the given budget axis has been drained by at
+    least ``min_consumed``. Returns the consumed amount so callers
+    can make additional assertions.
+
+    v1 pairs with ``mock_transport._maybe_consume_budget``
+    (benchmark-only shim); once FAZ-C PR-C3 lands, this helper
+    also works against the real adapter transport reconcile path.
+    """
+    budget = run_state.get("budget") or {}
+    axis_data = budget.get(axis) or {}
+    limit = axis_data.get("limit")
+    remaining = axis_data.get("remaining")
+    assert limit is not None and remaining is not None, (
+        f"budget axis {axis!r} missing limit/remaining; "
+        f"run_state budget={budget!r}"
+    )
+    consumed = float(limit) - float(remaining)
+    assert consumed >= min_consumed, (
+        f"budget axis {axis!r} consumed {consumed!r} below "
+        f"min_consumed {min_consumed!r}"
+    )
+    return consumed
+
+
 def assert_budget_axis_seeded(
     run_state: Mapping[str, Any],
     axis: str,
@@ -185,6 +215,7 @@ __all__ = [
     "assert_adapter_ok",
     "assert_budget_axis_seeded",
     "assert_capability_artifact",
+    "assert_cost_consumed",
     "assert_review_score",
     "assert_workflow_completed",
     "assert_workflow_failed",
