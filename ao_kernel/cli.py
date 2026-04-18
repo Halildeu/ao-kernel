@@ -234,16 +234,17 @@ def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
         workflow_registry=wreg,
         adapter_registry=areg,
     )
-    # PR-C6.1: actor-aware dispatch. Default behavior for adapter
-    # steps routes through MultiStepDriver.dry_run_step so
-    # context_pack_ref + parent_env derivation matches the real
-    # execution path. Non-adapter actors continue to use the
-    # executor-only path (placeholder envelope) — scope pinned to
-    # adapter parity in v3.3.1 (full-actor parity: v3.4.0).
-    # ``--executor-only`` flag forces executor path for debugging /
-    # backward compat regardless of actor.
+    # v3.4.0 #4: actor-aware dispatch extended to non-adapter actors.
+    # PR-C6.1 routed only `adapter` through the driver (full envelope
+    # + parent_env parity); v3.4.0 #4 lets `system` and `ao-kernel`
+    # actors flow through the driver as well so sandbox parent_env
+    # derivation matches the real run. `--executor-only` flag still
+    # forces executor path for debugging / backward-compat.
     executor_only = getattr(args, "executor_only", False)
-    use_driver = (not executor_only) and step_def.actor == "adapter"
+    use_driver = (
+        (not executor_only)
+        and step_def.actor in ("adapter", "system", "ao-kernel")
+    )
     if use_driver:
         from ao_kernel.executor.multi_step_driver import MultiStepDriver
 

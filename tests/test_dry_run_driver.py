@@ -234,15 +234,68 @@ class TestRunningPlaceholderReuse:
 
 
 class TestNonAdapterScope:
-    def test_non_adapter_actor_raises_not_implemented(
+    def test_system_actor_uses_sandbox_parent_env(
         self, tmp_path: Path,
     ) -> None:
-        """Inner driver API is strict: non-adapter actor raises
-        NotImplementedError. CLI layer routes non-adapters to executor
-        directly; this test pins the inner contract."""
+        """v3.4.0 #4: `system` actors (ci-runner / patch-apply) now
+        route through the driver with sandbox-style parent_env
+        (allowlist MINUS secrets). Previously raised
+        NotImplementedError (C6.1 adapter-only scope)."""
         driver, run_id = _prepare_workspace(tmp_path)
-        with pytest.raises(NotImplementedError, match="adapter actors only"):
-            driver.dry_run_step(run_id, "lint_check")  # system actor
+        captured: dict[str, Any] = {}
+        real_exec = driver._executor.dry_run_step
+
+        def _spy(*a: Any, **kw: Any) -> Any:
+            captured.update(kw)
+            return real_exec(*a, **kw)
+
+        with patch.object(driver._executor, "dry_run_step", side_effect=_spy):
+            driver.dry_run_step(run_id, "lint_check")
+
+        # system actors get parent_env (may be empty dict if no
+        # allowlisted env vars are set in the test environment) but
+        # no input_envelope_override
+        assert captured.get("input_envelope_override") is None
+        assert "parent_env" in captured
+        assert isinstance(captured["parent_env"], dict)
+        assert captured.get("driver_managed") is True
+
+
+class TestAoKernelActorScope:
+    """v3.4.0 #4: `ao-kernel` actors (internal steps) route through
+    the driver with empty envelope + no parent_env (in-process)."""
+
+    def _prepare_aokernel_workspace(self, root: Path):
+        install_workspace(root)
+        copy_workflow_fixture(root, "simple_aokernel_flow")
+        write_stub_adapter_manifest(root)
+        driver = build_driver(root)
+        run_id = seed_run(
+            root,
+            workflow_id="simple_aokernel_flow",
+            workflow_version="1.0.0",
+        )
+        return driver, run_id
+
+    def test_aokernel_actor_no_envelope_no_parent_env(
+        self, tmp_path: Path,
+    ) -> None:
+        driver, run_id = self._prepare_aokernel_workspace(tmp_path)
+        captured: dict[str, Any] = {}
+        real_exec = driver._executor.dry_run_step
+
+        def _spy(*a: Any, **kw: Any) -> Any:
+            captured.update(kw)
+            return real_exec(*a, **kw)
+
+        with patch.object(driver._executor, "dry_run_step", side_effect=_spy):
+            driver.dry_run_step(run_id, "compile_ctx")
+
+        # ao-kernel actor: no envelope override, no parent_env
+        # (in-process execution has no sandbox surface)
+        assert captured.get("input_envelope_override") is None
+        assert captured.get("parent_env") is None
+        assert captured.get("driver_managed") is True
 
 
 # ─── 7. parent_env derivation ──────────────────────────────────────────
