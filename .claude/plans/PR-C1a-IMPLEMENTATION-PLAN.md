@@ -1,10 +1,30 @@
-# PR-C1a Implementation Plan v3 — Adapter Artifact Surface + Context Compile Materialisation
+# PR-C1a Implementation Plan v4 — Adapter Artifact Surface + Context Compile Materialisation
 
 **Scope**: FAZ-C critical-path seri başı. Adapter-path output_ref garantisi + `context_compile` step real materialisation + `build_driver(policy_loader=...)` forward + `context_pack_ref` plumbing. Downstream PR'lar (C1b/C2/C3/C6) bu altyapıya bağımlı.
 
 **Base**: `main 5fb7f31` (PR #108 tooling merged). **Branch**: `feat/pr-c1a-adapter-surface`.
 
-**Status**: iter-2 PARTIAL absorb → iter-3 submit için hazır. Codex thread `019d9fc3-1b0b-76b2-b425-0f3dfd6efc66`.
+**Status**: iter-3 PARTIAL absorb → iter-4 submit için hazır. Codex thread `019d9fc3-1b0b-76b2-b425-0f3dfd6efc66`.
+
+---
+
+## v4 absorb summary (Codex iter-3 PARTIAL — 4 blocker + 2 warning)
+
+Iter-3 fact-check ile 4 API/attribute isim hatası + handler return dict eksik:
+
+| # | iter-3 bulgu | v4 fix |
+|---|---|---|
+| **B1** | Driver call `driver_managed=False` yanlış — driver contract `driver_managed=True` (`multi_step_driver.py:434,468`, `executor.py:129,478`). | v4: `driver_managed=True` override. Driver-owned CAS + capability artifact akışı korunur. |
+| **B2** | Resolver repo gerçekleriyle uyuşmuyor: `self._workflow_registry` yok (`self._registry`), `record["steps"]` liste (dict değil), `output_ref` run-relative `artifacts/...` (workspace-relative değil). | v4: `self._registry`, list iteration, artifact path = `workspace_root/.ao/evidence/workflows/{run_id}/{output_ref}`. |
+| **B3** | `canonical_store.query(workspace_root: Path, *, ...)` — `limit` kwarg yok; list döner. `compile_context()` `canonical_decisions` için `.items()` çağırıyor (dict bekler). | v4: `query(self._workspace_root)` signature fix + list → dict wrap: `{item["decision_id"]: item for item in canonical_list}`. |
+| **B4** | Handler return dict `context_preamble_bytes` + `context_path` taşımıyor; `_record_step_completion` `step_state.get()` ile okuyor → mismatch. Test `bytes > 0` empty-fixture'da fail olur. | v4: Handler return dict'e `context_preamble_bytes` + `context_path` eklenir. Test assertion `bytes >= 0` + `context_path.is_file()` (dosya varlık kontratı). |
+
+### v4 absorb warnings
+
+- **W1** (iter-3): Resolver `compile_step_names[0]` "ilk tanımlı" step seçiyor → çok-adımlı flow'larda yanlış context seçme riski. v4: Workflow step execution ORDER'ına göre (workflow_def.steps listesi topological order) + completion filter; "en son completed context_compile before current step" semantik. Dar-scope test `test_multi_context_compile_steps.py` eklenir (MVP 1 context_compile; ama semantik pin'li).
+- **W2** (iter-3): Master plan v5 drift follow-up item. v4 §5'te açık: C1a merge sonrası master plan v6 docs sync commit (ayrı 1-satır PR). PR body'de explicit drift note.
+
+---
 
 ---
 
@@ -148,19 +168,22 @@ if op == "context_compile":
 ```python
 if op == "context_compile":
     from ao_kernel.context.context_compiler import compile_context
-    from ao_kernel.context.canonical_store import load_store, query
+    from ao_kernel.context.canonical_store import query
     from ao_kernel._internal.shared.utils import write_text_atomic
     import json as _json
     
-    # MVP: session_context = {} (workflow-run schema top-level taşımıyor;
-    # session bridge ayrı PR'a bırakılır).
+    # MVP: session_context = {} (workflow-run schema top-level taşımıyor)
     session_context: dict[str, Any] = {}
     
-    # Canonical decisions: existing pipeline (agent_coordination.py:202 pattern).
-    canonical_store = load_store(self._workspace_root)
-    canonical = query(canonical_store, limit=100)
+    # Canonical decisions: query signature (workspace_root: Path, *, ...)
+    # returns list; compile_context() expects dict with .items() so wrap.
+    canonical_list = query(self._workspace_root)
+    canonical = {
+        item.get("decision_id", f"_idx_{idx}"): item
+        for idx, item in enumerate(canonical_list)
+    }
     
-    # Workspace facts: direct JSON read (`.cache/index/workspace_facts.v1.json`).
+    # Workspace facts: direct JSON read
     facts_path = (
         self._workspace_root / ".cache" / "index" / "workspace_facts.v1.json"
     )
@@ -198,6 +221,10 @@ if op == "context_compile":
         "output_ref": output_ref,
         "output_sha256": output_sha256,
         "operation": op,
+        # v4 B4 absorb: propagate to step_state so _record_step_completion
+        # reads real values (not stub hardcode).
+        "context_preamble_bytes": len(compiled.preamble.encode("utf-8")),
+        "context_path": str(context_path),
     }
 ```
 
@@ -227,18 +254,19 @@ if step_def.operation == "context_compile":
     }
 ```
 
-Bu değişiklik test `test_context_compile_stub_emits_stub_marker` kontratını günceller — artık assertion:
+Bu değişiklik test `test_context_compile_stub_emits_stub_marker` kontratını günceller — artık assertion (v4 B4 absorb — empty-fixture tolerant):
 ```python
 # Before
 assert payload["stub"] is True
 assert payload["context_preamble_bytes"] == 0
-# After  
+# After (v4 — empty canonical/facts fixture için bytes 0 olabilir)
 assert payload["stub"] is False
-assert payload["context_preamble_bytes"] > 0
-assert payload["context_path"].endswith(".md")
+assert payload["context_preamble_bytes"] >= 0  # empty fixture tolerates
+assert payload["context_path"] is not None
+assert Path(payload["context_path"]).is_file()  # dosya gerçekten var
 ```
 
-Step handler return dict'i `context_preamble_bytes` + `context_path` taşır (handler kendi payload'unda yazar; propagate için step_state'e de eklenir).
+Step handler return dict'i `context_preamble_bytes` + `context_path` taşır (§2.3 "After" kod örneğinde eklendi).
 
 **Path semantics (iter-1 B3 absorb)**: `context_path` **absolute path** (`{workspace_root}/.ao/evidence/workflows/{run_id}/context-{step_id}-attempt{attempt}.md`). Adapter subprocess worktree cwd'sinde çalışsa bile absolute path okunur. `run_dir` zaten `_run_ao_kernel_step` içinde hesaplanmış (line 588).
 
@@ -284,32 +312,43 @@ Backwards-compat: `input_envelope_override=None` → mevcut davranış. Mevcut c
 def _build_adapter_envelope_with_context(
     self, run_id: str, step_def: StepDefinition, record: Mapping[str, Any],
 ) -> dict[str, Any] | None:
-    """Resolve context_pack_ref from prior context_compile step's artifact.
-    Returns envelope override dict OR None if no context to inject
-    (caller falls back to Executor default envelope)."""
-    # 1. Workflow tanımından context_compile step_name'ini bul
-    workflow_def = self._workflow_registry.get(
+    """Resolve context_pack_ref from most recent completed
+    context_compile step in the run. Returns envelope override dict
+    OR None if no context available (caller falls back to Executor
+    default envelope)."""
+    # 1. Workflow tanımından context_compile step_name'lerini bul
+    #    (v4 B2 absorb: self._registry — self._workflow_registry değil)
+    workflow_def = self._registry.get(
         record["workflow_id"], record["workflow_version"],
     )
-    compile_step_names = [
+    compile_step_names = {
         sd.step_name for sd in workflow_def.steps
         if sd.operation == "context_compile"
-    ]
+    }
     if not compile_step_names:
         return None
     
-    # 2. En son tamamlanan context_compile step_record'unu bul
-    compile_step_name = compile_step_names[0]  # Workflow'larda typically 1 tane
-    compile_record = record.get("steps", {}).get(compile_step_name)
-    if not compile_record or compile_record.get("state") != "completed":
+    # 2. steps LIST iteration (v4 B2 absorb: record["steps"] is list)
+    #    En son tamamlanan context_compile step (reverse order)
+    compile_record = None
+    for prior in reversed(record.get("steps", [])):
+        if (
+            prior.get("step_name") in compile_step_names
+            and prior.get("state") == "completed"
+            and prior.get("output_ref")
+        ):
+            compile_record = prior
+            break
+    if compile_record is None:
         return None
     
-    output_ref = compile_record.get("output_ref")
-    if not output_ref:
-        return None
-    
-    # 3. Artifact JSON'dan context_path çek
-    artifact_path = self._workspace_root / output_ref
+    # 3. Artifact path = evidence run_dir + run-relative output_ref
+    #    (v4 B2 absorb: output_ref is run-relative "artifacts/..."
+    #    per artifacts.py:50,108 — NOT workspace-relative)
+    run_dir = (
+        self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
+    )
+    artifact_path = run_dir / compile_record["output_ref"]
     if not artifact_path.is_file():
         return None
     
@@ -318,13 +357,15 @@ def _build_adapter_envelope_with_context(
     if not context_path:
         return None
     
-    # 4. Envelope (task_prompt kaynak: record.intent.payload — iter-2 B2 pin)
+    # 4. Envelope (task_prompt = record.intent.payload; iter-2 B2 pin)
     return {
         "task_prompt": record.get("intent", {}).get("payload", ""),
         "run_id": run_id,
         "context_pack_ref": context_path,  # absolute
     }
 ```
+
+**Çok-adımlı workflow semantiği (iter-3 W1 absorb)**: Reverse iteration + completion filter → "en son completed context_compile before current step" semantiği. MVP workflow'larda 1 context_compile; ama çok-adımlı pattern desteklenir.
 
 **B1.3 — Driver `_run_adapter_step` override forward** (`multi_step_driver.py:467`):
 ```python
@@ -337,7 +378,7 @@ execution_result = self._executor.run_step(
     step_def,
     parent_env=parent_env,
     attempt=attempt,
-    driver_managed=False,
+    driver_managed=True,  # v4 B1 absorb: driver contract
     input_envelope_override=envelope_override,  # None | dict
 )
 ```
