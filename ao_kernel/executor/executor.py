@@ -72,6 +72,7 @@ class ExecutionResult:
     invocation_result: InvocationResult | None
     evidence_event_ids: tuple[str, ...]
     budget_after: Mapping[str, Any]
+    output_ref: str | None = None
 
 
 class Executor:
@@ -120,6 +121,7 @@ class Executor:
         step_id: str | None = None,
         fencing_token: int | None = None,
         fencing_resource_id: str | None = None,
+        input_envelope_override: Mapping[str, Any] | None = None,
     ) -> ExecutionResult:
         """Execute one workflow step.
 
@@ -235,6 +237,7 @@ class Executor:
                 attempt=attempt,
                 driver_managed=driver_managed,
                 step_id_override=step_id,
+                input_envelope_override=input_envelope_override,
             )
         # Non-adapter actors are PR-A4+; emit placeholder events and
         # record the step as completed. In driver-managed mode the
@@ -261,6 +264,7 @@ class Executor:
         attempt: int = 1,
         driver_managed: bool = False,
         step_id_override: str | None = None,
+        input_envelope_override: Mapping[str, Any] | None = None,
     ) -> ExecutionResult:
         if step_def.adapter_id is None:
             raise ValueError(
@@ -381,10 +385,15 @@ class Executor:
             evidence_event_ids.append(invoked.event_id)
 
             budget = budget_from_dict(record.get("budget", {}))
-            input_envelope = {
-                "task_prompt": record.get("intent", {}).get("payload", ""),
-                "run_id": run_id,
-            }
+            if input_envelope_override is not None:
+                # PR-C1a: driver pre-computes envelope with context_pack_ref
+                # resolved from prior context_compile step's artifact.
+                input_envelope = dict(input_envelope_override)
+            else:
+                input_envelope = {
+                    "task_prompt": record.get("intent", {}).get("payload", ""),
+                    "run_id": run_id,
+                }
             transport = manifest.invocation.get("transport")
             if transport == "cli":
                 invocation_result, budget_after = invoke_cli(
@@ -485,6 +494,7 @@ class Executor:
                 invocation_result=invocation_result,
                 evidence_event_ids=tuple(evidence_event_ids),
                 budget_after=budget_to_dict(budget_after),
+                output_ref=output_ref,
             )
 
         # CAS update run (A3 default path)
@@ -517,6 +527,7 @@ class Executor:
             invocation_result=invocation_result,
             evidence_event_ids=tuple(evidence_event_ids),
             budget_after=budget_to_dict(budget_after),
+            output_ref=output_ref,
         )
 
     # ------------------------------------------------------------------

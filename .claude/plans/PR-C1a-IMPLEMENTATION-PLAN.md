@@ -430,7 +430,7 @@ execution_result = self._executor.run_step(
 
 - `ao_kernel.executor.executor::ExecutionResult` — field delta.
 - `ao_kernel.executor.multi_step_driver::_run_ao_kernel_step` context_compile branch — compile_context + write_text_atomic yeni path.
-- `ao_kernel.executor.multi_step_driver::_build_adapter_input_envelope` (yeni fonksiyon) — context_pack_ref resolver.
+- `ao_kernel.executor.multi_step_driver::_build_adapter_envelope_with_context` (yeni fonksiyon) — context_pack_ref resolver.
 
 ---
 

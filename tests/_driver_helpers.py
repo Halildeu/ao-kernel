@@ -97,8 +97,17 @@ def write_stub_adapter_manifest(root: Path, adapter_id: str = "codex-stub") -> P
     return dest
 
 
-def build_driver(root: Path) -> MultiStepDriver:
-    """Build registry + adapter_registry + executor + driver pointing at ``root``."""
+def build_driver(
+    root: Path,
+    *,
+    policy_loader: Mapping[str, Any] | None = None,
+) -> MultiStepDriver:
+    """Build registry + adapter_registry + executor + driver pointing at ``root``.
+
+    ``policy_loader`` is forwarded to the Executor; ``None`` keeps the
+    Executor's default bundled-policy behavior. PR-C1a: benchmark + FAZ-C
+    testleri policy override'ı bu yolla aktarır.
+    """
     wreg = WorkflowRegistry()
     wreg.load_workspace(root)
 
@@ -109,6 +118,7 @@ def build_driver(root: Path) -> MultiStepDriver:
         workspace_root=root,
         workflow_registry=wreg,
         adapter_registry=areg,
+        policy_loader=policy_loader,
     )
 
     return MultiStepDriver(

@@ -52,7 +52,14 @@ class TestSimpleHappyPath:
         assert result.steps_retried == ()
         assert result.resume_token is None
 
-    def test_context_compile_stub_emits_stub_marker(self, tmp_path: Path) -> None:
+    def test_context_compile_emits_real_materialisation_payload(
+        self, tmp_path: Path,
+    ) -> None:
+        """PR-C1a: context_compile step now materialises actual
+        preamble + writes markdown. Test renamed from stub-marker
+        pattern; payload.stub is False; context_preamble_bytes is
+        tolerant of empty fixture (>= 0); context_path points to
+        existing file."""
         driver, run_id = self._setup(tmp_path)
         driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
         events_path = (
@@ -61,12 +68,19 @@ class TestSimpleHappyPath:
         )
         assert events_path.exists()
         lines = [json.loads(ln) for ln in events_path.read_text().splitlines()]
-        completed = [
+        compile_completed = [
             e for e in lines
             if e.get("kind") == "step_completed"
-            and e.get("payload", {}).get("stub") is True
+            and e.get("payload", {}).get("operation") == "context_compile"
         ]
-        assert len(completed) == 2
+        assert len(compile_completed) == 2
+        for event in compile_completed:
+            payload = event["payload"]
+            assert payload["stub"] is False
+            assert payload["context_preamble_bytes"] >= 0
+            context_path = payload.get("context_path")
+            assert context_path is not None
+            assert Path(context_path).is_file()
 
     def test_artifact_written_for_each_step(self, tmp_path: Path) -> None:
         driver, run_id = self._setup(tmp_path)
