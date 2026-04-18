@@ -7,10 +7,16 @@
     "max_open_consultations": 3
   },
   "paths": {
-    "requests": ".cache/index/consultations/requests",
-    "state": ".cache/index/consultations/state",
-    "responses": ".cache/reports/consultations",
-    "config": ".cache/config/consultation_agents.v1.json"
+    "requests": ".ao/consultations/requests",
+    "state": ".ao/consultations/state",
+    "responses": ".ao/consultations/responses",
+    "config": ".ao/consultations/config/consultation_agents.v1.json",
+    "legacy_fallbacks": {
+      "requests": ".cache/index/consultations/requests",
+      "state": ".cache/index/consultations/state",
+      "responses": ".cache/reports/consultations",
+      "config": ".cache/config/consultation_agents.v1.json"
+    }
   },
   "naming": {
     "request": "CNS-{YYYYMMDD}-{NNN}.request.v1.json",

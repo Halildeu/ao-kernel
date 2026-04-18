@@ -183,6 +183,67 @@ def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
     return 0 if not bulk.errors else 1
 
 
+def _cmd_consultation_migrate(args: argparse.Namespace) -> int:
+    """v3.5 D1 CLI: copy-forward legacy consultation artefacts to the
+    canonical `.ao/consultations/` layout."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.config import load_with_override
+    from ao_kernel.consultation.migrate import migrate_consultations
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+    # PR-D1 fix: workspace override hit first (policy SSOT). Workspace
+    # resources live under `<project_root>/.ao/`; load_with_override
+    # resolves to bundled default when no override exists.
+    policy = load_with_override(
+        "policies", "policy_agent_consultation.v1.json",
+        workspace=project_root / ".ao",
+    )
+
+    result = migrate_consultations(
+        policy,
+        workspace_root=project_root,
+        dry_run=bool(args.dry_run),
+        force=bool(args.force),
+        include_invalid=bool(args.include_invalid),
+    )
+
+    if args.output == "json":
+        payload = {
+            "dry_run": result.dry_run,
+            "copied": result.copied_count,
+            "skipped_existing": result.skipped_existing,
+            "skipped_invalid": result.skipped_invalid,
+            "backup_manifest": (
+                str(result.backup_manifest)
+                if result.backup_manifest else None
+            ),
+            "entries": [
+                {
+                    "artefact": e.artefact,
+                    "source": str(e.source),
+                    "target": str(e.target),
+                    "status": e.status,
+                    "classification": e.classification.value,
+                }
+                for e in result.entries
+            ],
+        }
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        mode = "dry-run" if result.dry_run else "applied"
+        print(
+            f"Consultation migration [{mode}]: "
+            f"copied={result.copied_count} "
+            f"skipped_existing={result.skipped_existing} "
+            f"skipped_invalid={result.skipped_invalid}"
+        )
+        if result.backup_manifest:
+            print(f"Backup manifest: {result.backup_manifest}")
+    return 0
+
+
 def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
     """PR-C6 CLI: preview a step's effects without side-effects."""
     import json as _json
@@ -555,6 +616,41 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Project root (default: cwd)",
     )
 
+    # v3.5 D1: consultation migrate subcommand
+    consult_p = sub.add_parser(
+        "consultation",
+        help="Consultation (CNS) artefact management",
+    )
+    consult_sub = consult_p.add_subparsers(dest="consultation_command")
+    migrate_cons_p = consult_sub.add_parser(
+        "migrate",
+        help=(
+            "Copy-forward legacy `.cache/...` consultation artefacts to "
+            "the canonical `.ao/consultations/` layout. Idempotent + "
+            "reversible (migration manifest written under "
+            "`.ao/consultations/.migration_backup/`)."
+        ),
+    )
+    migrate_cons_p.add_argument(
+        "--dry-run", action="store_true",
+        help="Report what WOULD be copied without touching disk.",
+    )
+    migrate_cons_p.add_argument(
+        "--force", action="store_true",
+        help="Overwrite pre-existing canonical files (non-destructive by default).",
+    )
+    migrate_cons_p.add_argument(
+        "--include-invalid", action="store_true",
+        help="Copy files flagged INVALID_JSON anyway (default: skipped).",
+    )
+    migrate_cons_p.add_argument(
+        "--output", choices=["json", "human"], default="human",
+    )
+    migrate_cons_p.add_argument(
+        "--project-root", default=None,
+        help="Project root (default: cwd)",
+    )
+
     # v3.4.0 #3: cost compact-markers subcommand
     compact_p = cost_sub.add_parser(
         "compact-markers",
@@ -665,6 +761,14 @@ def main(argv: list[str] | None = None) -> int:
         if ps_cmd == "run":
             return cmd_policy_sim_run(args)
         print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
+        return 1
+
+    # Consultation subcommand (v3.5 D1 — migrate)
+    if cmd == "consultation":
+        cns_cmd = getattr(args, "consultation_command", None)
+        if cns_cmd == "migrate":
+            return _cmd_consultation_migrate(args)
+        print("Usage: ao-kernel consultation {migrate}", file=sys.stderr)
         return 1
 
     # Cost subcommand (v3.4.0 #1 reconciler + #3 compact-markers)

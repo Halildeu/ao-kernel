@@ -28,7 +28,18 @@
         "requests":  { "type": "string", "description": "Immutable request artifacts (agent writes once)." },
         "state":     { "type": "string", "description": "Mutable state (dispatcher single-writer)." },
         "responses": { "type": "string", "description": "Immutable response artifacts (dispatcher writes after agent stdout parse)." },
-        "config":    { "type": "string", "description": "Agent binary config and dispatcher settings." }
+        "config":    { "type": "string", "description": "Agent binary config and dispatcher settings." },
+        "legacy_fallbacks": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "v3.5 D1 additive: workspace-relative pre-v3.5 `.cache/...` paths preserved as read-only fallbacks during copy-forward migration window. Keys mirror the sibling artefact names; any subset may be declared.",
+          "properties": {
+            "requests":  { "type": "string" },
+            "state":     { "type": "string" },
+            "responses": { "type": "string" },
+            "config":    { "type": "string" }
+          }
+        }
       }
     },
     "naming": {
