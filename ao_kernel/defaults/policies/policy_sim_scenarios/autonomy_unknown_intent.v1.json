@@ -1,0 +1,17 @@
+{
+  "scenario_id": "autonomy_unknown_intent",
+  "description": "governance_policy scenario — action string is not in policy_autonomy's intent allowlist so check_policy surfaces AUTONOMY_UNKNOWN_INTENT. Baseline resolves to deny.",
+  "kind": "governance_policy",
+  "target_policy_name": "policy_autonomy.v1.json",
+  "inputs": {
+    "adapter_manifest_ref": null,
+    "parent_env": {},
+    "requested_command": null,
+    "requested_cwd": null,
+    "action": "AUTONOMY_UNKNOWN_INTENT"
+  },
+  "expected_baseline": {
+    "violations_expected": ["AUTONOMY_UNKNOWN_INTENT"],
+    "decision_expected": "deny"
+  }
+}

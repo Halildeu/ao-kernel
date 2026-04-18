@@ -1,0 +1,18 @@
+{
+  "scenario_id": "path_poisoned_python",
+  "description": "parent PATH contains an attacker-controlled prefix; baseline policy_worktree_profile's command_allowlist should surface command_path_outside_policy so the scenario resolves to deny. Exercised only when --enable-host-fs-probes flips validate_command on.",
+  "kind": "executor_primitive",
+  "target_policy_name": "policy_worktree_profile.v1.json",
+  "inputs": {
+    "adapter_manifest_ref": "codex-stub",
+    "parent_env": {
+      "PATH": "/tmp/poison:/usr/bin"
+    },
+    "requested_command": "/tmp/poison/python",
+    "requested_cwd": null
+  },
+  "expected_baseline": {
+    "violations_expected": ["command_path_outside_policy"],
+    "decision_expected": "deny"
+  }
+}

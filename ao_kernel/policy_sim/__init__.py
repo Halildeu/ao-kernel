@@ -33,9 +33,20 @@ from ao_kernel.policy_sim.errors import (
     SimulationAbortedError,
     TargetPolicyNotFoundError,
 )
+from ao_kernel.policy_sim.scenario import (
+    ExpectedBaseline,
+    Scenario,
+    ScenarioInputs,
+    ScenarioKind,
+    ScenarioSet,
+    load_bundled_scenarios,
+    load_scenario_file,
+    load_scenarios_from_dir,
+)
 
 
 __all__ = [
+    # Errors
     "PolicySimError",
     "PolicySimReentrantError",
     "PolicySimSideEffectError",
@@ -45,4 +56,13 @@ __all__ = [
     "ScenarioValidationError",
     "SimulationAbortedError",
     "TargetPolicyNotFoundError",
+    # Scenario model
+    "ExpectedBaseline",
+    "Scenario",
+    "ScenarioInputs",
+    "ScenarioKind",
+    "ScenarioSet",
+    "load_bundled_scenarios",
+    "load_scenario_file",
+    "load_scenarios_from_dir",
 ]

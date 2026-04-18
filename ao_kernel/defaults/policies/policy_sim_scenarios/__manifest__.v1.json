@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "description": "Bundled scenario manifest for policy_sim. Operator workspace overrides are discovered via glob; this file lists the three reference fixtures shipped inside the wheel.",
+  "scenarios": [
+    "adapter_http_with_secret.v1.json",
+    "autonomy_unknown_intent.v1.json",
+    "path_poisoned_python.v1.json"
+  ]
+}
