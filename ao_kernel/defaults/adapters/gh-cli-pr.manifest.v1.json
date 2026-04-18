@@ -14,7 +14,8 @@
   },
   "input_envelope": {
     "task_prompt": "<PR title>",
-    "run_id": "<uuid>"
+    "run_id": "<uuid>",
+    "context_pack_ref": "<path to PR body markdown>"
   },
   "output_envelope": {
     "status": "ok"

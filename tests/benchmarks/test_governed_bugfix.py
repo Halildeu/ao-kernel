@@ -8,11 +8,12 @@ only; retry variant deferred; full mode deferred).
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
-
 
 from ao_kernel.workflow.run_store import load_run
 
+from tests._driver_helpers import _GIT_CFG
 from tests.benchmarks.assertions import (
     assert_adapter_ok,
     assert_budget_axis_seeded,
@@ -121,3 +122,154 @@ class TestTransportError:
             _run_dir(workspace_root, run_id),
             expected_category="adapter_crash",
         )
+
+
+# ---------------------------------------------------------------------------
+# PR-C1b: Full bundled bug_fix_flow E2E
+# ---------------------------------------------------------------------------
+
+
+_BUNDLED_WORKFLOW_ID = "bug_fix_flow"
+_BUNDLED_SCENARIO = "full_bundled_bugfix"
+
+
+def _install_mini_repo(workspace_root: Path) -> None:
+    """Install mini_repo files (src/foo.py + test_smoke.py) and commit
+    so the adapter worktree sees them. ``_BUG_DIFF`` from bug_envelopes
+    patches ``src/foo.py`` x=1 → x=2; we materialise that file here."""
+    src_dir = workspace_root / "src"
+    src_dir.mkdir(parents=True, exist_ok=True)
+    (src_dir / "__init__.py").write_text("", encoding="utf-8")
+    (src_dir / "foo.py").write_text("x = 1\n", encoding="utf-8")
+    tests_dir = workspace_root / "tests"
+    tests_dir.mkdir(parents=True, exist_ok=True)
+    (tests_dir / "test_smoke.py").write_text(
+        "def test_passes():\n    assert 1 + 1 == 2\n",
+        encoding="utf-8",
+    )
+    # Commit baseline so worktree picks up the files
+    subprocess.run(
+        ["git", *_GIT_CFG, "-C", str(workspace_root), "add", "."],
+        check=True, capture_output=True,
+    )
+    subprocess.run(
+        ["git", *_GIT_CFG, "-C", str(workspace_root), "commit",
+         "-q", "-m", "mini_repo baseline"],
+        check=True, capture_output=True,
+    )
+
+
+class TestFullBundledBugFixFlow:
+    """PR-C1b: Full 7-step bundled bug_fix_flow E2E benchmark.
+
+    **Scope-down (post-impl discovery)**: Full 7-step flow ci_gate +
+    patch_preview + apply_patch adımları ``validate_command`` preflight
+    check'ine takılıyor (git command allowlist + sandbox PATH resolve).
+    Bu policy engine tuning C2 scope'unda (parent_env union + command
+    allowlist parametrization). C1b scope bu iter'de 2 unit-level test
+    ile sınırlandı:
+    - ``test_bug_fix_flow_workflow_loads`` — bundled workflow registry
+      yükler.
+    - ``test_codex_stub_adapter_returns_via_mock`` — codex-stub adapter
+      mock envelope'u döner + ExecutionResult.output_ref (C1a contract)
+      + top-level diff artifact.
+
+    Full 7-step E2E policy tuning gerekince follow-up PR'da ele alınır.
+    """
+
+    def test_bug_fix_flow_workflow_loads_with_exact_step_order(
+        self,
+        workspace_root: Path,
+    ) -> None:
+        """Bundled bug_fix_flow workflow registry'ye yüklenir with
+        exact step order preserved (post-impl review W1 absorb —
+        previously asserted as set, hiding ordering bugs).
+
+        Also pins manifest parity: gh-cli-pr context_pack_ref
+        declaration present in bundled + fixture manifests."""
+        from ao_kernel.workflow.registry import WorkflowRegistry
+        import json as _json
+
+        wreg = WorkflowRegistry()
+        wreg.load_workspace(workspace_root)
+        wf = wreg.get("bug_fix_flow", version="1.0.0")
+        assert wf is not None
+        # Exact sequence (post-impl cleanup — order matters, Codex
+        # iter-1 B1 absorb: ci_gate is pre-commit sanity, apply_patch
+        # comes after approval).
+        step_order = [s.step_name for s in wf.steps]
+        assert step_order == [
+            "compile_context",
+            "invoke_coding_agent",
+            "preview_diff",
+            "ci_gate",
+            "await_approval",
+            "apply_patch",
+            "open_pr",
+        ], f"unexpected step order: {step_order!r}"
+        # Manifest parity check (C1b W4 absorb)
+        gh_manifest_path = (
+            workspace_root / ".ao" / "adapters"
+            / "gh-cli-pr.manifest.v1.json"
+        )
+        gh_manifest = _json.loads(gh_manifest_path.read_text())
+        assert "context_pack_ref" in gh_manifest["input_envelope"], (
+            "gh-cli-pr input_envelope must declare context_pack_ref"
+        )
+
+    def test_adapter_artifact_has_top_level_diff_contract(
+        self,
+        workspace_root: Path,
+        seeded_run,
+        benchmark_driver,
+    ) -> None:
+        """Generic adapter-artifact contract test (post-impl rename):
+        codex-stub mock envelope → ExecutionResult.output_ref (C1a
+        contract) → canonical JSON with top-level ``diff`` field.
+
+        Pins the C1b patch-fallback input contract: `_load_pending
+        _patch_content(workspace_root=...)` reads `artifact.get("diff")`
+        (NOT extracted_outputs.diff — Codex iter-1 B2 absorb). Uses
+        the bench variant (``governed_bugfix_bench``) since the full
+        bundled bug_fix_flow E2E is deferred to post-C2."""
+        _install_mini_repo(workspace_root)
+        run_id = seeded_run(
+            _WORKFLOW_ID, version=_WORKFLOW_VERSION,
+        )
+        canned = {
+            (_SCENARIO_ID, "codex-stub", 1):
+                bug_envelopes.coding_agent_happy(),
+        }
+        with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
+            first = benchmark_driver.run_workflow(
+                run_id, _WORKFLOW_ID, _WORKFLOW_VERSION,
+            )
+            token = first.resume_token or read_awaiting_human_token(
+                _run_dir(workspace_root, run_id),
+            )
+            benchmark_driver.resume_workflow(
+                run_id, token, payload={"decision": "granted"},
+            )
+
+        record, _ = load_run(workspace_root, run_id)
+        step_records = {
+            step["step_name"]: step for step in record.get("steps", [])
+        }
+        coding_step = step_records["invoke_coding_agent"]
+        assert coding_step["state"] == "completed"
+        output_ref = coding_step.get("output_ref")
+        assert output_ref is not None, coding_step
+
+        # C1a contract: output_ref is run-relative artifact path.
+        import json as _json
+        artifact_path = (
+            _run_dir(workspace_root, run_id) / output_ref
+        )
+        assert artifact_path.is_file()
+        artifact = _json.loads(artifact_path.read_text())
+        # C1b contract: top-level diff present for patch plumbing
+        # fallback (Codex iter-1 B2 absorb: NOT extracted_outputs.diff).
+        assert "diff" in artifact
+        assert isinstance(artifact["diff"], str)
+        assert len(artifact["diff"]) > 0
+
