@@ -173,6 +173,60 @@ def _build_parser() -> argparse.ArgumentParser:
         help="File path for atomic write; omit for stdout",
     )
 
+    # Policy-sim subcommand (PR-B4)
+    policy_sim_p = sub.add_parser(
+        "policy-sim",
+        help="Dry-run simulation of proposed policy changes",
+    )
+    policy_sim_sub = policy_sim_p.add_subparsers(dest="policy_sim_command")
+
+    run_p = policy_sim_sub.add_parser(
+        "run",
+        help="Evaluate scenarios against baseline + proposed policy sets",
+    )
+    run_p.add_argument(
+        "--scenarios",
+        default=None,
+        help="Scenario file or directory; omit for bundled fixtures",
+    )
+    run_p.add_argument(
+        "--proposed-policies",
+        required=True,
+        help="Directory containing proposed policy JSON files",
+    )
+    run_p.add_argument(
+        "--baseline-source",
+        choices=["bundled", "workspace_override", "explicit"],
+        default="bundled",
+        help="Baseline assembly source (default: bundled)",
+    )
+    run_p.add_argument(
+        "--baseline-overrides",
+        default=None,
+        help="Directory for baseline overrides (used with --baseline-source=explicit)",
+    )
+    run_p.add_argument(
+        "--format",
+        choices=["json", "text"],
+        default="json",
+        help="Report format (default: json)",
+    )
+    run_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
+    run_p.add_argument(
+        "--enable-host-fs-probes",
+        action="store_true",
+        help="Opt-in host-FS-dependent probes (default off; deferred in v1)",
+    )
+    run_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root for adapter discovery (default: cwd)",
+    )
+
     return parser
 
 
@@ -220,6 +274,18 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_mcp_serve(args)
         from ao_kernel.i18n import msg
         print(msg("usage_mcp_serve"))
+        return 1
+
+    # Policy-sim subcommand (PR-B4)
+    if cmd == "policy-sim":
+        from ao_kernel._internal.policy_sim.cli_handlers import (
+            cmd_policy_sim_run,
+        )
+
+        ps_cmd = getattr(args, "policy_sim_command", None)
+        if ps_cmd == "run":
+            return cmd_policy_sim_run(args)
+        print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
         return 1
 
     # Metrics subcommand (PR-B5)
