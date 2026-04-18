@@ -50,7 +50,7 @@ from ao_kernel.adapters import AdapterRegistry
 from ao_kernel.executor.artifacts import write_artifact
 from ao_kernel.executor.errors import PolicyViolationError
 from ao_kernel.executor.evidence_emitter import emit_event
-from ao_kernel.executor.executor import Executor
+from ao_kernel.executor.executor import Executor, _load_bundled_policy
 from ao_kernel.executor.policy_enforcer import (
     SandboxedEnvironment,
     build_sandbox,
@@ -199,7 +199,17 @@ class MultiStepDriver:
         self._registry = registry
         self._adapter_registry = adapter_registry
         self._executor = executor
-        self._policy: Mapping[str, Any] = policy_config or {}
+        # PR-C2.1 (Codex deep-review `019da0b2` follow-up): mirror
+        # Executor's truthiness-based bundled fallback for semantic
+        # parity. Falsy ``policy_config`` (None OR empty dict) →
+        # bundled policy. Previously the driver used ``is not None``
+        # which let ``policy_config={}`` produce an empty policy
+        # while Executor's ``or _load_bundled_policy()`` fell back
+        # to bundled — reintroducing the driver/executor split
+        # flagged by Codex in retrospective bulgu 1.
+        self._policy: Mapping[str, Any] = (
+            policy_config or _load_bundled_policy()
+        )
 
     # ------------------------------------------------------------------
     # Public: run_workflow
