@@ -8,12 +8,12 @@ The benchmark suite exercises two governed end-to-end flows and scores them obje
 
 Two scenarios ship:
 
-| Scenario | Workflow | Capability matrix | Runtime PR |
+| Scenario | Workflow (B7 v1) | Capability matrix | Runtime PR |
 |---|---|---|---|
-| `governed_bugfix` | [`bug_fix_flow.v1.json`](../ao_kernel/defaults/workflows/bug_fix_flow.v1.json) (PR-A2 existing) | `read_repo` + `write_diff` + `run_tests` | PR-A (baseline shipped) |
-| `governed_review` | `review_ai_flow.v1.json` (PR-B0 contract pin, PR-B6 runtime) | `read_repo` + `review_findings` (NEW) | PR-B6 |
+| `governed_bugfix` | `tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json` (bench variant — full bundled [`bug_fix_flow.v1.json`](../ao_kernel/defaults/workflows/bug_fix_flow.v1.json) deferred to B7.1 pending git/pytest sandbox allowlist) | `read_repo` + `write_diff` | PR-B7 v1 |
+| `governed_review` | [`review_ai_flow.v1.json`](../ao_kernel/defaults/workflows/review_ai_flow.v1.json) (bundled) | `read_repo` + `review_findings` | PR-B7 v1 |
 
-Both run under `tests/benchmarks/` with a shared runner (PR-B7). The `review_ai_flow` workflow definition ships in PR-B0 commit 4 so B0 acceptance tests can validate its schema compliance; step-level runtime (adapter dispatch, artifact materialisation) is PR-B6 scope.
+Both run under `tests/benchmarks/` with a shared runner (PR-B7). See §8 for the runner invocation + scoring threshold contract + B7 v1 scope trim.
 
 ## 2. Typed Artifact Contract (`governed_review`)
 
@@ -162,6 +162,35 @@ No new capability is required for `governed_bugfix`; `review_findings` is the si
 - Transport layer: [ADAPTERS.md](ADAPTERS.md) (PR-A existing), [EVIDENCE-TIMELINE.md](EVIDENCE-TIMELINE.md)
 - Adversarial review: [CNS-20260416-028v2 consensus](../.ao/consultations/CNS-20260416-028v2.consensus.md) §B3 (typed artifact contract), §B3''' (extraction via output_parse), §B4'''' (layer pin)
 
-## 8. Document Status
+## 8. Runner + Scoring (PR-B7 v1)
 
-Skeleton in PR-B0 commit 1. Concrete runner example, scoring-threshold case study, and adapter stub recipes for `governed_review` land in PR-B0 commit 5 (docs final pass) + PR-B6/B7 runtime.
+### 8.1 Running fast-mode benchmarks
+
+```bash
+pytest tests/benchmarks/ -q
+```
+
+Two scenarios run by default:
+- `tests/benchmarks/test_governed_bugfix.py` — compile_context + codex-stub invoke + human ack resume (minimal bench variant workflow; see §8.3).
+- `tests/benchmarks/test_governed_review.py` — compile_context + codex-stub review agent + human ack resume.
+
+CI integrates these through the `benchmark-fast` job in `.github/workflows/test.yml` (runs once per PR on Python 3.13 after the main test matrix).
+
+### 8.2 Scoring threshold
+
+`test_governed_review.py` parametrises the `review_findings.score` minimum against a default of 0.5. Tests include both a high-score pass (0.9 against 0.8 threshold) and a low-score negative (0.4 against 0.5 threshold) so the scoring helper itself is exercised. Raise the threshold to enforce tighter reviewer confidence; lower it to accept noisier adapter output.
+
+### 8.3 B7 v1 scope + deferred work
+
+PR-B7 v1 ships a trimmed scope:
+
+- **`governed_review`** exercises the bundled `review_ai_flow.v1.json` end-to-end — the three-step flow (compile + invoke review agent + await_acknowledgement) plays nicely with the default worktree-profile sandbox.
+- **`governed_bugfix`** uses a stripped-down bench variant (`tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json`) — the full bundled `bug_fix_flow` (`patch_preview` + `ci_pytest` + `apply_patch` + `gh-cli-pr`) needs workspace sandbox allowlist tuning for `git` and `pytest` invocations and is deferred to **B7.1**.
+- **Missing-payload walker behaviour** — a negative test is shipped as `pytest.mark.skip` pending a docs/runtime reconciliation of `_walk_output_parse` missing-key semantics; see `tests/benchmarks/test_governed_review.py::TestMissingPayload`.
+- **Full-mode real adapter dispatch**, **`cost_usd` reconcile assertion**, and **retry/branch variants** are deferred to **B7.1 / FAZ-C**. The current harness seeds the budget axis and asserts the seed; real spend reconciliation requires a follow-up to `record_spend` wiring inside the adapter transport path.
+
+### 8.4 Mock transport boundary
+
+The mock patches `ao_kernel.executor.executor.invoke_cli` + `invoke_http` at the executor's local-alias import site (not at `adapter_invoker` module level — the executor binds local references at load time). Orchestrator + driver + executor + adapter_invoker call chain stays real; only the final wrapper is substituted for tests. Canned envelopes delegate to the real `adapter_invoker._invocation_from_envelope` walker so `output_parse` contracts are exercised against the shipping code, not a mock approximation.
+
+See `tests/benchmarks/mock_transport.py` for `MockEnvelopeNotFoundError` (fixture/mock drift — a test-side bug signal) vs the `_TransportError` sentinel (deliberate `AdapterInvocationFailedError(reason="subprocess_crash")` negative path).

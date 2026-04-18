@@ -7,6 +7,61 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — FAZ-B PR-B7 (agent benchmark / regression suite)
+
+**FAZ-B Tranche B 7/9 — `tests/benchmarks/` harness running
+`governed_review` + `governed_bugfix` scenarios in fast-mode
+only (real-adapter full mode deferred to B7.1). Mock patches
+`invoke_cli` / `invoke_http` at the executor's local-alias
+import site so the orchestrator + driver + executor +
+adapter_invoker chain stays real; canned envelopes delegate to
+the shipping `_invocation_from_envelope` walker so
+`output_parse` contracts are exercised end-to-end.**
+
+- New `tests/benchmarks/` package:
+  * `mock_transport.py` — context manager patching the two
+    executor-local adapter wrappers; `MockEnvelopeNotFoundError`
+    (drift) + `_TransportError` sentinel (deliberate failure)
+    kept distinct.
+  * `assertions.py` — `assert_workflow_completed`,
+    `assert_workflow_failed(expected_category=...)`,
+    `assert_adapter_ok`, `assert_capability_artifact`,
+    `assert_review_score`, `assert_budget_axis_seeded`,
+    `resume_past_approval_gate` (wraps real
+    `driver.resume_workflow(run_id, resume_token, payload)`).
+  * `conftest.py` — `workspace_root` (install_workspace + bundled
+    copy), `seeded_budget`, `seeded_run` factory,
+    `benchmark_driver`.
+  * `fixtures/` — `bug_envelopes.py`, `review_envelopes.py`,
+    plus `workflows/governed_bugfix_bench.v1.json` (B7 v1
+    minimal variant — full bundled `bug_fix_flow` deferred to
+    B7.1 pending git/pytest sandbox allowlist).
+  * `test_governed_bugfix.py` — happy + transport-error
+    (`adapter_crash` category).
+  * `test_governed_review.py` — happy + score-threshold
+    parametrised + missing-payload negative (skipped pending
+    walker contract reconciliation in B7.1).
+- `docs/BENCHMARK-SUITE.md` §8 — runner example, scoring
+  threshold case study, B7 v1 scope + deferred work list, mock
+  boundary rationale.
+- `.github/workflows/test.yml` — `test` + `coverage` jobs add
+  `--ignore=tests/benchmarks`; new `benchmark-fast` job on
+  Python 3.13 `needs: [test]`.
+- Plan history captured in `.claude/plans/PR-B7-DRAFT-PLAN.md`
+  v5 (Codex adversarial review 5-iter convergence slow → impl
+  path chosen; remaining plan-drift residue fixed during impl).
+
+**Locked invariants**:
+- Mock boundary at `ao_kernel.executor.executor.invoke_cli` +
+  `invoke_http` (executor local alias — patching
+  `adapter_invoker.invoke_cli` would miss the bound reference).
+- Fast-mode only; no `--benchmark-mode` flag shipped (full mode
+  = B7.1).
+- No production `ao_kernel/` delta — benchmarks live entirely
+  under `tests/` + CI workflow + docs.
+- `_KINDS == 27` preserved — benchmarks emit no new evidence
+  kinds, they read the existing stream.
+
 ### Added — FAZ-B PR-B4 (policy simulation harness)
 
 **FAZ-B Tranche B 4/9 — dry-run evaluation of proposed policy
