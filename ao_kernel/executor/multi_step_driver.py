@@ -872,7 +872,9 @@ class MultiStepDriver:
         # A4b stub: patch primitives need patch_content sourced from a
         # prior adapter's output_ref. For now, empty content signals
         # this is a demo-tier flow; tests supply content via fixture.
-        patch_content = _load_pending_patch_content(record, step_def.step_name)
+        patch_content = _load_pending_patch_content(
+            record, step_def.step_name, workspace_root=self._workspace_root,
+        )
 
         try:
             if op == "patch_preview":
@@ -1893,12 +1895,22 @@ def _now_iso() -> str:
 
 
 def _load_pending_patch_content(
-    record: Mapping[str, Any], step_name: str,
+    record: Mapping[str, Any],
+    step_name: str,
+    *,
+    workspace_root: Path | None = None,
 ) -> str:
-    """MVP: test fixtures supply patch content via record.intent.payload.patches[step_name].
+    """Load pending patch content. PR-C1b absorb:
 
-    Production wiring (PR-A6) will sequence this from the prior
-    adapter's output_ref — A4b scope limits integration to fixtures.
+    1. Fixture/override path: ``record.intent.payload.patches[step_name]``.
+    2. Adapter artifact fallback: prior completed adapter step's
+       ``output_ref`` → canonical JSON ``diff`` field. Matches
+       ``fixtures/codex_stub.py`` output + executor artifact writer
+       (top-level ``diff``; ``extracted_outputs`` path is for other
+       capabilities like ``review_findings`` / ``commit_message``).
+
+    ``workspace_root`` default ``None`` preserves fixture-only behavior
+    for tests that construct records without a real filesystem backing.
     """
     intent_payload = record.get("intent", {}).get("payload", {})
     if isinstance(intent_payload, Mapping):
@@ -1906,4 +1918,27 @@ def _load_pending_patch_content(
         content = patches.get(step_name) if isinstance(patches, Mapping) else None
         if isinstance(content, str):
             return content
+
+    if workspace_root is None:
+        return ""
+    run_id = record.get("run_id")
+    if not run_id:
+        return ""
+    for prior in reversed(record.get("steps", [])):
+        if (
+            prior.get("actor") == "adapter"
+            and prior.get("state") == "completed"
+            and prior.get("output_ref")
+        ):
+            run_dir = workspace_root / ".ao" / "evidence" / "workflows" / run_id
+            artifact_path = run_dir / prior["output_ref"]
+            if not artifact_path.is_file():
+                return ""
+            import json as _json
+            try:
+                artifact = _json.loads(artifact_path.read_text())
+            except (OSError, _json.JSONDecodeError):
+                return ""
+            diff = artifact.get("diff", "")
+            return diff if isinstance(diff, str) else ""
     return ""
