@@ -227,7 +227,35 @@ class Executor:
                     issues=tuple(issues),
                 )
 
-        # Dispatch per actor
+        # Dispatch per actor (see _run_adapter_step + _run_placeholder_step).
+        return self._dispatch_step(
+            run_id=run_id,
+            record=record,
+            step_def=step_def,
+            parent_env=parent_env,
+            attempt=attempt,
+            driver_managed=driver_managed,
+            step_id=step_id,
+            input_envelope_override=input_envelope_override,
+        )
+
+    def _dispatch_step(
+        self,
+        *,
+        run_id: str,
+        record: Mapping[str, Any],
+        step_def: StepDefinition,
+        parent_env: Mapping[str, str],
+        attempt: int,
+        driver_managed: bool,
+        step_id: str | None,
+        input_envelope_override: Mapping[str, Any] | None,
+    ) -> "ExecutionResult":
+        """Shared actor-routing dispatch. PR-C6: called by both
+        run_step and dry_run_step after pre-flight. Under dry-run,
+        the module-level callables are patched to capture-and-skip
+        semantics so this body runs through emit/worktree/invoke/
+        write_artifact boundary mocks without real I/O."""
         if step_def.actor == "adapter":
             return self._run_adapter_step(
                 run_id=run_id,
@@ -248,6 +276,89 @@ class Executor:
             run_id=run_id,
             record=record,
             step_def=step_def,
+        )
+
+    # ------------------------------------------------------------------
+    # PR-C6: Dry-run (side-effect-free single-step preview)
+    # ------------------------------------------------------------------
+
+    def dry_run_step(
+        self,
+        run_id: str,
+        step_def: StepDefinition,
+        *,
+        parent_env: Mapping[str, str] | None = None,
+        attempt: int = 1,
+    ) -> Any:  # DryRunResult imported lazily; Any avoids TYPE_CHECKING cycle.
+        """Preview a step's effects without real side-effects.
+
+        Runs pre-flight + policy + dispatch through a mock boundary
+        that captures ``emit_event`` / ``invoke_cli`` / ``invoke_http``
+        / ``create_worktree`` / ``cleanup_worktree`` / ``write_artifact``
+        / ``update_run`` calls instead of producing real I/O. The run
+        record is NOT mutated. Policy violations surface in the
+        returned :class:`DryRunResult` rather than as raised
+        exceptions (PR-C6 v3 B1 absorb).
+
+        See ``ao_kernel/executor/dry_run.py`` for the recorder +
+        context manager contract.
+        """
+        from ao_kernel.executor.dry_run import (
+            DryRunResult,
+            dry_run_execution_context,
+        )
+
+        # Read the run record up front (outside the mock context) so
+        # we can hand back its budget snapshot regardless of whether
+        # the dispatch succeeds or raises.
+        record, _ = load_run(self._workspace_root, run_id)
+        baseline_budget = dict(record.get("budget") or {})
+
+        with dry_run_execution_context(
+            self._workspace_root, run_id,
+        ) as recorder:
+            try:
+                self.run_step(
+                    run_id,
+                    step_def,
+                    parent_env=parent_env,
+                    attempt=attempt,
+                    driver_managed=False,
+                )
+            except PolicyViolationError as exc:
+                # Real executor emits step_started + policy_checked
+                # + policy_denied + step_failed before raising; the
+                # first two are already captured by the mock emit
+                # during run_step pre-flight. Append the denial pair
+                # here to match the canonical event sequence.
+                recorder.record_policy_violation(str(exc))
+                recorder.predicted_events.append((
+                    "policy_denied",
+                    {
+                        "step_name": step_def.step_name,
+                        "reason": str(exc),
+                    },
+                ))
+                recorder.predicted_events.append((
+                    "step_failed",
+                    {
+                        "step_name": step_def.step_name,
+                        "final_state": "failed",
+                        "error_category": "policy_denied",
+                        "error_detail": str(exc),
+                    },
+                ))
+            except Exception:
+                # Any other dispatch error is intentionally swallowed;
+                # dry-run never raises. Downstream mock boundary
+                # absorbs the side-effect-producing branches.
+                pass
+
+        return DryRunResult(
+            predicted_events=tuple(recorder.predicted_events),
+            policy_violations=tuple(recorder.policy_violations),
+            simulated_budget_after=baseline_budget,
+            simulated_outputs=dict(recorder.simulated_outputs),
         )
 
     # ------------------------------------------------------------------
