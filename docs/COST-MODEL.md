@@ -10,7 +10,7 @@ Cost tracking in ao-kernel has three collaborating contracts:
 2. **Spend ledger** — append-only JSONL log of every billable LLM call, keyed by run/step, carrying provider, model, tokens, and USD cost.
 3. **Budget axes** — extended [`Budget`](../ao_kernel/workflow/budget.py) (PR-A1) with granular token axes (`tokens_input` / `tokens_output`) in addition to the existing `cost_usd` / `tokens` / `time_seconds` axes; fail-closed pre-invocation check.
 
-Cost-aware model routing (PR-B3) reads the catalog to estimate call cost before dispatch and falls back to a cheaper model if the remaining budget cannot cover the estimate.
+Cost-aware model routing (PR-B3) reads the catalog to re-order the target intent class's eligible provider set ascending by price-catalog cost before the router iterates — operators opt into cost-aware selection without changing any code. Full contract in §6.
 
 All behaviour described here is dormant until `policy_cost_tracking.v1.json::enabled: true`; defaults are operator-facing, not automatic.
 
@@ -181,7 +181,7 @@ The router does **not** swallow `load_cost_policy` exceptions:
 - Malformed override (invalid JSON) → `json.JSONDecodeError` propagates.
 - Schema-invalid override → `jsonschema.ValidationError` propagates.
 
-This matches the `cost/policy.py:115-116, :142-143` fail-closed contract and `llm.py::resolve_route`'s "Fail-closed" docstring.
+This matches the `cost/policy.py::_validate` + `load_cost_policy` fail-closed contract (the loader validates before returning and raises on any schema or JSON error) and `llm.py::resolve_route`'s "Fail-closed" docstring.
 
 For catalog loading the router uses a narrower wrapper: failures in strict mode raise `RoutingCatalogMissingError` (preserving the underlying cause as `__cause__` — `PriceCatalogChecksumError`, `PriceCatalogStaleError`, `JSONDecodeError`, `ValidationError`, etc.) so operators can drill down to the specific remediation.
 

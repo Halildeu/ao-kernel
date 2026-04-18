@@ -40,7 +40,8 @@ preserves pre-B3 `fallback_order_by_class` semantics.**
   `load_cost_policy`. Missing workspace override → bundled
   dormant fallback (no raise); malformed →
   `json.JSONDecodeError` / `jsonschema.ValidationError`
-  natural-propagates (honors `cost/policy.py:115-116, :142-143`).
+  natural-propagates (honors the fail-closed contract in
+  `cost/policy.py::_validate` + `load_cost_policy`).
 - Explicit `provider_priority` caller arg bypasses cost sort
   (plan v5 Yüksek 2 invariant — caller intent wins over
   cost-aware re-ordering).
@@ -57,7 +58,8 @@ preserves pre-B3 `fallback_order_by_class` semantics.**
 - Bundled dormant path unchanged: zero B2 / B5 / B6 test
   regression (full suite 2029+ passed).
 - Router never swallows policy loader exceptions; fail-closed
-  contract honored end-to-end (`llm.py:32-33`).
+  contract honored end-to-end (`llm.py::resolve_route`
+  "Fail-closed" docstring).
 
 ### Added — FAZ-B PR-B5 (metrics export — Prometheus textfile + `[metrics]` extra)
 
