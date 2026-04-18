@@ -7,6 +7,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.4.0] — 2026-04-18
+
+**v3.4.0 — Cost Runtime Maturity + Routing Extensibility**. Seven follow-ups landed in one session: reconciler daemon for orphan spends, evidence payload enrichment, marker compaction, full-actor dry-run parity, multi-step downgrade chain, per-workspace routing overrides, and a real-crash test harness. All backward compatible.
+
+Shipped PRs (all merged in one session):
+
+| # | PR | Scope |
+|---|---|---|
+| 1 | [#124](https://github.com/Halildeu/ao-kernel/pull/124) | Reconciliation daemon + CLI (`ao-kernel cost reconcile`) |
+| 2 | [#125](https://github.com/Halildeu/ao-kernel/pull/125) | `llm_spend_recorded` vendor_model_id enrichment |
+| 3 | [#126](https://github.com/Halildeu/ao-kernel/pull/126) | `cost_reconciled` marker compaction + CLI (`ao-kernel cost compact-markers`) |
+| 4 | [#127](https://github.com/Halildeu/ao-kernel/pull/127) | Non-adapter dry-run fidelity (system + ao-kernel actors) |
+| 5 | [#128](https://github.com/Halildeu/ao-kernel/pull/128) | Multi-step downgrade chain (cascaded budget routing) |
+| 6 | [#129](https://github.com/Halildeu/ao-kernel/pull/129) | Per-workspace `soft_degrade` / routing overrides |
+| 7 | [#130](https://github.com/Halildeu/ao-kernel/pull/130) | Subprocess crash-kill test harness |
+
+Test baseline: v3.3.1 2260 → v3.4.0 **~2300** (+40 new across the seven PRs). Ruff + mypy clean.
+
 ### Added — v3.4.0 #7 Subprocess crash-kill test harness
 
 **Context.** Mock-based idempotency tests (`test_cost_marker_idempotency`, `test_reconcile_daemon`) cover the exception-handling branches but cannot catch issues that only surface when the OS really terminates an interpreter mid-write — unflushed buffers, fsync gaps, open-file leaks. v3.4.0 #7 adds a stdlib-only harness that spawns a fresh Python subprocess, runs partial work up to a chosen checkpoint, and calls `os._exit` so finalizers never run. The parent process then inspects surviving on-disk state and runs recovery.
