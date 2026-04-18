@@ -7,6 +7,55 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.2.0] — 2026-04-18
+
+**FAZ-B — Ops Hardening**: 10 PRs landed across 6 workstreams
+(agent coordination, cost runtime + routing, policy ops,
+observability, AI workflow steps, quality gate). Public test
+count 2141 (2135 main suite + 6 benchmark scenarios). Zero
+production code change in PR-B7; tests + CI + docs only.
+
+**Governance highlights**:
+- Adversarial plan-time review via Codex across every PR
+  (19 total iterations across B0-B7 plan-time + 14 across
+  post-impl). Each verdict + absorb cycle captured in
+  `.claude/plans/*.md` and `.ao/consultations/`.
+- Post-impl Codex review adopted as a second quality gate
+  before PR push (feedback_post_impl_review memory rule).
+- Branch protection: `enforce_admins=false` made permanent
+  (owner admin-bypass merge) after confirming CI gates (lint,
+  typecheck, 3.11/3.12/3.13 pytest matrix, coverage, extras-
+  install, benchmark-fast) are the actual ship contract.
+
+**Shipped workstreams**:
+
+- **Agent coordination (B1)**: `ao_kernel.coordination/` —
+  lease / fencing / takeover. 5 plan-iter + runtime hardening.
+- **Cost runtime + routing (B2, B2-e2e, B3)**:
+  `ao_kernel.cost/` price catalog + spend ledger +
+  `governed_call` wrapper; `cost-aware routing` via
+  `routing_by_cost.priority="lowest_cost"`; tuple-partition
+  helper + drop-if-any-known / fallback-if-none-known; new
+  `RoutingCatalogMissingError(CostTrackingError)`.
+- **Policy simulation (B4)**: `ao_kernel.policy_sim/` dry-run
+  harness with 24-sentinel purity guard, centralised shape
+  registry, canonical policy hash matching
+  `executor/artifacts.py`, and `ao-kernel policy-sim run` CLI.
+- **Metrics export (B5)**: `ao_kernel.metrics/` +
+  `[metrics]` optional extra shipping eight Prometheus metric
+  families derived from evidence; `ao-kernel metrics
+  {export,debug-query}` CLI; cumulative-only textfile
+  semantics; cost-disjunction + dormant banner policies.
+- **AI workflow steps (B6)**: thin-driver `review_ai_flow`
+  + `commit_ai_flow` runtimes with driver-owned capability
+  artifact materialisation (`step_record.capability_output_refs`)
+  + new `output_parse` contract on adapter manifests.
+- **Quality gate (B7)**: `tests/benchmarks/` regression suite
+  with mock transport (`invoke_cli`/`invoke_http` patch at
+  executor's local alias) + `governed_review` (bundled
+  workflow) + `governed_bugfix` (bench variant; full bundled
+  flow deferred to B7.1 pending git/pytest sandbox allowlist).
+
 ### Added — FAZ-B PR-B7 (agent benchmark / regression suite)
 
 **FAZ-B Tranche B 7/9 — `tests/benchmarks/` harness running
