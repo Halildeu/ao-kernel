@@ -681,21 +681,29 @@ class MultiStepDriver:
             # Canonical: query (workspace_root: Path) returns list; wrap
             # as dict keyed by 'key' field (CanonicalDecision.key) so
             # compile_context().canonical_decisions .items() works.
-            canonical_list = _canonical_query(self._workspace_root)
+            # Corrupt store → degrade silently to empty (mirror the
+            # agent_coordination.py:208-214 tolerance pattern so run
+            # state doesn't escape with a raw exception).
+            try:
+                canonical_list = _canonical_query(self._workspace_root)
+            except Exception:  # noqa: BLE001
+                canonical_list = []
             canonical = {
                 item.get("key", f"_idx_{idx}"): item
                 for idx, item in enumerate(canonical_list)
             }
 
-            # Workspace facts: direct JSON read
+            # Workspace facts: direct JSON read; corrupt file → {}
             facts_path = (
                 self._workspace_root / ".cache" / "index"
                 / "workspace_facts.v1.json"
             )
-            facts = (
-                _json.loads(facts_path.read_text())
-                if facts_path.is_file() else {}
-            )
+            facts: dict[str, Any] = {}
+            if facts_path.is_file():
+                try:
+                    facts = _json.loads(facts_path.read_text())
+                except (OSError, _json.JSONDecodeError):
+                    facts = {}
 
             compiled = compile_context(
                 session_context,
