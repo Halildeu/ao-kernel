@@ -145,13 +145,6 @@ class TestHappyPath:
 
 
 class TestMissingPayload:
-    @pytest.mark.skip(
-        reason=(
-            "B7 v1: _walk_output_parse missing-key behaviour to "
-            "reconcile with docs/BENCHMARK-SUITE.md §3.2; deferred "
-            "to B7.1 follow-up."
-        ),
-    )
     def test_missing_review_findings_fails_workflow(
         self,
         workspace_root: Path,

@@ -8,12 +8,12 @@ The benchmark suite exercises two governed end-to-end flows and scores them obje
 
 Two scenarios ship:
 
-| Scenario | Workflow | Capability matrix | Runtime PR |
+| Scenario | Workflow (B7 v1) | Capability matrix | Runtime PR |
 |---|---|---|---|
-| `governed_bugfix` | [`bug_fix_flow.v1.json`](../ao_kernel/defaults/workflows/bug_fix_flow.v1.json) (PR-A2 existing) | `read_repo` + `write_diff` + `run_tests` | PR-A (baseline shipped) |
-| `governed_review` | `review_ai_flow.v1.json` (PR-B0 contract pin, PR-B6 runtime) | `read_repo` + `review_findings` (NEW) | PR-B6 |
+| `governed_bugfix` | `tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json` (bench variant — full bundled [`bug_fix_flow.v1.json`](../ao_kernel/defaults/workflows/bug_fix_flow.v1.json) deferred to B7.1 pending git/pytest sandbox allowlist) | `read_repo` + `write_diff` | PR-B7 v1 |
+| `governed_review` | [`review_ai_flow.v1.json`](../ao_kernel/defaults/workflows/review_ai_flow.v1.json) (bundled) | `read_repo` + `review_findings` | PR-B7 v1 |
 
-Both run under `tests/benchmarks/` with a shared runner (PR-B7). The `review_ai_flow` workflow definition ships in PR-B0 commit 4 so B0 acceptance tests can validate its schema compliance; step-level runtime (adapter dispatch, artifact materialisation) is PR-B6 scope.
+Both run under `tests/benchmarks/` with a shared runner (PR-B7). See §8 for the runner invocation + scoring threshold contract + B7 v1 scope trim.
 
 ## 2. Typed Artifact Contract (`governed_review`)
 
