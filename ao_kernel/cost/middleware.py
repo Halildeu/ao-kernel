@@ -491,6 +491,20 @@ def _build_adapter_spend_event(
     tokens_in = cost_actual.get("tokens_input")
     tokens_out = cost_actual.get("tokens_output")
     cost_raw = cost_actual.get("cost_usd", 0)
+
+    # PR-C3.1: adapter-supplied vendor_model_id propagates to the
+    # spend ledger. Blank strings normalize to None (defensive — a
+    # well-behaved adapter emits a non-empty string or omits the field,
+    # but mal-formed producers should not persist empty strings into
+    # the audit trail). Contract schema enforces minLength:1 at the
+    # boundary; this normalization is belt + suspenders.
+    vmid_raw = cost_actual.get("vendor_model_id")
+    vendor_model_id: str | None
+    if isinstance(vmid_raw, str) and vmid_raw.strip():
+        vendor_model_id = vmid_raw.strip()
+    else:
+        vendor_model_id = None
+
     usage_missing = tokens_in is None or tokens_out is None
     return SpendEvent(
         run_id=run_id,
@@ -502,7 +516,7 @@ def _build_adapter_spend_event(
         tokens_output=int(tokens_out or 0),
         cost_usd=Decimal(str(cost_raw)),
         ts=_iso_now(),
-        vendor_model_id=None,
+        vendor_model_id=vendor_model_id,
         cached_tokens=None,
         usage_missing=usage_missing,
     )

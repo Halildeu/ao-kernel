@@ -446,7 +446,12 @@
         "tokens_input": {"type": "integer", "minimum": 0},
         "tokens_output": {"type": "integer", "minimum": 0},
         "time_seconds": {"type": "number", "minimum": 0},
-        "cost_usd": {"type": "number", "minimum": 0}
+        "cost_usd": {"type": "number", "minimum": 0},
+        "vendor_model_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "PR-C3.1 additive: concrete vendor model identifier the adapter actually invoked (e.g., 'claude-3-5-sonnet-20241022'). Distinct from the caller's logical `model` request field — enables cross-adapter audit attribution. Optional: adapters that cannot reliably derive this omit it; the middleware normalizes blank strings to None defensively."
+        }
       },
       "description": "Adapter-reported actual resource consumption. Reconciled against budget on return."
     },

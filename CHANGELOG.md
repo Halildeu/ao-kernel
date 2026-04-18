@@ -40,6 +40,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 **Migration.** No action required. Existing `soft_degrade.rules[]` without `budget_remaining_threshold_usd` are explicitly inert — pre-v3.3.1 dormant behavior is preserved. Operators who want budget-aware degradation add the threshold field to one or more rules in their workspace override.
 
+### Fixed — PR-C3.1 adapter-path vendor_model_id attribution
+
+**Enable + propagate.** v3.3.0 shipped `_build_adapter_spend_event` with `vendor_model_id=None` hardcoded — adapter-path spend events lost the concrete vendor model identity even when the adapter knew it. v3.3.1 makes the field adapter-reportable: `agent-adapter-contract.schema.v1.json::$defs/cost_record` gains an optional `vendor_model_id` (`minLength: 1` at the contract boundary), and the middleware propagates it into `SpendEvent`. Blank strings are normalized to `None` defensively in case a mal-formed producer writes whitespace. Codex CNS-20260418-035 post-AGREE with 3 clarity notes absorbed.
+
+**Backward compat.** Adapters that don't populate the field (bundled fixtures `codex-stub`, `claude-code-cli`, `gh-cli-pr` — all mock/non-LLM; external adapters until they opt in) continue to produce ledger events with `vendor_model_id` omitted. No forced re-issue of historical ledger rows.
+
+**Replay note.** If the same `(run_id, step_id, attempt)` tuple is reconciled a second time with a different `vendor_model_id`, the billing_digest changes → `SpendLedgerDuplicateError`. The digest already incorporates `vendor_model_id` (ledger.py:110); this is intentional behavior — attribution change is a caller bug, not a retry.
+
+**Test baseline.** 2242 → **2250** (+8 new in `tests/test_post_adapter_reconcile.py`): propagation, absence fallback, blank-string normalization, `usage_missing` branch preservation, digest-based duplicate detection, and 3 schema-level pins (accept with, accept without, reject empty).
+
+**Deferred to v3.4.0.**
+- `llm_spend_recorded` evidence payload enrichment with `vendor_model_id`
+- Cross-adapter reconciliation / audit replay keyed on `vendor_model_id`
+- Multi-vendor cost compare in routing decisions
+
 ### Deferred — out of v3.3.1 scope (v3.4.0)
 
 - Full reconciliation daemon / API (`reconcile_orphan_spends`)
