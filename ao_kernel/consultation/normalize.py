@@ -386,6 +386,21 @@ def record_to_dict(record: ResolutionRecord) -> dict[str, Any]:
     }
 
 
+def record_digest(record_dict: Mapping[str, Any]) -> str:
+    """SHA-256 (hex, without `sha256:` prefix) over canonical-JSON.
+
+    Shared between archive.py and promotion.py so idempotency keys
+    stay identical across the two surfaces (Codex D2b iter-3
+    execution note #1).
+    """
+    import hashlib as _hashlib
+    canonical = json.dumps(
+        dict(record_dict), sort_keys=True, ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return _hashlib.sha256(canonical).hexdigest()
+
+
 __all__ = [
     "NORMALIZER_VERSION",
     "NormalizedVerdict",
@@ -396,5 +411,6 @@ __all__ = [
     "iteration_from_filename",
     "normalize_verdict",
     "build_resolution_record",
+    "record_digest",
     "record_to_dict",
 ]

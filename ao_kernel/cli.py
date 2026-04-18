@@ -183,6 +183,72 @@ def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
     return 0 if not bulk.errors else 1
 
 
+def _cmd_consultation_promote(args: argparse.Namespace) -> int:
+    """v3.5 D2b CLI: promote resolved AGREE/PARTIAL consultations
+    from the evidence archive into canonical_decisions.v1.json.
+    Opt-in via policy.promotion.enabled=true; --force bypasses
+    the flag only (integrity + eligibility still enforced)."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.config import load_with_override
+    from ao_kernel.consultation.promotion import (
+        promote_resolved_consultations,
+    )
+
+    project_root = _Path(args.project_root or _Path.cwd()).resolve()
+    policy = load_with_override(
+        "policies", "policy_agent_consultation.v1.json",
+        workspace=project_root / ".ao",
+    )
+
+    summary = promote_resolved_consultations(
+        project_root,
+        policy,
+        dry_run=bool(args.dry_run),
+        force=bool(args.force),
+    )
+
+    if args.output == "json":
+        payload = {
+            "dry_run": summary.dry_run,
+            "scanned": summary.scanned,
+            "eligible": summary.eligible,
+            "promoted": summary.promoted,
+            "updated": summary.updated,
+            "skipped_same_digest": summary.skipped_same_digest,
+            "skipped_integrity": summary.skipped_integrity,
+            "skipped_ineligible": summary.skipped_ineligible,
+            "skipped_disabled": summary.skipped_disabled,
+            "skipped_missing_record": summary.skipped_missing_record,
+            "errors": list(summary.errors),
+        }
+        print(_json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        mode = "dry-run" if summary.dry_run else "applied"
+        print(
+            f"Consultation promote [{mode}]: "
+            f"scanned={summary.scanned} "
+            f"eligible={summary.eligible} "
+            f"promoted={summary.promoted} "
+            f"updated={summary.updated}"
+        )
+        print(
+            f"  skipped: same_digest={summary.skipped_same_digest} "
+            f"integrity={summary.skipped_integrity} "
+            f"ineligible={summary.skipped_ineligible} "
+            f"disabled={summary.skipped_disabled} "
+            f"missing_record={summary.skipped_missing_record}"
+        )
+        if summary.errors:
+            print("Errors:")
+            for err in summary.errors:
+                print(f"  - {err}")
+    return 0 if (
+        not summary.errors and summary.skipped_disabled == 0
+    ) else (0 if summary.skipped_disabled else 1)
+
+
 def _cmd_consultation_archive(args: argparse.Namespace) -> int:
     """v3.5 D2a CLI: scan CNS corpus, snapshot into
     `.ao/evidence/consultations/<CNS-ID>/`, emit events, build
@@ -786,6 +852,35 @@ def _build_parser() -> argparse.ArgumentParser:
         "--project-root", default=None,
     )
 
+    # v3.5 D2b: consultation promote subcommand
+    promote_cons_p = consult_sub.add_parser(
+        "promote",
+        help=(
+            "Promote resolved AGREE/PARTIAL consultations from the "
+            "evidence archive into canonical_decisions.v1.json. "
+            "Opt-in via policy flag `promotion.enabled=true`; --force "
+            "bypasses the flag only (integrity + eligibility still "
+            "enforced)."
+        ),
+    )
+    promote_cons_p.add_argument(
+        "--dry-run", action="store_true",
+        help="Count what WOULD be promoted without touching the store.",
+    )
+    promote_cons_p.add_argument(
+        "--force", action="store_true",
+        help=(
+            "Bypass the policy.promotion.enabled gate for this run "
+            "(integrity + eligibility still enforced)."
+        ),
+    )
+    promote_cons_p.add_argument(
+        "--output", choices=["json", "human"], default="human",
+    )
+    promote_cons_p.add_argument(
+        "--project-root", default=None,
+    )
+
     # v3.4.0 #3: cost compact-markers subcommand
     compact_p = cost_sub.add_parser(
         "compact-markers",
@@ -898,15 +993,17 @@ def main(argv: list[str] | None = None) -> int:
         print("Usage: ao-kernel policy-sim run [options]", file=sys.stderr)
         return 1
 
-    # Consultation subcommand (v3.5 D1 migrate + D2a archive)
+    # Consultation subcommand (v3.5 D1 migrate + D2a archive + D2b promote)
     if cmd == "consultation":
         cns_cmd = getattr(args, "consultation_command", None)
         if cns_cmd == "migrate":
             return _cmd_consultation_migrate(args)
         if cns_cmd == "archive":
             return _cmd_consultation_archive(args)
+        if cns_cmd == "promote":
+            return _cmd_consultation_promote(args)
         print(
-            "Usage: ao-kernel consultation {migrate|archive}",
+            "Usage: ao-kernel consultation {migrate|archive|promote}",
             file=sys.stderr,
         )
         return 1

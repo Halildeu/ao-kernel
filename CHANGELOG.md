@@ -7,6 +7,37 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.5.0 D2b Canonical promotion (opt-in)
+
+**Context.** D2a produced source-stable `resolution.record.v1.json` artefacts. D2b promotes eligible records (status=resolved AND final_verdict in {AGREE, PARTIAL}) into the existing canonical decision store (`.ao/canonical_decisions.v1.json`) via `ao_kernel.context.canonical_store.promote_decision()`. Opt-in (policy `promotion.enabled=false` default); `--force` bypasses only the policy flag, never integrity or eligibility gates. Codex plan-time CNS: 3 iterations → AGREE.
+
+**Changes.**
+
+- **New module** `ao_kernel/consultation/promotion.py` — thin adapter over `canonical_store.promote_decision()`. Key namespace: `consultation.<CNS-ID>`. Compact value (cns_id, topic, from_agent, to_agent, final_verdict, resolved_at) + provenance pointer (`evidence_path`, `resolution_record_path`, `record_digest`). Full response corpus stays on disk under evidence dir.
+- **Shared digest helper** `record_digest()` promoted to public in `ao_kernel/consultation/normalize.py` so archive + promotion share one SSOT (Codex iter-3 execution note #1).
+- **Policy widen** `policy_agent_consultation.v1.json::promotion` (optional object, `enabled: bool` only). Schema updated with strict `additionalProperties: false`.
+- **New CLI** `ao-kernel consultation promote [--dry-run] [--force] [--output json|human]`.
+
+**Pipeline guardrails**:
+
+1. Policy gate (skip_disabled unless `--force`)
+2. Integrity gate (`verify_consultation_manifest` must pass)
+3. Eligibility (status=resolved AND final_verdict in {AGREE, PARTIAL})
+4. Idempotency (`provenance.record_digest` compared; same digest → no-op)
+5. Promotion via `promote_decision()` (telemetry `record_canonical_promote(category="consultation")` fires automatically — no double-count)
+
+**Confidence mapping** (narrow, promotable only):
+- `AGREE` → 1.0
+- `PARTIAL` → 0.7
+
+**Test baseline.** +18 new pins in `tests/test_consultation_d2b.py`: verdict confidence (3), eligibility (5), idempotency (2), key/value contract (2), policy flag (2), integrity + empty workspace (2), dry-run (1), request revisions (1). Ruff + mypy clean.
+
+**Scope boundary.**
+- IN: promote AGREE/PARTIAL resolved records + CLI + policy flag + schema widen
+- OUT: REVISE/REJECT "negative consensus store" (v3.6+)
+- OUT: Dual-read cut-over (v3.6 Memory Loop Closure)
+- OUT: MCP memory query integration (v3.6)
+
 ### Added — v3.5.0 D2a Consultation archive + normalization + integrity manifest
 
 **Context.** D1 canonicalized CNS paths. D2a walks the corpus, snapshots request/response files under a dedicated consultation evidence surface (`.ao/evidence/consultations/<CNS-ID>/`), normalizes heterogeneous verdicts into a 5-bucket enum, builds a **source-stable** resolution record (digest unchanged across re-runs with unchanged sources), emits events with persistent dedupe, and refreshes an SHA-256 integrity manifest. Archive/backfill only — live dual-write (MCP intercept of CNS writers) deferred to v3.6. Codex plan-time CNS: 4 iterations → AGREE.

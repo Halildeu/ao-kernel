@@ -13,7 +13,6 @@ Idempotent per Codex iter-4 AGREE:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import shutil
@@ -38,6 +37,7 @@ from ao_kernel.consultation.integrity import (
 from ao_kernel.consultation.normalize import (
     NORMALIZER_VERSION,
     build_resolution_record,
+    record_digest as _compute_record_digest,
     record_to_dict,
 )
 from ao_kernel.consultation.paths import (
@@ -153,12 +153,9 @@ def _group_files_by_cns(
 
 
 def _digest_record(record_dict: Mapping[str, Any]) -> str:
-    """SHA-256 over canonical-JSON record content."""
-    canonical = json.dumps(
-        record_dict, sort_keys=True, ensure_ascii=False,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(canonical).hexdigest()
+    """SHA-256 over canonical-JSON record content. Delegates to the
+    shared helper (Codex D2b iter-3 execution note #1)."""
+    return _compute_record_digest(record_dict)
 
 
 def _archive_cns(
