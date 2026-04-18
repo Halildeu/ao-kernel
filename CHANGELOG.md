@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.4.0 #6 Per-workspace routing / `soft_degrade` overrides
+
+**Context.** v3.3.1 routing rules (`llm_resolver_rules.v1.json`, `llm_provider_map.v1.json`, `llm_class_registry.v1.json`) shipped only as bundled defaults. Operators who wanted custom intent mappings or soft-degrade rules had to fork the package. v3.4.0 #6 accepts workspace-scoped override files under `.ao/operations/` — the router reads them with priority over the bundled copies, falling back cleanly when no override exists.
+
+**Changes.**
+
+- `llm_router._load_operations_json(..., *, workspace_root=None)` — resolution priority: workspace override → repo-root (editable installs) → bundled wheel defaults.
+- `llm_router.resolve()` threads `workspace_root` through to all three operations loads so a workspace can override any subset without forking the others.
+- Malformed workspace override (invalid JSON) → `json.JSONDecodeError` — fail-closed on the operator's explicit override rather than silently falling back.
+
+**Test baseline.** +2 new pins in `tests/test_resolve_route_downgrade.py::TestWorkspaceOverride`: override takes priority, malformed override fails closed.
+
 ### Added — v3.4.0 #5 Multi-step downgrade chain (cascaded budget-aware routing)
 
 **Context.** v3.3.1 C4.1 applied exactly one downgrade hop — first matching rule → `break`. A catalog like `PREMIUM → BALANCED_TEXT → FAST_TEXT` configured with two thresholds (`5.0` and `2.0`) would only hop once even when budget undershoots both. v3.4.0 #5 collapses the cascade into a single `resolve` call and exposes the full chain in the response.
