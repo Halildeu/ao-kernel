@@ -48,6 +48,38 @@ def _load_operations_json(filename: str, repo_root: Path) -> Dict[str, Any]:
     return payload
 
 
+_RESOLVER_RULES_SCHEMA_VALIDATED = False
+
+
+def _validate_resolver_rules_once(rules_dict: Dict[str, Any]) -> None:
+    """Schema-validate the loaded resolver rules on first use.
+
+    PR-C4.1: guards malformed ``soft_degrade.rules[]`` entries (e.g.
+    negative ``budget_remaining_threshold_usd``) before the runtime
+    evaluates them. Cached via module-level flag — validation runs
+    once per interpreter process, zero overhead on subsequent calls.
+    Malformed rules → ``jsonschema.ValidationError`` fail-closed.
+    """
+    global _RESOLVER_RULES_SCHEMA_VALIDATED
+    if _RESOLVER_RULES_SCHEMA_VALIDATED:
+        return
+    from jsonschema import Draft7Validator
+    from ao_kernel._internal.shared.resource_loader import load_resource
+    schema = load_resource("schemas", "schema_llm_resolver_rules.v1.json")
+    Draft7Validator(schema).validate(rules_dict)
+    _RESOLVER_RULES_SCHEMA_VALIDATED = True
+
+
+def _reset_resolver_rules_cache() -> None:
+    """Test-only hook: reset the schema-validation cache.
+
+    Invoked by the test suite between fixtures that swap the bundled
+    resolver rules; production code does not call this.
+    """
+    global _RESOLVER_RULES_SCHEMA_VALIDATED
+    _RESOLVER_RULES_SCHEMA_VALIDATED = False
+
+
 def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path | None, Path | None, Path | None, Path]:
     """Return probe_state path only. Operations loaded via _load_operations_json()."""
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
@@ -111,30 +143,30 @@ def resolve(
     repo_root = repo_root or Path(__file__).resolve().parents[2]
     now = now or datetime.now(timezone.utc)
 
-    # PR-C4 dormant plumbing (plumbing-only; runtime no-op in v1):
-    # Additive response fields are the single source of truth for
-    # the downgrade contract shape across all return paths below.
-    _c4_dormant: Dict[str, Any] = {
+    # PR-C4.1 ACTIVE: budget-aware cross-class soft-degrade.
+    # Defaults carried through every return path below; populated
+    # in the gating block further down when the caller opts in via
+    # cross_class_downgrade=True + budget_remaining snapshot.
+    _c4_meta: Dict[str, Any] = {
         "downgrade_applied": False,
         "original_class": None,
         "downgraded_class": None,
+        "matched_rule_index": None,
+        "threshold_usd": None,
+        "budget_remaining_usd": None,
     }
-    # Read + ignore (consumed in C4.1 follow-up — threshold schema
-    # widen + directional rule filter).
-    _ = request.get("budget_remaining")
-    _ = bool(request.get("cross_class_downgrade", False))
 
     if "model" in request:
         return {
             "status": "FAIL",
             "reason": "MODEL_OVERRIDE_NOT_ALLOWED",
-            **_c4_dormant,
+            **_c4_meta,
         }
     if "params_override" in request:
         return {
             "status": "FAIL",
             "reason": "PROFILE_PARAM_OVERRIDE_NOT_ALLOWED",
-            **_c4_dormant,
+            **_c4_meta,
         }
 
     intent = request.get("intent")
@@ -146,6 +178,7 @@ def resolve(
     # Load operations via resource_loader (bundled defaults fallback)
     _load_operations_json("llm_class_registry.v1.json", repo_root)  # validate
     resolver_rules = _load_operations_json("llm_resolver_rules.v1.json", repo_root)
+    _validate_resolver_rules_once(resolver_rules)
     provider_map = _load_operations_json("llm_provider_map.v1.json", repo_root)
     probe_state = _load_json(probe_state_path) if probe_state_path.exists() else {"classes": {}}
 
@@ -155,9 +188,67 @@ def resolve(
         return {
             "status": "FAIL",
             "reason": "UNKNOWN_INTENT",
-            **_c4_dormant,
+            **_c4_meta,
         }
-    target_class = intent_map[intent]
+    requested_class = intent_map[intent]
+
+    # PR-C4.1 gating: budget-aware soft-degrade.
+    # Preconditions stack (all must hold for a downgrade to apply):
+    #   1. Caller opted in via cross_class_downgrade=True
+    #   2. Caller supplied budget_remaining snapshot (Budget object)
+    #   3. Requested class allows degrade (strictness.degrade_allowed
+    #      defaults True; REASONING_TEXT / CODE_AGENTIC /
+    #      GOVERNANCE_ASSURANCE are absolute-deny)
+    #   4. Budget snapshot has a cost_usd axis configured
+    #   5. soft_degrade.rules[] contains a threshold-bearing rule that
+    #      matches (from_class, intent) AND remaining < threshold_usd
+    #      (STRICT less-than; equal → no downgrade)
+    # Threshold-less rules (the bundled DISCOVERY/BASELINE ones) are
+    # inert in C4.1 — behavior preserved, no unintended activation.
+    budget_snap = request.get("budget_remaining")
+    want_downgrade = bool(request.get("cross_class_downgrade", False))
+    strictness = resolver_rules.get("strictness", {})
+    soft_degrade = resolver_rules.get("soft_degrade", {})
+    soft_degrade_rules = (
+        soft_degrade.get("rules", []) if soft_degrade.get("enabled", False) else []
+    )
+
+    target_class = requested_class
+
+    if (
+        want_downgrade
+        and budget_snap is not None
+        and soft_degrade_rules
+    ):
+        strict_cfg = strictness.get(requested_class, {})
+        if strict_cfg.get("degrade_allowed", True):
+            # budget_snap expected to be a Budget (workflow.budget)
+            # with .cost_usd field (BudgetAxis | None).
+            cost_axis = getattr(budget_snap, "cost_usd", None)
+            if cost_axis is not None:
+                remaining_val = getattr(cost_axis, "remaining", None)
+                if remaining_val is not None:
+                    remaining_usd = float(remaining_val)
+                    _c4_meta["budget_remaining_usd"] = remaining_usd
+                    for idx, rule in enumerate(soft_degrade_rules):
+                        if not isinstance(rule, dict):
+                            continue
+                        threshold = rule.get("budget_remaining_threshold_usd")
+                        if threshold is None:
+                            continue  # inert in C4.1
+                        if rule.get("from_class") != requested_class:
+                            continue
+                        intents_list = rule.get("intents", []) or []
+                        if intent not in intents_list:
+                            continue
+                        if remaining_usd < float(threshold):
+                            target_class = rule["to_class"]
+                            _c4_meta["downgrade_applied"] = True
+                            _c4_meta["original_class"] = requested_class
+                            _c4_meta["downgraded_class"] = target_class
+                            _c4_meta["matched_rule_index"] = idx
+                            _c4_meta["threshold_usd"] = float(threshold)
+                            break
 
     ttl_default = resolver_rules.get("ttl_hours_default", 72)
     ttl_by_class = resolver_rules.get("ttl_hours_by_class", {})
@@ -263,7 +354,7 @@ def resolve(
             "reason": reason,
             "selected_class": target_class,
             "provider_attempts": attempts,
-            **_c4_dormant,
+            **_c4_meta,
         }
 
     sel_provider, sel_model_id, sel_model = selected
@@ -279,7 +370,7 @@ def resolve(
         "ttl_remaining_hours": None,  # compute optionally
         "intent": intent,
         "perspective": perspective,
-        **_c4_dormant,
+        **_c4_meta,
     }
     return manifest
 

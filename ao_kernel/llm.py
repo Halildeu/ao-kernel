@@ -37,12 +37,19 @@ def resolve_route(
     Deterministic routing: intent → class → provider → model.
     Verified-only, TTL-gated. Fail-closed.
 
-    Returns dict with 'status' ('OK' or 'FAIL'), 'provider_id', 'model',
-    and (PR-C4 plumbing) 'downgrade_applied', 'original_class',
-    'downgraded_class'. The latter three are always ``False``/``None``
-    in this PR — PR-C4 v1 is plumbing-only; runtime downgrade lands
-    in C4.1 follow-up (threshold schema widen + soft_degrade rules
-    directional filter).
+    Returns a dict with ``status`` (``OK`` / ``FAIL``), ``provider_id``,
+    ``model``, and the PR-C4.1 downgrade metadata block:
+    ``downgrade_applied``, ``original_class``, ``downgraded_class``,
+    ``matched_rule_index``, ``threshold_usd``, ``budget_remaining_usd``.
+    ``selected_class`` reflects the effective (post-downgrade) class.
+
+    PR-C4.1 gating (runtime active in v3.3.1): when the caller sets
+    ``cross_class_downgrade=True`` AND supplies a ``budget_remaining``
+    snapshot, the router evaluates ``soft_degrade.rules[]`` with the
+    additive ``budget_remaining_threshold_usd`` field. Five
+    preconditions stack — see ``_internal.prj_kernel_api.llm_router``
+    for the full contract. Rules without the threshold field stay
+    **inert** (pre-v3.3.1 dormant behavior preserved).
     """
     from ao_kernel._internal.prj_kernel_api.llm_router import resolve
 
@@ -51,7 +58,7 @@ def resolve_route(
             "intent": intent,
             "perspective": perspective,
             "provider_priority": provider_priority or [],
-            # PR-C4 additive (plumbing-only — dormant in v1):
+            # PR-C4.1 runtime (active):
             "budget_remaining": budget_remaining,
             "cross_class_downgrade": cross_class_downgrade,
         },

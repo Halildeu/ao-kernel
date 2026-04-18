@@ -22,6 +22,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 **Test baseline.** 2210 → **2222** (+12 new in `tests/test_cost_marker_idempotency.py`). Existing `test_same_digest_silent_no_op_on_second_call` extended with budget assertion — the v3.3.0 bug would have shown 9.90 remaining (double drain), now pinned to 9.95. Ruff + mypy clean. Scope explicitly excludes tam duplicate `governed_call` idempotency (reserve-phase problem, v3.4.0 follow-up); this PR closes post-reconcile phase only.
 
+### Added — PR-C4.1 cross-class downgrade runtime activation
+
+**Context.** v3.3.0 shipped `resolve_route(cross_class_downgrade=True, budget_remaining=...)` plumbing with the `route_cross_class_downgrade` event kind reserved, but the runtime ignored both kwargs. v3.3.1 turns it on: budget-aware soft-degrade rules now steer class selection when the run's remaining cost budget drops below a configured threshold. Codex CNS-20260418-034 adversarial plan review (4 iterations → AGREE) shaped the design against the existing `llm_resolver_rules.v1.json` shape instead of inventing a second taxonomy.
+
+**Changes.**
+
+- **Schema widen** `ao_kernel/defaults/schemas/schema_llm_resolver_rules.v1.json::soft_degrade.rules[]` — optional `budget_remaining_threshold_usd` (`type: "number"`, `minimum: 0`). Threshold-less rules (the bundled `DISCOVERY`/`BASELINE` degrade entries) stay **inert in v3.3.1 runtime** — behavior preserved, no unintended activation.
+- **Router gating** `ao_kernel/_internal/prj_kernel_api/llm_router.py::resolve()` — five preconditions stack before a downgrade applies: (1) caller opts in via `cross_class_downgrade=True`, (2) `budget_remaining` snapshot present, (3) `strictness[from_class].degrade_allowed` not False (`REASONING_TEXT` / `CODE_AGENTIC` / `GOVERNANCE_ASSURANCE` block outright), (4) budget has a `cost_usd` axis with a remaining value, (5) a matching rule has a threshold AND `remaining < threshold_usd` (**strict** less-than — equality is no-downgrade).
+- **Response additive fields** — `downgrade_applied: bool`, `original_class: str | None`, `downgraded_class: str | None`, `matched_rule_index: int | None`, `threshold_usd: float | None`, `budget_remaining_usd: float | None`. `selected_class` now reflects the **effective** class (post-downgrade) so callers / audit see the same value the provider selection used.
+- **Startup schema validation** (inline, cached) — `llm_resolver_rules.v1.json` is validated against the additive-widened schema on first use. Malformed rules (e.g. negative threshold) raise `jsonschema.ValidationError` fail-closed. Reset hook `_reset_resolver_rules_cache()` provided for test isolation only.
+- **Caller integration**:
+  - `AoKernelClient._route(intent, run_id=...)` — loads the run budget snapshot via `load_run` + `budget_from_dict`, opts into `cross_class_downgrade=True` when a snapshot is available. Snapshot-load failures are silent (warn-log + no-downgrade) — route path stays on the core flow.
+  - `AoKernelClient.llm_call` + `mcp_server.handle_llm_call` — when `route.downgrade_applied=True`, emit `route_cross_class_downgrade` event (fail-open `emit_event` wrap). Auto-route path only; explicit `provider_id` / `model` overrides bypass the route + emit entirely.
+
+**Test baseline.** `tests/test_resolve_route_downgrade.py` (new, 16 tests across 6 test classes): budget-below / above / exactly-at threshold, threshold-less inert rule, strictness-deny gate, intent mismatch, budget-absence / axis-missing dormant paths, response contract completeness, effective-class selection, schema rejection, and three client `_route` integration pins. Backward compat for existing resolver rule callers verified by `test_resolve_route_kwargs.py` (6 tests unchanged).
+
+**Migration.** No action required. Existing `soft_degrade.rules[]` without `budget_remaining_threshold_usd` are explicitly inert — pre-v3.3.1 dormant behavior is preserved. Operators who want budget-aware degradation add the threshold field to one or more rules in their workspace override.
+
 ### Deferred — out of v3.3.1 scope (v3.4.0)
 
 - Full reconciliation daemon / API (`reconcile_orphan_spends`)

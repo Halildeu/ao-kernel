@@ -80,10 +80,11 @@ _KINDS: Final[frozenset[str]] = frozenset({
     "llm_cost_estimated",   # pre-dispatch estimate emitted (governed_call step 4)
     "llm_spend_recorded",   # post-response actual cost computed + ledger appended
     "llm_usage_missing",    # adapter response missing tokens_input/output (audit flag)
-    # PR-C4 addition (cross-class routing, 27 → 28 kinds). Reserved for
-    # C4.1 follow-up runtime consumer (threshold schema widen + rule
-    # iterate); v1 plumbing only — _KINDS accepts the kind but cost
-    # runtime / route layer does NOT emit in this PR.
+    # PR-C4 plumbing + PR-C4.1 active runtime (cross-class routing,
+    # 27 → 28 kinds). Emitted by `client.llm_call` and
+    # `mcp_server.handle_llm_call` on auto-route paths when the router
+    # applies a budget-triggered class downgrade per
+    # `llm_resolver_rules.soft_degrade.rules[].budget_remaining_threshold_usd`.
     "route_cross_class_downgrade",
 })
 

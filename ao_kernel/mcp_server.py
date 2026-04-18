@@ -350,9 +350,95 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
     # Route if provider/model not specified
     if not provider_id or not model:
         from ao_kernel.llm import resolve_route
-        route = resolve_route(intent=intent, workspace_root=ws)
+
+        # PR-C4.1: opportunistic budget snapshot load for budget-aware
+        # cross-class downgrade. Fail-silently (warn-log) — cost-route
+        # is an optional path, not on the MCP thin-executor happy path.
+        budget_snap = None
+        if ao_run_id is not None and ws is not None:
+            try:
+                from pathlib import Path as _Path
+                from ao_kernel.workflow.budget import budget_from_dict
+                from ao_kernel.workflow.run_store import load_run
+
+                record, _ = load_run(_Path(ws), ao_run_id)
+                budget_dict = record.get("budget")
+                if budget_dict:
+                    budget_snap = budget_from_dict(budget_dict)
+            except Exception as exc:
+                import logging as _logging
+
+                _logging.getLogger(__name__).warning(
+                    "C4.1 MCP budget snapshot load failed "
+                    "(run=%s): %s; no-downgrade fallback",
+                    ao_run_id,
+                    exc,
+                )
+
+        # PR-C4.1: auto-route wrapped in try so router-side config
+        # errors (malformed resolver rules, missing class registry,
+        # etc) surface through the MCP decision envelope instead of
+        # bubbling as a raw exception — parity with handle_llm_route.
+        try:
+            route = resolve_route(
+                intent=intent,
+                workspace_root=ws,
+                cross_class_downgrade=budget_snap is not None,
+                budget_remaining=budget_snap,
+            )
+        except Exception as exc:
+            return _decision_envelope(
+                tool="ao_llm_call",
+                allowed=False,
+                decision="error",
+                reason_codes=["ROUTE_ERROR"],
+                error=f"resolve_route failed: {exc}",
+            )
         provider_id = provider_id or route.get("provider_id", route.get("selected_provider", "openai"))
         model = model or route.get("model", route.get("selected_model", "gpt-4"))
+
+        # PR-C4.1: evidence emit on budget-triggered downgrade.
+        # Fail-open wrap — evidence I/O issue must not cascade.
+        if (
+            route.get("downgrade_applied")
+            and ws is not None
+            and ao_run_id is not None
+        ):
+            try:
+                import datetime as _dt
+                from pathlib import Path as _Path
+
+                from ao_kernel.executor.evidence_emitter import emit_event
+
+                emit_event(
+                    _Path(ws),
+                    run_id=ao_run_id,
+                    kind="route_cross_class_downgrade",
+                    actor="ao-kernel",
+                    payload={
+                        "intent": intent,
+                        "original_class": route.get("original_class"),
+                        "downgraded_class": route.get("downgraded_class"),
+                        "selected_class": route.get("selected_class"),
+                        "matched_rule_index": route.get("matched_rule_index"),
+                        "threshold_usd": route.get("threshold_usd"),
+                        "budget_remaining_usd": route.get(
+                            "budget_remaining_usd",
+                        ),
+                        "provider_id": provider_id,
+                        "model": model,
+                        "ts": _dt.datetime.now(
+                            _dt.timezone.utc,
+                        ).isoformat(),
+                    },
+                )
+            except Exception as exc:
+                import logging as _logging
+
+                _logging.getLogger(__name__).warning(
+                    "route_cross_class_downgrade emit failed "
+                    "(fail-open): %s", exc,
+                )
 
     # Resolve API key via dual-read (factory > env fallback, D11/D0.3).
     # Never accept api_key as a tool parameter — it stays an env/secret concern.
