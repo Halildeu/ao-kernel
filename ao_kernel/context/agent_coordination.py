@@ -210,7 +210,12 @@ def compile_context_sdk(
     from ao_kernel.context.profile_router import detect_profile, get_profile
 
     canonical_items = query(workspace_root, category=None)
-    canonical_dict = {item["key"]: item for item in canonical_items}
+    # v3.6 E2 iter-2 Codex BLOCK #1 absorb — exclude consultation-
+    # category rows from the canonical lane so they render exactly
+    # once under the dedicated `## Consultations` section instead of
+    # appearing as both a generic canonical blob AND a consultation
+    # line. The consultation surface is the typed one.
+    canonical_dict = {item["key"]: item for item in canonical_items if item.get("category") != "consultation"}
 
     facts_path = workspace_root / ".cache" / "index" / "workspace_facts.v1.json"
     workspace_facts = None

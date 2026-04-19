@@ -23,10 +23,16 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ao_kernel.consultation.promotion import PromotedConsultation
 from ao_kernel.context.profile_router import ProfileConfig, get_profile
+
+if TYPE_CHECKING:
+    # Runtime-skipped to avoid a circular import: promotion.py imports
+    # canonical_store.query, which triggers ao_kernel.context.__init__,
+    # which loads this module. Annotations use string forward refs via
+    # `from __future__ import annotations` above.
+    from ao_kernel.consultation.promotion import PromotedConsultation
 
 logger = logging.getLogger(__name__)
 
@@ -163,17 +169,30 @@ def compile_context(
             }
         )
 
-    # Apply profile consultation cap (last-added-first-dropped when
-    # oversize, per plan §3.E2).
+    # Apply profile consultation cap (last-added-first-dropped per
+    # plan §3.E2) + enforce token budget (Codex iter-2 BLOCK #2 absorb
+    # — consultation lines must count toward max_tokens; previously
+    # they bypassed budget and also were not reflected in
+    # total_tokens / telemetry).
     cap = max(0, profile_config.max_consultations)
     capped_consultations = tuple(consultations[:cap]) if cap else ()
+    accepted_consultations: list[PromotedConsultation] = []
+    for record in capped_consultations:
+        rendered_line = _render_consultation(record)
+        line_chars = len(rendered_line) + 1  # trailing newline
+        if used_chars + line_chars > budget:
+            break
+        accepted_consultations.append(record)
+        used_chars += line_chars
 
-    # Build preamble from included items + capped consultations
+    # Build preamble from included items + budget-fit consultations
     preamble = _build_preamble(
         [i for i in items if i.included],
         profile_config,
-        consultations=capped_consultations,
+        consultations=tuple(accepted_consultations),
     )
+
+    total_tokens = used_chars // 4
 
     # Telemetry (optional subsystem per CLAUDE.md §7 — graceful fallback, debug log)
     try:
@@ -183,14 +202,14 @@ def compile_context(
             included_count,
             len(items) - included_count,
             profile=profile_config.profile_id,
-            total_tokens=used_chars // 4,
+            total_tokens=total_tokens,
         )
     except Exception as e:
         logger.debug("context telemetry record skipped: %s", e)
 
     return CompiledContext(
         preamble=preamble,
-        total_tokens=used_chars // 4,
+        total_tokens=total_tokens,
         items_included=included_count,
         items_excluded=len(items) - included_count,
         profile_id=profile_config.profile_id,

@@ -25,7 +25,7 @@ import pytest
 
 from ao_kernel.consultation.promotion import PromotedConsultation
 from ao_kernel.context.context_compiler import compile_context
-from ao_kernel.context.profile_router import PROFILES
+from ao_kernel.context.profile_router import PROFILES, ProfileConfig
 
 
 def _mk_consultation(
@@ -166,6 +166,119 @@ class TestLenientRender:
         assert "[CNS-NONE]" in result.preamble
         assert "(topic unknown)" in result.preamble
         assert "unresolved" in result.preamble
+
+
+class TestBlockAbsorb:
+    """Codex post-impl BLOCK iter-2 absorb.
+
+    BLOCK #1 — duplicate render: canonical lane + consultation lane
+    both contained consultation-category entries before the fix. SDK
+    layer now excludes `category=="consultation"` from canonical dict
+    so consultations appear exactly once under the typed section.
+
+    BLOCK #2 — budget bypass: consultation lines did not count toward
+    the `max_tokens` cap and were not reflected in `total_tokens`.
+    Compiler now reserves char-budget for each accepted consultation
+    line before rendering; anything that would push the preamble over
+    the cap is dropped tail-first.
+    """
+
+    def test_consultation_not_duplicated_in_canonical_lane(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        from ao_kernel.context.agent_coordination import compile_context_sdk
+
+        ao = tmp_path / ".ao"
+        ao.mkdir()
+        store = {
+            "version": "v1",
+            "decisions": {
+                "consultation.CNS-DEDUP": {
+                    "key": "consultation.CNS-DEDUP",
+                    "value": {
+                        "cns_id": "CNS-DEDUP",
+                        "topic": "dedup",
+                        "from_agent": "claude",
+                        "to_agent": "codex",
+                        "final_verdict": "AGREE",
+                        "resolved_at": "2026-04-18T10:00:00+00:00",
+                    },
+                    "category": "consultation",
+                    "source": "consultation_archive",
+                    "confidence": 1.0,
+                    "provenance": {
+                        "method": "consultation_promotion",
+                        "cns_id": "CNS-DEDUP",
+                    },
+                    "promoted_at": "2026-04-19T10:00:00+00:00",
+                    "expires_at": "",
+                },
+            },
+            "facts": {},
+            "updated_at": "2026-04-19T00:00:00Z",
+        }
+        (ao / "canonical_decisions.v1.json").write_text(
+            json.dumps(store, indent=2),
+            encoding="utf-8",
+        )
+
+        result = compile_context_sdk(
+            tmp_path,
+            session_context={"ephemeral_decisions": []},
+            messages=None,
+            profile="PLANNING",
+        )
+        preamble = result["preamble"]
+        # Consultation row must be rendered in the typed section only,
+        # not in the ## Canonical Decisions blob.
+        assert "## Canonical Decisions" not in preamble
+        assert "## Consultations" in preamble
+        # Concretely ensure the CNS-DEDUP row appears exactly once.
+        assert preamble.count("CNS-DEDUP") == 1
+
+    def test_consultation_lines_respect_token_budget(self) -> None:
+        """Budget fit: a long consultation list tail-truncates before
+        the preamble exceeds the char budget (`max_tokens * 4`).
+        Also verifies `total_tokens` reflects consultation chars."""
+        # Moderate budget — each ~160-char long line fits 1-2 times
+        # in a 200-char budget (max_tokens=50). 5 lines cannot all
+        # fit, so the tail must drop.
+        custom = ProfileConfig(
+            profile_id="TIGHT",
+            description="tight budget",
+            priority_prefixes=(),
+            max_decisions=5,
+            max_tokens=50,  # 200-char budget
+            max_consultations=10,
+        )
+        PROFILES["TIGHT"] = custom
+        try:
+            consultations = tuple(
+                _mk_consultation(
+                    f"CNS-{i:03d}",
+                    topic="x" * 80,  # ~160-char line each
+                )
+                for i in range(5)
+            )
+            result = compile_context(
+                {"ephemeral_decisions": []},
+                consultations=consultations,
+                profile="TIGHT",
+            )
+            rendered_count = result.preamble.count("[CNS-")
+            assert rendered_count < 5, f"expected some consultations dropped, got {rendered_count}/5"
+            assert rendered_count >= 1, f"expected at least one consultation accepted, got {rendered_count}"
+            # total_tokens must reflect consultation chars, not 0.
+            assert result.total_tokens > 0
+            # Preamble length within budget (allow ~80 char slack for
+            # the `[Context Profile: TIGHT]` prefix + section header).
+            budget_chars = custom.max_tokens * 4
+            assert len(result.preamble) <= budget_chars + 80, (
+                f"preamble={len(result.preamble)} over budget={budget_chars}"
+            )
+        finally:
+            PROFILES.pop("TIGHT", None)
 
 
 class TestSdkWiringAgreePreferred:
