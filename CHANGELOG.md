@@ -7,6 +7,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — post-v3.9 follow-up hygiene (accumulating toward v3.10)
+
+**PR-M1 (#153) — `_internal/utils/*` coverage tranche 2.**
+- `pyproject.toml::coverage.run.omit` no longer masks `ao_kernel/_internal/utils/*`. `budget.py` + `jsonio.py` (38 LOC, already ~80-82% transitive) are now under the ratcheted 85% scope.
+- `tests/test_internal_utils_coverage.py` adds targeted pins: `estimate_tokens` empty/non-str branches, `load_json`/`save_json` roundtrip, `to_canonical_json` sort_keys + unicode preservation.
+- Mirror of the v3.8 H1 `_internal/secrets/*` single-tranche pattern; Codex plan-time AGREE on "no providers in same PR."
+- Coverage: 85.10% → 85.13%.
+
+**PR-M2 (#154) — `ToolCallPolicy.from_dict()` legacy field bool-strict + `max_tool_rounds` schema alignment.**
+- Three legacy fields (`enabled`, `allow_unknown`, `max_tool_rounds`) now match the strict validation already applied to B1-absorbed fields. Pre-M2 they silently coerced `"true"` strings, `0/1` ints, and string-wrapped numbers.
+- `max_tool_rounds` also picks up the schema-matching `1 <= x <= 10` inclusive bounds (Codex plan-time note: "half-alignment risk").
+- Invalid payloads raise `ValueError` at parse time — fail-closed by design.
+- +6 negative pins in `tests/test_tool_gateway.py`.
+
+### Known follow-ups (post-v3.9)
+
+- `AoKernelClient.call_tool()` standalone path is not gated by `llm_call()` reset — persistent gateway state leaks outside the LLM-request boundary. Preexisting design debt; Codex rejected a per-`call_tool()` auto-reset (would break the documented manual tool-use contract where `call_tool()` is the public execution surface for tool chains). Tracked for v3.10 client API pass with an explicit `reset_tool_gateway_state()` helper or similar.
+
 ## [3.9.0] - 2026-04-19
 
 ### Added — v3.9.0 Tool Dispatch Governance Hardening (2 feature PRs)
@@ -44,11 +62,9 @@ The B2 runtime changes are **only observable** when an operator writes a non-def
 - `max_tool_calls_per_request` / `cycle_detection.max_identical_calls` → dormant pre-B1, enforced now. Gateways that accepted 100+ identical repeats or ran past the per-request cap return `DENIED` with the corresponding `reason_code`.
 - `tool_permissions.mutating_requires_confirmation=true` + `default_permission="read_only"` → will begin denying tools flagged `is_mutating=True`. Bundled MCP governance tools intentionally carry no such flag in v3.9 (no confirmation flow yet). External callers who register their own tools via `ToolGateway.register_handler(..., is_mutating=True)` will see the `MUTATING_REQUIRES_CONFIRMATION` deny under the bundled policy.
 
-### Known follow-ups (post-v3.9)
+### Known follow-ups (tracked at release time)
 
-- `_internal/utils/*` coverage tranche (C1) — deferred; small mechanical PR.
-- Legacy `ToolCallPolicy.from_dict()` bool-strict hardening for `enabled` / `allow_unknown` / `max_tool_rounds` — parser-hygiene follow-up.
-- `AoKernelClient.call_tool()` standalone path (not gated by `llm_call()` reset) — preexisting design debt; persistent gateway state outside the LLM-request boundary. Not observed in the bundled contract but documented.
+> The three items that shipped at v3.9.0 as "known follow-ups" (`_internal/utils/*` coverage tranche, legacy bool-strict hygiene, `call_tool()` standalone reset) have been triaged post-release: M1 + M2 landed under `[Unreleased]`; the `call_tool()` item remains open for v3.10 per Codex's plan-time rejection of a per-call auto-reset (public tool-use contract).
 
 ## [3.8.0] - 2026-04-19
 
