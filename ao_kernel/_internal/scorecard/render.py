@@ -82,9 +82,16 @@ def _render_footer(
 ) -> str:
     baseline = f"`{diff.baseline_sha}`" if diff.baseline_sha else "_(not found)_"
     head = f"`{diff.head_sha}`"
+    # v3.7 F2 absorb: footer labels per Codex iter-2 correction.
+    # `real_adapter` is event-backed (`llm_spend_recorded.source=
+    # "adapter_path"`) — NOT claim vendor-billed external spend.
+    # `mock_shim` label only renders for historical artefacts; post-F2
+    # fast-mode runs emit `cost_source=None`.
     cost_source_note = ""
     if diff.head_cost_source == "mock_shim":
         cost_source_note = " · Cost source: `mock_shim` (benchmark-only; not real billing)"
+    elif diff.head_cost_source == "real_adapter":
+        cost_source_note = " · Cost source: `real_adapter` (adapter-path reconcile; event-backed, non-shim)"
     elif diff.head_cost_source:
         cost_source_note = f" · Cost source: `{diff.head_cost_source}`"
     pr_note = ""

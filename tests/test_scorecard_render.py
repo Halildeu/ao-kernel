@@ -115,3 +115,22 @@ class TestRenderMarkdown:
         rendered = render_diff(diff, head_scorecard=head)
         assert "mock_shim" in rendered
         assert "benchmark-only; not real billing" in rendered
+
+    def test_real_adapter_cost_source_footer(self) -> None:
+        """v3.7 F2: `real_adapter` label renders event-backed wording."""
+        head = _scorecard(_entry("s", cost_source="real_adapter"))
+        diff = compare_scorecards(head, head, policy=_POLICY)
+        rendered = render_diff(diff, head_scorecard=head)
+        assert "real_adapter" in rendered
+        assert "adapter-path reconcile" in rendered
+        assert "event-backed" in rendered
+        # Do NOT claim vendor-billed external spend (Codex F2 absorb).
+        assert "real adapter spend" not in rendered
+
+    def test_none_cost_source_has_no_footer_note(self) -> None:
+        """v3.7 F2 fast-mode contract: `cost_source=None` → no cost
+        source annotation in the footer."""
+        head = _scorecard(_entry("s", cost_source=None))
+        diff = compare_scorecards(head, head, policy=_POLICY)
+        rendered = render_diff(diff, head_scorecard=head)
+        assert "Cost source:" not in rendered

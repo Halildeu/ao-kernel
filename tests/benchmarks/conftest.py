@@ -1,24 +1,24 @@
 """Shared fixtures for PR-B7 benchmarks.
 
-v3.7 F1 (scaffold only): `--benchmark-mode=fast|full` pytest option
-(default `fast`). Fast mode patches adapter transport via
+v3.7 F2 shipped: `--benchmark-mode=fast|full` pytest option (default
+`fast`). Fast mode patches adapter transport via
 ``mock_adapter_transport``; full mode bypasses the mock so tests
-marked ``@pytest.mark.full_mode`` can exercise the real subprocess
-path. Collection hook skips non-matching tests per mode so the
-default CI surface is identical to pre-v3.7.
+marked ``@pytest.mark.full_mode`` exercise the real subprocess path.
+Collection hook skips non-matching tests per mode so the default CI
+surface is identical to pre-v3.7.
 
-**F1 ships the scaffold, not a runnable real-adapter smoke.** The
-`@full_mode` marker + collection hook exist so v3.7 F2 can add the
-first genuine smoke without re-pluming the harness. Under
-`--benchmark-mode=full` today F1 collects 0 runnable tests.
-Rationale + forward reference: `docs/BENCHMARK-FULL-MODE.md`.
+Full-mode smokes live in ``tests/benchmarks/test_full_mode_smoke.py``;
+see ``docs/BENCHMARK-FULL-MODE.md`` for the operator runbook.
 
 v3.5 D3: scorecard collector hooks are wired here via
 :mod:`ao_kernel._internal.scorecard.collector`. Primary tests tag
 themselves with ``@pytest.mark.scorecard_primary`` and expose a
 :class:`PrimarySidecar` via the ``benchmark_primary_sidecar`` fixture.
-**Full-mode tests must NOT be `scorecard_primary`** — real-adapter
-scorecard path lands in v3.7 F2.
+v3.7 F2: the full-mode smoke combines ``@full_mode`` +
+``@scorecard_primary`` so the mode-gated expected set
+(``{"governed_review"}``) is satisfied when the smoke actually ran;
+when it skips due to prereq miss, the session-finish hook relaxes
+the invariant to empty.
 """
 
 from __future__ import annotations
@@ -105,11 +105,14 @@ def pytest_collection_modifyitems(
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
-        "full_mode: v3.7 F1 — mark a benchmark test as ops-only "
-        "real-adapter full-mode smoke. Requires "
-        "`--benchmark-mode=full` to run; skipped in default fast "
-        "mode. Do NOT combine with `scorecard_primary` (real-"
-        "adapter scorecard semantics land in v3.7 F2).",
+        "full_mode: mark a benchmark test as ops-only full-mode "
+        "smoke. Requires `--benchmark-mode=full` to run; skipped in "
+        "default fast mode. v3.7 F2 onward: may combine with "
+        "`@scorecard_primary` to publish a real-adapter scorecard "
+        "sidecar (the session-finish hook expects "
+        "`{governed_review}` as the full-mode primary set when any "
+        "smoke runs; empty registry is treated as a graceful skip "
+        "so the invariant collapses cleanly).",
     )
     config.addinivalue_line(
         "markers",
@@ -141,20 +144,38 @@ def pytest_sessionfinish(
     misconfiguration silently-green under CI. Now we propagate a
     non-zero pytest exit code via ``session.exitstatus``.
 
-    v3.7 F1 iter-2 absorb: under ``--benchmark-mode=full`` every
-    fast-mode (`scorecard_primary`-marked) test is skipped, so the
-    canonical primary set is legitimately empty. Suppress the
-    scorecard invariant in that mode — the scorecard surface is a
-    fast-mode-only contract today; F2's real-adapter smokes will
-    land their own scorecard path.
-    """
-    mode = session.config.getoption("--benchmark-mode")
-    if mode == "full":
-        return
+    v3.7 F2 absorb (Codex iter-2 AGREE): expected primary scenarios
+    are now mode-gated. Fast mode retains the canonical full set
+    (``{"governed_bugfix", "governed_review"}``); full mode only
+    requires ``{"governed_review"}`` because the F2 smoke scope is
+    minimal-by-design (no ``gh-cli-pr`` real-adapter wiring yet).
 
+    F2 post-impl BLOCK absorb: if full mode runs but the smoke
+    skipped due to prerequisites (system python3 lacking ao_kernel,
+    missing binary, etc.) the registry is empty. Raising
+    ``ScorecardCollectorError`` in that case would turn a legitimate
+    env-miss skip into a usage-error fail — the opposite of the
+    "graceful skip" contract. When full mode sees zero primaries
+    registered we relax the expected set to empty.
+    """
+    from ao_kernel._internal.scorecard.collector import (
+        EXPECTED_PRIMARY_SCENARIOS,
+    )
+
+    mode = session.config.getoption("--benchmark-mode")
     registry = _registry(session.config)
+    if mode == "full":
+        if not registry.distinct_scenarios():
+            # Smoke skipped (prereq miss) → no scorecard to produce;
+            # suppress the invariant instead of flagging misconfig.
+            expected: frozenset[str] = frozenset()
+        else:
+            expected = frozenset({"governed_review"})
+    else:
+        expected = EXPECTED_PRIMARY_SCENARIOS
+
     try:
-        finalize_session(registry)
+        finalize_session(registry, expected_scenarios=expected)
     except Exception as exc:
         session.config.get_terminal_writer().line(
             f"scorecard finalize failed: {exc}",
@@ -199,13 +220,20 @@ def _now_iso() -> str:
 
 
 @pytest.fixture
-def workspace_root(tmp_path: Path) -> Path:
+def workspace_root(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
     """Materialise a tmp workspace with `.ao/` + git skeleton and
     bundled policies / workflows / adapters copied in, so the
     driver + governance path reads a real filesystem.
 
     `install_workspace` from the shared driver helpers does the git
     init + base `.ao/` dirs; we layer the bundled defaults on top.
+
+    v3.7 F2: under `--benchmark-mode=full` the workspace is overlaid
+    with `policy_cost_tracking.v1.json::enabled=true` so the
+    adapter-path `post_adapter_reconcile` middleware actually runs
+    and emits `llm_spend_recorded` events with `source="adapter_path"`.
+    Fast-mode keeps the bundled dormant default so pre-F2 tests
+    behave identically.
     """
     install_workspace(tmp_path)
     ao = tmp_path / ".ao"
@@ -226,6 +254,24 @@ def workspace_root(tmp_path: Path) -> Path:
     if bench_workflows.is_dir():
         for workflow in bench_workflows.glob("*.v1.json"):
             shutil.copy2(workflow, ao / "workflows" / workflow.name)
+
+    # v3.7 F2 mode-gated cost policy override (Codex iter-2 AGREE).
+    # Fast-mode keeps bundled dormant default; full-mode flips
+    # `enabled=true` so the adapter-path reconcile middleware fires.
+    mode = request.config.getoption("--benchmark-mode")
+    if mode == "full":
+        cost_policy_path = ao / "policies" / "policy_cost_tracking.v1.json"
+        if cost_policy_path.is_file():
+            policy_doc = json.loads(
+                cost_policy_path.read_text(encoding="utf-8"),
+            )
+            if isinstance(policy_doc, dict):
+                policy_doc["enabled"] = True
+                cost_policy_path.write_text(
+                    json.dumps(policy_doc, indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
+
     return tmp_path
 
 

@@ -162,3 +162,142 @@ class TestContextPackRefRealArtefact:
         # that the file lands at `context_path`. Stronger content
         # assertions belong with F2's real-adapter smoke.
         _ = context_file.read_text(encoding="utf-8")
+
+
+# ── 4) v3.7 F2 full-mode codex-stub smoke ────────────────────────────
+#
+# The first runnable `@full_mode` smoke (v3.7 F2): dispatches
+# `governed_review` through the real adapter-path `invoke_cli` against
+# the deterministic `codex-stub` Python helper. No external LLM
+# credentials required — codex-stub runs locally and emits a canned
+# envelope that drives the `post_adapter_reconcile` middleware to
+# write `llm_spend_recorded` events with `source="adapter_path"`.
+#
+# Scope-out per Codex F2 plan-time AGREE: external claude-code-cli +
+# gh-cli-pr wiring, bench workflow variants, worktree-profile
+# enablement — all belong to separate F2.1+ PRs.
+
+
+@pytest.mark.full_mode
+@pytest.mark.scorecard_primary
+class TestFullModeAdapterPathReconcile:
+    """v3.7 F2 — first runnable full-mode smoke.
+
+    Exercises `governed_review` end-to-end without
+    `mock_adapter_transport`. The codex-stub local Python helper
+    stands in for external LLM adapters; the adapter-path
+    `post_adapter_reconcile` middleware emits real
+    `llm_spend_recorded` events which the scorecard collector now
+    maps to `cost_source="real_adapter"`.
+
+    Skipped under `--benchmark-mode=fast`; only runs under
+    `--benchmark-mode=full`.
+    """
+
+    def test_governed_review_emits_adapter_path_spend_event(
+        self,
+        workspace_root: Path,
+        seeded_run,
+        benchmark_driver,
+        benchmark_primary_sidecar,
+    ) -> None:
+        from ao_kernel.workflow.run_store import load_run
+
+        from tests.benchmarks.assertions import assert_spend_recorded_event
+
+        workflow_id = "review_ai_flow"
+        workflow_version = "1.0.0"
+        scenario_id = "governed_review"
+        run_id = seeded_run(workflow_id, version=workflow_version)
+
+        # NO mock_adapter_transport — real invoke_cli dispatches to
+        # codex-stub. The manifest calls bare `python3`, which may
+        # resolve to a system python lacking ao_kernel. Detect that
+        # prereq miss via the workflow_failed event and skip.
+        try:
+            first = benchmark_driver.run_workflow(
+                run_id,
+                workflow_id,
+                workflow_version,
+            )
+        except FileNotFoundError as exc:
+            pytest.skip(f"subprocess prereq missing: {exc}")
+
+        if first.resume_token is not None:
+            benchmark_driver.resume_workflow(
+                run_id,
+                first.resume_token,
+                payload={"decision": "granted"},
+            )
+
+        run_dir = workspace_root / ".ao" / "evidence" / "workflows" / run_id
+
+        # Detect subprocess-prereq failure (e.g. system `python3` has
+        # no `ao_kernel` on sys.path). This is a legitimate
+        # environment miss; skip cleanly. Other workflow failure
+        # categories (policy_denied, output_parse_failed, adapter_crash)
+        # should surface.
+        events_path = run_dir / "events.jsonl"
+        if events_path.is_file():
+            for line in events_path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if ev.get("kind") != "workflow_failed":
+                    continue
+                payload = ev.get("payload") or {}
+                reason = str(payload.get("reason") or "")
+                category = payload.get("category")
+                code = payload.get("code")
+                # Inspect adapter log stderr for the underlying
+                # module/binary miss signal.
+                adapter_log = run_dir / "adapter-codex-stub.jsonl"
+                stderr_blob = ""
+                if adapter_log.is_file():
+                    stderr_blob = adapter_log.read_text(encoding="utf-8")
+                # Codex post-impl BLOCK absorb #2 — widen prereq
+                # detection: the driver surfaces binary-miss as
+                # code="COMMAND_NOT_FOUND" (see
+                # multi_step_driver._run_adapter_step), not only
+                # NON_ZERO_EXIT.
+                prereq_miss = category == "invocation_failed" and (
+                    code == "COMMAND_NOT_FOUND"
+                    or (
+                        code == "NON_ZERO_EXIT"
+                        and (
+                            "No module named" in stderr_blob
+                            or "ModuleNotFoundError" in stderr_blob
+                            or "command not found" in stderr_blob
+                        )
+                    )
+                )
+                if prereq_miss:
+                    pytest.skip(f"subprocess prereq miss (code={code}): {reason}")
+                pytest.fail(f"workflow_failed: category={category} reason={reason}")
+
+        # Pin the real adapter-path reconcile fired — this is the
+        # signal the scorecard collector consumes for
+        # `cost_source="real_adapter"`.
+        event = assert_spend_recorded_event(run_dir, source="adapter_path")
+        assert event.get("kind") == "llm_spend_recorded"
+
+        # Publish the scorecard primary sidecar (full-mode expected
+        # set = {governed_review} per mode-gated session-finish).
+        record, _ = load_run(workspace_root, run_id)
+        steps = record.get("steps", [])
+        review_step = next(
+            (s for s in steps if s.get("step_name") == "invoke_review_agent"),
+            None,
+        )
+        refs = (review_step or {}).get("capability_output_refs") or {}
+        findings_ref = refs.get("review_findings")
+        findings_path = run_dir / findings_ref if findings_ref else None
+        benchmark_primary_sidecar(
+            scenario_id,
+            run_dir,
+            run_state_path=workspace_root / ".ao" / "runs" / run_id / "state.v1.json",
+            review_findings_path=findings_path,
+        )
