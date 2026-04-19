@@ -880,14 +880,21 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
                 record_mcp_tool_call(elapsed, tool=name, decision="deny")
                 # v3.9 B2: audit every denial through the existing MCP
                 # event log (workspace mode). Library mode is no-op.
+                # Use the same param-aware resolver as the success path
+                # (_with_evidence wrapper) to avoid `.ao/.ao/evidence/...`
+                # nesting when `config.workspace_root()` already points
+                # at `.ao/` instead of the project root.
                 try:
-                    from ao_kernel.config import workspace_root as _ws_root
                     from ao_kernel._internal.evidence.mcp_event_log import (
                         record_mcp_event as _rec_mcp,
                     )
+                    from ao_kernel._internal.mcp.memory_tools import (
+                        _resolve_workspace_for_call,
+                    )
 
+                    _ws = _resolve_workspace_for_call(arguments or {}, fallback=_find_workspace_root)
                     _rec_mcp(
-                        _ws_root(),
+                        _ws,
                         name,
                         deny_envelope,
                         params=arguments or {},

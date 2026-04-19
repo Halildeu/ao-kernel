@@ -77,9 +77,7 @@ class AoKernelClient:
         self._context: dict[str, Any] | None = None
         self._session_active = False
         self._vector_store, resolver_owned = self._resolve_vector_store(vector_store)
-        self._owns_vector_store = (
-            owns_vector_store if owns_vector_store is not None else resolver_owned
-        )
+        self._owns_vector_store = owns_vector_store if owns_vector_store is not None else resolver_owned
         self._embedding_config = self._resolve_embedding_config(embedding_config)
         self._extensions, self._action_registry = self._bootstrap_extensions()
 
@@ -137,9 +135,7 @@ class AoKernelClient:
 
     # ── Workspace ───────────────────────────────────────────────────
 
-    def _resolve_vector_store(
-        self, injected: Any | None
-    ) -> tuple[Any | None, bool]:
+    def _resolve_vector_store(self, injected: Any | None) -> tuple[Any | None, bool]:
         """Delegate to resolver — env + policy + injected precedence.
 
         Resolver raises VectorStoreConfigError/VectorStoreConnectError under
@@ -147,6 +143,7 @@ class AoKernelClient:
         still raise — only connect failures downgrade to deterministic fallback.
         """
         from ao_kernel.context.vector_store_resolver import resolve_vector_store
+
         return resolve_vector_store(
             workspace=self._workspace_root,
             injected=injected,
@@ -159,6 +156,7 @@ class AoKernelClient:
         is resolved lazily at call time from env (D11), not stored.
         """
         from ao_kernel.context.embedding_config import resolve_embedding_config
+
         return resolve_embedding_config(
             workspace=self._workspace_root,
             injected=injected,
@@ -219,6 +217,7 @@ class AoKernelClient:
             if auto_init:
                 from ao_kernel.workspace import init
                 import os
+
                 old_cwd = os.getcwd()
                 os.chdir(str(ws))
                 try:
@@ -235,8 +234,7 @@ class AoKernelClient:
         """Return self._workspace_root or raise — SDK memory ops need durable storage."""
         if self._workspace_root is None:
             raise RuntimeError(
-                "This operation requires a workspace; "
-                "construct AoKernelClient(workspace_root=...) first."
+                "This operation requires a workspace; construct AoKernelClient(workspace_root=...) first."
             )
         return self._workspace_root
 
@@ -260,6 +258,7 @@ class AoKernelClient:
         ephemeral storage instead of being dropped.
         """
         from ao_kernel.context.agent_coordination import record_decision
+
         effective_context = context if context is not None else self._context
         return record_decision(
             self._require_workspace(),
@@ -280,6 +279,7 @@ class AoKernelClient:
     ) -> list[dict[str, Any]]:
         """Query canonical decisions + facts."""
         from ao_kernel.context.agent_coordination import query_memory
+
         return query_memory(
             self._require_workspace(),
             key_pattern=key_pattern,
@@ -289,6 +289,7 @@ class AoKernelClient:
     def get_revision(self) -> str:
         """Opaque revision token for the canonical store."""
         from ao_kernel.context.agent_coordination import get_revision
+
         return get_revision(self._require_workspace())
 
     def has_changed(self, last_revision: str) -> bool:
@@ -297,6 +298,7 @@ class AoKernelClient:
         ADVISORY — see ``agent_coordination`` module docstring.
         """
         from ao_kernel.context.agent_coordination import has_changed
+
         return has_changed(self._require_workspace(), last_revision=last_revision)
 
     def read_with_revision(
@@ -306,6 +308,7 @@ class AoKernelClient:
     ) -> dict[str, Any]:
         """Read canonical decisions together with the current revision token."""
         from ao_kernel.context.agent_coordination import read_with_revision
+
         return read_with_revision(
             self._require_workspace(),
             key_pattern=key_pattern,
@@ -327,6 +330,7 @@ class AoKernelClient:
         an active session, that session's context is used.
         """
         from ao_kernel.context.agent_coordination import compile_context_sdk
+
         return compile_context_sdk(
             self._require_workspace(),
             session_context=session_context if session_context is not None else self._context,
@@ -349,6 +353,7 @@ class AoKernelClient:
         if self._context is None:
             raise RuntimeError("No active session to finalize.")
         from ao_kernel.context.agent_coordination import finalize_session_sdk
+
         summary = finalize_session_sdk(
             self._require_workspace(),
             self._context,
@@ -406,6 +411,7 @@ class AoKernelClient:
         if resume and ws:
             try:
                 from ao_kernel.session import load_context
+
                 ctx = load_context(ws, session_id=self._session_id)
                 if ctx and ctx.get("session_id"):
                     self._context = ctx
@@ -416,6 +422,7 @@ class AoKernelClient:
 
         if ws:
             from ao_kernel.session import new_context
+
             self._context = new_context(
                 session_id=self._session_id,
                 workspace_root=ws,
@@ -436,6 +443,7 @@ class AoKernelClient:
         if ws:
             try:
                 from ao_kernel.context.session_lifecycle import start_session as _start
+
                 _start(workspace_root=ws, session_id=self._session_id, ttl_seconds=ttl_seconds)
             except Exception:
                 pass
@@ -455,12 +463,14 @@ class AoKernelClient:
         if save and ws and self._context:
             try:
                 from ao_kernel.session import save_context
+
                 save_context(self._context, ws, session_id=self._session_id)
             except Exception:
                 pass
 
             try:
                 from ao_kernel.context.session_lifecycle import end_session as _end
+
                 _end(self._context, workspace_root=ws)
             except Exception:
                 pass
@@ -524,6 +534,17 @@ class AoKernelClient:
         """
         request_id = f"req-{uuid.uuid4().hex[:12]}"
 
+        # v3.9 B2: reset all transient per-request ToolGateway state
+        # at every new LLM request boundary. The persistent gateway
+        # stores `_call_count`, `_request_call_count`, and
+        # `_recent_calls`; without this reset they accumulate across
+        # llm_call() invocations and would eventually trip
+        # `MAX_CALLS_PER_REQUEST_EXCEEDED` or `CYCLE_DETECTED` on
+        # legitimate traffic (Codex v3.9-B2 post-impl BLOCKER).
+        gw = getattr(self, "_gateway", None)
+        if gw is not None:
+            gw.reset_rounds()
+
         # 1. Route (normalize: router returns selected_provider/selected_model)
         if not provider_id or not model:
             route = self._route(intent, run_id=run_id)
@@ -536,11 +557,7 @@ class AoKernelClient:
             # Fail-open wrap — evidence I/O problem must never cascade
             # into a routing outage. Auto-route path only (caller-side
             # override bypasses this block entirely).
-            if (
-                route.get("downgrade_applied")
-                and self._workspace_root is not None
-                and run_id is not None
-            ):
+            if route.get("downgrade_applied") and self._workspace_root is not None and run_id is not None:
                 try:
                     import datetime as _dt
 
@@ -574,8 +591,8 @@ class AoKernelClient:
                     import logging as _logging
 
                     _logging.getLogger(__name__).warning(
-                        "route_cross_class_downgrade emit failed "
-                        "(fail-open): %s", exc,
+                        "route_cross_class_downgrade emit failed (fail-open): %s",
+                        exc,
                     )
 
         if not base_url:
@@ -591,6 +608,7 @@ class AoKernelClient:
             # Build + stream dispatch — unchanged from pre-B2.
             if self._session_active and self._context:
                 from ao_kernel.llm import build_request_with_context
+
                 req = build_request_with_context(
                     provider_id=provider_id,
                     model=model,
@@ -611,6 +629,7 @@ class AoKernelClient:
                 )
             else:
                 from ao_kernel.llm import build_request
+
                 req = build_request(
                     provider_id=provider_id,
                     model=model,
@@ -673,6 +692,7 @@ class AoKernelClient:
         resp_bytes: bytes = result.get("resp_bytes", b"")
         transport_result = result.get("transport_result") or {}
         from ao_kernel.llm import extract_usage
+
         usage = extract_usage(resp_bytes)
 
         text = normalized.get("text", "")
@@ -682,6 +702,7 @@ class AoKernelClient:
         if ws_str:
             try:
                 from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_live_response
+
                 process_live_response(
                     resp_bytes=resp_bytes,
                     transport_result=transport_result,
@@ -694,13 +715,16 @@ class AoKernelClient:
             except Exception as e:
                 logger.warning(
                     "evidence writer skipped for request_id=%s provider=%s: %s",
-                    request_id, provider_id, e,
+                    request_id,
+                    provider_id,
+                    e,
                 )
 
         # 6. Context pipeline (decision extraction + memory)
         decisions_extracted = 0
         if self._session_active and self._context and text:
             from ao_kernel.llm import process_response_with_context
+
             self._context = process_response_with_context(
                 text,
                 self._context,
@@ -711,25 +735,27 @@ class AoKernelClient:
                 vector_store=self._vector_store,
                 embedding_config=self._embedding_config,
             )
-            decisions_extracted = len(
-                self._context.get("ephemeral_decisions", self._context.get("decisions", []))
-            )
+            decisions_extracted = len(self._context.get("ephemeral_decisions", self._context.get("decisions", [])))
 
         # 7. Eval scorecard
         scorecard = None
         try:
             from ao_kernel._internal.orchestrator.eval_harness import run_eval_suite, eval_scorecard
+
             eval_results = run_eval_suite(text)
             scorecard = eval_scorecard(eval_results)
         except Exception as e:
             logger.warning(
                 "eval scorecard skipped for request_id=%s provider=%s: %s",
-                request_id, provider_id, e,
+                request_id,
+                provider_id,
+                e,
             )
 
         # 8. Telemetry
         try:
             from ao_kernel.telemetry import record_llm_call_duration, record_token_usage
+
             record_llm_call_duration(
                 transport_result.get("elapsed_ms", 0),
                 provider=provider_id,
@@ -808,17 +834,21 @@ class AoKernelClient:
         if sr.events:
             try:
                 from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+
                 tool_calls = reconstruct_tool_calls(sr.events, provider_id)
             except Exception as e:
                 logger.warning(
                     "tool-call reconstruction skipped for request_id=%s provider=%s: %s",
-                    request_id, provider_id, e,
+                    request_id,
+                    provider_id,
+                    e,
                 )
 
         # Evidence (stream events + summary)
         if ws_str:
             try:
                 from ao_kernel._internal.prj_kernel_api.llm_post_processors import process_stream_response
+
                 process_stream_response(
                     stream_result=sr,
                     provider_id=provider_id,
@@ -829,13 +859,16 @@ class AoKernelClient:
             except Exception as e:
                 logger.warning(
                     "stream evidence writer skipped for request_id=%s provider=%s: %s",
-                    request_id, provider_id, e,
+                    request_id,
+                    provider_id,
+                    e,
                 )
 
         # Context pipeline
         decisions_extracted = 0
         if self._session_active and self._context and text:
             from ao_kernel.llm import process_response_with_context
+
             self._context = process_response_with_context(
                 text,
                 self._context,
@@ -846,13 +879,12 @@ class AoKernelClient:
                 vector_store=self._vector_store,
                 embedding_config=self._embedding_config,
             )
-            decisions_extracted = len(
-                self._context.get("ephemeral_decisions", self._context.get("decisions", []))
-            )
+            decisions_extracted = len(self._context.get("ephemeral_decisions", self._context.get("decisions", [])))
 
         # Telemetry
         try:
             from ao_kernel.telemetry import record_llm_call_duration, record_token_usage, record_stream_first_token
+
             record_llm_call_duration(sr.elapsed_ms, provider=provider_id, model=model, status=status)
             if usage:
                 record_token_usage(
@@ -910,8 +942,7 @@ class AoKernelClient:
                 import logging as _logging
 
                 _logging.getLogger(__name__).warning(
-                    "C4.1 budget snapshot load failed "
-                    "(run=%s): %s; no-downgrade fallback",
+                    "C4.1 budget snapshot load failed (run=%s): %s; no-downgrade fallback",
                     run_id,
                     exc,
                 )
@@ -929,10 +960,7 @@ class AoKernelClient:
             return resolve_route(
                 intent=intent,
                 provider_priority=self._provider_priority,
-                workspace_root=(
-                    str(self._workspace_root)
-                    if self._workspace_root else None
-                ),
+                workspace_root=(str(self._workspace_root) if self._workspace_root else None),
                 cross_class_downgrade=budget_snap is not None,
                 budget_remaining=budget_snap,
             )
@@ -976,12 +1004,14 @@ class AoKernelClient:
         if not hasattr(self, "_gateway"):
             self._gateway = ToolGateway()
 
-        self._gateway.register(ToolSpec(
-            name=name,
-            handler=handler,
-            description=description,
-            input_schema=input_schema or {},
-        ))
+        self._gateway.register(
+            ToolSpec(
+                name=name,
+                handler=handler,
+                description=description,
+                input_schema=input_schema or {},
+            )
+        )
 
     def call_tool(
         self,
@@ -1003,6 +1033,7 @@ class AoKernelClient:
             }
 
         from dataclasses import asdict
+
         result = self._gateway.dispatch(name, arguments or {})
         return asdict(result)
 
@@ -1019,6 +1050,7 @@ class AoKernelClient:
             return {"saved": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.checkpoint import save_checkpoint
+
         path = save_checkpoint(
             self._context,
             workspace_root=self._workspace_root,
@@ -1035,6 +1067,7 @@ class AoKernelClient:
             return {"resumed": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.checkpoint import resume_checkpoint
+
         self._context = resume_checkpoint(
             workspace_root=self._workspace_root,
             session_id=session_id,
@@ -1057,6 +1090,7 @@ class AoKernelClient:
             return {"stored": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.self_edit_memory import remember as _remember
+
         return _remember(
             self._workspace_root,
             key=key,
@@ -1071,6 +1105,7 @@ class AoKernelClient:
             return {"forgotten": False, "error": "NO_WORKSPACE"}
 
         from ao_kernel.context.self_edit_memory import forget as _forget
+
         return _forget(self._workspace_root, key=key)
 
     def recall(self, pattern: str = "*") -> list[dict[str, Any]]:
@@ -1079,6 +1114,7 @@ class AoKernelClient:
             return []
 
         from ao_kernel.context.self_edit_memory import recall as _recall
+
         return _recall(self._workspace_root, key_pattern=pattern)
 
     # ── Policy ──────────────────────────────────────────────────────
@@ -1090,6 +1126,7 @@ class AoKernelClient:
     ) -> dict[str, Any]:
         """Check an action against a named policy. Fail-closed."""
         from ao_kernel.policy import check
+
         ws = self._workspace_root if self._workspace_root and (self._workspace_root / ".ao").is_dir() else None
         return check(policy_name, action, workspace=ws)
 
@@ -1124,9 +1161,7 @@ class AoKernelClient:
         try:
             close()
         except Exception as exc:  # noqa: BLE001 — cleanup best-effort
-            logger.warning(
-                "vector_store close failed during __exit__: %s", exc
-            )
+            logger.warning("vector_store close failed during __exit__: %s", exc)
 
     # ── Repr ────────────────────────────────────────────────────────
 
