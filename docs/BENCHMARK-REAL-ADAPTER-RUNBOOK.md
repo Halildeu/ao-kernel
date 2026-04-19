@@ -102,7 +102,7 @@ Key deltas from bundled:
 - `enabled` false → **true** (engages the policy)
 - `secrets.allowlist_secret_ids` `[]` → `["ANTHROPIC_API_KEY"]`
 - `command_allowlist.exact` += `"claude"`
-- `rollout.mode_default` stays `report_only` for the first pass; flip to `block` after you've confirmed no spurious denies in evidence.
+- `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. **Current runtime note**: the shipped executor (`ao_kernel/executor/executor.py`) does NOT yet branch on `rollout.mode_default` — when `policy_worktree_profile.enabled=true`, any violation emits `policy_checked` + `policy_denied` events AND fails the run closed regardless of the `mode_default` value. `rollout.mode_default` is therefore a **declarative policy-doc setting for now**, not a runtime switch. The intent (report_only = log but don't block; block = log + deny) is documented inside `policy_worktree_profile.v1.json` itself; honoring it is post-v3.10 runtime work.
 
 ### Note on `policy_secrets.v1.json`
 
@@ -118,10 +118,11 @@ The `claude-code-cli` manifest's `output_parse` rule is **fail-closed**:
 {"json_path": "$.review_findings", "capability": "review_findings", "schema_ref": "review-findings.schema.v1.json"}
 ```
 
-So the real `claude` output MUST end with (or contain) a JSON object whose top level includes `review_findings` matching `review-findings.schema.v1.json`:
+Runtime parser (`ao_kernel/executor/adapter_invoker.py`) reads the adapter's stdout, strips whitespace, calls `json.loads()` on the result, and requires a top-level dict with a valid `status` enum (`ok | declined | interrupted | failed | partial`). So the adapter's stdout MUST be a single JSON object — **no markdown code fences, no prose before or after**. The capability payload rides inside that envelope under the `review_findings` key:
 
 ```json
 {
+  "status": "ok",
   "review_findings": {
     "schema_version": "1",
     "findings": [
@@ -139,7 +140,9 @@ So the real `claude` output MUST end with (or contain) a JSON object whose top l
 }
 ```
 
-Minimum required fields per the schema:
+The `status` field is NOT optional — the runtime rejects any dict that lacks it, or carries a value outside the allowed enum, with `AdapterOutputParseError` before `output_parse` rules even run.
+
+Minimum required fields per `review-findings.schema.v1.json`:
 - `review_findings.schema_version` — const `"1"`.
 - `review_findings.findings` — array (empty is legal = "reviewed, no issues"; missing/wrong shape = workflow fails).
 - `review_findings.summary` — non-empty string.
@@ -152,9 +155,9 @@ Optional:
 
 Supply the prompt template to the adapter via `{context_pack_ref}` (the `compile_context` step produces this). Minimum guidance for the prompt body:
 
-> "At the very end of your response, emit a single JSON code fence with a top-level key `review_findings` whose value conforms to `review-findings.schema.v1.json`. Every `findings[]` entry MUST include `severity` (one of `error`, `warning`, `info`, `note`) and `message`. `summary` is mandatory and must be one line. Do not include any text after the closing JSON fence."
+> "Your entire response MUST be a single JSON object — no markdown, no code fences, no prose. The object MUST have `\"status\": \"ok\"` at the top level, plus a `\"review_findings\"` key whose value conforms to `review-findings.schema.v1.json`. Every `findings[]` entry MUST include `severity` (one of `error`, `warning`, `info`, `note`) and `message`. `summary` is mandatory and must be one line. Do not print anything before the opening `{` or after the closing `}`."
 
-If the adapter prose doesn't produce this envelope, the `adapter_invoker` output_parse walker raises a parse error and the workflow transitions to `failed` — a clean signal, not a silent miss.
+If the adapter's stdout doesn't parse as a single JSON dict with a valid `status`, `adapter_invoker` raises `AdapterOutputParseError` and the workflow transitions to `failed` — a clean signal, not a silent miss.
 
 ---
 
@@ -196,18 +199,22 @@ The `policy_worktree_profile.worktree.cleanup_on_completion = true` setting plus
 
 Every run writes JSONL evidence under `.ao/evidence/workflows/{run_id}/`:
 - `adapter-claude-code-cli.jsonl` — the adapter invocation envelope (redacted per `evidence_redaction` patterns).
-- `policy_checked` / `policy_denied` events — emitted when `policy_worktree_profile.rollout.mode_default` is `report_only` or `block`.
+- `policy_checked` / `policy_denied` events — emitted whenever `policy_worktree_profile.enabled=true` and the executor runs the policy check layer. `policy_denied.payload.violation_kinds` carries the list of `PolicyViolation.kind` values (closed taxonomy, see `ao_kernel/executor/errors.py`).
 
-Common denials and the fix:
+Common violation kinds and the fix:
 
-| Denial event | Cause | Fix |
+| `PolicyViolation.kind` | Cause | Fix |
 |---|---|---|
-| `secret_leak_detected` | Redaction regex hit a value in stdout / env / file. | Audit your prompt template; rotate the leaked credential; re-run. |
-| `cwd_escape_attempted` | Adapter tried to `cd ..` past worktree root or use an absolute path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; report upstream. |
-| `command_not_in_allowlist` | Adapter invoked `sh -c` / `bash` / tooling not in `command_allowlist`. | Extend `command_allowlist.exact` after judging whether the tool belongs in your sandbox. |
-| `unknown_env_key` | Adapter tried to read an env var not in `env_allowlist.allowed_keys`. | Add the key to `allowed_keys` if legitimate; don't add secret keys here (those go in `secrets.allowlist_secret_ids`). |
+| `secret_exposure_denied` | Secret value tried to reach a channel not in `policy.secrets.exposure_modes` (e.g. argv, stdin, file, http_header). | Audit the adapter invocation and the prompt template; if the leak is legitimate, extend `exposure_modes` explicitly. If it's accidental, rotate the credential. |
+| `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Export the secret in the shell you launch the run from (`export ANTHROPIC_API_KEY=...`). |
+| `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
+| `command_not_allowlisted` | Adapter tried to execute a command not listed in `command_allowlist.exact` and not under any `command_allowlist.prefixes` directory. | Add the command to `exact` after judging whether the tool belongs in your sandbox. |
+| `command_path_outside_policy` | Command resolved via PATH to an absolute path outside all `command_allowlist.prefixes` entries (PATH-poisoning guard). | Fix your PATH so the command resolves inside one of the allowlisted prefixes (e.g. `/opt/homebrew/bin`), or add the actual prefix explicitly. |
+| `env_unknown` | Adapter tried to read an env var not in `env_allowlist.allowed_keys`. | Add the key to `allowed_keys` if legitimate; don't add secret keys here (those go in `secrets.allowlist_secret_ids`). |
+| `env_missing_required` | An env key listed as required has no value and no `explicit_additions` entry. | Either export the value in the shell or supply a default via `env_allowlist.explicit_additions`. |
+| `http_header_exposure_unauthorized` | An HTTP adapter tried to use a secret in a header but `secrets.exposure_modes` did not include `"http_header"`. | Add `"http_header"` to `exposure_modes` only if you've confirmed the adapter's HTTP transport is trusted with that surface. |
 
-During the first few runs, keep `rollout.mode_default = "report_only"` so violations are **logged but not blocking**. Once evidence shows no unintended denies, flip to `block`.
+Violations fail the run closed in the current runtime — `rollout.mode_default` is declarative-only until the post-v3.10 runtime work lands (see §2).
 
 ---
 
