@@ -222,6 +222,84 @@ class TestLoadPromptVariants:
         with pytest.raises(PromptVariantError, match="must be objects"):
             load_prompt_variants(workspace_root=tmp_path)
 
+    def test_invalid_variant_id_pattern_rejected_by_loader(self, tmp_path: Path) -> None:
+        # v3.12 E1 iter-2 (Codex BLOCKER absorb): loader now runs the
+        # JSON schema validator BEFORE the dataclass guard, so
+        # pattern/minLength/type violations surface as
+        # PromptVariantError with a schema-path excerpt. Pre-iter-2 the
+        # loader silently str(...)-coerced these.
+        from ao_kernel.prompts import load_prompt_variants, PromptVariantError
+
+        override_dir = tmp_path / ".ao" / "registry"
+        override_dir.mkdir(parents=True)
+        (override_dir / "prompt_variant_registry.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "variants": [
+                        {
+                            "variant_id": "-bad-starts-with-dash",
+                            "version": "1",
+                            "prompt_template": "x",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(PromptVariantError, match="schema violation"):
+            load_prompt_variants(workspace_root=tmp_path)
+
+    def test_non_string_version_rejected_by_loader(self, tmp_path: Path) -> None:
+        from ao_kernel.prompts import load_prompt_variants, PromptVariantError
+
+        override_dir = tmp_path / ".ao" / "registry"
+        override_dir.mkdir(parents=True)
+        (override_dir / "prompt_variant_registry.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "variants": [
+                        {
+                            "variant_id": "ok.v1",
+                            "version": 1,  # int, not string — schema violation
+                            "prompt_template": "x",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(PromptVariantError, match="schema violation"):
+            load_prompt_variants(workspace_root=tmp_path)
+
+    def test_empty_prompt_template_rejected_by_loader(self, tmp_path: Path) -> None:
+        # schema: prompt_template has minLength=1.
+        from ao_kernel.prompts import load_prompt_variants, PromptVariantError
+
+        override_dir = tmp_path / ".ao" / "registry"
+        override_dir.mkdir(parents=True)
+        (override_dir / "prompt_variant_registry.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "variants": [
+                        {
+                            "variant_id": "empty.tmpl.v1",
+                            "version": "1",
+                            "prompt_template": "",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(PromptVariantError, match="schema violation"):
+            load_prompt_variants(workspace_root=tmp_path)
+
 
 class TestIntentMetadataVariantIdContract:
     """`intent.metadata.variant_id` is supported by the existing

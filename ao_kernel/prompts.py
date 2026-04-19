@@ -115,17 +115,27 @@ def load_prompt_variants(workspace_root: Path | None = None) -> list[PromptVaria
     2. Bundled default: ``ao_kernel/defaults/registry/prompt_variant_registry.v1.json``
        (empty variants list in the bundled ship).
 
+    Each entry is validated against the bundled
+    ``prompt-variant.schema.v1.json`` (pattern + minLength + type +
+    closed enum) BEFORE the :meth:`PromptVariant.from_dict` field-level
+    guard runs. Schema violations surface as :class:`PromptVariantError`
+    with the first validator error rendered inline.
+
     Raises :class:`PromptVariantError` on:
 
     - Missing ``variants`` key (registry file must declare an array).
+    - Any schema validation failure on an individual entry (pattern,
+      type, minLength, closed enum).
     - Duplicate ``variant_id`` across entries.
-    - Any per-variant validation failure (see
+    - Any per-variant dataclass validation failure (see
       :meth:`PromptVariant.from_dict`).
 
     Returns an empty list when the bundled fallback is used and no
     operator override is present.
     """
     import json
+
+    from jsonschema import Draft202012Validator
 
     raw_registry: Mapping[str, Any] | None = None
 
@@ -144,11 +154,24 @@ def load_prompt_variants(workspace_root: Path | None = None) -> list[PromptVaria
     if not isinstance(variants_raw, list):
         raise PromptVariantError("prompt_variant_registry.variants must be an array")
 
+    # v3.12 E1 iter-2 absorb (Codex post-impl BLOCKER): enforce the
+    # JSON schema before the field-level guard. Loading the schema
+    # here (instead of import-time) keeps the module light when no
+    # registry is being read.
+    schema = load_resource("schemas", _SCHEMA_FILENAME)
+    validator = Draft202012Validator(schema)
+
     variants: list[PromptVariant] = []
     seen_ids: set[str] = set()
     for entry in variants_raw:
         if not isinstance(entry, Mapping):
             raise PromptVariantError(f"prompt_variant_registry entries must be objects; got {type(entry).__name__}")
+        # Schema-enforce BEFORE dataclass coercion.
+        schema_errors = sorted(validator.iter_errors(dict(entry)), key=lambda e: list(e.absolute_path))
+        if schema_errors:
+            first = schema_errors[0]
+            path = "$" + "".join(f".{p}" for p in first.absolute_path)
+            raise PromptVariantError(f"prompt-variant schema violation at {path}: {first.message}")
         variant = PromptVariant.from_dict(entry)
         if variant.variant_id in seen_ids:
             raise PromptVariantError(f"Duplicate variant_id in registry: {variant.variant_id!r}")
