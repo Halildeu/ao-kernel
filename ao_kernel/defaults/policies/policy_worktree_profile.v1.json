@@ -1,7 +1,7 @@
 {
   "version": "v1",
   "enabled": false,
-  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means no logging and no blocking — the policy simply does not engage. Workspace override required to engage (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
+  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means enforcement dormant (no 'policy_checked' / 'policy_denied' evidence events, no fail on violations). Sandbox shaping is retained so the adapter still receives a scoped env / worktree / redaction profile. Workspace override required to engage enforcement (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
 
   "worktree": {
     "strategy": "new_per_run",
@@ -85,8 +85,7 @@
     "promote_to_block_on": [
       "secret_exposure_denied",
       "cwd_escape",
-      "command_not_allowlisted",
-      "env_unknown"
+      "command_not_allowlisted"
     ]
   }
 }
