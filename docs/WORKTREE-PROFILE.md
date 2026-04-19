@@ -106,11 +106,9 @@ Entries MUST use the closed taxonomy from `ao_kernel/executor/errors.py::PolicyV
 - `cwd_escape`
 - `command_not_allowlisted`
 - `command_path_outside_policy`
-- `env_unknown`
-- `env_missing_required`
 - `http_header_exposure_unauthorized`
 
-Bundled default: `["secret_exposure_denied", "cwd_escape", "command_not_allowlisted", "env_unknown"]`.
+Bundled default: `["secret_exposure_denied", "cwd_escape", "command_not_allowlisted"]`.
 
 ### Promotion path
 

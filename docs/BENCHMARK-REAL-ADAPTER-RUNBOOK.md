@@ -106,7 +106,7 @@ Key deltas from bundled:
   - **`enabled=false`**: policy layer dormant — no events, no fail (sandbox still built from declared fields).
   - **`enabled=true + mode_default=report_only`**: violations collected; `policy_checked` emits with additive payload (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`); step continues.
   - **`enabled=true + mode_default=block`**: violations emit `policy_checked` + `policy_denied`; run fails closed.
-  - **Escalation**: in `report_only`, if a violation kind is in `rollout.promote_to_block_on`, escalation overrides and the step is blocked. Bundled default list uses the closed `PolicyViolation.kind` taxonomy (`secret_exposure_denied`, `cwd_escape`, `command_not_allowlisted`, `env_unknown`).
+  - **Escalation**: in `report_only`, if a violation kind is in `rollout.promote_to_block_on`, escalation overrides and the step is blocked. Bundled default list uses the closed `PolicyViolation.kind` taxonomy (`secret_exposure_denied`, `cwd_escape`, `command_not_allowlisted`).
 
 Use `report_only` for the first few runs to review `policy_checked` evidence without hitting fail-closed; flip to `block` once the allowlists are tuned.
 
@@ -216,8 +216,6 @@ Common violation kinds and the fix:
 | `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
 | `command_not_allowlisted` | Adapter tried to execute a command not listed in `command_allowlist.exact` and not under any `command_allowlist.prefixes` directory. | Add the command to `exact` after judging whether the tool belongs in your sandbox. |
 | `command_path_outside_policy` | Command resolved via PATH to an absolute path outside all `command_allowlist.prefixes` entries (PATH-poisoning guard). | Fix your PATH so the command resolves inside one of the allowlisted prefixes (e.g. `/opt/homebrew/bin`), or add the actual prefix explicitly. |
-| `env_unknown` | Adapter tried to read an env var not in `env_allowlist.allowed_keys`. | Add the key to `allowed_keys` if legitimate; don't add secret keys here (those go in `secrets.allowlist_secret_ids`). |
-| `env_missing_required` | An env key listed as required has no value and no `explicit_additions` entry. | Either export the value in the shell or supply a default via `env_allowlist.explicit_additions`. |
 | `http_header_exposure_unauthorized` | An HTTP adapter tried to use a secret in a header but `secrets.exposure_modes` did not include `"http_header"`. | Add `"http_header"` to `exposure_modes` only if you've confirmed the adapter's HTTP transport is trusted with that surface. |
 
 As of **v3.11 P2** the executor honors `rollout.mode_default`: in `report_only` violations emit `policy_checked` with `would_block=true` but the step continues; in `block` violations emit `policy_denied` and fail the run closed. See §2 for the full three-tier behavior and escalation via `promote_to_block_on`.
