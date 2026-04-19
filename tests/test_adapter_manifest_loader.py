@@ -166,9 +166,7 @@ class TestReasonTaxonomy:
         reasons = [s.reason for s in rpt.skipped]
         assert "json_decode" in reasons
 
-    def test_duplicate_adapter_id_unreachable_under_strict_filename_match(
-        self, tmp_path: Path
-    ) -> None:
+    def test_duplicate_adapter_id_unreachable_under_strict_filename_match(self, tmp_path: Path) -> None:
         """With strict filename↔adapter_id matching, two files cannot
         share an ``adapter_id`` because filenames are unique per
         directory — any second file declaring the same id will have a
@@ -232,9 +230,7 @@ class TestCapabilities:
         _copy_fixtures(tmp_path, ["codex-stub.manifest.v1.json"])
         reg = AdapterRegistry()
         reg.load_workspace(tmp_path)
-        gap = reg.missing_capabilities(
-            "codex-stub", ["read_repo", "open_pr", "run_tests"]
-        )
+        gap = reg.missing_capabilities("codex-stub", ["read_repo", "open_pr", "run_tests"])
         assert gap == frozenset({"open_pr", "run_tests"})
 
     def test_missing_capabilities_empty_when_subset(self, tmp_path: Path) -> None:
@@ -247,3 +243,86 @@ class TestCapabilities:
         reg = AdapterRegistry()
         with pytest.raises(AdapterManifestNotFoundError):
             reg.supports_capabilities("no-such", ["read_repo"])
+
+
+class TestClaudeCodeCliReviewFindingsV310A1:
+    """v3.10 A1 — `claude-code-cli` review_findings capability advertise.
+
+    Bundled manifest (`claude-code-cli.manifest.v1.json`) declares
+    `review_findings` capability (version 1.1.0) plus an `output_parse`
+    rule pointing at `review-findings.schema.v1.json`. This lets the
+    upcoming `governed_review_claude_code_cli` workflow variant pick a
+    real adapter instead of the codex-stub placeholder.
+
+    Contract (enforced at runtime by adapter_invoker output_parse walker):
+    the real `claude` CLI output MUST contain a `$.review_findings`
+    object conforming to `review-findings.schema.v1.json` — a top-level
+    object with `schema_version`, `findings` (array), and `summary`
+    required. See A3 runbook for the prompt contract that the operator
+    is expected to pass in.
+    """
+
+    def test_bundled_manifest_declares_review_findings_capability(
+        self,
+    ) -> None:
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("claude-code-cli")
+        assert "review_findings" in manifest.capabilities
+
+    def test_bundled_manifest_output_parse_rule_for_review_findings(
+        self,
+    ) -> None:
+        # The rule must point the capability at the bundled schema.
+        # Walker downstream resolves schema_ref + json_path at runtime.
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("claude-code-cli")
+        assert manifest.output_parse is not None
+        rules = manifest.output_parse.get("rules", [])
+        assert any(
+            r.get("capability") == "review_findings"
+            and r.get("json_path") == "$.review_findings"
+            and r.get("schema_ref") == "review-findings.schema.v1.json"
+            for r in rules
+        ), f"expected review_findings output_parse rule; got {rules!r}"
+
+    def test_bundled_manifest_output_parse_schema_ref_resolves_to_bundled(
+        self,
+    ) -> None:
+        # The schema_ref must actually resolve to the bundled schema
+        # file — catches typo/rename at manifest-load time before a
+        # real workflow would fail opaquely inside the output_parse
+        # walker (Codex A1 post-impl expected: "manifestteki schema_ref'ler
+        # bundled schema'ya resolve oluyor" pini).
+        from importlib import resources as _res
+
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("claude-code-cli")
+        rules = manifest.output_parse.get("rules", []) if manifest.output_parse else []
+        for r in rules:
+            schema_ref = r.get("schema_ref", "")
+            if not schema_ref:
+                continue
+            schema_pkg = _res.files("ao_kernel.defaults.schemas")
+            with _res.as_file(schema_pkg.joinpath(schema_ref)) as sp:
+                assert sp.exists(), f"schema_ref {schema_ref!r} not bundled"
+
+    def test_bundled_manifest_version_bumped_to_1_1_0(self) -> None:
+        # Capability surface widened — minor bump per SemVer.
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("claude-code-cli")
+        assert manifest.version == "1.1.0"
+
+    def test_bundled_manifest_supports_capabilities_covers_review(
+        self,
+    ) -> None:
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        # Regression: existing capabilities still present + new one.
+        assert reg.supports_capabilities(
+            "claude-code-cli",
+            ["read_repo", "write_diff", "run_tests", "stream_output", "review_findings"],
+        )

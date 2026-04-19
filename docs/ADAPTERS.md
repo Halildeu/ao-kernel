@@ -152,8 +152,8 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 {
   "adapter_id": "claude-code-cli",
   "adapter_kind": "claude-code-cli",
-  "version": "1.0.0",
-  "capabilities": ["read_repo", "write_diff", "run_tests", "stream_output"],
+  "version": "1.1.0",
+  "capabilities": ["read_repo", "write_diff", "run_tests", "stream_output", "review_findings"],
   "invocation": {
     "transport": "cli",
     "command": "claude",
