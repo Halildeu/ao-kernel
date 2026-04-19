@@ -7,23 +7,53 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Added — post-v3.9 follow-up hygiene (accumulating toward v3.10)
+## [3.10.0] - 2026-04-19
+
+### Added — v3.10.0 External Real-Adapter Benchmark + post-v3.9 hygiene
+
+**Context.** v3.9 closed the dormant-contract drift in `policy_tool_calling.v1.json` (parser + runtime enforcement). v3.10 opens the external real-adapter path: `claude-code-cli` now advertises `review_findings`, a dedicated real-adapter benchmark workflow ships, and operators get a runbook documenting the full setup. Scope narrowed from 4 PRs to 3 per Codex plan-time BLOCKER (`commit_message` capability dropped — no evidence of a `$.commit_message` field in real `claude` stdout, adding an output_parse rule would fail-close every commit-ai run). The arc also absorbs two post-v3.9 follow-up micro-PRs.
+
+**PR-A1 (#156) — `claude-code-cli` manifest advertises `review_findings`.**
+- `ao_kernel/defaults/adapters/claude-code-cli.manifest.v1.json`: version `1.0.0` → `1.1.0` (capability surface widened, SemVer minor). `capabilities` += `review_findings`. New `output_parse.rules` entry pointing `$.review_findings` at `review-findings.schema.v1.json`.
+- Runtime contract is **fail-closed**: `adapter_invoker._walk_output_parse` rejects any envelope where the declared `json_path` is absent or whose extracted payload doesn't match the schema. Operators follow the A3 runbook's prompt contract to produce the required shape.
+- `docs/ADAPTERS.md` + `tests/benchmarks/test_full_mode_smoke.py`: doc drift absorbed (version + capability list match the shipped manifest).
+- +5 pins in `tests/test_adapter_manifest_loader.py` including the Codex-requested `schema_ref` resolves-to-bundled anchor.
+
+**PR-A2 (#157) — `governed_review_claude_code_cli.v1.json` workflow variant.**
+- `ao_kernel/defaults/workflows/governed_review_claude_code_cli.v1.json` (new): sibling of `review_ai_flow` targeting `claude-code-cli` instead of the `codex-stub` placeholder. Steps mirror the stub flow (`compile_context` → `invoke_review_agent` → `await_acknowledgement`). `expected_adapter_refs=["claude-code-cli"]`; tags `real-adapter` + `benchmark` for operator discoverability.
+- Naming per Codex plan-time preference: adapter-specific (`governed_review_claude_code_cli`) rather than abstract (`governed_review_real_adapter`).
+- `review_ai_flow.v1.json` stays pinned at `codex-stub` for benchmark-baseline reproducibility; both flows coexist intentionally.
+- Review step `policy_refs` include `policy_secrets.v1.json` as a **canonical declarative companion** (Codex post-impl note): live secret gate today is `policy_worktree_profile.secrets.allowlist_secret_ids` inside the executor; `policy_secrets.v1.json` is the documented registry downstream audits cross-reference.
+- +4 pins in `tests/test_pr_b0_contracts.py` (schema validate, cross-ref valid against bundled adapters, adapter_refs == claude-code-cli only, discovery tag presence).
+
+**PR-A3 (#158) — `BENCHMARK-REAL-ADAPTER-RUNBOOK.md`.**
+- `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md` (new, ~260 lines): full operator guide for running the real-adapter workflow. Sections: prerequisites, workspace override minimum viable (`policy_worktree_profile.enabled=true` + `ANTHROPIC_API_KEY` allowlist + `command_allowlist` += `claude`), prompt contract (fail-closed JSON envelope with `"status": "ok"` + `review_findings` payload — no code fences, no prose), disposable sandbox repo pattern (`/tmp` clone + `ao-kernel init` + `rm -rf` cleanup), evidence + troubleshooting with the closed `PolicyViolation.kind` taxonomy from `ao_kernel/executor/errors.py`, cost + budget.
+- `docs/BENCHMARK-SUITE.md`: annotated `review_ai_flow` row as "pinned at codex-stub"; added row for `governed_review_claude_code_cli`; cross-ref to the runbook.
+- Runbook explicitly flags `rollout.mode_default` as a declarative policy-doc setting the current executor does NOT branch on — honoring it (report_only vs block) is post-v3.10 runtime work (Codex iter-1 BLOCKER absorb).
+
+### Changed — Post-v3.9 hygiene folded into v3.10.0
 
 **PR-M1 (#153) — `_internal/utils/*` coverage tranche 2.**
-- `pyproject.toml::coverage.run.omit` no longer masks `ao_kernel/_internal/utils/*`. `budget.py` + `jsonio.py` (38 LOC, already ~80-82% transitive) are now under the ratcheted 85% scope.
+- `pyproject.toml::coverage.run.omit` no longer masks `ao_kernel/_internal/utils/*`. `budget.py` + `jsonio.py` (38 LOC, already ~80–82% transitive) are now under the ratcheted 85% scope.
 - `tests/test_internal_utils_coverage.py` adds targeted pins: `estimate_tokens` empty/non-str branches, `load_json`/`save_json` roundtrip, `to_canonical_json` sort_keys + unicode preservation.
-- Mirror of the v3.8 H1 `_internal/secrets/*` single-tranche pattern; Codex plan-time AGREE on "no providers in same PR."
+- Mirror of the v3.8 H1 `_internal/secrets/*` single-tranche pattern.
 - Coverage: 85.10% → 85.13%.
 
-**PR-M2 (#154) — `ToolCallPolicy.from_dict()` legacy field bool-strict + `max_tool_rounds` schema alignment.**
+**PR-M2 (#154) — `ToolCallPolicy.from_dict()` legacy bool-strict + `max_tool_rounds` schema alignment.**
 - Three legacy fields (`enabled`, `allow_unknown`, `max_tool_rounds`) now match the strict validation already applied to B1-absorbed fields. Pre-M2 they silently coerced `"true"` strings, `0/1` ints, and string-wrapped numbers.
 - `max_tool_rounds` also picks up the schema-matching `1 <= x <= 10` inclusive bounds (Codex plan-time note: "half-alignment risk").
 - Invalid payloads raise `ValueError` at parse time — fail-closed by design.
 - +6 negative pins in `tests/test_tool_gateway.py`.
 
-### Known follow-ups (post-v3.9)
+### Migration note
 
-- `AoKernelClient.call_tool()` standalone path is not gated by `llm_call()` reset — persistent gateway state leaks outside the LLM-request boundary. Preexisting design debt; Codex rejected a per-`call_tool()` auto-reset (would break the documented manual tool-use contract where `call_tool()` is the public execution surface for tool chains). Tracked for v3.10 client API pass with an explicit `reset_tool_gateway_state()` helper or similar.
+- **Operators running `governed_review_claude_code_cli`**: follow the runbook at `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md`. Bundled `policy_worktree_profile` stays dormant; the real path only engages under a workspace override. Existing workspaces that keep `review_ai_flow` pointed at `codex-stub` are unaffected.
+- **Custom policy authors**: operator-written policies with silently-coerced legacy values (non-bool `enabled`, string `max_tool_rounds`, out-of-bounds `max_tool_rounds`) will now surface as `ValueError` at `ToolCallPolicy.from_dict()` time. Same fail-closed contract as the v3.9 B1 fields.
+
+### Known follow-ups (post-v3.10)
+
+- `AoKernelClient.call_tool()` standalone path is not gated by `llm_call()` reset — persistent gateway state leaks outside the LLM-request boundary. Preexisting design debt; Codex rejected a per-`call_tool()` auto-reset (would break the documented manual tool-use contract where `call_tool()` is the public execution surface for tool chains). Deferred to a future client API pass with an explicit `reset_tool_gateway_state()` helper or similar.
+- `policy_worktree_profile.rollout.mode_default` runtime honoring — currently declarative only; the shipped executor fails closed on any violation when the policy is enabled. Honoring `report_only` vs `block` is post-v3.10 runtime work.
 
 ## [3.9.0] - 2026-04-19
 
