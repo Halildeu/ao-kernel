@@ -157,7 +157,7 @@ ao-kernel mcp serve --transport http --port 8080   # HTTP (needs ao-kernel[mcp-h
 |---|:---:|:---:|
 | Route resolution (provider/model) | ✅ | ✅ |
 | Capability gap check | ✅ | ✅ (inside build) |
-| Context injection (3-lane compile) | ✅ | ❌ |
+| Context injection (4-lane compile: session/canonical/facts/consultations) | ✅ | ❌ |
 | Transport + retry + circuit breaker | ✅ | ✅ |
 | Normalize (text/usage/tool_calls) | ✅ | ✅ |
 | Decision extraction + memory loop | ✅ | ❌ |
