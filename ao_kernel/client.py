@@ -1037,6 +1037,36 @@ class AoKernelClient:
         result = self._gateway.dispatch(name, arguments or {})
         return asdict(result)
 
+    def reset_tool_gateway_state(self) -> None:
+        """Reset transient per-request state on the tool gateway.
+
+        v3.11 P1: explicit public helper for consumers who chain
+        ``call_tool()`` outside the ``llm_call()`` boundary. The
+        ``llm_call()`` path resets the gateway state automatically at
+        every new LLM request (v3.9 B2 contract). This helper exists
+        for the **manual tool-use path** — standalone ``call_tool()``
+        chains that accumulate ``_request_call_count`` /
+        ``_recent_calls`` across invocations. The policy layer will
+        otherwise deny once ``max_calls_per_request`` is exhausted or a
+        cycle is detected, which is the correct failure for a single
+        agentic tool loop but wrong semantics when the caller treats
+        each standalone ``call_tool()`` as a fresh surface.
+
+        **Design note (Codex plan-time rejection of per-call auto-reset):**
+        Auto-resetting inside ``call_tool()`` would break the documented
+        agentic contract where multiple ``call_tool()`` invocations form
+        a single logical LLM-tool-use loop (tool_call → tool_result →
+        tool_call → ...). This opt-in helper is the correct escape
+        hatch: chain semantics stay intact by default; callers who
+        want a fresh session call this explicitly.
+
+        No-ops when no gateway has been created (no tools registered,
+        ``hasattr(self, '_gateway') is False``).
+        """
+        gw = getattr(self, "_gateway", None)
+        if gw is not None:
+            gw.reset_rounds()
+
     # ── Checkpoint/Resume ───────────────────────────────────────────
 
     def save_checkpoint(self, session_id: str | None = None) -> dict[str, Any]:

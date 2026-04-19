@@ -181,6 +181,79 @@ class TestToolDispatch:
         assert len(client._gateway._recent_calls) == 0
 
 
+class TestResetToolGatewayStateV311P1:
+    """v3.11 P1 — explicit public helper for manual tool-use chains.
+
+    Closes the Codex-flagged residual debt from v3.9 B2 iter-3:
+    standalone ``call_tool()`` chains accumulate gateway state across
+    invocations (``_request_call_count`` / ``_recent_calls``) because
+    auto-reset in ``call_tool()`` would break the documented agentic
+    tool-use contract. The ``reset_tool_gateway_state()`` helper is
+    the opt-in escape hatch.
+    """
+
+    def test_reset_clears_dirty_state(self, tmp_path: Path):
+        client = AoKernelClient(tmp_path)
+        client.register_tool("probe", lambda x: {"ok": True})
+        # Dirty the state directly to simulate accumulated chain.
+        client._gateway._request_call_count = 42
+        client._gateway._recent_calls.append("stale|{}")
+
+        client.reset_tool_gateway_state()
+
+        assert client._gateway._request_call_count == 0
+        assert len(client._gateway._recent_calls) == 0
+
+    def test_reset_is_noop_when_no_gateway(self, tmp_path: Path):
+        # No tools registered → no gateway attribute.
+        client = AoKernelClient(tmp_path)
+        assert not hasattr(client, "_gateway")
+        # Must not raise (ergonomics of the public helper — callers
+        # shouldn't have to probe for gateway existence).
+        client.reset_tool_gateway_state()
+        # Still no gateway after the no-op.
+        assert not hasattr(client, "_gateway")
+
+    def test_standalone_chain_flows_without_reset(self, tmp_path: Path):
+        # Chain semantics MUST stay intact by default: multiple
+        # call_tool() invocations on the default policy form a single
+        # logical tool-use loop, and the per-request cap / cycle
+        # detector should count across them. This pin locks in that
+        # the reset is NOT implicit — it's opt-in via the new helper.
+        client = AoKernelClient(tmp_path)
+        client.register_tool("counter", lambda x: {"n": x.get("n", 0)})
+
+        for n in range(5):
+            result = client.call_tool("counter", {"n": n})
+            assert result["status"] == "OK"
+
+        # Gateway state reflects all 5 invocations chained.
+        assert client._gateway._request_call_count == 5
+
+    def test_reset_between_chains_allows_fresh_session(self, tmp_path: Path):
+        # The motivating use case: one chain exhausts the cap; the
+        # operator then calls reset_tool_gateway_state() and starts a
+        # second independent chain which must succeed from scratch.
+        from ao_kernel.tool_gateway import ToolCallPolicy, ToolGateway
+
+        client = AoKernelClient(tmp_path)
+        # Replace default gateway with a tight policy to make the
+        # test deterministic without 5 calls.
+        client._gateway = ToolGateway(policy=ToolCallPolicy(enabled=True, max_calls_per_request=2))
+        client.register_tool("probe", lambda x: {"ok": True})
+
+        # First chain: hit the cap.
+        assert client.call_tool("probe", {"r": 1})["status"] == "OK"
+        assert client.call_tool("probe", {"r": 2})["status"] == "OK"
+        denied = client.call_tool("probe", {"r": 3})
+        assert denied["status"] == "DENIED"
+        assert denied["reason_code"] == "MAX_CALLS_PER_REQUEST_EXCEEDED"
+
+        # Reset and start fresh.
+        client.reset_tool_gateway_state()
+        assert client.call_tool("probe", {"r": 4})["status"] == "OK"
+
+
 class TestSelfEditMemory:
     def test_remember_and_recall(self, tmp_workspace: Path):
         ws_root = tmp_workspace.parent
