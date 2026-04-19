@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -179,6 +180,78 @@ class TestToolDispatch:
         # Reset must have run before _route, clearing all transient state.
         assert client._gateway._request_call_count == 0
         assert len(client._gateway._recent_calls) == 0
+
+
+class TestClientCloseV312P5:
+    """v3.12 P5 — ``AoKernelClient.close()`` public helper.
+
+    Context manager stays the recommended pattern, but long-lived
+    daemons / pytest ``yield`` fixtures / instances created outside a
+    ``with`` block need an explicit teardown entry point. ``close()``
+    wraps the same end_session + _close_owned_vector_store sequence
+    that ``__exit__`` runs, and is idempotent so defensive callers can
+    invoke it multiple times without crashing.
+    """
+
+    def test_close_ends_active_session(self, tmp_workspace: Path) -> None:
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+        assert client.session_active is True
+
+        client.close()
+        assert client.session_active is False
+
+    def test_close_is_idempotent_across_calls(self, tmp_path: Path) -> None:
+        # No active session at all — close() must not raise.
+        client = AoKernelClient(tmp_path)
+        client.close()
+        # Second call stays a no-op.
+        client.close()
+        assert client.session_active is False
+
+    def test_close_without_context_manager(self, tmp_workspace: Path) -> None:
+        # Motivating use case — consumer builds a client outside a
+        # `with` block (e.g. module-level daemon, pytest fixture
+        # teardown via `yield`) and needs deterministic teardown.
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        ctx = client.start_session()
+        assert ctx["session_id"] == client.session_id
+        client.close()
+        assert client.session_active is False
+
+    def test_close_idempotent_on_owned_backend(self, tmp_path: Path) -> None:
+        # v3.12 P5 iter-2 (Codex post-impl BLOCKER absorb): iter-1
+        # claimed close() was idempotent but _close_owned_vector_store
+        # would re-call backend.close() on every invocation. Real
+        # idempotency now flips _owns_vector_store=False before the
+        # close() call, so a second close() is a true no-op regardless
+        # of backend side effects.
+        backend = MagicMock()
+        client = AoKernelClient(tmp_path, vector_store=backend)
+        # Force owned so the cleanup path engages.
+        client._owns_vector_store = True
+        client.close()
+        client.close()  # second call — must not touch backend again
+        assert backend.close.call_count == 1
+
+    def test_close_save_false_forwards_flag(self, tmp_workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # close(save=False) must forward the flag to end_session().
+        ws_root = tmp_workspace.parent
+        client = AoKernelClient(ws_root)
+        client.start_session()
+
+        captured: dict[str, Any] = {}
+        original = client.end_session
+
+        def _spy(*, save: bool = True) -> None:
+            captured["save"] = save
+            original(save=save)
+
+        monkeypatch.setattr(client, "end_session", _spy)
+        client.close(save=False)
+        assert captured["save"] is False
 
 
 class TestResetToolGatewayStateV311P1:
