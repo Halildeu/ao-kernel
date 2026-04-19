@@ -146,18 +146,31 @@ def pytest_sessionfinish(
     (``{"governed_bugfix", "governed_review"}``); full mode only
     requires ``{"governed_review"}`` because the F2 smoke scope is
     minimal-by-design (no ``gh-cli-pr`` real-adapter wiring yet).
+
+    F2 post-impl BLOCK absorb: if full mode runs but the smoke
+    skipped due to prerequisites (system python3 lacking ao_kernel,
+    missing binary, etc.) the registry is empty. Raising
+    ``ScorecardCollectorError`` in that case would turn a legitimate
+    env-miss skip into a usage-error fail — the opposite of the
+    "graceful skip" contract. When full mode sees zero primaries
+    registered we relax the expected set to empty.
     """
     from ao_kernel._internal.scorecard.collector import (
         EXPECTED_PRIMARY_SCENARIOS,
     )
 
     mode = session.config.getoption("--benchmark-mode")
+    registry = _registry(session.config)
     if mode == "full":
-        expected = frozenset({"governed_review"})
+        if not registry.distinct_scenarios():
+            # Smoke skipped (prereq miss) → no scorecard to produce;
+            # suppress the invariant instead of flagging misconfig.
+            expected: frozenset[str] = frozenset()
+        else:
+            expected = frozenset({"governed_review"})
     else:
         expected = EXPECTED_PRIMARY_SCENARIOS
 
-    registry = _registry(session.config)
     try:
         finalize_session(registry, expected_scenarios=expected)
     except Exception as exc:

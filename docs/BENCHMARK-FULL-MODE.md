@@ -19,63 +19,56 @@ F2 extends the F1 scaffold with an actual runnable `@pytest.mark.full_mode` smok
 - **`governed_bugfix` full-mode smoke.** `gh-cli-pr` fragility keeps it out of F2. Fast-mode bugfix coverage unchanged.
 - **CI full-mode gate.** `.github/workflows/test.yml` diff=0 remains; operators run full mode explicitly.
 
-## Forward reference for operators (F2+ wiring)
+## Prerequisites (F2 shipped state)
 
-This section records what operators will need when F2 lands a real-adapter smoke. **Do not configure any of this today in response to F1 alone** — nothing in F1 consumes these settings in an actionable path.
+### Local Python must import `ao_kernel`
 
-### Binaries
+The bundled bench workflows invoke `codex-stub` via a plain `python3 -m ao_kernel.fixtures.codex_stub` command. The `python3` on `$PATH` must be able to import `ao_kernel`. In an editable install (`pip install -e ".[dev,llm,mcp,metrics]"`) this is automatic; in a system python with ao-kernel missing, the F2 smoke skips gracefully via the workflow-failed event check.
 
-| Role | Binary |
-|---|---|
-| Anthropic Claude | `claude` (Claude Code CLI) |
-| GitHub CLI | `gh` |
+### Secret environment variables (F2.1+ forward reference)
 
-### Secret environment variables
+When F2.1+ wires external `claude-code-cli` / `gh-cli-pr` adapters, operators will export:
 
-The bundled `policy_secrets.v1.json` allowlist accepts both the canonical and legacy variants (v3.7 F1 backward-compat widening):
-
-| Role | Canonical (docs-preferred) | Legacy alias (also allowed) |
+| Role | Canonical (docs-preferred) | Legacy alias (also allowed in bundled allowlist) |
 |---|---|---|
 | Anthropic Claude | `ANTHROPIC_API_KEY` | `CLAUDE_API_KEY` |
 | GitHub CLI | `GH_TOKEN` | `GITHUB_TOKEN` |
 | OpenAI (embeddings / router fallback) | `OPENAI_API_KEY` | — |
 
-> **Actual fail-close gate** is `policy_worktree_profile.v1.json::secrets.allowlist_secret_ids`. The bundled `policy_secrets.v1.json` is the registry / docs canonical surface; the worktree-profile is what the adapter runtime enforces on invocation.
+> **Actual fail-close gate** is `policy_worktree_profile.v1.json::secrets.allowlist_secret_ids`. The bundled `policy_secrets.v1.json` is the registry / docs canonical surface; the worktree-profile is what the adapter runtime enforces on invocation. Neither is required for the F2 codex-stub smoke.
 
-### Workspace profile
+### Workspace profile (F2)
 
-- `policy_worktree_profile.enabled = true` with a secrets allowlist that matches your exports.
-- `policy_cost_tracking.enabled = true` if you want spend events to reach the reconcile path (F2 ships the matching scorecard label `cost_source="real_adapter"`).
+- `policy_cost_tracking.v1.json::enabled=true` — F2 workspace_root fixture flips this automatically in full mode so `post_adapter_reconcile` emits `llm_spend_recorded` events. Fast mode keeps the bundled dormant default.
+- `policy_worktree_profile.enabled=true` is NOT required for the F2 codex-stub smoke; it becomes relevant when external adapters are wired (F2.1+).
 
-### Disposable target repo
+### Disposable target repo (F2.1+ only)
 
-`gh-cli-pr` opens real PRs against the CWD's upstream. When F2 wires a smoke that exercises it, use a disposable sandbox clone, NEVER your main ao-kernel checkout.
+`gh-cli-pr` opens real PRs against the CWD's upstream. When F2.1+ wires a smoke that exercises it, use a disposable sandbox clone, NEVER your main ao-kernel checkout. The F2 codex-stub smoke does NOT open remote PRs and is safe to run in any checkout.
 
 ---
 
 ## Running
 
-Today (F1):
+Fast mode (default, unchanged):
 
 ```bash
-# Fast mode (default) — unchanged behaviour
 pytest tests/benchmarks/ -q
 ```
 
+Full mode (F2 smoke):
+
 ```bash
-# Full mode — scaffold exists, 0 runnable tests (until F2)
 pytest tests/benchmarks/ --benchmark-mode=full -q
 ```
 
-Fast mode skips `@full_mode` tests; full mode skips everything else in `tests/benchmarks/`.
-
-Post-F2, the same `--benchmark-mode=full` invocation will run the F2-added real-adapter smoke.
+In full mode the collection hook skips every non-`@full_mode` benchmark test; only `TestFullModeAdapterPathReconcile` runs. If `python3` cannot import `ao_kernel`, the test skips gracefully (`subprocess prereq miss`).
 
 ---
 
 ## Rollback
 
-F1 does not introduce any stateful side-effects on disk. No default CI job is touched. `.github/workflows/test.yml` remains identical to the pre-v3.7 shape.
+F2 does not introduce any stateful side-effects on disk. No default CI job is touched. `.github/workflows/test.yml` remains identical to the pre-v3.7 shape.
 
 ---
 

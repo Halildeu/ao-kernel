@@ -258,17 +258,24 @@ class TestFullModeAdapterPathReconcile:
                 stderr_blob = ""
                 if adapter_log.is_file():
                     stderr_blob = adapter_log.read_text(encoding="utf-8")
-                prereq_miss = (
-                    category == "invocation_failed"
-                    and code == "NON_ZERO_EXIT"
-                    and (
-                        "No module named" in stderr_blob
-                        or "ModuleNotFoundError" in stderr_blob
-                        or "command not found" in stderr_blob
+                # Codex post-impl BLOCK absorb #2 — widen prereq
+                # detection: the driver surfaces binary-miss as
+                # code="COMMAND_NOT_FOUND" (see
+                # multi_step_driver._run_adapter_step), not only
+                # NON_ZERO_EXIT.
+                prereq_miss = category == "invocation_failed" and (
+                    code == "COMMAND_NOT_FOUND"
+                    or (
+                        code == "NON_ZERO_EXIT"
+                        and (
+                            "No module named" in stderr_blob
+                            or "ModuleNotFoundError" in stderr_blob
+                            or "command not found" in stderr_blob
+                        )
                     )
                 )
                 if prereq_miss:
-                    pytest.skip(f"subprocess prereq: python3 cannot import ao_kernel ({reason})")
+                    pytest.skip(f"subprocess prereq miss (code={code}): {reason}")
                 pytest.fail(f"workflow_failed: category={category} reason={reason}")
 
         # Pin the real adapter-path reconcile fired — this is the
