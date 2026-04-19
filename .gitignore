@@ -236,3 +236,4 @@ pytest-of-*/
 tmp[a-z0-9]*/
 # Stale src/ dir (removed in v2.0.0; gets re-created by some editor cache)
 /src/
+benchmark_scorecard.v1.json
