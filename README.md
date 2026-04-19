@@ -14,7 +14,11 @@ pip install ao-kernel[otel]          # OpenTelemetry instrumentation
 pip install ao-kernel[llm,mcp,otel]  # Everything
 ```
 
-Requires Python 3.11+.
+**For live LLM calls**, install the `[llm]` extra — without it, `tenacity` (retry logic) and `tiktoken` (token counting) are missing, so any real provider call will fail at import time. The core install is sufficient for policy evaluation, evidence replay, workflow inspection, and MCP server hosting, but not for actually dispatching requests to OpenAI / Anthropic / Google endpoints.
+
+`ao-kernel doctor` surfaces this via a `tenacity/tiktoken (optional)` check that shows `WARN` when the extra is missing. That WARN is **expected** on the core install and clears once you run `pip install 'ao-kernel[llm]'`.
+
+Requires Python 3.11+. POSIX-only at the moment (Windows support scheduled for a future major release; see `LockPlatformNotSupported` in `docs/COORDINATION.md`).
 
 ## Quick Start
 

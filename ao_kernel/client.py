@@ -1174,6 +1174,29 @@ class AoKernelClient:
         finally:
             self._close_owned_vector_store()
 
+    def close(self, *, save: bool = True) -> None:
+        """Release all owned resources. Equivalent to exiting the
+        ``with`` block cleanly (``save=True``) or with an exception
+        (``save=False``).
+
+        v3.12 P5 (post-impl UX polish absorb): the context manager
+        protocol (``with AoKernelClient(...) as client:``) is still the
+        recommended pattern — it couples workspace teardown to lexical
+        scope and handles exception paths correctly via ``__exit__``.
+        This helper exists for call sites that outlive a single scope:
+        long-running daemons, pytest fixture teardown in ``yield``-style
+        fixtures, or any caller that instantiates the client outside a
+        ``with`` block and needs a deterministic teardown hook.
+
+        Idempotent — can be called multiple times (second call is a
+        no-op because ``end_session`` handles the "no active session"
+        case and ``_close_owned_vector_store`` gates on ownership).
+        """
+        try:
+            self.end_session(save=save)
+        finally:
+            self._close_owned_vector_store()
+
     def _close_owned_vector_store(self) -> None:
         """Close the backend if the client owns it (resolver-created).
 
