@@ -7,6 +7,55 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-04-19
+
+### Added — v3.8.0 Rolling Hardening (5 PRs, no feature surface growth)
+
+**Context.** v3.5–v3.7 were feature-heavy (consultation surfaces, memory loop, benchmark realism). v3.8 clears accumulated hardening debt without net-new features. Codex plan-time master AGREE with 3 revisions absorbed (H4 = dead-only cleanup, H3 deferred, H6 covers both workflows). Parallel-lane execution model: micro PRs (H6 + H5) shipped first, then H4, then core serial (H2 → H1). Two of the five PRs had Codex post-impl BLOCK → iter-2 MERGE (F2-style pattern).
+
+**H6 (#144) — CI pip-install retry wrapper.**
+- Wrap every `pip install` in `.github/workflows/test.yml` + `.github/workflows/publish.yml` with a 2-try `|| (sleep 5 && pip install ...)` pattern (inline bash; no new action deps). Motivated by a one-off `SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC` seen on the v3.7 release CI. No runtime / product code changes.
+
+**H5 (#145) — consultation lane observability accounting.**
+- Closes Codex v3.6 E2 residual note: consultation lines were budget-aware (v3.6 E2 iter-2 absorb) but invisible to `items_included` / `items_excluded` / `selection_log` counters.
+- `compile_context`:
+  - Accepted consultation → `included_count++` + `selection_log` entry with `lane="consultation"`, `included=True`
+  - Budget-dropped consultation → `consultation_excluded++` + `selection_log` entry with `reason="excluded: token budget (...) exceeded"`
+  - **H5 iter-2 BLOCK absorb (Codex)**: cap-dropped consultations (`consultations[cap:]` tail) were initially invisible too. Fix iterates the cap-drop tail first, adding each to `consultation_excluded` with `reason="excluded: max_consultations (...) cap"` so EMERGENCY (cap=0) and TASK_EXECUTION (cap=3 with 5 inputs) surface every dropped record.
+- Counter contract: `items_included + items_excluded` covers all four lanes.
+
+**H4 (#146) — dead `quality_waiver` pytest marker cleanup.**
+- `pyproject.toml::tool.pytest.ini_options.markers`: drop the unused `quality_waiver` entry (zero `@pytest.mark.quality_waiver` usage in code/tests/docs). Dynamic markers registered via `conftest.py::addinivalue_line` (e.g. `scorecard_primary`, `full_mode`) unaffected. Revival stays out of scope per Codex iter-1 AGREE (would require full design pass: marker + collection reporter + gate integration).
+
+**H2 (#147) — `emit_adapter_log` FS lock parity.**
+- **Codex plan-time scope pivot saved this PR.** My initial audit had 3 false positives (`consultation/evidence.py::append_event` runs under outer archive lock; `_internal/evidence/writer.py` is dormant/test-only; `cost/ledger.py` already sidecar-locked) + missed the real gap. Codex's deeper grep caught `executor/evidence_emitter.py::emit_adapter_log` which had only a comment-level "single-writer during invocation" assumption.
+- Fix: wrap the append in `file_lock(adapter_log_path + ".lock")` — sidecar-lock pattern per CNS-20260414-010. POSIX-only; Windows fail-closed preserved.
+- New concurrency regression test (`tests/test_emit_adapter_log_concurrent.py`): 8 threads × 4 appends → 32 total; invariants: line count, every line parses as JSON, sidecar `.lock` exists. Pattern follows repo precedent (`test_cost_ledger_concurrent.py`, `test_canonical_store_cas.py`).
+
+**H1 (#148) — `_internal/secrets/*` coverage tranche (tranche 1).**
+- Narrow the D13 "aşamalı dahil etme" omit list: `ao_kernel/_internal/secrets/*` removed from `coverage.run.omit`, so its ~174 stmts + ~130 branches feed the gate.
+- **H1 iter-2 BLOCK absorb (Codex)**: initial commit lowered `fail_under` 85→84 as a ratchet-down (unacceptable as final v3.8 PR — global enforcement rollback). Iter-2 reverts to 85, widens `exclude_lines` to drop `@overload` stubs + `if TYPE_CHECKING:` blocks (typing-only, runtime-unreachable — not real coverage gaps), and adds 15 new pins covering the actual secrets-tree branches:
+  - `api_key_resolver.py`: factory-exception → env fallback, audit True/False paths, missing-key returns, `environ=None` os.environ default, empty-string provider value, `env_names_for` unknown/known/case-insensitive lookups, `_default_provider` factory-load swallow
+  - `factory.py`: unknown ValueError, `vault_stub` default path, `str → Path` coercion
+  - `hashicorp_vault_provider.py`: missing-slash/addr/token, non-dict response body, non-string value, empty-string value
+- Coverage overall: **85.03%** — preserves the 85 gate cleanly.
+
+### Test baseline
+
+- **2506 pass, 1 skipped** (up from v3.7.0's 2447 + 1; delta ≈ +59 across H5/H2/H1 new pins).
+- Ruff + mypy clean on 205 source files.
+- Coverage 85.03% (gate 85).
+
+### Governance pattern
+
+Plan-time master AGREE + per-PR post-impl Codex review. 2 of 5 PRs ran BLOCK → iter-2 absorb → MERGE (H5 cap-exclusion accounting, H1 global-gate reversal). Codex deep-grep saved H2 from an incorrect audit; F2-style scope pivot reuse. Parallel-lane execution model (micro PRs lane 1+2, core serial lane) matched the v3.8 plan §4 sequencing exactly.
+
+### Scope boundaries (v3.8)
+
+- **IN:** H6 CI retry + H5 observability accounting + H4 dead-marker cleanup + H2 lock parity (scope-pivoted to live gap) + H1 coverage tranche 1.
+- **OUT (v3.9+):** external real-adapter benchmark smoke (F2.1+), remaining `_internal/*` coverage tranches (shared/utils/providers/prj_kernel_api still omit'd), `save_store()` deprecation cleanup (H3 deferred).
+- **OUT (v4.0):** `save_store()` public symbol removal (breaking change).
+
 ## [3.7.0] - 2026-04-19
 
 ### Added — v3.7.0 Benchmark Realism (F1 + F2)
