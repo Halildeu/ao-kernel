@@ -20,27 +20,32 @@ class ExecutorError(Exception):
 class PolicyViolation:
     """Structured violation record for plan v2 Q2/Q4/Q5 hardened enforcement.
 
-    ``kind`` taxonomy:
-    - ``env_unknown``: parent env key present but not in allowed_keys.
-    - ``env_missing_required``: required env key absent with no
-      explicit_additions entry.
+    ``kind`` taxonomy (closed; aligned with runtime emit paths as of v3.12):
+
     - ``command_not_allowlisted``: resolved command does not match any
       ``command_allowlist`` entry.
     - ``command_path_outside_policy``: resolved command realpath is not
       under any policy-declared path prefix (PATH poisoning guard).
     - ``cwd_escape``: requested cwd resolves outside the worktree root.
-    - ``secret_exposure_denied``: secret value appears in a channel not
-      listed in ``policy.secrets.exposure_modes``.
+    - ``secret_exposure_denied``: secret literal detected inside resolved
+      argv for the adapter invocation. HTTP header leaks surface under
+      the separate ``http_header_exposure_unauthorized`` kind; stdin /
+      file exposure checks are not emitted today.
     - ``secret_missing``: secret id in ``allowlist_secret_ids`` has no
-      value in resolved env.
+      value in the env passed to ``resolve_allowed_secrets``.
     - ``http_header_exposure_unauthorized``: HTTP adapter binds an
       ``auth_secret_id_ref`` but ``policy.secrets.exposure_modes`` does
       not include ``"http_header"``.
+
+    v3.12 H1 prune: ``env_unknown`` and ``env_missing_required`` were
+    previously declared here but never emitted by any ``policy_enforcer``
+    path (``build_sandbox`` silently filters unknown env keys rather
+    than raising a violation). Operators should not write them into
+    ``rollout.promote_to_block_on`` — a future runtime PR may reintroduce
+    emitters if the need arises, and the kinds can be re-added then.
     """
 
     kind: Literal[
-        "env_unknown",
-        "env_missing_required",
         "command_not_allowlisted",
         "command_path_outside_policy",
         "cwd_escape",
@@ -65,15 +70,8 @@ class PolicyViolationError(ExecutorError):
         self.violations = violations
         if violations:
             first = violations[0]
-            tail = (
-                f" (+{len(violations) - 1} more)"
-                if len(violations) > 1
-                else ""
-            )
-            super().__init__(
-                f"{len(violations)} policy violation(s): "
-                f"{first.kind}={first.detail}{tail}"
-            )
+            tail = f" (+{len(violations) - 1} more)" if len(violations) > 1 else ""
+            super().__init__(f"{len(violations)} policy violation(s): {first.kind}={first.detail}{tail}")
         else:
             super().__init__("0 policy violations (defensive raise)")
 
@@ -86,16 +84,18 @@ class AdapterInvocationFailedError(ExecutorError):
     record.
     """
 
-    _REASONS = frozenset({
-        "command_not_found",
-        "timeout",
-        "non_zero_exit",
-        "http_error",
-        "http_timeout",
-        "connection_refused",
-        "stdin_write_failed",
-        "subprocess_crash",
-    })
+    _REASONS = frozenset(
+        {
+            "command_not_found",
+            "timeout",
+            "non_zero_exit",
+            "http_error",
+            "http_timeout",
+            "connection_refused",
+            "stdin_write_failed",
+            "subprocess_crash",
+        }
+    )
 
     def __init__(self, *, reason: str, detail: str = "") -> None:
         self.reason = reason
@@ -115,22 +115,21 @@ class AdapterOutputParseError(ExecutorError):
     def __init__(self, *, raw_excerpt: str, detail: str = "") -> None:
         self.raw_excerpt = raw_excerpt
         self.detail = detail
-        super().__init__(
-            f"Adapter output parse failed: {detail} "
-            f"(excerpt={raw_excerpt[:120]!r})"
-        )
+        super().__init__(f"Adapter output parse failed: {detail} (excerpt={raw_excerpt[:120]!r})")
 
 
 class WorktreeBuilderError(ExecutorError):
     """Per-run worktree creation or cleanup failed."""
 
-    _REASONS = frozenset({
-        "git_worktree_failed",
-        "permissions",
-        "cleanup_failed",
-        "disk_full",
-        "already_exists",
-    })
+    _REASONS = frozenset(
+        {
+            "git_worktree_failed",
+            "permissions",
+            "cleanup_failed",
+            "disk_full",
+            "already_exists",
+        }
+    )
 
     def __init__(self, *, reason: str, detail: str = "") -> None:
         self.reason = reason
@@ -144,9 +143,7 @@ class EvidenceEmitError(ExecutorError):
     def __init__(self, *, run_id: str, detail: str = "") -> None:
         self.run_id = run_id
         self.detail = detail
-        super().__init__(
-            f"Evidence emit failed for run={run_id!r}: {detail}"
-        )
+        super().__init__(f"Evidence emit failed for run={run_id!r}: {detail}")
 
 
 __all__ = [
