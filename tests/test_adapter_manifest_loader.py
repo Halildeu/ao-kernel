@@ -256,8 +256,10 @@ class TestClaudeCodeCliReviewFindingsV310A1:
 
     Contract (enforced at runtime by adapter_invoker output_parse walker):
     the real `claude` CLI output MUST contain a `$.review_findings`
-    array matching the schema — see A3 runbook for the prompt contract
-    that the operator is expected to pass in.
+    object conforming to `review-findings.schema.v1.json` — a top-level
+    object with `schema_version`, `findings` (array), and `summary`
+    required. See A3 runbook for the prompt contract that the operator
+    is expected to pass in.
     """
 
     def test_bundled_manifest_declares_review_findings_capability(

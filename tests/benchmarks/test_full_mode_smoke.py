@@ -11,12 +11,16 @@ bundled `policy_worktree_profile` is dormant. Wiring the first
 genuine real-adapter smoke requires:
 
 1. A bench workflow variant pointing at real adapter manifests.
-2. `claude-code-cli.manifest.v1.json` to advertise the
-   `review_findings` capability (currently absent).
+2. ~~`claude-code-cli.manifest.v1.json` to advertise the
+   `review_findings` capability (currently absent).~~ **DONE in
+   v3.10 A1 (#156)** — claude-code-cli now advertises
+   `review_findings` + an `output_parse` rule pointing at
+   `review-findings.schema.v1.json`.
 3. Workspace override that enables `policy_worktree_profile`.
 
-Those three items are routed to v3.7 F2; see
-`.claude/plans/PR-v3.7-BENCHMARK-REALISM-DRAFT-PLAN.md` §3.F2.
+Items 1 and 3 are scheduled for v3.10 A2 (workflow variant) and
+A3 (runbook); the original v3.7 F2 routing has been folded into
+the v3.10 A arc. See the master plan doc for the current split.
 
 What F1 pins here (all run in fast mode — default):
 
