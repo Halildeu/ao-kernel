@@ -174,16 +174,66 @@ def compile_context(
     # — consultation lines must count toward max_tokens; previously
     # they bypassed budget and also were not reflected in
     # total_tokens / telemetry).
+    #
+    # v3.8 H5: consultation lines now also contribute to the
+    # `items_included` / `items_excluded` / `selection_log`
+    # observability surface so downstream telemetry reflects the
+    # full lane set (Codex v3.6 E2 residual follow-up).
     cap = max(0, profile_config.max_consultations)
     capped_consultations = tuple(consultations[:cap]) if cap else ()
     accepted_consultations: list[PromotedConsultation] = []
+    consultation_excluded = 0
+
+    # v3.8 H5 iter-2 (Codex post-impl BLOCK absorb): consultations
+    # dropped by the profile `max_consultations` cap (beyond the
+    # capped-tuple slice) must also show up in accounting and
+    # selection_log — otherwise EMERGENCY (cap=0) or
+    # TASK_EXECUTION (cap=3 with 5 inputs) would keep tail records
+    # invisible to telemetry.
+    cap_dropped = consultations[cap:] if cap < len(consultations) else ()
+    for record in cap_dropped:
+        consultation_excluded += 1
+        selection_log.append(
+            {
+                "key": f"consultation.{record.cns_id}",
+                "lane": "consultation",
+                "score": None,
+                "included": False,
+                "reason": f"excluded: max_consultations ({profile_config.max_consultations}) cap",
+            }
+        )
+
     for record in capped_consultations:
         rendered_line = _render_consultation(record)
         line_chars = len(rendered_line) + 1  # trailing newline
+        key = f"consultation.{record.cns_id}"
         if used_chars + line_chars > budget:
-            break
+            consultation_excluded += 1
+            selection_log.append(
+                {
+                    "key": key,
+                    "lane": "consultation",
+                    "score": None,
+                    "included": False,
+                    "reason": f"excluded: token budget ({profile_config.max_tokens}) exceeded",
+                }
+            )
+            # Rest of capped tuple also can't fit (monotonic budget);
+            # tail-drop + account each as excluded so counters stay
+            # consistent with last-added-first-dropped contract.
+            continue
         accepted_consultations.append(record)
         used_chars += line_chars
+        included_count += 1
+        selection_log.append(
+            {
+                "key": key,
+                "lane": "consultation",
+                "score": None,
+                "included": True,
+                "reason": "included",
+            }
+        )
 
     # Build preamble from included items + budget-fit consultations
     preamble = _build_preamble(
@@ -193,6 +243,7 @@ def compile_context(
     )
 
     total_tokens = used_chars // 4
+    total_excluded = (len(items) - sum(1 for i in items if i.included)) + consultation_excluded
 
     # Telemetry (optional subsystem per CLAUDE.md §7 — graceful fallback, debug log)
     try:
@@ -200,7 +251,7 @@ def compile_context(
 
         record_context_compile(
             included_count,
-            len(items) - included_count,
+            total_excluded,
             profile=profile_config.profile_id,
             total_tokens=total_tokens,
         )
@@ -211,7 +262,7 @@ def compile_context(
         preamble=preamble,
         total_tokens=total_tokens,
         items_included=included_count,
-        items_excluded=len(items) - included_count,
+        items_excluded=total_excluded,
         profile_id=profile_config.profile_id,
         selection_log=selection_log,
     )

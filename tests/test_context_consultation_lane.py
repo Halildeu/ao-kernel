@@ -358,3 +358,146 @@ class TestSdkWiringAgreePreferred:
         idx_agree = preamble.index("[CNS-AGREE]")
         idx_part = preamble.index("[CNS-PART]")
         assert idx_agree < idx_part, "AGREE must render before PARTIAL"
+
+
+class TestObservabilityAccounting:
+    """v3.8 H5: consultation lane contributes to
+    `items_included/items_excluded/selection_log` telemetry surface.
+    Closes Codex v3.6 E2 residual follow-up — consultation lines
+    were budget-aware but invisible to the counters."""
+
+    def test_accepted_consultation_counted_in_items_included(self) -> None:
+        consultations = (
+            _mk_consultation("CNS-OBS-1"),
+            _mk_consultation("CNS-OBS-2"),
+        )
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=consultations,
+            profile="PLANNING",
+        )
+        # Two consultations accepted; PLANNING profile has no
+        # session / canonical / fact items in this fixture.
+        assert result.items_included == 2
+        assert result.items_excluded == 0
+
+    def test_dropped_consultation_counted_in_items_excluded(self) -> None:
+        """Tight budget drops trailing consultations; they must show
+        up under `items_excluded` and in `selection_log` with
+        lane='consultation'."""
+        custom = ProfileConfig(
+            profile_id="H5_TIGHT",
+            description="tight budget — consultation drop test",
+            priority_prefixes=(),
+            max_decisions=5,
+            max_tokens=50,  # 200-char budget
+            max_consultations=10,
+        )
+        PROFILES["H5_TIGHT"] = custom
+        try:
+            consultations = tuple(
+                _mk_consultation(f"CNS-DROP-{i:03d}", topic="x" * 80)
+                for i in range(5)
+            )
+            result = compile_context(
+                {"ephemeral_decisions": []},
+                consultations=consultations,
+                profile="H5_TIGHT",
+            )
+            # Some accepted, some dropped; total must equal input count.
+            assert result.items_included >= 1
+            assert result.items_excluded >= 1
+            assert (
+                result.items_included + result.items_excluded == len(consultations)
+            ), (
+                f"counter drift: included={result.items_included} + "
+                f"excluded={result.items_excluded} != {len(consultations)}"
+            )
+            # selection_log has a consultation-lane entry for each
+            # capped consultation (accepted or excluded).
+            consultation_log = [
+                row
+                for row in result.selection_log
+                if row.get("lane") == "consultation"
+            ]
+            assert len(consultation_log) == len(consultations)
+            excluded_rows = [
+                row for row in consultation_log if row["included"] is False
+            ]
+            assert excluded_rows
+            assert all(
+                "budget" in row["reason"] for row in excluded_rows
+            ), f"unexpected exclusion reasons: {[r['reason'] for r in excluded_rows]}"
+        finally:
+            PROFILES.pop("H5_TIGHT", None)
+
+    def test_empty_consultations_leaves_counters_untouched(self) -> None:
+        """No consultations passed → counters reflect only other lanes."""
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=(),
+            profile="TASK_EXECUTION",
+        )
+        # Fresh workspace with no other lanes either.
+        assert result.items_included == 0
+        assert result.items_excluded == 0
+        assert not [
+            r for r in result.selection_log if r.get("lane") == "consultation"
+        ]
+
+
+class TestCapBasedExclusionAccounting:
+    """v3.8 H5 iter-2 (Codex post-impl BLOCK absorb): consultations
+    dropped by the profile `max_consultations` cap must also appear
+    in observability counters + `selection_log`."""
+
+    def test_task_execution_cap_drops_are_counted(self) -> None:
+        """TASK_EXECUTION has max_consultations=3; passing 5
+        consultations should leave 3 accepted and 2 cap-excluded."""
+        consultations = tuple(
+            _mk_consultation(f"CNS-CAP-{i:03d}") for i in range(5)
+        )
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=consultations,
+            profile="TASK_EXECUTION",
+        )
+        assert result.items_included == 3
+        assert result.items_excluded == 2
+        consultation_log = [
+            row
+            for row in result.selection_log
+            if row.get("lane") == "consultation"
+        ]
+        # Every consultation — including cap-dropped tail — appears.
+        assert len(consultation_log) == 5
+        excluded_rows = [r for r in consultation_log if r["included"] is False]
+        assert len(excluded_rows) == 2
+        assert all("max_consultations" in r["reason"] for r in excluded_rows), (
+            f"cap-dropped rows should surface max_consultations reason; "
+            f"got {[r['reason'] for r in excluded_rows]}"
+        )
+
+    def test_emergency_profile_all_consultations_excluded(self) -> None:
+        """EMERGENCY has max_consultations=0; any consultation passed
+        must be fully cap-excluded and reflected in counters."""
+        consultations = tuple(
+            _mk_consultation(f"CNS-EMERG-{i:03d}") for i in range(3)
+        )
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=consultations,
+            profile="EMERGENCY",
+        )
+        assert result.items_included == 0
+        assert result.items_excluded == 3
+        consultation_log = [
+            row
+            for row in result.selection_log
+            if row.get("lane") == "consultation"
+        ]
+        assert len(consultation_log) == 3
+        assert all(r["included"] is False for r in consultation_log)
+        assert all(
+            "max_consultations" in r["reason"] for r in consultation_log
+        )
