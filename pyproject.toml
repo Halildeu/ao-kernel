@@ -150,7 +150,12 @@ omit = [
     #   test_internal_providers_coverage.py.
     "ao_kernel/_internal/prj_kernel_api/*",
     "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
-    "ao_kernel/_internal/session/agent_context_version.py",
+    # v3.12 H3 (tranche 6): agent_context_version removed from omit;
+    # test_internal_session_agent_context_version_coverage.py pins the
+    # error/edge branches (file_hash/_file_modified_at try-except,
+    # extra_files, non-dict skip, load None). cross_session_context +
+    # provider_memory stay omitted for now (very low transitive
+    # coverage; safely isolated to larger v3.13 tranches H3b/H3c).
     "ao_kernel/_internal/session/cross_session_context.py",
     "ao_kernel/_internal/session/provider_memory.py",
     # PR-A4b: MultiStepDriver ships with unit coverage for entry
