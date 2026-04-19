@@ -1,24 +1,24 @@
 """Shared fixtures for PR-B7 benchmarks.
 
-v3.7 F1 (scaffold only): `--benchmark-mode=fast|full` pytest option
-(default `fast`). Fast mode patches adapter transport via
+v3.7 F2 shipped: `--benchmark-mode=fast|full` pytest option (default
+`fast`). Fast mode patches adapter transport via
 ``mock_adapter_transport``; full mode bypasses the mock so tests
-marked ``@pytest.mark.full_mode`` can exercise the real subprocess
-path. Collection hook skips non-matching tests per mode so the
-default CI surface is identical to pre-v3.7.
+marked ``@pytest.mark.full_mode`` exercise the real subprocess path.
+Collection hook skips non-matching tests per mode so the default CI
+surface is identical to pre-v3.7.
 
-**F1 ships the scaffold, not a runnable real-adapter smoke.** The
-`@full_mode` marker + collection hook exist so v3.7 F2 can add the
-first genuine smoke without re-pluming the harness. Under
-`--benchmark-mode=full` today F1 collects 0 runnable tests.
-Rationale + forward reference: `docs/BENCHMARK-FULL-MODE.md`.
+Full-mode smokes live in ``tests/benchmarks/test_full_mode_smoke.py``;
+see ``docs/BENCHMARK-FULL-MODE.md`` for the operator runbook.
 
 v3.5 D3: scorecard collector hooks are wired here via
 :mod:`ao_kernel._internal.scorecard.collector`. Primary tests tag
 themselves with ``@pytest.mark.scorecard_primary`` and expose a
 :class:`PrimarySidecar` via the ``benchmark_primary_sidecar`` fixture.
-**Full-mode tests must NOT be `scorecard_primary`** — real-adapter
-scorecard path lands in v3.7 F2.
+v3.7 F2: the full-mode smoke combines ``@full_mode`` +
+``@scorecard_primary`` so the mode-gated expected set
+(``{"governed_review"}``) is satisfied when the smoke actually ran;
+when it skips due to prereq miss, the session-finish hook relaxes
+the invariant to empty.
 """
 
 from __future__ import annotations
@@ -105,11 +105,14 @@ def pytest_collection_modifyitems(
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
-        "full_mode: v3.7 F1 — mark a benchmark test as ops-only "
-        "real-adapter full-mode smoke. Requires "
-        "`--benchmark-mode=full` to run; skipped in default fast "
-        "mode. Do NOT combine with `scorecard_primary` (real-"
-        "adapter scorecard semantics land in v3.7 F2).",
+        "full_mode: mark a benchmark test as ops-only full-mode "
+        "smoke. Requires `--benchmark-mode=full` to run; skipped in "
+        "default fast mode. v3.7 F2 onward: may combine with "
+        "`@scorecard_primary` to publish a real-adapter scorecard "
+        "sidecar (the session-finish hook expects "
+        "`{governed_review}` as the full-mode primary set when any "
+        "smoke runs; empty registry is treated as a graceful skip "
+        "so the invariant collapses cleanly).",
     )
     config.addinivalue_line(
         "markers",
