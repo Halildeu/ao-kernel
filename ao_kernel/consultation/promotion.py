@@ -30,7 +30,11 @@ from typing import Any, Mapping
 
 from ao_kernel.consultation.integrity import verify_consultation_manifest
 from ao_kernel.consultation.normalize import record_digest
-from ao_kernel.context.canonical_store import load_store, promote_decision
+from ao_kernel.context.canonical_store import (
+    load_store,
+    promote_decision,
+    query as canonical_query,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -86,16 +90,15 @@ def _compact_value(record: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _provenance(
-    cns_id: str, record_dig: str,
+    cns_id: str,
+    record_dig: str,
 ) -> dict[str, Any]:
     """Workspace-relative pointer + record digest for dereferencing."""
     return {
         "method": "consultation_promotion",
         "cns_id": cns_id,
         "evidence_path": f".ao/evidence/consultations/{cns_id}",
-        "resolution_record_path": (
-            f".ao/evidence/consultations/{cns_id}/resolution.record.v1.json"
-        ),
+        "resolution_record_path": (f".ao/evidence/consultations/{cns_id}/resolution.record.v1.json"),
         "record_digest": record_dig,
     }
 
@@ -152,16 +155,18 @@ def promote_resolved_consultations(
     if not enabled and not force:
         counters["skipped_disabled"] = 1
         return PromotionSummary(
-            **counters, errors=tuple(errors), dry_run=dry_run,
+            **counters,
+            errors=tuple(errors),
+            dry_run=dry_run,
         )
 
-    evidence_root = (
-        workspace_root / ".ao" / "evidence" / "consultations"
-    )
+    evidence_root = workspace_root / ".ao" / "evidence" / "consultations"
     # Codex iter-3 execution note #2: empty workspace → clean summary
     if not evidence_root.is_dir():
         return PromotionSummary(
-            **counters, errors=tuple(errors), dry_run=dry_run,
+            **counters,
+            errors=tuple(errors),
+            dry_run=dry_run,
         )
 
     store = load_store(workspace_root)
@@ -184,9 +189,7 @@ def promote_resolved_consultations(
         record = _load_record(cns_dir)
         if record is None:
             counters["skipped_missing_record"] += 1
-            errors.append(
-                f"{cns_dir.name}: resolution.record.v1.json missing"
-            )
+            errors.append(f"{cns_dir.name}: resolution.record.v1.json missing")
             continue
 
         # Eligibility
@@ -208,9 +211,7 @@ def promote_resolved_consultations(
         existing = existing_decisions.get(key)
         is_update = False
         if isinstance(existing, dict):
-            existing_digest = (
-                existing.get("provenance", {}).get("record_digest")
-            )
+            existing_digest = existing.get("provenance", {}).get("record_digest")
             if existing_digest == prefixed_digest:
                 counters["skipped_same_digest"] += 1
                 continue
@@ -239,12 +240,190 @@ def promote_resolved_consultations(
             counters["promoted"] += 1
 
     return PromotionSummary(
-        **counters, errors=tuple(errors), dry_run=dry_run,
+        **counters,
+        errors=tuple(errors),
+        dry_run=dry_run,
     )
 
 
+# ─── v3.6 E1 — Consumer-side reader facade ──────────────────────────────
+
+
+@dataclass(frozen=True)
+class PromotedConsultation:
+    """Typed record for a promoted consultation entry in the canonical
+    store.
+
+    Hydration policy (strict core, lenient edges — v3.6 plan §3.E1 +
+    Codex iter-1 revision #1 absorb):
+
+    - ``cns_id``, ``final_verdict`` and ``promoted_at`` are STRICT
+      CORE: any missing field causes the row to be silently SKIPPED
+      in :func:`query_promoted_consultations`.
+    - ``topic`` / ``from_agent`` / ``to_agent`` are None-tolerant here
+      because the producer already backfills ``"unknown"`` for missing
+      request metadata (see ``normalize.py::334``).
+    - ``confidence`` is read from the top-level canonical entry; if
+      absent, the reader derives it via :func:`verdict_confidence`.
+    - ``record_digest`` / ``evidence_path`` come from
+      ``provenance``; None when absent (no fallback derivation).
+
+    Rationale: canonical store has no category registry / schema
+    validation today (v3.7+ scope). A reader that panics on any
+    malformation would be the wrong failure mode for the consumer
+    path — it would propagate upstream producer bugs as hard failures
+    in context compilation and MCP query surfaces.
+    """
+
+    cns_id: str
+    topic: str | None
+    from_agent: str | None
+    to_agent: str | None
+    final_verdict: str
+    resolved_at: str | None
+    record_digest: str | None
+    evidence_path: str | None
+    confidence: float
+    promoted_at: str
+
+
+_HYDRATION_REQUIRED = ("cns_id", "final_verdict", "promoted_at")
+
+
+def _hydrate_consultation(
+    entry: Mapping[str, Any],
+) -> PromotedConsultation | None:
+    """Hydrate a canonical-store row into a ``PromotedConsultation``.
+
+    Returns ``None`` when any strict-core field is missing; callers
+    skip those rows silently.
+    """
+    value = entry.get("value") or {}
+    if not isinstance(value, Mapping):
+        return None
+
+    cns_id = value.get("cns_id") if isinstance(value.get("cns_id"), str) else None
+    final_verdict = value.get("final_verdict") if isinstance(value.get("final_verdict"), str) else None
+    promoted_at = entry.get("promoted_at") if isinstance(entry.get("promoted_at"), str) else None
+    if not cns_id or not final_verdict or not promoted_at:
+        return None
+
+    provenance = entry.get("provenance") or {}
+    if not isinstance(provenance, Mapping):
+        provenance = {}
+
+    # Lenient edge fields — nullable when absent.
+    topic_raw = value.get("topic")
+    topic: str | None = topic_raw if isinstance(topic_raw, str) and topic_raw else None
+    from_agent_raw = value.get("from_agent")
+    from_agent: str | None = from_agent_raw if isinstance(from_agent_raw, str) and from_agent_raw else None
+    to_agent_raw = value.get("to_agent")
+    to_agent: str | None = to_agent_raw if isinstance(to_agent_raw, str) and to_agent_raw else None
+    resolved_at_raw = value.get("resolved_at")
+    resolved_at: str | None = resolved_at_raw if isinstance(resolved_at_raw, str) else None
+    record_digest_raw = provenance.get("record_digest")
+    record_digest: str | None = record_digest_raw if isinstance(record_digest_raw, str) else None
+    evidence_path_raw = provenance.get("evidence_path")
+    evidence_path: str | None = evidence_path_raw if isinstance(evidence_path_raw, str) else None
+
+    confidence_raw = entry.get("confidence")
+    if isinstance(confidence_raw, (int, float)):
+        confidence = float(confidence_raw)
+    else:
+        confidence = verdict_confidence(final_verdict)
+
+    return PromotedConsultation(
+        cns_id=cns_id,
+        topic=topic,
+        from_agent=from_agent,
+        to_agent=to_agent,
+        final_verdict=final_verdict,
+        resolved_at=resolved_at,
+        record_digest=record_digest,
+        evidence_path=evidence_path,
+        confidence=confidence,
+        promoted_at=promoted_at,
+    )
+
+
+def query_promoted_consultations(
+    workspace_root: Path,
+    *,
+    verdict: str | None = None,
+    topic: str | None = None,
+    include_expired: bool = False,
+) -> tuple[PromotedConsultation, ...]:
+    """Query promoted consultations from the canonical store as typed
+    records.
+
+    Thin, consumer-safe wrapper over
+    :func:`ao_kernel.context.canonical_store.query` with
+    ``category="consultation"``. Rows that cannot be hydrated (strict
+    core field missing) are silently SKIPPED — the reader never
+    raises on malformed store content (v3.6 plan §3.E1 hydration
+    policy).
+
+    When two canonical rows resolve to the same ``cns_id``, the
+    more recent ``promoted_at`` wins — a last line of defence
+    against future store-format drift (Codex iter-1 revision #7
+    absorb). Canonical key uniqueness is enforced upstream on the
+    happy path, so this dedup is rarely exercised but guards the
+    contract.
+
+    Args:
+        workspace_root: Workspace root (``.ao/canonical_decisions.v1.json``
+            lives under this).
+        verdict: Optional filter (``AGREE`` / ``PARTIAL``); case-
+            sensitive match against ``final_verdict``.
+        topic: Optional case-insensitive substring filter on the
+            ``topic`` field (``None`` topic rows never match).
+        include_expired: When True, expired entries are included;
+            default False respects the canonical temporal lifecycle.
+
+    Returns:
+        Tuple of :class:`PromotedConsultation` records sorted by
+        ``promoted_at`` descending (newest first). Empty tuple when
+        the store is empty or has no consultation entries.
+    """
+    # Filter by category only — do NOT constrain key_pattern.
+    # Codex post-impl SUGGEST #1 absorb: `key_pattern="consultation.*"`
+    # re-introduces the namespaced-key assumption the facade was
+    # supposed to abstract away. Category is the sole authoritative
+    # filter; a row with `category="consultation"` but some other key
+    # must still hydrate.
+    raw = canonical_query(
+        workspace_root,
+        category="consultation",
+        include_expired=include_expired,
+    )
+
+    by_id: dict[str, PromotedConsultation] = {}
+    for row in raw:
+        hydrated = _hydrate_consultation(row)
+        if hydrated is None:
+            continue
+        if verdict is not None and hydrated.final_verdict != verdict:
+            continue
+        if topic is not None:
+            haystack = (hydrated.topic or "").lower()
+            if topic.lower() not in haystack:
+                continue
+        existing = by_id.get(hydrated.cns_id)
+        if existing is None or hydrated.promoted_at > existing.promoted_at:
+            by_id[hydrated.cns_id] = hydrated
+
+    sorted_records = sorted(
+        by_id.values(),
+        key=lambda rec: rec.promoted_at,
+        reverse=True,
+    )
+    return tuple(sorted_records)
+
+
 __all__ = [
+    "PromotedConsultation",
     "PromotionSummary",
     "promote_resolved_consultations",
+    "query_promoted_consultations",
     "verdict_confidence",
 ]
