@@ -183,6 +183,26 @@ def compile_context(
     capped_consultations = tuple(consultations[:cap]) if cap else ()
     accepted_consultations: list[PromotedConsultation] = []
     consultation_excluded = 0
+
+    # v3.8 H5 iter-2 (Codex post-impl BLOCK absorb): consultations
+    # dropped by the profile `max_consultations` cap (beyond the
+    # capped-tuple slice) must also show up in accounting and
+    # selection_log — otherwise EMERGENCY (cap=0) or
+    # TASK_EXECUTION (cap=3 with 5 inputs) would keep tail records
+    # invisible to telemetry.
+    cap_dropped = consultations[cap:] if cap < len(consultations) else ()
+    for record in cap_dropped:
+        consultation_excluded += 1
+        selection_log.append(
+            {
+                "key": f"consultation.{record.cns_id}",
+                "lane": "consultation",
+                "score": None,
+                "included": False,
+                "reason": f"excluded: max_consultations ({profile_config.max_consultations}) cap",
+            }
+        )
+
     for record in capped_consultations:
         rendered_line = _render_consultation(record)
         line_chars = len(rendered_line) + 1  # trailing newline

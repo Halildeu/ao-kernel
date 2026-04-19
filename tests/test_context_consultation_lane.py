@@ -444,3 +444,60 @@ class TestObservabilityAccounting:
         assert not [
             r for r in result.selection_log if r.get("lane") == "consultation"
         ]
+
+
+class TestCapBasedExclusionAccounting:
+    """v3.8 H5 iter-2 (Codex post-impl BLOCK absorb): consultations
+    dropped by the profile `max_consultations` cap must also appear
+    in observability counters + `selection_log`."""
+
+    def test_task_execution_cap_drops_are_counted(self) -> None:
+        """TASK_EXECUTION has max_consultations=3; passing 5
+        consultations should leave 3 accepted and 2 cap-excluded."""
+        consultations = tuple(
+            _mk_consultation(f"CNS-CAP-{i:03d}") for i in range(5)
+        )
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=consultations,
+            profile="TASK_EXECUTION",
+        )
+        assert result.items_included == 3
+        assert result.items_excluded == 2
+        consultation_log = [
+            row
+            for row in result.selection_log
+            if row.get("lane") == "consultation"
+        ]
+        # Every consultation — including cap-dropped tail — appears.
+        assert len(consultation_log) == 5
+        excluded_rows = [r for r in consultation_log if r["included"] is False]
+        assert len(excluded_rows) == 2
+        assert all("max_consultations" in r["reason"] for r in excluded_rows), (
+            f"cap-dropped rows should surface max_consultations reason; "
+            f"got {[r['reason'] for r in excluded_rows]}"
+        )
+
+    def test_emergency_profile_all_consultations_excluded(self) -> None:
+        """EMERGENCY has max_consultations=0; any consultation passed
+        must be fully cap-excluded and reflected in counters."""
+        consultations = tuple(
+            _mk_consultation(f"CNS-EMERG-{i:03d}") for i in range(3)
+        )
+        result = compile_context(
+            {"ephemeral_decisions": []},
+            consultations=consultations,
+            profile="EMERGENCY",
+        )
+        assert result.items_included == 0
+        assert result.items_excluded == 3
+        consultation_log = [
+            row
+            for row in result.selection_log
+            if row.get("lane") == "consultation"
+        ]
+        assert len(consultation_log) == 3
+        assert all(r["included"] is False for r in consultation_log)
+        assert all(
+            "max_consultations" in r["reason"] for r in consultation_log
+        )
