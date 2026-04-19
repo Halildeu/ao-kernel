@@ -7,37 +7,48 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### v3.9 — Tool Dispatch Governance (in progress)
+## [3.9.0] - 2026-04-19
+
+### Added — v3.9.0 Tool Dispatch Governance Hardening (2 feature PRs)
+
+**Context.** v3.8 shipped rolling hardening with no feature surface growth. v3.9 closes the dormant-contract drift in `policy_tool_calling.v1.json`: the policy file had 7 fields that operators could write but `ToolCallPolicy` parser and `ToolGateway` runtime ignored entirely. v3.9 = B1 (parser absorb) + B2 (runtime enforcement). Codex adversarial consensus: plan-time master AGREE on scope; B2 had 3 post-impl review iters (iter-1 BLOCKER: client persistent gateway never reset; iter-2 MEDIUM: denial audit `.ao/.ao/` nesting; iter-3 BLOCKER: `ao_memory_write` locked-DENY by default). Each absorbed with a regression pin.
 
 **PR-B1 (#150) — `ToolCallPolicy` contract absorb (parser-only).**
 - `ToolCallPolicy` now parses 7 previously-dormant fields from `policy_tool_calling.v1.json`: `max_calls_per_request`, `allowed_tools`, `blocked_tools`, `default_permission`, `mutating_requires_confirmation`, `cycle_detection_enabled`, `cycle_max_identical_calls`.
 - `ToolCallPolicy.from_dict()` validates each field; invalid types / enum / negative ints raise `ValueError` (iter-2 absorb: strict `isinstance(bool)` check instead of silent coercion).
 - `create_tool_gateway()` narrowed: policy LOAD/READ failures still fall back to a safe default; invalid absorbed content now surfaces as `ValueError` (no silent swallow).
-- **No runtime behavior change** — enforcement lands in PR-B2.
+- No runtime behavior change — enforcement lands in PR-B2.
 
-**PR-B2 — Runtime enforcement + MCP integration (this release).**
+**PR-B2 (#151) — Runtime enforcement + MCP integration.**
 - `ToolGateway.dispatch()` now enforces every B1-absorbed field:
   - `max_calls_per_request` — per-request call cap (separate from `max_rounds` agentic loop count).
   - `allowed_tools` — empty = permissive (matches `create_tool_gateway()` bundled-default reality + `governance._check_tool_calling` alignment); non-empty = strict fail-closed.
   - `blocked_tools` — always overrides `allowed_tools`.
   - `cycle_detection` — suffix-based repeat-call detection using a JSON fingerprint with `default=repr` fallback. Denied attempts are NOT recorded in the history (prevents self-feeding deny loops).
-  - `mutating_requires_confirmation` — gated by a new additive `ToolSpec.is_mutating` flag (default False, backward-compatible); denies mutating tools under a `read_only` default when confirmation is required and no confirmation path exists in this gateway.
+  - `mutating_requires_confirmation` — gated by a new additive `ToolSpec.is_mutating` flag (default False, backward-compatible). No MCP governance tool currently carries the flag (B2 iter-3 absorb: until a confirmation flow exists, flagging `ao_memory_write=True` would lock it DENY under the bundled policy; the write governance still runs via `policy_mcp_memory.write` inside the handler).
 - `authorize()` vs `dispatch()` split: `authorize()` handles static checks (policy/name/spec/blocklist/allowlist/max_rounds/mutating-confirm); `dispatch()` handles stateful/input-dependent checks (per-request cap, cycle detection).
 - `ToolCallResult.reason_code` (new) — machine-readable denial key. 9 canonical codes: `POLICY_DISABLED`, `TOOL_NOT_REGISTERED`, `TOOL_NOT_ALLOWED`, `MAX_ROUNDS_EXCEEDED`, `BLOCKED_BY_POLICY`, `NOT_IN_ALLOWLIST`, `MAX_CALLS_PER_REQUEST_EXCEEDED`, `CYCLE_DETECTED`, `MUTATING_REQUIRES_CONFIRMATION`. `reason` field kept for human-readable text (mirrors `reason_code` when set).
-- `reset_rounds()` extended to clear all transient per-request state (`_call_count`, `_request_call_count`, `_recent_calls`). Callers using persistent gateway instances (e.g. `AoKernelClient`) should call it at the start of every new LLM request.
-- MCP `call_tool()` denial envelope now propagates `gw_result.reason_code` in `reason_codes` (falls back to `reason` for pre-B2 callers). Denied calls are audited through the existing `record_mcp_event()` channel (workspace mode; library mode no-op).
-- `ao_memory_write` governance tool registered with `is_mutating=True`; the other six governance tools stay `is_mutating=False`.
+- `reset_rounds()` extended to clear all transient per-request state (`_call_count`, `_request_call_count`, `_recent_calls`). `AoKernelClient.llm_call()` calls `reset_rounds()` at the top of every LLM request (iter-1 BLOCKER absorb: persistent gateway regression across calls).
+- MCP `call_tool()` denial envelope propagates `gw_result.reason_code` in `reason_codes` (falls back to `reason` for pre-B2 callers). Denied calls audited via `record_mcp_event()` using `_resolve_workspace_for_call()` — same resolver as the success path (iter-2 MEDIUM absorb: avoids `.ao/.ao/evidence/...` nesting).
 - `list_tools()` output now includes `is_mutating` so introspection surfaces the mutating flag.
-- `governance._check_tool_calling()` aligned to the same allowlist semantic; legacy `TOOL_NO_ALLOWLIST` violation removed (the bundled default policy ships with `allowed_tools=[]` and would otherwise reject every governance call).
+- `governance._check_tool_calling()` aligned to the gateway semantic; legacy `TOOL_NO_ALLOWLIST` violation removed (the bundled default policy ships with `allowed_tools=[]` and would otherwise reject every governance call).
 - Schema `policy-tool-calling.schema.v1.json` `allowed_tools.description` updated to document the empty=permissive / non-empty=strict contract.
 
-**Operator migration note (B2).** The B2 runtime changes are only observable when an operator writes a non-default policy. Bundled policy ships with `enabled=false` (opt-in) and `allowed_tools=[]` (permissive under both pre-B2 and B2 semantics). Review if you author a custom policy:
+### Migration note
+
+The B2 runtime changes are **only observable** when an operator writes a non-default policy. Bundled policy ships with `enabled=false` (opt-in) and `allowed_tools=[]` (permissive under both pre-B2 and B2 semantics). Review if you author a custom policy:
 
 - `allowed_tools=[]` → behavior preserved, permissive. No action.
 - `allowed_tools=["tool_a", ...]` (non-empty) → now strictly enforced at the gateway. Tools outside list return `DENIED` with `reason_code="NOT_IN_ALLOWLIST"`.
 - `blocked_tools=["unsafe"]` → enforced at the gateway; `reason_code="BLOCKED_BY_POLICY"`; overrides `allowed_tools`.
 - `max_tool_calls_per_request` / `cycle_detection.max_identical_calls` → dormant pre-B1, enforced now. Gateways that accepted 100+ identical repeats or ran past the per-request cap return `DENIED` with the corresponding `reason_code`.
-- `tool_permissions.mutating_requires_confirmation=true` + `default_permission="read_only"` → tools registered with the new `is_mutating=True` flag return `DENIED` with `reason_code="MUTATING_REQUIRES_CONFIRMATION"`. Bundled `ao_memory_write` is the only governance tool carrying this flag.
+- `tool_permissions.mutating_requires_confirmation=true` + `default_permission="read_only"` → will begin denying tools flagged `is_mutating=True`. Bundled MCP governance tools intentionally carry no such flag in v3.9 (no confirmation flow yet). External callers who register their own tools via `ToolGateway.register_handler(..., is_mutating=True)` will see the `MUTATING_REQUIRES_CONFIRMATION` deny under the bundled policy.
+
+### Known follow-ups (post-v3.9)
+
+- `_internal/utils/*` coverage tranche (C1) — deferred; small mechanical PR.
+- Legacy `ToolCallPolicy.from_dict()` bool-strict hardening for `enabled` / `allow_unknown` / `max_tool_rounds` — parser-hygiene follow-up.
+- `AoKernelClient.call_tool()` standalone path (not gated by `llm_call()` reset) — preexisting design debt; persistent gateway state outside the LLM-request boundary. Not observed in the bundled contract but documented.
 
 ## [3.8.0] - 2026-04-19
 
