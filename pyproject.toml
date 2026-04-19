@@ -151,16 +151,21 @@ omit = [
     # - v3.12 H2a (tranche 5A): roadmap/{compiler, roadmap_checkpoint,
     #   exec_contracts}.py removed from omit (all 89-97% transitive).
     #   test_internal_roadmap_small_coverage.py pins the small missing
-    #   branches. roadmap/{change_proposals, sanitize, step_templates,
-    #   evidence, exec_evidence, exec_steps, executor}.py stay
-    #   omitted — deeper gaps deferred to v3.13 H2b/H2c tranches.
+    #   branches.
+    # - v3.13 H2b1 (tranche 5B): roadmap/{change_proposals, sanitize,
+    #   evidence}.py removed from omit. Dedicated pins in
+    #   test_internal_roadmap_small_trio_coverage.py cover the real
+    #   surfaces: validate_change + apply_change_to_roadmap_obj with
+    #   all 4 patch ops; scan_directory rule matrix (FORBIDDEN_TOKEN /
+    #   PRIVATE_KEY_MARKER / TOKEN_PREFIX_DETECTED) + findings_fingerprint
+    #   determinism; init_evidence_dir + write_step_evidence + the
+    #   SHA-256 integrity manifest envelope.
+    # Remaining roadmap omits (step_templates, exec_evidence, exec_steps,
+    # executor) stay deferred to v3.13+ larger tranches.
     "ao_kernel/_internal/prj_kernel_api/*",
-    "ao_kernel/_internal/roadmap/change_proposals.py",
-    "ao_kernel/_internal/roadmap/evidence.py",
     "ao_kernel/_internal/roadmap/exec_evidence.py",
     "ao_kernel/_internal/roadmap/exec_steps.py",
     "ao_kernel/_internal/roadmap/executor.py",
-    "ao_kernel/_internal/roadmap/sanitize.py",
     "ao_kernel/_internal/roadmap/step_templates.py",
     # v3.12 H3 (tranche 6): agent_context_version removed from omit;
     # test_internal_session_agent_context_version_coverage.py pins the
