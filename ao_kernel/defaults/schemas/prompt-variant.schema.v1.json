@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:prompt-variant:v1",
+  "title": "Prompt Variant",
+  "description": "A named prompt template operators author when running A/B / multi-variant prompt experiments. v3.12 E1 ships the declarative contract only: operators load the registry, pick a variant, and when starting a workflow run they stamp `intent.metadata.variant_id` with the chosen `variant_id` (and optionally `experiment_id`). ao-kernel does NOT yet orchestrate the A/B dispatch — that lands in a future release once operator-validated real-adapter smokes exist (see docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md prereq). Downstream analysis uses `ao_kernel.experiments.compare_variants` (E2) to pair `variant_id` with `step_record.capability_output_refs['review_findings']`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["variant_id", "version", "prompt_template"],
+  "properties": {
+    "variant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+      "description": "Stable identifier the operator references when stamping intent.metadata.variant_id. Must be unique within the registry; duplicates raise at load time."
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "description": "Operator-controlled version string (e.g. '1.0.0', 'v3', '2026-04-19'). Not parsed — consumed as opaque metadata."
+    },
+    "prompt_template": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The literal prompt body the operator hands to the adapter (via `{context_pack_ref}` in the real-adapter flow). No template substitution is performed by ao-kernel."
+    },
+    "expected_capability": {
+      "type": "string",
+      "enum": ["review_findings", "commit_message", "write_diff"],
+      "description": "Which capability the operator expects the variant to exercise. Used by `ao_kernel.experiments.compare_variants` to filter matching `step_record.capability_output_refs` entries. Closed enum — unknown values rejected at load."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Free-form operator metadata (e.g. experiment_id, branch, created_by, notes). Not validated beyond object shape."
+    }
+  }
+}
