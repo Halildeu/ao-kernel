@@ -19,6 +19,18 @@ final wrapper fn is substituted for tests.
   the real walker (`adapter_invoker._invocation_from_envelope`) so
   missing-`review_findings` negative tests pin the actual
   `output_parse` contract, not a mock-side approximation.
+
+**v3.7 F1 convention — fast-mode vs full-mode:**
+
+Tests in fast mode (the CI default, `--benchmark-mode=fast`) enter
+`mock_adapter_transport(...)` as a context manager to patch the
+transport layer. Tests marked ``@pytest.mark.full_mode`` run only
+under ``--benchmark-mode=full`` and MUST NOT invoke
+``mock_adapter_transport``; the real subprocess path dispatches
+with env-gated secrets + a real ``context_pack_ref`` resolved from
+an upstream ``compile_context`` step. Full-mode smoke tests live
+in a dedicated module (``test_full_mode_smoke.py``) to keep the
+fast-path suite deterministic.
 """
 
 from __future__ import annotations
@@ -86,10 +98,7 @@ def mock_adapter_transport(
         key: CannedKey = (scenario_id, adapter_id, attempt)
 
         if key not in canned:
-            raise MockEnvelopeNotFoundError(
-                f"no canned envelope for {key!r} — "
-                "fixture / mock drift (test-side bug)"
-            )
+            raise MockEnvelopeNotFoundError(f"no canned envelope for {key!r} — fixture / mock drift (test-side bug)")
 
         value = canned[key]
         if value is _TransportError:
@@ -99,10 +108,7 @@ def mock_adapter_transport(
             )
 
         if not isinstance(value, Mapping):
-            raise AssertionError(
-                f"canned envelope for {key!r} must be a dict; "
-                f"got {type(value).__name__}"
-            )
+            raise AssertionError(f"canned envelope for {key!r} must be a dict; got {type(value).__name__}")
 
         envelope_dict: Mapping[str, Any] = value
         # Delegate to the real walker so missing-payload tests pin
@@ -110,9 +116,12 @@ def mock_adapter_transport(
         return _invocation_from_envelope(
             envelope_dict,
             log_path=log_path,
-            elapsed=float(envelope_dict.get("cost_actual", {}).get(
-                "time_seconds", 0.0,
-            )),
+            elapsed=float(
+                envelope_dict.get("cost_actual", {}).get(
+                    "time_seconds",
+                    0.0,
+                )
+            ),
             command=f"benchmark-mock[{adapter_id}]",
             manifest=manifest,
         )
@@ -230,16 +239,11 @@ def _maybe_consume_budget(
 
 
 def _benchmark_log_path(
-    workspace_root: Path, run_id: str, adapter_id: str,
+    workspace_root: Path,
+    run_id: str,
+    adapter_id: str,
 ) -> Path:
-    return (
-        workspace_root
-        / ".ao"
-        / "evidence"
-        / "workflows"
-        / run_id
-        / f"adapter-{adapter_id}.stdout.log"
-    )
+    return workspace_root / ".ao" / "evidence" / "workflows" / run_id / f"adapter-{adapter_id}.stdout.log"
 
 
 def _ensure_log_parent(log_path: Path) -> None:
