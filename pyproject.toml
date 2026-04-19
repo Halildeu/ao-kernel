@@ -148,8 +148,20 @@ omit = [
     #   module + fake encoding class) + capability_model.py (registry
     #   load, resolve_manifest, probe overlay) pinned in
     #   test_internal_providers_coverage.py.
+    # - v3.12 H2a (tranche 5A): roadmap/{compiler, roadmap_checkpoint,
+    #   exec_contracts}.py removed from omit (all 89-97% transitive).
+    #   test_internal_roadmap_small_coverage.py pins the small missing
+    #   branches. roadmap/{change_proposals, sanitize, step_templates,
+    #   evidence, exec_evidence, exec_steps, executor}.py stay
+    #   omitted — deeper gaps deferred to v3.13 H2b/H2c tranches.
     "ao_kernel/_internal/prj_kernel_api/*",
-    "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
+    "ao_kernel/_internal/roadmap/change_proposals.py",
+    "ao_kernel/_internal/roadmap/evidence.py",
+    "ao_kernel/_internal/roadmap/exec_evidence.py",
+    "ao_kernel/_internal/roadmap/exec_steps.py",
+    "ao_kernel/_internal/roadmap/executor.py",
+    "ao_kernel/_internal/roadmap/sanitize.py",
+    "ao_kernel/_internal/roadmap/step_templates.py",
     # v3.12 H3 (tranche 6): agent_context_version removed from omit;
     # test_internal_session_agent_context_version_coverage.py pins the
     # error/edge branches (file_hash/_file_modified_at try-except,
