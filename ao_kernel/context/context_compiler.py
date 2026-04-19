@@ -1,8 +1,12 @@
-"""Context compiler — merge 3 lanes into relevance-scored, budget-aware context.
+"""Context compiler — merge 4 lanes into relevance-scored, budget-aware context.
 
 Lane 1: Active session decisions (most recent, ephemeral)
-Lane 2: Canonical decisions (promoted, permanent) — Faz 3 placeholder
+Lane 2: Canonical decisions (promoted, permanent) — from canonical_store
 Lane 3: Workspace facts (distilled cross-session) — from memory_distiller
+Lane 4: Promoted consultations (v3.6 E2) — typed agent-to-agent decisions
+        from ``ao_kernel.consultation.promotion.query_promoted_consultations``.
+        Caller supplies the already-loaded tuple; the compiler is pure and
+        does NOT perform any I/O (see plan §3.E2 + Codex iter-1 revision #1).
 
 Each item gets a relevance score based on:
     - Profile match (priority_prefixes)
@@ -16,11 +20,19 @@ Every included item carries selection_reason metadata.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ao_kernel.context.profile_router import ProfileConfig, get_profile
+
+if TYPE_CHECKING:
+    # Runtime-skipped to avoid a circular import: promotion.py imports
+    # canonical_store.query, which triggers ao_kernel.context.__init__,
+    # which loads this module. Annotations use string forward refs via
+    # `from __future__ import annotations` above.
+    from ao_kernel.consultation.promotion import PromotedConsultation
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +43,8 @@ class ContextItem:
 
     key: str
     value: Any
-    source_lane: str       # "session" | "canonical" | "fact"
-    relevance_score: float # 0.0-1.0
+    source_lane: str  # "session" | "canonical" | "fact"
+    relevance_score: float  # 0.0-1.0
     selection_reason: str  # why included/excluded
     included: bool = False
     token_estimate: int = 0
@@ -55,18 +67,25 @@ def compile_context(
     *,
     canonical_decisions: dict[str, Any] | None = None,
     workspace_facts: dict[str, Any] | None = None,
+    consultations: Sequence[PromotedConsultation] = (),
     profile: str | None = None,
     messages: list[dict[str, Any]] | None = None,
     enable_semantic_search: bool | None = None,
     embedding_config: Any | None = None,
     vector_store: Any | None = None,
 ) -> CompiledContext:
-    """Compile context from 3 lanes with relevance scoring and budget enforcement.
+    """Compile context from 4 lanes with relevance scoring and budget enforcement.
 
     Args:
         session_context: Current session context dict
         canonical_decisions: Promoted permanent decisions (Faz 3 — optional now)
         workspace_facts: Distilled workspace facts (from memory_distiller)
+        consultations: Promoted consultations to render in the
+            ``## Consultations`` section (v3.6 E2). MUST be
+            pre-loaded by the caller (``compile_context_sdk`` or
+            equivalent); the compiler is pure and does NOT query the
+            canonical store itself. Ordering is preserved — render
+            respects caller-supplied sort.
         profile: Explicit profile ID or None (auto-detect from messages)
         messages: Conversation messages (for profile auto-detection)
         enable_semantic_search: Enable semantic reranking (None = use profile/env).
@@ -82,6 +101,7 @@ def compile_context(
     # Resolve profile
     if profile is None and messages:
         from ao_kernel.context.profile_router import detect_profile
+
         profile = detect_profile(messages)
     profile_config = get_profile(profile)
 
@@ -139,33 +159,57 @@ def compile_context(
             used_chars += chars_needed
             included_count += 1
 
-        selection_log.append({
-            "key": item.key,
-            "lane": item.source_lane,
-            "score": round(item.relevance_score, 3),
-            "included": item.included,
-            "reason": item.selection_reason,
-        })
+        selection_log.append(
+            {
+                "key": item.key,
+                "lane": item.source_lane,
+                "score": round(item.relevance_score, 3),
+                "included": item.included,
+                "reason": item.selection_reason,
+            }
+        )
 
-    # Build preamble from included items
+    # Apply profile consultation cap (last-added-first-dropped per
+    # plan §3.E2) + enforce token budget (Codex iter-2 BLOCK #2 absorb
+    # — consultation lines must count toward max_tokens; previously
+    # they bypassed budget and also were not reflected in
+    # total_tokens / telemetry).
+    cap = max(0, profile_config.max_consultations)
+    capped_consultations = tuple(consultations[:cap]) if cap else ()
+    accepted_consultations: list[PromotedConsultation] = []
+    for record in capped_consultations:
+        rendered_line = _render_consultation(record)
+        line_chars = len(rendered_line) + 1  # trailing newline
+        if used_chars + line_chars > budget:
+            break
+        accepted_consultations.append(record)
+        used_chars += line_chars
+
+    # Build preamble from included items + budget-fit consultations
     preamble = _build_preamble(
         [i for i in items if i.included],
         profile_config,
+        consultations=tuple(accepted_consultations),
     )
+
+    total_tokens = used_chars // 4
 
     # Telemetry (optional subsystem per CLAUDE.md §7 — graceful fallback, debug log)
     try:
         from ao_kernel.telemetry import record_context_compile
+
         record_context_compile(
-            included_count, len(items) - included_count,
-            profile=profile_config.profile_id, total_tokens=used_chars // 4,
+            included_count,
+            len(items) - included_count,
+            profile=profile_config.profile_id,
+            total_tokens=total_tokens,
         )
     except Exception as e:
         logger.debug("context telemetry record skipped: %s", e)
 
     return CompiledContext(
         preamble=preamble,
-        total_tokens=used_chars // 4,
+        total_tokens=total_tokens,
         items_included=included_count,
         items_excluded=len(items) - included_count,
         profile_id=profile_config.profile_id,
@@ -310,10 +354,7 @@ def _apply_semantic_reranking(
         from ao_kernel.context.semantic_retrieval import semantic_search
 
         # Build decisions list from items for semantic_search
-        decisions_for_search = [
-            {"key": item.key, "value": item.value, "_embedding": None}
-            for item in items
-        ]
+        decisions_for_search = [{"key": item.key, "value": item.value, "_embedding": None} for item in items]
 
         # semantic_search needs pre-embedded decisions or API key;
         # if neither available, it returns [] — deterministic fallback
@@ -347,9 +388,28 @@ def _apply_semantic_reranking(
         pass  # Fail-open: semantic search is non-critical
 
 
-def _build_preamble(items: list[ContextItem], profile: ProfileConfig) -> str:
-    """Build formatted preamble from included items."""
-    if not items:
+def _render_consultation(record: PromotedConsultation) -> str:
+    """Compact one-line render for a promoted consultation entry.
+
+    Format: ``- [CNS-ID] topic VERDICT (from_agent→to_agent, resolved_at)``
+    with graceful fallback for any None edge field (strict core
+    guaranteed by the reader facade, lenient edges handled here).
+    """
+    topic = record.topic or "(topic unknown)"
+    from_agent = record.from_agent or "(from)"
+    to_agent = record.to_agent or "(to)"
+    resolved = record.resolved_at or "unresolved"
+    return f"- [{record.cns_id}] {topic} {record.final_verdict} ({from_agent}\u2192{to_agent}, {resolved})"
+
+
+def _build_preamble(
+    items: list[ContextItem],
+    profile: ProfileConfig,
+    *,
+    consultations: Sequence[PromotedConsultation] = (),
+) -> str:
+    """Build formatted preamble from included items + consultations."""
+    if not items and not consultations:
         return ""
 
     sections: dict[str, list[str]] = {"session": [], "canonical": [], "fact": []}
@@ -373,5 +433,9 @@ def _build_preamble(items: list[ContextItem], profile: ProfileConfig) -> str:
     if sections["fact"]:
         parts.append("## Workspace Facts")
         parts.extend(sections["fact"])
+
+    if consultations:
+        parts.append("## Consultations")
+        parts.extend(_render_consultation(rec) for rec in consultations)
 
     return "\n".join(parts)
