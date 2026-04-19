@@ -7,6 +7,60 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-04-20
+
+### Added — v3.13.0 Coverage Ratchet Final (3 PRs)
+
+**Context.** v3.12.0 shipped seven PRs (H1+H3+H2a+E1+E2+E3+P5) covering a mix of hygiene, Prompt Experiments, and polish. Two coverage-tranche follow-ups stayed open: deeper roadmap files (H2a deferred `compiler.py` + 7 remaining omits) and the session module's stateful members. v3.13 closes three of them in a focused coverage lane and picks up two absorbed Codex-review iteration BLOCKERs.
+
+**Scope:** 3 coverage PRs. v4.0 breaking prep (save_store removal + allow_overwrite flip) intentionally deferred — per Codex plan-time AGREE, v3.13 stays a pure hygiene release.
+
+**PR-H2b1 (#173) — roadmap small-trio coverage tranche 5B.**
+- `pyproject.toml::coverage.run.omit`: `_internal/roadmap/{change_proposals, sanitize, evidence}.py` pulled in.
+- `tests/test_internal_roadmap_small_trio_coverage.py` (new, 44 pins total): 40 first-pass + 4 Codex iter-1 absorb.
+- **Real API pins per Codex plan-time guardrail:** `change_proposals` exercises `validate_change()` + `apply_change_to_roadmap_obj()` with all 4 patch ops (`append_milestone_note`, `replace_milestone_notes`, `replace_milestone_steps`, `replace_milestone_title`) + fail-closed guards (`CHANGE_INVALID` / `CHANGE_TYPE_UNSUPPORTED` / `PATCH_OP_UNSUPPORTED`); `sanitize` pins the `scan_directory()` rule matrix (`FORBIDDEN_TOKEN` / `PRIVATE_KEY_MARKER` / `TOKEN_PREFIX_DETECTED`) + `findings_fingerprint()` determinism; `evidence` covers `init_evidence_dir()` + `write_step_evidence()` + `write_integrity_manifest()` SHA-256 envelope.
+- Codex iter-1 REVISE absorb: two missing `change_proposals` fail-closed guards (`patch entry must be an object`, `patch.milestone_id missing`) + `EMAIL_DETECTED` branch in `sanitize` now directly exercised via `scan_directory()`. Paired regression pin documents a raw-string regex bug (literal `\\.` instead of `\.` in `sanitize.py:39`): current behaviour matches only `user@example\.com`, not normal emails — follow-up bug fix tracked separately.
+- Coverage 85.42% → +0.39% delta.
+
+**PR-H2b-compiler (#174) — `compiler.py` real-API coverage + drop stale DEFER.**
+- `tests/test_internal_roadmap_compiler_coverage.py` (new, 18 pins) writes fresh pins directly against the live `compile_roadmap(roadmap_path=..., schema_path=..., cache_root=...)` surface.
+- `tests/test_internal_roadmap_small_coverage.py`: `_TestCompilerInvariantGuards_DEFER` class removed — it targeted a stale `plan_path=` kwarg and `"id"` roadmap field that don't exist in the live API (real roadmap shape uses `roadmap_id` + `version` + `milestones`). Per Codex plan-time directive, deferred pins were rewritten from scratch rather than revived.
+- Covers all missing branches from the 83% transitive baseline: `validate_roadmap` json_path error anchor, `ROADMAP_SCHEMA_INVALID` / `ROADMAP_INVALID` / `ROADMAP_MILESTONE_NOT_FOUND` raises, non-dict milestone skip, no-filter string-id tracking, `iso_core_required` preflight injection, `global_gates` → `GLOBAL:G:NNN` IDs, `deliverables` fallback paths (`steps` primary + `deliverables` elif), `out_path` additional-copy write, plan fingerprint differs on milestone filter.
+- Compiler transitive coverage: 83% → ~100%.
+- Follow-up flagged: `compiler.py:139` accesses `ms["id"]` unguarded — no-id dict crashes with `KeyError`. Pre-existing bug; test fixture intentionally excludes the no-id case.
+
+**PR-H3c (#175) — `_internal/session/provider_memory.py` coverage tranche 6B.**
+- `pyproject.toml::coverage.run.omit`: `provider_memory.py` pulled in. `cross_session_context.py` intentionally stays omitted (multi-session aggregation + prune/save + hierarchical merge deferred to a v3.14+ tranche per Codex plan-time split).
+- `tests/test_internal_session_provider_memory_coverage.py` (new, 30 pins) uses a **real** schema-valid session-context harness (`new_context()` + `save_context_atomic()`) rather than mocking `load_context` — schema round-trip + hash computation are exercised alongside the tested logic.
+- Covered surfaces: `_safe_slug` regex normalization + fallback, `resolve_auto_compact_token_limit` codex-config guards (exception / non-dict / missing effective / non-numeric), `read_provider_session_state` memory_strategy branches + provider match/mismatch + `compaction_summary_ref` on completed vs idle, `maybe_auto_compact_markdown` threshold guards + archive + summary + session update, `persist_provider_result` missing/happy/invalid, `_render_compaction_summary` structured + fallback + CRLF normalization.
+- Coverage 85.42% → +0.33% delta (H3c-only; cumulative with H2b1 + H2b-compiler lands at ~85.8%).
+
+### Changed
+
+- `tests/test_internal_roadmap_small_coverage.py`: docstring rewritten to cross-ref the new H2b1 + H2b-compiler companion files. Unused `import pytest` removed after deferred-class deletion.
+
+### Fixed (follow-up fixes folded from v3.12)
+
+- CHANGELOG v3.12 follow-up block had stale session-module filenames (`compaction.py` + `distillation.py` — those files don't exist; actual members are `compaction_engine.py` and `memory_distiller.py`, and the true omitted pair was `cross_session_context.py` + `provider_memory.py`). The stale names were correct at plan-time but drifted away from the omit list during H3 rewording. v3.13 H3c closed the `provider_memory.py` half; remaining omit is just `cross_session_context.py`.
+
+### Migration note
+
+- No runtime behaviour change. All three PRs are pure test + coverage-gate surface changes. Operators using `compile_roadmap` continue to pass `roadmap_path` + `schema_path` + `cache_root` — no signature drift.
+- Consumers subclassing or importing from `_internal/*` (not supported per D1) may want to note that `provider_memory.py` and the roadmap small-trio are now under the 85% coverage ratchet; behaviour isn't affected, but new pins will flag regressions more aggressively.
+
+### Known follow-ups (post-v3.13)
+
+- `sanitize.py:39` email regex raw-string bug (`r"...\\.[A-Z]{2,}"` should be `r"...\.[A-Z]{2,}"`) — `EMAIL_DETECTED` branch currently only fires on weird backslash-dot inputs. Two paired pins in `test_internal_roadmap_small_trio_coverage.py` (positive + negative) document current behaviour; the regex fix will flip the negative pin and the pair collapses to a single real-world positive pin.
+- `compiler.py:139` `ms_id = str(ms["id"])` accesses the key unguarded — dicts in the no-filter path that lack `"id"` crash with `KeyError`. Skip the dict in the filter's append loop or use `.get("id", "")` with a guard.
+- `_internal/roadmap/` remaining omits (`change_proposals` now in scope) still leave `step_templates`, `exec_evidence`, `exec_steps`, `executor` outside the ratchet — deferred to v3.14+ larger tranches.
+- `_internal/session/cross_session_context.py` — final session-module omit, deferred to v3.14+ (multi-session aggregation + prune/save + hierarchical merge is more stateful; needs a dedicated fixture harness).
+
+### v4.0 gates (tracked)
+
+- `save_store()` removal (deprecated since v3.0.0; `canonical_store.py:132`).
+- `allow_overwrite` default flip `True → False` on `promote_decision` + `forget` (CAS-first contract).
+- FAZ-C feature surface: streaming cost tracking, Aider-style patch primitive, `governed_bugfix` full flow, retry/chaos benchmark variants, Windows platform.
+
 ## [3.12.0] - 2026-04-20
 
 ### Added — v3.12.0 Hygiene + Prompt Experiments (7 PRs)
