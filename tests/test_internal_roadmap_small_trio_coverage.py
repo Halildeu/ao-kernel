@@ -385,6 +385,39 @@ class TestApplyChangePatchOps:
                 },
             )
 
+    def test_non_dict_patch_entry_raises(self) -> None:
+        """Codex iter-1 absorb: patch entry must be an object."""
+        from ao_kernel._internal.roadmap.change_proposals import (
+            apply_change_to_roadmap_obj,
+        )
+
+        with pytest.raises(ValueError, match="patch entry must be an object"):
+            apply_change_to_roadmap_obj(
+                roadmap_obj={"milestones": [{"id": "M1"}]},
+                change_obj={
+                    "type": "modify",
+                    "target": {"milestone_id": "M1"},
+                    "patches": ["not-a-dict"],
+                },
+            )
+
+    def test_missing_patch_milestone_id_raises(self) -> None:
+        """Codex iter-1 absorb: patch.milestone_id must be a non-empty
+        string. Empty / missing surfaces as CHANGE_INVALID."""
+        from ao_kernel._internal.roadmap.change_proposals import (
+            apply_change_to_roadmap_obj,
+        )
+
+        with pytest.raises(ValueError, match="patch.milestone_id missing"):
+            apply_change_to_roadmap_obj(
+                roadmap_obj={"milestones": [{"id": "M1"}]},
+                change_obj={
+                    "type": "modify",
+                    "target": {"milestone_id": "M1"},
+                    "patches": [{"op": "append_milestone_note", "note": "n"}],  # no milestone_id
+                },
+            )
+
 
 # ---------------------------------------------------------------------------
 # sanitize.py
@@ -434,6 +467,43 @@ class TestSanitizeScanDirectory:
         ok, findings = scan_directory(root=tmp_path, forbidden_tokens=["", "   "])
         assert ok is True
         assert findings == []
+
+    def test_email_detected_triggers_rule(self, tmp_path: Path) -> None:
+        """Codex iter-1 absorb: exercise the ``EMAIL_DETECTED`` branch
+        of ``scan_directory``.
+
+        The email regex at ``sanitize.py:39`` is
+        ``r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}"`` — the raw string's
+        ``\\.`` is two literal characters (``\`` + ``.``), which makes
+        the regex match only strings that literally contain a backslash
+        before the TLD (e.g. ``user@example\.com``). Normal emails do
+        NOT match. This pin documents current behaviour so a later
+        regex fix (tracked as a separate follow-up) will notice the
+        contract change.
+        """
+        from ao_kernel._internal.roadmap.sanitize import scan_directory
+
+        # NB: the backslash is literal on disk — that's what the buggy
+        # regex currently requires to fire.
+        (tmp_path / "mail.txt").write_text(r"contact: user@example\.com", encoding="utf-8")
+        ok, findings = scan_directory(root=tmp_path)
+        assert ok is False
+        rules = {f.rule for f in findings}
+        assert "EMAIL_DETECTED" in rules
+
+    def test_email_regex_current_does_not_match_normal_address(self, tmp_path: Path) -> None:
+        """Regression companion for the pin above: a *normal* email
+        address (no backslash before the TLD) currently does NOT fire
+        ``EMAIL_DETECTED`` because of the same raw-string bug. When the
+        regex is fixed, this pin flips to a failure and flags the
+        change — operator replaces the two-pin pair with a single
+        real-world pin."""
+        from ao_kernel._internal.roadmap.sanitize import scan_directory
+
+        (tmp_path / "plain.txt").write_text("contact: user@example.com", encoding="utf-8")
+        _, findings = scan_directory(root=tmp_path)
+        rules = {f.rule for f in findings}
+        assert "EMAIL_DETECTED" not in rules
 
     def test_private_key_marker_triggers_rule(self, tmp_path: Path) -> None:
         from ao_kernel._internal.roadmap.sanitize import scan_directory
