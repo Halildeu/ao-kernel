@@ -11,9 +11,10 @@ Two scenarios ship:
 | Scenario | Workflow (B7 v1) | Capability matrix | Runtime PR |
 |---|---|---|---|
 | `governed_bugfix` | `tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json` (bench variant — full bundled [`bug_fix_flow.v1.json`](../ao_kernel/defaults/workflows/bug_fix_flow.v1.json) deferred to B7.1 pending git/pytest sandbox allowlist) | `read_repo` + `write_diff` | PR-B7 v1 |
-| `governed_review` | [`review_ai_flow.v1.json`](../ao_kernel/defaults/workflows/review_ai_flow.v1.json) (bundled) | `read_repo` + `review_findings` | PR-B7 v1 |
+| `governed_review` | [`review_ai_flow.v1.json`](../ao_kernel/defaults/workflows/review_ai_flow.v1.json) (bundled, pinned at `codex-stub`) | `read_repo` + `review_findings` | PR-B7 v1 |
+| `governed_review_claude_code_cli` | [`governed_review_claude_code_cli.v1.json`](../ao_kernel/defaults/workflows/governed_review_claude_code_cli.v1.json) (bundled, real-adapter) | `read_repo` + `review_findings` | v3.10 A2 / PR #157 |
 
-Both run under `tests/benchmarks/` with a shared runner (PR-B7). See §8 for the runner invocation + scoring threshold contract + B7 v1 scope trim.
+Both run under `tests/benchmarks/` with a shared runner (PR-B7). See §8 for the runner invocation + scoring threshold contract + B7 v1 scope trim. The `governed_review_claude_code_cli` real-adapter variant is **operator-driven only** — ao-kernel CI stays on the deterministic `codex-stub` path. See [`BENCHMARK-REAL-ADAPTER-RUNBOOK.md`](./BENCHMARK-REAL-ADAPTER-RUNBOOK.md) for the full operator setup (workspace override, secret flow, prompt contract, disposable sandbox repo pattern).
 
 ## 2. Typed Artifact Contract (`governed_review`)
 
