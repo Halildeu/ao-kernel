@@ -128,20 +128,23 @@ omit = [
     "*/_test*",
     "*/conftest.py",
     # _internal: aşamalı dahil etme (D13). Test edilen modüller dahil, geri kalan omit.
-    # v3.8 H1 tranche 1: `_internal/secrets/*` removed from omit
-    # (87% coverage; test_api_key_resolver + test_secrets_deep +
-    # test_secrets_factory cover it). `_internal/shared/*` stays
-    # omit for now — it's exercised transitively by many tests but
-    # direct coverage still has gaps in cleanup/race branches
-    # (tracked as a post-v3.8 tranche; H1 is deliberately small).
+    # Tranche history (chronological, each one removed a submodule from omit):
+    # - v3.8 H1 tranche 1: `_internal/secrets/*` removed (test_api_key_resolver
+    #   + test_secrets_deep + test_secrets_factory cover it; ~87% after pins).
+    # - v3.9 post-release M1 (tranche 2): `_internal/utils/*` removed.
+    #   budget.py + jsonio.py (38 LOC) already ~80% transitive;
+    #   test_internal_utils_coverage.py pins empty/non-str, load_json
+    #   roundtrip, to_canonical_json unicode + sort semantics.
+    # - v3.11 P4 (tranche 3): `_internal/shared/*` removed. lock.py /
+    #   logger.py / resource_loader.py / utils.py already 86-98%
+    #   transitive; test_internal_shared_coverage.py pins remaining
+    #   reachable branches (Windows platform guard, AO_LOG_LEVEL env
+    #   var, repo-root fallback, jsonschema ImportError guard).
+    #   `lock.py` flock release-failure + timeout race paths stay
+    #   uncovered by design (need a second-process fixture; overall
+    #   gate still holds).
     "ao_kernel/_internal/prj_kernel_api/*",
     "ao_kernel/_internal/providers/*",
-    "ao_kernel/_internal/shared/*",
-    # v3.9 post-release M1 (C1 tranche 2): `_internal/utils/*` removed
-    # from omit. budget.py + jsonio.py (38 LOC total) are already ~80%
-    # covered transitively; test_internal_utils_coverage.py adds
-    # targeted pins for the remaining edge cases (empty/non-str,
-    # load_json roundtrip, to_canonical_json unicode + sort semantics).
     "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
     "ao_kernel/_internal/session/agent_context_version.py",
     "ao_kernel/_internal/session/cross_session_context.py",
