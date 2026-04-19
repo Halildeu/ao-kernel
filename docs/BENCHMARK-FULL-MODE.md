@@ -1,92 +1,94 @@
-# Benchmark Full Mode — Operator Runbook (v3.7 F1)
+# Benchmark Full Mode — Scaffold + Operator Forward Reference (v3.7 F1)
 
-**Status:** v3.7 F1 opt-in. The default PR CI path is unchanged (`--benchmark-mode=fast` remains the deterministic mock-transport surface; see [`BENCHMARK-SUITE.md`](BENCHMARK-SUITE.md)).
+**Status:** v3.7 F1 — **scaffold only**. The first real full-mode smoke lands in v3.7 F2. Default PR CI is unchanged (`--benchmark-mode=fast` remains the deterministic mock-transport surface; see [`BENCHMARK-SUITE.md`](BENCHMARK-SUITE.md)).
 
-Full mode bypasses the mock transport and dispatches to the real adapter subprocess path. It is **ops-only** — do NOT wire into the default CI matrix. Use this runbook when you need to validate a real end-to-end adapter invocation (e.g., before cutting a release, or when diagnosing an adapter manifest drift).
+## What F1 actually ships
 
----
+F1 wires the opt-in surface but does NOT include a runnable real-adapter smoke test:
 
-## 1. Prerequisites
+1. `pytest_addoption --benchmark-mode=fast|full` is registered in `tests/benchmarks/conftest.py`.
+2. A new `@pytest.mark.full_mode` marker gates real-adapter tests at collection time.
+3. `benchmark_mode` fixture resolves the mode string for fixture wiring.
+4. `mock_adapter_transport` docstring pins the convention (fast = patch, full = bypass).
+5. Bundled `policy_secrets.v1.json` allowlist canonicalized + backward-compat (5-entry set).
+6. `context_pack_ref` real-artefact contract pinned via a fast-mode test (so F2 can rely on it).
 
-### 1.1 Binaries on `$PATH`
+F1 does NOT ship a callable `@full_mode` test. Under `--benchmark-mode=full` the collection hook skips every non-`@full_mode` benchmark test and the remainder of the suite collects 0 runnable tests. That is intentional — the first real smoke lands in F2.
 
-Every adapter the benchmark scenarios exercise must be invokable from the shell:
+## Why the smoke isn't in F1
 
-- `claude` — Claude Code CLI (for the `claude-code-cli` adapter)
-- `gh` — GitHub CLI (for the `gh-cli-pr` adapter)
-- `git` — baseline repo ops
-- `pytest` — already required for running the suite
+The bundled bench workflows (`review_ai_flow`, `governed_bugfix_bench`) reference the `codex-stub` local Python helper as their adapter. A genuine real-adapter smoke (one that exercises `claude-code-cli` or `gh-cli-pr` with env-gated secrets) requires three changes that are **F2 scope**:
 
-### 1.2 Secrets
+1. A bench workflow variant pointing at real adapter manifests.
+2. `claude-code-cli.manifest.v1.json` to advertise the `review_findings` capability (today absent).
+3. Workspace override enabling `policy_worktree_profile` (bundled default is dormant, `enabled=false`, secret allowlist empty).
 
-Full mode resolves secrets through the existing `_internal/secrets` env provider. The **bundled** `policy_secrets.v1.json` allowlist accepts both the canonical and legacy variants (v3.7 F1 backward-compat):
+Without those three, a full-mode "smoke" would either skip silently on prerequisites or fail in misleading places (policy check, capability gap, etc.). Codex post-impl review flagged this as a BLOCK against F1; the response is to narrow F1 to scaffold and route the smoke to F2.
 
-| Role | Canonical (runbook-preferred) | Legacy alias (also allowed) |
+## Forward reference for operators (F2+ wiring)
+
+This section records what operators will need when F2 lands a real-adapter smoke. **Do not configure any of this today in response to F1 alone** — nothing in F1 consumes these settings in an actionable path.
+
+### Binaries
+
+| Role | Binary |
+|---|---|
+| Anthropic Claude | `claude` (Claude Code CLI) |
+| GitHub CLI | `gh` |
+
+### Secret environment variables
+
+The bundled `policy_secrets.v1.json` allowlist accepts both the canonical and legacy variants (v3.7 F1 backward-compat widening):
+
+| Role | Canonical (docs-preferred) | Legacy alias (also allowed) |
 |---|---|---|
 | Anthropic Claude | `ANTHROPIC_API_KEY` | `CLAUDE_API_KEY` |
 | GitHub CLI | `GH_TOKEN` | `GITHUB_TOKEN` |
 | OpenAI (embeddings / router fallback) | `OPENAI_API_KEY` | — |
 
-Export whichever variant you have in your environment before invoking the suite:
+> **Actual fail-close gate** is `policy_worktree_profile.v1.json::secrets.allowlist_secret_ids`. The bundled `policy_secrets.v1.json` is the registry / docs canonical surface; the worktree-profile is what the adapter runtime enforces on invocation.
 
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-export GH_TOKEN=ghp_...
-export OPENAI_API_KEY=sk-...     # optional — only needed if your workspace touches embedding / OpenAI routing
-```
-
-> **Actual fail-close gate** is the workspace-level `policy_worktree_profile.v1.json::secrets.allowlist_secret_ids`. Make sure that allowlist includes whatever env names you actually export; the bundled `policy_secrets.v1.json` is the registry/docs canonical — the worktree-profile is what the adapter runtime enforces on invocation.
-
-### 1.3 Workspace profile
-
-Full-mode benchmarks open subprocess shells against real adapters. At minimum:
+### Workspace profile
 
 - `policy_worktree_profile.enabled = true` with a secrets allowlist that matches your exports.
-- `policy_cost_tracking.enabled = true` if you want spend events to reach the real reconcile path. (Bundled default is dormant; v3.7 F2 closes the scorecard wiring so a full-mode run with tracking enabled produces `cost_source="real_adapter"` in the scorecard.)
+- `policy_cost_tracking.enabled = true` if you want spend events to reach the reconcile path (F2 ships the matching scorecard label `cost_source="real_adapter"`).
 
-### 1.4 Disposable target repo
+### Disposable target repo
 
-`gh-cli-pr` opens a **real PR** against whichever repo the CWD resolves to. Do NOT run full mode inside the ao-kernel main repo checkout. Instead:
-
-1. Clone ao-kernel into a scratch location.
-2. Create or reuse a disposable sandbox repo on GitHub that you can freely delete branches + PRs on.
-3. Make that sandbox repo the CWD when invoking pytest.
+`gh-cli-pr` opens real PRs against the CWD's upstream. When F2 wires a smoke that exercises it, use a disposable sandbox clone, NEVER your main ao-kernel checkout.
 
 ---
 
-## 2. Running
+## Running
+
+Today (F1):
 
 ```bash
-# From your disposable sandbox clone
+# Fast mode (default) — unchanged behaviour
+pytest tests/benchmarks/ -q
+```
+
+```bash
+# Full mode — scaffold exists, 0 runnable tests (until F2)
 pytest tests/benchmarks/ --benchmark-mode=full -q
 ```
 
-Only tests carrying `@pytest.mark.full_mode` run in this mode. The fast-mode suite is skipped automatically when `full` is passed (and vice-versa).
+Fast mode skips `@full_mode` tests; full mode skips everything else in `tests/benchmarks/`.
 
-Default heartbeat — run a single scenario first:
-
-```bash
-pytest tests/benchmarks/test_full_mode_smoke.py::TestFullModeGovernedReview \
-  --benchmark-mode=full -q
-```
+Post-F2, the same `--benchmark-mode=full` invocation will run the F2-added real-adapter smoke.
 
 ---
 
-## 3. Rollback
+## Rollback
 
-Full mode only affects the `tests/benchmarks/` suite. If a full-mode run leaves artefacts on your sandbox repo:
-
-- PRs: close via `gh pr close <number>`.
-- Branches: delete via `git push origin --delete <branch>`.
-- Local `.ao/` state: `git clean -xdf .ao/` (if this is a scratch clone; NEVER run in your main working tree).
-
-No default CI job is touched by this runbook. `.github/workflows/test.yml` remains identical to the pre-v3.7 shape.
+F1 does not introduce any stateful side-effects on disk. No default CI job is touched. `.github/workflows/test.yml` remains identical to the pre-v3.7 shape.
 
 ---
 
-## 4. See also
+## See also
 
 - [`docs/BENCHMARK-SUITE.md`](BENCHMARK-SUITE.md) — fast-mode contract + scenario catalog
 - [`docs/ADAPTERS.md`](ADAPTERS.md) — adapter manifest shape + secrets flow
-- [`docs/WORKTREE-PROFILE.md`](WORKTREE-PROFILE.md) — policy surface for allowlisted secrets / sandbox settings
+- [`docs/WORKTREE-PROFILE.md`](WORKTREE-PROFILE.md) — policy surface that will gate real-adapter secrets
 - [`tests/benchmarks/conftest.py`](../tests/benchmarks/conftest.py) — `--benchmark-mode` option + `benchmark_mode` fixture + `full_mode` marker
+- [`.claude/plans/PR-v3.7-BENCHMARK-REALISM-DRAFT-PLAN.md`](../.claude/plans/PR-v3.7-BENCHMARK-REALISM-DRAFT-PLAN.md) — v3.7 plan; see §3.F2 for the real-adapter follow-up scope

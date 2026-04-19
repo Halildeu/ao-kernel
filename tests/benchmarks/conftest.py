@@ -1,21 +1,24 @@
 """Shared fixtures for PR-B7 benchmarks.
 
-v3.7 F1: `--benchmark-mode=fast|full` pytest option (default `fast`).
-Fast mode patches adapter transport via ``mock_adapter_transport``;
-full mode bypasses the mock and exercises the real `invoke_cli` /
-`invoke_http` subprocess path (ops-only, env-gated secrets, real
-`context_pack_ref` resolved from an actual ``compile_context`` step).
+v3.7 F1 (scaffold only): `--benchmark-mode=fast|full` pytest option
+(default `fast`). Fast mode patches adapter transport via
+``mock_adapter_transport``; full mode bypasses the mock so tests
+marked ``@pytest.mark.full_mode`` can exercise the real subprocess
+path. Collection hook skips non-matching tests per mode so the
+default CI surface is identical to pre-v3.7.
 
-Full-mode smoke tests carry ``@pytest.mark.full_mode``; the option
-gates them via collection-time skip so the default CI surface is
-identical to pre-v3.7.
+**F1 ships the scaffold, not a runnable real-adapter smoke.** The
+`@full_mode` marker + collection hook exist so v3.7 F2 can add the
+first genuine smoke without re-pluming the harness. Under
+`--benchmark-mode=full` today F1 collects 0 runnable tests.
+Rationale + forward reference: `docs/BENCHMARK-FULL-MODE.md`.
 
 v3.5 D3: scorecard collector hooks are wired here via
 :mod:`ao_kernel._internal.scorecard.collector`. Primary tests tag
 themselves with ``@pytest.mark.scorecard_primary`` and expose a
 :class:`PrimarySidecar` via the ``benchmark_primary_sidecar`` fixture.
-**Full-mode tests are NOT `scorecard_primary`** — real-adapter
-scorecard path lands in v3.7 F2; F1 keeps the contract minimal.
+**Full-mode tests must NOT be `scorecard_primary`** — real-adapter
+scorecard path lands in v3.7 F2.
 """
 
 from __future__ import annotations
@@ -68,19 +71,35 @@ def pytest_collection_modifyitems(
     config: pytest.Config,
     items: list[pytest.Item],
 ) -> None:
-    """Skip ``@pytest.mark.full_mode`` tests unless ``--benchmark-mode=full``.
+    """Gate benchmark tests by ``--benchmark-mode`` (v3.7 F1 absorb of
+    Codex post-impl MEDIUM — code-docs parity).
 
-    v3.7 F1 — keeps default CI (fast mode) identical to pre-v3.7.
+    - ``fast`` (default): skip every ``@pytest.mark.full_mode`` test so
+      default CI stays identical to pre-v3.7.
+    - ``full``: skip every non-``@full_mode`` benchmark test so ops
+      runs focus on real-subprocess smokes (mock-based fast-mode
+      tests are intentionally NOT co-executed).
+
+    Only benchmark-suite items are gated; tests elsewhere in the repo
+    ignore the option entirely.
     """
     mode = config.getoption("--benchmark-mode")
-    if mode == "full":
-        return
     skip_full = pytest.mark.skip(
         reason="full_mode only runs under --benchmark-mode=full",
     )
+    skip_fast = pytest.mark.skip(
+        reason="fast-mode tests are skipped under --benchmark-mode=full",
+    )
     for item in items:
-        if "full_mode" in item.keywords:
-            item.add_marker(skip_full)
+        nodeid = getattr(item, "nodeid", "")
+        is_benchmark = "tests/benchmarks/" in nodeid
+        has_full_marker = "full_mode" in item.keywords
+        if mode == "full":
+            if is_benchmark and not has_full_marker:
+                item.add_marker(skip_fast)
+        else:  # fast
+            if has_full_marker:
+                item.add_marker(skip_full)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -121,7 +140,18 @@ def pytest_sessionfinish(
     benchmark job. Previously the exception was log-only, which made
     misconfiguration silently-green under CI. Now we propagate a
     non-zero pytest exit code via ``session.exitstatus``.
+
+    v3.7 F1 iter-2 absorb: under ``--benchmark-mode=full`` every
+    fast-mode (`scorecard_primary`-marked) test is skipped, so the
+    canonical primary set is legitimately empty. Suppress the
+    scorecard invariant in that mode — the scorecard surface is a
+    fast-mode-only contract today; F2's real-adapter smokes will
+    land their own scorecard path.
     """
+    mode = session.config.getoption("--benchmark-mode")
+    if mode == "full":
+        return
+
     registry = _registry(session.config)
     try:
         finalize_session(registry)
