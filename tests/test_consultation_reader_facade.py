@@ -230,6 +230,60 @@ class TestMalformedRowSkip:
         assert [rec.cns_id for rec in result] == ["CNS-GOOD"]
 
 
+class TestHydrationFallbacks:
+    """Codex post-impl SUGGEST #2 absorb — pin the derived-confidence
+    and None-provenance fallback branches. Default test helper was
+    populating these fields so the fallback code was not regression-
+    pinned."""
+
+    def test_confidence_derived_from_verdict_when_absent(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        entry = _canonical_entry("CNS-NC", verdict="PARTIAL")
+        entry.pop("confidence")  # simulate missing top-level field
+        _write_store(tmp_path, {"consultation.CNS-NC": entry})
+        result = query_promoted_consultations(tmp_path)
+        assert len(result) == 1
+        # verdict_confidence("PARTIAL") == 0.7
+        assert result[0].confidence == pytest.approx(0.7)
+
+    def test_provenance_fields_none_tolerated(self, tmp_path: Path) -> None:
+        entry = _canonical_entry(
+            "CNS-NP",
+            record_digest=None,
+            evidence_path=None,
+        )
+        _write_store(tmp_path, {"consultation.CNS-NP": entry})
+        result = query_promoted_consultations(tmp_path)
+        assert len(result) == 1
+        assert result[0].record_digest is None
+        assert result[0].evidence_path is None
+
+
+class TestCategoryAuthoritative:
+    """Codex post-impl SUGGEST #1 absorb — facade authoritative filter
+    is `category`, NOT key prefix. A row correctly categorised as
+    `consultation` but stored under some other canonical key must
+    still hydrate (future store-format drift defence)."""
+
+    def test_row_with_non_namespaced_key_still_hydrates(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        entry = _canonical_entry("CNS-OFF-KEY")
+        _write_store(
+            tmp_path,
+            {
+                # Deliberately off-namespace canonical key with correct
+                # category. Facade must still surface this row.
+                "decision.legacy.CNS-OFF-KEY": entry,
+            },
+        )
+        result = query_promoted_consultations(tmp_path)
+        assert [rec.cns_id for rec in result] == ["CNS-OFF-KEY"]
+
+
 class TestDuplicateDedup:
     def test_two_rows_same_cns_id_dedup_by_promoted_at(
         self,

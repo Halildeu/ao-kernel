@@ -385,9 +385,14 @@ def query_promoted_consultations(
         ``promoted_at`` descending (newest first). Empty tuple when
         the store is empty or has no consultation entries.
     """
+    # Filter by category only — do NOT constrain key_pattern.
+    # Codex post-impl SUGGEST #1 absorb: `key_pattern="consultation.*"`
+    # re-introduces the namespaced-key assumption the facade was
+    # supposed to abstract away. Category is the sole authoritative
+    # filter; a row with `category="consultation"` but some other key
+    # must still hydrate.
     raw = canonical_query(
         workspace_root,
-        key_pattern="consultation.*",
         category="consultation",
         include_expired=include_expired,
     )
