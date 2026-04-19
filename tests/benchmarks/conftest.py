@@ -3,6 +3,11 @@
 `--benchmark-mode` flag intentionally NOT exposed — fast mode is
 the only mode B7 ships (full real-adapter mode deferred to B7.1
 per plan v5 §7).
+
+v3.5 D3: scorecard collector hooks are wired here via
+:mod:`ao_kernel._internal.scorecard.collector`. Primary tests tag
+themselves with ``@pytest.mark.scorecard_primary`` and expose a
+:class:`PrimarySidecar` via the ``benchmark_primary_sidecar`` fixture.
 """
 
 from __future__ import annotations
@@ -12,14 +17,94 @@ import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 import pytest
 
+from ao_kernel._internal.scorecard.collector import (
+    PrimarySidecar,
+    ScorecardRegistry,
+    finalize_session,
+)
 from tests._driver_helpers import build_driver, install_workspace
 
 
 _BUNDLED_ROOT = Path(__file__).resolve().parents[2] / "ao_kernel" / "defaults"
+
+_REGISTRY_ATTR = "_ao_scorecard_registry"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "scorecard_primary(scenario_id=None): mark the canonical "
+        "happy-path test for a scorecard scenario. Exactly one per "
+        "canonical scenario; duplicates and missing primaries both "
+        "fail-close at session finish.",
+    )
+    setattr(config, _REGISTRY_ATTR, ScorecardRegistry())
+
+
+def _registry(config: pytest.Config) -> ScorecardRegistry:
+    reg = getattr(config, _REGISTRY_ATTR, None)
+    if reg is None:
+        reg = ScorecardRegistry()
+        setattr(config, _REGISTRY_ATTR, reg)
+    return reg
+
+
+def pytest_sessionfinish(
+    session: pytest.Session,
+    exitstatus: int,
+) -> None:
+    """Finalize the scorecard at session end.
+
+    Codex post-impl review BLOCKER fix: canonical-input invariant
+    violations (duplicate or missing primary markers) MUST fail the
+    benchmark job. Previously the exception was log-only, which made
+    misconfiguration silently-green under CI. Now we propagate a
+    non-zero pytest exit code via ``session.exitstatus``.
+    """
+    registry = _registry(session.config)
+    try:
+        finalize_session(registry)
+    except Exception as exc:
+        session.config.get_terminal_writer().line(
+            f"scorecard finalize failed: {exc}",
+            red=True,
+        )
+        # pytest ExitCode.USAGE_ERROR=4 signals "misconfigured suite"
+        # which is the right category here (canonical marker contract
+        # broken). Respect pre-existing failures by taking the max.
+        misconfig = int(pytest.ExitCode.USAGE_ERROR)
+        if int(session.exitstatus or 0) < misconfig:
+            session.exitstatus = pytest.ExitCode(misconfig)
+
+
+@pytest.fixture
+def benchmark_primary_sidecar(request: pytest.FixtureRequest) -> Callable[..., PrimarySidecar]:
+    """Factory fixture — primary-marked tests call this once per run
+    with the scenario_id + run_dir they exercised."""
+
+    registry = _registry(request.config)
+
+    def _record(
+        scenario_id: str,
+        run_dir: Path,
+        *,
+        run_state_path: Path | None = None,
+        review_findings_path: Path | None = None,
+    ) -> PrimarySidecar:
+        sidecar = PrimarySidecar(
+            scenario_id=scenario_id,
+            run_dir=Path(run_dir),
+            run_state_path=(Path(run_state_path) if run_state_path else None),
+            review_findings_path=(Path(review_findings_path) if review_findings_path else None),
+        )
+        registry.record(sidecar)
+        return sidecar
+
+    return _record
 
 
 def _now_iso() -> str:

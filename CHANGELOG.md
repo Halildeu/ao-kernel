@@ -7,6 +7,36 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — v3.5.0 D3 Dev Scorecard (benchmark compare + PR comment)
+
+**Context.** PR-B7 emits benchmark run-dir events + capability artefacts, but there was no aggregated surface for comparing a PR's benchmark output against the main-branch baseline or posting a compact scorecard comment. D3 closes that gap as the final v3.5.0 commitment. Codex plan-time CNS: 2 iterations → AGREE (iter-1 PARTIAL → iter-2 AGREE after absorbing canonical-input marker + CI SSOT + block/warn split revisions). Trend / sparkline visualisation deferred to v3.6+.
+
+**Changes.**
+
+- **New module** `ao_kernel/scorecard.py` (public facade) + `_internal/scorecard/{collector,compare,render,post_comment}.py`. Typed `BenchmarkResult` / `ScorecardDiff` dataclasses + atomic-write emit path, pure-function compare + render, `gh api` sticky-comment upsert.
+- **Canonical input** via `@pytest.mark.scorecard_primary` on happy-path tests (`test_review_findings_flow_completes` + `test_end_to_end_completes`). Exactly-one-primary-per-scenario rule — duplicate AND missing both fail-close at session finish (`ScorecardCollectorError`). `EXPECTED_PRIMARY_SCENARIOS = {governed_bugfix, governed_review}`.
+- **Schemas** `scorecard.schema.v1.json` (`urn:ao:scorecard:v1`, top-level strict, `benchmark_result` forward-extensible with `additionalProperties: true`) + `policy-scorecard.schema.v1.json` (`urn:ao:policy-scorecard:v1`, strict all layers).
+- **Policy** `policy_scorecard.v1.json` — `enabled: true`, `fail_action: "warn"`, regression thresholds (`duration_ms_relative_pct: 30.0`, `cost_usd_relative_pct: 20.0`, `review_score_min_delta: -0.1`). `enabled` gates `compare` + comment only; `emit` is policy-agnostic.
+- **CLI** `ao-kernel scorecard {emit,compare,render,post-comment}`. `compare --baseline ... --head ...` exits 0 on warn / 1 on block+regression. `post-comment --pr N --body-file F --sentinel M` is advisory-only (exit 0 even on failure).
+- **CI workflow**: `benchmark-fast` job extended with `AO_SCORECARD_OUTPUT` env var + head-artefact upload + `scorecard-main` baseline upload on main push. New `scorecard` job (PR-only, `continue-on-error: true`, `dawidd6/action-download-artifact` SHA-pinned to `bf251b5a`) downloads head + baseline, runs `compare`, upserts a sentinel-tagged sticky PR comment.
+- **Cost source label** — new `cost_source` schema field always populated (`"mock_shim"` v1, `"real_adapter"` post-C3). Render footer surfaces it as "benchmark-only; not real billing" so mock-shim baselines are never misread as real spend.
+
+**Plan-time + post-impl gate** followed per v3.5+ two-gate rule (feedback_v35_codex_two_gate).
+
+**Test baseline.** +51 new pins (collector 16 + compare 11 + render 8 + cli 12 + schema 4), 10 benchmark tests still pass with the collector wired in, 2408 total. Ruff + mypy clean.
+
+**Codex post-impl review: BLOCK → MERGE after iter-2 absorb.** Two blockers + one suggest absorbed:
+- Canonical-input contract violations (duplicate OR partial-missing primary markers) now propagate a non-zero pytest exit status (`ExitCode.USAGE_ERROR=4`), not just a log line.
+- `finalize_session()` checks `expected_scenarios - observed` instead of only `observed == set()`, so partial misconfiguration (one scenario marked, another silently dropped) also fail-closes.
+- `policy_scorecard.enabled` + `post_pr_comment` now wired end-to-end: `compare` emits an advisory banner + exit 0 without rendering when `enabled=false`; `post-comment` honours both flags and skips the upsert with an advisory stderr line.
+
+**Scope boundary.**
+- IN: scorecard emit + compare + render + sticky PR comment + bundled policy `warn`
+- OUT: multi-commit trend / ASCII sparkline (v3.6+)
+- OUT: CI-gate enforcement (bundled `fail_action=block`; only local/manual today)
+- OUT: full-adapter real-billing cost axis (C3)
+- OUT: new benchmark scenarios (B7.x+)
+
 ### Added — v3.5.0 D2b Canonical promotion (opt-in)
 
 **Context.** D2a produced source-stable `resolution.record.v1.json` artefacts. D2b promotes eligible records (status=resolved AND final_verdict in {AGREE, PARTIAL}) into the existing canonical decision store (`.ao/canonical_decisions.v1.json`) via `ao_kernel.context.canonical_store.promote_decision()`. Opt-in (policy `promotion.enabled=false` default); `--force` bypasses only the policy flag, never integrity or eligibility gates. Codex plan-time CNS: 3 iterations → AGREE.

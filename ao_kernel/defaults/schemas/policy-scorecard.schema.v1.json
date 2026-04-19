@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:policy-scorecard:v1",
+  "title": "Policy Scorecard",
+  "description": "Schema for policy_scorecard.v1.json — governs dev scorecard compare + PR-comment behaviour. v3.5 D3. `enabled` gates compare + comment posting only; the collector `emit` step is policy-agnostic and always produces output.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "post_pr_comment", "regression_threshold", "fail_action"],
+  "properties": {
+    "version": { "type": "string", "enum": ["v1"] },
+    "enabled": {
+      "type": "boolean",
+      "description": "When false, `ao-kernel scorecard compare` emits an advisory banner and skips comment posting. Scorecard `emit` is unaffected."
+    },
+    "post_pr_comment": {
+      "type": "boolean",
+      "description": "When false, compare prints the rendered markdown but never invokes `post-comment`."
+    },
+    "regression_threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cost_usd_relative_pct", "duration_ms_relative_pct", "review_score_min_delta"],
+      "properties": {
+        "cost_usd_relative_pct": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fractional cost increase (percent) at or above which a benchmark entry is flagged as regressed."
+        },
+        "duration_ms_relative_pct": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fractional duration increase (percent) at or above which a benchmark entry is flagged as regressed."
+        },
+        "review_score_min_delta": {
+          "type": "number",
+          "maximum": 0,
+          "description": "Minimum allowable review_score delta (negative). A drop below this value (more negative) is flagged as regressed."
+        }
+      }
+    },
+    "fail_action": {
+      "type": "string",
+      "enum": ["warn", "block"],
+      "description": "`warn`: regressions rendered but exit 0. `block`: regression → exit 1 (CLI/local use). Bundled default `warn`; CI never sets `block` in v1."
+    }
+  }
+}

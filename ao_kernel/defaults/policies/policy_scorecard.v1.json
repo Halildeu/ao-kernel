@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "enabled": true,
+  "post_pr_comment": true,
+  "regression_threshold": {
+    "cost_usd_relative_pct": 20.0,
+    "duration_ms_relative_pct": 30.0,
+    "review_score_min_delta": -0.1
+  },
+  "fail_action": "warn"
+}
