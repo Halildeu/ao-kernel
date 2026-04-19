@@ -331,12 +331,15 @@ def finalize_session(
         )
 
     observed = set(registry.distinct_scenarios())
-    if expected_scenarios and not observed:
+    missing = expected_scenarios - observed
+    if missing:
         raise ScorecardCollectorError(
-            "Zero @pytest.mark.scorecard_primary tests collected while "
-            f"expected canonical scenarios are {sorted(expected_scenarios)!r}. "
-            "Either mark a primary test per scenario or set "
-            "EXPECTED_PRIMARY_SCENARIOS=frozenset() in a downstream harness."
+            "Missing @pytest.mark.scorecard_primary tests for canonical "
+            f"scenarios: {sorted(missing)!r}. Each expected scenario in "
+            f"{sorted(expected_scenarios)!r} must have exactly one "
+            "primary-marked test. Either mark a primary test for the "
+            "missing scenarios or set EXPECTED_PRIMARY_SCENARIOS="
+            "frozenset() in a downstream harness."
         )
 
     results = [build_result(sidecar) for sidecar in registry.sidecars]

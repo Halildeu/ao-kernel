@@ -57,14 +57,28 @@ def pytest_sessionfinish(
     session: pytest.Session,
     exitstatus: int,
 ) -> None:
+    """Finalize the scorecard at session end.
+
+    Codex post-impl review BLOCKER fix: canonical-input invariant
+    violations (duplicate or missing primary markers) MUST fail the
+    benchmark job. Previously the exception was log-only, which made
+    misconfiguration silently-green under CI. Now we propagate a
+    non-zero pytest exit code via ``session.exitstatus``.
+    """
     registry = _registry(session.config)
     try:
         finalize_session(registry)
-    except Exception as exc:  # pragma: no cover - diagnostic path
+    except Exception as exc:
         session.config.get_terminal_writer().line(
             f"scorecard finalize failed: {exc}",
             red=True,
         )
+        # pytest ExitCode.USAGE_ERROR=4 signals "misconfigured suite"
+        # which is the right category here (canonical marker contract
+        # broken). Respect pre-existing failures by taking the max.
+        misconfig = int(pytest.ExitCode.USAGE_ERROR)
+        if int(session.exitstatus or 0) < misconfig:
+            session.exitstatus = pytest.ExitCode(misconfig)
 
 
 @pytest.fixture

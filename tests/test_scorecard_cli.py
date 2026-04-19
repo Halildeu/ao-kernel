@@ -213,6 +213,135 @@ class TestRenderIgnoresPolicy:
         assert exit_code == 0
 
 
+class TestPolicyFlagGating:
+    def test_compare_disabled_prints_banner_and_exits_0(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Codex post-impl SUGGEST absorb — `enabled=false` gates
+        compare output; full diff is not rendered."""
+        head = tmp_path / "head.json"
+        head.write_text(
+            json.dumps(_scorecard(_entry("s", duration_ms=100))),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            cli_module,
+            "_resolve_scorecard_policy",
+            lambda _root: {
+                "enabled": False,
+                "post_pr_comment": True,
+                "fail_action": "warn",
+                "regression_threshold": {
+                    "duration_ms_relative_pct": 30.0,
+                    "cost_usd_relative_pct": 20.0,
+                    "review_score_min_delta": -0.1,
+                },
+            },
+        )
+        exit_code = main(
+            [
+                "scorecard",
+                "compare",
+                "--baseline",
+                str(head),
+                "--head",
+                str(head),
+            ],
+        )
+        assert exit_code == 0
+        captured = capsys.readouterr()
+        assert "disabled" in captured.out
+        assert "enabled=false" in captured.err
+
+    def test_post_comment_disabled_skips_upsert(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """`enabled=false` gates the workflow comment path too."""
+        body = tmp_path / "body.md"
+        body.write_text("<!-- ao-scorecard -->", encoding="utf-8")
+        monkeypatch.setattr(
+            cli_module,
+            "_resolve_scorecard_policy",
+            lambda _root: {"enabled": False, "post_pr_comment": True},
+        )
+        called = {"upsert": False}
+
+        from ao_kernel._internal.scorecard import post_comment as pc_module
+
+        def _fail(**_kwargs: Any) -> Any:
+            called["upsert"] = True
+            raise AssertionError("upsert must NOT run when enabled=false")
+
+        monkeypatch.setattr(pc_module, "upsert_sticky_comment", _fail)
+        exit_code = main(
+            [
+                "scorecard",
+                "post-comment",
+                "--pr",
+                "1",
+                "--body-file",
+                str(body),
+                "--sentinel",
+                "<!-- ao-scorecard -->",
+                "--repo",
+                "owner/repo",
+            ],
+        )
+        assert exit_code == 0
+        assert called["upsert"] is False
+        captured = capsys.readouterr()
+        assert "enabled=false" in captured.err
+
+    def test_post_comment_false_flag_skips_upsert(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """`post_pr_comment=false` skips the upsert even when
+        `enabled=true`."""
+        body = tmp_path / "body.md"
+        body.write_text("<!-- ao-scorecard -->", encoding="utf-8")
+        monkeypatch.setattr(
+            cli_module,
+            "_resolve_scorecard_policy",
+            lambda _root: {"enabled": True, "post_pr_comment": False},
+        )
+        called = {"upsert": False}
+
+        from ao_kernel._internal.scorecard import post_comment as pc_module
+
+        def _fail(**_kwargs: Any) -> Any:
+            called["upsert"] = True
+            raise AssertionError("upsert must NOT run when post_pr_comment=false")
+
+        monkeypatch.setattr(pc_module, "upsert_sticky_comment", _fail)
+        exit_code = main(
+            [
+                "scorecard",
+                "post-comment",
+                "--pr",
+                "1",
+                "--body-file",
+                str(body),
+                "--sentinel",
+                "<!-- ao-scorecard -->",
+                "--repo",
+                "owner/repo",
+            ],
+        )
+        assert exit_code == 0
+        assert called["upsert"] is False
+        captured = capsys.readouterr()
+        assert "post_pr_comment=false" in captured.err
+
+
 class TestPostComment:
     def test_post_comment_advisory_on_missing_body(
         self,

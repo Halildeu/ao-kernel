@@ -201,12 +201,27 @@ class TestFinalizeSession:
     ) -> None:
         """AGREE iter-2 tighten #3 — missing primary also fail-closed."""
         registry = ScorecardRegistry()
-        with pytest.raises(ScorecardCollectorError, match="Zero"):
+        with pytest.raises(ScorecardCollectorError, match="Missing"):
             finalize_session(
                 registry,
                 tmp_path / "out.json",
                 expected_scenarios=frozenset({"governed_review"}),
             )
+
+    def test_partial_primary_subset_fails(self, tmp_path: Path) -> None:
+        """Codex post-impl BLOCKER absorb — if ANY expected scenario
+        is missing (not just fully empty), fail-close. Previously we
+        only trapped the empty-observed case."""
+        registry = ScorecardRegistry()
+        _write_events(tmp_path / "r", [{"kind": "workflow_completed"}])
+        registry.record(PrimarySidecar("governed_review", tmp_path / "r"))
+        with pytest.raises(ScorecardCollectorError, match="governed_bugfix"):
+            finalize_session(
+                registry,
+                tmp_path / "out.json",
+                expected_scenarios=frozenset({"governed_bugfix", "governed_review"}),
+            )
+        assert not (tmp_path / "out.json").exists()
 
     def test_zero_primary_noop_when_expected_empty(self, tmp_path: Path) -> None:
         """Empty expected-set → no-op, no scorecard produced."""
@@ -220,7 +235,86 @@ class TestFinalizeSession:
         assert not (tmp_path / "out.json").exists()
 
 
-class TestOutputPath:
+class TestSessionFinishExitStatus:
+    """Codex post-impl BLOCKER absorb — canonical-input contract
+    violations MUST propagate non-zero pytest exit status. Verified by
+    invoking a tiny pytest subprocess with a seeded conftest."""
+
+    def _run_pytest_with_conftest(
+        self,
+        tmp_path: Path,
+        conftest_body: str,
+        test_body: str,
+    ) -> int:
+        import subprocess
+        import sys
+
+        (tmp_path / "conftest.py").write_text(
+            conftest_body,
+            encoding="utf-8",
+        )
+        (tmp_path / "test_one.py").write_text(
+            test_body,
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(tmp_path), "-q"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        return result.returncode
+
+    def test_duplicate_primary_sets_nonzero_exit(self, tmp_path: Path) -> None:
+        conftest = """
+import pytest
+
+from ao_kernel._internal.scorecard.collector import (
+    PrimarySidecar, ScorecardRegistry, finalize_session,
+)
+
+
+_REG = ScorecardRegistry()
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "scorecard_primary: test marker"
+    )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # Simulate duplicate marker: two sidecars for same scenario.
+    r = session.config.stash.setdefault("_reg", ScorecardRegistry())
+    try:
+        finalize_session(r)
+    except Exception as exc:
+        session.config.get_terminal_writer().line(str(exc), red=True)
+        misconfig = int(pytest.ExitCode.USAGE_ERROR)
+        if int(session.exitstatus or 0) < misconfig:
+            session.exitstatus = pytest.ExitCode(misconfig)
+
+
+@pytest.fixture(autouse=True)
+def _seed(request, tmp_path):
+    reg = request.config.stash.setdefault("_reg", ScorecardRegistry())
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "events.jsonl").write_text('{"kind":"workflow_completed"}\\n')
+    (tmp_path / "b").mkdir()
+    (tmp_path / "b" / "events.jsonl").write_text('{"kind":"workflow_completed"}\\n')
+    reg.record(PrimarySidecar("same", tmp_path / "a"))
+    reg.record(PrimarySidecar("same", tmp_path / "b"))
+    yield
+"""
+        test = """
+def test_noop():
+    assert True
+"""
+        rc = self._run_pytest_with_conftest(tmp_path, conftest, test)
+        assert rc != 0
+        # Pytest ExitCode.USAGE_ERROR = 4
+        assert rc == 4, f"expected usage-error exit 4, got {rc}"
+
     def test_env_var_override(
         self,
         tmp_path: Path,

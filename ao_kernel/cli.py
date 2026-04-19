@@ -490,6 +490,20 @@ def _cmd_scorecard_compare(args: argparse.Namespace) -> int:
             )
 
     policy = _resolve_scorecard_policy(getattr(args, "project_root", None))
+    # Codex post-impl review SUGGEST absorb: `enabled=false` gates the
+    # compare/comment opinion layer. Emit an advisory banner + exit 0
+    # without rendering the full diff so downstream stages know the
+    # output is intentionally empty.
+    if not bool(policy.get("enabled", True)):
+        print("<!-- ao-scorecard -->")
+        print(
+            "### 📊 Benchmark Scorecard\n\n_Scorecard compare disabled via `policy_scorecard.enabled=false`._",
+        )
+        print(
+            "INFO: policy_scorecard.enabled=false; compare skipped.",
+            file=sys.stderr,
+        )
+        return 0
     diff = compare_scorecards(baseline, head, policy=policy)
     rendered = render_diff(diff, head_scorecard=head)
     print(rendered)
@@ -527,13 +541,34 @@ def _cmd_scorecard_render(args: argparse.Namespace) -> int:
 
 
 def _cmd_scorecard_post_comment(args: argparse.Namespace) -> int:
-    """CI-side sentinel-sticky upsert via gh; advisory-only (exit 0)."""
+    """CI-side sentinel-sticky upsert via gh; advisory-only (exit 0).
+
+    Codex post-impl review SUGGEST absorb: honour
+    ``policy_scorecard.enabled`` and ``policy_scorecard.post_pr_comment``.
+    When either flag is false, skip the upsert entirely with an
+    advisory stderr line. Policy is still resolved so operators can
+    override via workspace policy files.
+    """
     import os
     from pathlib import Path as _Path
 
     from ao_kernel._internal.scorecard.post_comment import (
         upsert_sticky_comment,
     )
+
+    policy = _resolve_scorecard_policy(getattr(args, "project_root", None))
+    if not bool(policy.get("enabled", True)):
+        print(
+            "INFO: policy_scorecard.enabled=false; post-comment skipped.",
+            file=sys.stderr,
+        )
+        return 0
+    if not bool(policy.get("post_pr_comment", True)):
+        print(
+            "INFO: policy_scorecard.post_pr_comment=false; upsert skipped.",
+            file=sys.stderr,
+        )
+        return 0
 
     body_path = _Path(args.body_file).expanduser().resolve()
     if not body_path.is_file():
@@ -1157,6 +1192,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--repo",
         default=None,
         help="`owner/name` slug (default: $GITHUB_REPOSITORY).",
+    )
+    post_sc_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root (optional; resolves workspace policy override).",
     )
 
     return parser

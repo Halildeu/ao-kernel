@@ -23,7 +23,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 **Plan-time + post-impl gate** followed per v3.5+ two-gate rule (feedback_v35_codex_two_gate).
 
-**Test baseline.** +46 new pins (collector 14 + compare 11 + render 8 + cli 9 + schema 4), 10 benchmark tests still pass with the collector wired in, 2403 total. Ruff + mypy clean.
+**Test baseline.** +51 new pins (collector 16 + compare 11 + render 8 + cli 12 + schema 4), 10 benchmark tests still pass with the collector wired in, 2408 total. Ruff + mypy clean.
+
+**Codex post-impl review: BLOCK → MERGE after iter-2 absorb.** Two blockers + one suggest absorbed:
+- Canonical-input contract violations (duplicate OR partial-missing primary markers) now propagate a non-zero pytest exit status (`ExitCode.USAGE_ERROR=4`), not just a log line.
+- `finalize_session()` checks `expected_scenarios - observed` instead of only `observed == set()`, so partial misconfiguration (one scenario marked, another silently dropped) also fail-closes.
+- `policy_scorecard.enabled` + `post_pr_comment` now wired end-to-end: `compare` emits an advisory banner + exit 0 without rendering when `enabled=false`; `post-comment` honours both flags and skips the upsert with an advisory stderr line.
 
 **Scope boundary.**
 - IN: scorecard emit + compare + render + sticky PR comment + bundled policy `warn`
