@@ -170,11 +170,20 @@ omit = [
     # v3.12 H3 (tranche 6): agent_context_version removed from omit;
     # test_internal_session_agent_context_version_coverage.py pins the
     # error/edge branches (file_hash/_file_modified_at try-except,
-    # extra_files, non-dict skip, load None). cross_session_context +
-    # provider_memory stay omitted for now (very low transitive
-    # coverage; safely isolated to larger v3.13 tranches H3b/H3c).
+    # extra_files, non-dict skip, load None).
+    # v3.13 H3c (tranche 6B): provider_memory.py removed from omit.
+    # test_internal_session_provider_memory_coverage.py writes against
+    # the real session-context surface via new_context() +
+    # save_context_atomic() harness — no mocks of load_context. Covered:
+    # _safe_slug, resolve_auto_compact_token_limit codex-config guards,
+    # read_provider_session_state (missing / invalid JSON /
+    # memory_strategy branches / provider match+mismatch /
+    # compaction_summary_ref), maybe_auto_compact_markdown threshold
+    # guards + archive + summary + session update, persist_provider_result
+    # missing/happy/invalid, _render_compaction_summary structured +
+    # fallback + CRLF normalization.
+    # cross_session_context.py stays omitted for now (v3.14+ tranche).
     "ao_kernel/_internal/session/cross_session_context.py",
-    "ao_kernel/_internal/session/provider_memory.py",
     # PR-A4b: MultiStepDriver ships with unit coverage for entry
     # matrix, retry append-only, escalate_to_human, terminal
     # reconstruction, and helper paths. End-to-end branches that need
