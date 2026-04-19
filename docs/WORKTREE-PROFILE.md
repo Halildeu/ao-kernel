@@ -89,16 +89,33 @@ The policy has three operational tiers. The tier is determined by the combinatio
 
 | Tier | `enabled` | `rollout.mode_default` | Behavior |
 |---|---|---|---|
-| **Dormant** | `false` | — | Policy does not engage. No logs, no blocks. This is the bundled default. |
-| **Warmup** | `true` | `"report_only"` | Violations emit a `policy_checked` evidence event but execution is not blocked. Use during policy rollout to collect data on what would be denied. |
-| **Production** | `true` | `"block"` | Violations emit a `policy_denied` evidence event AND deny the operation. The run transitions to `failed` with `error.category: "policy_denied"`. |
+| **Dormant** | `false` | — | Policy layer bypassed. No `policy_checked` or `policy_denied` events emitted; no step fails on policy. Sandbox is still built from declared fields so the adapter has a runnable env. This is the bundled default. |
+| **Warmup** | `true` | `"report_only"` | Violations are collected. `policy_checked` emitted with additive payload fields (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`). Step continues even if violations present — UNLESS a violation kind matches `promote_to_block_on` (see below). |
+| **Production** | `true` | `"block"` | Violations emit `policy_checked` + `policy_denied`. Run fails closed with `error.category: "policy_denied"` / `PolicyViolationError`. |
 
-The `promote_to_block_on` list (`secret_leak_detected`, `cwd_escape_attempted`, `command_not_in_allowlist`, `unknown_env_key`) is **only evaluated in block mode**. In report-only mode, violations are logged regardless; the list is a documentation artefact of which violation classes were intended to be deny-worthy.
+Unknown `mode_default` value → `block` fallback (fail-closed).
+
+### Escalation: `promote_to_block_on`
+
+In `report_only` mode, if ANY `PolicyViolation.kind` value is also in `rollout.promote_to_block_on`, the executor escalates the step to block mode (`policy_denied` + fail). This lets operators warm-up most violations without losing fail-closed semantics for the highest-severity classes.
+
+Entries MUST use the closed taxonomy from `ao_kernel/executor/errors.py::PolicyViolation.kind`:
+
+- `secret_exposure_denied`
+- `secret_missing`
+- `cwd_escape`
+- `command_not_allowlisted`
+- `command_path_outside_policy`
+- `env_unknown`
+- `env_missing_required`
+- `http_header_exposure_unauthorized`
+
+Bundled default: `["secret_exposure_denied", "cwd_escape", "command_not_allowlisted", "env_unknown"]`.
 
 ### Promotion path
 
 1. Start with dormant (ship, confirm no workflow depends on a hidden env/command).
-2. Enable in report-only mode, run a full week of real demos, review `policy_checked` events, add any missing env keys or commands to the allowlist.
+2. Enable in report-only mode, run a full week of real demos, review `policy_checked` events (check the `violation_kinds` / `would_block` payload fields), add any missing env keys or commands to the allowlist.
 3. Flip to block mode for production.
 
 ---

@@ -105,9 +105,7 @@ class Executor:
         self._workspace_root = workspace_root
         self._workflow_registry = workflow_registry
         self._adapter_registry = adapter_registry
-        self._policy: Mapping[str, Any] = (
-            policy_loader or _load_bundled_policy()
-        )
+        self._policy: Mapping[str, Any] = policy_loader or _load_bundled_policy()
         self._claim_registry = claim_registry
 
     def run_step(
@@ -159,21 +157,16 @@ class Executor:
         """
         # PR-B1 fencing entry check (W1v5 no-emit, pre-everything).
         if (fencing_token is None) != (fencing_resource_id is None):
-            raise ValueError(
-                "fencing_token and fencing_resource_id must be passed "
-                "together or both omitted"
-            )
+            raise ValueError("fencing_token and fencing_resource_id must be passed together or both omitted")
         if fencing_token is not None:
             if self._claim_registry is None:
-                raise ValueError(
-                    "fencing kwargs supplied but Executor has no "
-                    "claim_registry injected"
-                )
+                raise ValueError("fencing kwargs supplied but Executor has no claim_registry injected")
             # Raises ClaimStaleFencingError on mismatch; propagates to
             # MultiStepDriver which handles the step_failed emission +
             # error_category="other" + code="STALE_FENCING" mapping.
             self._claim_registry.validate_fencing_token(
-                fencing_resource_id, fencing_token,
+                fencing_resource_id,
+                fencing_token,
             )
 
         parent_env = dict(parent_env or {})
@@ -181,10 +174,7 @@ class Executor:
 
         # Pre-flight 1: run not terminal
         if record["state"] in {"completed", "failed", "cancelled"}:
-            raise ValueError(
-                f"run {run_id!r} is terminal (state={record['state']}); "
-                f"cannot execute further steps"
-            )
+            raise ValueError(f"run {run_id!r} is terminal (state={record['state']}); cannot execute further steps")
 
         # Pre-flight 2: resolve pinned workflow definition
         definition = self._workflow_registry.get(
@@ -207,20 +197,12 @@ class Executor:
         # Executor keeps the original guard.
         if not driver_managed:
             for prior in record.get("steps", ()):
-                if (
-                    prior.get("step_name") == step_def.step_name
-                    and prior.get("state") == "completed"
-                ):
-                    raise ValueError(
-                        f"step_name={step_def.step_name!r} already completed "
-                        f"for run {run_id!r}"
-                    )
+                if prior.get("step_name") == step_def.step_name and prior.get("state") == "completed":
+                    raise ValueError(f"step_name={step_def.step_name!r} already completed for run {run_id!r}")
 
         # Pre-flight 5: for adapter steps, run cross-ref per-call (no cache)
         if step_def.actor == "adapter":
-            issues = self._workflow_registry.validate_cross_refs(
-                definition, self._adapter_registry
-            )
+            issues = self._workflow_registry.validate_cross_refs(definition, self._adapter_registry)
             if issues:
                 raise WorkflowDefinitionCrossRefError(
                     workflow_id=definition.workflow_id,
@@ -325,7 +307,8 @@ class Executor:
         baseline_budget = dict(record.get("budget") or {})
 
         with dry_run_execution_context(
-            self._workspace_root, run_id,
+            self._workspace_root,
+            run_id,
         ) as recorder:
             try:
                 self.run_step(
@@ -344,22 +327,26 @@ class Executor:
                 # during run_step pre-flight. Append the denial pair
                 # here to match the canonical event sequence.
                 recorder.record_policy_violation(str(exc))
-                recorder.predicted_events.append((
-                    "policy_denied",
-                    {
-                        "step_name": step_def.step_name,
-                        "reason": str(exc),
-                    },
-                ))
-                recorder.predicted_events.append((
-                    "step_failed",
-                    {
-                        "step_name": step_def.step_name,
-                        "final_state": "failed",
-                        "error_category": "policy_denied",
-                        "error_detail": str(exc),
-                    },
-                ))
+                recorder.predicted_events.append(
+                    (
+                        "policy_denied",
+                        {
+                            "step_name": step_def.step_name,
+                            "reason": str(exc),
+                        },
+                    )
+                )
+                recorder.predicted_events.append(
+                    (
+                        "step_failed",
+                        {
+                            "step_name": step_def.step_name,
+                            "final_state": "failed",
+                            "error_category": "policy_denied",
+                            "error_detail": str(exc),
+                        },
+                    )
+                )
             except Exception:
                 # Any other dispatch error is intentionally swallowed;
                 # dry-run never raises. Downstream mock boundary
@@ -390,10 +377,7 @@ class Executor:
         input_envelope_override: Mapping[str, Any] | None = None,
     ) -> ExecutionResult:
         if step_def.adapter_id is None:
-            raise ValueError(
-                f"step_name={step_def.step_name!r} has actor=adapter but "
-                f"no adapter_id"
-            )
+            raise ValueError(f"step_name={step_def.step_name!r} has actor=adapter but no adapter_id")
         manifest = self._adapter_registry.get(step_def.adapter_id)
         # PR-A4b: driver passes a placeholder step_id for retry attempts
         # so events + artifacts for attempt=2 reference the placeholder
@@ -418,17 +402,36 @@ class Executor:
         )
         evidence_event_ids.append(started.event_id)
 
-        # Resolve allowed secrets + build sandbox
-        resolved_secrets, secret_violations = resolve_allowed_secrets(
-            self._policy, parent_env
-        )
+        # v3.11 P2: activation + rollout semantics honoring.
+        # Three tiers match the policy_worktree_profile.v1.json contract:
+        #   1. enabled=false: policy layer dormant — no checks, no emit,
+        #      no fail. Sandbox is still built from the declared fields
+        #      so the adapter has a runnable environment. Matches
+        #      "enabled=false -> policy dormant (no log, no block)"
+        #      from the bundled policy `_mode_note`.
+        #   2. enabled=true + rollout.mode_default="report_only":
+        #      violations are collected, a `policy_checked` event is
+        #      emitted (with additive `mode` / `would_block` /
+        #      `violation_kinds` / `promoted_to_block` payload fields),
+        #      but the step is NOT failed. Escalation override: if any
+        #      violation.kind is in `rollout.promote_to_block_on`, treat
+        #      as block (emit `policy_denied` + fail).
+        #   3. enabled=true + rollout.mode_default="block" (or unknown,
+        #      fail-closed fallback): current behavior — `policy_checked`
+        #      + (if violations) `policy_denied` + fail.
+        policy_enabled = bool(self._policy.get("enabled", False))
+        rollout_cfg = self._policy.get("rollout", {})
+        rollout_mode = rollout_cfg.get("mode_default", "block")
+        if rollout_mode not in ("report_only", "block"):
+            rollout_mode = "block"  # unknown mode → fail-closed block
+        promote_to_block_on = set(rollout_cfg.get("promote_to_block_on", []))
+
+        # Sandbox + secrets always need to resolve so the adapter has a
+        # runnable env even in the dormant / report_only tiers.
+        resolved_secrets, secret_violations = resolve_allowed_secrets(self._policy, parent_env)
         sandbox, sandbox_violations = build_sandbox(
             policy=self._policy,
-            worktree_root=self._workspace_root
-            / ".ao"
-            / "runs"
-            / run_id
-            / "worktree",
+            worktree_root=self._workspace_root / ".ao" / "runs" / run_id / "worktree",
             resolved_secrets=resolved_secrets,
             parent_env=parent_env,
         )
@@ -443,44 +446,54 @@ class Executor:
             *http_violations,
         ]
 
-        # policy_checked
-        checked = emit_event(
-            self._workspace_root,
-            run_id=run_id,
-            kind="policy_checked",
-            actor="ao-kernel",
-            payload={
-                "step_name": step_def.step_name,
-                "violations_count": len(policy_violations),
-            },
-            step_id=step_def.step_name,
-        )
-        evidence_event_ids.append(checked.event_id)
+        if policy_enabled:
+            # Determine effective mode with escalation override.
+            violation_kinds = [v.kind for v in policy_violations]
+            promoted_to_block = bool(set(violation_kinds) & promote_to_block_on) if policy_violations else False
+            effective_mode = "block" if (rollout_mode == "block" or promoted_to_block) else "report_only"
+            would_block = len(policy_violations) > 0
 
-        if policy_violations:
-            denied = emit_event(
+            # policy_checked with additive payload fields.
+            checked = emit_event(
                 self._workspace_root,
                 run_id=run_id,
-                kind="policy_denied",
+                kind="policy_checked",
                 actor="ao-kernel",
                 payload={
                     "step_name": step_def.step_name,
-                    "violation_kinds": [v.kind for v in policy_violations],
+                    "violations_count": len(policy_violations),
+                    "violation_kinds": violation_kinds,
+                    "mode": effective_mode,
+                    "would_block": would_block,
+                    "promoted_to_block": promoted_to_block,
                 },
                 step_id=step_def.step_name,
             )
-            evidence_event_ids.append(denied.event_id)
-            return self._fail_run(
-                run_id=run_id,
-                record=record,
-                step_def=step_def,
-                evidence_event_ids=tuple(evidence_event_ids),
-                error_category="policy_denied",
-                error_detail=f"{len(policy_violations)} policy violation(s)",
-                raise_after=PolicyViolationError(
-                    violations=policy_violations
-                ),
-            )
+            evidence_event_ids.append(checked.event_id)
+
+            if policy_violations and effective_mode == "block":
+                denied = emit_event(
+                    self._workspace_root,
+                    run_id=run_id,
+                    kind="policy_denied",
+                    actor="ao-kernel",
+                    payload={
+                        "step_name": step_def.step_name,
+                        "violation_kinds": violation_kinds,
+                        "promoted_to_block": promoted_to_block,
+                    },
+                    step_id=step_def.step_name,
+                )
+                evidence_event_ids.append(denied.event_id)
+                return self._fail_run(
+                    run_id=run_id,
+                    record=record,
+                    step_def=step_def,
+                    evidence_event_ids=tuple(evidence_event_ids),
+                    error_category="policy_denied",
+                    error_detail=f"{len(policy_violations)} policy violation(s)",
+                    raise_after=PolicyViolationError(violations=policy_violations),
+                )
 
         # Create worktree
         worktree_created: WorktreeHandle | None = None
@@ -545,11 +558,10 @@ class Executor:
             # + attempt so the replay tool can correlate events with
             # artifacts without stateful backtracking.
             step_id_for_events = step_id_override or step_def.step_name
-            run_dir = (
-                self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
-            )
+            run_dir = self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
             artifact_payload = _normalize_invocation_for_artifact(
-                invocation_result, adapter_id=manifest.adapter_id,
+                invocation_result,
+                adapter_id=manifest.adapter_id,
             )
             output_ref, output_sha256 = write_artifact(
                 run_dir=run_dir,
@@ -579,9 +591,7 @@ class Executor:
             evidence_event_ids.append(returned.event_id)
         finally:
             if worktree_created is not None:
-                cleanup_worktree(
-                    worktree_created, workspace_root=self._workspace_root
-                )
+                cleanup_worktree(worktree_created, workspace_root=self._workspace_root)
 
         # PR-C3: adapter cost reconcile — BEFORE terminal event so a
         # reconcile failure surfaces as step_failed rather than a
@@ -614,9 +624,7 @@ class Executor:
         )
 
         # step_completed | step_failed
-        terminal_kind = (
-            "step_completed" if step_state == "completed" else "step_failed"
-        )
+        terminal_kind = "step_completed" if step_state == "completed" else "step_failed"
         terminal = emit_event(
             self._workspace_root,
             run_id=run_id,
@@ -712,9 +720,7 @@ class Executor:
         )
         evidence_event_ids.append(completed.event_id)
 
-        new_state: WorkflowState = (
-            "running" if record["state"] == "created" else record["state"]
-        )
+        new_state: WorkflowState = "running" if record["state"] == "created" else record["state"]
         if new_state != record["state"]:
             validate_transition(record["state"], new_state)
 
@@ -788,17 +794,19 @@ class Executor:
                 "category": error_category,
             }
             steps = list(current.get("steps", []))
-            steps.append({
-                "step_id": step_def.step_name,
-                "step_name": step_def.step_name,
-                "state": "failed",
-                "actor": step_def.actor,
-                "adapter_id": step_def.adapter_id,
-                "started_at": step_failed.ts,
-                "completed_at": step_failed.ts,
-                "evidence_event_ids": list(event_ids_out),
-                "error": current["error"],
-            })
+            steps.append(
+                {
+                    "step_id": step_def.step_name,
+                    "step_name": step_def.step_name,
+                    "state": "failed",
+                    "actor": step_def.actor,
+                    "adapter_id": step_def.adapter_id,
+                    "started_at": step_failed.ts,
+                    "completed_at": step_failed.ts,
+                    "evidence_event_ids": list(event_ids_out),
+                    "error": current["error"],
+                }
+            )
             current["steps"] = steps
             return current
 

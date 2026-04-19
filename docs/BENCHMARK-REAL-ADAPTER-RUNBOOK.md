@@ -102,7 +102,13 @@ Key deltas from bundled:
 - `enabled` false → **true** (engages the policy)
 - `secrets.allowlist_secret_ids` `[]` → `["ANTHROPIC_API_KEY"]`
 - `command_allowlist.exact` += `"claude"`
-- `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. **Current runtime note**: the shipped executor (`ao_kernel/executor/executor.py`) does NOT yet branch on `rollout.mode_default` — when `policy_worktree_profile.enabled=true`, any violation emits `policy_checked` + `policy_denied` events AND fails the run closed regardless of the `mode_default` value. `rollout.mode_default` is therefore a **declarative policy-doc setting for now**, not a runtime switch. The intent (report_only = log but don't block; block = log + deny) is documented inside `policy_worktree_profile.v1.json` itself; honoring it is post-v3.10 runtime work.
+- `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. As of **v3.11 P2**, the shipped executor (`ao_kernel/executor/executor.py`) honors the three-tier activation + rollout semantics:
+  - **`enabled=false`**: policy layer dormant — no events, no fail (sandbox still built from declared fields).
+  - **`enabled=true + mode_default=report_only`**: violations collected; `policy_checked` emits with additive payload (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`); step continues.
+  - **`enabled=true + mode_default=block`**: violations emit `policy_checked` + `policy_denied`; run fails closed.
+  - **Escalation**: in `report_only`, if a violation kind is in `rollout.promote_to_block_on`, escalation overrides and the step is blocked. Bundled default list uses the closed `PolicyViolation.kind` taxonomy (`secret_exposure_denied`, `cwd_escape`, `command_not_allowlisted`, `env_unknown`).
+
+Use `report_only` for the first few runs to review `policy_checked` evidence without hitting fail-closed; flip to `block` once the allowlists are tuned.
 
 ### Note on `policy_secrets.v1.json`
 
@@ -214,7 +220,7 @@ Common violation kinds and the fix:
 | `env_missing_required` | An env key listed as required has no value and no `explicit_additions` entry. | Either export the value in the shell or supply a default via `env_allowlist.explicit_additions`. |
 | `http_header_exposure_unauthorized` | An HTTP adapter tried to use a secret in a header but `secrets.exposure_modes` did not include `"http_header"`. | Add `"http_header"` to `exposure_modes` only if you've confirmed the adapter's HTTP transport is trusted with that surface. |
 
-Violations fail the run closed in the current runtime — `rollout.mode_default` is declarative-only until the post-v3.10 runtime work lands (see §2).
+As of **v3.11 P2** the executor honors `rollout.mode_default`: in `report_only` violations emit `policy_checked` with `would_block=true` but the step continues; in `block` violations emit `policy_denied` and fail the run closed. See §2 for the full three-tier behavior and escalation via `promote_to_block_on`.
 
 ---
 

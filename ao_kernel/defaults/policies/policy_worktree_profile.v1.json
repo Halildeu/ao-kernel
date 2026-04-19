@@ -81,12 +81,12 @@
 
   "rollout": {
     "mode_default": "report_only",
-    "_mode_note": "Only meaningful when enabled=true. Three tiers: (1) enabled=false -> policy dormant (no log, no block). (2) enabled=true + mode_default=report_only -> violations emit 'policy_checked' evidence events but execution is not blocked (warmup tier). (3) enabled=true + mode_default=block -> violations emit 'policy_denied' events AND deny the operation (production tier). promote_to_block_on list is ONLY evaluated in block mode.",
+    "_mode_note": "Three tiers honored by the executor as of v3.11 P2: (1) enabled=false -> policy layer DORMANT: no 'policy_checked' / 'policy_denied' events, no fail; sandbox still built from declared fields so adapter has a runnable env. (2) enabled=true + mode_default='report_only' -> WARMUP: 'policy_checked' event emitted with additive payload fields (mode, would_block, violation_kinds, promoted_to_block); step continues even if violations present. (3) enabled=true + mode_default='block' -> PRODUCTION: 'policy_checked' + (on violations) 'policy_denied' + step fails closed (PolicyViolationError). Unknown mode_default value -> block (fail-closed fallback). promote_to_block_on is evaluated in report_only mode ONLY: if any violation.kind matches an entry in the list, escalation overrides report_only and the step is treated as block. Entries MUST use the closed PolicyViolation.kind taxonomy (see ao_kernel/executor/errors.py): env_unknown, env_missing_required, command_not_allowlisted, command_path_outside_policy, cwd_escape, secret_exposure_denied, secret_missing, http_header_exposure_unauthorized.",
     "promote_to_block_on": [
-      "secret_leak_detected",
-      "cwd_escape_attempted",
-      "command_not_in_allowlist",
-      "unknown_env_key"
+      "secret_exposure_denied",
+      "cwd_escape",
+      "command_not_allowlisted",
+      "env_unknown"
     ]
   }
 }
