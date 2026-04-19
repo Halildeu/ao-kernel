@@ -186,7 +186,7 @@ CI integrates these through the `benchmark-fast` job in `.github/workflows/test.
 - **`governed_bugfix`** uses a stripped-down bench variant (`tests/benchmarks/fixtures/workflows/governed_bugfix_bench.v1.json`). The full bundled `bug_fix_flow` (`patch_preview` + `ci_pytest` + `apply_patch` + `gh-cli-pr`) needs patch plumbing + input_envelope + policy_loader injection — routed to **FAZ-C PR-C1**.
 - **Missing-payload walker behaviour** — `_walk_output_parse` surfaces `AdapterOutputParseError` fail-closed when the canned envelope omits a declared `output_parse` field. `test_missing_review_findings_fails_workflow` exercises this end-to-end and is unskipped (docs §3.2 matches runtime).
 - **`cost_usd` reconcile** — B7.1 ships a benchmark-only shim (`mock_transport._maybe_consume_budget`) that drains the run-state `budget.cost_usd` axis so `assert_cost_consumed` can observe drain; the runtime gap (adapter transport reconcile inside `invoke_cli`/`invoke_http`) is routed to **FAZ-C PR-C3**.
-- **Real-adapter full mode** (`--benchmark-mode=full` + env-gated secrets + `context_pack_ref` input_envelope) is routed to **FAZ-C PR-C2**.
+- **Real-adapter full mode** (`--benchmark-mode=full` + env-gated secrets + `context_pack_ref` input_envelope) shipped in **v3.7 PR-F1** as opt-in. See [`BENCHMARK-FULL-MODE.md`](BENCHMARK-FULL-MODE.md) for the operator runbook. Default CI remains fast-only; the `full_mode`-marked tests are collection-time skipped unless `--benchmark-mode=full` is passed. Real-adapter `cost_source="real_adapter"` scorecard wiring lands separately in **v3.7 PR-F2**.
 - **Retry/branch variants**, **statistical perf tracking**, and **chaos-mode** remain post-FAZ-C.
 
 ### 8.4 Mock transport boundary

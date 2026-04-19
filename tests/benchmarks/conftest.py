@@ -1,13 +1,21 @@
 """Shared fixtures for PR-B7 benchmarks.
 
-`--benchmark-mode` flag intentionally NOT exposed — fast mode is
-the only mode B7 ships (full real-adapter mode deferred to B7.1
-per plan v5 §7).
+v3.7 F1: `--benchmark-mode=fast|full` pytest option (default `fast`).
+Fast mode patches adapter transport via ``mock_adapter_transport``;
+full mode bypasses the mock and exercises the real `invoke_cli` /
+`invoke_http` subprocess path (ops-only, env-gated secrets, real
+`context_pack_ref` resolved from an actual ``compile_context`` step).
+
+Full-mode smoke tests carry ``@pytest.mark.full_mode``; the option
+gates them via collection-time skip so the default CI surface is
+identical to pre-v3.7.
 
 v3.5 D3: scorecard collector hooks are wired here via
 :mod:`ao_kernel._internal.scorecard.collector`. Primary tests tag
 themselves with ``@pytest.mark.scorecard_primary`` and expose a
 :class:`PrimarySidecar` via the ``benchmark_primary_sidecar`` fixture.
+**Full-mode tests are NOT `scorecard_primary`** — real-adapter
+scorecard path lands in v3.7 F2; F1 keeps the contract minimal.
 """
 
 from __future__ import annotations
@@ -34,7 +42,56 @@ _BUNDLED_ROOT = Path(__file__).resolve().parents[2] / "ao_kernel" / "defaults"
 _REGISTRY_ATTR = "_ao_scorecard_registry"
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register ``--benchmark-mode`` (v3.7 F1).
+
+    Default ``fast`` preserves the pre-v3.7 deterministic mock-
+    transport path. ``full`` bypasses the mock and dispatches to the
+    real adapter subprocess path; tests carrying
+    ``@pytest.mark.full_mode`` are gated by this option (collected
+    only in full mode).
+    """
+    parser.addoption(
+        "--benchmark-mode",
+        action="store",
+        default="fast",
+        choices=["fast", "full"],
+        help=(
+            "Benchmark execution mode (v3.7 F1). 'fast' (default) "
+            "patches adapter transport via mock_adapter_transport. "
+            "'full' bypasses the mock for ops-only real-adapter runs."
+        ),
+    )
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config,
+    items: list[pytest.Item],
+) -> None:
+    """Skip ``@pytest.mark.full_mode`` tests unless ``--benchmark-mode=full``.
+
+    v3.7 F1 — keeps default CI (fast mode) identical to pre-v3.7.
+    """
+    mode = config.getoption("--benchmark-mode")
+    if mode == "full":
+        return
+    skip_full = pytest.mark.skip(
+        reason="full_mode only runs under --benchmark-mode=full",
+    )
+    for item in items:
+        if "full_mode" in item.keywords:
+            item.add_marker(skip_full)
+
+
 def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "full_mode: v3.7 F1 — mark a benchmark test as ops-only "
+        "real-adapter full-mode smoke. Requires "
+        "`--benchmark-mode=full` to run; skipped in default fast "
+        "mode. Do NOT combine with `scorecard_primary` (real-"
+        "adapter scorecard semantics land in v3.7 F2).",
+    )
     config.addinivalue_line(
         "markers",
         "scorecard_primary(scenario_id=None): mark the canonical "
@@ -226,3 +283,16 @@ def benchmark_driver(workspace_root: Path):
     """Driver bound to the bundled workspace (covers `codex-stub`
     + `gh-cli-pr` for both scenarios)."""
     return build_driver(workspace_root)
+
+
+@pytest.fixture
+def benchmark_mode(request: pytest.FixtureRequest) -> str:
+    """Resolved benchmark execution mode (v3.7 F1).
+
+    Returns ``"fast"`` (default) or ``"full"`` based on the
+    ``--benchmark-mode`` pytest option. Fast-mode tests expect
+    ``mock_adapter_transport`` to patch ``invoke_cli``/``invoke_http``;
+    full-mode tests dispatch to the real subprocess path.
+    """
+    mode = request.config.getoption("--benchmark-mode")
+    return str(mode)

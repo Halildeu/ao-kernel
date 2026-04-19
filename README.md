@@ -75,7 +75,7 @@ stream_request = build_req(
 python3 examples/demo_bugfix.py --workspace-root .
 ```
 
-Runs the governed bug-fix workflow end-to-end with a deterministic stub adapter (no LLM required). See `docs/DEMO-SCRIPT.md` for the full 11-step acceptance flow.
+Runs the governed bug-fix workflow end-to-end with a deterministic stub adapter (no LLM required). See `docs/DEMO-SCRIPT.md` for the full 11-step acceptance flow. For the opt-in real-adapter benchmark path (v3.7 F1), see [`docs/BENCHMARK-FULL-MODE.md`](docs/BENCHMARK-FULL-MODE.md).
 
 ## Python API
 
