@@ -205,7 +205,7 @@ Common violation kinds and the fix:
 
 | `PolicyViolation.kind` | Cause | Fix |
 |---|---|---|
-| `secret_exposure_denied` | Secret value tried to reach a channel not in `policy.secrets.exposure_modes` (e.g. argv, stdin, file, http_header). | Audit the adapter invocation and the prompt template; if the leak is legitimate, extend `exposure_modes` explicitly. If it's accidental, rotate the credential. |
+| `secret_exposure_denied` | Secret literal detected inside the resolved argv for the adapter invocation (current runtime scope). HTTP header leaks surface under the separate `http_header_exposure_unauthorized` kind; stdin/file exposure checks are deferred. | Audit the adapter invocation template; remove the secret from argv (the allowlisted channel is env). If the argv exposure is legitimate for this adapter, rotate the credential and reshape the invocation. |
 | `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Export the secret in the shell you launch the run from (`export ANTHROPIC_API_KEY=...`). |
 | `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
 | `command_not_allowlisted` | Adapter tried to execute a command not listed in `command_allowlist.exact` and not under any `command_allowlist.prefixes` directory. | Add the command to `exact` after judging whether the tool belongs in your sandbox. |
