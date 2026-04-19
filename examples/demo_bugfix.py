@@ -32,12 +32,20 @@ def main(argv: list[str] | None = None) -> int:
     ws = Path(args.workspace_root).resolve()
     print(f"[demo] workspace: {ws}")
 
-    # 1. Ensure workspace init
+    # 1. Ensure workspace init.
+    # NOTE: `ao-kernel init` has asymmetric path semantics — passing
+    # `--workspace-root X` writes the workspace files *directly* under
+    # X rather than `X/.ao/`. That's tracked as a v3.13.1+ fix. In the
+    # demo we side-step it by chdir'ing into the target and invoking
+    # `init` with no override, which uses `cwd/.ao/` as expected.
     ao_dir = ws / ".ao"
     if not ao_dir.is_dir():
         print("[demo] initializing workspace...")
-        subprocess.run([sys.executable, "-m", "ao_kernel.cli", "init",
-                        "--workspace-root", str(ws)], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "ao_kernel.cli", "init"],
+            cwd=str(ws),
+            check=True,
+        )
 
     # 2. Ensure adapter manifests
     adapters_dir = ao_dir / "adapters"

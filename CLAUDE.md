@@ -60,12 +60,14 @@ Tool spec'leri ve inputSchema'lar için: `mcp_server.py`
 
 ```bash
 ao-kernel init             # .ao/ workspace oluştur
-ao-kernel doctor           # sağlık kontrolü
+ao-kernel doctor           # sağlık kontrolü (8 kontrol)
 ao-kernel migrate          # workspace migration (--dry-run, --backup)
 ao-kernel mcp serve        # MCP server (stdio)
 ao-kernel mcp serve --transport http --port 8080
+ao-kernel evidence ...     # timeline / replay / manifest (run-level audit)
+ao-kernel metrics ...      # usage/cost aggregates (opt-in)
+ao-kernel policy-sim ...   # dry-run policy simulation
 ao-kernel version          # versiyon
-ao-kernel system-status    # workspace durumu
 ```
 
 ## 5. Mimari Genel Bakış
