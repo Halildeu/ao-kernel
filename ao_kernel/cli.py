@@ -22,11 +22,13 @@ def _cmd_version(args: argparse.Namespace) -> int:
 
 def _cmd_init(args: argparse.Namespace) -> int:
     from ao_kernel.init_cmd import run
+
     return run(workspace_root_override=args.workspace_root)
 
 
 def _cmd_migrate(args: argparse.Namespace) -> int:
     from ao_kernel.migrate_cmd import run
+
     return run(
         workspace_root_override=args.workspace_root,
         dry_run=args.dry_run,
@@ -36,6 +38,7 @@ def _cmd_migrate(args: argparse.Namespace) -> int:
 
 def _cmd_doctor(args: argparse.Namespace) -> int:
     from ao_kernel.doctor_cmd import run
+
     return run(workspace_root_override=args.workspace_root)
 
 
@@ -43,18 +46,22 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
     transport = getattr(args, "transport", "stdio")
     try:
         import asyncio
+
         if transport == "http":
             from ao_kernel.mcp_server import serve_http
+
             host = getattr(args, "host", "127.0.0.1")
             port = getattr(args, "port", 8080)
             asyncio.run(serve_http(host=host, port=port))
         else:
             from ao_kernel.mcp_server import serve_stdio
+
             asyncio.run(serve_stdio())
         return 0
     except ImportError as e:
         if "mcp" in str(e).lower():
             from ao_kernel.i18n import msg
+
             print(msg("error_mcp_missing"))
             return 1
         raise
@@ -102,10 +109,7 @@ def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
             f"Reconciler {mode}: found={result.orphans_found} "
             f"fixed={result.orphans_fixed} skipped={result.orphans_skipped}"
         )
-        print(
-            f"Cursor: offset {result.cursor_offset_before} → "
-            f"{result.cursor_offset_after}"
-        )
+        print(f"Cursor: offset {result.cursor_offset_before} → {result.cursor_offset_after}")
         if result.errors:
             print("Errors:")
             for err in result.errors:
@@ -139,10 +143,7 @@ def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
             payload = {
                 "run_id": res.run_id,
                 "markers_archived": res.markers_archived,
-                "archive_path": (
-                    str(res.archive_path.relative_to(project_root))
-                    if res.archive_path else None
-                ),
+                "archive_path": (str(res.archive_path.relative_to(project_root)) if res.archive_path else None),
                 "already_compact": res.already_compact,
                 "dry_run": dry_run,
             }
@@ -152,11 +153,7 @@ def _cmd_cost_compact_markers(args: argparse.Namespace) -> int:
             if res.already_compact:
                 print(f"run {res.run_id}: already compact (no markers)")
             else:
-                print(
-                    f"run {res.run_id} [{status}]: archived "
-                    f"{res.markers_archived} marker(s) → "
-                    f"{res.archive_path}"
-                )
+                print(f"run {res.run_id} [{status}]: archived {res.markers_archived} marker(s) → {res.archive_path}")
         return 0
 
     bulk = compact_all_terminal_runs(project_root, dry_run=dry_run)
@@ -198,7 +195,8 @@ def _cmd_consultation_promote(args: argparse.Namespace) -> int:
 
     project_root = _Path(args.project_root or _Path.cwd()).resolve()
     policy = load_with_override(
-        "policies", "policy_agent_consultation.v1.json",
+        "policies",
+        "policy_agent_consultation.v1.json",
         workspace=project_root / ".ao",
     )
 
@@ -244,9 +242,7 @@ def _cmd_consultation_promote(args: argparse.Namespace) -> int:
             print("Errors:")
             for err in summary.errors:
                 print(f"  - {err}")
-    return 0 if (
-        not summary.errors and summary.skipped_disabled == 0
-    ) else (0 if summary.skipped_disabled else 1)
+    return 0 if (not summary.errors and summary.skipped_disabled == 0) else (0 if summary.skipped_disabled else 1)
 
 
 def _cmd_consultation_archive(args: argparse.Namespace) -> int:
@@ -266,15 +262,14 @@ def _cmd_consultation_archive(args: argparse.Namespace) -> int:
 
     project_root = _Path(args.project_root or _Path.cwd()).resolve()
     policy = load_with_override(
-        "policies", "policy_agent_consultation.v1.json",
+        "policies",
+        "policy_agent_consultation.v1.json",
         workspace=project_root / ".ao",
     )
 
     # --verify path: no mutation, integrity-only
     if getattr(args, "verify", False):
-        evidence_root = (
-            project_root / ".ao" / "evidence" / "consultations"
-        )
+        evidence_root = project_root / ".ao" / "evidence" / "consultations"
         verify_results: list[tuple[str, bool, list[str]]] = []
         overall_ok = True
         if evidence_root.is_dir():
@@ -291,17 +286,11 @@ def _cmd_consultation_archive(args: argparse.Namespace) -> int:
             payload = {
                 "ok": overall_ok,
                 "scanned": len(verify_results),
-                "results": [
-                    {"cns_id": name, "ok": ok, "errors": list(errs)}
-                    for name, ok, errs in verify_results
-                ],
+                "results": [{"cns_id": name, "ok": ok, "errors": list(errs)} for name, ok, errs in verify_results],
             }
             print(_json.dumps(payload, indent=2, sort_keys=True))
         else:
-            print(
-                f"Consultation verify: scanned={len(verify_results)} "
-                f"ok={overall_ok}"
-            )
+            print(f"Consultation verify: scanned={len(verify_results)} ok={overall_ok}")
             for name, ok, errs in verify_results:
                 if not ok:
                     print(f"  - {name}:")
@@ -360,7 +349,8 @@ def _cmd_consultation_migrate(args: argparse.Namespace) -> int:
     # resources live under `<project_root>/.ao/`; load_with_override
     # resolves to bundled default when no override exists.
     policy = load_with_override(
-        "policies", "policy_agent_consultation.v1.json",
+        "policies",
+        "policy_agent_consultation.v1.json",
         workspace=project_root / ".ao",
     )
 
@@ -378,10 +368,7 @@ def _cmd_consultation_migrate(args: argparse.Namespace) -> int:
             "copied": result.copied_count,
             "skipped_existing": result.skipped_existing,
             "skipped_invalid": result.skipped_invalid,
-            "backup_manifest": (
-                str(result.backup_manifest)
-                if result.backup_manifest else None
-            ),
+            "backup_manifest": (str(result.backup_manifest) if result.backup_manifest else None),
             "entries": [
                 {
                     "artefact": e.artefact,
@@ -405,6 +392,171 @@ def _cmd_consultation_migrate(args: argparse.Namespace) -> int:
         if result.backup_manifest:
             print(f"Backup manifest: {result.backup_manifest}")
     return 0
+
+
+def _resolve_scorecard_policy(
+    project_root: object = None,
+) -> "dict[str, object]":
+    """Load policy_scorecard.v1.json with optional workspace override."""
+    from pathlib import Path as _Path
+
+    from ao_kernel.config import load_with_override
+
+    workspace: _Path | None = None
+    if project_root is not None:
+        workspace = _Path(str(project_root)).expanduser().resolve() / ".ao"
+    return load_with_override(
+        "policies",
+        "policy_scorecard.v1.json",
+        workspace=workspace,
+    )
+
+
+def _cmd_scorecard_emit(args: argparse.Namespace) -> int:
+    """Run benchmarks + write scorecard. Policy-agnostic (plan §3.8)."""
+    import os
+    import subprocess
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.scorecard.collector import (
+        DEFAULT_OUTPUT_FILENAME,
+        resolve_output_path,
+    )
+
+    output = _Path(args.output_path).expanduser().resolve() if args.output_path else resolve_output_path()
+    env = os.environ.copy()
+    env["AO_SCORECARD_OUTPUT"] = str(output)
+    cmd = ["pytest", "tests/benchmarks/", "-q"]
+    if args.pytest_args:
+        cmd.extend(args.pytest_args)
+    try:
+        completed = subprocess.run(cmd, env=env, check=False)
+    except FileNotFoundError:
+        print(
+            "pytest binary not found; install the [dev] extra or run in a virtualenv.",
+            file=sys.stderr,
+        )
+        return 2
+    # Emit is advisory: even on pytest failure the scorecard is written by
+    # the pytest_sessionfinish hook (failure diagnostic carried in content).
+    if not output.is_file():
+        print(
+            f"scorecard output not produced at {output} (check benchmark session logs).",
+            file=sys.stderr,
+        )
+        return completed.returncode or 3
+    print(f"scorecard emitted: {output}")
+    if completed.returncode != 0:
+        print(
+            f"pytest exit={completed.returncode}; see benchmark logs above.",
+            file=sys.stderr,
+        )
+    if not args.output_path and output != resolve_output_path():
+        print(
+            f"(default filename would have been {DEFAULT_OUTPUT_FILENAME})",
+            file=sys.stderr,
+        )
+    return completed.returncode
+
+
+def _cmd_scorecard_compare(args: argparse.Namespace) -> int:
+    """Diff baseline vs head + render + exit per fail_action."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.scorecard.compare import (
+        compare_scorecards,
+        exit_code_for,
+    )
+    from ao_kernel._internal.scorecard.render import render_diff
+
+    head_path = _Path(args.head).expanduser().resolve()
+    if not head_path.is_file():
+        print(f"head scorecard not found: {head_path}", file=sys.stderr)
+        return 2
+    head = _json.loads(head_path.read_text(encoding="utf-8"))
+
+    baseline = None
+    baseline_sha = "_(not found)_"
+    if args.baseline:
+        baseline_path = _Path(args.baseline).expanduser().resolve()
+        if baseline_path.is_file():
+            baseline = _json.loads(baseline_path.read_text(encoding="utf-8"))
+            baseline_sha = baseline.get("git_sha", "unknown") if isinstance(baseline, dict) else "unknown"
+        else:
+            print(
+                f"baseline scorecard not found at {baseline_path}; rendering diff against empty baseline.",
+                file=sys.stderr,
+            )
+
+    policy = _resolve_scorecard_policy(getattr(args, "project_root", None))
+    diff = compare_scorecards(baseline, head, policy=policy)
+    rendered = render_diff(diff, head_scorecard=head)
+    print(rendered)
+    if diff.has_regression and policy.get("fail_action") == "warn":
+        print(
+            f"WARN: regression detected (baseline={baseline_sha}) — bundled policy is warn-only; exit 0.",
+            file=sys.stderr,
+        )
+    return exit_code_for(diff)
+
+
+def _cmd_scorecard_render(args: argparse.Namespace) -> int:
+    """Render markdown only — no policy evaluation, always exit 0."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.scorecard.compare import compare_scorecards
+    from ao_kernel._internal.scorecard.render import render_diff
+
+    head_path = _Path(args.input).expanduser().resolve()
+    if not head_path.is_file():
+        print(f"input scorecard not found: {head_path}", file=sys.stderr)
+        return 2
+    head = _json.loads(head_path.read_text(encoding="utf-8"))
+
+    baseline = None
+    if args.baseline:
+        baseline_path = _Path(args.baseline).expanduser().resolve()
+        if baseline_path.is_file():
+            baseline = _json.loads(baseline_path.read_text(encoding="utf-8"))
+
+    diff = compare_scorecards(baseline, head)
+    print(render_diff(diff, head_scorecard=head))
+    return 0
+
+
+def _cmd_scorecard_post_comment(args: argparse.Namespace) -> int:
+    """CI-side sentinel-sticky upsert via gh; advisory-only (exit 0)."""
+    import os
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.scorecard.post_comment import (
+        upsert_sticky_comment,
+    )
+
+    body_path = _Path(args.body_file).expanduser().resolve()
+    if not body_path.is_file():
+        print(f"body file not found: {body_path}", file=sys.stderr)
+        return 0  # advisory
+    body = body_path.read_text(encoding="utf-8")
+
+    repo = args.repo or os.environ.get("GITHUB_REPOSITORY") or ""
+    if not repo:
+        print(
+            "GITHUB_REPOSITORY env var or --repo flag required; skipping post.",
+            file=sys.stderr,
+        )
+        return 0  # advisory
+
+    result = upsert_sticky_comment(
+        repo=repo,
+        pr=int(args.pr),
+        body=body,
+        sentinel=args.sentinel,
+    )
+    print(f"post-comment {result.outcome}: {result.message}")
+    return 0  # always advisory
 
 
 def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
@@ -447,8 +599,7 @@ def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
     )
     if step_def is None:
         print(
-            f"step_name={args.step_name!r} not in workflow "
-            f"{record['workflow_id']}@{record['workflow_version']}",
+            f"step_name={args.step_name!r} not in workflow {record['workflow_id']}@{record['workflow_version']}",
             file=sys.stderr,
         )
         return 1
@@ -465,10 +616,7 @@ def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
     # derivation matches the real run. `--executor-only` flag still
     # forces executor path for debugging / backward-compat.
     executor_only = getattr(args, "executor_only", False)
-    use_driver = (
-        (not executor_only)
-        and step_def.actor in ("adapter", "system", "ao-kernel")
-    )
+    use_driver = (not executor_only) and step_def.actor in ("adapter", "system", "ao-kernel")
     if use_driver:
         from ao_kernel.executor.multi_step_driver import MultiStepDriver
 
@@ -479,18 +627,19 @@ def _cmd_executor_dry_run(args: argparse.Namespace) -> int:
             executor=executor,
         )
         result = driver.dry_run_step(
-            args.run_id, args.step_name, attempt=args.attempt,
+            args.run_id,
+            args.step_name,
+            attempt=args.attempt,
         )
     else:
         result = executor.dry_run_step(
-            args.run_id, step_def, attempt=args.attempt or 1,
+            args.run_id,
+            step_def,
+            attempt=args.attempt or 1,
         )
     if args.format == "json":
         out = {
-            "predicted_events": [
-                {"kind": k, "payload": dict(p)}
-                for k, p in result.predicted_events
-            ],
+            "predicted_events": [{"kind": k, "payload": dict(p)} for k, p in result.predicted_events],
             "policy_violations": list(result.policy_violations),
             "simulated_budget_after": dict(result.simulated_budget_after),
             "simulated_outputs": dict(result.simulated_outputs),
@@ -548,8 +697,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     vm_p = ev_sub.add_parser("verify-manifest", help="Verify SHA-256 manifest")
     vm_p.add_argument("--run", dest="run_id", required=True, help="Run ID (UUID)")
-    vm_p.add_argument("--generate-if-missing", action="store_true",
-                       help="Generate manifest first if absent")
+    vm_p.add_argument("--generate-if-missing", action="store_true", help="Generate manifest first if absent")
 
     mcp_p = sub.add_parser("mcp", help="MCP server commands")
     mcp_sub = mcp_p.add_subparsers(dest="mcp_command")
@@ -586,19 +734,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     debug_p = metrics_sub.add_parser(
         "debug-query",
-        help=(
-            "Ad-hoc JSON query over evidence events "
-            "(never Prometheus textfile; for operator debugging)"
-        ),
+        help=("Ad-hoc JSON query over evidence events (never Prometheus textfile; for operator debugging)"),
     )
     debug_p.add_argument(
         "--since",
         type=parse_iso8601_strict,
         default=None,
-        help=(
-            "Filter events at or after this ISO-8601 timestamp; "
-            "timezone required (use 'Z' or '+HH:MM')"
-        ),
+        help=("Filter events at or after this ISO-8601 timestamp; timezone required (use 'Z' or '+HH:MM')"),
     )
     debug_p.add_argument(
         "--run",
@@ -646,10 +788,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _proposed_group.add_argument(
         "--proposed-patches",
         default=None,
-        help=(
-            "Directory containing RFC 7396 JSON Merge Patch files "
-            "(<name>.v1.patch.json → patches <name>.v1.json)"
-        ),
+        help=("Directory containing RFC 7396 JSON Merge Patch files (<name>.v1.patch.json → patches <name>.v1.json)"),
     )
     run_p.add_argument(
         "--baseline-source",
@@ -795,22 +934,28 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     migrate_cons_p.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Report what WOULD be copied without touching disk.",
     )
     migrate_cons_p.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Overwrite pre-existing canonical files (non-destructive by default).",
     )
     migrate_cons_p.add_argument(
-        "--include-invalid", action="store_true",
+        "--include-invalid",
+        action="store_true",
         help="Copy files flagged INVALID_JSON anyway (default: skipped).",
     )
     migrate_cons_p.add_argument(
-        "--output", choices=["json", "human"], default="human",
+        "--output",
+        choices=["json", "human"],
+        default="human",
     )
     migrate_cons_p.add_argument(
-        "--project-root", default=None,
+        "--project-root",
+        default=None,
         help="Project root (default: cwd)",
     )
 
@@ -825,11 +970,13 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     archive_cons_p.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Report scope without touching disk.",
     )
     archive_cons_p.add_argument(
-        "--renormalize", action="store_true",
+        "--renormalize",
+        action="store_true",
         help=(
             "Force resolution record rebuild even if digest matches. "
             "Use after normalizer_version upgrade to backfill historical "
@@ -837,7 +984,8 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     archive_cons_p.add_argument(
-        "--verify", action="store_true",
+        "--verify",
+        action="store_true",
         help=(
             "Verify integrity manifests for all existing evidence "
             "directories under `.ao/evidence/consultations/`. No "
@@ -846,10 +994,13 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     archive_cons_p.add_argument(
-        "--output", choices=["json", "human"], default="human",
+        "--output",
+        choices=["json", "human"],
+        default="human",
     )
     archive_cons_p.add_argument(
-        "--project-root", default=None,
+        "--project-root",
+        default=None,
     )
 
     # v3.5 D2b: consultation promote subcommand
@@ -864,21 +1015,23 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     promote_cons_p.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Count what WOULD be promoted without touching the store.",
     )
     promote_cons_p.add_argument(
-        "--force", action="store_true",
-        help=(
-            "Bypass the policy.promotion.enabled gate for this run "
-            "(integrity + eligibility still enforced)."
-        ),
+        "--force",
+        action="store_true",
+        help=("Bypass the policy.promotion.enabled gate for this run (integrity + eligibility still enforced)."),
     )
     promote_cons_p.add_argument(
-        "--output", choices=["json", "human"], default="human",
+        "--output",
+        choices=["json", "human"],
+        default="human",
     )
     promote_cons_p.add_argument(
-        "--project-root", default=None,
+        "--project-root",
+        default=None,
     )
 
     # v3.4.0 #3: cost compact-markers subcommand
@@ -894,18 +1047,12 @@ def _build_parser() -> argparse.ArgumentParser:
     compact_p.add_argument(
         "--run-id",
         default=None,
-        help=(
-            "Compact a single run by id. Mutually exclusive with "
-            "--all-terminal."
-        ),
+        help=("Compact a single run by id. Mutually exclusive with --all-terminal."),
     )
     compact_p.add_argument(
         "--all-terminal",
         action="store_true",
-        help=(
-            "Compact every on-disk run in a terminal state "
-            "(completed / failed / cancelled)."
-        ),
+        help=("Compact every on-disk run in a terminal state (completed / failed / cancelled)."),
     )
     compact_p.add_argument(
         "--dry-run",
@@ -922,6 +1069,94 @@ def _build_parser() -> argparse.ArgumentParser:
         "--project-root",
         default=None,
         help="Project root (default: cwd)",
+    )
+
+    # v3.5 D3: scorecard subcommand
+    scorecard_p = sub.add_parser(
+        "scorecard",
+        help=("Dev scorecard for PR-B7 benchmarks: emit, compare vs main baseline, render markdown, post-comment."),
+    )
+    scorecard_sub = scorecard_p.add_subparsers(dest="scorecard_command")
+
+    emit_sc_p = scorecard_sub.add_parser(
+        "emit",
+        help=("Run tests/benchmarks/ via pytest and write benchmark_scorecard.v1.json. Policy-agnostic."),
+    )
+    emit_sc_p.add_argument(
+        "--output",
+        dest="output_path",
+        default=None,
+        help=("Output path (default: $AO_SCORECARD_OUTPUT or ./benchmark_scorecard.v1.json)."),
+    )
+    emit_sc_p.add_argument(
+        "pytest_args",
+        nargs=argparse.REMAINDER,
+        help="Extra arguments forwarded to pytest after `--`.",
+    )
+
+    compare_sc_p = scorecard_sub.add_parser(
+        "compare",
+        help=("Diff baseline vs head scorecard, render markdown, exit per policy_scorecard.fail_action."),
+    )
+    compare_sc_p.add_argument(
+        "--baseline",
+        default=None,
+        help="Path to baseline scorecard JSON.",
+    )
+    compare_sc_p.add_argument(
+        "--head",
+        required=True,
+        help="Path to head scorecard JSON.",
+    )
+    compare_sc_p.add_argument(
+        "--project-root",
+        default=None,
+        help="Project root (optional; resolves workspace policy override).",
+    )
+
+    render_sc_p = scorecard_sub.add_parser(
+        "render",
+        help="Render diff markdown to stdout (no policy, always exit 0).",
+    )
+    render_sc_p.add_argument(
+        "--input",
+        required=True,
+        help="Path to head scorecard JSON.",
+    )
+    render_sc_p.add_argument(
+        "--baseline",
+        default=None,
+        help="Optional baseline scorecard JSON for delta columns.",
+    )
+
+    post_sc_p = scorecard_sub.add_parser(
+        "post-comment",
+        help=("Upsert a sentinel-tagged sticky comment on a PR. Advisory-only — exit 0 on any failure."),
+    )
+    post_sc_p.add_argument(
+        "--pr",
+        required=True,
+        type=int,
+        help="PR number.",
+    )
+    post_sc_p.add_argument(
+        "--body-file",
+        required=True,
+        help="Path to rendered markdown.",
+    )
+    post_sc_p.add_argument(
+        "--sentinel",
+        required=True,
+        help=(
+            "HTML sentinel string the body must contain. "
+            "Existing comments that include this string are PATCHed "
+            "instead of posted fresh."
+        ),
+    )
+    post_sc_p.add_argument(
+        "--repo",
+        default=None,
+        help="`owner/name` slug (default: $GITHUB_REPOSITORY).",
     )
 
     return parser
@@ -951,6 +1186,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_timeline,
             cmd_verify_manifest,
         )
+
         ev_dispatch = {
             "timeline": cmd_timeline,
             "replay": cmd_replay,
@@ -970,6 +1206,7 @@ def main(argv: list[str] | None = None) -> int:
         if mcp_cmd == "serve":
             return _cmd_mcp_serve(args)
         from ao_kernel.i18n import msg
+
         print(msg("usage_mcp_serve"))
         return 1
 
@@ -1017,6 +1254,23 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_cost_compact_markers(args)
         print(
             "Usage: ao-kernel cost {reconcile|compact-markers}",
+            file=sys.stderr,
+        )
+        return 1
+
+    # Scorecard subcommand (v3.5 D3)
+    if cmd == "scorecard":
+        sc_cmd = getattr(args, "scorecard_command", None)
+        if sc_cmd == "emit":
+            return _cmd_scorecard_emit(args)
+        if sc_cmd == "compare":
+            return _cmd_scorecard_compare(args)
+        if sc_cmd == "render":
+            return _cmd_scorecard_render(args)
+        if sc_cmd == "post-comment":
+            return _cmd_scorecard_post_comment(args)
+        print(
+            "Usage: ao-kernel scorecard {emit|compare|render|post-comment}",
             file=sys.stderr,
         )
         return 1

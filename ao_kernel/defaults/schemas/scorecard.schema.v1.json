@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:scorecard:v1",
+  "title": "Benchmark Scorecard",
+  "description": "Typed scorecard artefact emitted by the v3.5 D3 collector after a `tests/benchmarks/` session. One entry per scenario that carries `@pytest.mark.scorecard_primary`. Top-level contract is strict; per-benchmark entries are forward-extensible so future axes (e.g. memory_rss_kib) can land without a schema bump.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "git_sha", "benchmarks"],
+  "properties": {
+    "schema_version": { "const": "v1" },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp of collector session finish."
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "HEAD commit SHA at scorecard generation time. Short (7) or full (40) hex accepted."
+    },
+    "git_ref": {
+      "type": "string",
+      "description": "Branch or tag ref, best-effort (e.g. `refs/heads/main`, `feat/v3.5-d3`). Optional — may be absent in local runs."
+    },
+    "pr_number": {
+      "type": ["integer", "null"],
+      "description": "GitHub PR number when running inside a PR CI run; null on main or local."
+    },
+    "benchmarks": {
+      "type": "array",
+      "description": "One entry per primary-marked scenario. Sorted by `scenario` for deterministic artefact diffing.",
+      "items": { "$ref": "#/$defs/benchmark_result" }
+    }
+  },
+  "$defs": {
+    "benchmark_result": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scenario", "status", "workflow_completed"],
+      "properties": {
+        "scenario": {
+          "type": "string",
+          "description": "Scenario id (e.g. `governed_bugfix`, `governed_review`)."
+        },
+        "status": {
+          "enum": ["pass", "fail"],
+          "description": "Aggregate pass/fail derived from workflow_completed + workflow_failed event presence."
+        },
+        "workflow_completed": {
+          "type": "boolean",
+          "description": "True iff a `workflow_completed` event was observed in the primary run's events.jsonl."
+        },
+        "duration_ms": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Elapsed wall-clock milliseconds between first and last event in the primary run. Null when the run is empty."
+        },
+        "cost_consumed_usd": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "USD consumed from the `cost_usd` budget axis in the primary run's final state snapshot. Null when the axis was not seeded."
+        },
+        "cost_source": {
+          "type": ["string", "null"],
+          "description": "Where cost_consumed_usd originated. v1 always emits `mock_shim` (B7 benchmark-only shim). Post-C3 real-adapter runs will emit `real_adapter`."
+        },
+        "review_score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Optional reviewer self-confidence score from the `review_findings` capability artefact. Null when the scenario does not produce a review-findings payload."
+        }
+      }
+    }
+  }
+}

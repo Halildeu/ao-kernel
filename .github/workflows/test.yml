@@ -88,8 +88,71 @@ jobs:
           python-version: "3.13"
       - name: Install dependencies
         run: pip install -e ".[dev,llm,mcp,metrics]"
-      - name: Run PR-B7 benchmarks (fast mode)
+      - name: Run PR-B7 benchmarks (fast mode) + emit scorecard
+        env:
+          AO_SCORECARD_OUTPUT: benchmark_scorecard.v1.json
         run: pytest tests/benchmarks/ -q
+      - name: Upload head scorecard
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-${{ github.sha }}
+          path: benchmark_scorecard.v1.json
+          if-no-files-found: warn
+      - name: Upload main baseline scorecard
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-main
+          path: benchmark_scorecard.v1.json
+          if-no-files-found: warn
+          overwrite: true
+
+  scorecard:
+    name: scorecard
+    runs-on: ubuntu-latest
+    needs: [benchmark-fast]
+    if: github.event_name == 'pull_request'
+    continue-on-error: true  # Advisory surface — never red-check PRs.
+    permissions:
+      pull-requests: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -e ".[dev,llm,mcp,metrics]"
+      - name: Download head scorecard
+        uses: actions/download-artifact@v4
+        with:
+          name: scorecard-${{ github.sha }}
+          path: head/
+      # SHA-pinned dawidd6/action-download-artifact@v6
+      # (resolved against tag v6 at PR-open time per plan §3.7).
+      - name: Download main baseline scorecard
+        uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11
+        with:
+          workflow: test.yml
+          branch: main
+          name: scorecard-main
+          path: ./baseline/
+          if_no_artifact_found: warn
+      - name: Compose scorecard comment
+        run: |
+          ao-kernel scorecard compare \
+            --baseline baseline/benchmark_scorecard.v1.json \
+            --head head/benchmark_scorecard.v1.json \
+            > scorecard_comment.md
+      - name: Post sticky PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ao-kernel scorecard post-comment \
+            --pr ${{ github.event.pull_request.number }} \
+            --body-file scorecard_comment.md \
+            --sentinel '<!-- ao-scorecard -->' || true
 
   extras-install:
     name: extras-install

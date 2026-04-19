@@ -11,6 +11,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from ao_kernel.workflow.run_store import load_run
 
 from tests._driver_helpers import _GIT_CFG
@@ -39,12 +41,14 @@ def _run_dir(workspace_root: Path, run_id: str) -> Path:
 
 
 class TestHappyPath:
+    @pytest.mark.scorecard_primary
     def test_end_to_end_completes(
         self,
         workspace_root: Path,
         seeded_run,
         benchmark_driver,
         seeded_budget,
+        benchmark_primary_sidecar,
     ) -> None:
         run_id = seeded_run(_WORKFLOW_ID, version=_WORKFLOW_VERSION)
         # Bench variant exercises codex-stub only; gh-cli-pr
@@ -55,7 +59,9 @@ class TestHappyPath:
 
         with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
             first = benchmark_driver.run_workflow(
-                run_id, _WORKFLOW_ID, _WORKFLOW_VERSION,
+                run_id,
+                _WORKFLOW_ID,
+                _WORKFLOW_VERSION,
             )
             # `bug_fix_flow` carries an await_approval gate;
             # first run should exit awaiting_approval with a token.
@@ -66,7 +72,9 @@ class TestHappyPath:
                     _run_dir(workspace_root, run_id),
                 )
             second = benchmark_driver.resume_workflow(
-                run_id, token, payload={"decision": "granted"},
+                run_id,
+                token,
+                payload={"decision": "granted"},
             )
 
         assert second.final_state == "completed"
@@ -79,9 +87,7 @@ class TestHappyPath:
         # Adapter step records — only codex-stub step has
         # capability_output_refs (gh-cli-pr manifest has no
         # output_parse, v5 Codex W3 absorb).
-        step_records = {
-            step["step_name"]: step for step in record.get("steps", [])
-        }
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
         coding_step = step_records.get("invoke_coding_agent")
         assert coding_step is not None, step_records
         assert_adapter_ok(coding_step)
@@ -94,6 +100,19 @@ class TestHappyPath:
             coding_step,
             "commit_message",
             run_dir=_run_dir(workspace_root, run_id),
+        )
+
+        # Scorecard primary sidecar — governed_bugfix happy-path has
+        # no review-score contract (the codex-stub envelope carries
+        # review_findings but the scenario asserts only presence, not
+        # score). Pass review_findings_path=None so the collector
+        # records review_score=None. run_state_path points at the
+        # canonical run-state file so cost_consumed_usd extraction
+        # works off the `budget.cost_usd` axis.
+        benchmark_primary_sidecar(
+            _SCENARIO_ID,
+            _run_dir(workspace_root, run_id),
+            run_state_path=workspace_root / ".ao" / "runs" / run_id / "state.v1.json",
         )
 
 
@@ -114,7 +133,9 @@ class TestTransportError:
 
         with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
             result = benchmark_driver.run_workflow(
-                run_id, _WORKFLOW_ID, _WORKFLOW_VERSION,
+                run_id,
+                _WORKFLOW_ID,
+                _WORKFLOW_VERSION,
             )
 
         assert result.final_state == "failed"
@@ -150,12 +171,13 @@ def _install_mini_repo(workspace_root: Path) -> None:
     # Commit baseline so worktree picks up the files
     subprocess.run(
         ["git", *_GIT_CFG, "-C", str(workspace_root), "add", "."],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
     subprocess.run(
-        ["git", *_GIT_CFG, "-C", str(workspace_root), "commit",
-         "-q", "-m", "mini_repo baseline"],
-        check=True, capture_output=True,
+        ["git", *_GIT_CFG, "-C", str(workspace_root), "commit", "-q", "-m", "mini_repo baseline"],
+        check=True,
+        capture_output=True,
     )
 
 
@@ -208,10 +230,7 @@ class TestFullBundledBugFixFlow:
             "open_pr",
         ], f"unexpected step order: {step_order!r}"
         # Manifest parity check (C1b W4 absorb)
-        gh_manifest_path = (
-            workspace_root / ".ao" / "adapters"
-            / "gh-cli-pr.manifest.v1.json"
-        )
+        gh_manifest_path = workspace_root / ".ao" / "adapters" / "gh-cli-pr.manifest.v1.json"
         gh_manifest = _json.loads(gh_manifest_path.read_text())
         assert "context_pack_ref" in gh_manifest["input_envelope"], (
             "gh-cli-pr input_envelope must declare context_pack_ref"
@@ -236,17 +255,18 @@ class TestFullBundledBugFixFlow:
         run_id = seeded_run("bug_fix_flow", version="1.0.0")
 
         canned = {
-            ("full_bundled_bugfix", "codex-stub", 1):
-                bug_envelopes.coding_agent_happy(),
-            ("full_bundled_bugfix", "gh-cli-pr", 1):
-                bug_envelopes.open_pr_happy(),
+            ("full_bundled_bugfix", "codex-stub", 1): bug_envelopes.coding_agent_happy(),
+            ("full_bundled_bugfix", "gh-cli-pr", 1): bug_envelopes.open_pr_happy(),
         }
 
         with mock_adapter_transport(
-            canned, scenario_id="full_bundled_bugfix",
+            canned,
+            scenario_id="full_bundled_bugfix",
         ):
             first = benchmark_driver.run_workflow(
-                run_id, "bug_fix_flow", "1.0.0",
+                run_id,
+                "bug_fix_flow",
+                "1.0.0",
             )
             # If first run didn't reach the approval gate, surface
             # the reason with full context — CI environment drift
@@ -254,11 +274,9 @@ class TestFullBundledBugFixFlow:
             # platform-specific.
             if first.final_state != "waiting_approval":
                 from ao_kernel.workflow.run_store import load_run
+
                 record, _ = load_run(workspace_root, run_id)
-                step_records = {
-                    step["step_name"]: step
-                    for step in record.get("steps", [])
-                }
+                step_records = {step["step_name"]: step for step in record.get("steps", [])}
                 failed = [
                     {
                         "step_name": name,
@@ -277,9 +295,8 @@ class TestFullBundledBugFixFlow:
                 )
                 if failed:
                     import pytest as _pytest
-                    _pytest.skip(
-                        f"{pytest_skip_reason}; failed_steps={failed!r}"
-                    )
+
+                    _pytest.skip(f"{pytest_skip_reason}; failed_steps={failed!r}")
                 raise AssertionError(
                     f"expected waiting_approval, got "
                     f"{first.final_state!r}; no failed steps but flow "
@@ -290,32 +307,25 @@ class TestFullBundledBugFixFlow:
                 _run_dir(workspace_root, run_id),
             )
             final = benchmark_driver.resume_workflow(
-                run_id, token, payload={"decision": "granted"},
+                run_id,
+                token,
+                payload={"decision": "granted"},
             )
 
         from ao_kernel.workflow.run_store import load_run
+
         record, _ = load_run(workspace_root, run_id)
         if final.final_state != "completed":
-            step_records = {
-                step["step_name"]: step
-                for step in record.get("steps", [])
-            }
+            step_records = {step["step_name"]: step for step in record.get("steps", [])}
             failed = [
-                (name, step.get("error", {}))
-                for name, step in step_records.items()
-                if step.get("state") == "failed"
+                (name, step.get("error", {})) for name, step in step_records.items() if step.get("state") == "failed"
             ]
-            raise AssertionError(
-                f"expected completed, got {final.final_state!r}; "
-                f"failed_steps={failed!r}"
-            )
+            raise AssertionError(f"expected completed, got {final.final_state!r}; failed_steps={failed!r}")
 
         assert_workflow_completed(_run_dir(workspace_root, run_id))
 
         # All 7 steps should have run (some may be skipped if upstream failed).
-        step_records = {
-            step["step_name"]: step for step in record.get("steps", [])
-        }
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
         expected_steps = {
             "compile_context",
             "invoke_coding_agent",
@@ -325,9 +335,7 @@ class TestFullBundledBugFixFlow:
             "apply_patch",
             "open_pr",
         }
-        assert expected_steps.issubset(step_records.keys()), (
-            f"missing steps: {expected_steps - step_records.keys()}"
-        )
+        assert expected_steps.issubset(step_records.keys()), f"missing steps: {expected_steps - step_records.keys()}"
         assert_adapter_ok(step_records["open_pr"])
 
     def test_adapter_artifact_has_top_level_diff_contract(
@@ -347,27 +355,29 @@ class TestFullBundledBugFixFlow:
         bundled bug_fix_flow E2E is deferred to post-C2."""
         _install_mini_repo(workspace_root)
         run_id = seeded_run(
-            _WORKFLOW_ID, version=_WORKFLOW_VERSION,
+            _WORKFLOW_ID,
+            version=_WORKFLOW_VERSION,
         )
         canned = {
-            (_SCENARIO_ID, "codex-stub", 1):
-                bug_envelopes.coding_agent_happy(),
+            (_SCENARIO_ID, "codex-stub", 1): bug_envelopes.coding_agent_happy(),
         }
         with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
             first = benchmark_driver.run_workflow(
-                run_id, _WORKFLOW_ID, _WORKFLOW_VERSION,
+                run_id,
+                _WORKFLOW_ID,
+                _WORKFLOW_VERSION,
             )
             token = first.resume_token or read_awaiting_human_token(
                 _run_dir(workspace_root, run_id),
             )
             benchmark_driver.resume_workflow(
-                run_id, token, payload={"decision": "granted"},
+                run_id,
+                token,
+                payload={"decision": "granted"},
             )
 
         record, _ = load_run(workspace_root, run_id)
-        step_records = {
-            step["step_name"]: step for step in record.get("steps", [])
-        }
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
         coding_step = step_records["invoke_coding_agent"]
         assert coding_step["state"] == "completed"
         output_ref = coding_step.get("output_ref")
@@ -375,9 +385,8 @@ class TestFullBundledBugFixFlow:
 
         # C1a contract: output_ref is run-relative artifact path.
         import json as _json
-        artifact_path = (
-            _run_dir(workspace_root, run_id) / output_ref
-        )
+
+        artifact_path = _run_dir(workspace_root, run_id) / output_ref
         assert artifact_path.is_file()
         artifact = _json.loads(artifact_path.read_text())
         # C1b contract: top-level diff present for patch plumbing
@@ -385,4 +394,3 @@ class TestFullBundledBugFixFlow:
         assert "diff" in artifact
         assert isinstance(artifact["diff"], str)
         assert len(artifact["diff"]) > 0
-
