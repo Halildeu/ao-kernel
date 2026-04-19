@@ -1,7 +1,7 @@
 {
   "version": "v1",
   "enabled": false,
-  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means no logging and no blocking — the policy simply does not engage. Workspace override required to engage (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
+  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means enforcement dormant (no 'policy_checked' / 'policy_denied' evidence events, no fail on violations). Sandbox shaping is retained so the adapter still receives a scoped env / worktree / redaction profile. Workspace override required to engage enforcement (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
 
   "worktree": {
     "strategy": "new_per_run",
@@ -81,12 +81,11 @@
 
   "rollout": {
     "mode_default": "report_only",
-    "_mode_note": "Only meaningful when enabled=true. Three tiers: (1) enabled=false -> policy dormant (no log, no block). (2) enabled=true + mode_default=report_only -> violations emit 'policy_checked' evidence events but execution is not blocked (warmup tier). (3) enabled=true + mode_default=block -> violations emit 'policy_denied' events AND deny the operation (production tier). promote_to_block_on list is ONLY evaluated in block mode.",
+    "_mode_note": "Three tiers honored by the executor as of v3.11 P2: (1) enabled=false -> policy layer DORMANT: no 'policy_checked' / 'policy_denied' events, no fail; sandbox still built from declared fields so adapter has a runnable env. (2) enabled=true + mode_default='report_only' -> WARMUP: 'policy_checked' event emitted with additive payload fields (mode, would_block, violation_kinds, promoted_to_block); step continues even if violations present. (3) enabled=true + mode_default='block' -> PRODUCTION: 'policy_checked' + (on violations) 'policy_denied' + step fails closed (PolicyViolationError). Unknown mode_default value -> block (fail-closed fallback). promote_to_block_on is evaluated in report_only mode ONLY: if any violation.kind matches an entry in the list, escalation overrides report_only and the step is treated as block. Entries MUST use the closed PolicyViolation.kind taxonomy (see ao_kernel/executor/errors.py): env_unknown, env_missing_required, command_not_allowlisted, command_path_outside_policy, cwd_escape, secret_exposure_denied, secret_missing, http_header_exposure_unauthorized.",
     "promote_to_block_on": [
-      "secret_leak_detected",
-      "cwd_escape_attempted",
-      "command_not_in_allowlist",
-      "unknown_env_key"
+      "secret_exposure_denied",
+      "cwd_escape",
+      "command_not_allowlisted"
     ]
   }
 }
