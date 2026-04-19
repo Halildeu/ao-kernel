@@ -16,7 +16,10 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install ruff
-        run: pip install ruff
+        # v3.8 H6: 2-try retry guard for transient PyPI/TLS flakes
+        # (one-off `SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC` observed
+        # on v3.7 release CI; cheap insurance across all pip installs).
+        run: pip install ruff || (sleep 5 && pip install ruff)
       - name: Ruff check
         run: ruff check ao_kernel/ tests/
 
@@ -34,7 +37,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,metrics]"
+        # v3.8 H6 retry guard (see lint job note).
+        run: pip install -e ".[dev,llm,metrics]" || (sleep 5 && pip install -e ".[dev,llm,metrics]")
       - name: Run tests
         run: pytest tests/ --ignore=tests/benchmarks -v --cov=ao_kernel --cov-branch --cov-report=term-missing
 
@@ -47,7 +51,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,metrics]"
+        # v3.8 H6 retry guard (see lint job note).
+        run: pip install -e ".[dev,llm,metrics]" || (sleep 5 && pip install -e ".[dev,llm,metrics]")
       - name: Run tests with coverage gate
         run: |
           pytest tests/ --ignore=tests/benchmarks --cov=ao_kernel --cov-branch --cov-report=xml --cov-report=term-missing
@@ -73,7 +78,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,mcp,metrics]"
+        # v3.8 H6 retry guard (see lint job note).
+        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
       - name: Mypy
         run: mypy ao_kernel/
 
@@ -87,7 +93,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,mcp,metrics]"
+        # v3.8 H6 retry guard (see lint job note).
+        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
       - name: Run PR-B7 benchmarks (fast mode) + emit scorecard
         env:
           AO_SCORECARD_OUTPUT: benchmark_scorecard.v1.json
@@ -123,7 +130,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install dependencies
-        run: pip install -e ".[dev,llm,mcp,metrics]"
+        # v3.8 H6 retry guard (see lint job note).
+        run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
       - name: Download head scorecard
         uses: actions/download-artifact@v4
         with:
@@ -164,9 +172,13 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install and smoke-import each extra
+        # v3.8 H6: tiny inline retry helper — retry once on pip flake.
         run: |
-          pip install -e ".[llm]"      && python -c "import tenacity, tiktoken; print('llm OK')"
-          pip install -e ".[otel]"     && python -c "import opentelemetry; print('otel OK')"
-          pip install -e ".[mcp]"      && python -c "import mcp; print('mcp OK')"
-          pip install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
-          pip install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"
+          pip_install() {
+            pip install "$@" || (sleep 5 && pip install "$@")
+          }
+          pip_install -e ".[llm]"      && python -c "import tenacity, tiktoken; print('llm OK')"
+          pip_install -e ".[otel]"     && python -c "import opentelemetry; print('otel OK')"
+          pip_install -e ".[mcp]"      && python -c "import mcp; print('mcp OK')"
+          pip_install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
+          pip_install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"

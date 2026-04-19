@@ -20,7 +20,8 @@ jobs:
           python-version: "3.13"
 
       - name: Install build tools
-        run: pip install build twine
+        # v3.8 H6: 2-try retry guard for transient PyPI/TLS flakes.
+        run: pip install build twine || (sleep 5 && pip install build twine)
 
       - name: Build
         run: python -m build
