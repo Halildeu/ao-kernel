@@ -7,6 +7,78 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-04-20
+
+### Added — v3.12.0 Hygiene + Prompt Experiments (7 PRs)
+
+**Context.** v3.11.0 shipped four Runtime Polish PRs (P1 `reset_tool_gateway_state()` + P2 executor activation/rollout + P3/P4 `_internal/*` coverage tranches) and flagged two follow-up buckets: (1) `env_unknown` / `env_missing_required` dead `PolicyViolation.kind` entries, and (2) `_internal/roadmap/*` + `_internal/session/*` remaining omitted from coverage. v3.11 also gated Prompt Experiments on "at least one stable operator-validated real-adapter smoke" per v3.9 Codex AGREE. v3.12 unlocks both: the executor activation landed in v3.11 P2 with a stable dormant-by-default contract, and the E-series (contract + read-only helper + runbook) is additive — no runtime loop, no policy mutation. v3.12 also absorbs an external-AI UX report (5 valid findings / 1 wrong-mental-model rejection) into P5 polish.
+
+**Scope:** 3 hygiene PRs (H1 + H2a + H3), 3 experiment PRs (E1 + E2 + E3), 1 polish PR (P5).
+
+**PR-H1 (#165) — `env_unknown` / `env_missing_required` dead-kind cleanup.**
+- `ao_kernel/executor/errors.py::PolicyViolation.kind` Literal narrowed: `env_unknown` + `env_missing_required` removed. No `policy_enforcer` path was emitting either kind; operators writing `promote_to_block_on` against them would silently no-op against real runtime violations.
+- `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md` §2 workspace-override JSON example rewritten — the illustrative `promote_to_block_on` sample had stale aliases (`secret_leak_detected`, `cwd_escape_attempted`, `command_not_in_allowlist`) left over from the v3.11 P2 rewrite; now matches the live taxonomy (`secret_exposure_denied`, `cwd_escape`, `command_not_allowlisted`).
+- +2 pins: `test_policy_violation_kind_taxonomy_drops_env_dead_kinds` (typing negative) + `test_real_adapter_runbook_has_no_stale_kind_aliases` (doc regression).
+
+**PR-H3 (#166) — `_internal/session/agent_context_version` coverage tranche 6.**
+- `pyproject.toml::coverage.run.omit` no longer masks `ao_kernel/_internal/session/agent_context_version.py` (the smallest of the three omitted session-module files). The other two (`compaction.py`, `distillation.py`) stay omitted pending the larger v3.12+ session tranche.
+- +4 pins in `tests/test_internal_session_agent_context_version_coverage.py`: `validate_agent_context_version` accept current / accept legacy with warn log / reject future / reject malformed.
+- Coverage: 85.27% → 85.29%.
+
+**PR-H2a (#167) — `_internal/roadmap/*` small-files coverage tranche 5A.**
+- `pyproject.toml::coverage.run.omit` split into 7 granular entries for `_internal/roadmap/*`: `compiler.py`, `checkpoint.py`, `exec_contracts.py` removed (now in scope); `change_proposals.py`, `sanitize.py`, `step_templates.py`, `evidence.py`, `exec_evidence.py`, `exec_steps.py`, `executor.py` kept omitted for v3.12+ large-scope tranches.
+- `compiler.py` deferred to H2b (`compile_roadmap` requires schema_path + cache_root fixture harness outside the small-files tranche scope). Test class renamed `_TestCompilerInvariantGuards_DEFER` so pytest skips collection.
+- +9 pins across `tests/test_internal_roadmap_small_coverage.py`: `TestCheckpointManager` (×5 — load-missing / atomic-write-rename / reload-round-trip / stale-purge / corrupt-recover) + `TestExecContracts` (×4 — RoadmapStepContract from_dict / invalid payload / sanitize round-trip / compile happy-path).
+- Corrected during iter-1: class name `RoadmapCheckpointStore` → `RoadmapCheckpointManager`, path `checkpoints/` → `roadmap_checkpoints/`, filename `checkpoint.json` → `progress.v1.json`.
+- Coverage: 85.29% → 85.42%.
+
+**PR-E1 (#168) — Prompt variant contract + registry loader (contract-only).**
+- New `ao_kernel/prompts.py`: `PromptVariant` dataclass + `PromptVariantError` + `load_prompt_variants(path)` loader. Fields: `variant_id` (`^[a-z0-9_.-]+$`), `experiment_id` (optional, same pattern), `intent` (enum), `template` (non-empty str), `description` (optional), `created_at` (optional ISO-8601).
+- New `ao_kernel/defaults/schemas/prompt-variant.schema.v1.json` (JSON Schema Draft 2020-12) — source-of-truth for variant stamping contract.
+- Loader validates against schema via `jsonschema.Draft202012Validator.iter_errors` BEFORE dataclass coercion (iter-1 BLOCKER absorb: field-level `str(...)` coercion was silently accepting non-string / pattern-violating / empty values); first schema error path surfaces in `PromptVariantError` message.
+- +9 pins in `tests/test_prompts_v312_e1.py`: happy-path load + round-trip + experiment_id optional + created_at optional + pattern violation (iter-1) + non-string type (iter-1) + empty string (iter-1) + duplicate variant_id + missing required field.
+- **Scope strictly contract-only**: no registry directory lookup, no `intent.metadata.variant_id` stamping side effects in runtime; operators load + hand to `compare_variants` (E2) manually. The stamping contract (operator stamps `intent.metadata.variant_id` per variant run) is documented in E3 (#170).
+
+**PR-E2 (#169) — `ao_kernel.experiments.compare_variants` read-only helper.**
+- New `ao_kernel/experiments/compare.py`: `VariantComparison` + `VariantComparisonEntry` dataclasses + `compare_variants(run_ids, workspace_root)` function + `VariantComparisonError`.
+- Contract: each run's `intent.metadata.variant_id` (stamped by the operator per E1 contract) is REQUIRED; absence raises `VariantComparisonError` (fail-closed pairing). `experiment_id` optional. Artefact source: first `step_record.capability_output_refs["review_findings"]` across the run's steps wins.
+- Artefact path resolution (iter-1 BLOCKER): `capability_output_refs` values are run-dir-relative per `workflow-run.schema.v1.json`. Helper resolves against `workspace_root/.ao/evidence/workflows/<run_id>/` not `workspace_root`. New `_run_dir()` helper.
+- Path-traversal guard (iter-2 BLOCKER): `path.is_relative_to(run_dir_resolved)` check after `.resolve()` — a malformed / malicious run record carrying `review_findings_ref="../../../evil.json"` now surfaces as `load_error: "artefact ref escapes run directory: ..."` instead of silently loading an unrelated JSON file stamped as `review_findings`. Python 3.11+ `is_relative_to` (target minimum).
+- Artefact load failures (missing file / malformed JSON / non-dict payload / containment violation) are packaged into `VariantComparisonEntry.load_error` (fail-open read) — the row still ships with metadata so operators can diff what shipped vs what didn't.
+- `by_variant` groups entries by `variant_id` in discovery order across the input `run_ids`; `entries` preserves input order.
+- +10 pins in `tests/test_experiments_compare_v312_e2.py`: missing `intent.metadata` / missing `variant_id` / empty `variant_id` / no review-findings step / missing artefact file / malformed artefact / successful load / ref escape rejection (iter-3) / `by_variant` grouping / `experiment_id` pass-through.
+- **Read-only**: helper does NOT orchestrate runs. Operators start each variant run manually per E3 runbook.
+
+**PR-E3 (#170) — `PROMPT-EXPERIMENTS-RUNBOOK.md` operator guide.**
+- New `docs/PROMPT-EXPERIMENTS-RUNBOOK.md`: end-to-end operator walkthrough covering (1) defining variants with `PromptVariant` + JSON registry, (2) stamping `intent.metadata.variant_id` on every workflow run invocation (operator responsibility — the runtime does NOT auto-stamp), (3) running each variant through the normal workflow path (`governed_review_claude_code_cli` or any real-adapter flow) with the variant's `template` injected as the operator's prompt body, (4) running `compare_variants([run_a, run_b, ...], workspace_root=ws)` to collect paired `review_findings`, (5) diffing / scoring the payloads (operator tooling — the helper does not score).
+- Cross-refs: `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md` for the real-adapter setup prerequisite; `review-findings.schema.v1.json` for the artefact shape.
+- Pragmatics section: why `compare_variants` is read-only (fail-open artefact load so partial runs still diff), why `variant_id` pairing is fail-closed (unstamped runs do not belong in an experiment comparison), why the helper doesn't score (operators own the diff / threshold tooling — `ao-kernel` provides the substrate).
+
+**PR-P5 (#171) — `AoKernelClient.close()` + README `[llm]` extra clarification.**
+- `AoKernelClient.close(*, save: bool = True)` public method — alias for the context manager teardown path (`end_session(save=save)` + `_close_owned_vector_store()`). Use case: explicit lifecycle control outside `with` blocks (service frameworks, long-running processes with scoped clients). Idempotent — multiple calls are safe.
+- Idempotency fix (iter-2 BLOCKER): `_close_owned_vector_store` now flips `_owns_vector_store = False` BEFORE invoking `backend.close()`, so even if the backend raises during close the state transition completes and a subsequent `close()` call is a no-op rather than re-invoking `backend.close()`.
+- README `Installation` section clarified: `pip install ao-kernel` ships the core (only `jsonschema` required), but production-grade LLM calls need `pip install ao-kernel[llm]` for `tenacity` (retry / backoff) and `tiktoken` (exact token counting). Without the extra the runtime falls back to single-attempt execution + heuristic token count (functional but weaker SLA). POSIX-only note added (cross-ref `docs/COORDINATION.md`).
+- +5 pins in `tests/test_client.py::TestClientCloseV312P5`: close ends active session / close idempotent across calls / close without context manager / close forwards `save=False` flag / close idempotent on owned backend with MagicMock (iter-2).
+
+### Migration note
+
+- **Variant experiment authors**: to use `compare_variants`, stamp `intent.metadata.variant_id` on every workflow run invocation. The runtime does NOT auto-stamp — operator responsibility per the documented contract. Unstamped runs raise `VariantComparisonError` (fail-closed pairing).
+- **Consumers using `AoKernelClient` outside `with` blocks**: `close()` is now the documented teardown method. Previous code paths using `end_session()` directly still work but will not close owned vector-store backends; prefer `close()` for full cleanup.
+- **Workspace override `policy_worktree_profile` authors**: if you had `promote_to_block_on` carrying `env_unknown` / `env_missing_required`, those kinds are dropped from the taxonomy. The escalation was already a no-op (no `policy_enforcer` path emits them); remove them from your override to match the shipped taxonomy.
+
+### Known follow-ups (post-v3.12)
+
+- `_internal/roadmap/*` remaining omitted files (`change_proposals.py`, `sanitize.py`, `step_templates.py`, `evidence.py`, `exec_evidence.py`, `exec_steps.py`, `executor.py`) + `compiler.py` (deferred from H2a) — v3.12+ H2b tranche.
+- `_internal/session/compaction.py` + `distillation.py` — remaining omitted session-module files after H3. v3.12+ session tranche.
+- `init_cmd.py::build_workspace_config` hard-codes `"version": "3.2.0"` in the written `.ao/workspace.json` (external-AI UX report finding). Live tree verified uses `ao_kernel.__version__` dynamically — the `3.2.0` strings in stale workspaces come from pre-3.2.1 PyPI installs. Hygiene PR to backfill the dynamic version into any stale workspace.json via `ao-kernel migrate` or similar.
+- `compare_variants` scoring helpers (`differing_findings()` etc.) intentionally out-of-scope for v3.12; operators write their own diff tooling per E3 runbook. Consider adding a thin canonical-diff helper in a future release.
+
+### v4.0 gates (tracked)
+
+- `save_store()` removal (deprecated since v3.0.0; `canonical_store.py:132`).
+- `allow_overwrite` default flip `True → False` on `promote_decision` + `forget` (CAS-first contract).
+- FAZ-C feature surface: streaming cost tracking, Aider-style patch primitive, `governed_bugfix` full flow, retry/chaos benchmark variants, Windows platform.
+
 ## [3.11.0] - 2026-04-19
 
 ### Added — v3.11.0 Runtime Polish (4 feature PRs + release)
