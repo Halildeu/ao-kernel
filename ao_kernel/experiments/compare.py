@@ -91,15 +91,31 @@ def _extract_review_findings_ref(
     return None
 
 
-def _read_artefact(workspace_root: Path, ref: str) -> tuple[Mapping[str, Any] | None, str | None]:
-    """Resolve ``ref`` against ``workspace_root`` and JSON-parse it.
+def _run_dir(workspace_root: Path, run_id: str) -> Path:
+    """Canonical per-run evidence directory.
+
+    Matches ``workflow-run.schema.v1.json`` contract for
+    ``step_record.capability_output_refs`` values: every ref is
+    **run-dir-relative**, not workspace-root-relative. See
+    ``ao_kernel/executor/artifacts.py`` for the writer side that
+    produces the refs.
+    """
+    return workspace_root / ".ao" / "evidence" / "workflows" / run_id
+
+
+def _read_artefact(workspace_root: Path, run_id: str, ref: str) -> tuple[Mapping[str, Any] | None, str | None]:
+    """Resolve ``ref`` against the run-dir and JSON-parse it.
+
+    ``ref`` comes from ``step_record.capability_output_refs``, which
+    is run-dir-relative per the workflow-run schema. Build the full
+    path via :func:`_run_dir(workspace_root, run_id) / ref`.
 
     Returns ``(payload, None)`` on success, ``(None, reason)`` on any
     I/O or parse failure. Fail-open semantics — the comparison row
     still ships, just without the payload.
     """
     try:
-        path = (workspace_root / ref).resolve()
+        path = (_run_dir(workspace_root, run_id) / ref).resolve()
         if not path.is_file():
             return None, f"artefact file not found: {ref!r}"
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -154,7 +170,7 @@ def compare_variants(
         if ref is None:
             load_error = "no step emitted review_findings artefact"
         else:
-            payload, load_error = _read_artefact(workspace_root, ref)
+            payload, load_error = _read_artefact(workspace_root, run_id, ref)
 
         entry = VariantComparisonEntry(
             run_id=run_id,

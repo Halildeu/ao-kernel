@@ -115,9 +115,14 @@ class TestCompareVariantsArtefactResolution:
         assert entry.load_error == "no step emitted review_findings artefact"
 
     def test_missing_artefact_file_records_load_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Canonical ref format (run-dir-relative) per
+        # workflow-run.schema.v1.json. No file at the resolved path →
+        # load_error, row still ships.
         monkeypatch.setattr(
             "ao_kernel.experiments.compare._load_run_record",
-            lambda ws, rid: _fake_record(review_findings_ref=".ao/artefacts/r1/missing.json"),
+            lambda ws, rid: _fake_record(
+                review_findings_ref="artifacts/invoke_review_agent-review_findings-attempt1.json"
+            ),
         )
         result = compare_variants(["r1"], workspace_root=tmp_path)
         entry = result.entries[0]
@@ -126,35 +131,40 @@ class TestCompareVariantsArtefactResolution:
         assert "not found" in entry.load_error
 
     def test_malformed_artefact_records_load_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        art_ref = ".ao/artefacts/r1/rf.json"
-        (tmp_path / ".ao" / "artefacts" / "r1").mkdir(parents=True)
-        (tmp_path / art_ref).write_text("{not valid json", encoding="utf-8")
+        # Canonical layout: workspace_root/.ao/evidence/workflows/<run_id>/<ref>
+        run_id = "r1"
+        art_ref = "artifacts/invoke_review_agent-review_findings-attempt1.json"
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "artifacts"
+        run_dir.mkdir(parents=True)
+        (run_dir / Path(art_ref).name).write_text("{not valid json", encoding="utf-8")
 
         monkeypatch.setattr(
             "ao_kernel.experiments.compare._load_run_record",
             lambda ws, rid: _fake_record(review_findings_ref=art_ref),
         )
-        result = compare_variants(["r1"], workspace_root=tmp_path)
+        result = compare_variants([run_id], workspace_root=tmp_path)
         entry = result.entries[0]
         assert entry.review_findings is None
         assert entry.load_error is not None
         assert "artefact load failed" in entry.load_error
 
     def test_successful_artefact_load(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        art_ref = ".ao/artefacts/r1/rf.json"
-        (tmp_path / ".ao" / "artefacts" / "r1").mkdir(parents=True)
+        run_id = "r1"
+        art_ref = "artifacts/invoke_review_agent-review_findings-attempt1.json"
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "artifacts"
+        run_dir.mkdir(parents=True)
         payload = {
             "schema_version": "1",
             "findings": [{"severity": "warning", "message": "nit about import order"}],
             "summary": "1 warning, no blockers",
         }
-        (tmp_path / art_ref).write_text(json.dumps(payload), encoding="utf-8")
+        (run_dir / Path(art_ref).name).write_text(json.dumps(payload), encoding="utf-8")
 
         monkeypatch.setattr(
             "ao_kernel.experiments.compare._load_run_record",
             lambda ws, rid: _fake_record(review_findings_ref=art_ref),
         )
-        result = compare_variants(["r1"], workspace_root=tmp_path)
+        result = compare_variants([run_id], workspace_root=tmp_path)
         entry = result.entries[0]
         assert entry.review_findings == payload
         assert entry.load_error is None
