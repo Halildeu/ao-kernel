@@ -658,24 +658,47 @@ class TestToolGatewayFromDict:
 class TestV39B2MCPIntegration:
     """v3.9 B2: MCP integration pins — is_mutating flag, reason_code."""
 
-    def test_ao_memory_write_is_marked_mutating(self):
-        # v3.9 B2: the governance tool that mutates canonical store
-        # must be flagged so the mutating-confirm gate can enforce.
+    def test_no_governance_tool_is_flagged_mutating_by_default(self):
+        # v3.9 B2 iter-3 absorb (Codex post-impl BLOCKER):
+        # Bundled policy_tool_calling.v1.json has
+        # default_permission="read_only" + mutating_requires_confirmation=true.
+        # If any governance tool is marked is_mutating=True, the gateway
+        # would DENY it before its handler runs (regardless of any
+        # workspace override that lives INSIDE the handler). No
+        # confirmation flow exists yet, so no tool carries the flag.
         from ao_kernel.mcp_server import create_tool_gateway
 
         gw = create_tool_gateway()
         entries = {t["name"]: t for t in gw.list_tools()}
-        assert entries["ao_memory_write"]["is_mutating"] is True
-        # Other governance tools are read-only by contract.
-        for read_only_tool in (
+        for tool_name in (
             "ao_policy_check",
             "ao_llm_route",
             "ao_llm_call",
             "ao_quality_gate",
             "ao_workspace_status",
             "ao_memory_read",
+            "ao_memory_write",
         ):
-            assert entries[read_only_tool]["is_mutating"] is False
+            assert entries[tool_name]["is_mutating"] is False, (
+                f"{tool_name} should NOT be flagged is_mutating until a "
+                "confirmation flow exists (v3.9 B2 iter-3 absorb)."
+            )
+
+    def test_ao_memory_write_not_pre_handler_denied_by_gateway(self):
+        # v3.9 B2 iter-3 regression pin: MCP ao_memory_write must NOT
+        # be denied at the gateway level by MUTATING_REQUIRES_CONFIRMATION.
+        # The write policy inside handle_memory_write() is the
+        # authoritative gate for the side-effect.
+        from ao_kernel.mcp_server import create_tool_gateway
+
+        gw = create_tool_gateway()
+        result = gw.dispatch("ao_memory_write", {})
+        # We don't assert OK (the handler itself may reject on missing
+        # params), but we DO assert the gateway didn't deny it with
+        # MUTATING_REQUIRES_CONFIRMATION. Any OK / ERROR / different
+        # DENIED reason is acceptable here — the point is that the
+        # handler got to run.
+        assert result.reason_code != "MUTATING_REQUIRES_CONFIRMATION"
 
     def test_denial_result_carries_reason_code(self):
         # v3.9 B2: gw.dispatch() must populate reason_code on DENIED

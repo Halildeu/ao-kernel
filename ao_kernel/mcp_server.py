@@ -805,11 +805,26 @@ def create_tool_gateway() -> Any:
 
     gateway = ToolGateway(policy=policy)
 
-    # v3.9 B2: ao_memory_write is the only governance tool that mutates
-    # workspace state (canonical store). Flag it so the permission gate
-    # enforces the mutating-confirm contract when a policy tightens
-    # default_permission + mutating_requires_confirmation.
-    _MUTATING_TOOLS = {"ao_memory_write"}
+    # v3.9 B2 iter-3 absorb (Codex post-impl BLOCKER):
+    #
+    # The bundled `policy_tool_calling.v1.json` ships with
+    # `default_permission="read_only"` and
+    # `mutating_requires_confirmation=true`. If we register
+    # `ao_memory_write` with `is_mutating=True`, the gateway's
+    # MUTATING_REQUIRES_CONFIRMATION check DENYs the tool before the
+    # handler runs — regardless of any workspace-level
+    # `policy_mcp_memory.write.enabled=true` override, since that
+    # override is evaluated inside `memory_tools.handle_memory_write()`
+    # which never gets called.
+    #
+    # No confirmation flow exists in this gateway yet (B2 is a DENY-only
+    # enforcement pass). Locking `ao_memory_write` out-of-the-box would
+    # break the governance surface. So NO tool here is flagged
+    # `is_mutating` until a confirmation pathway lands (B3+ / future).
+    # The write governance still runs inside the handler via its own
+    # `policy_mcp_memory.write` policy, which remains the right place
+    # to gate the actual write side-effect.
+    _MUTATING_TOOLS: set[str] = set()
 
     for td in TOOL_DEFINITIONS:
         handler = TOOL_DISPATCH.get(td["name"])
