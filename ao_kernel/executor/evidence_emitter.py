@@ -43,50 +43,52 @@ from ao_kernel.executor.errors import EvidenceEmitError
 from ao_kernel.executor.policy_enforcer import RedactionConfig
 
 
-_KINDS: Final[frozenset[str]] = frozenset({
-    "workflow_started",
-    "workflow_completed",
-    "workflow_failed",
-    "step_started",
-    "step_completed",
-    "step_failed",
-    "adapter_invoked",
-    "adapter_returned",
-    "diff_previewed",
-    "diff_applied",
-    # PR-A4 addition: rollback of a previously applied patch. Idempotent
-    # at the driver layer; emitted only when an actual reverse-diff apply
-    # occurs (not on idempotent_skip no-ops).
-    "diff_rolled_back",
-    "approval_requested",
-    "approval_granted",
-    "approval_denied",
-    "test_executed",
-    "pr_opened",
-    "policy_checked",
-    "policy_denied",
-    # PR-B1 additions (coordination runtime, 18 → 24 kinds). Additive:
-    # the PR-A invariants stay intact; no existing kind is renamed or
-    # re-semanticised. See docs/COORDINATION.md §7 for payload contracts.
-    "claim_acquired",     # fresh acquire (new resource or reclaim-of-released)
-    "claim_released",     # owner-initiated release
-    "claim_heartbeat",    # liveness keep-alive (audit only, not used for decisions)
-    "claim_expired",      # prune_expired_claims cleaned a past-grace claim
-    "claim_takeover",     # past-grace reclaim by a different agent (distinct from claim_acquired)
-    "claim_conflict",     # acquire/takeover blocked by live or in-grace owner
-    # PR-B2 additions (cost runtime, 24 → 27 kinds). Additive; neither
-    # renames nor re-semanticises any existing kind. See
-    # docs/COST-MODEL.md §5 + PR-B2 plan v7 §2.8 for payload contracts.
-    "llm_cost_estimated",   # pre-dispatch estimate emitted (governed_call step 4)
-    "llm_spend_recorded",   # post-response actual cost computed + ledger appended
-    "llm_usage_missing",    # adapter response missing tokens_input/output (audit flag)
-    # PR-C4 plumbing + PR-C4.1 active runtime (cross-class routing,
-    # 27 → 28 kinds). Emitted by `client.llm_call` and
-    # `mcp_server.handle_llm_call` on auto-route paths when the router
-    # applies a budget-triggered class downgrade per
-    # `llm_resolver_rules.soft_degrade.rules[].budget_remaining_threshold_usd`.
-    "route_cross_class_downgrade",
-})
+_KINDS: Final[frozenset[str]] = frozenset(
+    {
+        "workflow_started",
+        "workflow_completed",
+        "workflow_failed",
+        "step_started",
+        "step_completed",
+        "step_failed",
+        "adapter_invoked",
+        "adapter_returned",
+        "diff_previewed",
+        "diff_applied",
+        # PR-A4 addition: rollback of a previously applied patch. Idempotent
+        # at the driver layer; emitted only when an actual reverse-diff apply
+        # occurs (not on idempotent_skip no-ops).
+        "diff_rolled_back",
+        "approval_requested",
+        "approval_granted",
+        "approval_denied",
+        "test_executed",
+        "pr_opened",
+        "policy_checked",
+        "policy_denied",
+        # PR-B1 additions (coordination runtime, 18 → 24 kinds). Additive:
+        # the PR-A invariants stay intact; no existing kind is renamed or
+        # re-semanticised. See docs/COORDINATION.md §7 for payload contracts.
+        "claim_acquired",  # fresh acquire (new resource or reclaim-of-released)
+        "claim_released",  # owner-initiated release
+        "claim_heartbeat",  # liveness keep-alive (audit only, not used for decisions)
+        "claim_expired",  # prune_expired_claims cleaned a past-grace claim
+        "claim_takeover",  # past-grace reclaim by a different agent (distinct from claim_acquired)
+        "claim_conflict",  # acquire/takeover blocked by live or in-grace owner
+        # PR-B2 additions (cost runtime, 24 → 27 kinds). Additive; neither
+        # renames nor re-semanticises any existing kind. See
+        # docs/COST-MODEL.md §5 + PR-B2 plan v7 §2.8 for payload contracts.
+        "llm_cost_estimated",  # pre-dispatch estimate emitted (governed_call step 4)
+        "llm_spend_recorded",  # post-response actual cost computed + ledger appended
+        "llm_usage_missing",  # adapter response missing tokens_input/output (audit flag)
+        # PR-C4 plumbing + PR-C4.1 active runtime (cross-class routing,
+        # 27 → 28 kinds). Emitted by `client.llm_call` and
+        # `mcp_server.handle_llm_call` on auto-route paths when the router
+        # applies a budget-triggered class downgrade per
+        # `llm_resolver_rules.soft_degrade.rules[].budget_remaining_threshold_usd`.
+        "route_cross_class_downgrade",
+    }
+)
 
 _REDACTED: Final[str] = "***REDACTED***"
 
@@ -136,15 +138,9 @@ def emit_event(
     - ``EvidenceEmitError`` on lock / write / fsync failure.
     """
     if kind not in _KINDS:
-        raise ValueError(
-            f"Unknown evidence event kind: {kind!r}; allowed: "
-            f"{sorted(_KINDS)}"
-        )
+        raise ValueError(f"Unknown evidence event kind: {kind!r}; allowed: {sorted(_KINDS)}")
     if actor not in {"adapter", "ao-kernel", "human", "system"}:
-        raise ValueError(
-            f"Unknown evidence actor: {actor!r}; allowed: adapter, "
-            f"ao-kernel, human, system"
-        )
+        raise ValueError(f"Unknown evidence actor: {actor!r}; allowed: adapter, ao-kernel, human, system")
 
     events_dir = workspace_root / ".ao" / "evidence" / "workflows" / run_id
     events_path = events_dir / "events.jsonl"
@@ -204,26 +200,22 @@ def emit_adapter_log(
     a single structured record.
 
     Returns the path. One adapter invocation writes one JSONL line; a
-    second call appends another line. No lock (single-writer during an
-    invocation); fsync after append.
+    second call appends another line.
+
+    v3.8 H2: the append is now guarded by a POSIX ``file_lock`` on a
+    sibling ``.lock`` sidecar so multiple concurrent step attempts (or
+    a future DAG-parallel driver) can safely append to the same
+    per-run adapter log. The previous "single-writer during an
+    invocation" comment was a dormant assumption — pinned as a
+    contract lock now that FS lock parity is the v3.8 bar.
     """
-    adapter_log_path = (
-        workspace_root
-        / ".ao"
-        / "evidence"
-        / "workflows"
-        / run_id
-        / f"adapter-{adapter_id}.jsonl"
-    )
+    adapter_log_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / f"adapter-{adapter_id}.jsonl"
     try:
         adapter_log_path.parent.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         raise EvidenceEmitError(
             run_id=run_id,
-            detail=(
-                f"could not create adapter log dir "
-                f"{adapter_log_path.parent}: {exc}"
-            ),
+            detail=(f"could not create adapter log dir {adapter_log_path.parent}: {exc}"),
         ) from exc
 
     record = {
@@ -234,8 +226,12 @@ def emit_adapter_log(
     }
     line = json.dumps(record, sort_keys=True, ensure_ascii=False) + "\n"
 
+    lock_path = adapter_log_path.with_suffix(
+        adapter_log_path.suffix + ".lock",
+    )
     try:
-        _append_line_with_fsync(adapter_log_path, line)
+        with file_lock(lock_path):
+            _append_line_with_fsync(adapter_log_path, line)
     except OSError as exc:
         raise EvidenceEmitError(
             run_id=run_id,
@@ -336,10 +332,7 @@ def _redact_payload(
         elif isinstance(value, dict):
             redacted[key] = _redact_payload(value, redaction)
         elif isinstance(value, list):
-            redacted[key] = [
-                _redact_text(v, redaction) if isinstance(v, str) else v
-                for v in value
-            ]
+            redacted[key] = [_redact_text(v, redaction) if isinstance(v, str) else v for v in value]
         else:
             redacted[key] = value
     return redacted
