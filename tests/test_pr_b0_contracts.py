@@ -112,11 +112,7 @@ class TestBundledDefaultsValidate:
         # workflow-definition is an existing PR-A2 schema, not "new in B0",
         # so load it via the defaults helper directly.
         flow_path = (
-            Path(__file__).resolve().parent.parent
-            / "ao_kernel"
-            / "defaults"
-            / "workflows"
-            / "review_ai_flow.v1.json"
+            Path(__file__).resolve().parent.parent / "ao_kernel" / "defaults" / "workflows" / "review_ai_flow.v1.json"
         )
         flow = json.loads(flow_path.read_text(encoding="utf-8"))
         schema = load_default("schemas", "workflow-definition.schema.v1.json")
@@ -154,6 +150,83 @@ class TestBundledDefaultsValidate:
         )
 
 
+class TestGovernedReviewClaudeCodeCliWorkflowV310A2:
+    """v3.10 A2 — real-adapter `governed_review_claude_code_cli` workflow.
+
+    Sibling of `review_ai_flow` pointing at the real `claude-code-cli`
+    adapter (now advertising `review_findings` — v3.10 A1 / #156)
+    instead of the `codex-stub` placeholder. The runbook at
+    docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md (A3) describes the
+    operator prerequisites (workspace policy_worktree_profile override,
+    ANTHROPIC_API_KEY secret allowlist, prompt contract).
+    """
+
+    def test_bundled_workflow_matches_schema(self) -> None:
+        flow_path = (
+            Path(__file__).resolve().parent.parent
+            / "ao_kernel"
+            / "defaults"
+            / "workflows"
+            / "governed_review_claude_code_cli.v1.json"
+        )
+        flow = json.loads(flow_path.read_text(encoding="utf-8"))
+        schema = load_default("schemas", "workflow-definition.schema.v1.json")
+        errors = list(Draft202012Validator(schema).iter_errors(flow))
+        assert errors == [], [e.message for e in errors]
+        # Declared capability requirement references review_findings.
+        assert "review_findings" in flow["required_capabilities"]
+        # Review step points at claude-code-cli, not codex-stub.
+        review_steps = [s for s in flow["steps"] if s.get("adapter_id") == "claude-code-cli"]
+        assert len(review_steps) == 1, f"expected exactly one claude-code-cli step; got {review_steps!r}"
+
+    def test_bundled_workflow_cross_ref_valid_against_bundled_adapters(
+        self,
+    ) -> None:
+        # Real-adapter analogue of the review_ai_flow cross-ref test.
+        # Requires v3.10 A1 (#156) to have landed — otherwise
+        # claude-code-cli manifest would miss the review_findings
+        # capability and this test would fail with a capability_gap.
+        from ao_kernel.adapters import AdapterRegistry
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        adapters = AdapterRegistry()
+        adapters.load_bundled()
+
+        workflows = WorkflowRegistry()
+        workflows.load_bundled()
+
+        flow = workflows.get("governed_review_claude_code_cli")
+        issues = workflows.validate_cross_refs(flow, adapters)
+        assert issues == [], (
+            f"governed_review_claude_code_cli must be cross-ref-valid against "
+            f"bundled adapters; got "
+            f"{[(i.kind, i.step_name, i.missing_capabilities) for i in issues]}"
+        )
+
+    def test_bundled_workflow_expected_adapter_refs_is_claude_code_cli_only(
+        self,
+    ) -> None:
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        workflows = WorkflowRegistry()
+        workflows.load_bundled()
+        flow = workflows.get("governed_review_claude_code_cli")
+        assert tuple(flow.expected_adapter_refs) == ("claude-code-cli",)
+
+    def test_bundled_workflow_tagged_real_adapter_and_benchmark(self) -> None:
+        # Discovery metadata: operators and benchmark tooling should be
+        # able to find the real-adapter variant by tag.
+        from ao_kernel.workflow.registry import WorkflowRegistry
+
+        workflows = WorkflowRegistry()
+        workflows.load_bundled()
+        flow = workflows.get("governed_review_claude_code_cli")
+        tags = set(flow.tags)
+        assert "real-adapter" in tags
+        assert "benchmark" in tags
+        assert "review" in tags  # sibling discoverability with review_ai_flow
+
+
 # ---------------------------------------------------------------------------
 # Rollout stance — all three B0 policies ship dormant
 # ---------------------------------------------------------------------------
@@ -174,8 +247,7 @@ class TestPoliciesShipDormant:
     def test_top_level_enabled_is_false(self, policy_name: str) -> None:
         policy = load_default("policies", policy_name)
         assert policy["enabled"] is False, (
-            f"{policy_name} must ship dormant (enabled=false); "
-            f"operators opt in via workspace override."
+            f"{policy_name} must ship dormant (enabled=false); operators opt in via workspace override."
         )
 
     def test_metrics_labels_advanced_also_off(self) -> None:
@@ -204,9 +276,7 @@ class TestReviewFindingsSchema:
         schema = _load_schema("review-findings.schema.v1.json")
         payload = {
             "schema_version": "1",
-            "findings": [
-                {"severity": "warning", "message": "tighten the bound"}
-            ],
+            "findings": [{"severity": "warning", "message": "tighten the bound"}],
             "summary": "Reviewed 1 file",
         }
         errors = list(Draft202012Validator(schema).iter_errors(payload))
@@ -226,9 +296,7 @@ class TestReviewFindingsSchema:
         schema = _load_schema("review-findings.schema.v1.json")
         payload = {
             "schema_version": "1",
-            "findings": [
-                {"severity": "critical", "message": "not an allowed value"}
-            ],
+            "findings": [{"severity": "critical", "message": "not an allowed value"}],
             "summary": "x",
         }
         errors = list(Draft202012Validator(schema).iter_errors(payload))
