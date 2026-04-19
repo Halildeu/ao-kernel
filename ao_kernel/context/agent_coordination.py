@@ -139,6 +139,7 @@ def record_decision(
 
     if auto_promote and confidence >= promote_threshold:
         from ao_kernel.context.canonical_store import promote_decision
+
         promote_decision(
             workspace_root,
             key=key,
@@ -151,6 +152,7 @@ def record_decision(
         destination = "canonical"
     elif context is not None:
         from ao_kernel._internal.session.context_store import upsert_decision
+
         upsert_decision(
             context,
             key=key,
@@ -199,8 +201,13 @@ def compile_context_sdk(
     Returns:
         ``{preamble, total_tokens, profile_id, items_included, items_excluded}``
     """
+    from ao_kernel.consultation.promotion import (
+        PromotedConsultation,
+        query_promoted_consultations,
+    )
     from ao_kernel.context.canonical_store import query
     from ao_kernel.context.context_compiler import compile_context
+    from ao_kernel.context.profile_router import detect_profile, get_profile
 
     canonical_items = query(workspace_root, category=None)
     canonical_dict = {item["key"]: item for item in canonical_items}
@@ -213,10 +220,33 @@ def compile_context_sdk(
         except (json.JSONDecodeError, OSError):
             pass
 
+    # v3.6 E2 — load consultations at the caller layer (compiler stays
+    # pure, plan §3.E2 + Codex iter-1 revision #1). Resolve profile up
+    # front so we only query the store when the profile wants
+    # consultations (`max_consultations > 0`), then slice + prefer-AGREE
+    # sort before handing the tuple to the compiler.
+    resolved_profile_id = profile
+    if resolved_profile_id is None and messages:
+        resolved_profile_id = detect_profile(messages)
+    profile_config = get_profile(resolved_profile_id)
+    consultation_cap = max(0, profile_config.max_consultations)
+    consultation_records: tuple[PromotedConsultation, ...] = ()
+    if consultation_cap:
+        try:
+            all_consultations = query_promoted_consultations(workspace_root)
+        except Exception:  # noqa: BLE001 — consumer-side query must not raise
+            all_consultations = ()
+        # Prefer AGREE first, PARTIAL second; each already sorted by
+        # promoted_at desc inside the facade.
+        agree = tuple(r for r in all_consultations if r.final_verdict == "AGREE")
+        partial = tuple(r for r in all_consultations if r.final_verdict == "PARTIAL")
+        consultation_records = (agree + partial)[:consultation_cap]
+
     result = compile_context(
         session_context or {"ephemeral_decisions": []},
         canonical_decisions=canonical_dict,
         workspace_facts=workspace_facts,
+        consultations=consultation_records,
         profile=profile,
         messages=messages,
     )
@@ -281,6 +311,7 @@ def query_memory(
     modules.
     """
     from ao_kernel.context.canonical_store import query
+
     return query(workspace_root, key_pattern=key_pattern, category=category)
 
 

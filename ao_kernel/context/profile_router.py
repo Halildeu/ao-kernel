@@ -16,14 +16,21 @@ from typing import Any
 
 @dataclass(frozen=True)
 class ProfileConfig:
-    """Configuration for a context loading profile."""
+    """Configuration for a context loading profile.
+
+    v3.6 E2 adds ``max_consultations`` — per-profile cap on promoted
+    consultations rendered in the ``## Consultations`` section
+    (plan §3.E2 + Codex iter-1 revision #6 — SSOT on the profile,
+    not hardcoded in the compiler).
+    """
 
     profile_id: str
     description: str
     priority_prefixes: tuple[str, ...]  # key prefixes to prioritize
-    max_decisions: int                   # max decisions to inject
-    max_tokens: int                      # token budget for context preamble
+    max_decisions: int  # max decisions to inject
+    max_tokens: int  # token budget for context preamble
     enable_semantic_search: bool = False  # opt-in semantic reranking (default OFF)
+    max_consultations: int = 3  # v3.6 E2 — see per-profile overrides below
 
 
 PROFILES: dict[str, ProfileConfig] = {
@@ -33,6 +40,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("workspace.", "config.", "setup."),
         max_decisions=10,
         max_tokens=1000,
+        max_consultations=3,
     ),
     "TASK_EXECUTION": ProfileConfig(
         profile_id="TASK_EXECUTION",
@@ -40,6 +48,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("runtime.", "decision.", "approved.", "tool.", "llm."),
         max_decisions=30,
         max_tokens=4000,
+        max_consultations=3,
     ),
     "REVIEW": ProfileConfig(
         profile_id="REVIEW",
@@ -47,6 +56,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("review.", "standard.", "quality.", "policy.", "architecture."),
         max_decisions=20,
         max_tokens=2000,
+        max_consultations=10,
     ),
     "EMERGENCY": ProfileConfig(
         profile_id="EMERGENCY",
@@ -54,6 +64,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("error.", "incident.", "alert.", "hotfix.", "rollback."),
         max_decisions=15,
         max_tokens=2000,
+        max_consultations=0,  # lean context — see plan §3.E2 rationale
     ),
     "ASSESSMENT": ProfileConfig(
         profile_id="ASSESSMENT",
@@ -61,6 +72,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("assessment.", "maturity.", "metric.", "benchmark.", "score."),
         max_decisions=25,
         max_tokens=3000,
+        max_consultations=3,
     ),
     "PLANNING": ProfileConfig(
         profile_id="PLANNING",
@@ -68,6 +80,7 @@ PROFILES: dict[str, ProfileConfig] = {
         priority_prefixes=("plan.", "roadmap.", "sprint.", "milestone.", "priority."),
         max_decisions=25,
         max_tokens=3000,
+        max_consultations=10,
     ),
 }
 
@@ -102,9 +115,7 @@ def detect_profile(messages: list[dict[str, Any]]) -> str:
                 user_text = content.lower()
                 break
             if isinstance(content, list):
-                user_text = " ".join(
-                    c.get("text", "") for c in content if isinstance(c, dict)
-                ).lower()
+                user_text = " ".join(c.get("text", "") for c in content if isinstance(c, dict)).lower()
                 break
 
     if not user_text:
