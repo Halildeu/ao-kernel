@@ -73,10 +73,30 @@ class ToolCallPolicy:
         no sort, no case-folding. Semantic interpretation (precedence,
         empty-allowlist meaning, etc.) is B2's responsibility.
         """
-        # Existing fields (unchanged behavior)
-        enabled = policy.get("enabled", True)
-        max_rounds = int(policy.get("max_tool_rounds", 10))
-        allow_unknown = policy.get("allow_unknown", False)
+        # v3.9 post-release M2: legacy fields now strict-validated.
+        # Pre-M2 behavior silently coerced "true"/"false" strings, 0/1
+        # ints, and other non-bool / non-int payloads. That defeats the
+        # "contract absorb + validation" point for the B1 dormant-field
+        # fix, and diverges from the stricter handling we already
+        # apply to the B1 fields below. `max_tool_rounds` gains the
+        # schema-matching `1 <= x <= 10` bounds (explicit alignment;
+        # B1 plan-time note absorbed).
+        raw_enabled = policy.get("enabled", True)
+        if not isinstance(raw_enabled, bool):
+            raise ValueError(f"enabled must be bool, got {type(raw_enabled).__name__}")
+        enabled = raw_enabled
+
+        raw_max_rounds = policy.get("max_tool_rounds", 10)
+        if not isinstance(raw_max_rounds, int) or isinstance(raw_max_rounds, bool):
+            raise ValueError(f"max_tool_rounds must be int, got {type(raw_max_rounds).__name__}")
+        if raw_max_rounds < 1 or raw_max_rounds > 10:
+            raise ValueError(f"max_tool_rounds must be between 1 and 10 inclusive, got {raw_max_rounds}")
+        max_rounds = raw_max_rounds
+
+        raw_allow_unknown = policy.get("allow_unknown", False)
+        if not isinstance(raw_allow_unknown, bool):
+            raise ValueError(f"allow_unknown must be bool, got {type(raw_allow_unknown).__name__}")
+        allow_unknown = raw_allow_unknown
 
         # max_calls_per_request: positive int
         raw_max_calls = policy.get("max_tool_calls_per_request", 5)

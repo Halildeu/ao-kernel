@@ -301,6 +301,51 @@ class TestToolCallPolicyAbsorbV39B1:
                 {"cycle_detection": {"enabled": 1}}  # int, not bool
             )
 
+    # ------------------------------------------------------------------
+    # v3.9 post-release M2 — legacy field bool-strict + max_tool_rounds
+    # schema alignment (1 <= x <= 10). Pre-M2, these silently coerced
+    # "true"/"false" strings, 0/1 ints, and other payloads. That
+    # diverged from the stricter B1 field handling in the same parser.
+    # ------------------------------------------------------------------
+
+    def test_from_dict_enabled_non_bool_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="enabled must be bool"):
+            ToolCallPolicy.from_dict({"enabled": "true"})
+
+    def test_from_dict_allow_unknown_non_bool_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="allow_unknown must be bool"):
+            ToolCallPolicy.from_dict({"allow_unknown": 1})  # int, not bool
+
+    def test_from_dict_max_tool_rounds_non_int_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="max_tool_rounds must be int"):
+            ToolCallPolicy.from_dict({"max_tool_rounds": "10"})
+
+    def test_from_dict_max_tool_rounds_zero_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="max_tool_rounds must be between 1 and 10 inclusive"):
+            ToolCallPolicy.from_dict({"max_tool_rounds": 0})
+
+    def test_from_dict_max_tool_rounds_above_ten_raises(self):
+        # Schema alignment: upper bound = 10 (inclusive).
+        import pytest
+
+        with pytest.raises(ValueError, match="max_tool_rounds must be between 1 and 10 inclusive"):
+            ToolCallPolicy.from_dict({"max_tool_rounds": 11})
+
+    def test_from_dict_max_tool_rounds_boundary_values_accepted(self):
+        # 1 and 10 must both be accepted (inclusive bounds).
+        p_lo = ToolCallPolicy.from_dict({"max_tool_rounds": 1})
+        p_hi = ToolCallPolicy.from_dict({"max_tool_rounds": 10})
+        assert p_lo.max_rounds == 1
+        assert p_hi.max_rounds == 10
+
 
 class TestCreateToolGatewayPolicyAbsorbV39B1:
     """v3.9 B1 — integration-level: absorbed fields survive `create_tool_gateway()`."""
