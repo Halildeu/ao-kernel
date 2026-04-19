@@ -781,14 +781,27 @@ def create_tool_gateway() -> Any:
 
     # Load policy from bundled defaults via from_dict()
     # MCP governance tools are ALWAYS enabled (they ARE the governance layer)
+    #
+    # v3.9 B1: narrow the fallback scope — only policy LOAD/READ failures
+    # fall back to a safe default policy. ValueError from from_dict() is a
+    # real contract violation (invalid absorbed field) and MUST surface so
+    # the operator notices; silent fallback here would defeat the whole
+    # point of the B1 absorb.
     try:
         from ao_kernel.config import load_default
 
         tool_policy = load_default("policies", "policy_tool_calling.v1.json")
+    except Exception:
+        # Bundled policy missing / unreadable — safe runtime default.
+        tool_policy = None
+
+    if tool_policy is None:
+        policy = ToolCallPolicy(enabled=True, max_rounds=10)
+    else:
+        # from_dict() ValueError intentionally propagates — invalid policy
+        # is a fail-closed contract issue, not a "swallow and continue" case.
         policy = ToolCallPolicy.from_dict(tool_policy)
         policy.enabled = True  # MCP governance tools always enabled (override)
-    except Exception:
-        policy = ToolCallPolicy(enabled=True, max_rounds=10)
 
     gateway = ToolGateway(policy=policy)
 
