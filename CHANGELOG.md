@@ -7,6 +7,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-04-19
+
+### Added — v3.6.0 Memory Loop Closure (consumer side for v3.5 promotion)
+
+**Context.** v3.5 shipped the **producer side** of consultation memory (D1 paths, D2a archive, D2b opt-in canonical promotion). v3.6 closes the loop on the **consumer side** with three additive PRs. Codex plan-time master CNS: iter-1 conditional AGREE (8 revisions absorbed: compiler purity, section-header reuse, hydration policy, pagination narrative, docs scope widening, ProfileConfig SSOT, dedup test rewording, handler-local pagination) → iter-2 AGREE. Each E-series PR also ran post-impl review per the v3.5+ two-gate rule.
+
+**E1 — PromotedConsultation reader facade (#137).**
+- New typed dataclass `PromotedConsultation` (10 fields spanning value/provenance/top-level canonical entry layers).
+- Public `query_promoted_consultations(workspace_root, *, verdict, topic, include_expired)` in `ao_kernel/consultation/promotion.py` — thin wrapper over `canonical_store.query(category="consultation")`.
+- **Strict core, lenient edges hydration**: rows missing `cns_id` / `final_verdict` / `promoted_at` silently SKIPPED (reader never raises on malformed store content); `topic` / `from_agent` / `to_agent` None-tolerant; `confidence` derived from verdict when absent.
+- **Category-authoritative filter** (Codex post-impl SUGGEST absorb): drops key-prefix restriction so `category="consultation"` rows under any canonical key still hydrate.
+- **Malformed-store defence**: two distinct canonical rows resolving to the same `cns_id` deduped by most recent `promoted_at` (future store-format drift guard).
+
+**E2 — Context pipeline consultation lane (#138).**
+- `ProfileConfig.max_consultations` SSOT per-profile cap: PLANNING/REVIEW=10, STARTUP/TASK_EXECUTION/ASSESSMENT=3, EMERGENCY=0 (lean-context invariant).
+- `compile_context` stays pure — accepts `consultations: Sequence[PromotedConsultation]` parameter; I/O handled in `compile_context_sdk` which queries via E1 facade, prefers AGREE over PARTIAL, slices by profile cap.
+- **`## Consultations` section** in preamble (reuses existing section-header pattern). Render: `- [CNS-ID] topic VERDICT (from→to, resolved_at)`. Null-tolerant edges render as `(topic unknown)` / `(from)` / `(to)` / `unresolved` — never literal "None".
+- **Canonical lane dedup** (Codex post-impl BLOCK #1 absorb): `compile_context_sdk` filters `category="consultation"` rows out of canonical_dict so promoted consultations appear exactly once under the typed section.
+- **Budget-aware consultation truncation** (Codex post-impl BLOCK #2 absorb): consultation lines count toward `max_tokens * 4` char budget; tail-first drop when over budget; `total_tokens` reflects consultation chars; telemetry accurate.
+
+**E3 — MCP memory_read pagination + consumer-side docs (#139).**
+- `ao_memory_read` inputSchema additive: `max_results` (default 50, hard cap 200) + `offset` (default 0). Existing callers unaffected.
+- Response `data` gains `total` (post-policy-filter total across the full query) + `next_offset` (cursor for next page, null when exhausted) alongside existing `items` + `count` (entries in this page).
+- Handler-local pagination (Codex iter-1 revision #8): `canonical_store.query()` signature unchanged.
+- Invalid pagination params → `deny` with `invalid_max_results` / `invalid_offset` reason codes.
+- New **`docs/CONSULTATION-QUERY.md`** — 6-section consumer guide: policy opt-in, E1 Python API, E3 MCP pagination loop, AGREE/PARTIAL semantics.
+- **4-lane doc updates**: `CLAUDE.md` §9 3-Lane → 4-Lane + canonical-lane filter note; `README.md` governance row; `docs/DEMO-SCRIPT.md` three-lane → four-lane inline; `docs/EVIDENCE-TIMELINE.md` cross-link to consumer doc.
+
+**Test baseline.** +27 new pins across v3.6 (E1 11 + E2 10 + E3 8 — +3 more than plan because of iter-2 BLOCK absorbs). 2437 total pass (up from 2408 at v3.5.0). Ruff + mypy clean on 205 source files.
+
+**Scope boundary.**
+- IN: E1 typed reader facade + E2 4-lane compiler + E3 pagination + consumer docs
+- OUT: multi-commit scorecard trend / sparkline (v3.6+ scope but deferred; same `scorecard-*` surface can grow later)
+- OUT: category registry schema (v3.7+)
+- OUT: delta / changelog subscription API (v4.x)
+- OUT: cross-workspace consultation replication
+- OUT: MCP write-side widening (producer surface stable from v3.5 D2b)
+
 ## [3.5.0] - 2026-04-19
 
 ### Added — v3.5.0 D3 Dev Scorecard (benchmark compare + PR comment)
