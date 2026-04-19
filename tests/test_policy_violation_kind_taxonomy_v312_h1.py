@@ -102,3 +102,18 @@ class TestDocTaxonomyAlignment:
         text = Path("docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md").read_text(encoding="utf-8")
         assert "env_unknown" not in text
         assert "env_missing_required" not in text
+
+    def test_real_adapter_runbook_has_no_stale_kind_aliases(self) -> None:
+        # Codex H1 post-impl BLOCKER: §2 workspace-override JSON example
+        # was still shipping pre-P2 placeholder names in
+        # promote_to_block_on. Operators copy-pasting it would get inert
+        # escalation (runtime never emits those kinds). This pin
+        # keeps the stale aliases out of the runbook.
+        text = Path("docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md").read_text(encoding="utf-8")
+        for stale in (
+            "secret_leak_detected",
+            "cwd_escape_attempted",
+            "command_not_in_allowlist",
+            "unknown_env_key",
+        ):
+            assert stale not in text, f"Runbook must not reference stale pre-P2 kind alias {stale!r}"

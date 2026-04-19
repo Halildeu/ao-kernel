@@ -89,10 +89,9 @@ Minimum viable override:
   "rollout": {
     "mode_default": "report_only",
     "promote_to_block_on": [
-      "secret_leak_detected",
-      "cwd_escape_attempted",
-      "command_not_in_allowlist",
-      "unknown_env_key"
+      "secret_exposure_denied",
+      "cwd_escape",
+      "command_not_allowlisted"
     ]
   }
 }
