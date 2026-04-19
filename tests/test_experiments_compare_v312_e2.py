@@ -169,6 +169,32 @@ class TestCompareVariantsArtefactResolution:
         assert entry.review_findings == payload
         assert entry.load_error is None
 
+    def test_ref_escape_outside_run_dir_rejected(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Codex iter-3 BLOCKER absorb: a malformed / malicious run
+        # record could carry `review_findings_ref="../../../evil.json"`;
+        # the helper MUST refuse rather than silently load an unrelated
+        # file stamped as review_findings.
+        run_id = "r1"
+        # Materialize a real JSON file OUTSIDE the run-dir so only the
+        # containment check (not `is_file` check) rejects it.
+        outside = tmp_path / "outside.json"
+        outside.write_text(
+            json.dumps({"schema_version": "1", "findings": [], "summary": "evil"}),
+            encoding="utf-8",
+        )
+        # ref climbs out of .ao/evidence/workflows/r1/ → tmp_path/outside.json
+        escape_ref = "../../../../outside.json"
+
+        monkeypatch.setattr(
+            "ao_kernel.experiments.compare._load_run_record",
+            lambda ws, rid: _fake_record(review_findings_ref=escape_ref),
+        )
+        result = compare_variants([run_id], workspace_root=tmp_path)
+        entry = result.entries[0]
+        assert entry.review_findings is None
+        assert entry.load_error is not None
+        assert "escapes run directory" in entry.load_error
+
 
 class TestCompareVariantsGrouping:
     def test_by_variant_groups_multiple_runs(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

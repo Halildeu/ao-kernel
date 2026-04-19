@@ -108,14 +108,25 @@ def _read_artefact(workspace_root: Path, run_id: str, ref: str) -> tuple[Mapping
 
     ``ref`` comes from ``step_record.capability_output_refs``, which
     is run-dir-relative per the workflow-run schema. Build the full
-    path via :func:`_run_dir(workspace_root, run_id) / ref`.
+    path via :func:`_run_dir(workspace_root, run_id) / ref`, then
+    verify the resolved path stays **inside** the run directory — a
+    malformed or malicious record could carry ``../../../some.json``
+    as the ref and silently hand the operator an unrelated JSON file
+    stamped as ``review_findings``. The containment check turns that
+    into a clear ``load_error`` instead of a silent mis-pairing.
 
     Returns ``(payload, None)`` on success, ``(None, reason)`` on any
-    I/O or parse failure. Fail-open semantics — the comparison row
-    still ships, just without the payload.
+    I/O / parse / containment failure. Fail-open semantics — the
+    comparison row still ships, just without the payload.
     """
     try:
-        path = (_run_dir(workspace_root, run_id) / ref).resolve()
+        run_dir_resolved = _run_dir(workspace_root, run_id).resolve()
+        path = (run_dir_resolved / ref).resolve()
+        # Containment guard — reject any ref that escapes the run-dir
+        # after resolving. ``is_relative_to`` was added in 3.9; we
+        # target 3.11+.
+        if not path.is_relative_to(run_dir_resolved):
+            return None, (f"artefact ref escapes run directory: {ref!r}")
         if not path.is_file():
             return None, f"artefact file not found: {ref!r}"
         data = json.loads(path.read_text(encoding="utf-8"))
