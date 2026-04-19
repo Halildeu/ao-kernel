@@ -7,6 +7,58 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-04-19
+
+### Added — v3.11.0 Runtime Polish (4 feature PRs + release)
+
+**Context.** v3.10 shipped the External Real-Adapter Benchmark arc (A1+A2+A3) with claude-code-cli declaring `review_findings` + operator runbook. v3.11 clears the post-v3.10 debt pile in a single "Rolling Polish" release (pattern: v3.8 H-series). Four micro/core PRs cover public API ergonomics, activation + rollout semantics for `policy_worktree_profile`, and the final two `_internal/*` coverage tranches. Codex plan-time master AGREE with 2 revisions absorbed (P2 scope widened from "rollout honoring" to "activation + rollout semantics honoring"; `promote_to_block_on` stale names rewritten in same PR).
+
+**PR-P1 (#160) — `AoKernelClient.reset_tool_gateway_state()` public helper.**
+- Closes v3.9 B2 iter-3 residual debt: standalone `call_tool()` chains accumulate `_request_call_count` / `_recent_calls` across invocations. `llm_call()` resets the gateway automatically at every LLM request; `call_tool()` chains (documented agentic tool-use contract) do NOT reset implicitly. The new helper is the opt-in escape hatch for consumers that treat each standalone `call_tool()` as a fresh session.
+- `AoKernelClient.reset_tool_gateway_state()` — thin wrapper over `self._gateway.reset_rounds()` with `getattr` ergonomics (no-op when no gateway exists).
+- +4 pins in `tests/test_client.py` (dirty state → reset → clean; no-op when no gateway; standalone chain preserves counters; cap-hit → reset → fresh chain).
+
+**PR-P2 (#162) — Executor activation + rollout semantics honoring.**
+- `_run_adapter_step` now honors the three-tier contract declared in `policy_worktree_profile.v1.json`. Pre-P2 the runtime ran every check unconditionally and failed closed on any violation — `enabled=false` and `rollout.mode_default="report_only"` were declarative-only placeholders.
+- Three tiers now honored:
+  - `enabled=false` → policy layer bypassed; no `policy_checked` / `policy_denied` events; no fail. Sandbox still built from declared fields so the adapter has a runnable env.
+  - `enabled=true` + `mode_default="report_only"` → violations collected; `policy_checked` emits with additive payload fields (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`); step continues.
+  - `enabled=true` + `mode_default="block"` (or unknown — fail-closed fallback) → `policy_checked` + (on violations) `policy_denied` + step fails closed with `PolicyViolationError`.
+- Escalation: in `report_only`, any `violation.kind` in `rollout.promote_to_block_on` escalates to block (override preserves fail-closed semantics for highest-severity classes).
+- `promote_to_block_on` stale names rewritten in the same PR (Codex plan-time directive) to match the `PolicyViolation.kind` closed taxonomy in `ao_kernel/executor/errors.py`: `secret_leak_detected` → `secret_exposure_denied`; `cwd_escape_attempted` → `cwd_escape`; `command_not_in_allowlist` → `command_not_allowlisted`. `env_unknown` dropped from the bundled default (declared in taxonomy but not actively emitted — Codex post-impl iter-2 polish; operators can re-add in workspace override if a future PR starts emitting it).
+- Docs alignment in same PR: `docs/WORKTREE-PROFILE.md` §4 three-tier table rewritten; `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md` §2 + §5 drop "declarative-only" narrative and document the shipped three-tier behavior; bundled policy `_mode_note` + `_comment` tightened to "enforcement dormant, sandbox shaping retained" (Codex iter-2 terminology polish).
+- +7 pins: three-tier dispatch + escalation override + unknown-mode fail-closed + `dry_run_step` parity (Codex-requested) + `policy_checked` additive payload shape (legacy `violations_count` BC).
+
+**PR-P4 (#161) — `_internal/shared/*` coverage tranche 3.**
+- `pyproject.toml::coverage.run.omit` no longer masks `ao_kernel/_internal/shared/*`. `lock.py` / `logger.py` / `resource_loader.py` / `utils.py` already 86-98% covered transitively; new tranche pins the reachable remaining branches.
+- +9 pins in `tests/test_internal_shared_coverage.py`: `TestLockPlatformGuard` (Windows sys.platform mock + success acquire/release), `TestLoggerEnvLevel` (`AO_LOG_LEVEL` valid/invalid), `TestResourceLoaderFallback` (`_find_repo_root` no-pyproject + bundled fallback + `load_resource_path` None), `TestLoadPolicyValidatedImportGuard` (jsonschema missing).
+- Two branches intentionally uncovered: `lock.py` flock release-failure + timeout race (need second-process fixture).
+- Coverage: 85.10% → 85.13%.
+
+**PR-P3 (#163) — `_internal/providers/*` coverage tranche 4.**
+- Fourth and final `_internal/*` coverage tranche in the v3.x series. `capability_model.py` (was ~73% transitive) + `token_counter.py` (was ~36%) pulled into scope.
+- Tiktoken path tested via `types.ModuleType("tiktoken")` + fake encoding class (Codex plan-time note: "monkeypatch/fake module, not live dependency"). CI does not require the optional `[llm]` extra to cover the tiktoken branch.
+- +19 pins: `TestCapabilityManifestSupports` (×3), `TestLoadCapabilityRegistry` (×2), `TestResolveManifest` (×3), `TestCountTokensHeuristic` (×2), `TestCountTokensTiktoken` (×3 — ImportError + fake encoding int return + `get_encoding` fallback on `KeyError`), `TestCountTokensDispatch` (×2 — openai → tiktoken, anthropic → heuristic), `TestUsageRecordAndTracker` (×4 — `to_dict`, unlimited budget, record + summary, budget denial).
+- Coverage: 85.13% → 85.27%.
+
+### Migration note
+
+- **Operators with a workspace override `policy_worktree_profile.v1.json`**: `rollout.mode_default` is now a real runtime switch. If you had `enabled=true` + `mode_default="report_only"` while the executor was still fail-closed regardless, behavior now changes: violations log `policy_checked` but the step continues. Flip to `"block"` to restore fail-closed behavior. If your workspace override uses the pre-P2 `promote_to_block_on` placeholder names (`secret_leak_detected`, `cwd_escape_attempted`, etc.) the escalation won't fire against real runtime violations — rewrite to match `PolicyViolation.kind` taxonomy.
+- **Standalone `call_tool()` chain users**: if you were working around cap/cycle accumulation by creating a fresh `AoKernelClient`, you can now call `client.reset_tool_gateway_state()` instead. The auto-reset inside `llm_call()` is unchanged.
+- **Bundled policy unchanged in semantics**: `enabled=false` is still the bundled default — no-op for anyone using defaults.
+
+### Known follow-ups (post-v3.11)
+
+- `env_unknown` / `env_missing_required` are declared in `PolicyViolation.kind` taxonomy (`ao_kernel/executor/errors.py`) but not actively emitted by any `policy_enforcer` path. Either start emitting them (env-allowlist strict mode) or prune from the taxonomy + docstring. Small hygiene PR.
+- `_internal/roadmap/*` (~2,497 LOC) and `_internal/session/*` (3 files) remain omitted from coverage. Large-scope tranches candidated for v3.12.
+- v3.11 E (Prompt Experiments) stays conditional per v3.9 Codex AGREE: needs "at least one stable operator-validated real-adapter smoke" before opening.
+
+### v4.0 gates (tracked)
+
+- `save_store()` removal (deprecated since v3.0.0; `canonical_store.py:132`).
+- `allow_overwrite` default flip `True → False` on `promote_decision` + `forget` (CAS-first contract).
+- FAZ-C feature surface: streaming cost tracking, Aider-style patch primitive, `governed_bugfix` full flow, retry/chaos benchmark variants, Windows platform.
+
 ## [3.10.0] - 2026-04-19
 
 ### Added — v3.10.0 External Real-Adapter Benchmark + post-v3.9 hygiene
