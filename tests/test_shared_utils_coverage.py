@@ -382,3 +382,299 @@ class TestVaultStubProviderCoverage:
         secrets_path.write_text('{"OTHER": "v"}', encoding="utf-8")
         provider = VaultStubSecretsProvider(secrets_path=secrets_path)
         assert provider.get("K") is None
+
+
+class TestApiKeyResolverEnvNames:
+    """v3.8 H1 — `env_names_for` branches + known-provider table."""
+
+    def test_unknown_provider_falls_back_to_uppercase(self) -> None:
+        from ao_kernel._internal.secrets.api_key_resolver import env_names_for
+
+        result = env_names_for("cohere")
+        assert result == ("COHERE_API_KEY",)
+
+    def test_known_provider_returns_canonical_set(self) -> None:
+        from ao_kernel._internal.secrets.api_key_resolver import env_names_for
+
+        assert env_names_for("anthropic") == ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY")
+        assert env_names_for("google") == ("GOOGLE_API_KEY", "GEMINI_API_KEY")
+
+    def test_case_insensitive_provider_lookup(self) -> None:
+        from ao_kernel._internal.secrets.api_key_resolver import env_names_for
+
+        assert env_names_for("OpenAI") == ("OPENAI_API_KEY",)
+
+
+class TestApiKeyResolverBranches:
+    """v3.8 H1 — close api_key_resolver coverage gaps (factory-path
+    exception, env fallback, audit return, _default_provider failure)."""
+
+    def test_factory_provider_exception_falls_to_env(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Provider raises → resolver falls through to env fallback."""
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        class _BrokenProvider:
+            def get(self, secret_id: str) -> str | None:
+                raise RuntimeError("provider broken")
+
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-env-fallback-123")
+        result = resolve_api_key(
+            "openai",
+            environ={"OPENAI_API_KEY": "sk-env-fallback-123"},
+            secrets_provider=_BrokenProvider(),
+        )
+        assert result == "sk-env-fallback-123"
+
+    def test_audit_returns_tuple_with_source(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """audit=True path returns `(value, source)` tuple."""
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        result = resolve_api_key(
+            "openai",
+            environ={"OPENAI_API_KEY": "  sk-audit-key  "},
+            secrets_provider=None,
+            audit=True,
+        )
+        assert result == ("sk-audit-key", "environ")
+
+    def test_missing_key_audit_returns_missing(self) -> None:
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        result = resolve_api_key(
+            "openai",
+            environ={},
+            secrets_provider=None,
+            audit=True,
+        )
+        assert result == ("", "missing")
+
+    def test_missing_key_non_audit_returns_empty_string(self) -> None:
+        """Non-audit missing path returns `""`, not tuple."""
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        result = resolve_api_key(
+            "openai",
+            environ={},
+            secrets_provider=None,
+        )
+        assert result == ""
+
+    def test_environ_none_defaults_to_os_environ(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When `environ=None`, resolver reads from `os.environ`."""
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-from-os-environ")
+        result = resolve_api_key(
+            "openai",
+            secrets_provider=None,
+        )
+        assert result == "sk-from-os-environ"
+
+    def test_factory_provider_empty_value_falls_to_env(self) -> None:
+        """Provider returns empty-string (e.g. masked) → fall through
+        to env fallback."""
+        from ao_kernel._internal.secrets.api_key_resolver import resolve_api_key
+
+        class _EmptyProvider:
+            def get(self, secret_id: str) -> str | None:
+                return "   "  # whitespace only → falsy after strip
+
+        result = resolve_api_key(
+            "openai",
+            environ={"OPENAI_API_KEY": "sk-fallback"},
+            secrets_provider=_EmptyProvider(),
+        )
+        assert result == "sk-fallback"
+
+    def test_default_provider_factory_failure_returns_none(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """_default_provider swallows factory errors → returns None."""
+        from ao_kernel._internal.secrets import api_key_resolver
+
+        def _boom():
+            raise RuntimeError("factory load boom")
+
+        # Patch the import site so _default_provider's try/except
+        # branch executes.
+        monkeypatch.setattr(
+            "ao_kernel._internal.secrets.factory.create_provider_from_env",
+            _boom,
+        )
+        result = api_key_resolver._default_provider()
+        assert result is None
+
+
+class TestFactoryBranches:
+    """v3.8 H1 — factory.py line 30/32 branches (non-env provider
+    types, unknown provider raises ValueError)."""
+
+    def test_unknown_provider_type_raises_value_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from ao_kernel._internal.secrets.factory import (
+            create_provider_from_env,
+        )
+
+        monkeypatch.setenv("SECRETS_PROVIDER", "not_a_real_provider")
+        with pytest.raises(ValueError, match="Unknown secrets provider"):
+            create_provider_from_env()
+
+    def test_vault_stub_with_default_path(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """factory.py line 29-30: when `secrets_path` kwarg is absent,
+        default Path('.secrets/vault.json') is used."""
+        from ao_kernel._internal.secrets.factory import create_provider
+
+        provider = create_provider("vault_stub")
+        # We only pin the factory branch; provider.get() on a missing
+        # default path returns None (vault_stub happy-path handled).
+        assert provider is not None
+
+    def test_vault_stub_with_string_path_coerced_to_Path(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """factory.py line 31-32: str `secrets_path` kwarg is coerced
+        via Path()."""
+        from ao_kernel._internal.secrets.factory import create_provider
+
+        string_path = str(tmp_path / "my_secrets.json")
+        provider = create_provider("vault_stub", secrets_path=string_path)
+        assert provider is not None
+
+
+class TestHashiCorpVaultProviderBranches:
+    """v3.8 H1 — HashiCorpVaultProvider network-failure branches
+    (lines 52, 66->69, 70, 75). No real vault server required —
+    patches urlopen to exercise response-shape edge cases."""
+
+    def test_missing_slash_returns_none(self) -> None:
+        from ao_kernel._internal.secrets.hashicorp_vault_provider import (
+            HashiCorpVaultProvider,
+        )
+
+        p = HashiCorpVaultProvider(
+            vault_addr="http://x",
+            vault_token="t",
+        )
+        # No slash → invalid path
+        assert p.get("no_slash_here") is None
+        # Empty key after slash
+        assert p.get("path/") is None
+        # Empty path before slash
+        assert p.get("/key") is None
+
+    def test_missing_addr_or_token_returns_none(self) -> None:
+        from ao_kernel._internal.secrets.hashicorp_vault_provider import (
+            HashiCorpVaultProvider,
+        )
+
+        # Missing addr
+        p1 = HashiCorpVaultProvider(vault_addr="", vault_token="t")
+        assert p1.get("secret/k") is None
+        # Missing token
+        p2 = HashiCorpVaultProvider(vault_addr="http://x", vault_token="")
+        assert p2.get("secret/k") is None
+
+    def test_non_dict_response_returns_none(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """KV v2 envelope response where `body.data` is missing or
+        not a dict → provider returns None."""
+        from ao_kernel._internal.secrets import hashicorp_vault_provider
+
+        class _FakeResp:
+            def read(self):
+                # body is a dict but body["data"] is a non-dict string
+                # → `isinstance(secret_data, dict)` False on line 66,
+                # skip unwrap, then `not isinstance(...)` True on line 69
+                # → return None (line 70).
+                return b'{"data": "not_a_dict_string"}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a, **kw):
+                return False
+
+        monkeypatch.setattr(
+            hashicorp_vault_provider,
+            "urlopen",
+            lambda *a, **kw: _FakeResp(),
+        )
+        p = hashicorp_vault_provider.HashiCorpVaultProvider(
+            vault_addr="http://x",
+            vault_token="t",
+        )
+        assert p.get("secret/key") is None
+
+    def test_non_string_value_returns_none(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from ao_kernel._internal.secrets import hashicorp_vault_provider
+
+        class _FakeResp:
+            def read(self):
+                return b'{"data": {"data": {"key": 42}}}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a, **kw):
+                return False
+
+        monkeypatch.setattr(
+            hashicorp_vault_provider,
+            "urlopen",
+            lambda *a, **kw: _FakeResp(),
+        )
+        p = hashicorp_vault_provider.HashiCorpVaultProvider(
+            vault_addr="http://x",
+            vault_token="t",
+        )
+        # value is int not str → return None
+        assert p.get("secret/key") is None
+
+    def test_empty_string_value_returns_none(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from ao_kernel._internal.secrets import hashicorp_vault_provider
+
+        class _FakeResp:
+            def read(self):
+                return b'{"data": {"data": {"key": "   "}}}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a, **kw):
+                return False
+
+        monkeypatch.setattr(
+            hashicorp_vault_provider,
+            "urlopen",
+            lambda *a, **kw: _FakeResp(),
+        )
+        p = hashicorp_vault_provider.HashiCorpVaultProvider(
+            vault_addr="http://x",
+            vault_token="t",
+        )
+        # empty stripped value → return None
+        assert p.get("secret/key") is None

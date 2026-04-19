@@ -166,17 +166,17 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 # Tranş C ratchet: 70 (baseline) → 75 (C2 context_store) → 80 (C3 evidence/writer) → 85 (C4 workspace).
-# v3.8 H1 tranche 1: 85 → 84 temporary ratchet-down to absorb the
-# `_internal/secrets/*` newly-measured surface (avg ~92% on that
-# tree but slightly below the implicit project-wide ≥85% weighted
-# average, so overall lands at 84.9%). Future H1 tranches (v3.9+)
-# ratchet back up as more `_internal/*` trees are tested to
-# equivalent-or-higher coverage.
-fail_under = 84
+# v3.8 H1 preserves this 85 gate — the new `_internal/secrets/*`
+# tranche lands with targeted pins so the overall stays ≥85%.
+fail_under = 85
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.",
     "raise NotImplementedError",
+    # v3.8 H1: typing.overload stubs are unreachable at runtime.
+    "@overload",
+    # v3.8 H1: TYPE_CHECKING-only imports never execute at runtime.
+    "if TYPE_CHECKING:",
 ]
 
 [tool.mutmut]
