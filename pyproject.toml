@@ -143,8 +143,12 @@ omit = [
     #   `lock.py` flock release-failure + timeout race paths stay
     #   uncovered by design (need a second-process fixture; overall
     #   gate still holds).
+    # - v3.11 P3 (tranche 4): `_internal/providers/*` removed.
+    #   token_counter.py (tiktoken path tested via monkeypatched
+    #   module + fake encoding class) + capability_model.py (registry
+    #   load, resolve_manifest, probe overlay) pinned in
+    #   test_internal_providers_coverage.py.
     "ao_kernel/_internal/prj_kernel_api/*",
-    "ao_kernel/_internal/providers/*",
     "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
     "ao_kernel/_internal/session/agent_context_version.py",
     "ao_kernel/_internal/session/cross_session_context.py",
