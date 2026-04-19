@@ -109,7 +109,7 @@ worktree: .ao/runs/a1b2c3d4.../worktree
 # Automatic; triggered by workflow start. No separate command needed.
 ```
 
-ao-kernel's context compiler compiles a three-lane context pack: canonical decisions, session transcript, workspace facts (see [CLAUDE.md §9](../CLAUDE.md)).
+ao-kernel's context compiler compiles a four-lane context pack: canonical decisions, session transcript, workspace facts, and promoted consultations (see [CLAUDE.md §9](../CLAUDE.md) and [docs/CONSULTATION-QUERY.md](CONSULTATION-QUERY.md)).
 
 **Evidence events:**
 - `step_started` for `compile_context`

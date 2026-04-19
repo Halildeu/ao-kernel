@@ -4,6 +4,10 @@ Every governed workflow run in ao-kernel emits an append-only JSONL stream of ev
 
 This document is the contract: what events exist, what shape they take, where they land on disk, and what replay guarantees hold.
 
+**Related surfaces:**
+- Consultation archive + resolution records (producer side) live under `.ao/evidence/consultations/<CNS-ID>/` (v3.5 D2a). Integrity manifest is `integrity.manifest.v1.json`.
+- The **consumer side** — promoted consultations, typed reader facade, `compile_context` 4-lane integration, and MCP pagination — is documented at [`docs/CONSULTATION-QUERY.md`](CONSULTATION-QUERY.md) (v3.6 E1/E2/E3).
+
 ---
 
 ## 1. Purpose

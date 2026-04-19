@@ -86,7 +86,7 @@ ao_kernel/                ← PUBLIC FACADE
 
   context/                 ← CONTEXT PIPELINE — governed memory loop
     memory_pipeline.py     ← process_turn() orchestration
-    context_compiler.py    ← 3-lane compilation (session/canonical/facts)
+    context_compiler.py    ← 4-lane compilation (session/canonical/facts/consultations)
     profile_router.py      ← 6 profil (STARTUP, TASK_EXECUTION, REVIEW, EMERGENCY, ASSESSMENT, PLANNING)
     memory_tiers.py        ← HOT/WARM/COLD tier enforcement
     self_edit_memory.py    ← Agent-controlled memory (remember/update/forget/recall, 4 importance level)
@@ -117,7 +117,7 @@ ao_kernel/                ← PUBLIC FACADE
 ```
 1. resolve_route()                → provider/model seçimi
 2. check_capabilities()           → capability gap kontrolü
-3. compile_context + inject       → 3-lane context → messages'a enjekte
+3. compile_context + inject       → 4-lane context → messages'a enjekte
 4. build_request()                → Provider-native HTTP request body
 5. execute_request()              → HTTP + retry (tenacity) + circuit breaker
 6. normalize_response()           → text + usage + tool_calls extraction
@@ -219,11 +219,12 @@ Session End:
   compact → distill → promote_from_ephemeral (confidence >= 0.7) → save
 ```
 
-### 3-Lane Compilation
+### 4-Lane Compilation
 
 - **Session decisions** (ephemeral) — session context dict içinde yaşar
-- **Canonical decisions** (promoted) — `.ao/canonical_decisions.v1.json`'a yazılır
+- **Canonical decisions** (promoted) — `.ao/canonical_decisions.v1.json`'a yazılır; consultation-category kayıtları v3.6'dan itibaren bu lane'den filtrelenir (typed `## Consultations` section'ına taşınır)
 - **Workspace facts** (distilled) — cross-session fact promotion
+- **Consultations** (v3.6 E2) — promoted agent-to-agent consultations via `ao_kernel.consultation.promotion.query_promoted_consultations`; compiler stays pure (I/O at `compile_context_sdk`). Per-profile cap via `ProfileConfig.max_consultations` (PLANNING/REVIEW=10, STARTUP/TASK_EXECUTION/ASSESSMENT=3, EMERGENCY=0). Tüketici rehberi: `docs/CONSULTATION-QUERY.md`.
 
 ### 6 Context Profil
 

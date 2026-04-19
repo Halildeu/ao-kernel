@@ -43,6 +43,7 @@ def _find_workspace_root() -> Path | None:
     to be sprinkled across this module.
     """
     from ao_kernel.workspace import project_root
+
     return project_root()
 
 
@@ -147,6 +148,7 @@ def handle_llm_route(params: dict[str, Any]) -> dict[str, Any]:
 
     try:
         from ao_kernel.llm import resolve_route
+
         result = resolve_route(
             intent=intent,
             perspective=params.get("perspective"),
@@ -203,6 +205,7 @@ def handle_quality_gate(params: dict[str, Any]) -> dict[str, Any]:
     if previous_decisions is None and ws:
         try:
             from ao_kernel.context.canonical_store import query as query_canonical
+
             previous_decisions = query_canonical(ws)
         except Exception:
             previous_decisions = None
@@ -300,6 +303,7 @@ def handle_resource(uri: str) -> dict[str, Any] | None:
 
     try:
         from ao_kernel.config import load_default
+
         return load_default(resource_type, name)
     except Exception:
         return None
@@ -369,8 +373,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
                 import logging as _logging
 
                 _logging.getLogger(__name__).warning(
-                    "C4.1 MCP budget snapshot load failed "
-                    "(run=%s): %s; no-downgrade fallback",
+                    "C4.1 MCP budget snapshot load failed (run=%s): %s; no-downgrade fallback",
                     ao_run_id,
                     exc,
                 )
@@ -399,11 +402,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
 
         # PR-C4.1: evidence emit on budget-triggered downgrade.
         # Fail-open wrap — evidence I/O issue must not cascade.
-        if (
-            route.get("downgrade_applied")
-            and ws is not None
-            and ao_run_id is not None
-        ):
+        if route.get("downgrade_applied") and ws is not None and ao_run_id is not None:
             try:
                 import datetime as _dt
                 from pathlib import Path as _Path
@@ -436,8 +435,8 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
                 import logging as _logging
 
                 _logging.getLogger(__name__).warning(
-                    "route_cross_class_downgrade emit failed "
-                    "(fail-open): %s", exc,
+                    "route_cross_class_downgrade emit failed (fail-open): %s",
+                    exc,
                 )
 
     # Resolve API key via dual-read (factory > env fallback, D11/D0.3).
@@ -446,6 +445,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
         env_names_for,
         resolve_api_key,
     )
+
     api_key = resolve_api_key(provider_id)
     if not api_key:
         env_candidates = env_names_for(provider_id)
@@ -460,6 +460,7 @@ def handle_llm_call(params: dict[str, Any]) -> dict[str, Any]:
 
     # Build + execute
     import uuid
+
     request_id = f"mcp-{uuid.uuid4().hex[:12]}"
 
     try:
@@ -589,7 +590,8 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "intent": {"type": "string", "description": "LLM intent class"},
                 "perspective": {"type": "string", "description": "Optional perspective"},
                 "provider_priority": {
-                    "type": "array", "items": {"type": "string"},
+                    "type": "array",
+                    "items": {"type": "string"},
                     "description": "Provider priority order",
                 },
                 "workspace_root": {"type": "string"},
@@ -660,13 +662,26 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "ao_memory_read",
-        "description": "Read canonical decisions and workspace facts. Policy-gated, fail-closed, read-only.",
+        "description": "Read canonical decisions and workspace facts. Policy-gated, fail-closed, read-only. v3.6 E3: supports `max_results` (default 50, hard cap 200) + `offset` pagination; response `data` adds `total` + `next_offset` alongside existing `items` + `count`.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "workspace_root": {"type": "string", "description": "Project root containing .ao/ (optional override)"},
                 "pattern": {"type": "string", "description": "Glob pattern for key match (fnmatch)", "default": "*"},
                 "category": {"type": "string", "description": "Optional category filter"},
+                "max_results": {
+                    "type": "integer",
+                    "description": "Maximum entries to return in this page (default 50, hard capped at 200).",
+                    "default": 50,
+                    "minimum": 1,
+                    "maximum": 200,
+                },
+                "offset": {
+                    "type": "integer",
+                    "description": "Pagination cursor (0-based offset into the post-policy filtered result set).",
+                    "default": 0,
+                    "minimum": 0,
+                },
             },
             "additionalProperties": False,
         },
@@ -679,14 +694,22 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "required": ["key", "value"],
             "properties": {
                 "workspace_root": {"type": "string", "description": "Project root containing .ao/ (optional override)"},
-                "key": {"type": "string", "description": "Canonical decision key (must match one of allowed_key_prefixes)"},
+                "key": {
+                    "type": "string",
+                    "description": "Canonical decision key (must match one of allowed_key_prefixes)",
+                },
                 "value": {"description": "Decision value (any JSON-serializable type; subject to max_value_bytes)"},
-                "source": {"type": "string", "description": "Source tag (must start with an allowed_source_prefix)", "default": "mcp:tool_write"},
+                "source": {
+                    "type": "string",
+                    "description": "Source tag (must start with an allowed_source_prefix)",
+                    "default": "mcp:tool_write",
+                },
             },
             "additionalProperties": False,
         },
     },
 ]
+
 
 def _with_evidence(tool_name: str, handler: Any) -> Any:
     """Wrap a raw handler so every dispatched call records a JSONL event.
@@ -707,6 +730,7 @@ def _with_evidence(tool_name: str, handler: Any) -> Any:
         try:
             from ao_kernel._internal.evidence.mcp_event_log import record_mcp_event
             from ao_kernel._internal.mcp.memory_tools import _resolve_workspace_for_call
+
             # Param-aware resolution roots evidence in the same workspace
             # the handler targeted (CNS-011 B1).
             ws = _resolve_workspace_for_call(params, fallback=_find_workspace_root)
@@ -726,9 +750,12 @@ def _with_evidence(tool_name: str, handler: Any) -> Any:
 
 def _lazy_memory_handler(fn_name: str) -> Any:
     """Factory: defers importing memory_tools until first call."""
+
     def proxy(params: dict[str, Any]) -> dict[str, Any]:
         from ao_kernel._internal.mcp import memory_tools
+
         return getattr(memory_tools, fn_name)(params)  # type: ignore[no-any-return]
+
     proxy.__name__ = fn_name
     return proxy
 
@@ -756,6 +783,7 @@ def create_tool_gateway() -> Any:
     # MCP governance tools are ALWAYS enabled (they ARE the governance layer)
     try:
         from ao_kernel.config import load_default
+
         tool_policy = load_default("policies", "policy_tool_calling.v1.json")
         policy = ToolCallPolicy.from_dict(tool_policy)
         policy.enabled = True  # MCP governance tools always enabled (override)
@@ -786,10 +814,7 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
         from mcp.server import Server
         from mcp.types import Resource, TextContent, Tool
     except ImportError:
-        raise ImportError(
-            "MCP server requires the 'mcp' package. "
-            "Install with: pip install ao-kernel[mcp]"
-        )
+        raise ImportError("MCP server requires the 'mcp' package. Install with: pip install ao-kernel[mcp]")
 
     server = Server("ao-kernel")
 
@@ -819,7 +844,9 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
 
             if gw_result.status == "DENIED":
                 deny_envelope = _decision_envelope(
-                    tool=name, allowed=False, decision="deny",
+                    tool=name,
+                    allowed=False,
+                    decision="deny",
                     reason_codes=[gw_result.reason],
                     error=f"ToolGateway denied: {gw_result.reason}",
                 )
@@ -849,8 +876,10 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
                     _resolve_workspace_for_call,
                     run_implicit_promote,
                 )
+
                 ws_root = _resolve_workspace_for_call(
-                    arguments or {}, fallback=_find_workspace_root,
+                    arguments or {},
+                    fallback=_find_workspace_root,
                 )
                 run_implicit_promote(name, result, ws_root)
             except Exception:
@@ -862,12 +891,14 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
     async def list_resources() -> list[Any]:
         resources = []
         for rtype in ("policies", "schemas", "registry"):
-            resources.append(Resource(
-                uri=f"ao://{rtype}/",  # type: ignore[arg-type]
-                name=f"ao-kernel {rtype}",
-                description=f"Bundled {rtype} JSON files",
-                mimeType="application/json",
-            ))
+            resources.append(
+                Resource(
+                    uri=f"ao://{rtype}/",  # type: ignore[arg-type]
+                    name=f"ao-kernel {rtype}",
+                    description=f"Bundled {rtype} JSON files",
+                    mimeType="application/json",
+                )
+            )
         return resources
 
     @server.read_resource()  # type: ignore[no-untyped-call,untyped-decorator]
@@ -885,10 +916,7 @@ async def serve_stdio() -> None:  # pragma: no cover — requires mcp package
     try:
         from mcp.server.stdio import stdio_server
     except ImportError:
-        raise ImportError(
-            "MCP server requires the 'mcp' package. "
-            "Install with: pip install ao-kernel[mcp]"
-        )
+        raise ImportError("MCP server requires the 'mcp' package. Install with: pip install ao-kernel[mcp]")
 
     server = create_mcp_server()
     async with stdio_server() as (read_stream, write_stream):
@@ -914,8 +942,7 @@ async def serve_http(  # pragma: no cover — requires mcp package
         import uvicorn
     except ImportError:
         raise ImportError(
-            "MCP HTTP transport requires starlette and uvicorn. "
-            "Install with: pip install ao-kernel[mcp-http]"
+            "MCP HTTP transport requires starlette and uvicorn. Install with: pip install ao-kernel[mcp-http]"
         ) from None
 
     server = create_mcp_server()

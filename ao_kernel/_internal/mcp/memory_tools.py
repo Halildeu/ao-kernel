@@ -60,6 +60,7 @@ _memory_rl_lock = threading.Lock()
 
 # ── Param-aware workspace resolver ──────────────────────────────────
 
+
 def _resolve_workspace_for_call(
     params: dict[str, Any] | None,
     *,
@@ -103,6 +104,7 @@ def _resolve_workspace_for_call(
 
 # ── Rate limit helpers ──────────────────────────────────────────────
 
+
 def _memory_rate_limiter_for(
     ws: Path,
     op: str,
@@ -133,6 +135,7 @@ def _memory_rate_limit_reset() -> None:
 
 
 # ── Validated policy loader ─────────────────────────────────────────
+
 
 def _load_memory_policy_validated(ws: Path | None) -> dict[str, Any]:
     """Load ``policy_mcp_memory.v1.json`` with schema validation.
@@ -265,6 +268,7 @@ def _error(tool: str, message: str) -> dict[str, Any]:
 
 # ── Handler: ao_memory_read ─────────────────────────────────────────
 
+
 def handle_memory_read(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for the ``ao_memory_read`` MCP tool.
 
@@ -299,10 +303,7 @@ def handle_memory_read(params: dict[str, Any]) -> dict[str, Any]:
     allowed_patterns = read_cfg.get("allowed_patterns", ["*"])
     if not isinstance(allowed_patterns, list) or not allowed_patterns:
         return _deny(tool, "pattern_not_allowed")
-    if not any(
-        isinstance(p, str) and _fn.fnmatchcase(user_pattern, p)
-        for p in allowed_patterns
-    ):
+    if not any(isinstance(p, str) and _fn.fnmatchcase(user_pattern, p) for p in allowed_patterns):
         return _deny(tool, "pattern_not_allowed")
 
     rate_cfg = policy.get("rate_limit", {}) if isinstance(policy, dict) else {}
@@ -317,6 +318,28 @@ def handle_memory_read(params: dict[str, Any]) -> dict[str, Any]:
     if category is not None and not isinstance(category, str):
         return _deny(tool, "invalid_category")
 
+    # v3.6 E3 pagination (plan §3.E3 — handler-local, does NOT widen
+    # canonical_store.query). `max_results` is hard-capped at 200 to
+    # respect MCP payload limits; `offset` is a caller-managed cursor
+    # into the post-policy filtered result set.
+    raw_max = params.get("max_results", 50) if isinstance(params, dict) else 50
+    raw_offset = params.get("offset", 0) if isinstance(params, dict) else 0
+    try:
+        max_results = int(raw_max)
+    except (TypeError, ValueError):
+        return _deny(tool, "invalid_max_results")
+    try:
+        offset = int(raw_offset)
+    except (TypeError, ValueError):
+        return _deny(tool, "invalid_offset")
+    if max_results < 1:
+        return _deny(tool, "invalid_max_results")
+    if offset < 0:
+        return _deny(tool, "invalid_offset")
+    # Hard cap per inputSchema.
+    if max_results > 200:
+        max_results = 200
+
     try:
         items = query_memory(
             workspace_root=ws,
@@ -326,18 +349,32 @@ def handle_memory_read(params: dict[str, Any]) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 — surface runtime failures as error envelope
         return _error(tool, f"query_failure: {exc}")
 
+    total = len(items)
+    page = items[offset : offset + max_results]
+    next_offset: int | None
+    if offset + max_results < total:
+        next_offset = offset + max_results
+    else:
+        next_offset = None
+
     return {
         "api_version": _API_VERSION,
         "tool": tool,
         "allowed": True,
         "decision": "executed",
         "reason_codes": [],
-        "data": {"items": items, "count": len(items)},
+        "data": {
+            "items": page,
+            "count": len(page),
+            "total": total,
+            "next_offset": next_offset,
+        },
         "error": None,
     }
 
 
 # ── Handler: ao_memory_write ────────────────────────────────────────
+
 
 def handle_memory_write(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for the ``ao_memory_write`` MCP tool.
