@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-04-19
+
 ### Added — v3.5.0 D3 Dev Scorecard (benchmark compare + PR comment)
 
 **Context.** PR-B7 emits benchmark run-dir events + capability artefacts, but there was no aggregated surface for comparing a PR's benchmark output against the main-branch baseline or posting a compact scorecard comment. D3 closes that gap as the final v3.5.0 commitment. Codex plan-time CNS: 2 iterations → AGREE (iter-1 PARTIAL → iter-2 AGREE after absorbing canonical-input marker + CI SSOT + block/warn split revisions). Trend / sparkline visualisation deferred to v3.6+.

@@ -25,6 +25,7 @@ class TestBundledAdapters:
         # Create workspace override with same adapter_id but different display_name
         # Read bundled codex-stub, modify version to prove override
         from importlib import resources as _res
+
         bundled_pkg = _res.files("ao_kernel.defaults.adapters")
         with _res.as_file(bundled_pkg.joinpath("codex-stub.manifest.v1.json")) as bp:
             override = json.loads(bp.read_text(encoding="utf-8"))
@@ -50,6 +51,7 @@ class TestGhPrStub:
         from ao_kernel.fixtures.gh_pr_stub import main
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = buf = io.StringIO()
         try:
@@ -91,23 +93,26 @@ class TestLlmFallback:
 
 
 class TestVersionBump:
-    def test_version_is_3_4_0(self) -> None:
+    def test_version_is_3_5_0(self) -> None:
         import ao_kernel
-        assert ao_kernel.__version__ == "3.4.0"
+
+        assert ao_kernel.__version__ == "3.5.0"
 
     def test_pyproject_version_matches(self) -> None:
         import tomllib
+
         pyproject = Path("pyproject.toml")
         if not pyproject.exists():
             pyproject = Path(__file__).parent.parent / "pyproject.toml"
         with open(pyproject, "rb") as f:
             data = tomllib.load(f)
-        assert data["project"]["version"] == "3.4.0"
+        assert data["project"]["version"] == "3.5.0"
 
 
 class TestMetaExtras:
     def test_coding_extra_defined(self) -> None:
         import tomllib
+
         pyproject = Path("pyproject.toml")
         if not pyproject.exists():
             pyproject = Path(__file__).parent.parent / "pyproject.toml"
