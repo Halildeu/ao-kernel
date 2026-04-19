@@ -136,7 +136,14 @@ omit = [
     # (tracked as a post-v3.8 tranche; H1 is deliberately small).
     "ao_kernel/_internal/prj_kernel_api/*",
     "ao_kernel/_internal/providers/*",
-    "ao_kernel/_internal/shared/*",
+    # v3.11 P4 (coverage tranche 3): `_internal/shared/*` removed from
+    # omit. lock.py / logger.py / resource_loader.py / utils.py are
+    # already 86-98% covered transitively; test_internal_shared_coverage.py
+    # adds targeted pins for the remaining reachable branches
+    # (Windows platform guard, AO_LOG_LEVEL env var, repo-root fallback,
+    # jsonschema ImportError guard). Lock release-failure and timeout
+    # race paths stay uncovered by design (hard to trigger without a
+    # second-process fixture; overall gate still holds).
     # v3.9 post-release M1 (C1 tranche 2): `_internal/utils/*` removed
     # from omit. budget.py + jsonio.py (38 LOC total) are already ~80%
     # covered transitively; test_internal_utils_coverage.py adds
