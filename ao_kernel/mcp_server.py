@@ -805,6 +805,12 @@ def create_tool_gateway() -> Any:
 
     gateway = ToolGateway(policy=policy)
 
+    # v3.9 B2: ao_memory_write is the only governance tool that mutates
+    # workspace state (canonical store). Flag it so the permission gate
+    # enforces the mutating-confirm contract when a policy tightens
+    # default_permission + mutating_requires_confirmation.
+    _MUTATING_TOOLS = {"ao_memory_write"}
+
     for td in TOOL_DEFINITIONS:
         handler = TOOL_DISPATCH.get(td["name"])
         if handler:
@@ -813,6 +819,7 @@ def create_tool_gateway() -> Any:
                 handler=handler,
                 description=td["description"],
                 input_schema=td["inputSchema"],
+                is_mutating=td["name"] in _MUTATING_TOOLS,
             )
 
     return gateway
@@ -856,15 +863,41 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
             elapsed = (_time.monotonic() - start) * 1000.0
 
             if gw_result.status == "DENIED":
+                # v3.9 B2: prefer the machine-readable reason_code over
+                # the free-form reason string. Fall back to reason when
+                # reason_code is empty (e.g. from callers built against
+                # pre-B2 ToolCallResult shape).
+                reason_code = gw_result.reason_code or gw_result.reason
                 deny_envelope = _decision_envelope(
                     tool=name,
                     allowed=False,
                     decision="deny",
-                    reason_codes=[gw_result.reason],
-                    error=f"ToolGateway denied: {gw_result.reason}",
+                    reason_codes=[reason_code],
+                    error=f"ToolGateway denied: {reason_code}",
                 )
                 s.set_attribute("ao.decision", "deny")
+                s.set_attribute("ao.policy.reason_code", reason_code)
                 record_mcp_tool_call(elapsed, tool=name, decision="deny")
+                # v3.9 B2: audit every denial through the existing MCP
+                # event log (workspace mode). Library mode is no-op.
+                try:
+                    from ao_kernel.config import workspace_root as _ws_root
+                    from ao_kernel._internal.evidence.mcp_event_log import (
+                        record_mcp_event as _rec_mcp,
+                    )
+
+                    _rec_mcp(
+                        _ws_root(),
+                        name,
+                        deny_envelope,
+                        params=arguments or {},
+                        duration_ms=int(elapsed),
+                        extra={"policy_denied": True, "reason_code": reason_code},
+                    )
+                except Exception:
+                    # Audit is fail-open side-channel; never block the
+                    # governance path on a write failure.
+                    pass
                 return [TextContent(type="text", text=json.dumps(deny_envelope, ensure_ascii=False))]
 
             result = gw_result.output or {"error": gw_result.reason}

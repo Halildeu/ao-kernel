@@ -336,3 +336,235 @@ class TestCreateToolGatewayPolicyAbsorbV39B1:
         monkeypatch.setattr("ao_kernel.config.load_default", _bad_loader)
         with pytest.raises(ValueError, match="max_tool_calls_per_request"):
             mcp_mod.create_tool_gateway()
+
+
+# =====================================================================
+# v3.9 B2 — runtime enforcement, denial reasons, MCP integration.
+# =====================================================================
+
+
+def _noop_handler(params: dict) -> dict:
+    return {"ok": True}
+
+
+class TestAllowlistBlocklistEnforcement:
+    """v3.9 B2: blocklist overrides allowlist; empty allowlist is permissive."""
+
+    def test_blocklist_denies_with_reason_code(self):
+        gw = ToolGateway(policy=ToolCallPolicy(blocked_tools=("dangerous",)))
+        gw.register_handler("dangerous", _noop_handler)
+        result = gw.dispatch("dangerous", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "BLOCKED_BY_POLICY"
+
+    def test_blocklist_overrides_allowlist(self):
+        # Even when listed in allowlist, blocklist wins.
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                allowed_tools=("tool_a",),
+                blocked_tools=("tool_a",),
+            )
+        )
+        gw.register_handler("tool_a", _noop_handler)
+        result = gw.dispatch("tool_a", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "BLOCKED_BY_POLICY"
+
+    def test_non_empty_allowlist_denies_unlisted(self):
+        gw = ToolGateway(policy=ToolCallPolicy(allowed_tools=("only_this",)))
+        gw.register_handler("only_this", _noop_handler)
+        gw.register_handler("other_tool", _noop_handler)
+        result = gw.dispatch("other_tool", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "NOT_IN_ALLOWLIST"
+
+    def test_non_empty_allowlist_allows_listed(self):
+        gw = ToolGateway(policy=ToolCallPolicy(allowed_tools=("only_this",)))
+        gw.register_handler("only_this", _noop_handler)
+        result = gw.dispatch("only_this", {})
+        assert result.status == "OK"
+
+    def test_empty_allowlist_is_permissive(self):
+        # Pre-B2 behavior preserved: empty allowed_tools = allowlist
+        # disabled; all registered tools permitted modulo blocklist.
+        gw = ToolGateway(policy=ToolCallPolicy(allowed_tools=()))
+        gw.register_handler("any_tool", _noop_handler)
+        result = gw.dispatch("any_tool", {})
+        assert result.status == "OK"
+
+
+class TestMaxCallsPerRequestEnforcement:
+    def test_per_request_cap_enforced(self):
+        gw = ToolGateway(policy=ToolCallPolicy(max_calls_per_request=2, max_rounds=100))
+        gw.register_handler("echo", _echo_handler)
+        assert gw.dispatch("echo", {"msg": "1"}).status == "OK"
+        assert gw.dispatch("echo", {"msg": "2"}).status == "OK"
+        result = gw.dispatch("echo", {"msg": "3"})
+        assert result.status == "DENIED"
+        assert result.reason_code == "MAX_CALLS_PER_REQUEST_EXCEEDED"
+
+    def test_reset_rounds_clears_request_count(self):
+        # v3.9 B2: reset_rounds() now clears _request_call_count too.
+        gw = ToolGateway(policy=ToolCallPolicy(max_calls_per_request=1, max_rounds=100))
+        gw.register_handler("echo", _echo_handler)
+        assert gw.dispatch("echo", {"msg": "1"}).status == "OK"
+        assert gw.dispatch("echo", {"msg": "2"}).status == "DENIED"
+        gw.reset_rounds()
+        # After reset, the per-request cap should be fresh.
+        assert gw.dispatch("echo", {"msg": "3"}).status == "OK"
+
+
+class TestCycleDetection:
+    def test_suffix_repeat_denied(self):
+        # cycle_max_identical_calls=2 → DENY when the last 2 calls are
+        # both identical to the new call.
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                cycle_detection_enabled=True,
+                cycle_max_identical_calls=2,
+                max_calls_per_request=100,
+                max_rounds=100,
+            )
+        )
+        gw.register_handler("echo", _echo_handler)
+        # Two identical → second still OK (fills window).
+        assert gw.dispatch("echo", {"msg": "same"}).status == "OK"
+        assert gw.dispatch("echo", {"msg": "same"}).status == "OK"
+        # Third identical → window is full of same key → DENY.
+        result = gw.dispatch("echo", {"msg": "same"})
+        assert result.status == "DENIED"
+        assert result.reason_code == "CYCLE_DETECTED"
+
+    def test_cycle_detection_disabled_allows_repeats(self):
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                cycle_detection_enabled=False,
+                cycle_max_identical_calls=2,
+                max_calls_per_request=100,
+                max_rounds=100,
+            )
+        )
+        gw.register_handler("echo", _echo_handler)
+        for _ in range(5):
+            assert gw.dispatch("echo", {"msg": "same"}).status == "OK"
+
+    def test_different_params_break_cycle(self):
+        # Different params → different fingerprint → no cycle.
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                cycle_detection_enabled=True,
+                cycle_max_identical_calls=2,
+                max_calls_per_request=100,
+                max_rounds=100,
+            )
+        )
+        gw.register_handler("echo", _echo_handler)
+        assert gw.dispatch("echo", {"msg": "a"}).status == "OK"
+        assert gw.dispatch("echo", {"msg": "a"}).status == "OK"
+        # Interleave with a different call → cycle chain broken.
+        assert gw.dispatch("echo", {"msg": "b"}).status == "OK"
+        assert gw.dispatch("echo", {"msg": "a"}).status == "OK"
+
+    def test_denied_attempt_not_recorded_in_history(self):
+        # v3.9 B2: a denied cycle attempt must NOT append to history;
+        # otherwise a single deny would feed itself indefinitely.
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                cycle_detection_enabled=True,
+                cycle_max_identical_calls=2,
+                max_calls_per_request=100,
+                max_rounds=100,
+            )
+        )
+        gw.register_handler("echo", _echo_handler)
+        gw.dispatch("echo", {"x": 1})
+        gw.dispatch("echo", {"x": 1})
+        # Third repeated is denied.
+        assert gw.dispatch("echo", {"x": 1}).status == "DENIED"
+        # A different call should now succeed (not polluted by deny).
+        assert gw.dispatch("echo", {"x": 2}).status == "OK"
+
+    def test_fingerprint_handles_non_json_native_values(self):
+        # v3.9 B2 Codex MEDIUM: json.dumps(default=repr) must not raise
+        # on non-JSON-native values.
+        class _Opaque:
+            def __repr__(self):
+                return "Opaque()"
+
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                cycle_detection_enabled=True,
+                cycle_max_identical_calls=2,
+                max_calls_per_request=100,
+                max_rounds=100,
+            )
+        )
+        gw.register_handler("echo", _echo_handler)
+        # Must not raise.
+        assert gw.dispatch("echo", {"obj": _Opaque()}).status == "OK"
+        assert gw.dispatch("echo", {"obj": _Opaque()}).status == "OK"
+
+
+class TestMutatingConfirmation:
+    def test_mutating_tool_read_only_default_denied(self):
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                default_permission="read_only",
+                mutating_requires_confirmation=True,
+            )
+        )
+        gw.register_handler("write_file", _noop_handler, is_mutating=True)
+        result = gw.dispatch("write_file", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "MUTATING_REQUIRES_CONFIRMATION"
+
+    def test_mutating_tool_allowed_when_confirm_disabled(self):
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                default_permission="read_only",
+                mutating_requires_confirmation=False,
+            )
+        )
+        gw.register_handler("write_file", _noop_handler, is_mutating=True)
+        result = gw.dispatch("write_file", {})
+        assert result.status == "OK"
+
+    def test_non_mutating_tool_unaffected(self):
+        gw = ToolGateway(
+            policy=ToolCallPolicy(
+                default_permission="read_only",
+                mutating_requires_confirmation=True,
+            )
+        )
+        gw.register_handler("read_file", _noop_handler, is_mutating=False)
+        result = gw.dispatch("read_file", {})
+        assert result.status == "OK"
+
+
+class TestReasonCodePropagation:
+    """v3.9 B2: reason_code is set on every DENIED path."""
+
+    def test_policy_disabled_reason_code(self):
+        gw = ToolGateway(policy=ToolCallPolicy(enabled=False))
+        gw.register_handler("echo", _echo_handler)
+        result = gw.dispatch("echo", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "POLICY_DISABLED"
+
+    def test_tool_not_registered_reason_code(self):
+        gw = ToolGateway()
+        result = gw.dispatch("nonexistent", {})
+        assert result.status == "DENIED"
+        assert result.reason_code == "TOOL_NOT_REGISTERED"
+
+
+class TestListToolsIsMutatingIntrospection:
+    def test_list_tools_exposes_is_mutating(self):
+        # v3.9 B2: list_tools() output includes is_mutating so MCP
+        # introspection (or any client-side policy UI) can surface it.
+        gw = ToolGateway()
+        gw.register_handler("read_op", _noop_handler, is_mutating=False)
+        gw.register_handler("write_op", _noop_handler, is_mutating=True)
+        entries = {t["name"]: t for t in gw.list_tools()}
+        assert entries["read_op"]["is_mutating"] is False
+        assert entries["write_op"]["is_mutating"] is True

@@ -14,13 +14,21 @@ Design:
 
 from __future__ import annotations
 
+import json
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
 
 @dataclass
 class ToolSpec:
-    """Specification for a registered tool."""
+    """Specification for a registered tool.
+
+    v3.9 B2: `is_mutating` additive opt-in flag. Tools that mutate
+    workspace/state should declare it explicitly; default False keeps
+    pre-B2 behavior. Enforcement: `default_permission="read_only"` +
+    `mutating_requires_confirmation=True` + `is_mutating=True` → DENY.
+    """
 
     name: str
     handler: Callable[[dict[str, Any]], dict[str, Any]]
@@ -28,6 +36,7 @@ class ToolSpec:
     allowed: bool = True
     requires_confirmation: bool = False
     input_schema: dict[str, Any] = field(default_factory=dict)
+    is_mutating: bool = False  # v3.9 B2
 
 
 @dataclass
@@ -139,13 +148,49 @@ class ToolCallPolicy:
 
 @dataclass
 class ToolCallResult:
-    """Result of a tool dispatch."""
+    """Result of a tool dispatch.
+
+    v3.9 B2: `reason_code` is machine-readable denial key; `reason` is
+    the free-form human-readable message. MCP envelope uses
+    `reason_code` for reliable policy branching.
+    """
 
     status: str  # OK | DENIED | ERROR
     tool_name: str
     output: dict[str, Any] | None = None
     reason: str = ""
+    reason_code: str = ""  # v3.9 B2 — machine-readable denial key
     round_number: int = 0
+
+
+# v3.9 B2 — machine-readable denial reason codes.
+# Pre-B2 (legacy) codes kept verbatim for backward compatibility with
+# callers that already match on them.
+REASON_POLICY_DISABLED = "POLICY_DISABLED"
+REASON_TOOL_NOT_REGISTERED = "TOOL_NOT_REGISTERED"
+REASON_TOOL_NOT_ALLOWED = "TOOL_NOT_ALLOWED"
+REASON_MAX_ROUNDS_EXCEEDED = "MAX_ROUNDS_EXCEEDED"
+# v3.9 B2 new codes:
+REASON_BLOCKED_BY_POLICY = "BLOCKED_BY_POLICY"
+REASON_NOT_IN_ALLOWLIST = "NOT_IN_ALLOWLIST"
+REASON_MAX_CALLS_PER_REQUEST = "MAX_CALLS_PER_REQUEST_EXCEEDED"
+REASON_CYCLE_DETECTED = "CYCLE_DETECTED"
+REASON_MUTATING_REQUIRES_CONFIRMATION = "MUTATING_REQUIRES_CONFIRMATION"
+
+
+def _fingerprint_params(params: dict[str, Any]) -> str:
+    """Hashable fingerprint for cycle detection. JSON-native with repr fallback.
+
+    Custom tool inputs may contain non-JSON-native values (e.g. dataclass
+    instances, datetime). `default=repr` guarantees a stable string without
+    raising. Sort keys so dict-order is irrelevant.
+    """
+    try:
+        return json.dumps(params, sort_keys=True, default=repr)
+    except Exception:
+        # Last-resort: repr of the sorted items. Should never trigger
+        # given `default=repr`, but keeps this helper fail-closed-safe.
+        return repr(sorted(params.items(), key=lambda kv: kv[0]))
 
 
 class ToolGateway:
@@ -156,7 +201,20 @@ class ToolGateway:
         - Tool not allowed → DENIED
         - Policy disabled → DENIED
         - Max rounds exceeded → DENIED
+        - Max calls per request exceeded → DENIED (v3.9 B2)
+        - Tool not in non-empty allowlist → DENIED (v3.9 B2)
+        - Tool in blocklist → DENIED (v3.9 B2; overrides allowlist)
+        - Cycle detected (same call repeated) → DENIED (v3.9 B2)
+        - Mutating tool requires confirmation → DENIED (v3.9 B2)
         - Handler raises → ERROR (not silent allow)
+
+    Allowlist semantic (v3.9 B2):
+        - `allowed_tools=()` (empty) → allowlist disabled; all registered
+          tools permitted modulo blocklist. Preserves pre-B2 behavior
+          and matches `create_tool_gateway()` bundled-default reality.
+        - `allowed_tools=("a","b")` (non-empty) → strict fail-closed;
+          only listed tools are allowed.
+        - `blocked_tools` always overrides `allowed_tools`.
     """
 
     def __init__(
@@ -167,6 +225,11 @@ class ToolGateway:
         self._tools: dict[str, ToolSpec] = {}
         self._policy = policy or ToolCallPolicy()
         self._call_count = 0
+        # v3.9 B2 stateful counters/history
+        self._request_call_count: int = 0
+        # Bounded cycle history: only need a suffix of `cycle_max_identical_calls`
+        # entries since cycle check is "last N are all the current key".
+        self._recent_calls: deque[str] = deque(maxlen=max(self._policy.cycle_max_identical_calls, 1))
 
     @property
     def policy(self) -> ToolCallPolicy:
@@ -184,6 +247,7 @@ class ToolGateway:
         description: str = "",
         allowed: bool = True,
         input_schema: dict[str, Any] | None = None,
+        is_mutating: bool = False,  # v3.9 B2 additive
     ) -> None:
         """Convenience method to register a tool handler."""
         self.register(
@@ -193,6 +257,7 @@ class ToolGateway:
                 description=description,
                 allowed=allowed,
                 input_schema=input_schema or {},
+                is_mutating=is_mutating,
             )
         )
 
@@ -204,25 +269,62 @@ class ToolGateway:
                 "description": spec.description,
                 "allowed": spec.allowed,
                 "input_schema": spec.input_schema,
+                "is_mutating": spec.is_mutating,  # v3.9 B2
             }
             for spec in self._tools.values()
         ]
 
     def authorize(self, tool_name: str) -> tuple[bool, str]:
-        """Check if a tool call is authorized. Returns (allowed, reason)."""
+        """Static policy check — NO stateful/input-dependent branches.
+
+        v3.9 B2 split: `authorize()` handles policy-static checks that only
+        depend on tool identity + policy config:
+
+            disabled, unregistered, spec.allowed, blocklist, allowlist,
+            max_rounds, mutating-confirmation
+
+        Stateful/input-dependent checks (`max_calls_per_request`,
+        cycle detection) live in `dispatch()` because they require a
+        live tool_input or mutate per-call counters.
+
+        The second element of the returned tuple is the machine-readable
+        `reason_code`. Kept as a string (not enum) for BC with existing
+        callers that match on string literals.
+        """
         if not self._policy.enabled:
-            return False, "POLICY_DISABLED"
+            return False, REASON_POLICY_DISABLED
 
         if tool_name not in self._tools:
             if not self._policy.allow_unknown:
-                return False, "TOOL_NOT_REGISTERED"
+                return False, REASON_TOOL_NOT_REGISTERED
 
         spec = self._tools.get(tool_name)
         if spec and not spec.allowed:
-            return False, "TOOL_NOT_ALLOWED"
+            return False, REASON_TOOL_NOT_ALLOWED
+
+        # Blocklist overrides allowlist (v3.9 B2).
+        if tool_name in self._policy.blocked_tools:
+            return False, REASON_BLOCKED_BY_POLICY
+
+        # Allowlist: empty = permissive (matches create_tool_gateway()
+        # bundled-default reality + governance._check_tool_calling).
+        # Non-empty = strict fail-closed.
+        if self._policy.allowed_tools and tool_name not in self._policy.allowed_tools:
+            return False, REASON_NOT_IN_ALLOWLIST
+
+        # Mutating-confirmation gate (v3.9 B2): a mutating tool under a
+        # read_only default + confirmation-required policy cannot run in
+        # this fire-and-forget gateway (no confirmation flow here).
+        if (
+            spec is not None
+            and spec.is_mutating
+            and self._policy.default_permission == "read_only"
+            and self._policy.mutating_requires_confirmation
+        ):
+            return False, REASON_MUTATING_REQUIRES_CONFIRMATION
 
         if self._call_count >= self._policy.max_rounds:
-            return False, "MAX_ROUNDS_EXCEEDED"
+            return False, REASON_MAX_ROUNDS_EXCEEDED
 
         return True, "AUTHORIZED"
 
@@ -234,14 +336,22 @@ class ToolGateway:
         """Dispatch a tool call through the policy gate.
 
         Fail-closed: unauthorized or erroring tools return DENIED/ERROR.
+        Runs `authorize()` first for static checks, then enforces
+        stateful/input-dependent checks (v3.9 B2):
+            - `max_calls_per_request` — per-request call cap
+            - `cycle_detection` — suffix-based repeat-call detection
+
+        Denied attempts are NOT recorded in cycle history (prevents a
+        deny from feeding itself on repeated attempts).
         """
-        # Authorization check
-        allowed, reason = self.authorize(tool_name)
+        # Static authorization check first.
+        allowed, reason_code = self.authorize(tool_name)
         if not allowed:
             return ToolCallResult(
                 status="DENIED",
                 tool_name=tool_name,
-                reason=reason,
+                reason=reason_code,
+                reason_code=reason_code,
             )
 
         spec = self._tools.get(tool_name)
@@ -249,11 +359,43 @@ class ToolGateway:
             return ToolCallResult(
                 status="DENIED",
                 tool_name=tool_name,
-                reason="TOOL_NOT_REGISTERED",
+                reason=REASON_TOOL_NOT_REGISTERED,
+                reason_code=REASON_TOOL_NOT_REGISTERED,
             )
 
-        # Dispatch
+        # v3.9 B2: per-request call cap (stateful).
+        if self._request_call_count >= self._policy.max_calls_per_request:
+            return ToolCallResult(
+                status="DENIED",
+                tool_name=tool_name,
+                reason=REASON_MAX_CALLS_PER_REQUEST,
+                reason_code=REASON_MAX_CALLS_PER_REQUEST,
+            )
+
+        # v3.9 B2: cycle detection (stateful + input-dependent).
+        # Suffix semantics: DENY iff the last N recent calls are ALL
+        # identical to the current (tool_name, params) key, where
+        # N = cycle_max_identical_calls. Deque is maxlen=N, so this is
+        # just "deque is full AND every entry equals current key".
+        fingerprint = f"{tool_name}|{_fingerprint_params(tool_input)}"
+        if (
+            self._policy.cycle_detection_enabled
+            and self._policy.cycle_max_identical_calls >= 1
+            and len(self._recent_calls) == self._policy.cycle_max_identical_calls
+            and all(k == fingerprint for k in self._recent_calls)
+        ):
+            # Do NOT append — a denied attempt must not extend the cycle.
+            return ToolCallResult(
+                status="DENIED",
+                tool_name=tool_name,
+                reason=REASON_CYCLE_DETECTED,
+                reason_code=REASON_CYCLE_DETECTED,
+            )
+
+        # Dispatch.
         self._call_count += 1
+        self._request_call_count += 1
+        self._recent_calls.append(fingerprint)
         try:
             output = spec.handler(tool_input)
             return ToolCallResult(
@@ -271,8 +413,18 @@ class ToolGateway:
             )
 
     def reset_rounds(self) -> None:
-        """Reset round counter (e.g., between requests)."""
+        """Reset all transient per-request gateway state.
+
+        v3.9 B2: in addition to `_call_count`, clears
+        `_request_call_count` and `_recent_calls` so the next request
+        starts with a clean slate. Call this at the start of every new
+        LLM request from a persistent gateway instance (e.g.
+        `AoKernelClient`). MCP path creates a fresh gateway per
+        `call_tool()` so this is implicit there.
+        """
         self._call_count = 0
+        self._request_call_count = 0
+        self._recent_calls.clear()
 
 
 __all__ = [

@@ -140,7 +140,22 @@ def _check_autonomy(policy: dict[str, Any], action: dict[str, Any]) -> list[str]
 
 
 def _check_tool_calling(policy: dict[str, Any], action: dict[str, Any]) -> list[str]:
-    """Check tool calling policy — allowed/blocked tools."""
+    """Check tool calling policy — allowed/blocked tools.
+
+    v3.9 B2 allowlist semantic alignment with ToolGateway:
+        - `allowed_tools=[]` (empty) → allowlist disabled; all registered
+          tools permitted modulo blocklist. Preserves pre-B2 behavior
+          and matches `create_tool_gateway()` bundled-default reality.
+        - `allowed_tools=["a","b"]` (non-empty) → strict fail-closed;
+          only listed tools permitted.
+        - `blocked_tools` always overrides `allowed_tools`.
+
+    The legacy `TOOL_NO_ALLOWLIST` violation was emitted on every
+    tool-call when `allowed_tools` was empty. That made the bundled
+    default policy (which ships with `allowed_tools=[]`) reject every
+    call — a contract drift against `ToolGateway` which has always
+    treated empty as permissive. B2 removes that violation.
+    """
     violations = []
 
     if not policy.get("enabled", False):
@@ -157,11 +172,11 @@ def _check_tool_calling(policy: dict[str, Any], action: dict[str, Any]) -> list[
     if tool in blocked:
         violations.append(f"TOOL_BLOCKED:{tool}")
 
+    # v3.9 B2: empty allowlist is permissive (no TOOL_NO_ALLOWLIST).
+    # Non-empty allowlist is strict.
     allowed = set(policy.get("allowed_tools", []))
     if allowed and tool not in allowed:
         violations.append(f"TOOL_NOT_ALLOWED:{tool}")
-    elif not allowed:
-        violations.append(f"TOOL_NO_ALLOWLIST:{tool}")
 
     return violations
 
@@ -229,12 +244,14 @@ def evaluate_quality(
     Returns list of QualityGateResult.
     """
     if not output_text:
-        return [QualityGateResult(
-            passed=False,
-            gate_id="output_not_empty",
-            action="reject",
-            reason="Empty output",
-        )]
+        return [
+            QualityGateResult(
+                passed=False,
+                gate_id="output_not_empty",
+                action="reject",
+                reason="Empty output",
+            )
+        ]
 
     try:
         from ao_kernel._internal.orchestrator.quality_gate import run_quality_gates
@@ -256,12 +273,14 @@ def evaluate_quality(
         ]
     except Exception as exc:
         # Fail-CLOSED: if quality gate can't run, DENY (not allow)
-        return [QualityGateResult(
-            passed=False,
-            gate_id="gate_load_error",
-            action="reject",
-            reason=f"Quality gate failed to load: {str(exc)[:200]}",
-        )]
+        return [
+            QualityGateResult(
+                passed=False,
+                gate_id="gate_load_error",
+                action="reject",
+                reason=f"Quality gate failed to load: {str(exc)[:200]}",
+            )
+        ]
 
 
 def quality_summary(results: list[QualityGateResult]) -> dict[str, Any]:
@@ -272,10 +291,7 @@ def quality_summary(results: list[QualityGateResult]) -> dict[str, Any]:
         "total": len(results),
         "passed": sum(1 for r in results if r.passed),
         "failed": sum(1 for r in results if not r.passed),
-        "gates": [
-            {"gate_id": r.gate_id, "passed": r.passed, "action": r.action, "reason": r.reason}
-            for r in results
-        ],
+        "gates": [{"gate_id": r.gate_id, "passed": r.passed, "action": r.action, "reason": r.reason} for r in results],
     }
 
 
