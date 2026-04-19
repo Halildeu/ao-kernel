@@ -19,7 +19,6 @@ from ao_kernel.workflow.run_store import load_run
 from tests.benchmarks.assertions import (
     assert_adapter_ok,
     assert_capability_artifact,
-    assert_cost_consumed,
     assert_review_score,
     assert_workflow_completed,
     assert_workflow_failed,
@@ -163,17 +162,24 @@ class TestHappyPath:
 
 
 class TestCostReconcile:
-    """PR-B7.1: verify the benchmark-only cost shim drains the
-    `cost_usd` axis. The real adapter transport path does not
-    reconcile cost_usd (FAZ-C PR-C3); this test pins the
-    benchmark-layer contract instead."""
+    """v3.7 F2 absorb: the PR-B7.1 benchmark-only cost shim was
+    removed because the adapter-path `post_adapter_reconcile`
+    middleware (v3.3.0 PR-C3) is now the sole cost drainer.
 
-    def test_cost_usd_drained_after_happy_review(
+    Fast-mode mock runs therefore do NOT drain ``cost_usd``; this
+    class pins the new fast-mode contract. Real adapter-path
+    reconcile + `cost_source="real_adapter"` scorecard wiring live
+    in the v3.7 F2 full-mode smokes.
+    """
+
+    def test_cost_usd_not_drained_in_fast_mode(
         self,
         workspace_root: Path,
         seeded_run,
         benchmark_driver,
     ) -> None:
+        from tests.benchmarks.assertions import assert_budget_unchanged
+
         run_id = seeded_run(_WORKFLOW_ID, version=_WORKFLOW_VERSION)
         canned = {
             (_SCENARIO_ID, "codex-stub", 1): review_envelopes.review_agent_happy(
@@ -197,11 +203,8 @@ class TestCostReconcile:
             )
 
         record, _ = load_run(workspace_root, run_id)
-        consumed = assert_cost_consumed(record, "cost_usd", min_consumed=0.0)
-        # The envelope reports 0.12 USD; the shim should drain by
-        # exactly that amount (no other adapter call for this
-        # scenario).
-        assert abs(consumed - 0.12) < 1e-9, f"unexpected cost_usd consumption: {consumed}"
+        # Fast-mode contract post-F2: axis seeded but not drained.
+        assert_budget_unchanged(record, axis="cost_usd")
 
 
 class TestMissingPayload:

@@ -141,20 +141,25 @@ def pytest_sessionfinish(
     misconfiguration silently-green under CI. Now we propagate a
     non-zero pytest exit code via ``session.exitstatus``.
 
-    v3.7 F1 iter-2 absorb: under ``--benchmark-mode=full`` every
-    fast-mode (`scorecard_primary`-marked) test is skipped, so the
-    canonical primary set is legitimately empty. Suppress the
-    scorecard invariant in that mode — the scorecard surface is a
-    fast-mode-only contract today; F2's real-adapter smokes will
-    land their own scorecard path.
+    v3.7 F2 absorb (Codex iter-2 AGREE): expected primary scenarios
+    are now mode-gated. Fast mode retains the canonical full set
+    (``{"governed_bugfix", "governed_review"}``); full mode only
+    requires ``{"governed_review"}`` because the F2 smoke scope is
+    minimal-by-design (no ``gh-cli-pr`` real-adapter wiring yet).
     """
+    from ao_kernel._internal.scorecard.collector import (
+        EXPECTED_PRIMARY_SCENARIOS,
+    )
+
     mode = session.config.getoption("--benchmark-mode")
     if mode == "full":
-        return
+        expected = frozenset({"governed_review"})
+    else:
+        expected = EXPECTED_PRIMARY_SCENARIOS
 
     registry = _registry(session.config)
     try:
-        finalize_session(registry)
+        finalize_session(registry, expected_scenarios=expected)
     except Exception as exc:
         session.config.get_terminal_writer().line(
             f"scorecard finalize failed: {exc}",
@@ -199,13 +204,20 @@ def _now_iso() -> str:
 
 
 @pytest.fixture
-def workspace_root(tmp_path: Path) -> Path:
+def workspace_root(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
     """Materialise a tmp workspace with `.ao/` + git skeleton and
     bundled policies / workflows / adapters copied in, so the
     driver + governance path reads a real filesystem.
 
     `install_workspace` from the shared driver helpers does the git
     init + base `.ao/` dirs; we layer the bundled defaults on top.
+
+    v3.7 F2: under `--benchmark-mode=full` the workspace is overlaid
+    with `policy_cost_tracking.v1.json::enabled=true` so the
+    adapter-path `post_adapter_reconcile` middleware actually runs
+    and emits `llm_spend_recorded` events with `source="adapter_path"`.
+    Fast-mode keeps the bundled dormant default so pre-F2 tests
+    behave identically.
     """
     install_workspace(tmp_path)
     ao = tmp_path / ".ao"
@@ -226,6 +238,24 @@ def workspace_root(tmp_path: Path) -> Path:
     if bench_workflows.is_dir():
         for workflow in bench_workflows.glob("*.v1.json"):
             shutil.copy2(workflow, ao / "workflows" / workflow.name)
+
+    # v3.7 F2 mode-gated cost policy override (Codex iter-2 AGREE).
+    # Fast-mode keeps bundled dormant default; full-mode flips
+    # `enabled=true` so the adapter-path reconcile middleware fires.
+    mode = request.config.getoption("--benchmark-mode")
+    if mode == "full":
+        cost_policy_path = ao / "policies" / "policy_cost_tracking.v1.json"
+        if cost_policy_path.is_file():
+            policy_doc = json.loads(
+                cost_policy_path.read_text(encoding="utf-8"),
+            )
+            if isinstance(policy_doc, dict):
+                policy_doc["enabled"] = True
+                cost_policy_path.write_text(
+                    json.dumps(policy_doc, indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
+
     return tmp_path
 
 

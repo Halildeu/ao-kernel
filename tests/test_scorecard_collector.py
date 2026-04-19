@@ -75,6 +75,9 @@ class TestBuildResult:
         assert result.workflow_completed is True
         assert result.duration_ms == 2000
         assert result.cost_consumed_usd == pytest.approx(0.5)
+        # v3.7 F2 legacy-drain compatibility: a positive budget drain
+        # with no `llm_spend_recorded(source="adapter_path")` event
+        # maps to the `mock_shim` label (historical artefact read).
         assert result.cost_source == "mock_shim"
         assert result.review_score == pytest.approx(0.88)
 
@@ -137,6 +140,88 @@ class TestBuildResult:
         assert result.workflow_completed is False
         assert result.status == "fail"
         assert result.duration_ms is None
+
+
+class TestCostSourceDetection:
+    """v3.7 F2: collector chooses `cost_source` via events stream first,
+    budget drain second, else None."""
+
+    def test_real_adapter_wins_when_llm_spend_recorded_present(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Event-backed detection: `llm_spend_recorded(source="adapter_path")`
+        → `cost_source="real_adapter"` regardless of budget state."""
+        run_dir = tmp_path / "run"
+        events = [
+            {"kind": "workflow_started", "ts": "2026-04-18T10:00:00+00:00"},
+            {
+                "kind": "llm_spend_recorded",
+                "ts": "2026-04-18T10:00:01+00:00",
+                "payload": {
+                    "source": "adapter_path",
+                    "cost_usd": 0.05,
+                },
+            },
+            {"kind": "workflow_completed", "ts": "2026-04-18T10:00:02+00:00"},
+        ]
+        _write_events(run_dir, events)
+        state = tmp_path / "state.json"
+        _write_run_state(state, 10.0, 9.95)
+        sidecar = PrimarySidecar(
+            scenario_id="governed_review",
+            run_dir=run_dir,
+            run_state_path=state,
+        )
+        result = build_result(sidecar)
+        assert result.cost_source == "real_adapter"
+        # cost_consumed_usd still reflects the run-state axis.
+        assert result.cost_consumed_usd == pytest.approx(0.05)
+
+    def test_no_event_no_drain_yields_none(self, tmp_path: Path) -> None:
+        """v3.7 F2 fast-mode post-shim: no `llm_spend_recorded` + no
+        positive drain → `cost_source=None`. Previously the collector
+        hardcoded `"mock_shim"` when drain>=0; F2 drops that hardcode."""
+        run_dir = tmp_path / "run"
+        _write_events(
+            run_dir,
+            [{"kind": "workflow_completed", "ts": "2026-04-18T10:00:00+00:00"}],
+        )
+        state = tmp_path / "state.json"
+        # Axis seeded but not drained (fast-mode F2 contract).
+        _write_run_state(state, 10.0, 10.0)
+        sidecar = PrimarySidecar(
+            scenario_id="governed_bugfix",
+            run_dir=run_dir,
+            run_state_path=state,
+        )
+        result = build_result(sidecar)
+        assert result.cost_source is None
+        assert result.cost_consumed_usd == pytest.approx(0.0)
+
+    def test_legacy_drain_without_event_maps_to_mock_shim(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Backward-compat: old artefacts produced by the removed
+        `_maybe_consume_budget` shim show positive drain but no
+        `llm_spend_recorded` event; collector keeps labelling those
+        as `mock_shim`."""
+        run_dir = tmp_path / "run"
+        _write_events(
+            run_dir,
+            [{"kind": "workflow_completed", "ts": "2026-04-18T10:00:00+00:00"}],
+        )
+        state = tmp_path / "state.json"
+        _write_run_state(state, 10.0, 9.5)
+        sidecar = PrimarySidecar(
+            scenario_id="governed_review",
+            run_dir=run_dir,
+            run_state_path=state,
+        )
+        result = build_result(sidecar)
+        assert result.cost_source == "mock_shim"
+        assert result.cost_consumed_usd == pytest.approx(0.5)
 
 
 class TestBuildScorecard:

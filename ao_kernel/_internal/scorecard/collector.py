@@ -215,6 +215,41 @@ def _extract_review_score(
     return None
 
 
+def _detect_cost_source(
+    events: list[dict[str, Any]],
+    cost_consumed: float | None,
+) -> str | None:
+    """Determine the `cost_source` label for a benchmark run.
+
+    v3.7 F2 absorb — decision tree (adapter-path reconcile benchmark
+    uplift):
+
+    1. Events stream carries `kind="llm_spend_recorded"` with
+       `payload.source="adapter_path"` → ``"real_adapter"``. The
+       canonical signal that the real adapter-path `post_adapter_reconcile`
+       middleware fired.
+    2. Else, legacy fast-mode run produced a budget drain via the
+       (now-removed) ``_maybe_consume_budget`` shim — historical
+       scorecard artefacts emitted ``"mock_shim"``. Post-F2 fast-mode
+       runs no longer drain the budget, so this branch is only ever
+       entered when reading older artefacts.
+    3. Otherwise ``None`` — the common F2+ fast-mode path.
+    """
+    for event in events:
+        if event.get("kind") != "llm_spend_recorded":
+            continue
+        payload = event.get("payload") or {}
+        if isinstance(payload, Mapping) and payload.get("source") == "adapter_path":
+            return "real_adapter"
+    if cost_consumed is not None and cost_consumed > 0:
+        # Legacy fast-mode shim drain; retained for backward
+        # compatibility reading older run artefacts. Post-F2
+        # fast-mode runs won't reach this branch because the shim
+        # was removed.
+        return "mock_shim"
+    return None
+
+
 def build_result(sidecar: PrimarySidecar) -> BenchmarkResult:
     """Derive a ``BenchmarkResult`` from a primary sidecar."""
     events = _iter_events(sidecar.run_dir)
@@ -224,7 +259,7 @@ def build_result(sidecar: PrimarySidecar) -> BenchmarkResult:
     status = "pass" if workflow_completed and not failed else "fail"
     run_state = _latest_run_state(sidecar.run_state_path)
     cost_consumed = _extract_cost(run_state)
-    cost_source = "mock_shim" if cost_consumed is not None else None
+    cost_source = _detect_cost_source(events, cost_consumed)
     review_score = _extract_review_score(sidecar.review_findings_path)
     return BenchmarkResult(
         scenario=sidecar.scenario_id,
