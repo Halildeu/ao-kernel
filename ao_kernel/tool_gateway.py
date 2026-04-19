@@ -100,13 +100,23 @@ class ToolCallPolicy:
         default_permission = perms.get("default", "read_only")
         if default_permission not in ("read_only", "mutating"):
             raise ValueError(f"tool_permissions.default must be 'read_only' or 'mutating', got {default_permission!r}")
-        mutating_requires_confirmation = bool(perms.get("mutating_requires_confirmation", True))
+        # Strict bool — no silent coercion of "false", 0, [], etc.
+        raw_mutating_req = perms.get("mutating_requires_confirmation", True)
+        if not isinstance(raw_mutating_req, bool):
+            raise ValueError(
+                f"tool_permissions.mutating_requires_confirmation must be bool, got {type(raw_mutating_req).__name__}"
+            )
+        mutating_requires_confirmation = raw_mutating_req
 
         # cycle_detection nested object
         cycle = policy.get("cycle_detection", {})
         if not isinstance(cycle, dict):
             raise ValueError(f"cycle_detection must be object, got {type(cycle).__name__}")
-        cycle_detection_enabled = bool(cycle.get("enabled", True))
+        # Strict bool — no silent coercion.
+        raw_cycle_enabled = cycle.get("enabled", True)
+        if not isinstance(raw_cycle_enabled, bool):
+            raise ValueError(f"cycle_detection.enabled must be bool, got {type(raw_cycle_enabled).__name__}")
+        cycle_detection_enabled = raw_cycle_enabled
         raw_cycle_max = cycle.get("max_identical_calls", 2)
         if not isinstance(raw_cycle_max, int) or isinstance(raw_cycle_max, bool):
             raise ValueError(f"cycle_detection.max_identical_calls must be int, got {type(raw_cycle_max).__name__}")

@@ -283,6 +283,24 @@ class TestToolCallPolicyAbsorbV39B1:
         with pytest.raises(ValueError, match="tool_permissions must be object"):
             ToolCallPolicy.from_dict({"tool_permissions": "read_only"})
 
+    def test_from_dict_mutating_requires_confirmation_non_bool_raises(self):
+        # v3.9 B1 iter-2 BLOCKER fix: strict bool, no silent coercion.
+        # Regression pin for "false"/0/[] being accepted as True/False
+        # (Codex post-impl review caught this gap).
+        import pytest
+
+        with pytest.raises(ValueError, match="mutating_requires_confirmation must be bool"):
+            ToolCallPolicy.from_dict({"tool_permissions": {"mutating_requires_confirmation": "false"}})
+
+    def test_from_dict_cycle_detection_enabled_non_bool_raises(self):
+        # v3.9 B1 iter-2 BLOCKER fix: strict bool, no silent coercion.
+        import pytest
+
+        with pytest.raises(ValueError, match="cycle_detection.enabled must be bool"):
+            ToolCallPolicy.from_dict(
+                {"cycle_detection": {"enabled": 1}}  # int, not bool
+            )
+
 
 class TestCreateToolGatewayPolicyAbsorbV39B1:
     """v3.9 B1 — integration-level: absorbed fields survive `create_tool_gateway()`."""
