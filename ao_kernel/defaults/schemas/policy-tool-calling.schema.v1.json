@@ -30,7 +30,7 @@
     "allowed_tools": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Tool names allowed. Empty = no tools allowed (fail-closed)."
+      "description": "Tool allowlist. v3.9 B2 semantic: empty array = allowlist DISABLED (all registered tools permitted modulo blocked_tools); non-empty = strict fail-closed (only listed tools permitted). blocked_tools always overrides allowed_tools."
     },
     "blocked_tools": {
       "type": "array",

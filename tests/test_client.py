@@ -149,6 +149,37 @@ class TestToolDispatch:
         # Both should be registered in the same gateway
         assert hasattr(client, "_gateway")
 
+    def test_llm_call_resets_gateway_state_v39_b2(self, tmp_path: Path):
+        # v3.9 B2 post-impl BLOCKER fix: persistent AoKernelClient
+        # gateway must be reset at every new LLM request boundary,
+        # otherwise _request_call_count / _recent_calls accumulate
+        # across calls and legitimate traffic trips
+        # MAX_CALLS_PER_REQUEST_EXCEEDED or CYCLE_DETECTED.
+        #
+        # The reset runs BEFORE any routing/execution in llm_call().
+        # We force _route to raise a sentinel and verify the reset
+        # still fired — no `except: pass` needed; the sentinel is
+        # the expected exception.
+        import pytest as _pytest  # local alias for clarity
+        from unittest.mock import patch
+
+        client = AoKernelClient(tmp_path)
+        client.register_tool("probe", lambda x: {"ok": True})
+        # Dirty the per-request state.
+        client._gateway._request_call_count = 99
+        client._gateway._recent_calls.append("stale|{}")
+
+        class _RouteSentinel(Exception):
+            pass
+
+        with patch.object(client, "_route", side_effect=_RouteSentinel):
+            with _pytest.raises(_RouteSentinel):
+                client.llm_call(messages=[{"role": "user", "content": "hi"}])
+
+        # Reset must have run before _route, clearing all transient state.
+        assert client._gateway._request_call_count == 0
+        assert len(client._gateway._recent_calls) == 0
+
 
 class TestSelfEditMemory:
     def test_remember_and_recall(self, tmp_workspace: Path):
@@ -275,17 +306,23 @@ class TestLLMCall:
 
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "https://api.openai.com/v1/chat/completions",
-                "headers": {},
-                "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "ERROR",
-                "error_code": "TIMEOUT",
-                "http_status": 504,
-                "elapsed_ms": 30000,
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "https://api.openai.com/v1/chat/completions",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "ERROR",
+                    "error_code": "TIMEOUT",
+                    "http_status": 504,
+                    "elapsed_ms": 30000,
+                },
+            ),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
@@ -302,32 +339,46 @@ class TestLLMCall:
         client = AoKernelClient(ws_root)
         client.start_session()
 
-        mock_response = json.dumps({
-            "choices": [{"message": {"content": "Hello! Python is a programming language."}}],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 20},
-        }).encode()
+        mock_response = json.dumps(
+            {
+                "choices": [{"message": {"content": "Hello! Python is a programming language."}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 20},
+            }
+        ).encode()
 
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "https://api.openai.com/v1/chat/completions",
-                "headers": {"Authorization": "Bearer test"},
-                "body_bytes": b'{"messages":[]}',
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK",
-                "http_status": 200,
-                "resp_bytes": mock_response,
-                "elapsed_ms": 500,
-            }),
-            patch("ao_kernel.llm.normalize_response", return_value={
-                "text": "Hello! Python is a programming language.",
-                "tool_calls": [],
-            }),
-            patch("ao_kernel.llm.extract_usage", return_value={
-                "input_tokens": 10,
-                "output_tokens": 20,
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "https://api.openai.com/v1/chat/completions",
+                    "headers": {"Authorization": "Bearer test"},
+                    "body_bytes": b'{"messages":[]}',
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "http_status": 200,
+                    "resp_bytes": mock_response,
+                    "elapsed_ms": 500,
+                },
+            ),
+            patch(
+                "ao_kernel.llm.normalize_response",
+                return_value={
+                    "text": "Hello! Python is a programming language.",
+                    "tool_calls": [],
+                },
+            ),
+            patch(
+                "ao_kernel.llm.extract_usage",
+                return_value={
+                    "input_tokens": 10,
+                    "output_tokens": 20,
+                },
+            ),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "What is Python?"}],
@@ -347,6 +398,7 @@ class TestLLMCallStreaming:
     def test_llm_call_stream_ok(self, tmp_workspace: Path):
         """stream=True dispatches to stream_request and returns OK."""
         from ao_kernel.llm import StreamResult
+
         ws_root = tmp_workspace.parent
         client = AoKernelClient(ws_root)
         client.start_session()
@@ -363,11 +415,14 @@ class TestLLMCallStreaming:
         )
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "https://api.openai.com/v1/chat/completions",
-                "headers": {},
-                "body_bytes": b"{}",
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "https://api.openai.com/v1/chat/completions",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
             patch("ao_kernel.llm.stream_request", return_value=mock_sr),
         ):
             result = client.llm_call(
@@ -388,6 +443,7 @@ class TestLLMCallStreaming:
     def test_llm_call_stream_partial(self, tmp_workspace: Path):
         """PARTIAL stream returns PARTIAL status."""
         from ao_kernel.llm import StreamResult
+
         ws_root = tmp_workspace.parent
         client = AoKernelClient(ws_root)
         client.start_session()
@@ -403,14 +459,21 @@ class TestLLMCallStreaming:
         )
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
             patch("ao_kernel.llm.stream_request", return_value=mock_sr),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
                 stream=True,
             )
             assert result["status"] == "PARTIAL"
@@ -420,6 +483,7 @@ class TestLLMCallStreaming:
     def test_llm_call_stream_fail(self, tmp_workspace: Path):
         """FAIL stream returns TRANSPORT_ERROR."""
         from ao_kernel.llm import StreamResult
+
         ws_root = tmp_workspace.parent
         client = AoKernelClient(ws_root)
         client.start_session()
@@ -434,14 +498,21 @@ class TestLLMCallStreaming:
         )
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
             patch("ao_kernel.llm.stream_request", return_value=mock_sr),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
                 stream=True,
             )
             assert result["status"] == "TRANSPORT_ERROR"
@@ -457,18 +528,30 @@ class TestLLMCallStreaming:
         mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
-            }) as mock_exec,
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "resp_bytes": mock_resp,
+                    "elapsed_ms": 100,
+                },
+            ) as mock_exec,
             patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
             patch("ao_kernel.llm.extract_usage", return_value=None),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
                 stream=False,
             )
             mock_exec.assert_called_once()
@@ -483,20 +566,33 @@ class TestAutoRouteContract:
         client = AoKernelClient(ws_root)
         client.start_session()
 
-        with patch("ao_kernel.llm.resolve_route", return_value={
-            "status": "OK",
-            "selected_provider": "claude",
-            "selected_model": "claude-3-opus",
-            "base_url": "https://api.anthropic.com/v1",
-        }):
+        with patch(
+            "ao_kernel.llm.resolve_route",
+            return_value={
+                "status": "OK",
+                "selected_provider": "claude",
+                "selected_model": "claude-3-opus",
+                "base_url": "https://api.anthropic.com/v1",
+            },
+        ):
             with (
                 patch("ao_kernel.llm.check_capabilities", return_value=(True, "claude", [])),
-                patch("ao_kernel.llm.build_request_with_context", return_value={
-                    "url": "u", "headers": {}, "body_bytes": b"{}",
-                }),
-                patch("ao_kernel.llm.execute_request", return_value={
-                    "status": "OK", "resp_bytes": b'{"choices":[{"message":{"content":"hi"}}]}', "elapsed_ms": 50,
-                }),
+                patch(
+                    "ao_kernel.llm.build_request_with_context",
+                    return_value={
+                        "url": "u",
+                        "headers": {},
+                        "body_bytes": b"{}",
+                    },
+                ),
+                patch(
+                    "ao_kernel.llm.execute_request",
+                    return_value={
+                        "status": "OK",
+                        "resp_bytes": b'{"choices":[{"message":{"content":"hi"}}]}',
+                        "elapsed_ms": 50,
+                    },
+                ),
                 patch("ao_kernel.llm.normalize_response", return_value={"text": "hi", "tool_calls": []}),
                 patch("ao_kernel.llm.extract_usage", return_value=None),
             ):
@@ -518,20 +614,34 @@ class TestEvidenceIntegration:
         mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
-                "http_status": 200, "error_type": None, "error_detail": None,
-                "tls_cafile": None,
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "resp_bytes": mock_resp,
+                    "elapsed_ms": 100,
+                    "http_status": 200,
+                    "error_type": None,
+                    "error_detail": None,
+                    "tls_cafile": None,
+                },
+            ),
             patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
             patch("ao_kernel.llm.extract_usage", return_value=None),
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
             )
             assert result["status"] == "OK"
 
@@ -551,21 +661,31 @@ class TestEvidenceIntegration:
         mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
-            }),
+            patch(
+                "ao_kernel.llm.build_request",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "resp_bytes": mock_resp,
+                    "elapsed_ms": 100,
+                },
+            ),
             patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
             patch("ao_kernel.llm.extract_usage", return_value=None),
-            patch(
-                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_live_response"
-            ) as mock_evidence,
+            patch("ao_kernel._internal.prj_kernel_api.llm_post_processors.process_live_response") as mock_evidence,
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
             )
             assert result["status"] == "OK"
             mock_evidence.assert_not_called()
@@ -579,22 +699,31 @@ class TestEvidenceIntegration:
         client.start_session()
 
         mock_sr = StreamResult(
-            status="OK", complete=True, text="hello",
-            finish_reason="stop", elapsed_ms=100, chunk_count=3,
+            status="OK",
+            complete=True,
+            text="hello",
+            finish_reason="stop",
+            elapsed_ms=100,
+            chunk_count=3,
         )
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
             patch(
-                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response"
-            ) as mock_stream_ev,
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+            patch("ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response") as mock_stream_ev,
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
                 stream=True,
             )
             assert result["status"] == "OK"
@@ -616,22 +745,31 @@ class TestEvidenceIntegration:
         client._context = {"session_id": "test", "ephemeral_decisions": []}
 
         mock_sr = StreamResult(
-            status="OK", complete=True, text="hello",
-            finish_reason="stop", elapsed_ms=100, chunk_count=3,
+            status="OK",
+            complete=True,
+            text="hello",
+            finish_reason="stop",
+            elapsed_ms=100,
+            chunk_count=3,
         )
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
             patch(
-                "ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response"
-            ) as mock_stream_ev,
+                "ao_kernel.llm.build_request",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch("ao_kernel.llm.stream_request", return_value=mock_sr),
+            patch("ao_kernel._internal.prj_kernel_api.llm_post_processors.process_stream_response") as mock_stream_ev,
         ):
             result = client.llm_call(
                 messages=[{"role": "user", "content": "test"}],
-                provider_id="openai", model="gpt-4", api_key="k",
+                provider_id="openai",
+                model="gpt-4",
+                api_key="k",
                 stream=True,
             )
             assert result["status"] == "OK"
@@ -651,14 +789,26 @@ class TestSwallowLoggingA3:
         mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
-                "http_status": 200, "error_type": None, "error_detail": None,
-                "tls_cafile": None,
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "resp_bytes": mock_resp,
+                    "elapsed_ms": 100,
+                    "http_status": 200,
+                    "error_type": None,
+                    "error_detail": None,
+                    "tls_cafile": None,
+                },
+            ),
             patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
             patch("ao_kernel.llm.extract_usage", return_value=None),
             patch(
@@ -669,12 +819,14 @@ class TestSwallowLoggingA3:
             with caplog.at_level("WARNING", logger="ao_kernel.client"):
                 result = client.llm_call(
                     messages=[{"role": "user", "content": "test"}],
-                    provider_id="openai", model="gpt-4", api_key="k",
+                    provider_id="openai",
+                    model="gpt-4",
+                    api_key="k",
                 )
             assert result["status"] == "OK"
-            assert any(
-                "evidence writer skipped" in r.message for r in caplog.records
-            ), f"expected warning, got: {[r.message for r in caplog.records]}"
+            assert any("evidence writer skipped" in r.message for r in caplog.records), (
+                f"expected warning, got: {[r.message for r in caplog.records]}"
+            )
 
     def test_eval_scorecard_failure_logs_warning(self, tmp_workspace: Path, caplog):
         ws_root = tmp_workspace.parent
@@ -684,14 +836,26 @@ class TestSwallowLoggingA3:
         mock_resp = json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
         with (
             patch("ao_kernel.llm.check_capabilities", return_value=(True, "openai", [])),
-            patch("ao_kernel.llm.build_request_with_context", return_value={
-                "url": "u", "headers": {}, "body_bytes": b"{}",
-            }),
-            patch("ao_kernel.llm.execute_request", return_value={
-                "status": "OK", "resp_bytes": mock_resp, "elapsed_ms": 100,
-                "http_status": 200, "error_type": None, "error_detail": None,
-                "tls_cafile": None,
-            }),
+            patch(
+                "ao_kernel.llm.build_request_with_context",
+                return_value={
+                    "url": "u",
+                    "headers": {},
+                    "body_bytes": b"{}",
+                },
+            ),
+            patch(
+                "ao_kernel.llm.execute_request",
+                return_value={
+                    "status": "OK",
+                    "resp_bytes": mock_resp,
+                    "elapsed_ms": 100,
+                    "http_status": 200,
+                    "error_type": None,
+                    "error_detail": None,
+                    "tls_cafile": None,
+                },
+            ),
             patch("ao_kernel.llm.normalize_response", return_value={"text": "ok", "tool_calls": []}),
             patch("ao_kernel.llm.extract_usage", return_value=None),
             patch(
@@ -702,12 +866,14 @@ class TestSwallowLoggingA3:
             with caplog.at_level("WARNING", logger="ao_kernel.client"):
                 result = client.llm_call(
                     messages=[{"role": "user", "content": "test"}],
-                    provider_id="openai", model="gpt-4", api_key="k",
+                    provider_id="openai",
+                    model="gpt-4",
+                    api_key="k",
                 )
             assert result["status"] == "OK"
-            assert any(
-                "eval scorecard skipped" in r.message for r in caplog.records
-            ), f"expected warning, got: {[r.message for r in caplog.records]}"
+            assert any("eval scorecard skipped" in r.message for r in caplog.records), (
+                f"expected warning, got: {[r.message for r in caplog.records]}"
+            )
 
 
 class TestDoctor:

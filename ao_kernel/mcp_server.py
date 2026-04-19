@@ -805,6 +805,27 @@ def create_tool_gateway() -> Any:
 
     gateway = ToolGateway(policy=policy)
 
+    # v3.9 B2 iter-3 absorb (Codex post-impl BLOCKER):
+    #
+    # The bundled `policy_tool_calling.v1.json` ships with
+    # `default_permission="read_only"` and
+    # `mutating_requires_confirmation=true`. If we register
+    # `ao_memory_write` with `is_mutating=True`, the gateway's
+    # MUTATING_REQUIRES_CONFIRMATION check DENYs the tool before the
+    # handler runs — regardless of any workspace-level
+    # `policy_mcp_memory.write.enabled=true` override, since that
+    # override is evaluated inside `memory_tools.handle_memory_write()`
+    # which never gets called.
+    #
+    # No confirmation flow exists in this gateway yet (B2 is a DENY-only
+    # enforcement pass). Locking `ao_memory_write` out-of-the-box would
+    # break the governance surface. So NO tool here is flagged
+    # `is_mutating` until a confirmation pathway lands (B3+ / future).
+    # The write governance still runs inside the handler via its own
+    # `policy_mcp_memory.write` policy, which remains the right place
+    # to gate the actual write side-effect.
+    _MUTATING_TOOLS: set[str] = set()
+
     for td in TOOL_DEFINITIONS:
         handler = TOOL_DISPATCH.get(td["name"])
         if handler:
@@ -813,6 +834,7 @@ def create_tool_gateway() -> Any:
                 handler=handler,
                 description=td["description"],
                 input_schema=td["inputSchema"],
+                is_mutating=td["name"] in _MUTATING_TOOLS,
             )
 
     return gateway
@@ -856,15 +878,48 @@ def create_mcp_server() -> Any:  # pragma: no cover — requires mcp package
             elapsed = (_time.monotonic() - start) * 1000.0
 
             if gw_result.status == "DENIED":
+                # v3.9 B2: prefer the machine-readable reason_code over
+                # the free-form reason string. Fall back to reason when
+                # reason_code is empty (e.g. from callers built against
+                # pre-B2 ToolCallResult shape).
+                reason_code = gw_result.reason_code or gw_result.reason
                 deny_envelope = _decision_envelope(
                     tool=name,
                     allowed=False,
                     decision="deny",
-                    reason_codes=[gw_result.reason],
-                    error=f"ToolGateway denied: {gw_result.reason}",
+                    reason_codes=[reason_code],
+                    error=f"ToolGateway denied: {reason_code}",
                 )
                 s.set_attribute("ao.decision", "deny")
+                s.set_attribute("ao.policy.reason_code", reason_code)
                 record_mcp_tool_call(elapsed, tool=name, decision="deny")
+                # v3.9 B2: audit every denial through the existing MCP
+                # event log (workspace mode). Library mode is no-op.
+                # Use the same param-aware resolver as the success path
+                # (_with_evidence wrapper) to avoid `.ao/.ao/evidence/...`
+                # nesting when `config.workspace_root()` already points
+                # at `.ao/` instead of the project root.
+                try:
+                    from ao_kernel._internal.evidence.mcp_event_log import (
+                        record_mcp_event as _rec_mcp,
+                    )
+                    from ao_kernel._internal.mcp.memory_tools import (
+                        _resolve_workspace_for_call,
+                    )
+
+                    _ws = _resolve_workspace_for_call(arguments or {}, fallback=_find_workspace_root)
+                    _rec_mcp(
+                        _ws,
+                        name,
+                        deny_envelope,
+                        params=arguments or {},
+                        duration_ms=int(elapsed),
+                        extra={"policy_denied": True, "reason_code": reason_code},
+                    )
+                except Exception:
+                    # Audit is fail-open side-channel; never block the
+                    # governance path on a write failure.
+                    pass
                 return [TextContent(type="text", text=json.dumps(deny_envelope, ensure_ascii=False))]
 
             result = gw_result.output or {"error": gw_result.reason}
