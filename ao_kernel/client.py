@@ -1204,11 +1204,21 @@ class AoKernelClient:
         and third-party backends without a close hook are both safe.
         Exceptions during close are logged, never propagated — cleanup is
         best-effort and must not mask the original control-flow.
+
+        v3.12 P5 iter-2 (Codex post-impl BLOCKER absorb): flips the
+        ownership flag after a successful (or attempted) close so a
+        subsequent ``close()`` / ``__exit__`` invocation does NOT
+        re-call the backend. Matches the idempotency contract the
+        public ``close()`` method advertises.
         """
         backend = self._vector_store
         if backend is None or not self._owns_vector_store:
             return
         close = getattr(backend, "close", None)
+        # Mark as no longer owned BEFORE calling close(), so even if
+        # close() raises the state transition already happened — a
+        # second close() attempt is still a no-op.
+        self._owns_vector_store = False
         if not callable(close):
             return
         try:

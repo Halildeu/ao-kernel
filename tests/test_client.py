@@ -221,6 +221,21 @@ class TestClientCloseV312P5:
         client.close()
         assert client.session_active is False
 
+    def test_close_idempotent_on_owned_backend(self, tmp_path: Path) -> None:
+        # v3.12 P5 iter-2 (Codex post-impl BLOCKER absorb): iter-1
+        # claimed close() was idempotent but _close_owned_vector_store
+        # would re-call backend.close() on every invocation. Real
+        # idempotency now flips _owns_vector_store=False before the
+        # close() call, so a second close() is a true no-op regardless
+        # of backend side effects.
+        backend = MagicMock()
+        client = AoKernelClient(tmp_path, vector_store=backend)
+        # Force owned so the cleanup path engages.
+        client._owns_vector_store = True
+        client.close()
+        client.close()  # second call — must not touch backend again
+        assert backend.close.call_count == 1
+
     def test_close_save_false_forwards_flag(self, tmp_workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         # close(save=False) must forward the flag to end_session().
         ws_root = tmp_workspace.parent
