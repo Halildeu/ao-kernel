@@ -7,6 +7,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-04-19
+
+### Added — v3.7.0 Benchmark Realism (F1 + F2)
+
+**Context.** v3.5–v3.6 closed the consultation producer/consumer loop. v3.7 tightens the benchmark surface by exposing a real-adapter-transport path (`--benchmark-mode=full`) and wiring event-backed cost-source detection into the scorecard. The default CI path is unchanged — `.github/workflows/test.yml` diff=0 — so the v3.7 changes are opt-in. Codex plan-time CNS: 2 rounds (scope correction) → AGREE. Each F-series PR also ran post-impl review per the v3.5+ two-gate rule.
+
+**F1 (#141) — Benchmark full-mode activation scaffold + secret canonicalization.**
+- New `pytest_addoption --benchmark-mode=fast|full` + `benchmark_mode` fixture + `@pytest.mark.full_mode` marker in `tests/benchmarks/conftest.py`. Collection hook gates benchmark tests by mode (fast skips `@full_mode`; full skips non-`@full_mode` benchmark tests). Only `tests/benchmarks/` items are affected.
+- Bundled `policy_secrets.v1.json` allowlist widened to a 5-entry backward-compat set (`ANTHROPIC_API_KEY`, `CLAUDE_API_KEY`, `GH_TOKEN`, `GITHUB_TOKEN`, `OPENAI_API_KEY`). Actual fail-close gate remains `policy_worktree_profile.v1.json::secrets.allowlist_secret_ids`; the bundled policy is the docs/ops canonical surface.
+- New `docs/BENCHMARK-FULL-MODE.md` operator runbook.
+- F1 iter-2 BLOCK absorb: narrowed claims to **scaffold only** — F1 ships the option + marker + fixture + secret registry + `context_pack_ref` artefact pin but does NOT include a runnable `@full_mode` smoke (the first smoke lands in F2).
+
+**F2 (#142) — Adapter-path cost reconcile benchmark uplift.**
+- Removed `tests/benchmarks/mock_transport.py::_maybe_consume_budget` shim. Fast-mode mock runs no longer drain `budget.cost_usd`; the adapter-path `post_adapter_reconcile` middleware (v3.3.0 PR-C3) is the sole drainer.
+- **Event-backed cost-source detection** (`ao_kernel/_internal/scorecard/collector.py::_detect_cost_source`):
+  1. `llm_spend_recorded(payload.source="adapter_path")` in events → `cost_source="real_adapter"`.
+  2. Else legacy positive budget drain (historical artefacts from the removed shim) → `"mock_shim"`.
+  3. Otherwise `None` (the common F2+ fast-mode path).
+- **Render footer wording** (per Codex iter-2 correction): `real_adapter` → "adapter-path reconcile (event-backed; non-shim)". Explicitly NOT "real adapter spend" — codex-stub emits canned events, not vendor billing.
+- First runnable `@full_mode` smoke — `TestFullModeAdapterPathReconcile::test_governed_review_emits_adapter_path_spend_event` dispatches `governed_review` through real `invoke_cli` → codex-stub. Graceful skip when `python3` cannot import `ao_kernel` (prereq miss); other workflow failure categories surface via `pytest.fail`.
+- Mode-gated `workspace_root` fixture: full mode flips `policy_cost_tracking.enabled=true`; fast mode keeps bundled dormant default. Mode-gated `pytest_sessionfinish`: fast={bugfix, review}; full={review}; empty registry (prereq skip) → empty expected set to preserve graceful skip.
+- New assertion helpers: `assert_budget_unchanged` (fast-mode post-F2 pin), `assert_spend_recorded_event` (full-mode event-backed pin). `assert_cost_consumed` semantics preserved for historical artefacts.
+- F2 iter-2 BLOCK absorb: graceful-skip ↔ session-finish invariant conflict resolved; prereq detection widened to include `COMMAND_NOT_FOUND` code.
+
+**Test baseline.** 2437 → 2447 (+10 new pins across F1 + F2 collector/render/benchmark). 1 skipped (full-mode smoke prereq-gated in local env; CI with `pip install -e` exercises the real path). Ruff + mypy clean on 205 source files.
+
+**Governance pattern.** Plan-time master AGREE (2 rounds — scope correction from "external claude-code-cli spend" to "minimal codex-stub path") + per-PR post-impl Codex review with BLOCK absorb on both F1 and F2 before MERGE.
+
+**Scope boundaries (v3.7).**
+- IN: F1 scaffold + F2 codex-stub adapter-path reconcile smoke + scorecard event-backed detection + secret canonicalization + operator runbook.
+- OUT → **F2.1+ / v3.9 governance**: external `claude-code-cli` / `gh-cli-pr` wiring, bench workflow variants referencing real vendor adapters, `policy_worktree_profile.enabled=true` bundled flip, `review_findings` capability advertise on `claude-code-cli.manifest.v1.json`.
+- OUT → **v3.8 Rolling Hardening**: `_internal` coverage lift tranche, FS lock parity audit, `save_store()` deprecation cleanup, `quality_waiver` dead-or-enforce decision, optional CI pip-install retry wrapper.
+- OUT: v3.6 observability cleanup (`items_included/items_excluded/selection_log` consultation accounting) — nice-to-have; deferred to post-release patch or folded into v3.8.
+
 ## [3.6.0] - 2026-04-19
 
 ### Added — v3.6.0 Memory Loop Closure (consumer side for v3.5 promotion)
