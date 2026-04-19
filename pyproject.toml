@@ -137,7 +137,11 @@ omit = [
     "ao_kernel/_internal/prj_kernel_api/*",
     "ao_kernel/_internal/providers/*",
     "ao_kernel/_internal/shared/*",
-    "ao_kernel/_internal/utils/*",
+    # v3.9 post-release M1 (C1 tranche 2): `_internal/utils/*` removed
+    # from omit. budget.py + jsonio.py (38 LOC total) are already ~80%
+    # covered transitively; test_internal_utils_coverage.py adds
+    # targeted pins for the remaining edge cases (empty/non-str,
+    # load_json roundtrip, to_canonical_json unicode + sort semantics).
     "ao_kernel/_internal/roadmap/*",  # 2,497 LOC — 26 test var ama branch coverage %70 altında
     "ao_kernel/_internal/session/agent_context_version.py",
     "ao_kernel/_internal/session/cross_session_context.py",
