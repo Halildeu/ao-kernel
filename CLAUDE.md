@@ -107,7 +107,7 @@ ao_kernel/                ← PUBLIC FACADE
     secrets/               ← Env provider, vault stub
     shared/, utils/        ← Logger, resource loader, JSON I/O
 
-  defaults/                ← Bundled JSON resources (policies, schemas, registry, extensions, operations)
+  defaults/                ← Bundled JSON resources (policies, schemas, registry, extensions, operations, adapters, workflows, catalogs, intent_rules)
 ```
 
 > Güncel sayılar: `pytest --co -q | tail -1` (test), `find ao_kernel/defaults -name "*.json" | wc -l` (bundled JSON), `ls tests/test_*.py | wc -l` (test dosyası)
