@@ -53,8 +53,12 @@ def main() -> int:
     # Import here so --help-style checks do not require ao-kernel installed yet.
     from ao_kernel import AoKernelClient
 
-    # workspace_root="." means: create/use .ao/ in the current directory.
-    with AoKernelClient(workspace_root=str(here)) as client:
+    # AoKernelClient expects a project root that ALREADY contains a `.ao/`
+    # workspace. It does NOT auto-create one (the default `auto_init=False`
+    # is intentional so that mis-spelled paths don't silently scaffold a
+    # workspace somewhere unexpected). Pass `auto_init=True` if you want
+    # hello-llm to bootstrap `.ao/` in `here` on first run.
+    with AoKernelClient(workspace_root=str(here), auto_init=True) as client:
         print(f"✓ Workspace initialized at: {here}")
 
         session_id = client.start_session()

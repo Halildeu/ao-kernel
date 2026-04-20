@@ -211,13 +211,15 @@ items = query_memory(ws, key_pattern="arch.*")
 
 | | ao-kernel | LangGraph | CrewAI | Pydantic AI |
 |---|---|---|---|---|
-| Policy engine | 96 policies | No | No | No |
+| Policy engine | 100+ policy files | No | No | No |
 | Fail-closed | Yes | No | No | No |
 | Evidence trail | Self-hosted JSONL | LangSmith SaaS | No | No |
 | Migration CLI | Yes | No | No | No |
 | Doctor | Yes | No | No | No |
 | MCP server | Yes | No | No | No |
 | Streaming | SSE (6 providers) | Yes | Yes | Yes |
+
+> Counts as of `v3.13.0`: `ao_kernel/defaults/` ships **377** bundled JSON files — 106 policies + 231 schemas + 19 extensions + 9 registry + 4 workflows + 3 operations + 3 adapters + 1 catalogs + 1 intent_rules. Run `find ao_kernel/defaults -name '*.json' | wc -l` for the live number.
 
 ## Architecture
 
@@ -229,7 +231,7 @@ ao_kernel/              <- Public facade (clean API)
   mcp_server.py         <- MCP server (7 tools, 3 resources)
   context/              <- Context pipeline (compile, inject, extract, promote)
   _internal/            <- Private implementation (do not import directly)
-  defaults/             <- 338 bundled JSON (policies, schemas, registry, extensions)
+  defaults/             <- 377 bundled JSON (policies, schemas, registry, extensions, operations, adapters, workflows, catalogs, intent_rules)
 ```
 
 ## Development

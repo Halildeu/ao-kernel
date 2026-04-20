@@ -82,7 +82,7 @@ After a successful run you will have:
 
 ## Troubleshooting
 
-- **`WorkspaceNotFoundError`** — you ran `main.py` without the init step. The example uses `AoKernelClient(workspace_root=".")` which creates `.ao/` on demand; if you deleted the directory mid-run, re-run cleanly from the example folder.
+- **`WorkspaceNotFoundError`** — the `.ao/` workspace is missing. The example passes `auto_init=True` to `AoKernelClient` so the first run will bootstrap `.ao/` in the example folder automatically. If you deleted the directory mid-run, re-run cleanly from the example folder — the next invocation will scaffold it again. (If you want the stricter "fail closed when `.ao/` is absent" behavior in your own code, omit `auto_init=True` — the default is `False`.)
 - **`401 Unauthorized` from provider** — your API key is wrong, expired, or missing. Double-check `.env` (or `echo $OPENAI_API_KEY`).
 - **`Policy violation`** — the bundled `policy_llm_routing.v1.json` denied the call. That is the fail-closed behavior; inspect the `decision` and `reason_codes` in the result dict.
 - **Silent hang** — a provider may be throttling you. Ctrl-C is safe; no partial state is persisted mid-call.
