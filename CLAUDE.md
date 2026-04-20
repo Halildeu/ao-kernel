@@ -376,3 +376,97 @@ codex exec -C . -o .ao/consultations/responses/CNS-YYYYMMDD-NNN.codex.response.v
 - Dokümanlar, planlar, raporlar: Türkçe
 - Codex istişare soruları: Türkçe
 - CLAUDE.md, README: Türkçe
+
+## 17. Branch Discipline — Stale State Engelleme (2026-04-20)
+
+Bu repo multi-worktree + multi-agent (Claude Code + Codex) çalışıyor. Stale branch'ler session'lar arası drift üretir ve version bump hatalarına yol açar (örn. 2026-04-20'de `claude/faz-c-master-plan` 72 commit behind main iken Codex v3.2.0 → 4.0.0b1 jump yaptı; 11 minor release kaybedildi).
+
+### Session başlangıç check (ZORUNLU)
+
+Her yeni kod değişikliği session'ı — Claude Code VEYA Codex — infaza geçmeden önce:
+
+```bash
+bash .claude/scripts/check-branch-sync.sh
+```
+
+Script exit 1 dönerse DUR, kullanıcı ile karar ver:
+
+- Main'e rebase: `git rebase origin/main`
+- Yeni branch from main: `git checkout -b <new> origin/main`
+- Eski branch'i sil: `git branch -D <old>`
+
+### Uzun-ömürlü branch YASAK
+
+- `main` = tek truth
+- `release/v*`, `feat/*`, `fix/*`, `docs/*`, `work/*` = **SHORT-LIVED** (günler içinde kapanır)
+- `backup/*` = uzun-ömürlü ama **yalnız read-only referans**, üstünde çalışılmaz
+- **`claude/*`, `master-plan/*`, `wip/*` = YASAK** — stale üretir, agent'lar yanlış base'de çalışır
+
+2026-04-20 temizliği: 95 local + 61 remote `claude/*` branch silindi. Bu disiplin geri dönmesin.
+
+### Worktree-per-branch denkliği
+
+Her worktree ayrı short-lived branch'te çalışır. Session başlangıç:
+
+```bash
+# Primary worktree (/Users/halilkocoglu/Documents/ao-kernel)
+cd /Users/halilkocoglu/Documents/ao-kernel
+git checkout main && git pull
+
+# Feature → ya primary'de short-lived branch'e geç, ya yeni worktree yarat
+git worktree add ../ao-kernel-feat-X -b feat/X origin/main
+
+# Bitince
+git worktree remove ../ao-kernel-feat-X
+git branch -D feat/X  # merge edildikten sonra
+```
+
+### Version bump — base freshness zorunlu
+
+`pyproject.toml::version` veya `ao_kernel/__init__.py::__version__` değişecekse:
+
+- Merge base `origin/main` ile **en fazla 24 saat eski** olmalı
+- Pre-commit hook bunu yakalar (Bölüm 18)
+- Aksi halde eski base üstünde version bump → 11 release kaybı gibi felaketler
+
+### Multi-agent koordinasyon
+
+Farklı worktree'lerde çalışan Claude/Codex session'ları için:
+
+- Her session **kendi worktree'sinin branch-freshness'ını kontrol eder** (`check-branch-sync.sh`)
+- Shared implementation branch yok — her session fresh branch from main
+- Backup branch (`backup/*`) sadece kurtarma için, üstünde impl yapılmaz
+
+## 18. Pre-commit Hook: Stale Base Version Bump Engeli (2026-04-20)
+
+`.git/hooks/pre-commit` (yerel, gitignored) aktif olmalı. Stale base'de version bump'ı commit time'da yakalar:
+
+```bash
+#!/bin/bash
+# Block version bump if branch base is >24h old
+
+set -e
+version_changed=$(git diff --cached --name-only | grep -E "^(pyproject\.toml|ao_kernel/__init__\.py)$" || true)
+if [ -z "$version_changed" ]; then exit 0; fi
+
+git fetch origin main --quiet 2>/dev/null || true
+base_ts=$(git log -1 --format=%ct "$(git merge-base HEAD origin/main)" 2>/dev/null || echo 0)
+now=$(date +%s)
+age_hours=$(( (now - base_ts) / 3600 ))
+
+if [ $age_hours -gt 24 ]; then
+  echo "✗ PRE-COMMIT BLOCK: version bump on stale base ($age_hours hours old)"
+  echo "  Rebase first: git rebase origin/main"
+  echo "  Or force (not recommended): git commit --no-verify"
+  exit 1
+fi
+exit 0
+```
+
+Kurulum:
+```bash
+cp .claude/scripts/pre-commit-version-gate.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**Not:** git worktree paylaşılan `.git/` kullanır, hook tüm worktree'lerde aktif olur. Bir kez kurulur, tüm session'lar korunur.
