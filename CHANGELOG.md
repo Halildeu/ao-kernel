@@ -41,7 +41,16 @@ v3.13.2 F1–F5'i tek PR'da kapatır; F6 (bug_fix_flow patch_preview) ayrı corr
 - Contract: `ao-kernel version`, `python -m ao_kernel version`, `python -m ao_kernel.cli version` — üçü de `4.0.0b1` (sonraki major) veya `3.13.2` dönecek.
 
 **F5 — Ergonomic pins** (F4 contract'ını pinliyor)
-- `tests/test_cli_entrypoints.py` **yeni**: `python -m ao_kernel version`, `python -m ao_kernel.cli version`, `ao-kernel --version` yolları hem stdlib subprocess ile koşturuluyor hem çıktı format'ı pinleniyor.
+- `tests/test_cli_entrypoints.py` **yeni**: 3 entry kontratı subprocess ile pinleniyor:
+  - `python -m ao_kernel version` (module entrypoint)
+  - `python -m ao_kernel.cli version` (cli module entrypoint)
+  - `ao-kernel version` (console script; `shutil.which` kontrolüyle skip-if-not-installed)
+- Not: `ao-kernel --version` flag'i YOKTUR; cli.py parser sadece `version` subcommand'ını destekler.
+
+**Codex iter-1 REVISE absorb (post-impl review):**
+- **M1**: `executor.py` adapter CLI adımında `validate_command()` preflight eklendi. `{python_executable}` resolved command + args substitusyon sonrasında policy command-allowlist + PATH anchor + secret leak kontrolleri çalışır. Bu olmadan `codex-stub.manifest.v1.json::command: "{python_executable}"` sandbox'ı by-pass ederdi.
+- **M2**: `test_cli_entrypoints.py` konsol script test'i eklendi + CHANGELOG'da `ao-kernel --version` yanlış ifadesi düzeltildi (parser sadece subcommand destekliyor).
+- **L1**: `docs/PUBLIC-BETA.md` sürüm durumu banner'ı eklendi — v3.13.2 Shipped satırları ile v4.0.0b1 plan satırları ayrıldı; "Wheel-install smoke CI shipped" iddiası "Beta (plan)"a çevrildi (gerçek CI job v4.0.0b1 scope'unda).
 
 ### Migration note
 

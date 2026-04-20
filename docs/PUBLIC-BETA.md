@@ -1,36 +1,51 @@
-# Public Beta
+# Public Beta (v4.0.0b1 Planı) — Support Matrix SSOT
 
-Bu doküman `ao-kernel` Public Beta yüzeyinin SSOT kaynağıdır.
-README kısa giriş sağlar; desteklenen/ertelenen yüzey, kurulum kanalı ve
-bilinen hatalar burada tutulur.
+> **Sürüm durumu (2026-04-20)**: `v3.13.2` yayında. Bu doküman tam
+> Public Beta `v4.0.0b1` hattının **plan + SSOT**'sudur. Aşağıdaki
+> "Shipped" satırları `v3.13.2` gövdesinde hâlihazırda çalışır; "Beta"
+> ve "Deferred" bölümleri `v4.0.0b1` ship hattıyla kapanır. Bu patch
+> release `v3.13.2`'de Public Beta yüzeyinin çekirdeğini (module
+> entrypoint + demo pivotu + CI gate) gövdeye aldı.
 
 ## Kurulum
+
+### v3.13.2 (stable patch, mevcut)
+
+```bash
+pip install ao-kernel
+```
+
+### v4.0.0b1 (Public Beta pre-release — henüz PyPI'de yayınlanmadı)
+
+Yayınlandığında:
 
 ```bash
 pip install ao-kernel==4.0.0b1
 pip install --pre ao-kernel
 ```
 
-`pip install ao-kernel` varsayılan olarak stable kanalda kalır. Public
-Beta kurmak için pre-release sürümü açıkça istemek gerekir.
+`pip install ao-kernel` varsayılan olarak stable kanalda kalır; pre-release
+istemek gerekir.
 
-## Shipped
+## Shipped (v3.13.2)
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `ao-kernel version` | Shipped | Konsol entrypoint kontratı |
+| `ao-kernel version` | Shipped | Konsol entrypoint kontratı (test_cli_entrypoints.py pinli) |
 | `python -m ao_kernel version` | Shipped | Module entrypoint kontratı |
 | `python -m ao_kernel.cli version` | Shipped | CLI module kontratı |
-| Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen tek demo workflow |
-| `examples/demo_review.py` | Shipped | Source checkout üzerinden çalışan demo |
-| Wheel-install packaging smoke CI | Shipped | Fresh venv + built wheel gate |
+| Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen demo workflow |
+| `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed` |
+| `ao-kernel doctor` | Shipped | Workspace health check (8/8 OK) |
+| CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |
 
-## Beta
+## Beta (v4.0.0b1 hattı, v3.13.2'de temeli hazır)
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `codex-stub` subprocess invocation | Beta | `{python_executable}` reserved token ile aktif interpreter kullanılır |
-| Public Beta docs | Beta | Bu doküman support matrix için SSOT |
+| `codex-stub` subprocess invocation | Beta | `{python_executable}` reserved token aktif; sandbox policy command validation wire'lı (v3.13.2 M1) |
+| Public Beta docs (bu doküman) | Beta | v4.0.0b1'de SSOT olacak |
+| Wheel-install packaging smoke CI job | Beta (plan) | v4.0.0b1 scope — henüz `test.yml`'de yok; `publish.yml` build+twine check var ama fresh-venv install + demo smoke job eklenecek |
 
 ## Deferred
 
