@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import ao_kernel
-from ao_kernel.config import load_workspace_json, workspace_root
+from ao_kernel.config import load_workspace_json, resolve_workspace_dir, workspace_root
 from ao_kernel.errors import WorkspaceCorruptedError
 
 
@@ -43,6 +43,7 @@ def run(
     ws = workspace_root(override=workspace_root_override)
     if ws is None:
         from ao_kernel.i18n import msg
+
         print(msg("error_no_workspace"))
         return 1
 
@@ -50,8 +51,18 @@ def run(
         ws_data = load_workspace_json(ws)
     except WorkspaceCorruptedError as e:
         from ao_kernel.i18n import msg
+
         print(msg("error_corrupted", detail=str(e)))
         return 1
+
+    # v3.13.1 P1 iter-1 BLOCKER absorb (Codex): ``load_workspace_json``
+    # is now path-tolerant, but downstream mutation/backup/report paths
+    # must also operate on the *resolved* workspace directory. Without
+    # this line, ``migrate --workspace-root <project_root>`` reads
+    # `.ao/workspace.json` correctly but then writes a fresh
+    # ``workspace.json`` alongside the project root and stashes a
+    # ``.backup/`` sibling in the wrong place.
+    resolved_ws = resolve_workspace_dir(ws)
 
     ws_version = ws_data.get("version", "0.0.0")
     pkg_version = ao_kernel.__version__
@@ -61,22 +72,21 @@ def run(
     action_items: list[str] = []
 
     if ws_version != pkg_version:
-        mutations.append({
-            "type": "version_update",
-            "from": ws_version,
-            "to": pkg_version,
-            "file": str(ws / "workspace.json"),
-        })
-
-    if legacy_ws is not None and str(legacy_ws) != str(ws):
-        action_items.append(
-            f"Legacy workspace tespit edildi: {legacy_ws}. "
-            ".ao/ workspace'e gecis onerilir."
+        mutations.append(
+            {
+                "type": "version_update",
+                "from": ws_version,
+                "to": pkg_version,
+                "file": str(resolved_ws / "workspace.json"),
+            }
         )
+
+    if legacy_ws is not None and str(legacy_ws) != str(resolved_ws):
+        action_items.append(f"Legacy workspace tespit edildi: {legacy_ws}. .ao/ workspace'e gecis onerilir.")
 
     report = {
         "timestamp": _now_iso(),
-        "workspace_path": str(ws),
+        "workspace_path": str(resolved_ws),
         "workspace_version": ws_version,
         "package_version": pkg_version,
         "status": "UP_TO_DATE" if not mutations else "MIGRATION_NEEDED",
@@ -92,7 +102,7 @@ def run(
         return 0
 
     if backup and mutations:
-        backup_dir = ws / ".backup" / _now_iso().replace(":", "-")
+        backup_dir = resolved_ws / ".backup" / _now_iso().replace(":", "-")
         backup_dir.mkdir(parents=True, exist_ok=True)
         for m in mutations:
             src = Path(m["file"])

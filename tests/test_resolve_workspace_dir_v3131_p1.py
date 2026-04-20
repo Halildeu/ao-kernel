@@ -130,11 +130,96 @@ class TestDoctorIntegration:
     "workspace.json valid"; after the normalizer, it passes."""
 
     def test_doctor_check_workspace_json_accepts_project_root(self, tmp_path: Path) -> None:
-        from ao_kernel.config import load_workspace_json
+        from ao_kernel.doctor_cmd import _check_workspace_json
 
         _write_ws_json(tmp_path / ".ao")
-        # doctor_cmd._check_workspace_json calls load_workspace_json
-        # on the result of workspace_root(override=ws). With the
-        # helper in place, project-root passthrough works.
-        data = load_workspace_json(tmp_path)
-        assert data["kind"] == "ao-workspace"
+        # Real doctor call path (Codex iter-1 feedback: pin the actual
+        # doctor_cmd helper, not a proxy through load_workspace_json).
+        # _check_workspace_json invokes workspace_root(override) →
+        # load_workspace_json(ws). With the P1 normalizer, project-root
+        # override resolves into .ao/ transparently and the check
+        # returns True.
+        assert _check_workspace_json(str(tmp_path)) is True
+
+
+class TestMigrateIntegration:
+    """Codex iter-1 BLOCKER absorb: after P1 ``load_workspace_json``
+    is path-tolerant, but migrate's mutation/backup/report paths must
+    ALSO operate on the resolved workspace directory. Otherwise
+    ``migrate --workspace-root <project_root>`` reads ``.ao/workspace.json``
+    correctly but writes a fresh ``workspace.json`` next to the project
+    root + a backup sibling in the wrong place."""
+
+    def test_dry_run_mutation_file_targets_resolved_ao_dir(self, tmp_path: Path) -> None:
+        """Dry-run report must carry the resolved ``.ao/workspace.json``
+        mutation file path, not ``<project_root>/workspace.json``."""
+        import ao_kernel
+        from ao_kernel.migrate_cmd import run as migrate_run
+
+        ao_dir = tmp_path / ".ao"
+        ao_dir.mkdir(parents=True)
+        # Force a version mismatch so a mutation is planned.
+        stale_payload = {"version": "3.0.0", "kind": "ao-workspace"}
+        (ao_dir / "workspace.json").write_text(json.dumps(stale_payload), encoding="utf-8")
+
+        # Capture stdout report JSON.
+        import io
+        import sys as _sys
+
+        buf = io.StringIO()
+        saved = _sys.stdout
+        _sys.stdout = buf
+        try:
+            rc = migrate_run(str(tmp_path), dry_run=True)
+        finally:
+            _sys.stdout = saved
+        assert rc == 0
+        report = json.loads(buf.getvalue())
+
+        assert report["status"] == "MIGRATION_NEEDED"
+        assert report["workspace_path"].endswith("/.ao")
+        assert report["mutations"], "expected a version_update mutation"
+        mutation_file = Path(report["mutations"][0]["file"])
+        assert mutation_file == (ao_dir / "workspace.json").resolve()
+        assert mutation_file.parent == ao_dir.resolve()
+        assert report["mutations"][0]["to"] == ao_kernel.__version__
+
+    def test_non_dry_run_writes_to_ao_workspace_json_and_backup_under_ao(self, tmp_path: Path) -> None:
+        """Non-dry-run must mutate the resolved ``.ao/workspace.json``
+        and stash the backup directory under ``.ao/.backup/``, not the
+        project root."""
+        import ao_kernel
+        from ao_kernel.migrate_cmd import run as migrate_run
+
+        ao_dir = tmp_path / ".ao"
+        ao_dir.mkdir(parents=True)
+        stale_payload = {"version": "3.0.0", "kind": "ao-workspace"}
+        (ao_dir / "workspace.json").write_text(json.dumps(stale_payload), encoding="utf-8")
+
+        import io
+        import sys as _sys
+
+        buf = io.StringIO()
+        saved = _sys.stdout
+        _sys.stdout = buf
+        try:
+            rc = migrate_run(str(tmp_path), dry_run=False, backup=True)
+        finally:
+            _sys.stdout = saved
+        assert rc == 0
+        report = json.loads(buf.getvalue())
+        assert report["status"] == "MIGRATED"
+
+        # Mutation happened in the resolved .ao dir.
+        updated = json.loads((ao_dir / "workspace.json").read_text(encoding="utf-8"))
+        assert updated["version"] == ao_kernel.__version__
+        assert "migrated_at" in updated
+
+        # Project root must NOT contain a stray workspace.json.
+        assert not (tmp_path / "workspace.json").is_file()
+
+        # Backup directory must live under resolved .ao/.backup/.
+        assert "backup_path" in report
+        backup_path = Path(report["backup_path"]).resolve()
+        assert ao_dir.resolve() in backup_path.parents
+        assert not (tmp_path / ".backup").is_dir()
