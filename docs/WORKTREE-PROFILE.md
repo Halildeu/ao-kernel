@@ -52,15 +52,19 @@ FAZ-B closes the network/egress and OS-level gaps with platform-specific sandbox
 
 ---
 
-## 3. Demo Workspace Override
+## 3. Real-Adapter Demo Override
 
-The bundled default policy is **dormant** (`enabled: false`). To run the DEMO-SCRIPT.md end-to-end flow, place the following override at `.ao/policies/policy_worktree_profile.v1.json` inside the workspace:
+The bundled default policy is **dormant** (`enabled: false`). The
+supported Public Beta demo (`review_ai_flow + codex-stub`) does not
+need this override. Use the following override only for the deferred
+real-adapter roadmap flow described in
+`docs/roadmap/DEMO-SCRIPT-SPEC.md`:
 
 ```json
 {
   "version": "v1",
   "enabled": true,
-  "_comment": "Demo workspace override for DEMO-SCRIPT.md E2E. Activates full sandbox in block mode with minimal secret allowlist.",
+  "_comment": "Roadmap/demo override for real-adapter E2E runs. Activates full sandbox in block mode with minimal secret allowlist.",
 
   "rollout": {
     "mode_default": "block"
@@ -242,6 +246,7 @@ Each deny must emit a policy_denied event with a clear reason code. The CI fixtu
 - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json` — the bundled policy this doc describes.
 - `docs/ADAPTERS.md` — how adapters declare `policy_refs` that include this policy.
 - `docs/EVIDENCE-TIMELINE.md` — the `policy_checked` and `policy_denied` events this policy emits.
-- `docs/DEMO-SCRIPT.md` — the E2E demo that exercises the demo override above.
+- `docs/PUBLIC-BETA.md` — the supported Public Beta surface.
+- `docs/roadmap/DEMO-SCRIPT-SPEC.md` — the deferred real-adapter spec this override supports.
 - `ao_kernel/defaults/policies/policy_secrets.v1.json` — the allowed-secret-ids + fail-action pattern this policy mirrors for secret resolution.
 - `ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json` — the adapter contract whose `invocation.cli.env_allowlist_ref` and `invocation.http.auth_secret_id_ref` point into this policy.

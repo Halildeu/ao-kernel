@@ -410,9 +410,11 @@ print('OK')
 "
 ```
 
-### 9.2 Demo script fixture
+### 9.2 Roadmap spec fixture
 
-Running `docs/DEMO-SCRIPT.md` with your adapter substituted for Claude Code CLI is the fastest end-to-end behavioral test. If all 11 steps emit the expected evidence events and the PR opens cleanly, the adapter is contract-conformant.
+`docs/roadmap/DEMO-SCRIPT-SPEC.md` describes the deferred three-adapter
+end-to-end flow. It is useful for roadmap alignment, but it is not the
+supported Public Beta validation surface.
 
 ### 9.3 CI-friendly testing
 
@@ -441,7 +443,8 @@ The workflow registry loads the union of all referenced policies for all adapter
 - [`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json`](../ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json) — the normative schema this document describes.
 - [docs/WORKTREE-PROFILE.md](WORKTREE-PROFILE.md) — the sandbox every adapter runs in.
 - [docs/EVIDENCE-TIMELINE.md](EVIDENCE-TIMELINE.md) — the event taxonomy adapters contribute to.
-- [docs/DEMO-SCRIPT.md](DEMO-SCRIPT.md) — the end-to-end flow exercising three reference adapters.
+- [docs/PUBLIC-BETA.md](PUBLIC-BETA.md) — the supported beta surface and known limitations.
+- [docs/roadmap/DEMO-SCRIPT-SPEC.md](roadmap/DEMO-SCRIPT-SPEC.md) — the deferred three-adapter roadmap spec.
 - [docs/COMPETITOR-MATRIX.md](COMPETITOR-MATRIX.md) — the live list of adapter-target platforms.
 - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json` — the sandbox policy referenced by every adapter.
 - `.claude/plans/TRANCHE-STRATEGY-V2.md` §3, §4 — FAZ-A feature roadmap and adapter scope.

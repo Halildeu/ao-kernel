@@ -37,6 +37,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -64,8 +65,9 @@ class SandboxedEnvironment:
     ``policy_derived_path_entries`` (plan v2 B1): the authoritative list
     of filesystem directories a resolved command may live under. When
     ``command_allowlist.prefixes`` lists ``/usr/bin/``, the path entry
-    is ``/usr/bin``. Workspace overrides may add additional entries;
-    the union is applied at command validation time.
+    is ``/usr/bin``. The current runtime interpreter directory is also
+    added so wheel-installed subprocess adapters can stay hermetic
+    without falling back to host PATH lookups.
     """
 
     env_vars: Mapping[str, str]
@@ -150,6 +152,13 @@ def build_sandbox(
             # Missing prefix is not a violation — it just cannot authorize
             # a command later.
             pass
+
+    try:
+        runtime_realpath = Path(sys.executable).resolve()
+        policy_path_entries.append(runtime_realpath.parent)
+        allowed_exact = frozenset({*allowed_exact, runtime_realpath.name})
+    except OSError:
+        pass
 
     # --- secret exposure: fold allowed secrets into env when permitted ----
     if "env" in exposure_modes:

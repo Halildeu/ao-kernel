@@ -14,7 +14,7 @@ class TestVersion:
         rc = main(["version"])
         assert rc == 0
         out = capsys.readouterr().out.strip()
-        assert re.match(r"^ao-kernel \d+\.\d+\.\d+$", out)
+        assert re.match(r"^ao-kernel \d+\.\d+\.\d+(?:[A-Za-z0-9.-]+)?$", out)
 
     def test_version_matches_package(self, capsys):
         import ao_kernel

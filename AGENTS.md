@@ -1,4 +1,4 @@
-# CLAUDE.md — ao-kernel
+# AGENTS.md — ao-kernel
 
 ## 1. Bu Proje Nedir
 
@@ -65,7 +65,7 @@ ao-kernel migrate          # workspace migration (--dry-run, --backup)
 ao-kernel mcp serve        # MCP server (stdio)
 ao-kernel mcp serve --transport http --port 8080
 ao-kernel version          # versiyon
-ao-kernel evidence timeline --run <id>  # evidence zaman çizelgesi
+ao-kernel system-status    # workspace durumu
 ```
 
 ## 5. Mimari Genel Bakış
@@ -262,7 +262,7 @@ Canonical store üzerinde revision tracking + stale detection. SDK hooks: `get_r
 
 ## 10. Streaming & Resilience
 
-**Desteklenen provider'lar:** Claude, OpenAI, Google Gemini, DeepSeek, Qwen, xAI
+**Desteklenen provider'lar:** Codex, OpenAI, Google Gemini, DeepSeek, Qwen, xAI
 
 **3 wire format:** Anthropic Messages API, OpenAI Chat Completions, Google Gemini (DeepSeek/Qwen/xAI → OpenAI-compatible)
 
@@ -325,7 +325,7 @@ mypy ao_kernel/ --ignore-missing-imports  # Type check
 
 ## 14. Mimari Kararlar
 
-Bu kararlar Claude + Codex arasında 25+ turda istişare edilerek alındı. Değiştirmek için yeni istişare gerekir.
+Bu kararlar Codex + Codex arasında 25+ turda istişare edilerek alındı. Değiştirmek için yeni istişare gerekir.
 
 | # | Karar | Gerekçe |
 |---|---|---|
@@ -372,4 +372,4 @@ codex exec -C . -o .ao/consultations/responses/CNS-YYYYMMDD-NNN.codex.response.v
 - Kod yorumları (comments): İngilizce
 - Dokümanlar, planlar, raporlar: Türkçe
 - Codex istişare soruları: Türkçe
-- CLAUDE.md, README: Türkçe
+- AGENTS.md, README: Türkçe

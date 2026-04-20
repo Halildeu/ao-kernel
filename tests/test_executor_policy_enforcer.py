@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +98,19 @@ class TestBuildSandbox:
         )
         assert sandbox.env_vars["ANTHROPIC_API_KEY"] == "sk-test-xyz"
 
+    def test_runtime_interpreter_anchor_is_added(self, tmp_path: Path) -> None:
+        policy = _bundled_policy()
+        sandbox, _ = build_sandbox(
+            policy=policy,
+            worktree_root=tmp_path,
+            resolved_secrets={},
+            parent_env={},
+        )
+        runtime_name = Path(sys.executable).resolve().name
+        runtime_dir = Path(sys.executable).resolve().parent
+        assert runtime_name in sandbox.allowed_commands_exact
+        assert runtime_dir in sandbox.policy_derived_path_entries
+
 
 class TestValidateCommand:
     def test_path_poisoning_denied(self, tmp_path: Path) -> None:
@@ -164,6 +178,45 @@ class TestValidateCommand:
         )
         kinds = {v.kind for v in violations}
         assert "secret_exposure_denied" in kinds
+
+    def test_current_python_absolute_path_allowed(self, tmp_path: Path) -> None:
+        policy = _bundled_policy()
+        sandbox, _ = build_sandbox(
+            policy=policy,
+            worktree_root=tmp_path,
+            resolved_secrets={},
+            parent_env={},
+        )
+        violations = validate_command(
+            sys.executable,
+            (),
+            sandbox,
+            secret_values={},
+        )
+        assert violations == []
+
+    def test_other_absolute_python_outside_runtime_anchor_denied(
+        self, tmp_path: Path
+    ) -> None:
+        fake_python = tmp_path / "python"
+        fake_python.write_text("#!/bin/sh\necho nope\n", encoding="utf-8")
+        os.chmod(fake_python, stat.S_IRWXU)
+
+        policy = _bundled_policy()
+        sandbox, _ = build_sandbox(
+            policy=policy,
+            worktree_root=tmp_path,
+            resolved_secrets={},
+            parent_env={},
+        )
+        violations = validate_command(
+            str(fake_python),
+            (),
+            sandbox,
+            secret_values={},
+        )
+        kinds = {v.kind for v in violations}
+        assert "command_path_outside_policy" in kinds
 
 
 class TestValidateCwd:

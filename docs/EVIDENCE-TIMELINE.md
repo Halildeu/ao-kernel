@@ -299,5 +299,6 @@ ao-kernel evidence verify-manifest --run <run_id> --generate-if-missing
 - `ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json` — `output_envelope.evidence_events` is the adapter's handle into this timeline.
 - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json` — `evidence_redaction` patterns this timeline honors.
 - `docs/WORKTREE-PROFILE.md` — operator-facing walkthrough of the redaction rules.
-- `docs/DEMO-SCRIPT.md` — the E2E flow that emits every event kind once.
+- `docs/PUBLIC-BETA.md` — the supported beta surface.
+- `docs/roadmap/DEMO-SCRIPT-SPEC.md` — the deferred E2E spec that targets the full event taxonomy.
 - `CLAUDE.md` §2 — the dual-form evidence invariant (workspace manifest vs MCP fsync-only).

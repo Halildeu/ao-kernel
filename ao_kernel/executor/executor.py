@@ -36,6 +36,8 @@ from typing import Any, Mapping
 from ao_kernel.adapters import AdapterRegistry
 from ao_kernel.executor.adapter_invoker import (
     InvocationResult,
+    _substitute_args,
+    _substitution_context,
     invoke_cli,
     invoke_http,
 )
@@ -46,6 +48,7 @@ from ao_kernel.executor.policy_enforcer import (
     build_sandbox,
     check_http_header_exposure,
     resolve_allowed_secrets,
+    validate_command,
 )
 from ao_kernel.executor.worktree_builder import (
     WorktreeHandle,
@@ -387,6 +390,49 @@ class Executor:
             }
             transport = manifest.invocation.get("transport")
             if transport == "cli":
+                substitution_context = _substitution_context(input_envelope)
+                command = _substitute_args(
+                    str(manifest.invocation.get("command", "")),
+                    substitution_context,
+                )
+                resolved_args = tuple(
+                    _substitute_args(arg, substitution_context)
+                    for arg in tuple(manifest.invocation.get("args", ()))
+                )
+                command_violations = validate_command(
+                    command,
+                    resolved_args,
+                    sandbox,
+                    secret_values=resolved_secrets,
+                )
+                if command_violations:
+                    denied = emit_event(
+                        self._workspace_root,
+                        run_id=run_id,
+                        kind="policy_denied",
+                        actor="ao-kernel",
+                        payload={
+                            "step_name": step_def.step_name,
+                            "violation_kinds": [
+                                v.kind for v in command_violations
+                            ],
+                        },
+                        step_id=step_def.step_name,
+                    )
+                    evidence_event_ids.append(denied.event_id)
+                    return self._fail_run(
+                        run_id=run_id,
+                        record=record,
+                        step_def=step_def,
+                        evidence_event_ids=tuple(evidence_event_ids),
+                        error_category="policy_denied",
+                        error_detail=(
+                            f"{len(command_violations)} policy violation(s)"
+                        ),
+                        raise_after=PolicyViolationError(
+                            violations=command_violations
+                        ),
+                    )
                 invocation_result, budget_after = invoke_cli(
                     manifest=manifest,
                     input_envelope=input_envelope,

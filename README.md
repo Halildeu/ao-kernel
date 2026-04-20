@@ -16,6 +16,18 @@ pip install ao-kernel[llm,mcp,otel]  # Everything
 
 Requires Python 3.11+.
 
+## Public Beta
+
+Public Beta support matrix and known limitations live in
+[`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md).
+
+```bash
+pip install ao-kernel==4.0.0b1  # Install this beta explicitly
+pip install --pre ao-kernel     # Track the latest pre-release
+```
+
+Bare `pip install ao-kernel` continues to install the stable channel.
+
 ## Quick Start
 
 ```bash
@@ -72,10 +84,15 @@ stream_request = build_req(
 ### Quick Demo
 
 ```bash
-python3 examples/demo_bugfix.py --workspace-root .
+python3 examples/demo_review.py
 ```
 
-Runs the governed bug-fix workflow end-to-end with a deterministic stub adapter (no LLM required). See `docs/DEMO-SCRIPT.md` for the full 11-step acceptance flow.
+Runs the supported Public Beta demo from a source checkout: bundled
+`review_ai_flow` + deterministic `codex-stub`, no external LLM
+required. See [`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md) for the
+supported surface and
+[`docs/roadmap/DEMO-SCRIPT-SPEC.md`](docs/roadmap/DEMO-SCRIPT-SPEC.md)
+for the deferred multi-adapter roadmap spec.
 
 ## Python API
 
@@ -225,7 +242,7 @@ ao_kernel/              <- Public facade (clean API)
   mcp_server.py         <- MCP server (7 tools, 3 resources)
   context/              <- Context pipeline (compile, inject, extract, promote)
   _internal/            <- Private implementation (do not import directly)
-  defaults/             <- 338 bundled JSON (policies, schemas, registry, extensions)
+  defaults/             <- 371 bundled JSON (policies, schemas, registry, extensions)
 ```
 
 ## Development
@@ -237,7 +254,7 @@ ruff check ao_kernel/ tests/              # Lint
 mypy ao_kernel/ --ignore-missing-imports  # Type check
 ```
 
-Coverage target: 70% branch coverage (excluding `_internal`).
+Coverage gate: 85% branch coverage.
 
 ## License
 

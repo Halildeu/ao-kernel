@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -31,6 +32,8 @@ from ao_kernel.workflow import budget_from_dict
 
 
 def _sandbox(tmp_path: Path, env: dict[str, str] | None = None) -> SandboxedEnvironment:
+    runtime_dir = Path(sys.executable).resolve().parent
+    runtime_name = Path(sys.executable).resolve().name
     env_vars = env or {
         "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin",
         "HOME": "/tmp/fake-home",
@@ -39,7 +42,9 @@ def _sandbox(tmp_path: Path, env: dict[str, str] | None = None) -> SandboxedEnvi
     return SandboxedEnvironment(
         env_vars=env_vars,
         cwd=tmp_path,
-        allowed_commands_exact=frozenset({"git", "python3", "pytest", "ruff", "mypy"}),
+        allowed_commands_exact=frozenset(
+            {"git", "python3", "pytest", "ruff", "mypy", runtime_name}
+        ),
         allowed_command_prefixes=(
             "/usr/bin/",
             "/usr/local/bin/",
@@ -49,6 +54,7 @@ def _sandbox(tmp_path: Path, env: dict[str, str] | None = None) -> SandboxedEnvi
             Path("/usr/bin"),
             Path("/usr/local/bin"),
             Path("/opt/homebrew/bin"),
+            runtime_dir,
         ),
         exposure_modes=frozenset({"env"}),
         evidence_redaction=RedactionConfig(
@@ -178,6 +184,33 @@ class TestCliHappyPath:
         assert result.status == "ok"
         assert result.diff is not None
         assert "+hello world" in result.diff
+
+    def test_command_template_uses_current_python(self, tmp_path: Path) -> None:
+        rid = "00000000-0000-4000-8000-00000000ab02"
+        manifest = _manifest_cli(command="{python_executable}")
+        sandbox = _sandbox(
+            tmp_path,
+            env={
+                "PATH": "/usr/bin:/usr/local/bin:/opt/homebrew/bin",
+                "PYTHONPATH": str(Path.cwd()),
+                "HOME": "/tmp/fake-home",
+            },
+        )
+        worktree = _worktree(tmp_path, rid)
+        budget = _budget()
+
+        result, _ = invoke_cli(
+            manifest=manifest,
+            input_envelope={"task_prompt": "fix bug", "run_id": rid},
+            sandbox=sandbox,
+            worktree=worktree,
+            budget=budget,
+            workspace_root=tmp_path,
+            run_id=rid,
+        )
+
+        assert result.status == "ok"
+        assert result.commands_executed[0]["command"] == sys.executable
 
 
 class TestBundledCodexStubEndToEnd:
