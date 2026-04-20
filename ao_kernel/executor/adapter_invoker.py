@@ -29,6 +29,7 @@ from __future__ import annotations
 import importlib.resources
 import json
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -121,9 +122,12 @@ def invoke_cli(
             ),
         )
 
-    command = invocation["command"]
+    substitution_context = _substitution_context(input_envelope)
+    command = _substitute_args(invocation["command"], substitution_context)
     args_template = tuple(invocation.get("args", ()))
-    resolved_args = tuple(_substitute_args(a, input_envelope) for a in args_template)
+    resolved_args = tuple(
+        _substitute_args(a, substitution_context) for a in args_template
+    )
     stdin_mode = invocation.get("stdin_mode", "none")
     stdin_payload = _build_stdin(stdin_mode, input_envelope)
 
@@ -266,7 +270,8 @@ def invoke_http(
         )
 
     endpoint = invocation["endpoint"]
-    endpoint_resolved = _substitute_args(endpoint, input_envelope)
+    substitution_context = _substitution_context(input_envelope)
+    endpoint_resolved = _substitute_args(endpoint, substitution_context)
     auth_secret_id_ref = invocation.get("auth_secret_id_ref")
     headers_allowlist = tuple(invocation.get("headers_allowlist", ()))
     body_template = invocation.get("request_body_template", {}) or {}
@@ -707,6 +712,17 @@ def _substitute_args(template: str, envelope: Mapping[str, Any]) -> str:
     return result
 
 
+def _substitution_context(envelope: Mapping[str, Any]) -> dict[str, Any]:
+    """Build the placeholder context for invocation templates.
+
+    Reserved runtime tokens are injected after caller-provided values so
+    adapter manifests cannot override them through the input envelope.
+    """
+    context = dict(envelope)
+    context["python_executable"] = sys.executable
+    return context
+
+
 def _build_stdin(
     stdin_mode: str,
     envelope: Mapping[str, Any],
@@ -751,7 +767,7 @@ def _resolve_body(
     if isinstance(template, list):
         return [_resolve_body(v, envelope) for v in template]
     if isinstance(template, str):
-        return _substitute_args(template, envelope)
+        return _substitute_args(template, _substitution_context(envelope))
     return template
 
 

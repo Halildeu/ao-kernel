@@ -5,7 +5,7 @@
   "capabilities": ["read_repo", "write_diff", "review_findings", "commit_message"],
   "invocation": {
     "transport": "cli",
-    "command": "python3",
+    "command": "{python_executable}",
     "args": ["-m", "ao_kernel.fixtures.codex_stub", "--run-id", "{run_id}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",
