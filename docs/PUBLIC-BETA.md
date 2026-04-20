@@ -43,7 +43,7 @@ istemek gerekir.
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `codex-stub` subprocess invocation | Beta | `{python_executable}` reserved token ile aktif interpreter kullanılır (demo/packaging compat fix). Policy command validation entegrasyonu v4.0.0b1 lane'inde (runtime anchor + rollout semantics) — v3.13.2'de sandbox preflight YOK, v3.13.1 davranışıyla aynı. |
+| `codex-stub` subprocess invocation | Beta | `{python_executable}` reserved token ile aktif interpreter'ın **mutlak yolu** (`sys.executable`) doğrudan çalıştırılır (demo/packaging compat fix). Önceki `"python3"` sandbox PATH çözümüne tabiydi; yeni wiring PATH resolution'dan bağımsız — enabled policy + command_allowlist operator'ları için interpreter seçimi semantiği v3.13.1'e göre değişti. Policy command validation entegrasyonu (runtime anchor + rollout semantics) v4.0.0b1 lane'inde — v3.13.2'de sandbox preflight YOK. |
 | Public Beta docs (bu doküman) | Beta | v4.0.0b1'de SSOT olacak |
 | Wheel-install packaging smoke CI job | Beta (plan) | v4.0.0b1 scope — henüz `test.yml`'de yok; `publish.yml` build+twine check var ama fresh-venv install + demo smoke job eklenecek |
 
