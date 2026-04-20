@@ -199,7 +199,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 ### Invocation path
 
 1. Workflow registry resolves `adapter_id: "claude-code-cli"`.
-2. Current shipped executor shapes the sandbox `PATH` from `command_allowlist`, but it does **not** yet preflight the adapter CLI command via `validate_command()`. Hard command enforcement for adapter subprocess start lands in `v4.0.0b1`.
+2. `v4.0.0b1` executor shapes the sandbox `PATH` from `command_allowlist` **and** preflights the resolved adapter CLI command via `validate_command()` before `adapter_invoked`. Bundled `{python_executable}` is a localized exception only for the resolved `sys.executable` realpath.
 3. Secret `ANTHROPIC_API_KEY` is in `allowlist_secret_ids`, resolved to env-var, injected into subprocess environment.
 4. Worktree is created at `.ao/runs/{run_id}/worktree` (git worktree from main checkout).
 5. Subprocess spawned with the resolved command, args template substituted, stdin not used, working dir = worktree.
@@ -210,7 +210,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 ### Evidence events emitted
 
 - `adapter_invoked` — before subprocess start.
-- `policy_checked` — a single aggregate pre-invocation policy summary event. In `v3.13.3`, the live scope covers secret resolution, sandbox shaping, and HTTP-header exposure checks; adapter CLI command enforcement lands in `v4.0.0b1`.
+- `policy_checked` — a single aggregate pre-invocation policy summary event. In `v4.0.0b1`, the live scope covers secret resolution, sandbox shaping, HTTP-header exposure checks, and adapter CLI command enforcement.
 - `adapter_returned` — after subprocess exit; payload includes status, finish_reason, cost_actual.
 
 ### Failure modes

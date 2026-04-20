@@ -1,23 +1,18 @@
-# Public Beta (v4.0.0b1 Planı) — Support Matrix SSOT
+# Public Beta (v4.0.0b1) — Support Matrix SSOT
 
-> **Sürüm durumu (2026-04-20)**: `v3.13.3` yayında. Bu doküman tam
-> Public Beta `v4.0.0b1` hattının **plan + SSOT**'sudur. Aşağıdaki
-> "Shipped" satırları `v3.13.3` gövdesinde hâlihazırda çalışır; "Beta"
-> ve "Deferred" bölümleri `v4.0.0b1` ship hattıyla kapanır. Bu patch
-> release `v3.13.3`'te Public Beta yüzeyinin çekirdeğini (module
-> entrypoint + demo pivotu + CI gate) gövdeye aldı.
+> **Sürüm durumu (2026-04-20)**: stable kanal `v3.13.3`, bu branch /
+> pre-release paket sürümü `4.0.0b1`. Bu doküman `v4.0.0b1` için canlı
+> destek matrisi ve operator-facing SSOT'tur.
 
 ## Kurulum
 
-### v3.13.3 (stable patch, mevcut)
+### Stable kanal
 
 ```bash
 pip install ao-kernel
 ```
 
-### v4.0.0b1 (Public Beta pre-release — henüz PyPI'de yayınlanmadı)
-
-Yayınlandığında:
+### Public Beta pre-release
 
 ```bash
 pip install ao-kernel==4.0.0b1
@@ -27,7 +22,7 @@ pip install --pre ao-kernel
 `pip install ao-kernel` varsayılan olarak stable kanalda kalır; pre-release
 istemek gerekir.
 
-## Shipped (v3.13.3)
+## Shipped (v4.0.0b1)
 
 | Yüzey | Durum | Not |
 |---|---|---|
@@ -38,14 +33,16 @@ istemek gerekir.
 | `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed` |
 | `ao-kernel doctor` | Shipped | Workspace health check (8/8 OK) |
 | CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |
+| Adapter CLI command enforcement | Shipped | `policy_checked` / `policy_denied` artık resolved command ihlallerini de içerir; canonical sıra `step_started -> policy_checked -> adapter_invoked` korunur |
+| `{python_executable}` localized exception | Shipped | Yalnız manifest `command` alanı explicit `{python_executable}` kullandığında, yalnız resolved `sys.executable` realpath'i için geçerli; sandbox allowlist'ini mutate etmez |
+| Wheel-install packaging smoke CI | Shipped | `scripts/packaging_smoke.py` blocking job olarak `test.yml`'de ve publish öncesi `publish.yml`'de koşar |
 
-## Beta (v4.0.0b1 hattı, v3.13.3'te temeli hazır)
+## Beta
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `codex-stub` subprocess invocation | Beta | `{python_executable}` reserved token ile aktif interpreter'ın **mutlak yolu** (`sys.executable`) doğrudan çalıştırılır (demo/packaging compat fix). Önceki `"python3"` sandbox PATH çözümüne tabiydi; yeni wiring PATH resolution'dan bağımsız — enabled policy + command_allowlist operator'ları için interpreter seçimi semantiği v3.13.1'e göre değişti. Policy command validation entegrasyonu (runtime anchor + rollout semantics) v4.0.0b1 lane'inde — `v3.13.3` gövdesinde sandbox preflight hâlâ yok. |
-| Public Beta docs (bu doküman) | Beta | v4.0.0b1'de SSOT olacak |
-| Wheel-install packaging smoke CI job | Beta (plan) | v4.0.0b1 scope — henüz `test.yml`'de yok; `publish.yml` build+twine check var ama fresh-venv install + demo smoke job eklenecek |
+| Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
+| Real-adapter benchmark tam modu | Beta | Operator-managed yüzey; deterministik stub lane kadar stabil değil |
 
 ## Deferred
 
@@ -54,7 +51,6 @@ istemek gerekir.
 | `bug_fix_flow` release closure | Deferred | Public Beta kapsamı dışında |
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Roadmap/spec yüzeyi |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
-| Real-adapter benchmark tam modu | Deferred | Fast-mode/deterministic yüzey dışında |
 | Adapter-path `cost_usd` reconcile | Deferred | Ayrı correctness işi |
 
 ## Known Bugs

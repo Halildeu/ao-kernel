@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -99,6 +100,56 @@ class TestBuildSandbox:
 
 
 class TestValidateCommand:
+    def test_runtime_interpreter_not_globally_allowlisted(
+        self, tmp_path: Path
+    ) -> None:
+        policy = _bundled_policy()
+        policy = dict(policy)
+        policy["command_allowlist"] = {"exact": ["git"], "prefixes": []}
+        env_spec = dict(policy["env_allowlist"])
+        env_spec["explicit_additions"] = {"PATH": ""}
+        policy["env_allowlist"] = env_spec
+
+        sandbox, _ = build_sandbox(
+            policy=policy,
+            worktree_root=tmp_path,
+            resolved_secrets={},
+            parent_env={},
+        )
+        violations = validate_command(
+            sys.executable,
+            (),
+            sandbox,
+            secret_values={},
+        )
+        kinds = {v.kind for v in violations}
+        assert "command_path_outside_policy" in kinds
+
+    def test_runtime_override_is_localized_to_explicit_path(
+        self, tmp_path: Path
+    ) -> None:
+        policy = _bundled_policy()
+        policy = dict(policy)
+        policy["command_allowlist"] = {"exact": ["git"], "prefixes": []}
+        env_spec = dict(policy["env_allowlist"])
+        env_spec["explicit_additions"] = {"PATH": ""}
+        policy["env_allowlist"] = env_spec
+
+        sandbox, _ = build_sandbox(
+            policy=policy,
+            worktree_root=tmp_path,
+            resolved_secrets={},
+            parent_env={},
+        )
+        violations = validate_command(
+            sys.executable,
+            (),
+            sandbox,
+            secret_values={},
+            runtime_allowed_realpaths=(Path(sys.executable).resolve(),),
+        )
+        assert violations == []
+
     def test_path_poisoning_denied(self, tmp_path: Path) -> None:
         """Plan v2 B1: fake python3 under /tmp/evil must NOT authorize
         even though 'python3' is in exact list."""

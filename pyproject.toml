@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ao-kernel"
-version = "3.13.3"
+version = "4.0.0b1"
 description = "Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail"
 readme = "README.md"
 requires-python = ">=3.11"

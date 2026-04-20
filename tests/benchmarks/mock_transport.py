@@ -134,6 +134,7 @@ def mock_adapter_transport(
         budget: Any,
         workspace_root: Path,
         run_id: str,
+        resolved_invocation: Any = None,
     ) -> tuple[InvocationResult, Any]:
         log_path = _benchmark_log_path(workspace_root, run_id, manifest.adapter_id)
         _ensure_log_parent(log_path)

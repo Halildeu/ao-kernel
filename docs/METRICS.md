@@ -33,7 +33,7 @@ Low-cardinality labels only. See §3 for opt-in expansion.
 | `ao_llm_tokens_used_total` | counter | `provider`, `direction` ∈ `{input, output, cached}` | `llm_spend_recorded.{tokens_input,tokens_output,cached_tokens}` |
 | `ao_llm_cost_usd_total` | counter | `provider` | `llm_spend_recorded.cost_usd` |
 | `ao_llm_usage_missing_total` | counter | `provider` | `llm_usage_missing` event count |
-| `ao_policy_check_total` | counter | `outcome` ∈ `{allow, deny}` | `policy_checked.violations_count` (`==0` → allow, `>0` → deny). In `v3.13.3`, this reflects the shipped preflight scope only; adapter CLI command enforcement joins in `v4.0.0b1`. |
+| `ao_policy_check_total` | counter | `outcome` ∈ `{allow, deny}` | `policy_checked.violations_count` (`==0` → allow, `>0` → deny). In `v4.0.0b1`, this includes adapter CLI command enforcement along with the earlier secret / sandbox / HTTP-header checks. |
 | `ao_workflow_duration_seconds` | histogram | `final_state` ∈ `{completed, failed, cancelled}` | `workflow_started` + terminal event (or `state.v1.json.completed_at` for cancelled) |
 | `ao_claim_active_total` | gauge | (none — scalar) | `coordination.registry.live_claims_count()` snapshot |
 | `ao_claim_takeover_total` | counter | (none — scalar) | `claim_takeover` event count |

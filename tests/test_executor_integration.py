@@ -127,6 +127,52 @@ class TestIntegrationHappy:
         worktree_path = tmp_path / ".ao" / "runs" / rid / "worktree"
         assert not worktree_path.exists()
 
+    def test_bundled_codex_stub_allows_localized_python_executable_override(
+        self, tmp_path: Path
+    ) -> None:
+        """Bundled ``{python_executable}`` stays runnable under a
+        restrictive command policy, but only for that resolved path."""
+
+        _init_git_repo(tmp_path)
+
+        wf_reg = WorkflowRegistry()
+        wf_reg.load_bundled()
+        ad_reg = AdapterRegistry()
+        ad_reg.load_bundled()
+
+        rid = str(uuid.uuid4())
+        _create_run_record(tmp_path, rid)
+
+        definition = wf_reg.get("bug_fix_flow")
+        adapter_step = next(s for s in definition.steps if s.actor == "adapter")
+
+        policy = _bundled_policy_with_overrides()
+        policy["command_allowlist"] = {"exact": ["git"], "prefixes": []}
+        policy["rollout"] = {"mode_default": "block", "promote_to_block_on": []}
+
+        executor = Executor(
+            tmp_path,
+            workflow_registry=wf_reg,
+            adapter_registry=ad_reg,
+            policy_loader=policy,
+        )
+        result = executor.run_step(rid, adapter_step, parent_env={})
+        assert result.step_state == "completed"
+        assert result.invocation_result is not None
+        assert result.invocation_result.status == "ok"
+
+        events_path = (
+            tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
+        )
+        events = [
+            json.loads(line)
+            for line in events_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        checked = next(e for e in events if e.get("kind") == "policy_checked")
+        assert checked["payload"]["violations_count"] == 0
+        assert checked["payload"]["violation_kinds"] == []
+
 
 class TestIntegrationPolicyDenied:
     def test_missing_adapter_manifest_raises_cross_ref(

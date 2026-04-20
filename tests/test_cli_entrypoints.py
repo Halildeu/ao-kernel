@@ -1,4 +1,4 @@
-"""v3.13.3 — CLI entry-point contract pins.
+"""v4.0.0b1 — CLI entry-point contract pins.
 
 Pinleri 3 yol için:
 
@@ -54,7 +54,12 @@ def _console_script_installed_for_current_dist() -> bool:
         installed_version = importlib_metadata.version("ao-kernel")
     except importlib_metadata.PackageNotFoundError:
         return False
-    return installed_version == ao_kernel.__version__
+    if installed_version != ao_kernel.__version__:
+        return False
+    proc = _run_console("version")
+    if proc.returncode != 0:
+        return False
+    return proc.stdout.strip() == f"ao-kernel {ao_kernel.__version__}"
 
 
 def test_python_m_ao_kernel_version() -> None:
