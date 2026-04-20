@@ -48,9 +48,14 @@ v3.13.2 F1–F5'i tek PR'da kapatır; F6 (bug_fix_flow patch_preview) ayrı corr
 - Not: `ao-kernel --version` flag'i YOKTUR; cli.py parser sadece `version` subcommand'ını destekler.
 
 **Codex iter-1 REVISE absorb (post-impl review):**
-- **M1**: `executor.py` adapter CLI adımında `validate_command()` preflight eklendi. `{python_executable}` resolved command + args substitusyon sonrasında policy command-allowlist + PATH anchor + secret leak kontrolleri çalışır. Bu olmadan `codex-stub.manifest.v1.json::command: "{python_executable}"` sandbox'ı by-pass ederdi.
 - **M2**: `test_cli_entrypoints.py` konsol script test'i eklendi + CHANGELOG'da `ao-kernel --version` yanlış ifadesi düzeltildi (parser sadece subcommand destekliyor).
 - **L1**: `docs/PUBLIC-BETA.md` sürüm durumu banner'ı eklendi — v3.13.2 Shipped satırları ile v4.0.0b1 plan satırları ayrıldı; "Wheel-install smoke CI shipped" iddiası "Beta (plan)"a çevrildi (gerçek CI job v4.0.0b1 scope'unda).
+
+**Codex iter-2 BLOCKER verdict — M1 reverted:**
+- İlk iter-1'de `executor.py` adapter CLI adımına `validate_command()` preflight wiring'i eklenmişti. Codex iter-2 review'unda 3 substantive bulgu: (1) event ordering bozuluyor — `adapter_invoked` ÖNCE emit ediliyor, sonra validate_command; canonical order `step_started → policy_checked → adapter_invoked` bozuluyor; (2) rollout semantics bypass — `enabled=false` dormant policy'de bile blokluyor (executor.py:408-424 `enabled=false → no check/emit/fail` kontratı dışında); (3) `build_sandbox()` runtime interpreter path'ini anchor olarak eklemiyor → `sys.executable` venv/Homebrew/python.org kurulumlarda `command_path_outside_policy` violation atabilir.
+- Codex iter-2 hüküm: "Böyle bir şeyi patch release'te 'iyileştirme' diye ship etmek, hiç ship etmemekten daha kötü."
+- **Karar**: M1 wiring tamamen revert edildi. `{python_executable}` token + `codex-stub` manifest değişikliği sadece demo/packaging compatibility fix olarak tutuldu (adapter_invoker.py substitution only). Executor sandbox enforcement v3.13.1'deki status quo'da kalır — ne iyileşir ne kötüleşir.
+- **Defer**: `enabled policy + command validation integration` (rollout-aware, event-order-preserving, runtime-anchor sandbox) → v4.0.0b1 lane, Codex implementation.
 
 ### Migration note
 
