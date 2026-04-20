@@ -1,6 +1,6 @@
 """v3.13.2 F5 — CLI entry-point contract pins.
 
-Pinleri 4 yol için:
+Pinleri 3 yol için:
 
 - ``python -m ao_kernel version`` (new module entrypoint via
   ``ao_kernel/__main__.py``)
@@ -12,7 +12,7 @@ Pinleri 4 yol için:
   test interpreter's environment (e.g. running from source without
   ``pip install -e .``).
 
-All four must echo ``ao-kernel <version>``.
+All three must echo ``ao-kernel <version>``.
 """
 
 from __future__ import annotations
