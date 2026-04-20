@@ -7,6 +7,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.13.1] - 2026-04-20
+
+### Fixed — v3.13.1 Drift Patch (2 PRs)
+
+**Context.** v3.13.0 shipped pure coverage lane (H2b1 + H2b-compiler + H3c). External AI UX review flagged three drift signals that accumulated during the v3.8 → v3.13 release cadence: (1) README policy/JSON counts outdated, (2) `CLAUDE.md` CLI reference listed a non-existent `ao-kernel system-status` command, (3) `workspace_root(override=...)` ↔ `load_workspace_json()` contract asymmetry made `doctor --workspace-root .` fail while `doctor --workspace-root .ao` passed. Codex plan-time REVISE absorbed into two-PR patch (read-side non-breaking).
+
+**PR-D1 (#177) — docs + examples drift fix.**
+- `README.md`: `96 policies` → `100+ policy files` with live breakdown footnote (377 bundled JSON = 106 policies + 231 schemas + 19 extensions + 9 registry + 4 workflows + 3 operations + 3 adapters + 1 catalogs + 1 intent_rules). Architecture tree `338 bundled JSON` → `377` with category list.
+- `CLAUDE.md`: stale `ao-kernel system-status` line removed (no handler in `cli.py`); `evidence` / `metrics` / `policy-sim` entries added to match live CLI surface. Architecture tree `defaults/` category list synchronized with README (9 kinds) per Codex iter-1 REVISE absorb.
+- `examples/hello-llm/main.py`: fixed misleading "`AoKernelClient` creates `.ao/` on demand" claim. Default `auto_init=False` is intentional; the example now explicitly opts in with `auto_init=True`.
+- `examples/hello-llm/README.md`:85 troubleshooting narrative updated with the `auto_init` contract.
+- `examples/demo_bugfix.py`: side-stepped `init --workspace-root X` asymmetric write-side bug (tracked for v3.14+) by `chdir` into target + `init` with no override.
+
+**PR-P1 (#178) — `resolve_workspace_dir` normalizer + `load_workspace_json` fallback.**
+- New public helper `ao_kernel.config.resolve_workspace_dir(path)` — tolerant normalization between project root (with `.ao/` inside) and the workspace dir itself (`.ao/`). Accepts `Path | str`. Returns input unchanged when neither shape matches so downstream callers produce clear fail-closed errors with the user-supplied path.
+- `load_workspace_json()` now calls the helper first. `doctor`, `migrate`, `workspace.load_config`, and MCP `ao_workspace_status` all benefit transparently — `doctor --workspace-root .` returns **8/8 OK** (previously 7/1 FAIL on `workspace.json valid`).
+- Codex iter-1 BLOCKER absorb: `migrate_cmd.run()` widened to normalize via `resolve_workspace_dir(ws)` once and use the resolved directory for every downstream write path (mutation file, `report.workspace_path`, `backup_dir`, legacy comparison). Without this, `migrate --workspace-root <project_root>` would silently mutate a stray `workspace.json` at the project root rather than `.ao/workspace.json`.
+- +12 pins in `tests/test_resolve_workspace_dir_v3131_p1.py`: helper shape (project root / `.ao/` / neither / string / precedence edge case), `load_workspace_json` integration + malformed JSON + fail-closed error message, `doctor_cmd._check_workspace_json(project_root)` real path, `migrate` dry-run mutation file targets `.ao/`, `migrate` non-dry-run writes to `.ao/workspace.json` + backup under `.ao/.backup/`.
+- Coverage 85.8% → 86.10%.
+
+### Migration note
+
+- **No breaking change.** Both PRs are read-side normalization + doc alignment. Operators who explicitly point `--workspace-root` at their `.ao/` directory keep working (backward compat). Operators who pass the project root (the intuitive interpretation of "workspace root") now work correctly where they previously failed.
+- **`AoKernelClient` ergonomic detail** — the default remains `auto_init=False`. If you want the client to scaffold `.ao/` when missing, pass `auto_init=True` explicitly (as `examples/hello-llm/main.py` now does).
+
+### Deferred follow-ups
+
+- **`init_cmd.run(override)` WRITE-side asymmetry** — `init --workspace-root X` writes directly to `X/workspace.json` rather than `X/.ao/workspace.json`. Fixing this is a contract break for operators who intentionally pass `.ao/` as override. Scheduled for v3.14+ with a Codex plan-time consultation and a migration note.
+- **`system-status` CLI alias** — Codex rejected adding a new command (name collision with `tool_registry` and `policy_intent_runbook_registry` concepts). Docs-only fix shipped in PR-D1.
+- **`sanitize.py:39` EMAIL regex raw-string bug** — tracked separately (spawn_task); fix will also flip the paired regression pin in `tests/test_internal_roadmap_small_trio_coverage.py`.
+- **`compiler.py:139` no-id dict KeyError** — tracked separately (spawn_task).
+
+### v4.0 gates (tracked)
+
+- `save_store()` removal (deprecated since v3.0.0; `canonical_store.py:132`).
+- `allow_overwrite` default flip `True → False` on `promote_decision` + `forget` (CAS-first contract).
+- FAZ-C feature surface: streaming cost tracking, Aider-style patch primitive, `governed_bugfix` full flow, retry/chaos benchmark variants, Windows platform.
+
 ## [3.13.0] - 2026-04-20
 
 ### Added — v3.13.0 Coverage Ratchet Final (3 PRs)
