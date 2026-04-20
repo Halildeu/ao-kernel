@@ -7,6 +7,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.13.3] - 2026-04-20
+
+### Fixed — Policy docs/test parity patch
+
+**Context.** `v3.13.2` deliberately left adapter-path command validation out of the patch release after Codex iter-2 blocked the first wiring attempt. That left one honest but awkward state: the runtime behavior was intentional, yet several operator-facing docs still described command-allowlist enforcement as if it were already live, and one rollout test still pinned parity with `assert result is not None`.
+
+`v3.13.3` is the truth-and-tests patch for that gap. It does **not** change runtime semantics. The shipped executor still performs sandbox shaping, secret resolution / secret-in-argv checks, and HTTP-header exposure checks; adapter CLI command preflight remains a `v4.0.0b1` lane item.
+
+- Docs aligned to the real shipped scope:
+  - `docs/WORKTREE-PROFILE.md`
+  - `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md`
+  - `docs/ADAPTERS.md`
+  - `docs/EVIDENCE-TIMELINE.md`
+  - `docs/METRICS.md`
+  - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json`
+- `docs/PUBLIC-BETA.md` stable banner and shipped section updated from `v3.13.2` to `v3.13.3`; the document keeps the same honest caveat that adapter CLI command preflight is not yet live.
+- `tests/test_executor_policy_rollout_v311_p2.py` hardened:
+  - report-only run now pins deterministic success (`step_state == "completed"` + `InvocationResult.status == "ok"`)
+  - dry-run parity now asserts `predicted_events` order plus `policy_checked` payload fields instead of a tautological non-`None` result
+- Version bump `3.13.2 -> 3.13.3`.
+
+### Migration note
+
+- No runtime behavior change.
+- Operators should read `command_allowlist` in `v3.13.3` as a declared policy boundary plus sandbox PATH-shaping input. Adapter CLI hard enforcement becomes live in `v4.0.0b1`.
+
 ## [3.13.2] - 2026-04-20
 
 ### Fixed — v3.13.2 Correctness Patch (F1–F5, single PR)

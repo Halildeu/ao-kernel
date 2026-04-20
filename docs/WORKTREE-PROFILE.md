@@ -1,6 +1,6 @@
 # Worktree Execution Profile
 
-`policy_worktree_profile.v1.json` is the operator-facing contract that sandboxes every external agent invocation in ao-kernel. It is the CNS-016 D4 **expanded minimum** sandbox for FAZ-A: worktree isolation, env allowlist, secret deny-by-default, command allowlist, cwd confinement, evidence redaction. OS-level network/egress sandboxing is deferred to FAZ-B.
+`policy_worktree_profile.v1.json` is the operator-facing contract for ao-kernel's external-agent sandbox. It defines the FAZ-A **expanded minimum** policy surface: worktree isolation, env allowlist, secret deny-by-default, command allowlist, cwd confinement, and evidence redaction. In the shipped `v3.13.3` executor, the live pre-invocation checks are narrower: secret resolution, sandbox env shaping, and HTTP header exposure checks run today; adapter CLI command preflight remains deferred to `v4.0.0b1`. OS-level network/egress sandboxing is deferred to FAZ-B.
 
 This document is the plain-English companion to the policy JSON. Read this to decide how to engage the policy, configure it for a demo, or promote it to production mode.
 
@@ -90,8 +90,8 @@ The policy has three operational tiers. The tier is determined by the combinatio
 | Tier | `enabled` | `rollout.mode_default` | Behavior |
 |---|---|---|---|
 | **Dormant** | `false` | — | Policy layer bypassed. No `policy_checked` or `policy_denied` events emitted; no step fails on policy. Sandbox is still built from declared fields so the adapter has a runnable env. This is the bundled default. |
-| **Warmup** | `true` | `"report_only"` | Violations are collected. `policy_checked` emitted with additive payload fields (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`). Step continues even if violations present — UNLESS a violation kind matches `promote_to_block_on` (see below). |
-| **Production** | `true` | `"block"` | Violations emit `policy_checked` + `policy_denied`. Run fails closed with `error.category: "policy_denied"` / `PolicyViolationError`. |
+| **Warmup** | `true` | `"report_only"` | Live violations from the current preflight scope are collected and a single aggregate `policy_checked` event is emitted with additive payload fields (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`). Step continues even if violations are present — UNLESS a violation kind matches `promote_to_block_on` (see below). Adapter CLI command preflight is not part of the shipped scope yet. |
+| **Production** | `true` | `"block"` | Live violations emit `policy_checked` + `policy_denied`. Run fails closed with `error.category: "policy_denied"` / `PolicyViolationError`. In `v3.13.3`, this covers secret resolution and HTTP-header exposure checks; adapter CLI command preflight lands in `v4.0.0b1`. |
 
 Unknown `mode_default` value → `block` fallback (fail-closed).
 
@@ -113,7 +113,7 @@ Bundled default: `["secret_exposure_denied", "cwd_escape", "command_not_allowlis
 ### Promotion path
 
 1. Start with dormant (ship, confirm no workflow depends on a hidden env/command).
-2. Enable in report-only mode, run a full week of real demos, review `policy_checked` events (check the `violation_kinds` / `would_block` payload fields), add any missing env keys or commands to the allowlist.
+2. Enable in report-only mode, run a full week of real demos, review `policy_checked` events (check the `violation_kinds` / `would_block` payload fields), add any missing env keys today and prepare the future command allowlist for `v4.0.0b1`.
 3. Flip to block mode for production.
 
 ---
@@ -141,7 +141,11 @@ The `secrets.denied_exposure_modes` list (`["argv", "stdin", "file", "http_heade
 - **file** — writing a secret to a file on disk risks accidental commit, backup leak, or later read by a less-trusted process.
 - **http_header** — HTTP adapters must explicitly override `exposure_modes` to include `"http_header"`; the bundled default does not, so HTTP transport adapters need a conscious workspace-level decision before they can receive a secret.
 
-The worktree executor (Tranche A PR-A3) enforces these at adapter invocation time. An adapter that declares `invocation.transport: "cli"` with `stdin_mode: "prompt_only"` and passes a secret in the prompt will be denied before the subprocess starts.
+Current runtime scope is narrower than the full policy declaration:
+
+- `argv` secret leakage is checked live via resolved CLI args.
+- `http_header` exposure is checked live for HTTP adapters.
+- `stdin` / `file` exposure modes remain policy-declared but are not yet preflighted by the shipped adapter path.
 
 ---
 
@@ -172,13 +176,15 @@ Exact-only allowlists are tighter at the cost of more maintenance (every new too
 
 ### Resolution
 
-When an adapter tries to execute a command, the worktree executor:
+`v3.13.3` note: the shipped executor uses this block to shape the sandbox `PATH`, but it does **not** yet run adapter CLI command preflight before `subprocess.run()`. The exact/prefix hard gate described below is the intended `v4.0.0b1` behavior.
+
+When adapter CLI command preflight is enabled, the worktree executor:
 
 1. Resolves the command via `$PATH` if it's unqualified.
 2. Compares the resolved absolute path against `exact` (by basename) and `prefixes` (by path prefix).
 3. If neither matches and `deny_if_not_in_list: true`, the invocation is denied.
 
-Adapters that need a command outside the allowlist must have it added via workspace override, not bypassed at invocation time.
+Until `v4.0.0b1`, adapters that need a command outside the allowlist will not be blocked by this check at subprocess start. Operators should treat `command_allowlist` in `v3.13.3` as a declared sandbox boundary plus PATH-shaping input, not as a fully live adapter CLI gate.
 
 ---
 
@@ -244,11 +250,11 @@ The FAZ-A release gate (TRANCHE-STRATEGY-V2.md §10) requires these four deny pa
 | Test | Setup | Expected |
 |---|---|---|
 | env allowlist violation denied | Workspace override with `env_allowlist.allowed_keys` missing `PATH`; invoke adapter | Adapter invocation denied with `policy_denied` event, `error.category: "policy_denied"` |
-| command allowlist violation denied | Adapter attempts to run `curl https://evil.example.com`; `curl` not in `exact` or `prefixes` | Command execution denied before subprocess starts |
+| command allowlist violation denied | Adapter attempts to run `curl https://evil.example.com`; `curl` not in `exact` or `prefixes` | Planned `v4.0.0b1` gate; not enforced by the shipped `v3.13.3` adapter CLI path |
 | CWD escape denied | Adapter attempts `open("/etc/passwd")` or `cd ../..`; both resolve outside worktree root | Operation denied, evidence event emitted |
 | Secret deny-by-default enforced | Workspace without `secrets.allowlist_secret_ids` entry for `ANTHROPIC_API_KEY`; adapter requires it | Invocation denied before subprocess starts; `MISSING_SECRET_ID` error surfaces to the run |
 
-Each deny must emit a policy_denied event with a clear reason code. The CI fixture for FAZ-A PR-A3 will exercise all four.
+Current shipped executor exercises the secret and HTTP-header surfaces. Command-path enforcement remains a `v4.0.0b1` release gate item.
 
 ---
 

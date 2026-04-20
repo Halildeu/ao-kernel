@@ -202,11 +202,10 @@ class TestTierReportOnly:
         rid = str(uuid.uuid4())
         _create_run_record(tmp_path, rid)
 
-        # Step should NOT raise (report_only) even with secret_missing violation.
         result = ex.run_step(rid, step, parent_env={"OTHER_KEY": "triggers_secret_missing"})
-        # Step may complete or fail for reasons other than policy_denied.
-        # The pin is specifically that PolicyViolationError was NOT raised.
-        assert result is not None
+        assert result.step_state == "completed"
+        assert result.invocation_result is not None
+        assert result.invocation_result.status == "ok"
 
         events = _read_events(tmp_path, rid)
         checked = next((e for e in events if e.get("kind") == "policy_checked"), None)
@@ -290,9 +289,21 @@ class TestDryRunParityReportOnly:
         rid = str(uuid.uuid4())
         _create_run_record(tmp_path, rid)
 
-        # Must not raise — report_only semantics apply inside dry_run too.
         result = ex.dry_run_step(rid, step, parent_env={"OTHER_KEY": "parity_check"})
-        assert result is not None
+        kinds = [kind for kind, _payload in result.predicted_events]
+        assert kinds == [
+            "step_started",
+            "policy_checked",
+            "adapter_invoked",
+            "adapter_returned",
+            "step_completed",
+        ]
+        checked_payload = result.predicted_events[1][1]
+        assert checked_payload["mode"] == "report_only"
+        assert checked_payload["would_block"] is True
+        assert "secret_missing" in checked_payload["violation_kinds"]
+        assert checked_payload["promoted_to_block"] is False
+        assert result.policy_violations == ()
 
 
 class TestPolicyCheckedAdditivePayload:

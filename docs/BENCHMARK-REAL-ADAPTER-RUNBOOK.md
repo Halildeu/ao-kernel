@@ -101,11 +101,13 @@ Key deltas from bundled:
 - `enabled` false → **true** (engages the policy)
 - `secrets.allowlist_secret_ids` `[]` → `["ANTHROPIC_API_KEY"]`
 - `command_allowlist.exact` += `"claude"`
-- `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. As of **v3.11 P2**, the shipped executor (`ao_kernel/executor/executor.py`) honors the three-tier activation + rollout semantics:
+- `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. As of **v3.13.3**, the shipped executor (`ao_kernel/executor/executor.py`) honors the three-tier activation + rollout semantics for the current live preflight scope:
   - **`enabled=false`**: policy layer dormant — no events, no fail (sandbox still built from declared fields).
   - **`enabled=true + mode_default=report_only`**: violations collected; `policy_checked` emits with additive payload (`mode`, `would_block`, `violation_kinds`, `promoted_to_block`); step continues.
   - **`enabled=true + mode_default=block`**: violations emit `policy_checked` + `policy_denied`; run fails closed.
   - **Escalation**: in `report_only`, if a violation kind is in `rollout.promote_to_block_on`, escalation overrides and the step is blocked. Bundled default list uses the closed `PolicyViolation.kind` taxonomy (`secret_exposure_denied`, `cwd_escape`, `command_not_allowlisted`).
+
+`v3.13.3` caveat: adapter CLI command preflight is not wired yet. In the shipped executor, the live violation sources here are secret resolution, secret-in-argv detection, and HTTP-header exposure checks. `command_not_allowlisted` / `command_path_outside_policy` for adapter CLI invocation land in `v4.0.0b1`.
 
 Use `report_only` for the first few runs to review `policy_checked` evidence without hitting fail-closed; flip to `block` once the allowlists are tuned.
 
@@ -204,7 +206,7 @@ The `policy_worktree_profile.worktree.cleanup_on_completion = true` setting plus
 
 Every run writes JSONL evidence under `.ao/evidence/workflows/{run_id}/`:
 - `adapter-claude-code-cli.jsonl` — the adapter invocation envelope (redacted per `evidence_redaction` patterns).
-- `policy_checked` / `policy_denied` events — emitted whenever `policy_worktree_profile.enabled=true` and the executor runs the policy check layer. `policy_denied.payload.violation_kinds` carries the list of `PolicyViolation.kind` values (closed taxonomy, see `ao_kernel/executor/errors.py`).
+- `policy_checked` / `policy_denied` events — emitted whenever `policy_worktree_profile.enabled=true` and the executor runs the policy check layer. `policy_checked.payload.violation_kinds` / `policy_denied.payload.violation_kinds` carry the aggregate `PolicyViolation.kind` list for the live scope (closed taxonomy lives in `ao_kernel/executor/errors.py`; adapter CLI command kinds become live in `v4.0.0b1`).
 
 Common violation kinds and the fix:
 
@@ -213,8 +215,8 @@ Common violation kinds and the fix:
 | `secret_exposure_denied` | Secret literal detected inside the resolved argv for the adapter invocation (current runtime scope). HTTP header leaks surface under the separate `http_header_exposure_unauthorized` kind; stdin/file exposure checks are deferred. | Audit the adapter invocation template; remove the secret from argv (the allowlisted channel is env). If the argv exposure is legitimate for this adapter, rotate the credential and reshape the invocation. |
 | `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Export the secret in the shell you launch the run from (`export ANTHROPIC_API_KEY=...`). |
 | `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
-| `command_not_allowlisted` | Adapter tried to execute a command not listed in `command_allowlist.exact` and not under any `command_allowlist.prefixes` directory. | Add the command to `exact` after judging whether the tool belongs in your sandbox. |
-| `command_path_outside_policy` | Command resolved via PATH to an absolute path outside all `command_allowlist.prefixes` entries (PATH-poisoning guard). | Fix your PATH so the command resolves inside one of the allowlisted prefixes (e.g. `/opt/homebrew/bin`), or add the actual prefix explicitly. |
+| `command_not_allowlisted` | Planned adapter CLI violation once command preflight lands in `v4.0.0b1`; current `v3.13.3` executor does not emit this kind for adapter subprocess start. | Prepare the exact allowlist now; expect this to become an active block path in `v4.0.0b1`. |
+| `command_path_outside_policy` | Planned PATH-poisoning guard once adapter CLI command preflight lands in `v4.0.0b1`; not emitted by the shipped `v3.13.3` adapter path. | Ensure the real command resolves inside an allowlisted prefix before enabling the future gate. |
 | `http_header_exposure_unauthorized` | An HTTP adapter tried to use a secret in a header but `secrets.exposure_modes` did not include `"http_header"`. | Add `"http_header"` to `exposure_modes` only if you've confirmed the adapter's HTTP transport is trusted with that surface. |
 
 As of **v3.11 P2** the executor honors `rollout.mode_default`: in `report_only` violations emit `policy_checked` with `would_block=true` but the step continues; in `block` violations emit `policy_denied` and fail the run closed. See §2 for the full three-tier behavior and escalation via `promote_to_block_on`.
