@@ -7,6 +7,69 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [4.0.0b1] - 2026-04-20
+
+### Changed — Runtime command enforcement + packaging smoke gate
+
+**Context.** `v3.13.3` deliberately stopped at docs/test parity: operator docs became honest again, but adapter-path command enforcement was still deferred. The remaining review findings were all on the same seam: command violations were not wired into executor rollout semantics, `{python_executable}` needed a localized exception rather than a global sandbox hole, and wheel-install smoke still was not a release gate.
+
+`v4.0.0b1` closes that seam.
+
+- `Executor._run_adapter_step()` now resolves CLI invocations before execution and validates the resolved command in canonical order:
+  - `step_started`
+  - `policy_checked`
+  - `policy_denied` on effective block
+  - `adapter_invoked` only after the command passes
+- `policy_checked.violations_count` / `violation_kinds` now include command-level violations, so evidence/audit output no longer reports a false zero immediately before a command deny.
+- `build_sandbox()` stays policy-only. The runtime interpreter is **not** injected into sandbox-wide allowlists or path anchors.
+- `{python_executable}` is now a localized command-resolution exception only:
+  - only when the manifest command field explicitly uses the reserved token
+  - only for the resolved `sys.executable` realpath
+  - never for args, unrelated commands, PATH resolution, or sandbox mutation
+- `invoke_cli()` and the executor now share one resolver (`ResolvedCliInvocation`) for command/args/stdin substitution, removing duplicated placeholder logic and preserving a single source of truth for reserved-token metadata.
+- Command rollout semantics are live:
+  - `enabled=false` keeps the policy layer dormant
+  - `report_only` emits `policy_checked` and continues
+  - `promote_to_block_on` escalation applies to command violations too
+  - `block` fails closed before adapter execution
+- Full-suite verification also surfaced a pre-existing deterministic test hygiene issue in `context.memory_tiers`: the optional `now` parameter was ignored and tier tests were pinned to wall-clock-sensitive dates. `v4.0.0b1` now honors the explicit `now` override and pins the tests to a fixed reference time so CI does not drift with the calendar.
+- New release gate: `scripts/packaging_smoke.py` builds sdist+wheel, creates a fresh venv, installs the wheel only, runs the three CLI entrypoint checks, then executes `examples/demo_review.py --cleanup` from a temp cwd outside the repo.
+- `.github/workflows/test.yml` now runs the packaging smoke as a blocking job, and `.github/workflows/publish.yml` reruns the same smoke before `twine check` / PyPI publish.
+- Operator docs and the bundled policy comments now describe command enforcement as live in `v4.0.0b1`, including the localized `{python_executable}` exception.
+- Version bump `3.13.3 -> 4.0.0b1` (git tag target: `v4.0.0-beta.1`).
+
+### Migration note
+
+- Workspaces with `policy_worktree_profile.enabled=true` and restrictive `command_allowlist` settings now get real adapter CLI blocking via `command_not_allowlisted` / `command_path_outside_policy`.
+- Bundled `codex-stub` remains runnable under enabled policy because its manifest explicitly uses `{python_executable}`; that exception does not generalize to other commands.
+- `pip install ao-kernel` stays on the stable channel until a pre-release is explicitly requested (`pip install ao-kernel==4.0.0b1` or `pip install --pre ao-kernel`).
+
+## [3.13.3] - 2026-04-20
+
+### Fixed — Policy docs/test parity patch
+
+**Context.** `v3.13.2` deliberately left adapter-path command validation out of the patch release after Codex iter-2 blocked the first wiring attempt. That left one honest but awkward state: the runtime behavior was intentional, yet several operator-facing docs still described command-allowlist enforcement as if it were already live, and one rollout test still pinned parity with `assert result is not None`.
+
+`v3.13.3` is the truth-and-tests patch for that gap. It does **not** change runtime semantics. The shipped executor still performs sandbox shaping, secret resolution / secret-in-argv checks, and HTTP-header exposure checks; adapter CLI command preflight remains a `v4.0.0b1` lane item.
+
+- Docs aligned to the real shipped scope:
+  - `docs/WORKTREE-PROFILE.md`
+  - `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md`
+  - `docs/ADAPTERS.md`
+  - `docs/EVIDENCE-TIMELINE.md`
+  - `docs/METRICS.md`
+  - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json`
+- `docs/PUBLIC-BETA.md` stable banner and shipped section updated from `v3.13.2` to `v3.13.3`; the document keeps the same honest caveat that adapter CLI command preflight is not yet live.
+- `tests/test_executor_policy_rollout_v311_p2.py` hardened:
+  - report-only run now pins deterministic success (`step_state == "completed"` + `InvocationResult.status == "ok"`)
+  - dry-run parity now asserts `predicted_events` order plus `policy_checked` payload fields instead of a tautological non-`None` result
+- Version bump `3.13.2 -> 3.13.3`.
+
+### Migration note
+
+- No runtime behavior change.
+- Operators should read `command_allowlist` in `v3.13.3` as a declared policy boundary plus sandbox PATH-shaping input. Adapter CLI hard enforcement becomes live in `v4.0.0b1`.
+
 ## [3.13.2] - 2026-04-20
 
 ### Fixed — v3.13.2 Correctness Patch (F1–F5, single PR)

@@ -16,7 +16,7 @@ The evidence timeline exists to answer four questions without reading code:
 
 1. **What happened?** — chronological event list for the run.
 2. **Can we reproduce it?** — deterministic replay of the workflow state machine against the event stream.
-3. **What did the policies decide?** — every `policy_checked` and `policy_denied` event is in the stream.
+3. **What did the policies decide?** — every emitted `policy_checked` and `policy_denied` event is in the stream. In `v4.0.0b1`, that includes adapter CLI command enforcement as well as the earlier secret / sandbox / HTTP-header checks.
 4. **What did a human approve?** — every `approval_requested` / `approval_granted` / `approval_denied` event is in the stream with actor identity.
 
 The timeline replaces ad-hoc log reading and makes governance auditable: a reviewer can replay a past run, inspect every policy decision, and verify that the sequence of state transitions followed the contract.
@@ -89,8 +89,8 @@ Every event carries a `kind` field from this closed set. Additional kinds may ap
 
 | Kind | Emitted when | Actor |
 |---|---|---|
-| `policy_checked` | A policy check evaluated (both allow and deny outcomes emit this in `report_only` mode; in `block` mode, denies emit `policy_denied` instead). | `ao-kernel` |
-| `policy_denied` | A policy check denied an operation in `block` mode. Run transitions to `failed` with `error.category: "policy_denied"`. | `ao-kernel` |
+| `policy_checked` | The enabled pre-invocation policy layer evaluated. Emitted in both allow and deny paths; payload carries aggregate `violations_count`, `violation_kinds`, `mode`, `would_block`, and `promoted_to_block`. In `v4.0.0b1`, the live scope covers secret resolution, sandbox shaping, HTTP-header exposure checks, and adapter CLI command validation. | `ao-kernel` |
+| `policy_denied` | The enabled pre-invocation policy layer denied an operation in effective `block` mode. Run transitions to `failed` with `error.category: "policy_denied"`. | `ao-kernel` |
 
 > **Total: 18 events across 8 categories.** This is the closed set for FAZ-A (PR-A0 initial 17 + PR-A4 `diff_rolled_back`).
 

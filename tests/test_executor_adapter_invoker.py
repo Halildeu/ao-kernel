@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -26,7 +27,10 @@ from ao_kernel.executor import (
     invoke_cli,
     invoke_http,
 )
-from ao_kernel.executor.adapter_invoker import _jsonpath_dotted
+from ao_kernel.executor.adapter_invoker import (
+    _jsonpath_dotted,
+    _resolve_cli_invocation,
+)
 from ao_kernel.workflow import budget_from_dict
 
 
@@ -141,6 +145,39 @@ def _budget(time_limit: float = 120.0) -> Any:
             "fail_closed_on_exhaust": True,
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# CLI resolution helpers
+# ---------------------------------------------------------------------------
+
+
+class TestCliResolution:
+    def test_resolve_cli_invocation_tracks_reserved_command_tokens(
+        self,
+    ) -> None:
+        manifest = _manifest_cli(
+            command="{python_executable}",
+            args=("--run-id", "{run_id}", "--prompt", "{task_prompt}"),
+        )
+
+        resolved = _resolve_cli_invocation(
+            invocation=manifest.invocation,
+            input_envelope={
+                "run_id": "run-123",
+                "task_prompt": "review this change",
+            },
+        )
+
+        assert resolved.command == sys.executable
+        assert resolved.args == (
+            "--run-id",
+            "run-123",
+            "--prompt",
+            "review this change",
+        )
+        assert resolved.stdin_payload is None
+        assert resolved.reserved_command_tokens == ("python_executable",)
 
 
 # ---------------------------------------------------------------------------

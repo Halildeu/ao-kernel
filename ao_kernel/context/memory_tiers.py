@@ -55,6 +55,7 @@ def enforce_tier_budgets(
     decisions: list[dict[str, Any]],
     *,
     tier_config: dict[str, Any] | None = None,
+    now: str | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Classify decisions into tiers and enforce max budget per tier.
 
@@ -65,7 +66,7 @@ def enforce_tier_budgets(
     tiers: dict[str, list[dict[str, Any]]] = {"hot": [], "warm": [], "cold": []}
 
     for d in decisions:
-        tier = classify_tier(d)
+        tier = classify_tier(d, now=now)
         tiers[tier].append(d)
 
     # Enforce budgets — overflow demotes to next tier
@@ -103,7 +104,10 @@ def _age_days(timestamp: str, now: str | None = None) -> float:
         return 999.0
     try:
         dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-        now_dt = datetime.now(timezone.utc)
+        if now:
+            now_dt = datetime.fromisoformat(now.replace("Z", "+00:00"))
+        else:
+            now_dt = datetime.now(timezone.utc)
         return (now_dt - dt).total_seconds() / 86400
     except (ValueError, TypeError):
         return 999.0

@@ -196,6 +196,7 @@ def validate_command(
     resolved_args: tuple[str, ...],
     sandbox: SandboxedEnvironment,
     secret_values: Mapping[str, str],
+    runtime_allowed_realpaths: Iterable[Path] = (),
 ) -> list[PolicyViolation]:
     """Validate ``command`` against the allowlist + PATH-anchor and scan
     ``resolved_args`` for secret leakage.
@@ -209,11 +210,18 @@ def validate_command(
        ``allowed_commands_exact`` AND realpath parent is under a
        ``policy_derived_path_entries`` entry).
     5. Else → ``command_path_outside_policy``.
+       A caller MAY pass localized ``runtime_allowed_realpaths`` for a
+       reserved-token expansion such as ``{python_executable}``; this
+       does not mutate the sandbox and does not authorize any other
+       command.
     6. For each arg: if any secret value appears verbatim →
        ``secret_exposure_denied`` with ``field_path=args[i]``.
     """
     violations: list[PolicyViolation] = []
     policy_ref = "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
+    runtime_allowed = {
+        path.resolve() for path in runtime_allowed_realpaths
+    }
 
     resolved = shutil.which(command, path=sandbox.env_vars.get("PATH", ""))
     if resolved is None:
@@ -239,7 +247,8 @@ def validate_command(
             for anchor in sandbox.policy_derived_path_entries
         )
     )
-    if not (prefix_ok or exact_ok_with_anchor):
+    runtime_override_ok = realpath in runtime_allowed
+    if not (prefix_ok or exact_ok_with_anchor or runtime_override_ok):
         violations.append(PolicyViolation(
             kind="command_path_outside_policy",
             detail=(

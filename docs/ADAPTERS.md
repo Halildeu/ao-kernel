@@ -199,7 +199,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 ### Invocation path
 
 1. Workflow registry resolves `adapter_id: "claude-code-cli"`.
-2. Worktree executor checks `command_allowlist`: `claude` resolves to `/opt/homebrew/bin/claude` (or wherever the CLI is installed; prefix match).
+2. `v4.0.0b1` executor shapes the sandbox `PATH` from `command_allowlist` **and** preflights the resolved adapter CLI command via `validate_command()` before `adapter_invoked`. Bundled `{python_executable}` is a localized exception only for the resolved `sys.executable` realpath.
 3. Secret `ANTHROPIC_API_KEY` is in `allowlist_secret_ids`, resolved to env-var, injected into subprocess environment.
 4. Worktree is created at `.ao/runs/{run_id}/worktree` (git worktree from main checkout).
 5. Subprocess spawned with the resolved command, args template substituted, stdin not used, working dir = worktree.
@@ -210,7 +210,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 ### Evidence events emitted
 
 - `adapter_invoked` — before subprocess start.
-- `policy_checked` — for worktree, command, env, secrets (separate events).
+- `policy_checked` — a single aggregate pre-invocation policy summary event. In `v4.0.0b1`, the live scope covers secret resolution, sandbox shaping, HTTP-header exposure checks, and adapter CLI command enforcement.
 - `adapter_returned` — after subprocess exit; payload includes status, finish_reason, cost_actual.
 
 ### Failure modes
@@ -236,7 +236,7 @@ The codex stub is an in-process adapter used for CI determinism and demos withou
   "capabilities": ["read_repo", "write_diff"],
   "invocation": {
     "transport": "cli",
-    "command": "python3",
+    "command": "{python_executable}",
     "args": ["-m", "ao_kernel.fixtures.codex_stub", "--run-id", "{run_id}", "--fixture", "{context_pack_ref}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",

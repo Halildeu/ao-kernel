@@ -1,4 +1,4 @@
-"""v3.13.2 F5 — CLI entry-point contract pins.
+"""v4.0.0b1 — CLI entry-point contract pins.
 
 Pinleri 3 yol için:
 
@@ -20,6 +20,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+from importlib import metadata as importlib_metadata
 
 import pytest
 
@@ -46,6 +47,21 @@ def _run_console(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _console_script_installed_for_current_dist() -> bool:
+    if shutil.which("ao-kernel") is None:
+        return False
+    try:
+        installed_version = importlib_metadata.version("ao-kernel")
+    except importlib_metadata.PackageNotFoundError:
+        return False
+    if installed_version != ao_kernel.__version__:
+        return False
+    proc = _run_console("version")
+    if proc.returncode != 0:
+        return False
+    return proc.stdout.strip() == f"ao-kernel {ao_kernel.__version__}"
+
+
 def test_python_m_ao_kernel_version() -> None:
     proc = _run_module("-m", "ao_kernel", "version")
     assert proc.returncode == 0
@@ -59,8 +75,8 @@ def test_python_m_ao_kernel_cli_version() -> None:
 
 
 @pytest.mark.skipif(
-    shutil.which("ao-kernel") is None,
-    reason="ao-kernel console script not on PATH (run `pip install -e .` or install wheel)",
+    not _console_script_installed_for_current_dist(),
+    reason="ao-kernel console script is not installed for the current distribution version",
 )
 def test_ao_kernel_console_version() -> None:
     """Codex iter-1 M2 absorb: console script was claimed in CHANGELOG

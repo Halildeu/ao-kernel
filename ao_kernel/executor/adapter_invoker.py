@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import importlib.resources
 import json
+import re
 import subprocess
 import sys
 import time
@@ -54,6 +55,8 @@ from ao_kernel.workflow import Budget, record_spend
 _SENTINEL_MISSING: object = object()
 
 _DIFF_MARKERS = ("---", "+++", "@@")
+_PLACEHOLDER_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
+_RESERVED_RUNTIME_TOKENS = frozenset({"python_executable"})
 
 _EMPTY_EXTRACTED: Mapping[str, Mapping[str, Any]] = MappingProxyType({})
 
@@ -88,6 +91,22 @@ class InvocationResult:
     """
 
 
+@dataclass(frozen=True)
+class ResolvedCliInvocation:
+    """Resolved CLI invocation with reserved-token metadata.
+
+    ``reserved_command_tokens`` is intentionally scoped to the command
+    field only so runtime exceptions such as ``{python_executable}``
+    can stay local to command validation instead of mutating the
+    sandbox-wide allowlist.
+    """
+
+    command: str
+    args: tuple[str, ...]
+    stdin_payload: str | None
+    reserved_command_tokens: tuple[str, ...]
+
+
 # ---------------------------------------------------------------------------
 # CLI invocation
 # ---------------------------------------------------------------------------
@@ -102,6 +121,7 @@ def invoke_cli(
     budget: Budget,
     workspace_root: Path,
     run_id: str,
+    resolved_invocation: ResolvedCliInvocation | None = None,
 ) -> tuple[InvocationResult, Budget]:
     """Spawn ``subprocess.run`` per ``manifest.invocation``.
 
@@ -122,14 +142,13 @@ def invoke_cli(
             ),
         )
 
-    substitution_context = _substitution_context(input_envelope)
-    command = _substitute_args(invocation["command"], substitution_context)
-    args_template = tuple(invocation.get("args", ()))
-    resolved_args = tuple(
-        _substitute_args(a, substitution_context) for a in args_template
+    resolved_cli = resolved_invocation or _resolve_cli_invocation(
+        invocation=invocation,
+        input_envelope=input_envelope,
     )
-    stdin_mode = invocation.get("stdin_mode", "none")
-    stdin_payload = _build_stdin(stdin_mode, input_envelope)
+    command = resolved_cli.command
+    resolved_args = resolved_cli.args
+    stdin_payload = resolved_cli.stdin_payload
 
     # Compute effective timeout = min(manifest-level, budget remaining)
     effective_timeout = _effective_timeout(invocation, budget)
@@ -705,11 +724,15 @@ def _jsonpath_dotted(root: Mapping[str, Any], path: str) -> Any:
 
 
 def _substitute_args(template: str, envelope: Mapping[str, Any]) -> str:
-    """Simple ``{placeholder}`` substitution; no shell expansion."""
-    result = template
-    for key, value in envelope.items():
-        result = result.replace("{" + key + "}", str(value))
-    return result
+    """Single-pass ``{placeholder}`` substitution; no shell expansion."""
+
+    def _replace(match: re.Match[str]) -> str:
+        key = match.group(1)
+        if key not in envelope:
+            return match.group(0)
+        return str(envelope[key])
+
+    return _PLACEHOLDER_RE.sub(_replace, template)
 
 
 def _substitution_context(envelope: Mapping[str, Any]) -> dict[str, Any]:
@@ -721,6 +744,40 @@ def _substitution_context(envelope: Mapping[str, Any]) -> dict[str, Any]:
     context = dict(envelope)
     context["python_executable"] = sys.executable
     return context
+
+
+def _resolve_cli_invocation(
+    *,
+    invocation: Mapping[str, Any],
+    input_envelope: Mapping[str, Any],
+) -> ResolvedCliInvocation:
+    """Resolve command/args/stdin from the invocation template."""
+
+    substitution_context = _substitution_context(input_envelope)
+    command_template = str(invocation["command"])
+    args_template = tuple(str(arg) for arg in invocation.get("args", ()))
+    reserved_command_tokens = tuple(
+        dict.fromkeys(
+            token
+            for token in _placeholder_tokens(command_template)
+            if token in _RESERVED_RUNTIME_TOKENS
+        )
+    )
+    return ResolvedCliInvocation(
+        command=_substitute_args(command_template, substitution_context),
+        args=tuple(
+            _substitute_args(arg, substitution_context) for arg in args_template
+        ),
+        stdin_payload=_build_stdin(
+            invocation.get("stdin_mode", "none"),
+            input_envelope,
+        ),
+        reserved_command_tokens=reserved_command_tokens,
+    )
+
+
+def _placeholder_tokens(template: str) -> tuple[str, ...]:
+    return tuple(match.group(1) for match in _PLACEHOLDER_RE.finditer(template))
 
 
 def _build_stdin(
@@ -780,6 +837,7 @@ def _is_clear_unified_diff(body: str) -> bool:
 
 __all__ = [
     "InvocationResult",
+    "ResolvedCliInvocation",
     "invoke_cli",
     "invoke_http",
 ]

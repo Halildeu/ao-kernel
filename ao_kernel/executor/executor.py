@@ -36,6 +36,7 @@ from typing import Any, Mapping
 from ao_kernel.adapters import AdapterRegistry
 from ao_kernel.executor.adapter_invoker import (
     InvocationResult,
+    _resolve_cli_invocation,
     invoke_cli,
     invoke_http,
 )
@@ -46,6 +47,7 @@ from ao_kernel.executor.policy_enforcer import (
     build_sandbox,
     check_http_header_exposure,
     resolve_allowed_secrets,
+    validate_command,
 )
 from ao_kernel.executor.worktree_builder import (
     WorktreeHandle,
@@ -425,6 +427,16 @@ class Executor:
         if rollout_mode not in ("report_only", "block"):
             rollout_mode = "block"  # unknown mode → fail-closed block
         promote_to_block_on = set(rollout_cfg.get("promote_to_block_on", []))
+        transport = manifest.invocation.get("transport")
+        if input_envelope_override is not None:
+            # PR-C1a: driver pre-computes envelope with context_pack_ref
+            # resolved from prior context_compile step's artifact.
+            input_envelope = dict(input_envelope_override)
+        else:
+            input_envelope = {
+                "task_prompt": record.get("intent", {}).get("payload", ""),
+                "run_id": run_id,
+            }
 
         # Sandbox + secrets always need to resolve so the adapter has a
         # runnable env even in the dormant / report_only tiers.
@@ -445,6 +457,27 @@ class Executor:
             *sandbox_violations,
             *http_violations,
         ]
+        resolved_cli_invocation = None
+
+        if policy_enabled and transport == "cli":
+            resolved_cli_invocation = _resolve_cli_invocation(
+                invocation=manifest.invocation,
+                input_envelope=input_envelope,
+            )
+            runtime_allowed_realpaths: tuple[Path, ...] = ()
+            if "python_executable" in resolved_cli_invocation.reserved_command_tokens:
+                runtime_allowed_realpaths = (
+                    Path(resolved_cli_invocation.command).resolve(),
+                )
+            policy_violations.extend(
+                validate_command(
+                    resolved_cli_invocation.command,
+                    resolved_cli_invocation.args,
+                    sandbox,
+                    secret_values=resolved_secrets,
+                    runtime_allowed_realpaths=runtime_allowed_realpaths,
+                )
+            )
 
         if policy_enabled:
             # Determine effective mode with escalation override.
@@ -467,7 +500,7 @@ class Executor:
                     "would_block": would_block,
                     "promoted_to_block": promoted_to_block,
                 },
-                step_id=step_def.step_name,
+                step_id=step_id_for_events,
             )
             evidence_event_ids.append(checked.event_id)
 
@@ -482,13 +515,14 @@ class Executor:
                         "violation_kinds": violation_kinds,
                         "promoted_to_block": promoted_to_block,
                     },
-                    step_id=step_def.step_name,
+                    step_id=step_id_for_events,
                 )
                 evidence_event_ids.append(denied.event_id)
                 return self._fail_run(
                     run_id=run_id,
                     record=record,
                     step_def=step_def,
+                    step_id=step_id_for_events,
                     evidence_event_ids=tuple(evidence_event_ids),
                     error_category="policy_denied",
                     error_detail=f"{len(policy_violations)} policy violation(s)",
@@ -515,22 +549,12 @@ class Executor:
                     "adapter_id": manifest.adapter_id,
                     "transport": manifest.invocation.get("transport"),
                 },
-                step_id=step_def.step_name,
+                step_id=step_id_for_events,
                 replay_safe=False,
             )
             evidence_event_ids.append(invoked.event_id)
 
             budget = budget_from_dict(record.get("budget", {}))
-            if input_envelope_override is not None:
-                # PR-C1a: driver pre-computes envelope with context_pack_ref
-                # resolved from prior context_compile step's artifact.
-                input_envelope = dict(input_envelope_override)
-            else:
-                input_envelope = {
-                    "task_prompt": record.get("intent", {}).get("payload", ""),
-                    "run_id": run_id,
-                }
-            transport = manifest.invocation.get("transport")
             if transport == "cli":
                 invocation_result, budget_after = invoke_cli(
                     manifest=manifest,
@@ -540,6 +564,7 @@ class Executor:
                     budget=budget,
                     workspace_root=self._workspace_root,
                     run_id=run_id,
+                    resolved_invocation=resolved_cli_invocation,
                 )
             else:
                 invocation_result, budget_after = invoke_http(
@@ -764,6 +789,7 @@ class Executor:
         run_id: str,
         record: Mapping[str, Any],
         step_def: StepDefinition,
+        step_id: str,
         evidence_event_ids: tuple[str, ...],
         error_category: str,
         error_detail: str,
@@ -781,7 +807,7 @@ class Executor:
                 "error_category": error_category,
                 "error_detail": error_detail,
             },
-            step_id=step_def.step_name,
+            step_id=step_id,
         )
         event_ids_out = (*evidence_event_ids, step_failed.event_id)
 
@@ -796,7 +822,7 @@ class Executor:
             steps = list(current.get("steps", []))
             steps.append(
                 {
-                    "step_id": step_def.step_name,
+                    "step_id": step_id,
                     "step_name": step_def.step_name,
                     "state": "failed",
                     "actor": step_def.actor,

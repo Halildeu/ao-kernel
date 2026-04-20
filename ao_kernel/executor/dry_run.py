@@ -155,6 +155,7 @@ def dry_run_execution_context(
         budget: Any,
         workspace_root: Path,
         run_id: str,
+        resolved_invocation: Any = None,
     ) -> tuple[Any, Any]:
         return (_canned_invocation_result(manifest), budget)
 
