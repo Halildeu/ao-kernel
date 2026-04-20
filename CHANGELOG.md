@@ -7,6 +7,62 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [3.13.2] - 2026-04-20
+
+### Fixed — v3.13.2 Correctness Patch (F1–F5, single PR)
+
+**Context.** v3.13.1 ship'ten sonra iki dış AI değerlendirmesi art arda geldi. İlkinde README quick demo'nun çalışmadığı + `workspace_root` path semantic drift keşfedildi (absorb edildi v3.13.1'de). İkincisinde v3.13.1 sonrası kalan 5 bulgu ortaya çıktı:
+
+1. **P1 demo bozuk**: README:79 hâlâ `examples/demo_bugfix.py`'ı öneriyor, ancak script `wreg.load_bundled()` çağırmıyor → `WorkflowDefinitionNotFoundError`. Yani README'yi izleyen kullanıcı ilk demoda duvara çarpıyor.
+2. **P2 CI coverage gate drift**: `pyproject.toml::fail_under = 85` ama `.github/workflows/test.yml::coverage report --fail-under=70` — 15 puan boşluk. v3.13.0'daki coverage ratchet work'ü CI-level gate altında değildi.
+3. **P2 DEMO-SCRIPT.md aspirational**: `intent classify`, `workflow start`, `diff preview` vb. canlı CLI'de olmayan komutları live runbook gibi anlatıyor.
+4. **P3 `python -m ao_kernel` çalışmıyor**: `ao_kernel/__main__.py` eksik, `ModuleNotFoundError: No module named ao_kernel.__main__`.
+5. **P1 `bug_fix_flow + codex-stub` patch_preview fail**: Ayrı bug — demo değiştirildiğinde user-facing değil ama gerçek runtime problemi. v3.13.3+'e ertelendi.
+
+v3.13.2 F1–F5'i tek PR'da kapatır; F6 (bug_fix_flow patch_preview) ayrı correctness lane'e bırakılır.
+
+**F1 — CI coverage gate 70 → 85**
+- `.github/workflows/test.yml:59`: `coverage report --fail-under=70` → `--fail-under=85`
+- `pyproject.toml::fail_under=85` ile hizalı. v3.13.0 coverage ratchet artık CI-level enforced.
+
+**F2 — Public demo pivotu (`bug_fix_flow` → `review_ai_flow`)**
+- `examples/demo_bugfix.py` **silindi** — never worked end-to-end on a fresh workspace (registry + git init + adapter subprocess cascade of bugs). `bug_fix_flow` patch_preview bug'ı (F6) ayrı lane'e.
+- **`examples/demo_review.py` yeni** — `review_ai_flow + codex-stub` disposable git workspace + auto-approve + `review_findings` artifact validation + evidence timeline verify. Canlı smoke `final state: completed`.
+- `README.md` quick-start: `demo_bugfix.py --workspace-root .` → `demo_review.py --cleanup`
+- `docs/PUBLIC-BETA.md` **yeni** — Shipped / Beta / Deferred / Known Bugs SSOT tablosu (Codex Public Beta planından port).
+- `docs/DEMO-SCRIPT.md` → compat pointer stub (canlı runbook değil, spec reference)
+- `docs/roadmap/DEMO-SCRIPT-SPEC.md` **yeni** — 11 adımlı `bug_fix_flow` anlatımı roadmap/spec olarak taşındı; release-closure hedefi olarak korunur.
+
+**F3 — Doc/CLI parity** (F2 içinde)
+- DEMO-SCRIPT.md aspirational content roadmap/'a taşındı, canlı yüzey `bug_fix_flow` demo vaadini geri çekiyor.
+
+**F4 — Module entry point: `python -m ao_kernel`**
+- `ao_kernel/__main__.py` **yeni**: 9 satır, `from ao_kernel.cli import main; raise SystemExit(main())`. Codex Public Beta planından port.
+- Contract: `ao-kernel version`, `python -m ao_kernel version`, `python -m ao_kernel.cli version` — üçü de `4.0.0b1` (sonraki major) veya `3.13.2` dönecek.
+
+**F5 — Ergonomic pins** (F4 contract'ını pinliyor)
+- `tests/test_cli_entrypoints.py` **yeni**: `python -m ao_kernel version`, `python -m ao_kernel.cli version`, `ao-kernel --version` yolları hem stdlib subprocess ile koşturuluyor hem çıktı format'ı pinleniyor.
+
+### Migration note
+
+- **Operator breaking** yok (non-breaking patch release).
+- **README quick-start komutu** değişti: `examples/demo_bugfix.py` YOK. Yerine `python3 examples/demo_review.py --cleanup`. Eski script'e referans veren harici doc/script varsa güncelleyin.
+- **CI coverage gate** 70 → 85 yükseldi. Fork ederek PR açan contributor'lar: `pytest --cov` sonucu 85'in altındaysa CI fail eder. Önceden geçiyor olan (70-85 arası) PR'lar artık geçmez — ratchet disiplini CI'de aktif.
+- **`python -m ao_kernel`** contract'ı artık garantili. Mevcut `ao-kernel` console script davranışı değişmedi.
+
+### Deferred (v3.13.3+)
+
+- **F6 `bug_fix_flow + codex-stub` patch_preview**: `codex-stub` sabit `hello.txt` diff'i üretiyor, `patch_preview` adımı `PATCH_ERROR / patch_patch_preview_PatchPreviewError` atıyor. `bug_fix_flow` tam hattı için: ya `codex-stub` akıllı diff üretsin (workflow intent'ine göre), ya workflow adapter-ref'i fallback variant alsın, ya `bug_fix_flow_real_adapter` opt-in variant olsun (review_ai_flow pattern'ı).
+- `init_cmd.run(override)` WRITE-side asymmetry — v3.14+ contract-break Codex consultation.
+- `sanitize.py:39` EMAIL regex raw-string bug.
+- `compiler.py:139` no-id dict KeyError.
+
+### v4.0 gates (tracked)
+
+- `save_store()` removal (deprecated since v3.0.0).
+- `allow_overwrite` default flip `True → False`.
+- FAZ-C feature surface: streaming cost, patch primitive, `governed_bugfix` full, retry/chaos bench, Windows platform.
+
 ## [3.13.1] - 2026-04-20
 
 ### Fixed — v3.13.1 Drift Patch (2 PRs)

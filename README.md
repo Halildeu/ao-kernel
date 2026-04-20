@@ -76,10 +76,12 @@ stream_request = build_req(
 ### Quick Demo
 
 ```bash
-python3 examples/demo_bugfix.py --workspace-root .
+python3 examples/demo_review.py --cleanup
 ```
 
-Runs the governed bug-fix workflow end-to-end with a deterministic stub adapter (no LLM required). See `docs/DEMO-SCRIPT.md` for the full 11-step acceptance flow. For the opt-in real-adapter benchmark path (v3.7 F1), see [`docs/BENCHMARK-FULL-MODE.md`](docs/BENCHMARK-FULL-MODE.md).
+Runs `review_ai_flow` end-to-end against a disposable workspace (`git init` + `ao-kernel init` + `codex-stub` deterministic adapter, no LLM required). The demo verifies the workflow completes (`workflow_completed` event), the `review_findings` artefact materializes and validates against `review-findings.schema.v1.json`, and the evidence timeline is emitted to `.ao/evidence/workflows/<run_id>/events.jsonl`.
+
+See [`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md) for the support matrix (Shipped / Beta / Deferred / Known Bugs). `bug_fix_flow` (full patch-preview flow) stays on the roadmap — see [`docs/roadmap/DEMO-SCRIPT-SPEC.md`](docs/roadmap/DEMO-SCRIPT-SPEC.md). For the opt-in real-adapter benchmark path, see [`docs/BENCHMARK-FULL-MODE.md`](docs/BENCHMARK-FULL-MODE.md).
 
 ## Python API
 
