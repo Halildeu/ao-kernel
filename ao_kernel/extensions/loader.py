@@ -291,16 +291,22 @@ def _classify_ref_paths(
     remap_candidates: list[str] = []
     missing: list[str] = []
     defaults_root = base / "defaults"
+    seen_targets: set[str] = set()
     for ref in refs:
-        if not ref:
+        normalized_ref = str(ref).strip()
+        if not normalized_ref:
             continue
-        if (base / ref).exists():
+        path_ref = normalized_ref.split("#", 1)[0].strip()
+        if not path_ref or path_ref in seen_targets:
             continue
-        head = ref.split("/", 1)[0]
-        if head in _BUNDLED_REF_KINDS and (defaults_root / ref).exists():
-            remap_candidates.append(ref)
+        seen_targets.add(path_ref)
+        if (base / path_ref).exists():
             continue
-        missing.append(ref)
+        head = path_ref.split("/", 1)[0]
+        if head in _BUNDLED_REF_KINDS and (defaults_root / path_ref).exists():
+            remap_candidates.append(path_ref)
+            continue
+        missing.append(path_ref)
     return tuple(remap_candidates), tuple(missing)
 
 

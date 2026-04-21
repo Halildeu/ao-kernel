@@ -196,6 +196,69 @@ class TestWorkspaceOverride:
         report = reg.load_from_workspace(tmp_path)  # no .ao/extensions present
         assert report.loaded == 0
 
+    def test_ref_audit_normalizes_anchor_and_dedupes_existing_targets(self, tmp_path: Path):
+        docs_dir = tmp_path / "docs"
+        tests_dir = tmp_path / "tests"
+        docs_dir.mkdir()
+        tests_dir.mkdir()
+        (docs_dir / "live.md").write_text("ok", encoding="utf-8")
+        (tests_dir / "contract_test.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+
+        ext_dir = tmp_path / ".ao" / "extensions" / "REFS-NORMALIZED"
+        ext_dir.mkdir(parents=True)
+        manifest = _valid_manifest(
+            "REFS-NORMALIZED",
+            docs_ref="docs/live.md#section-a",
+            ai_context_refs=[
+                "docs/live.md",
+                "docs/live.md#section-b",
+                "tests/contract_test.py",
+            ],
+            tests_entrypoints=[
+                "tests/contract_test.py",
+                "tests/contract_test.py#case-a",
+            ],
+        )
+        (ext_dir / "extension.manifest.v1.json").write_text(
+            json.dumps(manifest), encoding="utf-8",
+        )
+
+        reg = ExtensionRegistry()
+        reg.load_from_workspace(tmp_path)
+        ext = reg.get("REFS-NORMALIZED")
+        assert ext is not None
+        assert ext.remap_candidate_refs == ()
+        assert ext.missing_runtime_refs == ()
+
+    def test_ref_audit_dedupes_missing_targets_by_normalized_path(self, tmp_path: Path):
+        ext_dir = tmp_path / ".ao" / "extensions" / "REFS-MISSING"
+        ext_dir.mkdir(parents=True)
+        manifest = _valid_manifest(
+            "REFS-MISSING",
+            docs_ref="docs/missing.md#ext-refs-missing",
+            ai_context_refs=[
+                "docs/missing.md",
+                "docs/missing.md#overview",
+                "tests/missing_contract_test.py",
+            ],
+            tests_entrypoints=[
+                "tests/missing_contract_test.py",
+                "tests/missing_contract_test.py#case-a",
+            ],
+        )
+        (ext_dir / "extension.manifest.v1.json").write_text(
+            json.dumps(manifest), encoding="utf-8",
+        )
+
+        reg = ExtensionRegistry()
+        reg.load_from_workspace(tmp_path)
+        ext = reg.get("REFS-MISSING")
+        assert ext is not None
+        assert ext.missing_runtime_refs == (
+            "docs/missing.md",
+            "tests/missing_contract_test.py",
+        )
+
 
 class TestSchemaValidation:
     def test_invalid_manifest_is_skipped_with_report(self, tmp_path: Path):
