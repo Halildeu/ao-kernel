@@ -71,7 +71,6 @@ Stable support surface:
 - OS-level sandbox / egress enforcement
 - full PR automation surface
 - post-beta correctness patch seti:
-  - `compiler.py:139`
   - `init_cmd.py:30-33`
 
 ## 5. Değişmez Kurallar
@@ -180,7 +179,7 @@ Stable gövdede henüz live OLMAYAN:
 | `WP-13` | Publish pre-smoke | Faz 3 | `4.0.0b1` | Completed in branch | `WP-11` | publish workflow |
 | `WP-14` | `PUBLIC-BETA.md` classification cleanup | Faz 3 | `4.0.0b1` | Completed in branch | Faz 2 | doc audit |
 | `WP-15` | `sanitize.py:39` | Faz 4 | post-beta | Completed in branch | — | unit test + doc cleanup |
-| `WP-16` | `compiler.py:139` | Faz 4 | post-beta | Deferred | — | future patch |
+| `WP-16` | `compiler.py:139` | Faz 4 | post-beta | Completed in branch | — | unit test + doc cleanup |
 | `WP-17` | `init_cmd.py:30-33` | Faz 4 | post-beta | Deferred | — | future patch |
 | `WP-18` | `bug_fix_flow + codex-stub patch_preview` | Faz 4 | post-beta | Deferred | — | future patch |
 | `WP-19` | deterministic test hygiene / time drift | Faz 4 | post-beta | Partial blocker absorbed in branch | — | full-suite verification |

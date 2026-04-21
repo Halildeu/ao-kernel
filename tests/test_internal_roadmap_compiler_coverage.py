@@ -206,11 +206,6 @@ class TestCompileRoadmapHappyPath:
         (line 88-89); non-string-id dicts land in ``plan["milestones"]``
         but are excluded from ``milestones_included`` because
         ``isinstance(ms_id, str)`` is False.
-
-        Note: the compiler currently accesses ``ms["id"]`` unguarded at
-        line 139 inside the render loop — dicts with NO ``id`` key at
-        all crash with ``KeyError``. That shape is intentionally
-        excluded from this pin; it is tracked as a separate follow-up.
         """
         from ao_kernel._internal.roadmap.compiler import compile_roadmap
 
@@ -236,6 +231,41 @@ class TestCompileRoadmapHappyPath:
         assert result.milestones_included == ["MS-1"]
         # Both dict-shaped milestones appear in the plan header.
         assert len(result.plan["milestones"]) == 2
+
+    def test_no_filter_skips_dict_without_id_in_render_loop(self, tmp_path: Path) -> None:
+        """A dict-shaped milestone without ``id`` must be skipped instead
+        of crashing the compiler."""
+        from ao_kernel._internal.roadmap.compiler import compile_roadmap
+
+        schema_path = _write_schema(tmp_path, _PERMISSIVE_SCHEMA)
+        roadmap_path = _write_roadmap(
+            tmp_path,
+            {
+                "roadmap_id": "R1",
+                "version": "v1",
+                "milestones": [
+                    {"title": "missing-id", "steps": [{"type": "noop"}]},
+                    {"id": "MS-1", "title": "ok", "steps": [{"type": "noop"}]},
+                ],
+            },
+        )
+        result = compile_roadmap(
+            roadmap_path=roadmap_path,
+            schema_path=schema_path,
+            cache_root=tmp_path / ".cache",
+        )
+        assert result.status == "OK"
+        assert result.milestones_included == ["MS-1"]
+        assert result.plan["milestones"] == [
+            {
+                "id": "MS-1",
+                "title": "ok",
+                "constraints": {},
+                "deliverables_count": 1,
+                "gates_count": 0,
+            }
+        ]
+        assert all(step["milestone_id"] == "MS-1" for step in result.plan["steps"])
 
     def test_iso_core_required_injects_preflight_step(self, tmp_path: Path) -> None:
         from ao_kernel._internal.roadmap.compiler import compile_roadmap

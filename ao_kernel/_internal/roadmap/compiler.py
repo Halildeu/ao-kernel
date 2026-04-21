@@ -136,7 +136,12 @@ def compile_roadmap(
 
     plan_milestones: list[dict[str, Any]] = []
     for ms in milestones_filtered:
-        ms_id = str(ms["id"])
+        ms_id_raw = ms.get("id")
+        if ms_id_raw is None:
+            continue
+        if isinstance(ms_id_raw, str) and not ms_id_raw.strip():
+            continue
+        ms_id = str(ms_id_raw)
         title = str(ms.get("title", ""))
         constraints = ms.get("constraints") if isinstance(ms.get("constraints"), dict) else {}
         deliverables = []
