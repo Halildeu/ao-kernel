@@ -180,7 +180,7 @@ Stable gövdede henüz live OLMAYAN:
 | `WP-15` | `sanitize.py:39` | Faz 4 | post-beta | Completed in branch | — | unit test + doc cleanup |
 | `WP-16` | `compiler.py:139` | Faz 4 | post-beta | Completed in branch | — | unit test + doc cleanup |
 | `WP-17` | `init_cmd.py:30-33` | Faz 4 | post-beta | Completed in branch | — | init override tests + doc cleanup |
-| `WP-18` | `bug_fix_flow + codex-stub patch_preview` | Faz 4 | post-beta | Deferred | — | future patch |
+| `WP-18` | `bug_fix_flow + codex-stub patch_preview` | Faz 4 | post-beta | Completed in branch | — | real driver approval-gate repro + diff parity |
 | `WP-19` | deterministic test hygiene / time drift | Faz 4 | post-beta | Partial blocker absorbed in branch | — | full-suite verification |
 
 ## 8. Risk Register

@@ -54,7 +54,9 @@ class TestHappyPath:
         # Bench variant exercises codex-stub only; gh-cli-pr
         # deferred to B7.1 (full bundled bug_fix_flow).
         canned = {
-            (_SCENARIO_ID, "codex-stub", 1): bug_envelopes.coding_agent_happy(),
+            (_SCENARIO_ID, "codex-stub", 1): bug_envelopes.coding_agent_happy(
+                workspace_root,
+            ),
         }
 
         with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
@@ -156,8 +158,9 @@ _BUNDLED_SCENARIO = "full_bundled_bugfix"
 
 def _install_mini_repo(workspace_root: Path) -> None:
     """Install mini_repo files (src/foo.py + test_smoke.py) and commit
-    so the adapter worktree sees them. ``_BUG_DIFF`` from bug_envelopes
-    patches ``src/foo.py`` x=1 → x=2; we materialise that file here."""
+    so the adapter worktree sees them. ``resolve_canned_diff`` prefers
+    ``src/foo.py`` x=1 → x=2 for this repo shape, which keeps the mock
+    and real codex-stub paths aligned."""
     src_dir = workspace_root / "src"
     src_dir.mkdir(parents=True, exist_ok=True)
     (src_dir / "__init__.py").write_text("", encoding="utf-8")
@@ -255,7 +258,9 @@ class TestFullBundledBugFixFlow:
         run_id = seeded_run("bug_fix_flow", version="1.0.0")
 
         canned = {
-            ("full_bundled_bugfix", "codex-stub", 1): bug_envelopes.coding_agent_happy(),
+            ("full_bundled_bugfix", "codex-stub", 1): bug_envelopes.coding_agent_happy(
+                workspace_root,
+            ),
             ("full_bundled_bugfix", "gh-cli-pr", 1): bug_envelopes.open_pr_happy(),
         }
 
@@ -351,15 +356,17 @@ class TestFullBundledBugFixFlow:
         Pins the C1b patch-fallback input contract: `_load_pending
         _patch_content(workspace_root=...)` reads `artifact.get("diff")`
         (NOT extracted_outputs.diff — Codex iter-1 B2 absorb). Uses
-        the bench variant (``governed_bugfix_bench``) since the full
-        bundled bug_fix_flow E2E is deferred to post-C2."""
+        the bench variant (``governed_bugfix_bench``) to isolate the
+        adapter artifact contract from the later workflow steps."""
         _install_mini_repo(workspace_root)
         run_id = seeded_run(
             _WORKFLOW_ID,
             version=_WORKFLOW_VERSION,
         )
         canned = {
-            (_SCENARIO_ID, "codex-stub", 1): bug_envelopes.coding_agent_happy(),
+            (_SCENARIO_ID, "codex-stub", 1): bug_envelopes.coding_agent_happy(
+                workspace_root,
+            ),
         }
         with mock_adapter_transport(canned, scenario_id=_SCENARIO_ID):
             first = benchmark_driver.run_workflow(

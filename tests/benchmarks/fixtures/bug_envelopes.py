@@ -12,25 +12,21 @@ simple `status=ok` + PR ref payload.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-
-_BUG_DIFF = (
-    "--- a/src/foo.py\n"
-    "+++ b/src/foo.py\n"
-    "@@ -1 +1 @@\n"
-    "-x = 1\n"
-    "+x = 2\n"
-)
+from ao_kernel.fixtures.codex_stub import resolve_canned_diff
 
 
-def coding_agent_happy() -> dict[str, Any]:
+def coding_agent_happy(
+    worktree_root: Path | None = None,
+) -> dict[str, Any]:
     """Happy `invoke_coding_agent` envelope — codex-stub with both
     output_parse payloads (review_findings empty list + stub
     commit_message) plus the diff + cost."""
     return {
         "status": "ok",
-        "diff": _BUG_DIFF,
+        "diff": resolve_canned_diff(worktree_root),
         "review_findings": {
             "schema_version": "1",
             "findings": [],
