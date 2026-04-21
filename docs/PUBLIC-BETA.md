@@ -65,7 +65,6 @@ istemek gerekir.
 
 | Konum | Etki | Workaround | Beta blocker? | Hedef |
 |---|---|---|---|---|
-| `ao_kernel/_internal/roadmap/compiler.py:139` | `id` alanı olmayan milestone girdisi `KeyError` üretebilir | Public Beta demo `compile_roadmap` no-id milestone ile çağırmaz | Hayır | Post-beta correctness patch |
 | `ao_kernel/init_cmd.py:30-33` | `workspace_root_override` write-side asimetrik | Public Beta dokümanlarında `--workspace-root X` örneği verilmez | Hayır | Post-beta correctness patch |
 
 ## Kapsam Dışı Notlar
