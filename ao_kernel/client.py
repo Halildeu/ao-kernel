@@ -365,29 +365,12 @@ class AoKernelClient:
         return summary
 
     def doctor(self) -> dict[str, Any]:
-        """Run workspace health check. Returns check results."""
-        from ao_kernel.doctor_cmd import run as _doctor_run
-        import io
-        import sys
-        import json
+        """Run workspace health check and return the structured report."""
+        from ao_kernel.doctor_cmd import build_report as _doctor_report
 
-        old_stdout = sys.stdout
-        sys.stdout = buf = io.StringIO()
-        try:
-            rc = _doctor_run(
-                workspace_root_override=str(self._workspace_root) if self._workspace_root else None,
-            )
-        finally:
-            sys.stdout = old_stdout
-
-        output = buf.getvalue()
-        try:
-            parsed = json.loads(output)
-        except (json.JSONDecodeError, ValueError):
-            return {"exit_code": rc, "output": output}
-        if not isinstance(parsed, dict):
-            return {"exit_code": rc, "output": output}
-        return parsed
+        return _doctor_report(
+            workspace_root_override=str(self._workspace_root) if self._workspace_root else None,
+        )
 
     # ── Session Lifecycle ───────────────────────────────────────────
 

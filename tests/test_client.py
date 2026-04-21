@@ -1023,8 +1023,21 @@ class TestSwallowLoggingA3:
 
 
 class TestDoctor:
-    def test_doctor_returns_dict(self, tmp_workspace: Path):
+    def test_doctor_returns_structured_report(self, tmp_workspace: Path):
         ws_root = tmp_workspace.parent
         client = AoKernelClient(ws_root)
         result = client.doctor()
         assert isinstance(result, dict)
+        assert result["exit_code"] == 0
+        assert result["version"]
+        checks = {item["label"]: item["status"] for item in result["checks"]}
+        assert checks["Workspace found"] == "OK"
+        assert checks["workspace.json valid"] == "OK"
+        assert checks["Bundled extension truth"] == "WARN"
+        summary = result["summary"]
+        assert summary["fail_count"] == 0
+        assert summary["warn_count"] >= 1
+        extension_truth = result["extension_truth"]
+        assert extension_truth["runtime_backed"] >= 1
+        assert "PRJ-HELLO" in extension_truth["runtime_backed_ids"]
+        assert extension_truth["quarantined"] >= 1
