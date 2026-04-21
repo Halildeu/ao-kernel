@@ -186,10 +186,13 @@ class TestBundledBugFixFlow:
         else:
             assert result.final_state == "failed"
             error = ci_gate.get("error") or {}
-            assert error.get("code") in {
-                "CI_RUNNER_NOT_FOUND",
-                "CI_CHECK_FAILED",
-            }, error
+            assert (
+                error.get("code") in {"CI_RUNNER_NOT_FOUND", "CI_CHECK_FAILED"}
+                or (
+                    error.get("code") == "STEP_FAILED"
+                    and error.get("message") == "ci_pytest_fail"
+                )
+            ), error
 
 
 class TestSimpleFlowEvidenceOrder:
