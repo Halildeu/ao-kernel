@@ -1,6 +1,12 @@
 # Policy Command Enforcement Closure — Program Plan
 
-**Durum:** Faz 1-3 implemented in branch, verification passed
+> **Tarihsel plan notu (2026-04-22):** Bu dosya policy-command-closure
+> programının tarihsel plan kaydıdır. Yaşayan execution backlog ve güncel
+> program durumu için
+> [`.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`](./PRODUCTION-HARDENING-PROGRAM-STATUS.md)
+> dosyasını kullanın.
+
+**Durum:** Tarihsel plan kaydı; Faz 1-3 closure daha sonra `main` hattına absorb edildi
 **Onay tarihi:** 2026-04-20
 **Plan sahibi:** Codex
 **Yürütme modu:** Kapsam disiplini
