@@ -1,0 +1,9 @@
+# Default owner
+* @Halildeu
+
+# Governance-sensitive surfaces
+/.github/ @Halildeu
+/.claude/ @Halildeu
+/CLAUDE.md @Halildeu
+/ao_kernel/defaults/policies/ @Halildeu
+/docs/ @Halildeu

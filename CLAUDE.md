@@ -527,6 +527,10 @@ bash .claude/scripts/trigger-test-workflow.sh <branch>
 
 Bu bölüm yaşayan hardening ilkelerinin SSOT'udur. Geçici plan dosyalarına
 eklenen ama repo genelinde kalıcı kural olması gereken notlar burada tutulur.
+Program execution status / backlog SSOT:
+`.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
+Repo-side merge governance özeti:
+`.github/REPO-GOVERNANCE.md`
 
 1. **Coverage gate parity opsiyonel hijyen değildir.**
    `pyproject.toml` içindeki coverage eşiği ile CI workflow gate'i aynı
