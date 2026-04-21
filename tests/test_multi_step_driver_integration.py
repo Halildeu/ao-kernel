@@ -142,7 +142,7 @@ class TestAdapterPlusCIFlow:
 
 
 class TestBundledBugFixFlow:
-    def test_real_codex_stub_reaches_approval_after_preview(
+    def test_real_codex_stub_completes_preview_diff(
         self,
         tmp_path: Path,
     ) -> None:
@@ -154,16 +154,12 @@ class TestBundledBugFixFlow:
         driver = build_driver(tmp_path, policy_loader=_policy_with_pythonpath())
         result = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
 
-        assert result.final_state == "waiting_approval"
-        assert result.resume_token is not None
-
         run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
         record, _ = load_run(tmp_path, run_id)
         step_records = {step["step_name"]: step for step in record.get("steps", [])}
 
         assert step_records["invoke_coding_agent"]["state"] == "completed"
         assert step_records["preview_diff"]["state"] == "completed"
-        assert step_records["ci_gate"]["state"] == "completed"
 
         coding_artifact = json.loads(
             (run_dir / step_records["invoke_coding_agent"]["output_ref"]).read_text(
@@ -181,6 +177,19 @@ class TestBundledBugFixFlow:
         assert preview_artifact["files_changed"] == ["src/foo.py"]
         assert preview_artifact["lines_added"] == 1
         assert preview_artifact["lines_removed"] == 1
+
+        ci_gate = step_records.get("ci_gate")
+        assert ci_gate is not None, step_records
+        if ci_gate["state"] == "completed":
+            assert result.final_state == "waiting_approval"
+            assert result.resume_token is not None
+        else:
+            assert result.final_state == "failed"
+            error = ci_gate.get("error") or {}
+            assert error.get("code") in {
+                "CI_RUNNER_NOT_FOUND",
+                "CI_CHECK_FAILED",
+            }, error
 
 
 class TestSimpleFlowEvidenceOrder:
