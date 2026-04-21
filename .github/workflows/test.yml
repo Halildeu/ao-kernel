@@ -11,8 +11,8 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install ruff
@@ -31,9 +31,9 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -46,8 +46,8 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -58,7 +58,7 @@ jobs:
           pytest tests/ --ignore=tests/benchmarks --cov=ao_kernel --cov-branch --cov-report=xml --cov-report=term-missing
           coverage report --fail-under=85
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.xml
@@ -68,8 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, coverage, lint, typecheck]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install build tool
@@ -87,8 +87,8 @@ jobs:
     # importable (untyped decorators on server.list_tools etc). Without mcp
     # those decorators resolve to Any and the ignores become "unused".
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -102,8 +102,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -114,14 +114,14 @@ jobs:
           AO_SCORECARD_OUTPUT: benchmark_scorecard.v1.json
         run: pytest tests/benchmarks/ -q
       - name: Upload head scorecard
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: scorecard-${{ github.sha }}
           path: benchmark_scorecard.v1.json
           if-no-files-found: warn
       - name: Upload main baseline scorecard
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: scorecard-main
           path: benchmark_scorecard.v1.json
@@ -139,22 +139,22 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install dependencies
         # v3.8 H6 retry guard (see lint job note).
         run: pip install -e ".[dev,llm,mcp,metrics]" || (sleep 5 && pip install -e ".[dev,llm,mcp,metrics]")
       - name: Download head scorecard
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: scorecard-${{ github.sha }}
           path: head/
-      # SHA-pinned dawidd6/action-download-artifact@v6
-      # (resolved against tag v6 at PR-open time per plan §3.7).
+      # SHA-pinned dawidd6/action-download-artifact@v20
+      # (resolved against tag v20 for Node 24 runner compatibility).
       - name: Download main baseline scorecard
-        uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11
+        uses: dawidd6/action-download-artifact@8305c0f1062bb0d184d09ef4493ecb9288447732
         with:
           workflow: test.yml
           branch: main
@@ -181,8 +181,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true  # Optional extras smoke — non-blocking
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install and smoke-import each extra
