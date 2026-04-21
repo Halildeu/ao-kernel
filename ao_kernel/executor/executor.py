@@ -324,31 +324,34 @@ class Executor:
                 )
             except PolicyViolationError as exc:
                 # Real executor emits step_started + policy_checked
-                # + policy_denied + step_failed before raising; the
-                # first two are already captured by the mock emit
-                # during run_step pre-flight. Append the denial pair
-                # here to match the canonical event sequence.
+                # + policy_denied + step_failed before raising. Under
+                # the dry-run mocks those events are usually already
+                # captured, so only synthesize the denial tail if the
+                # mocked path did not record it.
                 recorder.record_policy_violation(str(exc))
-                recorder.predicted_events.append(
-                    (
-                        "policy_denied",
-                        {
-                            "step_name": step_def.step_name,
-                            "reason": str(exc),
-                        },
+                kinds = [kind for kind, _payload in recorder.predicted_events]
+                if "policy_denied" not in kinds:
+                    recorder.predicted_events.append(
+                        (
+                            "policy_denied",
+                            {
+                                "step_name": step_def.step_name,
+                                "reason": str(exc),
+                            },
+                        )
                     )
-                )
-                recorder.predicted_events.append(
-                    (
-                        "step_failed",
-                        {
-                            "step_name": step_def.step_name,
-                            "final_state": "failed",
-                            "error_category": "policy_denied",
-                            "error_detail": str(exc),
-                        },
+                if "step_failed" not in kinds:
+                    recorder.predicted_events.append(
+                        (
+                            "step_failed",
+                            {
+                                "step_name": step_def.step_name,
+                                "final_state": "failed",
+                                "error_category": "policy_denied",
+                                "error_detail": str(exc),
+                            },
+                        )
                     )
-                )
             except Exception:
                 # Any other dispatch error is intentionally swallowed;
                 # dry-run never raises. Downstream mock boundary

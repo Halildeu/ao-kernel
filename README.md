@@ -2,7 +2,7 @@
 
 Governed AI orchestration runtime — policy-driven, fail-closed, evidence-trail.
 
-ao-kernel is **not** a general-purpose agent framework. It is a **governed runtime** that enforces policies, records evidence, and provides deterministic LLM routing for production Python teams.
+ao-kernel is **not** a general-purpose agent framework or a blanket "production coding automation platform" claim. It is a **governed runtime** that enforces policies, records evidence, and provides deterministic LLM routing for production Python teams.
 
 ## Installation
 
@@ -79,9 +79,19 @@ stream_request = build_req(
 python3 examples/demo_review.py --cleanup
 ```
 
+Run this from an environment where `ao-kernel` is already installed (wheel, venv, or editable install). The script spins up a disposable workspace and invokes `python -m ao_kernel init` inside that temp checkout.
+
 Runs `review_ai_flow` end-to-end against a disposable workspace (`git init` + `ao-kernel init` + `codex-stub` deterministic adapter, no LLM required). The demo verifies the workflow completes (`workflow_completed` event), the `review_findings` artefact materializes and validates against `review-findings.schema.v1.json`, and the evidence timeline is emitted to `.ao/evidence/workflows/<run_id>/events.jsonl`.
 
 See [`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md) for the support matrix (Shipped / Beta / Deferred / Known Bugs). `bug_fix_flow` (full patch-preview flow) stays on the roadmap — see [`docs/roadmap/DEMO-SCRIPT-SPEC.md`](docs/roadmap/DEMO-SCRIPT-SPEC.md). For the opt-in real-adapter benchmark path, see [`docs/BENCHMARK-FULL-MODE.md`](docs/BENCHMARK-FULL-MODE.md).
+
+### Support Boundary
+
+Treat the repo in three layers:
+
+- **Runtime-backed / supported**: core CLI and SDK surfaces, evidence tooling, worktree policy enforcement, bundled `review_ai_flow`, and `examples/demo_review.py`.
+- **Operator / evaluation only**: benchmark docs, real-adapter runbooks, prompt experiment runbooks, and other opt-in validation paths that are intentionally outside the default deterministic CI/demo lane.
+- **Contract / reference inventory**: bundled JSON defaults, adapter manifests, registry files, and example code such as `examples/hello-llm/`. Their presence in the tree is useful reference material, not blanket proof that every surface is production-ready end to end.
 
 ## Python API
 
@@ -221,7 +231,7 @@ items = query_memory(ws, key_pattern="arch.*")
 | MCP server | Yes | No | No | No |
 | Streaming | SSE (6 providers) | Yes | Yes | Yes |
 
-> Counts as of `v3.13.0`: `ao_kernel/defaults/` ships **377** bundled JSON files — 106 policies + 231 schemas + 19 extensions + 9 registry + 4 workflows + 3 operations + 3 adapters + 1 catalogs + 1 intent_rules. Run `find ao_kernel/defaults -name '*.json' | wc -l` for the live number.
+> Counts as of `v3.13.0`: `ao_kernel/defaults/` ships **377** bundled JSON files — 106 policies + 231 schemas + 19 extensions + 9 registry + 4 workflows + 3 operations + 3 adapters + 1 catalogs + 1 intent_rules. Run `find ao_kernel/defaults -name '*.json' | wc -l` for the live number. This is an inventory count, not a support-matrix count; use [`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md) for what is actually supported.
 
 ## Architecture
 

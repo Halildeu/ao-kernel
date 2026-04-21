@@ -2,6 +2,8 @@
 
 An adapter is the bridge between an ao-kernel workflow and an external coding-agent runtime. The adapter contract is defined in [`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json`](../ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json). This document is the human-readable companion: it explains the contract fields, walks through three reference adapters, and shows how to write a custom one.
 
+> **Support boundary.** This document describes the adapter contract and bundled reference shapes. It does **not** mean every adapter kind or bundled manifest is an end-to-end production-supported surface in this repo. The narrow shipped baseline is the deterministic `review_ai_flow` + bundled `codex-stub` path; real-adapter flows remain operator-managed unless [`PUBLIC-BETA.md`](PUBLIC-BETA.md) explicitly says otherwise.
+
 ---
 
 ## 1. Adapter Contract Overview
@@ -41,6 +43,15 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 | `gh-cli-pr` | CLI | **Typed VCS/PR connector**, not a full coding agent. Wraps `gh` (GitHub CLI) for PR creation only. Declares `capabilities: ["open_pr"]` and does not produce diffs. |
 | `custom-cli` | CLI | User-defined CLI adapter. Escape hatch for runtimes not in the closed list. |
 | `custom-http` | HTTP | User-defined HTTP adapter. Same escape hatch for HTTP transport. |
+
+### Current repo support tiers
+
+| Surface | Current status | Meaning |
+|---|---|---|
+| Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
+| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; useful for runbooks and benchmarks, not the default support claim |
+| `gh-cli-pr` walkthroughs and manifests | Deferred / contract surface | Typed connector contract exists, but the full end-user E2E PR lane is not the current supported demo |
+| `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
 ### Promotion criteria for new enum values
 
@@ -224,7 +235,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 
 ## 6. Walkthrough 2: Codex Stub
 
-The codex stub is an in-process adapter used for CI determinism and demos without real LLM calls. It ships with ao-kernel as a reference fixture.
+The codex stub is an in-process adapter used for CI determinism and demos without real LLM calls. It ships with ao-kernel as the repo's supported deterministic baseline.
 
 ### Manifest sketch
 
@@ -410,9 +421,9 @@ print('OK')
 "
 ```
 
-### 9.2 Demo script fixture
+### 9.2 Supported smoke vs roadmap spec
 
-Running `docs/DEMO-SCRIPT.md` with your adapter substituted for Claude Code CLI is the fastest end-to-end behavioral test. If all 11 steps emit the expected evidence events and the PR opens cleanly, the adapter is contract-conformant.
+For the shipped deterministic smoke, use [`examples/demo_review.py`](../examples/demo_review.py) together with [`docs/PUBLIC-BETA.md`](PUBLIC-BETA.md). The legacy 11-step multi-adapter flow is no longer the live demo contract; it survives as a roadmap/spec document at [`docs/roadmap/DEMO-SCRIPT-SPEC.md`](roadmap/DEMO-SCRIPT-SPEC.md).
 
 ### 9.3 CI-friendly testing
 
@@ -441,7 +452,8 @@ The workflow registry loads the union of all referenced policies for all adapter
 - [`ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json`](../ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json) — the normative schema this document describes.
 - [docs/WORKTREE-PROFILE.md](WORKTREE-PROFILE.md) — the sandbox every adapter runs in.
 - [docs/EVIDENCE-TIMELINE.md](EVIDENCE-TIMELINE.md) — the event taxonomy adapters contribute to.
-- [docs/DEMO-SCRIPT.md](DEMO-SCRIPT.md) — the end-to-end flow exercising three reference adapters.
+- [docs/PUBLIC-BETA.md](PUBLIC-BETA.md) — the authoritative support matrix for which adapter paths are actually supported.
+- [docs/roadmap/DEMO-SCRIPT-SPEC.md](roadmap/DEMO-SCRIPT-SPEC.md) — the legacy multi-adapter acceptance spec.
 - [docs/COMPETITOR-MATRIX.md](COMPETITOR-MATRIX.md) — the live list of adapter-target platforms.
 - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json` — the sandbox policy referenced by every adapter.
 - `.claude/plans/TRANCHE-STRATEGY-V2.md` §3, §4 — FAZ-A feature roadmap and adapter scope.

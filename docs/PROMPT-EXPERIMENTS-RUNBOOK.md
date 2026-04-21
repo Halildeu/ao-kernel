@@ -9,6 +9,8 @@
 
 **Status (v3.12).** This is a **contract-only** shipment. ao-kernel does **NOT** orchestrate A/B dispatch at runtime — operators start each variant run manually and pair them post-run via `compare_variants`. Runtime A/B automation is deferred until at least one operator-validated real-adapter smoke cycle exists (Codex v3.9+ plan-time precondition; tracked toward v3.13+).
 
+This runbook is an operator/evaluation surface, not a shipped experiment scheduler. A successful comparison here does not widen the default supported demo lane on its own.
+
 ---
 
 ## 1. Why a contract-only experiment surface

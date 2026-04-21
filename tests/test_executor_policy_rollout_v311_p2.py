@@ -191,6 +191,10 @@ def _read_events(workspace_root: Path, run_id: str) -> list[dict[str, Any]]:
     return events
 
 
+def _event_kinds(events: list[dict[str, Any]]) -> list[str]:
+    return [e.get("kind") for e in events]
+
+
 class TestTierDormant:
     """`enabled=false` → policy layer bypassed entirely."""
 
@@ -233,25 +237,45 @@ class TestTierReportOnly:
         policy = _policy_with_secret_missing_violation(enabled=True, mode_default="report_only")
         ex, step = _build_executor(tmp_path, policy)
         rid = str(uuid.uuid4())
+        placeholder_step_id = "invoke_agent-a2-report0001"
         _create_run_record(tmp_path, rid)
 
-        result = ex.run_step(rid, step, parent_env={"OTHER_KEY": "triggers_secret_missing"})
+        result = ex.run_step(
+            rid,
+            step,
+            parent_env={"OTHER_KEY": "triggers_secret_missing"},
+            attempt=2,
+            step_id=placeholder_step_id,
+        )
         assert result.step_state == "completed"
         assert result.invocation_result is not None
         assert result.invocation_result.status == "ok"
 
         events = _read_events(tmp_path, rid)
+        kinds = _event_kinds(events)
+        assert kinds[:5] == [
+            "step_started",
+            "policy_checked",
+            "adapter_invoked",
+            "adapter_returned",
+            "step_completed",
+        ]
         checked = next((e for e in events if e.get("kind") == "policy_checked"), None)
         assert checked is not None, "policy_checked must be emitted"
         payload = checked.get("payload", {})
         assert payload.get("mode") == "report_only"
+        assert payload.get("violations_count") == 1
         assert payload.get("would_block") is True
-        assert "secret_missing" in payload.get("violation_kinds", [])
+        assert payload.get("violation_kinds") == ["secret_missing"]
         assert payload.get("promoted_to_block") is False
+        assert {e.get("step_id") for e in events[:5]} == {placeholder_step_id}
 
         # policy_denied NOT emitted in report_only + no escalation.
         denied = [e for e in events if e.get("kind") == "policy_denied"]
         assert denied == [], f"policy_denied must not fire in report_only without escalation; got {denied!r}"
+        record, _ = load_run(tmp_path, rid)
+        assert record["steps"][-1]["step_id"] == placeholder_step_id
+        assert record["steps"][-1]["attempt"] == 2
 
     def test_report_only_command_violation_emits_checked_and_continues(
         self, tmp_path: Path
@@ -303,21 +327,45 @@ class TestTierReportOnly:
         )
         ex, step = _build_executor(tmp_path, policy)
         rid = str(uuid.uuid4())
+        placeholder_step_id = "invoke_agent-a2-escalate0001"
         _create_run_record(tmp_path, rid)
         _transition_run_to_running(tmp_path, rid)
 
         with pytest.raises(PolicyViolationError):
-            ex.run_step(rid, step, parent_env={"OTHER_KEY": "escalates"})
+            ex.run_step(
+                rid,
+                step,
+                parent_env={"OTHER_KEY": "escalates"},
+                attempt=2,
+                step_id=placeholder_step_id,
+            )
 
         events = _read_events(tmp_path, rid)
+        kinds = _event_kinds(events)
+        assert kinds[:4] == [
+            "step_started",
+            "policy_checked",
+            "policy_denied",
+            "step_failed",
+        ]
         checked = next((e for e in events if e.get("kind") == "policy_checked"), None)
         assert checked is not None
         assert checked.get("payload", {}).get("promoted_to_block") is True
         # Effective mode in the emitted payload is now block.
-        assert checked.get("payload", {}).get("mode") == "block"
+        payload = checked.get("payload", {})
+        assert payload.get("mode") == "block"
+        assert payload.get("violations_count") == 1
+        assert payload.get("violation_kinds") == ["secret_missing"]
+        assert payload.get("would_block") is True
 
         denied = next((e for e in events if e.get("kind") == "policy_denied"), None)
         assert denied is not None, "escalation must emit policy_denied"
+        assert "adapter_invoked" not in kinds
+        assert {e.get("step_id") for e in events[:4]} == {placeholder_step_id}
+
+        record, _ = load_run(tmp_path, rid)
+        assert record["steps"][-1]["step_id"] == placeholder_step_id
+        assert record["steps"][-1]["state"] == "failed"
 
 
 class TestTierBlock:
@@ -327,15 +375,40 @@ class TestTierBlock:
         policy = _policy_with_secret_missing_violation(enabled=True, mode_default="block")
         ex, step = _build_executor(tmp_path, policy)
         rid = str(uuid.uuid4())
+        placeholder_step_id = "invoke_agent-a2-secretblock0001"
         _create_run_record(tmp_path, rid)
         _transition_run_to_running(tmp_path, rid)
 
         with pytest.raises(PolicyViolationError):
-            ex.run_step(rid, step, parent_env={"OTHER_KEY": "triggers_block"})
+            ex.run_step(
+                rid,
+                step,
+                parent_env={"OTHER_KEY": "triggers_block"},
+                attempt=2,
+                step_id=placeholder_step_id,
+            )
 
         events = _read_events(tmp_path, rid)
-        assert any(e.get("kind") == "policy_checked" for e in events)
-        assert any(e.get("kind") == "policy_denied" for e in events)
+        kinds = _event_kinds(events)
+        assert kinds[:4] == [
+            "step_started",
+            "policy_checked",
+            "policy_denied",
+            "step_failed",
+        ]
+        checked = events[1]
+        payload = checked.get("payload", {})
+        assert payload.get("mode") == "block"
+        assert payload.get("violations_count") == 1
+        assert payload.get("violation_kinds") == ["secret_missing"]
+        assert payload.get("would_block") is True
+        assert payload.get("promoted_to_block") is False
+        assert "adapter_invoked" not in kinds
+        assert {e.get("step_id") for e in events[:4]} == {placeholder_step_id}
+
+        record, _ = load_run(tmp_path, rid)
+        assert record["steps"][-1]["step_id"] == placeholder_step_id
+        assert record["steps"][-1]["state"] == "failed"
 
     def test_block_command_violation_fails_before_adapter_invocation(
         self, tmp_path: Path
@@ -376,11 +449,34 @@ class TestUnknownModeFallback:
         policy = _policy_with_secret_missing_violation(enabled=True, mode_default="audit_only_v7")
         ex, step = _build_executor(tmp_path, policy)
         rid = str(uuid.uuid4())
+        placeholder_step_id = "invoke_agent-a2-fallback0001"
         _create_run_record(tmp_path, rid)
         _transition_run_to_running(tmp_path, rid)
 
         with pytest.raises(PolicyViolationError):
-            ex.run_step(rid, step, parent_env={"OTHER_KEY": "triggers_fallback"})
+            ex.run_step(
+                rid,
+                step,
+                parent_env={"OTHER_KEY": "triggers_fallback"},
+                attempt=2,
+                step_id=placeholder_step_id,
+            )
+
+        events = _read_events(tmp_path, rid)
+        kinds = _event_kinds(events)
+        assert kinds[:4] == [
+            "step_started",
+            "policy_checked",
+            "policy_denied",
+            "step_failed",
+        ]
+        payload = events[1].get("payload", {})
+        assert payload.get("mode") == "block"
+        assert payload.get("violations_count") == 1
+        assert payload.get("violation_kinds") == ["secret_missing"]
+        assert payload.get("promoted_to_block") is False
+        assert "adapter_invoked" not in kinds
+        assert {e.get("step_id") for e in events[:4]} == {placeholder_step_id}
 
 
 class TestDryRunParityReportOnly:
@@ -404,10 +500,38 @@ class TestDryRunParityReportOnly:
         ]
         checked_payload = result.predicted_events[1][1]
         assert checked_payload["mode"] == "report_only"
+        assert checked_payload["violations_count"] == 1
         assert checked_payload["would_block"] is True
-        assert "secret_missing" in checked_payload["violation_kinds"]
+        assert checked_payload["violation_kinds"] == ["secret_missing"]
         assert checked_payload["promoted_to_block"] is False
         assert result.policy_violations == ()
+
+
+class TestDryRunParityBlock:
+    """Block-mode dry-run should predict denial order and surface violation details."""
+
+    def test_dry_run_block_command_violation_predicts_denial(self, tmp_path: Path) -> None:
+        policy = _policy_with_command_violation(enabled=True, mode_default="block")
+        ex, step = _build_executor(tmp_path, policy)
+        rid = str(uuid.uuid4())
+        _create_run_record(tmp_path, rid)
+
+        result = ex.dry_run_step(rid, step, parent_env={})
+        kinds = [kind for kind, _payload in result.predicted_events]
+        assert kinds == [
+            "step_started",
+            "policy_checked",
+            "policy_denied",
+            "step_failed",
+        ]
+        checked_payload = result.predicted_events[1][1]
+        assert checked_payload["mode"] == "block"
+        assert checked_payload["violations_count"] == 1
+        assert checked_payload["violation_kinds"] == ["command_path_outside_policy"]
+        assert checked_payload["would_block"] is True
+        assert checked_payload["promoted_to_block"] is False
+        assert len(result.policy_violations) == 1
+        assert "command_path_outside_policy" in result.policy_violations[0]
 
 
 class TestPolicyCheckedAdditivePayload:
