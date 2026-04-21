@@ -36,7 +36,7 @@ def scan_directory(
     tokens = [t for t in (forbidden_tokens or DEFAULT_FORBIDDEN_TOKENS) if isinstance(t, str) and t.strip()]
 
     # Keep rules deterministic and simple.
-    email_re = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", re.IGNORECASE)
+    email_re = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
     private_key_markers = [
         "-----BEGIN PRIVATE KEY-----",
         "-----BEGIN OPENSSH PRIVATE KEY-----",
@@ -87,4 +87,3 @@ def scan_directory(
 def findings_fingerprint(findings: list[SanitizeFinding]) -> str:
     raw = "\n".join([f"{f.path}:{f.rule}" for f in findings]).encode("utf-8")
     return sha256(raw).hexdigest()[:16]
-
