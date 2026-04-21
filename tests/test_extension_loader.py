@@ -56,6 +56,16 @@ class TestBundledDefaults:
         # SHA256 hex == 64 chars.
         assert len(ext.content_hash) == 64
 
+    def test_truth_summary_exposes_runtime_backed_and_quarantined_inventory(self):
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        summary = reg.truth_summary()
+        assert summary.total_extensions >= 1
+        assert summary.runtime_backed >= 1
+        assert "PRJ-HELLO" in summary.runtime_backed_ids
+        assert summary.quarantined >= 1
+        assert summary.missing_runtime_refs >= 1
+
     def test_list_enabled_filters_disabled_and_blocked(self):
         reg = ExtensionRegistry()
         reg.load_from_defaults()
@@ -136,6 +146,16 @@ class TestBundledDefaults:
         assert zanzibar.semver == "1.0.0"
         assert zanzibar.origin == "CORE"
         assert zanzibar.owner == "CORE"
+
+    def test_airunner_manifest_is_quarantined_candidate(self):
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        ext = reg.get("PRJ-AIRUNNER")
+        assert ext is not None
+        assert ext.truth_tier == "quarantined"
+        assert ext.runtime_handler_registered is False
+        assert ext.remap_candidate_refs
+        assert ext.missing_runtime_refs
 
 
 class TestWorkspaceOverride:

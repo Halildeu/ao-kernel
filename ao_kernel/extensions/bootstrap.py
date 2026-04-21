@@ -55,6 +55,11 @@ def register_default_handlers(
     return registered
 
 
+def default_handler_extension_ids() -> frozenset[str]:
+    """Return the bundled extension IDs with explicit runtime handlers."""
+    return frozenset(extension_id for extension_id, _module_path in _DEFAULT_HANDLERS)
+
+
 def _manifest_activatable(
     extensions: "ExtensionRegistry | None", extension_id: str,
 ) -> bool:
@@ -80,4 +85,4 @@ _DEFAULT_HANDLERS: list[tuple[str, str]] = [
 ]
 
 
-__all__ = ["register_default_handlers"]
+__all__ = ["register_default_handlers", "default_handler_extension_ids"]

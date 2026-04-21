@@ -1,12 +1,13 @@
 """ao-kernel doctor — workspace health check.
 
-Runs 8 checks and reports OK/WARN/FAIL for each.
+Runs the core workspace checks plus a bundled-extension truth audit and
+reports OK/WARN/FAIL for each.
 """
 
 from __future__ import annotations
 
 import sys
-from typing import Callable
+from typing import Any, Callable, cast
 
 import ao_kernel
 from ao_kernel.config import workspace_root
@@ -81,20 +82,28 @@ def _check_internal_import() -> bool:
 
 
 def _check_extension_manifests() -> bool:
-    """Discover and validate ALL bundled extension manifests."""
-    from importlib.resources import files
+    """Discover bundled extension manifests.
 
-    extensions_pkg = files("ao_kernel.defaults.extensions")
-    found = 0
-    for item in extensions_pkg.iterdir():
-        if item.is_dir() and item.name.startswith("PRJ-"):
-            manifest = item.joinpath("extension.manifest.v1.json")
-            try:
-                manifest.read_text(encoding="utf-8")
-                found += 1
-            except (FileNotFoundError, TypeError):
-                return False
-    return found > 0
+    Truth and hygiene debt is surfaced by the separate extension-truth
+    audit; discovery itself stays a narrow presence/loadability check so
+    operators can distinguish inventory drift from a broken install.
+    """
+    from ao_kernel.extensions.loader import ExtensionRegistry
+
+    reg = ExtensionRegistry()
+    report = reg.load_from_defaults()
+    return report.loaded > 0
+
+
+def _bundled_extension_truth() -> tuple[bool, object]:
+    """Return ``(healthy, summary)`` for bundled extension truth inventory."""
+    from ao_kernel.extensions.loader import ExtensionRegistry
+
+    reg = ExtensionRegistry()
+    report = reg.load_from_defaults()
+    summary = reg.truth_summary()
+    healthy = report.loaded > 0 and summary.quarantined == 0
+    return healthy, summary
 
 
 def run(workspace_root_override: str | None = None) -> int:
@@ -109,6 +118,14 @@ def run(workspace_root_override: str | None = None) -> int:
         ("Internal modules import", _check_internal_import),
         ("Extension manifest discovery", _check_extension_manifests),
     ]
+    truth_ok, extension_truth = _bundled_extension_truth()
+    extension_truth = cast(Any, extension_truth)
+    checks.append(
+        (
+            "Bundled extension truth",
+            (lambda: True if truth_ok else "WARN"),
+        )
+    )
 
     print(f"ao-kernel doctor v{ao_kernel.__version__}")
     print("-" * 50)
@@ -125,6 +142,27 @@ def run(workspace_root_override: str | None = None) -> int:
     fail_count = sum(1 for _, s in results if s == "FAIL")
     warn_count = sum(1 for _, s in results if s == "WARN")
     ok_count = sum(1 for _, s in results if s == "OK")
+
+    if getattr(extension_truth, "total_extensions", None) is not None:
+        print("  Extension Truth Inventory")
+        print(
+            "    "
+            f"runtime_backed={extension_truth.runtime_backed} "
+            f"contract_only={extension_truth.contract_only} "
+            f"quarantined={extension_truth.quarantined}"
+        )
+        print(
+            "    "
+            f"remap_candidate_refs={extension_truth.remap_candidate_refs} "
+            f"missing_runtime_refs={extension_truth.missing_runtime_refs}"
+        )
+        runtime_ids = ", ".join(extension_truth.runtime_backed_ids) or "-"
+        print(f"    runtime_backed_ids={runtime_ids}")
+        if extension_truth.quarantined_ids:
+            preview = ", ".join(extension_truth.quarantined_ids[:5])
+            suffix = " ..." if len(extension_truth.quarantined_ids) > 5 else ""
+            print(f"    quarantined_ids={preview}{suffix}")
+        print("-" * 50)
 
     print(f"  {ok_count} OK, {warn_count} WARN, {fail_count} FAIL")
 

@@ -86,6 +86,8 @@ class TestBootstrapHelloExtension:
         ext = client.extensions.get("PRJ-HELLO")
         assert ext is not None
         assert ext.enabled is True
+        assert ext.truth_tier == "runtime_backed"
+        assert ext.runtime_handler_registered is True
         assert "hello_world" in ext.entrypoints.get("kernel_api_actions", [])
 
 

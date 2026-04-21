@@ -16,7 +16,7 @@ pip install ao-kernel[llm,mcp,otel]  # Everything
 
 **For production-grade live LLM calls**, install the `[llm]` extra. Without it the runtime still dispatches requests, but two guarantees weaken: **retry / backoff** (`tenacity`) degrades to a single-attempt call so transient 429 / 5xx responses fail the request instead of being retried, and **exact token counting** (`tiktoken`) falls back to a heuristic estimator (~4 chars/token) so budget accounting is approximate. The core install is fully sufficient for policy evaluation, evidence replay, workflow inspection, and MCP server hosting.
 
-`ao-kernel doctor` surfaces the missing extra via a `tenacity/tiktoken (optional)` check that shows `WARN` when the extra is missing. That WARN is **expected** on the core install and clears once you run `pip install 'ao-kernel[llm]'`.
+`ao-kernel doctor` surfaces the missing extra via a `tenacity/tiktoken (optional)` check that shows `WARN` when the extra is missing. That WARN is **expected** on the core install and clears once you run `pip install 'ao-kernel[llm]'`. The same command now also prints a bundled extension truth inventory so operators can see which manifests are runtime-backed versus contract-only or quarantined candidates.
 
 Requires Python 3.11+. POSIX-only at the moment (Windows support scheduled for a future major release; see `LockPlatformNotSupported` in `docs/COORDINATION.md`).
 
@@ -64,7 +64,7 @@ stream_request = build_req(
 | Command | Description |
 |---|---|
 | `ao-kernel init` | Create `.ao/` workspace |
-| `ao-kernel doctor` | Workspace health check (8 checks) |
+| `ao-kernel doctor` | Workspace health check + extension truth audit |
 | `ao-kernel migrate [--dry-run] [--backup]` | Version migration |
 | `ao-kernel version` | Print version |
 | `ao-kernel mcp serve` | Start MCP server (stdio) |
@@ -91,7 +91,7 @@ Treat the repo in three layers:
 
 - **Runtime-backed / supported**: core CLI and SDK surfaces, evidence tooling, worktree policy enforcement, bundled `review_ai_flow`, and `examples/demo_review.py`.
 - **Operator / evaluation only**: benchmark docs, real-adapter runbooks, prompt experiment runbooks, and other opt-in validation paths that are intentionally outside the default deterministic CI/demo lane.
-- **Contract / reference inventory**: bundled JSON defaults, adapter manifests, registry files, and example code such as `examples/hello-llm/`. Their presence in the tree is useful reference material, not blanket proof that every surface is production-ready end to end.
+- **Contract / reference inventory**: bundled JSON defaults, adapter manifests, registry files, and example code such as `examples/hello-llm/`. Their presence in the tree is useful reference material, not blanket proof that every surface is production-ready end to end. The bundled extension inventory is especially narrow at runtime today: `PRJ-HELLO` is the explicit bootstrap-backed smoke path; the rest of the bundled manifests should be treated as contract inventory unless a support doc says otherwise.
 
 ## Python API
 
