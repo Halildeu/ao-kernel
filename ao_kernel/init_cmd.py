@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import ao_kernel
+from ao_kernel.config import resolve_workspace_dir
 
 
 def _now_iso() -> str:
@@ -25,12 +26,31 @@ def _write_json_atomic(path: Path, data: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
+def _resolve_init_target(workspace_root_override: str | None) -> Path:
+    """Normalize init writes to the same workspace shape the read side accepts.
+
+    Supported override shapes:
+    - project root: ``<root>/.ao`` is created/used
+    - workspace dir: existing ``workspace.json`` directory is used as-is
+    - explicit ``.ao`` path: used as-is even before first init
+    """
+    if not workspace_root_override:
+        return Path.cwd() / ".ao"
+
+    override = Path(workspace_root_override).resolve()
+    resolved = resolve_workspace_dir(override)
+    if resolved != override:
+        return resolved
+    if override.name == ".ao":
+        return override
+    if (override / "workspace.json").is_file():
+        return override
+    return override / ".ao"
+
+
 def run(workspace_root_override: str | None = None) -> int:
     """Create .ao/ workspace. Idempotent — safe to run multiple times."""
-    if workspace_root_override:
-        target = Path(workspace_root_override).resolve()
-    else:
-        target = Path.cwd() / ".ao"
+    target = _resolve_init_target(workspace_root_override)
 
     if target.is_dir():
         ws_json = target / "workspace.json"

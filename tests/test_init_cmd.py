@@ -33,9 +33,27 @@ class TestInitCmd:
         rc = run()
         assert rc == 0
 
-    def test_custom_root(self, tmp_path: Path):
-        custom = tmp_path / "custom_ws"
-        custom.mkdir()
-        rc = run(workspace_root_override=str(custom))
+    def test_project_root_override_creates_nested_ao_workspace(self, tmp_path: Path):
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+        rc = run(workspace_root_override=str(project_root))
         assert rc == 0
-        assert (custom / "workspace.json").is_file()
+        assert (project_root / ".ao" / "workspace.json").is_file()
+        assert not (project_root / "workspace.json").exists()
+
+    def test_explicit_ao_override_still_writes_directly(self, tmp_path: Path):
+        ao_dir = tmp_path / "project" / ".ao"
+        rc = run(workspace_root_override=str(ao_dir))
+        assert rc == 0
+        assert (ao_dir / "workspace.json").is_file()
+
+    def test_existing_workspace_dir_override_is_idempotent(self, tmp_path: Path, capsys):
+        ao_dir = tmp_path / "project" / ".ao"
+        rc1 = run(workspace_root_override=str(ao_dir))
+        assert rc1 == 0
+        capsys.readouterr()
+
+        rc2 = run(workspace_root_override=str(tmp_path / "project"))
+        assert rc2 == 0
+        out = capsys.readouterr().out
+        assert "already exists" in out.lower()

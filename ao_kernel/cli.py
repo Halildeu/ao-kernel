@@ -697,7 +697,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--workspace-root",
         default=None,
-        help="Override workspace root directory",
+        help="Override project root or explicit .ao workspace directory",
     )
 
     sub = parser.add_subparsers(dest="command")
