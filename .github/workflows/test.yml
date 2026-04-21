@@ -2,14 +2,80 @@ name: Test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - "codex/**"
   pull_request:
     branches: [main]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual rerun reason (e.g. stacked retarget)"
+        required: false
+        type: string
 
 jobs:
+  event-gate:
+    name: event-gate
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+      trigger_reason: ${{ steps.decide.outputs.trigger_reason }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_PATH: ${{ github.event_path }}
+          DISPATCH_REASON: ${{ github.event.inputs.reason || '' }}
+        run: |
+          should_run=false
+          trigger_reason=ignored
+
+          case "$EVENT_NAME" in
+            push)
+              should_run=true
+              trigger_reason="push"
+              ;;
+            workflow_dispatch)
+              should_run=true
+              trigger_reason="workflow_dispatch:${DISPATCH_REASON:-manual}"
+              ;;
+            pull_request)
+              case "$EVENT_ACTION" in
+                opened|reopened|synchronize|ready_for_review)
+                  should_run=true
+                  trigger_reason="pull_request:$EVENT_ACTION"
+                  ;;
+                edited)
+                  # Retarget (`base` changed) must rerun the full PR gate.
+                  if jq -e '.changes.base.ref.from' "$EVENT_PATH" >/dev/null 2>&1; then
+                    should_run=true
+                    trigger_reason="pull_request:retargeted"
+                  fi
+                  ;;
+              esac
+              ;;
+          esac
+
+          echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
+          echo "trigger_reason=$trigger_reason" >> "$GITHUB_OUTPUT"
+      - name: Explain trigger decision
+        run: |
+          echo "should_run=${{ steps.decide.outputs.should_run }}"
+          echo "trigger_reason=${{ steps.decide.outputs.trigger_reason }}"
+
   lint:
     name: lint
     runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -26,6 +92,8 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -45,6 +113,8 @@ jobs:
   coverage:
     name: coverage
     runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -66,7 +136,8 @@ jobs:
   packaging-smoke:
     name: packaging-smoke
     runs-on: ubuntu-latest
-    needs: [test, coverage, lint, typecheck]
+    needs: [event-gate, test, coverage, lint, typecheck]
+    if: needs.event-gate.outputs.should_run == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -80,6 +151,8 @@ jobs:
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
     # CNS-006 Q4: after the 131-error cleanup (PR #56), typecheck is a real
     # gate. _internal/* is still under per-module ignore (D13).
     #
@@ -100,7 +173,8 @@ jobs:
   benchmark-fast:
     name: benchmark-fast
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [event-gate, test]
+    if: needs.event-gate.outputs.should_run == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -131,8 +205,8 @@ jobs:
   scorecard:
     name: scorecard
     runs-on: ubuntu-latest
-    needs: [benchmark-fast]
-    if: github.event_name == 'pull_request'
+    needs: [event-gate, benchmark-fast]
+    if: needs.event-gate.outputs.should_run == 'true' && github.event_name == 'pull_request'
     continue-on-error: true  # Advisory surface — never red-check PRs.
     permissions:
       pull-requests: write
@@ -179,6 +253,8 @@ jobs:
   extras-install:
     name: extras-install
     runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
     continue-on-error: true  # Optional extras smoke — non-blocking
     steps:
       - uses: actions/checkout@v6

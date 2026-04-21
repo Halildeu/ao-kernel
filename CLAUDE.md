@@ -470,3 +470,55 @@ chmod +x .git/hooks/pre-commit
 ```
 
 **Not:** git worktree paylaşılan `.git/` kullanır, hook tüm worktree'lerde aktif olur. Bir kez kurulur, tüm session'lar korunur.
+
+## 19. Stacked PR Merge Protocol (2026-04-21)
+
+Bu repo short-lived stacked PR zincirini destekler, ama merge güvenliği için
+tek bir protokol izlenir. Amaç: alt PR merge olurken üst PR diff'lerinin
+kirlenmemesi ve retarget sonrası CI boşluğu oluşmaması.
+
+### Branch zinciri
+
+- Her katman fresh `main` üstünden açılan bir short-lived branch'ten başlar.
+- Stack gerekiyorsa üst branch, bir alt branch'i base alır:
+  - `codex/wp2-*` → base `main`
+  - `codex/wp3-*` → base `codex/wp2-*`
+  - `codex/wp4-*` → base `codex/wp3-*`
+- Her katman kendi kapsamı kadar diff taşır; alt PR dosyaları üst PR'da
+  tekrar görünüyorsa zincir bozulmuştur.
+
+### CI kuralı
+
+- `.github/workflows/test.yml` artık `codex/*` branch push'larında da koşar.
+  Bu sayede stacked branch daha PR açılmadan gerçek check üretir.
+- `pull_request` tetikleyicisi `ready_for_review` ve `edited` olaylarını da
+  dinler. `edited` yalnızca retarget (`base` değişti) ise gate'i yeniden koşturur.
+- Otomatik run görünmüyorsa manuel fallback:
+
+```bash
+bash .claude/scripts/trigger-test-workflow.sh <branch>
+```
+
+### Merge metodu
+
+- **Varsayılan stacked merge metodu = merge commit.**
+- Alt PR squash edilmez; squash üst branch diff'lerini kirletir, çünkü üst
+  branch'in taşıdığı alt commit'ler `main` geçmişinde görünmez hale gelir.
+- Squash yalnız tekil/non-stacked PR için veya üst branch'ler önceden restack
+  edildiğinde kabul edilebilir.
+
+### Sıralı uygulama
+
+1. En alt PR review + CI green → merge commit ile merge et.
+2. Bir üst PR'ı `main`e retarget et: `gh pr edit <id> --base main`
+3. `gh pr diff <id> --name-only` ile diff'in yalnız kendi katmanını taşıdığını doğrula.
+4. Check'ler otomatik görünmezse `trigger-test-workflow.sh` ile manuel CI tetikle.
+5. Review/CI temizse bir sonraki PR'a geç.
+
+### No-go koşulları
+
+- Retarget sonrası PR diff'i alt katman dosyalarını tekrar gösteriyorsa merge ETME.
+- Head branch push edilmemişse manuel dispatch ETME.
+- Kullanıcıya ait dirty dosya stage/commit içine karışmışsa merge hazırlığı yapma.
+- Branch policy review onayı istiyorsa self-comment yeterli sanma; gerekli onay
+  yolu açıkça doğrulanmadan normal merge komutu deneme.
