@@ -469,7 +469,7 @@ class TestSanitizeScanDirectory:
         assert findings == []
 
     def test_email_detected_triggers_rule(self, tmp_path: Path) -> None:
-        """Codex iter-1 absorb: exercise the ``EMAIL_DETECTED`` branch
+        r"""Codex iter-1 absorb: exercise the ``EMAIL_DETECTED`` branch
         of ``scan_directory``.
 
         The email regex at ``sanitize.py:39`` is
