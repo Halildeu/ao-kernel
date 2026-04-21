@@ -94,7 +94,8 @@ class TestPatchBinaryUnsupportedError:
 
 class TestValidatePatchId:
     def test_accepts_typical_token_urlsafe(self) -> None:
-        validate_patch_id("abc123_DEF-456")
+        result = validate_patch_id("abc123_DEF-456")
+        assert result is None
 
     def test_rejects_non_string(self) -> None:
         with pytest.raises(ValueError, match="must be a string"):
