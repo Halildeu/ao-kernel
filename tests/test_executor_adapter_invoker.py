@@ -201,6 +201,9 @@ class TestCliHappyPath:
             },
         )
         worktree = _worktree(tmp_path, rid)
+        src_dir = worktree.path / "src"
+        src_dir.mkdir(parents=True, exist_ok=True)
+        (src_dir / "foo.py").write_text("x = 1\n", encoding="utf-8")
         budget = _budget()
 
         result, budget_after = invoke_cli(
@@ -214,7 +217,9 @@ class TestCliHappyPath:
         )
         assert result.status == "ok"
         assert result.diff is not None
-        assert "+hello world" in result.diff
+        assert "--- a/src/foo.py" in result.diff
+        assert "+++ b/src/foo.py" in result.diff
+        assert "+x = 2" in result.diff
 
 
 class TestBundledCodexStubEndToEnd:
