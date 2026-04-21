@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from ao_kernel.context.canonical_store import (
     CanonicalDecision,
     load_store,
@@ -24,7 +26,8 @@ class TestStoreLifecycle:
     def test_save_and_load_roundtrip(self, tmp_path: Path):
         store = load_store(tmp_path)
         store["decisions"]["test.key"] = {"value": "hello"}
-        save_store(tmp_path, store)
+        with pytest.deprecated_call(match="save_store\\(\\) is deprecated"):
+            save_store(tmp_path, store)
 
         loaded = load_store(tmp_path)
         assert "test.key" in loaded["decisions"]

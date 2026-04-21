@@ -11,33 +11,32 @@ from ao_kernel._internal.prj_kernel_api.llm_router import (
     resolve,
 )
 
+NOW = datetime(2026, 4, 21, 12, 0, 0, tzinfo=timezone.utc)
+NOW_ISO = NOW.isoformat().replace("+00:00", "Z")
+
 
 class TestHelpers:
     def test_is_stale_none_ts(self):
-        now = datetime.now(timezone.utc)
-        assert _is_stale(None, 72, now) is True
+        assert _is_stale(None, 72, NOW) is True
 
     def test_is_stale_within_ttl(self):
-        now = datetime.now(timezone.utc)
-        ts = now.isoformat().replace("+00:00", "Z")
-        assert _is_stale(ts, 72, now) is False
+        assert _is_stale(NOW_ISO, 72, NOW) is False
 
     def test_is_stale_expired(self):
-        now = datetime.now(timezone.utc)
         old_ts = "2020-01-01T00:00:00Z"
-        assert _is_stale(old_ts, 72, now) is True
+        assert _is_stale(old_ts, 72, NOW) is True
 
     def test_eligible_verified_ok(self):
-        model = {"stage": "verified", "probe_status": "ok", "probe_last_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
-        assert _eligible(model, 72, datetime.now(timezone.utc)) is True
+        model = {"stage": "verified", "probe_status": "ok", "probe_last_at": NOW_ISO}
+        assert _eligible(model, 72, NOW) is True
 
     def test_eligible_not_verified(self):
-        model = {"stage": "pending", "probe_status": "ok", "probe_last_at": datetime.now(timezone.utc).isoformat()}
-        assert _eligible(model, 72, datetime.now(timezone.utc)) is False
+        model = {"stage": "pending", "probe_status": "ok", "probe_last_at": NOW_ISO}
+        assert _eligible(model, 72, NOW) is False
 
     def test_eligible_probe_failed(self):
-        model = {"stage": "verified", "probe_status": "error", "probe_last_at": datetime.now(timezone.utc).isoformat()}
-        assert _eligible(model, 72, datetime.now(timezone.utc)) is False
+        model = {"stage": "verified", "probe_status": "error", "probe_last_at": NOW_ISO}
+        assert _eligible(model, 72, NOW) is False
 
 
 class TestMergeState:
