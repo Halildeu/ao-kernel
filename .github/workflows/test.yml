@@ -32,7 +32,6 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_ACTION: ${{ github.event.action }}
-          EVENT_PATH: ${{ github.event_path }}
           DISPATCH_REASON: ${{ github.event.inputs.reason || '' }}
         run: |
           should_run=false
@@ -55,7 +54,7 @@ jobs:
                   ;;
                 edited)
                   # Retarget (`base` changed) must rerun the full PR gate.
-                  if jq -e '.changes.base.ref.from' "$EVENT_PATH" >/dev/null 2>&1; then
+                  if jq -e '.changes.base.ref.from' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
                     should_run=true
                     trigger_reason="pull_request:retargeted"
                   fi
