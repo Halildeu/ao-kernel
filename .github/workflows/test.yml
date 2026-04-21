@@ -151,10 +151,10 @@ jobs:
         with:
           name: scorecard-${{ github.sha }}
           path: head/
-      # SHA-pinned dawidd6/action-download-artifact@v6
-      # (resolved against tag v6 at PR-open time per plan §3.7).
+      # SHA-pinned dawidd6/action-download-artifact@v20
+      # (resolved against tag v20 for Node 24 runner compatibility).
       - name: Download main baseline scorecard
-        uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11
+        uses: dawidd6/action-download-artifact@8305c0f1062bb0d184d09ef4493ecb9288447732
         with:
           workflow: test.yml
           branch: main
