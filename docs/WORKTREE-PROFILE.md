@@ -2,7 +2,7 @@
 
 `policy_worktree_profile.v1.json` is the operator-facing contract for ao-kernel's external-agent sandbox. It defines the FAZ-A **expanded minimum** policy surface: worktree isolation, env allowlist, secret deny-by-default, command allowlist, cwd confinement, and evidence redaction. In `v4.0.0b1`, the live pre-invocation scope includes secret resolution, sandbox env shaping, HTTP header exposure checks, and adapter CLI command validation. OS-level network/egress sandboxing is deferred to FAZ-B.
 
-This document is the plain-English companion to the policy JSON. Read this to decide how to engage the policy, configure it for a demo, or promote it to production mode.
+This document is the plain-English companion to the policy JSON. Read this to decide how to engage the policy, configure it for a demo, or promote it to production mode. It describes runtime governance only; it does **not** make every bundled adapter, extension, or roadmap demo a supported production surface by itself.
 
 ---
 
@@ -54,13 +54,13 @@ FAZ-B closes the network/egress and OS-level gaps with platform-specific sandbox
 
 ## 3. Demo Workspace Override
 
-The bundled default policy is **dormant** (`enabled: false`). To run the DEMO-SCRIPT.md end-to-end flow, place the following override at `.ao/policies/policy_worktree_profile.v1.json` inside the workspace:
+The bundled default policy is **dormant** (`enabled: false`). The supported deterministic Public Beta demo (`examples/demo_review.py`) does **not** require enabling this policy. To exercise an operator-managed adapter path or the roadmap/spec multi-adapter stack, place the following override at `.ao/policies/policy_worktree_profile.v1.json` inside the workspace:
 
 ```json
 {
   "version": "v1",
   "enabled": true,
-  "_comment": "Demo workspace override for DEMO-SCRIPT.md E2E. Activates full sandbox in block mode with minimal secret allowlist.",
+  "_comment": "Operator demo override for real-adapter / roadmap-spec flows. Activates full sandbox in block mode with minimal secret allowlist.",
 
   "rollout": {
     "mode_default": "block"
@@ -74,7 +74,7 @@ The bundled default policy is **dormant** (`enabled: false`). To run the DEMO-SC
 
 The override shallow-merges with the bundled default: only `enabled`, `rollout.mode_default`, and `secrets.allowlist_secret_ids` are replaced. Everything else (worktree strategy, env allowlist, command allowlist, cwd confinement, evidence redaction) comes from the bundled default.
 
-Demo prerequisites must be set in the environment before launching:
+Operator-managed adapter prerequisites must be set in the environment before launching:
 
 - `ANTHROPIC_API_KEY` — Anthropic API key for the Claude Code CLI adapter.
 - `GH_TOKEN` — GitHub personal access token for the `gh-cli-pr` adapter.
@@ -264,6 +264,7 @@ Current shipped executor exercises the secret, HTTP-header, and command-path sur
 - `ao_kernel/defaults/policies/policy_worktree_profile.v1.json` — the bundled policy this doc describes.
 - `docs/ADAPTERS.md` — how adapters declare `policy_refs` that include this policy.
 - `docs/EVIDENCE-TIMELINE.md` — the `policy_checked` and `policy_denied` events this policy emits.
-- `docs/DEMO-SCRIPT.md` — the E2E demo that exercises the demo override above.
+- `docs/PUBLIC-BETA.md` — the live support matrix for the shipped deterministic demo surface.
+- `docs/roadmap/DEMO-SCRIPT-SPEC.md` — the legacy multi-adapter spec that can exercise this override in operator-managed runs.
 - `ao_kernel/defaults/policies/policy_secrets.v1.json` — the allowed-secret-ids + fail-action pattern this policy mirrors for secret resolution.
 - `ao_kernel/defaults/schemas/agent-adapter-contract.schema.v1.json` — the adapter contract whose `invocation.cli.env_allowlist_ref` and `invocation.http.auth_secret_id_ref` point into this policy.

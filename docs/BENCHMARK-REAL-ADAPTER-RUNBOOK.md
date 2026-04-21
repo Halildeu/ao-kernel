@@ -8,6 +8,8 @@
 
 **Status.** This runbook documents configuration only. The real-adapter path is NOT exercised in ao-kernel CI — benchmark-fast stays on the deterministic `codex-stub` path, and `review_ai_flow` keeps that behaviour for baseline reproducibility. Running the real adapter is an operator-driven, out-of-repo action.
 
+Successful completion here validates an operator setup, not the whole product support matrix. [`PUBLIC-BETA.md`](PUBLIC-BETA.md) remains the authoritative source for what ao-kernel currently supports as a shipped or beta surface.
+
 ---
 
 ## 1. Prerequisites

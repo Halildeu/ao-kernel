@@ -2,6 +2,8 @@
 
 **Status:** v3.7 F2 — **first runnable full-mode smoke** landed (codex-stub subprocess path; external adapter wiring stays scope-out). Default PR CI is unchanged (`--benchmark-mode=fast` remains the deterministic mock-transport surface; see [`BENCHMARK-SUITE.md`](BENCHMARK-SUITE.md)).
 
+> **Operator-only validation lane.** Full mode is useful to prove adapter-path reconcile behavior, but it is not the default release gate and it is not, by itself, a blanket claim that real-adapter end-to-end automation is production-ready.
+
 ## What F2 ships
 
 F2 extends the F1 scaffold with an actual runnable `@pytest.mark.full_mode` smoke:

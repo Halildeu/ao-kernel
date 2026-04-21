@@ -98,6 +98,7 @@ The following were considered and explicitly excluded from the matrix, with reas
 ## 7. Cross-References
 
 - [docs/ADAPTERS.md](ADAPTERS.md) — adapter contract and walkthroughs for the `planned` / `shipped` entries above.
-- [docs/DEMO-SCRIPT.md](DEMO-SCRIPT.md) — the FAZ-A demo flow that exercises Claude Code CLI / codex-stub / gh-cli-pr adapters.
+- [docs/PUBLIC-BETA.md](PUBLIC-BETA.md) — the authoritative support matrix for live shipped and beta surfaces.
+- [docs/roadmap/DEMO-SCRIPT-SPEC.md](roadmap/DEMO-SCRIPT-SPEC.md) — the legacy multi-adapter acceptance spec.
 - [docs/WORKTREE-PROFILE.md](WORKTREE-PROFILE.md) — the sandbox each adapter runs inside.
 - `.claude/plans/TRANCHE-STRATEGY-V2.md` §1, §4 — the niche statement and build-vs-integrate classification that pin the positioning.

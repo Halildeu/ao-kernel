@@ -30,7 +30,7 @@ istemek gerekir.
 | `python -m ao_kernel version` | Shipped | Module entrypoint kontratı |
 | `python -m ao_kernel.cli version` | Shipped | CLI module kontratı |
 | Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen demo workflow |
-| `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed` |
+| `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed`; komut, `ao-kernel` kurulu bir Python environment'ı içinde çalıştırılmalıdır |
 | `ao-kernel doctor` | Shipped | Workspace health check (8/8 OK) |
 | CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |
 | Adapter CLI command enforcement | Shipped | `policy_checked` / `policy_denied` artık resolved command ihlallerini de içerir; canonical sıra `step_started -> policy_checked -> adapter_invoked` korunur |
@@ -43,6 +43,14 @@ istemek gerekir.
 |---|---|---|
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
 | Real-adapter benchmark tam modu | Beta | Operator-managed yüzey; deterministik stub lane kadar stabil değil |
+
+## Contract / Inventory Layer
+
+| Yüzey | Durum | Not |
+|---|---|---|
+| Extension loader + manifest validation | Shipped infra | Loader/validator kodu ve temel dispatch wiring'i gerçektir; bu, her bundled manifestin end-to-end production-ready olduğu anlamına gelmez |
+| Bundled `defaults/registry`, `defaults/extensions`, `defaults/operations`, `defaults/adapters` içeriği | Contract inventory | Ağaçta görünmesi destek vaadi değildir; ancak ilgili doküman/test/Public Beta matrisi o yüzeyi ayrıca işaretliyorsa destekli sayılır |
+| `examples/hello-llm/` | Example-only | SDK kullanım örneğidir; Public Beta destek vaadinin parçası değildir |
 
 ## Deferred
 
@@ -65,5 +73,8 @@ istemek gerekir.
 
 - Public Beta “hemen çalışır” iddiası yalnızca bundled
   `review_ai_flow` + bundled `codex-stub` yolu için geçerlidir.
+- Bu doküman, ao-kernel'in genel amaçlı bir production coding automation
+  platformu olduğunu iddia etmez; destek vaadi dar ve açıkça tablolanmış
+  yüzeyler içindir.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.
