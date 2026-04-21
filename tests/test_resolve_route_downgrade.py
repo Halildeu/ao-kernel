@@ -647,7 +647,10 @@ class TestClientLlmCallEmit:
             intent="DISCOVERY",
             run_id=run_id,
         )
-        assert result is not None  # completed past the emit block
+        assert result["status"] == "OK"
+        assert result["text"] == ""
+        assert result["tool_calls"] == []
+        assert result["usage"] is None
 
 
 class TestMultiStepDowngradeChain:

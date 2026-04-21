@@ -538,11 +538,13 @@ class TestFactoryBranches:
         """factory.py line 29-30: when `secrets_path` kwarg is absent,
         default Path('.secrets/vault.json') is used."""
         from ao_kernel._internal.secrets.factory import create_provider
+        from ao_kernel._internal.secrets.vault_stub_provider import (
+            VaultStubSecretsProvider,
+        )
 
         provider = create_provider("vault_stub")
-        # We only pin the factory branch; provider.get() on a missing
-        # default path returns None (vault_stub happy-path handled).
-        assert provider is not None
+        assert isinstance(provider, VaultStubSecretsProvider)
+        assert provider._secrets_path == Path(".secrets/vault.json")
 
     def test_vault_stub_with_string_path_coerced_to_Path(
         self,
@@ -551,10 +553,14 @@ class TestFactoryBranches:
         """factory.py line 31-32: str `secrets_path` kwarg is coerced
         via Path()."""
         from ao_kernel._internal.secrets.factory import create_provider
+        from ao_kernel._internal.secrets.vault_stub_provider import (
+            VaultStubSecretsProvider,
+        )
 
         string_path = str(tmp_path / "my_secrets.json")
         provider = create_provider("vault_stub", secrets_path=string_path)
-        assert provider is not None
+        assert isinstance(provider, VaultStubSecretsProvider)
+        assert provider._secrets_path == Path(string_path)
 
 
 class TestHashiCorpVaultProviderBranches:
