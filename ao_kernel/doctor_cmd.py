@@ -1,7 +1,9 @@
 """ao-kernel doctor — workspace health check.
 
 Runs the core workspace checks plus a bundled-extension truth audit and
-reports OK/WARN/FAIL for each.
+reports OK/WARN/FAIL for each. The same data is also exposed as a
+structured report for SDK/test consumers so doctor semantics are not
+locked behind stdout parsing.
 """
 
 from __future__ import annotations
@@ -106,8 +108,25 @@ def _bundled_extension_truth() -> tuple[bool, object]:
     return healthy, summary
 
 
-def run(workspace_root_override: str | None = None) -> int:
-    """Run all health checks and print report."""
+def _extension_truth_payload(summary: Any) -> dict[str, Any] | None:
+    """Return a JSON-friendly truth payload when summary data is available."""
+    if getattr(summary, "total_extensions", None) is None:
+        return None
+    return {
+        "total_extensions": summary.total_extensions,
+        "runtime_backed": summary.runtime_backed,
+        "contract_only": summary.contract_only,
+        "quarantined": summary.quarantined,
+        "remap_candidate_refs": summary.remap_candidate_refs,
+        "missing_runtime_refs": summary.missing_runtime_refs,
+        "runtime_backed_ids": list(summary.runtime_backed_ids),
+        "contract_only_ids": list(summary.contract_only_ids),
+        "quarantined_ids": list(summary.quarantined_ids),
+    }
+
+
+def build_report(workspace_root_override: str | None = None) -> dict[str, Any]:
+    """Build a structured doctor report without writing to stdout."""
     checks = [
         ("Workspace found", lambda: _check_workspace(workspace_root_override)),
         ("workspace.json valid", lambda: _check_workspace_json(workspace_root_override)),
@@ -119,7 +138,6 @@ def run(workspace_root_override: str | None = None) -> int:
         ("Extension manifest discovery", _check_extension_manifests),
     ]
     truth_ok, extension_truth = _bundled_extension_truth()
-    extension_truth = cast(Any, extension_truth)
     checks.append(
         (
             "Bundled extension truth",
@@ -127,43 +145,70 @@ def run(workspace_root_override: str | None = None) -> int:
         )
     )
 
-    print(f"ao-kernel doctor v{ao_kernel.__version__}")
-    print("-" * 50)
-
     results = []
     for label, fn in checks:
-        status = _check(label, fn)
-        results.append((label, status))
+        results.append({"label": label, "status": _check(label, fn)})
+
+    fail_count = sum(1 for result in results if result["status"] == "FAIL")
+    warn_count = sum(1 for result in results if result["status"] == "WARN")
+    ok_count = sum(1 for result in results if result["status"] == "OK")
+
+    return {
+        "version": ao_kernel.__version__,
+        "checks": results,
+        "summary": {
+            "ok_count": ok_count,
+            "warn_count": warn_count,
+            "fail_count": fail_count,
+        },
+        "extension_truth": _extension_truth_payload(cast(Any, extension_truth)),
+        "exit_code": 1 if fail_count > 0 else 0,
+    }
+
+
+def run(workspace_root_override: str | None = None) -> int:
+    """Run all health checks and print report."""
+    report = build_report(workspace_root_override)
+    summary = cast(dict[str, int], report["summary"])
+    extension_truth = cast(dict[str, Any] | None, report["extension_truth"])
+
+    print(f"ao-kernel doctor v{report['version']}")
+    print("-" * 50)
+
+    for result in cast(list[dict[str, str]], report["checks"]):
+        label = result["label"]
+        status = result["status"]
         icon = {"OK": "+", "WARN": "~", "FAIL": "!"}[status]
         print(f"  [{icon}] {label:<35} {status}")
 
     print("-" * 50)
 
-    fail_count = sum(1 for _, s in results if s == "FAIL")
-    warn_count = sum(1 for _, s in results if s == "WARN")
-    ok_count = sum(1 for _, s in results if s == "OK")
-
-    if getattr(extension_truth, "total_extensions", None) is not None:
+    if extension_truth:
         print("  Extension Truth Inventory")
         print(
             "    "
-            f"runtime_backed={extension_truth.runtime_backed} "
-            f"contract_only={extension_truth.contract_only} "
-            f"quarantined={extension_truth.quarantined}"
+            f"runtime_backed={extension_truth['runtime_backed']} "
+            f"contract_only={extension_truth['contract_only']} "
+            f"quarantined={extension_truth['quarantined']}"
         )
         print(
             "    "
-            f"remap_candidate_refs={extension_truth.remap_candidate_refs} "
-            f"missing_runtime_refs={extension_truth.missing_runtime_refs}"
+            f"remap_candidate_refs={extension_truth['remap_candidate_refs']} "
+            f"missing_runtime_refs={extension_truth['missing_runtime_refs']}"
         )
-        runtime_ids = ", ".join(extension_truth.runtime_backed_ids) or "-"
+        runtime_ids = ", ".join(extension_truth["runtime_backed_ids"]) or "-"
         print(f"    runtime_backed_ids={runtime_ids}")
-        if extension_truth.quarantined_ids:
-            preview = ", ".join(extension_truth.quarantined_ids[:5])
-            suffix = " ..." if len(extension_truth.quarantined_ids) > 5 else ""
+        quarantined_ids = cast(list[str], extension_truth["quarantined_ids"])
+        if quarantined_ids:
+            preview = ", ".join(quarantined_ids[:5])
+            suffix = " ..." if len(quarantined_ids) > 5 else ""
             print(f"    quarantined_ids={preview}{suffix}")
         print("-" * 50)
 
-    print(f"  {ok_count} OK, {warn_count} WARN, {fail_count} FAIL")
+    print(
+        f"  {summary['ok_count']} OK, "
+        f"{summary['warn_count']} WARN, "
+        f"{summary['fail_count']} FAIL"
+    )
 
-    return 1 if fail_count > 0 else 0
+    return cast(int, report["exit_code"])

@@ -71,6 +71,9 @@ class TestDoctor:
         assert len(lines) >= 8
         assert "Extension Truth Inventory" in out
         assert "runtime_backed=" in out
+        assert "runtime_backed_ids=PRJ-HELLO" in out
+        truth_line = next(line for line in lines if "Bundled extension truth" in line)
+        assert "WARN" in truth_line
 
 
 class TestMigrate:
