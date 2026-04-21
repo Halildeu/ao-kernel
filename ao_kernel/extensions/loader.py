@@ -34,6 +34,23 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+TRUTH_TIER_RUNTIME_BACKED = "runtime_backed"
+TRUTH_TIER_CONTRACT_ONLY = "contract_only"
+TRUTH_TIER_QUARANTINED = "quarantined"
+_BUNDLED_REF_KINDS = frozenset(
+    {
+        "adapters",
+        "catalogs",
+        "extensions",
+        "intent_rules",
+        "operations",
+        "policies",
+        "registry",
+        "schemas",
+        "workflows",
+    }
+)
+
 
 @dataclass(frozen=True)
 class ExtensionManifest:
@@ -78,6 +95,10 @@ class ExtensionManifest:
     content_hash: str = ""
     source: str = "bundled"  # "bundled" or "workspace"
     stale_refs: tuple[str, ...] = ()
+    remap_candidate_refs: tuple[str, ...] = ()
+    missing_runtime_refs: tuple[str, ...] = ()
+    runtime_handler_registered: bool = False
+    truth_tier: str = TRUTH_TIER_CONTRACT_ONLY
     activation_blockers: tuple[str, ...] = ()
 
 
@@ -98,6 +119,21 @@ class LoadReport:
     loaded: int
     skipped: list[dict[str, str]] = field(default_factory=list)
     conflicts: list[ConflictRecord] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ExtensionTruthSummary:
+    """Aggregated truth view over the loaded extension inventory."""
+
+    total_extensions: int
+    runtime_backed: int
+    contract_only: int
+    quarantined: int
+    remap_candidate_refs: int
+    missing_runtime_refs: int
+    runtime_backed_ids: tuple[str, ...]
+    contract_only_ids: tuple[str, ...]
+    quarantined_ids: tuple[str, ...]
 
 
 def _content_hash(raw_bytes: bytes) -> str:
@@ -226,23 +262,58 @@ def _compat_blockers(manifest: ExtensionManifest) -> tuple[str, ...]:
     return tuple(blockers)
 
 
-def _stale_ref_paths(manifest: ExtensionManifest, *, base: Path | None) -> tuple[str, ...]:
-    """Return manifest-declared paths that do not exist relative to base.
+def _distribution_root() -> Path:
+    """Return the installed package root used for bundled truth checks."""
+    return Path(__file__).resolve().parents[1]
 
-    Bundled manifests copied from the upstream autonomous-orchestrator repo
-    often reference paths (``src/prj_kernel_api/adapter.py``, etc.) that do
-    not exist in the ao-kernel package tree. Flagging them keeps the
-    registry honest without blocking activation.
+
+def _classify_ref_paths(
+    manifest: ExtensionManifest,
+    *,
+    base: Path | None,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Return ``(remap_candidate_refs, missing_runtime_refs)``.
+
+    ``base`` is the authority root for the currently installed runtime.
+    For bundled manifests this is the ao-kernel package root, not the
+    operator workspace. Legacy refs like ``policies/foo.json`` may be
+    recoverable as ``defaults/policies/foo.json`` inside the wheel; those
+    are tracked separately from refs that are absent from the distribution
+    entirely.
     """
     if base is None or not base.is_dir():
-        return ()
+        return (), ()
     refs: list[str] = []
     refs.extend(manifest.ai_context_refs)
     if manifest.docs_ref:
         refs.append(manifest.docs_ref)
     refs.extend(manifest.tests_entrypoints)
-    stale = [r for r in refs if r and not (base / r).exists()]
-    return tuple(stale)
+    remap_candidates: list[str] = []
+    missing: list[str] = []
+    defaults_root = base / "defaults"
+    for ref in refs:
+        if not ref:
+            continue
+        if (base / ref).exists():
+            continue
+        head = ref.split("/", 1)[0]
+        if head in _BUNDLED_REF_KINDS and (defaults_root / ref).exists():
+            remap_candidates.append(ref)
+            continue
+        missing.append(ref)
+    return tuple(remap_candidates), tuple(missing)
+
+
+def _truth_tier(
+    *,
+    runtime_handler_registered: bool,
+    missing_runtime_refs: tuple[str, ...],
+) -> str:
+    if missing_runtime_refs:
+        return TRUTH_TIER_QUARANTINED
+    if runtime_handler_registered:
+        return TRUTH_TIER_RUNTIME_BACKED
+    return TRUTH_TIER_CONTRACT_ONLY
 
 
 class ExtensionRegistry:
@@ -259,8 +330,9 @@ class ExtensionRegistry:
     def load_from_defaults(self, *, refs_base: Path | None = None) -> LoadReport:
         """Load bundled manifests packaged under ao_kernel.defaults.extensions.
 
-        ``refs_base`` controls where stale-ref path checks resolve from.
-        Callers typically pass the project root; None skips the stale check.
+        ``refs_base`` controls bundled ref auditing. When omitted, bundled
+        manifests are checked against the installed ao-kernel package root so
+        the truth report reflects what the runtime actually ships.
         """
         schema = _load_schema()
         try:
@@ -269,6 +341,7 @@ class ExtensionRegistry:
         except (ImportError, ModuleNotFoundError):
             return LoadReport(loaded=0)
 
+        effective_refs_base = refs_base or _distribution_root()
         report = LoadReport(loaded=0)
         # Sorted iteration → deterministic first-wins conflict resolution.
         items = sorted(
@@ -281,7 +354,7 @@ class ExtensionRegistry:
                 manifest_file,
                 schema=schema,
                 source="bundled",
-                refs_base=refs_base,
+                refs_base=effective_refs_base,
                 report=report,
             )
         return report
@@ -328,6 +401,36 @@ class ExtensionRegistry:
             m for m in self.list_all()
             if m.enabled and not m.activation_blockers
         ]
+
+    def truth_summary(self) -> ExtensionTruthSummary:
+        """Return an aggregated runtime-truth summary for loaded manifests."""
+        manifests = self.list_all()
+        runtime_backed_ids = tuple(
+            m.extension_id
+            for m in manifests
+            if m.truth_tier == TRUTH_TIER_RUNTIME_BACKED
+        )
+        contract_only_ids = tuple(
+            m.extension_id
+            for m in manifests
+            if m.truth_tier == TRUTH_TIER_CONTRACT_ONLY
+        )
+        quarantined_ids = tuple(
+            m.extension_id
+            for m in manifests
+            if m.truth_tier == TRUTH_TIER_QUARANTINED
+        )
+        return ExtensionTruthSummary(
+            total_extensions=len(manifests),
+            runtime_backed=len(runtime_backed_ids),
+            contract_only=len(contract_only_ids),
+            quarantined=len(quarantined_ids),
+            remap_candidate_refs=sum(len(m.remap_candidate_refs) for m in manifests),
+            missing_runtime_refs=sum(len(m.missing_runtime_refs) for m in manifests),
+            runtime_backed_ids=runtime_backed_ids,
+            contract_only_ids=contract_only_ids,
+            quarantined_ids=quarantined_ids,
+        )
 
     def find_by_entrypoint(self, entrypoint_name: str) -> list[ExtensionManifest]:
         out: list[ExtensionManifest] = []
@@ -408,9 +511,28 @@ class ExtensionRegistry:
     def _enrich(self, manifest: ExtensionManifest, *, refs_base: Path | None) -> ExtensionManifest:
         """Attach compat blockers and stale refs to a freshly parsed manifest."""
         from dataclasses import replace
+        from ao_kernel.extensions.bootstrap import default_handler_extension_ids
+
         blockers = _compat_blockers(manifest)
-        stale = _stale_ref_paths(manifest, base=refs_base)
-        return replace(manifest, activation_blockers=blockers, stale_refs=stale)
+        remap_candidates, missing_runtime_refs = _classify_ref_paths(
+            manifest,
+            base=refs_base,
+        )
+        stale = tuple((*remap_candidates, *missing_runtime_refs))
+        runtime_handler_registered = manifest.extension_id in default_handler_extension_ids()
+        truth_tier = _truth_tier(
+            runtime_handler_registered=runtime_handler_registered,
+            missing_runtime_refs=missing_runtime_refs,
+        )
+        return replace(
+            manifest,
+            activation_blockers=blockers,
+            stale_refs=stale,
+            remap_candidate_refs=remap_candidates,
+            missing_runtime_refs=missing_runtime_refs,
+            runtime_handler_registered=runtime_handler_registered,
+            truth_tier=truth_tier,
+        )
 
     def _register_entrypoints(self, manifest: ExtensionManifest, *, report: LoadReport) -> None:
         for group, names in manifest.entrypoints.items():
@@ -446,4 +568,8 @@ __all__ = [
     "ExtensionRegistry",
     "ConflictRecord",
     "LoadReport",
+    "ExtensionTruthSummary",
+    "TRUTH_TIER_RUNTIME_BACKED",
+    "TRUTH_TIER_CONTRACT_ONLY",
+    "TRUTH_TIER_QUARANTINED",
 ]

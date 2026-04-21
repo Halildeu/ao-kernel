@@ -68,7 +68,9 @@ class TestDoctor:
         lines = [line for line in out.splitlines() if line.strip().startswith("[")]
         fail_lines = [line for line in lines if "[!]" in line]
         assert len(fail_lines) == 0
-        assert len(lines) >= 7  # At least 7 check lines
+        assert len(lines) >= 8
+        assert "Extension Truth Inventory" in out
+        assert "runtime_backed=" in out
 
 
 class TestMigrate:

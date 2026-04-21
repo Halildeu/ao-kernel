@@ -174,9 +174,10 @@ class AoKernelClient:
         from ao_kernel.extensions.loader import ExtensionRegistry
 
         extensions = ExtensionRegistry()
-        refs_base = self._workspace_root
         try:
-            extensions.load_from_defaults(refs_base=refs_base)
+            # Bundled manifest refs must be audited against the installed
+            # distribution, not the operator workspace.
+            extensions.load_from_defaults()
         except Exception as exc:  # noqa: BLE001 — manifest path is best-effort
             logger.warning("extension defaults load failed: %s", exc)
         if self._workspace_root is not None:
