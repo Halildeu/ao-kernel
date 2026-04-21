@@ -1,14 +1,14 @@
 {
   "version": "v1",
   "enabled": false,
-  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means enforcement dormant (no 'policy_checked' / 'policy_denied' evidence events, no fail on violations). Sandbox shaping is retained so the adapter still receives a scoped env / worktree / redaction profile. Workspace override required to engage enforcement (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) deferred to FAZ-B. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and demo override example. Pattern: policy_quality.v1.json (inline _comment, no external $schema). Validation schema lands in Tranche A PR-A3 worktree executor impl.",
+  "_comment": "Fail-closed. Bundled default DORMANT: enabled=false means enforcement dormant (no 'policy_checked' / 'policy_denied' evidence events, no fail on violations). Sandbox shaping is retained so the adapter still receives a scoped env / worktree / redaction profile. Workspace override required to engage enforcement (set enabled=true). Expanded minimum per CNS-016 D4: worktree + env_allowlist + secret deny-by-default + command_allowlist + cwd_confinement + evidence_redaction. OS-level network/egress sandboxing (cgroups, firejail, nsjail) and extended redaction catalog (AWS/Google/xAI/structured JWT) remain deferred. See docs/WORKTREE-PROFILE.md for operator-facing walkthrough and override examples. The supported deterministic Public Beta demo does not require this policy to be enabled; engage it for operator-managed adapter runs.",
 
   "worktree": {
     "strategy": "new_per_run",
     "base_dir_template": ".ao/runs/{run_id}/worktree",
     "cleanup_on_completion": true,
     "max_concurrent": 4,
-    "_strategy_note": "new_per_run: create a fresh git worktree per workflow run (default, strongest isolation). Alternatives at Tranche A PR-A3 impl: reuse_per_agent (one worktree per adapter_id, faster for repeated invocations), shared_readonly (mount-point analysis, no writes)."
+    "_strategy_note": "new_per_run: create a fresh git worktree per workflow run (default, strongest isolation). shared_readonly is implemented as a copied read-only tree for analysis-oriented runs. reuse_per_agent remains reserved and currently raises if selected."
   },
 
   "env_allowlist": {
@@ -16,7 +16,7 @@
     "inherit_from_parent": false,
     "explicit_additions": {},
     "deny_on_unknown": true,
-    "_env_note": "env_allowlist covers NON-SECRET environment variables only. Secrets (API keys, tokens) are handled via the secrets block below, NOT added here. deny_on_unknown=true: any env key not explicitly in allowed_keys or explicit_additions is stripped before adapter invocation. SSH agent forwarding (SSH_AUTH_SOCK) is NOT in the default allowlist; FAZ-A demos use HTTP-token auth via secrets.allowlist_secret_ids. SSH support is deferred to FAZ-A PR-A5 (evidence CLI) or later."
+    "_env_note": "env_allowlist covers NON-SECRET environment variables only. Secrets (API keys, tokens) are handled via the secrets block below, NOT added here. deny_on_unknown=true: any env key not explicitly in allowed_keys or explicit_additions is stripped before adapter invocation. SSH agent forwarding (SSH_AUTH_SOCK) is NOT in the default allowlist; current bundled demos and operator runbooks use HTTP-token auth via secrets.allowlist_secret_ids. SSH support remains deferred."
   },
 
   "secrets": {
@@ -24,7 +24,7 @@
     "allowlist_secret_ids": [],
     "exposure_modes": ["env"],
     "denied_exposure_modes": ["argv", "stdin", "file", "http_header"],
-    "_secret_note": "deny_by_default=true: no secret is available to the adapter unless its secret_id is explicitly added to allowlist_secret_ids. Resolution model mirrors policy_secrets.v1.json (allowed_secret_ids + fail_action). exposure_modes=['env'] means allowed secrets are injected ONLY as exported environment variables. denied_exposure_modes lists channels where secrets MUST NOT appear: argv (command arguments — visible in process listings), stdin (adapter prompt payload — captured in evidence), file (on-disk — accidental commit risk), http_header (HTTP adapter requests — requires explicit workspace override of exposure_modes to include 'http_header'). ao-kernel worktree executor (Tranche A PR-A3) enforces this at invocation time."
+    "_secret_note": "deny_by_default=true: no secret is available to the adapter unless its secret_id is explicitly added to allowlist_secret_ids. Resolution model mirrors policy_secrets.v1.json (allowed_secret_ids + fail_action). exposure_modes=['env'] means allowed secrets are injected ONLY as exported environment variables. denied_exposure_modes lists channels where secrets MUST NOT appear: argv (command arguments — visible in process listings), stdin (adapter prompt payload — captured in evidence), file (on-disk — accidental commit risk), http_header (HTTP adapter requests — requires explicit workspace override of exposure_modes to include 'http_header'). ao-kernel executor enforces this at invocation time."
   },
 
   "command_allowlist": {
@@ -39,7 +39,7 @@
     "allowed_subdirs": ["*"],
     "deny_absolute_paths_outside_root": true,
     "deny_parent_escape": true,
-    "_cwd_note": "root_template: per-run worktree root. allowed_subdirs=['*']: adapter may cd into any subdirectory under the root. deny_parent_escape=true: 'cd ..' past root, symlink escapes, and absolute paths outside root are all denied. Enforcement via chroot-like path normalization at Tranche A PR-A3."
+    "_cwd_note": "root_template: per-run worktree root. allowed_subdirs=['*']: adapter may cd into any subdirectory under the root. deny_parent_escape=true: 'cd ..' past root, symlink escapes, and absolute paths outside root are all denied. Enforcement happens through normalized path checks before adapter invocation."
   },
 
   "evidence_redaction": {
@@ -52,7 +52,7 @@
       "Bearer\\s+[A-Za-z0-9._~+/=-]+",
       "Basic\\s+[A-Za-z0-9+/=]+"
     ],
-    "_redaction_scope_note": "P0 pattern coverage: OpenAI (sk-), Anthropic (sk-ant-), GitHub PAT (ghp_), Slack bot (xoxb-), generic OAuth Bearer, HTTP Basic. FAZ-B extended catalog: AWS access key (AKIA...), Google API key (AIza...), xAI (xai-...), structured JWT payloads, private key blocks. Redaction replaces matches with '***REDACTED***' in JSONL evidence; redaction is unreachable for secret values in denied_exposure_modes (they never reach a logged surface).",
+    "_redaction_scope_note": "Bundled pattern coverage: OpenAI (sk-), Anthropic (sk-ant-), GitHub PAT (ghp_), Slack bot (xoxb-), generic OAuth Bearer, HTTP Basic. Extended catalog remains deferred: AWS access key (AKIA...), Google API key (AIza...), xAI (xai-...), structured JWT payloads, private key blocks. Redaction replaces matches with '***REDACTED***' in JSONL evidence; redaction is unreachable for secret values in denied_exposure_modes (they never reach a logged surface).",
     "file_content_patterns": []
   },
 
@@ -75,7 +75,7 @@
     "ssh_agent_forwarding": {
       "status": "deferred",
       "target": "FAZ-A_PR-A5_or_later",
-      "_note": "SSH_AUTH_SOCK env inheritance and agent forwarding are NOT supported in FAZ-A demo tier. Use HTTP-token auth via secrets.allowlist_secret_ids instead."
+      "_note": "SSH_AUTH_SOCK env inheritance and agent forwarding are NOT supported in the current bundled demo/operator tier. Use HTTP-token auth via secrets.allowlist_secret_ids instead."
     }
   },
 

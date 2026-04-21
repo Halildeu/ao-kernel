@@ -240,7 +240,7 @@ These are left off FAZ-A so the P0 redaction list stays focused on the providers
 | OS-level network egress sandbox | FAZ-B | cgroups / firejail / nsjail are platform-specific; needs per-OS testing surface. |
 | OS-level resource / namespace sandbox | FAZ-B | Same as above. |
 | Extended redaction catalog | FAZ-B | Expands beyond the P0 demo providers. |
-| **SSH agent forwarding** | **FAZ-A PR-A5 or later** | `SSH_AUTH_SOCK` inheritance is NOT supported in the FAZ-A demo tier. Demo flow uses HTTP-token auth (`GH_TOKEN`) via `secrets.allowlist_secret_ids`. Workspaces that need SSH for git push/pull must wait for a later FAZ-A PR (or provide their own override with explicit acknowledgement). |
+| **SSH agent forwarding** | **FAZ-A PR-A5 or later** | `SSH_AUTH_SOCK` inheritance is NOT supported in the current bundled demo/operator tier. Current documented flows use HTTP-token auth (`GH_TOKEN`) via `secrets.allowlist_secret_ids`. Workspaces that need SSH for git push/pull must wait for a later implementation (or provide their own override with explicit acknowledgement). |
 
 ---
 
