@@ -522,3 +522,34 @@ bash .claude/scripts/trigger-test-workflow.sh <branch>
 - Kullanıcıya ait dirty dosya stage/commit içine karışmışsa merge hazırlığı yapma.
 - Branch policy review onayı istiyorsa self-comment yeterli sanma; gerekli onay
   yolu açıkça doğrulanmadan normal merge komutu deneme.
+
+## 20. Hardening Principles (2026-04-21)
+
+Bu bölüm yaşayan hardening ilkelerinin SSOT'udur. Geçici plan dosyalarına
+eklenen ama repo genelinde kalıcı kural olması gereken notlar burada tutulur.
+
+1. **Coverage gate parity opsiyonel hijyen değildir.**
+   `pyproject.toml` içindeki coverage eşiği ile CI workflow gate'i aynı
+   gerçeği söylemelidir. "Kod tabanında 85, CI'de 70" tipi ayrışmalar docs
+   drift değil release-truth problemidir.
+
+2. **Packaging smoke kontaminasyon savunmasıdır.**
+   Editable install, aktif worktree, kullanıcı PATH'i veya eski console-script
+   kalıntıları sahte yeşil üretebilir. Release kanıtı ancak wheel-only kurulum
+   + temiz venv + repo dışı temp cwd kombinasyonu ile kabul edilir.
+
+3. **Deterministic test hygiene görünür backlog'tur.**
+   Wall-clock'a bağlı fixture'lar, kullanılmayan `now` parametreleri veya
+   tarihle çürüyen test varsayımları "küçük test borcu" diye saklanmaz.
+   Beta-blocker değillerse bile görünür iş paketi, release notu veya backlog
+   kalemi olarak izlenir.
+
+4. **Support matrix tek anlamlı kalmalıdır.**
+   Aynı yüzey aynı sürüm dokümanında birden fazla lifecycle kategorisi
+   taşımaz. Bir şey aynı anda hem `Beta` hem `Deferred`, ya da hem
+   `operator-managed` hem de `unsupported` gibi konuşulmaz.
+
+5. **Karar ilkesi: daha az vaat, daha güçlü kanıt.**
+   Runtime closure tamamlanmadan anlatı genişletilmez. Bir yüzey ancak
+   code path + davranışsal test + packaging smoke + support matrix birlikte
+   mevcutsa "destekli" kabul edilir.
