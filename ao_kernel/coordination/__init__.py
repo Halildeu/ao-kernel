@@ -71,6 +71,11 @@ from ao_kernel.coordination.registry import (
     EvidenceSink,
     build_coordination_sink,
 )
+from ao_kernel.coordination.status import (
+    build_coordination_status,
+    coordination_status_schema,
+    render_coordination_status,
+)
 
 
 __all__ = [
@@ -106,6 +111,10 @@ __all__ = [
     "normalize_workspace_relative_path",
     "release_path_write_claims",
     "top_level_write_area",
+    # Status
+    "build_coordination_status",
+    "coordination_status_schema",
+    "render_coordination_status",
     # Registry
     "AgentClaimIndex",
     "ClaimRegistry",

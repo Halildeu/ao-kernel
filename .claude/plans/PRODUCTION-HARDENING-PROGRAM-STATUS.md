@@ -112,17 +112,22 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#198](https://github.com/Halildeu/ao-kernel/issues/198)
-- aktif slice: [`WP-7.1-PATH-RESOURCE-NAMESPACE.md`](./WP-7.1-PATH-RESOURCE-NAMESPACE.md)
+- aktif slice: [`WP-7.2-CLAIM-VISIBILITY.md`](./WP-7.2-CLAIM-VISIBILITY.md)
 
 **Hedef slice'lar**
 1. `[x]` ownership model ve resource namespace kararı
 2. `[ ]` claim / release / takeover / handoff kaydı
 3. `[ ]` executor veya orchestration girişinde write ownership enforcement
 
-**Bu slice’ın hedefi (`WP-7.1`)**
+**Tamamlanan slice (`WP-7.1`)**
 - workspace-relative path -> top-level area -> deterministic `resource_id`
 - mevcut `ClaimRegistry` üstünden sequential acquire/release helper’ları
 - partial acquire rollback ve pytest kanıtı
+
+**Bu slice’ın hedefi (`WP-7.2`)**
+- canlı claim SSOT snapshot’ı
+- `ACTIVE` / `GRACE` / `TAKEOVER_READY` görünürlüğü
+- `ao-kernel coordination status` text/json yüzeyi
 
 ## 7. En Son
 

@@ -161,6 +161,17 @@ acquires them sequentially in sorted order. Multi-area acquisition is **not
 atomic**; if a later area conflicts, earlier acquired areas are released
 best-effort in reverse order.
 
+Read-only operator visibility for the current claim SSOT is available via:
+
+```bash
+ao-kernel coordination status
+ao-kernel coordination status --format json
+```
+
+The status surface reports the current claim owner plus derived state:
+`ACTIVE`, `GRACE`, or `TAKEOVER_READY`. This is a visibility-only surface; it
+does not change write semantics or executor enforcement.
+
 ### 10.2 Fail-closed vs fail-open
 
 - **Fail-closed (raise, never silently absorb):**
