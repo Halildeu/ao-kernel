@@ -3,6 +3,7 @@
 **Durum tarihi:** 2026-04-22
 **İlişkili issue:** [#220](https://github.com/Halildeu/ao-kernel/issues/220)
 **Üst tracker:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
+**Durum:** Backfilled complete on `main` (2026-04-22 canlı doğrulama)
 
 ## Amaç
 
@@ -41,3 +42,10 @@ boşluğunu küçük ve merge-edilebilir tek runtime slice altında kapatmak.
 
 Bu slice merge olduktan sonra doğru sıradaki bir sonraki runtime hat
 `PB-2` olacaktır: `bug_fix_flow + codex-stub patch_preview` closure.
+
+## Backfill Kanıtı
+
+- `tests/test_init_cmd.py`
+- `tests/test_internal_roadmap_compiler_coverage.py`
+- `tests/test_internal_roadmap_small_trio_coverage.py`
+- canlı doğrulama: `pytest -q tests/test_init_cmd.py tests/test_internal_roadmap_compiler_coverage.py tests/test_internal_roadmap_small_trio_coverage.py -q`
