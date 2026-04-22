@@ -196,8 +196,10 @@ def new_context(
     if not isinstance(ttl_seconds, int) or ttl_seconds < 60 or ttl_seconds > 604800:
         raise SessionContextError("INVALID_ARGS", "ttl_seconds must be in [60, 604800]")
 
-    now = datetime.now(timezone.utc)
-    created_at = now.isoformat().replace("+00:00", "Z")
+    created_at = _now_iso8601()
+    now = _parse_iso8601(created_at)
+    if now is None:
+        raise SessionContextError("INVALID_TIME", "failed to resolve current time")
     expires_at = (now + timedelta(seconds=int(ttl_seconds))).isoformat().replace("+00:00", "Z")
 
     ctx: dict[str, Any] = {
@@ -481,8 +483,10 @@ def renew_context(context: dict[str, Any], ttl_seconds: int) -> dict[str, Any]:
     if not isinstance(ttl_seconds, int) or ttl_seconds < 60 or ttl_seconds > 604800:
         raise SessionContextError("INVALID_ARGS", "ttl_seconds must be in [60, 604800]")
 
-    now = datetime.now(timezone.utc)
-    now_iso = now.isoformat().replace("+00:00", "Z")
+    now_iso = _now_iso8601()
+    now = _parse_iso8601(now_iso)
+    if now is None:
+        raise SessionContextError("INVALID_TIME", "failed to resolve current time")
     expires_at = (now + timedelta(seconds=int(ttl_seconds))).isoformat().replace("+00:00", "Z")
 
     context = prune_expired_decisions(context, now_iso)

@@ -54,3 +54,12 @@ somut deterministic fix tranche'lerine bölmektir.
 2. `tests/test_coordination_status.py` içindeki canlı saat kullanımını sabit
    zamana çekmek
 3. snapshot `generated_at` alanını da deterministic sözleşme olarak pinlemek
+
+## Üçüncü Tranche
+
+1. `ao_kernel._internal.session.context_store` içinde dağınık `datetime.now(...)`
+   çağrılarını mevcut `_now_iso8601()` seam'i ile hizalamak
+2. `tests/test_context_store_internal.py` içinde `new_context` ve
+   `renew_context` için exact timestamp sözleşmesini pinlemek
+3. daha geniş `context_store_coverage` alanını sonraki küçük tranche'lere
+   bırakmak
