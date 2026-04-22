@@ -73,7 +73,7 @@ istemek gerekir.
 | `bug_fix_flow` release closure | Deferred | Public Beta kapsamı dışında |
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Mevcut beta yüzey yalnız dry-run preflight'tır; gerçek remote PR açılışı henüz destek vaadi değildir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
-| Adapter-path `cost_usd` reconcile | Deferred | Ayrı correctness işi |
+| Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
 
 ## Known Bugs
 

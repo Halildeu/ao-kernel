@@ -4,6 +4,8 @@
 
 > **Operator-only validation lane.** Full mode is useful to prove adapter-path reconcile behavior, but it is not the default release gate and it is not, by itself, a blanket claim that real-adapter end-to-end automation is production-ready.
 
+> **Boundary note.** Evidence that `post_adapter_reconcile` fires in full mode is an internal/operator benchmark contract. It does not, by itself, override `PUBLIC-BETA.md` or widen the public support boundary for adapter-path `cost_usd` reconcile.
+
 ## What F2 ships
 
 F2 extends the F1 scaffold with an actual runnable `@pytest.mark.full_mode` smoke:
@@ -11,7 +13,7 @@ F2 extends the F1 scaffold with an actual runnable `@pytest.mark.full_mode` smok
 1. `_maybe_consume_budget` benchmark-only shim **removed** — adapter-path `post_adapter_reconcile` middleware (v3.3.0 PR-C3) is the sole cost drainer.
 2. Mode-gated cost-tracking override in `tests/benchmarks/conftest.py::workspace_root`: full mode flips `policy_cost_tracking.enabled=true`; fast mode keeps bundled dormant default.
 3. First runnable `@full_mode` smoke: `TestFullModeAdapterPathReconcile` in `tests/benchmarks/test_full_mode_smoke.py` dispatches `governed_review` via real `invoke_cli` against `codex-stub`.
-4. Scorecard collector switches to **event-backed** cost-source detection: `llm_spend_recorded(source="adapter_path")` → `cost_source="real_adapter"`. No event + no drain → `None`. Legacy positive drain (historical artefacts from the removed shim) → `"mock_shim"`.
+4. Scorecard collector switches to **event-backed** cost-source detection: `llm_spend_recorded(source="adapter_path")` → `cost_source="real_adapter"`. No event + no drain → `None`. Legacy positive drain (historical artefacts from the removed shim) → `"mock_shim"`. This label is a benchmark consumer signal, not a public support-tier promotion.
 5. Render footer wording: `real_adapter` → "adapter-path reconcile (event-backed; non-shim)". Codex iter-2 correction: NOT "real adapter spend" — codex-stub emits canned events, not vendor billing.
 6. Mode-gated scorecard session-finish: fast mode expects `{governed_review, governed_bugfix}`; full mode expects `{governed_review}` only (no `gh-cli-pr` wiring in F2 scope).
 

@@ -13,7 +13,7 @@ operator-only, or just contract inventory?"
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke | entrypoint checks, doctor, demo review smoke, CI |
 | Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed dry-run lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
-| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a support claim |
+| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary |
 
 ## 2. Current line by line boundary
 
