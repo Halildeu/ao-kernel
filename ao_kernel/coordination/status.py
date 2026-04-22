@@ -65,15 +65,24 @@ def _claim_state(
     )
 
 
-def build_coordination_status(workspace_root: Path | str) -> dict[str, Any]:
+def build_coordination_status(
+    workspace_root: Path | str,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
     """Build a machine-readable coordination snapshot.
 
     The snapshot is derived from the claim SSOT under ``claims.lock``. Dormant
     coordination returns a successful IDLE payload rather than raising: status
     visibility is allowed to say "nothing is active" without forcing an opt-in.
+    ``now`` exists so tests can pin time-sensitive claim-state transitions
+    without relying on wall-clock drift.
     """
     project_root = _project_root(workspace_root)
-    generated_at = datetime.now(timezone.utc).isoformat()
+    resolved_now = now or datetime.now(timezone.utc)
+    if resolved_now.tzinfo is None:
+        resolved_now = resolved_now.replace(tzinfo=timezone.utc)
+    generated_at = resolved_now.isoformat()
     policy = load_coordination_policy(project_root)
 
     if not policy.enabled:
@@ -112,7 +121,6 @@ def build_coordination_status(workspace_root: Path | str) -> dict[str, Any]:
     with file_lock(_claims_lock_path(project_root)):
         registry._ensure_index_consistent()
         index = registry._load_index()
-        now = datetime.now(timezone.utc)
         for agent_id, resource_ids in sorted(index.agents.items()):
             for resource_id in resource_ids:
                 claim = registry._load_claim_if_exists(resource_id)
@@ -123,7 +131,7 @@ def build_coordination_status(workspace_root: Path | str) -> dict[str, Any]:
                     claim.heartbeat_at,
                     expiry_seconds=policy.expiry_seconds,
                     takeover_grace_period_seconds=policy.takeover_grace_period_seconds,
-                    now=now,
+                    now=resolved_now,
                 )
                 claims.append(
                     {

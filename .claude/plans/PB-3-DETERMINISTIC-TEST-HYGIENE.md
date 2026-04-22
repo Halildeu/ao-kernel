@@ -46,3 +46,11 @@ kılmak ve deterministik olmayan test yüzeylerini küçük tranche'lerle kapatm
 
 İlk tranche merge olduktan sonra doğru devam, time-dependent seam envanterini
 somut deterministic fix tranche'lerine bölmektir.
+
+## İkinci Tranche
+
+1. `ao_kernel.coordination.status.build_coordination_status(...)` için opsiyonel
+   `now` seam'i eklemek
+2. `tests/test_coordination_status.py` içindeki canlı saat kullanımını sabit
+   zamana çekmek
+3. snapshot `generated_at` alanını da deterministic sözleşme olarak pinlemek
