@@ -60,86 +60,48 @@ automation platform çizgisine taşımak.
 
 ## 5. Şimdi
 
-### `WP-6` — Worktree/Branch Safety Control Loop
-
-**Neden şimdi**
-- Branch protection sertleşti; bundan sonraki ana risk yanlış worktree üzerinde
-  çalışma, dirty tree unutma ve stale base ile session başlatma.
-
-**GitHub takip**
-- üst issue: [#197](https://github.com/Halildeu/ao-kernel/issues/197)
-- son slice: [`WP-6.4-ARCHIVE-WORKTREE.md`](./WP-6.4-ARCHIVE-WORKTREE.md)
-
-**Adım sırası**
-1. `[x]` `ops.sh` dispatcher yüzeyi eklendi.
-2. `[x]` `preflight` branch freshness + current dirty tree + upstream +
-   other worktree snapshot'ını tek komutta topladı.
-3. `[x]` Clean / warning / fail path'leri subprocess testleriyle pinlendi.
-4. `[x]` `WP-6.2` overlap-check yüzeyi eklendi.
-5. `[x]` `WP-6.3` close-worktree yüzeyi eklendi.
-6. `[x]` `WP-6.4` archive-worktree yüzeyi eklendi.
-
-**Canlı snapshot**
-- session başlangıç komutu: `bash .claude/scripts/ops.sh preflight`
-- çoklu worktree çakışma görünürlüğü: `bash .claude/scripts/ops.sh overlap-check`
-- güvenli yardımcı worktree kapanışı: `bash .claude/scripts/ops.sh close-worktree <path>`
-- dirty yardımcı worktree arşivleme + kaldırma: `bash .claude/scripts/ops.sh archive-worktree <path>`
-- hard block: forbidden branch / detached HEAD / stale base / `main` drift
-- warning-only: current dirty tree / upstream yok / other worktree dirty
-- overlap-check: exact file overlap ve shared top-level area sinyali üretir;
-  bu slice görünürlük verir, henüz hard-enforcement yapmaz
-- close-worktree: clean non-current target'ı kapatır; dirty/current target için
-  fail-closed davranır
-- archive-worktree: dirty non-current target için patch + untracked snapshot
-  alır, common git dir altına arşivler ve sonra target'ı kaldırır
-- `check-branch-sync.sh` alttaki primitive olarak korunur
-
-**Definition of Done**
-- tek komutla session sağlık özeti alınabiliyor
-- yanlış base ile çalışmak hard fail olarak yakalanıyor
-- dirty tree ve other worktree riski görünür hale geliyor
-- çoklu worktree path çakışması görünür hale geliyor
-- güvenli worktree kapanışı standart yüzeyden yapılabiliyor
-- dirty worktree state'i repo kirletmeden arşivlenip güvenli kaldırılabiliyor
-- bu davranış test veya smoke ile pinlenmiş
-
-## 6. Sonra
-
 ### `WP-7` — Path-Scoped Write Ownership
 
-**Amaç**
-- mevcut claim/fencing altyapısını path-grubu ownership seviyesine taşımak
+**Neden şimdi**
+- Worktree/branch safety hattı kapandı. Bundan sonraki ana değişim riski,
+  aynı logical path alanına iki writer'ın sessizce girmesi.
 
 **GitHub takip**
 - üst issue: [#198](https://github.com/Halildeu/ao-kernel/issues/198)
-- aktif slice: [`WP-7.2-CLAIM-VISIBILITY.md`](./WP-7.2-CLAIM-VISIBILITY.md)
+- son merge: `WP-7.2` / PR #208
+- aktif slice: [`WP-7.3-EXECUTOR-ENFORCEMENT.md`](./WP-7.3-EXECUTOR-ENFORCEMENT.md)
 
-**Hedef slice'lar**
-1. `[x]` ownership model ve resource namespace kararı
-2. `[ ]` claim / release / takeover / handoff kaydı
-3. `[ ]` executor veya orchestration girişinde write ownership enforcement
+**Adım sırası**
+1. `[x]` `WP-7.1` path resource namespace kararı + acquire/release helper'ları
+2. `[x]` `WP-7.2` claim visibility (`coordination status`) yüzeyi
+3. `[~]` `WP-7.3` patch apply write-ownership enforcement
+4. `[ ]` handoff / takeover ergonomics ve daha geniş orchestration entry coverage
 
-**Tamamlanan slice (`WP-7.1`)**
-- workspace-relative path -> top-level area -> deterministic `resource_id`
-- mevcut `ClaimRegistry` üstünden sequential acquire/release helper’ları
-- partial acquire rollback ve pytest kanıtı
+**Canlı snapshot**
+- `patch_apply` artık coordination enabled workspace'te preview edilen
+  `files_changed` üstünden path-scoped write claim almaya hazırlanıyor
+- claim scope top-level area üstünden belirlenir (`src/*` -> tek claim alanı)
+- claim acquire/release event'leri workflow evidence akışına bağlanır
+- conflict path'i deterministic `_StepFailed(code=WRITE_OWNERSHIP_CONFLICT)`
+  olarak yüzeye çıkar
+- current scope yalnız gerçek write noktası olan `patch_apply`; read-only
+  preview/status yüzeyleri unchanged
 
-**Bu slice’ın hedefi (`WP-7.2`)**
-- canlı claim SSOT snapshot’ı
-- `ACTIVE` / `GRACE` / `TAKEOVER_READY` görünürlüğü
-- `ao-kernel coordination status` text/json yüzeyi
+**Definition of Done**
+- coordination enabled patch apply yolu claim acquire/release ile çalışıyor
+- conflict aynı path alanında deterministic fail üretiyor
+- dormant coordination semantics korunuyor
+- yeni davranış behavior-first testlerle pinleniyor
+- docs/runtime/story aynı şeyi söylüyor
 
-## 7. En Son
+## 6. Sonra
 
 ### `WP-8` — Real Adapter Certification
 
 **Amaç**
 - stub-demodan çıkıp gerçek adapter yüzeyini kanıtlı hale getirmek
 
-**Minimum kabul**
-- en az 2 gerçek adapter
-- timeout / cancel / retry / idempotency / secret handling / audit completeness
-- production-tier smoke + failure-mode testleri
+## 7. En Son
 
 ### `WP-9` — Operations / Runbook / Incident Readiness
 
@@ -157,10 +119,9 @@ automation platform çizgisine taşımak.
 
 Bugünden itibaren doğru sıra:
 
-1. `WP-6` Worktree/branch safety control loop
-2. `WP-7` Path-scoped write ownership
-3. `WP-8` Real adapter certification
-4. `WP-9` Ops/runbook/incident readiness
+1. `WP-7` Path-scoped write ownership
+2. `WP-8` Real adapter certification
+3. `WP-9` Ops/runbook/incident readiness
 
 ## 9. Güncelleme Protokolü
 

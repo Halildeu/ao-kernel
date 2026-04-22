@@ -908,6 +908,12 @@ class MultiStepDriver:
         from ao_kernel.patch import (  # lazy to avoid cycle through executor
             apply_patch, preview_diff, rollback_patch, PatchError,
         )
+        from ao_kernel.coordination import release_path_write_claims
+        from ao_kernel.coordination.errors import (
+            ClaimConflictError,
+            ClaimConflictGraceError,
+            CoordinationError,
+        )
         op = step_def.operation
         sandbox = self._build_sandbox(run_id)
         worktree = self._workspace_root / ".ao" / "runs" / run_id / "worktree"
@@ -920,6 +926,7 @@ class MultiStepDriver:
         patch_content = _load_pending_patch_content(
             record, step_def.step_name, workspace_root=self._workspace_root,
         )
+        ownership: tuple[Any, Any] | None = None
 
         try:
             if op == "patch_preview":
@@ -935,20 +942,42 @@ class MultiStepDriver:
                     "lines_removed": preview.lines_removed,
                 }
             elif op == "patch_apply":
-                apply_result = apply_patch(
-                    worktree, patch_content, sandbox, run_dir,
+                ownership = self._acquire_patch_write_claims(
+                    run_id=run_id,
+                    patch_content=patch_content,
+                    sandbox=sandbox,
+                    worktree=worktree,
                 )
+                ownership_payload = (
+                    self._ownership_payload(ownership[1])
+                    if ownership is not None
+                    else {}
+                )
+                try:
+                    apply_result = apply_patch(
+                        worktree, patch_content, sandbox, run_dir,
+                    )
+                except BaseException:
+                    if ownership is not None:
+                        registry, lease_set = ownership
+                        try:
+                            release_path_write_claims(registry, lease_set)
+                        except CoordinationError:
+                            pass
+                    raise
                 self._emit(run_id, "diff_applied",
                     {"step_name": step_def.step_name,
                      "patch_id": apply_result.patch_id,
                      "applied_sha": apply_result.applied_sha,
-                     "attempt": attempt},
+                     "attempt": attempt,
+                     **ownership_payload},
                     step_id=step_id)
                 artifact = {
                     "operation": op, "patch_id": apply_result.patch_id,
                     "reverse_diff_id": apply_result.reverse_diff_id,
                     "files_changed": list(apply_result.files_changed),
                     "applied_sha": apply_result.applied_sha,
+                    **ownership_payload,
                 }
             else:  # patch_rollback
                 reverse_diff_id = step_def.step_name  # test fixture convention
@@ -980,15 +1009,100 @@ class MultiStepDriver:
                 category="other",
                 code="POLICY_VIOLATION",
             ) from exc
+        except CoordinationError as exc:
+            code = (
+                "WRITE_OWNERSHIP_CONFLICT"
+                if isinstance(exc, (ClaimConflictError, ClaimConflictGraceError))
+                else "WRITE_OWNERSHIP_ERROR"
+            )
+            raise _StepFailed(
+                reason=f"write_ownership_{type(exc).__name__}: {exc}",
+                attempt=attempt,
+                category="other",
+                code=code,
+            ) from exc
 
         output_ref, output_sha256 = write_artifact(
             run_dir=run_dir, step_id=step_id, attempt=attempt, payload=artifact,
         )
+        if op == "patch_apply" and ownership is not None:
+            registry, lease_set = ownership
+            try:
+                release_path_write_claims(registry, lease_set)
+            except CoordinationError as exc:
+                code = (
+                    "WRITE_OWNERSHIP_CONFLICT"
+                    if isinstance(exc, (ClaimConflictError, ClaimConflictGraceError))
+                    else "WRITE_OWNERSHIP_ERROR"
+                )
+                raise _StepFailed(
+                    reason=f"write_ownership_{type(exc).__name__}: {exc}",
+                    attempt=attempt,
+                    category="other",
+                    code=code,
+                ) from exc
         return dict(record), {
             "step_state": "completed",
             "output_ref": output_ref,
             "output_sha256": output_sha256,
             "operation": op,
+        }
+
+    def _acquire_patch_write_claims(
+        self,
+        *,
+        run_id: str,
+        patch_content: str,
+        sandbox: SandboxedEnvironment,
+        worktree: Path,
+    ) -> tuple[Any, Any] | None:
+        """Acquire path-scoped write ownership for ``patch_apply``.
+
+        The claim scope is derived from the patch preview's
+        ``files_changed`` list and is always projected onto the shared
+        workspace root, so isolated run worktrees still serialize on
+        the same logical top-level areas.
+        """
+        from ao_kernel.coordination import (
+            ClaimRegistry,
+            acquire_path_write_claims,
+            build_coordination_sink,
+            load_coordination_policy,
+        )
+        from ao_kernel.patch import preview_diff
+
+        coordination_policy = load_coordination_policy(self._workspace_root)
+        if not coordination_policy.enabled:
+            return None
+
+        preview = preview_diff(worktree, patch_content, sandbox)
+        if not preview.files_changed:
+            return None
+
+        registry = ClaimRegistry(
+            self._workspace_root,
+            evidence_sink=build_coordination_sink(
+                self._workspace_root,
+                coordination_policy,
+                run_id=run_id,
+            ),
+        )
+        lease_set = acquire_path_write_claims(
+            registry,
+            self._workspace_root,
+            owner_agent_id=f"workflow-run:{run_id}",
+            paths=preview.files_changed,
+            policy=coordination_policy,
+        )
+        return registry, lease_set
+
+    def _ownership_payload(self, lease_set: Any) -> dict[str, Any]:
+        """Return additive audit fields for patch apply evidence."""
+        return {
+            "write_claim_areas": [lease.scope.area for lease in lease_set.leases],
+            "write_claim_resource_ids": [
+                lease.scope.resource_id for lease in lease_set.leases
+            ],
         }
 
     def _run_human_gate(
