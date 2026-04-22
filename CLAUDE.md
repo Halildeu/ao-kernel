@@ -423,6 +423,21 @@ bash .claude/scripts/ops.sh close-worktree <path>
 - yalnız attached ve clean non-current worktree'yi kapatır
 - branch'i silmez; yalnız worktree'yi kapatır
 
+Dirty bir yardımcı worktree'yi düşürmeden önce state'i saklamak gerekiyorsa şu
+yüzeyi kullan:
+
+```bash
+bash .claude/scripts/ops.sh archive-worktree <path>
+```
+
+`ops.sh archive-worktree` şu dar kontratla çalışır:
+
+- current worktree'yi arşivlemez
+- clean target'ı arşivlemez; `close-worktree`'ye yönlendirir
+- dirty non-current attached worktree için patch + untracked snapshot üretir
+- arşivi common git dir altına yazar, repo worktree'sini kirletmez
+- arşiv sonrası target worktree'yi force-remove eder, branch'i silmez
+
 Komut exit 1 dönerse DUR, kullanıcı ile karar ver:
 
 - Main'e rebase: `git rebase origin/main`

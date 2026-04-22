@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -79,6 +80,17 @@ def _run_overlap_check(cwd: Path) -> subprocess.CompletedProcess[str]:
 def _run_close_worktree(cwd: Path, target: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["bash", str(OPS_SCRIPT), "close-worktree", target.as_posix()],
+        cwd=cwd,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+
+
+def _run_archive_worktree(cwd: Path, target: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(OPS_SCRIPT), "archive-worktree", target.as_posix()],
         cwd=cwd,
         check=False,
         capture_output=True,
@@ -251,6 +263,7 @@ def test_ops_close_worktree_refuses_dirty_secondary_worktree(
 
     assert proc.returncode == 1
     assert "Refusing to close dirty worktree" in proc.stdout
+    assert "archive-worktree" in proc.stdout
     assert wt.exists()
     assert wt.as_posix() in _git(work, "worktree", "list", "--porcelain").stdout
 
@@ -269,6 +282,81 @@ def test_ops_close_worktree_rejects_unknown_target(tmp_path: Path) -> None:
     unknown = tmp_path / "missing"
 
     proc = _run_close_worktree(work, unknown)
+
+    assert proc.returncode == 1
+    assert "Target is not an attached worktree for this repository" in proc.stdout
+
+
+def test_ops_archive_worktree_archives_dirty_secondary_and_removes_it(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt = tmp_path / "wt-archive"
+
+    _run(
+        ["git", "worktree", "add", "-b", "feature-archive", wt.as_posix(), "origin/main"],
+        cwd=work,
+    )
+    (wt / "tracked.txt").write_text("dirty tracked\n", encoding="utf-8")
+    _git(wt, "add", "tracked.txt")
+    (wt / "tracked.txt").write_text("dirty tracked updated\n", encoding="utf-8")
+    (wt / "notes.txt").write_text("untracked note\n", encoding="utf-8")
+
+    proc = _run_archive_worktree(work, wt)
+
+    assert proc.returncode == 0
+    assert "== ops archive-worktree ==" in proc.stdout
+    assert "✓ Worktree archived and removed" in proc.stdout
+    assert not wt.exists()
+    assert wt.as_posix() not in _git(work, "worktree", "list", "--porcelain").stdout
+    assert "feature-archive" in _git(work, "branch", "--list").stdout
+
+    common_git_dir = (work / ".git").resolve()
+    archives = sorted((common_git_dir / "ops-worktree-archives").glob("*feature-archive*"))
+    assert len(archives) == 1
+    archive_dir = archives[0]
+    meta = json.loads((archive_dir / "archive-meta.json").read_text(encoding="utf-8"))
+    assert meta["branch"] == "feature-archive"
+    assert meta["dirty_status"] == {"staged": 1, "unstaged": 1, "untracked": 1}
+    assert "tracked.txt" in (archive_dir / "staged.patch").read_text(encoding="utf-8")
+    assert "tracked.txt" in (archive_dir / "unstaged.patch").read_text(encoding="utf-8")
+    assert (archive_dir / "untracked" / "notes.txt").read_text(encoding="utf-8") == "untracked note\n"
+    assert "notes.txt" in (archive_dir / "untracked-files.txt").read_text(encoding="utf-8")
+
+
+def test_ops_archive_worktree_refuses_clean_secondary_worktree(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt = tmp_path / "wt-clean-archive"
+
+    _run(
+        ["git", "worktree", "add", "-b", "feature-clean-archive", wt.as_posix(), "origin/main"],
+        cwd=work,
+    )
+
+    proc = _run_archive_worktree(work, wt)
+
+    assert proc.returncode == 1
+    assert "Refusing to archive clean worktree" in proc.stdout
+    assert "close-worktree" in proc.stdout
+    assert wt.exists()
+
+
+def test_ops_archive_worktree_refuses_current_worktree(tmp_path: Path) -> None:
+    work = _init_remote_clone(tmp_path)
+
+    proc = _run_archive_worktree(work, work)
+
+    assert proc.returncode == 1
+    assert "Refusing to archive current worktree" in proc.stdout
+
+
+def test_ops_archive_worktree_rejects_unknown_target(tmp_path: Path) -> None:
+    work = _init_remote_clone(tmp_path)
+    unknown = tmp_path / "missing"
+
+    proc = _run_archive_worktree(work, unknown)
 
     assert proc.returncode == 1
     assert "Target is not an attached worktree for this repository" in proc.stdout

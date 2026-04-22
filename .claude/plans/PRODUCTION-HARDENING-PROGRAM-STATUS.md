@@ -68,7 +68,7 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#197](https://github.com/Halildeu/ao-kernel/issues/197)
-- aktif slice: [`WP-6.3-CLOSE-WORKTREE.md`](./WP-6.3-CLOSE-WORKTREE.md)
+- aktif slice: [`WP-6.4-ARCHIVE-WORKTREE.md`](./WP-6.4-ARCHIVE-WORKTREE.md)
 
 **Adım sırası**
 1. `[x]` `ops.sh` dispatcher yüzeyi eklendi.
@@ -77,18 +77,21 @@ automation platform çizgisine taşımak.
 3. `[x]` Clean / warning / fail path'leri subprocess testleriyle pinlendi.
 4. `[x]` `WP-6.2` overlap-check yüzeyi eklendi.
 5. `[x]` `WP-6.3` close-worktree yüzeyi eklendi.
-6. `[ ]` `WP-6.4` archive-worktree yüzeyi eklenecek.
+6. `[x]` `WP-6.4` archive-worktree yüzeyi eklendi.
 
 **Canlı snapshot**
 - session başlangıç komutu: `bash .claude/scripts/ops.sh preflight`
 - çoklu worktree çakışma görünürlüğü: `bash .claude/scripts/ops.sh overlap-check`
 - güvenli yardımcı worktree kapanışı: `bash .claude/scripts/ops.sh close-worktree <path>`
+- dirty yardımcı worktree arşivleme + kaldırma: `bash .claude/scripts/ops.sh archive-worktree <path>`
 - hard block: forbidden branch / detached HEAD / stale base / `main` drift
 - warning-only: current dirty tree / upstream yok / other worktree dirty
 - overlap-check: exact file overlap ve shared top-level area sinyali üretir;
   bu slice görünürlük verir, henüz hard-enforcement yapmaz
 - close-worktree: clean non-current target'ı kapatır; dirty/current target için
   fail-closed davranır
+- archive-worktree: dirty non-current target için patch + untracked snapshot
+  alır, common git dir altına arşivler ve sonra target'ı kaldırır
 - `check-branch-sync.sh` alttaki primitive olarak korunur
 
 **Definition of Done**
@@ -97,6 +100,7 @@ automation platform çizgisine taşımak.
 - dirty tree ve other worktree riski görünür hale geliyor
 - çoklu worktree path çakışması görünür hale geliyor
 - güvenli worktree kapanışı standart yüzeyden yapılabiliyor
+- dirty worktree state'i repo kirletmeden arşivlenip güvenli kaldırılabiliyor
 - bu davranış test veya smoke ile pinlenmiş
 
 ## 6. Sonra

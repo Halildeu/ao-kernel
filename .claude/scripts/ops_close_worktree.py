@@ -105,7 +105,10 @@ def main(argv: list[str]) -> int:
 
     if staged or unstaged or untracked:
         print("Refusing to close dirty worktree")
-        print("Next step: commit/clean changes first; archive flow WP-6.4'te gelecek")
+        print(
+            "Next step: use `bash .claude/scripts/ops.sh archive-worktree <path>` "
+            "veya önce bilinçli olarak temizle"
+        )
         return 1
 
     _run_git(repo_root, "worktree", "remove", target.as_posix())
