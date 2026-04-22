@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-5-ADAPTER-PATH-COST-EVIDENCE-COMPLETENESS.md`
+- **Aktif slice planı:** `—` (`PB-5` closeout tamamlandı; sıradaki plan açılışı `PB-6` için)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#238](https://github.com/Halildeu/ao-kernel/issues/238)
+- **Aktif issue:** `—` (`PB-6` issue açılışı sıradaki iş)
 
 ## 2. Başlangıç Gerçeği
 
@@ -56,57 +56,41 @@ ayrı ayrı görünür kılmak.
 | `PB-2` `bug_fix_flow + codex-stub patch_preview` closure | Completed on `main` ([#222](https://github.com/Halildeu/ao-kernel/issues/222), [#224](https://github.com/Halildeu/ao-kernel/pull/224)) | `open_pr` adımında PR metadata/evidence boşluğunu kapatmak ve deferred bugfix workflow yüzeyini deterministik integration coverage ile doğrulamak | merged runtime fix + integration tests + green CI |
 | `PB-3` deterministic test hygiene / time seams | Completed on `main` ([#226](https://github.com/Halildeu/ao-kernel/issues/226), [#227](https://github.com/Halildeu/ao-kernel/pull/227), [#228](https://github.com/Halildeu/ao-kernel/pull/228), [#229](https://github.com/Halildeu/ao-kernel/pull/229), [#230](https://github.com/Halildeu/ao-kernel/pull/230), [#231](https://github.com/Halildeu/ao-kernel/pull/231)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | targeted suite proof + residual seam inventory |
 | `PB-4` support-surface widening decisions | Completed on `main` ([#232](https://github.com/Halildeu/ao-kernel/issues/232), [#237](https://github.com/Halildeu/ao-kernel/pull/237)) | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | canlı smoke + karar notu + docs parity |
-| `PB-5` adapter-path cost/evidence completeness | In progress ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness boşluklarını tek anlamlı kontrata indirmek | truth audit + tests/evidence parity |
+| `PB-5` adapter-path cost/evidence completeness | Completed ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness yüzeyinde ayrı runtime gap olup olmadığını karara bağlamak; sonuç: docs parity closeout yeterli, ayrı tranche 3 gerekmedi | truth audit + targeted tests + docs parity closeout |
 | `PB-6` general-purpose expansion gap map | Planned | narrow beta'dan daha geniş production platform çizgisine geçiş için önkoşulları tabloya dökmek | written gap map + ordered backlog |
 
 ## 5. Şimdi
 
-### `PB-5` — adapter-path cost/evidence completeness
+### `PB-5` — closeout kararı
 
-**Neden şimdi**
-- `PB-4` closeout-ready karardan çıkıp fiilen kapanmıştır; support surface
-  widening tarafında bugünkü boundary artık yazılı ve tek anlamlıdır.
-- Bir sonraki gerçek risk alanı, adapter-path cost ve evidence yüzeyinde kalan
-  truth gap'tir: bazı docs satırları bu alanı deferred söylerken bazı
-  benchmark/test yüzeyleri kapanmış contract gibi anlatmaktadır.
-- Bu slice'ın işi yeni promise eklemek değil; cost/evidence sözleşmesini
-  authoritative hale getirmektir.
+`PB-5` bu turda kapanmıştır. Docs parity patch sonrasında yeniden yapılan
+runtime/test/evidence audit'i şu hükme varmıştır:
 
-**Aktif kapsam**
-1. adapter-path `cost_usd` reconcile anlatısının truth audit'i
-2. evidence/event/materialization completeness yüzeyinin truth audit'i
-3. docs/runtime/tests/benchmark parity sonucu tek anlamlı verdict üretmek
+1. `post_adapter_reconcile` runtime hook'u, executor wiring'i ve scorecard
+   consumer zinciri `main` üzerinde gerçektir.
+2. Kalan asıl problem runtime yokluğu değil, support-boundary ile
+   benchmark/operator dilinin scope ayrımıydı; tranche 2 bunu tek anlamlı hale
+   getirmiştir.
+3. Bu nedenle ayrı bir `PB-5 tranche 3` runtime/evidence fix hattı
+   açılmamıştır.
 
-**Definition of Done**
-- adapter-path cost/evidence için tek authoritative contract yazılıdır
-- docs/runtime/tests/benchmark aynı sonucu söyler
-- gerçek gap varsa sonraki tranche'ler net repro/test planı ile sıralanır
+Closeout kanıtı:
 
-**Anlık ilerleme**
-- `PB-5` issue'su açıldı: [#238](https://github.com/Halildeu/ao-kernel/issues/238)
-- yaşayan slice planı oluşturuldu:
-  `.claude/plans/PB-5-ADAPTER-PATH-COST-EVIDENCE-COMPLETENESS.md`
-- tranche 1 truth audit yapıldı; hüküm şu:
-  adapter-path cost/evidence runtime hook'u repoda mevcut ve behavior-first
-  test/benchmark kanıtı var, fakat public support docs bunu bilerek deferred
-  support claim olarak tutuyor
-- bugün görünen ana gerilim runtime yokluğu değil; benchmark/operator contract
-  ile support-boundary dilinin scope ayrımını her yerde aynı netlikte
-  söylememesi
-- sıradaki doğru alt adım docs parity patch; runtime semantics değişikliği
-  ancak bu temizlendikten sonra gerçek bir completeness gap kalırsa açılacak
-- tranche 1 yerel kanıtı toplandı:
-  `test_post_adapter_reconcile` `17 passed`,
-  `test_cost_marker_idempotency` `12 passed`,
-  `test_scorecard_render` `10 passed`;
-  full-mode smoke operator prereq yokluğunda `skip` verdi
-- tranche 2 docs parity patch başlatıldı; hedef dört yüzey:
-  `PUBLIC-BETA.md`, `SUPPORT-BOUNDARY.md`, `BENCHMARK-SUITE.md`,
-  `BENCHMARK-FULL-MODE.md`
+- `python3 -m pytest tests/test_post_adapter_reconcile.py -q` → `17 passed`
+- `python3 -m pytest tests/test_cost_marker_idempotency.py -q` → `12 passed`
+- `python3 -m pytest tests/test_scorecard_render.py -q` → `10 passed`
+- `python3 -m pytest tests/benchmarks/test_full_mode_smoke.py -q -m full_mode --benchmark-mode=full`
+  → `1 skipped, 5 deselected`
+
+Residual not:
+
+- `tests/benchmarks/test_governed_review.py::TestCostReconcile::test_cost_usd_not_drained_in_fast_mode`
+  için `ADV-001` kalite advisory'si sürüyor; bu, ayrı runtime/evidence gap'i
+  değil test-hijyen backlog'udur.
 
 ## 6. Sonra
 
-`PB-5` kapandıktan sonraki doğru sıra:
+`PB-5` kapandığı için sıradaki doğru sıra:
 
 1. `PB-6` general-purpose expansion gap map
 
@@ -123,7 +107,7 @@ ayrı ayrı görünür kılmak.
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-5` adapter-path cost/evidence completeness
+1. `PB-6` general-purpose expansion gap map
 
 ## 9. Güncelleme Protokolü
 
