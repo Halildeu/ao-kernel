@@ -13,9 +13,10 @@ from ao_kernel.coordination import (
     release_path_write_claims,
 )
 from ao_kernel.executor.multi_step_driver import _StepFailed
+from ao_kernel.patch import apply_patch
 from ao_kernel.workflow.registry import StepDefinition
 from tests._driver_helpers import _GIT_CFG, build_driver, install_workspace
-from tests._patch_helpers import make_patch_from_changes
+from tests._patch_helpers import build_test_sandbox, make_patch_from_changes
 
 
 def _write_coordination_policy(workspace_root: Path, *, enabled: bool) -> None:
@@ -53,6 +54,17 @@ def _install_patch_target_repo(workspace_root: Path) -> None:
     )
 
 
+def _prepare_run_worktree(workspace_root: Path, run_id: str) -> Path:
+    worktree = workspace_root / ".ao" / "runs" / run_id / "worktree"
+    worktree.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", *_GIT_CFG, "-C", str(workspace_root), "worktree", "add", "--detach", str(worktree), "HEAD"],
+        check=True,
+        capture_output=True,
+    )
+    return worktree
+
+
 def _patch_step() -> StepDefinition:
     return StepDefinition(
         step_name="apply_patch",
@@ -65,6 +77,21 @@ def _patch_step() -> StepDefinition:
         human_interrupt_allowed=False,
         gate=None,
         operation="patch_apply",
+    )
+
+
+def _rollback_step(reverse_diff_id: str) -> StepDefinition:
+    return StepDefinition(
+        step_name=reverse_diff_id,
+        actor="ao-kernel",
+        adapter_id=None,
+        required_capabilities=(),
+        policy_refs=(),
+        on_failure="transition_to_failed",
+        timeout_seconds=None,
+        human_interrupt_allowed=False,
+        gate=None,
+        operation="patch_rollback",
     )
 
 
@@ -99,6 +126,14 @@ def _record_with_adapter_output(run_id: str, output_ref: str) -> dict[str, objec
                 "output_ref": output_ref,
             }
         ],
+    }
+
+
+def _bare_record(run_id: str) -> dict[str, object]:
+    return {
+        "run_id": run_id,
+        "state": "running",
+        "steps": [],
     }
 
 
@@ -214,6 +249,163 @@ class TestPatchWriteOwnershipEnforcement:
         events = _events(tmp_path, run_id)
         kinds = [event["kind"] for event in events]
         assert kinds == ["step_started", "claim_conflict"]
+
+        remaining = registry.list_agent_claims("agent-existing")
+        assert [claim.resource_id for claim in remaining] == [
+            blocked.leases[0].scope.resource_id
+        ]
+        release_path_write_claims(registry, blocked)
+
+    def test_patch_rollback_skips_claims_when_coordination_disabled(
+        self, tmp_path: Path,
+    ) -> None:
+        install_workspace(tmp_path)
+        _install_patch_target_repo(tmp_path)
+        run_id = "00000000-0000-4000-8000-000000000704"
+        worktree = _prepare_run_worktree(tmp_path, run_id)
+        _write_coordination_policy(tmp_path, enabled=False)
+        patch = make_patch_from_changes(worktree, {"src/foo.py": "x = 2\n"})
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        apply_result = apply_patch(
+            worktree,
+            patch,
+            build_test_sandbox(worktree),
+            run_dir,
+        )
+        subprocess.run(
+            ["git", *_GIT_CFG, "-C", str(worktree), "commit", "-q", "-am", "apply"],
+            check=True,
+            capture_output=True,
+        )
+        driver = build_driver(tmp_path)
+
+        _record, result = driver._run_aokernel_step(
+            run_id,
+            _bare_record(run_id),
+            _rollback_step(apply_result.reverse_diff_id),
+            attempt=1,
+            step_id="rollback_patch",
+        )
+
+        assert result["step_state"] == "completed"
+        assert (worktree / "src" / "foo.py").read_text(encoding="utf-8") == "x = 1\n"
+        events = _events(tmp_path, run_id)
+        assert [event["kind"] for event in events] == [
+            "step_started",
+            "diff_rolled_back",
+        ]
+        diff_rolled_back = next(
+            event for event in events if event["kind"] == "diff_rolled_back"
+        )
+        assert "write_claim_areas" not in diff_rolled_back["payload"]
+
+    def test_patch_rollback_acquires_and_releases_write_claims(
+        self, tmp_path: Path,
+    ) -> None:
+        install_workspace(tmp_path)
+        _install_patch_target_repo(tmp_path)
+        run_id = "00000000-0000-4000-8000-000000000705"
+        worktree = _prepare_run_worktree(tmp_path, run_id)
+        _write_coordination_policy(tmp_path, enabled=True)
+        patch = make_patch_from_changes(worktree, {"src/foo.py": "x = 2\n"})
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        apply_result = apply_patch(
+            worktree,
+            patch,
+            build_test_sandbox(worktree),
+            run_dir,
+        )
+        subprocess.run(
+            ["git", *_GIT_CFG, "-C", str(worktree), "commit", "-q", "-am", "apply"],
+            check=True,
+            capture_output=True,
+        )
+        driver = build_driver(tmp_path)
+
+        _record, result = driver._run_aokernel_step(
+            run_id,
+            _bare_record(run_id),
+            _rollback_step(apply_result.reverse_diff_id),
+            attempt=1,
+            step_id="rollback_patch",
+        )
+
+        assert result["step_state"] == "completed"
+        assert (worktree / "src" / "foo.py").read_text(encoding="utf-8") == "x = 1\n"
+
+        events = _events(tmp_path, run_id)
+        assert [event["kind"] for event in events] == [
+            "step_started",
+            "claim_acquired",
+            "diff_rolled_back",
+            "claim_released",
+        ]
+
+        diff_rolled_back = next(
+            event for event in events if event["kind"] == "diff_rolled_back"
+        )
+        assert diff_rolled_back["payload"]["write_claim_areas"] == ["src"]
+        assert len(diff_rolled_back["payload"]["write_claim_resource_ids"]) == 1
+
+        artifact = json.loads(
+            (run_dir / result["output_ref"]).read_text(encoding="utf-8")
+        )
+        assert artifact["write_claim_areas"] == ["src"]
+
+        registry = ClaimRegistry(tmp_path)
+        assert registry.list_agent_claims(f"workflow-run:{run_id}") == []
+
+    def test_patch_rollback_conflict_surfaces_as_step_failed_signal(
+        self, tmp_path: Path,
+    ) -> None:
+        install_workspace(tmp_path)
+        _install_patch_target_repo(tmp_path)
+        run_id = "00000000-0000-4000-8000-000000000706"
+        worktree = _prepare_run_worktree(tmp_path, run_id)
+        _write_coordination_policy(tmp_path, enabled=True)
+        patch = make_patch_from_changes(worktree, {"src/foo.py": "x = 2\n"})
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        apply_result = apply_patch(
+            worktree,
+            patch,
+            build_test_sandbox(worktree),
+            run_dir,
+        )
+        subprocess.run(
+            ["git", *_GIT_CFG, "-C", str(worktree), "commit", "-q", "-am", "apply"],
+            check=True,
+            capture_output=True,
+        )
+        driver = build_driver(tmp_path)
+        registry = ClaimRegistry(tmp_path)
+        blocked = acquire_path_write_claims(
+            registry,
+            tmp_path,
+            owner_agent_id="agent-existing",
+            paths=["src/foo.py"],
+        )
+
+        with pytest.raises(_StepFailed) as excinfo:
+            driver._run_aokernel_step(
+                run_id,
+                _bare_record(run_id),
+                _rollback_step(apply_result.reverse_diff_id),
+                attempt=1,
+                step_id="rollback_patch",
+            )
+
+        assert excinfo.value.code == "WRITE_OWNERSHIP_CONFLICT"
+        assert "ClaimConflictError" in excinfo.value.reason
+        assert (worktree / "src" / "foo.py").read_text(encoding="utf-8") == "x = 2\n"
+
+        events = _events(tmp_path, run_id)
+        assert [event["kind"] for event in events] == [
+            "step_started",
+            "claim_conflict",
+        ]
 
         remaining = registry.list_agent_claims("agent-existing")
         assert [claim.resource_id for claim in remaining] == [
