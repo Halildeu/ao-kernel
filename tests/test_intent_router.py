@@ -61,8 +61,13 @@ class TestBundledRules:
     def test_bundled_rules_classify_bug_fix(self) -> None:
         router = IntentRouter()
         result = router.classify("Please fix the broken authentication bug")
-        assert result is not None
-        assert result.workflow_id == "bug_fix_flow"
+        assert result == ClassificationResult(
+            workflow_id="bug_fix_flow",
+            workflow_version=None,
+            confidence=0.82,
+            matched_rule_id="bug_fix_keywords",
+            match_type="keyword",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -75,8 +80,13 @@ class TestKeywordMatching:
         rule = _rule(rule_id="r1", keywords=("bug",))
         router = IntentRouter(rules=[rule])
         result = router.classify("We have a bug in production")
-        assert result is not None
-        assert result.matched_rule_id == "r1"
+        assert result == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="keyword",
+        )
 
     def test_substring_does_not_match(self) -> None:
         rule = _rule(rule_id="r1", keywords=("bug",))
@@ -89,24 +99,39 @@ class TestKeywordMatching:
         rule = _rule(rule_id="r1", keywords=("BUG",))
         router = IntentRouter(rules=[rule])
         result = router.classify("tiny bug today")
-        assert result is not None
-        assert result.matched_rule_id == "r1"
+        assert result == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="keyword",
+        )
 
     def test_keyword_with_dash_boundary(self) -> None:
         """Dashed keyword matches the dashed token exactly."""
         rule = _rule(rule_id="r1", keywords=("bug-fix",))
         router = IntentRouter(rules=[rule])
         result = router.classify("we filed a bug-fix yesterday")
-        assert result is not None
-        assert result.match_type == "keyword"
+        assert result == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="keyword",
+        )
 
     def test_keyword_with_underscore_is_part_of_word(self) -> None:
         """Underscore is `\\w`, so 'bug' does match 'bug_fix' token."""
         rule = _rule(rule_id="r1", keywords=("bug_fix",))
         router = IntentRouter(rules=[rule])
         result = router.classify("tag: bug_fix pending")
-        assert result is not None
-        assert result.matched_rule_id == "r1"
+        assert result == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="keyword",
+        )
 
 
 class TestRegexMatching:
@@ -119,8 +144,13 @@ class TestRegexMatching:
         )
         router = IntentRouter(rules=[rule])
         result = router.classify("Fix: resolve crash in worker")
-        assert result is not None
-        assert result.match_type == "regex"
+        assert result == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="regex",
+        )
 
     def test_regex_miss_returns_none(self) -> None:
         pattern = re.compile(r"^fix:", re.IGNORECASE)
@@ -143,7 +173,13 @@ class TestCombinedMatching:
         )
         router = IntentRouter(rules=[rule])
         # Both conditions met.
-        assert router.classify("Fix: urgent crash in worker") is not None
+        assert router.classify("Fix: urgent crash in worker") == ClassificationResult(
+            workflow_id="demo_flow",
+            workflow_version=None,
+            confidence=0.8,
+            matched_rule_id="r1",
+            match_type="combined",
+        )
         # Keyword only — no regex match.
         assert router.classify("urgent change needed") is None
         # Regex only — no keyword match.
@@ -167,9 +203,13 @@ class TestPriority:
         )
         router = IntentRouter(rules=[low, high])
         result = router.classify("please fix the crash")
-        assert result is not None
-        assert result.matched_rule_id == "high"
-        assert result.workflow_id == "other_flow"
+        assert result == ClassificationResult(
+            workflow_id="other_flow",
+            workflow_version=None,
+            confidence=0.9,
+            matched_rule_id="high",
+            match_type="keyword",
+        )
 
     def test_duplicate_priority_match_raises(self) -> None:
         r1 = _rule(rule_id="a", keywords=("fix",), priority=5)
@@ -210,10 +250,13 @@ class TestFallback:
             default_workflow_id="fallback_flow",
         )
         result = router.classify("unrelated text")
-        assert result is not None
-        assert result.workflow_id == "fallback_flow"
-        assert result.matched_rule_id == "__default__"
-        assert result.match_type == "default"
+        assert result == ClassificationResult(
+            workflow_id="fallback_flow",
+            workflow_version=None,
+            confidence=0.0,
+            matched_rule_id="__default__",
+            match_type="default",
+        )
 
     def test_llm_fallback_raises_classification_error_when_llm_missing(self) -> None:
         """PR-A6: llm_fallback now tries to call LLM; without [llm]

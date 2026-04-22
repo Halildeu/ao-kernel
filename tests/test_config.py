@@ -30,8 +30,7 @@ class TestWorkspaceRoot:
 
     def test_finds_ao_dir(self, tmp_workspace: Path):
         result = workspace_root()
-        assert result is not None
-        assert result.name == ".ao"
+        assert result == tmp_workspace
 
     def test_returns_none_library_mode(self, empty_dir: Path):
         result = workspace_root()
