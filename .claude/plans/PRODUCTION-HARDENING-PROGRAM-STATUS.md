@@ -54,62 +54,46 @@ automation platform çizgisine taşımak.
 | `WP-4` Packaging/install trust | Baseline | Completed on `main` | wheel-only smoke gerçek gate olur | `scripts/packaging_smoke.py` + CI |
 | `WP-5` Release governance hardening | Faz 3 | Completed on `main` | branch protection / required checks / CODEOWNERS / merge gate sertliği | PR #202 + branch protection snapshot |
 | `WP-6` Worktree/branch safety control loop | Faz 3 | Completed on `main` | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
-| `WP-7` Path-scoped write ownership | Faz 3 | **Active** ([#198](https://github.com/Halildeu/ao-kernel/issues/198)) | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
-| `WP-8` Real adapter certification | Faz 4 | Planned ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | en az 2 gerçek adapter prod-tier smoke ve failure-mode testlerinden geçsin | capability matrix + smoke logs |
+| `WP-7` Path-scoped write ownership | Faz 3 | Completed on `main` | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
+| `WP-8` Real adapter certification | Faz 4 | **Active** ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | en az 2 gerçek adapter prod-tier smoke ve failure-mode testlerinden geçsin | capability matrix + smoke logs |
 | `WP-9` Ops/runbook/incident readiness | Faz 4 | Planned ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
 
 ## 5. Şimdi
 
-### `WP-7` — Path-Scoped Write Ownership
-
-**Neden şimdi**
-- Worktree/branch safety hattı kapandı. Bundan sonraki ana değişim riski,
-  aynı logical path alanına iki writer'ın sessizce girmesi.
-
-**GitHub takip**
-- üst issue: [#198](https://github.com/Halildeu/ao-kernel/issues/198)
-- son merge: `WP-7.4` / PR #211
-- aktif slice: [`WP-7.5-ORCHESTRATION-COVERAGE-MATRIX.md`](./WP-7.5-ORCHESTRATION-COVERAGE-MATRIX.md)
-
-**Adım sırası**
-1. `[x]` `WP-7.1` path resource namespace kararı + acquire/release helper'ları
-2. `[x]` `WP-7.2` claim visibility (`coordination status`) yüzeyi
-3. `[x]` `WP-7.3` patch apply / patch rollback write-ownership enforcement
-4. `[x]` `WP-7.4` handoff / takeover ergonomics
-5. `[~]` `WP-7.5` orchestration coverage matrix
-
-**Canlı snapshot**
-- `patch_apply` artık coordination enabled workspace'te preview edilen
-  `files_changed` üstünden path-scoped write claim alıyor
-- claim scope top-level area üstünden belirlenir (`src/*` -> tek claim alanı)
-- claim acquire/release event'leri workflow evidence akışına bağlanır
-- conflict path'i deterministic `_StepFailed(code=WRITE_OWNERSHIP_CONFLICT)`
-  olarak yüzeye çıkar
-- `patch_rollback` aynı ownership kontratıyla claim acquire/release yapar
-- `coordination takeover` operatöre past-grace claim devralma yüzeyi verir
-- aktif alt slice mevcut ao-kernel operasyonlarını claim-free / claim-required
-  matrisi olarak behavior-first testlerle kilitler
-- read-only `coordination status` yüzeyi ownership state'ini snapshot olarak
-  vermeye devam eder
-
-**Definition of Done**
-- coordination enabled patch apply ve patch rollback yolları claim
-  acquire/release ile çalışıyor
-- conflict aynı path alanında deterministic fail üretiyor
-- `coordination takeover` past-grace claim'i CLI üzerinden devralabiliyor
-- `context_compile` ve `patch_preview` claim-free kaldığı testle pinleniyor
-- dormant coordination semantics korunuyor
-- yeni davranış behavior-first testlerle pinleniyor
-- docs/runtime/story aynı şeyi söylüyor
-
-## 6. Sonra
-
 ### `WP-8` — Real Adapter Certification
 
-**Amaç**
-- stub-demodan çıkıp gerçek adapter yüzeyini kanıtlı hale getirmek
+**Neden şimdi**
+- `WP-7` ile change-safety hattı kapandı. Bundan sonraki ana eksik, gerçek
+  adapter yüzeyinin stub baseline'dan ayrışmış kanıtla sertifiye edilmemiş
+  olması.
 
-## 7. En Son
+**GitHub takip**
+- üst issue: [#199](https://github.com/Halildeu/ao-kernel/issues/199)
+- son merge: `WP-7.5` / PR #212
+- aktif slice: [`WP-8.1-REAL-ADAPTER-CERTIFICATION-BASELINE.md`](./WP-8.1-REAL-ADAPTER-CERTIFICATION-BASELINE.md)
+
+**Adım sırası**
+1. `[~]` `WP-8.1` certification baseline + candidate matrix
+2. `[ ]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
+3. `[ ]` `WP-8.3` ikinci gerçek adapter certification lane
+4. `[ ]` `WP-8.4` public capability/support matrix hizası
+
+**Canlı snapshot**
+- bundled gerçek-adapter aday seti `claude-code-cli` + `gh-cli-pr`
+  olarak netleştiriliyor
+- `codex-stub` sertifikasyon dışı deterministic baseline olarak kalıyor
+- gerçek-adapter CI hâlâ otomatik release gate değildir; mevcut yüzey
+  operator-managed durumdadır
+- aktif alt slice certification kriterlerini ve aday matrisini tek kaynağa
+  bağlıyor
+
+**Definition of Done**
+- bundled gerçek-adapter aday seti explicit
+- her aday için smoke + failure-mode + evidence gereksinimi yazılı
+- stub baseline ile gerçek adapter yüzeyi net ayrışmış
+- public support boundary yanlış genişletilmemiş
+
+## 6. Sonra
 
 ### `WP-9` — Operations / Runbook / Incident Readiness
 
@@ -127,9 +111,8 @@ automation platform çizgisine taşımak.
 
 Bugünden itibaren doğru sıra:
 
-1. `WP-7` Path-scoped write ownership
-2. `WP-8` Real adapter certification
-3. `WP-9` Ops/runbook/incident readiness
+1. `WP-8` Real adapter certification
+2. `WP-9` Ops/runbook/incident readiness
 
 ## 9. Güncelleme Protokolü
 
