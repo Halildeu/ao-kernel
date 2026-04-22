@@ -53,8 +53,8 @@ automation platform çizgisine taşımak.
 | `WP-3` Policy rollout test upgrade | Baseline | Completed on `main` | behavior-first governance testleri | rollout pytest paketi |
 | `WP-4` Packaging/install trust | Baseline | Completed on `main` | wheel-only smoke gerçek gate olur | `scripts/packaging_smoke.py` + CI |
 | `WP-5` Release governance hardening | Faz 3 | Completed on `main` | branch protection / required checks / CODEOWNERS / merge gate sertliği | PR #202 + branch protection snapshot |
-| `WP-6` Worktree/branch safety control loop | Faz 3 | **Active** ([#197](https://github.com/Halildeu/ao-kernel/issues/197)) | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
-| `WP-7` Path-scoped write ownership | Faz 3 | Planned ([#198](https://github.com/Halildeu/ao-kernel/issues/198)) | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
+| `WP-6` Worktree/branch safety control loop | Faz 3 | Completed on `main` | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
+| `WP-7` Path-scoped write ownership | Faz 3 | **Active** ([#198](https://github.com/Halildeu/ao-kernel/issues/198)) | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
 | `WP-8` Real adapter certification | Faz 4 | Planned ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | en az 2 gerçek adapter prod-tier smoke ve failure-mode testlerinden geçsin | capability matrix + smoke logs |
 | `WP-9` Ops/runbook/incident readiness | Faz 4 | Planned ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
 
@@ -68,7 +68,7 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#197](https://github.com/Halildeu/ao-kernel/issues/197)
-- aktif slice: [`WP-6.4-ARCHIVE-WORKTREE.md`](./WP-6.4-ARCHIVE-WORKTREE.md)
+- son slice: [`WP-6.4-ARCHIVE-WORKTREE.md`](./WP-6.4-ARCHIVE-WORKTREE.md)
 
 **Adım sırası**
 1. `[x]` `ops.sh` dispatcher yüzeyi eklendi.
@@ -110,10 +110,19 @@ automation platform çizgisine taşımak.
 **Amaç**
 - mevcut claim/fencing altyapısını path-grubu ownership seviyesine taşımak
 
+**GitHub takip**
+- üst issue: [#198](https://github.com/Halildeu/ao-kernel/issues/198)
+- aktif slice: [`WP-7.1-PATH-RESOURCE-NAMESPACE.md`](./WP-7.1-PATH-RESOURCE-NAMESPACE.md)
+
 **Hedef slice'lar**
-1. ownership model ve resource namespace kararı
-2. claim / release / takeover / handoff kaydı
-3. executor veya orchestration girişinde write ownership enforcement
+1. `[x]` ownership model ve resource namespace kararı
+2. `[ ]` claim / release / takeover / handoff kaydı
+3. `[ ]` executor veya orchestration girişinde write ownership enforcement
+
+**Bu slice’ın hedefi (`WP-7.1`)**
+- workspace-relative path -> top-level area -> deterministic `resource_id`
+- mevcut `ClaimRegistry` üstünden sequential acquire/release helper’ları
+- partial acquire rollback ve pytest kanıtı
 
 ## 7. En Son
 

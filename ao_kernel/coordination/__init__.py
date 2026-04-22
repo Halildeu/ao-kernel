@@ -54,6 +54,17 @@ from ao_kernel.coordination.policy import (
     load_coordination_policy,
     match_resource_pattern,
 )
+from ao_kernel.coordination.path_ownership import (
+    PathWriteLease,
+    PathWriteLeaseSet,
+    PathWriteScope,
+    acquire_path_write_claims,
+    build_path_write_resource_id,
+    build_path_write_scopes,
+    normalize_workspace_relative_path,
+    release_path_write_claims,
+    top_level_write_area,
+)
 from ao_kernel.coordination.registry import (
     AgentClaimIndex,
     ClaimRegistry,
@@ -85,6 +96,16 @@ __all__ = [
     "EvidenceRedaction",
     "load_coordination_policy",
     "match_resource_pattern",
+    # Path ownership
+    "PathWriteLease",
+    "PathWriteLeaseSet",
+    "PathWriteScope",
+    "acquire_path_write_claims",
+    "build_path_write_resource_id",
+    "build_path_write_scopes",
+    "normalize_workspace_relative_path",
+    "release_path_write_claims",
+    "top_level_write_area",
     # Registry
     "AgentClaimIndex",
     "ClaimRegistry",

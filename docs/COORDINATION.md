@@ -136,6 +136,31 @@ registry.prune_expired_claims(policy=None, *, max_batch=None)
 
 Callers **MUST** hold onto the `Claim` dataclass returned by `acquire_claim` (or `takeover_claim`) — `heartbeat` and `release_claim` take both `resource_id` and `claim_id` (plus `owner_agent_id`) as arguments so the registry does O(1) direct file lookup rather than maintaining a reverse index.
 
+Path-scoped write ownership builds on the same registry rather than introducing a
+parallel lock layer:
+
+```python
+from ao_kernel.coordination import (
+    acquire_path_write_claims,
+    release_path_write_claims,
+)
+
+lease_set = acquire_path_write_claims(
+    registry,
+    workspace_root,
+    owner_agent_id="agent-alpha",
+    paths=["pkg/core.py", "pkg/sub/test_core.py"],
+)
+
+release_path_write_claims(registry, lease_set)
+```
+
+The v1 path-ownership granularity is **top-level area**. The helper maps
+workspace-relative paths onto deterministic `write-area.*` resource ids and
+acquires them sequentially in sorted order. Multi-area acquisition is **not
+atomic**; if a later area conflicts, earlier acquired areas are released
+best-effort in reverse order.
+
 ### 10.2 Fail-closed vs fail-open
 
 - **Fail-closed (raise, never silently absorb):**
