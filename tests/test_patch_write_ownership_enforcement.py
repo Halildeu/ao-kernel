@@ -80,6 +80,21 @@ def _patch_step() -> StepDefinition:
     )
 
 
+def _preview_step() -> StepDefinition:
+    return StepDefinition(
+        step_name="preview_diff",
+        actor="ao-kernel",
+        adapter_id=None,
+        required_capabilities=(),
+        policy_refs=(),
+        on_failure="transition_to_failed",
+        timeout_seconds=None,
+        human_interrupt_allowed=False,
+        gate=None,
+        operation="patch_preview",
+    )
+
+
 def _rollback_step(reverse_diff_id: str) -> StepDefinition:
     return StepDefinition(
         step_name=reverse_diff_id,
@@ -145,6 +160,37 @@ def _events(workspace_root: Path, run_id: str) -> list[dict[str, Any]]:
 
 
 class TestPatchWriteOwnershipEnforcement:
+    def test_patch_preview_remains_claim_free_when_coordination_enabled(
+        self, tmp_path: Path,
+    ) -> None:
+        install_workspace(tmp_path)
+        _install_patch_target_repo(tmp_path)
+        patch = make_patch_from_changes(tmp_path, {"src/foo.py": "x = 2\n"})
+        _write_coordination_policy(tmp_path, enabled=True)
+        run_id = "00000000-0000-4000-8000-000000000700"
+        output_ref = _prime_adapter_artifact(tmp_path, run_id, patch=patch)
+        driver = build_driver(tmp_path)
+
+        _record, result = driver._run_aokernel_step(
+            run_id,
+            _record_with_adapter_output(run_id, output_ref),
+            _preview_step(),
+            attempt=1,
+            step_id="preview_diff",
+        )
+
+        assert result["step_state"] == "completed"
+        events = _events(tmp_path, run_id)
+        assert [event["kind"] for event in events] == [
+            "step_started",
+            "diff_previewed",
+        ]
+        previewed = next(event for event in events if event["kind"] == "diff_previewed")
+        assert "src/foo.py" in previewed["payload"]["files_changed"]
+
+        registry = ClaimRegistry(tmp_path)
+        assert registry.list_agent_claims(f"workflow-run:{run_id}") == []
+
     def test_patch_apply_skips_claims_when_coordination_disabled(
         self, tmp_path: Path,
     ) -> None:

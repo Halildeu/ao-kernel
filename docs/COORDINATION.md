@@ -191,6 +191,17 @@ fields on `diff_applied` / `diff_rolled_back`
 afterwards. With coordination disabled, both patch operations keep the old
 dormant behavior and do not engage the claim layer.
 
+Current shipped `ao-kernel` operation matrix is explicit:
+
+- `context_compile` -> claim-free (evidence/materialization only; no shared
+  workspace file mutation contract)
+- `patch_preview` -> claim-free (diff inspection only; no mutation)
+- `patch_apply` -> claim-required
+- `patch_rollback` -> claim-required
+
+Any future write-capable orchestration operation must either join the
+claim-required set or document why it is safely claim-free.
+
 ### 10.2 Fail-closed vs fail-open
 
 - **Fail-closed (raise, never silently absorb):**
