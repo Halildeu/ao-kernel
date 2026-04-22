@@ -5,11 +5,12 @@
 adımlarla daha güvenilir ve sonunda daha genel amaçlı production-grade coding
 automation platform çizgisine taşımak.
 **Yürütme modu:** Kapsam disiplini
-**Bu dosyanın rolü:** yaşayan execution backlog + program status SSOT
+**Bu dosyanın rolü:** kapanmış production hardening programının closeout snapshot SSOT'u
 
 ## 1. SSOT Sınırları
 
-- **Program execution status / backlog:** bu dosya
+- **Production hardening closeout snapshot:** bu dosya
+- **Sonraki execution backlog:** `.claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md`
 - **Yaşayan hardening ilkeleri:** `CLAUDE.md` §20
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Tarihsel policy-command closure planı:** `.claude/plans/POLICY-COMMAND-ENFORCEMENT-PROGRAM-PLAN.md`
