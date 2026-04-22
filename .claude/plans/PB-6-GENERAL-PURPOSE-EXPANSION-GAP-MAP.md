@@ -190,11 +190,27 @@ DoD:
 3. Sonraki runtime slice'lar rastgele değil, ordered tranche backlog'tan çıkar.
 4. Support widening kararı helper smoke veya manifest varlığına indirgenmez.
 
+## `PB-6.1` Başlatma Notu
+
+`PB-6.1` bu slice altında aktif alt hat olarak başlatıldı:
+
+- plan: `.claude/plans/PB-6.1-EXTENSION-TRUTH-RATIONALIZATION.md`
+- issue: [#245](https://github.com/Halildeu/ao-kernel/issues/245)
+
+İlk karar:
+
+1. `PRJ-HELLO` dışındaki 18 extension tek blok olarak ele alınmayacak
+2. bucket ayrımı artık yazılı:
+   - `promote candidate`
+   - `remap-needed`
+   - `quarantine-keep`
+   - `retire/dead-reference candidate`
+3. `PB-6` içindeki sonraki widening kararı, `PB-6.1` karar tablosu olmadan
+   alınmayacak
+
 ## Beklenen Sonraki Adım
 
-`PB-6` için ilk uygulanabilir slice `PB-6.1` olacaktır:
+`PB-6` için sıradaki doğru canlı iş `PB-6.1a` confirmatory pass olacaktır:
 
-1. doctor truth inventory'yi extension bazlı karar tablosuna çevirmek
-2. quarantine/remap/missing-runtime ref debt'ini en yüksek sinyalli kümelerle
-   sınıflandırmak
-3. bu sınıflandırmadan sonra ancak gerçek promotion adaylarını ayırmak
+1. retire/dead-reference adaylarını bir kez daha hedefli kanıtla teyit etmek
+2. ardından `promote candidate` shortlist'inden ilk runtime slice adayını seçmek

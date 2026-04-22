@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-6-GENERAL-PURPOSE-EXPANSION-GAP-MAP.md`
+- **Aktif slice planı:** `.claude/plans/PB-6.1-EXTENSION-TRUTH-RATIONALIZATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **Aktif issue:** [#245](https://github.com/Halildeu/ao-kernel/issues/245)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,11 +60,11 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6` — general-purpose expansion gap map
+### `PB-6.1` — extension truth rationalization
 
-`PB-6` aktif hat olarak açıldı. Bu slice'ın işi support boundary'yi hemen
-widen etmek değil; narrow Public Beta yüzeyi ile general-purpose production
-iddiası arasındaki somut boşlukları canlı kanıtla sınıflandırmaktır.
+`PB-6` içinde aktif alt hat artık `PB-6.1`'dir. Bu slice'ın işi, bundled
+extension inventory'yi tek parça "quarantined" kümesi gibi görmek yerine
+extension-bazlı karar tablosuna çevirmektir.
 
 Canlı baseline:
 
@@ -76,26 +76,30 @@ Canlı baseline:
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
    - `overall_status="pass"`
 
-İlk hüküm:
+`PB-6.1` kararı:
 
-1. helper-backed beta lane'ler bugün canlı smoke veriyor
-2. buna rağmen runtime-backed surface hâlâ çok dar
-3. en kritik ilk gap, bundled inventory ile gerçek runtime-backed support
-   yüzeyi arasındaki açıklıktır
+1. `PRJ-HELLO` dışındaki 18 extension aynı tedaviyle ele alınmayacak
+2. bucket ayrımı yazılı hale geldi:
+   - `promote candidate`
+   - `remap-needed`
+   - `quarantine-keep`
+   - `retire/dead-reference candidate`
+3. support widening bundan sonra bu karar tablosu olmadan ilerlemeyecek
 
 Sıradaki doğru alt adım:
 
-1. `PB-6.1` extension truth rationalization
-2. doctor truth inventory'yi extension bazlı karar tablosuna çevirmek
-3. promotion adayı / quarantine / retire kümelerini ayırmak
+1. `PB-6.1a` retire/dead-reference adayları için confirmatory pass
+2. `PB-6.1b` promote candidate shortlist seçimi
+3. sonra ancak widening slice sırasını netleştirmek
 
 ## 6. Sonra
 
 `PB-6` açıldıktan sonraki doğru sıra:
 
-1. `PB-6.1` extension truth rationalization
-2. `PB-6.2` real-adapter workflow graduation criteria
-3. `PB-6.3` write-side / PR lane graduation criteria
+1. `PB-6.1a` retire/dead-reference confirmatory pass
+2. `PB-6.1b` promote candidate shortlist
+3. `PB-6.2` real-adapter workflow graduation criteria
+4. `PB-6.3` write-side / PR lane graduation criteria
 
 ## 7. Riskler
 
@@ -111,7 +115,7 @@ Sıradaki doğru alt adım:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.1` extension truth rationalization
+1. `PB-6.1a` retire/dead-reference confirmatory pass
 
 ## 9. Güncelleme Protokolü
 
