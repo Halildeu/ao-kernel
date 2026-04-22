@@ -11,10 +11,14 @@
 # - `overlap-check`
 #   - attached worktree'lerin changed-path setlerini karşılaştırır
 #   - exact file overlap ve paylaşılan top-level alan sinyali üretir
+# - `close-worktree`
+#   - clean non-current worktree'yi güvenli biçimde kapatır
+#   - dirty veya current target için fail-closed davranır
 #
 # Kullanım:
 #   bash .claude/scripts/ops.sh preflight
 #   bash .claude/scripts/ops.sh overlap-check
+#   bash .claude/scripts/ops.sh close-worktree <path>
 
 set -euo pipefail
 
@@ -25,10 +29,12 @@ usage() {
 Usage:
   bash .claude/scripts/ops.sh preflight
   bash .claude/scripts/ops.sh overlap-check
+  bash .claude/scripts/ops.sh close-worktree <path>
 
 Available commands:
-  preflight      Session başlangıcı için branch/worktree sağlık özeti
-  overlap-check  Attached worktree'ler arası path-overlap riski görünürlüğü
+  preflight       Session başlangıcı için branch/worktree sağlık özeti
+  overlap-check   Attached worktree'ler arası path-overlap riski görünürlüğü
+  close-worktree  Clean non-current worktree kapatma yüzeyi
 EOF
 }
 
@@ -158,6 +164,10 @@ run_overlap_check() {
   python3 "$SCRIPT_DIR/ops_overlap_check.py"
 }
 
+run_close_worktree() {
+  python3 "$SCRIPT_DIR/ops_close_worktree.py" "$@"
+}
+
 main() {
   local command="${1:-}"
   case "$command" in
@@ -166,6 +176,10 @@ main() {
       ;;
     overlap-check)
       run_overlap_check
+      ;;
+    close-worktree)
+      shift
+      run_close_worktree "$@"
       ;;
     ""|-h|--help|help)
       usage
