@@ -12,7 +12,7 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** henüz açılmadı (`PB-4` issue scope'u plan dosyasına indirgenecek)
+- **Aktif slice planı:** `.claude/plans/PB-4-SUPPORT-SURFACE-WIDENING-DECISIONS.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
