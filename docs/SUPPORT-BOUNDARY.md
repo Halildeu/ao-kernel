@@ -1,0 +1,74 @@
+# Support Boundary
+
+This document is the narrative companion to [`PUBLIC-BETA.md`](PUBLIC-BETA.md).
+When the two disagree, `PUBLIC-BETA.md` wins.
+
+Use this page when you need to answer: "is this surface actually supported,
+operator-only, or just contract inventory?"
+
+## 1. Support layers
+
+| Layer | Included surfaces | Verification |
+|---|---|---|
+| Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke | entrypoint checks, doctor, demo review smoke, CI |
+| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed dry-run lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
+| Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
+| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a support claim |
+
+## 2. Current line by line boundary
+
+### Shipped baseline
+
+The repo currently supports these as the default claim:
+
+- `ao-kernel version`
+- `python -m ao_kernel version`
+- `python -m ao_kernel.cli version`
+- `ao-kernel doctor`
+- bundled `review_ai_flow` + bundled `codex-stub`
+- `python3 examples/demo_review.py --cleanup`
+
+### Beta (operator-managed)
+
+These are real, testable surfaces, but they are not the default shipped demo:
+
+- `python3 scripts/claude_code_cli_smoke.py --output text`
+- `python3 scripts/gh_cli_pr_smoke.py --output text`
+- real-adapter benchmark full-mode runbooks
+
+### Contract inventory
+
+These may be bundled and schema-valid without being end-to-end supported:
+
+- bundled adapter manifests
+- bundled extensions and registry files
+- `examples/hello-llm/`
+- roadmap/spec documents
+
+## 3. What does NOT automatically widen support
+
+The following do not, by themselves, justify a broader support claim:
+
+- a manifest file existing in `ao_kernel/defaults/`
+- a runbook describing an operator flow
+- a roadmap/spec document
+- a contract loader or truth-audit warning surface
+- a smoke passing only in one operator environment without the support docs
+  being updated
+
+## 4. Operational rule
+
+If a surface is not simultaneously backed by:
+
+1. a real code path,
+2. a behavior check or smoke,
+3. the relevant CI or explicit operator validation path,
+4. the matching support doc wording,
+
+then treat it as not widened.
+
+## 5. Related documents
+
+- [`PUBLIC-BETA.md`](PUBLIC-BETA.md)
+- [`OPERATIONS-RUNBOOK.md`](OPERATIONS-RUNBOOK.md)
+- [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
