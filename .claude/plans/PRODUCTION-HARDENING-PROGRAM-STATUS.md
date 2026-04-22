@@ -85,9 +85,10 @@ automation platform çizgisine taşımak.
 - gerçek-adapter CI hâlâ otomatik release gate değildir; mevcut yüzey
   operator-managed durumdadır
 - aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
-  helper'ı eklendi; 4 unit test ile davranış pinlendi
-- bu makinedeki canlı preflight şu an iki blocker veriyor:
-  `prompt_access_denied` ve `manifest_cli_contract_mismatch`
+  helper'ı eklendi; smoke + manifest contract testleri yeşil
+- repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
+- bu makinedeki canlı preflight artık tek blocker veriyor:
+  `prompt_access_denied`
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

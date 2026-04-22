@@ -399,6 +399,7 @@ def _looks_like_manifest_contract_mismatch(result: CommandResult) -> bool:
         "did you mean",
         "error: unknown option",
         "--prompt-file",
+        "--append-system-prompt-file",
     )
     return any(needle in combined for needle in needles)
 

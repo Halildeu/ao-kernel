@@ -108,7 +108,7 @@ Adapters use one of two transports: `cli` (subprocess-based) or `http` (network-
 "invocation": {
   "transport": "cli",
   "command": "claude",
-  "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+  "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"],
   "env_allowlist_ref": "#/env_allowlist/allowed_keys",
   "cwd_policy": "per_run_worktree",
   "stdin_mode": "none",
@@ -168,7 +168,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
   "invocation": {
     "transport": "cli",
     "command": "claude",
-    "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+    "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",
     "stdin_mode": "none",

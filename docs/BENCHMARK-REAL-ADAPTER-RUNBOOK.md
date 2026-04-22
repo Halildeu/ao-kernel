@@ -1,6 +1,6 @@
 # Benchmark — Real-Adapter Runbook
 
-**Scope.** Operator-facing walkthrough for running the `governed_review_claude_code_cli` workflow (v3.10 A2, PR #157) against a real `claude` CLI instead of the `codex-stub` baseline. Paired with:
+**Scope.** Operator-facing walkthrough for running the `governed_review_claude_code_cli` workflow (v3.10 A2, PR #157; invocation contract refreshed in WP-8.2) against a real `claude` CLI instead of the `codex-stub` baseline. Paired with:
 
 - `governed_review_claude_code_cli.v1.json` (A2) — workflow variant that targets the `claude-code-cli` adapter.
 - `claude-code-cli.manifest.v1.json` v1.1.0+ (A1) — advertises `review_findings` capability + `output_parse` rule pointing at `review-findings.schema.v1.json`.
@@ -19,7 +19,7 @@ Successful completion here validates an operator setup, not the whole product su
    "invocation": {
      "transport": "cli",
      "command": "claude",
-     "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"]
+     "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"]
    }
    ```
    Do NOT treat "binary exists" as sufficient. The authoritative preflight is the helper in §1.1, which verifies version, auth status, prompt access, and whether the installed Claude CLI still accepts the bundled manifest argv shape.
@@ -47,7 +47,7 @@ The helper is the current smoke SSOT for `claude-code-cli`. It performs four che
 1. `claude --version`
 2. `claude auth status`
 3. a live prompt-access probe via `claude -p`
-4. a bundled-manifest smoke that resolves the repo's actual `claude-code-cli` invocation template and runs it against a disposable prompt file
+4. a bundled-manifest smoke that resolves the repo's actual `claude-code-cli` invocation template and runs it against a disposable prompt/context file pair
 
 **Success criterion:** all four checks report `pass`.
 

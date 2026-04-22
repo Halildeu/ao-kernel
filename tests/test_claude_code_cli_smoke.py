@@ -114,11 +114,11 @@ def test_manifest_contract_mismatch_is_reported() -> None:
             )
         if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
             return _result(cmd, stdout="ok\n")
-        if cmd[:4] == ("/fake/claude", "code", "run", "--prompt-file"):
+        if cmd[:4] == ("/fake/claude", "-p", "Your entire response MUST be a single JSON object with exactly this shape: {\"status\":\"ok\",\"review_findings\":{\"schema_version\":\"1\",\"findings\":[],\"summary\":\"smoke ok\"}}", "--append-system-prompt-file"):
             return _result(
                 cmd,
                 returncode=1,
-                stderr="error: unknown option '--prompt-file'",
+                stderr="error: unknown option '--append-system-prompt-file'",
             )
         raise AssertionError(f"unexpected argv: {cmd!r}")
 
