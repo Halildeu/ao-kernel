@@ -3,7 +3,7 @@
 **Durum tarihi:** 2026-04-22
 **İlişkili issue:** [#238](https://github.com/Halildeu/ao-kernel/issues/238)
 **Üst tracker:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-**Durum:** In progress
+**Durum:** Completed
 
 ## Amaç
 
@@ -144,6 +144,54 @@ python3 -m pytest tests/test_post_adapter_reconcile.py -q
 python3 -m pytest tests/test_scorecard_render.py -q
 ```
 
+## Closeout Verdict
+
+**Closeout tarihi:** 2026-04-22
+
+Docs parity patch sonrasında yeniden yapılan runtime/test/evidence audit
+sonucu:
+
+1. `main` üzerinde ayrı bir `PB-5 tranche 3` runtime/evidence fix hattı
+   gerektiren yeni bir boşluk tespit edilmedi.
+2. `post_adapter_reconcile` runtime hook'u mevcuttur, executor adapter-path
+   akışına wired durumdadır ve downstream scorecard consumer / render yüzeyi
+   event-backed sinyali tüketmektedir.
+3. Support-boundary ile benchmark/operator dili artık aynı şeyi söylemektedir:
+   runtime hook'un varlığı internal/benchmark contract'tir; bu, public support
+   claim'i kendiliğinden widen etmez.
+4. Bu nedenle `PB-5`in açık kalan kısmı runtime semantics değil, docs parity
+   closeout'uydu; o closeout bu slice içinde tamamlanmıştır.
+
+## Closeout Kanıtı
+
+Karar öncesi yeniden koşulan yerel kanıt paketi:
+
+```bash
+python3 -m pytest tests/test_post_adapter_reconcile.py -q
+python3 -m pytest tests/test_cost_marker_idempotency.py -q
+python3 -m pytest tests/test_scorecard_render.py -q
+python3 -m pytest tests/benchmarks/test_full_mode_smoke.py -q -m full_mode --benchmark-mode=full
+```
+
+Sonuç özeti:
+
+1. `tests/test_post_adapter_reconcile.py` → `17 passed`
+2. `tests/test_cost_marker_idempotency.py` → `12 passed`
+3. `tests/test_scorecard_render.py` → `10 passed`
+4. `tests/benchmarks/test_full_mode_smoke.py` → `1 skipped, 5 deselected`
+   - skip, operator/full-mode prerequisite yokluğunda beklenen davranış olarak
+     değerlendirildi; public support boundary zaten bu lane'i shipped claim
+     yapmamaktadır
+
+## Residual Notlar
+
+1. `tests/benchmarks/test_governed_review.py::TestCostReconcile::test_cost_usd_not_drained_in_fast_mode`
+   hâlâ `ADV-001` kalite advisory'si üretmektedir; bu, helper tabanlı assert
+   kullanan test-hijyen alanıdır.
+2. Bu advisory, `PB-5` kapsamında yeni bir runtime/evidence completeness gap
+   sayılmamıştır; deterministic test hygiene / genişleme backlog'unda ele
+   alınmalıdır.
+
 ## Kabul Kriterleri
 
 1. Adapter-path cost/evidence için tek bir authoritative contract yazılıdır.
@@ -153,15 +201,9 @@ python3 -m pytest tests/test_scorecard_render.py -q
 4. Closeout anında kalan deferred alanlar sessizce kaybolmaz; status ve known
    boundary yüzeyinde görünür kalır.
 
-## Beklenen Sonraki Adım
+## Sonraki Adım
 
-`PB-5` için sıradaki doğru alt adım docs parity patch'tir:
-
-1. `PUBLIC-BETA.md` / `SUPPORT-BOUNDARY.md` tarafında "deferred support claim"
-   ile "missing runtime capability" ayrımını daha açık hale getirmek
-2. `BENCHMARK-SUITE.md` / `BENCHMARK-FULL-MODE.md` tarafında "gap closed"
-   ifadesini internal benchmark/operator contract bağlamına sabitlemek
-3. Gerekirse scorecard wording'ini değil, surrounding docs dilini netleştirmek
-
-`PB-5` kapandıktan sonraki doğru sıra `PB-6` general-purpose expansion gap map
-olacaktır.
+`PB-5` closeout sonrasındaki doğru sıra `PB-6` general-purpose expansion gap
+map'tir. Bir sonraki canlı slice, dar Public Beta'dan daha geniş production
+platform çizgisine geçiş için eksik adapter/runtime/ops alanlarını tabloya
+dökecektir.
