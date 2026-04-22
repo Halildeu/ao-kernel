@@ -68,14 +68,15 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#198](https://github.com/Halildeu/ao-kernel/issues/198)
-- son merge: `WP-7.3 slice 1` / PR #209
-- aktif slice: [`WP-7.3-EXECUTOR-ENFORCEMENT.md`](./WP-7.3-EXECUTOR-ENFORCEMENT.md)
+- son merge: `WP-7.3 slice 2` / PR #210
+- aktif slice: [`WP-7.4-TAKEOVER-ERGONOMICS.md`](./WP-7.4-TAKEOVER-ERGONOMICS.md)
 
 **Adım sırası**
 1. `[x]` `WP-7.1` path resource namespace kararı + acquire/release helper'ları
 2. `[x]` `WP-7.2` claim visibility (`coordination status`) yüzeyi
-3. `[~]` `WP-7.3` patch apply / patch rollback write-ownership enforcement
-4. `[ ]` handoff / takeover ergonomics ve daha geniş orchestration entry coverage
+3. `[x]` `WP-7.3` patch apply / patch rollback write-ownership enforcement
+4. `[~]` `WP-7.4` handoff / takeover ergonomics
+5. `[ ]` daha geniş orchestration entry coverage
 
 **Canlı snapshot**
 - `patch_apply` artık coordination enabled workspace'te preview edilen
@@ -84,13 +85,16 @@ automation platform çizgisine taşımak.
 - claim acquire/release event'leri workflow evidence akışına bağlanır
 - conflict path'i deterministic `_StepFailed(code=WRITE_OWNERSHIP_CONFLICT)`
   olarak yüzeye çıkar
-- aktif alt slice aynı kontratı `patch_rollback` yoluna genişletir
-- read-only preview/status yüzeyleri unchanged
+- `patch_rollback` aynı ownership kontratıyla claim acquire/release yapar
+- aktif alt slice operatör için `coordination takeover` CLI yüzeyini ekler
+- read-only `coordination status` yüzeyi ownership state'ini snapshot olarak
+  vermeye devam eder
 
 **Definition of Done**
 - coordination enabled patch apply ve patch rollback yolları claim
   acquire/release ile çalışıyor
 - conflict aynı path alanında deterministic fail üretiyor
+- `coordination takeover` past-grace claim'i CLI üzerinden devralabiliyor
 - dormant coordination semantics korunuyor
 - yeni davranış behavior-first testlerle pinleniyor
 - docs/runtime/story aynı şeyi söylüyor

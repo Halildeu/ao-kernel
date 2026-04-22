@@ -7,7 +7,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ao_kernel.coordination.errors import ClaimCorruptedError
+from ao_kernel.coordination import ClaimRegistry
+from ao_kernel.coordination.claim import claim_to_dict
+from ao_kernel.coordination.errors import (
+    ClaimConflictError,
+    ClaimConflictGraceError,
+    ClaimCoordinationDisabledError,
+    ClaimCorruptedError,
+    ClaimNotFoundError,
+)
 from ao_kernel.coordination.status import (
     build_coordination_status,
     render_coordination_status,
@@ -68,4 +76,67 @@ def cmd_coordination_status(args: Any) -> int:
     return 0
 
 
-__all__ = ["cmd_coordination_status"]
+def _takeover_payload(claim: Any, workspace: Path) -> dict[str, Any]:
+    payload = claim_to_dict(claim)
+    payload["version"] = "v1"
+    payload["workspace_root"] = str(workspace)
+    payload["owner_tag"] = payload.pop("owner_agent_id")
+    payload["status"] = "TAKEN_OVER"
+    return payload
+
+
+def _render_takeover(payload: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "== coordination takeover ==",
+            f"Workspace: {payload['workspace_root']}",
+            f"Resource: {payload['resource_id']}",
+            f"New owner: {payload['owner_tag']}",
+            f"Claim id: {payload['claim_id']}",
+            f"Fencing token: {payload['fencing_token']}",
+            f"Acquired at: {payload['acquired_at']}",
+            f"Heartbeat at: {payload['heartbeat_at']}",
+            f"Status: {payload['status']}",
+        ]
+    )
+
+
+def cmd_coordination_takeover(args: Any) -> int:
+    """Handle ``ao-kernel coordination takeover``."""
+    workspace = _resolve_workspace(args)
+    registry = ClaimRegistry(workspace)
+
+    try:
+        claim = registry.takeover_claim(
+            getattr(args, "resource_id"),
+            getattr(args, "owner_tag"),
+        )
+    except ClaimCoordinationDisabledError:
+        print(
+            "error: coordination disabled — "
+            "policy_coordination_claims.enabled=false",
+            file=sys.stderr,
+        )
+        return 1
+    except (ClaimConflictError, ClaimConflictGraceError, ClaimNotFoundError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except ClaimCorruptedError as exc:
+        print(f"error: corrupt coordination state — {exc}", file=sys.stderr)
+        return 2
+
+    payload_doc = _takeover_payload(claim, workspace)
+    if getattr(args, "format", "text") == "json":
+        payload = json.dumps(payload_doc, indent=2, sort_keys=True)
+    else:
+        payload = _render_takeover(payload_doc)
+
+    try:
+        _emit_output(payload, args)
+    except (OSError, PermissionError) as exc:
+        print(f"error: output write failed — {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+__all__ = ["cmd_coordination_status", "cmd_coordination_takeover"]

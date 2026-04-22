@@ -166,10 +166,17 @@ Read-only operator visibility for the current claim SSOT is available via:
 ```bash
 ao-kernel coordination status
 ao-kernel coordination status --format json
+ao-kernel coordination takeover --resource-id worktree-a --owner-tag agent-beta
 ```
 
 The status surface reports the current claim owner plus derived state:
 `ACTIVE`, `GRACE`, or `TAKEOVER_READY`.
+
+`coordination takeover` exact `resource_id` ile çalışır; path-scoped ownership
+claim'lerinde human-friendly label değil, `coordination status --format json`
+çıktısındaki gerçek `work_item_id` / `resource_id` anahtarı kullanılmalıdır.
+Komut yalnızca claim past-grace durumuna geçtiğinde başarılı olur; live claim,
+grace window ve absent claim ayrı non-zero exit ile reddedilir.
 
 Runtime enforcement now covers the shipped write-capable patch points:
 `MultiStepDriver._run_patch_step()` acquires path-scoped claims before

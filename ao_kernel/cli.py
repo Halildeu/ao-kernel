@@ -815,6 +815,31 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="File path for atomic write; omit for stdout",
     )
+    coordination_takeover_p = coordination_sub.add_parser(
+        "takeover",
+        help="Take over a past-grace coordination claim for a new owner",
+    )
+    coordination_takeover_p.add_argument(
+        "--resource-id",
+        required=True,
+        help="Exact claim resource_id to take over",
+    )
+    coordination_takeover_p.add_argument(
+        "--owner-tag",
+        required=True,
+        help="New owner tag / agent id that will hold the claim",
+    )
+    coordination_takeover_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)",
+    )
+    coordination_takeover_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
 
     # Policy-sim subcommand (PR-B4)
     policy_sim_p = sub.add_parser(
@@ -1359,12 +1384,15 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "coordination":
         from ao_kernel._internal.coordination.cli_handlers import (
             cmd_coordination_status,
+            cmd_coordination_takeover,
         )
 
         coordination_cmd = getattr(args, "coordination_command", None)
         if coordination_cmd == "status":
             return cmd_coordination_status(args)
-        print("Usage: ao-kernel coordination status", file=sys.stderr)
+        if coordination_cmd == "takeover":
+            return cmd_coordination_takeover(args)
+        print("Usage: ao-kernel coordination {status|takeover}", file=sys.stderr)
         return 1
 
     handler = dispatch.get(cmd)
