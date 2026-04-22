@@ -2,14 +2,19 @@
 #
 # ops.sh — WP-6 operasyon dispatcher'ı.
 #
-# İlk yüzey: `preflight`
-# - branch freshness (`check-branch-sync.sh`)
-# - current worktree dirtiness
-# - upstream divergence visibility
-# - other attached worktree snapshot
+# İlk yüzeyler:
+# - `preflight`
+#   - branch freshness (`check-branch-sync.sh`)
+#   - current worktree dirtiness
+#   - upstream divergence visibility
+#   - other attached worktree snapshot
+# - `overlap-check`
+#   - attached worktree'lerin changed-path setlerini karşılaştırır
+#   - exact file overlap ve paylaşılan top-level alan sinyali üretir
 #
 # Kullanım:
 #   bash .claude/scripts/ops.sh preflight
+#   bash .claude/scripts/ops.sh overlap-check
 
 set -euo pipefail
 
@@ -19,9 +24,11 @@ usage() {
   cat <<'EOF'
 Usage:
   bash .claude/scripts/ops.sh preflight
+  bash .claude/scripts/ops.sh overlap-check
 
 Available commands:
-  preflight   Session başlangıcı için branch/worktree sağlık özeti
+  preflight      Session başlangıcı için branch/worktree sağlık özeti
+  overlap-check  Attached worktree'ler arası path-overlap riski görünürlüğü
 EOF
 }
 
@@ -147,11 +154,18 @@ run_preflight() {
   fi
 }
 
+run_overlap_check() {
+  python3 "$SCRIPT_DIR/ops_overlap_check.py"
+}
+
 main() {
   local command="${1:-}"
   case "$command" in
     preflight)
       run_preflight
+      ;;
+    overlap-check)
+      run_overlap_check
       ;;
     ""|-h|--help|help)
       usage

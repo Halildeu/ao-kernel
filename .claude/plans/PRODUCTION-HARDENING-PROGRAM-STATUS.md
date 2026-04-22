@@ -68,27 +68,31 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#197](https://github.com/Halildeu/ao-kernel/issues/197)
-- aktif slice: [`WP-6.1-OPS-PREFLIGHT.md`](./WP-6.1-OPS-PREFLIGHT.md)
+- aktif slice: [`WP-6.2-OVERLAP-CHECK.md`](./WP-6.2-OVERLAP-CHECK.md)
 
 **Adım sırası**
 1. `[x]` `ops.sh` dispatcher yüzeyi eklendi.
 2. `[x]` `preflight` branch freshness + current dirty tree + upstream +
    other worktree snapshot'ını tek komutta topladı.
 3. `[x]` Clean / warning / fail path'leri subprocess testleriyle pinlendi.
-4. `[ ]` `WP-6.2` overlap-check yüzeyi eklenecek.
+4. `[x]` `WP-6.2` overlap-check yüzeyi eklendi.
 5. `[ ]` `WP-6.3` close-worktree yüzeyi eklenecek.
 6. `[ ]` `WP-6.4` archive-worktree yüzeyi eklenecek.
 
 **Canlı snapshot**
 - session başlangıç komutu: `bash .claude/scripts/ops.sh preflight`
+- çoklu worktree çakışma görünürlüğü: `bash .claude/scripts/ops.sh overlap-check`
 - hard block: forbidden branch / detached HEAD / stale base / `main` drift
 - warning-only: current dirty tree / upstream yok / other worktree dirty
+- overlap-check: exact file overlap ve shared top-level area sinyali üretir;
+  bu slice görünürlük verir, henüz hard-enforcement yapmaz
 - `check-branch-sync.sh` alttaki primitive olarak korunur
 
 **Definition of Done**
 - tek komutla session sağlık özeti alınabiliyor
 - yanlış base ile çalışmak hard fail olarak yakalanıyor
 - dirty tree ve other worktree riski görünür hale geliyor
+- çoklu worktree path çakışması görünür hale geliyor
 - bu davranış test veya smoke ile pinlenmiş
 
 ## 6. Sonra
