@@ -83,6 +83,16 @@ ayrı ayrı görünür kılmak.
 - docs/runtime/test/CI tek anlamlı support boundary anlatır
 - widen edilmeyen yüzeyler açıkça deferred veya operator-managed olarak yazılır
 
+**Anlık ilerleme**
+- ilk tranche canlı smoke tazelemesi tamamlandı:
+  - `python3 scripts/claude_code_cli_smoke.py --output text` → `pass`
+  - `python3 scripts/gh_cli_pr_smoke.py --output text` → `pass`
+- bugünkü kanıt, docs'taki mevcut dar boundary ile uyumlu:
+  `claude-code-cli` beta operator-managed, `gh-cli-pr` beta preflight-only,
+  gerçek remote PR açılışı deferred
+- sıradaki alt adım: `claude-code-cli` lane'i için prerequisite / known bug /
+  smoke tutarlılığını karar notuna çevirmek
+
 ## 6. Sonra
 
 `PB-4` kapandıktan sonraki doğru sıra:
