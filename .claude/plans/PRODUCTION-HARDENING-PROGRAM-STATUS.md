@@ -21,6 +21,9 @@ automation platform çizgisine taşımak.
 - `WP-0` ile `WP-4` fiilen kapanmıştır.
 - `main` hattında truth parity, policy command enforcement, behavioral policy
   tests ve wheel-first packaging smoke mevcuttur.
+- `WP-5` repo-side governance closure ve güvenli branch-protection tightening
+  uygulanmıştır; `enforce_admins` kişisel repo + tek maintainer kısıtı nedeniyle
+  bilinçli olarak deferred kalır.
 - Repo bugün **dar ama kanıtlı bir governed runtime / Public Beta** seviyesindedir.
 - Repo bugün hâlâ **genel amaçlı production coding automation platformu**
   seviyesinde değildir.
@@ -49,63 +52,46 @@ automation platform çizgisine taşımak.
 | `WP-2` Policy command enforcement | Baseline | Completed on `main` | adapter CLI command deny gerçekten live | runtime tests + deny repro |
 | `WP-3` Policy rollout test upgrade | Baseline | Completed on `main` | behavior-first governance testleri | rollout pytest paketi |
 | `WP-4` Packaging/install trust | Baseline | Completed on `main` | wheel-only smoke gerçek gate olur | `scripts/packaging_smoke.py` + CI |
-| `WP-5` Release governance hardening | Faz 3 | **Active** ([#196](https://github.com/Halildeu/ao-kernel/issues/196)) | branch protection / required checks / CODEOWNERS / merge gate sertliği | repo diff + GitHub settings checklist |
-| `WP-6` Worktree/branch safety control loop | Faz 3 | Planned ([#197](https://github.com/Halildeu/ao-kernel/issues/197)) | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
+| `WP-5` Release governance hardening | Faz 3 | Completed on `main` | branch protection / required checks / CODEOWNERS / merge gate sertliği | PR #202 + branch protection snapshot |
+| `WP-6` Worktree/branch safety control loop | Faz 3 | **Active** ([#197](https://github.com/Halildeu/ao-kernel/issues/197)) | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
 | `WP-7` Path-scoped write ownership | Faz 3 | Planned ([#198](https://github.com/Halildeu/ao-kernel/issues/198)) | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
 | `WP-8` Real adapter certification | Faz 4 | Planned ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | en az 2 gerçek adapter prod-tier smoke ve failure-mode testlerinden geçsin | capability matrix + smoke logs |
 | `WP-9` Ops/runbook/incident readiness | Faz 4 | Planned ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
 
 ## 5. Şimdi
 
-### `WP-5` — Release Governance Hardening
-
-**Neden şimdi**
-- Teknik closure büyük ölçüde tamam; bundan sonraki ana risk yanlış merge,
-  yumuşak gate veya repo-policy bypass.
-
-**GitHub takip**
-- üst issue: [#196](https://github.com/Halildeu/ao-kernel/issues/196)
-- aktif slice: [#195](https://github.com/Halildeu/ao-kernel/issues/195)
-- canlı envanter: [`WP-5.1-GOVERNANCE-INVENTORY.md`](./WP-5.1-GOVERNANCE-INVENTORY.md)
-- repo-side governance SSOT: [`.github/REPO-GOVERNANCE.md`](../../.github/REPO-GOVERNANCE.md)
-
-**Adım sırası**
-1. `[x]` Repo içinden zorunlu check isimlerini ve merge protokolünü netleştir.
-2. `[x]` GitHub settings tarafında repo dışı kalan kontroller için yazılı checklist üret.
-3. `[x]` `.github/CODEOWNERS` eklendi; code-owner enforcement önkoşulu yazılı hale getirildi.
-4. `[x]` `main` release gate'inin hangi kısmı repoda, hangi kısmı platform ayarında
-   enforced bunu kalıcı governance dokümanına bağla.
-5. `[ ]` GitHub branch protection ayarlarını hedef konfigürasyona çek (`WP-5.3`).
-
-**Canlı snapshot**
-- required check'ler şu an: `lint`, `test (3.11)`, `test (3.12)`,
-  `test (3.13)`, `coverage`, `typecheck`
-- `packaging-smoke` workflow'da blocking ama branch protection'da required değil
-- `.github/CODEOWNERS` repo içinde var; platform enforcement için ikinci maintainer
-  veya açık istisna kararı gerekiyor
-- `dismiss_stale_reviews=false`
-- `require_code_owner_reviews=false`
-- `enforce_admins=false`
-
-**Definition of Done**
-- required checks listesi yazılı ve güncel
-- code-owner review beklentisi repo içinde görünür
-- admin bypass / stale review / strict merge için dış-ayar checklist'i mevcut
-- normal geliştirici akışını bozmadan merge güvenliği artmış
-
-## 6. Sonra
-
 ### `WP-6` — Worktree/Branch Safety Control Loop
 
-**Amaç**
-- merge'de kaybolma, stale worktree ile ilerleme, overlap fark etmeme
-  problemlerini operasyona gömmek
+**Neden şimdi**
+- Branch protection sertleşti; bundan sonraki ana risk yanlış worktree üzerinde
+  çalışma, dirty tree unutma ve stale base ile session başlatma.
 
-**Hedef slice'lar**
-1. `ops preflight`
-2. `ops overlap-check`
-3. `ops close-worktree`
-4. `ops archive-worktree`
+**GitHub takip**
+- üst issue: [#197](https://github.com/Halildeu/ao-kernel/issues/197)
+- aktif slice: [`WP-6.1-OPS-PREFLIGHT.md`](./WP-6.1-OPS-PREFLIGHT.md)
+
+**Adım sırası**
+1. `[x]` `ops.sh` dispatcher yüzeyi eklendi.
+2. `[x]` `preflight` branch freshness + current dirty tree + upstream +
+   other worktree snapshot'ını tek komutta topladı.
+3. `[x]` Clean / warning / fail path'leri subprocess testleriyle pinlendi.
+4. `[ ]` `WP-6.2` overlap-check yüzeyi eklenecek.
+5. `[ ]` `WP-6.3` close-worktree yüzeyi eklenecek.
+6. `[ ]` `WP-6.4` archive-worktree yüzeyi eklenecek.
+
+**Canlı snapshot**
+- session başlangıç komutu: `bash .claude/scripts/ops.sh preflight`
+- hard block: forbidden branch / detached HEAD / stale base / `main` drift
+- warning-only: current dirty tree / upstream yok / other worktree dirty
+- `check-branch-sync.sh` alttaki primitive olarak korunur
+
+**Definition of Done**
+- tek komutla session sağlık özeti alınabiliyor
+- yanlış base ile çalışmak hard fail olarak yakalanıyor
+- dirty tree ve other worktree riski görünür hale geliyor
+- bu davranış test veya smoke ile pinlenmiş
+
+## 6. Sonra
 
 ### `WP-7` — Path-Scoped Write Ownership
 
@@ -145,11 +131,10 @@ automation platform çizgisine taşımak.
 
 Bugünden itibaren doğru sıra:
 
-1. `WP-5` Release governance hardening
-2. `WP-6` Worktree/branch safety control loop
-3. `WP-7` Path-scoped write ownership
-4. `WP-8` Real adapter certification
-5. `WP-9` Ops/runbook/incident readiness
+1. `WP-6` Worktree/branch safety control loop
+2. `WP-7` Path-scoped write ownership
+3. `WP-8` Real adapter certification
+4. `WP-9` Ops/runbook/incident readiness
 
 ## 9. Güncelleme Protokolü
 
