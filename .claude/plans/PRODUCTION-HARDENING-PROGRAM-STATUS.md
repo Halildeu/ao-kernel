@@ -55,82 +55,49 @@ automation platform çizgisine taşımak.
 | `WP-5` Release governance hardening | Faz 3 | Completed on `main` | branch protection / required checks / CODEOWNERS / merge gate sertliği | PR #202 + branch protection snapshot |
 | `WP-6` Worktree/branch safety control loop | Faz 3 | Completed on `main` | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
 | `WP-7` Path-scoped write ownership | Faz 3 | Completed on `main` | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
-| `WP-8` Real adapter certification | Faz 4 | **Active** ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | en az 2 gerçek adapter prod-tier smoke ve failure-mode testlerinden geçsin | capability matrix + smoke logs |
-| `WP-9` Ops/runbook/incident readiness | Faz 4 | Planned ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
+| `WP-8` Real adapter certification | Faz 4 | Completed on `main` ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | helper-backed real-adapter smoke/failure-mode baseline + capability matrix hizası | smoke logs + support matrix |
+| `WP-9` Ops/runbook/incident readiness | Faz 4 | **Active** ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
 
 ## 5. Şimdi
 
-### `WP-8` — Real Adapter Certification
-
-**Neden şimdi**
-- `WP-7` ile change-safety hattı kapandı. Bundan sonraki ana eksik, gerçek
-  adapter yüzeyinin stub baseline'dan ayrışmış kanıtla sertifiye edilmemiş
-  olması.
-
-**GitHub takip**
-- üst issue: [#199](https://github.com/Halildeu/ao-kernel/issues/199)
-- son merge: `WP-8.3` / PR #215
-- aktif slice: [`WP-8.4-CAPABILITY-MATRIX-ALIGNMENT.md`](./WP-8.4-CAPABILITY-MATRIX-ALIGNMENT.md)
-
-**Adım sırası**
-1. `[x]` `WP-8.1` certification baseline + candidate matrix
-2. `[x]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
-3. `[x]` `WP-8.3` `gh-cli-pr` side-effect-safe preflight baseline
-4. `[~]` `WP-8.4` public capability/support matrix hizası
-
-**Canlı snapshot**
-- bundled gerçek-adapter aday seti `claude-code-cli` + `gh-cli-pr`
-  olarak netleşti
-- `codex-stub` sertifikasyon dışı deterministic baseline olarak kalıyor
-- gerçek-adapter CI hâlâ otomatik release gate değildir; mevcut yüzey
-  operator-managed durumdadır
-- aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
-  helper'ı eklendi; smoke + manifest contract testleri yeşil
-- aktif alt slice için `python3 scripts/gh_cli_pr_smoke.py`
-  helper'ı eklendi; `gh` binary + auth + repo visibility + safe
-  `gh pr create --dry-run` preflight'ı tek komutta toplandı
-- `WP-8.3` PR #215 ile merge edildi; canlı `gh_cli_pr_smoke` + tam CI turu
-  yeşil geçti
-- repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
-- aynı canlı turda önce `claude auth status` yeşil olsa da `claude -p`
-  org-level access hatasıyla düştü; kontrollü re-login sonrası helper tam
-  `pass` verdi ve doğrudan `claude -p` smoke'u `ok` döndürdü
-- `setup-token` altında üretilen uzun ömürlü token ise bu turda güvenilir
-  kurtarma yolu olarak doğrulanmadı; ayrıca `Invalid bearer token` reddi
-  görüldü
-- `claude-code-cli` lane'i bugün **Beta (operator-managed)** olarak
-  hizalanacak: helper-backed preflight ve canlı prompt smoke var, ancak
-  default shipped demo değildir
-- `gh-cli-pr` lane'i bugün **Beta (operator-managed preflight only)** olarak
-  hizalanacak: helper-backed dry-run smoke var, ancak gerçek remote PR açılışı
-  hâlâ deferred kalır
-
-**Definition of Done**
-- bundled gerçek-adapter aday seti explicit
-- her aday için smoke + failure-mode + evidence gereksinimi yazılı
-- stub baseline ile gerçek adapter yüzeyi net ayrışmış
-- public support boundary yanlış genişletilmemiş
-
-## 6. Sonra
-
 ### `WP-9` — Operations / Runbook / Incident Readiness
 
-**Amaç**
-- ürünün sadece çalışması değil, işletilebilir olması
+**Neden şimdi**
+- `WP-8.4` ile support matrix dili hizalandı. Bundan sonraki ana eksik,
+  operator'ın incident, upgrade, rollback ve support-boundary kararlarını
+  aynı SSOT'tan alabileceği işletim paketidir.
 
-**Minimum kabul**
-- incident runbook
-- rollback yolu
-- upgrade notes
-- support boundary
-- non-empty known bugs registry
+**GitHub takip**
+- üst issue: [#200](https://github.com/Halildeu/ao-kernel/issues/200)
+- son merge: `WP-8.4` / PR #216
+- aktif slice: [`WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md`](./WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md)
+
+**Paket hedefi**
+1. incident runbook
+2. rollback yolu
+3. upgrade notes
+4. support boundary rehberi
+5. non-empty known bugs registry
+
+**Canlı snapshot**
+- shipped baseline ile beta/operator-managed lane ayrımı `PUBLIC-BETA` ve
+  `ADAPTERS` içinde yazılıdır
+- gerçek-adapter helper yüzeyleri (`claude_code_cli_smoke`, `gh_cli_pr_smoke`)
+  kanıtlıdır ama default shipped demo değildir
+- operator için hâlâ tek yerde toplanmış incident/rollback/upgrade paketi ve
+  boş olmayan known-bugs kaydı eksiktir
+
+**Definition of Done**
+- operator bozulduğunda ilk 5 dakikada ne yapacağını bilir
+- rollback yolu yazılı ve doğrulanabilir komutlar içerir
+- support boundary ve known bugs aynı paket içinde görünürdür
+- `PUBLIC-BETA.md` known-bugs bölümü boş değildir
 
 ## 8. Anlık Öncelik
 
 Bugünden itibaren doğru sıra:
 
-1. `WP-8` Real adapter certification
-2. `WP-9` Ops/runbook/incident readiness
+1. `WP-9` Ops/runbook/incident readiness
 
 ## 9. Güncelleme Protokolü
 

@@ -93,6 +93,14 @@ Treat the repo in three layers:
 - **Operator / evaluation only**: benchmark docs, real-adapter runbooks, prompt experiment runbooks, and other opt-in validation paths that are intentionally outside the default deterministic CI/demo lane.
 - **Contract / reference inventory**: bundled JSON defaults, adapter manifests, registry files, and example code such as `examples/hello-llm/`. Their presence in the tree is useful reference material, not blanket proof that every surface is production-ready end to end. The bundled extension inventory is especially narrow at runtime today: `PRJ-HELLO` is the explicit bootstrap-backed smoke path; the rest of the bundled manifests should be treated as contract inventory unless a support doc says otherwise.
 
+### Operational Docs
+
+- [`docs/SUPPORT-BOUNDARY.md`](docs/SUPPORT-BOUNDARY.md)
+- [`docs/OPERATIONS-RUNBOOK.md`](docs/OPERATIONS-RUNBOOK.md)
+- [`docs/UPGRADE-NOTES.md`](docs/UPGRADE-NOTES.md)
+- [`docs/ROLLBACK.md`](docs/ROLLBACK.md)
+- [`docs/KNOWN-BUGS.md`](docs/KNOWN-BUGS.md)
+
 ## Python API
 
 ### ao_kernel.config

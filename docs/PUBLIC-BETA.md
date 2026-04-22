@@ -22,6 +22,14 @@ pip install --pre ao-kernel
 `pip install ao-kernel` varsayılan olarak stable kanalda kalır; pre-release
 istemek gerekir.
 
+## Operational References
+
+- [`SUPPORT-BOUNDARY.md`](SUPPORT-BOUNDARY.md)
+- [`OPERATIONS-RUNBOOK.md`](OPERATIONS-RUNBOOK.md)
+- [`UPGRADE-NOTES.md`](UPGRADE-NOTES.md)
+- [`ROLLBACK.md`](ROLLBACK.md)
+- [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
+
 ## Shipped (v4.0.0b1)
 
 | Yüzey | Durum | Not |
@@ -69,8 +77,12 @@ istemek gerekir.
 
 ## Known Bugs
 
+> Full operator registry: [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
+
 | Konum | Etki | Workaround | Beta blocker? | Hedef |
 |---|---|---|---|---|
+| `KB-001` / `claude-code-cli` beta lane | `claude auth status` yeşil görünse bile gerçek `claude -p` prompt access bloklu olabilir | `claude auth status` yerine `python3 scripts/claude_code_cli_smoke.py --output text` çıktısını belirleyici kabul et; gerekirse session re-login yap | Yalnız operator-managed lane için evet; shipped baseline için hayır | Open |
+| `KB-002` / `claude-code-cli` token fallback | `claude setup-token` türevi uzun ömürlü token route'u `Invalid bearer token` verebilir | session auth kullan; env-token fallback'i primary recovery olarak görme | Hayır | Open |
 
 ## Kapsam Dışı Notlar
 
