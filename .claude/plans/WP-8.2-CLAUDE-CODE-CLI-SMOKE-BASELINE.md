@@ -25,20 +25,48 @@ kaynakta toplamak.
 | Alan | Durum | Not |
 |---|---|---|
 | Bundled manifest | var | aday gerçek adapter olarak tanımlı |
-| Operator-safe smoke | yok | disposable target ve güvenli success kriteri henüz yazılı değil |
-| Failure-mode testleri | kısmi / dağınık | auth yok, binary yok, deny policy, timeout davranışı tek pakette değil |
+| Operator-safe smoke | **var (ilk cut)** | `python3 scripts/claude_code_cli_smoke.py` ile version/auth/prompt/manifest preflight somutlaştı |
+| Failure-mode testleri | **var (ilk cut)** | binary yok, auth deny, manifest CLI mismatch, temiz pass unit-test ile pinlendi |
 | Docs/runtime parity | kısmi | support boundary henüz public capability matrix'e çevrilmedi |
 | Release gate | yok | smoke CI-required değil |
+
+## Somutlaştırılan Yüzey
+
+1. **Repo helper**
+   - `scripts/claude_code_cli_smoke.py`
+   - çıktılar: `text` veya `json`
+   - exit code: bütün zorunlu check'ler `pass` ise `0`, aksi halde `1`
+2. **Kod mantığı**
+   - `ao_kernel/real_adapter_smoke.py`
+   - binary / version / auth status / prompt access / manifest smoke sınıflandırması
+3. **Davranış testleri**
+   - `tests/test_claude_code_cli_smoke.py`
+   - binary missing
+   - prompt access denied
+   - manifest CLI contract mismatch
+   - clean pass
+
+## Canlı Bulunan Blokajlar
+
+Bu makinedeki 2026-04-22 canlı kontrolde iki blocker görüldü:
+
+1. `prompt_access_denied`
+   - `claude auth status` logged-in görünmesine rağmen `claude -p` çağrısı
+     "Your organization does not have access to Claude" ile fail etti
+2. `manifest_cli_contract_mismatch`
+   - bundled manifest hâlâ `claude code run --prompt-file ...` bekliyor
+   - yüklü Claude CLI `--prompt-file` seçeneğini tanımıyor
 
 ## Çıkarılacak Baseline Paketi
 
 1. **Smoke sözleşmesi**
-   - hangi disposable workspace kullanılacak
-   - success kriteri ne olacak
-   - network/auth gereksinimi nasıl ayrılacak
+   - `python3 scripts/claude_code_cli_smoke.py`
+   - success kriteri: `overall_status=pass`
+   - network/auth gereksinimi: prompt-access smoke ile binary-only varlıktan ayrılır
 2. **Failure-mode matrisi**
    - CLI binary missing
    - auth erişimi yok
+   - manifest CLI contract mismatch
    - policy deny
    - timeout / non-zero exit
    - parse/evidence bozulması

@@ -84,8 +84,10 @@ automation platform çizgisine taşımak.
 - `codex-stub` sertifikasyon dışı deterministic baseline olarak kalıyor
 - gerçek-adapter CI hâlâ otomatik release gate değildir; mevcut yüzey
   operator-managed durumdadır
-- aktif alt slice `claude-code-cli` için operator-safe smoke sınırını,
-  failure-mode setini ve canlı sertifikasyon engellerini yazılı hale getiriyor
+- aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
+  helper'ı eklendi; 4 unit test ile davranış pinlendi
+- bu makinedeki canlı preflight şu an iki blocker veriyor:
+  `prompt_access_denied` ve `manifest_cli_contract_mismatch`
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

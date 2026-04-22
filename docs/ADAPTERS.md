@@ -49,7 +49,7 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 | Surface | Current status | Meaning |
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
-| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; useful for runbooks and benchmarks, not the default support claim |
+| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`, but this is still not the default support claim |
 | `gh-cli-pr` walkthroughs and manifests | Deferred / contract surface | Typed connector contract exists, but the full end-user E2E PR lane is not the current supported demo |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
