@@ -14,11 +14,15 @@
 # - `close-worktree`
 #   - clean non-current worktree'yi güvenli biçimde kapatır
 #   - dirty veya current target için fail-closed davranır
+# - `archive-worktree`
+#   - dirty non-current worktree'yi common git dir altında arşivler
+#   - arşiv sonrası worktree'yi force-remove eder
 #
 # Kullanım:
 #   bash .claude/scripts/ops.sh preflight
 #   bash .claude/scripts/ops.sh overlap-check
 #   bash .claude/scripts/ops.sh close-worktree <path>
+#   bash .claude/scripts/ops.sh archive-worktree <path>
 
 set -euo pipefail
 
@@ -30,11 +34,13 @@ Usage:
   bash .claude/scripts/ops.sh preflight
   bash .claude/scripts/ops.sh overlap-check
   bash .claude/scripts/ops.sh close-worktree <path>
+  bash .claude/scripts/ops.sh archive-worktree <path>
 
 Available commands:
-  preflight       Session başlangıcı için branch/worktree sağlık özeti
-  overlap-check   Attached worktree'ler arası path-overlap riski görünürlüğü
-  close-worktree  Clean non-current worktree kapatma yüzeyi
+  preflight         Session başlangıcı için branch/worktree sağlık özeti
+  overlap-check     Attached worktree'ler arası path-overlap riski görünürlüğü
+  close-worktree    Clean non-current worktree kapatma yüzeyi
+  archive-worktree  Dirty non-current worktree arşivleme + kaldırma yüzeyi
 EOF
 }
 
@@ -168,6 +174,10 @@ run_close_worktree() {
   python3 "$SCRIPT_DIR/ops_close_worktree.py" "$@"
 }
 
+run_archive_worktree() {
+  python3 "$SCRIPT_DIR/ops_archive_worktree.py" "$@"
+}
+
 main() {
   local command="${1:-}"
   case "$command" in
@@ -180,6 +190,10 @@ main() {
     close-worktree)
       shift
       run_close_worktree "$@"
+      ;;
+    archive-worktree)
+      shift
+      run_archive_worktree "$@"
       ;;
     ""|-h|--help|help)
       usage
