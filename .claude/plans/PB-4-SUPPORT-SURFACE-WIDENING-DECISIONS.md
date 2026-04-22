@@ -142,6 +142,57 @@ prerequisite / known bug / smoke tutarlılığını karar notuna çevirmektir.
    netleştirmek
 3. widen edilmeyecekse bunu açık karar notuna çevirmek
 
+## İkinci Tranche — `claude-code-cli` Karar Notu
+
+**Karar tarihi:** 2026-04-22
+
+İncelenen yüzeyler:
+
+1. `docs/PUBLIC-BETA.md`
+2. `docs/ADAPTERS.md`
+3. `docs/SUPPORT-BOUNDARY.md`
+4. `docs/OPERATIONS-RUNBOOK.md`
+5. `docs/KNOWN-BUGS.md`
+6. `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md`
+7. ilk tranche canlı smoke kanıtı:
+   `python3 scripts/claude_code_cli_smoke.py --output text`
+
+Karar:
+
+1. `claude-code-cli` yüzeyi bugün için **Beta (operator-managed)** olarak
+   kalır; shipped baseline'a promote edilmez.
+2. Bu kararın nedeni smoke başarısızlığı değil, support boundary disiplinidir:
+   helper smoke geçse bile bu lane hâlâ operator-managed prerequisite'lere ve
+   hesap/organizasyon erişimine bağlıdır.
+3. `claude auth status` tek başına yeterli sağlık sinyali değildir.
+   Belirleyici sinyal yalnız helper'ın gerçek `claude -p` prompt access ve
+   bundled manifest invocation sonucudur.
+4. Varsayılan auth yolu **Claude Code session auth** olarak kalır.
+   Env-token fallback (`ANTHROPIC_API_KEY` / `CLAUDE_API_KEY`) support widening
+   gerekçesi sayılmaz.
+5. `KB-001` ve `KB-002` bu yüzden açık kalır:
+   - `KB-001`: auth-status yeşil olsa da gerçek prompt access bloklu olabilir
+   - `KB-002`: uzun ömürlü token fallback güvenilir recovery yolu değildir
+
+Bugünkü tutarlılık hükmü:
+
+1. `PUBLIC-BETA.md` satırı doğru: helper-backed preflight + canlı prompt smoke
+   vardır, ama varsayılan shipped demo değildir.
+2. `ADAPTERS.md` satırı doğru: current tier `Beta (operator-managed)` ve
+   beklenen prerequisite session auth'tur.
+3. `KNOWN-BUGS.md` ile runbook uyumludur: smoke `pass` sonucu bug'ları
+   silmez; yalnız bugünkü operatör ortamında lane'in çalıştığını gösterir.
+4. Zorunlu bir docs daraltması veya tier düzeltmesi gerekmedi.
+
+İkinci tranche sonucu:
+
+1. `claude-code-cli` lane'i için yazılı karar artık nettir:
+   smoke pass + session auth sağlıklı ise lane kullanılabilir, fakat support
+   claim hâlâ Beta/operator-managed sınırındadır.
+2. Bu lane shipped baseline'a widen edilmemiştir.
+3. Sonraki doğru adım üçüncü tranche ile `gh-cli-pr` preflight-only boundary ve
+   deferred full-E2E remote PR açılışını ayrı karar notuna çevirmektir.
+
 ## Üçüncü Tranche
 
 1. `gh-cli-pr` lane'i için preflight-only boundary ile deferred full-E2E
@@ -188,5 +239,6 @@ python3 examples/demo_review.py --cleanup
 
 ## Beklenen Sonraki Adım
 
-İkinci tranche ile `claude-code-cli` lane'i için operator prerequisite, known
-bugs ve canlı smoke sonucunu tek karar notunda birleştirmektir.
+Üçüncü tranche ile `gh-cli-pr` preflight-only boundary ve deferred full-E2E
+remote PR açılışı için disposable sandbox / rollback önkoşullarını karar
+notuna çevirmektir.
