@@ -309,12 +309,28 @@ class TestClaudeCodeCliReviewFindingsV310A1:
             with _res.as_file(schema_pkg.joinpath(schema_ref)) as sp:
                 assert sp.exists(), f"schema_ref {schema_ref!r} not bundled"
 
-    def test_bundled_manifest_version_bumped_to_1_1_0(self) -> None:
-        # Capability surface widened — minor bump per SemVer.
+    def test_bundled_manifest_version_bumped_to_1_1_1(self) -> None:
+        # WP-8.2 invocation contract refresh keeps capabilities the same
+        # but changes the bundled Claude CLI argv surface.
         reg = AdapterRegistry()
         reg.load_bundled()
         manifest = reg.get("claude-code-cli")
-        assert manifest.version == "1.1.0"
+        assert manifest.version == "1.1.1"
+
+    def test_bundled_manifest_invocation_matches_current_claude_cli_shape(
+        self,
+    ) -> None:
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("claude-code-cli")
+        assert manifest.invocation["command"] == "claude"
+        assert tuple(manifest.invocation["args"]) == (
+            "-p",
+            "{task_prompt}",
+            "--append-system-prompt-file",
+            "{context_pack_ref}",
+        )
+        assert manifest.invocation["stdin_mode"] == "none"
 
     def test_bundled_manifest_supports_capabilities_covers_review(
         self,

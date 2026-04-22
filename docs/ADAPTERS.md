@@ -49,7 +49,7 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 | Surface | Current status | Meaning |
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
-| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; useful for runbooks and benchmarks, not the default support claim |
+| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`, but this is still not the default support claim |
 | `gh-cli-pr` walkthroughs and manifests | Deferred / contract surface | Typed connector contract exists, but the full end-user E2E PR lane is not the current supported demo |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
@@ -108,7 +108,7 @@ Adapters use one of two transports: `cli` (subprocess-based) or `http` (network-
 "invocation": {
   "transport": "cli",
   "command": "claude",
-  "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+  "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"],
   "env_allowlist_ref": "#/env_allowlist/allowed_keys",
   "cwd_policy": "per_run_worktree",
   "stdin_mode": "none",
@@ -168,7 +168,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
   "invocation": {
     "transport": "cli",
     "command": "claude",
-    "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+    "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",
     "stdin_mode": "none",
@@ -211,7 +211,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 
 1. Workflow registry resolves `adapter_id: "claude-code-cli"`.
 2. `v4.0.0b1` executor shapes the sandbox `PATH` from `command_allowlist` **and** preflights the resolved adapter CLI command via `validate_command()` before `adapter_invoked`. Bundled `{python_executable}` is a localized exception only for the resolved `sys.executable` realpath.
-3. Secret `ANTHROPIC_API_KEY` is in `allowlist_secret_ids`, resolved to env-var, injected into subprocess environment.
+3. Varsayılan yol Claude Code session auth'tur. Yalnız operator env-secret fallback seçerse `ANTHROPIC_API_KEY` `allowlist_secret_ids` içine alınır ve subprocess environment'a env-var olarak enjekte edilir.
 4. Worktree is created at `.ao/runs/{run_id}/worktree` (git worktree from main checkout).
 5. Subprocess spawned with the resolved command, args template substituted, stdin not used, working dir = worktree.
 6. Adapter reads context pack from `{context_pack_ref}` (narrative; adapter's CLI must support this flag).

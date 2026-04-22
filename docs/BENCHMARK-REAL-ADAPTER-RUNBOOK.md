@@ -1,12 +1,12 @@
 # Benchmark — Real-Adapter Runbook
 
-**Scope.** Operator-facing walkthrough for running the `governed_review_claude_code_cli` workflow (v3.10 A2, PR #157) against a real `claude` CLI instead of the `codex-stub` baseline. Paired with:
+**Scope.** Operator-facing walkthrough for running the `governed_review_claude_code_cli` workflow (v3.10 A2, PR #157; invocation contract refreshed in WP-8.2) against a real `claude` CLI instead of the `codex-stub` baseline. Paired with:
 
 - `governed_review_claude_code_cli.v1.json` (A2) — workflow variant that targets the `claude-code-cli` adapter.
 - `claude-code-cli.manifest.v1.json` v1.1.0+ (A1) — advertises `review_findings` capability + `output_parse` rule pointing at `review-findings.schema.v1.json`.
 - `policy_worktree_profile.v1.json` (bundled, dormant) — must be enabled via workspace override.
 
-**Status.** This runbook documents configuration only. The real-adapter path is NOT exercised in ao-kernel CI — benchmark-fast stays on the deterministic `codex-stub` path, and `review_ai_flow` keeps that behaviour for baseline reproducibility. Running the real adapter is an operator-driven, out-of-repo action.
+**Status.** This runbook now includes an explicit operator preflight, but the real-adapter path is still NOT exercised in ao-kernel CI. `benchmark-fast` stays on the deterministic `codex-stub` path, and `review_ai_flow` keeps that behaviour for baseline reproducibility. Running the real adapter remains an operator-driven, out-of-repo action.
 
 Successful completion here validates an operator setup, not the whole product support matrix. [`PUBLIC-BETA.md`](PUBLIC-BETA.md) remains the authoritative source for what ao-kernel currently supports as a shipped or beta surface.
 
@@ -14,21 +14,72 @@ Successful completion here validates an operator setup, not the whole product su
 
 ## 1. Prerequisites
 
-1. **`claude` CLI** installed and authenticated. The manifest's invocation block is:
+1. **`claude` CLI** installed. The bundled manifest currently targets:
    ```json
    "invocation": {
      "transport": "cli",
      "command": "claude",
-     "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"]
+     "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"]
    }
    ```
-   Verify authentication with `claude --version` + a dry `claude code` call in a disposable directory before plugging in ao-kernel.
+   Do NOT treat "binary exists" as sufficient. The authoritative preflight is the helper in §1.1, which verifies version, auth status, prompt access, and whether the installed Claude CLI still accepts the bundled manifest argv shape.
 
-2. **`ANTHROPIC_API_KEY` in env.** The key is resolved via env var; ao-kernel never reads it from argv, stdin, or file (enforced by `policy_worktree_profile.secrets.exposure_modes`).
+2. **Primary auth route = Claude Code session.** Bu repo için varsayılan ve beklenen yol `claude-code-cli` oturumu ile gerçek prompt access almaktır. `claude auth status` tek başına yeterli sayılmaz; §1.1 helper'ı belirleyicidir çünkü `loggedIn=true` durumunda bile gerçek prompt erişimi bloklu olabilir.
+
+   Exported API key route (`ANTHROPIC_API_KEY` / `CLAUDE_API_KEY`) yalnız istisnai operator fallback'idir. `WP-8.2` kabulü için varsayılan yol olarak görülmez ve normal certification lane bunun üzerine kurulmaz.
 
 3. **Python 3.11+ with `ao-kernel` installed.** Existing requirement; no new extras needed.
 
 4. **Disposable sandbox repo.** The real adapter reads/writes inside a per-run git worktree (`policy_worktree_profile.worktree.strategy = new_per_run`). Point ao-kernel at a scratch repo you're comfortable rolling back; do NOT run the first real-adapter pass against a working branch you care about.
+
+### 1.1 Authoritative operator preflight
+
+Run this from the repo root before any real-adapter certification attempt:
+
+```bash
+python3 scripts/claude_code_cli_smoke.py --output text
+```
+
+The helper is the current smoke SSOT for `claude-code-cli`. It performs four checks:
+
+1. `claude --version`
+2. `claude auth status`
+3. a live prompt-access probe via `claude -p`
+4. a bundled-manifest smoke that resolves the repo's actual `claude-code-cli` invocation template and runs it against a disposable prompt/context file pair
+
+**Success criterion:** all four checks report `pass`.
+
+**Current blocker semantics:**
+
+| `finding_code` | Meaning | Typical next action |
+|---|---|---|
+| `claude_binary_missing` | `claude` binary yok veya PATH'te değil | CLI'ı kur, PATH'i düzelt |
+| `claude_not_logged_in` | `claude auth status` login göstermiyor | `claude auth login` veya auth route'unu düzelt |
+| `prompt_access_denied` | login görünse bile gerçek prompt çağrısı yetkisiz | org/subscription/access tarafını çöz; yalnız `auth status`'a güvenme |
+| `prompt_smoke_timeout` | canlı prompt probe sürede dönemedi | CLI hang/latency nedenini ayır; helper artık crash etmez, fail-closed raporlar |
+| `manifest_cli_contract_mismatch` | bundled manifest argv yüzeyi yüklü Claude CLI ile uyuşmuyor | manifest/runtime contract düzeltmesi aç; workflow smoke'a geçme |
+| `manifest_smoke_timeout` | bundled manifest smoke sürede dönemedi | auth/CLI hang ve prompt contract etkisini ayır; workflow’a geçmeden nedeni çöz |
+| `manifest_output_not_json` | CLI çalıştı ama required JSON envelope dönmedi | prompt contract'ı veya adapter invocation'ı düzelt |
+| `manifest_output_missing_status` | stdout JSON ama top-level `status` yok | fail-closed output contract'ı düzelt |
+
+Helper çıkışı `blocked` ise bu lane certification-pass veya production-tier sayılamaz.
+
+2026-04-22 canlı ayrım:
+
+- Aynı makinede ilk preflight, `claude auth status` yeşil olmasına rağmen
+  `claude -p` ve bundled manifest smoke'u
+  "Your organization does not have access to Claude" ile blokladı.
+- Kontrollü `claude auth logout` + `claude auth login --claudeai` sonrası yeni
+  organizasyon oturumunda helper tamamen `pass` verdi ve doğrudan
+  `claude -p "reply with exactly ok"` çağrısı `ok` döndürdü.
+- `claude setup-token` ile üretilen uzun ömürlü OAuth token bu turda güvenilir
+  kurtarma yolu olarak kanıtlanmadı; env-var altında ayrıca
+  `Invalid bearer token` reddi görüldü.
+
+Sonuç: bu lane'de "auth status yeşil" = "prompt access var" varsayımı yasak.
+Belirleyici sinyal her zaman helper'ın gerçek `claude -p` probe sonucudur.
+Başarı koşulu yalnız binary/manifest değil, prompt access veren doğru org/account
+oturumudur.
 
 ---
 
@@ -58,7 +109,7 @@ Minimum viable override:
 
   "secrets": {
     "deny_by_default": true,
-    "allowlist_secret_ids": ["ANTHROPIC_API_KEY"],
+    "allowlist_secret_ids": [],
     "exposure_modes": ["env"],
     "denied_exposure_modes": ["argv", "stdin", "file", "http_header"]
   },
@@ -101,7 +152,6 @@ Minimum viable override:
 
 Key deltas from bundled:
 - `enabled` false → **true** (engages the policy)
-- `secrets.allowlist_secret_ids` `[]` → `["ANTHROPIC_API_KEY"]`
 - `command_allowlist.exact` += `"claude"`
 - `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. As of **v4.0.0b1**, the executor (`ao_kernel/executor/executor.py`) honors the three-tier activation + rollout semantics for the live preflight scope:
   - **`enabled=false`**: policy layer dormant — no events, no fail (sandbox still built from declared fields).
@@ -112,6 +162,17 @@ Key deltas from bundled:
 `v4.0.0b1` caveat: bundled adapters that explicitly use `{python_executable}` in the manifest `command` field get a localized exception for the resolved `sys.executable` realpath only. The sandbox itself is not widened, and unrelated commands still go through normal allowlist enforcement.
 
 Use `report_only` for the first few runs to review `policy_checked` evidence without hitting fail-closed; flip to `block` once the allowlists are tuned.
+
+If you deliberately use the rare env-secret fallback, extend the override with:
+
+```json
+"secrets": {
+  "deny_by_default": true,
+  "allowlist_secret_ids": ["ANTHROPIC_API_KEY"],
+  "exposure_modes": ["env"],
+  "denied_exposure_modes": ["argv", "stdin", "file", "http_header"]
+}
+```
 
 ### Note on `policy_secrets.v1.json`
 
@@ -189,8 +250,8 @@ cat > .ao/policies/policy_worktree_profile.v1.json <<'EOF'
 { ...the override from §2... }
 EOF
 
-# 4. Export the API key for THIS shell only (no shell-rc leak).
-export ANTHROPIC_API_KEY='sk-ant-...'
+# 4. Verify the Claude Code session can answer a trivial prompt.
+python3 scripts/claude_code_cli_smoke.py --output text
 
 # 5. Run the benchmark workflow with the real-adapter variant.
 #    The exact ao-kernel bench entrypoint depends on your install; see
@@ -215,13 +276,25 @@ Common violation kinds and the fix:
 | `PolicyViolation.kind` | Cause | Fix |
 |---|---|---|
 | `secret_exposure_denied` | Secret literal detected inside the resolved argv for the adapter invocation (current runtime scope). HTTP header leaks surface under the separate `http_header_exposure_unauthorized` kind; stdin/file exposure checks are deferred. | Audit the adapter invocation template; remove the secret from argv (the allowlisted channel is env). If the argv exposure is legitimate for this adapter, rotate the credential and reshape the invocation. |
-| `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Export the secret in the shell you launch the run from (`export ANTHROPIC_API_KEY=...`). |
+| `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Bu yalnız env-secret fallback kullaniyorsan anlamlıdır; normal Claude Code session yolunda `allowlist_secret_ids` boş kalabilir. |
 | `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
 | `command_not_allowlisted` | Adapter command could not be resolved within the sandbox policy boundary. | Add the command to `exact`, or switch the adapter to an explicitly allowed binary. |
 | `command_path_outside_policy` | Adapter command resolved, but its realpath sits outside policy-declared prefixes / exact anchors. | Ensure the real command resolves inside an allowlisted prefix, or use the explicit `{python_executable}` reserved token when the manifest truly means the current interpreter. |
 | `http_header_exposure_unauthorized` | An HTTP adapter tried to use a secret in a header but `secrets.exposure_modes` did not include `"http_header"`. | Add `"http_header"` to `exposure_modes` only if you've confirmed the adapter's HTTP transport is trusted with that surface. |
 
 As of **v3.11 P2** the executor honors `rollout.mode_default`: in `report_only` violations emit `policy_checked` with `would_block=true` but the step continues; in `block` violations emit `policy_denied` and fail the run closed. See §2 for the full three-tier behavior and escalation via `promote_to_block_on`.
+
+### Preflight failures before workflow evidence exists
+
+The helper in §1.1 can fail before ao-kernel reaches `policy_checked` / workflow evidence. These are certification-preflight finding codes, not `PolicyViolation.kind` values:
+
+| Preflight finding | Why it matters |
+|---|---|
+| `claude_binary_missing` | No real-adapter lane exists on this machine yet |
+| `claude_not_logged_in` | Operator auth route incomplete |
+| `prompt_access_denied` | Login surface and actual model access disagree |
+| `manifest_cli_contract_mismatch` | Bundled manifest no longer matches installed Claude CLI flags/subcommands |
+| `manifest_output_not_json` / `manifest_output_missing_status` | Prompt contract no longer satisfies ao-kernel's fail-closed parser |
 
 ---
 

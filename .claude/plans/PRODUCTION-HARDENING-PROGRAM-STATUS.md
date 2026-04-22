@@ -69,23 +69,30 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#199](https://github.com/Halildeu/ao-kernel/issues/199)
-- son merge: `WP-7.5` / PR #212
-- aktif slice: [`WP-8.1-REAL-ADAPTER-CERTIFICATION-BASELINE.md`](./WP-8.1-REAL-ADAPTER-CERTIFICATION-BASELINE.md)
+- son merge: `WP-8.1` / PR #213
+- aktif slice: [`WP-8.2-CLAUDE-CODE-CLI-SMOKE-BASELINE.md`](./WP-8.2-CLAUDE-CODE-CLI-SMOKE-BASELINE.md)
 
 **Adım sırası**
-1. `[~]` `WP-8.1` certification baseline + candidate matrix
-2. `[ ]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
+1. `[x]` `WP-8.1` certification baseline + candidate matrix
+2. `[~]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
 3. `[ ]` `WP-8.3` ikinci gerçek adapter certification lane
 4. `[ ]` `WP-8.4` public capability/support matrix hizası
 
 **Canlı snapshot**
 - bundled gerçek-adapter aday seti `claude-code-cli` + `gh-cli-pr`
-  olarak netleştiriliyor
+  olarak netleşti
 - `codex-stub` sertifikasyon dışı deterministic baseline olarak kalıyor
 - gerçek-adapter CI hâlâ otomatik release gate değildir; mevcut yüzey
   operator-managed durumdadır
-- aktif alt slice certification kriterlerini ve aday matrisini tek kaynağa
-  bağlıyor
+- aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
+  helper'ı eklendi; smoke + manifest contract testleri yeşil
+- repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
+- aynı canlı turda önce `claude auth status` yeşil olsa da `claude -p`
+  org-level access hatasıyla düştü; kontrollü re-login sonrası helper tam
+  `pass` verdi ve doğrudan `claude -p` smoke'u `ok` döndürdü
+- `setup-token` altında üretilen uzun ömürlü token ise bu turda güvenilir
+  kurtarma yolu olarak doğrulanmadı; ayrıca `Invalid bearer token` reddi
+  görüldü
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

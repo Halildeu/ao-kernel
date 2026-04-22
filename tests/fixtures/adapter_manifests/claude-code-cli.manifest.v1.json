@@ -1,12 +1,12 @@
 {
   "adapter_id": "claude-code-cli",
   "adapter_kind": "claude-code-cli",
-  "version": "1.0.0",
-  "capabilities": ["read_repo", "write_diff", "run_tests", "stream_output"],
+  "version": "1.1.1",
+  "capabilities": ["read_repo", "write_diff", "run_tests", "stream_output", "review_findings"],
   "invocation": {
     "transport": "cli",
     "command": "claude",
-    "args": ["code", "run", "--prompt-file", "{context_pack_ref}", "--run-id", "{run_id}"],
+    "args": ["-p", "{task_prompt}", "--append-system-prompt-file", "{context_pack_ref}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",
     "stdin_mode": "none",
@@ -27,6 +27,15 @@
   },
   "output_envelope": {
     "status": "ok"
+  },
+  "output_parse": {
+    "rules": [
+      {
+        "json_path": "$.review_findings",
+        "capability": "review_findings",
+        "schema_ref": "review-findings.schema.v1.json"
+      }
+    ]
   },
   "policy_refs": [
     "ao_kernel/defaults/policies/policy_worktree_profile.v1.json",

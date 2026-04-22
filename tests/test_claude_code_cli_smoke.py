@@ -1,0 +1,290 @@
+from __future__ import annotations
+
+import json
+import subprocess
+from collections.abc import Sequence
+from pathlib import Path
+
+from ao_kernel.real_adapter_smoke import CommandResult, run_claude_code_cli_smoke
+
+
+def _result(
+    argv: Sequence[str],
+    *,
+    returncode: int = 0,
+    stdout: str = "",
+    stderr: str = "",
+) -> CommandResult:
+    return CommandResult(
+        argv=tuple(argv),
+        returncode=returncode,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def test_binary_missing_blocks_and_skips_remaining_checks() -> None:
+    report = run_claude_code_cli_smoke(
+        which=lambda command: None,
+        runner=lambda argv, cwd, timeout: _result(argv),
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert report.findings == ("claude_binary_missing",)
+    assert [check.status for check in report.checks] == [
+        "fail",
+        "skip",
+        "skip",
+        "skip",
+        "skip",
+    ]
+
+
+def test_prompt_access_denied_is_classified_explicitly() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(
+                cmd,
+                returncode=1,
+                stderr=(
+                    "Your organization does not have access to Claude. "
+                    "Please login again or contact your administrator."
+                ),
+            )
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                returncode=1,
+                stderr=(
+                    "Your organization does not have access to Claude. "
+                    "Please login again or contact your administrator."
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "prompt_access_denied" in report.findings
+    prompt_check = next(check for check in report.checks if check.name == "prompt_access")
+    assert prompt_check.finding_code == "prompt_access_denied"
+    assert prompt_check.detail == (
+        "canli prompt smoke org-duzeyi OAuth/prompt access blokajina dustu"
+    )
+    assert prompt_check.observed["failure_kind"] == "org_oauth_not_allowed"
+
+
+def test_invalid_bearer_token_is_classified_explicitly() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                returncode=1,
+                stderr=(
+                    "Failed to authenticate. API Error: 401 "
+                    '{"type":"error","error":{"type":"authentication_error",'
+                    '"message":"Invalid bearer token"}}'
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "prompt_access_denied" in report.findings
+    prompt_check = next(check for check in report.checks if check.name == "prompt_access")
+    assert prompt_check.finding_code == "prompt_access_denied"
+    assert prompt_check.detail == (
+        "canli prompt smoke bearer token gecersizligi nedeniyle bloklandi"
+    )
+    assert prompt_check.observed["failure_kind"] == "invalid_bearer_token"
+
+
+def test_prompt_timeout_is_reported_without_crashing() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout or 20.0)
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "status": "ok",
+                        "review_findings": {
+                            "schema_version": "1",
+                            "findings": [],
+                            "summary": "smoke ok",
+                        },
+                    }
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "prompt_smoke_timeout" in report.findings
+    prompt_check = next(check for check in report.checks if check.name == "prompt_access")
+    assert prompt_check.finding_code == "prompt_smoke_timeout"
+    assert prompt_check.detail == "canli prompt smoke timeout'a dustu"
+    assert prompt_check.observed["timed_out"] == "true"
+
+
+def test_manifest_contract_mismatch_is_reported() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:4] == ("/fake/claude", "-p", "Your entire response MUST be a single JSON object with exactly this shape: {\"status\":\"ok\",\"review_findings\":{\"schema_version\":\"1\",\"findings\":[],\"summary\":\"smoke ok\"}}", "--append-system-prompt-file"):
+            return _result(
+                cmd,
+                returncode=1,
+                stderr="error: unknown option '--append-system-prompt-file'",
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "manifest_cli_contract_mismatch" in report.findings
+    manifest_check = next(
+        check for check in report.checks if check.name == "manifest_invocation"
+    )
+    assert manifest_check.finding_code == "manifest_cli_contract_mismatch"
+
+
+def test_success_path_returns_pass_report() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "status": "ok",
+                        "review_findings": {
+                            "schema_version": "1",
+                            "findings": [],
+                            "summary": "smoke ok",
+                        },
+                    }
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "pass"
+    assert report.findings == ()
+    assert all(check.status == "pass" for check in report.checks)
