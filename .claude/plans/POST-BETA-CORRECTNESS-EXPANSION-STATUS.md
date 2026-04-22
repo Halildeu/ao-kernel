@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-3-DETERMINISTIC-TEST-HYGIENE.md`
+- **Aktif slice planı:** henüz açılmadı (`PB-4` issue scope'u plan dosyasına indirgenecek)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#226](https://github.com/Halildeu/ao-kernel/issues/226)
+- **Aktif issue:** [#232](https://github.com/Halildeu/ao-kernel/issues/232)
 
 ## 2. Başlangıç Gerçeği
 
@@ -54,40 +54,41 @@ ayrı ayrı görünür kılmak.
 |---|---|---|---|
 | `PB-1` Deferred correctness pack 1 | Completed on `main` ([#220](https://github.com/Halildeu/ao-kernel/issues/220)) | `sanitize.py`, `compiler.py`, `init_cmd.py` correctness boşluklarının zaten kapanmış olduğunu backfill doğrulamak | targeted tests on `main` + status correction |
 | `PB-2` `bug_fix_flow + codex-stub patch_preview` closure | Completed on `main` ([#222](https://github.com/Halildeu/ao-kernel/issues/222), [#224](https://github.com/Halildeu/ao-kernel/pull/224)) | `open_pr` adımında PR metadata/evidence boşluğunu kapatmak ve deferred bugfix workflow yüzeyini deterministik integration coverage ile doğrulamak | merged runtime fix + integration tests + green CI |
-| `PB-3` deterministic test hygiene / time seams | In progress ([#226](https://github.com/Halildeu/ao-kernel/issues/226)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | suite proof + seam inventory |
-| `PB-4` support-surface widening decisions | Planned | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | smoke/e2e kanıtı + docs parity |
+| `PB-3` deterministic test hygiene / time seams | Completed on `main` ([#226](https://github.com/Halildeu/ao-kernel/issues/226), [#227](https://github.com/Halildeu/ao-kernel/pull/227), [#228](https://github.com/Halildeu/ao-kernel/pull/228), [#229](https://github.com/Halildeu/ao-kernel/pull/229), [#230](https://github.com/Halildeu/ao-kernel/pull/230), [#231](https://github.com/Halildeu/ao-kernel/pull/231)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | targeted suite proof + residual seam inventory |
+| `PB-4` support-surface widening decisions | In progress ([#232](https://github.com/Halildeu/ao-kernel/issues/232)) | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | smoke/e2e kanıtı + docs parity |
 | `PB-5` adapter-path cost/evidence completeness | Planned | `cost_usd` reconcile ve evidence completeness boşluklarını kapatmak | tests + evidence parity |
 | `PB-6` general-purpose expansion gap map | Planned | narrow beta'dan daha geniş production platform çizgisine geçiş için önkoşulları tabloya dökmek | written gap map + ordered backlog |
 
 ## 5. Şimdi
 
-### `PB-3` — deterministic test hygiene / time seams
+### `PB-4` — support-surface widening decisions
 
 **Neden şimdi**
-- `PB-2` merge edildi ve `bug_fix_flow` yolundaki `open_pr` metadata/evidence
-  boşluğu kapandı; aktif runtime correctness slice artık bu değil.
-- Bir sonraki yüksek değerli debt, zaman bağımlı test seam'leri ve davranışsal
-  olarak zayıf assertion alanlarının sistematik temizlenmesidir.
-- İlk tranche deliberately küçüktür: weak assertion cleanup ile behavior-first
-  test kontratı dar ama kanıtlı şekilde güçlendirilecektir.
+- `PB-3` beş küçük tranche ile kapandı; deterministic test hygiene tarafındaki
+  aktif blocker görünür şekilde daraltıldı.
+- Doğru sıradaki yeni karar alanı support boundary widening: hangi adapter lane
+  ve operator akışlarının daha geniş destek iddiasına çıkabileceği artık canlı
+  smoke ve docs/runtime/test parity ile ölçülmeli.
+- Bu hat yeni promise eklemeden önce mevcut support surface'i kanıt bazlı
+  sınıflandıracaktır.
 
 **Aktif kapsam**
-1. zaman bağımlı testlerin envanteri
-2. `now=` seam'lerinin deterministik hale getirilmesi
-3. `result is not None` tipi zayıf assertion'ların davranışsal kontrata çekilmesi
+1. `gh-cli-pr` ve ilişkili operator-managed lane'ler için canlı smoke/e2e kanıtı
+2. `docs/PUBLIC-BETA.md` ve `docs/ADAPTERS.md` içindeki tier/sınır hizası
+3. widen edilmeyen yüzeylerin açık deferred/operator-managed işaretlenmesi
 
 **Definition of Done**
-- flaky / date-sensitive test kümeleri yazılı envanterle görünürdür
-- en az ilk tranche seam fix + behavior-first assertion güçlendirmesi merge edilir
-- suite gerçek deterministik kontrata biraz daha yaklaşır; fake-green alan daralır
+- widening kararı verilen yüzey için canlı smoke veya eşdeğer yüksek-sinyal
+  kanıt vardır
+- docs/runtime/test/CI tek anlamlı support boundary anlatır
+- widen edilmeyen yüzeyler açıkça deferred veya operator-managed olarak yazılır
 
 ## 6. Sonra
 
-`PB-3` kapandıktan sonraki doğru sıra:
+`PB-4` kapandıktan sonraki doğru sıra:
 
-1. `PB-4` support-surface widening decisions
-2. `PB-5` adapter-path cost/evidence completeness
-3. `PB-6` general-purpose expansion gap map
+1. `PB-5` adapter-path cost/evidence completeness
+2. `PB-6` general-purpose expansion gap map
 
 ## 7. Riskler
 
@@ -102,7 +103,7 @@ ayrı ayrı görünür kılmak.
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-3` deterministic test hygiene / time seams
+1. `PB-4` support-surface widening decisions
 
 ## 9. Güncelleme Protokolü
 
