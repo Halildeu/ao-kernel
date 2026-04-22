@@ -56,48 +56,46 @@ automation platform çizgisine taşımak.
 | `WP-6` Worktree/branch safety control loop | Faz 3 | Completed on `main` | stale base / overlap / dirty worktree riskini operasyonel kapatmak | ops komutları + usage proof |
 | `WP-7` Path-scoped write ownership | Faz 3 | Completed on `main` | aynı path alanına iki aktif writer çakışmasın | ownership tests + takeover audit |
 | `WP-8` Real adapter certification | Faz 4 | Completed on `main` ([#199](https://github.com/Halildeu/ao-kernel/issues/199)) | helper-backed real-adapter smoke/failure-mode baseline + capability matrix hizası | smoke logs + support matrix |
-| `WP-9` Ops/runbook/incident readiness | Faz 4 | **Active** ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | runbook + drill evidence |
+| `WP-9` Ops/runbook/incident readiness | Faz 4 | Completed on `main` ([#200](https://github.com/Halildeu/ao-kernel/issues/200)) | rollback / incident / support boundary / known bugs paketi | PR #217 + runbook package |
 
 ## 5. Şimdi
 
-### `WP-9` — Operations / Runbook / Incident Readiness
+### Production Hardening Program Closeout
 
-**Neden şimdi**
-- `WP-8.4` ile support matrix dili hizalandı. Bundan sonraki ana eksik,
-  operator'ın incident, upgrade, rollback ve support-boundary kararlarını
-  aynı SSOT'tan alabileceği işletim paketidir.
+**Durum**
+- `WP-5` ile `WP-9` arası program hattı `main` üzerinde tamamlandı.
+- Son kapanış slice'ı `WP-9` / PR #217 ile merge edildi; issue `#200` kapandı.
+- Bu dosya içinde artık aktif bir WP yok; sonraki iş ayrı bir tracker / issue
+  ve net DoD ile başlatılmalıdır.
 
 **GitHub takip**
-- üst issue: [#200](https://github.com/Halildeu/ao-kernel/issues/200)
-- son merge: `WP-8.4` / PR #216
-- aktif slice: [`WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md`](./WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md)
+- tracker issue: [#201](https://github.com/Halildeu/ao-kernel/issues/201)
+- son merge: `WP-9` / PR #217
+- son slice: [`WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md`](./WP-9-OPS-RUNBOOK-INCIDENT-READINESS.md)
 
-**Paket hedefi**
-1. incident runbook
-2. rollback yolu
-3. upgrade notes
-4. support boundary rehberi
-5. non-empty known bugs registry
+**Program çıktısı**
+1. truth parity tamamlandı
+2. policy command enforcement canlıya bağlandı
+3. packaging smoke blocking gate oldu
+4. governance / worktree / ownership güvenlik hatları eklendi
+5. ops / rollback / upgrade / known-bugs paketi repo SSOT'una bağlandı
 
 **Canlı snapshot**
-- shipped baseline ile beta/operator-managed lane ayrımı `PUBLIC-BETA` ve
-  `ADAPTERS` içinde yazılıdır
-- gerçek-adapter helper yüzeyleri (`claude_code_cli_smoke`, `gh_cli_pr_smoke`)
-  kanıtlıdır ama default shipped demo değildir
-- operator için hâlâ tek yerde toplanmış incident/rollback/upgrade paketi ve
-  boş olmayan known-bugs kaydı eksiktir
+- repo bugün dar ama kanıtlı bir governed runtime / Public Beta yüzeyine sahiptir
+- support boundary, runbook, rollback, upgrade ve known-bugs belgeleri canlıdır
+- genel amaçlı production platform genişlemesi bu programın dışında kalır
 
-**Definition of Done**
-- operator bozulduğunda ilk 5 dakikada ne yapacağını bilir
-- rollback yolu yazılı ve doğrulanabilir komutlar içerir
-- support boundary ve known bugs aynı paket içinde görünürdür
-- `PUBLIC-BETA.md` known-bugs bölümü boş değildir
+**Closeout Kriteri**
+- bu program içinde aktif WP kalmaz
+- status SSOT ile GitHub tracker aynı gerçeği söyler
+- bundan sonraki iş yeni bir backlog hattı olarak başlatılır
 
 ## 8. Anlık Öncelik
 
-Bugünden itibaren doğru sıra:
+Bugünden itibaren bu program için doğru durum:
 
-1. `WP-9` Ops/runbook/incident readiness
+1. `WP-5` ile `WP-9` tamamlandı
+2. yeni aktif iş açılacaksa bu dosya yerine yeni issue / slice ile başlatılmalı
 
 ## 9. Güncelleme Protokolü
 
