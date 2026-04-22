@@ -386,10 +386,17 @@ Bu repo multi-worktree + multi-agent (Claude Code + Codex) çalışıyor. Stale 
 Her yeni kod değişikliği session'ı — Claude Code VEYA Codex — infaza geçmeden önce:
 
 ```bash
-bash .claude/scripts/check-branch-sync.sh
+bash .claude/scripts/ops.sh preflight
 ```
 
-Script exit 1 dönerse DUR, kullanıcı ile karar ver:
+`ops.sh preflight` mevcut session için şu özeti verir:
+
+- branch freshness (`check-branch-sync.sh` primitive'i üstünden)
+- current worktree dirty/clean görünürlüğü
+- upstream push/divergence özeti
+- diğer attached worktree'lerin clean/dirty snapshot'ı
+
+Komut exit 1 dönerse DUR, kullanıcı ile karar ver:
 
 - Main'e rebase: `git rebase origin/main`
 - Yeni branch from main: `git checkout -b <new> origin/main`
@@ -433,7 +440,7 @@ git branch -D feat/X  # merge edildikten sonra
 
 Farklı worktree'lerde çalışan Claude/Codex session'ları için:
 
-- Her session **kendi worktree'sinin branch-freshness'ını kontrol eder** (`check-branch-sync.sh`)
+- Her session **kendi worktree'sinin preflight kontrolünü** çalıştırır (`ops.sh preflight`)
 - Shared implementation branch yok — her session fresh branch from main
 - Backup branch (`backup/*`) sadece kurtarma için, üstünde impl yapılmaz
 
