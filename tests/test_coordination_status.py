@@ -15,6 +15,8 @@ from ao_kernel.coordination.status import (
     render_coordination_status,
 )
 
+FIXED_NOW = datetime(2026, 4, 22, 12, 0, 0, tzinfo=timezone.utc)
+
 
 def _enabled_policy(**overrides: object) -> dict[str, object]:
     base: dict[str, object] = {
@@ -48,11 +50,12 @@ def _validate_snapshot(snapshot: dict) -> None:
 
 class TestCoordinationStatus:
     def test_disabled_policy_returns_idle_snapshot(self, tmp_path: Path) -> None:
-        snapshot = build_coordination_status(tmp_path)
+        snapshot = build_coordination_status(tmp_path, now=FIXED_NOW)
 
         _validate_snapshot(snapshot)
         assert snapshot["status"] == "IDLE"
         assert snapshot["coordination_enabled"] is False
+        assert snapshot["generated_at"] == FIXED_NOW.isoformat()
         assert snapshot["claims"] == []
         assert snapshot["summary"]["total_active"] == 0
         assert snapshot["summary"]["total_reported"] == 0
@@ -62,11 +65,12 @@ class TestCoordinationStatus:
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
 
-        snapshot = build_coordination_status(tmp_path)
+        snapshot = build_coordination_status(tmp_path, now=FIXED_NOW)
 
         _validate_snapshot(snapshot)
         assert snapshot["status"] == "IDLE"
         assert snapshot["coordination_enabled"] is True
+        assert snapshot["generated_at"] == FIXED_NOW.isoformat()
         assert snapshot["summary"]["coordination_enabled"] is True
 
     def test_path_area_claims_surface_resource_kind_and_label(
@@ -81,7 +85,7 @@ class TestCoordinationStatus:
             paths=["pkg/a.py", "tests/test_demo.py"],
         )
 
-        snapshot = build_coordination_status(tmp_path)
+        snapshot = build_coordination_status(tmp_path, now=FIXED_NOW)
 
         _validate_snapshot(snapshot)
         assert snapshot["status"] == "OK"
@@ -109,11 +113,10 @@ class TestCoordinationStatus:
         ready_doc = json.loads(
             claim_path(tmp_path, ready_claim.resource_id).read_text(encoding="utf-8")
         )
-        now = datetime.now(timezone.utc)
-        grace_doc["heartbeat_at"] = (now - timedelta(seconds=12)).isoformat()
-        grace_doc["expires_at"] = (now - timedelta(seconds=2)).isoformat()
-        ready_doc["heartbeat_at"] = (now - timedelta(seconds=20)).isoformat()
-        ready_doc["expires_at"] = (now - timedelta(seconds=10)).isoformat()
+        grace_doc["heartbeat_at"] = (FIXED_NOW - timedelta(seconds=12)).isoformat()
+        grace_doc["expires_at"] = (FIXED_NOW - timedelta(seconds=2)).isoformat()
+        ready_doc["heartbeat_at"] = (FIXED_NOW - timedelta(seconds=20)).isoformat()
+        ready_doc["expires_at"] = (FIXED_NOW - timedelta(seconds=10)).isoformat()
         from ao_kernel.coordination.claim import claim_revision
 
         grace_doc["revision"] = claim_revision(grace_doc)
@@ -127,7 +130,7 @@ class TestCoordinationStatus:
             encoding="utf-8",
         )
 
-        snapshot = build_coordination_status(tmp_path)
+        snapshot = build_coordination_status(tmp_path, now=FIXED_NOW)
 
         _validate_snapshot(snapshot)
         by_id = {item["work_item_id"]: item for item in snapshot["claims"]}
@@ -143,7 +146,9 @@ class TestCoordinationStatus:
         registry = ClaimRegistry(tmp_path)
         registry.acquire_claim("worktree-a", "agent-alpha")
 
-        rendered = render_coordination_status(build_coordination_status(tmp_path))
+        rendered = render_coordination_status(
+            build_coordination_status(tmp_path, now=FIXED_NOW)
+        )
 
         assert "== coordination status ==" in rendered
         assert "owner=agent-alpha" in rendered
