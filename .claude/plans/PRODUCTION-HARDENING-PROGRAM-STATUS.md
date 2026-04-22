@@ -69,14 +69,14 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#199](https://github.com/Halildeu/ao-kernel/issues/199)
-- son merge: `WP-8.2` / PR #214
-- aktif slice: [`WP-8.3-GH-CLI-PR-SMOKE-BASELINE.md`](./WP-8.3-GH-CLI-PR-SMOKE-BASELINE.md)
+- son merge: `WP-8.3` / PR #215
+- aktif slice: [`WP-8.4-CAPABILITY-MATRIX-ALIGNMENT.md`](./WP-8.4-CAPABILITY-MATRIX-ALIGNMENT.md)
 
 **Adım sırası**
 1. `[x]` `WP-8.1` certification baseline + candidate matrix
 2. `[x]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
-3. `[~]` `WP-8.3` `gh-cli-pr` side-effect-safe preflight baseline
-4. `[ ]` `WP-8.4` public capability/support matrix hizası
+3. `[x]` `WP-8.3` `gh-cli-pr` side-effect-safe preflight baseline
+4. `[~]` `WP-8.4` public capability/support matrix hizası
 
 **Canlı snapshot**
 - bundled gerçek-adapter aday seti `claude-code-cli` + `gh-cli-pr`
@@ -89,8 +89,8 @@ automation platform çizgisine taşımak.
 - aktif alt slice için `python3 scripts/gh_cli_pr_smoke.py`
   helper'ı eklendi; `gh` binary + auth + repo visibility + safe
   `gh pr create --dry-run` preflight'ı tek komutta toplandı
-- bu turdaki canlı `python3 scripts/gh_cli_pr_smoke.py --output text`
-  doğrulaması `overall_status: pass` verdi
+- `WP-8.3` PR #215 ile merge edildi; canlı `gh_cli_pr_smoke` + tam CI turu
+  yeşil geçti
 - repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
 - aynı canlı turda önce `claude auth status` yeşil olsa da `claude -p`
   org-level access hatasıyla düştü; kontrollü re-login sonrası helper tam
@@ -98,8 +98,12 @@ automation platform çizgisine taşımak.
 - `setup-token` altında üretilen uzun ömürlü token ise bu turda güvenilir
   kurtarma yolu olarak doğrulanmadı; ayrıca `Invalid bearer token` reddi
   görüldü
-- `gh-cli-pr` lane'inde tam canlı PR açılışı bu slice'ın DIŞINDA kalır;
-  helper yalnız side-effect-safe preflight uygular
+- `claude-code-cli` lane'i bugün **Beta (operator-managed)** olarak
+  hizalanacak: helper-backed preflight ve canlı prompt smoke var, ancak
+  default shipped demo değildir
+- `gh-cli-pr` lane'i bugün **Beta (operator-managed preflight only)** olarak
+  hizalanacak: helper-backed dry-run smoke var, ancak gerçek remote PR açılışı
+  hâlâ deferred kalır
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

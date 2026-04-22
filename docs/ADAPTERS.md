@@ -49,8 +49,8 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 | Surface | Current status | Meaning |
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
-| `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`, but this is still not the default support claim |
-| `gh-cli-pr` walkthroughs and manifests | Operator-managed preflight / contract surface | Typed connector contract exists; helper-backed safe preflight lives at `python3 scripts/gh_cli_pr_smoke.py`, but full live PR opening is still not the default supported demo |
+| `claude-code-cli` walkthroughs and manifests | Beta (operator-managed) | Helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`; canlı prompt smoke vardır, fakat bu lane default shipped demo değildir |
+| `gh-cli-pr` walkthroughs and manifests | Beta (operator-managed preflight only) | Helper-backed safe preflight lives at `python3 scripts/gh_cli_pr_smoke.py`; gerçek remote PR açılışı ayrı ve deferred yüzeydir |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
 ### Promotion criteria for new enum values
@@ -224,6 +224,14 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - `policy_checked` — a single aggregate pre-invocation policy summary event. In `v4.0.0b1`, the live scope covers secret resolution, sandbox shaping, HTTP-header exposure checks, and adapter CLI command enforcement.
 - `adapter_returned` — after subprocess exit; payload includes status, finish_reason, cost_actual.
 
+### Current support tier
+
+- Current tier: **Beta (operator-managed)**
+- Helper-backed preflight: `python3 scripts/claude_code_cli_smoke.py`
+- Expected operator prerequisite: valid Claude Code session auth
+- This lane is not the default shipped demo; the shipped baseline remains
+  bundled `review_ai_flow` + bundled `codex-stub`
+
 ### Failure modes
 
 - Binary not found → `error.category: "invocation_failed"`.
@@ -347,14 +355,16 @@ The codex stub is an in-process adapter used for CI determinism and demos withou
 - **Policy and evidence uniformity.** The same worktree profile and evidence taxonomy apply, including secret handling for `GH_TOKEN`.
 - **Replaceability.** A workspace that uses GitLab can swap `gh-cli-pr` for a hypothetical `glab-cli-mr` adapter without changing the workflow.
 
-### Current certification boundary
+### Current support tier
 
+- Current tier: **Beta (operator-managed preflight only)**
 - Bundled contract: `gh pr create --title {task_prompt} --body-file {context_pack_ref}`
-- Operator-safe preflight: `python3 scripts/gh_cli_pr_smoke.py`
+- Helper-backed preflight: `python3 scripts/gh_cli_pr_smoke.py`
 - The preflight intentionally adds `--repo`, `--head`, `--base`, and `--dry-run`
   outside the bundled manifest so operators can verify auth and repo
   visibility without opening a real remote PR.
-- Full live PR opening remains outside the default shipped support boundary.
+- Full live PR opening remains **Deferred** and outside the default shipped
+  support boundary.
 
 ### Why it's NOT a full coding agent
 
