@@ -69,13 +69,13 @@ automation platform çizgisine taşımak.
 
 **GitHub takip**
 - üst issue: [#199](https://github.com/Halildeu/ao-kernel/issues/199)
-- son merge: `WP-8.1` / PR #213
-- aktif slice: [`WP-8.2-CLAUDE-CODE-CLI-SMOKE-BASELINE.md`](./WP-8.2-CLAUDE-CODE-CLI-SMOKE-BASELINE.md)
+- son merge: `WP-8.2` / PR #214
+- aktif slice: [`WP-8.3-GH-CLI-PR-SMOKE-BASELINE.md`](./WP-8.3-GH-CLI-PR-SMOKE-BASELINE.md)
 
 **Adım sırası**
 1. `[x]` `WP-8.1` certification baseline + candidate matrix
-2. `[~]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
-3. `[ ]` `WP-8.3` ikinci gerçek adapter certification lane
+2. `[x]` `WP-8.2` `claude-code-cli` smoke + failure-mode baseline
+3. `[~]` `WP-8.3` `gh-cli-pr` side-effect-safe preflight baseline
 4. `[ ]` `WP-8.4` public capability/support matrix hizası
 
 **Canlı snapshot**
@@ -86,6 +86,11 @@ automation platform çizgisine taşımak.
   operator-managed durumdadır
 - aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
   helper'ı eklendi; smoke + manifest contract testleri yeşil
+- aktif alt slice için `python3 scripts/gh_cli_pr_smoke.py`
+  helper'ı eklendi; `gh` binary + auth + repo visibility + safe
+  `gh pr create --dry-run` preflight'ı tek komutta toplandı
+- bu turdaki canlı `python3 scripts/gh_cli_pr_smoke.py --output text`
+  doğrulaması `overall_status: pass` verdi
 - repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
 - aynı canlı turda önce `claude auth status` yeşil olsa da `claude -p`
   org-level access hatasıyla düştü; kontrollü re-login sonrası helper tam
@@ -93,6 +98,8 @@ automation platform çizgisine taşımak.
 - `setup-token` altında üretilen uzun ömürlü token ise bu turda güvenilir
   kurtarma yolu olarak doğrulanmadı; ayrıca `Invalid bearer token` reddi
   görüldü
+- `gh-cli-pr` lane'inde tam canlı PR açılışı bu slice'ın DIŞINDA kalır;
+  helper yalnız side-effect-safe preflight uygular
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

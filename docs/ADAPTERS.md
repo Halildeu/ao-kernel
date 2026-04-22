@@ -50,7 +50,7 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
 | `claude-code-cli` walkthroughs and manifests | Operator-managed | Real-adapter evaluation surface; helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`, but this is still not the default support claim |
-| `gh-cli-pr` walkthroughs and manifests | Deferred / contract surface | Typed connector contract exists, but the full end-user E2E PR lane is not the current supported demo |
+| `gh-cli-pr` walkthroughs and manifests | Operator-managed preflight / contract surface | Typed connector contract exists; helper-backed safe preflight lives at `python3 scripts/gh_cli_pr_smoke.py`, but full live PR opening is still not the default supported demo |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
 ### Promotion criteria for new enum values
@@ -307,7 +307,7 @@ The codex stub is an in-process adapter used for CI determinism and demos withou
   "invocation": {
     "transport": "cli",
     "command": "gh",
-    "args": ["pr", "create", "--title", "{task_prompt}", "--body-file", "{context_pack_ref}", "--head", "ao-kernel/run-{run_id}"],
+    "args": ["pr", "create", "--title", "{task_prompt}", "--body-file", "{context_pack_ref}"],
     "env_allowlist_ref": "#/env_allowlist/allowed_keys",
     "cwd_policy": "per_run_worktree",
     "stdin_mode": "none",
@@ -346,6 +346,15 @@ The codex stub is an in-process adapter used for CI determinism and demos withou
 - **Uniform invocation path.** The workflow doesn't have special cases for "open PR via gh" vs "agent opens PR itself". Both go through `adapter_invoked` / `adapter_returned`.
 - **Policy and evidence uniformity.** The same worktree profile and evidence taxonomy apply, including secret handling for `GH_TOKEN`.
 - **Replaceability.** A workspace that uses GitLab can swap `gh-cli-pr` for a hypothetical `glab-cli-mr` adapter without changing the workflow.
+
+### Current certification boundary
+
+- Bundled contract: `gh pr create --title {task_prompt} --body-file {context_pack_ref}`
+- Operator-safe preflight: `python3 scripts/gh_cli_pr_smoke.py`
+- The preflight intentionally adds `--repo`, `--head`, `--base`, and `--dry-run`
+  outside the bundled manifest so operators can verify auth and repo
+  visibility without opening a real remote PR.
+- Full live PR opening remains outside the default shipped support boundary.
 
 ### Why it's NOT a full coding agent
 
