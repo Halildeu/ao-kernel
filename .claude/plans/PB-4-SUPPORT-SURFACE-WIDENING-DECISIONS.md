@@ -94,6 +94,46 @@ olarak aynı sınırda tutup nedenini yazılı hale getirmektir.
    çıktısını toplamak
 3. issue üzerinde “başlangıç gerçeği” notunu kanıtla kaydetmek
 
+## İlk Tranche — Canlı Kanıt Tazelemesi
+
+**Koşu tarihi:** 2026-04-22
+
+Çalıştırılan komutlar:
+
+```bash
+python3 scripts/claude_code_cli_smoke.py --output text
+python3 scripts/gh_cli_pr_smoke.py --output text
+```
+
+Özet sonuç:
+
+1. `claude-code-cli` helper smoke: `pass`
+   - `claude --version`: geçti
+   - `claude auth status`: geçti
+   - canlı `claude -p` prompt access: geçti
+   - bundled manifest invocation smoke: geçti
+2. `gh-cli-pr` helper smoke: `pass`
+   - `gh --version`: geçti
+   - `gh auth status --json hosts`: geçti
+   - bundled manifest contract smoke: geçti
+   - `gh repo view`: geçti
+   - `gh pr create --dry-run`: geçti
+
+İlk tranche kararı:
+
+1. Bugünkü canlı kanıt, `docs/PUBLIC-BETA.md` ve `docs/ADAPTERS.md` içinde
+   yazan dar boundary ile uyumludur.
+2. `claude-code-cli` lane'i bugün için **Beta (operator-managed)** statüsünde
+   kalabilir; daraltma gerektiren bir smoke bulgusu oluşmadı.
+3. `gh-cli-pr` lane'i bugün için **Beta (operator-managed preflight only)**
+   statüsünde kalabilir; helper smoke yalnız dry-run preflight'i doğruladı.
+4. `gh-cli-pr` tam E2E remote PR açılışı için hâlâ ayrı disposable sandbox +
+   rollback kanıtı yok; bu yüzey **Deferred** kalır.
+
+İlk tranche sonucu olarak docs üzerinde zorunlu boundary düzeltmesi gerekmedi;
+bir sonraki doğru adım ikinci tranche ile `claude-code-cli` lane'inin operator
+prerequisite / known bug / smoke tutarlılığını karar notuna çevirmektir.
+
 ## İkinci Tranche
 
 1. `claude-code-cli` lane'i için operator prerequisite / known bug / smoke
@@ -148,5 +188,5 @@ python3 examples/demo_review.py --cleanup
 
 ## Beklenen Sonraki Adım
 
-İlk tranche ile canlı smoke kanıtını tazelemek ve support-tier dokümanlarının
-tek anlamlı olup olmadığını yeniden doğrulamaktır.
+İkinci tranche ile `claude-code-cli` lane'i için operator prerequisite, known
+bugs ve canlı smoke sonucunu tek karar notunda birleştirmektir.
