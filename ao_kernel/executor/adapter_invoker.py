@@ -73,6 +73,10 @@ class InvocationResult:
     cost_actual: Mapping[str, Any]
     stdout_path: Path | None
     stderr_path: Path | None
+    pr_url: str | None = None
+    pr_number: int | None = None
+    base_sha: str | None = None
+    head_sha: str | None = None
     extracted_outputs: Mapping[str, Mapping[str, Any]] = field(
         default_factory=lambda: _EMPTY_EXTRACTED
     )
@@ -565,6 +569,15 @@ def _invocation_from_envelope(
         cost_actual=envelope.get("cost_actual", {"time_seconds": elapsed}),
         stdout_path=log_path,
         stderr_path=None,
+        pr_url=envelope.get("pr_url") if isinstance(envelope.get("pr_url"), str) else None,
+        pr_number=(
+            envelope.get("pr_number")
+            if isinstance(envelope.get("pr_number"), int)
+            and not isinstance(envelope.get("pr_number"), bool)
+            else None
+        ),
+        base_sha=envelope.get("base_sha") if isinstance(envelope.get("base_sha"), str) else None,
+        head_sha=envelope.get("head_sha") if isinstance(envelope.get("head_sha"), str) else None,
         extracted_outputs=extracted,
     )
 

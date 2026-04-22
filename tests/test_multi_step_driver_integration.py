@@ -13,11 +13,15 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
+from ao_kernel.ci import CIResult
+from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
 from ao_kernel.executor import DriverResult
 from ao_kernel.workflow.run_store import load_run
+from tests.benchmarks.fixtures import bug_envelopes
 from tests._driver_helpers import (
     _GIT_CFG,
     build_driver,
@@ -193,6 +197,148 @@ class TestBundledBugFixFlow:
                     and error.get("message") == "ci_pytest_fail"
                 )
             ), error
+
+    def test_real_codex_stub_with_mocked_ci_and_open_pr_completes_full_flow(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Pin the bundled 7-step bug-fix path with the real
+        ``codex-stub`` subprocess plus deterministic CI/PR sidecars.
+
+        Scope of this test is the workflow closure after the coding
+        step: approval gate, patch apply, PR metadata persistence and
+        evidence emission. ``ci_pytest`` and ``gh-cli-pr`` are mocked so
+        host runner toolchain drift does not make the integration flaky.
+        """
+        install_workspace(tmp_path)
+        _copy_bundled_defaults(tmp_path)
+        _install_bugfix_repo(tmp_path)
+
+        run_id = seed_run(tmp_path, "bug_fix_flow")
+        driver = build_driver(tmp_path, policy_loader=_policy_with_pythonpath())
+
+        import ao_kernel.ci as ci_module
+        from ao_kernel.executor import executor as executor_module
+
+        original_invoke_cli = executor_module.invoke_cli
+
+        def _mock_run_pytest(*args, **kwargs):
+            return CIResult(
+                check_name="pytest",
+                command=("python3", "-m", "pytest"),
+                status="pass",
+                exit_code=0,
+                duration_seconds=0.01,
+                stdout_tail="mocked pytest pass",
+                stderr_tail="",
+            )
+
+        def _dispatch_cli(
+            *,
+            manifest,
+            input_envelope,
+            sandbox,
+            worktree,
+            budget,
+            workspace_root,
+            run_id,
+            resolved_invocation=None,
+        ):
+            if manifest.adapter_id != "gh-cli-pr":
+                return original_invoke_cli(
+                    manifest=manifest,
+                    input_envelope=input_envelope,
+                    sandbox=sandbox,
+                    worktree=worktree,
+                    budget=budget,
+                    workspace_root=workspace_root,
+                    run_id=run_id,
+                    resolved_invocation=resolved_invocation,
+                )
+
+            log_path = (
+                workspace_root
+                / ".ao"
+                / "evidence"
+                / "workflows"
+                / run_id
+                / f"adapter-{manifest.adapter_id}.stdout.log"
+            )
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
+            envelope = bug_envelopes.open_pr_happy()
+            result = _invocation_from_envelope(
+                envelope,
+                log_path=log_path,
+                elapsed=float(envelope["cost_actual"]["time_seconds"]),
+                command="benchmark-mock[gh-cli-pr]",
+                manifest=manifest,
+            )
+            return result, budget
+
+        with patch(
+            "ao_kernel.executor.executor.invoke_cli",
+            side_effect=_dispatch_cli,
+        ):
+            with patch.object(ci_module, "run_pytest", side_effect=_mock_run_pytest):
+                first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
+                assert first.final_state == "waiting_approval"
+                assert first.resume_token is not None
+
+                final = driver.resume_workflow(
+                    run_id,
+                    first.resume_token,
+                    payload={"decision": "granted"},
+                )
+
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
+        record, _ = load_run(tmp_path, run_id)
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
+
+        assert final.final_state == "completed"
+        assert step_records["invoke_coding_agent"]["state"] == "completed"
+        assert step_records["preview_diff"]["state"] == "completed"
+        assert step_records["ci_gate"]["state"] == "completed"
+        assert step_records["await_approval"]["state"] == "completed"
+        assert step_records["apply_patch"]["state"] == "completed"
+        assert step_records["open_pr"]["state"] == "completed"
+
+        ci_artifact = json.loads(
+            (run_dir / step_records["ci_gate"]["output_ref"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        assert ci_artifact["status"] == "pass"
+        assert ci_artifact["exit_code"] == 0
+
+        apply_artifact = json.loads(
+            (run_dir / step_records["apply_patch"]["output_ref"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        assert apply_artifact["files_changed"] == ["src/foo.py"]
+
+        open_pr_artifact = json.loads(
+            (run_dir / step_records["open_pr"]["output_ref"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        assert open_pr_artifact["pr_url"].endswith("/pull/999")
+        assert open_pr_artifact["pr_number"] == 999
+
+        events = [
+            json.loads(line)
+            for line in (run_dir / "events.jsonl").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.strip()
+        ]
+        kinds = [event.get("kind") for event in events]
+        assert "approval_granted" in kinds
+        assert "pr_opened" in kinds
+        pr_opened = next(event for event in events if event.get("kind") == "pr_opened")
+        assert pr_opened["payload"]["pr_url"].endswith("/pull/999")
+        assert pr_opened["payload"]["pr_number"] == 999
 
 
 class TestSimpleFlowEvidenceOrder:
