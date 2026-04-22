@@ -92,7 +92,7 @@ gerekçesi ayrıca ispat edilmelidir.
 | promote candidate | 3 | `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API`, `PRJ-RELEASE-AUTOMATION` |
 | remap-needed | 7 | `PRJ-AIRUNNER`, `PRJ-DEPLOY`, `PRJ-GITHUB-OPS`, `PRJ-PLANNER`, `PRJ-PM-SUITE`, `PRJ-UX-NORTH-STAR`, `PRJ-WORK-INTAKE` |
 | quarantine-keep | 4 | `PRJ-ENFORCEMENT-PACK`, `PRJ-M0-MAINTAINABILITY`, `PRJ-OBSERVABILITY-OTEL`, `PRJ-ZANZIBAR-OPENFGA` |
-| retire/dead-reference candidate | 4 | `PRJ-EXECUTORPORT`, `PRJ-MEMORYPORT`, `PRJ-SEARCH`, `PRJ-UI-COCKPIT-LITE` |
+| confirmed retire/archive candidate | 4 | `PRJ-EXECUTORPORT`, `PRJ-MEMORYPORT`, `PRJ-SEARCH`, `PRJ-UI-COCKPIT-LITE` |
 
 ## Extension Bazlı Karar Tablosu
 
@@ -131,7 +131,7 @@ gerekçesi ayrıca ispat edilmelidir.
 | `PRJ-OBSERVABILITY-OTEL` | `missing=12`, `remap=3`, no entrypoint/ui | observability önemli ama bundled extension olarak canlı runtime iz düşümü zayıf | quarantine'de kalsın; önce concrete handler/ops planı gerekir |
 | `PRJ-ZANZIBAR-OPENFGA` | `missing=5`, `remap=1`, entrypoint yok | mimari/roadmap izi var fakat aktif runtime surface yok | quarantine'de kalsın; security/domain owner olmadan widen edilmesin |
 
-### Retire / dead-reference candidate
+### Confirmed retire / archive candidate
 
 | Extension | Sinyal | Karar gerekçesi | Sonraki karar |
 |---|---|---|---|
@@ -139,6 +139,30 @@ gerekçesi ayrıca ispat edilmelidir.
 | `PRJ-MEMORYPORT` | `entrypoints=0`, `ui=0`, `missing=9`, eski `src/orchestrator/memory/*` port refs | legacy bridge gibi davranıyor; runtime promotion gerekçesi yok | archive veya retire değerlendirmesi |
 | `PRJ-SEARCH` | `missing=9`, `remap=0`, `extensions/PRJ-SEARCH/*` ve `PRJ-UI-COCKPIT-LITE/keyword_search.py` gibi absent dosyalara bağlı | kendi canlı runtime'ı yok; başka stale UI yüzeyine bağımlı | retire adayı; ancak explicit owner çıkarsa yeniden açılır |
 | `PRJ-UI-COCKPIT-LITE` | `missing=29`, `remap=0`, büyük absent UI/server/test ağacı | en yüksek stale yük; bundled inventory'de en zayıf canlılık sinyali | archive/dead-reference doğrulama turu açılmalı |
+
+## `PB-6.1a` Confirmatory Pass
+
+`PB-6.1a` bu slice altında hedefli olarak çalıştırıldı:
+
+- plan: `.claude/plans/PB-6.1a-RETIRE-DEAD-REFERENCE-CONFIRMATION.md`
+- issue: [#247](https://github.com/Halildeu/ao-kernel/issues/247)
+
+Teyit sonucu:
+
+1. `PRJ-EXECUTORPORT`
+2. `PRJ-MEMORYPORT`
+3. `PRJ-SEARCH`
+4. `PRJ-UI-COCKPIT-LITE`
+
+bu tur sonunda **confirmed retire/archive candidate** olarak kaldı.
+
+Ortak kanıt:
+
+1. dördünün de `docs_ref` hedefi bugünkü repoda yok
+2. explicit runtime handler yok
+3. ref setleri ağırlıkla absent `extensions/*` veya eski `src/orchestrator/*`
+   katmanına bakıyor
+4. downgrade gerektirecek canlı runtime eşdeğeri bulunmadı
 
 ## İlk Hüküm
 
@@ -152,12 +176,9 @@ gerekçesi ayrıca ispat edilmelidir.
 
 ## Önerilen Sonraki Sıra
 
-1. `PB-6.1a` retire/dead-reference adayları için confirmatory pass
-   - özellikle `PRJ-EXECUTORPORT`, `PRJ-MEMORYPORT`, `PRJ-SEARCH`,
-     `PRJ-UI-COCKPIT-LITE`
-2. `PB-6.1b` promote candidate shortlist kararı
+1. `PB-6.1b` promote candidate shortlist kararı
    - `PRJ-CONTEXT-ORCHESTRATION`
    - `PRJ-KERNEL-API`
    - `PRJ-RELEASE-AUTOMATION`
-3. Bu shortlist'ten sonra ancak `PB-6.2`/`PB-6.3` widening slice'ları
+2. Bu shortlist'ten sonra ancak `PB-6.2`/`PB-6.3` widening slice'ları
    güvenli sıraya konabilir

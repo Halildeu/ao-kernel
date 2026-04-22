@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-6.1-EXTENSION-TRUTH-RATIONALIZATION.md`
+- **Aktif slice planı:** `.claude/plans/PB-6.1a-RETIRE-DEAD-REFERENCE-CONFIRMATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#245](https://github.com/Halildeu/ao-kernel/issues/245)
+- **Aktif issue:** [#247](https://github.com/Halildeu/ao-kernel/issues/247)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,11 +60,11 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.1` — extension truth rationalization
+### `PB-6.1a` — retire/dead-reference confirmatory pass
 
-`PB-6` içinde aktif alt hat artık `PB-6.1`'dir. Bu slice'ın işi, bundled
-extension inventory'yi tek parça "quarantined" kümesi gibi görmek yerine
-extension-bazlı karar tablosuna çevirmektir.
+`PB-6` içinde aktif alt hat artık `PB-6.1a`'dır. Bu slice'ın işi, `PB-6.1`
+karar tablosundaki dört retire/dead-reference adayının bu hükmü gerçekten
+hak edip etmediğini teyit etmektir.
 
 Canlı baseline:
 
@@ -76,30 +76,36 @@ Canlı baseline:
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
    - `overall_status="pass"`
 
-`PB-6.1` kararı:
+`PB-6.1a` hükmü:
 
-1. `PRJ-HELLO` dışındaki 18 extension aynı tedaviyle ele alınmayacak
-2. bucket ayrımı yazılı hale geldi:
-   - `promote candidate`
-   - `remap-needed`
-   - `quarantine-keep`
-   - `retire/dead-reference candidate`
-3. support widening bundan sonra bu karar tablosu olmadan ilerlemeyecek
+1. `PRJ-EXECUTORPORT`
+2. `PRJ-MEMORYPORT`
+3. `PRJ-SEARCH`
+4. `PRJ-UI-COCKPIT-LITE`
+
+hepsi confirmatory pass sonunda **confirmed retire/archive candidate** olarak
+kaldı.
+
+Teyit gerekçesi:
+
+1. dördünün de `docs_ref` hedefi bugünkü repoda yok
+2. explicit runtime handler yok
+3. missing ref kümeleri ağırlıkla absent `extensions/*` veya eski
+   `src/orchestrator/*` yollarına gidiyor
+4. downgrade gerektirecek canlı runtime eşdeğeri bulunmadı
 
 Sıradaki doğru alt adım:
 
-1. `PB-6.1a` retire/dead-reference adayları için confirmatory pass
-2. `PB-6.1b` promote candidate shortlist seçimi
-3. sonra ancak widening slice sırasını netleştirmek
+1. `PB-6.1b` promote candidate shortlist seçimi
+2. sonra widening slice sırasını netleştirmek
 
 ## 6. Sonra
 
 `PB-6` açıldıktan sonraki doğru sıra:
 
-1. `PB-6.1a` retire/dead-reference confirmatory pass
-2. `PB-6.1b` promote candidate shortlist
-3. `PB-6.2` real-adapter workflow graduation criteria
-4. `PB-6.3` write-side / PR lane graduation criteria
+1. `PB-6.1b` promote candidate shortlist
+2. `PB-6.2` real-adapter workflow graduation criteria
+3. `PB-6.3` write-side / PR lane graduation criteria
 
 ## 7. Riskler
 
@@ -115,7 +121,7 @@ Sıradaki doğru alt adım:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.1a` retire/dead-reference confirmatory pass
+1. `PB-6.1b` promote candidate shortlist
 
 ## 9. Güncelleme Protokolü
 
