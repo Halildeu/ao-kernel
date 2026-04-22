@@ -169,8 +169,17 @@ ao-kernel coordination status --format json
 ```
 
 The status surface reports the current claim owner plus derived state:
-`ACTIVE`, `GRACE`, or `TAKEOVER_READY`. This is a visibility-only surface; it
-does not change write semantics or executor enforcement.
+`ACTIVE`, `GRACE`, or `TAKEOVER_READY`.
+
+Runtime enforcement now starts at the first real write point:
+`MultiStepDriver._run_patch_step()` acquires path-scoped claims before
+`patch_apply` when `policy_coordination_claims.enabled=true`. The claim scope is
+derived from the patch preview's `files_changed` list and projected onto the
+shared workspace root, so separate run worktrees still serialize on the same
+logical top-level areas. Successful apply emits additive audit fields on
+`diff_applied` (`write_claim_areas`, `write_claim_resource_ids`) and releases
+the claim afterwards. With coordination disabled, `patch_apply` keeps the old
+dormant behavior and does not engage the claim layer.
 
 ### 10.2 Fail-closed vs fail-open
 
