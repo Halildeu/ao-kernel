@@ -109,6 +109,41 @@ Sonuç özeti:
    - skip, operator/full-mode prereq yokluğunda beklenen davranış; tranche 1
      verdict'ini invalid kılmıyor ama live operator proof olarak sayılmıyor
 
+## İkinci Tranche — Docs Parity Patch
+
+Amaç: support-boundary dili ile benchmark/operator dili arasındaki scope
+ayrımını aynı anlamla yazmak; "deferred support claim" ile "runtime hook yok"
+yorumunun karışmasını engellemek.
+
+Hedef yüzeyler:
+
+1. `docs/PUBLIC-BETA.md`
+2. `docs/SUPPORT-BOUNDARY.md`
+3. `docs/BENCHMARK-SUITE.md`
+4. `docs/BENCHMARK-FULL-MODE.md`
+
+Bu tranche'de özellikle yapılacaklar:
+
+1. support-facing docs'ta `adapter-path cost_usd reconcile` satırını
+   "public support claim deferred" olarak açıklaştırmak
+2. benchmark docs'ta "gap closed" cümlesini benchmark/internal contract
+   bağlamına sabitlemek
+3. `real_adapter` scorecard dilinin support-tier promotion değil, benchmark
+   consumer sinyali olduğunu doküman seviyesinde netleştirmek
+
+Bu tranche'de özellikle yapılmayacaklar:
+
+1. runtime semantics değişikliği
+2. scorecard/render kodu değişikliği
+3. support boundary widening
+
+Yerel kanıt:
+
+```bash
+python3 -m pytest tests/test_post_adapter_reconcile.py -q
+python3 -m pytest tests/test_scorecard_render.py -q
+```
+
 ## Kabul Kriterleri
 
 1. Adapter-path cost/evidence için tek bir authoritative contract yazılıdır.

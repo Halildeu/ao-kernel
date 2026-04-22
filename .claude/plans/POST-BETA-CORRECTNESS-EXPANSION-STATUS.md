@@ -100,6 +100,9 @@ ayrı ayrı görünür kılmak.
   `test_cost_marker_idempotency` `12 passed`,
   `test_scorecard_render` `10 passed`;
   full-mode smoke operator prereq yokluğunda `skip` verdi
+- tranche 2 docs parity patch başlatıldı; hedef dört yüzey:
+  `PUBLIC-BETA.md`, `SUPPORT-BOUNDARY.md`, `BENCHMARK-SUITE.md`,
+  `BENCHMARK-FULL-MODE.md`
 
 ## 6. Sonra
 
