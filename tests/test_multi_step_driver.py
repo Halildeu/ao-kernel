@@ -29,6 +29,25 @@ from tests._driver_helpers import (
 )
 
 
+def _write_coordination_policy(workspace_root: Path, *, enabled: bool) -> None:
+    policy_dir = workspace_root / ".ao" / "policies"
+    policy_dir.mkdir(parents=True, exist_ok=True)
+    doc = {
+        "version": "v1",
+        "enabled": enabled,
+        "heartbeat_interval_seconds": 30,
+        "expiry_seconds": 90,
+        "takeover_grace_period_seconds": 15,
+        "max_claims_per_agent": 5,
+        "claim_resource_patterns": ["*"],
+        "evidence_redaction": {"patterns": []},
+    }
+    (policy_dir / "policy_coordination_claims.v1.json").write_text(
+        json.dumps(doc, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Simple ao-kernel-only flow (no adapter subprocess required)
 # ---------------------------------------------------------------------------
@@ -81,6 +100,23 @@ class TestSimpleHappyPath:
             context_path = payload.get("context_path")
             assert context_path is not None
             assert Path(context_path).is_file()
+
+    def test_context_compile_remains_claim_free_when_coordination_enabled(
+        self, tmp_path: Path,
+    ) -> None:
+        driver, run_id = self._setup(tmp_path)
+        _write_coordination_policy(tmp_path, enabled=True)
+
+        driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
+
+        events_path = (
+            tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
+        )
+        events = [json.loads(line) for line in events_path.read_text().splitlines()]
+        kinds = [event["kind"] for event in events]
+        assert "claim_acquired" not in kinds
+        assert "claim_conflict" not in kinds
+        assert "claim_released" not in kinds
 
     def test_artifact_written_for_each_step(self, tmp_path: Path) -> None:
         driver, run_id = self._setup(tmp_path)
