@@ -127,7 +127,7 @@ The actual adapter invocation (which picks up `variants[...].prompt_template`) h
 For each variant you want in the comparison:
 
 1. **Check out a clean disposable sandbox repo** (BENCHMARK-REAL-ADAPTER-RUNBOOK.md §4).
-2. **Ensure the workspace override** enables the worktree profile (`enabled=true`, `ANTHROPIC_API_KEY` in `allowlist_secret_ids`, etc.).
+2. **Ensure the workspace override** enables the worktree profile (`enabled=true`, `claude` command allowlist'te, vb.). Varsayılan yol Claude Code session auth'tur; `ANTHROPIC_API_KEY` yalnız istisnai env-secret fallback kullanıyorsan allowlist'e eklenir.
 3. **Set the variant prompt** — typically by writing it into the `context_pack_ref` file that the workflow's `compile_context` step produces. In the current bundled `claude-code-cli` manifest this file is passed through `--append-system-prompt-file {context_pack_ref}` while the workflow intent stays in `{task_prompt}`.
 4. **Start the run** with `intent.metadata.variant_id = <that variant's id>`.
 5. **Wait for completion** and confirm the run reaches `state=completed` with `review_findings` in at least one `step_record.capability_output_refs`.

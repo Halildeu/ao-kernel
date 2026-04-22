@@ -36,6 +36,7 @@ kaynakta toplamak.
    - `scripts/claude_code_cli_smoke.py`
    - çıktılar: `text` veya `json`
    - exit code: bütün zorunlu check'ler `pass` ise `0`, aksi halde `1`
+   - varsayılan auth varsayımı: Claude Code session
 2. **Kod mantığı**
    - `ao_kernel/real_adapter_smoke.py`
    - binary / version / auth status / prompt access / manifest smoke sınıflandırması
@@ -59,6 +60,12 @@ Bu makinedeki 2026-04-22 canlı kontrolde repo tarafındaki
      "Your organization does not have access to Claude" ile fail ediyor
    - bundled manifest smoke da artık aynı noktada bloklanıyor; parser/argv
      uyuşmazlığı kalmadı
+
+## Auth Duruşu
+
+- varsayılan ve hedeflenen yol: Claude Code CLI session auth
+- env-secret / API-key yolu: istisnai operator fallback
+- `WP-8.2` kabulü API-key varlığına bağlanmaz
 
 ## Çıkarılacak Baseline Paketi
 

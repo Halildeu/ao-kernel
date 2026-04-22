@@ -211,7 +211,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 
 1. Workflow registry resolves `adapter_id: "claude-code-cli"`.
 2. `v4.0.0b1` executor shapes the sandbox `PATH` from `command_allowlist` **and** preflights the resolved adapter CLI command via `validate_command()` before `adapter_invoked`. Bundled `{python_executable}` is a localized exception only for the resolved `sys.executable` realpath.
-3. Secret `ANTHROPIC_API_KEY` is in `allowlist_secret_ids`, resolved to env-var, injected into subprocess environment.
+3. Varsayılan yol Claude Code session auth'tur. Yalnız operator env-secret fallback seçerse `ANTHROPIC_API_KEY` `allowlist_secret_ids` içine alınır ve subprocess environment'a env-var olarak enjekte edilir.
 4. Worktree is created at `.ao/runs/{run_id}/worktree` (git worktree from main checkout).
 5. Subprocess spawned with the resolved command, args template substituted, stdin not used, working dir = worktree.
 6. Adapter reads context pack from `{context_pack_ref}` (narrative; adapter's CLI must support this flag).

@@ -177,7 +177,7 @@ def test_success_path_returns_pass_report() -> None:
     report = run_claude_code_cli_smoke(
         which=lambda command: "/fake/claude",
         runner=runner,
-        env={"ANTHROPIC_API_KEY": "sk-test"},
+        env={},
     )
 
     assert report.overall_status == "pass"

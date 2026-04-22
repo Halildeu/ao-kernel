@@ -24,11 +24,9 @@ Successful completion here validates an operator setup, not the whole product su
    ```
    Do NOT treat "binary exists" as sufficient. The authoritative preflight is the helper in §1.1, which verifies version, auth status, prompt access, and whether the installed Claude CLI still accepts the bundled manifest argv shape.
 
-2. **Usable auth route.** For the current non-`--bare` bundled manifest, either of these can satisfy the auth side:
-   - Claude Code first-party login with real prompt access.
-   - Exported API key route (`ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`) when the operator intentionally uses API-key auth.
+2. **Primary auth route = Claude Code session.** Bu repo için varsayılan ve beklenen yol `claude-code-cli` oturumu ile gerçek prompt access almaktır. `claude auth status` tek başına yeterli sayılmaz; §1.1 helper'ı belirleyicidir çünkü `loggedIn=true` durumunda bile gerçek prompt erişimi bloklu olabilir.
 
-   `claude auth status` alone is NOT enough; the helper in §1.1 is authoritative because it catches real prompt-access denial even when the CLI reports `loggedIn=true`.
+   Exported API key route (`ANTHROPIC_API_KEY` / `CLAUDE_API_KEY`) yalnız istisnai operator fallback'idir. `WP-8.2` kabulü için varsayılan yol olarak görülmez ve normal certification lane bunun üzerine kurulmaz.
 
 3. **Python 3.11+ with `ao-kernel` installed.** Existing requirement; no new extras needed.
 
@@ -92,7 +90,7 @@ Minimum viable override:
 
   "secrets": {
     "deny_by_default": true,
-    "allowlist_secret_ids": ["ANTHROPIC_API_KEY"],
+    "allowlist_secret_ids": [],
     "exposure_modes": ["env"],
     "denied_exposure_modes": ["argv", "stdin", "file", "http_header"]
   },
@@ -135,7 +133,6 @@ Minimum viable override:
 
 Key deltas from bundled:
 - `enabled` false → **true** (engages the policy)
-- `secrets.allowlist_secret_ids` `[]` → `["ANTHROPIC_API_KEY"]` when the operator chooses the env-secret auth route
 - `command_allowlist.exact` += `"claude"`
 - `rollout.mode_default` remains `report_only` in the override above, matching the bundled default. As of **v4.0.0b1**, the executor (`ao_kernel/executor/executor.py`) honors the three-tier activation + rollout semantics for the live preflight scope:
   - **`enabled=false`**: policy layer dormant — no events, no fail (sandbox still built from declared fields).
@@ -146,6 +143,17 @@ Key deltas from bundled:
 `v4.0.0b1` caveat: bundled adapters that explicitly use `{python_executable}` in the manifest `command` field get a localized exception for the resolved `sys.executable` realpath only. The sandbox itself is not widened, and unrelated commands still go through normal allowlist enforcement.
 
 Use `report_only` for the first few runs to review `policy_checked` evidence without hitting fail-closed; flip to `block` once the allowlists are tuned.
+
+If you deliberately use the rare env-secret fallback, extend the override with:
+
+```json
+"secrets": {
+  "deny_by_default": true,
+  "allowlist_secret_ids": ["ANTHROPIC_API_KEY"],
+  "exposure_modes": ["env"],
+  "denied_exposure_modes": ["argv", "stdin", "file", "http_header"]
+}
+```
 
 ### Note on `policy_secrets.v1.json`
 
@@ -223,8 +231,8 @@ cat > .ao/policies/policy_worktree_profile.v1.json <<'EOF'
 { ...the override from §2... }
 EOF
 
-# 4. Export the API key for THIS shell only (no shell-rc leak).
-export ANTHROPIC_API_KEY='sk-ant-...'
+# 4. Verify the Claude Code session can answer a trivial prompt.
+python3 scripts/claude_code_cli_smoke.py --output text
 
 # 5. Run the benchmark workflow with the real-adapter variant.
 #    The exact ao-kernel bench entrypoint depends on your install; see
@@ -249,7 +257,7 @@ Common violation kinds and the fix:
 | `PolicyViolation.kind` | Cause | Fix |
 |---|---|---|
 | `secret_exposure_denied` | Secret literal detected inside the resolved argv for the adapter invocation (current runtime scope). HTTP header leaks surface under the separate `http_header_exposure_unauthorized` kind; stdin/file exposure checks are deferred. | Audit the adapter invocation template; remove the secret from argv (the allowlisted channel is env). If the argv exposure is legitimate for this adapter, rotate the credential and reshape the invocation. |
-| `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Export the secret in the shell you launch the run from (`export ANTHROPIC_API_KEY=...`). |
+| `secret_missing` | A `secret_id` listed in `allowlist_secret_ids` has no value in the resolved env. | Bu yalnız env-secret fallback kullaniyorsan anlamlıdır; normal Claude Code session yolunda `allowlist_secret_ids` boş kalabilir. |
 | `cwd_escape` | Adapter tried to `cd ..` past the worktree root or resolve a path outside `{worktree_base}`. | Shouldn't happen with a well-behaved `claude` prompt; if you see it, report upstream with the evidence JSONL excerpt. |
 | `command_not_allowlisted` | Adapter command could not be resolved within the sandbox policy boundary. | Add the command to `exact`, or switch the adapter to an explicitly allowed binary. |
 | `command_path_outside_policy` | Adapter command resolved, but its realpath sits outside policy-declared prefixes / exact anchors. | Ensure the real command resolves inside an allowlisted prefix, or use the explicit `{python_executable}` reserved token when the manifest truly means the current interpreter. |

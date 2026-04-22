@@ -186,7 +186,6 @@ def render_text_report(report: ClaudeCodeSmokeReport) -> str:
         f"overall_status: {report.overall_status}",
         f"adapter_id: {report.adapter_id}",
         f"binary_path: {report.binary_path or '<missing>'}",
-        f"api_key_env_present: {'yes' if report.api_key_env_present else 'no'}",
         "checks:",
     ]
     for check in report.checks:
@@ -282,7 +281,7 @@ def _classify_auth_status_check(
     logged_in = bool(payload.get("loggedIn"))
     detail = (
         f"loggedIn={logged_in} authMethod={payload.get('authMethod')!r} "
-        f"orgName={payload.get('orgName')!r} api_key_env_present={api_key_env_present}"
+        f"orgName={payload.get('orgName')!r}"
     )
     if logged_in:
         return SmokeCheck(
@@ -295,6 +294,7 @@ def _classify_auth_status_check(
                 "loggedIn": logged_in,
                 "authMethod": payload.get("authMethod"),
                 "orgName": payload.get("orgName"),
+                "fallback_api_key_env_present": api_key_env_present,
             },
         )
     return SmokeCheck(
@@ -308,6 +308,7 @@ def _classify_auth_status_check(
             "loggedIn": logged_in,
             "authMethod": payload.get("authMethod"),
             "orgName": payload.get("orgName"),
+            "fallback_api_key_env_present": api_key_env_present,
         },
     )
 
