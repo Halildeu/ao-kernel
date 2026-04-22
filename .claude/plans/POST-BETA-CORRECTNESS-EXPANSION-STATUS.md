@@ -17,7 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#222](https://github.com/Halildeu/ao-kernel/issues/222)
+- **Aktif issue:** Henüz açılmadı (`PB-3` issue follow-up)
 
 ## 2. Başlangıç Gerçeği
 
@@ -53,7 +53,7 @@ ayrı ayrı görünür kılmak.
 | Slice | Durum | Hedef | Zorunlu kanıt |
 |---|---|---|---|
 | `PB-1` Deferred correctness pack 1 | Completed on `main` ([#220](https://github.com/Halildeu/ao-kernel/issues/220)) | `sanitize.py`, `compiler.py`, `init_cmd.py` correctness boşluklarının zaten kapanmış olduğunu backfill doğrulamak | targeted tests on `main` + status correction |
-| `PB-2` `bug_fix_flow + codex-stub patch_preview` closure | **Active** ([#222](https://github.com/Halildeu/ao-kernel/issues/222)) | deferred bugfix workflow yüzeyini ya gerçekten çalışır hale getirmek ya da boundary'yi kalıcı daraltmak | workflow repro + decision doc + tests |
+| `PB-2` `bug_fix_flow + codex-stub patch_preview` closure | Completed on `main` ([#222](https://github.com/Halildeu/ao-kernel/issues/222), [#224](https://github.com/Halildeu/ao-kernel/pull/224)) | `open_pr` adımında PR metadata/evidence boşluğunu kapatmak ve deferred bugfix workflow yüzeyini deterministik integration coverage ile doğrulamak | merged runtime fix + integration tests + green CI |
 | `PB-3` deterministic test hygiene / time seams | Planned | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | suite proof + seam inventory |
 | `PB-4` support-surface widening decisions | Planned | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | smoke/e2e kanıtı + docs parity |
 | `PB-5` adapter-path cost/evidence completeness | Planned | `cost_usd` reconcile ve evidence completeness boşluklarını kapatmak | tests + evidence parity |
@@ -61,32 +61,31 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-2` — `bug_fix_flow + codex-stub patch_preview` closure
+### `PB-3` — deterministic test hygiene / time seams
 
 **Neden şimdi**
-- `PB-1` için hedeflenen üç defect zaten `main` üzerinde kapanmış durumda;
-  bu, canlı testlerle doğrulandı.
-- Bundan sonraki en büyük kalan runtime debt, `bug_fix_flow` yüzeyinin ya
-  gerçekten kapanması ya da support boundary'den kalıcı biçimde çıkarılmasıdır.
+- `PB-2` merge edildi ve `bug_fix_flow` yolundaki `open_pr` metadata/evidence
+  boşluğu kapandı; aktif runtime correctness slice artık bu değil.
+- Bir sonraki yüksek değerli debt, zaman bağımlı test seam'leri ve davranışsal
+  olarak zayıf assertion alanlarının sistematik temizlenmesidir.
 
 **Aktif kapsam**
-1. bundled `bug_fix_flow` workflow yüzeyi
-2. `codex-stub` ile `patch_preview` / apply / human gate zinciri
-3. docs/test/runtime parity kararı
+1. zaman bağımlı testlerin envanteri
+2. `now=` seam'lerinin deterministik hale getirilmesi
+3. `result is not None` tipi zayıf assertion'ların davranışsal kontrata çekilmesi
 
 **Definition of Done**
-- bu yüzey ya canlı ve kanıtlı şekilde çalışır hale gelir ya da yanlış destek
-  beklentisi bırakmayacak şekilde boundary daraltılır
-- workflow repro / test / doc üçlüsü aynı şeyi söyler
-- fake demo yüzeyi bırakılmaz
+- flaky / date-sensitive test kümeleri yazılı envanterle görünürdür
+- en az ilk tranche seam fix + behavior-first assertion güçlendirmesi merge edilir
+- suite gerçek deterministik kontrata biraz daha yaklaşır; fake-green alan daralır
 
 ## 6. Sonra
 
-`PB-2` kapandıktan sonraki doğru sıra:
+`PB-3` kapandıktan sonraki doğru sıra:
 
-1. `PB-3` deterministic test hygiene / time seams
-2. `PB-4` support-surface widening decisions
-3. `PB-5` adapter-path cost/evidence completeness
+1. `PB-4` support-surface widening decisions
+2. `PB-5` adapter-path cost/evidence completeness
+3. `PB-6` general-purpose expansion gap map
 
 ## 7. Riskler
 
@@ -94,14 +93,14 @@ ayrı ayrı görünür kılmak.
 |---|---|---|
 | Küçük correctness fix'i support widening gibi sunmak | Orta | status + docs boundary'yi dar tut |
 | `PB-1` için stale backlog üzerinde çalışmak | Orta | canlı testle doğrula, sonra status'u düzelt |
-| Deferred bugfix closure sırasında yeniden kapsam kayması | Yüksek | `PB-2`yi ayrıca slice'la |
+| Deterministic test hygiene işinde scope creep | Yüksek | `PB-3`ü seam inventory + küçük tranche fix'ler olarak dilimle |
 | Zayıf testlerle fake green oluşması | Yüksek | behavior-first assertions ve smoke kanıtı zorunlu |
 
 ## 8. Anlık Öncelik
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-2` `bug_fix_flow + codex-stub patch_preview` closure
+1. `PB-3` deterministic test hygiene / time seams
 
 ## 9. Güncelleme Protokolü
 
