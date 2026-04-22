@@ -76,6 +76,17 @@ def _run_overlap_check(cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _run_close_worktree(cwd: Path, target: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(OPS_SCRIPT), "close-worktree", target.as_posix()],
+        cwd=cwd,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+
+
 def test_ops_preflight_clean_repo(tmp_path: Path) -> None:
     work = _init_remote_clone(tmp_path)
 
@@ -202,3 +213,62 @@ def test_ops_overlap_check_uses_mainline_base_for_pushed_feature_branches(
     assert "feature-a" in proc.stdout
     assert "feature-b" in proc.stdout
     assert "⚠ Overlap risk detected" in proc.stdout
+
+
+def test_ops_close_worktree_closes_clean_secondary_worktree(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt = tmp_path / "wt-close"
+
+    _run(
+        ["git", "worktree", "add", "-b", "feature-close", wt.as_posix(), "origin/main"],
+        cwd=work,
+    )
+
+    proc = _run_close_worktree(work, wt)
+
+    assert proc.returncode == 0
+    assert "== ops close-worktree ==" in proc.stdout
+    assert "✓ Worktree closed" in proc.stdout
+    assert not wt.exists()
+    assert wt.as_posix() not in _git(work, "worktree", "list", "--porcelain").stdout
+
+
+def test_ops_close_worktree_refuses_dirty_secondary_worktree(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt = tmp_path / "wt-dirty"
+
+    _run(
+        ["git", "worktree", "add", "-b", "feature-dirty", wt.as_posix(), "origin/main"],
+        cwd=work,
+    )
+    (wt / "notes.txt").write_text("dirty\n", encoding="utf-8")
+
+    proc = _run_close_worktree(work, wt)
+
+    assert proc.returncode == 1
+    assert "Refusing to close dirty worktree" in proc.stdout
+    assert wt.exists()
+    assert wt.as_posix() in _git(work, "worktree", "list", "--porcelain").stdout
+
+
+def test_ops_close_worktree_refuses_current_worktree(tmp_path: Path) -> None:
+    work = _init_remote_clone(tmp_path)
+
+    proc = _run_close_worktree(work, work)
+
+    assert proc.returncode == 1
+    assert "Refusing to close current worktree" in proc.stdout
+
+
+def test_ops_close_worktree_rejects_unknown_target(tmp_path: Path) -> None:
+    work = _init_remote_clone(tmp_path)
+    unknown = tmp_path / "missing"
+
+    proc = _run_close_worktree(work, unknown)
+
+    assert proc.returncode == 1
+    assert "Target is not an attached worktree for this repository" in proc.stdout

@@ -409,6 +409,20 @@ setlerini karşılaştırır ve iki seviyede sinyal üretir:
 - **exact file overlap** — aynı dosyaya iki açık worktree dokunuyor
 - **shared top-level area** — aynı üst klasör alanında paralel değişim var
 
+Clean bir yardımcı worktree kapatılacaksa çıplak `git worktree remove` yerine şu
+yüzeyi kullan:
+
+```bash
+bash .claude/scripts/ops.sh close-worktree <path>
+```
+
+`ops.sh close-worktree` şu güvenlik kontratıyla çalışır:
+
+- current worktree'yi kapatmaz
+- dirty target'ı kapatmaz
+- yalnız attached ve clean non-current worktree'yi kapatır
+- branch'i silmez; yalnız worktree'yi kapatır
+
 Komut exit 1 dönerse DUR, kullanıcı ile karar ver:
 
 - Main'e rebase: `git rebase origin/main`
@@ -437,7 +451,7 @@ git checkout main && git pull
 git worktree add ../ao-kernel-feat-X -b feat/X origin/main
 
 # Bitince
-git worktree remove ../ao-kernel-feat-X
+bash .claude/scripts/ops.sh close-worktree ../ao-kernel-feat-X
 git branch -D feat/X  # merge edildikten sonra
 ```
 
