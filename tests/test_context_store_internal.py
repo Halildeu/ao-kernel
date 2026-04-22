@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import ao_kernel._internal.session.context_store as context_store_module
 
 from ao_kernel._internal.session.context_store import (
     SessionContextError,
@@ -20,13 +21,28 @@ from ao_kernel._internal.session.context_store import (
     upsert_decision,
 )
 
+FIXED_CONTEXT_NOW = "2026-04-22T12:00:00Z"
+FIXED_RENEW_NOW = "2026-04-22T12:30:00Z"
+
 
 class TestNewContext:
-    def test_creates_valid_context(self, tmp_path: Path):
+    def test_creates_valid_context(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            context_store_module,
+            "_now_iso8601",
+            lambda: FIXED_CONTEXT_NOW,
+        )
         ctx = new_context("sess-001", str(tmp_path), 3600)
         assert ctx["session_id"] == "sess-001"
         assert ctx["version"] == "v1"
         assert ctx["ttl_seconds"] == 3600
+        assert ctx["created_at"] == FIXED_CONTEXT_NOW
+        assert ctx["updated_at"] == FIXED_CONTEXT_NOW
+        assert ctx["expires_at"] == "2026-04-22T13:00:00Z"
         assert ctx["ephemeral_decisions"] == []
         assert len(ctx["hashes"]["session_context_sha256"]) == 64
 
@@ -163,12 +179,27 @@ class TestSaveLoadRoundtrip:
 
 
 class TestRenewContext:
-    def test_renew_extends_ttl(self, tmp_path: Path):
+    def test_renew_extends_ttl(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            context_store_module,
+            "_now_iso8601",
+            lambda: FIXED_CONTEXT_NOW,
+        )
         ctx = new_context("renew", str(tmp_path), 600)
-        old_expires = ctx["expires_at"]
+        assert ctx["expires_at"] == "2026-04-22T12:10:00Z"
+        monkeypatch.setattr(
+            context_store_module,
+            "_now_iso8601",
+            lambda: FIXED_RENEW_NOW,
+        )
         ctx = renew_context(ctx, 7200)
         assert ctx["ttl_seconds"] == 7200
-        assert ctx["expires_at"] > old_expires
+        assert ctx["updated_at"] == FIXED_RENEW_NOW
+        assert ctx["expires_at"] == "2026-04-22T14:30:00Z"
 
     def test_renew_invalid_ttl_raises(self, tmp_path: Path):
         ctx = new_context("renew-bad", str(tmp_path), 3600)
