@@ -396,6 +396,19 @@ bash .claude/scripts/ops.sh preflight
 - upstream push/divergence özeti
 - diğer attached worktree'lerin clean/dirty snapshot'ı
 
+Birden fazla aktif worktree varsa, edit veya merge öncesi ayrıca şu komutu
+çalıştır:
+
+```bash
+bash .claude/scripts/ops.sh overlap-check
+```
+
+`ops.sh overlap-check` attached worktree'lerin base'e göre changed-path
+setlerini karşılaştırır ve iki seviyede sinyal üretir:
+
+- **exact file overlap** — aynı dosyaya iki açık worktree dokunuyor
+- **shared top-level area** — aynı üst klasör alanında paralel değişim var
+
 Komut exit 1 dönerse DUR, kullanıcı ile karar ver:
 
 - Main'e rebase: `git rebase origin/main`
@@ -441,6 +454,8 @@ git branch -D feat/X  # merge edildikten sonra
 Farklı worktree'lerde çalışan Claude/Codex session'ları için:
 
 - Her session **kendi worktree'sinin preflight kontrolünü** çalıştırır (`ops.sh preflight`)
+- Birden fazla attached worktree varsa edit başlamadan önce `ops.sh overlap-check`
+  ile path-overlap görünürlüğü alınır
 - Shared implementation branch yok — her session fresh branch from main
 - Backup branch (`backup/*`) sadece kurtarma için, üstünde impl yapılmaz
 
