@@ -63,3 +63,11 @@ somut deterministic fix tranche'lerine bölmektir.
    `renew_context` için exact timestamp sözleşmesini pinlemek
 3. daha geniş `context_store_coverage` alanını sonraki küçük tranche'lere
    bırakmak
+
+## Dördüncü Tranche
+
+1. `tests/test_context_store_coverage.py` içindeki kalan ad hoc
+   `datetime.now(...)` kullanımını sabit zaman helper'ına çekmek
+2. `inherit_parent_decisions` ve prune edge testlerini wall-clock'tan
+   bağımsız hale getirmek
+3. runtime yüzeyine dokunmadan yalnız test deterministikliğini artırmak
