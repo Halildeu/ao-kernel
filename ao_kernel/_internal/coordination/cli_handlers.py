@@ -17,20 +17,20 @@ from ao_kernel.coordination.status import (
 def _resolve_workspace(args: Any) -> Path:
     ws = getattr(args, "workspace_root", None)
     if ws:
-        resolved = Path(ws).resolve()
-        if resolved.name == ".ao":
-            return resolved.parent
-        return resolved
+        explicit_root = Path(ws).resolve()
+        if explicit_root.name == ".ao":
+            return explicit_root.parent
+        return explicit_root
 
     from ao_kernel.config import workspace_root
 
-    resolved = workspace_root()
-    if resolved is None:
+    discovered_root = workspace_root()
+    if discovered_root is None:
         print("error: no .ao/ workspace found", file=sys.stderr)
         raise SystemExit(1)
-    if resolved.name == ".ao":
-        return resolved.parent
-    return resolved
+    if discovered_root.name == ".ao":
+        return discovered_root.parent
+    return discovered_root
 
 
 def _emit_output(payload: str, args: Any) -> None:
