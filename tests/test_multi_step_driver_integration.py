@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 import pytest
 
+from ao_kernel.ci import CIResult
 from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
 from ao_kernel.executor import DriverResult
 from ao_kernel.workflow.run_store import load_run
@@ -197,15 +198,17 @@ class TestBundledBugFixFlow:
                 )
             ), error
 
-    def test_real_codex_stub_with_mocked_open_pr_completes_full_flow(
+    def test_real_codex_stub_with_mocked_ci_and_open_pr_completes_full_flow(
         self,
         tmp_path: Path,
     ) -> None:
         """Pin the bundled 7-step bug-fix path with the real
-        ``codex-stub`` subprocess and a mocked ``gh-cli-pr`` adapter.
+        ``codex-stub`` subprocess plus deterministic CI/PR sidecars.
 
-        This keeps the deterministic local coverage strong without
-        claiming support for real remote PR opening.
+        Scope of this test is the workflow closure after the coding
+        step: approval gate, patch apply, PR metadata persistence and
+        evidence emission. ``ci_pytest`` and ``gh-cli-pr`` are mocked so
+        host runner toolchain drift does not make the integration flaky.
         """
         install_workspace(tmp_path)
         _copy_bundled_defaults(tmp_path)
@@ -214,9 +217,21 @@ class TestBundledBugFixFlow:
         run_id = seed_run(tmp_path, "bug_fix_flow")
         driver = build_driver(tmp_path, policy_loader=_policy_with_pythonpath())
 
+        import ao_kernel.ci as ci_module
         from ao_kernel.executor import executor as executor_module
 
         original_invoke_cli = executor_module.invoke_cli
+
+        def _mock_run_pytest(*args, **kwargs):
+            return CIResult(
+                check_name="pytest",
+                command=("python3", "-m", "pytest"),
+                status="pass",
+                exit_code=0,
+                duration_seconds=0.01,
+                stdout_tail="mocked pytest pass",
+                stderr_tail="",
+            )
 
         def _dispatch_cli(
             *,
@@ -265,15 +280,16 @@ class TestBundledBugFixFlow:
             "ao_kernel.executor.executor.invoke_cli",
             side_effect=_dispatch_cli,
         ):
-            first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
-            assert first.final_state == "waiting_approval"
-            assert first.resume_token is not None
+            with patch.object(ci_module, "run_pytest", side_effect=_mock_run_pytest):
+                first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
+                assert first.final_state == "waiting_approval"
+                assert first.resume_token is not None
 
-            final = driver.resume_workflow(
-                run_id,
-                first.resume_token,
-                payload={"decision": "granted"},
-            )
+                final = driver.resume_workflow(
+                    run_id,
+                    first.resume_token,
+                    payload={"decision": "granted"},
+                )
 
         run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
         record, _ = load_run(tmp_path, run_id)
@@ -286,6 +302,14 @@ class TestBundledBugFixFlow:
         assert step_records["await_approval"]["state"] == "completed"
         assert step_records["apply_patch"]["state"] == "completed"
         assert step_records["open_pr"]["state"] == "completed"
+
+        ci_artifact = json.loads(
+            (run_dir / step_records["ci_gate"]["output_ref"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        assert ci_artifact["status"] == "pass"
+        assert ci_artifact["exit_code"] == 0
 
         apply_artifact = json.loads(
             (run_dir / step_records["apply_patch"]["output_ref"]).read_text(
