@@ -1,6 +1,6 @@
 # Post-Beta Correctness and Expansion Status
 
-**Durum tarihi:** 2026-04-22
+**Durum tarihi:** 2026-04-23
 **Amaç:** Public Beta closeout sonrasında kalan correctness debt'ini
 fail-closed disiplinle kapatmak, support-surface widening kararlarını kanıtla
 yönetmek ve genel amaçlı production çizgisine geçiş için gerçek gap'leri
@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `—` (`PB-5` closeout tamamlandı; sıradaki plan açılışı `PB-6` için)
+- **Aktif slice planı:** `.claude/plans/PB-6-GENERAL-PURPOSE-EXPANSION-GAP-MAP.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** `—` (`PB-6` issue açılışı sıradaki iş)
+- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 2. Başlangıç Gerçeği
 
@@ -26,9 +26,8 @@ ayrı ayrı görünür kılmak.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
 - Public Beta closeout sonrası aktif program odağı artık defer edilmiş ilk
-  correctness boşlukları değil; support-surface widening closeout'u bitmiş,
-  aktif odak adapter-path cost/evidence completeness ve onun arkasındaki daha
-  geniş expansion gap'lerdir.
+  correctness boşlukları değil; support-surface widening ve PB-5 closeout'u
+  tamamlandı, bugünkü aktif odak daha geniş expansion gap'lerin sıralanmasıdır.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -57,42 +56,46 @@ ayrı ayrı görünür kılmak.
 | `PB-3` deterministic test hygiene / time seams | Completed on `main` ([#226](https://github.com/Halildeu/ao-kernel/issues/226), [#227](https://github.com/Halildeu/ao-kernel/pull/227), [#228](https://github.com/Halildeu/ao-kernel/pull/228), [#229](https://github.com/Halildeu/ao-kernel/pull/229), [#230](https://github.com/Halildeu/ao-kernel/pull/230), [#231](https://github.com/Halildeu/ao-kernel/pull/231)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | targeted suite proof + residual seam inventory |
 | `PB-4` support-surface widening decisions | Completed on `main` ([#232](https://github.com/Halildeu/ao-kernel/issues/232), [#237](https://github.com/Halildeu/ao-kernel/pull/237)) | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | canlı smoke + karar notu + docs parity |
 | `PB-5` adapter-path cost/evidence completeness | Completed ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness yüzeyinde ayrı runtime gap olup olmadığını karara bağlamak; sonuç: docs parity closeout yeterli, ayrı tranche 3 gerekmedi | truth audit + targeted tests + docs parity closeout |
-| `PB-6` general-purpose expansion gap map | Planned | narrow beta'dan daha geniş production platform çizgisine geçiş için önkoşulları tabloya dökmek | written gap map + ordered backlog |
+| `PB-6` general-purpose expansion gap map | In progress ([#243](https://github.com/Halildeu/ao-kernel/issues/243)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + canlı baseline |
 
 ## 5. Şimdi
 
-### `PB-5` — closeout kararı
+### `PB-6` — general-purpose expansion gap map
 
-`PB-5` bu turda kapanmıştır. Docs parity patch sonrasında yeniden yapılan
-runtime/test/evidence audit'i şu hükme varmıştır:
+`PB-6` aktif hat olarak açıldı. Bu slice'ın işi support boundary'yi hemen
+widen etmek değil; narrow Public Beta yüzeyi ile general-purpose production
+iddiası arasındaki somut boşlukları canlı kanıtla sınıflandırmaktır.
 
-1. `post_adapter_reconcile` runtime hook'u, executor wiring'i ve scorecard
-   consumer zinciri `main` üzerinde gerçektir.
-2. Kalan asıl problem runtime yokluğu değil, support-boundary ile
-   benchmark/operator dilinin scope ayrımıydı; tranche 2 bunu tek anlamlı hale
-   getirmiştir.
-3. Bu nedenle ayrı bir `PB-5 tranche 3` runtime/evidence fix hattı
-   açılmamıştır.
+Canlı baseline:
 
-Closeout kanıtı:
+1. `python3 -m ao_kernel doctor`
+   - `8 OK, 1 WARN, 0 FAIL`
+   - `runtime_backed=1`, `quarantined=18`, `missing_runtime_refs=161`
+2. `python3 scripts/claude_code_cli_smoke.py --output json`
+   - `overall_status="pass"`
+3. `python3 scripts/gh_cli_pr_smoke.py --output json`
+   - `overall_status="pass"`
 
-- `python3 -m pytest tests/test_post_adapter_reconcile.py -q` → `17 passed`
-- `python3 -m pytest tests/test_cost_marker_idempotency.py -q` → `12 passed`
-- `python3 -m pytest tests/test_scorecard_render.py -q` → `10 passed`
-- `python3 -m pytest tests/benchmarks/test_full_mode_smoke.py -q -m full_mode --benchmark-mode=full`
-  → `1 skipped, 5 deselected`
+İlk hüküm:
 
-Residual not:
+1. helper-backed beta lane'ler bugün canlı smoke veriyor
+2. buna rağmen runtime-backed surface hâlâ çok dar
+3. en kritik ilk gap, bundled inventory ile gerçek runtime-backed support
+   yüzeyi arasındaki açıklıktır
 
-- `tests/benchmarks/test_governed_review.py::TestCostReconcile::test_cost_usd_not_drained_in_fast_mode`
-  için `ADV-001` kalite advisory'si sürüyor; bu, ayrı runtime/evidence gap'i
-  değil test-hijyen backlog'udur.
+Sıradaki doğru alt adım:
+
+1. `PB-6.1` extension truth rationalization
+2. doctor truth inventory'yi extension bazlı karar tablosuna çevirmek
+3. promotion adayı / quarantine / retire kümelerini ayırmak
 
 ## 6. Sonra
 
-`PB-5` kapandığı için sıradaki doğru sıra:
+`PB-6` açıldıktan sonraki doğru sıra:
 
-1. `PB-6` general-purpose expansion gap map
+1. `PB-6.1` extension truth rationalization
+2. `PB-6.2` real-adapter workflow graduation criteria
+3. `PB-6.3` write-side / PR lane graduation criteria
 
 ## 7. Riskler
 
@@ -102,12 +105,13 @@ Residual not:
 | `PB-1` için stale backlog üzerinde çalışmak | Orta | canlı testle doğrula, sonra status'u düzelt |
 | Deterministic test hygiene işinde scope creep | Yüksek | `PB-3`ü seam inventory + küçük tranche fix'ler olarak dilimle |
 | Zayıf testlerle fake green oluşması | Yüksek | behavior-first assertions ve smoke kanıtı zorunlu |
+| Inventory genişliği nedeniyle yanlış promotion yapmak | Yüksek | extension bazlı karar tablosu olmadan support widening yapma |
 
 ## 8. Anlık Öncelik
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6` general-purpose expansion gap map
+1. `PB-6.1` extension truth rationalization
 
 ## 9. Güncelleme Protokolü
 
