@@ -42,6 +42,7 @@ class CommandResult:
     returncode: int
     stdout: str
     stderr: str
+    timed_out: bool = False
 
 
 @dataclass(frozen=True)
@@ -134,13 +135,24 @@ def run_claude_code_cli_smoke(
             checks=checks,
         )
 
-    version_result = runner((binary_path, "--version"), None, timeout_seconds)
+    version_result = _run_check(
+        runner,
+        (binary_path, "--version"),
+        None,
+        timeout_seconds,
+    )
     checks.append(_classify_version_check(version_result))
 
-    auth_result = runner((binary_path, "auth", "status"), None, timeout_seconds)
+    auth_result = _run_check(
+        runner,
+        (binary_path, "auth", "status"),
+        None,
+        timeout_seconds,
+    )
     checks.append(_classify_auth_status_check(auth_result, api_key_env_present))
 
-    prompt_result = runner(
+    prompt_result = _run_check(
+        runner,
         (binary_path, "-p", _PROMPT_ACCESS_PROBE),
         None,
         timeout_seconds,
@@ -164,7 +176,8 @@ def run_claude_code_cli_smoke(
             invocation=manifest.invocation,
             input_envelope=envelope,
         )
-        manifest_result = runner(
+        manifest_result = _run_check(
+            runner,
             (binary_path, *resolved.args),
             temp_root,
             timeout_seconds,
@@ -230,7 +243,35 @@ def _default_runner(
     )
 
 
+def _run_check(
+    runner: Runner,
+    argv: Sequence[str],
+    cwd: Path | None,
+    timeout_seconds: float | None,
+) -> CommandResult:
+    try:
+        return runner(argv, cwd, timeout_seconds)
+    except subprocess.TimeoutExpired as exc:
+        return CommandResult(
+            argv=tuple(str(part) for part in argv),
+            returncode=124,
+            stdout=_decode_timeout_stream(exc.stdout),
+            stderr=_decode_timeout_stream(exc.stderr),
+            timed_out=True,
+        )
+
+
 def _classify_version_check(result: CommandResult) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="version",
+            status="fail",
+            detail="claude --version cagrisi timeout'a dustu",
+            finding_code="claude_version_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
     if result.returncode == 0 and result.stdout.strip():
         return SmokeCheck(
             name="version",
@@ -254,6 +295,16 @@ def _classify_auth_status_check(
     result: CommandResult,
     api_key_env_present: bool,
 ) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="auth_status",
+            status="fail",
+            detail="claude auth status cagrisi timeout'a dustu",
+            finding_code="claude_auth_status_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
     if result.returncode != 0:
         return SmokeCheck(
             name="auth_status",
@@ -314,6 +365,16 @@ def _classify_auth_status_check(
 
 
 def _classify_prompt_access_check(result: CommandResult) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="prompt_access",
+            status="fail",
+            detail="canli prompt smoke timeout'a dustu",
+            finding_code="prompt_smoke_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
     if result.returncode == 0 and result.stdout.strip() == "ok":
         return SmokeCheck(
             name="prompt_access",
@@ -344,6 +405,16 @@ def _classify_prompt_access_check(result: CommandResult) -> SmokeCheck:
 
 
 def _classify_manifest_invocation_check(result: CommandResult) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="manifest_invocation",
+            status="fail",
+            detail="bundled manifest smoke timeout'a dustu",
+            finding_code="manifest_smoke_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
     if result.returncode == 0:
         try:
             payload = json.loads(result.stdout)
@@ -488,7 +559,17 @@ def _trim_output(result: CommandResult) -> dict[str, str]:
         trimmed["stdout"] = result.stdout.strip()[:400]
     if result.stderr.strip():
         trimmed["stderr"] = result.stderr.strip()[:400]
+    if result.timed_out:
+        trimmed["timed_out"] = "true"
     return trimmed
+
+
+def _decode_timeout_stream(value: bytes | str | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
 
 
 def _finalize_report(

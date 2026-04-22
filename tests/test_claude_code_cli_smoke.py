@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -142,6 +143,58 @@ def test_invalid_bearer_token_is_classified_explicitly() -> None:
         "canli prompt smoke bearer token gecersizligi nedeniyle bloklandi"
     )
     assert prompt_check.observed["failure_kind"] == "invalid_bearer_token"
+
+
+def test_prompt_timeout_is_reported_without_crashing() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout or 20.0)
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "status": "ok",
+                        "review_findings": {
+                            "schema_version": "1",
+                            "findings": [],
+                            "summary": "smoke ok",
+                        },
+                    }
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "prompt_smoke_timeout" in report.findings
+    prompt_check = next(check for check in report.checks if check.name == "prompt_access")
+    assert prompt_check.finding_code == "prompt_smoke_timeout"
+    assert prompt_check.detail == "canli prompt smoke timeout'a dustu"
+    assert prompt_check.observed["timed_out"] == "true"
 
 
 def test_manifest_contract_mismatch_is_reported() -> None:

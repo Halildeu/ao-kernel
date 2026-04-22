@@ -56,7 +56,9 @@ The helper is the current smoke SSOT for `claude-code-cli`. It performs four che
 | `claude_binary_missing` | `claude` binary yok veya PATH'te değil | CLI'ı kur, PATH'i düzelt |
 | `claude_not_logged_in` | `claude auth status` login göstermiyor | `claude auth login` veya auth route'unu düzelt |
 | `prompt_access_denied` | login görünse bile gerçek prompt çağrısı yetkisiz | org/subscription/access tarafını çöz; yalnız `auth status`'a güvenme |
+| `prompt_smoke_timeout` | canlı prompt probe sürede dönemedi | CLI hang/latency nedenini ayır; helper artık crash etmez, fail-closed raporlar |
 | `manifest_cli_contract_mismatch` | bundled manifest argv yüzeyi yüklü Claude CLI ile uyuşmuyor | manifest/runtime contract düzeltmesi aç; workflow smoke'a geçme |
+| `manifest_smoke_timeout` | bundled manifest smoke sürede dönemedi | auth/CLI hang ve prompt contract etkisini ayır; workflow’a geçmeden nedeni çöz |
 | `manifest_output_not_json` | CLI çalıştı ama required JSON envelope dönmedi | prompt contract'ı veya adapter invocation'ı düzelt |
 | `manifest_output_missing_status` | stdout JSON ama top-level `status` yok | fail-closed output contract'ı düzelt |
 
