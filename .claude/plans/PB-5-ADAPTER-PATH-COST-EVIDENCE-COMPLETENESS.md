@@ -57,6 +57,58 @@ Bugünkü ana gerçek:
    adapter-path cost/evidence yüzeyi bugün shipped mi, beta mı, deferred mı?
 3. Truth audit sonucunu status + issue üzerinde yazılı karar notuna çevirmek.
 
+## İlk Tranche — Truth Audit Bulguları
+
+**Audit tarihi:** 2026-04-22
+
+| Surface | Current claim | Runtime truth | Evidence source | Conflict | Verdict |
+|---|---|---|---|---|---|
+| `docs/PUBLIC-BETA.md` | `adapter-path cost_usd reconcile` deferred | Runtime hook'un yok olduğunu değil, public support claim'in dar tutulduğunu söylüyor | `PUBLIC-BETA.md`, `SUPPORT-BOUNDARY.md` | Terminoloji kolay yanlış okunur | support-boundary statement |
+| `docs/SUPPORT-BOUNDARY.md` | deferred / not a support claim | Benchmark/internal contract'i reddetmiyor; shipped baseline dışı bırakıyor | `SUPPORT-BOUNDARY.md` | `Deferred` ifadesi implementation eksikliği gibi okunabilir | support-boundary statement |
+| `docs/BENCHMARK-SUITE.md` | v3.7 F2 bu gap'i kapattı | Benchmark/full-mode bağlamında `post_adapter_reconcile` event-backed çalışıyor | `BENCHMARK-SUITE.md`, `BENCHMARK-FULL-MODE.md` | Public support ile internal benchmark contract aynı cümle ailesinde değil | benchmark-scoped closure |
+| `docs/BENCHMARK-FULL-MODE.md` | operator-only validation lane, event-backed reconcile | Full-mode smoke yalnız adapter-path reconcile'in çalıştığını kanıtlıyor; blanket production claim vermiyor | `BENCHMARK-FULL-MODE.md`, `tests/benchmarks/test_full_mode_smoke.py` | Düşük; scope-out notları açık | operator validation only |
+| `ao_kernel/cost/middleware.py::post_adapter_reconcile` | adapter-path reconcile contract | `policy.enabled=true` ve `cost_actual` varsa ledger + budget + evidence emit akışı implement edilmiş | `ao_kernel/cost/middleware.py` | Conflict yok | implemented runtime contract |
+| `ao_kernel/executor/executor.py` adapter path | reconcile-before-terminal ordering | Executor cost policy açıksa `post_adapter_reconcile`'i terminal event öncesi çağırıyor | `ao_kernel/executor/executor.py` | Conflict yok | wired in runtime |
+| `tests/test_post_adapter_reconcile.py` | core contract tests | dormant, happy path, usage-missing, idempotency, wire-format davranışları pinli | `tests/test_post_adapter_reconcile.py` | Contract coverage güçlü | behavior pinned |
+| `tests/benchmarks/test_full_mode_smoke.py` | full-mode smoke | `llm_spend_recorded(source=\"adapter_path\")` sinyalini gerçek invoke_cli hattında pinliyor | `tests/benchmarks/test_full_mode_smoke.py` | Operator prereq bağımlı | high-signal operator proof |
+| scorecard consumer/render | `real_adapter` label | Event-backed adapter-path reconcile'i tüketiyor; vendor billing claim'i yapmıyor | `ao_kernel/_internal/scorecard/collector.py`, `render.py`, `tests/test_scorecard_render.py` | İsimlendirme tek başına yanlış okunabilir ama wording daraltılmış | downstream consumer aligned |
+
+## İlk Tranche — Verdict
+
+1. `post_adapter_reconcile` runtime hook'u ve onun evidence emit davranışı
+   repoda **mevcuttur**; bu yüzey "runtime yok" türü bir boşluk değildir.
+2. `PUBLIC-BETA.md` ve `SUPPORT-BOUNDARY.md` içindeki `Deferred` satırı,
+   core hook'un eksik olduğunu değil, bunun bugün için **public support claim**
+   olmadığını söylemektedir.
+3. Gerilim, esas olarak **scope/terminology parity** problemidir:
+   benchmark docs "gap closed" derken internal benchmark/operator doğrulama
+   kontratını anlatıyor; support docs ise shipped/public support sınırını
+   anlatıyor.
+4. Bu tranche'in hükmü: **ana sorun docs/parity netliği**; tranche 2'nin doğru
+   yönü önce operator-facing ve benchmark-facing anlatıyı tek anlamlı hale
+   getirmektir. Runtime semantics değişikliği ancak bu ayrımdan sonra gerçek
+   bir evidence completeness boşluğu kalırsa açılmalıdır.
+
+## İlk Tranche — Yerel Kanıt
+
+Çalıştırılan komutlar:
+
+```bash
+python3 -m pytest tests/test_post_adapter_reconcile.py -q
+python3 -m pytest tests/test_cost_marker_idempotency.py -q
+python3 -m pytest tests/test_scorecard_render.py -q
+python3 -m pytest tests/benchmarks/test_full_mode_smoke.py -q -m full_mode --benchmark-mode=full
+```
+
+Sonuç özeti:
+
+1. `tests/test_post_adapter_reconcile.py` → `17 passed`
+2. `tests/test_cost_marker_idempotency.py` → `12 passed`
+3. `tests/test_scorecard_render.py` → `10 passed`
+4. `tests/benchmarks/test_full_mode_smoke.py` → `1 skipped, 5 deselected`
+   - skip, operator/full-mode prereq yokluğunda beklenen davranış; tranche 1
+     verdict'ini invalid kılmıyor ama live operator proof olarak sayılmıyor
+
 ## Kabul Kriterleri
 
 1. Adapter-path cost/evidence için tek bir authoritative contract yazılıdır.
@@ -67,6 +119,14 @@ Bugünkü ana gerçek:
    boundary yüzeyinde görünür kalır.
 
 ## Beklenen Sonraki Adım
+
+`PB-5` için sıradaki doğru alt adım docs parity patch'tir:
+
+1. `PUBLIC-BETA.md` / `SUPPORT-BOUNDARY.md` tarafında "deferred support claim"
+   ile "missing runtime capability" ayrımını daha açık hale getirmek
+2. `BENCHMARK-SUITE.md` / `BENCHMARK-FULL-MODE.md` tarafında "gap closed"
+   ifadesini internal benchmark/operator contract bağlamına sabitlemek
+3. Gerekirse scorecard wording'ini değil, surrounding docs dilini netleştirmek
 
 `PB-5` kapandıktan sonraki doğru sıra `PB-6` general-purpose expansion gap map
 olacaktır.

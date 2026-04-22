@@ -86,8 +86,20 @@ ayrı ayrı görünür kılmak.
 - `PB-5` issue'su açıldı: [#238](https://github.com/Halildeu/ao-kernel/issues/238)
 - yaşayan slice planı oluşturuldu:
   `.claude/plans/PB-5-ADAPTER-PATH-COST-EVIDENCE-COMPLETENESS.md`
-- ilk tranche henüz başlamadı; doğru ilk adım truth audit ile mevcut cost ve
-  evidence anlatısının hangi yüzeylerde çatıştığını kanıt bazlı çıkarmaktır
+- tranche 1 truth audit yapıldı; hüküm şu:
+  adapter-path cost/evidence runtime hook'u repoda mevcut ve behavior-first
+  test/benchmark kanıtı var, fakat public support docs bunu bilerek deferred
+  support claim olarak tutuyor
+- bugün görünen ana gerilim runtime yokluğu değil; benchmark/operator contract
+  ile support-boundary dilinin scope ayrımını her yerde aynı netlikte
+  söylememesi
+- sıradaki doğru alt adım docs parity patch; runtime semantics değişikliği
+  ancak bu temizlendikten sonra gerçek bir completeness gap kalırsa açılacak
+- tranche 1 yerel kanıtı toplandı:
+  `test_post_adapter_reconcile` `17 passed`,
+  `test_cost_marker_idempotency` `12 passed`,
+  `test_scorecard_render` `10 passed`;
+  full-mode smoke operator prereq yokluğunda `skip` verdi
 
 ## 6. Sonra
 
