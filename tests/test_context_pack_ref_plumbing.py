@@ -154,10 +154,11 @@ class TestEnvelopeResolverSuccessPath:
         result = driver._build_adapter_envelope_with_context(
             run_id=run_id, step_def=step_def, record=record,
         )
-        assert result is not None
-        assert result["task_prompt"] == "do the adapter thing"
-        assert result["run_id"] == run_id
-        assert result["context_pack_ref"] == str(context_md_path)
+        assert result == {
+            "task_prompt": "do the adapter thing",
+            "run_id": run_id,
+            "context_pack_ref": str(context_md_path),
+        }
         # Absolute path invariant: adapter subprocess reads from worktree
         # cwd via plain string replacement, so path must resolve regardless.
         assert Path(result["context_pack_ref"]).is_absolute()

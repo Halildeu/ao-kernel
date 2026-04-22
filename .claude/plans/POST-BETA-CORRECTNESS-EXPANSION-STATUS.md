@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-2-BUGFIX-FLOW-PATCH-PREVIEW-CLOSURE.md`
+- **Aktif slice planı:** `.claude/plans/PB-3-DETERMINISTIC-TEST-HYGIENE.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** Henüz açılmadı (`PB-3` issue follow-up)
+- **Aktif issue:** [#226](https://github.com/Halildeu/ao-kernel/issues/226)
 
 ## 2. Başlangıç Gerçeği
 
@@ -25,10 +25,10 @@ ayrı ayrı görünür kılmak.
 - Repo bugün dar ama kanıtlı bir Public Beta / governed runtime yüzeyine sahiptir.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
-- Public Beta closeout sonrası hâlâ ayrı correctness işleri vardır:
-  `sanitize.py:39`, `compiler.py:139`, `init_cmd.py:30-33`,
-  `bug_fix_flow + codex-stub patch_preview`, time-dependent test hygiene ve
-  adapter-path cost/evidence completeness.
+- Public Beta closeout sonrası aktif program odağı artık defer edilmiş ilk
+  correctness boşlukları değil; deterministik test hygiene, support-surface
+  widening kararları ve adapter-path cost/evidence completeness gibi kalan
+  post-beta işlerdir.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -54,7 +54,7 @@ ayrı ayrı görünür kılmak.
 |---|---|---|---|
 | `PB-1` Deferred correctness pack 1 | Completed on `main` ([#220](https://github.com/Halildeu/ao-kernel/issues/220)) | `sanitize.py`, `compiler.py`, `init_cmd.py` correctness boşluklarının zaten kapanmış olduğunu backfill doğrulamak | targeted tests on `main` + status correction |
 | `PB-2` `bug_fix_flow + codex-stub patch_preview` closure | Completed on `main` ([#222](https://github.com/Halildeu/ao-kernel/issues/222), [#224](https://github.com/Halildeu/ao-kernel/pull/224)) | `open_pr` adımında PR metadata/evidence boşluğunu kapatmak ve deferred bugfix workflow yüzeyini deterministik integration coverage ile doğrulamak | merged runtime fix + integration tests + green CI |
-| `PB-3` deterministic test hygiene / time seams | Planned | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | suite proof + seam inventory |
+| `PB-3` deterministic test hygiene / time seams | In progress ([#226](https://github.com/Halildeu/ao-kernel/issues/226)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | suite proof + seam inventory |
 | `PB-4` support-surface widening decisions | Planned | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | smoke/e2e kanıtı + docs parity |
 | `PB-5` adapter-path cost/evidence completeness | Planned | `cost_usd` reconcile ve evidence completeness boşluklarını kapatmak | tests + evidence parity |
 | `PB-6` general-purpose expansion gap map | Planned | narrow beta'dan daha geniş production platform çizgisine geçiş için önkoşulları tabloya dökmek | written gap map + ordered backlog |
@@ -68,6 +68,8 @@ ayrı ayrı görünür kılmak.
   boşluğu kapandı; aktif runtime correctness slice artık bu değil.
 - Bir sonraki yüksek değerli debt, zaman bağımlı test seam'leri ve davranışsal
   olarak zayıf assertion alanlarının sistematik temizlenmesidir.
+- İlk tranche deliberately küçüktür: weak assertion cleanup ile behavior-first
+  test kontratı dar ama kanıtlı şekilde güçlendirilecektir.
 
 **Aktif kapsam**
 1. zaman bağımlı testlerin envanteri
