@@ -90,8 +90,12 @@ ayrı ayrı görünür kılmak.
 - bugünkü kanıt, docs'taki mevcut dar boundary ile uyumlu:
   `claude-code-cli` beta operator-managed, `gh-cli-pr` beta preflight-only,
   gerçek remote PR açılışı deferred
-- sıradaki alt adım: `claude-code-cli` lane'i için prerequisite / known bug /
-  smoke tutarlılığını karar notuna çevirmek
+- ikinci tranche kararı netleşti:
+  `claude-code-cli` lane'i smoke pass verse de Beta/operator-managed kalır;
+  belirleyici sağlık sinyali helper smoke'tur, `claude auth status` tek başına
+  yeterli değildir, env-token fallback support widening gerekçesi sayılmaz
+- sıradaki alt adım: `gh-cli-pr` preflight-only boundary ile deferred full-E2E
+  remote PR açılışı için karar notunu yazmak
 
 ## 6. Sonra
 
