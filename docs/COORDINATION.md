@@ -171,15 +171,18 @@ ao-kernel coordination status --format json
 The status surface reports the current claim owner plus derived state:
 `ACTIVE`, `GRACE`, or `TAKEOVER_READY`.
 
-Runtime enforcement now starts at the first real write point:
+Runtime enforcement now covers the shipped write-capable patch points:
 `MultiStepDriver._run_patch_step()` acquires path-scoped claims before
-`patch_apply` when `policy_coordination_claims.enabled=true`. The claim scope is
-derived from the patch preview's `files_changed` list and projected onto the
+`patch_apply` and `patch_rollback` when
+`policy_coordination_claims.enabled=true`. For `patch_apply`, the claim scope is
+derived from the patch preview's `files_changed` list; for `patch_rollback`, it
+is derived from the reverse diff's touched paths. Both are projected onto the
 shared workspace root, so separate run worktrees still serialize on the same
-logical top-level areas. Successful apply emits additive audit fields on
-`diff_applied` (`write_claim_areas`, `write_claim_resource_ids`) and releases
-the claim afterwards. With coordination disabled, `patch_apply` keeps the old
-dormant behavior and does not engage the claim layer.
+logical top-level areas. Successful apply / rollback emits additive audit
+fields on `diff_applied` / `diff_rolled_back`
+(`write_claim_areas`, `write_claim_resource_ids`) and releases the claim
+afterwards. With coordination disabled, both patch operations keep the old
+dormant behavior and do not engage the claim layer.
 
 ### 10.2 Fail-closed vs fail-open
 

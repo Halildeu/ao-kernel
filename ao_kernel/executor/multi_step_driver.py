@@ -39,6 +39,7 @@ idempotency key, NOT persisted to schema.
 from __future__ import annotations
 
 import os
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -82,6 +83,9 @@ __all__ = [
     "MultiStepDriver",
     "WorkflowStateCorruptedError",
 ]
+
+
+_DIFF_PATH = re.compile(r"^(?:\+\+\+|---) [ab]/(.+)$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -908,7 +912,6 @@ class MultiStepDriver:
         from ao_kernel.patch import (  # lazy to avoid cycle through executor
             apply_patch, preview_diff, rollback_patch, PatchError,
         )
-        from ao_kernel.coordination import release_path_write_claims
         from ao_kernel.coordination.errors import (
             ClaimConflictError,
             ClaimConflictGraceError,
@@ -927,6 +930,7 @@ class MultiStepDriver:
             record, step_def.step_name, workspace_root=self._workspace_root,
         )
         ownership: tuple[Any, Any] | None = None
+        ownership_payload: dict[str, Any] = {}
 
         try:
             if op == "patch_preview":
@@ -942,26 +946,22 @@ class MultiStepDriver:
                     "lines_removed": preview.lines_removed,
                 }
             elif op == "patch_apply":
-                ownership = self._acquire_patch_write_claims(
+                ownership = self._acquire_patch_apply_write_claims(
                     run_id=run_id,
                     patch_content=patch_content,
                     sandbox=sandbox,
                     worktree=worktree,
                 )
-                ownership_payload = (
-                    self._ownership_payload(ownership[1])
-                    if ownership is not None
-                    else {}
-                )
+                if ownership is not None:
+                    ownership_payload = self._ownership_payload(ownership[1])
                 try:
                     apply_result = apply_patch(
                         worktree, patch_content, sandbox, run_dir,
                     )
                 except BaseException:
                     if ownership is not None:
-                        registry, lease_set = ownership
                         try:
-                            release_path_write_claims(registry, lease_set)
+                            self._release_patch_write_claims(ownership)
                         except CoordinationError:
                             pass
                     raise
@@ -981,19 +981,36 @@ class MultiStepDriver:
                 }
             else:  # patch_rollback
                 reverse_diff_id = step_def.step_name  # test fixture convention
-                rb_result = rollback_patch(
-                    worktree, reverse_diff_id, sandbox, run_dir,
+                ownership = self._acquire_patch_rollback_write_claims(
+                    run_id=run_id,
+                    run_dir=run_dir,
+                    reverse_diff_id=reverse_diff_id,
                 )
+                if ownership is not None:
+                    ownership_payload = self._ownership_payload(ownership[1])
+                try:
+                    rb_result = rollback_patch(
+                        worktree, reverse_diff_id, sandbox, run_dir,
+                    )
+                except BaseException:
+                    if ownership is not None:
+                        try:
+                            self._release_patch_write_claims(ownership)
+                        except CoordinationError:
+                            pass
+                    raise
                 if rb_result.rolled_back:
                     self._emit(run_id, "diff_rolled_back",
                         {"step_name": step_def.step_name,
-                         "patch_id": rb_result.patch_id, "attempt": attempt},
+                         "patch_id": rb_result.patch_id, "attempt": attempt,
+                         **ownership_payload},
                         step_id=step_id)
                 artifact = {
                     "operation": op, "patch_id": rb_result.patch_id,
                     "rolled_back": rb_result.rolled_back,
                     "idempotent_skip": rb_result.idempotent_skip,
                     "files_reverted": list(rb_result.files_reverted),
+                    **ownership_payload,
                 }
         except PatchError as exc:
             raise _StepFailed(
@@ -1025,10 +1042,9 @@ class MultiStepDriver:
         output_ref, output_sha256 = write_artifact(
             run_dir=run_dir, step_id=step_id, attempt=attempt, payload=artifact,
         )
-        if op == "patch_apply" and ownership is not None:
-            registry, lease_set = ownership
+        if ownership is not None:
             try:
-                release_path_write_claims(registry, lease_set)
+                self._release_patch_write_claims(ownership)
             except CoordinationError as exc:
                 code = (
                     "WRITE_OWNERSHIP_CONFLICT"
@@ -1048,7 +1064,7 @@ class MultiStepDriver:
             "operation": op,
         }
 
-    def _acquire_patch_write_claims(
+    def _acquire_patch_apply_write_claims(
         self,
         *,
         run_id: str,
@@ -1063,20 +1079,52 @@ class MultiStepDriver:
         workspace root, so isolated run worktrees still serialize on
         the same logical top-level areas.
         """
+        from ao_kernel.patch import preview_diff
+
+        preview = preview_diff(worktree, patch_content, sandbox)
+        return self._acquire_write_claims_for_paths(
+            run_id=run_id,
+            paths=preview.files_changed,
+        )
+
+    def _acquire_patch_rollback_write_claims(
+        self,
+        *,
+        run_id: str,
+        run_dir: Path,
+        reverse_diff_id: str,
+    ) -> tuple[Any, Any] | None:
+        """Acquire path-scoped write ownership for ``patch_rollback``."""
+        revdiff_path = run_dir / "patches" / f"{reverse_diff_id}.revdiff"
+        try:
+            revdiff_content = revdiff_path.read_text(encoding="utf-8")
+        except OSError:
+            return None
+        return self._acquire_write_claims_for_paths(
+            run_id=run_id,
+            paths=_extract_paths_from_diff(revdiff_content),
+        )
+
+    def _acquire_write_claims_for_paths(
+        self,
+        *,
+        run_id: str,
+        paths: tuple[str, ...] | list[str],
+    ) -> tuple[Any, Any] | None:
+        """Acquire path-scoped write ownership for concrete workspace paths."""
         from ao_kernel.coordination import (
             ClaimRegistry,
             acquire_path_write_claims,
             build_coordination_sink,
             load_coordination_policy,
         )
-        from ao_kernel.patch import preview_diff
+
+        normalized_paths = tuple(paths)
+        if not normalized_paths:
+            return None
 
         coordination_policy = load_coordination_policy(self._workspace_root)
         if not coordination_policy.enabled:
-            return None
-
-        preview = preview_diff(worktree, patch_content, sandbox)
-        if not preview.files_changed:
             return None
 
         registry = ClaimRegistry(
@@ -1091,13 +1139,20 @@ class MultiStepDriver:
             registry,
             self._workspace_root,
             owner_agent_id=f"workflow-run:{run_id}",
-            paths=preview.files_changed,
+            paths=normalized_paths,
             policy=coordination_policy,
         )
         return registry, lease_set
 
+    def _release_patch_write_claims(self, ownership: tuple[Any, Any]) -> None:
+        """Release a previously acquired patch-operation write claim set."""
+        from ao_kernel.coordination import release_path_write_claims
+
+        registry, lease_set = ownership
+        release_path_write_claims(registry, lease_set)
+
     def _ownership_payload(self, lease_set: Any) -> dict[str, Any]:
-        """Return additive audit fields for patch apply evidence."""
+        """Return additive audit fields for patch-operation evidence."""
         return {
             "write_claim_areas": [lease.scope.area for lease in lease_set.leases],
             "write_claim_resource_ids": [
@@ -2296,3 +2351,14 @@ def _load_pending_patch_content(
             diff = artifact.get("diff", "")
             return diff if isinstance(diff, str) else ""
     return ""
+
+
+def _extract_paths_from_diff(diff_content: str) -> tuple[str, ...]:
+    """Pull touched-file paths from unified diff headers."""
+    seen: dict[str, None] = {}
+    for match in _DIFF_PATH.finditer(diff_content):
+        path = match.group(1)
+        if path == "/dev/null":
+            continue
+        seen.setdefault(path, None)
+    return tuple(seen.keys())
