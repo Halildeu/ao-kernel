@@ -92,10 +92,18 @@ def _resolve_base_label(path: Path) -> str:
         "@{upstream}",
         check=False,
     )
-    candidate_refs: list[str] = []
-    if upstream.returncode == 0:
-        candidate_refs.append(upstream.stdout.strip())
-    candidate_refs.extend(["origin/main", "main"])
+    branch = _git_value(path, "branch", "--show-current")
+    candidate_refs: list[str]
+
+    if branch == "main":
+        candidate_refs = []
+        if upstream.returncode == 0:
+            candidate_refs.append(upstream.stdout.strip())
+        candidate_refs.extend(["origin/main", "main"])
+    else:
+        candidate_refs = ["origin/main", "main"]
+        if upstream.returncode == 0:
+            candidate_refs.append(upstream.stdout.strip())
 
     for candidate in candidate_refs:
         if candidate and _ref_exists(path, candidate):

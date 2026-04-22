@@ -31,9 +31,9 @@ kaynaktan üretir:
 
 Base çözümleme sırası:
 
-1. branch upstream'i
-2. `origin/main`
-3. `main`
+1. `main` branch'i için upstream, sonra `origin/main`, sonra `main`
+2. kısa ömürlü non-main branch'ler için `origin/main`, sonra `main`
+3. yalnız mainline ref bulunamazsa branch upstream'i fallback olur
 
 Komut iki seviye sinyal üretir:
 

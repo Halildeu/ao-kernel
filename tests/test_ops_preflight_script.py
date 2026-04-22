@@ -164,3 +164,41 @@ def test_ops_overlap_check_reports_exact_file_and_area_overlap(
     assert "pkg/shared.py" in proc.stdout
     assert "pkg" in proc.stdout
     assert "⚠ Overlap risk detected" in proc.stdout
+
+
+def test_ops_overlap_check_uses_mainline_base_for_pushed_feature_branches(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt_a = tmp_path / "wt-a"
+    wt_b = tmp_path / "wt-b"
+
+    _run(
+        ["git", "worktree", "add", "-b", "feature-a", wt_a.as_posix(), "origin/main"],
+        cwd=work,
+    )
+    _run(
+        ["git", "worktree", "add", "-b", "feature-b", wt_b.as_posix(), "origin/main"],
+        cwd=work,
+    )
+
+    (wt_a / "pkg").mkdir()
+    (wt_a / "pkg" / "shared.py").write_text("print('a')\n", encoding="utf-8")
+    _git(wt_a, "add", "pkg/shared.py")
+    _git(wt_a, "commit", "-m", "feature-a change")
+    _git(wt_a, "push", "-u", "origin", "feature-a")
+
+    (wt_b / "pkg").mkdir()
+    (wt_b / "pkg" / "shared.py").write_text("print('b')\n", encoding="utf-8")
+    _git(wt_b, "add", "pkg/shared.py")
+    _git(wt_b, "commit", "-m", "feature-b change")
+    _git(wt_b, "push", "-u", "origin", "feature-b")
+
+    proc = _run_overlap_check(work)
+
+    assert proc.returncode == 0
+    assert "base: origin/main" in proc.stdout
+    assert "pkg/shared.py" in proc.stdout
+    assert "feature-a" in proc.stdout
+    assert "feature-b" in proc.stdout
+    assert "⚠ Overlap risk detected" in proc.stdout
