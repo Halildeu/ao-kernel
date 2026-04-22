@@ -94,8 +94,12 @@ ayrı ayrı görünür kılmak.
   `claude-code-cli` lane'i smoke pass verse de Beta/operator-managed kalır;
   belirleyici sağlık sinyali helper smoke'tur, `claude auth status` tek başına
   yeterli değildir, env-token fallback support widening gerekçesi sayılmaz
-- sıradaki alt adım: `gh-cli-pr` preflight-only boundary ile deferred full-E2E
-  remote PR açılışı için karar notunu yazmak
+- üçüncü tranche kararı da netleşti:
+  `gh-cli-pr` helper smoke yalnız dry-run preflight kanıtı üretir; gerçek
+  remote PR açılışı disposable sandbox + remote cleanup/rollback runbook'u
+  olmadan widening adayı değildir ve deferred kalır
+- `PB-4` closeout-ready duruma geldi; sıradaki alt adım closeout değerlendirmesi
+  ve issue/status kapanış turudur
 
 ## 6. Sonra
 
