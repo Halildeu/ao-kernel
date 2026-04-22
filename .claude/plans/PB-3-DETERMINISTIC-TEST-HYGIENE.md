@@ -71,3 +71,11 @@ somut deterministic fix tranche'lerine bölmektir.
 2. `inherit_parent_decisions` ve prune edge testlerini wall-clock'tan
    bağımsız hale getirmek
 3. runtime yüzeyine dokunmadan yalnız test deterministikliğini artırmak
+
+## Beşinci Tranche
+
+1. `tests/test_context_store_internal.py` içindeki kalan dört canlı zaman
+   kullanımını sabit helper'a toplamak
+2. prune / expiry edge testlerini exact sabit timestamp ile çalıştırmak
+3. `PB-3` closeout öncesi internal + coverage test yüzeyini aynı zaman
+   yaklaşımına hizalamak

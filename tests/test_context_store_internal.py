@@ -23,6 +23,11 @@ from ao_kernel._internal.session.context_store import (
 
 FIXED_CONTEXT_NOW = "2026-04-22T12:00:00Z"
 FIXED_RENEW_NOW = "2026-04-22T12:30:00Z"
+FIXED_INTERNAL_NOW = datetime(2026, 4, 22, 12, 0, 0, tzinfo=timezone.utc)
+
+
+def _iso(dt: datetime) -> str:
+    return dt.isoformat().replace("+00:00", "Z")
 
 
 class TestNewContext:
@@ -102,10 +107,9 @@ class TestUpsertDecision:
 
 class TestPruneExpired:
     def test_removes_expired_decisions(self, tmp_path: Path):
-        now = datetime.now(timezone.utc)
-        now_iso = now.isoformat().replace("+00:00", "Z")
-        far_future = (now + timedelta(days=30)).isoformat().replace("+00:00", "Z")
-        past = (now - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        now_iso = _iso(FIXED_INTERNAL_NOW)
+        far_future = _iso(FIXED_INTERNAL_NOW + timedelta(days=30))
+        past = _iso(FIXED_INTERNAL_NOW - timedelta(hours=1))
 
         ctx = new_context("prune-test", str(tmp_path), 3600)
         # Add a decision that won't expire soon
@@ -135,20 +139,38 @@ class TestPruneExpired:
     def test_keeps_valid_decisions(self, tmp_path: Path):
         ctx = new_context("prune-keep", str(tmp_path), 3600)
         ctx = upsert_decision(ctx, "valid", True, "agent")
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = _iso(FIXED_INTERNAL_NOW)
         ctx = prune_expired_decisions(ctx, now)
         assert len(ctx["ephemeral_decisions"]) == 1
 
 
 class TestIsExpired:
-    def test_not_expired(self, tmp_path: Path):
+    def test_not_expired(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            context_store_module,
+            "_now_iso8601",
+            lambda: FIXED_CONTEXT_NOW,
+        )
         ctx = new_context("exp-test", str(tmp_path), 3600)
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        now = _iso(FIXED_INTERNAL_NOW)
         assert is_expired(ctx, now) is False
 
-    def test_expired_after_ttl(self, tmp_path: Path):
+    def test_expired_after_ttl(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            context_store_module,
+            "_now_iso8601",
+            lambda: FIXED_CONTEXT_NOW,
+        )
         ctx = new_context("exp-test", str(tmp_path), 60)
-        future = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+        future = _iso(FIXED_INTERNAL_NOW + timedelta(hours=2))
         assert is_expired(ctx, future) is True
 
     def test_missing_expires_at(self):
