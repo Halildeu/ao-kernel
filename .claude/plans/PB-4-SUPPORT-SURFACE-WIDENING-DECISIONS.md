@@ -3,7 +3,7 @@
 **Durum tarihi:** 2026-04-22
 **İlişkili issue:** [#232](https://github.com/Halildeu/ao-kernel/issues/232)
 **Üst tracker:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-**Durum:** In progress
+**Durum:** Completed on `main`
 
 ## Amaç
 
@@ -261,8 +261,7 @@ Bugünkü tutarlılık hükmü:
    - bu akışın canlı operator kanıtı
 3. Bu tranche sonunda zorunlu docs düzeltmesi çıkmadı; mevcut boundary anlatısı
    bugünkü kanıtla tutarlı kaldı.
-4. `PB-4` teknik olarak closeout-ready duruma gelmiştir; ayrı closeout/issue
-   kapanış turu ile tamamlanabilir.
+4. `PB-4` closeout turu tamamlanmış ve slice kapanmıştır.
 
 ## Kabul Kriterleri
 
@@ -302,6 +301,19 @@ python3 examples/demo_review.py --cleanup
 
 ## Beklenen Sonraki Adım
 
-`PB-4` closeout değerlendirmesi yapıp issue/status yüzeyinde tamamlandı
-işaretlemek; ardından `PB-5` adapter-path cost/evidence completeness hattına
-geçmektir.
+`PB-5` adapter-path cost/evidence completeness hattına geçmektir.
+
+## Closeout
+
+`PB-4` aşağıdaki kapanış paketi ile tamamlandı:
+
+1. [`#237`](https://github.com/Halildeu/ao-kernel/pull/237) ile üçüncü tranche
+   karar notu `main` üzerine merge edildi.
+2. Support boundary hükmü yazılı hale geldi:
+   - `claude-code-cli` helper-backed lane = **Beta (operator-managed)**
+   - `gh-cli-pr` helper-backed lane = **Beta (operator-managed preflight only)**
+   - gerçek remote `gh-cli-pr` PR açılışı = **Deferred**
+3. Zorunlu bir docs tier düzeltmesi çıkmadı; mevcut boundary anlatısı canlı
+   smoke ve karar notlarıyla tutarlı kaldı.
+4. Sonraki aktif slice olarak `PB-5` açıldı:
+   [`#238`](https://github.com/Halildeu/ao-kernel/issues/238)
