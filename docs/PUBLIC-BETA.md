@@ -1,6 +1,6 @@
 # Public Beta (v4.0.0b1) — Support Matrix SSOT
 
-> **Sürüm durumu (2026-04-20)**: stable kanal `v3.13.3`, bu branch /
+> **Sürüm durumu (2026-04-22)**: stable kanal `v3.13.3`, bu branch /
 > pre-release paket sürümü `4.0.0b1`. Bu doküman `v4.0.0b1` için canlı
 > destek matrisi ve operator-facing SSOT'tur.
 
@@ -39,10 +39,16 @@ istemek gerekir.
 
 ## Beta
 
+> **Not:** Bu tablodaki yüzeyler shipped baseline değildir. Çalışan smoke ve
+> helper kanıtları vardır, fakat operator-managed kullanım ve ek önkoşullar
+> gerektirirler.
+
 | Yüzey | Durum | Not |
 |---|---|---|
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
-| Real-adapter benchmark tam modu | Beta | Operator-managed yüzey; deterministik stub lane kadar stabil değil |
+| `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir |
+| `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight only) | `python3 scripts/gh_cli_pr_smoke.py` auth/repo visibility + `gh pr create --dry-run` zincirini doğrular; gerçek remote PR açmaz |
+| Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
 
 ## Contract / Inventory Layer
 
@@ -57,7 +63,7 @@ istemek gerekir.
 | Yüzey | Durum | Not |
 |---|---|---|
 | `bug_fix_flow` release closure | Deferred | Public Beta kapsamı dışında |
-| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Roadmap/spec yüzeyi |
+| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Mevcut beta yüzey yalnız dry-run preflight'tır; gerçek remote PR açılışı henüz destek vaadi değildir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Ayrı correctness işi |
 
@@ -70,6 +76,8 @@ istemek gerekir.
 
 - Public Beta “hemen çalışır” iddiası yalnızca bundled
   `review_ai_flow` + bundled `codex-stub` yolu için geçerlidir.
+- `claude-code-cli` ve `gh-cli-pr` bugün default demo yüzeyi değildir;
+  yalnız helper-backed operator-managed beta satırları kadar desteklenir.
 - Bundled extension inventory bugün dar runtime-backed yüzeye sahiptir:
   explicit bootstrap-backed smoke `PRJ-HELLO` ile sınırlıdır; kalan
   manifestler doctor truth audit'inde contract-only veya quarantined
