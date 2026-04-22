@@ -795,6 +795,27 @@ def _build_parser() -> argparse.ArgumentParser:
         help="File path for atomic write; omit for stdout",
     )
 
+    coordination_p = sub.add_parser(
+        "coordination",
+        help="Coordination claim visibility",
+    )
+    coordination_sub = coordination_p.add_subparsers(dest="coordination_command")
+    coordination_status_p = coordination_sub.add_parser(
+        "status",
+        help="Show current claim ownership / grace / takeover snapshot",
+    )
+    coordination_status_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)",
+    )
+    coordination_status_p.add_argument(
+        "--output",
+        default=None,
+        help="File path for atomic write; omit for stdout",
+    )
+
     # Policy-sim subcommand (PR-B4)
     policy_sim_p = sub.add_parser(
         "policy-sim",
@@ -1334,6 +1355,17 @@ def main(argv: list[str] | None = None) -> int:
             print("Usage: ao-kernel metrics {export|debug-query}")
             return 1
         return handler(args)
+
+    if cmd == "coordination":
+        from ao_kernel._internal.coordination.cli_handlers import (
+            cmd_coordination_status,
+        )
+
+        coordination_cmd = getattr(args, "coordination_command", None)
+        if coordination_cmd == "status":
+            return cmd_coordination_status(args)
+        print("Usage: ao-kernel coordination status", file=sys.stderr)
+        return 1
 
     handler = dispatch.get(cmd)
     if handler is None:
