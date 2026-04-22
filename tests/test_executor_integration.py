@@ -21,7 +21,9 @@ import pytest
 
 from ao_kernel.adapters import AdapterRegistry
 from ao_kernel.executor import Executor
+from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
 from ao_kernel.workflow import WorkflowRegistry, create_run, load_run
+from tests.benchmarks.fixtures import bug_envelopes
 
 
 _FIXTURE_SRC = Path(__file__).parent / "fixtures" / "adapter_manifests"
@@ -172,6 +174,115 @@ class TestIntegrationHappy:
         checked = next(e for e in events if e.get("kind") == "policy_checked")
         assert checked["payload"]["violations_count"] == 0
         assert checked["payload"]["violation_kinds"] == []
+
+    def test_open_pr_step_persists_pr_metadata_and_emits_event(
+        self, tmp_path: Path
+    ) -> None:
+        _init_git_repo(tmp_path)
+
+        wf_reg = WorkflowRegistry()
+        wf_reg.load_bundled()
+        ad_reg = AdapterRegistry()
+        ad_reg.load_bundled()
+
+        rid = str(uuid.uuid4())
+        _create_run_record(tmp_path, rid)
+
+        definition = wf_reg.get("bug_fix_flow")
+        open_pr_step = next(s for s in definition.steps if s.step_name == "open_pr")
+
+        executor = Executor(
+            tmp_path,
+            workflow_registry=wf_reg,
+            adapter_registry=ad_reg,
+            policy_loader=_bundled_policy_with_overrides(),
+        )
+
+        from ao_kernel.executor import executor as executor_module
+
+        original_invoke_cli = executor_module.invoke_cli
+
+        def _dispatch_cli(
+            *,
+            manifest,
+            input_envelope,
+            sandbox,
+            worktree,
+            budget,
+            workspace_root,
+            run_id,
+            resolved_invocation=None,
+        ):
+            if manifest.adapter_id != "gh-cli-pr":
+                return original_invoke_cli(
+                    manifest=manifest,
+                    input_envelope=input_envelope,
+                    sandbox=sandbox,
+                    worktree=worktree,
+                    budget=budget,
+                    workspace_root=workspace_root,
+                    run_id=run_id,
+                    resolved_invocation=resolved_invocation,
+                )
+
+            log_path = (
+                workspace_root
+                / ".ao"
+                / "evidence"
+                / "workflows"
+                / run_id
+                / "adapter-gh-cli-pr.stdout.log"
+            )
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
+            envelope = bug_envelopes.open_pr_happy()
+            result = _invocation_from_envelope(
+                envelope,
+                log_path=log_path,
+                elapsed=float(envelope["cost_actual"]["time_seconds"]),
+                command="benchmark-mock[gh-cli-pr]",
+                manifest=manifest,
+            )
+            return result, budget
+
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(executor_module, "invoke_cli", _dispatch_cli)
+            result = executor.run_step(rid, open_pr_step, parent_env={})
+
+        assert result.step_state == "completed"
+        assert result.invocation_result is not None
+        assert result.invocation_result.pr_url == "https://github.example/ao-kernel/pull/999"
+        assert result.invocation_result.pr_number == 999
+
+        record, _ = load_run(tmp_path, rid)
+        step = record["steps"][0]
+        artifact = json.loads(
+            (
+                tmp_path
+                / ".ao"
+                / "evidence"
+                / "workflows"
+                / rid
+                / step["output_ref"]
+            ).read_text(encoding="utf-8")
+        )
+        assert artifact["pr_url"].endswith("/pull/999")
+        assert artifact["pr_number"] == 999
+
+        events_path = (
+            tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
+        )
+        events = [
+            json.loads(line)
+            for line in events_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        returned = next(event for event in events if event.get("kind") == "adapter_returned")
+        pr_opened = next(event for event in events if event.get("kind") == "pr_opened")
+        assert returned["payload"]["pr_url"].endswith("/pull/999")
+        assert returned["payload"]["pr_number"] == 999
+        assert pr_opened["payload"]["pr_url"].endswith("/pull/999")
+        assert pr_opened["payload"]["pr_number"] == 999
 
 
 class TestIntegrationPolicyDenied:

@@ -599,24 +599,63 @@ class Executor:
             )
 
             # adapter_returned (B2 absorb: replay_safe=False — adapter response is non-deterministic)
+            returned_payload = {
+                "step_name": step_def.step_name,
+                "adapter_id": manifest.adapter_id,
+                "status": invocation_result.status,
+                "finish_reason": invocation_result.finish_reason,
+                "output_ref": output_ref,
+                "output_sha256": output_sha256,
+                "attempt": attempt,
+            }
+            if invocation_result.pr_url is not None:
+                returned_payload["pr_url"] = invocation_result.pr_url
+            if invocation_result.pr_number is not None:
+                returned_payload["pr_number"] = invocation_result.pr_number
+            if invocation_result.base_sha is not None:
+                returned_payload["base_sha"] = invocation_result.base_sha
+            if invocation_result.head_sha is not None:
+                returned_payload["head_sha"] = invocation_result.head_sha
             returned = emit_event(
                 self._workspace_root,
                 run_id=run_id,
                 kind="adapter_returned",
                 actor="ao-kernel",
-                payload={
-                    "step_name": step_def.step_name,
-                    "adapter_id": manifest.adapter_id,
-                    "status": invocation_result.status,
-                    "finish_reason": invocation_result.finish_reason,
-                    "output_ref": output_ref,
-                    "output_sha256": output_sha256,
-                    "attempt": attempt,
-                },
+                payload=returned_payload,
                 step_id=step_id_for_events,
                 replay_safe=False,
             )
             evidence_event_ids.append(returned.event_id)
+
+            if (
+                invocation_result.status == "ok"
+                and (
+                    invocation_result.pr_url is not None
+                    or invocation_result.pr_number is not None
+                )
+            ):
+                pr_payload: dict[str, Any] = {
+                    "step_name": step_def.step_name,
+                    "adapter_id": manifest.adapter_id,
+                }
+                if invocation_result.pr_url is not None:
+                    pr_payload["pr_url"] = invocation_result.pr_url
+                if invocation_result.pr_number is not None:
+                    pr_payload["pr_number"] = invocation_result.pr_number
+                if invocation_result.base_sha is not None:
+                    pr_payload["base_sha"] = invocation_result.base_sha
+                if invocation_result.head_sha is not None:
+                    pr_payload["head_sha"] = invocation_result.head_sha
+                pr_opened = emit_event(
+                    self._workspace_root,
+                    run_id=run_id,
+                    kind="pr_opened",
+                    actor="adapter",
+                    payload=pr_payload,
+                    step_id=step_id_for_events,
+                    replay_safe=False,
+                )
+                evidence_event_ids.append(pr_opened.event_id)
         finally:
             if worktree_created is not None:
                 cleanup_worktree(worktree_created, workspace_root=self._workspace_root)
@@ -899,7 +938,7 @@ def _normalize_invocation_for_artifact(
     across adapter kinds so PR-A5 timeline / replay tools correlate on
     well-known keys.
     """
-    return {
+    artifact = {
         "adapter_id": adapter_id,
         "status": invocation_result.status,
         "diff": invocation_result.diff,
@@ -912,6 +951,16 @@ def _normalize_invocation_for_artifact(
         "stdout_tail_ref": getattr(invocation_result, "stdout_tail_ref", None),
         "stderr_tail_ref": getattr(invocation_result, "stderr_tail_ref", None),
     }
+    if getattr(invocation_result, "pr_url", None) is not None:
+        artifact["pr_url"] = invocation_result.pr_url
+    if getattr(invocation_result, "pr_number", None) is not None:
+        artifact["pr_number"] = invocation_result.pr_number
+    if getattr(invocation_result, "base_sha", None) is not None:
+        artifact["base_sha"] = invocation_result.base_sha
+    if getattr(invocation_result, "head_sha", None) is not None:
+        artifact["head_sha"] = invocation_result.head_sha
+    return artifact
+
 
 
 def _load_bundled_policy() -> Mapping[str, Any]:
