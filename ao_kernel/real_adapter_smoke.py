@@ -25,7 +25,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal, Mapping, Sequence
 
-from ao_kernel.adapters import AdapterRegistry
+from ao_kernel.adapters import AdapterManifest, AdapterRegistry
 from ao_kernel.executor.adapter_invoker import _resolve_cli_invocation
 
 _AUTH_ENV_KEYS = ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY")
@@ -203,7 +203,7 @@ def render_text_report(report: ClaudeCodeSmokeReport) -> str:
     return "\n".join(lines)
 
 
-def _load_claude_manifest():
+def _load_claude_manifest() -> AdapterManifest:
     reg = AdapterRegistry()
     reg.load_bundled()
     return reg.get("claude-code-cli")
