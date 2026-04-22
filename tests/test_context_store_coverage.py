@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+import ao_kernel._internal.session.context_store as context_store_module
 
 from ao_kernel._internal.session.context_store import (
     SessionContextError,
@@ -26,6 +27,26 @@ from ao_kernel._internal.session.context_store import (
     upsert_decision,
     upsert_provider_state,
 )
+
+FIXED_COVERAGE_NOW = datetime(2026, 4, 22, 12, 0, 0, tzinfo=timezone.utc)
+FIXED_COVERAGE_NOW_ISO = "2026-04-22T12:00:00Z"
+FIXED_COVERAGE_RENEW_ISO = "2026-04-22T12:30:00Z"
+
+
+def _iso(dt: datetime) -> str:
+    return dt.isoformat().replace("+00:00", "Z")
+
+
+def _freeze_context_store_now(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    now_iso: str = FIXED_COVERAGE_NOW_ISO,
+) -> None:
+    monkeypatch.setattr(
+        context_store_module,
+        "_now_iso8601",
+        lambda: now_iso,
+    )
 
 
 # ── upsert_provider_state ───────────────────────────────────────────
@@ -152,10 +173,15 @@ class TestRenewContext:
         # hashes refreshed
         assert len(renewed["hashes"]["session_context_sha256"]) == 64
 
-    def test_renew_prunes_expired_decisions(self, tmp_path: Path):
+    def test_renew_prunes_expired_decisions(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         ctx = new_context("s", str(tmp_path), 3600)
         # Insert an already-expired decision.
-        past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        past = _iso(FIXED_COVERAGE_NOW - timedelta(hours=1))
         ctx["ephemeral_decisions"].append({
             "key": "old",
             "value": "x",
@@ -164,6 +190,10 @@ class TestRenewContext:
             "ttl_seconds": 60,
             "expires_at": past,
         })
+        _freeze_context_store_now(
+            monkeypatch,
+            now_iso=FIXED_COVERAGE_RENEW_ISO,
+        )
         renewed = renew_context(ctx, 3600)
         assert all(d["key"] != "old" for d in renewed["ephemeral_decisions"])
 
@@ -197,15 +227,19 @@ class TestLinkToParent:
 
 class TestInheritParentDecisions:
     def _fresh_decision(self, key: str, value: str, ttl: int = 3600) -> dict:
-        now = datetime.now(timezone.utc)
-        created = now.isoformat().replace("+00:00", "Z")
-        expires = (now + timedelta(seconds=ttl)).isoformat().replace("+00:00", "Z")
+        created = _iso(FIXED_COVERAGE_NOW)
+        expires = _iso(FIXED_COVERAGE_NOW + timedelta(seconds=ttl))
         return {
             "key": key, "value": value, "source": "agent",
             "created_at": created, "ttl_seconds": ttl, "expires_at": expires,
         }
 
-    def test_inherits_parent_decisions(self, tmp_path: Path):
+    def test_inherits_parent_decisions(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         child = new_context("child", str(tmp_path), 3600)
         parent = new_context("parent", str(tmp_path), 3600)
         parent["ephemeral_decisions"].append(self._fresh_decision("shared", "v"))
@@ -213,7 +247,12 @@ class TestInheritParentDecisions:
         keys = [d["key"] for d in out["ephemeral_decisions"]]
         assert "shared" in keys
 
-    def test_does_not_overwrite_child_by_default(self, tmp_path: Path):
+    def test_does_not_overwrite_child_by_default(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         child = new_context("child", str(tmp_path), 3600)
         child = upsert_decision(child, key="shared", value="child_value", source="agent")
         parent = new_context("parent", str(tmp_path), 3600)
@@ -222,7 +261,12 @@ class TestInheritParentDecisions:
         shared = next(d for d in out["ephemeral_decisions"] if d["key"] == "shared")
         assert shared["value"] == "child_value"
 
-    def test_overwrite_existing_replaces_child_value(self, tmp_path: Path):
+    def test_overwrite_existing_replaces_child_value(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         child = new_context("child", str(tmp_path), 3600)
         child = upsert_decision(child, key="shared", value="child_value", source="agent")
         parent = new_context("parent", str(tmp_path), 3600)
@@ -231,10 +275,15 @@ class TestInheritParentDecisions:
         shared = next(d for d in out["ephemeral_decisions"] if d["key"] == "shared")
         assert shared["value"] == "parent_value"
 
-    def test_expired_parent_decisions_skipped(self, tmp_path: Path):
+    def test_expired_parent_decisions_skipped(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         child = new_context("child", str(tmp_path), 3600)
         parent = new_context("parent", str(tmp_path), 3600)
-        past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        past = _iso(FIXED_COVERAGE_NOW - timedelta(hours=1))
         parent["ephemeral_decisions"].append({
             "key": "expired", "value": "x", "source": "agent",
             "created_at": past, "ttl_seconds": 60, "expires_at": past,
@@ -242,7 +291,12 @@ class TestInheritParentDecisions:
         out = inherit_parent_decisions(child, parent_context=parent)
         assert all(d["key"] != "expired" for d in out["ephemeral_decisions"])
 
-    def test_missing_parent_decisions_noop(self, tmp_path: Path):
+    def test_missing_parent_decisions_noop(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _freeze_context_store_now(monkeypatch)
         child = new_context("child", str(tmp_path), 3600)
         parent = new_context("parent", str(tmp_path), 3600)
         out = inherit_parent_decisions(child, parent_context=parent)
@@ -265,11 +319,11 @@ class TestPruneExpiredDecisionsEdges:
     def test_non_list_decisions_passthrough(self, tmp_path: Path):
         ctx = new_context("s", str(tmp_path), 3600)
         ctx["ephemeral_decisions"] = "corrupt"  # type: ignore[assignment]
-        out = prune_expired_decisions(ctx, datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+        out = prune_expired_decisions(ctx, _iso(FIXED_COVERAGE_NOW))
         assert out is ctx
 
     def test_non_dict_decision_entries_dropped(self, tmp_path: Path):
         ctx = new_context("s", str(tmp_path), 3600)
         ctx["ephemeral_decisions"] = ["oops", {"key": "k", "value": "v", "source": "agent"}]
-        out = prune_expired_decisions(ctx, datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
+        out = prune_expired_decisions(ctx, _iso(FIXED_COVERAGE_NOW))
         assert all(isinstance(d, dict) for d in out["ephemeral_decisions"])
