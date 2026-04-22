@@ -1,17 +1,15 @@
-"""Operator smoke helpers for the bundled ``claude-code-cli`` adapter.
+"""Operator smoke helpers for bundled real-adapter certification lanes.
 
-This module intentionally targets the operator-managed certification lane
-rather than the deterministic shipped demo surface. The goal is to make
-real-adapter readiness concrete and reproducible:
+This module intentionally targets operator-managed surfaces rather than
+the deterministic shipped demo baseline. Today it covers two adapters:
 
-1. Verify the Claude CLI binary is present.
-2. Verify the CLI can report a version and auth state.
-3. Verify prompt access with a minimal live call.
-4. Verify the bundled adapter manifest still matches the installed CLI
-   contract closely enough to start a smoke invocation.
+1. ``claude-code-cli``:
+   version/auth/prompt/manifest smoke for the bundled Claude CLI path.
+2. ``gh-cli-pr``:
+   binary/auth/repo/dry-run preflight for the typed GitHub PR connector.
 
-The smoke is machine-readable so docs/runbooks can point at a single
-command instead of a prose-only checklist.
+The smoke outputs are machine-readable so docs and runbooks can point at
+one command instead of a prose-only checklist.
 """
 
 from __future__ import annotations
@@ -34,6 +32,9 @@ _MANIFEST_SMOKE_PROMPT = (
     'Your entire response MUST be a single JSON object with exactly this shape: '
     '{"status":"ok","review_findings":{"schema_version":"1","findings":[],"summary":"smoke ok"}}'
 )
+_GH_PR_DRY_RUN_TITLE = "ao-kernel gh-cli-pr smoke probe"
+_GH_PR_DRY_RUN_BODY = "Safe dry-run preflight for gh-cli-pr certification."
+_GH_DRY_RUN_MARKER = "would have created a pull request"
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,21 @@ class ClaudeCodeSmokeReport:
     adapter_id: str
     binary_path: str | None
     api_key_env_present: bool
+    checks: tuple[SmokeCheck, ...]
+    findings: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class GhCliPrSmokeReport:
+    overall_status: Literal["pass", "blocked"]
+    adapter_id: str
+    binary_path: str | None
+    repo_name: str | None
+    default_branch: str | None
+    repo_url: str | None
     checks: tuple[SmokeCheck, ...]
     findings: tuple[str, ...]
 
@@ -192,15 +208,185 @@ def run_claude_code_cli_smoke(
     )
 
 
-def render_text_report(report: ClaudeCodeSmokeReport) -> str:
+def run_gh_cli_pr_smoke(
+    *,
+    timeout_seconds: float = 20.0,
+    runner: Runner | None = None,
+    which: WhichFn = shutil.which,
+    cwd: Path | None = None,
+    repo: str | None = None,
+    base_ref: str | None = None,
+    head_ref: str | None = None,
+    probe_title: str = _GH_PR_DRY_RUN_TITLE,
+    probe_body: str = _GH_PR_DRY_RUN_BODY,
+) -> GhCliPrSmokeReport:
+    """Run side-effect-safe smoke checks for the bundled gh PR adapter."""
+
+    runner = runner or _default_runner
+    manifest = _load_gh_pr_manifest()
+    command = str(manifest.invocation["command"])
+    binary_path = which(command)
+    working_dir = cwd or Path.cwd()
+
+    checks: list[SmokeCheck] = []
+
+    if binary_path is None:
+        checks.append(
+            SmokeCheck(
+                name="binary",
+                status="fail",
+                detail=(
+                    f"bundled manifest command {command!r} PATH uzerinde bulunamadi"
+                ),
+                finding_code="gh_binary_missing",
+                observed={"command": command},
+            )
+        )
+        checks.extend(
+            (
+                SmokeCheck(
+                    name="version",
+                    status="skip",
+                    detail="binary bulunamadigi icin version smoke atlandi",
+                ),
+                SmokeCheck(
+                    name="auth_status",
+                    status="skip",
+                    detail="binary bulunamadigi icin auth status smoke atlandi",
+                ),
+                SmokeCheck(
+                    name="manifest_contract",
+                    status="skip",
+                    detail="binary bulunamadigi icin manifest contract smoke atlandi",
+                ),
+                SmokeCheck(
+                    name="repo_view",
+                    status="skip",
+                    detail="binary bulunamadigi icin repo view smoke atlandi",
+                ),
+                SmokeCheck(
+                    name="pr_dry_run",
+                    status="skip",
+                    detail="binary bulunamadigi icin PR dry-run smoke atlandi",
+                ),
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=None,
+            repo_name=None,
+            default_branch=None,
+            repo_url=None,
+            checks=checks,
+        )
+
+    version_result = _run_check(
+        runner,
+        (binary_path, "--version"),
+        None,
+        timeout_seconds,
+    )
+    checks.append(_classify_gh_version_check(version_result))
+
+    auth_result = _run_check(
+        runner,
+        (binary_path, "auth", "status", "--json", "hosts"),
+        None,
+        timeout_seconds,
+    )
+    checks.append(_classify_gh_auth_status_check(auth_result))
+    checks.append(_classify_gh_manifest_contract_check(manifest))
+
+    repo_view_argv = [binary_path, "repo", "view"]
+    if repo:
+        repo_view_argv.extend(("--repo", repo))
+    repo_view_argv.extend(
+        ("--json", "nameWithOwner,defaultBranchRef,isPrivate,url")
+    )
+    repo_result = _run_check(
+        runner,
+        tuple(repo_view_argv),
+        working_dir,
+        timeout_seconds,
+    )
+    repo_check, resolved_repo, detected_default_branch, repo_url = (
+        _classify_gh_repo_view_check(repo_result)
+    )
+    checks.append(repo_check)
+
+    resolved_base = base_ref or detected_default_branch
+    resolved_head = head_ref or detected_default_branch
+    if resolved_repo and resolved_base and resolved_head:
+        with tempfile.TemporaryDirectory(prefix="ao-kernel-gh-cli-pr-smoke-") as tmp:
+            temp_root = Path(tmp)
+            body_file = temp_root / "pr-body.md"
+            body_file.write_text(probe_body, encoding="utf-8")
+
+            dry_run_result = _run_check(
+                runner,
+                (
+                    binary_path,
+                    "pr",
+                    "create",
+                    "--repo",
+                    resolved_repo,
+                    "--head",
+                    resolved_head,
+                    "--base",
+                    resolved_base,
+                    "--title",
+                    probe_title,
+                    "--body-file",
+                    str(body_file),
+                    "--dry-run",
+                ),
+                working_dir,
+                timeout_seconds,
+            )
+        checks.append(
+            _classify_gh_pr_dry_run_check(
+                dry_run_result,
+                repo_name=resolved_repo,
+                head_ref=resolved_head,
+                base_ref=resolved_base,
+            )
+        )
+    else:
+        checks.append(
+            SmokeCheck(
+                name="pr_dry_run",
+                status="skip",
+                detail="repo/default-branch cozulmedigi icin PR dry-run smoke atlandi",
+            )
+        )
+
+    return _finalize_gh_report(
+        adapter_id=manifest.adapter_id,
+        binary_path=binary_path,
+        repo_name=resolved_repo,
+        default_branch=detected_default_branch,
+        repo_url=repo_url,
+        checks=checks,
+    )
+
+
+def render_text_report(
+    report: ClaudeCodeSmokeReport | GhCliPrSmokeReport,
+) -> str:
     """Render a concise operator-facing report."""
 
     lines = [
         f"overall_status: {report.overall_status}",
         f"adapter_id: {report.adapter_id}",
         f"binary_path: {report.binary_path or '<missing>'}",
-        "checks:",
     ]
+    if isinstance(report, ClaudeCodeSmokeReport):
+        lines.append(f"api_key_env_present: {str(report.api_key_env_present).lower()}")
+    if isinstance(report, GhCliPrSmokeReport):
+        lines.append(f"repo_name: {report.repo_name or '<unresolved>'}")
+        lines.append(f"default_branch: {report.default_branch or '<unresolved>'}")
+        lines.append(f"repo_url: {report.repo_url or '<unresolved>'}")
+    lines.append("checks:")
     for check in report.checks:
         lines.append(f"- {check.name}: {check.status} - {check.detail}")
         if check.finding_code:
@@ -220,6 +406,12 @@ def _load_claude_manifest() -> AdapterManifest:
     reg = AdapterRegistry()
     reg.load_bundled()
     return reg.get("claude-code-cli")
+
+
+def _load_gh_pr_manifest() -> AdapterManifest:
+    reg = AdapterRegistry()
+    reg.load_bundled()
+    return reg.get("gh-cli-pr")
 
 
 def _default_runner(
@@ -285,6 +477,37 @@ def _classify_version_check(result: CommandResult) -> SmokeCheck:
         status="fail",
         detail="claude --version cagrisi basarisiz",
         finding_code="claude_version_unavailable",
+        argv=result.argv,
+        returncode=result.returncode,
+        observed=_trim_output(result),
+    )
+
+
+def _classify_gh_version_check(result: CommandResult) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="version",
+            status="fail",
+            detail="gh --version cagrisi timeout'a dustu",
+            finding_code="gh_version_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+    if result.returncode == 0 and result.stdout.strip():
+        first_line = result.stdout.strip().splitlines()[0]
+        return SmokeCheck(
+            name="version",
+            status="pass",
+            detail=f"gh version: {first_line}",
+            argv=result.argv,
+            returncode=result.returncode,
+        )
+    return SmokeCheck(
+        name="version",
+        status="fail",
+        detail="gh --version cagrisi basarisiz",
+        finding_code="gh_version_unavailable",
         argv=result.argv,
         returncode=result.returncode,
         observed=_trim_output(result),
@@ -361,6 +584,264 @@ def _classify_auth_status_check(
             "orgName": payload.get("orgName"),
             "fallback_api_key_env_present": api_key_env_present,
         },
+    )
+
+
+def _classify_gh_auth_status_check(result: CommandResult) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="auth_status",
+            status="fail",
+            detail="gh auth status cagrisi timeout'a dustu",
+            finding_code="gh_auth_status_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+    if result.returncode != 0:
+        return SmokeCheck(
+            name="auth_status",
+            status="fail",
+            detail="gh auth status cagrisi basarisiz",
+            finding_code="gh_auth_status_failed",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return SmokeCheck(
+            name="auth_status",
+            status="fail",
+            detail="gh auth status JSON donmedi",
+            finding_code="gh_auth_status_not_json",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+
+    hosts = payload.get("hosts")
+    github_hosts = hosts.get("github.com") if isinstance(hosts, dict) else None
+    active_entry = None
+    if isinstance(github_hosts, list):
+        for entry in github_hosts:
+            if (
+                isinstance(entry, dict)
+                and entry.get("active") is True
+                and entry.get("state") == "success"
+            ):
+                active_entry = entry
+                break
+
+    if active_entry is None:
+        return SmokeCheck(
+            name="auth_status",
+            status="fail",
+            detail="github.com icin aktif gh auth kaydi bulunamadi",
+            finding_code="gh_not_authenticated",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={
+                "github_hosts_present": "true" if github_hosts is not None else "false",
+            },
+        )
+
+    return SmokeCheck(
+        name="auth_status",
+        status="pass",
+        detail=(
+            f"host='github.com' login={active_entry.get('login')!r} "
+            f"tokenSource={active_entry.get('tokenSource')!r}"
+        ),
+        argv=result.argv,
+        returncode=result.returncode,
+        observed={
+            "host": active_entry.get("host"),
+            "login": active_entry.get("login"),
+            "tokenSource": active_entry.get("tokenSource"),
+            "scopes": active_entry.get("scopes"),
+            "gitProtocol": active_entry.get("gitProtocol"),
+        },
+    )
+
+
+def _classify_gh_manifest_contract_check(manifest: AdapterManifest) -> SmokeCheck:
+    expected_args = (
+        "pr",
+        "create",
+        "--title",
+        "{task_prompt}",
+        "--body-file",
+        "{context_pack_ref}",
+    )
+    actual_args = tuple(str(part) for part in manifest.invocation.get("args", ()))
+    if (
+        manifest.invocation.get("command") == "gh"
+        and actual_args == expected_args
+        and manifest.invocation.get("stdin_mode") == "none"
+    ):
+        return SmokeCheck(
+            name="manifest_contract",
+            status="pass",
+            detail="bundled gh-cli-pr manifest contract smoke gecti",
+            observed={"args": list(actual_args)},
+        )
+    return SmokeCheck(
+        name="manifest_contract",
+        status="fail",
+        detail="bundled gh-cli-pr manifest argv mevcut contract ile uyusmuyor",
+        finding_code="gh_pr_manifest_contract_mismatch",
+        observed={
+            "command": str(manifest.invocation.get("command")),
+            "args": list(actual_args),
+            "stdin_mode": str(manifest.invocation.get("stdin_mode")),
+        },
+    )
+
+
+def _classify_gh_repo_view_check(
+    result: CommandResult,
+) -> tuple[SmokeCheck, str | None, str | None, str | None]:
+    if result.timed_out:
+        return (
+            SmokeCheck(
+                name="repo_view",
+                status="fail",
+                detail="gh repo view cagrisi timeout'a dustu",
+                finding_code="gh_repo_view_timeout",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+            None,
+            None,
+        )
+    if result.returncode != 0:
+        return (
+            SmokeCheck(
+                name="repo_view",
+                status="fail",
+                detail="gh repo view cagrisi basarisiz",
+                finding_code="gh_repo_view_failed",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+            None,
+            None,
+        )
+
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return (
+            SmokeCheck(
+                name="repo_view",
+                status="fail",
+                detail="gh repo view JSON donmedi",
+                finding_code="gh_repo_view_not_json",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+            None,
+            None,
+        )
+
+    repo_name = payload.get("nameWithOwner")
+    repo_url = payload.get("url")
+    default_branch_ref = payload.get("defaultBranchRef")
+    default_branch = None
+    if isinstance(default_branch_ref, dict):
+        default_branch = default_branch_ref.get("name")
+
+    if not repo_name or not default_branch or not repo_url:
+        return (
+            SmokeCheck(
+                name="repo_view",
+                status="fail",
+                detail="gh repo view gerekli alanlari donmedi",
+                finding_code="gh_repo_view_incomplete",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed={
+                    "nameWithOwner": str(repo_name),
+                    "defaultBranch": str(default_branch),
+                    "url": str(repo_url),
+                },
+            ),
+            None,
+            None,
+            None,
+        )
+
+    return (
+        SmokeCheck(
+            name="repo_view",
+            status="pass",
+            detail=(
+                f"repo={repo_name!r} default_branch={default_branch!r} "
+                f"isPrivate={payload.get('isPrivate')!r}"
+            ),
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={
+                "nameWithOwner": repo_name,
+                "defaultBranch": default_branch,
+                "url": repo_url,
+                "isPrivate": payload.get("isPrivate"),
+            },
+        ),
+        str(repo_name),
+        str(default_branch),
+        str(repo_url),
+    )
+
+
+def _classify_gh_pr_dry_run_check(
+    result: CommandResult,
+    *,
+    repo_name: str,
+    head_ref: str,
+    base_ref: str,
+) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="pr_dry_run",
+            status="fail",
+            detail="gh pr create --dry-run timeout'a dustu",
+            finding_code="gh_pr_dry_run_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    if result.returncode == 0 and _GH_DRY_RUN_MARKER in combined:
+        return SmokeCheck(
+            name="pr_dry_run",
+            status="pass",
+            detail=(
+                f"gh pr create --dry-run gecti "
+                f"(repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"
+            ),
+            argv=result.argv,
+            returncode=result.returncode,
+        )
+
+    return SmokeCheck(
+        name="pr_dry_run",
+        status="fail",
+        detail="gh pr create --dry-run basarisiz",
+        finding_code="gh_pr_dry_run_failed",
+        argv=result.argv,
+        returncode=result.returncode,
+        observed=_trim_output(result),
     )
 
 
@@ -594,6 +1075,37 @@ def _finalize_report(
         adapter_id=adapter_id,
         binary_path=binary_path,
         api_key_env_present=api_key_env_present,
+        checks=tuple(checks),
+        findings=findings,
+    )
+
+
+def _finalize_gh_report(
+    *,
+    adapter_id: str,
+    binary_path: str | None,
+    repo_name: str | None,
+    default_branch: str | None,
+    repo_url: str | None,
+    checks: Sequence[SmokeCheck],
+) -> GhCliPrSmokeReport:
+    findings = tuple(
+        dict.fromkeys(
+            check.finding_code
+            for check in checks
+            if check.finding_code is not None
+        )
+    )
+    overall_status: Literal["pass", "blocked"] = (
+        "pass" if not findings else "blocked"
+    )
+    return GhCliPrSmokeReport(
+        overall_status=overall_status,
+        adapter_id=adapter_id,
+        binary_path=binary_path,
+        repo_name=repo_name,
+        default_branch=default_branch,
+        repo_url=repo_url,
         checks=tuple(checks),
         findings=findings,
     )

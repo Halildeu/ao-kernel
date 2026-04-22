@@ -342,3 +342,24 @@ class TestClaudeCodeCliReviewFindingsV310A1:
             "claude-code-cli",
             ["read_repo", "write_diff", "run_tests", "stream_output", "review_findings"],
         )
+
+
+class TestGhCliPrManifestContractWP83:
+    """WP-8.3 bundled gh-cli-pr manifest contract pin."""
+
+    def test_bundled_manifest_invocation_matches_current_gh_cli_shape(
+        self,
+    ) -> None:
+        reg = AdapterRegistry()
+        reg.load_bundled()
+        manifest = reg.get("gh-cli-pr")
+        assert manifest.invocation["command"] == "gh"
+        assert tuple(manifest.invocation["args"]) == (
+            "pr",
+            "create",
+            "--title",
+            "{task_prompt}",
+            "--body-file",
+            "{context_pack_ref}",
+        )
+        assert manifest.invocation["stdin_mode"] == "none"
