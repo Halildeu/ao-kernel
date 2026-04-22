@@ -3,7 +3,7 @@
 **Durum tarihi:** 2026-04-22
 **İlişkili issue:** [#226](https://github.com/Halildeu/ao-kernel/issues/226)
 **Üst tracker:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-**Durum:** In progress
+**Durum:** Completed on `main`
 
 ## Amaç
 
@@ -44,8 +44,8 @@ kılmak ve deterministik olmayan test yüzeylerini küçük tranche'lerle kapatm
 
 ## Beklenen Sonraki Adım
 
-İlk tranche merge olduktan sonra doğru devam, time-dependent seam envanterini
-somut deterministic fix tranche'lerine bölmektir.
+`PB-3` kapandıktan sonra doğru devam, support boundary widening kararlarını
+kanıt temelli olarak ele alan `PB-4` hattına geçmektir.
 
 ## İkinci Tranche
 
@@ -79,3 +79,55 @@ somut deterministic fix tranche'lerine bölmektir.
 2. prune / expiry edge testlerini exact sabit timestamp ile çalıştırmak
 3. `PB-3` closeout öncesi internal + coverage test yüzeyini aynı zaman
    yaklaşımına hizalamak
+
+## Closeout
+
+`PB-3` aşağıdaki tranche zinciri ile `main` üzerinde kapanmıştır:
+
+1. `#227` weak assertion cleanup
+2. `#228` coordination status `now` seam
+3. `#229` `context_store` runtime/internal seam hizası
+4. `#230` `context_store_coverage` sabit zaman helper geçişi
+5. `#231` `context_store_internal` kalan canlı zaman kullanımlarının kapanışı
+
+## Closeout Kanıtı
+
+Hedefli PB-3 doğrulama kümesi:
+
+```bash
+python3 -m pytest \
+  tests/test_intent_router.py \
+  tests/test_config.py \
+  tests/test_context_pack_ref_plumbing.py \
+  tests/test_coordination_status.py \
+  tests/test_coordination_cli.py \
+  tests/test_context_store_internal.py \
+  tests/test_context_store_coverage.py \
+  tests/test_coordination_takeover_prune.py \
+  tests/test_cost_catalog.py \
+  tests/test_shared_utils_coverage.py \
+  tests/test_memory_tiers.py -q
+```
+
+Sonuç: `210 passed in 5.83s`
+
+## Residual Inventory
+
+Kalan `datetime.now(...)` kullanımları closeout audit'inde yeniden tarandı.
+Bugün için `PB-3` blocker sayılmayan kalıntılar:
+
+1. `tests/test_coordination_cli.py`
+   - relative backdate helper kullanıyor
+   - exact timestamp kontratı test etmiyor
+2. `tests/test_coordination_takeover_prune.py`
+   - geçmişe alma helper'ı yalnız grace/past-grace simülasyonu için var
+   - wall-clock çıktısını pinlemiyor
+3. `tests/test_cost_catalog.py`
+   - stale/fresh kapısı için `now - 1 day` / `now + 30 days` kullanıyor
+   - self-contained relative eşik testi, seam eksikliği bugün fake-green üretmiyor
+4. `tests/test_shared_utils_coverage.py`
+   - round-trip parse testi kendi ürettiği timestamp'i parse ediyor
+   - dış wall-clock kontratı yok
+
+Bu kalıntılar yeni flaky sinyal üretmediği sürece ayrı opportunistic cleanup
+olarak ele alınacak; `PB-3` tekrar açılmayacak.
