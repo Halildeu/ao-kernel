@@ -323,19 +323,23 @@ def _classify_prompt_access_check(result: CommandResult) -> SmokeCheck:
             returncode=result.returncode,
         )
 
-    finding = (
-        "prompt_access_denied"
-        if _looks_like_prompt_access_denied(result)
-        else "prompt_smoke_failed"
+    finding, detail, failure_kind = _classify_auth_failure(
+        result,
+        context_label="canli prompt smoke",
+        default_finding="prompt_smoke_failed",
+        default_detail="canli prompt smoke basarisiz",
     )
+    observed = _trim_output(result)
+    if failure_kind is not None:
+        observed["failure_kind"] = failure_kind
     return SmokeCheck(
         name="prompt_access",
         status="fail",
-        detail="canli prompt smoke basarisiz",
+        detail=detail,
         finding_code=finding,
         argv=result.argv,
         returncode=result.returncode,
-        observed=_trim_output(result),
+        observed=observed,
     )
 
 
@@ -374,12 +378,25 @@ def _classify_manifest_invocation_check(result: CommandResult) -> SmokeCheck:
     if _looks_like_manifest_contract_mismatch(result):
         finding = "manifest_cli_contract_mismatch"
         detail = "bundled manifest argv mevcut Claude CLI sozlesmesiyle uyusmuyor"
-    elif _looks_like_prompt_access_denied(result):
-        finding = "prompt_access_denied"
-        detail = "bundled manifest smoke auth/prompt access asamasinda bloklandi"
     else:
-        finding = "manifest_smoke_failed"
-        detail = "bundled manifest smoke basarisiz"
+        finding, detail, failure_kind = _classify_auth_failure(
+            result,
+            context_label="bundled manifest smoke",
+            default_finding="manifest_smoke_failed",
+            default_detail="bundled manifest smoke basarisiz",
+        )
+        observed = _trim_output(result)
+        if failure_kind is not None:
+            observed["failure_kind"] = failure_kind
+        return SmokeCheck(
+            name="manifest_invocation",
+            status="fail",
+            detail=detail,
+            finding_code=finding,
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=observed,
+        )
 
     return SmokeCheck(
         name="manifest_invocation",
@@ -390,6 +407,51 @@ def _classify_manifest_invocation_check(result: CommandResult) -> SmokeCheck:
         returncode=result.returncode,
         observed=_trim_output(result),
     )
+
+
+def _classify_auth_failure(
+    result: CommandResult,
+    *,
+    context_label: str,
+    default_finding: str,
+    default_detail: str,
+) -> tuple[str, str, str | None]:
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    if (
+        "organization does not have access to claude" in combined
+        or "oauth authentication is currently not allowed for this organization"
+        in combined
+    ):
+        return (
+            "prompt_access_denied",
+            f"{context_label} org-duzeyi OAuth/prompt access blokajina dustu",
+            "org_oauth_not_allowed",
+        )
+    if "account does not have access to claude" in combined:
+        return (
+            "prompt_access_denied",
+            f"{context_label} hesap-duzeyi prompt access blokajina dustu",
+            "account_access_denied",
+        )
+    if "invalid bearer token" in combined:
+        return (
+            "prompt_access_denied",
+            f"{context_label} bearer token gecersizligi nedeniyle bloklandi",
+            "invalid_bearer_token",
+        )
+    if "not logged in" in combined:
+        return (
+            "prompt_access_denied",
+            f"{context_label} login/auth eksikligi nedeniyle bloklandi",
+            "not_logged_in",
+        )
+    if _looks_like_prompt_access_denied(result):
+        return (
+            "prompt_access_denied",
+            f"{context_label} auth/prompt access asamasinda bloklandi",
+            "generic_auth_failure",
+        )
+    return default_finding, default_detail, None
 
 
 def _looks_like_manifest_contract_mismatch(result: CommandResult) -> bool:
@@ -409,10 +471,13 @@ def _looks_like_prompt_access_denied(result: CommandResult) -> bool:
     combined = f"{result.stdout}\n{result.stderr}".lower()
     needles = (
         "does not have access to claude",
+        "oauth authentication is currently not allowed for this organization",
+        "invalid bearer token",
         "please login again",
         "contact your administrator",
         "not logged in",
-        "authentication",
+        "failed to authenticate",
+        "authentication failed",
     )
     return any(needle in combined for needle in needles)
 

@@ -87,8 +87,12 @@ automation platform çizgisine taşımak.
 - aktif alt slice için `python3 scripts/claude_code_cli_smoke.py`
   helper'ı eklendi; smoke + manifest contract testleri yeşil
 - repo tarafındaki `manifest_cli_contract_mismatch` kapatıldı
-- bu makinedeki canlı preflight artık tek blocker veriyor:
-  `prompt_access_denied`
+- aynı canlı turda önce `claude auth status` yeşil olsa da `claude -p`
+  org-level access hatasıyla düştü; kontrollü re-login sonrası helper tam
+  `pass` verdi ve doğrudan `claude -p` smoke'u `ok` döndürdü
+- `setup-token` altında üretilen uzun ömürlü token ise bu turda güvenilir
+  kurtarma yolu olarak doğrulanmadı; ayrıca `Invalid bearer token` reddi
+  görüldü
 
 **Definition of Done**
 - bundled gerçek-adapter aday seti explicit

@@ -62,6 +62,23 @@ The helper is the current smoke SSOT for `claude-code-cli`. It performs four che
 
 Helper çıkışı `blocked` ise bu lane certification-pass veya production-tier sayılamaz.
 
+2026-04-22 canlı ayrım:
+
+- Aynı makinede ilk preflight, `claude auth status` yeşil olmasına rağmen
+  `claude -p` ve bundled manifest smoke'u
+  "Your organization does not have access to Claude" ile blokladı.
+- Kontrollü `claude auth logout` + `claude auth login --claudeai` sonrası yeni
+  organizasyon oturumunda helper tamamen `pass` verdi ve doğrudan
+  `claude -p "reply with exactly ok"` çağrısı `ok` döndürdü.
+- `claude setup-token` ile üretilen uzun ömürlü OAuth token bu turda güvenilir
+  kurtarma yolu olarak kanıtlanmadı; env-var altında ayrıca
+  `Invalid bearer token` reddi görüldü.
+
+Sonuç: bu lane'de "auth status yeşil" = "prompt access var" varsayımı yasak.
+Belirleyici sinyal her zaman helper'ın gerçek `claude -p` probe sonucudur.
+Başarı koşulu yalnız binary/manifest değil, prompt access veren doğru org/account
+oturumudur.
+
 ---
 
 ## 2. Workspace override — `policy_worktree_profile.v1.json`
