@@ -107,6 +107,8 @@ These may be bundled and schema-valid without being end-to-end supported:
 değildir; support tier yalnız Beta (operator-managed) satırı kadar genişler.
 `PRJ-CONTEXT-ORCHESTRATION` için `GP-1.4` kararı `stay_contract_only` olduğu
 için bu extension contract inventory katmanında kalır; support widening yoktur.
+`GP-1.5` program closeout kararı da boundary'yi widen etmemiştir; genel çizgi
+`stay_beta_operator_managed` olarak korunur.
 
 ## 3. What does NOT automatically widen support
 

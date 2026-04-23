@@ -118,6 +118,8 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   `PRJ-CONTEXT-ORCHESTRATION` bugün contract-only katmandadır
   (manifest/contract cleanup sonrası, runtime handler hâlâ yoktur);
   `GP-1.4` kararı da bu sınırı değiştirmemiştir (`stay_contract_only`).
+- `GP-1.5` program closeout kararı support boundary'yi widen etmemiştir;
+  genel hüküm `stay_beta_operator_managed` çizgisinin korunmasıdır.
   kalan manifestler doctor truth audit'inde quarantined olarak görülebilir.
 - Bu doküman, ao-kernel'in genel amaçlı bir production coding automation
   platformu olduğunu iddia etmez; destek vaadi dar ve açıkça tablolanmış
