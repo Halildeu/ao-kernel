@@ -1,8 +1,8 @@
 # PB-8 — General-Purpose Productionization Roadmap
 
-**Status:** Active  
+**Status:** Completed  
 **Date:** 2026-04-23  
-**Tracker:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)  
+**Tracker:** [#288](https://github.com/Halildeu/ao-kernel/issues/288) (closed)  
 **Execution mode:** Kapsam disiplini, tek aktif runtime tranche
 
 ## Amaç
@@ -115,3 +115,16 @@ Toplam hedef: 4-6 hafta (dış bağımlılık ve auth/sandbox stabilitesine bağ
    açıkça işlenir.
 3. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif slice'ı kapatır.
 4. Tracker [#288](https://github.com/Halildeu/ao-kernel/issues/288) kapanır.
+
+## Closeout Snapshot (2026-04-23)
+
+1. Tüm tranche'lar tamamlandı:
+   - `PB-8.1` [#289](https://github.com/Halildeu/ao-kernel/issues/289)
+   - `PB-8.2` [#290](https://github.com/Halildeu/ao-kernel/issues/290)
+   - `PB-8.3` [#291](https://github.com/Halildeu/ao-kernel/issues/291)
+   - `PB-8.4` [#292](https://github.com/Halildeu/ao-kernel/issues/292)
+2. `PB-8.3` karar çıktısı `stay_deferred` olarak korunmuştur.
+3. `PB-8.4` docs/runbook/release-gate parity closeout'u
+   [#300](https://github.com/Halildeu/ao-kernel/pull/300) +
+   [#301](https://github.com/Halildeu/ao-kernel/pull/301) ile tamamlanmıştır.
+4. Sonraki aktif hat `PB-9` tracker'ına taşınmıştır.
