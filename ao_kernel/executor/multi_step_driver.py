@@ -86,6 +86,7 @@ __all__ = [
 
 
 _DIFF_PATH = re.compile(r"^(?:\+\+\+|---) [ab]/(.+)$", re.MULTILINE)
+_OPEN_PR_LIVE_WRITE_GUARD_ENV = "AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE"
 
 
 @dataclass(frozen=True)
@@ -478,6 +479,8 @@ class MultiStepDriver:
             AdapterOutputParseError,
         )
 
+        self._enforce_open_pr_live_write_guard(step_def, attempt=attempt)
+
         # PR-C1a: resolve context_pack_ref from prior context_compile step's
         # artifact; None → Executor default envelope (backwards-compat).
         envelope_override = self._build_adapter_envelope_with_context(
@@ -659,6 +662,37 @@ class MultiStepDriver:
         # Refresh record so completion update sees the latest CAS state
         refreshed, _ = load_run(self._workspace_root, run_id)
         return dict(refreshed), exec_result, capability_output_refs
+
+    def _enforce_open_pr_live_write_guard(
+        self,
+        step_def: StepDefinition,
+        *,
+        attempt: int,
+    ) -> None:
+        """Fail-closed guard for workflow-level ``open_pr`` side effects.
+
+        `bug_fix_flow` release-closure lane keeps PR creation behind an explicit
+        operator opt-in flag so accidental workflow runs cannot trigger remote
+        write operations by default.
+        """
+        if step_def.actor != "adapter":
+            return
+        if step_def.adapter_id != "gh-cli-pr":
+            return
+
+        guard_value = os.environ.get(_OPEN_PR_LIVE_WRITE_GUARD_ENV, "")
+        if guard_value.strip() == "1":
+            return
+
+        raise _StepFailed(
+            reason=(
+                "gh-cli-pr live-write guard blocked: set "
+                f"{_OPEN_PR_LIVE_WRITE_GUARD_ENV}=1"
+            ),
+            attempt=attempt,
+            category="policy_denied",
+            code="LIVE_WRITE_NOT_ALLOWED",
+        )
 
     def _build_adapter_envelope_with_context(
         self,

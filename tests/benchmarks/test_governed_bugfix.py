@@ -34,6 +34,7 @@ from tests.benchmarks.mock_transport import (
 _WORKFLOW_ID = "governed_bugfix_bench"
 _WORKFLOW_VERSION = "1.0.0"
 _SCENARIO_ID = "governed_bugfix"
+_OPEN_PR_GUARD_ENV = "AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE"
 
 
 def _run_dir(workspace_root: Path, run_id: str) -> Path:
@@ -244,6 +245,7 @@ class TestFullBundledBugFixFlow:
         workspace_root: Path,
         seeded_run,
         benchmark_driver,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """PR-C1b.1 (C2.1 unblock): Full 7-step bundled bug_fix_flow
         with default benchmark_driver (now sees bundled policy via
@@ -263,6 +265,7 @@ class TestFullBundledBugFixFlow:
             ),
             ("full_bundled_bugfix", "gh-cli-pr", 1): bug_envelopes.open_pr_happy(),
         }
+        monkeypatch.setenv(_OPEN_PR_GUARD_ENV, "1")
 
         with mock_adapter_transport(
             canned,
