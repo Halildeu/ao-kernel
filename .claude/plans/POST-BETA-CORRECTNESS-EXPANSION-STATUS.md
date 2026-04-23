@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#275](https://github.com/Halildeu/ao-kernel/issues/275)
+- **Aktif issue:** [#277](https://github.com/Halildeu/ao-kernel/issues/277)
 
 ## 2. Başlangıç Gerçeği
 
@@ -116,13 +116,24 @@ bir sonraki implementation hattına taşımaktır.
 4. Slice plan:
    `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
 
-`PB-6.5` kickoff:
+`PB-6.5` decision closeout tamamlandı:
 
 1. Issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
-2. Hedef: widened lane adayları için ops-readiness kapılarını tek tabloda
-   finalize etmek (incident + rollback + prerequisite + known-bug + parity)
+2. Karar özeti:
+   - `claude-code-cli`: `promotion_candidate_with_ops_gates`
+   - `gh-cli-pr` preflight: `stay_beta_operator_managed`
+   - `gh-cli-pr` live write: `stay_deferred`
+   - `PRJ-KERNEL-API` write-side: `stay_deferred`
 3. Slice plan:
    `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
+
+`PB-6.6` kickoff:
+
+1. Issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277)
+2. Hedef: `claude-code-cli` lane için ops-gated support-tier closeout kararını
+   tekilleştirmek
+3. Slice plan:
+   `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -210,9 +221,13 @@ Güncel runtime baseline:
    - third tranche complete: `PB-6.4c` decision closeout (`stay_preflight`, [#271](https://github.com/Halildeu/ao-kernel/issues/271))
    - fourth tranche complete: `PB-6.4d` decision closeout (`stay_deferred`, [#270](https://github.com/Halildeu/ao-kernel/issues/270))
 5. `PB-6.5` ops readiness gates
-   - active planning slice (issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275))
+   - completed decision closeout (issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275))
    - plan:
      `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
+6. `PB-6.6` claude-code-cli lane ops-gated promotion closeout
+   - active decision slice (issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277))
+   - plan:
+     `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
 
 Not:
 
@@ -239,9 +254,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.5` active ops-readiness slice (`#275`)
-   - lane bazlı ops gate tablosunu finalize et
-   - widening implementation öncesi tekil karar/verdict setini çıkar
+1. `PB-6.6` active ops-gated promotion closeout (`#277`)
+   - `claude-code-cli` lane için support-tier verdict tekilleştir
+   - kararın docs/status/issue yüzeylerinde tek anlamlı kalmasını sağla
 
 ## 9. Güncelleme Protokolü
 
