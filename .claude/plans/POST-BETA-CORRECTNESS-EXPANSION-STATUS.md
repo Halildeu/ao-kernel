@@ -20,7 +20,7 @@ ayrı ayrı görünür kılmak.
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#270](https://github.com/Halildeu/ao-kernel/issues/270)
+- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 2. Başlangıç Gerçeği
 
@@ -107,12 +107,13 @@ bir sonraki implementation hattına taşımaktır.
 4. Slice plan:
    `.claude/plans/PB-6.4c-GH-CLI-PR-LIVE-WRITE-GRADUATION.md`
 
-`PB-6.4d` active hold-decision slice:
+`PB-6.4d` decision slice'ı tamamlandı:
 
 1. Issue: [#270](https://github.com/Halildeu/ao-kernel/issues/270)
-2. Hedef: `PRJ-KERNEL-API` write-side widening önkoşullarını action bazlı
-   gate tablosuna indirmek
-3. Slice plan:
+2. Karar: `stay_deferred`
+3. Gerekçe: governance + behavior + safety + rollback kapıları write-side
+   widening için karşılanmadı; docs parity tek başına widening açmadı
+4. Slice plan:
    `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
@@ -199,7 +200,7 @@ Güncel runtime baseline:
    - first tranche complete: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265), [#266](https://github.com/Halildeu/ao-kernel/pull/266))
    - second tranche complete: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267), [#268](https://github.com/Halildeu/ao-kernel/pull/268))
    - third tranche complete: `PB-6.4c` decision closeout (`stay_preflight`, [#271](https://github.com/Halildeu/ao-kernel/issues/271))
-   - active hold tranche: `PB-6.4d` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
+   - fourth tranche complete: `PB-6.4d` decision closeout (`stay_deferred`, [#270](https://github.com/Halildeu/ao-kernel/issues/270))
 
 Not:
 
@@ -208,8 +209,9 @@ Not:
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
 3. `PB-6.4c` kararı `stay_preflight` olarak kapanmıştır; live write widening
    support boundary dışında kalır.
-4. `PB-6.4d` karar dilimi kapanmadan kernel-api write-side widening
-   implementation açılmayacak.
+4. `PB-6.4d` kararı `stay_deferred` olarak kapanmıştır; kernel-api write-side
+   widening için ayrı implementation tranche'i yalnız yazılı önkoşullar
+   karşılandığında açılabilir.
 
 ## 7. Riskler
 
@@ -225,9 +227,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.4d` active hold-decision slice (`#270`)
-   - kernel-api write-side widening preconditions
-   - governance/policy + behavior test + rollback gate tabanı
+1. `PB-6` umbrella closeout ve sonraki widening tranche seçimi (`#243`)
+   - `PB-6.4a/b/c/d` kararlarını tek backlog sırasına indir
+   - bir sonraki aktif slice'ı tek issue + tek DoD ile aç
 
 ## 9. Güncelleme Protokolü
 
