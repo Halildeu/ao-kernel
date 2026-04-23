@@ -19,7 +19,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="gh_cli_pr_smoke.py",
         description=(
-            "Run side-effect-safe smoke checks for the bundled gh-cli-pr adapter."
+            "Run gh-cli-pr adapter smoke checks (preflight default; "
+            "live-write explicit opt-in)."
         ),
     )
     parser.add_argument(
@@ -44,7 +45,34 @@ def main() -> int:
     )
     parser.add_argument(
         "--head",
-        help="Optional head branch override for the dry-run PR probe.",
+        help="Optional head branch override for the PR probe.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("preflight", "live-write"),
+        default="preflight",
+        help=(
+            "Probe mode. preflight runs side-effect-safe dry-run; "
+            "live-write runs create+rollback chain with explicit opt-in."
+        ),
+    )
+    parser.add_argument(
+        "--allow-live-write",
+        action="store_true",
+        help="Required guard flag for --mode live-write.",
+    )
+    parser.add_argument(
+        "--keep-live-write-pr-open",
+        action="store_true",
+        help="Skip rollback close step after live-write create success.",
+    )
+    parser.add_argument(
+        "--require-disposable-keyword",
+        default="sandbox",
+        help=(
+            "Disposable repo guard keyword for live-write mode "
+            "(empty string disables the guard)."
+        ),
     )
     args = parser.parse_args()
 
@@ -54,6 +82,10 @@ def main() -> int:
         repo=args.repo,
         base_ref=args.base,
         head_ref=args.head,
+        mode=args.mode.replace("-", "_"),
+        allow_live_write=args.allow_live_write,
+        keep_live_write_pr_open=args.keep_live_write_pr_open,
+        require_disposable_repo_keyword=args.require_disposable_keyword or None,
     )
     if args.output == "json":
         print(json.dumps(report.as_dict(), indent=2, sort_keys=True))

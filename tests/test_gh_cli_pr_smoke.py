@@ -315,3 +315,203 @@ def test_clean_pass_reports_repo_and_dry_run_success() -> None:
     assert report.default_branch == "main"
     dry_run_check = next(check for check in report.checks if check.name == "pr_dry_run")
     assert dry_run_check.status == "pass"
+
+
+def test_live_write_requires_explicit_opt_in() -> None:
+    create_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal create_called
+        cmd = tuple(argv)
+        if cmd == ("/fake/gh", "--version"):
+            return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
+        if cmd == ("/fake/gh", "auth", "status", "--json", "hosts"):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"hosts":{"github.com":[{"state":"success","active":true,'
+                    '"host":"github.com","login":"Halildeu",'
+                    '"tokenSource":"keyring","scopes":"repo",'
+                    '"gitProtocol":"https"}]}}'
+                ),
+            )
+        if cmd == (
+            "/fake/gh",
+            "repo",
+            "view",
+            "--json",
+            "nameWithOwner,defaultBranchRef,isPrivate,url",
+        ):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"nameWithOwner":"Halildeu/ao-kernel",'
+                    '"defaultBranchRef":{"name":"main"},'
+                    '"isPrivate":false,'
+                    '"url":"https://github.com/Halildeu/ao-kernel"}'
+                ),
+            )
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            create_called = True
+            raise AssertionError("live-write create should not run without opt-in")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=False,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_opt_in_required" in report.findings
+    assert create_called is False
+
+
+def test_live_write_passes_with_create_and_rollback() -> None:
+    create_called = False
+    close_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal create_called, close_called
+        cmd = tuple(argv)
+        if cmd == ("/fake/gh", "--version"):
+            return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
+        if cmd == ("/fake/gh", "auth", "status", "--json", "hosts"):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"hosts":{"github.com":[{"state":"success","active":true,'
+                    '"host":"github.com","login":"Halildeu",'
+                    '"tokenSource":"keyring","scopes":"repo",'
+                    '"gitProtocol":"https"}]}}'
+                ),
+            )
+        if cmd == (
+            "/fake/gh",
+            "repo",
+            "view",
+            "--json",
+            "nameWithOwner,defaultBranchRef,isPrivate,url",
+        ):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"nameWithOwner":"Halildeu/ao-kernel",'
+                    '"defaultBranchRef":{"name":"main"},'
+                    '"isPrivate":false,'
+                    '"url":"https://github.com/Halildeu/ao-kernel"}'
+                ),
+            )
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            create_called = True
+            assert "--draft" in cmd
+            return _result(
+                cmd,
+                stdout=(
+                    "https://github.com/Halildeu/ao-kernel/pull/123\n"
+                    "Creating draft pull request...\n"
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "close",
+            "https://github.com/Halildeu/ao-kernel/pull/123",
+        ):
+            close_called = True
+            return _result(cmd, stdout="Closed pull request #123\n")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "pass"
+    assert report.findings == ()
+    live_check = next(check for check in report.checks if check.name == "pr_live_write")
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert live_check.status == "pass"
+    assert rollback_check.status == "pass"
+    assert create_called is True
+    assert close_called is True
+
+
+def test_live_write_disposable_repo_guard_blocks_write() -> None:
+    create_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal create_called
+        cmd = tuple(argv)
+        if cmd == ("/fake/gh", "--version"):
+            return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
+        if cmd == ("/fake/gh", "auth", "status", "--json", "hosts"):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"hosts":{"github.com":[{"state":"success","active":true,'
+                    '"host":"github.com","login":"Halildeu",'
+                    '"tokenSource":"keyring","scopes":"repo",'
+                    '"gitProtocol":"https"}]}}'
+                ),
+            )
+        if cmd == (
+            "/fake/gh",
+            "repo",
+            "view",
+            "--json",
+            "nameWithOwner,defaultBranchRef,isPrivate,url",
+        ):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"nameWithOwner":"Halildeu/ao-kernel",'
+                    '"defaultBranchRef":{"name":"main"},'
+                    '"isPrivate":false,'
+                    '"url":"https://github.com/Halildeu/ao-kernel"}'
+                ),
+            )
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            create_called = True
+            raise AssertionError("disposable guard failsa create calismamali")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="sandbox",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_repo_not_disposable" in report.findings
+    assert create_called is False

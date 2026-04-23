@@ -50,7 +50,7 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
 | `claude-code-cli` walkthroughs and manifests | Beta (operator-managed) | Helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`; canlı prompt smoke vardır, fakat bu lane default shipped demo değildir |
-| `gh-cli-pr` walkthroughs and manifests | Beta (operator-managed preflight only) | Helper-backed safe preflight lives at `python3 scripts/gh_cli_pr_smoke.py`; gerçek remote PR açılışı ayrı ve deferred yüzeydir |
+| `gh-cli-pr` walkthroughs and manifests | Beta (operator-managed preflight + live-write readiness probe) | Default helper yolu preflight (`python3 scripts/gh_cli_pr_smoke.py`), live-write probe ise explicit opt-in (`--mode live-write --allow-live-write`) + disposable guard ister; gerçek remote PR açılışı hâlâ deferred support yüzeyidir |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
 ### Promotion criteria for new enum values
