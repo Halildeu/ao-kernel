@@ -192,7 +192,8 @@ gercekte denemek.
 
 ### ST-5 — Deferred Correctness Closure
 
-**Durum:** Next active gate.
+**Durum:** Active via [#348](https://github.com/Halildeu/ao-kernel/issues/348)
+and `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`.
 
 **Amac:** Stable shipped yuzeyi etkileyen correctness borcunu kapatmak veya
 bilerek stable disina almak.
