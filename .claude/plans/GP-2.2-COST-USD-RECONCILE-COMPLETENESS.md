@@ -47,11 +47,13 @@ Bu tranche support widening kararı üretmez; yalnız completeness gap'ini kapat
 
 Kapanış: PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
 
-### `GP-2.2b` — Deterministic assertion upgrade (In Progress)
+### `GP-2.2b` — Deterministic assertion upgrade (Completed)
 
 - Hedef: `cost_usd` reconcile davranışı için doğrudan kırmızı/yeşil davranış
   testi eklemek veya mevcut testleri güçlendirmek.
 - Issue: [#336](https://github.com/Halildeu/ao-kernel/issues/336)
+- PR: [#337](https://github.com/Halildeu/ao-kernel/pull/337)
+- Sonuç: issue kapandı; deterministic assertion paketi `main` üzerinde.
 - Mevcut ilerleme:
   1. Fast-mode negatif guard: `adapter_path` spend event'inin yokluğu benchmark testinde pinlendi.
   2. Full-mode pozitif guard: `llm_spend_recorded` payload alanları (`run_id`, `step_id`, `attempt`, `cost_usd`) açık assert edildi.
@@ -60,12 +62,14 @@ Kapanış: PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
   1. en az bir negatif (reconcile yok/bozuk) yol testte yakalanır
   2. en az bir pozitif yol evidence/cost alanlarını açık assert eder
 
-### `GP-2.2c` — Minimum runtime patch (Conditional)
+### `GP-2.2c` — Minimum runtime patch (Conditional / currently no-op)
 
 - Hedef: yalnız testlerle kapanmayan gerçek runtime gap varsa minimal kod düzeltmesi.
 - Kural: adapter-path dışına yayılma yok; scope creep blok.
+- Mevcut karar: `GP-2.2b` sonrası ayrı runtime patch gap'i henüz
+  kanıtlanmadı; `GP-2.2d` closeout sırasında tekrar kontrol edilir.
 
-### `GP-2.2d` — Docs/status parity closeout (Pending)
+### `GP-2.2d` — Docs/status parity closeout (Active)
 
 - Hedef: `PUBLIC-BETA` ve status satırlarında tranche sonucu gerçek davranışla hizalı.
 - Kural: support tier promotion iddiası yok; karar notu düzeyinde netlik.

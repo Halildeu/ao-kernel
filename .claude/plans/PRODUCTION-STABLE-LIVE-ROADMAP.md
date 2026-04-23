@@ -1,0 +1,295 @@
+# Production Stable Live Roadmap
+
+**Durum tarihi:** 2026-04-24
+**Rol:** Public Beta / post-beta correctness hattindan production stable live
+release'e gecis icin takip edilebilir program kontrati.
+**Kapsam mottosu:** once gercegi kilitle, sonra support'u genislet.
+
+## 1. Hedef
+
+Bu roadmap'in hedefi `ao-kernel` icin "canli stable production" kararini
+kanita baglamaktir. Stable release, sadece surum numarasi degildir; asagidaki
+bes seyin ayni anda dogru oldugu release'tir:
+
+1. `pip install ao-kernel` ile gelen stable paket gercek desteklenen yuzeyi
+   kurar.
+2. Runtime, docs, tests, CI ve runbook ayni support boundary'yi anlatir.
+3. Wheel-installed smoke repo kokune, editable install'a veya host PATH
+   tesaduflerine dayanmaz.
+4. Shipped iddialar negative/positive behavior testleriyle kanitlidir.
+5. Operator, hata aninda rollback/incident/known-bug yolunu bilir.
+
+## 2. Stable Claim Seviyeleri
+
+Iki farkli hedef birbirine karistirilmeyecek:
+
+| Seviye | Anlam | Stable icin durum |
+|---|---|---|
+| Stable runtime release | Dar support boundary ile guvenilir, paketlenmis, isletilebilir cekirdek | `4.0.0` icin hedeflenebilir |
+| General-purpose production coding automation platform | Gercek adapter'lar, live-write E2E, multi-agent safety ve operator runbook'lariyla genis platform | Ancak sertifikasyon kapilari kapandiktan sonra iddia edilir |
+
+`4.0.0` stable release dar ama dogru bir production runtime olabilir. "Genel
+amacli production coding automation platform" iddiasi, gercek adapter
+sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
+
+## 3. Mevcut Baseline
+
+- `main` temiz ve `origin/main` ile senkron.
+- Paket metadata su anda `4.0.0b1` gosteriyor.
+- Public tag `v4.0.0-beta.1` mevcut; `main` bu tag'den ileride.
+- Public Beta support boundary dar: `review_ai_flow + codex-stub`,
+  entrypoint'ler, doctor, policy command enforcement ve wheel smoke kanitli
+  cekirdek shipped yuzeydir.
+- `claude-code-cli`, `gh-cli-pr` ve write/live hatlari operator-managed beta
+  veya karar bekleyen yuzeylerdir.
+- Post-beta programda GP-2 hattinda deferred support lane'leri kanitla
+  kapatiliyor.
+
+## 4. Immediate Drift Kayitlari
+
+Stable roadmap baslamadan once su drift'ler kapatilacak veya karar notuna
+baglanacak:
+
+1. `docs/PUBLIC-BETA.md` stable kanal orneginde stale surum yazimi varsa
+   hard-code yerine kural yazacak.
+2. `.claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` icinde GP-2.2b
+   issue/status satirlari merge sonrasi gercekle hizalanacak.
+3. Adapter-path `cost_usd` reconcile icin "runtime fix gerekir mi, yoksa
+   evidence/test/docs closeout yeterli mi" karari GP-2.2d'de kapanacak.
+4. `v4.0.0-beta.1` tag'i main'in gerisinde kaldigi icin bir sonraki public
+   beta/stable release eski tag uzerinden degil current `main` uzerinden
+   cikacak.
+
+## 5. Release Stratejisi
+
+Stable'a dogrudan ziplanmayacak. Varsayilan yol:
+
+1. `4.0.0b2` veya release-candidate niteliginde yeni pre-release cik.
+2. Fresh install / wheel / docs / smoke / runbook kanitlarini bu pre-release
+   uzerinde topla.
+3. Support boundary genisletilecekse sadece kanitli yuzeyleri genislet.
+4. Blocker kalmazsa `4.0.0` stable tag ve PyPI publish yap.
+
+Eger `4.0.0b2` sirasinda shipped yuzeyi degistiren runtime bug bulunursa,
+stable yerine yeni beta devam eder. Stable release, takvim karari degil gate
+kararidir.
+
+## 6. Work Packages
+
+### ST-0 — Beta Sync ve Status Truth Closeout
+
+**Amac:** Current `main` ile public beta/live dokumanlari arasindaki drift'i
+kapatmak.
+
+**Kapsam:**
+
+- GP-2.2 status/issue satirlarini merge sonrasi gercege cek.
+- `docs/PUBLIC-BETA.md`, `docs/SUPPORT-BOUNDARY.md`,
+  `docs/KNOWN-BUGS.md` ve status dosyalarinda stable/beta/deferred dilini
+  hizala.
+- Stable kanal surumunu hard-code etmek yerine install kuralini yaz.
+
+**DoD:**
+
+- Support matrix'te stale issue/surum/status yok.
+- GP-2.2d closeout karari yazili.
+- Public Beta dokumani current `main` gercegini anlatiyor.
+
+### ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
+
+**Amac:** Current `main`'i eski `v4.0.0-beta.1` tag'inden ayrilmis yeni bir
+kanitli pre-release'e cevirmek.
+
+**Kapsam:**
+
+- Version bump gerekiyorsa `4.0.0b2`.
+- Changelog/release note: `v4.0.0-beta.1` sonrasi kapanan governance,
+  support-boundary, evidence ve adapter kararlarini ozetle.
+- CI + packaging smoke + publish workflow dry-run/publish gate.
+
+**DoD:**
+
+- Fresh venv, repo disi cwd, wheel install smoke geciyor.
+- `ao-kernel version`, `python -m ao_kernel version`,
+  `python -m ao_kernel.cli version` ayni pre-release surumunu veriyor.
+- `python3 examples/demo_review.py --cleanup` installed package yuzeyiyle
+  `completed` oluyor.
+- PyPI pre-release verify tamam.
+
+### ST-2 — Stable Support Boundary Freeze
+
+**Amac:** `4.0.0` stable'in neyi destekledigini release oncesi dondurmek.
+
+**Kapsam:**
+
+- Shipped / Beta / Deferred / Known Bugs matrisi final review.
+- Her shipped satir icin kod yolu + test/smoke + docs kaniti.
+- Her beta/deferred satir icin neden stable scope disinda kaldigi.
+
+**DoD:**
+
+- Stable release notes "genel amacli her seyi yapar" iddiasi tasimiyor.
+- Known bug listesinde shipped baseline'i bozan blocker yok.
+- Beta operator-managed yuzeyler stable iddianin icine sizmiyor.
+
+### ST-3 — Real Adapter Certification Decision
+
+**Amac:** Gercek adapter yuzeylerinin stable scope'a girip girmeyecegini
+kanıtla karara baglamak.
+
+**Adaylar:**
+
+- `claude-code-cli`: PATH binary + operator auth/prerequisite lane.
+- `gh-cli-pr`: PATH binary + GitHub CLI auth/preflight/live-write lane.
+- `codex-stub`: repo-native deterministic stub, production adapter degil.
+
+**DoD:**
+
+- Her adapter icin capability tier: `stub`, `preflight`, `operator-managed
+  beta`, `production-certified`.
+- Production-certified denilen adapter icin timeout/cancel/retry,
+  idempotency, secret handling, evidence completeness ve failure-mode smoke
+  mevcut.
+- Production-certified adapter yoksa stable claim dar runtime olarak kalir.
+
+### ST-4 — Live Write ve Rollback Rehearsal
+
+**Amac:** Canli yazma yapacak yuzeyler icin geri alma ve kanit kontratini
+gercekte denemek.
+
+**Kapsam:**
+
+- Disposable sandbox repo veya controlled test target.
+- Live-write create/verify/rollback akisi.
+- Idempotent cleanup.
+- Evidence JSONL ve operator runbook kaydi.
+
+**DoD:**
+
+- Live-write iddiasi olan her yuzey icin rollback kaniti var.
+- Rollback yoksa yuzey stable write scope'a alinmaz.
+
+### ST-5 — Deferred Correctness Closure
+
+**Amac:** Stable shipped yuzeyi etkileyen correctness borcunu kapatmak veya
+bilerek stable disina almak.
+
+**Kapsam adaylari:**
+
+- `bug_fix_flow` release closure.
+- `gh-cli-pr` full E2E remote PR opening.
+- Roadmap/spec demo yuzeyinin live support'a alinip alinmayacagi.
+- Adapter-path `cost_usd` reconcile son karari.
+
+**DoD:**
+
+- Her item `ship`, `beta`, `deferred` veya `retire` olarak tek kategoriye
+  duser.
+- Iki kategoriye birden yazilan yuzey kalmaz.
+
+### ST-6 — Operations Readiness
+
+**Amac:** Stable release'i isletilebilir hale getirmek.
+
+**Kapsam:**
+
+- Incident runbook.
+- Rollback/upgrade notes.
+- Support boundary.
+- Known bugs registry.
+- Required checks ve branch protection uyumu.
+
+**DoD:**
+
+- Operator "kurulum bozuldu", "adapter auth bozuk", "policy deny beklenmiyor",
+  "publish hatali" durumlarinda hangi komutu kosacagini biliyor.
+- Publish sonrasi verify komutlari yazili.
+- Emergency rollback ve yanked release karari yazili.
+
+### ST-7 — Stable Release Candidate
+
+**Amac:** `4.0.0` stable icin final aday cikarmak.
+
+**Kapsam:**
+
+- Version `4.0.0`.
+- Changelog final.
+- Docs'ta beta/pre-release install dilini stable release diline ayir.
+- Full CI, packaging smoke, installed demo, doctor, adapter smokes.
+
+**DoD:**
+
+- `pip install ao-kernel==4.0.0` icin publish-oncesi wheel smoke ayni
+  kontrati geciyor.
+- `--pre` gerektiren kurulum stable docs'ta stable yol gibi anlatilmiyor.
+- Release blocker listesi bos.
+
+### ST-8 — Stable Publish ve Post-Publish Verification
+
+**Amac:** Stable'i canliya almak ve public install gercegini dogrulamak.
+
+**Kapsam:**
+
+- Tag: `v4.0.0`.
+- Publish workflow success.
+- PyPI HTTP/JSON verify.
+- Fresh venv public install verify.
+- Post-release issue/status closeout.
+
+**DoD:**
+
+- `pip install ao-kernel` stable kanaldan `4.0.0` kuruyor.
+- Fresh venv smoke public paketle geciyor.
+- GitHub release, CHANGELOG, docs ve status ayni sonucu anlatiyor.
+
+## 7. Stable Release Blocker Listesi
+
+Asagidaki durumlardan biri varsa stable publish yapilmaz:
+
+- Docs/runtime/test/CI ayni support boundary'yi anlatmiyor.
+- Wheel-installed smoke repo kokune veya editable install'a bagimli.
+- Shipped yuzeyde bilinen blocker known bug var.
+- Policy/security enforcement icin negative test yok.
+- Adapter production claim'i sadece manifest veya docs'a dayaniyor.
+- Live-write yuzeyi rollback rehearsali olmadan stable scope'a alinmis.
+- `docs/PUBLIC-BETA.md` veya `docs/SUPPORT-BOUNDARY.md` stale surum/status
+  bilgisi tasiyor.
+- `main` ile release branch/tag arasinda aciklanmamis fark var.
+
+## 8. Zorunlu Kanit Paketi
+
+Stable kararindan once en az su komutlar gecmis olacak:
+
+```bash
+python3 -m pytest -q tests/ --ignore=tests/benchmarks --cov
+python3 -m pytest -q tests/benchmarks/test_governed_review.py tests/benchmarks/test_governed_bugfix.py
+python3 scripts/packaging_smoke.py
+python3 scripts/truth_inventory_ratchet.py --output json
+python3 examples/demo_review.py --cleanup
+python3 -m ao_kernel doctor
+```
+
+Release branch uzerinde ek olarak fresh temp venv + wheel install smoke
+zorunludur. Public publish sonrasinda ayni kontrat PyPI paketinden tekrar
+dogrulanir.
+
+## 9. Yurutme Kurali
+
+- Ayni anda en fazla bir `ST-*` implementation slice acik olur.
+- Her slice icin issue veya status entry acilir.
+- Her PR su paketle kapanir: kod/doc degisikligi, test/smoke kaniti,
+  changelog etkisi, kalan deferred maddeler.
+- Support boundary genisletme PR'i, onu kanitlayan runtime/test PR'ina
+  baglanmadan merge edilmez.
+- Stable release karari tek kisi kanaatiyle degil, bu dosyadaki blocker ve DoD
+  listesinin kapanmasiyla verilir.
+
+## 10. Hemen Siradaki Is
+
+1. `ST-0` baslat: GP-2.2 closeout ve status/docs drift temizligi.
+2. `ST-1` hazirla: current `main` icin yeni pre-release gate karari
+   (`4.0.0b2` varsayilan).
+3. `ST-2` ile stable support boundary freeze yap.
+4. Sonra stable scope kararina gore `ST-3` ve `ST-4` gerekli mi, yoksa dar
+   runtime stable release'e gecilebilir mi karar ver.
+
