@@ -40,7 +40,7 @@ istemek gerekir.
 | Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen demo workflow |
 | `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed`; komut, `ao-kernel` kurulu bir Python environment'ı içinde çalıştırılmalıdır |
 | `ao-kernel doctor` | Shipped | Workspace health check + bundled extension truth audit; may emit WARN while quarantined inventory remains |
-| `PRJ-KERNEL-API` minimum runtime-backed actions | Shipped | Only `system_status` and `doc_nav_check`; both are explicit bootstrap handlers, offline, read-only, and behavior-tested |
+| `PRJ-KERNEL-API` read-only runtime-backed actions | Shipped | `system_status` and `doc_nav_check`; explicit bootstrap handlers, offline, read-only, behavior-tested |
 | CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |
 | Adapter CLI command enforcement | Shipped | `policy_checked` / `policy_denied` artık resolved command ihlallerini de içerir; canonical sıra `step_started -> policy_checked -> adapter_invoked` korunur |
 | `{python_executable}` localized exception | Shipped | Yalnız manifest `command` alanı explicit `{python_executable}` kullandığında, yalnız resolved `sys.executable` realpath'i için geçerli; sandbox allowlist'ini mutate etmez |
@@ -57,6 +57,7 @@ istemek gerekir.
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
 | `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir. `PB-6.6` closeout verdict'i: `stay_beta_operator_managed` |
 | `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py` preflight yoludur (`--dry-run`). Live-write probe (`--mode live-write --allow-live-write --head <branch> --base <branch>`) explicit opt-in + disposable guard + create->verify->rollback zinciri ister; `--keep-live-write-pr-open` lane'i riskli sayar ve `blocked` döner. Support widening değildir |
+| `PRJ-KERNEL-API` write-side actions | Beta (operator-managed write contract) | `project_status`, `roadmap_follow`, `roadmap_finish` runtime-backed. `workspace_root` zorunlu, varsayılan `dry_run=true`, gerçek yazma için `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` gerekir; conflict/idempotency/rollback davranışı behavior testlerle pinlidir |
 | Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
 
 ## Contract / Inventory Layer
@@ -88,7 +89,6 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Live-write probe create->verify->rollback guard'larıyla güçlense de gerçek remote PR açılışı hâlâ destek vaadi değildir; lane operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
-| `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | `PB-7.3` kararı `stay_deferred`: runtime owner/entrypoint kaydı bu action'lar için hâlâ yok; behavior/safety/rollback kapıları tamamlanmadan support widening açılmaz |
 
 ## Known Bugs
 
@@ -105,9 +105,10 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
   `review_ai_flow` + bundled `codex-stub` yolu için geçerlidir.
 - `claude-code-cli` ve `gh-cli-pr` bugün default demo yüzeyi değildir;
   yalnız helper-backed operator-managed beta satırları kadar desteklenir.
-- Bundled extension inventory bugün dar runtime-backed yüzeye sahiptir:
-  explicit bootstrap-backed smoke `PRJ-HELLO` ve `PRJ-KERNEL-API` için
-  yalnız `system_status` / `doc_nav_check` action'ları.
+- Bundled extension inventory runtime-backed olsa da support-tier ayrımı korunur:
+  `PRJ-KERNEL-API` içinde `system_status` / `doc_nav_check` shipped read-only
+  satırındadır; `project_status` / `roadmap_follow` / `roadmap_finish` ise
+  explicit write contract ile Beta (operator-managed) satırındadır.
   `PRJ-CONTEXT-ORCHESTRATION` bugün contract-only katmandadır
   (manifest/contract cleanup sonrası, runtime handler hâlâ yoktur);
   kalan manifestler doctor truth audit'inde quarantined olarak görülebilir.

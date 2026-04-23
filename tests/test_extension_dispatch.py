@@ -10,6 +10,8 @@ Covers:
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from ao_kernel.client import AoKernelClient
@@ -97,16 +99,19 @@ class TestBootstrapKernelApiExtension:
 
         assert "PRJ-KERNEL-API" in default_handler_extension_ids()
 
-    def test_kernel_api_minimum_actions_registered_by_default(self):
+    def test_kernel_api_actions_registered_by_default(self):
         client = AoKernelClient()
 
-        for action in ("system_status", "doc_nav_check"):
+        for action in (
+            "system_status",
+            "doc_nav_check",
+            "project_status",
+            "roadmap_follow",
+            "roadmap_finish",
+        ):
             record = client.action_registry.resolve(action)
             assert record is not None
             assert record.extension_id == "PRJ-KERNEL-API"
-
-        for action in ("project_status", "roadmap_follow", "roadmap_finish"):
-            assert client.action_registry.resolve(action) is None
 
     def test_kernel_api_system_status_payload_is_bounded(self):
         client = AoKernelClient()
@@ -117,12 +122,22 @@ class TestBootstrapKernelApiExtension:
         assert out["action"] == "system_status"
         assert out["extension_id"] == "PRJ-KERNEL-API"
         result = out["result"]
-        assert result["supported_actions"] == ["system_status", "doc_nav_check"]
-        assert result["deferred_actions"] == [
+        assert result["supported_actions"] == [
+            "system_status",
+            "doc_nav_check",
             "project_status",
             "roadmap_follow",
             "roadmap_finish",
         ]
+        assert result["read_only_actions"] == ["system_status", "doc_nav_check"]
+        assert result["write_actions"] == [
+            "project_status",
+            "roadmap_follow",
+            "roadmap_finish",
+        ]
+        contract = result["write_side_contract"]
+        assert contract["dry_run_default"] is True
+        assert contract["require_confirm_for_write"] is True
         assert result["params_echo"] == {"detail": True}
         truth = result["extension_truth"]
         assert truth["runtime_backed"] == 2
@@ -142,9 +157,163 @@ class TestBootstrapKernelApiExtension:
         assert ext["extension_id"] == "PRJ-KERNEL-API"
         assert ext["truth_tier"] == "runtime_backed"
         assert ext["runtime_handler_registered"] is True
-        assert ext["kernel_api_actions"] == ["system_status", "doc_nav_check"]
+        assert ext["kernel_api_actions"] == [
+            "system_status",
+            "doc_nav_check",
+            "project_status",
+            "roadmap_follow",
+            "roadmap_finish",
+        ]
         assert ext["missing_runtime_refs"] == []
         assert ext["remap_candidate_refs"] == []
+        assert result["write_side_contract"]["dry_run_default"] is True
+
+    def test_project_status_requires_workspace_root(self):
+        client = AoKernelClient()
+        out = client.call_action("project_status", {})
+
+        assert out["ok"] is False
+        assert out["status"] == "BLOCKED"
+        assert out["error"]["code"] == "WORKSPACE_ROOT_REQUIRED"
+
+    def test_project_status_dry_run_default_no_side_effect(self, tmp_path):
+        client = AoKernelClient()
+
+        out = client.call_action(
+            "project_status",
+            {"workspace_root": str(tmp_path)},
+        )
+
+        assert out["ok"] is True
+        result = out["result"]
+        assert result["dry_run"] is True
+        assert result["write_applied"] is False
+        report_path = tmp_path / result["report_path"]
+        assert not report_path.exists()
+
+    def test_project_status_write_requires_confirm_token(self, tmp_path):
+        client = AoKernelClient()
+        out = client.call_action(
+            "project_status",
+            {
+                "workspace_root": str(tmp_path),
+                "dry_run": False,
+            },
+        )
+
+        assert out["ok"] is False
+        assert out["status"] == "BLOCKED"
+        assert out["error"]["code"] == "WRITE_CONFIRM_REQUIRED"
+
+    def test_project_status_idempotent_write_contract(self, tmp_path):
+        client = AoKernelClient()
+        params = {
+            "workspace_root": str(tmp_path),
+            "dry_run": False,
+            "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS",
+            "request_id": "req-1",
+        }
+
+        first = client.call_action("project_status", params)
+        second = client.call_action("project_status", params)
+
+        assert first["ok"] is True
+        assert first["result"]["write_applied"] is True
+        assert first["result"]["idempotent"] is False
+        assert second["ok"] is True
+        assert second["result"]["write_applied"] is False
+        assert second["result"]["idempotent"] is True
+
+    def test_roadmap_follow_conflict_and_takeover(self, tmp_path):
+        client = AoKernelClient()
+        base_params = {
+            "workspace_root": str(tmp_path),
+            "dry_run": False,
+            "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS",
+        }
+
+        first = client.call_action(
+            "roadmap_follow",
+            {**base_params, "roadmap_id": "A", "step_id": "s1"},
+        )
+        conflict = client.call_action(
+            "roadmap_follow",
+            {**base_params, "roadmap_id": "B", "step_id": "s1"},
+        )
+        takeover = client.call_action(
+            "roadmap_follow",
+            {
+                **base_params,
+                "roadmap_id": "B",
+                "step_id": "s1",
+                "allow_takeover": True,
+            },
+        )
+
+        assert first["ok"] is True
+        assert conflict["ok"] is False
+        assert conflict["status"] == "BLOCKED"
+        assert conflict["error"]["code"] == "ROADMAP_CONFLICT"
+        assert takeover["ok"] is True
+        assert takeover["result"]["status"] == "following"
+
+    def test_roadmap_finish_requires_follow_then_becomes_idempotent(self, tmp_path):
+        client = AoKernelClient()
+        base_params = {
+            "workspace_root": str(tmp_path),
+            "dry_run": False,
+            "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS",
+            "roadmap_id": "R1",
+            "step_id": "s2",
+        }
+
+        not_following = client.call_action("roadmap_finish", base_params)
+        follow = client.call_action("roadmap_follow", base_params)
+        finish = client.call_action("roadmap_finish", base_params)
+        finish_again = client.call_action("roadmap_finish", base_params)
+
+        assert not_following["ok"] is False
+        assert not_following["status"] == "BLOCKED"
+        assert not_following["error"]["code"] == "ROADMAP_NOT_FOLLOWING"
+        assert follow["ok"] is True
+        assert finish["ok"] is True
+        assert finish["result"]["idempotent"] is False
+        assert finish["result"]["status"] == "finished"
+        assert finish_again["ok"] is True
+        assert finish_again["result"]["idempotent"] is True
+
+    def test_write_partial_failure_restores_previous_state(self, tmp_path, monkeypatch):
+        from ao_kernel.extensions.handlers import prj_kernel_api
+
+        client = AoKernelClient()
+        base_params = {
+            "workspace_root": str(tmp_path),
+            "dry_run": False,
+            "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS",
+            "roadmap_id": "ROLLBACK-1",
+            "step_id": "s1",
+        }
+        first = client.call_action("roadmap_follow", base_params)
+        assert first["ok"] is True
+
+        state_path = tmp_path / ".ao" / "state" / "kernel_api_roadmap_state.v1.json"
+        before = state_path.read_text(encoding="utf-8")
+
+        def _boom(path, entry):  # noqa: ARG001
+            raise RuntimeError("forced-audit-failure")
+
+        monkeypatch.setattr(prj_kernel_api, "_append_jsonl", _boom)
+        failed = client.call_action(
+            "roadmap_follow",
+            {**base_params, "step_id": "s2"},
+        )
+
+        assert failed["ok"] is False
+        assert failed["error"]["code"] == "WRITE_PARTIAL_FAILURE_ROLLBACK"
+        after = state_path.read_text(encoding="utf-8")
+        assert after == before
+        restored = json.loads(after)
+        assert restored["last_step_id"] == "s1"
 
 
 class TestBootstrapSkipsBlocked:

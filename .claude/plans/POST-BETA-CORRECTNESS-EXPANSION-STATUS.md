@@ -15,14 +15,14 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-8.1-GH-CLI-PR-LIVE-WRITE-PRODUCTIONIZATION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-8.2-KERNEL-API-WRITE-SIDE-RUNTIME-IMPLEMENTATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-- **Aktif issue:** [#289](https://github.com/Halildeu/ao-kernel/issues/289) (`PB-8.1`)
+- **Aktif issue:** [#290](https://github.com/Halildeu/ao-kernel/issues/290) (`PB-8.2`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -259,23 +259,16 @@ Not:
 
 `PB-8` kickoff aktif.
 
-1. Son kapanan slice: `PB-7.3` (`PRJ-KERNEL-API` write-side widening decision)
-2. Bugünkü aktif slice: `PB-8.1` (`gh-cli-pr` live-write productionization)
-3. Sonraki sıra (planlı): `PB-8.2` -> `PB-8.3` -> `PB-8.4`
+1. Son kapanan slice: `PB-8.1` (`gh-cli-pr` live-write productionization)
+2. Bugünkü aktif slice: `PB-8.2` (`PRJ-KERNEL-API` write-side runtime implementation)
+3. Sonraki sıra (planlı): `PB-8.3` -> `PB-8.4`
 
-`PB-8.1` implementation deltas (active branch snapshot):
+`PB-8.2` implementation odakları:
 
-1. `gh-cli-pr` live-write lane artık fail-closed precondition seti uygular:
-   explicit `--allow-live-write`, explicit `--head`, explicit `--base`,
-   disposable keyword guard.
-2. Live-write execution zinciri create -> verify (`gh pr view`) -> rollback
-   (`gh pr close`) sırasıyla zorunlu evidence check'lerine bağlandı.
-3. `--keep-live-write-pr-open` yolu side-effect riski olarak işaretlenir ve
-   raporu `blocked` döndürür (`gh_pr_live_write_keep_open_requested`).
-4. Test matrisi create/verify/rollback fail-path davranışlarını behavior-first
-   assertion'larla pinler (`tests/test_gh_cli_pr_smoke.py`).
-5. Support boundary dokümanlarında lane açıklaması bu davranışla hizalanır
-   (`docs/PUBLIC-BETA.md`, `docs/SUPPORT-BOUNDARY.md`, `docs/ADAPTERS.md`).
+1. `project_status`, `roadmap_follow`, `roadmap_finish` runtime owner/registration
+2. write-side action contract: `workspace_root`, `dry_run`, `confirm_write`
+3. deny/idempotency/conflict/partial-failure rollback test matrisi
+4. docs + status parity güncellemesi
 
 ## 9. PB-7 Closeout Snapshot
 
@@ -345,9 +338,8 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 
 1. Program roadmap: `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
 2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-3. Aktif tranche: `PB-8.1` ([#289](https://github.com/Halildeu/ao-kernel/issues/289))
+3. Aktif tranche: `PB-8.2` ([#290](https://github.com/Halildeu/ao-kernel/issues/290))
 4. Sıradaki tranche'lar:
-   - `PB-8.2` ([#290](https://github.com/Halildeu/ao-kernel/issues/290))
    - `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
    - `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
 5. Program kuralı: tek aktif runtime tranche + zorunlu kanıt paketi.
