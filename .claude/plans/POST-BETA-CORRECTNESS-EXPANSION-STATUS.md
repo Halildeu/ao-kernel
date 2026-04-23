@@ -19,7 +19,8 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **Aktif issue:** [#271](https://github.com/Halildeu/ao-kernel/issues/271)
 
 ## 2. Başlangıç Gerçeği
 
@@ -96,6 +97,22 @@ bir sonraki implementation hattına taşımaktır.
    `Beta (operator-managed)` olarak kalır.
 6. Slice plan:
    `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
+
+`PB-6.4c` active decision slice:
+
+1. Issue: [#271](https://github.com/Halildeu/ao-kernel/issues/271)
+2. Hedef: `gh-cli-pr` için `preflight-only` ile `live write` lane sınırını
+   gate tabanlı karar dilimine çevirmek
+3. Slice plan:
+   `.claude/plans/PB-6.4c-GH-CLI-PR-LIVE-WRITE-GRADUATION.md`
+
+`PB-6.4d` queued hold slice:
+
+1. Issue: [#270](https://github.com/Halildeu/ao-kernel/issues/270)
+2. Hedef: `PRJ-KERNEL-API` write-side widening önkoşullarını action bazlı
+   gate tablosuna indirmek
+3. Slice plan:
+   `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -180,15 +197,16 @@ Güncel runtime baseline:
      `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
    - first tranche complete: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265), [#266](https://github.com/Halildeu/ao-kernel/pull/266))
    - second tranche complete: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267), [#268](https://github.com/Halildeu/ao-kernel/pull/268))
-   - hold backlog: `PB-6.4c` (gh-cli-pr live write lane), `PB-6.4d` (kernel-api write-side widening)
+   - active hold-management tranche: `PB-6.4c` ([#271](https://github.com/Halildeu/ao-kernel/issues/271))
+   - queued hold tranche: `PB-6.4d` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
-3. `PB-6.4` karar notu tamamlandı; `PB-6.4c`/`PB-6.4d` için ayrı dar karar
-   dilimi açılmadan support widening implementation açılmayacak.
+3. `PB-6.4` karar notu tamamlandı; `PB-6.4c` aktif karar dilimi ve `PB-6.4d`
+   queued hold dilimi kapanmadan support widening implementation açılmayacak.
 
 ## 7. Riskler
 
@@ -204,9 +222,11 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6` umbrella altında hold backlog yönetimi:
-   - `PB-6.4c` ve `PB-6.4d` için precondition/exit kriterleri
-   - support widening implementation açmadan önce dar karar dilimi
+1. `PB-6.4c` active decision slice (`#271`)
+   - `gh-cli-pr` preflight vs live write boundary
+   - disposable sandbox + rollback + evidence completeness kapıları
+2. `PB-6.4d` queued hold slice (`#270`)
+   - kernel-api write-side widening preconditions
 
 ## 9. Güncelleme Protokolü
 
