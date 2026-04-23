@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **Aktif issue:** [#275](https://github.com/Halildeu/ao-kernel/issues/275)
 
 ## 2. Başlangıç Gerçeği
 
@@ -116,6 +116,14 @@ bir sonraki implementation hattına taşımaktır.
 4. Slice plan:
    `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
 
+`PB-6.5` kickoff:
+
+1. Issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
+2. Hedef: widened lane adayları için ops-readiness kapılarını tek tabloda
+   finalize etmek (incident + rollback + prerequisite + known-bug + parity)
+3. Slice plan:
+   `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
+
 `PB-6.2` contract slice'ı tamamlandı:
 
 1. Issue: [#251](https://github.com/Halildeu/ao-kernel/issues/251)
@@ -201,6 +209,10 @@ Güncel runtime baseline:
    - second tranche complete: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267), [#268](https://github.com/Halildeu/ao-kernel/pull/268))
    - third tranche complete: `PB-6.4c` decision closeout (`stay_preflight`, [#271](https://github.com/Halildeu/ao-kernel/issues/271))
    - fourth tranche complete: `PB-6.4d` decision closeout (`stay_deferred`, [#270](https://github.com/Halildeu/ao-kernel/issues/270))
+5. `PB-6.5` ops readiness gates
+   - active planning slice (issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275))
+   - plan:
+     `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
 
 Not:
 
@@ -227,9 +239,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6` umbrella closeout ve sonraki widening tranche seçimi (`#243`)
-   - `PB-6.4a/b/c/d` kararlarını tek backlog sırasına indir
-   - bir sonraki aktif slice'ı tek issue + tek DoD ile aç
+1. `PB-6.5` active ops-readiness slice (`#275`)
+   - lane bazlı ops gate tablosunu finalize et
+   - widening implementation öncesi tekil karar/verdict setini çıkar
 
 ## 9. Güncelleme Protokolü
 

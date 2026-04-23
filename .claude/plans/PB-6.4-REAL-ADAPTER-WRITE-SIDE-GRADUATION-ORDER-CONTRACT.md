@@ -149,6 +149,7 @@ Güncel yürütüm sırası:
    - plan:
      `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
 5. sonraki aktif hat:
-   - `PB-6` umbrella üzerinde widening implementation adayının
-     (yeni tranche) dar kapsamla seçilmesi
-   - issue: [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+   - `PB-6.5` ops readiness gates slice'ı başlatıldı
+   - issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
+   - plan:
+     `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`

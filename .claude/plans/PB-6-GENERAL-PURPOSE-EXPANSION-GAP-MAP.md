@@ -219,7 +219,11 @@ Canlı yürütme sırası bundan sonra aşağıdaki SSOT'tan takip edilir:
 
 1. `PB-6.1a`, `PB-6.1b`, `PB-6.2`, `PB-6.2b`, `PB-6.3`, `PB-6.3b` tamamlandı.
 2. `PB-6.4` karar/ordering slice tamamlandı (issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)).
-3. Aktif alt hat `PB-6.4c` (issue: [#271](https://github.com/Halildeu/ao-kernel/issues/271));
-   queued alt hat `PB-6.4d` (issue: [#270](https://github.com/Halildeu/ao-kernel/issues/270)).
-4. `PB-6.4` için karar/ordering contract:
+3. `PB-6.4c` ve `PB-6.4d` karar dilimleri tamamlandı:
+   - `PB-6.4c`: `stay_preflight` ([#271](https://github.com/Halildeu/ao-kernel/issues/271))
+   - `PB-6.4d`: `stay_deferred` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
+4. `PB-6.4` karar/ordering contract:
    `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
+5. Yeni aktif alt hat `PB-6.5`:
+   - issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
+   - plan: `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
