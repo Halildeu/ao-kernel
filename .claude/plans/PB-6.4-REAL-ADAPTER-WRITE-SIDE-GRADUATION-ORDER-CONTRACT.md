@@ -116,10 +116,16 @@ Bu beş kapıdan biri eksikse lane widening yapılmaz.
 
 1. first/second/hold lane sırası
 2. her lane için açık DoD/hold koşulu
-3. bir sonraki implementasyon hattının tekil seçimi (`PB-6.4a`)
+3. aktif implementasyon hattının tekil seçimi (`PB-6.4b`)
 
 ## 8) Sıradaki Adım
 
-Bu karar contract'ı merge olduktan sonra ilk implementasyon hattı:
+Güncel yürütüm sırası:
 
-1. `PB-6.4a` support mapping hardening (docs/truth parity slice)
+1. `PB-6.4a` support mapping hardening tamamlandı
+   - issue: [#265](https://github.com/Halildeu/ao-kernel/issues/265)
+   - PR: [#266](https://github.com/Halildeu/ao-kernel/pull/266)
+2. aktif hat: `PB-6.4b` `claude-code-cli` lane promotion readiness karar dilimi
+   - issue: [#267](https://github.com/Halildeu/ao-kernel/issues/267)
+   - plan:
+     `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
