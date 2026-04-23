@@ -30,9 +30,12 @@ giriş kapılarını netleştirmektir.
 
 ### `GP-2.1` — Deferred lane evidence-delta map (Active)
 
+- Issue: [#331](https://github.com/Halildeu/ao-kernel/issues/331)
 - Hedef: her deferred satır için mevcut kanıt, kalan kanıt boşluğu, risk seviyesi
   ve promotion önkoşulunu tek tabloda toplamak.
 - Çıktı: `Now / Next / Later` sırası + ilk uygulanabilir tranche önerisi.
+- Decision record:
+  `.claude/plans/GP-2.1-DEFERRED-LANE-EVIDENCE-DELTA-MAP.md`
 - DoD:
   1. Deferred lane tablosu tek anlamlı hale gelir.
   2. İlk aktif runtime tranche açıkça seçilir.
@@ -42,6 +45,7 @@ giriş kapılarını netleştirmektir.
 
 - Hedef: `GP-2.1` çıktısındaki ilk lane'i dar kapsamlı bir implementation dilimi
   olarak başlatmak.
+- Current candidate lane (from `GP-2.1`): adapter-path `cost_usd` reconcile completeness.
 - Kural: yalnız bir lane açılır; diğer deferred satırlar status dosyasında
   `deferred` olarak kalır.
 
