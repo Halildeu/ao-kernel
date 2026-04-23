@@ -35,7 +35,8 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
 ## 3. Mevcut Baseline
 
 - `main` temiz ve `origin/main` ile senkron.
-- Paket metadata su anda `4.0.0b1` gosteriyor.
+- `ST-1` release PR package metadata hedefi `4.0.0b2`; onceki public
+  pre-release package metadata `4.0.0b1` idi.
 - Public tag `v4.0.0-beta.1` mevcut; `main` bu tag'den ileride.
 - Public Beta support boundary dar: `review_ai_flow + codex-stub`,
   entrypoint'ler, doctor, policy command enforcement ve wheel smoke kanitli
@@ -100,7 +101,7 @@ kapatmak.
 
 ### ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
 
-**Durum:** Active via [#340](https://github.com/Halildeu/ao-kernel/issues/340)
+**Durum:** Release PR active via [#340](https://github.com/Halildeu/ao-kernel/issues/340)
 and `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`.
 
 **Amac:** Current `main`'i eski `v4.0.0-beta.1` tag'inden ayrilmis yeni bir

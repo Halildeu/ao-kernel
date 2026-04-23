@@ -1,6 +1,6 @@
 # ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
 
-**Durum:** Active
+**Durum:** Release PR active
 **Issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Hedef pre-release:** package version `4.0.0b2`, git tag
@@ -14,10 +14,10 @@ amacı bu ilerlemeyi yeni bir kanitli pre-release gate'e cevirmektir. Bu gate
 stable'a dogrudan gecis degil; stable oncesi fresh wheel, CI, docs ve PyPI
 pre-release gercegini tekrar kanitlama adimidir.
 
-## 2. Current Baseline
+## 2. Contract-Start Baseline
 
 - `main` `origin/main` ile senkron baslamali.
-- Current package metadata `4.0.0b1` gosteriyor:
+- Contract-start package metadata `4.0.0b1` gosteriyordu:
   - `pyproject.toml`
   - `ao_kernel/__init__.py`
 - Son public pre-release tag'i `v4.0.0-beta.1`.
@@ -29,6 +29,9 @@ pre-release gercegini tekrar kanitlama adimidir.
   - shipped baseline dar
   - real adapter lane'leri operator-managed beta
   - adapter-path `cost_usd` reconcile public support claim olarak deferred
+
+Release PR hedefi bu metadata'yi `4.0.0b2`ye tasimaktir. Stable `4.0.0`
+claim'i bu slice'ta yoktur.
 
 ## 3. Kapsam
 
@@ -49,6 +52,7 @@ Bu ayrim bilerek yapilir: release PR'i baslamadan once gate net olmalidir.
 | `pyproject.toml` | Package version `4.0.0b1 -> 4.0.0b2` olacak mi? |
 | `ao_kernel/__init__.py` | `__version__` package version ile birebir ayni mi? |
 | `CHANGELOG.md` | `[4.0.0b2] - <date>` entry'si beta.1 sonrasi kapanan PR/gate'leri dogru ozetliyor mu? |
+| `tests/test_pr_a6_features.py` | Version bump contract testleri yeni package version'i bekliyor mu? |
 | `docs/PUBLIC-BETA.md` | Public Beta pin `4.0.0b2` olarak guncellendi mi; support boundary genislemedi mi? |
 | `docs/UPGRADE-NOTES.md` | Explicit beta install pin `4.0.0b2` oldu mu? |
 | `docs/ROLLBACK.md` | Documented beta rollback pin `4.0.0b2` oldu mu; stable rollback komutu hard-code stable version yazmiyor mu? |
@@ -86,9 +90,14 @@ python3 -m pytest -q tests/ --ignore=tests/benchmarks --cov
 python3 -m pytest -q tests/benchmarks/test_governed_review.py tests/benchmarks/test_governed_bugfix.py
 python3 scripts/packaging_smoke.py
 python3 scripts/truth_inventory_ratchet.py --output json
-python3 examples/demo_review.py --cleanup
 python3 -m ao_kernel doctor
 ```
+
+`examples/demo_review.py` dogrulamasi wheel-installed Python ile yapilmalidir;
+`scripts/packaging_smoke.py` bunu fresh venv icinde otomatik kosar. Source
+checkout'tan plain `python3 examples/demo_review.py --cleanup` komutu gate
+degildir, cunku adapter subprocess sandbox'i host `PYTHONPATH`'ini tasimaz ve
+ambient install durumuna bagli hale gelir.
 
 Version-specific local checks:
 
@@ -191,4 +200,3 @@ Release PR veya tag publish su durumlarda durur:
    olarak gosterir.
 6. Issue [#340](https://github.com/Halildeu/ao-kernel/issues/340) closeout
    comment ile kapatilir.
-
