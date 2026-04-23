@@ -127,8 +127,8 @@ kanitli pre-release'e cevirmek.
 
 ### ST-2 — Stable Support Boundary Freeze
 
-**Durum:** Freeze PR active via
-[#344](https://github.com/Halildeu/ao-kernel/issues/344) and
+**Durum:** Completed via
+[#346](https://github.com/Halildeu/ao-kernel/pull/346) and
 `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`.
 
 **Amac:** `4.0.0` stable'in neyi destekledigini release oncesi dondurmek.
@@ -146,6 +146,10 @@ kanitli pre-release'e cevirmek.
 - Beta operator-managed yuzeyler stable iddianin icine sizmiyor.
 
 ### ST-3 — Real Adapter Certification Decision
+
+**Durum:** Parked for support widening. Not a blocker for the narrow stable
+runtime release because real-adapter lanes are not stable shipped claims after
+`ST-2`.
 
 **Amac:** Gercek adapter yuzeylerinin stable scope'a girip girmeyecegini
 kanıtla karara baglamak.
@@ -167,6 +171,10 @@ kanıtla karara baglamak.
 
 ### ST-4 — Live Write ve Rollback Rehearsal
 
+**Durum:** Parked for support widening. Not a blocker for the narrow stable
+runtime release because live-write / remote side-effect surfaces are not stable
+shipped claims after `ST-2`.
+
 **Amac:** Canli yazma yapacak yuzeyler icin geri alma ve kanit kontratini
 gercekte denemek.
 
@@ -183,6 +191,8 @@ gercekte denemek.
 - Rollback yoksa yuzey stable write scope'a alinmaz.
 
 ### ST-5 — Deferred Correctness Closure
+
+**Durum:** Next active gate.
 
 **Amac:** Stable shipped yuzeyi etkileyen correctness borcunu kapatmak veya
 bilerek stable disina almak.
