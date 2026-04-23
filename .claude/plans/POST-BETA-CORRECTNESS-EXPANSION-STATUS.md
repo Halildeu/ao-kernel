@@ -15,14 +15,14 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8.3-BUG-FIX-FLOW-RELEASE-CLOSURE-PROMOTION.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8.4` closeout lane)
+- **Aktif decision/ordering contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout tamam; `PB-9` kickoff pending)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-- **Aktif issue:** [#292](https://github.com/Halildeu/ao-kernel/issues/292) (`PB-8.4`)
+- **Aktif issue:** yok (`PB-8` closeout sonrası `PB-9` kickoff issue'su açılacak)
 
 ## 2. Başlangıç Gerçeği
 
@@ -30,9 +30,8 @@ ayrı ayrı görünür kılmak.
 - Repo bugün dar ama kanıtlı bir Public Beta / governed runtime yüzeyine sahiptir.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
-- Public Beta closeout sonrası aktif program odağı artık defer edilmiş ilk
-  correctness boşlukları değil; `PB-8.4` içinde support docs/runbook/release-gate
-  parity closeout'unu tek anlamlı hale getirmektir.
+- Public Beta closeout sonrası `PB-8.4` docs/runbook/release-gate parity
+  tranche'i tamamlandı; bir sonraki aktif hat `PB-9` kickoff planlamasıdır.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -257,11 +256,11 @@ Not:
 
 ## 8. Anlık Öncelik
 
-`PB-8` kickoff aktif.
+`PB-8` programı kapanış aşamasına geçti.
 
-1. Son kapanan slice: `PB-8.3` (`bug_fix_flow` release closure promotion)
-2. Bugünkü aktif slice: `PB-8.4` (`support widening closeout`)
-3. Sonraki sıra (planlı): `PB-9`
+1. Son kapanan slice: `PB-8.4` (`support widening closeout`)
+2. Bugünkü aktif iş: `PB-8` tracker closeout ve `PB-9` kickoff hazırlığı
+3. Sonraki sıra (planlı): `PB-9` issue + ordering contract
 
 `PB-8.2` completion kaydı:
 
@@ -291,6 +290,18 @@ Not:
    indirmek
 2. `PUBLIC-BETA` + `SUPPORT-BOUNDARY` + status parity drift'ini kapatmak
 3. `PB-8` tracker closeout kararını issue/docs kanıtlarıyla netleştirmek
+
+`PB-8.4` completion kaydı:
+
+1. Issue: [#292](https://github.com/Halildeu/ao-kernel/issues/292)
+2. PR: [#300](https://github.com/Halildeu/ao-kernel/pull/300)
+3. Merge commit: `e2c57c1`
+4. Sonuç:
+   - status SSOT referansları `PB-8.4` closeout hattına hizalandı
+   - `ROLLBACK` stable rollback satırı drift-safe hale getirildi
+   - `OPERATIONS-RUNBOOK` + `UPGRADE-NOTES` üzerinde `bug_fix_flow open_pr`
+     fail-closed guard beklentisi explicit yazıldı
+5. Karar: `PB-8` support closeout tranche'i tamamlandı, tracker closeout adımına geçildi
 
 ## 9. PB-7 Closeout Snapshot
 
@@ -354,13 +365,17 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 5. Sonraki hat: yok (explicit widening implementation tranche açılmadan
    support boundary dar kalır)
 
-## 12. PB-8 Kickoff
+## 12. PB-8 Closeout
 
-`PB-7` closeout sonrası takip edilebilir widening programı `PB-8` olarak açıldı.
+`PB-7` closeout sonrası açılan `PB-8` widening programındaki tranche'lar tamamlandı.
 
 1. Program roadmap: `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
-2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-3. Aktif tranche: `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
-4. Sıradaki tranche'lar:
-   - `PB-9` (plan açılışında issue atanacak)
-5. Program kuralı: tek aktif runtime tranche + zorunlu kanıt paketi.
+2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288) (`closeout pending`)
+3. Kapanan tranche'lar:
+   - `PB-8.1` ([#289](https://github.com/Halildeu/ao-kernel/issues/289))
+   - `PB-8.2` ([#290](https://github.com/Halildeu/ao-kernel/issues/290))
+   - `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
+   - `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
+4. Sonraki hat:
+   - `PB-9` (yeni issue + aktif ordering contract ataması ile açılacak)
+5. Program kuralı korunur: tek aktif runtime tranche + zorunlu kanıt paketi.
