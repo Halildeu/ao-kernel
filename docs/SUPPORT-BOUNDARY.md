@@ -27,6 +27,12 @@ başına yeterli değildir. Bu sınıfların support yorumu aşağıdaki gibi sa
 | `quarantined` | Runtime owner/refs/entrypoint tarafında açık gap vardır | Support dışı kalır; yalnız karar/debt izleme yüzeyi olarak ele alınır |
 
 Bu tablo, `docs/PUBLIC-BETA.md` ve status SSOT ile aynı anlamda okunur.
+`PB-9.2` debt sıralama kuralları için tek karar kaynağı:
+`.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`.
+Bu ratchet tablosu support widening kararı vermez; yalnız debt işlem sırasını
+deterministik hale getirir.
+Canlı ratchet raporu `python3 scripts/truth_inventory_ratchet.py --output json`
+ile tekrar üretilebilir.
 
 ## 2. Current line by line boundary
 

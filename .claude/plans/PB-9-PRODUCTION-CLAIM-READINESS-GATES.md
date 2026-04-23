@@ -58,6 +58,7 @@ kapılar birlikte geçerse verilir:
 ### `PB-9.2` — Truth inventory debt ratchet (Active)
 
 - Issue: [#306](https://github.com/Halildeu/ao-kernel/issues/306)
+- Karar notu: `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - Hedef: doctor truth inventory (`runtime_backed/contract_only/quarantined`)
   üzerinden promotion sırası için ölçülebilir karar tablosu çıkarmak.
 - Ana çıktı: widening adayları için objektif ve tekrar üretilebilir ranking.

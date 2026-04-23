@@ -16,6 +16,7 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md`
 - **Aktif decision/ordering contract:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md` (`PB-9.2` active)
+- **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)

@@ -80,6 +80,10 @@ eşlenir:
 | `quarantined` | Açık runtime gap vardır; support dışı/deferred sınıfında kalır |
 
 Bu kuralın amacı, inventory görünürlüğünü support widening ile karıştırmamaktır.
+`PB-9.2` kapsamında debt işlem sırası ve truth-tier tabanlı karar ratchet'i
+`.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md` içinde tutulur.
+Bu ratchet support tier'ı tek başına widen etmez.
+Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --output json`.
 
 ## Deferred
 
