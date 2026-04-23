@@ -64,18 +64,19 @@ kapılar birlikte geçerse verilir:
   üzerinden promotion sırası için ölçülebilir karar tablosu çıkarmak.
 - Ana çıktı: widening adayları için objektif ve tekrar üretilebilir ranking.
 
-### `PB-9.3` — Write/live lane evidence rehearsal (Active)
+### `PB-9.3` — Write/live lane evidence rehearsal (Completed)
 
-- Issue: [#309](https://github.com/Halildeu/ao-kernel/issues/309)
+- Issue: [#309](https://github.com/Halildeu/ao-kernel/issues/309) (`closed`)
+- PR: [#311](https://github.com/Halildeu/ao-kernel/pull/311)
 - Karar notu: `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - Hedef: write/live lane'lerde create->verify->rollback zincirini
   behavior-first kanıtla güçlendirmek.
 - Ana çıktı: live side-effect risklerinin incident/rollback açısından
   operatörce savunulabilir olması.
 
-### `PB-9.4` — Production claim decision closeout (Planned)
+### `PB-9.4` — Production claim decision closeout (Active)
 
-- Issue: `pending`
+- Issue: [#312](https://github.com/Halildeu/ao-kernel/issues/312)
 - Hedef: `promote` veya `stay_beta_operator_managed` kararını
   tek bir kapanış notuna bağlamak.
 - Ana çıktı: support boundary satırları kararla birlikte güncellenir,
