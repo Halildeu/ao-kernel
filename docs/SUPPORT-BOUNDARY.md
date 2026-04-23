@@ -53,6 +53,21 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks
 
+Operator prerequisite contract (PB-9.1):
+
+1. `claude-code-cli` lane için belirleyici komut
+   `python3 scripts/claude_code_cli_smoke.py --output text` olup
+   `overall_status: pass` dönmelidir; bu report içinde `auth_status` ve
+   `prompt_access` birlikte geçmelidir.
+2. `gh-cli-pr` preflight lane için `gh` binary + aktif auth + repo context
+   (`gh repo view`) çözümü gerekir; preflight side-effect-safe dry-run zinciridir.
+3. `gh-cli-pr` live-write probe yalnız explicit
+   `--mode live-write --allow-live-write --head ... --base ...` ile açılır.
+4. Live-write probe varsayılan disposable guard keyword `sandbox` uygular;
+   repo adı bu keyword'ü içermiyorsa lane bilerek `blocked` olur.
+5. `--keep-live-write-pr-open` lane'i bilinçli riskli kabul ettirir ve
+   support widening sinyali üretmez.
+
 `PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
 `stay_beta_operator_managed` olarak korunur; lane shipped baseline'a yükselmez.
 

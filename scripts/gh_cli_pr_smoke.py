@@ -80,7 +80,7 @@ def main() -> int:
         default="sandbox",
         help=(
             "Disposable repo guard keyword for live-write mode "
-            "(empty string disables the guard)."
+            "(default: sandbox, empty string disables the guard)."
         ),
     )
     args = parser.parse_args()
