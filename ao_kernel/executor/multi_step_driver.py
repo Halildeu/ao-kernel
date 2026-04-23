@@ -579,11 +579,41 @@ class MultiStepDriver:
             raise
 
         if exec_result.step_state != "completed":
+            invocation_result = getattr(exec_result, "invocation_result", None)
+            adapter_status = getattr(
+                invocation_result, "status", exec_result.step_state
+            )
+            error_payload: Mapping[str, Any] = {}
+            if invocation_result is not None:
+                raw_error = getattr(invocation_result, "error", None)
+                if isinstance(raw_error, Mapping):
+                    error_payload = raw_error
+
+            category = "other"
+            if adapter_status == "failed":
+                category = "invocation_failed"
+            elif adapter_status == "partial":
+                category = "timeout"
+
+            raw_category = error_payload.get("category")
+            if isinstance(raw_category, str) and raw_category.strip():
+                category = _legal_error_category(raw_category.strip())
+
+            code = "ADAPTER_FAILED"
+            raw_code = error_payload.get("code")
+            if isinstance(raw_code, str) and raw_code.strip():
+                code = raw_code.strip()
+
+            detail = f"adapter_status={adapter_status}"
+            raw_message = error_payload.get("message")
+            if isinstance(raw_message, str) and raw_message.strip():
+                detail = raw_message.strip()
+
             raise _StepFailed(
-                reason=f"adapter_status={exec_result.step_state}",
+                reason=f"adapter_status={adapter_status}: {detail}",
                 attempt=attempt,
-                category="other",
-                code="ADAPTER_FAILED",
+                category=category,
+                code=code,
             )
 
         # PR-B6 v4 §2.2 absorb: driver-owned per-capability artifact
@@ -1381,13 +1411,17 @@ class MultiStepDriver:
         on_failure = step_def.on_failure
         self._emit(run_id, "step_failed",
             {"step_name": step_def.step_name, "reason": failure.reason,
-             "attempt": failure.attempt, "code": failure.code},
+             "attempt": failure.attempt, "code": failure.code,
+             "category": _legal_error_category(failure.category)},
             step_id=self._step_id_for_attempt(step_def.step_name, failure.attempt))
 
         # CAS: append terminal failed attempt step_record
         record = self._append_failed_attempt_record(
             run_id, record, step_def,
-            attempt=failure.attempt, reason=failure.reason,
+            attempt=failure.attempt,
+            reason=failure.reason,
+            category=failure.category,
+            code=failure.code,
         )
 
         if on_failure == "transition_to_failed":
@@ -1591,9 +1625,13 @@ class MultiStepDriver:
         *,
         attempt: int,
         reason: str,
+        category: str = "other",
+        code: str = "",
     ) -> dict[str, Any]:
         step_id = self._step_id_for_attempt(step_def.step_name, attempt)
         now = _now_iso()
+        normalized_category = _legal_error_category(category)
+        normalized_code = code or "STEP_FAILED"
 
         def _mutator(cur: dict[str, Any]) -> dict[str, Any]:
             steps = list(cur.get("steps", []))
@@ -1605,8 +1643,11 @@ class MultiStepDriver:
                         **sr,
                         "state": "failed",
                         "completed_at": now,
-                        "error": {"category": "other", "code": "STEP_FAILED",
-                                  "message": reason},
+                        "error": {
+                            "category": normalized_category,
+                            "code": normalized_code,
+                            "message": reason,
+                        },
                     }
                     cur["steps"] = steps
                     return cur
@@ -1619,8 +1660,11 @@ class MultiStepDriver:
                 "started_at": now,
                 "completed_at": now,
                 "attempt": attempt,
-                "error": {"category": "other", "code": "STEP_FAILED",
-                          "message": reason},
+                "error": {
+                    "category": normalized_category,
+                    "code": normalized_code,
+                    "message": reason,
+                },
             }
             if step_def.adapter_id:
                 entry["adapter_id"] = step_def.adapter_id

@@ -340,6 +340,134 @@ class TestBundledBugFixFlow:
         assert pr_opened["payload"]["pr_url"].endswith("/pull/999")
         assert pr_opened["payload"]["pr_number"] == 999
 
+    def test_open_pr_failure_preserves_adapter_error_metadata(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Open-PR failure path should keep adapter error code/category
+        on both evidence stream and persisted step record.
+        """
+        install_workspace(tmp_path)
+        _copy_bundled_defaults(tmp_path)
+        _install_bugfix_repo(tmp_path)
+
+        run_id = seed_run(tmp_path, "bug_fix_flow")
+        driver = build_driver(tmp_path, policy_loader=_policy_with_pythonpath())
+
+        import ao_kernel.ci as ci_module
+        from ao_kernel.executor import executor as executor_module
+
+        original_invoke_cli = executor_module.invoke_cli
+
+        def _mock_run_pytest(*args, **kwargs):
+            return CIResult(
+                check_name="pytest",
+                command=("python3", "-m", "pytest"),
+                status="pass",
+                exit_code=0,
+                duration_seconds=0.01,
+                stdout_tail="mocked pytest pass",
+                stderr_tail="",
+            )
+
+        def _dispatch_cli(
+            *,
+            manifest,
+            input_envelope,
+            sandbox,
+            worktree,
+            budget,
+            workspace_root,
+            run_id,
+            resolved_invocation=None,
+        ):
+            if manifest.adapter_id != "gh-cli-pr":
+                return original_invoke_cli(
+                    manifest=manifest,
+                    input_envelope=input_envelope,
+                    sandbox=sandbox,
+                    worktree=worktree,
+                    budget=budget,
+                    workspace_root=workspace_root,
+                    run_id=run_id,
+                    resolved_invocation=resolved_invocation,
+                )
+
+            log_path = (
+                workspace_root
+                / ".ao"
+                / "evidence"
+                / "workflows"
+                / run_id
+                / f"adapter-{manifest.adapter_id}.stdout.log"
+            )
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
+            envelope = {
+                "status": "failed",
+                "error": {
+                    "code": "PR_CREATE_FAILED",
+                    "category": "invocation_failed",
+                    "message": "mocked gh pr create failed",
+                },
+                "cost_actual": {"time_seconds": 0.4},
+            }
+            result = _invocation_from_envelope(
+                envelope,
+                log_path=log_path,
+                elapsed=float(envelope["cost_actual"]["time_seconds"]),
+                command="benchmark-mock[gh-cli-pr]",
+                manifest=manifest,
+            )
+            return result, budget
+
+        with patch(
+            "ao_kernel.executor.executor.invoke_cli",
+            side_effect=_dispatch_cli,
+        ):
+            with patch.object(ci_module, "run_pytest", side_effect=_mock_run_pytest):
+                first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
+                assert first.final_state == "waiting_approval"
+                assert first.resume_token is not None
+                final = driver.resume_workflow(
+                    run_id,
+                    first.resume_token,
+                    payload={"decision": "granted"},
+                )
+
+        assert final.final_state == "failed"
+        record, _ = load_run(tmp_path, run_id)
+        run_error = record.get("error") or {}
+        assert run_error.get("category") == "invocation_failed"
+        assert run_error.get("code") == "PR_CREATE_FAILED"
+
+        step_records = {
+            step["step_name"]: step for step in record.get("steps", [])
+        }
+        assert step_records["open_pr"]["state"] == "failed"
+        step_error = step_records["open_pr"].get("error") or {}
+        assert step_error.get("category") == "invocation_failed"
+        assert step_error.get("code") == "PR_CREATE_FAILED"
+
+        events = [
+            json.loads(line)
+            for line in (
+                tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
+            ).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        kinds = [event.get("kind") for event in events]
+        assert "pr_opened" not in kinds
+        open_pr_failed = [
+            event for event in events
+            if event.get("kind") == "step_failed"
+            and event.get("payload", {}).get("step_name") == "open_pr"
+        ]
+        assert open_pr_failed, kinds
+        payload = open_pr_failed[-1]["payload"]
+        assert payload.get("category") == "invocation_failed"
+        assert payload.get("code") == "PR_CREATE_FAILED"
+
 
 class TestSimpleFlowEvidenceOrder:
     """Verify the canonical event order (workflow_started → step_* →
