@@ -89,7 +89,7 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `bug_fix_flow` release closure | Deferred | `PB-8.3` closeout kararı: `stay_deferred`. Workflow-level `open_pr` adımı explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına alındı ve failure metadata/evidence parity güçlendirildi; buna rağmen disposable/live rollback zinciri workflow runtime contract'ında promoted support kapısı değil |
+| `bug_fix_flow` release closure | Deferred | `PB-8.3` closeout kararı (`stay_deferred`) `GP-1.3` re-evaluation ile yeniden doğrulandı. Workflow-level `open_pr` adımı explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına alındı ve failure metadata/evidence parity güçlendirildi; buna rağmen disposable/live rollback zinciri workflow runtime contract'ında promoted support kapısı değil |
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Live-write probe create->verify->rollback guard'larıyla güçlense de gerçek remote PR açılışı hâlâ destek vaadi değildir; lane operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
