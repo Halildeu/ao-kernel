@@ -16,7 +16,8 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` (`ST-1 active`)
+- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` (`ST-1 completed`)
+- **Aktif decision/ordering contract:** `ST-2` issue/contract açılacak
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -41,8 +42,8 @@ ayrı ayrı görünür kılmak.
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
-- **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`open`)
-- **Aktif issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`ST-1 pre-release gate`)
+- **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
+- **Aktif issue:** `ST-2` için açılacak
 
 ## 2. Başlangıç Gerçeği
 
@@ -90,16 +91,16 @@ ayrı ayrı görünür kılmak.
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
 | `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
-| `ST-1` releasable pre-release gate | Active ([#340](https://github.com/Halildeu/ao-kernel/issues/340)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak | release contract + exact file/test/publish checklist |
+| `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 
 ## 5. Şimdi
 
-### `ST-1` — releasable pre-release gate (`4.0.0b2` release PR)
+### `ST-1` — releasable pre-release gate (`4.0.0b2`) completed
 
-Aktif iş artık production-stable roadmap'teki `ST-1` kapısına hazırlıktır.
-Issue [#340](https://github.com/Halildeu/ao-kernel/issues/340) açıldı ve
-aktif contract
-`.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` olarak belirlendi.
+Production-stable roadmap'teki `ST-1` kapısı tamamlandı. Issue
+[#340](https://github.com/Halildeu/ao-kernel/issues/340) için aktif contract
+`.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` olarak belirlendi ve
+release/publish sonucu aynı dosyaya işlendi.
 `GP-2.2b` deterministic assertion upgrade issue'su
 [#336](https://github.com/Halildeu/ao-kernel/issues/336) kapanmış, PR
 [#337](https://github.com/Halildeu/ao-kernel/pull/337) merge edilmiştir.
@@ -115,22 +116,24 @@ Son GP-2.2 kararı:
 4. [#333](https://github.com/Halildeu/ao-kernel/issues/333) merge sonrası
    closeout comment ile kapatılır.
 
-Bu slice'ın işi release publish değildir; release PR'ı başlamadan önce exact
-dosya listesi, karar soruları, local/CI/publish kanıt komutları ve blocker
-listesi yazılı hale getirilir.
-
 Contract PR [#341](https://github.com/Halildeu/ao-kernel/pull/341) ile
-tamamlandı. Aktif alt adım artık `4.0.0b2` release PR'ıdır:
+tamamlandı. Release PR [#342](https://github.com/Halildeu/ao-kernel/pull/342)
+ile merge edildi ve tag/publish doğrulaması tamamlandı:
 
 1. `pyproject.toml` ve `ao_kernel/__init__.py` version surfaces
-   `4.0.0b2`ye çekilir.
+   `4.0.0b2`ye çekildi.
 2. `CHANGELOG.md`, `docs/PUBLIC-BETA.md`, `docs/UPGRADE-NOTES.md` ve
-   `docs/ROLLBACK.md` beta pinleri hizalanır.
-3. Local validation + full CI + packaging-smoke geçmeden tag/publish yoktur.
-4. Merge sonrası tag hedefi `v4.0.0-beta.2`dir.
+   `docs/ROLLBACK.md` beta pinleri hizalandı.
+3. Full CI + packaging-smoke geçti.
+4. Tag `v4.0.0-beta.2` `main` merge commit'i `bc1bca7` üzerine pushlandı.
+5. `publish.yml` run `24863200216` success oldu.
+6. PyPI `https://pypi.org/project/ao-kernel/4.0.0b2/` `HTTP/2 200` döndü.
+7. Fresh venv exact pin install `ao-kernel==4.0.0b2`, üç entrypoint ve
+   installed-package `examples/demo_review.py --cleanup` smoke geçti.
 
 Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
-`ST-1` bloğudur.
+`ST-1` closeout bloğudur. Sonraki aday aktif hat `ST-2` stable support
+boundary freeze'dir; yeni issue açılmadan stable scope genişletilmeyecek.
 
 ### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
@@ -324,15 +327,17 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-1` pre-release gate hazırlığı.
+Aktif slice: `ST-1` pre-release gate closeout tamamlandı; sıradaki aday hat
+`ST-2` stable support boundary freeze.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-3. Aktif contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
-4. Sonraki iş: `4.0.0b2` release PR'ını contract'a göre merge et.
-5. Stable release'e doğrudan geçilmez; önce fresh wheel/PyPI pre-release
-   kanıtı toplanır.
+3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
+4. Sonraki iş: `ST-2` için issue/contract açıp stable support boundary
+   freeze kararını yazılı hale getir.
+5. Stable release'e doğrudan geçilmez; önce ST-2 boundary freeze ve sonraki
+   stable gates kapanır.
 
 `PB-8.2` completion kaydı:
 
