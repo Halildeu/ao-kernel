@@ -33,6 +33,18 @@ Bu tranche support widening kararı üretmez; yalnız completeness gap'ini kapat
   - `tests/benchmarks/*` (özellikle cost-source/reconcile assertion katmanı)
 - Çıktı: kapsamı sınırlı assertion matrisi (`required` vs `nice-to-have`)
 
+#### Canonical Assertion Matrisi (`GP-2.2a` capture)
+
+| Alan | Required assertion | Kaynak yüzey |
+|---|---|---|
+| Activation gate | `policy.enabled=false` veya `cost_actual is None` ise reconcile no-op kalır | `ao_kernel/cost/middleware.py::post_adapter_reconcile` |
+| Usage-missing path | `tokens_input/tokens_output` eksikse `llm_usage_missing` emit edilir, `llm_spend_recorded` edilmez | `post_adapter_reconcile` + `tests/test_post_adapter_reconcile.py` |
+| Success path event | reconcile başarılıysa `llm_spend_recorded` payload'ında `source=adapter_path`, `run_id`, `step_id`, `attempt`, `cost_usd` alanları bulunur | `post_adapter_reconcile` emit bloğu + testler |
+| Budget mutation | usage-missing audit-only path budget'i değiştirmez; success path `budget.cost_usd.remaining` değerini düşürür | `apply_spend_with_marker` budget mutator + `tests/test_post_adapter_reconcile.py` |
+| Idempotency | aynı `(run_id, step_id, attempt, billing_digest)` tekrarında ikinci çağrı çift harcama üretmez | `tests/test_post_adapter_reconcile.py` duplicate digest vakaları |
+| Executor ordering | reconcile terminal eventten önce çağrılır; reconcile hatası step-level failure olarak yüzeye çıkar | `ao_kernel/executor/executor.py` (post-adapter reconcile bloğu) |
+| Benchmark evidence | full-mode lane en az bir `llm_spend_recorded(source=adapter_path)` eventini doğrular | `tests/benchmarks/assertions.py::assert_spend_recorded_event` |
+
 ### `GP-2.2b` — Deterministic assertion upgrade (Pending)
 
 - Hedef: `cost_usd` reconcile davranışı için doğrudan kırmızı/yeşil davranış
