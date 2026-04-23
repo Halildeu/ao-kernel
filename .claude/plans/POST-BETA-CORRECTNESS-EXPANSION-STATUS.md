@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-6-GENERAL-PURPOSE-EXPANSION-GAP-MAP.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#277](https://github.com/Halildeu/ao-kernel/issues/277)
+- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 2. Başlangıç Gerçeği
 
@@ -127,12 +127,15 @@ bir sonraki implementation hattına taşımaktır.
 3. Slice plan:
    `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
 
-`PB-6.6` kickoff:
+`PB-6.6` decision closeout tamamlandı:
 
 1. Issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277)
-2. Hedef: `claude-code-cli` lane için ops-gated support-tier closeout kararını
-   tekilleştirmek
-3. Slice plan:
+2. Final verdict: `stay_beta_operator_managed`
+3. Gerekçe özeti:
+   - smoke repeatability var, fakat lane hâlâ operator-env bağımlı
+   - `KB-001` ve `KB-002` bounded/open olarak kalıyor
+   - support tier widening yerine narrow beta sınırı korunuyor
+4. Slice plan:
    `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
@@ -225,7 +228,7 @@ Güncel runtime baseline:
    - plan:
      `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
 6. `PB-6.6` claude-code-cli lane ops-gated promotion closeout
-   - active decision slice (issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277))
+   - completed decision closeout (issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277))
    - plan:
      `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
 
@@ -254,9 +257,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.6` active ops-gated promotion closeout (`#277`)
-   - `claude-code-cli` lane için support-tier verdict tekilleştir
-   - kararın docs/status/issue yüzeylerinde tek anlamlı kalmasını sağla
+1. `PB-6` umbrella (`#243`) altında bir sonraki dar tranche'i seç
+   - inventory truth gap ve support widening sırasını yeniden doğrula
+   - tek issue + tek plan + tek DoD disipliniyle yeni alt slice aç
 
 ## 9. Güncelleme Protokolü
 

@@ -55,7 +55,7 @@ istemek gerekir.
 | Yüzey | Durum | Not |
 |---|---|---|
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
-| `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir |
+| `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir. `PB-6.6` closeout verdict'i: `stay_beta_operator_managed` |
 | `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight only) | `python3 scripts/gh_cli_pr_smoke.py` auth/repo visibility + `gh pr create --dry-run` zincirini doğrular; gerçek remote PR açmaz |
 | Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
 
