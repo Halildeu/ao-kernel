@@ -159,3 +159,17 @@ T2 progress update (2026-04-23):
 3. Guard davranışı, başarı/failure zinciri ve benchmark full-flow yolu
    behavior-first testlerle pinlenecek; ardından T3 karar/parity turuna
    geçilecek.
+
+T3 closeout update (2026-04-23):
+
+1. [#298](https://github.com/Halildeu/ao-kernel/pull/298) merge edildi:
+   workflow-level `open_pr` guard runtime'a alındı ve integration/benchmark
+   testleri yeni explicit opt-in kontratına hizalandı.
+2. Final decision: `stay_deferred`.
+   - `bug_fix_flow` lane'inde side-effect risk azaltımı ve evidence parity
+     kapanmış olsa da disposable/live rollback zinciri workflow runtime support
+     contract'ında promoted seviyeye çıkmadı.
+3. Decision parity:
+   - `docs/PUBLIC-BETA.md` + `docs/SUPPORT-BOUNDARY.md` deferred satırları
+     `PB-8.3` verdict'i ile hizalandı.
+4. Sonraki aktif hat: `PB-8.4` support widening closeout.

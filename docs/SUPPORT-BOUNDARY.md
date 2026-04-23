@@ -13,7 +13,7 @@ operator-only, or just contract inventory?"
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
 | Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit write contract, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
-| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-7.2` verdict for bug_fix_flow: `stay_deferred`) |
+| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-8.3` verdict for bug_fix_flow: `stay_deferred`) |
 
 ### 1.1 Truth inventory to support mapping
 
@@ -61,6 +61,11 @@ disposable repo, explicit `--head` + `--base`) ve create -> verify -> rollback
 zincirine taşınmıştır. `--keep-live-write-pr-open` seçeneği lane'i riskli kabul
 eder ve rapor `blocked` döner. Bu probe'un varlığı tek başına live remote PR
 opening support tier'ını widen etmez; public boundary satırı deferred kalır.
+
+`PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
+explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
+alınmıştır. Bu guard accidental side-effect riskini düşürür, fakat tek başına
+support boundary widening kararı üretmez; lane deferred kalır.
 
 ### Contract inventory
 

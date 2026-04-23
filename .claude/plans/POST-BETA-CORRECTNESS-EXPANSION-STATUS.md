@@ -259,9 +259,9 @@ Not:
 
 `PB-8` kickoff aktif.
 
-1. Son kapanan slice: `PB-8.2` (`PRJ-KERNEL-API` write-side runtime implementation)
-2. Bugünkü aktif slice: `PB-8.3` (`bug_fix_flow` release closure promotion)
-3. Sonraki sıra (planlı): `PB-8.4`
+1. Son kapanan slice: `PB-8.3` (`bug_fix_flow` release closure promotion)
+2. Bugünkü aktif slice: `PB-8.4` (`support widening closeout`)
+3. Sonraki sıra (planlı): `PB-9`
 
 `PB-8.2` completion kaydı:
 
@@ -271,24 +271,26 @@ Not:
 4. Sonuç: `PRJ-KERNEL-API` write-side action'lar runtime-backed hale geldi ve
    behavior-first test matrisi + docs parity merge edildi.
 
-`PB-8.3` implementation odakları:
+`PB-8.3` completion kaydı:
 
-1. `bug_fix_flow` lane'inde side-effect safety/rollback kontratını workflow
-   düzeyinde enforce etmek
-2. `open_pr` path evidence completeness + retry/approval/apply zinciri
-   davranışını negatif senaryolarla pinlemek
-3. release-closure sonucu için kanıta dayalı tek karar üretmek:
-   `promote` veya `stay_deferred`
-4. `PUBLIC-BETA` + `SUPPORT-BOUNDARY` + status parity güncellemesi
+1. Issue: [#291](https://github.com/Halildeu/ao-kernel/issues/291)
+2. PR'ler:
+   - [#297](https://github.com/Halildeu/ao-kernel/pull/297) (`f09d9fa`)
+   - [#298](https://github.com/Halildeu/ao-kernel/pull/298) (`99f9ed3`)
+3. Sonuç:
+   - `open_pr` failure metadata parity (run + step + event) güçlendirildi
+   - `bug_fix_flow` `open_pr` adımı workflow-level explicit live-write guard
+     (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına alındı
+4. Karar: `stay_deferred`
+   - gerekçe: guard + evidence iyileştirmelerine rağmen disposable/live rollback
+     zinciri workflow runtime contract'ında promoted support kapısı değildir.
 
-`PB-8.3` T2 progress (kapanan dilimler):
+`PB-8.4` implementation odakları:
 
-1. [#297](https://github.com/Halildeu/ao-kernel/pull/297) (`f09d9fa`) merge:
-   `open_pr` failure path'inde adapter error metadata (`code/category/message`)
-   run error + step error + `step_failed` payload seviyesinde korunuyor.
-2. Bu branchte aktif dilim: `open_pr` için explicit live-write guard
-   (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) + behavior-first test pinleri.
-   Hedef: workflow-level side-effect safety gap'ini dar kapsamda kapatmak.
+1. `PB-8.1`..`PB-8.3` kararlarını support docs yüzeyinde tek anlamlı closeout'a
+   indirmek
+2. `PUBLIC-BETA` + `SUPPORT-BOUNDARY` + status parity drift'ini kapatmak
+3. `PB-8` tracker closeout kararını issue/docs kanıtlarıyla netleştirmek
 
 ## 9. PB-7 Closeout Snapshot
 
