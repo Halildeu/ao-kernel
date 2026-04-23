@@ -88,7 +88,7 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Readiness probe varlığına rağmen gerçek remote PR açılışı henüz destek vaadi değildir; live-write lane yalnız operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
-| `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | Manifest ve runtime handler yüzeyi ilk tranche'ta bilerek iki read-only action'a daraltıldı; workspace/write-side contract netleşmeden desteklenmez |
+| `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | `PB-7.3` kararı `stay_deferred`: runtime owner/entrypoint kaydı bu action'lar için hâlâ yok; behavior/safety/rollback kapıları tamamlanmadan support widening açılmaz |
 
 ## Known Bugs
 
