@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-7.2-BUGFIX-FLOW-SUPPORT-GRADUATION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-7.3-KERNEL-API-WRITE-SIDE-WIDENING-DECISION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#283](https://github.com/Halildeu/ao-kernel/issues/283) (`PB-7.2`)
+- **Aktif issue:** [#285](https://github.com/Halildeu/ao-kernel/issues/285) (`PB-7.3`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -255,11 +255,11 @@ Not:
 
 ## 8. Anlık Öncelik
 
-`PB-7.2` tamamlandı.
+`PB-7.3` tamamlandı.
 
-1. Son kapanan slice: `PB-7.2` (`bug_fix_flow` support-boundary graduation decision)
-2. Karar: `stay_deferred` (support widening açılmadı)
-3. Sonraki aktif hat: `PB-7.3` (`PRJ-KERNEL-API` write-side widening preconditions)
+1. Son kapanan slice: `PB-7.3` (`PRJ-KERNEL-API` write-side widening decision)
+2. Karar: `stay_deferred` (write-side support widening açılmadı)
+3. Sonraki aktif hat: yok (yeni widening implementation slice'ı açılmadı)
 
 ## 9. Program Closeout (Final)
 
@@ -311,3 +311,14 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    write-side support widening için workflow-level side-effect safety kapıları
    henüz promoted kontrat seviyesinde değil.
 5. Sonraki hat: `PB-7.3` (`PRJ-KERNEL-API` write-side widening preconditions)
+
+`PB-7.3` closeout:
+
+1. Issue: [#285](https://github.com/Halildeu/ao-kernel/issues/285)
+2. Plan: `.claude/plans/PB-7.3-KERNEL-API-WRITE-SIDE-WIDENING-DECISION.md`
+3. Karar: `stay_deferred`
+4. Gerekçe özeti: write-side action'lar runtime registry'de açılmadı
+   (`project_status`, `roadmap_follow`, `roadmap_finish` owner yok); behavior +
+   safety + rollback kapıları widening için hâlâ tamamlanmadı.
+5. Sonraki hat: yok (explicit widening implementation tranche açılmadan
+   support boundary dar kalır)
