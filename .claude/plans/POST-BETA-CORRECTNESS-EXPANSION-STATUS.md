@@ -13,6 +13,7 @@ ayrı ayrı görünür kılmak.
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
+- **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
@@ -101,23 +102,28 @@ Güncel runtime baseline:
 3. Support widening yine code path + behavior tests + smoke/doctor evidence +
    docs parity birlikte mevcut olmadan yapılmayacak.
 
-`PB-6.3` karar soruları:
+`PB-6.3` karar sonucu:
 
-1. `PRJ-CONTEXT-ORCHESTRATION` promote candidate mı, remap-needed mı,
-   quarantine-keep mi, yoksa retire candidate mı?
-2. Yaşayan runtime karşılığı varsa explicit handler/owner boundary hangi
-   modül ve action setiyle sınırlandırılmalı?
-3. Missing/remap refs hangi yaşayan package-local ref'lere bağlanabilir?
-4. Minimum runtime-backed tranche varsa hangi action'lar side-effect-free ve
-   behavior-testable?
+1. `PRJ-CONTEXT-ORCHESTRATION` `remap-needed` later candidate olarak kalır.
+2. Bu slice runtime behavior değiştirmez ve support boundary genişletmez.
+3. Extension bugün `truth_tier=quarantined`,
+   `runtime_handler_registered=False`, `remap_candidate_refs=5`,
+   `missing_runtime_refs=4` durumundadır.
+4. Canlı runtime owner sinyali `ao_kernel.context` paketidir; fakat extension
+   handler owner henüz yoktur.
+5. Gelecek runtime promotion ancak
+   `ao_kernel/extensions/handlers/prj_context_orchestration.py` gibi explicit
+   bir handler, dar `kernel_api_actions`, behavior-first tests ve docs parity
+   ile yapılabilir.
 
 Beklenen çıktı:
 
-1. `PRJ-CONTEXT-ORCHESTRATION` için written decision table çıkacak.
-2. Eğer promote edilecekse ayrı implementation contract açılacak.
-3. Eğer promote edilmeyecekse quarantine/retire gerekçesi status ve issue
-   yüzeyinde kapanacak.
-4. `PRJ-RELEASE-AUTOMATION`, `PB-6.3` kapanana kadar başlamayacak.
+1. Written decision table:
+   `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`.
+2. Manifest ref cleanup ve handler/action contract ayrı follow-up slice'a
+   ayrılacak.
+3. `PRJ-RELEASE-AUTOMATION`, context orchestration contract cleanup kararı
+   yazılmadan başlamayacak.
 
 ## 6. Sonra
 
@@ -127,14 +133,17 @@ Beklenen çıktı:
    - completed on `main` via [#255](https://github.com/Halildeu/ao-kernel/pull/255)
 2. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
    - active via [#256](https://github.com/Halildeu/ao-kernel/issues/256)
-3. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
+   - decision: `remap-needed`, keep non-shipped until contract cleanup
+3. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
+   - next slice after `PB-6.3` merge
+4. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
-3. `PB-6.3` merge olmadan başka extension promotion hattı başlamayacak.
+3. `PB-6.3b` merge olmadan başka extension promotion hattı başlamayacak.
 
 ## 7. Riskler
 
@@ -151,6 +160,7 @@ Not:
 Bugünden itibaren doğru sıra:
 
 1. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
+2. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
 
 ## 9. Güncelleme Protokolü
 
