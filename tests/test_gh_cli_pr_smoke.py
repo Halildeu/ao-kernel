@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 
@@ -855,3 +856,41 @@ def test_live_write_rollback_failure_blocks_lane() -> None:
         check for check in report.checks if check.name == "pr_live_write_rollback"
     )
     assert rollback_check.status == "fail"
+
+
+def test_write_smoke_report_json_persists_canonical_payload(
+    tmp_path: Path,
+) -> None:
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(
+                cmd,
+                stdout=(
+                    "Would have created a Pull Request with:\n"
+                    "Title: ao-kernel gh-cli-pr smoke probe\n"
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=tmp_path,
+    )
+    output_path = tmp_path / "artifacts" / "gh-cli-pr-smoke.report.json"
+    resolved = smoke.write_smoke_report_json(report, output_path)
+
+    assert resolved == output_path.resolve()
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["overall_status"] == "pass"
+    assert payload["adapter_id"] == "gh-cli-pr"
+    assert payload["repo_name"] == "Halildeu/ao-kernel"
+    assert payload["checks"][-1]["name"] == "pr_dry_run"

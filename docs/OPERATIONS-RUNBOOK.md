@@ -38,6 +38,8 @@ python3 scripts/gh_cli_pr_smoke.py --output text
 python3 scripts/kernel_api_write_smoke.py --output text
 # Optional readiness probe (live-write, explicit opt-in + disposable guard):
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
+# Optional: persist canonical JSON evidence artifact
+# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch> --output json --report-path /tmp/gh-cli-pr-live-write.report.json
 ```
 
 Prerequisite contract (operator-managed lanes):
@@ -53,6 +55,23 @@ Prerequisite contract (operator-managed lanes):
    taşımıyorsa probe bilerek `blocked` döner.
 5. `--keep-live-write-pr-open` lane'i riskli kabul ettirir; bu sonucu support
    widening sinyali olarak yorumlama.
+
+Deterministic command/evidence pack (`GP-1.2` live-write rehearsal):
+
+```bash
+ARTIFACT_ROOT=/tmp/ao-kernel-gh-cli-pr-live-write
+mkdir -p "$ARTIFACT_ROOT"
+python3 scripts/gh_cli_pr_smoke.py \
+  --mode live-write \
+  --allow-live-write \
+  --head <feature-branch> \
+  --base <target-branch> \
+  --output json \
+  --report-path "$ARTIFACT_ROOT/gh-cli-pr-live-write.report.json"
+```
+
+Bu komut paketi support widening kararı için canonical evidence girdisidir;
+`report_path` dosyası issue/PR karar notuna doğrudan bağlanır.
 
 `bug_fix_flow` içinde workflow-level `open_pr` side effect'i varsayılan
 fail-closed guard ile gelir. `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` olmadan
@@ -118,6 +137,8 @@ For any Sev 1 or Sev 2 incident, collect:
   `.ao/evidence/workflows/<run_id>/events.jsonl`
 - adapter evidence path if an adapter lane ran:
   `.ao/evidence/workflows/<run_id>/adapter-*.jsonl`
+- helper smoke report artifact path (opsiyonel ama önerilen):
+  `--report-path` ile üretilen `gh-cli-pr-live-write.report.json`
 
 ## 5. Exit criteria
 
