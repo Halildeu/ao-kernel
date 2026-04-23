@@ -1,6 +1,6 @@
 # ST-5 — Deferred Correctness Closure
 
-**Durum:** Active contract via
+**Durum:** Closeout PR active via
 [#348](https://github.com/Halildeu/ao-kernel/issues/348)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-2` support boundary freeze completed via
@@ -27,6 +27,22 @@ bir kategoriye düşer:
 | Roadmap/spec demo live-support | Deferred/spec-only | Canlı demo yüzeyine çevrilecek mi, yoksa spec-only kalacak mı? | `retire` veya `deferred` |
 | Adapter-path `cost_usd` public support | Deferred | Internal hook + behavior evidence public support claim için yeterli mi? | Açık promotion kanıtı yoksa `deferred` |
 | Yeni shipped-baseline bug | Unknown | Stable blocker mı? | Fix edilene veya scope dışına alınana kadar blocker |
+
+## 2.1 Closeout Decision
+
+ST-5 decision inventory:
+
+| Kalem | Final kategori | Kanıt / gerekçe | Sonraki gate |
+|---|---|---|---|
+| `bug_fix_flow` release closure | `deferred` | `PB-8.3` ve `GP-1.3` kararları `stay_deferred`; `open_pr` adımı explicit opt-in guard arkasında, ancak disposable/live rollback zinciri stable support kanıtı değil | Ayrı runtime closure + rollback gate gerekir |
+| `gh-cli-pr` full E2E remote PR opening | `deferred` | Preflight ve live-write readiness probe operator-managed beta; gerçek remote PR açılışı support claim değil | ST-4 tarzı live-write rollback rehearsal gerekir |
+| Roadmap/spec demo live-support | `deferred` / spec-only | `docs/roadmap/DEMO-SCRIPT-SPEC.md` canlı demo kontratı değil; shipped demo `examples/demo_review.py` olarak kalır | Yeni demo yüzeyi istenirse ayrı shipped-smoke PR gerekir |
+| Adapter-path `cost_usd` public support | `deferred` | `GP-2.2` runtime/evidence completeness doğrulandı, ama public support boundary genişletilmedi | Public support promotion için docs + behavior + operator evidence PR gerekir |
+| Yeni shipped-baseline bug | None known | `docs/KNOWN-BUGS.md` shipped baseline blocker status `none currently known` diyor | Yeni blocker bulunursa stable gate durur |
+
+Sonuç: ST-5 kapsamında stable shipped baseline'a yeni yüzey eklenmedi.
+Deferred kalemlerin hiçbiri stable `4.0.0` dar runtime claim'ini bloklamaz,
+çünkü `ST-2` boundary bu yüzeyleri stable dışına almıştır.
 
 ## 3. Kapsam Dışı
 

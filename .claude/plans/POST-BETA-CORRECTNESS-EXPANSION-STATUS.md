@@ -354,7 +354,7 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-5` deferred correctness closure contract.
+Aktif slice: `ST-5` deferred correctness closure closeout.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
@@ -366,10 +366,11 @@ Aktif slice: `ST-5` deferred correctness closure contract.
    real-adapter/live-write promotion istenirse ayrı gate gerekir.
 7. Aktif issue: [#348](https://github.com/Halildeu/ao-kernel/issues/348)
 8. Aktif contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-9. Sonraki iş: `ST-5` altında deferred correctness kalemlerini `ship`, `beta`,
-   `deferred` veya `retire` kararına indirmek.
+9. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
+   promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
 10. Stable release'e doğrudan geçilmez; önce `ST-5`, `ST-6` ve `ST-7` gates
    kapanır.
+11. Sonraki gate: `ST-6` operations readiness.
 
 `PB-8.2` completion kaydı:
 

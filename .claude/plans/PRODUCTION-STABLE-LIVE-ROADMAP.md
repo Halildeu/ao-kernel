@@ -192,8 +192,9 @@ gercekte denemek.
 
 ### ST-5 — Deferred Correctness Closure
 
-**Durum:** Active via [#348](https://github.com/Halildeu/ao-kernel/issues/348)
-and `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`.
+**Durum:** Closeout PR active via
+[#348](https://github.com/Halildeu/ao-kernel/issues/348) and
+`.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`.
 
 **Amac:** Stable shipped yuzeyi etkileyen correctness borcunu kapatmak veya
 bilerek stable disina almak.
@@ -212,6 +213,8 @@ bilerek stable disina almak.
 - Iki kategoriye birden yazilan yuzey kalmaz.
 
 ### ST-6 — Operations Readiness
+
+**Durum:** Next active gate.
 
 **Amac:** Stable release'i isletilebilir hale getirmek.
 
