@@ -1,38 +1,31 @@
 {
   "ai_context_refs": [
-    "AGENTS.md",
-    "docs/OPERATIONS/EXTENSIONS.md",
-    "docs/OPERATIONS/SSOT-MAP.md",
-    "policies/policy_kernel_api_guardrails.v1.json",
-    "schemas/kernel-api-request.schema.v1.json",
-    "schemas/kernel-api-response.schema.v1.json",
-    "src/prj_kernel_api/adapter.py"
+    "extensions/handlers/prj_kernel_api.py",
+    "_internal/prj_kernel_api/llm_router.py",
+    "defaults/policies/policy_kernel_api_guardrails.v1.json",
+    "defaults/schemas/kernel-api-request.schema.v1.json",
+    "defaults/schemas/kernel-api-response.schema.v1.json"
   ],
   "compat": {
     "core_max": "",
     "core_min": "0.0.0",
     "notes": []
   },
-  "docs_ref": "docs/OPERATIONS/EXTENSIONS.md#ext-PRJ-KERNEL-API",
+  "docs_ref": "",
   "entrypoints": {
     "cockpit_sections": [],
     "kernel_api_actions": [
-      "doc_nav_check",
-      "project_status",
-      "roadmap_finish",
-      "roadmap_follow",
-      "system_status"
+      "system_status",
+      "doc_nav_check"
     ],
     "ops": [],
     "ops_single_gate": []
   },
-  "tests_entrypoints": [
-    "extensions/PRJ-KERNEL-API/tests/contract_test.py"
-  ],
+  "tests_entrypoints": [],
   "tests_policy": {
     "network_allowed": false,
     "notes": [
-      "contract_test_only"
+      "bounded_handler_tests_only"
     ]
   },
   "extension_id": "PRJ-KERNEL-API",
@@ -43,30 +36,33 @@
       "validate_schemas"
     ]
   },
+  "guardrails": {
+    "offline": true,
+    "network_default": false
+  },
   "layer_contract": {
     "notes": [],
     "read_roots_allowlist": [
-      "roadmaps/PROJECTS/PRJ-KERNEL-API/"
+      "defaults/policies/",
+      "defaults/schemas/",
+      "_internal/prj_kernel_api/"
     ],
-    "write_roots_allowlist": [
-      ".cache/",
-      "incubator/",
-      "external_allowlist/"
-    ]
+    "write_roots_allowlist": []
   },
-  "notes": [],
+  "notes": [
+    "Minimum runtime-backed tranche only: system_status and doc_nav_check.",
+    "project_status, roadmap_follow, and roadmap_finish remain deferred."
+  ],
   "origin": "CORE",
   "outputs": {
-    "workspace_reports": [
-      ".cache/reports/kernel_api_audit.v1.jsonl"
-    ]
+    "workspace_reports": []
   },
   "owner": "CORE",
   "policies": [],
   "policy_files": [
-    "policies/policy_kernel_api_guardrails.v1.json"
+    "defaults/policies/policy_kernel_api_guardrails.v1.json"
   ],
-  "semver": "0.1.0",
+  "semver": "0.2.0",
   "ui_surfaces": [],
   "version": "v1",
   "enabled": true

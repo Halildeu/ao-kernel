@@ -39,7 +39,8 @@ istemek gerekir.
 | `python -m ao_kernel.cli version` | Shipped | CLI module kontratı |
 | Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen demo workflow |
 | `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed`; komut, `ao-kernel` kurulu bir Python environment'ı içinde çalıştırılmalıdır |
-| `ao-kernel doctor` | Shipped | Workspace health check + bundled extension truth audit; may emit WARN while contract-only / quarantined inventory remains |
+| `ao-kernel doctor` | Shipped | Workspace health check + bundled extension truth audit; may emit WARN while quarantined inventory remains |
+| `PRJ-KERNEL-API` minimum runtime-backed actions | Shipped | Only `system_status` and `doc_nav_check`; both are explicit bootstrap handlers, offline, read-only, and behavior-tested |
 | CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |
 | Adapter CLI command enforcement | Shipped | `policy_checked` / `policy_denied` artık resolved command ihlallerini de içerir; canonical sıra `step_started -> policy_checked -> adapter_invoked` korunur |
 | `{python_executable}` localized exception | Shipped | Yalnız manifest `command` alanı explicit `{python_executable}` kullandığında, yalnız resolved `sys.executable` realpath'i için geçerli; sandbox allowlist'ini mutate etmez |
@@ -74,6 +75,7 @@ istemek gerekir.
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Mevcut beta yüzey yalnız dry-run preflight'tır; gerçek remote PR açılışı henüz destek vaadi değildir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
+| `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | Manifest ve runtime handler yüzeyi ilk tranche'ta bilerek iki read-only action'a daraltıldı; workspace/write-side contract netleşmeden desteklenmez |
 
 ## Known Bugs
 
@@ -91,9 +93,9 @@ istemek gerekir.
 - `claude-code-cli` ve `gh-cli-pr` bugün default demo yüzeyi değildir;
   yalnız helper-backed operator-managed beta satırları kadar desteklenir.
 - Bundled extension inventory bugün dar runtime-backed yüzeye sahiptir:
-  explicit bootstrap-backed smoke `PRJ-HELLO` ile sınırlıdır; kalan
-  manifestler doctor truth audit'inde contract-only veya quarantined
-  olarak görülebilir.
+  explicit bootstrap-backed smoke `PRJ-HELLO` ve `PRJ-KERNEL-API` için
+  yalnız `system_status` / `doc_nav_check` action'ları. Kalan manifestler
+  doctor truth audit'inde quarantined olarak görülebilir.
 - Bu doküman, ao-kernel'in genel amaçlı bir production coding automation
   platformu olduğunu iddia etmez; destek vaadi dar ve açıkça tablolanmış
   yüzeyler içindir.

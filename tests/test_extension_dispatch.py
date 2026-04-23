@@ -91,6 +91,62 @@ class TestBootstrapHelloExtension:
         assert "hello_world" in ext.entrypoints.get("kernel_api_actions", [])
 
 
+class TestBootstrapKernelApiExtension:
+    def test_kernel_api_default_handler_id_is_explicit(self):
+        from ao_kernel.extensions.bootstrap import default_handler_extension_ids
+
+        assert "PRJ-KERNEL-API" in default_handler_extension_ids()
+
+    def test_kernel_api_minimum_actions_registered_by_default(self):
+        client = AoKernelClient()
+
+        for action in ("system_status", "doc_nav_check"):
+            record = client.action_registry.resolve(action)
+            assert record is not None
+            assert record.extension_id == "PRJ-KERNEL-API"
+
+        for action in ("project_status", "roadmap_follow", "roadmap_finish"):
+            assert client.action_registry.resolve(action) is None
+
+    def test_kernel_api_system_status_payload_is_bounded(self):
+        client = AoKernelClient()
+
+        out = client.call_action("system_status", {"detail": True, "ignored": "x"})
+
+        assert out["ok"] is True
+        assert out["action"] == "system_status"
+        assert out["extension_id"] == "PRJ-KERNEL-API"
+        result = out["result"]
+        assert result["supported_actions"] == ["system_status", "doc_nav_check"]
+        assert result["deferred_actions"] == [
+            "project_status",
+            "roadmap_follow",
+            "roadmap_finish",
+        ]
+        assert result["params_echo"] == {"detail": True}
+        truth = result["extension_truth"]
+        assert truth["runtime_backed"] == 2
+        assert "PRJ-KERNEL-API" in truth["runtime_backed_ids"]
+
+    def test_kernel_api_doc_nav_check_reports_clean_runtime_refs(self):
+        client = AoKernelClient()
+
+        out = client.call_action("doc_nav_check")
+
+        assert out["ok"] is True
+        assert out["action"] == "doc_nav_check"
+        result = out["result"]
+        assert result["network_required"] is False
+        assert result["workspace_write"] is False
+        ext = result["extension"]
+        assert ext["extension_id"] == "PRJ-KERNEL-API"
+        assert ext["truth_tier"] == "runtime_backed"
+        assert ext["runtime_handler_registered"] is True
+        assert ext["kernel_api_actions"] == ["system_status", "doc_nav_check"]
+        assert ext["missing_runtime_refs"] == []
+        assert ext["remap_candidate_refs"] == []
+
+
 class TestBootstrapSkipsBlocked:
     def test_bootstrap_skips_disabled_manifest(self, tmp_path, monkeypatch):
         """Disabled manifests are not wired into the action registry."""
@@ -147,8 +203,10 @@ class TestBootstrapSkipsBlocked:
         from ao_kernel.extensions.bootstrap import register_default_handlers
         actions = ActionRegistry()
         registered = register_default_handlers(actions, extensions=None)
-        assert registered == 1
+        assert registered == 2
         assert actions.resolve("hello_world") is not None
+        assert actions.resolve("system_status") is not None
+        assert actions.resolve("doc_nav_check") is not None
 
 
 class TestFailureIsolation:

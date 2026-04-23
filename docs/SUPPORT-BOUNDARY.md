@@ -10,7 +10,7 @@ operator-only, or just contract inventory?"
 
 | Layer | Included surfaces | Verification |
 |---|---|---|
-| Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke | entrypoint checks, doctor, demo review smoke, CI |
+| Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
 | Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed dry-run lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary |
@@ -27,6 +27,8 @@ The repo currently supports these as the default claim:
 - `ao-kernel doctor`
 - bundled `review_ai_flow` + bundled `codex-stub`
 - `python3 examples/demo_review.py --cleanup`
+- `PRJ-KERNEL-API` runtime-backed action: `system_status`
+- `PRJ-KERNEL-API` runtime-backed action: `doc_nav_check`
 
 ### Beta (operator-managed)
 
@@ -44,6 +46,13 @@ These may be bundled and schema-valid without being end-to-end supported:
 - bundled extensions and registry files
 - `examples/hello-llm/`
 - roadmap/spec documents
+
+For `PRJ-KERNEL-API`, these actions remain outside the shipped support
+boundary even though the extension has a minimum runtime-backed tranche:
+
+- `project_status`
+- `roadmap_follow`
+- `roadmap_finish`
 
 ## 3. What does NOT automatically widen support
 
