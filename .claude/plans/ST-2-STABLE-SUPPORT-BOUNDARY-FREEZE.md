@@ -1,6 +1,6 @@
 # ST-2 — Stable Support Boundary Freeze
 
-**Durum:** Active
+**Durum:** Freeze PR active
 **Issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-1` tamamlandi; `v4.0.0-beta.2` published ve PyPI
@@ -87,6 +87,23 @@ ST-2 sirasinda shipped baseline'i bozan yeni bug bulunursa:
 1. `docs/KNOWN-BUGS.md` icine eklenir.
 2. Stable release blocker olarak isaretlenir.
 3. `ST-2` tamamlanmaz; fix veya stable scope daraltma karari gerekir.
+
+## 5.1 Freeze Decision
+
+Freeze PR karari:
+
+1. Stable candidate support set, `docs/PUBLIC-BETA.md` icindeki `Shipped`
+   tablosuyla sinirli kalir.
+2. Current known bugs shipped baseline'i bloklamaz; ikisi de
+   `claude-code-cli` operator-managed beta lane'leriyle sinirlidir.
+3. `ST-3` real-adapter certification dar stable runtime release icin blocker
+   degildir, cunku real adapter lane'leri stable shipped claim'e alinmiyor.
+4. `ST-4` live-write rollback rehearsal dar stable runtime release icin blocker
+   degildir, cunku live-write / remote side-effect yuzeyleri stable shipped
+   claim'e alinmiyor.
+5. Gelecekte `claude-code-cli`, `gh-cli-pr`, kernel API write-side actions,
+   real-adapter benchmark tam modu veya `bug_fix_flow` release closure stable'a
+   promote edilmek istenirse ST-3/ST-4 tarzi yeni kanit gate'i zorunlu olur.
 
 ## 6. Exact File List
 

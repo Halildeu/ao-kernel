@@ -127,8 +127,9 @@ kanitli pre-release'e cevirmek.
 
 ### ST-2 — Stable Support Boundary Freeze
 
-**Durum:** Active via [#344](https://github.com/Halildeu/ao-kernel/issues/344)
-and `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`.
+**Durum:** Freeze PR active via
+[#344](https://github.com/Halildeu/ao-kernel/issues/344) and
+`.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`.
 
 **Amac:** `4.0.0` stable'in neyi destekledigini release oncesi dondurmek.
 

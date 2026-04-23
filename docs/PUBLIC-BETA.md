@@ -32,6 +32,25 @@ istemek gerekir.
 - [`ROLLBACK.md`](ROLLBACK.md)
 - [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
 
+## Stable Candidate Freeze (ST-2)
+
+`ST-2` freezes the support boundary for a possible future `4.0.0` stable
+release. The stable candidate support set is exactly the `Shipped` table below
+unless a later ST gate changes this document with new evidence.
+
+Stable candidate rules:
+
+1. `Beta`, `Deferred`, `Contract inventory`, and `Example-only` rows are not
+   stable shipped support claims.
+2. `claude-code-cli`, `gh-cli-pr`, `PRJ-KERNEL-API` write-side actions, and
+   real-adapter benchmark full mode remain operator-managed beta.
+3. `bug_fix_flow` release closure, full remote PR opening, roadmap/spec demo
+   widening, and adapter-path `cost_usd` public support remain deferred.
+4. There is currently no known bug that blocks the shipped baseline; current
+   known bugs affect operator-managed beta lanes only.
+5. This boundary still does not claim ao-kernel is a general-purpose
+   production coding automation platform.
+
 ## Shipped (v4.0.0b2)
 
 | Yüzey | Durum | Not |

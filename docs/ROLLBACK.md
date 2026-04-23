@@ -56,7 +56,19 @@ If only an operator-managed beta lane regresses while the shipped baseline
 stays green, prefer narrowing guidance and updating
 [`KNOWN-BUGS.md`](KNOWN-BUGS.md) over rolling back the whole baseline.
 
-## 5. Related documents
+## 5. Stable boundary rule
+
+Rollback does not widen support. If a stable shipped baseline check fails,
+either rollback to the last known-good package or ship a corrective release.
+Do not substitute an operator-managed beta lane as the stable path.
+
+For the current stable candidate boundary:
+
+- shipped baseline regressions are release blockers,
+- beta/operator-managed regressions stay in [`KNOWN-BUGS.md`](KNOWN-BUGS.md),
+- live-write or real-adapter promotion requires separate ST gate evidence.
+
+## 6. Related documents
 
 - [`UPGRADE-NOTES.md`](UPGRADE-NOTES.md)
 - [`OPERATIONS-RUNBOOK.md`](OPERATIONS-RUNBOOK.md)

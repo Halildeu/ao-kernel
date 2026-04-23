@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed — Stable support boundary freeze
+
+- Added the ST-2 stable support boundary freeze decision:
+  - stable candidate support remains the narrow shipped baseline only
+  - operator-managed beta lanes are not promoted into stable support
+  - deferred lanes remain deferred unless later ST gates provide new evidence
+  - current known bugs do not block the shipped baseline
+- Clarified upgrade and rollback docs so stable checks do not fall back to
+  beta/operator-managed lanes.
+
 ## [4.0.0b2] - 2026-04-24
 
 ### Changed — Post-beta closeout + stable-release gate preparation

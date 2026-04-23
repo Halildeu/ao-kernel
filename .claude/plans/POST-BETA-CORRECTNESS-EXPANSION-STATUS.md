@@ -354,16 +354,18 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-2` stable support boundary freeze.
+Aktif slice: `ST-2` stable support boundary freeze implementation.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
 4. Aktif contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
-5. Sonraki iş: ST-2 freeze PR'i ile support docs parity ve stable blocker
+5. Aktif iş: ST-2 freeze PR'i ile support docs parity ve stable blocker
    kararını kapat.
-6. Stable release'e doğrudan geçilmez; önce ST-2 boundary freeze ve sonraki
+6. Freeze PR kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
+   real-adapter/live-write promotion istenirse ayrı gate gerekir.
+7. Stable release'e doğrudan geçilmez; önce ST-2 boundary freeze ve sonraki
    stable gates kapanır.
 
 `PB-8.2` completion kaydı:

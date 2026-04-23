@@ -7,6 +7,12 @@ operator registry.
 
 ## Current entries
 
+Stable shipped baseline blocker status: **none currently known**.
+
+The open entries below affect operator-managed beta lanes only. They do not
+block a narrow stable runtime release unless a future ST gate promotes those
+lanes into stable shipped support.
+
 | ID | Surface | Symptom | Workaround | Shipped baseline impact |
 |---|---|---|---|---|
 | `KB-001` | `claude-code-cli` beta lane | `claude auth status` may report a healthy login while a real `claude -p` prompt call is still denied | Always trust `python3 scripts/claude_code_cli_smoke.py --output text` over `claude auth status` alone; if blocked, re-login the Claude Code session | None; affects operator-managed lane only |

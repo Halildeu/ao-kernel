@@ -15,7 +15,26 @@ operator-only, or just contract inventory?"
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-8.3` verdict `stay_deferred`, `GP-1.3` revalidation ile teyitli) |
 
-### 1.1 Truth inventory to support mapping
+### 1.1 ST-2 stable candidate freeze
+
+For the possible future `4.0.0` stable release, the stable support candidate is
+the `Shipped baseline` layer only. This freeze deliberately excludes:
+
+- operator-managed beta lanes,
+- live-write / remote side-effect flows,
+- contract inventory without behavior evidence,
+- roadmap/spec-only walkthroughs,
+- deferred support claims.
+
+`ST-3` real-adapter certification and `ST-4` live-write rollback rehearsal are
+not blockers for a narrow stable runtime release as long as stable docs do not
+claim those surfaces. They become blockers only if a future PR tries to promote
+real adapters or live-write behavior into stable shipped support.
+
+There is currently no known bug that blocks the shipped baseline. The known
+bugs in [`KNOWN-BUGS.md`](KNOWN-BUGS.md) affect operator-managed beta lanes.
+
+### 1.2 Truth inventory to support mapping
 
 `ao-kernel doctor` içindeki extension truth sınıfları support kararı için tek
 başına yeterli değildir. Bu sınıfların support yorumu aşağıdaki gibi sabittir:
