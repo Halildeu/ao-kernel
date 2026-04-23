@@ -94,8 +94,10 @@ istemek gerekir.
   yalnız helper-backed operator-managed beta satırları kadar desteklenir.
 - Bundled extension inventory bugün dar runtime-backed yüzeye sahiptir:
   explicit bootstrap-backed smoke `PRJ-HELLO` ve `PRJ-KERNEL-API` için
-  yalnız `system_status` / `doc_nav_check` action'ları. Kalan manifestler
-  doctor truth audit'inde quarantined olarak görülebilir.
+  yalnız `system_status` / `doc_nav_check` action'ları.
+  `PRJ-CONTEXT-ORCHESTRATION` bugün contract-only katmandadır
+  (manifest/contract cleanup sonrası, runtime handler hâlâ yoktur);
+  kalan manifestler doctor truth audit'inde quarantined olarak görülebilir.
 - Bu doküman, ao-kernel'in genel amaçlı bir production coding automation
   platformu olduğunu iddia etmez; destek vaadi dar ve açıkça tablolanmış
   yüzeyler içindir.

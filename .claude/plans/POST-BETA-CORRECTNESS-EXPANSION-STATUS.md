@@ -88,8 +88,10 @@ Güncel runtime baseline:
 
 1. `python3 -m ao_kernel doctor`
    - `8 OK, 1 WARN, 0 FAIL`
-   - `runtime_backed=2`, `quarantined=17`
+   - `runtime_backed=2`, `contract_only=1`, `quarantined=16`
+   - `remap_candidate_refs=61`, `missing_runtime_refs=152`
    - `runtime_backed_ids=PRJ-HELLO, PRJ-KERNEL-API`
+   - `contract_only_ids=PRJ-CONTEXT-ORCHESTRATION`
 2. `python3 scripts/claude_code_cli_smoke.py --output json`
    - `overall_status="pass"`
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
@@ -107,7 +109,8 @@ Güncel runtime baseline:
 
 1. `PRJ-CONTEXT-ORCHESTRATION` `remap-needed` later candidate olarak kalır.
 2. Bu slice runtime behavior değiştirmez ve support boundary genişletmez.
-3. Extension bugün `truth_tier=quarantined`,
+3. `PB-6.3` karar anındaki snapshot'ta extension
+   `truth_tier=quarantined`,
    `runtime_handler_registered=False`, `remap_candidate_refs=5`,
    `missing_runtime_refs=4` durumundadır.
 4. Canlı runtime owner sinyali `ao_kernel.context` paketidir; fakat extension
@@ -116,6 +119,8 @@ Güncel runtime baseline:
    `ao_kernel/extensions/handlers/prj_context_orchestration.py` gibi explicit
    bir handler, dar `kernel_api_actions`, behavior-first tests ve docs parity
    ile yapılabilir.
+6. `PB-6.3b` manifest cleanup ile extension truth
+   `contract_only` katmanına çekilir; runtime handler hâlâ register edilmez.
 
 Beklenen çıktı:
 

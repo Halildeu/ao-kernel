@@ -62,6 +62,7 @@ class TestBundledDefaults:
         summary = reg.truth_summary()
         assert summary.total_extensions >= 1
         assert summary.runtime_backed >= 2
+        assert summary.contract_only >= 1
         assert "PRJ-HELLO" in summary.runtime_backed_ids
         assert "PRJ-KERNEL-API" in summary.runtime_backed_ids
         assert summary.quarantined >= 1
@@ -92,8 +93,30 @@ class TestBundledDefaults:
         reg.load_from_defaults()
         summary = reg.truth_summary()
         assert summary.runtime_backed == 2
-        assert summary.quarantined == 17
+        assert summary.contract_only == 1
+        assert summary.quarantined == 16
         assert summary.runtime_backed_ids == ("PRJ-HELLO", "PRJ-KERNEL-API")
+        assert summary.contract_only_ids == ("PRJ-CONTEXT-ORCHESTRATION",)
+
+    def test_context_orchestration_manifest_is_contract_only_with_clean_refs(self):
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        ext = reg.get("PRJ-CONTEXT-ORCHESTRATION")
+        assert ext is not None
+        assert ext.truth_tier == "contract_only"
+        assert ext.runtime_handler_registered is False
+        assert ext.remap_candidate_refs == ()
+        assert ext.missing_runtime_refs == ()
+        assert ext.docs_ref == ""
+        assert ext.tests_entrypoints == ()
+        assert ext.policy_files == (
+            "defaults/policies/policy_context_orchestration.v1.json",
+        )
+        assert ext.entrypoints.get("ops", []) == []
+        assert ext.entrypoints.get("ops_single_gate", []) == []
+        assert ext.entrypoints.get("cockpit_sections", []) == []
+        assert ext.ui_surfaces == []
+        assert ext.layer_contract.get("write_roots_allowlist") == []
 
     def test_list_enabled_filters_disabled_and_blocked(self):
         reg = ExtensionRegistry()
