@@ -100,6 +100,9 @@ kapatmak.
 
 ### ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
 
+**Durum:** Active via [#340](https://github.com/Halildeu/ao-kernel/issues/340)
+and `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`.
+
 **Amac:** Current `main`'i eski `v4.0.0-beta.1` tag'inden ayrilmis yeni bir
 kanitli pre-release'e cevirmek.
 

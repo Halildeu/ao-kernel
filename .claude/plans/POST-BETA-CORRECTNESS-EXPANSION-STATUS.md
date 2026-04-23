@@ -16,7 +16,8 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md` (`GP-2.2 active`)
+- **Aktif decision/ordering contract:** `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` (`ST-1 active`)
+- **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - **PB-9.4 karar notu:** `.claude/plans/PB-9.4-PRODUCTION-CLAIM-DECISION-CLOSEOUT.md`
@@ -40,7 +41,8 @@ ayrı ayrı görünür kılmak.
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
-- **Aktif issue:** henüz açılmadı (`ST-1 pre-release gate` sırada)
+- **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`open`)
+- **Aktif issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`ST-1 pre-release gate`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -87,12 +89,17 @@ ayrı ayrı görünür kılmak.
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
 | `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
+| `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
+| `ST-1` releasable pre-release gate | Active ([#340](https://github.com/Halildeu/ao-kernel/issues/340)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak | release contract + exact file/test/publish checklist |
 
 ## 5. Şimdi
 
 ### `ST-1` — releasable pre-release gate (`4.0.0b2` varsayımı)
 
 Aktif iş artık production-stable roadmap'teki `ST-1` kapısına hazırlıktır.
+Issue [#340](https://github.com/Halildeu/ao-kernel/issues/340) açıldı ve
+aktif contract
+`.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` olarak belirlendi.
 `GP-2.2b` deterministic assertion upgrade issue'su
 [#336](https://github.com/Halildeu/ao-kernel/issues/336) kapanmış, PR
 [#337](https://github.com/Halildeu/ao-kernel/pull/337) merge edilmiştir.
@@ -108,8 +115,9 @@ Son GP-2.2 kararı:
 4. [#333](https://github.com/Halildeu/ao-kernel/issues/333) merge sonrası
    closeout comment ile kapatılır.
 
-Sonraki slice `ST-1` issue/branch açılışıdır. Hedef, current `main`'i eski
-`v4.0.0-beta.1` tag'inden ayrılmış kanıtlı yeni pre-release gate'e taşımaktır.
+Bu slice'ın işi release publish değildir; release PR'ı başlamadan önce exact
+dosya listesi, karar soruları, local/CI/publish kanıt komutları ve blocker
+listesi yazılı hale getirilir.
 
 Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
 `ST-1` bloğudur.
@@ -311,9 +319,9 @@ Aktif slice: `ST-1` pre-release gate hazırlığı.
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-3. Sonraki iş: `ST-1` için issue + branch aç, `4.0.0b2` pre-release gate
-   kabul kriterlerini exact dosya/test listesine indir.
-4. Stable release'e doğrudan geçilmez; önce fresh wheel/PyPI pre-release
+3. Aktif contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
+4. Sonraki iş: `4.0.0b2` release PR'ını contract'a göre aç.
+5. Stable release'e doğrudan geçilmez; önce fresh wheel/PyPI pre-release
    kanıtı toplanır.
 
 `PB-8.2` completion kaydı:
