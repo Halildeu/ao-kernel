@@ -22,6 +22,23 @@ pip install ao-kernel==4.0.0b2
 Do not assume `pip install ao-kernel` will pick the beta. It stays on the
 stable channel unless you ask for a pre-release explicitly.
 
+## 1.1 Stable support boundary
+
+The stable candidate support boundary is intentionally narrow. Treat the
+`Shipped` table in [`PUBLIC-BETA.md`](PUBLIC-BETA.md) and the `Shipped
+baseline` layer in [`SUPPORT-BOUNDARY.md`](SUPPORT-BOUNDARY.md) as the supported
+runtime claim.
+
+Do not treat the following as stable shipped support unless a later release
+explicitly promotes them:
+
+- `claude-code-cli` real-adapter lane,
+- `gh-cli-pr` preflight or live-write lane,
+- `PRJ-KERNEL-API` write-side actions,
+- real-adapter benchmark full mode,
+- `bug_fix_flow` release closure,
+- full remote PR opening.
+
 ## 2. Pre-upgrade snapshot
 
 Before upgrading, record the current environment state:
@@ -44,6 +61,11 @@ python -m ao_kernel.cli version
 ao-kernel doctor
 python3 examples/demo_review.py --cleanup
 ```
+
+`examples/demo_review.py` must be executed with a Python environment that has
+the intended `ao-kernel` package installed. The release gate version of this
+check is `scripts/packaging_smoke.py`, which installs the wheel into a fresh
+venv before running the demo.
 
 If you use operator-managed real-adapter lanes, run the corresponding smoke as
 well:
