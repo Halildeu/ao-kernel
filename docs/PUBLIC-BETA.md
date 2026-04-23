@@ -67,6 +67,19 @@ istemek gerekir.
 | Bundled `defaults/registry`, `defaults/extensions`, `defaults/operations`, `defaults/adapters` içeriği | Contract inventory | Ağaçta görünmesi destek vaadi değildir; ancak ilgili doküman/test/Public Beta matrisi o yüzeyi ayrıca işaretliyorsa destekli sayılır |
 | `examples/hello-llm/` | Example-only | SDK kullanım örneğidir; Public Beta destek vaadinin parçası değildir |
 
+### Truth-tier yorum kuralı
+
+`ao-kernel doctor` truth sınıfları support boundary ile aşağıdaki kuralla
+eşlenir:
+
+| Truth tier | Support yorumu |
+|---|---|
+| `runtime_backed` | Runtime owner vardır; yine de shipped/beta claim için behavior test + smoke + docs parity birlikte gerekir |
+| `contract_only` | Contract katmanı vardır, runtime register yoktur; support claim değildir |
+| `quarantined` | Açık runtime gap vardır; support dışı/deferred sınıfında kalır |
+
+Bu kuralın amacı, inventory görünürlüğünü support widening ile karıştırmamaktır.
+
 ## Deferred
 
 | Yüzey | Durum | Not |

@@ -15,6 +15,19 @@ operator-only, or just contract inventory?"
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary |
 
+### 1.1 Truth inventory to support mapping
+
+`ao-kernel doctor` içindeki extension truth sınıfları support kararı için tek
+başına yeterli değildir. Bu sınıfların support yorumu aşağıdaki gibi sabittir:
+
+| Doctor truth tier | Support anlamı | Promotion kuralı |
+|---|---|---|
+| `runtime_backed` | Runtime handler + entrypoint bağlantısı vardır | Shipped/Beta claim için ek olarak behavior test + smoke + docs parity gerekir |
+| `contract_only` | Manifest/contract katmanı vardır, runtime handler register değildir | Tek başına support claim üretmez; implementation tranche gerektirir |
+| `quarantined` | Runtime owner/refs/entrypoint tarafında açık gap vardır | Support dışı kalır; yalnız karar/debt izleme yüzeyi olarak ele alınır |
+
+Bu tablo, `docs/PUBLIC-BETA.md` ve status SSOT ile aynı anlamda okunur.
+
 ## 2. Current line by line boundary
 
 ### Shipped baseline
