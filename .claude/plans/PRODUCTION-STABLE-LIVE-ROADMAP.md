@@ -78,6 +78,9 @@ kararidir.
 
 ### ST-0 — Beta Sync ve Status Truth Closeout
 
+**Durum:** Completed on `main` via PR [#338](https://github.com/Halildeu/ao-kernel/pull/338)
+and GP-2.2 closeout verdict.
+
 **Amac:** Current `main` ile public beta/live dokumanlari arasindaki drift'i
 kapatmak.
 
@@ -292,4 +295,3 @@ dogrulanir.
 3. `ST-2` ile stable support boundary freeze yap.
 4. Sonra stable scope kararina gore `ST-3` ve `ST-4` gerekli mi, yoksa dar
    runtime stable release'e gecilebilir mi karar ver.
-

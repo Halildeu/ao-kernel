@@ -62,17 +62,33 @@ Kapanış: PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
   1. en az bir negatif (reconcile yok/bozuk) yol testte yakalanır
   2. en az bir pozitif yol evidence/cost alanlarını açık assert eder
 
-### `GP-2.2c` — Minimum runtime patch (Conditional / currently no-op)
+### `GP-2.2c` — Minimum runtime patch (No-op closeout)
 
 - Hedef: yalnız testlerle kapanmayan gerçek runtime gap varsa minimal kod düzeltmesi.
 - Kural: adapter-path dışına yayılma yok; scope creep blok.
-- Mevcut karar: `GP-2.2b` sonrası ayrı runtime patch gap'i henüz
-  kanıtlanmadı; `GP-2.2d` closeout sırasında tekrar kontrol edilir.
+- Karar: `GP-2.2b` sonrası ayrı runtime patch gap'i kanıtlanmadı. Bu
+  tranche'ta runtime kodu değişmeyecek.
+- Gerekçe: behavior-first assertion paketi adapter-path reconcile
+  davranışını yeterli şekilde pinledi; kalan konu support boundary ve
+  status/docs parity idi.
 
-### `GP-2.2d` — Docs/status parity closeout (Active)
+### `GP-2.2d` — Docs/status parity closeout (Completed)
 
 - Hedef: `PUBLIC-BETA` ve status satırlarında tranche sonucu gerçek davranışla hizalı.
 - Kural: support tier promotion iddiası yok; karar notu düzeyinde netlik.
+- Kapanış: PR [#338](https://github.com/Halildeu/ao-kernel/pull/338)
+  stable channel wording, status pointer ve GP-2.2b issue drift'ini hizaladı.
+
+## Closeout Verdict
+
+1. `GP-2.2` reconcile completeness için ek runtime patch gerekmiyor.
+2. Adapter-path `cost_usd` reconcile public support claim olarak **Deferred**
+   kalır; benchmark/internal evidence contract varlığı support widening
+   üretmez.
+3. `PUBLIC-BETA` stable kanal exact sürümünü hard-code etmez; install kuralını
+   anlatır.
+4. Sonraki production-stable kapı `ST-1` pre-release gate'tir
+   (`4.0.0b2` varsayımı).
 
 ## Zorunlu Kanıt Komutları
 
@@ -85,3 +101,6 @@ Kapanış: PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
 1. Reconcile completeness için behavior-first assertion paketi yeşil.
 2. Runtime patch gerekiyorsa minimal ve lane-scope içinde.
 3. Status SSOT + docs parity güncel.
+
+Durum: tamamlandı. Tracker [#333](https://github.com/Halildeu/ao-kernel/issues/333)
+merge sonrası kapatılacaktır.

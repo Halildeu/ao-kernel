@@ -38,9 +38,9 @@ ayrı ayrı görünür kılmak.
 - **GP-1 tracker issue:** [#316](https://github.com/Halildeu/ao-kernel/issues/316) (`closed`)
 - **GP-2 tracker issue:** [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`open`)
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
-- **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
+- **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
-- **Aktif issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`GP-2.2 docs/status parity closeout`)
+- **Aktif issue:** henüz açılmadı (`ST-1 pre-release gate` sırada)
 
 ## 2. Başlangıç Gerçeği
 
@@ -86,31 +86,33 @@ ayrı ayrı görünür kılmak.
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
-| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), current slice [#333](https://github.com/Halildeu/ao-kernel/issues/333)) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
+| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
 
 ## 5. Şimdi
 
-### `GP-2.2d` — adapter-path `cost_usd` reconcile docs/status parity closeout
+### `ST-1` — releasable pre-release gate (`4.0.0b2` varsayımı)
 
-Aktif iş artık `GP-2.2d` closeout'tur. `GP-2.2b` deterministic assertion
-upgrade issue'su [#336](https://github.com/Halildeu/ao-kernel/issues/336)
-kapanmış, PR [#337](https://github.com/Halildeu/ao-kernel/pull/337) merge
-edilmiştir. `GP-2.2c` için ayrı runtime patch gap'i henüz kanıtlanmadığı için
-closeout kararı bu slice'ta yazılı hale getirilecektir.
+Aktif iş artık production-stable roadmap'teki `ST-1` kapısına hazırlıktır.
+`GP-2.2b` deterministic assertion upgrade issue'su
+[#336](https://github.com/Halildeu/ao-kernel/issues/336) kapanmış, PR
+[#337](https://github.com/Halildeu/ao-kernel/pull/337) merge edilmiştir.
+`GP-2.2d` docs/status closeout PR
+[#338](https://github.com/Halildeu/ao-kernel/pull/338) ile tamamlandı.
 
-Bu slice'ın sınırı:
+Son GP-2.2 kararı:
 
-1. `PUBLIC-BETA` stable kanal sürüm dilini hard-code etmeden doğru anlatır.
-2. `GP-2.2` contract dosyası `GP-2.2b completed`, `GP-2.2d active`
-   durumunu gösterir.
-3. `POST-BETA-CORRECTNESS-EXPANSION-STATUS` aktif issue olarak [#333](https://github.com/Halildeu/ao-kernel/issues/333)
-   satırına döner.
-4. Support widening yapılmaz; adapter-path `cost_usd` reconcile public support
+1. `GP-2.2c` runtime patch no-op kalır; ek runtime gap kanıtlanmadı.
+2. Adapter-path `cost_usd` reconcile public support
    claim olarak deferred kalır.
-5. `ST-0` production-stable roadmap kapısı için status/docs drift kapanır.
+3. Public Beta stable kanal dili hard-code exact stable sürüm taşımaz.
+4. [#333](https://github.com/Halildeu/ao-kernel/issues/333) merge sonrası
+   closeout comment ile kapatılır.
+
+Sonraki slice `ST-1` issue/branch açılışıdır. Hedef, current `main`'i eski
+`v4.0.0-beta.1` tag'inden ayrılmış kanıtlı yeni pre-release gate'e taşımaktır.
 
 Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
-`GP-2.2d` bloğudur.
+`ST-1` bloğudur.
 
 ### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
@@ -304,14 +306,15 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `GP-2.2d` docs/status parity closeout.
+Aktif slice: `ST-1` pre-release gate hazırlığı.
 
-1. Tracker: [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
-2. Son kapanan alt slice: [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`GP-2.2b`, `closed`)
-3. Production-stable kapısı: `ST-0` (`.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`)
-4. Sonraki karar: `GP-2.2c` runtime patch gerekmediği yazılı kapanırsa
-   `GP-2.2d` closeout tamamlanır; ardından `ST-1` pre-release gate
-   (`4.0.0b2` varsayımı) planlanır.
+1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
+   closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
+2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
+3. Sonraki iş: `ST-1` için issue + branch aç, `4.0.0b2` pre-release gate
+   kabul kriterlerini exact dosya/test listesine indir.
+4. Stable release'e doğrudan geçilmez; önce fresh wheel/PyPI pre-release
+   kanıtı toplanır.
 
 `PB-8.2` completion kaydı:
 
@@ -540,7 +543,7 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 
 `GP-2.1` ordering closeout sonrası aktif runtime tranche `GP-2.2` olarak açıldı.
 
-1. Issue: [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
+1. Issue: [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 2. Active contract:
    `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 3. Scope:
@@ -552,3 +555,8 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 5. İlk ilerleme:
    - `GP-2.2a` truth capture sonucu canonical assertion matrisi
      `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md` içine işlendi
+6. Closeout:
+   - `GP-2.2b` deterministic assertion upgrade [#336](https://github.com/Halildeu/ao-kernel/issues/336) ile kapandı
+   - `GP-2.2c` runtime patch no-op kaldı
+   - `GP-2.2d` docs/status parity PR [#338](https://github.com/Halildeu/ao-kernel/pull/338) ile tamamlandı
+   - adapter-path `cost_usd` reconcile public support claim olarak deferred kaldı
