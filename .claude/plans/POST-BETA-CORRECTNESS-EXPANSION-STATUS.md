@@ -18,7 +18,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#256](https://github.com/Halildeu/ao-kernel/issues/256)
+- **Aktif issue:** [#259](https://github.com/Halildeu/ao-kernel/issues/259)
 
 ## 2. Başlangıç Gerçeği
 
@@ -61,11 +61,12 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.3` — `PRJ-CONTEXT-ORCHESTRATION` remap and owner boundary decision
+### `PB-6.3b` — `PRJ-CONTEXT-ORCHESTRATION` manifest and contract cleanup
 
-`PB-6` içinde aktif alt hat artık `PB-6.3`'tür. Bu slice'ın işi,
-`PRJ-CONTEXT-ORCHESTRATION` için support widening'e geçmeden önce remap,
-owner ve runtime-boundary kararını yazılı hale getirmektir.
+`PB-6` içinde aktif alt hat artık `PB-6.3b`'dir. Bu slice'ın işi,
+`PB-6.3` kararını uygulamaya hazır hale getirmek için
+`PRJ-CONTEXT-ORCHESTRATION` manifest referanslarını ve gelecekteki handler
+contract sınırını daraltmaktır.
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -94,13 +95,13 @@ Güncel runtime baseline:
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
    - `overall_status="pass"`
 
-`PB-6.3` giriş kanıtı:
+`PB-6.3` decision slice'ı tamamlandı:
 
-1. `PB-6.1b` shortlist sonucu `PRJ-CONTEXT-ORCHESTRATION` ikinci adaydır.
-2. `PRJ-KERNEL-API` hattı kapandı; artık sıradaki extension decision
-   slice'ına geçilebilir.
-3. Support widening yine code path + behavior tests + smoke/doctor evidence +
-   docs parity birlikte mevcut olmadan yapılmayacak.
+1. Issue: [#256](https://github.com/Halildeu/ao-kernel/issues/256)
+2. PR: [#258](https://github.com/Halildeu/ao-kernel/pull/258)
+3. Merge commit: `1b4991817618445526552ae39cae0b72d140ac17`
+4. Decision record:
+   `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 
 `PB-6.3` karar sonucu:
 
@@ -118,11 +119,15 @@ Güncel runtime baseline:
 
 Beklenen çıktı:
 
-1. Written decision table:
-   `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`.
-2. Manifest ref cleanup ve handler/action contract ayrı follow-up slice'a
-   ayrılacak.
-3. `PRJ-RELEASE-AUTOMATION`, context orchestration contract cleanup kararı
+1. `PB-6.3b` issue: [#259](https://github.com/Halildeu/ao-kernel/issues/259)
+2. Legacy top-level `policies/` ve `schemas/` refs package-local
+   `defaults/...` refs'e taşınacak veya açıkça kaldırılacak.
+3. Missing packaged refs (`AGENTS.md`, `docs/OPERATIONS/*`, nonexistent
+   contract test) canlı package refs ile değiştirilmeden support widening
+   yapılmayacak.
+4. Future handler/action boundary yazılı contract'a inecek; runtime handler
+   registration ayrı implementation slice'a kalacak.
+5. `PRJ-RELEASE-AUTOMATION`, context orchestration contract cleanup kararı
    yazılmadan başlamayacak.
 
 ## 6. Sonra
@@ -132,10 +137,10 @@ Beklenen çıktı:
 1. `PB-6.2b` `PRJ-KERNEL-API` minimum runtime-backed implementation
    - completed on `main` via [#255](https://github.com/Halildeu/ao-kernel/pull/255)
 2. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
-   - active via [#256](https://github.com/Halildeu/ao-kernel/issues/256)
+   - completed on `main` via [#258](https://github.com/Halildeu/ao-kernel/pull/258)
    - decision: `remap-needed`, keep non-shipped until contract cleanup
 3. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
-   - next slice after `PB-6.3` merge
+   - active via [#259](https://github.com/Halildeu/ao-kernel/issues/259)
 4. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
 
 Not:
@@ -159,8 +164,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
-2. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
+1. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
 
 ## 9. Güncelleme Protokolü
 
