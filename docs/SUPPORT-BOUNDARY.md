@@ -56,6 +56,7 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>`
+- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch> --output json --report-path <artifact.json>`
 - `python3 scripts/kernel_api_write_smoke.py --output text`
 - `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks

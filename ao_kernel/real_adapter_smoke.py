@@ -814,6 +814,19 @@ def render_text_report(
     return "\n".join(lines)
 
 
+def write_smoke_report_json(
+    report: ClaudeCodeSmokeReport | GhCliPrSmokeReport,
+    output_path: Path | str,
+) -> Path:
+    """Persist a smoke report as canonical JSON and return absolute path."""
+
+    target_path = Path(output_path).expanduser()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(report.as_dict(), indent=2, sort_keys=True) + "\n"
+    target_path.write_text(payload, encoding="utf-8")
+    return target_path.resolve()
+
+
 def _load_claude_manifest() -> AdapterManifest:
     reg = AdapterRegistry()
     reg.load_bundled()

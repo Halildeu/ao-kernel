@@ -13,6 +13,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from ao_kernel.real_adapter_smoke import render_text_report, run_gh_cli_pr_smoke
+from ao_kernel.real_adapter_smoke import write_smoke_report_json
 
 
 def main() -> int:
@@ -28,6 +29,13 @@ def main() -> int:
         choices=("text", "json"),
         default="text",
         help="Render mode for the smoke report.",
+    )
+    parser.add_argument(
+        "--report-path",
+        help=(
+            "Optional JSON artifact output path. When provided, "
+            "the canonical smoke report is written to this file."
+        ),
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -96,10 +104,15 @@ def main() -> int:
         keep_live_write_pr_open=args.keep_live_write_pr_open,
         require_disposable_repo_keyword=args.require_disposable_keyword or None,
     )
+    persisted_report_path: Path | None = None
+    if args.report_path:
+        persisted_report_path = write_smoke_report_json(report, args.report_path)
     if args.output == "json":
         print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
     else:
         print(render_text_report(report))
+        if persisted_report_path is not None:
+            print(f"report_path: {persisted_report_path}")
     return 0 if report.overall_status == "pass" else 1
 
 
