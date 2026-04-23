@@ -227,6 +227,8 @@ Canlı yürütme sırası bundan sonra aşağıdaki SSOT'tan takip edilir:
 5. `PB-6.5` decision closeout tamamlandı:
    - issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
    - plan: `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
-6. Yeni aktif alt hat `PB-6.6`:
+6. `PB-6.6` decision closeout tamamlandı:
    - issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277)
    - plan: `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
+7. Sonraki aktif adım:
+   - `PB-6` umbrella (`#243`) altında bir sonraki dar tranche issue/plan açılışı

@@ -51,6 +51,9 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
 - real-adapter benchmark full-mode runbooks
 
+`PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
+`stay_beta_operator_managed` olarak korunur; lane shipped baseline'a yükselmez.
+
 ### Contract inventory
 
 These may be bundled and schema-valid without being end-to-end supported:

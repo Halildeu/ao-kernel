@@ -1,10 +1,11 @@
 # PB-6.6 — Claude Code CLI Lane Ops-Gated Promotion Closeout
 
-**Status:** Active  
+**Status:** Completed (decision closeout)  
 **Date:** 2026-04-23  
 **Parent:** `PB-6`  
 **Parent issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)  
-**Active issue:** [#277](https://github.com/Halildeu/ao-kernel/issues/277)
+**Decision issue:** [#277](https://github.com/Halildeu/ao-kernel/issues/277)  
+**Next active issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## Amaç
 
@@ -41,6 +42,21 @@ işletim kapılarını finalize eder.
 3. live smoke:
    `python3 scripts/claude_code_cli_smoke.py --output json` -> pass
 
+## Canlı Kanıt Turu (2026-04-23)
+
+Komut:
+
+```bash
+python3 scripts/claude_code_cli_smoke.py --output json
+```
+
+Özet:
+
+1. `overall_status="pass"`
+2. `version`, `auth_status`, `prompt_access`, `manifest_invocation` alt
+   kontrolleri geçiyor
+3. lane teknik olarak canlı ve tekrar edilebilir smoke üretiyor
+
 ## Gate Seti
 
 1. Evidence repeatability gate:
@@ -52,9 +68,40 @@ işletim kapılarını finalize eder.
 4. Docs parity gate:
    - support tier dili tüm SSOT yüzeylerinde tek anlamlı mı?
 
+## Gate Değerlendirmesi (Final)
+
+| Gate | Durum | Kanıt | Yorum |
+|---|---|---|---|
+| Evidence repeatability | PASS | `scripts/claude_code_cli_smoke.py --output json` | Lane tekrar eden smoke ile doğrulanıyor |
+| Known-bug containment | PASS (bounded) | `KB-001`, `KB-002` | Etki operator-managed sınır içinde yönetilebilir; shipped baseline etkisi yok |
+| Ops runbook | PASS | `docs/OPERATIONS-RUNBOOK.md`, `docs/ROLLBACK.md` | Incident/rollback akışı lane için yazılı ve uygulanabilir |
+| Docs parity | PASS | `PUBLIC-BETA`, `SUPPORT-BOUNDARY`, `KNOWN-BUGS` | Lane tier anlatımı tek anlamlı ve çelişkisiz |
+
+## PB-6.6 Karar Çıkışı
+
+**Final verdict:** `stay_beta_operator_managed`
+
+Gerekçe:
+
+1. `promotion_candidate_with_ops_gates` sinyali korunuyor, fakat lane bugün hâlâ
+   operator çevresine bağımlı canlı auth/prompt precondition'ları taşıyor.
+2. `KB-001` ve `KB-002` bounded olsa da support tier'i widen edecek kadar
+   evrensel/çevre-bağımsız dayanıklılık kanıtı üretilmiş değil.
+3. Bu nedenle lane support sınırı `Beta (operator-managed)` olarak kalır;
+   shipped baseline'a yükseltilmez.
+
+## Docs/Status Parity Sonucu
+
+1. `docs/PUBLIC-BETA.md`: `claude-code-cli` satırı `Beta (operator-managed)`
+2. `docs/SUPPORT-BOUNDARY.md`: Beta layer aynı sınırı taşıyor
+3. `docs/OPERATIONS-RUNBOOK.md`, `docs/KNOWN-BUGS.md`, `docs/ROLLBACK.md`:
+   incident/known-bug/rollback anlatımı bu verdict ile uyumlu
+4. program status SSOT (`POST-BETA-...STATUS.md`) aktif issue/hat bilgisini
+   `#243` umbrella seviyesine çeker
+
 ## DoD
 
 1. `claude-code-cli` lane için tek support-tier verdict üretildi
 2. kararın gerekçesi gate bazında yazılı
 3. docs/status/issue yüzeyleri aynı kararı taşıyor
-4. `PB-6` umbrella'da bir sonraki aktif hat tek issue ile bırakıldı
+4. `PB-6` umbrella'da bir sonraki aktif hat tek issue ile bırakıldı (`#243`)
