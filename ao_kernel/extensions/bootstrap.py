@@ -82,6 +82,7 @@ def _manifest_activatable(
 # whole point of D7 preservation.
 _DEFAULT_HANDLERS: list[tuple[str, str]] = [
     ("PRJ-HELLO", "ao_kernel.extensions.handlers.prj_hello"),
+    ("PRJ-KERNEL-API", "ao_kernel.extensions.handlers.prj_kernel_api"),
 ]
 
 

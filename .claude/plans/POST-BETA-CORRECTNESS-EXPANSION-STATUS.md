@@ -75,11 +75,12 @@ ayrı ayrı görünür kılmak.
 `PB-6.2b` support boundary'yi ancak handler, manifest, tests, smoke, doctor
 truth metric ve docs parity aynı PR'da kapanırsa genişletebilir.
 
-Canlı baseline:
+`PB-6.2b` hedef runtime baseline:
 
 1. `python3 -m ao_kernel doctor`
    - `8 OK, 1 WARN, 0 FAIL`
-   - `runtime_backed=1`, `quarantined=18`, `missing_runtime_refs=161`
+   - `runtime_backed=2`, `quarantined=17`
+   - `runtime_backed_ids=PRJ-HELLO, PRJ-KERNEL-API`
 2. `python3 scripts/claude_code_cli_smoke.py --output json`
    - `overall_status="pass"`
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`

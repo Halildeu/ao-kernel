@@ -61,10 +61,39 @@ class TestBundledDefaults:
         reg.load_from_defaults()
         summary = reg.truth_summary()
         assert summary.total_extensions >= 1
-        assert summary.runtime_backed >= 1
+        assert summary.runtime_backed >= 2
         assert "PRJ-HELLO" in summary.runtime_backed_ids
+        assert "PRJ-KERNEL-API" in summary.runtime_backed_ids
         assert summary.quarantined >= 1
         assert summary.missing_runtime_refs >= 1
+
+    def test_kernel_api_manifest_is_minimum_runtime_backed(self):
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        ext = reg.get("PRJ-KERNEL-API")
+        assert ext is not None
+        assert ext.truth_tier == "runtime_backed"
+        assert ext.runtime_handler_registered is True
+        assert ext.remap_candidate_refs == ()
+        assert ext.missing_runtime_refs == ()
+        assert ext.entrypoints.get("kernel_api_actions") == [
+            "system_status",
+            "doc_nav_check",
+        ]
+        assert ext.guardrails == {"offline": True, "network_default": False}
+        assert ext.policy_files == (
+            "defaults/policies/policy_kernel_api_guardrails.v1.json",
+        )
+        for action in ("project_status", "roadmap_follow", "roadmap_finish"):
+            assert action not in ext.entrypoints.get("kernel_api_actions", [])
+
+    def test_truth_summary_pins_kernel_api_promotion_metrics(self):
+        reg = ExtensionRegistry()
+        reg.load_from_defaults()
+        summary = reg.truth_summary()
+        assert summary.runtime_backed == 2
+        assert summary.quarantined == 17
+        assert summary.runtime_backed_ids == ("PRJ-HELLO", "PRJ-KERNEL-API")
 
     def test_list_enabled_filters_disabled_and_blocked(self):
         reg = ExtensionRegistry()
