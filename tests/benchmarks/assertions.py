@@ -244,12 +244,35 @@ def assert_spend_recorded_event(
     )
 
 
+def assert_no_spend_recorded_event(
+    run_dir: Path,
+    *,
+    source: str = "adapter_path",
+) -> None:
+    """Assert no ``llm_spend_recorded`` event exists for ``source``.
+
+    Used by fast-mode benchmark contracts where adapter-path reconcile
+    is intentionally inactive and spend evidence must remain absent.
+    """
+    events = _iter_events(run_dir)
+    for event in events:
+        if event.get("kind") != "llm_spend_recorded":
+            continue
+        payload = event.get("payload") or {}
+        if isinstance(payload, Mapping) and payload.get("source") == source:
+            raise AssertionError(
+                f"unexpected llm_spend_recorded event with source={source!r} "
+                f"in {run_dir / 'events.jsonl'!s}"
+            )
+
+
 __all__ = [
     "assert_adapter_ok",
     "assert_budget_axis_seeded",
     "assert_budget_unchanged",
     "assert_capability_artifact",
     "assert_cost_consumed",
+    "assert_no_spend_recorded_event",
     "assert_review_score",
     "assert_spend_recorded_event",
     "assert_workflow_completed",

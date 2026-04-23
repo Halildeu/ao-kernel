@@ -38,7 +38,8 @@ ayrı ayrı görünür kılmak.
 - **GP-2 tracker issue:** [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`open`)
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
-- **Aktif issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`GP-2.2 active`)
+- **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`open`)
+- **Aktif issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`GP-2.2b deterministic assertion upgrade`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -84,7 +85,7 @@ ayrı ayrı görünür kılmak.
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
-| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329)) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + yeni aktif tranche kickoff |
+| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), current slice [#336](https://github.com/Halildeu/ao-kernel/issues/336)) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + yeni aktif tranche kickoff |
 
 ## 5. Şimdi
 

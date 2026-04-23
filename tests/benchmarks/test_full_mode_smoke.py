@@ -287,6 +287,12 @@ class TestFullModeAdapterPathReconcile:
         # `cost_source="real_adapter"`.
         event = assert_spend_recorded_event(run_dir, source="adapter_path")
         assert event.get("kind") == "llm_spend_recorded"
+        payload = event.get("payload") or {}
+        assert payload.get("source") == "adapter_path"
+        assert payload.get("run_id") == run_id
+        assert isinstance(payload.get("step_id"), str) and payload["step_id"]
+        assert isinstance(payload.get("attempt"), int) and payload["attempt"] >= 1
+        assert float(payload.get("cost_usd", 0.0)) > 0.0
 
         # Publish the scorecard primary sidecar (full-mode expected
         # set = {governed_review} per mode-gated session-finish).
