@@ -141,7 +141,7 @@ def _default_roadmap_state() -> dict[str, Any]:
         "active_roadmap_id": None,
         "status": "idle",
         "last_step_id": None,
-        "updated_at": _now_iso(),
+        "updated_at": None,
         "finished_at": None,
         "history": [],
     }
