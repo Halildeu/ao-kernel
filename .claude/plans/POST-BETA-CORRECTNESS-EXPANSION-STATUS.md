@@ -15,10 +15,11 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md` (`GP-1.2` active)
+- **Aktif decision/ordering contract:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md` (`GP-1.3` active)
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - **PB-9.4 karar notu:** `.claude/plans/PB-9.4-PRODUCTION-CLAIM-DECISION-CLOSEOUT.md`
+- **GP-1.2 karar notu:** `.claude/plans/GP-1.2-GH-CLI-PR-LIVE-WRITE-DISPOSABLE-DECISION.md`
 - **GP-1 roadmap:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
@@ -28,7 +29,7 @@ ayrı ayrı görünür kılmak.
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288) (`closed`)
 - **PB-9 tracker issue:** [#302](https://github.com/Halildeu/ao-kernel/issues/302) (`closed`)
 - **GP-1 tracker issue:** [#316](https://github.com/Halildeu/ao-kernel/issues/316)
-- **Aktif issue:** [#318](https://github.com/Halildeu/ao-kernel/issues/318) (`GP-1.2`)
+- **Aktif issue:** [#322](https://github.com/Halildeu/ao-kernel/issues/322) (`GP-1.3`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -40,8 +41,8 @@ ayrı ayrı görünür kılmak.
   tranche'i tamamlandı ve `PB-8` tracker kapandı; `PB-9.1` prerequisite parity,
   `PB-9.2` truth inventory debt ratchet, `PB-9.3` write/live evidence rehearsal
   ve `PB-9.4` production claim decision closeout dilimleri kapanmıştır.
-- `GP-1` tracker açıldı; `GP-1.1` kapanmış, aktif hat `GP-1.2`
-  live-write disposable contract dilimidir.
+- `GP-1` tracker açıldı; `GP-1.2` canlı karar kanıtı ile kapanmış, aktif hat
+  `GP-1.3` bug_fix_flow release-closure re-evaluation dilimidir.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -73,7 +74,7 @@ ayrı ayrı görünür kılmak.
 | `PB-6` general-purpose expansion gap map | Completed on `main` ([#243](https://github.com/Halildeu/ao-kernel/issues/243), [#279](https://github.com/Halildeu/ao-kernel/pull/279)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + PB-6.6 final verdict closeout |
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
-| `GP-1` general-purpose production widening | Active ([#316](https://github.com/Halildeu/ao-kernel/issues/316), active tranche [#318](https://github.com/Halildeu/ao-kernel/issues/318)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde yürütmek | roadmap + active tranche issue + status parity |
+| `GP-1` general-purpose production widening | Active ([#316](https://github.com/Halildeu/ao-kernel/issues/316), active tranche [#322](https://github.com/Halildeu/ao-kernel/issues/322)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde yürütmek | roadmap + active tranche issue + status parity |
 
 ## 5. Şimdi
 
@@ -271,9 +272,9 @@ Not:
 
 `GP-1` yürütmesi aktif.
 
-1. Son kapanan slice: `GP-1.1` widening authority map + entry gates
-2. Bugünkü aktif iş: `GP-1.2` `gh-cli-pr` live-write disposable contract
-3. Sonraki sıra (planlı): `GP-1.3` `bug_fix_flow` release-closure re-evaluation
+1. Son kapanan slice: `GP-1.2` `gh-cli-pr` live-write disposable contract
+2. Bugünkü aktif iş: `GP-1.3` `bug_fix_flow` release-closure re-evaluation
+3. Sonraki sıra (planlı): `GP-1.4` extension promotion tranche
 
 `PB-8.2` completion kaydı:
 
@@ -442,7 +443,7 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
 2. Tracker issue: [#316](https://github.com/Halildeu/ao-kernel/issues/316) (`open`)
 3. Aktif tranche issue:
-   - [#318](https://github.com/Halildeu/ao-kernel/issues/318) (`GP-1.2`, `open`)
+   - [#322](https://github.com/Halildeu/ao-kernel/issues/322) (`GP-1.3`, `open`)
 4. `GP-1.1` kapsamı:
    - widening authority map and entry gates
    - support widening kararları için non-negotiable gate setini sabitlemek
@@ -450,6 +451,12 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    - issue: [#315](https://github.com/Halildeu/ao-kernel/issues/315) (`closed`)
    - PR: [#317](https://github.com/Halildeu/ao-kernel/pull/317)
    - merge commit: `9c4ca53`
-6. Sonraki planlı sıra:
-   - `GP-1.3` `bug_fix_flow` release-closure re-evaluation
+6. `GP-1.2` completion:
+   - issue: [#318](https://github.com/Halildeu/ao-kernel/issues/318) (`closed`)
+   - canlı kanıt: preflight (`/tmp/gp12-gh-preflight.report.json`), fail-closed guard (`/tmp/gp12-gh-livewrite-guard.report.json`), controlled live-write chain (`/tmp/gp12-gh-livewrite-pass.report.json`)
+   - canlı PR kanıtı: [#321](https://github.com/Halildeu/ao-kernel/pull/321) (`draft`, sonra `CLOSED`)
+   - karar notu: `.claude/plans/GP-1.2-GH-CLI-PR-LIVE-WRITE-DISPOSABLE-DECISION.md`
+   - verdict: `stay_preflight`
+7. Sonraki planlı sıra:
    - `GP-1.4` extension promotion tranche
+   - `GP-1.5` program closeout decision

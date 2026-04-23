@@ -46,16 +46,19 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
   - PR: [#317](https://github.com/Halildeu/ao-kernel/pull/317)
   - Merge commit: `9c4ca53`
 
-### `GP-1.2` — `gh-cli-pr` live-write disposable contract (Active)
+### `GP-1.2` — `gh-cli-pr` live-write disposable contract (Completed)
 
 - Issue: [#318](https://github.com/Halildeu/ao-kernel/issues/318)
 - Hedef: disposable sandbox + create->verify->rollback zincirini production-grade
   karar seviyesinde doğrulamak.
 - Ana çıktı: `promote_candidate` veya `stay_preflight` kararı.
+- Karar notu:
+  - `.claude/plans/GP-1.2-GH-CLI-PR-LIVE-WRITE-DISPOSABLE-DECISION.md`
+- Karar: `stay_preflight`
 
-### `GP-1.3` — `bug_fix_flow` release-closure re-evaluation (Planned)
+### `GP-1.3` — `bug_fix_flow` release-closure re-evaluation (Active)
 
-- Issue: `pending`
+- Issue: [#322](https://github.com/Halildeu/ao-kernel/issues/322)
 - Hedef: `bug_fix_flow` deferred sınırını yeniden değerlendirmek.
 - Ana çıktı: support boundary satırı için promote/stay kararı.
 
