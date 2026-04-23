@@ -35,9 +35,9 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
 ## 3. Mevcut Baseline
 
 - `main` temiz ve `origin/main` ile senkron.
-- `ST-1` release PR package metadata hedefi `4.0.0b2`; onceki public
-  pre-release package metadata `4.0.0b1` idi.
-- Public tag `v4.0.0-beta.1` mevcut; `main` bu tag'den ileride.
+- `ST-1` release PR package metadata hedefi `4.0.0b2` idi ve tamamlandi.
+- Public tag `v4.0.0-beta.2` mevcut; PyPI exact pin
+  `ao-kernel==4.0.0b2` fresh venv ile dogrulandi.
 - Public Beta support boundary dar: `review_ai_flow + codex-stub`,
   entrypoint'ler, doctor, policy command enforcement ve wheel smoke kanitli
   cekirdek shipped yuzeydir.
@@ -65,9 +65,9 @@ baglanacak:
 
 Stable'a dogrudan ziplanmayacak. Varsayilan yol:
 
-1. `4.0.0b2` veya release-candidate niteliginde yeni pre-release cik.
-2. Fresh install / wheel / docs / smoke / runbook kanitlarini bu pre-release
-   uzerinde topla.
+1. `4.0.0b2` pre-release cikti ve fresh install / wheel / docs / smoke /
+   runbook kanitlari toplandi.
+2. Siradaki adim `ST-2` stable support boundary freeze'dir.
 3. Support boundary genisletilecekse sadece kanitli yuzeyleri genislet.
 4. Blocker kalmazsa `4.0.0` stable tag ve PyPI publish yap.
 
@@ -101,27 +101,29 @@ kapatmak.
 
 ### ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
 
-**Durum:** Release PR active via [#340](https://github.com/Halildeu/ao-kernel/issues/340)
-and `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`.
+**Durum:** Completed on `main` via [#340](https://github.com/Halildeu/ao-kernel/issues/340),
+contract PR [#341](https://github.com/Halildeu/ao-kernel/pull/341), release PR
+[#342](https://github.com/Halildeu/ao-kernel/pull/342), tag
+`v4.0.0-beta.2`, and publish workflow `24863200216`.
 
 **Amac:** Current `main`'i eski `v4.0.0-beta.1` tag'inden ayrilmis yeni bir
 kanitli pre-release'e cevirmek.
 
 **Kapsam:**
 
-- Version bump gerekiyorsa `4.0.0b2`.
+- Version bump `4.0.0b2`.
 - Changelog/release note: `v4.0.0-beta.1` sonrasi kapanan governance,
   support-boundary, evidence ve adapter kararlarini ozetle.
 - CI + packaging smoke + publish workflow dry-run/publish gate.
 
 **DoD:**
 
-- Fresh venv, repo disi cwd, wheel install smoke geciyor.
+- Fresh venv, repo disi cwd, wheel install smoke gecti.
 - `ao-kernel version`, `python -m ao_kernel version`,
-  `python -m ao_kernel.cli version` ayni pre-release surumunu veriyor.
+  `python -m ao_kernel.cli version` ayni pre-release surumunu verdi.
 - `python3 examples/demo_review.py --cleanup` installed package yuzeyiyle
-  `completed` oluyor.
-- PyPI pre-release verify tamam.
+  `completed` oldu.
+- PyPI pre-release verify tamamlandi.
 
 ### ST-2 — Stable Support Boundary Freeze
 
@@ -293,9 +295,9 @@ dogrulanir.
 
 ## 10. Hemen Siradaki Is
 
-1. `ST-0` baslat: GP-2.2 closeout ve status/docs drift temizligi.
-2. `ST-1` hazirla: current `main` icin yeni pre-release gate karari
-   (`4.0.0b2` varsayilan).
+1. `ST-0` tamamlandi: GP-2.2 closeout ve status/docs drift temizligi.
+2. `ST-1` tamamlandi: current `main` icin `4.0.0b2` pre-release publish ve
+   PyPI exact pin verify.
 3. `ST-2` ile stable support boundary freeze yap.
 4. Sonra stable scope kararina gore `ST-3` ve `ST-4` gerekli mi, yoksa dar
    runtime stable release'e gecilebilir mi karar ver.

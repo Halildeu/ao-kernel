@@ -1,6 +1,6 @@
 # ST-1 — Releasable Pre-Release Gate (`4.0.0b2`)
 
-**Durum:** Release PR active
+**Durum:** Completed on `main`
 **Issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Hedef pre-release:** package version `4.0.0b2`, git tag
@@ -30,8 +30,25 @@ pre-release gercegini tekrar kanitlama adimidir.
   - real adapter lane'leri operator-managed beta
   - adapter-path `cost_usd` reconcile public support claim olarak deferred
 
-Release PR hedefi bu metadata'yi `4.0.0b2`ye tasimaktir. Stable `4.0.0`
+Release PR hedefi bu metadata'yi `4.0.0b2`ye tasimakti. Stable `4.0.0`
 claim'i bu slice'ta yoktur.
+
+## 2.1 Completion Result
+
+- Contract PR: [#341](https://github.com/Halildeu/ao-kernel/pull/341)
+- Release PR: [#342](https://github.com/Halildeu/ao-kernel/pull/342)
+- Merge commit: `bc1bca7`
+- Git tag: `v4.0.0-beta.2`
+- Publish workflow: `24863200216` success
+- PyPI exact URL: `https://pypi.org/project/ao-kernel/4.0.0b2/` returned
+  `HTTP/2 200`
+- Fresh venv exact pin install: `ao-kernel==4.0.0b2`
+- Verified entrypoints:
+  - `ao-kernel version`
+  - `python -m ao_kernel version`
+  - `python -m ao_kernel.cli version`
+- Verified demo: `examples/demo_review.py --cleanup` with the installed
+  package Python returned final state `completed`.
 
 ## 3. Kapsam
 
