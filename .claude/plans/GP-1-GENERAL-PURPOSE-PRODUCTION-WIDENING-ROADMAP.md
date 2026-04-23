@@ -56,15 +56,18 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
   - `.claude/plans/GP-1.2-GH-CLI-PR-LIVE-WRITE-DISPOSABLE-DECISION.md`
 - Karar: `stay_preflight`
 
-### `GP-1.3` — `bug_fix_flow` release-closure re-evaluation (Active)
+### `GP-1.3` — `bug_fix_flow` release-closure re-evaluation (Completed)
 
 - Issue: [#322](https://github.com/Halildeu/ao-kernel/issues/322)
 - Hedef: `bug_fix_flow` deferred sınırını yeniden değerlendirmek.
 - Ana çıktı: support boundary satırı için promote/stay kararı.
+- Karar notu:
+  - `.claude/plans/GP-1.3-BUG-FIX-FLOW-RELEASE-CLOSURE-DECISION.md`
+- Karar: `stay_deferred`
 
-### `GP-1.4` — Extension promotion tranche (`PRJ-CONTEXT-ORCHESTRATION`) (Planned)
+### `GP-1.4` — Extension promotion tranche (`PRJ-CONTEXT-ORCHESTRATION`) (Active)
 
-- Issue: `pending`
+- Issue: [#324](https://github.com/Halildeu/ao-kernel/issues/324)
 - Hedef: contract-only extension için runtime ownership / handler readiness kanıtı.
 - Ana çıktı: `promotion_candidate` veya `stay_contract_only`.
 
