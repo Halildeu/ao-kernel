@@ -14,14 +14,15 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** yok (`PB-7.3` kapanış kararı:
-  `.claude/plans/PB-7.3-KERNEL-API-WRITE-SIDE-WIDENING-DECISION.md`)
+- **Program roadmap:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-8.1-GH-CLI-PR-LIVE-WRITE-PRODUCTIONIZATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** yok (open slice bulunmuyor)
+- **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)
+- **Aktif issue:** [#289](https://github.com/Halildeu/ao-kernel/issues/289) (`PB-8.1`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -256,13 +257,13 @@ Not:
 
 ## 8. Anlık Öncelik
 
-`PB-7.3` tamamlandı.
+`PB-8` kickoff aktif.
 
 1. Son kapanan slice: `PB-7.3` (`PRJ-KERNEL-API` write-side widening decision)
-2. Karar: `stay_deferred` (write-side support widening açılmadı)
-3. Sonraki aktif hat: yok (yeni widening implementation slice'ı açılmadı)
+2. Bugünkü aktif slice: `PB-8.1` (`gh-cli-pr` live-write productionization)
+3. Sonraki sıra (planlı): `PB-8.2` -> `PB-8.3` -> `PB-8.4`
 
-## 9. Program Closeout (Final)
+## 9. PB-7 Closeout Snapshot
 
 **Kapanış tarihi:** 2026-04-23
 
@@ -271,7 +272,7 @@ Not:
    (PB-6.6 / issue `#277`).
 3. Support boundary bilerek dar bırakıldı; shipped baseline dışı widening
    otomatik açılmadı.
-4. Program tracker/umbrella issue kapanışı bu closeout ile yapılır:
+4. O günkü program tracker/umbrella issue kapanışı bu closeout ile yapılır:
    `#243`, `#219`.
 
 ## 10. Güncelleme Protokolü
@@ -323,3 +324,16 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    safety + rollback kapıları widening için hâlâ tamamlanmadı.
 5. Sonraki hat: yok (explicit widening implementation tranche açılmadan
    support boundary dar kalır)
+
+## 12. PB-8 Kickoff
+
+`PB-7` closeout sonrası takip edilebilir widening programı `PB-8` olarak açıldı.
+
+1. Program roadmap: `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
+2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288)
+3. Aktif tranche: `PB-8.1` ([#289](https://github.com/Halildeu/ao-kernel/issues/289))
+4. Sıradaki tranche'lar:
+   - `PB-8.2` ([#290](https://github.com/Halildeu/ao-kernel/issues/290))
+   - `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
+   - `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
+5. Program kuralı: tek aktif runtime tranche + zorunlu kanıt paketi.
