@@ -19,7 +19,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#265](https://github.com/Halildeu/ao-kernel/issues/265)
+- **Aktif issue:** [#267](https://github.com/Halildeu/ao-kernel/issues/267)
 
 ## 2. Başlangıç Gerçeği
 
@@ -75,16 +75,23 @@ bir sonraki implementation hattına taşımaktır.
 2. Decision/ordering contract:
    `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
 3. Hedef: first/second/hold tranche sırasını yazılı kapıya çevirmek ve
-   ilk implementasyon hattını `PB-6.4a` olarak tekillemek.
+   yalnız aktif tranche'ı net tutmak.
 
-`PB-6.4a` active implementation slice:
+`PB-6.4a` implementation slice'ı tamamlandı:
 
 1. Issue: [#265](https://github.com/Halildeu/ao-kernel/issues/265)
-2. Hedef: support mapping hardening (`truth tier` -> support language parity)
-3. Kapsam: `docs/PUBLIC-BETA.md`, `docs/SUPPORT-BOUNDARY.md`,
-   `tests/test_doctor_cmd.py`, status SSOT hizası
-4. Slice plan:
-   `.claude/plans/PB-6.4a-SUPPORT-MAPPING-HARDENING.md`
+2. PR: [#266](https://github.com/Halildeu/ao-kernel/pull/266)
+3. Merge commit: `b934fb65003dd0b3713fac982a066e8c252a92b8`
+4. Sonuç: support mapping parity (`PUBLIC-BETA` + `SUPPORT-BOUNDARY`) ve
+   `tests/test_doctor_cmd.py` doğrulamaları hizalandı.
+
+`PB-6.4b` active decision slice:
+
+1. Issue: [#267](https://github.com/Halildeu/ao-kernel/issues/267)
+2. Hedef: `claude-code-cli` lane'i için promotion readiness kararını
+   checklist + failure-mode matrisi ile yazılı kapıya çevirmek
+3. Slice plan:
+   `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -167,7 +174,8 @@ Güncel runtime baseline:
    - issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)
    - contract:
      `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
-   - active implementation tranche: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265))
+   - first tranche complete: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265), [#266](https://github.com/Halildeu/ao-kernel/pull/266))
+   - active implementation tranche: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267))
 
 Not:
 
@@ -190,7 +198,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
+1. `PB-6.4b` `claude-code-cli` lane promotion readiness karar dilimi
 
 ## 9. Güncelleme Protokolü
 
