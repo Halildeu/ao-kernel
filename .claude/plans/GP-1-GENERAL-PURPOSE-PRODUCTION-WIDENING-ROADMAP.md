@@ -36,16 +36,19 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
 
 ## Tranche Sırası
 
-### `GP-1.1` — Widening authority map and entry gates (Active)
+### `GP-1.1` — Widening authority map and entry gates (Completed)
 
 - Issue: [#315](https://github.com/Halildeu/ao-kernel/issues/315)
 - Hedef: hangi yüzey hangi gate seti olmadan promote edilemez, bunu
   authoritative tabloya bağlamak.
 - Ana çıktı: tek anlamlı entry-gate kontratı + tranche sıralaması.
+- Kapanış kanıtı:
+  - PR: [#317](https://github.com/Halildeu/ao-kernel/pull/317)
+  - Merge commit: `9c4ca53`
 
-### `GP-1.2` — `gh-cli-pr` live-write disposable contract (Planned)
+### `GP-1.2` — `gh-cli-pr` live-write disposable contract (Active)
 
-- Issue: `pending`
+- Issue: [#318](https://github.com/Halildeu/ao-kernel/issues/318)
 - Hedef: disposable sandbox + create->verify->rollback zincirini production-grade
   karar seviyesinde doğrulamak.
 - Ana çıktı: `promote_candidate` veya `stay_preflight` kararı.
@@ -89,4 +92,3 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
 1. `GP-1.1..GP-1.5` için karar kayıtları tamamlanır.
 2. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif hattı kapatır.
 3. Tracker [#316](https://github.com/Halildeu/ao-kernel/issues/316) kapanır.
-
