@@ -56,7 +56,7 @@ istemek gerekir.
 |---|---|---|
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
 | `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir. `PB-6.6` closeout verdict'i: `stay_beta_operator_managed` |
-| `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py` preflight yoludur (`--dry-run`). `--mode live-write --allow-live-write` readiness probe'u explicit opt-in + disposable guard ister; support widening değildir |
+| `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py` preflight yoludur (`--dry-run`). Live-write probe (`--mode live-write --allow-live-write --head <branch> --base <branch>`) explicit opt-in + disposable guard + create->verify->rollback zinciri ister; `--keep-live-write-pr-open` lane'i riskli sayar ve `blocked` döner. Support widening değildir |
 | Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
 
 ## Contract / Inventory Layer
@@ -85,7 +85,7 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
 | Yüzey | Durum | Not |
 |---|---|---|
 | `bug_fix_flow` release closure | Deferred | Deterministik correctness/evidence coverage mevcut olsa da write-side support widening kararı `PB-7.2` ile `stay_deferred`; live remote PR yan-etki kapıları promoted değil |
-| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Readiness probe varlığına rağmen gerçek remote PR açılışı henüz destek vaadi değildir; live-write lane yalnız operator-managed/deferred boundary içinde değerlendirilir |
+| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Live-write probe create->verify->rollback guard'larıyla güçlense de gerçek remote PR açılışı hâlâ destek vaadi değildir; lane operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
 | `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | `PB-7.3` kararı `stay_deferred`: runtime owner/entrypoint kaydı bu action'lar için hâlâ yok; behavior/safety/rollback kapıları tamamlanmadan support widening açılmaz |

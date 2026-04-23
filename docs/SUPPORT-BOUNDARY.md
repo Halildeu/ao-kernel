@@ -55,9 +55,11 @@ These are real, testable surfaces, but they are not the default shipped demo:
 `PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
 `stay_beta_operator_managed` olarak korunur; lane shipped baseline'a yükselmez.
 
-`gh-cli-pr` live-write probe, `PB-7.1` ile readiness amaçlı opt-in guard
-katmanı kazanır. Bu probe'un varlığı tek başına live remote PR opening support
-tier'ını widen etmez; public boundary satırı deferred kalır.
+`gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
+disposable repo, explicit `--head` + `--base`) ve create -> verify -> rollback
+zincirine taşınmıştır. `--keep-live-write-pr-open` seçeneği lane'i riskli kabul
+eder ve rapor `blocked` döner. Bu probe'un varlığı tek başına live remote PR
+opening support tier'ını widen etmez; public boundary satırı deferred kalır.
 
 ### Contract inventory
 

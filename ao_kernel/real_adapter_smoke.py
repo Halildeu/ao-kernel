@@ -39,6 +39,9 @@ _GH_DRY_RUN_MARKER = "would have created a pull request"
 _GH_LIVE_WRITE_ROLLBACK_COMMENT = (
     "ao-kernel gh-cli-pr live-write smoke rollback"
 )
+_GH_LIVE_WRITE_VERIFY_JSON_FIELDS = (
+    "state,isDraft,url,number,headRefName,baseRefName"
+)
 _GITHUB_PR_URL_RE = re.compile(
     r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+"
 )
@@ -302,6 +305,11 @@ def run_gh_cli_pr_smoke(
                         detail="binary bulunamadigi icin live-write smoke atlandi",
                     ),
                     SmokeCheck(
+                        name="pr_live_write_verify",
+                        status="skip",
+                        detail="binary bulunamadigi icin live-write verify smoke atlandi",
+                    ),
+                    SmokeCheck(
                         name="pr_live_write_rollback",
                         status="skip",
                         detail="binary bulunamadigi icin rollback smoke atlandi",
@@ -422,6 +430,13 @@ def run_gh_cli_pr_smoke(
         )
         checks.append(
             SmokeCheck(
+                name="pr_live_write_verify",
+                status="skip",
+                detail="live-write adimi acilmadigi icin verify smoke atlandi",
+            )
+        )
+        checks.append(
+            SmokeCheck(
                 name="pr_live_write_rollback",
                 status="skip",
                 detail="live-write adimi acilmadigi icin rollback smoke atlandi",
@@ -436,19 +451,66 @@ def run_gh_cli_pr_smoke(
             checks=checks,
         )
 
-    if not resolved_repo or not resolved_base or not resolved_head:
+    if not resolved_repo:
         checks.append(
             SmokeCheck(
                 name="pr_live_write",
+                status="fail",
+                detail="live-write smoke icin repo context cozulmelidir",
+                finding_code="gh_pr_live_write_repo_context_required",
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_verify",
                 status="skip",
-                detail="repo/default-branch cozulmedigi icin live-write smoke atlandi",
+                detail="live-write adimi baslamadigi icin verify smoke atlandi",
             )
         )
         checks.append(
             SmokeCheck(
                 name="pr_live_write_rollback",
                 status="skip",
-                detail="live-write adimi kosulmadigi icin rollback smoke atlandi",
+                detail="live-write adimi baslamadigi icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if not base_ref:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail=(
+                    "live-write smoke icin explicit --base verilmelidir "
+                    "(default branch fallback kabul edilmez)"
+                ),
+                finding_code="gh_pr_live_write_base_ref_required",
+                observed={
+                    "resolved_base": resolved_base,
+                    "resolved_head": resolved_head,
+                },
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_verify",
+                status="skip",
+                detail="live-write adimi baslamadigi icin verify smoke atlandi",
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write adimi baslamadigi icin rollback smoke atlandi",
             )
         )
         return _finalize_gh_report(
@@ -470,7 +532,17 @@ def run_gh_cli_pr_smoke(
                     "(default branch fallback kabul edilmez)"
                 ),
                 finding_code="gh_pr_live_write_head_ref_required",
-                observed={"resolved_base": resolved_base, "resolved_head": resolved_head},
+                observed={
+                    "resolved_base": resolved_base,
+                    "resolved_head": resolved_head,
+                },
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_verify",
+                status="skip",
+                detail="live-write adimi baslamadigi icin verify smoke atlandi",
             )
         )
         checks.append(
@@ -489,14 +561,27 @@ def run_gh_cli_pr_smoke(
             checks=checks,
         )
 
-    if resolved_head == resolved_base:
+    resolved_base_ref = base_ref
+    resolved_head_ref = head_ref
+
+    if resolved_head_ref == resolved_base_ref:
         checks.append(
             SmokeCheck(
                 name="pr_live_write",
                 status="fail",
                 detail="live-write smoke icin --head ve --base farkli olmalidir",
                 finding_code="gh_pr_live_write_same_head_base",
-                observed={"resolved_base": resolved_base, "resolved_head": resolved_head},
+                observed={
+                    "resolved_base": resolved_base_ref,
+                    "resolved_head": resolved_head_ref,
+                },
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_verify",
+                status="skip",
+                detail="live-write adimi baslamadigi icin verify smoke atlandi",
             )
         )
         checks.append(
@@ -527,7 +612,17 @@ def run_gh_cli_pr_smoke(
                         f"(keyword={required_keyword!r})"
                     ),
                     finding_code="gh_pr_live_write_repo_not_disposable",
-                    observed={"repo_name": resolved_repo, "required_keyword": required_keyword},
+                    observed={
+                        "repo_name": resolved_repo,
+                        "required_keyword": required_keyword,
+                    },
+                )
+            )
+            checks.append(
+                SmokeCheck(
+                    name="pr_live_write_verify",
+                    status="skip",
+                    detail="live-write adimi baslamadigi icin verify smoke atlandi",
                 )
             )
             checks.append(
@@ -560,9 +655,9 @@ def run_gh_cli_pr_smoke(
                 "--repo",
                 resolved_repo,
                 "--head",
-                resolved_head,
+                resolved_head_ref,
                 "--base",
-                resolved_base,
+                resolved_base_ref,
                 "--title",
                 probe_title,
                 "--body-file",
@@ -575,12 +670,19 @@ def run_gh_cli_pr_smoke(
     live_write_check, created_pr_url = _classify_gh_pr_live_write_check(
         live_create_result,
         repo_name=resolved_repo,
-        head_ref=resolved_head,
-        base_ref=resolved_base,
+        head_ref=resolved_head_ref,
+        base_ref=resolved_base_ref,
     )
     checks.append(live_write_check)
 
     if live_write_check.status != "pass" or created_pr_url is None:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_verify",
+                status="skip",
+                detail="live-write create basarisiz oldugu icin verify smoke atlandi",
+            )
+        )
         checks.append(
             SmokeCheck(
                 name="pr_live_write_rollback",
@@ -597,13 +699,45 @@ def run_gh_cli_pr_smoke(
             checks=checks,
         )
 
+    verify_result = _run_check(
+        runner,
+        (
+            binary_path,
+            "pr",
+            "view",
+            created_pr_url,
+            "--repo",
+            resolved_repo,
+            "--json",
+            _GH_LIVE_WRITE_VERIFY_JSON_FIELDS,
+        ),
+        working_dir,
+        timeout_seconds,
+    )
+    checks.append(
+        _classify_gh_pr_live_write_verify_check(
+            verify_result,
+            pr_url=created_pr_url,
+            repo_name=resolved_repo,
+            head_ref=resolved_head_ref,
+            base_ref=resolved_base_ref,
+        )
+    )
+
     if keep_live_write_pr_open:
         checks.append(
             SmokeCheck(
                 name="pr_live_write_rollback",
-                status="skip",
-                detail="--keep-live-write-pr-open nedeniyle rollback skip edildi",
-                observed={"pr_url": created_pr_url},
+                status="fail",
+                detail=(
+                    "--keep-live-write-pr-open nedeniyle rollback devre disi kaldigi "
+                    "icin lane riskli kabul edildi"
+                ),
+                finding_code="gh_pr_live_write_keep_open_requested",
+                observed={
+                    "pr_url": created_pr_url,
+                    "risk": "rollback_not_executed",
+                },
             )
         )
         return _finalize_gh_report(
@@ -1186,6 +1320,109 @@ def _classify_gh_pr_live_write_check(
             observed={"pr_url": pr_url},
         ),
         pr_url,
+    )
+
+
+def _classify_gh_pr_live_write_verify_check(
+    result: CommandResult,
+    *,
+    pr_url: str,
+    repo_name: str,
+    head_ref: str,
+    base_ref: str,
+) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="pr_live_write_verify",
+            status="fail",
+            detail="gh pr view verify cagrisi timeout'a dustu",
+            finding_code="gh_pr_live_write_verify_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={"pr_url": pr_url, **_trim_output(result)},
+        )
+    if result.returncode != 0:
+        return SmokeCheck(
+            name="pr_live_write_verify",
+            status="fail",
+            detail="gh pr view verify cagrisi basarisiz",
+            finding_code="gh_pr_live_write_verify_failed",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={"pr_url": pr_url, **_trim_output(result)},
+        )
+
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return SmokeCheck(
+            name="pr_live_write_verify",
+            status="fail",
+            detail="gh pr view verify JSON donmedi",
+            finding_code="gh_pr_live_write_verify_not_json",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={"pr_url": pr_url, **_trim_output(result)},
+        )
+
+    observed_url = payload.get("url")
+    observed_state = str(payload.get("state"))
+    observed_is_draft = payload.get("isDraft")
+    observed_head = payload.get("headRefName")
+    observed_base = payload.get("baseRefName")
+    observed_number = payload.get("number")
+    verify_ok = (
+        isinstance(observed_number, int)
+        and observed_url == pr_url
+        and observed_state.upper() == "OPEN"
+        and observed_is_draft is True
+        and observed_head == head_ref
+        and observed_base == base_ref
+    )
+    if verify_ok:
+        return SmokeCheck(
+            name="pr_live_write_verify",
+            status="pass",
+            detail=(
+                "gh pr view verify gecti "
+                f"(repo={repo_name!r}, pr={pr_url!r}, number={observed_number})"
+            ),
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={
+                "pr_url": observed_url,
+                "number": observed_number,
+                "state": observed_state,
+                "is_draft": observed_is_draft,
+                "head_ref": observed_head,
+                "base_ref": observed_base,
+            },
+        )
+
+    return SmokeCheck(
+        name="pr_live_write_verify",
+        status="fail",
+        detail="gh pr view verify sonucu beklenen state/head/base ile uyusmuyor",
+        finding_code="gh_pr_live_write_verify_mismatch",
+        argv=result.argv,
+        returncode=result.returncode,
+        observed={
+            "expected": {
+                "pr_url": pr_url,
+                "state": "OPEN",
+                "is_draft": True,
+                "head_ref": head_ref,
+                "base_ref": base_ref,
+            },
+            "actual": {
+                "pr_url": observed_url,
+                "number": observed_number,
+                "state": observed_state,
+                "is_draft": observed_is_draft,
+                "head_ref": observed_head,
+                "base_ref": observed_base,
+            },
+        },
     )
 
 

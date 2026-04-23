@@ -41,11 +41,17 @@ def main() -> int:
     )
     parser.add_argument(
         "--base",
-        help="Optional base branch override for the dry-run PR probe.",
+        help=(
+            "Base branch override. live-write mode'da explicit --base zorunludur; "
+            "preflight modunda default branch fallback kullanilir."
+        ),
     )
     parser.add_argument(
         "--head",
-        help="Optional head branch override for the PR probe.",
+        help=(
+            "Head branch override. live-write mode'da explicit --head zorunludur; "
+            "preflight modunda default branch fallback kullanilir."
+        ),
     )
     parser.add_argument(
         "--mode",
@@ -64,7 +70,10 @@ def main() -> int:
     parser.add_argument(
         "--keep-live-write-pr-open",
         action="store_true",
-        help="Skip rollback close step after live-write create success.",
+        help=(
+            "Create edilen PR'i acik birak. Bu secenek lane'i riskli sayar ve "
+            "rapor blocked doner."
+        ),
     )
     parser.add_argument(
         "--require-disposable-keyword",
