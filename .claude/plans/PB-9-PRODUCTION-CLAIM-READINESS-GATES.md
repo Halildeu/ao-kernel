@@ -55,17 +55,18 @@ kapılar birlikte geçerse verilir:
   çıktılarıyla tek anlamlı yapmak.
 - Ana çıktı: operatör aynı prereq bilgisini tüm SSOT yüzeylerde aynı şekilde görür.
 
-### `PB-9.2` — Truth inventory debt ratchet (Active)
+### `PB-9.2` — Truth inventory debt ratchet (Completed)
 
-- Issue: [#306](https://github.com/Halildeu/ao-kernel/issues/306)
+- Issue: [#306](https://github.com/Halildeu/ao-kernel/issues/306) (`closed`)
+- PR: [#308](https://github.com/Halildeu/ao-kernel/pull/308)
 - Karar notu: `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - Hedef: doctor truth inventory (`runtime_backed/contract_only/quarantined`)
   üzerinden promotion sırası için ölçülebilir karar tablosu çıkarmak.
 - Ana çıktı: widening adayları için objektif ve tekrar üretilebilir ranking.
 
-### `PB-9.3` — Write/live lane evidence rehearsal (Planned)
+### `PB-9.3` — Write/live lane evidence rehearsal (Active)
 
-- Issue: `pending`
+- Issue: [#309](https://github.com/Halildeu/ao-kernel/issues/309)
 - Hedef: write/live lane'lerde create->verify->rollback zincirini
   behavior-first kanıtla güçlendirmek.
 - Ana çıktı: live side-effect risklerinin incident/rollback açısından
