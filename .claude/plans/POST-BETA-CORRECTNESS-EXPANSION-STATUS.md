@@ -15,7 +15,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md` (`PB-9.3` active)
+- **Aktif decision/ordering contract:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md` (`PB-9.4` active)
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
@@ -25,7 +25,7 @@ ayrı ayrı görünür kılmak.
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288) (`closed`)
 - **PB-9 tracker issue:** [#302](https://github.com/Halildeu/ao-kernel/issues/302)
-- **Aktif issue:** [#309](https://github.com/Halildeu/ao-kernel/issues/309) (`PB-9.3`)
+- **Aktif issue:** [#312](https://github.com/Halildeu/ao-kernel/issues/312) (`PB-9.4`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -34,9 +34,10 @@ ayrı ayrı görünür kılmak.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
 - Public Beta closeout sonrası `PB-8.4` docs/runbook/release-gate parity
-  tranche'i tamamlandı ve `PB-8` tracker kapandı; `PB-9.1` prerequisite parity
-  ile `PB-9.2` truth inventory debt ratchet dilimleri kapanmıştır. Aktif hat
-  artık `PB-9.3` write/live lane evidence rehearsal'dır.
+  tranche'i tamamlandı ve `PB-8` tracker kapandı; `PB-9.1` prerequisite parity,
+  `PB-9.2` truth inventory debt ratchet ve `PB-9.3` write/live evidence
+  rehearsal dilimleri kapanmıştır. Aktif hat artık `PB-9.4` production claim
+  decision closeout'tur.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -67,7 +68,7 @@ ayrı ayrı görünür kılmak.
 | `PB-5` adapter-path cost/evidence completeness | Completed ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness yüzeyinde ayrı runtime gap olup olmadığını karara bağlamak; sonuç: docs parity closeout yeterli, ayrı tranche 3 gerekmedi | truth audit + targeted tests + docs parity closeout |
 | `PB-6` general-purpose expansion gap map | Completed on `main` ([#243](https://github.com/Halildeu/ao-kernel/issues/243), [#279](https://github.com/Halildeu/ao-kernel/pull/279)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + PB-6.6 final verdict closeout |
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
-| `PB-9` production claim readiness gates | Active ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), active tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | active roadmap + tranche issue + status parity |
+| `PB-9` production claim readiness gates | Active ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), active tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | active roadmap + tranche issue + status parity |
 
 ## 5. Şimdi
 
@@ -265,9 +266,9 @@ Not:
 
 `PB-9` yürütmesi aktif.
 
-1. Son kapanan slice: `PB-9.2` truth inventory debt ratchet
-2. Bugünkü aktif iş: `PB-9.3` write/live lane evidence rehearsal
-3. Sonraki sıra (planlı): `PB-9.4` production claim decision closeout
+1. Son kapanan slice: `PB-9.3` write/live lane evidence rehearsal
+2. Bugünkü aktif iş: `PB-9.4` production claim decision closeout
+3. Sonraki sıra (planlı): `PB-9` tracker closeout
 
 `PB-8.2` completion kaydı:
 
@@ -408,7 +409,14 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
      (`.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`) ve
      script+test kanıtı (`scripts/truth_inventory_ratchet.py`,
      `tests/test_extension_truth_ratchet.py`) `main`e alındı.
-5. Aktif tranche: `PB-9.3`
-   ([#309](https://github.com/Halildeu/ao-kernel/issues/309))
-6. Sonraki tranche (planlı): `PB-9.4` (`production claim decision closeout`)
+5. `PB-9.3` completion:
+   - issue: [#309](https://github.com/Halildeu/ao-kernel/issues/309) (`closed`)
+   - PR: [#311](https://github.com/Halildeu/ao-kernel/pull/311)
+   - merge commit: `7df83c9`
+   - sonuç: write/live lane için deterministic rehearsal komut paketi
+     (`scripts/kernel_api_write_smoke.py` + `scripts/gh_cli_pr_smoke.py`)
+     ve karar notu (`.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`)
+     `main`e alındı.
+6. Aktif tranche: `PB-9.4`
+   ([#312](https://github.com/Halildeu/ao-kernel/issues/312))
 7. Program kuralı korunur: tek aktif runtime tranche + zorunlu kanıt paketi.
