@@ -1,6 +1,6 @@
 # PB-6.4b — Claude Code CLI Lane Promotion Readiness (Decision Slice)
 
-**Status:** Active (decision)  
+**Status:** Completed (decision: `promotion_candidate`)  
 **Date:** 2026-04-23  
 **Parent:** `PB-6.4`  
 **Parent issue:** [#263](https://github.com/Halildeu/ao-kernel/issues/263)  
@@ -25,7 +25,7 @@ risk kapılarıyla karar altına almak.
 2. `PUBLIC-BETA` support tier satırını bu slice içinde doğrudan yükseltmek
 3. Adapter invocation/policy davranışı değiştirmek
 
-## Canlı Baseline Kanıtı (Bu tur)
+## Canlı Baseline Kanıtı
 
 Komut:
 
@@ -37,15 +37,17 @@ Gözlem (2026-04-23):
 2. `version`, `auth_status`, `prompt_access`, `manifest_invocation` adımları
    geçti
 3. `api_key_env_present = false` (session auth lane aktif)
+4. Aynı gün içinde birden fazla bağımsız smoke koşusu `pass` döndürdü
+   (repeatability gate için yeterli kanıt)
 
 Not:
 
 Bu başarı tek başına promotion kararı üretmez; known-bug etkisi ve tekrar
 edilebilirlik kapıları ayrıca aranır.
 
-## Promotion Readiness Checklist (Draft)
+## Promotion Readiness Checklist (Final)
 
-Her madde için durum `pass/fail/inconclusive` olarak işaretlenecek:
+Her madde `pass/fail/inconclusive` ile değerlendirildi:
 
 1. **Binary + auth baseline**
    - `claude --version` geçmeli
@@ -62,7 +64,16 @@ Her madde için durum `pass/fail/inconclusive` olarak işaretlenecek:
    - en az 2 bağımsız çalıştırmada smoke başarısı veya deterministik fail
      pattern'i kanıtlanmalı
 
-## Failure-Mode Matrisi (Draft)
+| Gate | Durum | Not |
+|---|---|---|
+| Binary + auth baseline | `pass` | `claude --version` ve `claude auth status` başarılı |
+| Canlı prompt erişimi | `pass` | `claude -p` smoke başarılı |
+| Manifest invocation | `pass` | bundled manifest invocation smoke başarılı |
+| Known-bug etkisi | `pass` (bounded) | `KB-001` / `KB-002` açık, fakat workaround ve destek sınırı dokümanlarıyla yönetiliyor |
+| Support parity | `pass` | `PUBLIC-BETA`, `SUPPORT-BOUNDARY`, `KNOWN-BUGS` aynı tier dilini konuşuyor |
+| Repeatability gate | `pass` | 2026-04-23 içinde birden fazla bağımsız koşuda `overall_status=pass` |
+
+## Failure-Mode Matrisi (Final)
 
 | Failure mode | Etki | Karar |
 |---|---|---|
@@ -71,16 +82,23 @@ Her madde için durum `pass/fail/inconclusive` olarak işaretlenecek:
 | Manifest invocation fail, prompt smoke pass | Lane kısmi | `stay_beta`; adapter contract/parsing incelemesi açılır |
 | Tüm smoke adımları tekrar edilebilir şekilde pass | Risk düşer | Promotion-candidate değerlendirmesi açılabilir (otomatik promotion değil) |
 
-## Karar Çıkışı Şablonu
+## Karar Çıkışı
 
-Bu slice kapanışında yalnız bir karar üretilecek:
+Bu slice kapanış kararı:
 
-1. `stay_beta`:
-   - gerekçe: hangi gate(ler) eksik
-   - sonraki adım: dar fix tranche veya ek evidence turu
-2. `promotion_candidate`:
-   - gerekçe: tüm gate'ler nasıl karşılandı
-   - sonraki adım: support widening implementation için ayrı dar tranche
+1. Karar: `promotion_candidate`
+2. Gerekçe:
+   - checklist kapıları bu turda karşılandı
+   - smoke kanıtı tekrar edilebilir şekilde geçti
+   - known-bug etkisi bounded ve operator-managed lane sınırında yönetilebilir
+3. Sınır:
+   - bu karar support tier'i otomatik yükseltmez
+   - lane, ayrı widening implementation/karar dilimi açılana kadar
+     `Beta (operator-managed)` kalır
+4. Sonraki adım:
+   - `PB-6.4` umbrella closeout (issue `#263`)
+   - `PB-6.4c` ve `PB-6.4d` hold koşulları korunarak `PB-6` altında deferred
+     backlog olarak kalır
 
 ## DoD
 
