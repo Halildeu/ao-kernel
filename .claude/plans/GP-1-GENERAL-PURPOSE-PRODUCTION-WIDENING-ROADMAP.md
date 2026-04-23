@@ -65,15 +65,18 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
   - `.claude/plans/GP-1.3-BUG-FIX-FLOW-RELEASE-CLOSURE-DECISION.md`
 - Karar: `stay_deferred`
 
-### `GP-1.4` — Extension promotion tranche (`PRJ-CONTEXT-ORCHESTRATION`) (Active)
+### `GP-1.4` — Extension promotion tranche (`PRJ-CONTEXT-ORCHESTRATION`) (Completed)
 
 - Issue: [#324](https://github.com/Halildeu/ao-kernel/issues/324)
 - Hedef: contract-only extension için runtime ownership / handler readiness kanıtı.
 - Ana çıktı: `promotion_candidate` veya `stay_contract_only`.
+- Karar notu:
+  - `.claude/plans/GP-1.4-CONTEXT-ORCHESTRATION-PROMOTION-DECISION.md`
+- Karar: `stay_contract_only`
 
-### `GP-1.5` — Program closeout decision (Planned)
+### `GP-1.5` — Program closeout decision (Active)
 
-- Issue: `pending`
+- Issue: [#326](https://github.com/Halildeu/ao-kernel/issues/326)
 - Hedef: program sonunda widening etkisini tek closeout notunda sabitlemek.
 - Ana çıktı: updated support boundary + tracker closeout.
 
