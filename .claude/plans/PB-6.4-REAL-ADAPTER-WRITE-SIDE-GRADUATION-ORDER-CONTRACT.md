@@ -4,7 +4,7 @@
 **Date:** 2026-04-23  
 **Parent tracker:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)  
 **Decision issue (closed):** [#263](https://github.com/Halildeu/ao-kernel/issues/263)  
-**Follow-up active issue:** [#270](https://github.com/Halildeu/ao-kernel/issues/270)
+**Follow-up active issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 1) Problem
 
@@ -123,7 +123,10 @@ Kapanış doğrulaması (2026-04-23):
 
 1. `PB-6.4a` tamamlandı (`#266`)
 2. `PB-6.4b` tamamlandı (`#268`) ve karar `promotion_candidate`
-3. hold lane sınırları (`PB-6.4c`, `PB-6.4d`) korunarak yazılı bırakıldı
+3. `PB-6.4c` tamamlandı (`#273`) ve karar `stay_preflight`
+4. `PB-6.4d` tamamlandı (`#270` closeout) ve karar `stay_deferred`
+5. hold lane sınırları yazılı kararlarla korundu; write-side widening
+   implementation açılmadı
 
 ## 8) Sıradaki Adım
 
@@ -140,7 +143,12 @@ Güncel yürütüm sırası:
    - `PB-6.4c` (`#271`) karar dilimi tamamlandı: `stay_preflight`
    - plan:
      `.claude/plans/PB-6.4c-GH-CLI-PR-LIVE-WRITE-GRADUATION.md`
-4. aktif follow-up hat:
+4. follow-up hat:
    - `PB-6.4d` (`#270`) kernel-api write-side widening preconditions
+   - karar: `stay_deferred` (closeout)
    - plan:
      `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`
+5. sonraki aktif hat:
+   - `PB-6` umbrella üzerinde widening implementation adayının
+     (yeni tranche) dar kapsamla seçilmesi
+   - issue: [#243](https://github.com/Halildeu/ao-kernel/issues/243)
