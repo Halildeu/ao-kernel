@@ -164,6 +164,50 @@ Ortak kanıt:
    katmanına bakıyor
 4. downgrade gerektirecek canlı runtime eşdeğeri bulunmadı
 
+Closeout:
+
+1. PR: [#248](https://github.com/Halildeu/ao-kernel/pull/248)
+2. issue: [#247](https://github.com/Halildeu/ao-kernel/issues/247)
+3. sonuç: dört aday da confirm edildi, `PB-6.1a` kapanabilir
+
+## `PB-6.1b` Promote Shortlist
+
+`PB-6.1b` bu slice içinde bir sonraki aktif karar turudur:
+
+- plan: `.claude/plans/PB-6.1b-PROMOTE-CANDIDATE-SHORTLIST.md`
+- issue: [#249](https://github.com/Halildeu/ao-kernel/issues/249)
+
+Bu turun amacı, üç `promote candidate` arasından widening sırasını yazılı hale
+getirmektir:
+
+1. `PRJ-CONTEXT-ORCHESTRATION`
+2. `PRJ-KERNEL-API`
+3. `PRJ-RELEASE-AUTOMATION`
+
+Bu turda beklenen çıktı:
+
+1. ranked shortlist: `first / second / hold`
+2. her aday için kısa ama savunulabilir gerekçe
+3. shortlist sonucunun `PB-6.2` ve `PB-6.3` sırasını nasıl etkilediği
+
+Closeout kararı:
+
+| Sıra | Extension | Karar |
+|---|---|---|
+| `first` | `PRJ-KERNEL-API` | `promote-now candidate` |
+| `second` | `PRJ-CONTEXT-ORCHESTRATION` | `later candidate` |
+| `hold` | `PRJ-RELEASE-AUTOMATION` | `not-now` |
+
+Gerekçe:
+
+1. `PRJ-KERNEL-API`, yaşayan `ao_kernel/_internal/prj_kernel_api/*` runtime
+   kodu ve mevcut `kernel_api_actions` dispatch modeli nedeniyle en düşük
+   blast-radius promotion hattıdır.
+2. `PRJ-CONTEXT-ORCHESTRATION`, canlı context koduna sahip olsa da ops/UI
+   yüzeyi daha geniştir ve önce owner/remap boundary ister.
+3. `PRJ-RELEASE-AUTOMATION`, repo governance yönüyle hizalıdır fakat dedicated
+   runtime module bugünkü repoda yoktur; bu yüzden hold kalır.
+
 ## İlk Hüküm
 
 1. General-purpose readiness'i bugün en çok yavaşlatan şey "çok extension var"

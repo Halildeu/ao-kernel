@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-6.1a-RETIRE-DEAD-REFERENCE-CONFIRMATION.md`
+- **Aktif slice planı:** `.claude/plans/PB-6.1b-PROMOTE-CANDIDATE-SHORTLIST.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#247](https://github.com/Halildeu/ao-kernel/issues/247)
+- **Aktif issue:** [#249](https://github.com/Halildeu/ao-kernel/issues/249)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,11 +60,11 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.1a` — retire/dead-reference confirmatory pass
+### `PB-6.1b` — promote candidate shortlist closeout
 
-`PB-6` içinde aktif alt hat artık `PB-6.1a`'dır. Bu slice'ın işi, `PB-6.1`
-karar tablosundaki dört retire/dead-reference adayının bu hükmü gerçekten
-hak edip etmediğini teyit etmektir.
+`PB-6` içinde aktif alt hat `PB-6.1b`'dir. Bu slice'ın işi, `PB-6.1` karar
+tablosundaki üç `promote candidate` arasından widening sırasını net biçimde
+seçmekti; closeout kararı bu branch üzerinde yazıldı.
 
 Canlı baseline:
 
@@ -76,7 +76,7 @@ Canlı baseline:
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
    - `overall_status="pass"`
 
-`PB-6.1a` hükmü:
+`PB-6.1a` closeout'u bu slice için artık giriş kanıtıdır:
 
 1. `PRJ-EXECUTORPORT`
 2. `PRJ-MEMORYPORT`
@@ -86,26 +86,44 @@ Canlı baseline:
 hepsi confirmatory pass sonunda **confirmed retire/archive candidate** olarak
 kaldı.
 
-Teyit gerekçesi:
+`PB-6.1b` karar sonucu:
 
-1. dördünün de `docs_ref` hedefi bugünkü repoda yok
-2. explicit runtime handler yok
-3. missing ref kümeleri ağırlıkla absent `extensions/*` veya eski
-   `src/orchestrator/*` yollarına gidiyor
-4. downgrade gerektirecek canlı runtime eşdeğeri bulunmadı
+1. `first`: `PRJ-KERNEL-API`
+2. `second`: `PRJ-CONTEXT-ORCHESTRATION`
+3. `hold`: `PRJ-RELEASE-AUTOMATION`
 
-Sıradaki doğru alt adım:
+Kısa gerekçe:
 
-1. `PB-6.1b` promote candidate shortlist seçimi
-2. sonra widening slice sırasını netleştirmek
+1. `PRJ-KERNEL-API`, `ao_kernel/_internal/prj_kernel_api/*` runtime kodu ve
+   mevcut `kernel_api_actions` dispatch modeli nedeniyle en düşük blast-radius
+   promotion hattıdır.
+2. `PRJ-CONTEXT-ORCHESTRATION`, güçlü context koduna rağmen daha geniş ops/UI
+   yüzeyi ve owner/remap kararı gerektirir.
+3. `PRJ-RELEASE-AUTOMATION`, dedicated runtime module eksik olduğu için hold
+   kalır.
+
+Beklenen çıktı:
+
+1. `PB-6.1b` PR'ı review/merge hattına girecek.
+2. Merge sonrası aktif hat `PB-6.2` olarak `PRJ-KERNEL-API` promotion
+   criteria ve handler/smoke boundary planına dönecek.
+3. `PRJ-CONTEXT-ORCHESTRATION` ikinci promotion adayı olarak ayrı slice'a
+   kalacak.
+4. `PRJ-RELEASE-AUTOMATION`, runtime module/owner çıkana kadar hold kalacak.
 
 ## 6. Sonra
 
 `PB-6` açıldıktan sonraki doğru sıra:
 
-1. `PB-6.1b` promote candidate shortlist
-2. `PB-6.2` real-adapter workflow graduation criteria
-3. `PB-6.3` write-side / PR lane graduation criteria
+1. `PB-6.2` `PRJ-KERNEL-API` promotion criteria + handler/smoke boundary
+2. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
+3. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
+
+Not:
+
+1. Önceki provisional `PB-6.2`/`PB-6.3` isimleri `PB-6.1b` sonucu ile
+   daraltıldı; support widening gerçek extension promotion sırasına göre
+   ilerleyecek.
 
 ## 7. Riskler
 
