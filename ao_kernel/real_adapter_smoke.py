@@ -561,7 +561,10 @@ def run_gh_cli_pr_smoke(
             checks=checks,
         )
 
-    if resolved_head == resolved_base:
+    resolved_base_ref = base_ref
+    resolved_head_ref = head_ref
+
+    if resolved_head_ref == resolved_base_ref:
         checks.append(
             SmokeCheck(
                 name="pr_live_write",
@@ -569,8 +572,8 @@ def run_gh_cli_pr_smoke(
                 detail="live-write smoke icin --head ve --base farkli olmalidir",
                 finding_code="gh_pr_live_write_same_head_base",
                 observed={
-                    "resolved_base": resolved_base,
-                    "resolved_head": resolved_head,
+                    "resolved_base": resolved_base_ref,
+                    "resolved_head": resolved_head_ref,
                 },
             )
         )
@@ -652,9 +655,9 @@ def run_gh_cli_pr_smoke(
                 "--repo",
                 resolved_repo,
                 "--head",
-                resolved_head,
+                resolved_head_ref,
                 "--base",
-                resolved_base,
+                resolved_base_ref,
                 "--title",
                 probe_title,
                 "--body-file",
@@ -667,8 +670,8 @@ def run_gh_cli_pr_smoke(
     live_write_check, created_pr_url = _classify_gh_pr_live_write_check(
         live_create_result,
         repo_name=resolved_repo,
-        head_ref=resolved_head,
-        base_ref=resolved_base,
+        head_ref=resolved_head_ref,
+        base_ref=resolved_base_ref,
     )
     checks.append(live_write_check)
 
@@ -716,8 +719,8 @@ def run_gh_cli_pr_smoke(
             verify_result,
             pr_url=created_pr_url,
             repo_name=resolved_repo,
-            head_ref=resolved_head,
-            base_ref=resolved_base,
+            head_ref=resolved_head_ref,
+            base_ref=resolved_base_ref,
         )
     )
 
