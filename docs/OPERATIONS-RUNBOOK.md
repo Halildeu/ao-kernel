@@ -39,6 +39,21 @@ python3 scripts/gh_cli_pr_smoke.py --output text
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
+`PRJ-KERNEL-API` write-side lane için ek doğrulama:
+
+```bash
+python3 - <<'PY'
+from ao_kernel.client import AoKernelClient
+import tempfile
+from pathlib import Path
+ws = Path(tempfile.mkdtemp(prefix="kernel-api-write-smoke-"))
+client = AoKernelClient()
+print(client.call_action("project_status", {"workspace_root": str(ws), "dry_run": True})["status"])
+print(client.call_action("roadmap_follow", {"workspace_root": str(ws), "roadmap_id": "SMOKE", "step_id": "s1", "dry_run": False, "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS"})["status"])
+print(client.call_action("roadmap_finish", {"workspace_root": str(ws), "roadmap_id": "SMOKE", "step_id": "s2", "dry_run": False, "confirm_write": "I_UNDERSTAND_SIDE_EFFECTS"})["status"])
+PY
+```
+
 ## 3. Decision tree
 
 ### 3.1 Shipped baseline fails
@@ -67,6 +82,7 @@ If shipped baseline stays green but one of these fails:
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
 - optional live-write readiness probe (`gh_cli_pr_smoke.py --mode live-write --allow-live-write ...`)
+- `PRJ-KERNEL-API` write-side action lane (`project_status`, `roadmap_follow`, `roadmap_finish`)
 - operator-run real-adapter benchmark path
 
 Then the shipped baseline claim stays intact, but the operator guidance must

@@ -68,7 +68,7 @@ class TestBundledDefaults:
         assert summary.quarantined >= 1
         assert summary.missing_runtime_refs >= 1
 
-    def test_kernel_api_manifest_is_minimum_runtime_backed(self):
+    def test_kernel_api_manifest_is_runtime_backed_with_write_contract(self):
         reg = ExtensionRegistry()
         reg.load_from_defaults()
         ext = reg.get("PRJ-KERNEL-API")
@@ -80,13 +80,18 @@ class TestBundledDefaults:
         assert ext.entrypoints.get("kernel_api_actions") == [
             "system_status",
             "doc_nav_check",
+            "project_status",
+            "roadmap_follow",
+            "roadmap_finish",
         ]
         assert ext.guardrails == {"offline": True, "network_default": False}
         assert ext.policy_files == (
             "defaults/policies/policy_kernel_api_guardrails.v1.json",
         )
-        for action in ("project_status", "roadmap_follow", "roadmap_finish"):
-            assert action not in ext.entrypoints.get("kernel_api_actions", [])
+        assert ext.layer_contract.get("write_roots_allowlist") == [
+            ".ao/reports/",
+            ".ao/state/",
+        ]
 
     def test_truth_summary_pins_kernel_api_promotion_metrics(self):
         reg = ExtensionRegistry()

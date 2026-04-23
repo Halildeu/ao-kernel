@@ -16,7 +16,10 @@
     "cockpit_sections": [],
     "kernel_api_actions": [
       "system_status",
-      "doc_nav_check"
+      "doc_nav_check",
+      "project_status",
+      "roadmap_follow",
+      "roadmap_finish"
     ],
     "ops": [],
     "ops_single_gate": []
@@ -47,11 +50,14 @@
       "defaults/schemas/",
       "_internal/prj_kernel_api/"
     ],
-    "write_roots_allowlist": []
+    "write_roots_allowlist": [
+      ".ao/reports/",
+      ".ao/state/"
+    ]
   },
   "notes": [
-    "Minimum runtime-backed tranche only: system_status and doc_nav_check.",
-    "project_status, roadmap_follow, and roadmap_finish remain deferred."
+    "system_status and doc_nav_check stay read-only runtime actions.",
+    "project_status, roadmap_follow, and roadmap_finish are write-side runtime-backed actions with explicit dry-run and confirm-write contract."
   ],
   "origin": "CORE",
   "outputs": {
@@ -62,7 +68,7 @@
   "policy_files": [
     "defaults/policies/policy_kernel_api_guardrails.v1.json"
   ],
-  "semver": "0.2.0",
+  "semver": "0.3.0",
   "ui_surfaces": [],
   "version": "v1",
   "enabled": true

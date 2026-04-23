@@ -11,9 +11,9 @@ operator-only, or just contract inventory?"
 | Layer | Included surfaces | Verification |
 |---|---|---|
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
-| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
+| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit write contract, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
-| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, `PRJ-KERNEL-API` write-side actions, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-7.2` verdict for bug_fix_flow: `stay_deferred`, `PB-7.3` verdict for kernel-api write-side: `stay_deferred`) |
+| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-7.2` verdict for bug_fix_flow: `stay_deferred`) |
 
 ### 1.1 Truth inventory to support mapping
 
@@ -50,6 +50,7 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>`
+- `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks
 
 `PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
@@ -70,16 +71,8 @@ These may be bundled and schema-valid without being end-to-end supported:
 - `examples/hello-llm/`
 - roadmap/spec documents
 
-For `PRJ-KERNEL-API`, these actions remain outside the shipped support
-boundary even though the extension has a minimum runtime-backed tranche:
-
-- `project_status`
-- `roadmap_follow`
-- `roadmap_finish`
-
-`PB-7.3` kararına göre bu write-side action'lar için widening açılmadı; runtime
-owner/entrypoint yokluğu ile behavior/safety/rollback kapıları tamamlanana
-kadar deferred sınır korunur.
+`PRJ-KERNEL-API` write-side actions runtime-backed olsa da shipped baseline
+değildir; support tier yalnız Beta (operator-managed) satırı kadar genişler.
 
 ## 3. What does NOT automatically widen support
 
