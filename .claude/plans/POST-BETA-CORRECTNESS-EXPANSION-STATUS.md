@@ -14,11 +14,12 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **Aktif issue:** [#263](https://github.com/Halildeu/ao-kernel/issues/263)
 
 ## 2. Başlangıç Gerçeği
 
@@ -67,6 +68,14 @@ ayrı ayrı görünür kılmak.
 genel amaçlı platform widening'i için real-adapter/write-side promotion
 kriterlerini risk sırasına göre yeniden düzenlemek ve yalnız kanıtlı adayları
 bir sonraki implementation hattına taşımaktır.
+
+`PB-6.4` kickoff:
+
+1. Issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)
+2. Decision/ordering contract:
+   `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
+3. Hedef: first/second/hold tranche sırasını yazılı kapıya çevirmek ve
+   ilk implementasyon hattını `PB-6.4a` olarak tekillemek.
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -146,6 +155,9 @@ Güncel runtime baseline:
    - outcome: `truth_tier=contract_only`, no runtime handler registration
 4. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
    - active
+   - issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)
+   - contract:
+     `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
 
 Not:
 
