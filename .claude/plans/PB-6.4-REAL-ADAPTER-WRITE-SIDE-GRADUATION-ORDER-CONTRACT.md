@@ -1,6 +1,6 @@
 # PB-6.4 — Real-adapter / Write-side Graduation Order Contract
 
-**Status:** In progress (decision/ordering slice)  
+**Status:** Completed (decision/ordering slice)  
 **Date:** 2026-04-23  
 **Parent tracker:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)  
 **Active issue:** [#263](https://github.com/Halildeu/ao-kernel/issues/263)
@@ -118,6 +118,12 @@ Bu beş kapıdan biri eksikse lane widening yapılmaz.
 2. her lane için açık DoD/hold koşulu
 3. aktif implementasyon hattının tekil seçimi (`PB-6.4b`)
 
+Kapanış doğrulaması (2026-04-23):
+
+1. `PB-6.4a` tamamlandı (`#266`)
+2. `PB-6.4b` tamamlandı (`#268`) ve karar `promotion_candidate`
+3. hold lane sınırları (`PB-6.4c`, `PB-6.4d`) korunarak yazılı bırakıldı
+
 ## 8) Sıradaki Adım
 
 Güncel yürütüm sırası:
@@ -125,7 +131,11 @@ Güncel yürütüm sırası:
 1. `PB-6.4a` support mapping hardening tamamlandı
    - issue: [#265](https://github.com/Halildeu/ao-kernel/issues/265)
    - PR: [#266](https://github.com/Halildeu/ao-kernel/pull/266)
-2. aktif hat: `PB-6.4b` `claude-code-cli` lane promotion readiness karar dilimi
+2. `PB-6.4b` `claude-code-cli` lane promotion readiness karar dilimi tamamlandı
    - issue: [#267](https://github.com/Halildeu/ao-kernel/issues/267)
    - plan:
      `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
+3. sonraki aktif hat:
+   - `PB-6` umbrella (`#243`) altında hold lane precondition/backlog yönetimi
+   - `PB-6.4c` ve `PB-6.4d` ayrı widening implementation'a çevrilmeden önce
+     karar ve kanıt kapıları korunur

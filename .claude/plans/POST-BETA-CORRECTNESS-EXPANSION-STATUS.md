@@ -19,7 +19,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#267](https://github.com/Halildeu/ao-kernel/issues/267)
+- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 2. Başlangıç Gerçeği
 
@@ -64,7 +64,7 @@ ayrı ayrı görünür kılmak.
 
 ### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
-`PB-6` içinde aktif alt hat artık `PB-6.4`'dür. Bu slice'ın işi,
+`PB-6` içinde `PB-6.4` sıralama/karar alt hattı tamamlandı. Bu slice'ın işi,
 genel amaçlı platform widening'i için real-adapter/write-side promotion
 kriterlerini risk sırasına göre yeniden düzenlemek ve yalnız kanıtlı adayları
 bir sonraki implementation hattına taşımaktır.
@@ -85,12 +85,16 @@ bir sonraki implementation hattına taşımaktır.
 4. Sonuç: support mapping parity (`PUBLIC-BETA` + `SUPPORT-BOUNDARY`) ve
    `tests/test_doctor_cmd.py` doğrulamaları hizalandı.
 
-`PB-6.4b` active decision slice:
+`PB-6.4b` decision slice'ı tamamlandı:
 
 1. Issue: [#267](https://github.com/Halildeu/ao-kernel/issues/267)
-2. Hedef: `claude-code-cli` lane'i için promotion readiness kararını
-   checklist + failure-mode matrisi ile yazılı kapıya çevirmek
-3. Slice plan:
+2. PR: [#268](https://github.com/Halildeu/ao-kernel/pull/268)
+3. Karar: `promotion_candidate` (otomatik support widening yok)
+4. Gerekçe: checklist kapıları geçildi, smoke tekrar edilebilir, known-bug
+   etkisi operator-managed lane sınırında bounded kaldı.
+5. Sınır: lane support tier'i ayrı widening slice açılana kadar
+   `Beta (operator-managed)` olarak kalır.
+6. Slice plan:
    `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
@@ -170,19 +174,21 @@ Güncel runtime baseline:
    - completed on `main` via [#261](https://github.com/Halildeu/ao-kernel/pull/261)
    - outcome: `truth_tier=contract_only`, no runtime handler registration
 4. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
-   - active
+   - completed (ordering + second decision tranche)
    - issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)
    - contract:
      `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
    - first tranche complete: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265), [#266](https://github.com/Halildeu/ao-kernel/pull/266))
-   - active implementation tranche: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267))
+   - second tranche complete: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267), [#268](https://github.com/Halildeu/ao-kernel/pull/268))
+   - hold backlog: `PB-6.4c` (gh-cli-pr live write lane), `PB-6.4d` (kernel-api write-side widening)
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
-3. `PB-6.4` karar notu çıkmadan yeni support widening implementation açılmayacak.
+3. `PB-6.4` karar notu tamamlandı; `PB-6.4c`/`PB-6.4d` için ayrı dar karar
+   dilimi açılmadan support widening implementation açılmayacak.
 
 ## 7. Riskler
 
@@ -198,7 +204,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.4b` `claude-code-cli` lane promotion readiness karar dilimi
+1. `PB-6` umbrella altında hold backlog yönetimi:
+   - `PB-6.4c` ve `PB-6.4d` için precondition/exit kriterleri
+   - support widening implementation açmadan önce dar karar dilimi
 
 ## 9. Güncelleme Protokolü
 
