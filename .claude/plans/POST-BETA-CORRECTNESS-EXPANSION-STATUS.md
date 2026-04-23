@@ -12,17 +12,17 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
+- **Son tamamlanan implementation contract:** `.claude/plans/PB-8.2-KERNEL-API-WRITE-SIDE-RUNTIME-IMPLEMENTATION.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-8.2-KERNEL-API-WRITE-SIDE-RUNTIME-IMPLEMENTATION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-8.3-BUG-FIX-FLOW-RELEASE-CLOSURE-PROMOTION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-- **Aktif issue:** [#290](https://github.com/Halildeu/ao-kernel/issues/290) (`PB-8.2`)
+- **Aktif issue:** [#291](https://github.com/Halildeu/ao-kernel/issues/291) (`PB-8.3`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -259,16 +259,27 @@ Not:
 
 `PB-8` kickoff aktif.
 
-1. Son kapanan slice: `PB-8.1` (`gh-cli-pr` live-write productionization)
-2. Bugünkü aktif slice: `PB-8.2` (`PRJ-KERNEL-API` write-side runtime implementation)
-3. Sonraki sıra (planlı): `PB-8.3` -> `PB-8.4`
+1. Son kapanan slice: `PB-8.2` (`PRJ-KERNEL-API` write-side runtime implementation)
+2. Bugünkü aktif slice: `PB-8.3` (`bug_fix_flow` release closure promotion)
+3. Sonraki sıra (planlı): `PB-8.4`
 
-`PB-8.2` implementation odakları:
+`PB-8.2` completion kaydı:
 
-1. `project_status`, `roadmap_follow`, `roadmap_finish` runtime owner/registration
-2. write-side action contract: `workspace_root`, `dry_run`, `confirm_write`
-3. deny/idempotency/conflict/partial-failure rollback test matrisi
-4. docs + status parity güncellemesi
+1. Issue: [#290](https://github.com/Halildeu/ao-kernel/issues/290) (`closed`)
+2. PR: [#295](https://github.com/Halildeu/ao-kernel/pull/295)
+3. Merge commit: `c0e98f7`
+4. Sonuç: `PRJ-KERNEL-API` write-side action'lar runtime-backed hale geldi ve
+   behavior-first test matrisi + docs parity merge edildi.
+
+`PB-8.3` implementation odakları:
+
+1. `bug_fix_flow` lane'inde side-effect safety/rollback kontratını workflow
+   düzeyinde enforce etmek
+2. `open_pr` path evidence completeness + retry/approval/apply zinciri
+   davranışını negatif senaryolarla pinlemek
+3. release-closure sonucu için kanıta dayalı tek karar üretmek:
+   `promote` veya `stay_deferred`
+4. `PUBLIC-BETA` + `SUPPORT-BOUNDARY` + status parity güncellemesi
 
 ## 9. PB-7 Closeout Snapshot
 
@@ -338,8 +349,7 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 
 1. Program roadmap: `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
 2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-3. Aktif tranche: `PB-8.2` ([#290](https://github.com/Halildeu/ao-kernel/issues/290))
+3. Aktif tranche: `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
 4. Sıradaki tranche'lar:
-   - `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
    - `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
 5. Program kuralı: tek aktif runtime tranche + zorunlu kanıt paketi.
