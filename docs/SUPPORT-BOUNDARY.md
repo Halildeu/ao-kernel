@@ -13,7 +13,7 @@ operator-only, or just contract inventory?"
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
 | Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
-| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary |
+| Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-7.2` verdict for bug_fix_flow: `stay_deferred`) |
 
 ### 1.1 Truth inventory to support mapping
 
