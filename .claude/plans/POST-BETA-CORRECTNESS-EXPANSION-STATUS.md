@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-7.1-GH-CLI-PR-LIVE-WRITE-READINESS.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-7.2-BUGFIX-FLOW-SUPPORT-GRADUATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#281](https://github.com/Halildeu/ao-kernel/issues/281) (`PB-7.1`)
+- **Aktif issue:** [#283](https://github.com/Halildeu/ao-kernel/issues/283) (`PB-7.2`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -255,12 +255,11 @@ Not:
 
 ## 8. Anlık Öncelik
 
-`PB-7.1` aktif.
+`PB-7.2` tamamlandı.
 
-1. Aktif runtime slice: `PB-7.1` (`gh-cli-pr` live-write readiness guards)
-2. Scope: preflight default'u bozmadan opt-in live-write guard/rollback/evidence
-   kontratı eklemek.
-3. `PB-7.1` kapanmadan yeni runtime widening slice açılmaz.
+1. Son kapanan slice: `PB-7.2` (`bug_fix_flow` support-boundary graduation decision)
+2. Karar: `stay_deferred` (support widening açılmadı)
+3. Sonraki aktif hat: `PB-7.3` (`PRJ-KERNEL-API` write-side widening preconditions)
 
 ## 9. Program Closeout (Final)
 
@@ -294,3 +293,21 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 3. Hedef: `gh-cli-pr` lane'inde live-write promotion için eksik kalan
    sandbox/side-effect/rollback/evidence kapılarını
    **support boundary widening yapmadan** kod/test seviyesinde somutlamak.
+
+`PB-7.1` closeout:
+
+1. Issue: [#281](https://github.com/Halildeu/ao-kernel/issues/281)
+2. PR: [#282](https://github.com/Halildeu/ao-kernel/pull/282)
+3. Merge commit: `431e0d9`
+4. Sonuç: `gh-cli-pr` lane'i için preflight default korunarak live-write
+   readiness guard/rollback check katmanı eklendi; support widening açılmadı.
+
+`PB-7.2` closeout:
+
+1. Issue: [#283](https://github.com/Halildeu/ao-kernel/issues/283)
+2. Plan: `.claude/plans/PB-7.2-BUGFIX-FLOW-SUPPORT-GRADUATION.md`
+3. Karar: `stay_deferred`
+4. Gerekçe özeti: `bug_fix_flow` correctness/evidence zinciri doğrulansa da
+   write-side support widening için workflow-level side-effect safety kapıları
+   henüz promoted kontrat seviyesinde değil.
+5. Sonraki hat: `PB-7.3` (`PRJ-KERNEL-API` write-side widening preconditions)

@@ -84,7 +84,7 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| `bug_fix_flow` release closure | Deferred | Public Beta kapsamı dışında |
+| `bug_fix_flow` release closure | Deferred | Deterministik correctness/evidence coverage mevcut olsa da write-side support widening kararı `PB-7.2` ile `stay_deferred`; live remote PR yan-etki kapıları promoted değil |
 | `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Readiness probe varlığına rağmen gerçek remote PR açılışı henüz destek vaadi değildir; live-write lane yalnız operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
