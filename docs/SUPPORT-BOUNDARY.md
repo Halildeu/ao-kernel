@@ -84,6 +84,9 @@ zincirine taşınmıştır. `--keep-live-write-pr-open` seçeneği lane'i riskli
 eder ve rapor `blocked` döner. Bu probe'un varlığı tek başına live remote PR
 opening support tier'ını widen etmez; public boundary satırı deferred kalır.
 
+`PB-9.4` closeout kararı `stay_beta_operator_managed` olduğu için bu satırların
+support tier'i widening almadan korunur.
+
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
 alınmıştır. Bu guard accidental side-effect riskini düşürür, fakat tek başına

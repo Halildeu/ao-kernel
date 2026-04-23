@@ -1,6 +1,6 @@
 # PB-9 — Production Claim Readiness Gates
 
-**Status:** Active  
+**Status:** Completed  
 **Date:** 2026-04-23  
 **Tracker:** [#302](https://github.com/Halildeu/ao-kernel/issues/302)  
 **Execution mode:** Kapsam disiplini, tek aktif runtime tranche
@@ -74,13 +74,15 @@ kapılar birlikte geçerse verilir:
 - Ana çıktı: live side-effect risklerinin incident/rollback açısından
   operatörce savunulabilir olması.
 
-### `PB-9.4` — Production claim decision closeout (Active)
+### `PB-9.4` — Production claim decision closeout (Completed)
 
-- Issue: [#312](https://github.com/Halildeu/ao-kernel/issues/312)
+- Issue: [#312](https://github.com/Halildeu/ao-kernel/issues/312) (`closed`)
+- Karar notu: `.claude/plans/PB-9.4-PRODUCTION-CLAIM-DECISION-CLOSEOUT.md`
 - Hedef: `promote` veya `stay_beta_operator_managed` kararını
   tek bir kapanış notuna bağlamak.
 - Ana çıktı: support boundary satırları kararla birlikte güncellenir,
   tracker kapanış kriteri netleşir.
+- Çıktı kararı: `stay_beta_operator_managed`
 
 ## Başarı Kriterleri
 
@@ -102,6 +104,6 @@ kapılar birlikte geçerse verilir:
 
 ## Program Kapanış Koşulu
 
-1. `PB-9.1`..`PB-9.4` için karar kayıtları tamamlanır.
-2. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif hatı kapatır.
-3. Tracker [#302](https://github.com/Halildeu/ao-kernel/issues/302) kapanır.
+1. `PB-9.1`..`PB-9.4` için karar kayıtları tamamlandı.
+2. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif hatı kapattı.
+3. Tracker [#302](https://github.com/Halildeu/ao-kernel/issues/302) kapandı.
