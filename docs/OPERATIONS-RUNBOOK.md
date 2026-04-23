@@ -39,6 +39,20 @@ python3 scripts/gh_cli_pr_smoke.py --output text
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
+Prerequisite contract (operator-managed lanes):
+
+1. `claude-code-cli` lane için `claude auth status` tek başına yeterli sinyal
+   değildir; karar yalnız `python3 scripts/claude_code_cli_smoke.py --output text`
+   içindeki `overall_status` + `prompt_access` sonucuna göre verilir.
+2. `gh-cli-pr` preflight için `gh` binary + aktif auth + repo context çözümü
+   gerekir; preflight lane side-effect-safe dry-run'dır.
+3. `gh-cli-pr` live-write probe için explicit
+   `--mode live-write --allow-live-write --head ... --base ...` zorunludur.
+4. Varsayılan disposable guard keyword `sandbox`'dır; repo adı keyword'ü
+   taşımıyorsa probe bilerek `blocked` döner.
+5. `--keep-live-write-pr-open` lane'i riskli kabul ettirir; bu sonucu support
+   widening sinyali olarak yorumlama.
+
 `bug_fix_flow` içinde workflow-level `open_pr` side effect'i varsayılan
 fail-closed guard ile gelir. `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` olmadan
 `open_pr` adımında `LIVE_WRITE_NOT_ALLOWED` görmek beklenen davranıştır ve tek
