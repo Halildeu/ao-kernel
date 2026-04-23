@@ -11,7 +11,7 @@ operator-only, or just contract inventory?"
 | Layer | Included surfaces | Verification |
 |---|---|---|
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
-| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed dry-run lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
+| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary |
 
@@ -49,10 +49,15 @@ These are real, testable surfaces, but they are not the default shipped demo:
 
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
+- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>`
 - real-adapter benchmark full-mode runbooks
 
 `PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
 `stay_beta_operator_managed` olarak korunur; lane shipped baseline'a yükselmez.
+
+`gh-cli-pr` live-write probe, `PB-7.1` ile readiness amaçlı opt-in guard
+katmanı kazanır. Bu probe'un varlığı tek başına live remote PR opening support
+tier'ını widen etmez; public boundary satırı deferred kalır.
 
 ### Contract inventory
 

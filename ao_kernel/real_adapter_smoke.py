@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -35,6 +36,12 @@ _MANIFEST_SMOKE_PROMPT = (
 _GH_PR_DRY_RUN_TITLE = "ao-kernel gh-cli-pr smoke probe"
 _GH_PR_DRY_RUN_BODY = "Safe dry-run preflight for gh-cli-pr certification."
 _GH_DRY_RUN_MARKER = "would have created a pull request"
+_GH_LIVE_WRITE_ROLLBACK_COMMENT = (
+    "ao-kernel gh-cli-pr live-write smoke rollback"
+)
+_GITHUB_PR_URL_RE = re.compile(
+    r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+"
+)
 
 
 @dataclass(frozen=True)
@@ -217,12 +224,24 @@ def run_gh_cli_pr_smoke(
     repo: str | None = None,
     base_ref: str | None = None,
     head_ref: str | None = None,
+    mode: Literal["preflight", "live_write"] = "preflight",
+    allow_live_write: bool = False,
+    keep_live_write_pr_open: bool = False,
+    require_disposable_repo_keyword: str | None = "sandbox",
     probe_title: str = _GH_PR_DRY_RUN_TITLE,
     probe_body: str = _GH_PR_DRY_RUN_BODY,
 ) -> GhCliPrSmokeReport:
-    """Run side-effect-safe smoke checks for the bundled gh PR adapter."""
+    """Run smoke checks for the bundled gh PR adapter.
+
+    ``mode='preflight'`` is side-effect-safe and runs `gh pr create --dry-run`.
+    ``mode='live_write'`` is explicit opt-in and executes a bounded create/close
+    chain for disposable environments.
+    """
 
     runner = runner or _default_runner
+    if mode not in ("preflight", "live_write"):
+        raise ValueError("mode must be 'preflight' or 'live_write'")
+
     manifest = _load_gh_pr_manifest()
     command = str(manifest.invocation["command"])
     binary_path = which(command)
@@ -264,13 +283,31 @@ def run_gh_cli_pr_smoke(
                     status="skip",
                     detail="binary bulunamadigi icin repo view smoke atlandi",
                 ),
+            )
+        )
+        if mode == "preflight":
+            checks.append(
                 SmokeCheck(
                     name="pr_dry_run",
                     status="skip",
                     detail="binary bulunamadigi icin PR dry-run smoke atlandi",
-                ),
+                )
             )
-        )
+        else:
+            checks.extend(
+                (
+                    SmokeCheck(
+                        name="pr_live_write",
+                        status="skip",
+                        detail="binary bulunamadigi icin live-write smoke atlandi",
+                    ),
+                    SmokeCheck(
+                        name="pr_live_write_rollback",
+                        status="skip",
+                        detail="binary bulunamadigi icin rollback smoke atlandi",
+                    ),
+                )
+            )
         return _finalize_gh_report(
             adapter_id=manifest.adapter_id,
             binary_path=None,
@@ -316,49 +353,290 @@ def run_gh_cli_pr_smoke(
 
     resolved_base = base_ref or detected_default_branch
     resolved_head = head_ref or detected_default_branch
-    if resolved_repo and resolved_base and resolved_head:
-        with tempfile.TemporaryDirectory(prefix="ao-kernel-gh-cli-pr-smoke-") as tmp:
-            temp_root = Path(tmp)
-            body_file = temp_root / "pr-body.md"
-            body_file.write_text(probe_body, encoding="utf-8")
+    if mode == "preflight":
+        if resolved_repo and resolved_base and resolved_head:
+            with tempfile.TemporaryDirectory(prefix="ao-kernel-gh-cli-pr-smoke-") as tmp:
+                temp_root = Path(tmp)
+                body_file = temp_root / "pr-body.md"
+                body_file.write_text(probe_body, encoding="utf-8")
 
-            dry_run_result = _run_check(
-                runner,
-                (
-                    binary_path,
-                    "pr",
-                    "create",
-                    "--repo",
-                    resolved_repo,
-                    "--head",
-                    resolved_head,
-                    "--base",
-                    resolved_base,
-                    "--title",
-                    probe_title,
-                    "--body-file",
-                    str(body_file),
-                    "--dry-run",
-                ),
-                working_dir,
-                timeout_seconds,
+                dry_run_result = _run_check(
+                    runner,
+                    (
+                        binary_path,
+                        "pr",
+                        "create",
+                        "--repo",
+                        resolved_repo,
+                        "--head",
+                        resolved_head,
+                        "--base",
+                        resolved_base,
+                        "--title",
+                        probe_title,
+                        "--body-file",
+                        str(body_file),
+                        "--dry-run",
+                    ),
+                    working_dir,
+                    timeout_seconds,
+                )
+            checks.append(
+                _classify_gh_pr_dry_run_check(
+                    dry_run_result,
+                    repo_name=resolved_repo,
+                    head_ref=resolved_head,
+                    base_ref=resolved_base,
+                )
             )
-        checks.append(
-            _classify_gh_pr_dry_run_check(
-                dry_run_result,
-                repo_name=resolved_repo,
-                head_ref=resolved_head,
-                base_ref=resolved_base,
+        else:
+            checks.append(
+                SmokeCheck(
+                    name="pr_dry_run",
+                    status="skip",
+                    detail=(
+                        "repo/default-branch cozulmedigi icin PR dry-run smoke atlandi"
+                    ),
+                )
             )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
         )
-    else:
+
+    if not allow_live_write:
         checks.append(
             SmokeCheck(
-                name="pr_dry_run",
-                status="skip",
-                detail="repo/default-branch cozulmedigi icin PR dry-run smoke atlandi",
+                name="pr_live_write",
+                status="fail",
+                detail=(
+                    "live-write smoke icin --allow-live-write explicit opt-in gereklidir"
+                ),
+                finding_code="gh_pr_live_write_opt_in_required",
+                observed={"mode": mode},
             )
         )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write adimi acilmadigi icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if not resolved_repo or not resolved_base or not resolved_head:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write",
+                status="skip",
+                detail="repo/default-branch cozulmedigi icin live-write smoke atlandi",
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write adimi kosulmadigi icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if not head_ref:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail=(
+                    "live-write smoke icin explicit --head verilmelidir "
+                    "(default branch fallback kabul edilmez)"
+                ),
+                finding_code="gh_pr_live_write_head_ref_required",
+                observed={"resolved_base": resolved_base, "resolved_head": resolved_head},
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write adimi baslamadigi icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if resolved_head == resolved_base:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail="live-write smoke icin --head ve --base farkli olmalidir",
+                finding_code="gh_pr_live_write_same_head_base",
+                observed={"resolved_base": resolved_base, "resolved_head": resolved_head},
+            )
+        )
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write adimi baslamadigi icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if require_disposable_repo_keyword:
+        required_keyword = require_disposable_repo_keyword.strip().lower()
+        if required_keyword and required_keyword not in resolved_repo.lower():
+            checks.append(
+                SmokeCheck(
+                    name="pr_live_write",
+                    status="fail",
+                    detail=(
+                        "live-write smoke disposable repo guard'ina takildi "
+                        f"(keyword={required_keyword!r})"
+                    ),
+                    finding_code="gh_pr_live_write_repo_not_disposable",
+                    observed={"repo_name": resolved_repo, "required_keyword": required_keyword},
+                )
+            )
+            checks.append(
+                SmokeCheck(
+                    name="pr_live_write_rollback",
+                    status="skip",
+                    detail="live-write adimi baslamadigi icin rollback smoke atlandi",
+                )
+            )
+            return _finalize_gh_report(
+                adapter_id=manifest.adapter_id,
+                binary_path=binary_path,
+                repo_name=resolved_repo,
+                default_branch=detected_default_branch,
+                repo_url=repo_url,
+                checks=checks,
+            )
+
+    with tempfile.TemporaryDirectory(prefix="ao-kernel-gh-cli-pr-live-smoke-") as tmp:
+        temp_root = Path(tmp)
+        body_file = temp_root / "pr-body.md"
+        body_file.write_text(probe_body, encoding="utf-8")
+
+        live_create_result = _run_check(
+            runner,
+            (
+                binary_path,
+                "pr",
+                "create",
+                "--repo",
+                resolved_repo,
+                "--head",
+                resolved_head,
+                "--base",
+                resolved_base,
+                "--title",
+                probe_title,
+                "--body-file",
+                str(body_file),
+                "--draft",
+            ),
+            working_dir,
+            timeout_seconds,
+        )
+    live_write_check, created_pr_url = _classify_gh_pr_live_write_check(
+        live_create_result,
+        repo_name=resolved_repo,
+        head_ref=resolved_head,
+        base_ref=resolved_base,
+    )
+    checks.append(live_write_check)
+
+    if live_write_check.status != "pass" or created_pr_url is None:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="live-write create basarisiz oldugu icin rollback smoke atlandi",
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    if keep_live_write_pr_open:
+        checks.append(
+            SmokeCheck(
+                name="pr_live_write_rollback",
+                status="skip",
+                detail="--keep-live-write-pr-open nedeniyle rollback skip edildi",
+                observed={"pr_url": created_pr_url},
+            )
+        )
+        return _finalize_gh_report(
+            adapter_id=manifest.adapter_id,
+            binary_path=binary_path,
+            repo_name=resolved_repo,
+            default_branch=detected_default_branch,
+            repo_url=repo_url,
+            checks=checks,
+        )
+
+    rollback_result = _run_check(
+        runner,
+        (
+            binary_path,
+            "pr",
+            "close",
+            created_pr_url,
+            "--repo",
+            resolved_repo,
+            "--comment",
+            _GH_LIVE_WRITE_ROLLBACK_COMMENT,
+        ),
+        working_dir,
+        timeout_seconds,
+    )
+    checks.append(
+        _classify_gh_pr_live_write_rollback_check(
+            rollback_result,
+            pr_url=created_pr_url,
+            repo_name=resolved_repo,
+        )
+    )
 
     return _finalize_gh_report(
         adapter_id=manifest.adapter_id,
@@ -843,6 +1121,116 @@ def _classify_gh_pr_dry_run_check(
         returncode=result.returncode,
         observed=_trim_output(result),
     )
+
+
+def _classify_gh_pr_live_write_check(
+    result: CommandResult,
+    *,
+    repo_name: str,
+    head_ref: str,
+    base_ref: str,
+) -> tuple[SmokeCheck, str | None]:
+    if result.timed_out:
+        return (
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail="gh pr create --draft timeout'a dustu",
+                finding_code="gh_pr_live_write_timeout",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+        )
+
+    if result.returncode != 0:
+        return (
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail="gh pr create --draft basarisiz",
+                finding_code="gh_pr_live_write_failed",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+        )
+
+    pr_url = _extract_github_pr_url(result.stdout, result.stderr)
+    if pr_url is None:
+        return (
+            SmokeCheck(
+                name="pr_live_write",
+                status="fail",
+                detail="gh pr create --draft cikisinda PR URL cozulmedi",
+                finding_code="gh_pr_live_write_url_missing",
+                argv=result.argv,
+                returncode=result.returncode,
+                observed=_trim_output(result),
+            ),
+            None,
+        )
+
+    return (
+        SmokeCheck(
+            name="pr_live_write",
+            status="pass",
+            detail=(
+                "gh pr create --draft gecti "
+                f"(repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"
+            ),
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={"pr_url": pr_url},
+        ),
+        pr_url,
+    )
+
+
+def _classify_gh_pr_live_write_rollback_check(
+    result: CommandResult,
+    *,
+    pr_url: str,
+    repo_name: str,
+) -> SmokeCheck:
+    if result.timed_out:
+        return SmokeCheck(
+            name="pr_live_write_rollback",
+            status="fail",
+            detail="gh pr close rollback timeout'a dustu",
+            finding_code="gh_pr_live_write_rollback_timeout",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed=_trim_output(result),
+        )
+    if result.returncode == 0:
+        return SmokeCheck(
+            name="pr_live_write_rollback",
+            status="pass",
+            detail=f"gh pr close rollback gecti (repo={repo_name!r})",
+            argv=result.argv,
+            returncode=result.returncode,
+            observed={"pr_url": pr_url},
+        )
+    return SmokeCheck(
+        name="pr_live_write_rollback",
+        status="fail",
+        detail="gh pr close rollback basarisiz",
+        finding_code="gh_pr_live_write_rollback_failed",
+        argv=result.argv,
+        returncode=result.returncode,
+        observed={"pr_url": pr_url, **_trim_output(result)},
+    )
+
+
+def _extract_github_pr_url(stdout: str, stderr: str) -> str | None:
+    text = f"{stdout}\n{stderr}"
+    match = _GITHUB_PR_URL_RE.search(text)
+    if match is None:
+        return None
+    return match.group(0)
 
 
 def _classify_prompt_access_check(result: CommandResult) -> SmokeCheck:

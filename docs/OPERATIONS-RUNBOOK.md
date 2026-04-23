@@ -35,6 +35,8 @@ smoke next:
 ```bash
 python3 scripts/claude_code_cli_smoke.py --output text
 python3 scripts/gh_cli_pr_smoke.py --output text
+# Optional readiness probe (live-write, explicit opt-in + disposable guard):
+# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
 ## 3. Decision tree
@@ -64,6 +66,7 @@ If shipped baseline stays green but one of these fails:
 
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
+- optional live-write readiness probe (`gh_cli_pr_smoke.py --mode live-write --allow-live-write ...`)
 - operator-run real-adapter benchmark path
 
 Then the shipped baseline claim stays intact, but the operator guidance must

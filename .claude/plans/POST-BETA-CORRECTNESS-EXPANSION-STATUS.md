@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** Yok (program closeout tamamlandı)
+- **Aktif decision/ordering contract:** `.claude/plans/PB-7.1-GH-CLI-PR-LIVE-WRITE-READINESS.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** Yok (closeout sonrası yeni tranche açılmadı)
+- **Aktif issue:** [#281](https://github.com/Halildeu/ao-kernel/issues/281) (`PB-7.1`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -255,10 +255,12 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Program closeout tamamlandı.
+`PB-7.1` aktif.
 
-1. Aktif runtime slice yok.
-2. Yeni iş açılacaksa doğrudan `#243` umbrella altında yeni dar tranche issue + plan + DoD ile başlat.
+1. Aktif runtime slice: `PB-7.1` (`gh-cli-pr` live-write readiness guards)
+2. Scope: preflight default'u bozmadan opt-in live-write guard/rollback/evidence
+   kontratı eklemek.
+3. `PB-7.1` kapanmadan yeni runtime widening slice açılmaz.
 
 ## 9. Program Closeout (Final)
 
@@ -281,3 +283,14 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 - issue / PR / kanıt referansı
 - yeni risk veya deferred notu
 - sıradaki tek aktif hat
+
+## 11. PB-7 Kickoff
+
+`PB-6` closeout sonrası bir sonraki dar implementation hattı bugün
+`PB-7.1` olarak açıldı:
+
+1. Issue: [#281](https://github.com/Halildeu/ao-kernel/issues/281)
+2. Plan: `.claude/plans/PB-7.1-GH-CLI-PR-LIVE-WRITE-READINESS.md`
+3. Hedef: `gh-cli-pr` lane'inde live-write promotion için eksik kalan
+   sandbox/side-effect/rollback/evidence kapılarını
+   **support boundary widening yapmadan** kod/test seviyesinde somutlamak.

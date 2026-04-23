@@ -56,7 +56,7 @@ istemek gerekir.
 |---|---|---|
 | Public Beta yüzeyinin tamamı | Beta | Stable kanal hâlâ `3.13.3`; genel kullanım için pre-release install gerekir |
 | `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py` ile preflight + canlı prompt smoke doğrulanabilir; varsayılan shipped demo değildir. `PB-6.6` closeout verdict'i: `stay_beta_operator_managed` |
-| `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight only) | `python3 scripts/gh_cli_pr_smoke.py` auth/repo visibility + `gh pr create --dry-run` zincirini doğrular; gerçek remote PR açmaz |
+| `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py` preflight yoludur (`--dry-run`). `--mode live-write --allow-live-write` readiness probe'u explicit opt-in + disposable guard ister; support widening değildir |
 | Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
 
 ## Contract / Inventory Layer
@@ -85,7 +85,7 @@ Bu kuralın amacı, inventory görünürlüğünü support widening ile karışt
 | Yüzey | Durum | Not |
 |---|---|---|
 | `bug_fix_flow` release closure | Deferred | Public Beta kapsamı dışında |
-| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Mevcut beta yüzey yalnız dry-run preflight'tır; gerçek remote PR açılışı henüz destek vaadi değildir |
+| `gh-cli-pr` ile tam E2E PR açılışı | Deferred | Readiness probe varlığına rağmen gerçek remote PR açılışı henüz destek vaadi değildir; live-write lane yalnız operator-managed/deferred boundary içinde değerlendirilir |
 | `docs/roadmap/DEMO-SCRIPT-SPEC.md` içindeki 11 adımlı üç-adapter akış | Deferred | Canlı destek vaadi değildir |
 | Adapter-path `cost_usd` reconcile | Deferred | Public support claim olarak hâlâ deferred; benchmark/internal runtime hook varlığı bunu tek başına shipped veya beta support yüzeyine yükseltmez |
 | `PRJ-KERNEL-API` `project_status`, `roadmap_follow`, `roadmap_finish` actions | Deferred | Manifest ve runtime handler yüzeyi ilk tranche'ta bilerek iki read-only action'a daraltıldı; workspace/write-side contract netleşmeden desteklenmez |

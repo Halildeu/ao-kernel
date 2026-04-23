@@ -51,6 +51,8 @@ well:
 ```bash
 python3 scripts/claude_code_cli_smoke.py --output text
 python3 scripts/gh_cli_pr_smoke.py --output text
+# Optional readiness probe (live-write, explicit opt-in + disposable guard):
+# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
 ## 4. Expected warnings
