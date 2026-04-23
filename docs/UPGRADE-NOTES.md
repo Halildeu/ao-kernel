@@ -55,6 +55,10 @@ python3 scripts/gh_cli_pr_smoke.py --output text
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
+`bug_fix_flow` workflow path'inde `open_pr` adımı varsayılan fail-closed
+guard arkasındadır. Gerçek live-write denemesi yalnız disposable ortamda,
+explicit `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` ile yapılmalıdır.
+
 ## 4. Expected warnings
 
 These do not automatically mean the upgrade failed:
@@ -63,6 +67,8 @@ These do not automatically mean the upgrade failed:
   core-only install
 - bundled extension truth inventory may report contract-only or quarantined
   candidates
+- guard env tanımlı değilken `bug_fix_flow` `open_pr` adımının
+  `LIVE_WRITE_NOT_ALLOWED` ile fail etmesi (beklenen güvenlik davranışı)
 
 Treat those as expected unless the support matrix says otherwise.
 

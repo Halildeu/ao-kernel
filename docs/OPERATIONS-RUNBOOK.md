@@ -39,6 +39,11 @@ python3 scripts/gh_cli_pr_smoke.py --output text
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
 ```
 
+`bug_fix_flow` içinde workflow-level `open_pr` side effect'i varsayılan
+fail-closed guard ile gelir. `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` olmadan
+`open_pr` adımında `LIVE_WRITE_NOT_ALLOWED` görmek beklenen davranıştır ve tek
+başına incident sayılmaz.
+
 `PRJ-KERNEL-API` write-side lane için ek doğrulama:
 
 ```bash

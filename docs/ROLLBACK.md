@@ -8,8 +8,11 @@ baseline or an explicitly supported beta lane in a worse state.
 ### Return to stable
 
 ```bash
-pip install --force-reinstall ao-kernel==3.13.3
+pip install --force-reinstall ao-kernel
 ```
+
+`ao-kernel` stable channel pin'i dokümana sabit yazılmaz; bu komut pre-release
+flag olmadan en güncel stable hattı geri yükler.
 
 ### Return to the documented beta pin
 
