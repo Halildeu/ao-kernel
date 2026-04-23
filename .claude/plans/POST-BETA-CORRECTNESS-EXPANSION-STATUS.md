@@ -354,23 +354,22 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-5` deferred correctness closure closeout.
+Aktif slice: `ST-6` operations readiness contract.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
 4. Completed contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
-5. Son kapanan PR: [#346](https://github.com/Halildeu/ao-kernel/pull/346)
-6. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
+5. Completed contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
+6. Son kapanan PR: [#350](https://github.com/Halildeu/ao-kernel/pull/350)
+7. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
    real-adapter/live-write promotion istenirse ayrı gate gerekir.
-7. Aktif issue: [#348](https://github.com/Halildeu/ao-kernel/issues/348)
-8. Aktif contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-9. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
+8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
    promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
-10. Stable release'e doğrudan geçilmez; önce `ST-5`, `ST-6` ve `ST-7` gates
-   kapanır.
-11. Sonraki gate: `ST-6` operations readiness.
+9. Aktif issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
+10. Aktif contract: `.claude/plans/ST-6-OPERATIONS-READINESS.md`
+11. Stable release'e doğrudan geçilmez; önce `ST-6` ve `ST-7` gates kapanır.
 
 `PB-8.2` completion kaydı:
 

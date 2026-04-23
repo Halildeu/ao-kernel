@@ -1,7 +1,7 @@
 # ST-5 — Deferred Correctness Closure
 
-**Durum:** Closeout PR active via
-[#348](https://github.com/Halildeu/ao-kernel/issues/348)
+**Durum:** Completed on main via
+[#350](https://github.com/Halildeu/ao-kernel/pull/350)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-2` support boundary freeze completed via
 [#346](https://github.com/Halildeu/ao-kernel/pull/346) and
