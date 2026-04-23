@@ -14,8 +14,8 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Program roadmap:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
-- **Aktif decision/ordering contract:** `none` (`GP-1 closed`)
+- **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md` (`GP-2.1 active`)
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - **PB-9.4 karar notu:** `.claude/plans/PB-9.4-PRODUCTION-CLAIM-DECISION-CLOSEOUT.md`
@@ -24,6 +24,7 @@ ayrı ayrı görünür kılmak.
 - **GP-1.4 karar notu:** `.claude/plans/GP-1.4-CONTEXT-ORCHESTRATION-PROMOTION-DECISION.md`
 - **GP-1.5 karar notu:** `.claude/plans/GP-1.5-PROGRAM-CLOSEOUT-DECISION.md`
 - **GP-1 roadmap:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
+- **GP-2 roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
@@ -32,7 +33,8 @@ ayrı ayrı görünür kılmak.
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288) (`closed`)
 - **PB-9 tracker issue:** [#302](https://github.com/Halildeu/ao-kernel/issues/302) (`closed`)
 - **GP-1 tracker issue:** [#316](https://github.com/Halildeu/ao-kernel/issues/316) (`closed`)
-- **Aktif issue:** `none` (`GP-1 closeout tamamlandı`)
+- **GP-2 tracker issue:** [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`open`)
+- **Aktif issue:** [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`GP-2.1 active`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -78,6 +80,7 @@ ayrı ayrı görünür kılmak.
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
+| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329)) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + yeni aktif tranche kickoff |
 
 ## 5. Şimdi
 
@@ -469,3 +472,20 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    - aktif tranche yok
    - support boundary genişletilmedi
    - yeni widening hattı için ayrı tracker açılmadan program tekrar açılmaz
+
+## 15. GP-2 Kickoff Snapshot
+
+`GP-1` closeout sonrası aktif hat `GP-2` olarak başlatıldı.
+
+1. Program roadmap:
+   `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
+2. Tracker issue:
+   [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`open`)
+3. Aktif tranche:
+   `GP-2.1` deferred lane evidence-delta map
+4. Tranche hedefi:
+   - deferred lane tablosunu `Now / Next / Later` sırasına indirmek
+   - ilk aktif runtime slice için tek issue + tek contract seçmek
+5. Sınır:
+   - bu kickoff dilimi runtime widening implementasyonu içermez
+   - support boundary kararı yalnız yazılı kanıt/karar notu ile güncellenir
