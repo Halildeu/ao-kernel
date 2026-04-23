@@ -1,6 +1,7 @@
 # ST-2 — Stable Support Boundary Freeze
 
-**Durum:** Freeze PR active
+**Durum:** Completed on main via
+[#346](https://github.com/Halildeu/ao-kernel/pull/346)
 **Issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-1` tamamlandi; `v4.0.0-beta.2` published ve PyPI
@@ -104,6 +105,27 @@ Freeze PR karari:
 5. Gelecekte `claude-code-cli`, `gh-cli-pr`, kernel API write-side actions,
    real-adapter benchmark tam modu veya `bug_fix_flow` release closure stable'a
    promote edilmek istenirse ST-3/ST-4 tarzi yeni kanit gate'i zorunlu olur.
+
+## 5.2 Closeout Evidence
+
+`ST-2` closeout:
+
+1. Freeze implementation PR: [#346](https://github.com/Halildeu/ao-kernel/pull/346)
+2. Merge commit: `a7e010d`
+3. CI: lint, typecheck, test matrix, coverage, benchmark-fast,
+   packaging-smoke and scorecard all green.
+4. Local validation:
+   - `git diff --check`
+   - `python3 -m pytest -q tests/test_cli_entrypoints.py tests/test_doctor_cmd.py tests/test_cli.py tests/test_client.py`
+   - `python3 -m pytest -q tests/test_extension_dispatch.py`
+   - `python3 -m pytest -q tests/test_executor_policy_enforcer.py tests/test_executor_adapter_invoker.py tests/test_executor_policy_rollout_v311_p2.py tests/test_executor_integration.py`
+   - `python3 -m pytest -q tests/benchmarks/test_governed_review.py tests/benchmarks/test_governed_bugfix.py`
+   - `python3 scripts/truth_inventory_ratchet.py --output json > /tmp/ao-kernel-st2-truth.json`
+   - `python3 -m ao_kernel doctor`
+   - `python3 scripts/packaging_smoke.py`
+5. Outcome: stable candidate boundary is frozen to the shipped baseline only.
+   Known bugs remain beta-lane issues and do not block the narrow stable
+   runtime claim.
 
 ## 6. Exact File List
 
