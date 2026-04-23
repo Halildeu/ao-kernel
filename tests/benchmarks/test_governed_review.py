@@ -19,6 +19,7 @@ from ao_kernel.workflow.run_store import load_run
 from tests.benchmarks.assertions import (
     assert_adapter_ok,
     assert_capability_artifact,
+    assert_no_spend_recorded_event,
     assert_review_score,
     assert_workflow_completed,
     assert_workflow_failed,
@@ -203,8 +204,11 @@ class TestCostReconcile:
             )
 
         record, _ = load_run(workspace_root, run_id)
+        run_dir = _run_dir(workspace_root, run_id)
+        assert (run_dir / "events.jsonl").is_file()
         # Fast-mode contract post-F2: axis seeded but not drained.
         assert_budget_unchanged(record, axis="cost_usd")
+        assert_no_spend_recorded_event(run_dir, source="adapter_path")
 
 
 class TestMissingPayload:

@@ -51,6 +51,9 @@ giriş kapılarını netleştirmektir.
 - Current candidate lane (from `GP-2.1`): adapter-path `cost_usd` reconcile completeness.
 - Kural: yalnız bir lane açılır; diğer deferred satırlar status dosyasında
   `deferred` olarak kalır.
+- İlerleme:
+  1. `GP-2.2a` truth-capture closure merged via PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
+  2. `GP-2.2b` deterministic assertion upgrade active on issue [#336](https://github.com/Halildeu/ao-kernel/issues/336)
 
 ## Gate Modeli
 

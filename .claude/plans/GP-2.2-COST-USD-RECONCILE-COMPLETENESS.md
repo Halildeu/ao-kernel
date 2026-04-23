@@ -22,7 +22,7 @@ Bu tranche support widening kararı üretmez; yalnız completeness gap'ini kapat
 
 ## Dar Kapsam (Implementation Slices)
 
-### `GP-2.2a` — Runtime/evidence truth capture (Active)
+### `GP-2.2a` — Runtime/evidence truth capture (Completed)
 
 - Hedef: reconcile akışında hangi alanların canonical assert edilmesi gerektiğini
   çalışma kodundan çıkarmak.
@@ -45,10 +45,17 @@ Bu tranche support widening kararı üretmez; yalnız completeness gap'ini kapat
 | Executor ordering | reconcile terminal eventten önce çağrılır; reconcile hatası step-level failure olarak yüzeye çıkar | `ao_kernel/executor/executor.py` (post-adapter reconcile bloğu) |
 | Benchmark evidence | full-mode lane en az bir `llm_spend_recorded(source=adapter_path)` eventini doğrular | `tests/benchmarks/assertions.py::assert_spend_recorded_event` |
 
-### `GP-2.2b` — Deterministic assertion upgrade (Pending)
+Kapanış: PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
+
+### `GP-2.2b` — Deterministic assertion upgrade (In Progress)
 
 - Hedef: `cost_usd` reconcile davranışı için doğrudan kırmızı/yeşil davranış
   testi eklemek veya mevcut testleri güçlendirmek.
+- Issue: [#336](https://github.com/Halildeu/ao-kernel/issues/336)
+- Mevcut ilerleme:
+  1. Fast-mode negatif guard: `adapter_path` spend event'inin yokluğu benchmark testinde pinlendi.
+  2. Full-mode pozitif guard: `llm_spend_recorded` payload alanları (`run_id`, `step_id`, `attempt`, `cost_usd`) açık assert edildi.
+  3. `post_adapter_reconcile` contract testleri payload alanları için daha sıkı hale getirildi.
 - DoD:
   1. en az bir negatif (reconcile yok/bozuk) yol testte yakalanır
   2. en az bir pozitif yol evidence/cost alanlarını açık assert eder

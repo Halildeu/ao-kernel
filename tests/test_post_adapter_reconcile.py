@@ -189,6 +189,12 @@ class TestHappyPath:
         payload = spend_events[0]["payload"]
         assert payload["source"] == "adapter_path"
         assert payload["run_id"] == run_id
+        assert payload["step_id"] == "s1"
+        assert payload["attempt"] == 1
+        assert payload["provider_id"] == "codex"
+        assert payload["model"] == "stub"
+        assert payload["tokens_input"] == 100
+        assert payload["tokens_output"] == 50
         assert payload["cost_usd"] == pytest.approx(0.05)
 
 
@@ -225,8 +231,14 @@ class TestUsageMissing:
         ]
         assert len(usage_missing_events) == 1
         assert len(spend_events) == 0
-        assert usage_missing_events[0]["payload"]["source"] == "adapter_path"
-        assert set(usage_missing_events[0]["payload"]["missing_fields"]) == {
+        payload = usage_missing_events[0]["payload"]
+        assert payload["source"] == "adapter_path"
+        assert payload["run_id"] == run_id
+        assert payload["step_id"] == "s1"
+        assert payload["attempt"] == 1
+        assert payload["provider_id"] == "codex"
+        assert payload["model"] == "stub"
+        assert set(payload["missing_fields"]) == {
             "tokens_input", "tokens_output",
         }
 
