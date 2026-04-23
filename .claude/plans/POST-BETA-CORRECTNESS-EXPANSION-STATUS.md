@@ -18,7 +18,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#259](https://github.com/Halildeu/ao-kernel/issues/259)
+- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 
 ## 2. Başlangıç Gerçeği
 
@@ -61,12 +61,12 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.3b` — `PRJ-CONTEXT-ORCHESTRATION` manifest and contract cleanup
+### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
-`PB-6` içinde aktif alt hat artık `PB-6.3b`'dir. Bu slice'ın işi,
-`PB-6.3` kararını uygulamaya hazır hale getirmek için
-`PRJ-CONTEXT-ORCHESTRATION` manifest referanslarını ve gelecekteki handler
-contract sınırını daraltmaktır.
+`PB-6` içinde aktif alt hat artık `PB-6.4`'dür. Bu slice'ın işi,
+genel amaçlı platform widening'i için real-adapter/write-side promotion
+kriterlerini risk sırasına göre yeniden düzenlemek ve yalnız kanıtlı adayları
+bir sonraki implementation hattına taşımaktır.
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -119,21 +119,18 @@ Güncel runtime baseline:
    `ao_kernel/extensions/handlers/prj_context_orchestration.py` gibi explicit
    bir handler, dar `kernel_api_actions`, behavior-first tests ve docs parity
    ile yapılabilir.
-6. `PB-6.3b` manifest cleanup ile extension truth
-   `contract_only` katmanına çekilir; runtime handler hâlâ register edilmez.
+6. `PB-6.3b` manifest cleanup sonrası extension truth
+   `contract_only` katmanına çekilmiş ve runtime handler register edilmemiştir.
 
-Beklenen çıktı:
+`PB-6.3b` completion:
 
 1. `PB-6.3b` issue: [#259](https://github.com/Halildeu/ao-kernel/issues/259)
-2. Legacy top-level `policies/` ve `schemas/` refs package-local
-   `defaults/...` refs'e taşınacak veya açıkça kaldırılacak.
-3. Missing packaged refs (`AGENTS.md`, `docs/OPERATIONS/*`, nonexistent
-   contract test) canlı package refs ile değiştirilmeden support widening
-   yapılmayacak.
-4. Future handler/action boundary yazılı contract'a inecek; runtime handler
-   registration ayrı implementation slice'a kalacak.
-5. `PRJ-RELEASE-AUTOMATION`, context orchestration contract cleanup kararı
-   yazılmadan başlamayacak.
+2. `PB-6.3b` PR: [#261](https://github.com/Halildeu/ao-kernel/pull/261)
+3. Merge commit: `08a3a95`
+4. Legacy top-level refs temizlenmiş, package-local `defaults/...` refs
+   korunmuş, missing packaged refs kaldırılmıştır.
+5. `future_handler_contract` sınırı manifestte explicit yazılmıştır.
+6. Scope guard korunmuştur: runtime handler registration ayrı slice'tadır.
 
 ## 6. Sonra
 
@@ -145,15 +142,17 @@ Beklenen çıktı:
    - completed on `main` via [#258](https://github.com/Halildeu/ao-kernel/pull/258)
    - decision: `remap-needed`, keep non-shipped until contract cleanup
 3. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
-   - active via [#259](https://github.com/Halildeu/ao-kernel/issues/259)
+   - completed on `main` via [#261](https://github.com/Halildeu/ao-kernel/pull/261)
+   - outcome: `truth_tier=contract_only`, no runtime handler registration
 4. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
+   - active
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
-3. `PB-6.3b` merge olmadan başka extension promotion hattı başlamayacak.
+3. `PB-6.4` karar notu çıkmadan yeni support widening implementation açılmayacak.
 
 ## 7. Riskler
 
@@ -169,7 +168,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.3b` `PRJ-CONTEXT-ORCHESTRATION` manifest/contract cleanup
+1. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
 
 ## 9. Güncelleme Protokolü
 
