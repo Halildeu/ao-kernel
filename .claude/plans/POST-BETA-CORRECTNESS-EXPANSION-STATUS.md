@@ -281,6 +281,15 @@ Not:
    `promote` veya `stay_deferred`
 4. `PUBLIC-BETA` + `SUPPORT-BOUNDARY` + status parity güncellemesi
 
+`PB-8.3` T2 progress (kapanan dilimler):
+
+1. [#297](https://github.com/Halildeu/ao-kernel/pull/297) (`f09d9fa`) merge:
+   `open_pr` failure path'inde adapter error metadata (`code/category/message`)
+   run error + step error + `step_failed` payload seviyesinde korunuyor.
+2. Bu branchte aktif dilim: `open_pr` için explicit live-write guard
+   (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) + behavior-first test pinleri.
+   Hedef: workflow-level side-effect safety gap'ini dar kapsamda kapatmak.
+
 ## 9. PB-7 Closeout Snapshot
 
 **Kapanış tarihi:** 2026-04-23

@@ -148,3 +148,14 @@ Başlangıç gap notları:
 3. Release-closure kararı için docs/status parity güncellemesi yalnız karar
    çıktıktan sonra yapılacak; bu dilimde false-promotion önlemek için
    `stay_deferred` seçeneği açık tutulur.
+
+T2 progress update (2026-04-23):
+
+1. [#297](https://github.com/Halildeu/ao-kernel/pull/297) merge edildi:
+   `open_pr` failure metadata artık generic fallback altında kaybolmuyor.
+2. Bu dilimde bir sonraki closure adımı olarak workflow-level live-write guard
+   açıldı: `gh-cli-pr` `open_pr` side effect'i yalnız
+   `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` explicit opt-in ile çalışır.
+3. Guard davranışı, başarı/failure zinciri ve benchmark full-flow yolu
+   behavior-first testlerle pinlenecek; ardından T3 karar/parity turuna
+   geçilecek.
