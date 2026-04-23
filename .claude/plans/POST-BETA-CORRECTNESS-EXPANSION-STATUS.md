@@ -12,17 +12,17 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Son tamamlanan implementation contract:** `.claude/plans/PB-8.2-KERNEL-API-WRITE-SIDE-RUNTIME-IMPLEMENTATION.md`
+- **Son tamamlanan implementation contract:** `.claude/plans/PB-8.3-BUG-FIX-FLOW-RELEASE-CLOSURE-PROMOTION.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-8.3-BUG-FIX-FLOW-RELEASE-CLOSURE-PROMOTION.md`
+- **Aktif decision/ordering contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8.4` closeout lane)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-- **Aktif issue:** [#291](https://github.com/Halildeu/ao-kernel/issues/291) (`PB-8.3`)
+- **Aktif issue:** [#292](https://github.com/Halildeu/ao-kernel/issues/292) (`PB-8.4`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -31,8 +31,8 @@ ayrı ayrı görünür kılmak.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
 - Public Beta closeout sonrası aktif program odağı artık defer edilmiş ilk
-  correctness boşlukları değil; support-surface widening ve PB-5 closeout'u
-  tamamlandı, bugünkü aktif odak daha geniş expansion gap'lerin sıralanmasıdır.
+  correctness boşlukları değil; `PB-8.4` içinde support docs/runbook/release-gate
+  parity closeout'unu tek anlamlı hale getirmektir.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -360,7 +360,7 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 
 1. Program roadmap: `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md`
 2. Tracker issue: [#288](https://github.com/Halildeu/ao-kernel/issues/288)
-3. Aktif tranche: `PB-8.3` ([#291](https://github.com/Halildeu/ao-kernel/issues/291))
+3. Aktif tranche: `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
 4. Sıradaki tranche'lar:
-   - `PB-8.4` ([#292](https://github.com/Halildeu/ao-kernel/issues/292))
+   - `PB-9` (plan açılışında issue atanacak)
 5. Program kuralı: tek aktif runtime tranche + zorunlu kanıt paketi.
