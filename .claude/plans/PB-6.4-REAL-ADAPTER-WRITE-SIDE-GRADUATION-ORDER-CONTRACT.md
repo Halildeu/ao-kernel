@@ -4,7 +4,7 @@
 **Date:** 2026-04-23  
 **Parent tracker:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)  
 **Decision issue (closed):** [#263](https://github.com/Halildeu/ao-kernel/issues/263)  
-**Follow-up active issue:** [#271](https://github.com/Halildeu/ao-kernel/issues/271)
+**Follow-up active issue:** [#270](https://github.com/Halildeu/ao-kernel/issues/270)
 
 ## 1) Problem
 
@@ -137,10 +137,10 @@ Güncel yürütüm sırası:
    - plan:
      `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
 3. aktif follow-up hat:
-   - `PB-6.4c` (`#271`) `gh-cli-pr` live write lane precondition kararı
+   - `PB-6.4c` (`#271`) karar dilimi tamamlandı: `stay_preflight`
    - plan:
      `.claude/plans/PB-6.4c-GH-CLI-PR-LIVE-WRITE-GRADUATION.md`
-4. queued follow-up hat:
+4. aktif follow-up hat:
    - `PB-6.4d` (`#270`) kernel-api write-side widening preconditions
    - plan:
      `.claude/plans/PB-6.4d-KERNEL-API-WRITE-SIDE-WIDENING-PRECONDITIONS.md`

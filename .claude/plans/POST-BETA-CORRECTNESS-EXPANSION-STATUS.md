@@ -20,7 +20,7 @@ ayrı ayrı görünür kılmak.
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#271](https://github.com/Halildeu/ao-kernel/issues/271)
+- **Aktif issue:** [#270](https://github.com/Halildeu/ao-kernel/issues/270)
 
 ## 2. Başlangıç Gerçeği
 
@@ -98,15 +98,16 @@ bir sonraki implementation hattına taşımaktır.
 6. Slice plan:
    `.claude/plans/PB-6.4b-CLAUDE-CODE-CLI-PROMOTION-READINESS.md`
 
-`PB-6.4c` active decision slice:
+`PB-6.4c` decision slice'ı tamamlandı:
 
 1. Issue: [#271](https://github.com/Halildeu/ao-kernel/issues/271)
-2. Hedef: `gh-cli-pr` için `preflight-only` ile `live write` lane sınırını
-   gate tabanlı karar dilimine çevirmek
-3. Slice plan:
+2. Karar: `stay_preflight`
+3. Gerekçe: live write lane için sandbox/side-effect/rollback/evidence
+   kapıları henüz karşılanmadı; preflight-only support sınırı korunuyor
+4. Slice plan:
    `.claude/plans/PB-6.4c-GH-CLI-PR-LIVE-WRITE-GRADUATION.md`
 
-`PB-6.4d` queued hold slice:
+`PB-6.4d` active hold-decision slice:
 
 1. Issue: [#270](https://github.com/Halildeu/ao-kernel/issues/270)
 2. Hedef: `PRJ-KERNEL-API` write-side widening önkoşullarını action bazlı
@@ -197,16 +198,18 @@ Güncel runtime baseline:
      `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
    - first tranche complete: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265), [#266](https://github.com/Halildeu/ao-kernel/pull/266))
    - second tranche complete: `PB-6.4b` ([#267](https://github.com/Halildeu/ao-kernel/issues/267), [#268](https://github.com/Halildeu/ao-kernel/pull/268))
-   - active hold-management tranche: `PB-6.4c` ([#271](https://github.com/Halildeu/ao-kernel/issues/271))
-   - queued hold tranche: `PB-6.4d` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
+   - third tranche complete: `PB-6.4c` decision closeout (`stay_preflight`, [#271](https://github.com/Halildeu/ao-kernel/issues/271))
+   - active hold tranche: `PB-6.4d` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
 2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
-3. `PB-6.4` karar notu tamamlandı; `PB-6.4c` aktif karar dilimi ve `PB-6.4d`
-   queued hold dilimi kapanmadan support widening implementation açılmayacak.
+3. `PB-6.4c` kararı `stay_preflight` olarak kapanmıştır; live write widening
+   support boundary dışında kalır.
+4. `PB-6.4d` karar dilimi kapanmadan kernel-api write-side widening
+   implementation açılmayacak.
 
 ## 7. Riskler
 
@@ -222,11 +225,9 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.4c` active decision slice (`#271`)
-   - `gh-cli-pr` preflight vs live write boundary
-   - disposable sandbox + rollback + evidence completeness kapıları
-2. `PB-6.4d` queued hold slice (`#270`)
+1. `PB-6.4d` active hold-decision slice (`#270`)
    - kernel-api write-side widening preconditions
+   - governance/policy + behavior test + rollback gate tabanı
 
 ## 9. Güncelleme Protokolü
 
