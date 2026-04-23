@@ -224,6 +224,9 @@ Canlı yürütme sırası bundan sonra aşağıdaki SSOT'tan takip edilir:
    - `PB-6.4d`: `stay_deferred` ([#270](https://github.com/Halildeu/ao-kernel/issues/270))
 4. `PB-6.4` karar/ordering contract:
    `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
-5. Yeni aktif alt hat `PB-6.5`:
+5. `PB-6.5` decision closeout tamamlandı:
    - issue: [#275](https://github.com/Halildeu/ao-kernel/issues/275)
    - plan: `.claude/plans/PB-6.5-OPS-READINESS-FOR-WIDENED-LANES.md`
+6. Yeni aktif alt hat `PB-6.6`:
+   - issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277)
+   - plan: `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
