@@ -28,7 +28,7 @@ giriş kapılarını netleştirmektir.
 
 ## Tranche Sırası
 
-### `GP-2.1` — Deferred lane evidence-delta map (Active)
+### `GP-2.1` — Deferred lane evidence-delta map (Completed)
 
 - Issue: [#331](https://github.com/Halildeu/ao-kernel/issues/331)
 - Hedef: her deferred satır için mevcut kanıt, kalan kanıt boşluğu, risk seviyesi
@@ -40,11 +40,14 @@ giriş kapılarını netleştirmektir.
   1. Deferred lane tablosu tek anlamlı hale gelir.
   2. İlk aktif runtime tranche açıkça seçilir.
   3. Seçilen tranche için tek issue + tek contract referansı üretilir.
+- Kapanış: [#331](https://github.com/Halildeu/ao-kernel/issues/331) closed, PR [#332](https://github.com/Halildeu/ao-kernel/pull/332)
 
-### `GP-2.2` — First runtime slice kickoff (Pending)
+### `GP-2.2` — First runtime slice kickoff (Active)
 
-- Hedef: `GP-2.1` çıktısındaki ilk lane'i dar kapsamlı bir implementation dilimi
-  olarak başlatmak.
+- Issue: [#333](https://github.com/Halildeu/ao-kernel/issues/333)
+- Contract:
+  `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
+- Hedef: `GP-2.1` çıktısındaki ilk lane'i dar kapsamlı bir implementation dilimi olarak başlatmak.
 - Current candidate lane (from `GP-2.1`): adapter-path `cost_usd` reconcile completeness.
 - Kural: yalnız bir lane açılır; diğer deferred satırlar status dosyasında
   `deferred` olarak kalır.

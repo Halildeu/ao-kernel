@@ -15,7 +15,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/GP-2.1-DEFERRED-LANE-EVIDENCE-DELTA-MAP.md` (`GP-2.1 active`)
+- **Aktif decision/ordering contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md` (`GP-2.2 active`)
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - **PB-9.4 karar notu:** `.claude/plans/PB-9.4-PRODUCTION-CLAIM-DECISION-CLOSEOUT.md`
@@ -26,6 +26,7 @@ ayrı ayrı görünür kılmak.
 - **GP-1 roadmap:** `.claude/plans/GP-1-GENERAL-PURPOSE-PRODUCTION-WIDENING-ROADMAP.md`
 - **GP-2 roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **GP-2.1 karar notu:** `.claude/plans/GP-2.1-DEFERRED-LANE-EVIDENCE-DELTA-MAP.md`
+- **GP-2.2 contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
@@ -35,8 +36,9 @@ ayrı ayrı görünür kılmak.
 - **PB-9 tracker issue:** [#302](https://github.com/Halildeu/ao-kernel/issues/302) (`closed`)
 - **GP-1 tracker issue:** [#316](https://github.com/Halildeu/ao-kernel/issues/316) (`closed`)
 - **GP-2 tracker issue:** [#329](https://github.com/Halildeu/ao-kernel/issues/329) (`open`)
-- **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`open`)
-- **Aktif issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`GP-2.1 active`)
+- **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
+- **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
+- **Aktif issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`GP-2.2 active`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -506,3 +508,17 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 4. Next implementation start condition:
    - `GP-2.2` için tek issue/branch açılacak
    - ilk runtime slice yalnız `cost_usd` evidence parity kapsamıyla sınırlı kalacak
+
+## 17. GP-2.2 Kickoff Snapshot
+
+`GP-2.1` ordering closeout sonrası aktif runtime tranche `GP-2.2` olarak açıldı.
+
+1. Issue: [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`open`)
+2. Active contract:
+   `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
+3. Scope:
+   - adapter-path `cost_usd` reconcile completeness gap'ini dar kapsamda kapatmak
+   - behavior-first test/evidence assertion setini güçlendirmek
+4. Sınır:
+   - support boundary widening kararı bu tranche'ta verilmeyecek
+   - `gh-cli-pr` full E2E ve `bug_fix_flow` closure lane'leri `deferred` kalacak
