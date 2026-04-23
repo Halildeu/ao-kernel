@@ -109,6 +109,8 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   `review_ai_flow` + bundled `codex-stub` yolu için geçerlidir.
 - `claude-code-cli` ve `gh-cli-pr` bugün default demo yüzeyi değildir;
   yalnız helper-backed operator-managed beta satırları kadar desteklenir.
+- `PB-9.4` closeout kararı `stay_beta_operator_managed` olarak sabitlenmiştir;
+  bu release çizgisinde support widening yapılmaz.
 - Bundled extension inventory runtime-backed olsa da support-tier ayrımı korunur:
   `PRJ-KERNEL-API` içinde `system_status` / `doc_nav_check` shipped read-only
   satırındadır; `project_status` / `roadmap_follow` / `roadmap_finish` ise
