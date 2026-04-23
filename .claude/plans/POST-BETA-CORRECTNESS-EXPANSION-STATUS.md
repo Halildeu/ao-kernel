@@ -94,7 +94,7 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `ST-1` — releasable pre-release gate (`4.0.0b2` varsayımı)
+### `ST-1` — releasable pre-release gate (`4.0.0b2` release PR)
 
 Aktif iş artık production-stable roadmap'teki `ST-1` kapısına hazırlıktır.
 Issue [#340](https://github.com/Halildeu/ao-kernel/issues/340) açıldı ve
@@ -118,6 +118,16 @@ Son GP-2.2 kararı:
 Bu slice'ın işi release publish değildir; release PR'ı başlamadan önce exact
 dosya listesi, karar soruları, local/CI/publish kanıt komutları ve blocker
 listesi yazılı hale getirilir.
+
+Contract PR [#341](https://github.com/Halildeu/ao-kernel/pull/341) ile
+tamamlandı. Aktif alt adım artık `4.0.0b2` release PR'ıdır:
+
+1. `pyproject.toml` ve `ao_kernel/__init__.py` version surfaces
+   `4.0.0b2`ye çekilir.
+2. `CHANGELOG.md`, `docs/PUBLIC-BETA.md`, `docs/UPGRADE-NOTES.md` ve
+   `docs/ROLLBACK.md` beta pinleri hizalanır.
+3. Local validation + full CI + packaging-smoke geçmeden tag/publish yoktur.
+4. Merge sonrası tag hedefi `v4.0.0-beta.2`dir.
 
 Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
 `ST-1` bloğudur.
@@ -320,7 +330,7 @@ Aktif slice: `ST-1` pre-release gate hazırlığı.
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 3. Aktif contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
-4. Sonraki iş: `4.0.0b2` release PR'ını contract'a göre aç.
+4. Sonraki iş: `4.0.0b2` release PR'ını contract'a göre merge et.
 5. Stable release'e doğrudan geçilmez; önce fresh wheel/PyPI pre-release
    kanıtı toplanır.
 

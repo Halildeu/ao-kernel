@@ -1,8 +1,8 @@
-# Public Beta (v4.0.0b1) — Support Matrix SSOT
+# Public Beta (v4.0.0b2) — Support Matrix SSOT
 
 > **Sürüm durumu (2026-04-24)**: stable kanal `pip install ao-kernel`
 > komutuyla, Public Beta ise explicit pre-release pin veya `--pre` ile
-> kurulur. Bu doküman `v4.0.0b1` için canlı destek matrisi ve
+> kurulur. Bu doküman `v4.0.0b2` için canlı destek matrisi ve
 > operator-facing SSOT'tur; stable kanalın exact sürüm numarası release
 > anında PyPI'dan doğrulanır, burada hard-code edilmez.
 
@@ -17,7 +17,7 @@ pip install ao-kernel
 ### Public Beta pre-release
 
 ```bash
-pip install ao-kernel==4.0.0b1
+pip install ao-kernel==4.0.0b2
 pip install --pre ao-kernel
 ```
 
@@ -32,7 +32,7 @@ istemek gerekir.
 - [`ROLLBACK.md`](ROLLBACK.md)
 - [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
 
-## Shipped (v4.0.0b1)
+## Shipped (v4.0.0b2)
 
 | Yüzey | Durum | Not |
 |---|---|---|

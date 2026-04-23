@@ -7,6 +7,48 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [4.0.0b2] - 2026-04-24
+
+### Changed — Post-beta closeout + stable-release gate preparation
+
+`v4.0.0b2` refreshes the Public Beta pre-release line from current `main`
+after the post-beta correctness and productionization program work. It does
+not widen the public support boundary to a general-purpose production coding
+automation platform; it packages the current governed runtime baseline with
+clearer release gates and closeout records.
+
+- Added the production stable live roadmap and ST-1 pre-release gate contract:
+  - `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
+  - `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
+- Closed the GP-2.2 adapter-path `cost_usd` reconcile completeness tranche:
+  - deterministic assertions now pin the fast-mode negative path and
+    full-mode `llm_spend_recorded(source="adapter_path")` payload fields
+  - no additional runtime patch was required
+  - adapter-path `cost_usd` reconcile remains deferred as a public support
+    claim
+- Public Beta docs no longer hard-code the exact stable channel version; they
+  document the install rule instead.
+- Support boundary remains intentionally narrow:
+  - shipped baseline: module/CLI entrypoints, doctor, `review_ai_flow` +
+    `codex-stub`, `examples/demo_review.py`, policy command enforcement,
+    packaging smoke, and documented read-only kernel API actions
+  - operator-managed beta: `claude-code-cli`, `gh-cli-pr` preflight/live-write
+    readiness probe, kernel API write-side actions, and real-adapter benchmark
+    full mode
+  - deferred: `bug_fix_flow` release closure, full remote PR opening,
+    roadmap/spec demo widening, and adapter-path `cost_usd` as a public
+    support claim
+- Version bump `4.0.0b1 -> 4.0.0b2` (git tag target:
+  `v4.0.0-beta.2`).
+
+### Migration note
+
+- `pip install ao-kernel` still stays on the stable channel until a
+  pre-release is requested explicitly.
+- Public Beta users should pin `ao-kernel==4.0.0b2` or use
+  `pip install --pre ao-kernel`.
+- No stable `4.0.0` claim is made by this release.
+
 ## [4.0.0b1] - 2026-04-20
 
 ### Changed — Runtime command enforcement + packaging smoke gate

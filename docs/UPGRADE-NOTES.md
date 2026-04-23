@@ -16,7 +16,7 @@ pip install -U ao-kernel
 ```bash
 pip install --pre ao-kernel
 # or pin explicitly
-pip install ao-kernel==4.0.0b1
+pip install ao-kernel==4.0.0b2
 ```
 
 Do not assume `pip install ao-kernel` will pick the beta. It stays on the

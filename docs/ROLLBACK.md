@@ -17,7 +17,7 @@ flag olmadan en güncel stable hattı geri yükler.
 ### Return to the documented beta pin
 
 ```bash
-pip install --force-reinstall ao-kernel==4.0.0b1
+pip install --force-reinstall ao-kernel==4.0.0b2
 ```
 
 After either rollback, verify:
