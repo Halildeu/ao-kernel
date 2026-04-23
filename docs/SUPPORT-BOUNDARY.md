@@ -105,6 +105,8 @@ These may be bundled and schema-valid without being end-to-end supported:
 
 `PRJ-KERNEL-API` write-side actions runtime-backed olsa da shipped baseline
 değildir; support tier yalnız Beta (operator-managed) satırı kadar genişler.
+`PRJ-CONTEXT-ORCHESTRATION` için `GP-1.4` kararı `stay_contract_only` olduğu
+için bu extension contract inventory katmanında kalır; support widening yoktur.
 
 ## 3. What does NOT automatically widen support
 
