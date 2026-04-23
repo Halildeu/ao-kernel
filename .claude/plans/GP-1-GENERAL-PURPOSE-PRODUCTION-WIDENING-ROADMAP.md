@@ -1,6 +1,6 @@
 # GP-1 — General-Purpose Production Widening Program
 
-**Status:** Active  
+**Status:** Completed  
 **Date:** 2026-04-23  
 **Tracker:** [#316](https://github.com/Halildeu/ao-kernel/issues/316)  
 **Execution mode:** Kapsam disiplini, tek aktif runtime tranche
@@ -74,11 +74,14 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
   - `.claude/plans/GP-1.4-CONTEXT-ORCHESTRATION-PROMOTION-DECISION.md`
 - Karar: `stay_contract_only`
 
-### `GP-1.5` — Program closeout decision (Active)
+### `GP-1.5` — Program closeout decision (Completed)
 
 - Issue: [#326](https://github.com/Halildeu/ao-kernel/issues/326)
 - Hedef: program sonunda widening etkisini tek closeout notunda sabitlemek.
 - Ana çıktı: updated support boundary + tracker closeout.
+- Karar notu:
+  - `.claude/plans/GP-1.5-PROGRAM-CLOSEOUT-DECISION.md`
+- Karar: program closed (`stay_beta_operator_managed`)
 
 ## Başarı Kriterleri
 
@@ -98,6 +101,6 @@ Amaç, widening'i yalnız kanıt zinciri tamamlandığında açmaktır.
 
 ## Program Kapanış Koşulu
 
-1. `GP-1.1..GP-1.5` için karar kayıtları tamamlanır.
-2. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif hattı kapatır.
-3. Tracker [#316](https://github.com/Halildeu/ao-kernel/issues/316) kapanır.
+1. `GP-1.1..GP-1.5` için karar kayıtları tamamlandı.
+2. `POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` aktif hattı kapattı.
+3. Tracker [#316](https://github.com/Halildeu/ao-kernel/issues/316) bu tranche ile kapatılır.
