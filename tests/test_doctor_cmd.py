@@ -28,6 +28,12 @@ class TestDoctorReport:
 
         extension_truth = report["extension_truth"]
         assert extension_truth["total_extensions"] >= 1
-        assert extension_truth["runtime_backed"] >= 1
+        assert extension_truth["runtime_backed"] >= 2
+        assert extension_truth["contract_only"] >= 1
         assert extension_truth["quarantined"] >= 1
         assert "PRJ-HELLO" in extension_truth["runtime_backed_ids"]
+        assert "PRJ-KERNEL-API" in extension_truth["runtime_backed_ids"]
+        assert "PRJ-CONTEXT-ORCHESTRATION" in extension_truth["contract_only_ids"]
+        assert len(extension_truth["runtime_backed_ids"]) == extension_truth["runtime_backed"]
+        assert len(extension_truth["contract_only_ids"]) == extension_truth["contract_only"]
+        assert len(extension_truth["quarantined_ids"]) == extension_truth["quarantined"]

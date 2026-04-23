@@ -19,7 +19,7 @@ ayrı ayrı görünür kılmak.
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#263](https://github.com/Halildeu/ao-kernel/issues/263)
+- **Aktif issue:** [#265](https://github.com/Halildeu/ao-kernel/issues/265)
 
 ## 2. Başlangıç Gerçeği
 
@@ -76,6 +76,15 @@ bir sonraki implementation hattına taşımaktır.
    `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
 3. Hedef: first/second/hold tranche sırasını yazılı kapıya çevirmek ve
    ilk implementasyon hattını `PB-6.4a` olarak tekillemek.
+
+`PB-6.4a` active implementation slice:
+
+1. Issue: [#265](https://github.com/Halildeu/ao-kernel/issues/265)
+2. Hedef: support mapping hardening (`truth tier` -> support language parity)
+3. Kapsam: `docs/PUBLIC-BETA.md`, `docs/SUPPORT-BOUNDARY.md`,
+   `tests/test_doctor_cmd.py`, status SSOT hizası
+4. Slice plan:
+   `.claude/plans/PB-6.4a-SUPPORT-MAPPING-HARDENING.md`
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -158,6 +167,7 @@ Güncel runtime baseline:
    - issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)
    - contract:
      `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
+   - active implementation tranche: `PB-6.4a` ([#265](https://github.com/Halildeu/ao-kernel/issues/265))
 
 Not:
 
