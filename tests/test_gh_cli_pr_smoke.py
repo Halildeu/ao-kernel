@@ -29,6 +29,38 @@ def _bundled_manifest():
     return reg.get("gh-cli-pr")
 
 
+def _base_gh_runner_result(cmd: tuple[str, ...]) -> CommandResult | None:
+    if cmd == ("/fake/gh", "--version"):
+        return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
+    if cmd == ("/fake/gh", "auth", "status", "--json", "hosts"):
+        return _result(
+            cmd,
+            stdout=(
+                '{"hosts":{"github.com":[{"state":"success","active":true,'
+                '"host":"github.com","login":"Halildeu",'
+                '"tokenSource":"keyring","scopes":"repo",'
+                '"gitProtocol":"https"}]}}'
+            ),
+        )
+    if cmd == (
+        "/fake/gh",
+        "repo",
+        "view",
+        "--json",
+        "nameWithOwner,defaultBranchRef,isPrivate,url",
+    ):
+        return _result(
+            cmd,
+            stdout=(
+                '{"nameWithOwner":"Halildeu/ao-kernel",'
+                '"defaultBranchRef":{"name":"main"},'
+                '"isPrivate":false,'
+                '"url":"https://github.com/Halildeu/ao-kernel"}'
+            ),
+        )
+    return None
+
+
 def test_binary_missing_blocks_and_skips_remaining_checks() -> None:
     report = run_gh_cli_pr_smoke(
         which=lambda command: None,
@@ -378,6 +410,7 @@ def test_live_write_requires_explicit_opt_in() -> None:
 
 def test_live_write_passes_with_create_and_rollback() -> None:
     create_called = False
+    verify_called = False
     close_called = False
 
     def runner(
@@ -385,7 +418,7 @@ def test_live_write_passes_with_create_and_rollback() -> None:
         cwd: Path | None,
         timeout: float | None,
     ) -> CommandResult:
-        nonlocal create_called, close_called
+        nonlocal create_called, verify_called, close_called
         cmd = tuple(argv)
         if cmd == ("/fake/gh", "--version"):
             return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
@@ -428,6 +461,23 @@ def test_live_write_passes_with_create_and_rollback() -> None:
         if cmd[:4] == (
             "/fake/gh",
             "pr",
+            "view",
+            "https://github.com/Halildeu/ao-kernel/pull/123",
+        ):
+            verify_called = True
+            return _result(
+                cmd,
+                stdout=(
+                    '{"state":"OPEN","isDraft":true,'
+                    '"url":"https://github.com/Halildeu/ao-kernel/pull/123",'
+                    '"number":123,'
+                    '"headRefName":"feature/smoke",'
+                    '"baseRefName":"main"}'
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
             "close",
             "https://github.com/Halildeu/ao-kernel/pull/123",
         ):
@@ -449,12 +499,17 @@ def test_live_write_passes_with_create_and_rollback() -> None:
     assert report.overall_status == "pass"
     assert report.findings == ()
     live_check = next(check for check in report.checks if check.name == "pr_live_write")
+    verify_check = next(
+        check for check in report.checks if check.name == "pr_live_write_verify"
+    )
     rollback_check = next(
         check for check in report.checks if check.name == "pr_live_write_rollback"
     )
     assert live_check.status == "pass"
+    assert verify_check.status == "pass"
     assert rollback_check.status == "pass"
     assert create_called is True
+    assert verify_called is True
     assert close_called is True
 
 
@@ -515,3 +570,288 @@ def test_live_write_disposable_repo_guard_blocks_write() -> None:
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_repo_not_disposable" in report.findings
     assert create_called is False
+
+
+def test_live_write_requires_explicit_base_ref() -> None:
+    create_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal create_called
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            create_called = True
+            raise AssertionError("base yokken live-write create calismamali")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref=None,
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_base_ref_required" in report.findings
+    create_check = next(check for check in report.checks if check.name == "pr_live_write")
+    verify_check = next(
+        check for check in report.checks if check.name == "pr_live_write_verify"
+    )
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert create_check.status == "fail"
+    assert verify_check.status == "skip"
+    assert rollback_check.status == "skip"
+    assert create_called is False
+
+
+def test_live_write_create_failure_skips_verify_and_rollback() -> None:
+    verify_called = False
+    close_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal verify_called, close_called
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(cmd, returncode=1, stderr="create failed")
+        if cmd[:4] == ("/fake/gh", "pr", "view", "https://github.com"):
+            verify_called = True
+            raise AssertionError("create fail oldugunda verify calismamali")
+        if cmd[:4] == ("/fake/gh", "pr", "close", "https://github.com"):
+            close_called = True
+            raise AssertionError("create fail oldugunda rollback calismamali")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_failed" in report.findings
+    verify_check = next(
+        check for check in report.checks if check.name == "pr_live_write_verify"
+    )
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert verify_check.status == "skip"
+    assert rollback_check.status == "skip"
+    assert verify_called is False
+    assert close_called is False
+
+
+def test_live_write_verify_failure_is_fail_closed_and_still_rolls_back() -> None:
+    close_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal close_called
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(
+                cmd,
+                stdout=(
+                    "https://github.com/Halildeu/ao-kernel/pull/456\n"
+                    "Creating draft pull request...\n"
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "view",
+            "https://github.com/Halildeu/ao-kernel/pull/456",
+        ):
+            return _result(cmd, returncode=1, stderr="verify failed")
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "close",
+            "https://github.com/Halildeu/ao-kernel/pull/456",
+        ):
+            close_called = True
+            return _result(cmd, stdout="Closed pull request #456\n")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_verify_failed" in report.findings
+    verify_check = next(
+        check for check in report.checks if check.name == "pr_live_write_verify"
+    )
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert verify_check.status == "fail"
+    assert rollback_check.status == "pass"
+    assert close_called is True
+
+
+def test_live_write_keep_open_is_marked_as_blocking_risk() -> None:
+    close_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal close_called
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(
+                cmd,
+                stdout=(
+                    "https://github.com/Halildeu/ao-kernel/pull/777\n"
+                    "Creating draft pull request...\n"
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "view",
+            "https://github.com/Halildeu/ao-kernel/pull/777",
+        ):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"state":"OPEN","isDraft":true,'
+                    '"url":"https://github.com/Halildeu/ao-kernel/pull/777",'
+                    '"number":777,'
+                    '"headRefName":"feature/smoke",'
+                    '"baseRefName":"main"}'
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "close",
+            "https://github.com/Halildeu/ao-kernel/pull/777",
+        ):
+            close_called = True
+            raise AssertionError("keep-open seceneginde rollback calismamali")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        keep_live_write_pr_open=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_keep_open_requested" in report.findings
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert rollback_check.status == "fail"
+    assert close_called is False
+
+
+def test_live_write_rollback_failure_blocks_lane() -> None:
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        baseline = _base_gh_runner_result(cmd)
+        if baseline is not None:
+            return baseline
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(
+                cmd,
+                stdout=(
+                    "https://github.com/Halildeu/ao-kernel/pull/999\n"
+                    "Creating draft pull request...\n"
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "view",
+            "https://github.com/Halildeu/ao-kernel/pull/999",
+        ):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"state":"OPEN","isDraft":true,'
+                    '"url":"https://github.com/Halildeu/ao-kernel/pull/999",'
+                    '"number":999,'
+                    '"headRefName":"feature/smoke",'
+                    '"baseRefName":"main"}'
+                ),
+            )
+        if cmd[:4] == (
+            "/fake/gh",
+            "pr",
+            "close",
+            "https://github.com/Halildeu/ao-kernel/pull/999",
+        ):
+            return _result(cmd, returncode=1, stderr="close failed")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        mode="live_write",
+        allow_live_write=True,
+        head_ref="feature/smoke",
+        base_ref="main",
+        require_disposable_repo_keyword="ao-kernel",
+    )
+
+    assert report.overall_status == "blocked"
+    assert "gh_pr_live_write_rollback_failed" in report.findings
+    rollback_check = next(
+        check for check in report.checks if check.name == "pr_live_write_rollback"
+    )
+    assert rollback_check.status == "fail"

@@ -263,6 +263,20 @@ Not:
 2. Bugünkü aktif slice: `PB-8.1` (`gh-cli-pr` live-write productionization)
 3. Sonraki sıra (planlı): `PB-8.2` -> `PB-8.3` -> `PB-8.4`
 
+`PB-8.1` implementation deltas (active branch snapshot):
+
+1. `gh-cli-pr` live-write lane artık fail-closed precondition seti uygular:
+   explicit `--allow-live-write`, explicit `--head`, explicit `--base`,
+   disposable keyword guard.
+2. Live-write execution zinciri create -> verify (`gh pr view`) -> rollback
+   (`gh pr close`) sırasıyla zorunlu evidence check'lerine bağlandı.
+3. `--keep-live-write-pr-open` yolu side-effect riski olarak işaretlenir ve
+   raporu `blocked` döndürür (`gh_pr_live_write_keep_open_requested`).
+4. Test matrisi create/verify/rollback fail-path davranışlarını behavior-first
+   assertion'larla pinler (`tests/test_gh_cli_pr_smoke.py`).
+5. Support boundary dokümanlarında lane açıklaması bu davranışla hizalanır
+   (`docs/PUBLIC-BETA.md`, `docs/SUPPORT-BOUNDARY.md`, `docs/ADAPTERS.md`).
+
 ## 9. PB-7 Closeout Snapshot
 
 **Kapanış tarihi:** 2026-04-23
