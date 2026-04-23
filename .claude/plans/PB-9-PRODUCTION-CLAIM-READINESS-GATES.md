@@ -46,17 +46,18 @@ kapılar birlikte geçerse verilir:
 
 ## Tranche Sırası
 
-### `PB-9.1` — Operator prerequisite contract parity (Active)
+### `PB-9.1` — Operator prerequisite contract parity (Completed)
 
-- Issue: [#303](https://github.com/Halildeu/ao-kernel/issues/303)
+- Issue: [#303](https://github.com/Halildeu/ao-kernel/issues/303) (`closed`)
+- PR: [#305](https://github.com/Halildeu/ao-kernel/pull/305)
 - Hedef: `claude-code-cli` ve `gh-cli-pr` lane'lerinde prerequisite dilini
   `PUBLIC-BETA`, `SUPPORT-BOUNDARY`, `OPERATIONS-RUNBOOK` ve smoke helper
   çıktılarıyla tek anlamlı yapmak.
 - Ana çıktı: operatör aynı prereq bilgisini tüm SSOT yüzeylerde aynı şekilde görür.
 
-### `PB-9.2` — Truth inventory debt ratchet (Planned)
+### `PB-9.2` — Truth inventory debt ratchet (Active)
 
-- Issue: `pending`
+- Issue: [#306](https://github.com/Halildeu/ao-kernel/issues/306)
 - Hedef: doctor truth inventory (`runtime_backed/contract_only/quarantined`)
   üzerinden promotion sırası için ölçülebilir karar tablosu çıkarmak.
 - Ana çıktı: widening adayları için objektif ve tekrar üretilebilir ranking.

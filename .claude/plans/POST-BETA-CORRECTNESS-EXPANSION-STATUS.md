@@ -15,7 +15,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md` (`PB-9.1` active)
+- **Aktif decision/ordering contract:** `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md` (`PB-9.2` active)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
@@ -23,7 +23,7 @@ ayrı ayrı görünür kılmak.
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 - **PB-8 tracker issue:** [#288](https://github.com/Halildeu/ao-kernel/issues/288) (`closed`)
 - **PB-9 tracker issue:** [#302](https://github.com/Halildeu/ao-kernel/issues/302)
-- **Aktif issue:** [#303](https://github.com/Halildeu/ao-kernel/issues/303) (`PB-9.1`)
+- **Aktif issue:** [#306](https://github.com/Halildeu/ao-kernel/issues/306) (`PB-9.2`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -32,8 +32,8 @@ ayrı ayrı görünür kılmak.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
 - Public Beta closeout sonrası `PB-8.4` docs/runbook/release-gate parity
-  tranche'i tamamlandı ve `PB-8` tracker kapandı; aktif hat artık `PB-9.1`
-  prerequisite contract parity dilimidir.
+  tranche'i tamamlandı ve `PB-8` tracker kapandı; `PB-9.1` prerequisite parity
+  dilimi kapanmıştır. Aktif hat artık `PB-9.2` truth inventory debt ratchet'tır.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -64,7 +64,7 @@ ayrı ayrı görünür kılmak.
 | `PB-5` adapter-path cost/evidence completeness | Completed ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness yüzeyinde ayrı runtime gap olup olmadığını karara bağlamak; sonuç: docs parity closeout yeterli, ayrı tranche 3 gerekmedi | truth audit + targeted tests + docs parity closeout |
 | `PB-6` general-purpose expansion gap map | Completed on `main` ([#243](https://github.com/Halildeu/ao-kernel/issues/243), [#279](https://github.com/Halildeu/ao-kernel/pull/279)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + PB-6.6 final verdict closeout |
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
-| `PB-9` production claim readiness gates | Active ([#302](https://github.com/Halildeu/ao-kernel/issues/302), active tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | active roadmap + tranche issue + status parity |
+| `PB-9` production claim readiness gates | Active ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), active tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | active roadmap + tranche issue + status parity |
 
 ## 5. Şimdi
 
@@ -260,11 +260,11 @@ Not:
 
 ## 8. Anlık Öncelik
 
-`PB-9` kickoff aktif.
+`PB-9` yürütmesi aktif.
 
-1. Son kapanan slice: `PB-8.4` (`support widening closeout`)
-2. Bugünkü aktif iş: `PB-9.1` prerequisite contract parity
-3. Sonraki sıra (planlı): `PB-9.2` truth inventory debt ratchet
+1. Son kapanan slice: `PB-9.1` prerequisite contract parity
+2. Bugünkü aktif iş: `PB-9.2` truth inventory debt ratchet
+3. Sonraki sıra (planlı): `PB-9.3` write/live lane evidence rehearsal
 
 `PB-8.2` completion kaydı:
 
@@ -391,7 +391,13 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 1. Program roadmap:
    `.claude/plans/PB-9-PRODUCTION-CLAIM-READINESS-GATES.md`
 2. Tracker issue: [#302](https://github.com/Halildeu/ao-kernel/issues/302)
-3. Aktif tranche: `PB-9.1`
-   ([#303](https://github.com/Halildeu/ao-kernel/issues/303))
-4. Sonraki tranche (planlı): `PB-9.2` (`truth inventory debt ratchet`)
-5. Program kuralı korunur: tek aktif runtime tranche + zorunlu kanıt paketi.
+3. `PB-9.1` completion:
+   - issue: [#303](https://github.com/Halildeu/ao-kernel/issues/303) (`closed`)
+   - PR: [#305](https://github.com/Halildeu/ao-kernel/pull/305)
+   - merge commit: `ea32ee4`
+   - sonuç: operator prerequisite contract docs + smoke-help yüzeylerinde
+     tek anlamlı hale getirildi.
+4. Aktif tranche: `PB-9.2`
+   ([#306](https://github.com/Halildeu/ao-kernel/issues/306))
+5. Sonraki tranche (planlı): `PB-9.3` (`write/live lane evidence rehearsal`)
+6. Program kuralı korunur: tek aktif runtime tranche + zorunlu kanıt paketi.
