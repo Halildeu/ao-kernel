@@ -67,6 +67,7 @@ kapılar birlikte geçerse verilir:
 ### `PB-9.3` — Write/live lane evidence rehearsal (Active)
 
 - Issue: [#309](https://github.com/Halildeu/ao-kernel/issues/309)
+- Karar notu: `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
 - Hedef: write/live lane'lerde create->verify->rollback zincirini
   behavior-first kanıtla güçlendirmek.
 - Ana çıktı: live side-effect risklerinin incident/rollback açısından
