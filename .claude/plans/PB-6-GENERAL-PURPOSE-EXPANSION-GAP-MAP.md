@@ -3,7 +3,7 @@
 **Durum tarihi:** 2026-04-23
 **İlişkili issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 **Üst tracker:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-**Durum:** In progress
+**Durum:** Completed (decision map finalized)
 
 ## Amaç
 
@@ -50,12 +50,12 @@ python3 scripts/gh_cli_pr_smoke.py --output json
 
 1. `python3 -m ao_kernel doctor`
    - `8 OK, 1 WARN, 0 FAIL`
-   - `runtime_backed=1`
-   - `contract_only=0`
-   - `quarantined=18`
-   - `remap_candidate_refs=69`
-   - `missing_runtime_refs=161`
-   - tek runtime-backed bundled extension: `PRJ-HELLO`
+   - `runtime_backed=2`
+   - `contract_only=1`
+   - `quarantined=16`
+   - `remap_candidate_refs=61`
+   - `missing_runtime_refs=152`
+   - runtime-backed bundled extensions: `PRJ-HELLO`, `PRJ-KERNEL-API`
 2. `python3 scripts/claude_code_cli_smoke.py --output json`
    - `overall_status="pass"`
    - binary / auth / prompt_access / manifest_invocation check'leri geçti
@@ -90,7 +90,7 @@ Hüküm:
 
 | Gap bucket | Bugünkü kanıt | Açık boşluk | Production-grade için gereken |
 |---|---|---|---|
-| Extension/runtime truth gap | `doctor` yalnız `PRJ-HELLO`yu runtime-backed görüyor; `quarantined=18` | Bundled inventory'nin çoğu runtime-backed değil, remap/missing ref debt yüksek | extension bazlı promote / quarantine / retire kararı + ölçülebilir truth target |
+| Extension/runtime truth gap | `doctor` bugün iki runtime-backed extension gösteriyor (`PRJ-HELLO`, `PRJ-KERNEL-API`); `quarantined=16` | Bundled inventory'nin çoğu runtime-backed değil, remap/missing ref debt yüksek | extension bazlı promote / quarantine / retire kararı + ölçülebilir truth target |
 | Real-adapter workflow graduation gap | `claude-code-cli` helper smoke yeşil | helper smoke workflow-driven support kanıtı değildir | end-to-end workflow smoke, failure-mode matrisi, support docs promotion kararı |
 | Write-side / PR orchestration gap | `gh-cli-pr` dry-run smoke yeşil | gerçek remote PR opening hâlâ deferred; disposable sandbox/rollback contract dar | side-effectful PR lane için bounded E2E kanıt ve rollback güvencesi |
 | Support boundary vs contract inventory gap | docs boundary dürüst, ama inventory çok geniş | operator bir manifest gördüğünde onu destekli yüzey sanabilir | contract inventory ile supported surface arasında daha sert sınıflandırma ve mapping |
@@ -230,5 +230,6 @@ Canlı yürütme sırası bundan sonra aşağıdaki SSOT'tan takip edilir:
 6. `PB-6.6` decision closeout tamamlandı:
    - issue: [#277](https://github.com/Halildeu/ao-kernel/issues/277)
    - plan: `.claude/plans/PB-6.6-CLAUDE-CODE-CLI-OPS-GATED-PROMOTION-CLOSEOUT.md`
-7. Sonraki aktif adım:
-   - `PB-6` umbrella (`#243`) altında bir sonraki dar tranche issue/plan açılışı
+7. `PB-6` umbrella closeout:
+   - mapping, tranche sırası ve decision closeout seti tamamlandı
+   - sonraki iş yalnız yeni scope ile ayrı issue/plan olarak açılır

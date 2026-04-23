@@ -14,13 +14,13 @@ ayrı ayrı görünür kılmak.
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
-- **Aktif decision/ordering contract:** `.claude/plans/PB-6-GENERAL-PURPOSE-EXPANSION-GAP-MAP.md`
+- **Aktif decision/ordering contract:** Yok (program closeout tamamlandı)
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
 - **PB-6 umbrella issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
-- **Aktif issue:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
+- **Aktif issue:** Yok (closeout sonrası yeni tranche açılmadı)
 
 ## 2. Başlangıç Gerçeği
 
@@ -59,7 +59,7 @@ ayrı ayrı görünür kılmak.
 | `PB-3` deterministic test hygiene / time seams | Completed on `main` ([#226](https://github.com/Halildeu/ao-kernel/issues/226), [#227](https://github.com/Halildeu/ao-kernel/pull/227), [#228](https://github.com/Halildeu/ao-kernel/pull/228), [#229](https://github.com/Halildeu/ao-kernel/pull/229), [#230](https://github.com/Halildeu/ao-kernel/pull/230), [#231](https://github.com/Halildeu/ao-kernel/pull/231)) | zaman-bağımlı test ve zayıf assertion drift'ini sistematik azaltmak | targeted suite proof + residual seam inventory |
 | `PB-4` support-surface widening decisions | Completed on `main` ([#232](https://github.com/Halildeu/ao-kernel/issues/232), [#237](https://github.com/Halildeu/ao-kernel/pull/237)) | `gh-cli-pr` full E2E ve operator lane promotion kararlarını kanıtla vermek | canlı smoke + karar notu + docs parity |
 | `PB-5` adapter-path cost/evidence completeness | Completed ([#238](https://github.com/Halildeu/ao-kernel/issues/238)) | `cost_usd` reconcile ve evidence completeness yüzeyinde ayrı runtime gap olup olmadığını karara bağlamak; sonuç: docs parity closeout yeterli, ayrı tranche 3 gerekmedi | truth audit + targeted tests + docs parity closeout |
-| `PB-6` general-purpose expansion gap map | In progress ([#243](https://github.com/Halildeu/ao-kernel/issues/243)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + canlı baseline |
+| `PB-6` general-purpose expansion gap map | Completed on `main` ([#243](https://github.com/Halildeu/ao-kernel/issues/243), [#279](https://github.com/Halildeu/ao-kernel/pull/279)) | narrow beta'dan daha geniş production platform çizgisine geçiş için hangi yüzeylerin neden henüz promoted olmadığını canlı kanıtla sınıflandırmak | written gap map + ordered tranche backlog + PB-6.6 final verdict closeout |
 
 ## 5. Şimdi
 
@@ -255,13 +255,24 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Bugünden itibaren doğru sıra:
+Program closeout tamamlandı.
 
-1. `PB-6` umbrella (`#243`) altında bir sonraki dar tranche'i seç
-   - inventory truth gap ve support widening sırasını yeniden doğrula
-   - tek issue + tek plan + tek DoD disipliniyle yeni alt slice aç
+1. Aktif runtime slice yok.
+2. Yeni iş açılacaksa doğrudan `#243` umbrella altında yeni dar tranche issue + plan + DoD ile başlat.
 
-## 9. Güncelleme Protokolü
+## 9. Program Closeout (Final)
+
+**Kapanış tarihi:** 2026-04-23
+
+1. `PB-1` ... `PB-6` dilimleri `main` üzerinde yazılı kanıtlarla kapatıldı.
+2. Son karar: `claude-code-cli` lane için `stay_beta_operator_managed`
+   (PB-6.6 / issue `#277`).
+3. Support boundary bilerek dar bırakıldı; shipped baseline dışı widening
+   otomatik açılmadı.
+4. Program tracker/umbrella issue kapanışı bu closeout ile yapılır:
+   `#243`, `#219`.
+
+## 10. Güncelleme Protokolü
 
 Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 
