@@ -208,9 +208,16 @@ DoD:
 3. `PB-6` içindeki sonraki widening kararı, `PB-6.1` karar tablosu olmadan
    alınmayacak
 
-## Beklenen Sonraki Adım
+## Aktif Durum Notu (2026-04-23)
 
-`PB-6` için sıradaki doğru canlı iş `PB-6.1a` confirmatory pass olacaktır:
+Bu dosya `PB-6` için başlangıç gap map ve tranche tasarımını taşır.
+Canlı yürütme sırası bundan sonra aşağıdaki SSOT'tan takip edilir:
 
-1. retire/dead-reference adaylarını bir kez daha hedefli kanıtla teyit etmek
-2. ardından `promote candidate` shortlist'inden ilk runtime slice adayını seçmek
+- `.claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md`
+
+Özet:
+
+1. `PB-6.1a`, `PB-6.1b`, `PB-6.2`, `PB-6.2b`, `PB-6.3`, `PB-6.3b` tamamlandı.
+2. Aktif alt hat `PB-6.4` (issue: [#263](https://github.com/Halildeu/ao-kernel/issues/263)).
+3. `PB-6.4` için karar/ordering contract:
+   `.claude/plans/PB-6.4-REAL-ADAPTER-WRITE-SIDE-GRADUATION-ORDER-CONTRACT.md`
