@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
+- **Son tamamlanan implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#253](https://github.com/Halildeu/ao-kernel/issues/253)
+- **Aktif issue:** [#256](https://github.com/Halildeu/ao-kernel/issues/256)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,10 +60,11 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.2b` — `PRJ-KERNEL-API` minimum runtime-backed implementation
+### `PB-6.3` — `PRJ-CONTEXT-ORCHESTRATION` remap and owner boundary decision
 
-`PB-6` içinde aktif alt hat artık `PB-6.2b`'dir. Bu slice'ın işi,
-`PB-6.2` contract'ını runtime-backed implementasyona çevirmektir.
+`PB-6` içinde aktif alt hat artık `PB-6.3`'tür. Bu slice'ın işi,
+`PRJ-CONTEXT-ORCHESTRATION` için support widening'e geçmeden önce remap,
+owner ve runtime-boundary kararını yazılı hale getirmektir.
 
 `PB-6.2` contract slice'ı tamamlandı:
 
@@ -72,10 +73,16 @@ ayrı ayrı görünür kılmak.
 3. Merge commit: `8401092d5feafde07b4b8b75833f002b9499fa8d`
 4. Contract: `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 
-`PB-6.2b` support boundary'yi ancak handler, manifest, tests, smoke, doctor
-truth metric ve docs parity aynı PR'da kapanırsa genişletebilir.
+`PB-6.2b` implementation slice'ı tamamlandı:
 
-`PB-6.2b` hedef runtime baseline:
+1. Issue: [#253](https://github.com/Halildeu/ao-kernel/issues/253)
+2. PR: [#255](https://github.com/Halildeu/ao-kernel/pull/255)
+3. Merge commit: `f979f4b8d652f71e726b1f69838f4372e6a7d638`
+4. Support boundary yalnız `PRJ-KERNEL-API` `system_status` ve
+   `doc_nav_check` action'ları için genişledi.
+5. `project_status`, `roadmap_follow`, `roadmap_finish` deferred kaldı.
+
+Güncel runtime baseline:
 
 1. `python3 -m ao_kernel doctor`
    - `8 OK, 1 WARN, 0 FAIL`
@@ -86,58 +93,48 @@ truth metric ve docs parity aynı PR'da kapanırsa genişletebilir.
 3. `python3 scripts/gh_cli_pr_smoke.py --output json`
    - `overall_status="pass"`
 
-`PB-6.1a` closeout'u bu slice için artık giriş kanıtıdır:
+`PB-6.3` giriş kanıtı:
 
-1. `PRJ-EXECUTORPORT`
-2. `PRJ-MEMORYPORT`
-3. `PRJ-SEARCH`
-4. `PRJ-UI-COCKPIT-LITE`
+1. `PB-6.1b` shortlist sonucu `PRJ-CONTEXT-ORCHESTRATION` ikinci adaydır.
+2. `PRJ-KERNEL-API` hattı kapandı; artık sıradaki extension decision
+   slice'ına geçilebilir.
+3. Support widening yine code path + behavior tests + smoke/doctor evidence +
+   docs parity birlikte mevcut olmadan yapılmayacak.
 
-hepsi confirmatory pass sonunda **confirmed retire/archive candidate** olarak
-kaldı.
+`PB-6.3` karar soruları:
 
-`PB-6.1b` closeout sonucu artık giriş kanıtıdır:
-
-1. `first`: `PRJ-KERNEL-API`
-2. `second`: `PRJ-CONTEXT-ORCHESTRATION`
-3. `hold`: `PRJ-RELEASE-AUTOMATION`
-
-`PB-6.2b` implementation hedefi:
-
-1. İlk runtime-backed tranche yalnız `system_status` ve `doc_nav_check`
-   action'larını kapsayacak.
-2. `project_status`, `roadmap_follow`, `roadmap_finish` deferred kalacak.
-3. Handler yolu explicit olacak:
-   - `ao_kernel/extensions/bootstrap.py`
-   - `ao_kernel/extensions/handlers/prj_kernel_api.py`
-4. Missing runtime refs sıfırlanmadan support widening yapılmayacak.
-5. `doctor` hedef metriği implementation PR'ında `runtime_backed=2`,
-   `quarantined=17` olacak.
+1. `PRJ-CONTEXT-ORCHESTRATION` promote candidate mı, remap-needed mı,
+   quarantine-keep mi, yoksa retire candidate mı?
+2. Yaşayan runtime karşılığı varsa explicit handler/owner boundary hangi
+   modül ve action setiyle sınırlandırılmalı?
+3. Missing/remap refs hangi yaşayan package-local ref'lere bağlanabilir?
+4. Minimum runtime-backed tranche varsa hangi action'lar side-effect-free ve
+   behavior-testable?
 
 Beklenen çıktı:
 
-1. `PRJ-KERNEL-API` için explicit handler/smoke promotion PR'ı çıkacak.
-2. `doctor` truth inventory hedef metriği `runtime_backed=2`,
-   `quarantined=17` olacak.
-3. `system_status` ve `doc_nav_check` action'ları runtime-backed supported
-   olarak belgelenebilecek.
-4. `project_status`, `roadmap_follow`, `roadmap_finish` deferred kalacak.
-5. `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API` hattı kapanana kadar
-   başlamayacak.
+1. `PRJ-CONTEXT-ORCHESTRATION` için written decision table çıkacak.
+2. Eğer promote edilecekse ayrı implementation contract açılacak.
+3. Eğer promote edilmeyecekse quarantine/retire gerekçesi status ve issue
+   yüzeyinde kapanacak.
+4. `PRJ-RELEASE-AUTOMATION`, `PB-6.3` kapanana kadar başlamayacak.
 
 ## 6. Sonra
 
 `PB-6` açıldıktan sonraki doğru sıra:
 
 1. `PB-6.2b` `PRJ-KERNEL-API` minimum runtime-backed implementation
+   - completed on `main` via [#255](https://github.com/Halildeu/ao-kernel/pull/255)
 2. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
+   - active via [#256](https://github.com/Halildeu/ao-kernel/issues/256)
 3. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
 
 Not:
 
 1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
    implementation PR için contract çıkardı.
-2. `PB-6.2b` merge olmadan başka extension promotion hattı başlamayacak.
+2. `PB-6.2b` support boundary'yi yalnız iki read-only action için genişletti.
+3. `PB-6.3` merge olmadan başka extension promotion hattı başlamayacak.
 
 ## 7. Riskler
 
@@ -153,7 +150,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.2b` `PRJ-KERNEL-API` minimum runtime-backed implementation
+1. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
 
 ## 9. Güncelleme Protokolü
 
