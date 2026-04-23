@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-6.1b-PROMOTE-CANDIDATE-SHORTLIST.md`
+- **Aktif slice planı:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#249](https://github.com/Halildeu/ao-kernel/issues/249)
+- **Aktif issue:** [#251](https://github.com/Halildeu/ao-kernel/issues/251)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,11 +60,12 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.1b` — promote candidate shortlist closeout
+### `PB-6.2` — `PRJ-KERNEL-API` minimum runtime-backed promotion contract
 
-`PB-6` içinde aktif alt hat `PB-6.1b`'dir. Bu slice'ın işi, `PB-6.1` karar
-tablosundaki üç `promote candidate` arasından widening sırasını net biçimde
-seçmekti; closeout kararı bu branch üzerinde yazıldı.
+`PB-6` içinde aktif alt hat artık `PB-6.2`'dir. Bu slice'ın işi,
+`PRJ-KERNEL-API` için minimum runtime-backed promotion contract'ını yazmaktır.
+Bu slice runtime behavior değiştirmez; sonraki implementation PR'ının dar
+scope'unu belirler.
 
 Canlı baseline:
 
@@ -86,44 +87,44 @@ Canlı baseline:
 hepsi confirmatory pass sonunda **confirmed retire/archive candidate** olarak
 kaldı.
 
-`PB-6.1b` karar sonucu:
+`PB-6.1b` closeout sonucu artık giriş kanıtıdır:
 
 1. `first`: `PRJ-KERNEL-API`
 2. `second`: `PRJ-CONTEXT-ORCHESTRATION`
 3. `hold`: `PRJ-RELEASE-AUTOMATION`
 
-Kısa gerekçe:
+`PB-6.2` contract hedefi:
 
-1. `PRJ-KERNEL-API`, `ao_kernel/_internal/prj_kernel_api/*` runtime kodu ve
-   mevcut `kernel_api_actions` dispatch modeli nedeniyle en düşük blast-radius
-   promotion hattıdır.
-2. `PRJ-CONTEXT-ORCHESTRATION`, güçlü context koduna rağmen daha geniş ops/UI
-   yüzeyi ve owner/remap kararı gerektirir.
-3. `PRJ-RELEASE-AUTOMATION`, dedicated runtime module eksik olduğu için hold
-   kalır.
+1. İlk runtime-backed tranche yalnız `system_status` ve `doc_nav_check`
+   action'larını kapsayacak.
+2. `project_status`, `roadmap_follow`, `roadmap_finish` deferred kalacak.
+3. Handler yolu explicit olacak:
+   - `ao_kernel/extensions/bootstrap.py`
+   - `ao_kernel/extensions/handlers/prj_kernel_api.py`
+4. Missing runtime refs sıfırlanmadan support widening yapılmayacak.
+5. `doctor` hedef metriği implementation PR'ında `runtime_backed=2`,
+   `quarantined=17` olacak.
 
 Beklenen çıktı:
 
-1. `PB-6.1b` PR'ı review/merge hattına girecek.
-2. Merge sonrası aktif hat `PB-6.2` olarak `PRJ-KERNEL-API` promotion
-   criteria ve handler/smoke boundary planına dönecek.
-3. `PRJ-CONTEXT-ORCHESTRATION` ikinci promotion adayı olarak ayrı slice'a
-   kalacak.
-4. `PRJ-RELEASE-AUTOMATION`, runtime module/owner çıkana kadar hold kalacak.
+1. `PB-6.2` planı review/merge hattına girecek.
+2. Merge sonrası aktif hat `PB-6.2b` veya doğrudan implementation PR olarak
+   `PRJ-KERNEL-API` handler/smoke promotion olacak.
+3. `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API` hattı kapanana kadar
+   başlamayacak.
 
 ## 6. Sonra
 
 `PB-6` açıldıktan sonraki doğru sıra:
 
-1. `PB-6.2` `PRJ-KERNEL-API` promotion criteria + handler/smoke boundary
+1. `PB-6.2b` `PRJ-KERNEL-API` minimum runtime-backed implementation
 2. `PB-6.3` `PRJ-CONTEXT-ORCHESTRATION` remap/owner decision
 3. `PB-6.4` real-adapter/write-side graduation criteria yeniden sıralama
 
 Not:
 
-1. Önceki provisional `PB-6.2`/`PB-6.3` isimleri `PB-6.1b` sonucu ile
-   daraltıldı; support widening gerçek extension promotion sırasına göre
-   ilerleyecek.
+1. `PB-6.2` planning slice'ı support boundary'yi değiştirmez; yalnız
+   implementation PR için contract çıkarır.
 
 ## 7. Riskler
 
@@ -139,7 +140,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.1b` promote candidate shortlist
+1. `PB-6.2` `PRJ-KERNEL-API` minimum runtime-backed promotion contract
 
 ## 9. Güncelleme Protokolü
 
