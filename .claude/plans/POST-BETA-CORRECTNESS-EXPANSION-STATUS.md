@@ -522,3 +522,6 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 4. Sınır:
    - support boundary widening kararı bu tranche'ta verilmeyecek
    - `gh-cli-pr` full E2E ve `bug_fix_flow` closure lane'leri `deferred` kalacak
+5. İlk ilerleme:
+   - `GP-2.2a` truth capture sonucu canonical assertion matrisi
+     `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md` içine işlendi
