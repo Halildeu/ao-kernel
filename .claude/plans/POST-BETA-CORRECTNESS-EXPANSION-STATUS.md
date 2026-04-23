@@ -17,7 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` (`ST-1 completed`)
-- **Aktif decision/ordering contract:** `ST-2` issue/contract açılacak
+- **Aktif decision/ordering contract:** `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md` (`ST-2 active`)
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -43,7 +43,8 @@ ayrı ayrı görünür kılmak.
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
-- **Aktif issue:** `ST-2` için açılacak
+- **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`open`)
+- **Aktif issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`ST-2 stable support boundary freeze`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -92,6 +93,7 @@ ayrı ayrı görünür kılmak.
 | `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
+| `ST-2` stable support boundary freeze | Active ([#344](https://github.com/Halildeu/ao-kernel/issues/344)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
 
 ## 5. Şimdi
 
@@ -132,8 +134,33 @@ ile merge edildi ve tag/publish doğrulaması tamamlandı:
    installed-package `examples/demo_review.py --cleanup` smoke geçti.
 
 Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
-`ST-1` closeout bloğudur. Sonraki aday aktif hat `ST-2` stable support
-boundary freeze'dir; yeni issue açılmadan stable scope genişletilmeyecek.
+`ST-1` closeout bloğudur. Aktif hat artık `ST-2` stable support boundary
+freeze'dir; issue [#344](https://github.com/Halildeu/ao-kernel/issues/344)
+ve contract
+`.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md` üzerinden yürür.
+Stable scope, bu gate tamamlanmadan genişletilmeyecek.
+
+### `ST-2` — stable support boundary freeze active
+
+`ST-2` amacı `4.0.0` stable öncesinde support boundary'yi dondurmaktır. Bu
+runtime widening işi değildir. İlk PR yalnız contract/status bağlantısını
+kurar; sonraki freeze PR'i `docs/PUBLIC-BETA.md`,
+`docs/SUPPORT-BOUNDARY.md`, `docs/KNOWN-BUGS.md`, `docs/UPGRADE-NOTES.md`,
+`docs/ROLLBACK.md` ve gerekirse `CHANGELOG.md` üzerinde docs parity +
+stable-blocker kararını kapatır.
+
+Mevcut varsayılan karar:
+
+1. Shipped candidate dar kalır: entrypoint'ler, `doctor`,
+   `review_ai_flow + codex-stub`, `examples/demo_review.py`,
+   `PRJ-KERNEL-API` read-only actions, policy command enforcement ve release
+   gate'leri.
+2. `claude-code-cli`, `gh-cli-pr`, `PRJ-KERNEL-API` write-side actions ve
+   real-adapter benchmark tam modu operator-managed beta kalır.
+3. `bug_fix_flow` release closure, full remote PR opening, roadmap/spec demo
+   ve adapter-path `cost_usd` public support claim deferred kalır.
+4. Known bug registry shipped baseline blocker taşımıyorsa stable blocker yok
+   olarak yazılır; shipped baseline etkilenirse ST-2 durur.
 
 ### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
@@ -327,16 +354,16 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-1` pre-release gate closeout tamamlandı; sıradaki aday hat
-`ST-2` stable support boundary freeze.
+Aktif slice: `ST-2` stable support boundary freeze.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
 2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
-4. Sonraki iş: `ST-2` için issue/contract açıp stable support boundary
-   freeze kararını yazılı hale getir.
-5. Stable release'e doğrudan geçilmez; önce ST-2 boundary freeze ve sonraki
+4. Aktif contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
+5. Sonraki iş: ST-2 freeze PR'i ile support docs parity ve stable blocker
+   kararını kapat.
+6. Stable release'e doğrudan geçilmez; önce ST-2 boundary freeze ve sonraki
    stable gates kapanır.
 
 `PB-8.2` completion kaydı:
