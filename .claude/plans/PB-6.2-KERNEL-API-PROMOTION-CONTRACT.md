@@ -2,9 +2,11 @@
 
 **Durum tarihi:** 2026-04-23
 **İlişkili issue:** [#251](https://github.com/Halildeu/ao-kernel/issues/251)
+**Merge PR:** [#252](https://github.com/Halildeu/ao-kernel/pull/252)
+**Sonraki implementation issue:** [#253](https://github.com/Halildeu/ao-kernel/issues/253)
 **Üst program:** [#243](https://github.com/Halildeu/ao-kernel/issues/243)
 **Önceki karar:** `PB-6.1b` / [#250](https://github.com/Halildeu/ao-kernel/pull/250)
-**Durum:** Active
+**Durum:** Completed on `main`
 
 ## Amaç
 
@@ -13,6 +15,15 @@ contract'ını yazmaktır.
 
 Bu slice runtime behavior değiştirmez. Çıktısı, sonraki implementasyon PR'ının
 neyi yapıp neyi yapmayacağını netleştiren dar bir promotion contract'tır.
+
+Closeout:
+
+1. Contract PR [#252](https://github.com/Halildeu/ao-kernel/pull/252) ile
+   merge edildi.
+2. Merge commit:
+   `8401092d5feafde07b4b8b75833f002b9499fa8d`
+3. Uygulama hattı [#253](https://github.com/Halildeu/ao-kernel/issues/253)
+   olarak açıldı.
 
 ## Başlangıç Gerçeği
 

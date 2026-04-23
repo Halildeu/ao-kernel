@@ -12,12 +12,12 @@ ayrı ayrı görünür kılmak.
 
 - **Execution status / backlog:** bu dosya
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
-- **Aktif slice planı:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
+- **Aktif implementation contract:** `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
 - **Public Beta support boundary:** `docs/PUBLIC-BETA.md`
 - **Known bugs registry:** `docs/KNOWN-BUGS.md`
 - **GitHub milestone:** [Post-Beta Correctness and Expansion](https://github.com/Halildeu/ao-kernel/milestone/2)
 - **GitHub tracker issue:** [#219](https://github.com/Halildeu/ao-kernel/issues/219)
-- **Aktif issue:** [#251](https://github.com/Halildeu/ao-kernel/issues/251)
+- **Aktif issue:** [#253](https://github.com/Halildeu/ao-kernel/issues/253)
 
 ## 2. Başlangıç Gerçeği
 
@@ -60,12 +60,20 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `PB-6.2` — `PRJ-KERNEL-API` minimum runtime-backed promotion contract
+### `PB-6.2b` — `PRJ-KERNEL-API` minimum runtime-backed implementation
 
-`PB-6` içinde aktif alt hat artık `PB-6.2`'dir. Bu slice'ın işi,
-`PRJ-KERNEL-API` için minimum runtime-backed promotion contract'ını yazmaktır.
-Bu slice runtime behavior değiştirmez; sonraki implementation PR'ının dar
-scope'unu belirler.
+`PB-6` içinde aktif alt hat artık `PB-6.2b`'dir. Bu slice'ın işi,
+`PB-6.2` contract'ını runtime-backed implementasyona çevirmektir.
+
+`PB-6.2` contract slice'ı tamamlandı:
+
+1. Issue: [#251](https://github.com/Halildeu/ao-kernel/issues/251)
+2. PR: [#252](https://github.com/Halildeu/ao-kernel/pull/252)
+3. Merge commit: `8401092d5feafde07b4b8b75833f002b9499fa8d`
+4. Contract: `.claude/plans/PB-6.2-KERNEL-API-PROMOTION-CONTRACT.md`
+
+`PB-6.2b` support boundary'yi ancak handler, manifest, tests, smoke, doctor
+truth metric ve docs parity aynı PR'da kapanırsa genişletebilir.
 
 Canlı baseline:
 
@@ -93,7 +101,7 @@ kaldı.
 2. `second`: `PRJ-CONTEXT-ORCHESTRATION`
 3. `hold`: `PRJ-RELEASE-AUTOMATION`
 
-`PB-6.2` contract hedefi:
+`PB-6.2b` implementation hedefi:
 
 1. İlk runtime-backed tranche yalnız `system_status` ve `doc_nav_check`
    action'larını kapsayacak.
@@ -107,10 +115,13 @@ kaldı.
 
 Beklenen çıktı:
 
-1. `PB-6.2` planı review/merge hattına girecek.
-2. Merge sonrası aktif hat `PB-6.2b` veya doğrudan implementation PR olarak
-   `PRJ-KERNEL-API` handler/smoke promotion olacak.
-3. `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API` hattı kapanana kadar
+1. `PRJ-KERNEL-API` için explicit handler/smoke promotion PR'ı çıkacak.
+2. `doctor` truth inventory hedef metriği `runtime_backed=2`,
+   `quarantined=17` olacak.
+3. `system_status` ve `doc_nav_check` action'ları runtime-backed supported
+   olarak belgelenebilecek.
+4. `project_status`, `roadmap_follow`, `roadmap_finish` deferred kalacak.
+5. `PRJ-CONTEXT-ORCHESTRATION`, `PRJ-KERNEL-API` hattı kapanana kadar
    başlamayacak.
 
 ## 6. Sonra
@@ -123,8 +134,9 @@ Beklenen çıktı:
 
 Not:
 
-1. `PB-6.2` planning slice'ı support boundary'yi değiştirmez; yalnız
-   implementation PR için contract çıkarır.
+1. `PB-6.2` planning slice'ı support boundary'yi değiştirmedi; yalnız
+   implementation PR için contract çıkardı.
+2. `PB-6.2b` merge olmadan başka extension promotion hattı başlamayacak.
 
 ## 7. Riskler
 
@@ -140,7 +152,7 @@ Not:
 
 Bugünden itibaren doğru sıra:
 
-1. `PB-6.2` `PRJ-KERNEL-API` minimum runtime-backed promotion contract
+1. `PB-6.2b` `PRJ-KERNEL-API` minimum runtime-backed implementation
 
 ## 9. Güncelleme Protokolü
 
