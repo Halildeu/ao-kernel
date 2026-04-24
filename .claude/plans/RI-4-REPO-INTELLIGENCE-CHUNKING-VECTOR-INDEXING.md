@@ -1,10 +1,10 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** RI-4b implementation PR
+**Status:** RI-4c implementation PR
 **Date:** 2026-04-24
-**Branch:** `codex/repo-intelligence-vector-plan`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-vector-plan`
-**Base:** `origin/main` at `cbce91e`
+**Branch:** `codex/repo-intelligence-vector-write`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-vector-write`
+**Base:** `origin/main` at `6bf28bc`
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -395,27 +395,29 @@ Planned files:
 ```text
 ao_kernel/_internal/repo_intelligence/repo_vector_indexer.py
 ao_kernel/defaults/schemas/repo-vector-index-manifest.schema.v1.json
+ao_kernel/_internal/repo_intelligence/artifacts.py
 ao_kernel/cli.py
 tests/test_repo_intelligence_vector_indexer.py
 tests/test_cli_repo_index.py
+tests/test_repo_intelligence_artifacts.py
 docs/PUBLIC-BETA.md
 docs/SUPPORT-BOUNDARY.md
 ```
 
 Acceptance:
 
-- [ ] Real vector writes require `--write-vectors`.
-- [ ] Real vector writes require
+- [x] Real vector writes require `--write-vectors`.
+- [x] Real vector writes require
       `--confirm-vector-index I_UNDERSTAND_REPO_VECTOR_WRITES`.
-- [ ] Uses existing vector store resolver rather than inventing a separate
+- [x] Uses existing vector store resolver rather than inventing a separate
       backend selection path.
-- [ ] Uses existing embedding configuration resolver.
-- [ ] Stores required metadata on every vector record.
-- [ ] Deletes stale keys only inside the recorded project and embedding space.
-- [ ] Writes `.ao/context/repo_vector_index_manifest.json`.
-- [ ] Fails closed on backend/model/dimension mismatch.
-- [ ] Behavior tests use mocked embeddings and mocked vector store.
-- [ ] No integration test requires a live pgvector service by default.
+- [x] Uses existing embedding configuration resolver.
+- [x] Stores required metadata on every vector record.
+- [x] Deletes stale keys only inside the recorded project and embedding space.
+- [x] Writes `.ao/context/repo_vector_index_manifest.json`.
+- [x] Fails closed on backend/model/dimension mismatch.
+- [x] Behavior tests use mocked embeddings and mocked vector store.
+- [x] No integration test requires a live pgvector service by default.
 
 ### RI-4d - Retrieval integration
 
@@ -462,3 +464,5 @@ Questions to answer before implementation:
 | 2026-04-24 | RI-4a validation | Full suite passed with branch coverage above the 85% gate; full ruff, full mypy, focused repo-intelligence tests, CLI smoke, and packaging smoke passed. |
 | 2026-04-24 | RI-4b implementation | Added deterministic `repo index --dry-run` vector write-plan generation only; no embedding calls, vector backend connection, vector writes, network, or root exports. |
 | 2026-04-24 | RI-4b validation | Full suite passed with branch coverage above the 85% gate; full ruff, full mypy, focused repo-intelligence tests, CLI scan/index smoke, doctor, and packaging smoke passed. |
+| 2026-04-24 | RI-4c implementation | Added explicit `repo index --write-vectors` path gated by confirmation, configured vector backend, and embedding API key; writes vector write-plan and vector index manifest under `.ao/context/` only. |
+| 2026-04-24 | RI-4c validation | Focused repo-intelligence tests, benchmark-fast, CI-scope ruff, mypy, repo-external CLI scan/index smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2958 passed, 1 skipped`, total coverage `85.49%`. |

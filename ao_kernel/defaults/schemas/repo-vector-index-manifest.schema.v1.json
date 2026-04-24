@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-vector-index-manifest:v1",
+  "title": "Repo Intelligence Vector Index Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generator",
+    "project",
+    "indexer",
+    "embedding_space",
+    "vector_namespace",
+    "source_artifacts",
+    "summary",
+    "indexed_keys",
+    "deleted_keys",
+    "delete_missing_keys",
+    "vectors",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "repo_vector_index_manifest"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "indexer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "mode"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel-repo-vector-indexer"
+        },
+        "version": {
+          "const": "repo-vector-indexer.v1"
+        },
+        "mode": {
+          "const": "write_vectors"
+        }
+      }
+    },
+    "embedding_space": {
+      "$ref": "#/$defs/embedding_space"
+    },
+    "vector_namespace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_prefix", "project_root_identity_sha256"],
+      "properties": {
+        "key_prefix": {
+          "const": "repo_chunk"
+        },
+        "project_root_identity_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "source_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_chunks_sha256", "repo_vector_write_plan_sha256"],
+      "properties": {
+        "repo_chunks_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "repo_vector_write_plan_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dry_run",
+        "indexed_keys",
+        "deleted_keys",
+        "delete_missing_keys",
+        "embedding_calls",
+        "vector_writes",
+        "vector_deletes"
+      ],
+      "properties": {
+        "dry_run": {
+          "const": false
+        },
+        "indexed_keys": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deleted_keys": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "delete_missing_keys": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "embedding_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vector_writes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vector_deletes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "indexed_keys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vector_key"
+      }
+    },
+    "deleted_keys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vector_key"
+      }
+    },
+    "delete_missing_keys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vector_key"
+      }
+    },
+    "vectors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vector_record"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "root_name", "name", "root_identity_sha256"],
+      "properties": {
+        "root": {
+          "const": "."
+        },
+        "root_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root_identity_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "embedding_space": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model",
+        "dimension",
+        "chunker_version",
+        "embedding_space_id"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dimension": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunker_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "embedding_space_id": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "vector_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "chunk_id", "source_path", "content_sha256"],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/vector_key"
+        },
+        "chunk_id": {
+          "$ref": "#/$defs/chunk_id"
+        },
+        "source_path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "vector_key": {
+      "type": "string",
+      "pattern": "^repo_chunk::[0-9a-f]{64}::[0-9a-f]{64}::repo-chunk-v1:[0-9a-f]{64}$"
+    },
+    "chunk_id": {
+      "type": "string",
+      "pattern": "^repo-chunk-v1:[0-9a-f]{64}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
