@@ -59,7 +59,15 @@
     "artifact": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "schema_ref", "sha256", "bytes"],
+      "required": ["path", "sha256", "bytes"],
+      "anyOf": [
+        {
+          "required": ["schema_ref"]
+        },
+        {
+          "required": ["format_ref"]
+        }
+      ],
       "properties": {
         "path": {
           "type": "string",
@@ -69,6 +77,14 @@
           }
         },
         "schema_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "format_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "media_type": {
           "type": "string",
           "minLength": 1
         },

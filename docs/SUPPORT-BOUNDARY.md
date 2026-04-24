@@ -81,7 +81,8 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - real-adapter benchmark full-mode runbooks
 - `python3 -m ao_kernel repo scan --project-root . --output json` for
   experimental read-only repo intelligence artifacts under `.ao/context/`,
-  including Python AST-derived import graph and top-level symbol index outputs
+  including Python AST-derived import graph, top-level symbol index outputs,
+  and a deterministic Markdown agent context pack
 
 Operator prerequisite contract (PB-9.1):
 
