@@ -230,6 +230,8 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - Helper-backed preflight: `python3 scripts/claude_code_cli_smoke.py`
 - Governed workflow smoke: `python3 scripts/claude_code_cli_workflow_smoke.py`
 - Support-boundary verdict: `GP-3.6` `close_keep_operator_beta`
+- GP-4 closeout verdict: `GP-4.5`
+  `close_no_widening_keep_operator_beta`
 - Expected operator prerequisite: valid Claude Code session auth
 - This lane is not the default shipped demo; the shipped baseline remains
   bundled `review_ai_flow` + bundled `codex-stub`
@@ -251,6 +253,9 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
   decision is `blocked_no_rehearsal` because the protected environment and
   project-owned credential are not attested. It does not run `claude`, bind an
   environment, or promote this lane.
+- `GP-4.5` closes the support-boundary decision without widening. The lane
+  remains `Beta (operator-managed)`; production-certified real-adapter support
+  and general-purpose production platform support are not granted.
 
 ### Failure modes
 

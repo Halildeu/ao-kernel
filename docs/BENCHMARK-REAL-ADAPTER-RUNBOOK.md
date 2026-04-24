@@ -106,6 +106,9 @@ bugünkü karar `blocked_no_rehearsal`dir çünkü protected environment ve
 project-owned credential attested değildir.
 Tüm artifact'ler bugün blocked/no-widening semantiğindedir; bu live benchmark
 veya real-adapter support kanıtı değildir.
+`GP-4.5` closeout verdict'i `close_no_widening_keep_operator_beta` olduğu için
+bu lane production-certified real-adapter veya live benchmark support claim'i
+üretmez.
 
 ### 1.3 Failure-mode matrix
 

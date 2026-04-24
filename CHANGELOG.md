@@ -92,6 +92,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `decision="blocked_no_rehearsal"` because the protected environment and
   project-owned credential are not attested; it still does not bind a live
   environment, call `claude`, or widen support.
+- Closed the `GP-4` CI-managed live adapter gate design program with
+  `GP-4.5` verdict `close_no_widening_keep_operator_beta`. `claude-code-cli`
+  remains `Beta (operator-managed)`; production-certified real-adapter support,
+  stable support widening, general-purpose production platform claims, version
+  bump, tag, publish, secret access, workflow environment binding, and live
+  `claude` invocation are all explicitly not included.
 
 ## [4.0.0] - 2026-04-24
 

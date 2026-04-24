@@ -126,6 +126,10 @@ environment oluşturmaz ve artifact hâlâ `live_execution_allowed=false` /
 Mevcut karar `blocked_no_rehearsal`dir; protected environment ve
 project-owned credential attested olmadığı için canlı rehearsal denenmez,
 workflow environment'a bağlanmaz ve support widening yapılmaz.
+`GP-4.5` closeout kararı `close_no_widening_keep_operator_beta` olarak
+kapanmıştır. Bu karar `claude-code-cli` lane'ini `Beta (operator-managed)`
+katmanında tutar; production-certified real-adapter support ve genel amaçlı
+production platform claim'i verilmez.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify
@@ -180,6 +184,8 @@ The following do not, by themselves, justify a broader support claim:
   executing a protected live adapter identity
 - a schema-valid live-gate evidence artifact that still marks required live
   evidence slots as blocked and `support_widening=false`
+- a support-boundary closeout decision that explicitly records blocked live
+  rehearsal evidence and keeps support unchanged
 - a roadmap/spec document
 - a contract loader or truth-audit warning surface
 - a smoke passing only in one operator environment without the support docs
