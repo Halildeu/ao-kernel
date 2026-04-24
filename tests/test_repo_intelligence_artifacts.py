@@ -22,6 +22,7 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     REPO_MAP_SCHEMA_NAME,
     REPO_VECTOR_INDEX_MANIFEST_FILENAME,
     REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME,
+    REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME,
     REPO_VECTOR_WRITE_PLAN_FILENAME,
     REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME,
     validate_python_import_graph,
@@ -30,6 +31,7 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     validate_repo_index_manifest,
     validate_repo_map,
     validate_repo_vector_index_manifest,
+    validate_repo_vector_query_result,
     validate_repo_vector_write_plan,
     write_repo_scan_artifacts,
     write_repo_vector_index_manifest_artifact,
@@ -40,8 +42,10 @@ from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_pytho
 from ao_kernel._internal.repo_intelligence.repo_chunker import build_repo_chunks
 from ao_kernel._internal.repo_intelligence.repo_vector_indexer import write_repo_vectors
 from ao_kernel._internal.repo_intelligence.repo_vector_plan import build_repo_vector_write_plan
+from ao_kernel._internal.repo_intelligence.repo_vector_retriever import query_repo_vectors
 from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 from ao_kernel.context.embedding_config import EmbeddingConfig
+from ao_kernel.context.vector_store import InMemoryVectorStore
 from ao_kernel.config import load_default
 
 
@@ -62,6 +66,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     repo_chunks_schema = load_default("schemas", REPO_CHUNKS_SCHEMA_NAME)
     vector_write_plan_schema = load_default("schemas", REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME)
     vector_index_manifest_schema = load_default("schemas", REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME)
+    vector_query_result_schema = load_default("schemas", REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME)
     manifest_schema = load_default("schemas", REPO_INDEX_MANIFEST_SCHEMA_NAME)
 
     Draft202012Validator.check_schema(repo_map_schema)
@@ -70,6 +75,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     Draft202012Validator.check_schema(repo_chunks_schema)
     Draft202012Validator.check_schema(vector_write_plan_schema)
     Draft202012Validator.check_schema(vector_index_manifest_schema)
+    Draft202012Validator.check_schema(vector_query_result_schema)
     Draft202012Validator.check_schema(manifest_schema)
     assert repo_map_schema["$id"] == "urn:ao:repo-map:v1"
     assert import_graph_schema["$id"] == "urn:ao:python-import-graph:v1"
@@ -77,6 +83,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     assert repo_chunks_schema["$id"] == "urn:ao:repo-chunks:v1"
     assert vector_write_plan_schema["$id"] == "urn:ao:repo-vector-write-plan:v1"
     assert vector_index_manifest_schema["$id"] == "urn:ao:repo-vector-index-manifest:v1"
+    assert vector_query_result_schema["$id"] == "urn:ao:repo-vector-query-result:v1"
     assert manifest_schema["$id"] == "urn:ao:repo-index-manifest:v1"
 
 
@@ -263,6 +270,41 @@ def test_write_repo_vector_index_manifest_artifact_writes_schema_backed_output(t
         ".ao/context/repo_vector_index_manifest.json",
     ]
     assert result["artifacts"][0]["schema_ref"] == REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME
+
+
+def test_validate_repo_vector_query_result_accepts_schema_backed_output(tmp_path: Path) -> None:
+    project = _repo_with_workspace(tmp_path)
+    repo_map = scan_repo(project)
+    import_graph, symbol_index = build_python_ast_indexes(project, repo_map)
+    repo_chunks = build_repo_chunks(project, repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    vector_write_plan = build_repo_vector_write_plan(
+        repo_chunks=repo_chunks,
+        embedding_provider="openai",
+        embedding_model="text-embedding-3-small",
+        embedding_dimension=3,
+    )
+    store = InMemoryVectorStore()
+    embedding_config = EmbeddingConfig(api_key="test-key")
+    vector_index_manifest = write_repo_vectors(
+        project_root=project,
+        vector_write_plan=vector_write_plan,
+        vector_store=store,
+        embedding_config=embedding_config,
+        embed_text_fn=lambda *_args, **_kwargs: [0.1, 0.2, 0.3],
+    )
+
+    query_result = query_repo_vectors(
+        project_root=project,
+        vector_index_manifest=vector_index_manifest,
+        vector_store=store,
+        embedding_config=embedding_config,
+        query="main function",
+        embed_text_fn=lambda *_args, **_kwargs: [0.1, 0.2, 0.3],
+    )
+
+    validate_repo_vector_query_result(query_result)
+    assert query_result["artifact_kind"] == "repo_vector_query_result"
+    assert query_result["summary"]["matches"] >= 1
 
 
 def test_artifact_writer_delegates_agent_pack_to_shared_text_writer(tmp_path: Path, monkeypatch: Any) -> None:

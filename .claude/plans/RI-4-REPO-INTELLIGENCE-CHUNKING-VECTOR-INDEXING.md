@@ -1,10 +1,13 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** RI-4c merged on `main`; RI-4d gated, not started
+**Status:** RI-4d implementation PR
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `019987a`
+**Authority:** `origin/main` at `c559195`
 **Closed PR:** [#419](https://github.com/Halildeu/ao-kernel/pull/419)
-**Next slice:** RI-4d retrieval readiness / query boundary, separate PR only
+**Branch:** `codex/repo-intelligence-retrieval`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-retrieval`
+**Base:** `origin/main` at `c559195`
+**Next slice:** RI-4d read-only repo query surface, separate PR only
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -44,12 +47,12 @@ RI-4 must be implemented in this order:
 2. `RI-4b` - vector indexing dry-run and write-plan artifact only. Completed.
 3. `RI-4c` - explicit opt-in vector write path. Completed on `main` via
    [#419](https://github.com/Halildeu/ao-kernel/pull/419).
-4. `RI-4d` - retrieval integration, if evidence shows the index is clean and
-   useful. Not started.
+4. `RI-4d` - read-only retrieval boundary over the existing repo vector index.
+   In progress in the current PR.
 
-The next PR must not auto-wire repo vectors into general context compilation.
-It should first close the RI-4d retrieval boundary: read-only query surface,
-evidence contract, support tier, and failure-mode tests.
+The current PR must not auto-wire repo vectors into general context
+compilation. It first closes the RI-4d retrieval boundary: read-only query
+surface, evidence contract, support tier, and failure-mode tests.
 
 ## Non-Negotiable Boundaries
 
@@ -422,46 +425,52 @@ Acceptance:
 - [x] Behavior tests use mocked embeddings and mocked vector store.
 - [x] No integration test requires a live pgvector service by default.
 
-### RI-4d - Retrieval integration
+### RI-4d - Read-only repo query
 
 Do not start runtime integration until RI-4c has stable evidence and the
 retrieval boundary is explicit. The RI-4c merge proves the write path is gated
 and schema-backed; it does not prove that retrieved chunks are useful or safe to
 inject into general-purpose agent context.
 
-Questions to answer before implementation:
+Scope decision:
 
-1. Should repo chunk retrieval feed `context_compiler` directly?
-2. Should repo chunk retrieval be a separate agent-context query command?
-3. What ranking blend should combine symbol/path filters and vector search?
-4. What is the maximum retrieved token budget?
-5. How does the caller distinguish repo chunks from canonical decisions?
+1. Do not feed `context_compiler` directly in RI-4d.
+2. Add a separate `repo query` command first.
+3. Ranking is vector similarity first, with deterministic tie-break by vector
+   key. Path, language, and symbol are exact metadata filters, not score boosts.
+4. Default retrieved budget is `--max-tokens 2000`, with `--top-k 5`,
+   `--candidate-limit max(50, top_k*5)`, and `--max-snippet-chars 1200`.
+5. Repo chunks are distinguished by
+   `repo_chunk::<project_identity>::<embedding_space>::` keys and required
+   metadata `source=repo_intelligence`, `artifact_kind=repo_chunk`.
 
-Current RI-4d decision:
+Planned files:
 
-- First implementation slice should be a separate read-only query surface, not
-  automatic `context_compiler` injection.
-- Retrieval must require an existing `.ao/context/repo_vector_index_manifest.json`
-  and a configured vector backend.
-- Retrieval may embed the query text, but it must not write vectors, delete
-  vectors, update manifests, or mutate root authority files.
-- Results must be typed as `repo_chunk` candidates and kept distinct from
-  canonical/session memory decisions.
-- The default support tier remains Beta / experimental until a later promotion
-  PR proves usefulness, relevance quality, and operator-safe failure behavior.
+```text
+ao_kernel/_internal/repo_intelligence/repo_vector_retriever.py
+ao_kernel/defaults/schemas/repo-vector-query-result.schema.v1.json
+ao_kernel/_internal/repo_intelligence/artifacts.py
+ao_kernel/cli.py
+ao_kernel/repo_intelligence/__init__.py
+tests/test_repo_intelligence_vector_retriever.py
+tests/test_cli_repo_query.py
+tests/test_repo_intelligence_artifacts.py
+docs/PUBLIC-BETA.md
+docs/SUPPORT-BOUNDARY.md
+```
 
-Recommended first RI-4d slice:
+Acceptance:
 
-1. Add a narrow `repo retrieve` or equivalent read-only command.
-2. Read and validate the existing repo vector index manifest.
-3. Embed the query through the existing embedding configuration resolver.
-4. Search only the repo chunk namespace recorded by the manifest.
-5. Return schema-backed JSON candidates with path, line range, chunk identity,
-   score, embedding identity, and source manifest hash.
-6. Add negative tests for missing manifest, backend disabled, missing API key,
-   namespace mismatch, and non-repo-chunk result filtering.
-7. Keep `context_compiler` and MCP integration deferred until this read-only
-   query surface is proven.
+- [x] `repo query` is read-only.
+- [x] Requires vector index manifest, configured backend, and embedding API key.
+- [x] Filters namespace/metadata so canonical/session memory cannot appear as
+      repo chunks.
+- [x] Validates current source line ranges and content hashes before returning
+      snippets.
+- [x] Excludes stale chunks by default.
+- [x] No root files, `.ao/context` artifacts, vector writes, MCP tools, or
+      context compiler auto-injection.
+- [x] Unit and CLI tests use mocked/in-memory vector store and embeddings.
 
 ## Rejected Approaches
 
@@ -500,3 +509,5 @@ Recommended first RI-4d slice:
 | 2026-04-24 | RI-4c validation | Focused repo-intelligence tests, benchmark-fast, CI-scope ruff, mypy, repo-external CLI scan/index smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2958 passed, 1 skipped`, total coverage `85.49%`. |
 | 2026-04-24 | RI-4c merge closeout | PR [#419](https://github.com/Halildeu/ao-kernel/pull/419) merged to `main` at `019987a`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch sync and doctor passed with expected extension-truth WARN only. |
 | 2026-04-24 | RI-4d gate | Next work is a read-only retrieval boundary slice. Automatic `context_compiler`, MCP, or root authority integration remains deferred until the query surface has behavior tests and support-boundary evidence. |
+| 2026-04-24 | RI-4d implementation | Added read-only `repo query` retrieval over the existing repo vector index manifest and configured vector backend; no context compiler auto-injection, MCP tool, vector writes, root exports, or artifact writes. |
+| 2026-04-24 | RI-4d validation | Full ruff, full mypy, focused repo-intelligence tests, CLI query smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2970 passed, 1 skipped`, total coverage `85.37%`. |

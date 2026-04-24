@@ -25,6 +25,7 @@ REPO_CHUNKS_SCHEMA_NAME = "repo-chunks.schema.v1.json"
 REPO_INDEX_MANIFEST_SCHEMA_NAME = "repo-index-manifest.schema.v1.json"
 REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME = "repo-vector-write-plan.schema.v1.json"
 REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME = "repo-vector-index-manifest.schema.v1.json"
+REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME = "repo-vector-query-result.schema.v1.json"
 AGENT_PACK_FORMAT_REF = "agent-pack-markdown.v1"
 
 JsonDict = dict[str, Any]
@@ -63,6 +64,11 @@ def validate_repo_vector_write_plan(vector_write_plan: Mapping[str, Any]) -> Non
 def validate_repo_vector_index_manifest(vector_index_manifest: Mapping[str, Any]) -> None:
     """Validate a repo vector index manifest document against the bundled schema."""
     _validate(vector_index_manifest, REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME)
+
+
+def validate_repo_vector_query_result(vector_query_result: Mapping[str, Any]) -> None:
+    """Validate a repo vector query result document against the bundled schema."""
+    _validate(vector_query_result, REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME)
 
 
 def write_repo_scan_artifacts(

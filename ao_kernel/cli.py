@@ -330,6 +330,130 @@ def _cmd_repo_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_repo_query(args: argparse.Namespace) -> int:
+    import json as _json
+    from dataclasses import replace as _replace
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.repo_intelligence.artifacts import (
+        REPO_VECTOR_INDEX_MANIFEST_FILENAME,
+        validate_repo_vector_index_manifest,
+        validate_repo_vector_query_result,
+    )
+    from ao_kernel.context.embedding_config import resolve_embedding_config
+    from ao_kernel.context.vector_store_resolver import resolve_vector_store
+    from ao_kernel.repo_intelligence import query_repo_vectors
+
+    project_root = _Path(args.project_root or ".").resolve()
+    if not project_root.is_dir():
+        print(f"project root not found: {project_root}", file=sys.stderr)
+        return 1
+
+    workspace_dir = _resolve_repo_workspace_dir(project_root, args.workspace_root)
+    if not workspace_dir.is_dir():
+        print(
+            f".ao workspace not found at {workspace_dir}. Run 'ao-kernel init' first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    context_dir = workspace_dir / "context"
+    index_manifest_path = context_dir / REPO_VECTOR_INDEX_MANIFEST_FILENAME
+    if not index_manifest_path.is_file():
+        print(
+            f"repo vector index manifest not found: {index_manifest_path}. Run 'ao-kernel repo index --write-vectors' first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        vector_index_manifest = _load_repo_json_artifact(index_manifest_path)
+        validate_repo_vector_index_manifest(vector_index_manifest)
+    except Exception as exc:  # noqa: BLE001 - CLI fail-closed with concise stderr
+        print(f"invalid repo vector index manifest: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        top_k = _parse_positive_int(args.top_k, "top_k")
+        candidate_limit = _parse_positive_int(
+            args.candidate_limit if args.candidate_limit is not None else max(50, top_k * 5),
+            "candidate_limit",
+        )
+        max_tokens = _parse_positive_int(args.max_tokens, "max_tokens")
+        max_snippet_chars = _parse_positive_int(args.max_snippet_chars, "max_snippet_chars")
+        min_similarity = _parse_nonnegative_float(args.min_similarity, "min_similarity")
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    embedding_space = vector_index_manifest["embedding_space"]
+    embedding_config = resolve_embedding_config(workspace=workspace_dir)
+    effective_embedding_config = _replace(
+        embedding_config,
+        provider=str(embedding_space["provider"]),
+        model=str(embedding_space["model"]),
+    )
+    if not effective_embedding_config.resolve_api_key():
+        print("embedding API key is required for repo vector query", file=sys.stderr)
+        return 1
+
+    vector_store = None
+    owns_vector_store = False
+    try:
+        vector_store, owns_vector_store = resolve_vector_store(workspace=workspace_dir)
+        if vector_store is None:
+            print("repo query requires a configured vector backend", file=sys.stderr)
+            return 1
+        query_result = query_repo_vectors(
+            project_root=project_root,
+            vector_index_manifest=vector_index_manifest,
+            vector_store=vector_store,
+            embedding_config=effective_embedding_config,
+            query=args.query,
+            top_k=top_k,
+            candidate_limit=candidate_limit,
+            min_similarity=min_similarity,
+            max_tokens=max_tokens,
+            source_path_prefix=args.path_prefix,
+            language=args.language,
+            symbol=args.symbol,
+            max_snippet_chars=max_snippet_chars,
+        )
+        validate_repo_vector_query_result(query_result)
+    except Exception as exc:  # noqa: BLE001 - schema/config/backend failures are command failures
+        print(f"repo vector query failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if owns_vector_store and vector_store is not None:
+            vector_store.close()
+
+    summary = {
+        "status": "ok",
+        "command": "repo query",
+        "project_root": ".",
+        "workspace_root": _repo_display_workspace(project_root, workspace_dir),
+        "summary": query_result["summary"],
+        "embedding_space": query_result["embedding_space"],
+        "results": query_result["results"],
+        "diagnostics": query_result["diagnostics"],
+        "query_result": query_result,
+    }
+    if args.output == "json":
+        print(_json.dumps(summary, indent=2, sort_keys=True))
+    else:
+        print("repo query complete")
+        print("project_root: .")
+        print(f"workspace_root: {summary['workspace_root']}")
+        print(f"matches: {query_result['summary']['matches']}")
+        print(f"estimated_tokens: {query_result['summary']['estimated_tokens']}")
+        for item in query_result["results"]:
+            print(
+                f"- {item['source_path']}:{item['start_line']} "
+                f"similarity={item['similarity']}"
+            )
+    return 0
+
+
 def _resolve_repo_workspace_dir(project_root: Path, workspace_root: str | None) -> Path:
     raw = Path(workspace_root or ".ao")
     return raw.resolve() if raw.is_absolute() else (project_root / raw).resolve()
@@ -361,6 +485,26 @@ def _parse_repo_embedding_dimension(raw: str | int | None) -> int:
     if dimension <= 0:
         raise ValueError(f"AO_KERNEL_EMBEDDING_DIMENSION must be positive, got {dimension}")
     return dimension
+
+
+def _parse_positive_int(raw: str | int | None, field_name: str) -> int:
+    try:
+        value = int(raw) if raw is not None else 0
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be a positive integer, got {raw!r}") from exc
+    if value <= 0:
+        raise ValueError(f"{field_name} must be positive, got {value}")
+    return value
+
+
+def _parse_nonnegative_float(raw: str | float | None, field_name: str) -> float:
+    try:
+        value = float(raw) if raw is not None else 0.0
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be a non-negative number, got {raw!r}") from exc
+    if value < 0:
+        raise ValueError(f"{field_name} must be non-negative, got {value}")
+    return value
 
 
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
@@ -1091,6 +1235,68 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Command output format (default: text)",
     )
+    query_p = repo_sub.add_parser("query", help="Query repo chunk vectors from configured backend")
+    query_p.add_argument(
+        "--project-root",
+        default=".",
+        help="Repository root to query (default: current directory)",
+    )
+    query_p.add_argument(
+        "--workspace-root",
+        default=".ao",
+        help="ao-kernel workspace root relative to project root (default: .ao)",
+    )
+    query_p.add_argument(
+        "--query",
+        required=True,
+        help="Natural language query text to embed and match against repo chunks",
+    )
+    query_p.add_argument(
+        "--top-k",
+        default="5",
+        help="Maximum returned chunks (default: 5)",
+    )
+    query_p.add_argument(
+        "--candidate-limit",
+        default=None,
+        help="Vector candidates to inspect before namespace/filter/stale checks (default: max(50, top_k*5))",
+    )
+    query_p.add_argument(
+        "--min-similarity",
+        default="0.3",
+        help="Minimum vector similarity threshold (default: 0.3)",
+    )
+    query_p.add_argument(
+        "--max-tokens",
+        default="2000",
+        help="Approximate maximum retrieved token budget (default: 2000)",
+    )
+    query_p.add_argument(
+        "--max-snippet-chars",
+        default="1200",
+        help="Maximum source snippet characters per result (default: 1200)",
+    )
+    query_p.add_argument(
+        "--path-prefix",
+        default=None,
+        help="Optional repo-relative POSIX source path prefix filter",
+    )
+    query_p.add_argument(
+        "--language",
+        default=None,
+        help="Optional language metadata filter",
+    )
+    query_p.add_argument(
+        "--symbol",
+        default=None,
+        help="Optional symbol metadata filter",
+    )
+    query_p.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
+    )
 
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
@@ -1654,8 +1860,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repo_scan(args)
         if repo_cmd == "index":
             return _cmd_repo_index(args)
+        if repo_cmd == "query":
+            return _cmd_repo_query(args)
         print(
-            "Usage: ao-kernel repo {scan,index} [--project-root PATH] [--output {text,json}]",
+            "Usage: ao-kernel repo {scan,index,query} [--project-root PATH] [--output {text,json}]",
             file=sys.stderr,
         )
         return 1
