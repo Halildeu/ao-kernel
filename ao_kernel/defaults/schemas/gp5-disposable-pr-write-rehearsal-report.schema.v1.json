@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gp5-disposable-pr-write-rehearsal-report.schema.v1.json",
+  "title": "GP-5.6a disposable PR write rehearsal report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "production_remote_pr_support",
+    "arbitrary_repo_support",
+    "local_patch_precondition",
+    "target_repo",
+    "remote_branch",
+    "remote_pr",
+    "gh_cli_pr_smoke",
+    "cleanup",
+    "promotion_decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_disposable_pr_write_rehearsal_report" },
+    "program_id": { "const": "GP-5.6a" },
+    "overall_status": { "enum": ["pass", "blocked"] },
+    "decision": {
+      "enum": [
+        "pass_disposable_pr_write_rehearsal_no_support_widening",
+        "blocked_disposable_pr_write_rehearsal_no_support_widening"
+      ]
+    },
+    "support_widening": { "const": false },
+    "production_remote_pr_support": { "const": false },
+    "arbitrary_repo_support": { "const": false },
+    "blocked_reason": { "type": "string", "minLength": 1 },
+    "local_patch_precondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_path",
+        "report_sha256",
+        "status",
+        "overall_status",
+        "decision",
+        "support_widening",
+        "remote_side_effects_allowed",
+        "rollback_status",
+        "cleanup_status",
+        "findings"
+      ],
+      "properties": {
+        "report_path": { "type": "string", "minLength": 1 },
+        "report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "status": { "enum": ["pass", "fail"] },
+        "overall_status": { "type": "string" },
+        "decision": { "type": "string" },
+        "support_widening": { "type": "boolean" },
+        "remote_side_effects_allowed": { "type": "boolean" },
+        "rollback_status": { "type": "string" },
+        "cleanup_status": { "type": "string" },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "target_repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "base_ref",
+        "head_ref",
+        "disposable_keyword",
+        "disposable_guard_status",
+        "live_write_opt_in",
+        "production_repo_allowed"
+      ],
+      "properties": {
+        "repo": { "type": "string", "minLength": 1 },
+        "base_ref": { "type": "string", "minLength": 1 },
+        "head_ref": { "type": "string", "minLength": 1 },
+        "disposable_keyword": { "type": "string" },
+        "disposable_guard_status": { "enum": ["pass", "fail"] },
+        "live_write_opt_in": { "type": "boolean" },
+        "production_repo_allowed": { "const": false }
+      }
+    },
+    "remote_branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "create_status",
+        "seed_commit_status",
+        "delete_attempted",
+        "delete_status",
+        "delete_verified",
+        "evidence_file_path"
+      ],
+      "properties": {
+        "create_status": { "enum": ["pass", "fail", "not_run"] },
+        "seed_commit_status": { "enum": ["pass", "fail", "not_run"] },
+        "delete_attempted": { "type": "boolean" },
+        "delete_status": { "enum": ["pass", "fail", "not_run"] },
+        "delete_verified": { "type": "boolean" },
+        "evidence_file_path": { "type": "string" },
+        "created_commit_sha": { "type": "string" },
+        "finding_code": { "type": "string" }
+      }
+    },
+    "remote_pr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "create_status",
+        "verify_open_status",
+        "rollback_close_status",
+        "verify_closed_status",
+        "final_state"
+      ],
+      "properties": {
+        "url": { "type": "string" },
+        "create_status": { "enum": ["pass", "fail", "not_run"] },
+        "verify_open_status": { "enum": ["pass", "fail", "skip", "not_run"] },
+        "rollback_close_status": { "enum": ["pass", "fail", "skip", "not_run"] },
+        "verify_closed_status": { "enum": ["pass", "fail", "not_run"] },
+        "final_state": { "enum": ["CLOSED", "OPEN", "UNKNOWN", "not_run"] },
+        "finding_code": { "type": "string" }
+      }
+    },
+    "gh_cli_pr_smoke": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall_status", "findings", "checks"],
+      "properties": {
+        "overall_status": { "enum": ["pass", "blocked", "not_run"] },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["name", "status"],
+            "properties": {
+              "name": { "type": "string" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "remote_pr_closed",
+        "remote_branch_deleted",
+        "cleanup_complete",
+        "side_effects_remaining"
+      ],
+      "properties": {
+        "remote_pr_closed": { "type": "boolean" },
+        "remote_branch_deleted": { "type": "boolean" },
+        "cleanup_complete": { "type": "boolean" },
+        "side_effects_remaining": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "decision",
+        "next_gate",
+        "reason"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "decision": { "const": "no_support_widening" },
+        "next_gate": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
