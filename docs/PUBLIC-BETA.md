@@ -98,7 +98,7 @@ Stable rules:
 |---|---|---|
 | Extension loader + manifest validation | Shipped infra | Loader/validator kodu ve truth-tier audit gerçektir; bu, her bundled manifestin end-to-end production-ready olduğu anlamına gelmez |
 | Bundled `defaults/registry`, `defaults/extensions`, `defaults/operations`, `defaults/adapters` içeriği | Contract inventory | Ağaçta görünmesi destek vaadi değildir; ancak ilgili doküman/test/Public Beta matrisi o yüzeyi ayrıca işaretliyorsa destekli sayılır |
-| GP-5 controlled patch/test lane | Contract / design-only | `gp5-controlled-patch-test-contract.schema.v1.json` future controlled local patch/test rehearsal için disposable/dedicated worktree, path-scoped ownership, diff preview, explicit apply decision, targeted tests, rollback, cleanup ve runbook evidence gerektirir. Bu satır runtime patch support, live remote PR, real-adapter live-write veya production support widening değildir |
+| GP-5 controlled patch/test lane | Rehearsal / no support widening | `gp5-controlled-patch-test-contract.schema.v1.json` design contract'ı ve `gp5-controlled-patch-test-rehearsal-report.schema.v1.json` local disposable worktree rehearsal raporu vardır. `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` yalnız deterministic local patch preview/apply/test/rollback/cleanup kanıtı üretir. Bu satır runtime patch support, live remote PR, real-adapter live-write veya production support widening değildir |
 | `examples/hello-llm/` | Example-only | SDK kullanım örneğidir; Public Beta destek vaadinin parçası değildir |
 
 ### Truth-tier yorum kuralı

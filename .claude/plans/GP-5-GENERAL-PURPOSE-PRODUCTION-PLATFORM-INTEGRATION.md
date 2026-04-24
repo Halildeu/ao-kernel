@@ -1,16 +1,16 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.5a` controlled patch/test design closeout
+**Status:** Active program setup / `GP-5.5b` controlled local patch/test rehearsal closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `9ce74da` for the `GP-5.4a` governed read-only workflow rehearsal
+**Authority:** `origin/main` at `e2d5f91` for the `GP-5.5a` controlled patch/test design
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.5a` - controlled patch/test design
-**Branch:** `codex/gp5-5a-controlled-patch-test-design`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-5a`
+**Current slice:** `GP-5.5b` - controlled local patch/test rehearsal
+**Branch:** `codex/gp5-5b-controlled-patch-rehearsal`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-5b`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
-`GP-5.3e` completed, `GP-5.4a` completed
+`GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -546,8 +546,8 @@ promotion.
 | 9 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 10 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Completed on `main`; wheel-installed `review_ai_flow + codex-stub` with explicit repo-intelligence handoff fixture; no production support widening. |
-| 12 | `GP-5.5a` | Controlled patch/test design | Active closeout candidate: schema-backed contract and runbook skeleton; no runtime write support widening. |
-| 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Next gate: execute GP-5.5a contract in disposable/dedicated worktree with rollback/test evidence. |
+| 12 | `GP-5.5a` | Controlled patch/test design | Completed on `main`; schema-backed contract and runbook skeleton; no runtime write support widening. |
+| 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Active closeout candidate: disposable worktree preview/apply/test/rollback/idempotency/cleanup evidence; no support widening. |
 | 13 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
 | 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
@@ -567,15 +567,17 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5.5a closes the controlled patch/test design gate with
-`design_contract_ready_no_runtime_write_support`. The slice adds the
-schema-backed contract for future controlled local patch/test rehearsals:
-disposable or dedicated worktree, path-scoped write ownership, diff preview,
-explicit apply decision, explainable targeted tests with full-gate fallback,
-rollback verification, cleanup, and runbook evidence.
+GP-5.5b closes the first controlled local patch/test rehearsal gate with
+`pass_controlled_local_patch_test_rehearsal_no_support_widening`. The slice
+adds a schema-backed report and a deterministic local command that creates a
+disposable detached worktree, previews a patch, requires explicit
+`--approve-apply`, acquires path-scoped claims for apply and rollback, runs a
+targeted verification command, rolls back through the reverse diff, checks
+rollback idempotency, and removes the worktree.
 
-This is not runtime patch support widening. It does not enable live remote PR
-creation, real-adapter live-write support, or production write-side support.
+This is still not runtime patch support widening. It does not enable live
+remote PR creation, real-adapter live-write support, arbitrary repository
+patch generation, or production write-side support.
 
 Current product wording remains:
 
@@ -583,6 +585,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step after `GP-5.5a`: start `GP-5.5b` controlled local patch/test
-   rehearsal unless protected environment/credential attestation arrives first
-   for `GP-5.1b`.
+5. next step after `GP-5.5b`: start `GP-5.6a` disposable PR write rehearsal
+   unless protected environment/credential attestation arrives first for
+   `GP-5.1b`.
