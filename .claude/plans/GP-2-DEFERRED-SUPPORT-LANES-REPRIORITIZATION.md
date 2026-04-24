@@ -84,9 +84,10 @@ giriş kapılarını netleştirmektir.
   - Next active contract:
     `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
 
-### `GP-2.4` — `claude-code-cli` read-only certification contract (Active)
+### `GP-2.4` — `claude-code-cli` read-only certification contract (Completed)
 
 - Issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+- Verdict issue: [#371](https://github.com/Halildeu/ao-kernel/issues/371)
 - Contract:
   `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
 - Hedef: `claude-code-cli` read-only real-adapter certification için
@@ -95,8 +96,8 @@ giriş kapılarını netleştirmektir.
 - Sıra:
   1. `GP-2.4a` preflight evidence contract (Completed via [#365](https://github.com/Halildeu/ao-kernel/issues/365))
   2. `GP-2.4b` governed workflow smoke evidence (Completed via [#367](https://github.com/Halildeu/ao-kernel/issues/367))
-  3. `GP-2.4c` failure-mode matrix (Completed via [#369](https://github.com/Halildeu/ao-kernel/issues/369) implementation branch; pending PR merge)
-  4. `GP-2.4d` support boundary verdict
+  3. `GP-2.4c` failure-mode matrix (Completed via [#369](https://github.com/Halildeu/ao-kernel/issues/369))
+  4. `GP-2.4d` support boundary verdict (Completed via [#371](https://github.com/Halildeu/ao-kernel/issues/371))
 - Son ilerleme:
   - `tests/test_claude_code_cli_smoke.py` helper JSON output contract'ını pinler
   - `auth_status=pass` + `prompt_access=fail` blocker olarak kalır
@@ -109,12 +110,26 @@ giriş kapılarını netleştirmektir.
     `claude_binary_missing`, `claude_not_logged_in`, `prompt_access_denied`,
     `manifest_smoke_timeout`, `manifest_output_not_json`,
     `adapter_non_zero_exit`, `output_parse_failed`, `policy_denied`
+- Final verdict:
+  - `operator_managed_beta_keep`
 - Next default:
-  - `GP-2.4d` support boundary verdict
+  - `gh-cli-pr` live-write rollback rehearsal
 - Sınır:
-  - `claude-code-cli` henüz production-certified değildir
+  - `claude-code-cli` production-certified değildir
   - Live-write yok
   - Stable support boundary unchanged kalır
+
+### `GP-2.5` — `gh-cli-pr` live-write rollback rehearsal (Next)
+
+- Issue: TBD
+- Contract: TBD
+- Hedef: `GP-2.3` kararındaki next lane'i açmadan önce remote side-effect,
+  disposable sandbox, rollback/idempotency ve support-boundary kapılarını
+  yazılı hale getirmek.
+- Sınır:
+  - Bu roadmap güncellemesi runtime değişikliği yapmaz.
+  - `gh-cli-pr` tam E2E remote PR açılışı hâlâ deferred support yüzeyidir.
+  - Yeni lane ayrı issue + ayrı contract ile açılmadan implementation başlamaz.
 
 ## Gate Modeli
 

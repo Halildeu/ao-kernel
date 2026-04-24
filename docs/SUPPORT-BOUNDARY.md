@@ -95,8 +95,10 @@ Operator prerequisite contract (PB-9.1):
 5. `--keep-live-write-pr-open` lane'i bilinçli riskli kabul ettirir ve
    support widening sinyali üretmez.
 
-`PB-6.6` closeout kararıyla `claude-code-cli` lane support-tier'i
-`stay_beta_operator_managed` olarak korunur; lane shipped baseline'a yükselmez.
+`PB-6.6` closeout kararı ve `GP-2.4d` certification verdict'iyle
+`claude-code-cli` lane support-tier'i Beta/operator-managed olarak korunur.
+`GP-2.4d` final sonucu `operator_managed_beta_keep` olduğundan lane shipped
+baseline'a veya production-certified read-only tier'ına yükselmez.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--head` + `--base`) ve create -> verify -> rollback
