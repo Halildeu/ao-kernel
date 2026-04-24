@@ -1,6 +1,6 @@
 # GP-2.2 — Adapter-Path `cost_usd` Reconcile Completeness
 
-**Status:** Active  
+**Status:** Completed
 **Date:** 2026-04-23  
 **Tracker:** [#333](https://github.com/Halildeu/ao-kernel/issues/333)  
 **Parent:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`

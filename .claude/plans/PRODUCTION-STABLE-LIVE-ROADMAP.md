@@ -47,8 +47,8 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
   cekirdek shipped yuzeydir.
 - `claude-code-cli`, `gh-cli-pr` ve write/live hatlari operator-managed beta
   veya karar bekleyen yuzeylerdir.
-- Post-beta programda GP-2 hattinda deferred support lane'leri kanitla
-  kapatiliyor.
+- Post-beta programda GP-2 hattı tamamlandı; deferred support lane'leri kanıtla
+  sınıflandırıldı ve support boundary genişletilmedi.
 
 ## 4. Closed Drift Kayitlari
 
@@ -343,12 +343,17 @@ dogrulanir.
 5. Son tamamlanan post-stable contract hattı `GP-2.4`:
    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
    - Final verdict: `operator_managed_beta_keep`
-6. Varsayılan sıra:
-   - `Now`: `GP-2.5a` `gh-cli-pr` disposable sandbox rehearsal closeout
-     (`.claude/plans/GP-2.5-GH-CLI-PR-LIVE-WRITE-ROLLBACK-REHEARSAL.md`)
-   - `Next`: extension/support widening
+6. Son tamamlanan post-stable support-lane hattı `GP-2`:
+   `.claude/plans/GP-2-CLOSEOUT-DECISION.md`
+   - Final verdict: no stable support widening
+   - `claude-code-cli`: Beta/operator-managed
+   - `gh-cli-pr`: Beta/operator-managed; sandbox rehearsal passed
+   - full remote PR opening: not stable shipped support
+7. Varsayılan sıra:
+   - `Now`: stable maintenance, bugfix, and evidence hygiene
+   - `Next`: ayrı bir promotion programı açılırsa tek lane support widening
    - `Later`: genel amaçlı production platform claim'i
-7. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
-   production platform claim'i için `GP-2.4` sonucunda support boundary
-   genişlememiştir. `GP-2.5a` sandbox rehearsal kanıtı support widening'i
-   otomatik açmaz; ayrı promotion decision gerekir.
+8. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+   production platform claim'i için support boundary genişlememiştir. `GP-2`
+   closeout ve `GP-2.5a` sandbox rehearsal support widening'i otomatik açmaz;
+   ayrı promotion decision gerekir.
