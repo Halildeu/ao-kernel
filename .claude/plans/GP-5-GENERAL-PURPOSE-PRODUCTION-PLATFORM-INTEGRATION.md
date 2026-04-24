@@ -1,15 +1,16 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.3e` workflow building-block decision closeout
+**Status:** Active program setup / `GP-5.4a` governed read-only workflow rehearsal closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `7f937ec` for the `GP-5.3e` workflow building-block decision
+**Authority:** `origin/main` at `d4f3d9b` for the `GP-5.3e` workflow building-block decision
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.3e` - repo-intelligence workflow building-block decision
-**Branch:** `codex/gp5-3e-workflow-building-block`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3e`
+**Current slice:** `GP-5.4a` - governed read-only workflow rehearsal
+**Branch:** `codex/gp5-4a-read-only-rehearsal`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-4a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
-`GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed
+`GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
+`GP-5.3e` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -541,10 +542,10 @@ promotion.
 | 5 | `GP-5.3b` | Agent context handoff contract | Completed on `main`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
 | 6 | `GP-5.3c` | Workflow opt-in design contract | Completed on `main`; schema-backed future opt-in; runtime remains unwired. |
 | 7 | `GP-5.3d` | No-MCP/no-root-export guard | Completed on `main`; negative boundary pinned; no support widening. |
-| 8 | `GP-5.3e` | Repo-intelligence workflow building-block promotion decision | Closeout candidate: beta explicit-handoff building block; no production support widening. |
+| 8 | `GP-5.3e` | Repo-intelligence workflow building-block promotion decision | Completed on `main`; beta explicit-handoff building block; no production support widening. |
 | 9 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 10 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
-| 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
+| 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Active closeout candidate: wheel-installed `review_ai_flow + codex-stub` with explicit repo-intelligence handoff fixture; no production support widening. |
 | 12 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
 | 13 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
 | 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
@@ -565,11 +566,15 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5.3e closes the repo-intelligence pre-rehearsal decision gate with
-`promote_beta_explicit_handoff_building_block`. Repo-intelligence read-only
-Markdown may now be used as explicit operator-provided context in future GP-5
-read-only workflow rehearsals. This is still not production workflow
-integration and does not widen real-adapter or live-write support.
+GP-5.4a closes the first governed read-only workflow rehearsal with
+`pass_read_only_rehearsal_no_support_widening` when
+`python3 scripts/gp5_read_only_rehearsal.py --output json` passes. The
+rehearsal uses wheel-installed `review_ai_flow + codex-stub` and supplies a
+deterministic repo-intelligence Markdown handoff through `--intent-file`.
+
+The handoff remains explicit operator-visible input. It is not MCP, root
+export, `context_compiler` auto-feed, real-adapter promotion, or production
+semantic-correctness evidence.
 
 Current product wording remains:
 
@@ -577,6 +582,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.3e`, then start `GP-5.4a` governed read-only
-   workflow rehearsal unless protected environment/credential attestation is
-   provided first for `GP-5.1b`.
+5. next step after `GP-5.4a`: start `GP-5.5a` controlled patch/test design
+   unless protected environment/credential attestation arrives first for
+   `GP-5.1b`.

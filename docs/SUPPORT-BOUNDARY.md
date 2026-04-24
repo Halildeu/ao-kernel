@@ -195,6 +195,14 @@ visible input. This is not production workflow integration and does not add
 automatic prompt injection, MCP tools, root exports, workflow runtime wiring,
 `context_compiler` auto-feed, or real-adapter support widening.
 
+`GP-5.4a` adds a deterministic read-only rehearsal command,
+`python3 scripts/gp5_read_only_rehearsal.py --output json`. It builds a
+schema-backed report, installs the current wheel in a temporary virtualenv, and
+runs `review_ai_flow + codex-stub` with explicit repo-intelligence Markdown
+supplied through `--intent-file`. This is still beta rehearsal evidence only:
+`support_widening=false`, no live real adapter, no MCP/root export, no
+`context_compiler` auto-feed, and no write-side support.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

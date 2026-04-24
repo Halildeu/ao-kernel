@@ -31,6 +31,15 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Remove the temporary demo workspace after verification",
     )
+    parser.add_argument(
+        "--intent-file",
+        type=Path,
+        help=(
+            "Optional UTF-8 file whose contents are supplied as visible workflow "
+            "intent input. This does not auto-wire repo intelligence into the "
+            "workflow; the operator must pass the file explicitly."
+        ),
+    )
     args = parser.parse_args(argv)
 
     workspace_root = Path(
@@ -41,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         _init_git_repo(workspace_root)
         _init_workspace(workspace_root)
-        result = _run_demo(workspace_root)
+        result = _run_demo(workspace_root, intent_payload=_read_intent(args.intent_file))
 
         print(f"[demo] run_id: {result['run_id']}")
         print(f"[demo] final state: {result['final_state']}")
@@ -97,7 +106,13 @@ def _init_workspace(workspace_root: Path) -> None:
         print(proc.stdout.strip())
 
 
-def _run_demo(workspace_root: Path) -> dict[str, str]:
+def _read_intent(intent_file: Path | None) -> str:
+    if intent_file is None:
+        return "Inspect the workspace and emit review findings."
+    return intent_file.read_text(encoding="utf-8")
+
+
+def _run_demo(workspace_root: Path, *, intent_payload: str) -> dict[str, str]:
     from ao_kernel.adapters import AdapterRegistry
     from ao_kernel.config import load_default
     from ao_kernel.executor import Executor, MultiStepDriver
@@ -129,7 +144,7 @@ def _run_demo(workspace_root: Path) -> dict[str, str]:
         workflow_version="1.0.0",
         intent={
             "kind": "inline_prompt",
-            "payload": "Inspect the workspace and emit review findings.",
+            "payload": intent_payload,
         },
         budget={
             "fail_closed_on_exhaust": True,
