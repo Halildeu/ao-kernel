@@ -81,6 +81,8 @@ the same PR.
 5. `BC-10` blocked by missing real-adapter usage/cost evidence.
 
 No adapter, workflow, repo-intelligence, write-side, remote PR, or support tier
-was promoted by this decision. The next active runtime work must be opened as a
-new scoped slice from current `origin/main`; current recommendation is
-`RI-5b` create-only root export implementation.
+was promoted by this decision. Any future runtime work must be opened as a new
+scoped slice from current `origin/main`. `RI-5b` create-only root export has
+since merged as Beta/operator-managed with `support_widening=false`, so there
+is currently no active general-purpose widening/runtime recommendation left by
+`GP-5.9`.

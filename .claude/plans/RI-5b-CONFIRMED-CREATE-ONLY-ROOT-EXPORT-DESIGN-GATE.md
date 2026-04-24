@@ -2,17 +2,18 @@
 
 **Status:** Design gate merged / RI-5b implementation merged
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `6234476`
+**Authority:** `origin/main` at `fcaff20`
 **Issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
 **Design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
 **Implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (closed)
 **Implementation PR:** [#465](https://github.com/Halildeu/ao-kernel/pull/465)
-**Closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466)
+**Closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (closed)
+**Closeout PR:** [#467](https://github.com/Halildeu/ao-kernel/pull/467)
 **Design branch:** cleaned after merge
 **Design worktree:** cleaned after merge
 **Implementation branch:** cleaned after merge
 **Implementation worktree:** cleaned after merge
-**Base:** `origin/main` at `6234476`
+**Base:** `origin/main` at `fcaff20`
 **Previous slice:** RI-5a export-plan preview merged by PR
 [#457](https://github.com/Halildeu/ao-kernel/pull/457) and closed out by PR
 [#458](https://github.com/Halildeu/ao-kernel/pull/458)
@@ -281,3 +282,4 @@ management.
 | 2026-04-24 | Implementation local validation passed | Targeted deny/happy-path tests, schema validation, CLI behavior tests, mypy, packaging smoke, fresh-venv installed-wheel `repo export` smoke, doctor, and full coverage gate all passed in the RI-5b implementation worktree. |
 | 2026-04-24 | Implementation merged | PR [#465](https://github.com/Halildeu/ao-kernel/pull/465) merged to `main` at `6234476`; issue [#464](https://github.com/Halildeu/ao-kernel/issues/464) closed. |
 | 2026-04-24 | Implementation cleanup completed | Local `main` synchronized with `origin/main`; implementation branch/worktree and remote branch cleaned; closeout issue [#466](https://github.com/Halildeu/ao-kernel/issues/466) records status cleanup. |
+| 2026-04-24 | Closeout status merged | PR [#467](https://github.com/Halildeu/ao-kernel/pull/467) merged to `main` at `fcaff20`; issue [#466](https://github.com/Halildeu/ao-kernel/issues/466) closed; no active RI-5b implementation slice remains. |
