@@ -16,6 +16,7 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     PYTHON_SYMBOL_INDEX_SCHEMA_NAME,
     REPO_CHUNKS_FILENAME,
     REPO_CHUNKS_SCHEMA_NAME,
+    REPO_EXPORT_PLAN_SCHEMA_NAME,
     REPO_INDEX_MANIFEST_FILENAME,
     REPO_INDEX_MANIFEST_SCHEMA_NAME,
     REPO_MAP_FILENAME,
@@ -67,6 +68,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     vector_write_plan_schema = load_default("schemas", REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME)
     vector_index_manifest_schema = load_default("schemas", REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME)
     vector_query_result_schema = load_default("schemas", REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME)
+    export_plan_schema = load_default("schemas", REPO_EXPORT_PLAN_SCHEMA_NAME)
     manifest_schema = load_default("schemas", REPO_INDEX_MANIFEST_SCHEMA_NAME)
 
     Draft202012Validator.check_schema(repo_map_schema)
@@ -76,6 +78,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     Draft202012Validator.check_schema(vector_write_plan_schema)
     Draft202012Validator.check_schema(vector_index_manifest_schema)
     Draft202012Validator.check_schema(vector_query_result_schema)
+    Draft202012Validator.check_schema(export_plan_schema)
     Draft202012Validator.check_schema(manifest_schema)
     assert repo_map_schema["$id"] == "urn:ao:repo-map:v1"
     assert import_graph_schema["$id"] == "urn:ao:python-import-graph:v1"
@@ -84,6 +87,7 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     assert vector_write_plan_schema["$id"] == "urn:ao:repo-vector-write-plan:v1"
     assert vector_index_manifest_schema["$id"] == "urn:ao:repo-vector-index-manifest:v1"
     assert vector_query_result_schema["$id"] == "urn:ao:repo-vector-query-result:v1"
+    assert export_plan_schema["$id"] == "urn:ao:repo-export-plan:v1"
     assert manifest_schema["$id"] == "urn:ao:repo-index-manifest:v1"
 
 

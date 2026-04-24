@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- Added the RI-5a preview-only `repo export-plan` surface. It reads existing
+  repo-intelligence artifacts, writes only
+  `.ao/context/repo_export_plan.json`, validates the plan against bundled
+  `repo-export-plan.schema.v1.json`, records source/generated digests, and
+  keeps all root authority file writes deferred to a future RI-5b lane.
 - Added agent-readable Markdown output for the RI-4 repo query boundary via
   `repo query --output markdown`. The output is stdout-only and keeps the same
   read-only support boundary: no root exports, `.ao/context` artifact writes,
