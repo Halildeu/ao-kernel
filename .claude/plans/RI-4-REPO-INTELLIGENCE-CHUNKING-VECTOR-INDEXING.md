@@ -1,10 +1,10 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** Design gate
+**Status:** RI-4a implementation PR
 **Date:** 2026-04-24
-**Branch:** `codex/repo-intelligence-vector-design`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-vector-design`
-**Base:** `origin/main` at `6488ba8`
+**Branch:** `codex/repo-intelligence-chunks`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-chunks`
+**Base:** `origin/main` at `cc9734b`
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -349,20 +349,20 @@ docs/SUPPORT-BOUNDARY.md
 
 Acceptance:
 
-- [ ] Dedicated worktree and non-main branch.
-- [ ] `repo_chunks.json` is schema-backed.
-- [ ] Chunk output is deterministic across repeated runs.
-- [ ] Chunk IDs do not include absolute filesystem paths.
-- [ ] Chunker records diagnostics for skipped secret-like or oversized files.
-- [ ] `repo scan` writes only under `.ao/context/`.
-- [ ] No embedding calls.
-- [ ] No vector store writes.
-- [ ] No network access.
-- [ ] No root authority file writes.
-- [ ] Focused tests pass.
-- [ ] `ruff check ao_kernel/ tests/` passes.
-- [ ] `mypy ao_kernel/` passes.
-- [ ] `python3 scripts/packaging_smoke.py` passes.
+- [x] Dedicated worktree and non-main branch.
+- [x] `repo_chunks.json` is schema-backed.
+- [x] Chunk output is deterministic across repeated runs.
+- [x] Chunk IDs do not include absolute filesystem paths.
+- [x] Chunker records diagnostics for skipped secret-like or oversized files.
+- [x] `repo scan` writes only under `.ao/context/`.
+- [x] No embedding calls.
+- [x] No vector store writes.
+- [x] No network access.
+- [x] No root authority file writes.
+- [x] Focused tests pass.
+- [x] `ruff check ao_kernel/ tests/` passes.
+- [x] `mypy ao_kernel/` passes.
+- [x] `python3 scripts/packaging_smoke.py` passes.
 
 ### RI-4b - Vector write-plan dry-run
 
@@ -459,3 +459,4 @@ Questions to answer before implementation:
 |---|---|---|
 | 2026-04-24 | Design gate | Added RI-4 chunking/vector indexing plan before implementation. |
 | 2026-04-24 | RI-4a implementation | Added deterministic `repo_chunks.json` chunk manifest generation only; no embedding calls, vector writes, network, `repo index`, or root exports. |
+| 2026-04-24 | RI-4a validation | Full suite passed with branch coverage above the 85% gate; full ruff, full mypy, focused repo-intelligence tests, CLI smoke, and packaging smoke passed. |
