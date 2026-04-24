@@ -49,7 +49,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.8 operations support package:** `.claude/plans/GP-5.8-OPERATIONS-SUPPORT-PACKAGE.md`
 - **Aktif GP-5.9 production platform claim decision:** `.claude/plans/GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md`
 - **Son tamamlanan RI-5a export-plan preview:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
-- **Aktif RI-5b confirmed create-only root export design gate:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
+- **Son tamamlanan RI-5b confirmed create-only root export design gate:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
@@ -123,7 +123,7 @@ ayrı ayrı görünür kılmak.
 - **GP-5.8 issue:** [#453](https://github.com/Halildeu/ao-kernel/issues/453) (`closed after GP-5.8 PR`)
 - **GP-5.9 issue:** [#455](https://github.com/Halildeu/ao-kernel/issues/455) (`active`)
 - **RI-5a export-plan preview:** PR `#457` merged at `a2144da`; closeout PR `#458` merged at `0a6eacb`
-- **RI-5b design gate issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`active`)
+- **RI-5b design gate issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`closed by PR #460`)
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
   integration gates, write-side rollback evidence, and an explicit closeout
@@ -188,7 +188,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4.4` protected live rehearsal blocked decision | Completed by GP-4.4 PR ([#410](https://github.com/Halildeu/ao-kernel/issues/410), record `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`) | protected live rehearsal prerequisite eksikse fake live success üretmeden blocked decision kaydetmek | schema validation + blocked rehearsal decision artifact + no live adapter execution + no support widening |
 | `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
 | `GP-5` general-purpose platform integration | Active setup / `GP-5.9` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve operations support paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a..GP-5.3e` close repo-intelligence handoff gates; `GP-5.4a` read-only rehearsal passed; `GP-5.5b` local patch/test rehearsal passed; `GP-5.6a` disposable PR rehearsal passed; `GP-5.7a` defines the full rehearsal contract; `GP-5.7b` aggregates execution evidence; `GP-5.8` packages operations readiness; `GP-5.9` closes the claim decision; no production support widening unless the decision explicitly grants it |
-| `RI-5b` confirmed create-only root export design gate | Active ([#459](https://github.com/Halildeu/ao-kernel/issues/459)) | RI-5a preview planından root authority file create-only write yoluna geçmeden önce exact confirmation, path ownership, deny matrix ve rollback evidence kontratını kilitlemek | docs/status-only design gate; no runtime `repo export`; no root write; no support widening |
+| `RI-5b` confirmed create-only root export design gate | Completed ([#459](https://github.com/Halildeu/ao-kernel/issues/459), [#460](https://github.com/Halildeu/ao-kernel/pull/460)) | RI-5a preview planından root authority file create-only write yoluna geçmeden önce exact confirmation, path ownership, deny matrix ve rollback evidence kontratını kilitlemek | docs/status-only design gate; no runtime `repo export`; no root write; no support widening |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -1488,18 +1488,19 @@ This is not support widening and does not grant root authority write support.
 
 ## 34. RI-5b Confirmed Create-Only Root Export Design Gate
 
-`RI-5b` design gate is active. This is not the implementation slice.
+`RI-5b` design gate is complete. This is not the implementation slice.
 
 1. Issue:
-   [#459](https://github.com/Halildeu/ao-kernel/issues/459)
-2. Design record:
+   [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`closed`)
+2. Design PR:
+   [#460](https://github.com/Halildeu/ao-kernel/pull/460), merged to `main`
+   at `91c1bc0`
+3. Design record:
    `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
-3. Branch:
-   `codex/ri5b-root-export-design-gate`
-4. Worktree:
-   `/Users/halilkocoglu/Documents/ao-kernel-ri5b-root-export-design-gate`
+4. Design branch/worktree:
+   cleaned after merge
 5. Base:
-   `origin/main` at `0a6eacb`
+   `origin/main` at `91c1bc0`
 6. Scope:
    docs/status only; no runtime code, no root writes, no support widening
 7. Pinned design decisions:
@@ -1511,5 +1512,7 @@ This is not support widening and does not grant root authority write support.
    - deny paths cover missing/stale plans, existing-file conflicts, symlinks,
      path escapes, unsupported targets, and invalid confirmation
    - root snapshot and rollback/no-corruption evidence is required
-8. Next slice:
-   RI-5b create-only implementation PR, only after this design gate is merged.
+8. Closeout:
+   local `main` synchronized with `origin/main`; design branch/worktree cleaned
+9. Next slice:
+   RI-5b create-only implementation PR from current `origin/main`.

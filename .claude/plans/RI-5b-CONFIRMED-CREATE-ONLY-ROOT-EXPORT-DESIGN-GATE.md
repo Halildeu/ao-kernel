@@ -1,17 +1,18 @@
 # RI-5b - Confirmed Create-Only Root Export Design Gate
 
-**Status:** Design gate active / no runtime implementation
+**Status:** Design gate merged / implementation gated
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `0a6eacb`
-**Issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459)
-**Branch:** `codex/ri5b-root-export-design-gate`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5b-root-export-design-gate`
-**Base:** `origin/main` at `0a6eacb`
+**Authority:** `origin/main` at `91c1bc0`
+**Issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
+**Design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
+**Design branch:** cleaned after merge
+**Design worktree:** cleaned after merge
+**Base:** `origin/main` at `91c1bc0`
 **Previous slice:** RI-5a export-plan preview merged by PR
 [#457](https://github.com/Halildeu/ao-kernel/pull/457) and closed out by PR
 [#458](https://github.com/Halildeu/ao-kernel/pull/458)
-**Next allowed slice:** RI-5b create-only implementation PR after this design
-gate merges
+**Next allowed slice:** RI-5b create-only implementation PR from current
+`origin/main`
 **Support impact:** none; no support widening
 
 ## Purpose
@@ -267,3 +268,5 @@ management.
 | Date | Status | Notes |
 |---|---|---|
 | 2026-04-24 | Design gate opened | Dedicated branch `codex/ri5b-root-export-design-gate` and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5b-root-export-design-gate` opened from `origin/main` at `0a6eacb`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) created. |
+| 2026-04-24 | Design gate merged | PR [#460](https://github.com/Halildeu/ao-kernel/pull/460) merged to `main` at `91c1bc0`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) closed; runtime implementation remains gated. |
+| 2026-04-24 | Design branch cleanup completed | Local `main` synchronized with `origin/main`; design branch and worktree cleaned. Next allowed slice is RI-5b create-only implementation from current `origin/main`. |

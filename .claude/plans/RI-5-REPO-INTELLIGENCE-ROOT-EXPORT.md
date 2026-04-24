@@ -1,21 +1,22 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** RI-5b design gate active
+**Status:** RI-5b design gate merged; implementation gated
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `0a6eacb`
+**Authority:** `origin/main` at `91c1bc0`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
 **Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
 **Implementation PR:** [#457](https://github.com/Halildeu/ao-kernel/pull/457)
-**RI-5b issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459)
+**RI-5b issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
+**RI-5b design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
 **RI-5b design record:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
 **Implementation branch:** cleaned after merge
 **Implementation worktree:** cleaned after merge
-**Tracking branch:** `codex/ri5b-root-export-design-gate`
-**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5b-root-export-design-gate`
-**Base:** `origin/main` at `0a6eacb`
-**Next slice:** RI-5b create-only implementation PR after design gate merge
+**RI-5b design branch:** cleaned after merge
+**RI-5b design worktree:** cleaned after merge
+**Base:** `origin/main` at `91c1bc0`
+**Next slice:** RI-5b create-only implementation PR from current `origin/main`
 **Implementation:** Merged to `main` at `a2144da`; preview-only export-plan
 support is live as Beta / experimental.
 **Rule:** Never work directly on `main`.
@@ -387,10 +388,11 @@ these constraints:
 7. support docs remain Beta / operator-managed or Deferred until live write
    evidence and rollback evidence exist.
 
-The dedicated design gate is tracked in
+The dedicated design gate is closed in
 `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md` and
 issue [#459](https://github.com/Halildeu/ao-kernel/issues/459). Runtime
-implementation remains blocked until that design gate is merged.
+implementation remains blocked until a separate RI-5b implementation branch
+starts from current `origin/main`.
 
 ## Non-Negotiable Boundaries
 
@@ -509,3 +511,5 @@ CHANGELOG.md
 | 2026-04-24 | RI-5a implementation merged | PR [#457](https://github.com/Halildeu/ao-kernel/pull/457) merged to `main` at `a2144da`; `repo export-plan` is live as Beta / experimental preview-only and still writes no root authority files. |
 | 2026-04-24 | RI-5a cleanup completed | Local `main` synchronized with `origin/main`, implementation branch/worktree cleaned, and RI-5b is gated behind a separate confirmed create-only root export design slice. |
 | 2026-04-24 | RI-5b design gate opened | Issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) and branch `codex/ri5b-root-export-design-gate` opened from `origin/main` at `0a6eacb`; runtime implementation remains blocked until design gate merge. |
+| 2026-04-24 | RI-5b design gate merged | PR [#460](https://github.com/Halildeu/ao-kernel/pull/460) merged to `main` at `91c1bc0`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) closed; runtime implementation remains a separate next slice. |
+| 2026-04-24 | RI-5b design cleanup completed | Local `main` synchronized with `origin/main`; design branch/worktree cleaned; next allowed slice is RI-5b create-only implementation from current `origin/main`. |
