@@ -15,10 +15,10 @@ operator-only, or just contract inventory?"
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-8.3` verdict `stay_deferred`, `GP-1.3` revalidation ile teyitli) |
 
-### 1.1 ST-2 stable candidate freeze
+### 1.1 ST-2 stable boundary freeze
 
-For the `4.0.0` stable candidate, the stable support set is the `Shipped
-baseline` layer only. This freeze deliberately excludes:
+For `4.0.0` stable, the stable support set is the `Shipped baseline` layer
+only. This freeze deliberately excludes:
 
 - operator-managed beta lanes,
 - live-write / remote side-effect flows,
@@ -153,7 +153,7 @@ then treat it as not widened.
 
 ## 4.1 Stable operations rule
 
-For the narrow stable candidate, operational readiness follows the same support
+For the narrow stable release, operational readiness follows the same support
 boundary:
 
 - shipped baseline failure is a release blocker,

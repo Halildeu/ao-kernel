@@ -8,16 +8,16 @@ ao-kernel is **not** a general-purpose agent framework or a blanket "production 
 
 ```bash
 pip install ao-kernel                # Core (only jsonschema dependency)
-pip install ao-kernel==4.0.0         # Exact stable pin after v4.0.0 publish
+pip install ao-kernel==4.0.0         # Exact stable pin
 pip install ao-kernel[llm]           # LLM modules (tenacity + tiktoken)
 pip install ao-kernel[mcp]           # MCP server support
 pip install ao-kernel[otel]          # OpenTelemetry instrumentation
 pip install ao-kernel[llm,mcp,otel]  # Everything
 ```
 
-`4.0.0` stable source changes do not by themselves mean the public package is
-live. Treat the exact `ao-kernel==4.0.0` install path as live only after the
-tag-triggered publish workflow and fresh-venv public install verification pass.
+`v4.0.0` is live on PyPI. Post-publish verification confirmed both
+`pip install ao-kernel` and `pip install ao-kernel==4.0.0` resolve to
+`ao-kernel 4.0.0` in fresh virtual environments.
 
 **For production-grade live LLM calls**, install the `[llm]` extra. Without it the runtime still dispatches requests, but two guarantees weaken: **retry / backoff** (`tenacity`) degrades to a single-attempt call so transient 429 / 5xx responses fail the request instead of being retried, and **exact token counting** (`tiktoken`) falls back to a heuristic estimator (~4 chars/token) so budget accounting is approximate. The core install is fully sufficient for policy evaluation, evidence replay, workflow inspection, and MCP server hosting.
 

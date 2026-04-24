@@ -9,7 +9,7 @@ stable and beta channels.
 
 ```bash
 pip install -U ao-kernel
-# exact pin after v4.0.0 publish
+# exact stable pin
 pip install ao-kernel==4.0.0
 ```
 
@@ -22,13 +22,14 @@ pip install ao-kernel==4.0.0b2
 ```
 
 Do not assume `pip install ao-kernel` will pick a beta. It stays on the stable
-channel unless you ask for a pre-release explicitly. The exact
-`ao-kernel==4.0.0` pin is live only after the `v4.0.0` publish workflow and
-fresh-venv public install verification pass.
+channel unless you ask for a pre-release explicitly. `v4.0.0` is live on PyPI;
+post-publish verification confirmed both `pip install ao-kernel` and
+`pip install ao-kernel==4.0.0` resolve to `ao-kernel 4.0.0` in fresh virtual
+environments.
 
 ## 1.1 Stable support boundary
 
-The stable candidate support boundary is intentionally narrow. Treat the
+The stable support boundary is intentionally narrow. Treat the
 `Shipped` table in [`PUBLIC-BETA.md`](PUBLIC-BETA.md) and the `Shipped
 baseline` layer in [`SUPPORT-BOUNDARY.md`](SUPPORT-BOUNDARY.md) as the supported
 runtime claim.
