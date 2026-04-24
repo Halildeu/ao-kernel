@@ -17,7 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md` (`post-stable next-slice selection`)
+- **Aktif decision/ordering contract:** `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -42,12 +42,13 @@ ayrı ayrı görünür kılmak.
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
+- **GP-2.3 issue:** [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`open`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
 - **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
 - **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`closed after closeout`)
 - **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`closed after closeout`)
-- **Aktif gate:** none; `v4.0.0` stable live completed. Next runtime/support widening work requires a new scoped slice under `GP-2` or a follow-up roadmap.
+- **Aktif gate:** `GP-2.3` post-stable adapter certification entry decision. Runtime/support widening yok; yalnız sıradaki gate seçimi.
 
 ## 2. Başlangıç Gerçeği
 
@@ -95,7 +96,7 @@ ayrı ayrı görünür kılmak.
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
-| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
+| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), active slice [#361](https://github.com/Halildeu/ao-kernel/issues/361)) | `GP-1` ve `v4.0.0` stable sonrası deferred/support widening lane'lerini tek anlamlı sıraya indirip ilk post-stable certification gate'ini seçmek | GP-2.2 closeout + GP-2.3 `Now/Next/Later` post-stable karar kaydı |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -363,28 +364,27 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: none. `ST-8` stable publish and post-publish verification
-tamamlandı; sıradaki runtime/support widening işi yeni scoped slice olarak
-açılmalıdır.
+Aktif slice: `GP-2.3` post-stable adapter certification entry decision
+([#361](https://github.com/Halildeu/ao-kernel/issues/361)).
 
-1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
-   closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
-2. Production-stable roadmap: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
-4. Completed contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
-5. Completed contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-6. Son kapanan PR: ST-8 closeout PR
-7. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
-   real-adapter/live-write promotion istenirse ayrı gate gerekir.
-8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
-   promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
-9. Son kapanan issue: [#358](https://github.com/Halildeu/ao-kernel/issues/358)
-   (`ST-8` closed after closeout)
-10. Completed contract:
-   `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md`
-11. Stable live iddiası artık geçerlidir: `pip install ao-kernel` ve exact pin
+Bu slice runtime/support widening yapmaz. Amaç `v4.0.0` stable sonrası ilk
+gerçek widening giriş kapısını seçmek ve sonraki implementation contract'ının
+sorularını sabitlemektir.
+
+1. Son kapanan slice: `ST-8` stable publish and post-publish verification
+   ([#358](https://github.com/Halildeu/ao-kernel/issues/358))
+2. Son kapanan GP slice: `GP-2.2` adapter-path `cost_usd` reconcile
+   completeness closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
+3. Aktif contract:
+   `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
+4. Karar sırası:
+   - `Now`: `claude-code-cli` read-only real-adapter certification
+   - `Next`: `gh-cli-pr` live-write rollback rehearsal
+   - `Later`: extension/support widening ve genel amaçlı platform claim'i
+5. Stable live iddiası geçerlidir: `pip install ao-kernel` ve exact pin
    `ao-kernel==4.0.0` fresh venv içinde `4.0.0` kurmuştur.
-12. Aktif iş: yeni scoped slice seçilmeden runtime/support widening yapılmaz.
+6. Stable support boundary unchanged kalır; `GP-2.3` yeni production adapter
+   claim'i üretmez.
 
 `PB-8.2` completion kaydı:
 
@@ -630,3 +630,24 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
    - `GP-2.2c` runtime patch no-op kaldı
    - `GP-2.2d` docs/status parity PR [#338](https://github.com/Halildeu/ao-kernel/pull/338) ile tamamlandı
    - adapter-path `cost_usd` reconcile public support claim olarak deferred kaldı
+
+## 18. GP-2.3 Post-Stable Entry Snapshot
+
+`ST-8` stable publish closeout sonrası aktif karar slice'ı `GP-2.3` olarak
+açıldı.
+
+1. Issue: [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`open`)
+2. Active contract:
+   `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
+3. Scope:
+   - post-stable support-widening giriş kapısını seçmek
+   - `ST-3`, `ST-4` ve extension/support widening sırasını netleştirmek
+   - sonraki implementation slice için cevaplanacak contract sorularını yazmak
+4. Sınır:
+   - runtime değişikliği yok
+   - stable support boundary widening yok
+   - version bump, tag ve publish yok
+5. Varsayılan karar:
+   - `Now`: `claude-code-cli` read-only real-adapter certification
+   - `Next`: `gh-cli-pr` live-write rollback rehearsal
+   - `Later`: extension/support widening

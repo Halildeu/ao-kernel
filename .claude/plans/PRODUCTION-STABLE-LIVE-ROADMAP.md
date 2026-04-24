@@ -148,9 +148,11 @@ kanitli pre-release'e cevirmek.
 
 ### ST-3 — Real Adapter Certification Decision
 
-**Durum:** Parked for support widening. Not a blocker for the narrow stable
-runtime release because real-adapter lanes are not stable shipped claims after
-`ST-2`.
+**Durum:** Parked for support widening. Post-stable entry ordering is tracked
+by `GP-2.3` ([#361](https://github.com/Halildeu/ao-kernel/issues/361)); the
+default first certification candidate is `claude-code-cli` read-only.
+Not a blocker for the narrow stable runtime release because real-adapter lanes
+are not stable shipped claims after `ST-2`.
 
 **Amac:** Gercek adapter yuzeylerinin stable scope'a girip girmeyecegini
 kanıtla karara baglamak.
@@ -331,6 +333,13 @@ dogrulanir.
 1. `ST-0` tamamlandi: GP-2.2 closeout ve status/docs drift temizligi.
 2. `ST-1` tamamlandi: current `main` icin `4.0.0b2` pre-release publish ve
    PyPI exact pin verify.
-3. `ST-2` ile stable support boundary freeze yap.
-4. Sonra stable scope kararina gore `ST-3` ve `ST-4` gerekli mi, yoksa dar
-   runtime stable release'e gecilebilir mi karar ver.
+3. `ST-2`, `ST-5`, `ST-6`, `ST-7` ve `ST-8` tamamlandi; `v4.0.0` stable live.
+4. Aktif post-stable karar hattı `GP-2.3`:
+   `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
+5. Varsayılan sıra:
+   - `Now`: `claude-code-cli` read-only real-adapter certification
+   - `Next`: `gh-cli-pr` live-write rollback rehearsal
+   - `Later`: extension/support widening
+6. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+   production platform claim'i için `GP-2.3` sonrası certification ve
+   rollback kanıtları gerekir.

@@ -1,8 +1,8 @@
 # GP-2 — Deferred Support-Lane Backlog Reprioritization
 
-**Status:** Active  
-**Date:** 2026-04-23  
-**Tracker:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)  
+**Status:** Active
+**Date:** 2026-04-24
+**Tracker:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Execution mode:** Kapsam disiplini, tek aktif planning/runtime tranche
 
 ## Amaç
@@ -23,8 +23,12 @@ giriş kapılarını netleştirmektir.
    - `gh-cli-pr` ile tam E2E remote PR açılışı
    - `docs/roadmap/DEMO-SCRIPT-SPEC.md` üç-adapter akışının canlı destek iddiası
    - adapter-path `cost_usd` reconcile
-3. Aktif widening tranche yoktur; yeni runtime işi açılmadan önce
-   sıralama ve kanıt boşluğu kararı yazılı olmalıdır.
+3. `GP-2.2` adapter-path `cost_usd` reconcile completeness hattı
+   tamamlanmıştır; ek runtime patch gerekmemiş ve public support claim
+   deferred kalmıştır.
+4. `ST-8` tamamlanmıştır: `v4.0.0` stable PyPI üzerinde canlıdır.
+5. Aktif widening tranche yoktur; yeni runtime/support işi açılmadan önce
+   post-stable giriş sırası ve kanıt boşluğu kararı yazılı olmalıdır.
 
 ## Tranche Sırası
 
@@ -42,7 +46,7 @@ giriş kapılarını netleştirmektir.
   3. Seçilen tranche için tek issue + tek contract referansı üretilir.
 - Kapanış: [#331](https://github.com/Halildeu/ao-kernel/issues/331) closed, PR [#332](https://github.com/Halildeu/ao-kernel/pull/332)
 
-### `GP-2.2` — First runtime slice kickoff (Active)
+### `GP-2.2` — First runtime slice kickoff (Completed)
 
 - Issue: [#333](https://github.com/Halildeu/ao-kernel/issues/333)
 - Contract:
@@ -53,7 +57,28 @@ giriş kapılarını netleştirmektir.
   `deferred` olarak kalır.
 - İlerleme:
   1. `GP-2.2a` truth-capture closure merged via PR [#335](https://github.com/Halildeu/ao-kernel/pull/335)
-  2. `GP-2.2b` deterministic assertion upgrade active on issue [#336](https://github.com/Halildeu/ao-kernel/issues/336)
+  2. `GP-2.2b` deterministic assertion upgrade closed via issue [#336](https://github.com/Halildeu/ao-kernel/issues/336) and PR [#337](https://github.com/Halildeu/ao-kernel/pull/337)
+  3. `GP-2.2c` runtime patch no-op closeout: ek runtime gap kanıtlanmadı
+  4. `GP-2.2d` docs/status parity closeout merged via PR [#338](https://github.com/Halildeu/ao-kernel/pull/338)
+- Sonuç: adapter-path `cost_usd` reconcile public support claim olarak
+  **Deferred** kalır; behavior/evidence assertions mevcut ama support widening
+  üretmez.
+
+### `GP-2.3` — Post-stable adapter certification entry decision (Active)
+
+- Issue: [#361](https://github.com/Halildeu/ao-kernel/issues/361)
+- Contract:
+  `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
+- Hedef: `v4.0.0` stable live sonrası ilk support-widening giriş kapısını
+  seçmek; bu tranche runtime widening veya yeni stable claim üretmez.
+- Karar sırası:
+  1. **Now:** `claude-code-cli` read-only real-adapter certification decision
+  2. **Next:** `gh-cli-pr` live-write rollback rehearsal
+  3. **Later:** extension/support widening ve genel amaçlı platform claim'i
+- Sınır:
+  - Runtime değişikliği yok
+  - Version bump, tag veya publish yok
+  - Stable support boundary unchanged kalır
 
 ## Gate Modeli
 
@@ -65,8 +90,9 @@ giriş kapılarını netleştirmektir.
 ## Başarı Kriterleri
 
 1. `GP-2.1` sonunda deferred satırların sırasi tartışmasızdır.
-2. İlk aktif runtime slice açık issue/contract ile başlatılmıştır.
-3. Status SSOT'ta aktif issue/contract alanı günceldir.
+2. `GP-2.2` ilk runtime/evidence slice olarak tamamlanmıştır.
+3. `GP-2.3` post-stable next-slice kararını açık issue/contract ile taşır.
+4. Status SSOT'ta aktif issue/contract alanı günceldir.
 
 ## Risk Register
 
