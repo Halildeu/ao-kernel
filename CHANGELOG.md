@@ -29,6 +29,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added the `SM-2` stable baseline evidence refresh, recording entrypoint,
   doctor, truth inventory, wheel-installed packaging smoke, and targeted test
   results without runtime changes or support widening.
+- Added the `SM-3` program-status cleanup, removing stale historical `ST-2`
+  wording from the living status board while keeping stable maintenance / no
+  active widening as the current mode.
 
 ## [4.0.0] - 2026-04-24
 

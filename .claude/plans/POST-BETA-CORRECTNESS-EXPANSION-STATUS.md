@@ -18,6 +18,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP closeout decision:** `.claude/plans/GP-2-CLOSEOUT-DECISION.md`
 - **Son tamamlanan maintenance baseline:** `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`
 - **Son tamamlanan stable evidence refresh:** `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
+- **Son tamamlanan status truth cleanup:** `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -59,6 +60,7 @@ ayrı ayrı görünür kılmak.
 - **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`closed after closeout`)
 - **SM-1 issue:** [#378](https://github.com/Halildeu/ao-kernel/issues/378) (`closed by maintenance baseline PR`)
 - **SM-2 issue:** [#380](https://github.com/Halildeu/ao-kernel/issues/380) (`closed by evidence refresh PR`)
+- **SM-3 issue:** [#382](https://github.com/Halildeu/ao-kernel/issues/382) (`closed by status cleanup PR`)
 - **Aktif gate:** yok. SM-1 stable maintenance baseline geçerlidir; yeni support widening ancak ayrı promotion issue/contract ile açılır.
 
 ## 2. Başlangıç Gerçeği
@@ -110,6 +112,7 @@ ayrı ayrı görünür kılmak.
 | `GP-2` deferred support-lane backlog reprioritization | Completed ([#329](https://github.com/Halildeu/ao-kernel/issues/329), closeout decision `.claude/plans/GP-2-CLOSEOUT-DECISION.md`) | `GP-1` ve `v4.0.0` stable sonrası deferred/support widening lane'lerini tek anlamlı sıraya indirip post-stable support-lane gates yürütmek | GP-2.5a sandbox rehearsal evidence + support boundary unchanged verdict |
 | `SM-1` stable maintenance baseline | Completed ([#378](https://github.com/Halildeu/ao-kernel/issues/378), decision `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`) | GP-2 sonrası varsayılan çalışma modunu maintenance olarak sabitlemek | no active widening gate + support-boundary prerequisite drift fixed |
 | `SM-2` stable baseline evidence refresh | Completed ([#380](https://github.com/Halildeu/ao-kernel/issues/380), evidence `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`) | SM-1 sonrası shipped baseline kanıtını tazelemek | entrypoints + doctor + truth inventory + wheel-installed packaging smoke + targeted tests |
+| `SM-3` program status active-section cleanup | Completed ([#382](https://github.com/Halildeu/ao-kernel/issues/382), record `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`) | yaşayan status dosyasındaki stale historical `ST-2` anlatımını temizlemek | no active widening gate + historical records clearly non-active |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -120,70 +123,27 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### `ST-1` — releasable pre-release gate (`4.0.0b2`) completed
+### Current mode — stable maintenance
 
-Production-stable roadmap'teki `ST-1` kapısı tamamlandı. Issue
-[#340](https://github.com/Halildeu/ao-kernel/issues/340) için aktif contract
-`.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` olarak belirlendi ve
-release/publish sonucu aynı dosyaya işlendi.
-`GP-2.2b` deterministic assertion upgrade issue'su
-[#336](https://github.com/Halildeu/ao-kernel/issues/336) kapanmış, PR
-[#337](https://github.com/Halildeu/ao-kernel/pull/337) merge edilmiştir.
-`GP-2.2d` docs/status closeout PR
-[#338](https://github.com/Halildeu/ao-kernel/pull/338) ile tamamlandı.
+Aktif runtime/support-widening slice yoktur. `SM-1` stable maintenance
+baseline geçerlidir; `SM-2` stable baseline evidence refresh son kanıt
+kaydıdır. `SM-3` yalnız yaşayan status dosyasındaki stale active wording
+drift'ini temizler.
 
-Son GP-2.2 kararı:
+Varsayılan yol:
 
-1. `GP-2.2c` runtime patch no-op kalır; ek runtime gap kanıtlanmadı.
-2. Adapter-path `cost_usd` reconcile public support
-   claim olarak deferred kalır.
-3. Public Beta stable kanal dili hard-code exact stable sürüm taşımaz.
-4. [#333](https://github.com/Halildeu/ao-kernel/issues/333) merge sonrası
-   closeout comment ile kapatılır.
+1. shipped baseline bugfix
+2. docs/runtime/test parity cleanup
+3. CI/package/release/rollback hygiene
+4. known-bug registry / runbook clarification
+5. evidence hygiene without widening support
 
-Contract PR [#341](https://github.com/Halildeu/ao-kernel/pull/341) ile
-tamamlandı. Release PR [#342](https://github.com/Halildeu/ao-kernel/pull/342)
-ile merge edildi ve tag/publish doğrulaması tamamlandı:
+Support widening istenirse `GP-3` gibi ayrı bir promotion programı açılır.
+Bu program başlamadan önce ayrı issue, karar notu, support-boundary diff'i,
+runtime/test/smoke kanıtı ve PR gerekir.
 
-1. `pyproject.toml` ve `ao_kernel/__init__.py` version surfaces
-   `4.0.0b2`ye çekildi.
-2. `CHANGELOG.md`, `docs/PUBLIC-BETA.md`, `docs/UPGRADE-NOTES.md` ve
-   `docs/ROLLBACK.md` beta pinleri hizalandı.
-3. Full CI + packaging-smoke geçti.
-4. Tag `v4.0.0-beta.2` `main` merge commit'i `bc1bca7` üzerine pushlandı.
-5. `publish.yml` run `24863200216` success oldu.
-6. PyPI `https://pypi.org/project/ao-kernel/4.0.0b2/` `HTTP/2 200` döndü.
-7. Fresh venv exact pin install `ao-kernel==4.0.0b2`, üç entrypoint ve
-   installed-package `examples/demo_review.py --cleanup` smoke geçti.
-
-Tarihi PB/GP kayıtları aşağıda korunur; güncel yürütme kararı yukarıdaki
-`ST-1` closeout bloğudur. Aktif hat artık `ST-2` stable support boundary
-freeze'dir; issue [#344](https://github.com/Halildeu/ao-kernel/issues/344)
-ve contract
-`.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md` üzerinden yürür.
-Stable scope, bu gate tamamlanmadan genişletilmeyecek.
-
-### `ST-2` — stable support boundary freeze active
-
-`ST-2` amacı `4.0.0` stable öncesinde support boundary'yi dondurmaktır. Bu
-runtime widening işi değildir. İlk PR yalnız contract/status bağlantısını
-kurar; sonraki freeze PR'i `docs/PUBLIC-BETA.md`,
-`docs/SUPPORT-BOUNDARY.md`, `docs/KNOWN-BUGS.md`, `docs/UPGRADE-NOTES.md`,
-`docs/ROLLBACK.md` ve gerekirse `CHANGELOG.md` üzerinde docs parity +
-stable-blocker kararını kapatır.
-
-Mevcut varsayılan karar:
-
-1. Shipped candidate dar kalır: entrypoint'ler, `doctor`,
-   `review_ai_flow + codex-stub`, `examples/demo_review.py`,
-   `PRJ-KERNEL-API` read-only actions, policy command enforcement ve release
-   gate'leri.
-2. `claude-code-cli`, `gh-cli-pr`, `PRJ-KERNEL-API` write-side actions ve
-   real-adapter benchmark tam modu operator-managed beta kalır.
-3. `bug_fix_flow` release closure, full remote PR opening, roadmap/spec demo
-   ve adapter-path `cost_usd` public support claim deferred kalır.
-4. Known bug registry shipped baseline blocker taşımıyorsa stable blocker yok
-   olarak yazılır; shipped baseline etkilenirse ST-2 durur.
+Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
+değildir.
 
 ### `PB-6.4` — real-adapter/write-side graduation criteria yeniden sıralama
 
@@ -379,6 +339,8 @@ Not:
 
 Aktif runtime/support-widening slice yoktur. GP-2 closeout tamamlanmıştır,
 SM-1 stable maintenance baseline geçerlidir ve support boundary değişmemiştir.
+SM-2 stable evidence refresh tamamlanmıştır; SM-3 yalnız status drift
+temizliğidir.
 
 Bundan sonraki varsayılan yol maintenance'tır. Support widening istenirse yeni
 bir promotion programı açılır; bu program tek lane, tek decision record, tek PR
@@ -398,21 +360,25 @@ disipliniyle yürür.
    `.claude/plans/GP-2-CLOSEOUT-DECISION.md`
 7. Son maintenance baseline:
    `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`
-8. GP-2.4 sıra:
+8. Son evidence refresh:
+   `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
+9. Son status cleanup:
+   `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`
+10. GP-2.4 sıra:
    - `GP-2.4a`: preflight evidence contract (`closed after merge`)
    - `GP-2.4b`: governed workflow smoke evidence (`closed after merge`)
    - `GP-2.4c`: failure-mode matrix (`closed after merge`)
    - `GP-2.4d`: support boundary verdict (`operator_managed_beta_keep`)
-9. GP-2.5/GP-2.5a kanıtı:
+11. GP-2.5/GP-2.5a kanıtı:
    - preflight smoke: `overall_status=pass`
    - live-write guard smoke: `overall_status=blocked`,
      finding `gh_pr_live_write_same_head_base`
    - sandbox live-write smoke: `overall_status=pass`,
      PR `https://github.com/Halildeu/ao-kernel-sandbox/pull/1`,
      final state `CLOSED`, remote head cleanup verified
-10. Stable live iddiası geçerlidir: `pip install ao-kernel` ve exact pin
+12. Stable live iddiası geçerlidir: `pip install ao-kernel` ve exact pin
    `ao-kernel==4.0.0` fresh venv içinde `4.0.0` kurmuştur.
-11. Stable support boundary unchanged kalır; `gh-cli-pr` full remote PR opening
+13. Stable support boundary unchanged kalır; `gh-cli-pr` full remote PR opening
    hâlâ Deferred support yüzeyidir.
 
 `PB-8.2` completion kaydı:
@@ -822,3 +788,27 @@ GP-2 sonrası varsayılan yürütme modu maintenance olarak sabitlendi.
 5. Drift fixed:
    - operator-facing `gh-cli-pr` live-write prerequisite prose now includes
      explicit `--repo <owner>/<sandbox-repo>`
+
+## 23. SM-2 / SM-3 Stable Maintenance Refresh Snapshot
+
+Stable maintenance hattında support widening yapılmadan kanıt ve status
+doğruluğu tazelendi.
+
+1. SM-2 issue: [#380](https://github.com/Halildeu/ao-kernel/issues/380)
+2. SM-2 evidence record:
+   `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
+3. SM-3 issue: [#382](https://github.com/Halildeu/ao-kernel/issues/382)
+4. SM-3 status cleanup record:
+   `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`
+5. Current mode:
+   - active runtime widening gate yok
+   - default path stable maintenance
+   - support widening için ayrı promotion programı gerekir
+6. SM-2 evidence:
+   - `python3 -m ao_kernel doctor`: `8 OK`, `1 WARN`, `0 FAIL`
+   - truth inventory: `runtime_backed=2`, `contract_only=1`,
+     `quarantined=16`
+   - wheel-installed packaging smoke passed
+   - targeted tests: `3 passed`, `1 skipped`
+7. SM-3 fixed:
+   - stale historical `ST-2` wording removed from `## 5. Şimdi`
