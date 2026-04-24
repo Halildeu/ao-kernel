@@ -77,7 +77,6 @@ schema version and update the support docs through a separate decision gate.
 ## Next Slice
 
 `GP-4.3` has since added the protected GitHub environment / secret contract in
-`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. The next slice
-is `GP-4.4`: either run a protected live rehearsal after project-owned
-credentials exist, or record an explicit blocked decision without support
-widening.
+`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. `GP-4.4`
+has since recorded the protected live rehearsal blocked decision in
+`.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`.

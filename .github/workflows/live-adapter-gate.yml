@@ -64,6 +64,7 @@ jobs:
             --report-path live-adapter-gate-contract.v1.json \
             --evidence-path live-adapter-gate-evidence.v1.json \
             --environment-contract-path live-adapter-gate-environment-contract.v1.json \
+            --rehearsal-decision-path live-adapter-gate-rehearsal-decision.v1.json \
             --target-ref "$TARGET_REF" \
             --reason "$DISPATCH_REASON" \
             --requested-by "$REQUESTED_BY" \
@@ -78,4 +79,5 @@ jobs:
             live-adapter-gate-contract.v1.json
             live-adapter-gate-evidence.v1.json
             live-adapter-gate-environment-contract.v1.json
+            live-adapter-gate-rehearsal-decision.v1.json
           if-no-files-found: error

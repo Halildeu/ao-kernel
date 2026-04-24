@@ -247,6 +247,10 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
   the required protected environment (`ao-kernel-live-adapter-gate`) and secret
   handle (`AO_CLAUDE_CODE_CLI_AUTH`) without committing secret values, binding a
   live environment, invoking `claude`, or promoting this lane.
+- `GP-4.4` adds `live-adapter-gate-rehearsal-decision.v1.json`. The current
+  decision is `blocked_no_rehearsal` because the protected environment and
+  project-owned credential are not attested. It does not run `claude`, bind an
+  environment, or promote this lane.
 
 ### Failure modes
 

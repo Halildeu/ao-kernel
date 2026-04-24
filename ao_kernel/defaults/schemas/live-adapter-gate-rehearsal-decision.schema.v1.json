@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:live-adapter-gate-rehearsal-decision:v1",
+  "title": "Live Adapter Gate Protected Live Rehearsal Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "gate_id",
+    "adapter_id",
+    "support_tier",
+    "overall_status",
+    "decision",
+    "finding_code",
+    "generated_at",
+    "live_rehearsal_attempted",
+    "live_execution_allowed",
+    "support_widening",
+    "prerequisite_status",
+    "promotion_decision",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "live_adapter_gate_rehearsal_decision"
+    },
+    "program_id": {
+      "const": "GP-4.4"
+    },
+    "gate_id": {
+      "const": "ci-managed-live-adapter-gate"
+    },
+    "adapter_id": {
+      "const": "claude-code-cli"
+    },
+    "support_tier": {
+      "const": "Beta (operator-managed)"
+    },
+    "overall_status": {
+      "const": "blocked"
+    },
+    "decision": {
+      "const": "blocked_no_rehearsal"
+    },
+    "finding_code": {
+      "const": "live_gate_rehearsal_blocked_missing_protected_prerequisites"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "live_rehearsal_attempted": {
+      "const": false
+    },
+    "live_execution_allowed": {
+      "const": false
+    },
+    "support_widening": {
+      "const": false
+    },
+    "prerequisite_status": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "$ref": "#/$defs/prerequisite_status"
+      }
+    },
+    "promotion_decision": {
+      "$ref": "#/$defs/promotion_decision"
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "contains": {
+        "const": "live_gate_rehearsal_blocked_missing_protected_prerequisites"
+      },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "prerequisite_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prerequisite_id", "status", "finding_code", "detail"],
+      "properties": {
+        "prerequisite_id": {
+          "enum": [
+            "protected_environment_attestation",
+            "project_owned_credential",
+            "protected_live_preflight",
+            "governed_workflow_smoke"
+          ]
+        },
+        "status": {
+          "enum": ["blocked", "not_attested"]
+        },
+        "finding_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_certified",
+        "next_gate",
+        "reason"
+      ],
+      "properties": {
+        "support_widening_allowed": {
+          "const": false
+        },
+        "production_certified": {
+          "const": false
+        },
+        "next_gate": {
+          "const": "GP-4.5"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

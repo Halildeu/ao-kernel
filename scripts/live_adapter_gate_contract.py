@@ -15,12 +15,15 @@ if str(_REPO_ROOT) not in sys.path:
 from ao_kernel.live_adapter_gate import (  # noqa: E402
     EVIDENCE_ARTIFACT,
     ENVIRONMENT_CONTRACT_ARTIFACT,
+    REHEARSAL_DECISION_ARTIFACT,
     build_live_adapter_gate_environment_contract,
-    build_live_adapter_gate_report,
     build_live_adapter_gate_evidence_artifact,
+    build_live_adapter_gate_rehearsal_decision,
+    build_live_adapter_gate_report,
     render_live_adapter_gate_text,
     write_live_adapter_gate_environment_contract,
     write_live_adapter_gate_evidence_artifact,
+    write_live_adapter_gate_rehearsal_decision,
     write_live_adapter_gate_report,
 )
 
@@ -31,8 +34,8 @@ def main() -> int:
         description=(
             "Emit the design-only GP-4.1 live-adapter gate contract report. "
             "This command also writes the GP-4.2 evidence artifact plus the "
-            "GP-4.3 protected environment contract and never executes a live "
-            "external adapter."
+            "GP-4.3 protected environment contract plus the GP-4.4 blocked "
+            "live rehearsal decision and never executes a live external adapter."
         ),
     )
     parser.add_argument(
@@ -58,6 +61,12 @@ def main() -> int:
         type=Path,
         default=Path(ENVIRONMENT_CONTRACT_ARTIFACT),
         help="Path for the canonical GP-4.3 protected environment contract.",
+    )
+    parser.add_argument(
+        "--rehearsal-decision-path",
+        type=Path,
+        default=Path(REHEARSAL_DECISION_ARTIFACT),
+        help="Path for the canonical GP-4.4 protected live rehearsal decision.",
     )
     parser.add_argument("--target-ref", default="main", help="Protected target ref being evaluated.")
     parser.add_argument("--reason", default="", help="Manual dispatch reason.")
@@ -85,6 +94,13 @@ def main() -> int:
     write_live_adapter_gate_environment_contract(
         args.environment_contract_path,
         environment_contract,
+    )
+    rehearsal_decision = build_live_adapter_gate_rehearsal_decision(
+        generated_at=report["generated_at"],
+    )
+    write_live_adapter_gate_rehearsal_decision(
+        args.rehearsal_decision_path,
+        rehearsal_decision,
     )
 
     if args.output == "json":

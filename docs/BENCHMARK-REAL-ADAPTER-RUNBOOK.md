@@ -101,6 +101,9 @@ protected environment attestation slotlarını promotion blocker olarak listeler
 `GP-4.3` `live-adapter-gate-environment-contract.v1.json` artifact'ini ekler;
 bu required protected environment (`ao-kernel-live-adapter-gate`) ve secret
 handle (`AO_CLAUDE_CODE_CLI_AUTH`) adlarını kaydeder ama secret değeri içermez.
+`GP-4.4` `live-adapter-gate-rehearsal-decision.v1.json` artifact'ini ekler;
+bugünkü karar `blocked_no_rehearsal`dir çünkü protected environment ve
+project-owned credential attested değildir.
 Tüm artifact'ler bugün blocked/no-widening semantiğindedir; bu live benchmark
 veya real-adapter support kanıtı değildir.
 

@@ -87,8 +87,7 @@ explicit release-gate equivalent.
 
 ## Next Slice
 
-`GP-4.4` may run a protected live rehearsal only after the protected environment
-and project-owned credential are configured outside the repository and the run
-can attach preflight + governed workflow smoke evidence. If that cannot be
-done, `GP-4.4` should record an explicit blocked decision instead of widening
-support.
+`GP-4.4` has since recorded an explicit blocked decision in
+`.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`, because
+the protected environment and project-owned credential are not attested. The
+next GP-4 slice is `GP-4.5` support-boundary closeout.

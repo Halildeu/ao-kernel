@@ -121,6 +121,10 @@ ekler. Bu contract required protected environment adını
 `AO_CLAUDE_CODE_CLI_AUTH` olarak kaydeder; secret değeri commit etmez,
 environment oluşturmaz ve artifact hâlâ `live_execution_allowed=false` /
 `support_widening=false` döner.
+`GP-4.4` `live-adapter-gate-rehearsal-decision.v1.json` artifact'ini ekler.
+Mevcut karar `blocked_no_rehearsal`dir; protected environment ve
+project-owned credential attested olmadığı için canlı rehearsal denenmez,
+workflow environment'a bağlanmaz ve support widening yapılmaz.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify

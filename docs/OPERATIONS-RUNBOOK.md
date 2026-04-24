@@ -47,11 +47,16 @@ canlı adapter çalıştırmaz. Manual workflow
 `live-adapter-gate-contract.v1.json` ve schema-backed
 `live-adapter-gate-evidence.v1.json` artifact'lerini üretir. `GP-4.3` aynı
 bundle'a `live-adapter-gate-environment-contract.v1.json` artifact'ini ekler.
-Bu üçüncü artifact required protected environment
+`GP-4.4` aynı bundle'a
+`live-adapter-gate-rehearsal-decision.v1.json` artifact'ini ekler.
+Environment contract artifact'i required protected environment
 `ao-kernel-live-adapter-gate` ve secret handle `AO_CLAUDE_CODE_CLI_AUTH`
-adlarını kaydeder, ama secret değerlerini okumaz veya yazmaz. Contract/evidence
+adlarını kaydeder, ama secret değerlerini okumaz veya yazmaz. Rehearsal
+decision artifact'i `decision="blocked_no_rehearsal"` döner. Contract/evidence
 artifact'lerinde `finding_code="live_gate_not_implemented"`, environment
-contract artifact'inde `finding_code="live_gate_protected_environment_not_attested"`
+contract artifact'inde `finding_code="live_gate_protected_environment_not_attested"`,
+rehearsal decision artifact'inde
+`finding_code="live_gate_rehearsal_blocked_missing_protected_prerequisites"`
 beklenir; hepsi `overall_status="blocked"` / `support_widening=false`
 semantiğindedir. Workflow'un yeşil olması production-certified
 `claude-code-cli` support anlamına gelmez.
