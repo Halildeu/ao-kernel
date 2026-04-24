@@ -119,17 +119,25 @@ giriş kapılarını netleştirmektir.
   - Live-write yok
   - Stable support boundary unchanged kalır
 
-### `GP-2.5` — `gh-cli-pr` live-write rollback rehearsal (Next)
+### `GP-2.5` — `gh-cli-pr` live-write rollback rehearsal (Active)
 
-- Issue: TBD
-- Contract: TBD
+- Issue: [#373](https://github.com/Halildeu/ao-kernel/issues/373)
+- Contract:
+  `.claude/plans/GP-2.5-GH-CLI-PR-LIVE-WRITE-ROLLBACK-REHEARSAL.md`
 - Hedef: `GP-2.3` kararındaki next lane'i açmadan önce remote side-effect,
   disposable sandbox, rollback/idempotency ve support-boundary kapılarını
   yazılı hale getirmek.
+- No-side-effect kanıt:
+  - `python3 scripts/gh_cli_pr_smoke.py --mode preflight --output json --timeout-seconds 20`
+    -> `overall_status=pass`
+  - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head main --base main --output json --timeout-seconds 20`
+    -> `overall_status=blocked`, finding `gh_pr_live_write_same_head_base`
+- Next default:
+  - `GP-2.5a` disposable sandbox live-write rehearsal, ayrı onay/issue ile
 - Sınır:
-  - Bu roadmap güncellemesi runtime değişikliği yapmaz.
+  - Bu contract PR'ı runtime değişikliği yapmaz.
   - `gh-cli-pr` tam E2E remote PR açılışı hâlâ deferred support yüzeyidir.
-  - Yeni lane ayrı issue + ayrı contract ile açılmadan implementation başlamaz.
+  - Gerçek remote PR create bu contract PR'ında çalıştırılmaz.
 
 ## Gate Modeli
 

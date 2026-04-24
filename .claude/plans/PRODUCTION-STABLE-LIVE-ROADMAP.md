@@ -341,7 +341,8 @@ dogrulanir.
    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
    - Final verdict: `operator_managed_beta_keep`
 6. Varsayılan sıra:
-   - `Now`: `gh-cli-pr` live-write rollback rehearsal
+   - `Now`: `GP-2.5` `gh-cli-pr` live-write rollback rehearsal contract
+     (`.claude/plans/GP-2.5-GH-CLI-PR-LIVE-WRITE-ROLLBACK-REHEARSAL.md`)
    - `Next`: extension/support widening
    - `Later`: genel amaçlı production platform claim'i
 7. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
