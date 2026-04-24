@@ -175,9 +175,10 @@ kanıtla karara baglamak.
 
 ### ST-4 — Live Write ve Rollback Rehearsal
 
-**Durum:** Parked for support widening. Not a blocker for the narrow stable
-runtime release because live-write / remote side-effect surfaces are not stable
-shipped claims after `ST-2`.
+**Durum:** Completed for `gh-cli-pr` rehearsal evidence via `GP-2.5a`, but not
+promoted to stable shipped support. Not a blocker for the narrow stable runtime
+release because live-write / remote side-effect surfaces are not stable shipped
+claims after `ST-2`.
 
 **Amac:** Canli yazma yapacak yuzeyler icin geri alma ve kanit kontratini
 gercekte denemek.
@@ -191,8 +192,10 @@ gercekte denemek.
 
 **DoD:**
 
-- Live-write iddiasi olan her yuzey icin rollback kaniti var.
+- `gh-cli-pr` disposable sandbox rehearsal produced create -> verify ->
+  rollback evidence against `Halildeu/ao-kernel-sandbox`.
 - Rollback yoksa yuzey stable write scope'a alinmaz.
+- Support widening still requires a separate promotion decision PR.
 
 ### ST-5 — Deferred Correctness Closure
 
@@ -341,11 +344,11 @@ dogrulanir.
    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
    - Final verdict: `operator_managed_beta_keep`
 6. Varsayılan sıra:
-   - `Now`: `GP-2.5` `gh-cli-pr` live-write rollback rehearsal contract
+   - `Now`: `GP-2.5a` `gh-cli-pr` disposable sandbox rehearsal closeout
      (`.claude/plans/GP-2.5-GH-CLI-PR-LIVE-WRITE-ROLLBACK-REHEARSAL.md`)
    - `Next`: extension/support widening
    - `Later`: genel amaçlı production platform claim'i
 7. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
    production platform claim'i için `GP-2.4` sonucunda support boundary
-   genişlememiştir. Sıradaki kanıt hattı `gh-cli-pr` live-write rollback
-   rehearsal'dır.
+   genişlememiştir. `GP-2.5a` sandbox rehearsal kanıtı support widening'i
+   otomatik açmaz; ayrı promotion decision gerekir.

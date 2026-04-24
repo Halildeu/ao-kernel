@@ -1,8 +1,9 @@
 # GP-2.5 — gh-cli-pr Live-Write Rollback Rehearsal Contract
 
-**Status:** Active  
+**Status:** Completed — `rehearsal_pass_keep_beta`
 **Date:** 2026-04-24  
 **Tracker:** [#373](https://github.com/Halildeu/ao-kernel/issues/373)  
+**Live rehearsal tracker:** [#375](https://github.com/Halildeu/ao-kernel/issues/375)
 **Parent:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)  
 **Parent roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 
@@ -72,6 +73,62 @@ Sonuç:
 2. `findings=["gh_pr_live_write_same_head_base"]`
 3. `pr_live_write_verify` ve `pr_live_write_rollback` checks `skip`
 4. Remote PR side effect oluşmadı.
+
+## Disposable Live-Write Rehearsal Evidence
+
+2026-04-24 tarihinde `GP-2.5a` kapsamında disposable sandbox rehearsal
+çalıştırıldı.
+
+Hedef:
+
+1. repo: `Halildeu/ao-kernel-sandbox`
+2. repo visibility: private
+3. default branch: `main`
+4. head branch: `smoke/gp25-livewrite-20260424T024918Z`
+5. artifact root: `/tmp/ao-kernel-gp25a-gh-cli-pr-live-write`
+
+Komut:
+
+```bash
+python3 scripts/gh_cli_pr_smoke.py \
+  --mode live-write \
+  --allow-live-write \
+  --repo Halildeu/ao-kernel-sandbox \
+  --head smoke/gp25-livewrite-20260424T024918Z \
+  --base main \
+  --output json \
+  --timeout-seconds 30 \
+  --report-path /tmp/ao-kernel-gp25a-gh-cli-pr-live-write/gh-cli-pr-live-write.report.json
+```
+
+Sonuç:
+
+1. `overall_status=pass`
+2. `adapter_id=gh-cli-pr`
+3. `repo_name=Halildeu/ao-kernel-sandbox`
+4. `findings=[]`
+5. `version`, `auth_status`, `manifest_contract`, `repo_view`,
+   `pr_live_write`, `pr_live_write_verify`, `pr_live_write_rollback` checks
+   pass
+6. created PR: `https://github.com/Halildeu/ao-kernel-sandbox/pull/1`
+7. independent final PR state: `CLOSED`
+8. remote head ref cleanup: `404 Not Found` for
+   `heads/smoke/gp25-livewrite-20260424T024918Z`
+
+İlk denemede helper, current GitHub CLI için geçersiz olan
+`gh repo view --repo <repo>` çağrısında fail-closed durdu. Bu regression
+`gh repo view <repo> --json ...` şeklinde dar scope'la düzeltildi ve
+`tests/test_gh_cli_pr_smoke.py::test_repo_override_uses_positional_repo_view_arg`
+ile pinlendi. İlk denemede PR oluşturulmadı; yalnız push edilen ephemeral head
+branch temizlendi.
+
+Final verdict:
+
+`rehearsal_pass_keep_beta`. Disposable sandbox create -> verify -> rollback
+zinciri çalışmıştır, ancak bu tek başına `gh-cli-pr` full remote PR opening'i
+stable shipped support'a yükseltmez. Lane Beta/operator-managed kalır; support
+widening için ayrı promotion PR'ı, tekrar edilebilir kanıt ve docs parity
+gerekir.
 
 ## Rehearsal Target Contract
 
@@ -173,9 +230,9 @@ değerlendirilir.
 
 ## Out of Scope
 
-- Bu contract PR'ında gerçek remote PR create çalıştırmak.
-- `bug_fix_flow` release closure support promotion.
 - Stable support boundary widening.
+- Production repo üzerinde gerçek remote PR create çalıştırmak.
+- `bug_fix_flow` release closure support promotion.
 - Version bump, tag veya publish.
 - `claude-code-cli` support verdict'ini değiştirmek.
 
@@ -203,3 +260,15 @@ davranışıdır.
 4. Disposable live-write rehearsal için exact command/artifact/cleanup/verdict
    kuralları netleşir.
 5. Stable support boundary unchanged kalır.
+
+## Closeout
+
+`GP-2.5` ve `GP-2.5a` birlikte şu kararı üretmiştir:
+
+1. no-side-effect preflight ve guard smoke geçmiştir;
+2. sandbox live-write create -> verify -> rollback zinciri geçmiştir;
+3. cleanup bağımsız olarak doğrulanmıştır;
+4. repo override helper bug'ı testle kapatılmıştır;
+5. stable support boundary unchanged kalmıştır;
+6. next action support widening değil, gerekirse ayrı `gh-cli-pr` promotion
+   decision PR'ıdır.
