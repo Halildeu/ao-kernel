@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit the GP-4.1 CI-managed live adapter gate skeleton report."""
+"""Emit the fail-closed GP-4 live adapter gate reports."""
 
 from __future__ import annotations
 
@@ -13,8 +13,11 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from ao_kernel.live_adapter_gate import (  # noqa: E402
+    EVIDENCE_ARTIFACT,
     build_live_adapter_gate_report,
+    build_live_adapter_gate_evidence_artifact,
     render_live_adapter_gate_text,
+    write_live_adapter_gate_evidence_artifact,
     write_live_adapter_gate_report,
 )
 
@@ -24,7 +27,8 @@ def main() -> int:
         prog="live_adapter_gate_contract.py",
         description=(
             "Emit the design-only GP-4.1 live-adapter gate contract report. "
-            "This command never executes a live external adapter."
+            "This command also writes the GP-4.2 evidence artifact and never "
+            "executes a live external adapter."
         ),
     )
     parser.add_argument(
@@ -38,6 +42,12 @@ def main() -> int:
         type=Path,
         default=Path("live-adapter-gate-contract.v1.json"),
         help="Path for the canonical JSON report artifact.",
+    )
+    parser.add_argument(
+        "--evidence-path",
+        type=Path,
+        default=Path(EVIDENCE_ARTIFACT),
+        help="Path for the canonical GP-4.2 evidence artifact.",
     )
     parser.add_argument("--target-ref", default="main", help="Protected target ref being evaluated.")
     parser.add_argument("--reason", default="", help="Manual dispatch reason.")
@@ -54,6 +64,11 @@ def main() -> int:
         head_sha=args.head_sha,
     )
     write_live_adapter_gate_report(args.report_path, report)
+    evidence_artifact = build_live_adapter_gate_evidence_artifact(
+        report,
+        contract_report_path=args.report_path.name,
+    )
+    write_live_adapter_gate_evidence_artifact(args.evidence_path, evidence_artifact)
 
     if args.output == "json":
         print(json.dumps(report, indent=2, sort_keys=True))

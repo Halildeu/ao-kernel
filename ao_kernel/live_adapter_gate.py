@@ -1,26 +1,37 @@
 """CI-managed live adapter gate contract helpers.
 
-The GP-4.1 gate is intentionally a skeleton: it emits a machine-readable
-contract report but does not execute external live adapters.
+The GP-4 gate is intentionally fail-closed: current helpers emit
+machine-readable blocked reports/artifacts but do not execute external live
+adapters.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import UTC, datetime
+from importlib import resources
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Any, Literal, TypedDict, cast
+
+from jsonschema import Draft202012Validator
 
 SCHEMA_VERSION = "1"
 PROGRAM_ID = "GP-4.1"
+EVIDENCE_PROGRAM_ID = "GP-4.2"
 GATE_ID = "ci-managed-live-adapter-gate"
 ADAPTER_ID = "claude-code-cli"
 SUPPORT_TIER = "Beta (operator-managed)"
 BLOCKED_FINDING = "live_gate_not_implemented"
+EVIDENCE_ARTIFACT_KIND = "live_adapter_gate_evidence"
+EVIDENCE_SCHEMA_NAME = "live-adapter-gate-evidence.schema.v1.json"
+CONTRACT_REPORT_ARTIFACT = "live-adapter-gate-contract.v1.json"
+EVIDENCE_ARTIFACT = "live-adapter-gate-evidence.v1.json"
 
 
 CheckStatus = Literal["pass", "blocked", "skipped"]
 OverallStatus = Literal["blocked"]
+EvidenceRequirementStatus = Literal["present", "blocked"]
 
 
 class LiveAdapterGateTrigger(TypedDict):
@@ -57,6 +68,55 @@ class LiveAdapterGateReport(TypedDict):
     support_widening: bool
     trigger: LiveAdapterGateTrigger
     checks: list[LiveAdapterGateCheck]
+    findings: list[str]
+
+
+class LiveAdapterGateSourceReport(TypedDict):
+    """Digest pointer to the underlying gate contract report."""
+
+    path: str
+    schema_version: str
+    sha256: str
+
+
+class LiveAdapterGateEvidenceRequirement(TypedDict):
+    """Single evidence slot required before support can be widened."""
+
+    requirement_id: str
+    artifact_path: str
+    status: EvidenceRequirementStatus
+    finding_code: str | None
+    required_for_promotion: bool
+    detail: str
+
+
+class LiveAdapterGatePromotionDecision(TypedDict):
+    """Fail-closed promotion decision encoded in the evidence artifact."""
+
+    support_widening_allowed: bool
+    production_certified: bool
+    reason: str
+    required_before_widening: list[str]
+
+
+class LiveAdapterGateEvidenceArtifact(TypedDict):
+    """Machine-readable GP-4.2 evidence artifact contract."""
+
+    schema_version: str
+    artifact_kind: str
+    program_id: str
+    gate_id: str
+    adapter_id: str
+    support_tier: str
+    overall_status: OverallStatus
+    finding_code: str
+    generated_at: str
+    live_execution_attempted: bool
+    support_widening: bool
+    trigger: LiveAdapterGateTrigger
+    source_report: LiveAdapterGateSourceReport
+    evidence_requirements: list[LiveAdapterGateEvidenceRequirement]
+    promotion_decision: LiveAdapterGatePromotionDecision
     findings: list[str]
 
 
@@ -130,11 +190,132 @@ def build_live_adapter_gate_report(
     }
 
 
+def _canonical_json_bytes(payload: object) -> bytes:
+    """Return deterministic bytes for report digests."""
+
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def live_adapter_gate_report_sha256(report: LiveAdapterGateReport) -> str:
+    """Hash the logical contract report payload, independent of pretty-printing."""
+
+    return hashlib.sha256(_canonical_json_bytes(report)).hexdigest()
+
+
+def build_live_adapter_gate_evidence_artifact(
+    report: LiveAdapterGateReport,
+    *,
+    contract_report_path: str = CONTRACT_REPORT_ARTIFACT,
+    generated_at: str | None = None,
+) -> LiveAdapterGateEvidenceArtifact:
+    """Build the GP-4.2 evidence artifact wrapper.
+
+    The artifact is intentionally blocked until the protected live preflight and
+    governed workflow-smoke reports are attached by a later slice.
+    """
+
+    timestamp = generated_at or report["generated_at"]
+    preflight_finding = "live_gate_preflight_not_collected"
+    workflow_finding = "live_gate_workflow_smoke_not_collected"
+    environment_finding = "live_gate_protected_environment_not_attested"
+    findings = [BLOCKED_FINDING, preflight_finding, workflow_finding, environment_finding]
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": EVIDENCE_ARTIFACT_KIND,
+        "program_id": EVIDENCE_PROGRAM_ID,
+        "gate_id": report["gate_id"],
+        "adapter_id": report["adapter_id"],
+        "support_tier": report["support_tier"],
+        "overall_status": report["overall_status"],
+        "finding_code": report["finding_code"],
+        "generated_at": timestamp,
+        "live_execution_attempted": report["live_execution_attempted"],
+        "support_widening": report["support_widening"],
+        "trigger": report["trigger"],
+        "source_report": {
+            "path": contract_report_path,
+            "schema_version": report["schema_version"],
+            "sha256": live_adapter_gate_report_sha256(report),
+        },
+        "evidence_requirements": [
+            {
+                "requirement_id": "gate_contract_report",
+                "artifact_path": contract_report_path,
+                "status": "present",
+                "finding_code": None,
+                "required_for_promotion": True,
+                "detail": "Design-only gate contract report is attached.",
+            },
+            {
+                "requirement_id": "preflight_report",
+                "artifact_path": "claude-code-cli-preflight.v1.json",
+                "status": "blocked",
+                "finding_code": preflight_finding,
+                "required_for_promotion": True,
+                "detail": "Protected live preflight report is not collected by GP-4.2.",
+            },
+            {
+                "requirement_id": "governed_workflow_smoke_report",
+                "artifact_path": "claude-code-cli-workflow-smoke.v1.json",
+                "status": "blocked",
+                "finding_code": workflow_finding,
+                "required_for_promotion": True,
+                "detail": "Protected governed workflow-smoke report is not collected by GP-4.2.",
+            },
+            {
+                "requirement_id": "protected_environment_attestation",
+                "artifact_path": "live-adapter-gate-environment.v1.json",
+                "status": "blocked",
+                "finding_code": environment_finding,
+                "required_for_promotion": True,
+                "detail": "Protected GitHub environment and project-owned identity are not attested by GP-4.2.",
+            },
+        ],
+        "promotion_decision": {
+            "support_widening_allowed": False,
+            "production_certified": False,
+            "reason": (
+                "The manual gate emitted schema-valid blocked evidence, but no protected live "
+                "adapter preflight or governed workflow-smoke evidence exists."
+            ),
+            "required_before_widening": [
+                "project_owned_identity",
+                "protected_environment",
+                "preflight_report",
+                "governed_workflow_smoke_report",
+                "docs_parity",
+            ],
+        },
+        "findings": findings,
+    }
+
+
+def load_live_adapter_gate_evidence_schema() -> dict[str, Any]:
+    """Load the bundled GP-4.2 evidence artifact JSON Schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(EVIDENCE_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
+def validate_live_adapter_gate_evidence_artifact(artifact: object) -> None:
+    """Validate a GP-4.2 evidence artifact against the bundled schema."""
+
+    Draft202012Validator(load_live_adapter_gate_evidence_schema()).validate(artifact)
+
+
 def write_live_adapter_gate_report(path: Path, report: LiveAdapterGateReport) -> None:
     """Write a canonical JSON report to ``path``."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_live_adapter_gate_evidence_artifact(path: Path, artifact: LiveAdapterGateEvidenceArtifact) -> None:
+    """Write a canonical GP-4.2 evidence artifact to ``path``."""
+
+    validate_live_adapter_gate_evidence_artifact(artifact)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def render_live_adapter_gate_text(report: LiveAdapterGateReport) -> str:

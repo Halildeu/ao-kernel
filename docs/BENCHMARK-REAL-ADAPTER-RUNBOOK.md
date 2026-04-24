@@ -94,9 +94,12 @@ doğrular; external `claude` binary/session auth, açık `KB-001`/`KB-002` ve
 CI-managed live adapter gate'i olmaması support widening'i engeller.
 `GP-4` bu eksik gate'i tasarım konusu yapar; runbook'taki lokal helper geçişi
 tek başına production-certified support değildir.
-`GP-4.1` manual workflow skeleton'ı yalnız `live-adapter-gate-contract.v1.json`
-üretir ve artifact `overall_status="blocked"` döner; bu live benchmark veya
-real-adapter support kanıtı değildir.
+`GP-4.1` manual workflow skeleton'ı `live-adapter-gate-contract.v1.json`
+üretir. `GP-4.2` ayrıca schema-backed `live-adapter-gate-evidence.v1.json`
+artifact'ini üretir; bu artifact live preflight, governed workflow smoke ve
+protected environment attestation slotlarını promotion blocker olarak listeler.
+Her iki artifact de bugün blocked/no-widening semantiğindedir; bu live benchmark
+veya real-adapter support kanıtı değildir.
 
 ### 1.3 Failure-mode matrix
 

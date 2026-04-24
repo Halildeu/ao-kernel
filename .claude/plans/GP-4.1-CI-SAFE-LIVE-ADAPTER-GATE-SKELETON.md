@@ -75,6 +75,7 @@ governed workflow smoke evidence.
 
 ## Next Slice
 
-`GP-4.2` should define the evidence artifact contract for the eventual
-protected live gate, including exact JSON report fields for preflight,
-workflow-smoke, missing credential, policy, timeout, and cost/budget outcomes.
+`GP-4.2` has since added the schema-backed evidence artifact contract in
+`.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`. The next
+active GP-4 slice is `GP-4.3`: protected GitHub environment / secret contract
+and fork-safety rules.
