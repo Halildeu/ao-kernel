@@ -275,6 +275,52 @@ def test_auth_status_not_logged_in_blocks_preflight_contract() -> None:
     assert auth_check["observed"]["loggedIn"] is False
 
 
+def test_auth_status_non_json_blocks_preflight_contract() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(cmd, stdout="not json\n")
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:1] == ("/fake/claude",):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "status": "ok",
+                        "review_findings": {
+                            "schema_version": "1",
+                            "findings": [],
+                            "summary": "smoke ok",
+                        },
+                    }
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    payload = _json_payload(report)
+
+    assert payload["overall_status"] == "blocked"
+    assert "claude_auth_status_not_json" in payload["findings"]
+    auth_check = next(
+        check for check in payload["checks"] if check["name"] == "auth_status"
+    )
+    assert auth_check["status"] == "fail"
+    assert auth_check["finding_code"] == "claude_auth_status_not_json"
+
+
 def test_prompt_access_denied_is_classified_explicitly() -> None:
     def runner(
         argv: Sequence[str],
@@ -554,6 +600,47 @@ def test_manifest_non_json_output_is_contract_failure() -> None:
         check for check in report.checks if check.name == "manifest_invocation"
     )
     assert manifest_check.finding_code == "manifest_output_not_json"
+
+
+def test_manifest_json_missing_status_is_contract_failure() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:1] == ("/fake/claude",):
+            return _result(cmd, stdout=json.dumps({"review_findings": {}}))
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "manifest_output_missing_status" in report.findings
+    manifest_check = next(
+        check for check in report.checks if check.name == "manifest_invocation"
+    )
+    assert manifest_check.finding_code == "manifest_output_missing_status"
+    assert manifest_check.observed["stdout_keys"] == ["review_findings"]
 
 
 def test_success_path_returns_pass_report() -> None:

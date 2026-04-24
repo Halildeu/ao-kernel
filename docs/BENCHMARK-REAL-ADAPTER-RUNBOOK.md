@@ -97,10 +97,14 @@ Aşağıdaki stable finding code'lar ise promotion blocker'dır:
 |---|---|---|
 | `claude` binary missing | `claude_binary_missing` | helper preflight |
 | `auth_status` not logged in | `claude_not_logged_in` | helper preflight |
+| `auth_status` malformed JSON | `claude_auth_status_not_json` | helper preflight |
 | `prompt_access` fail despite auth pass | `prompt_access_denied` | helper preflight |
+| prompt invocation timeout | `prompt_smoke_timeout` | helper preflight |
 | manifest invocation timeout | `manifest_smoke_timeout` | helper preflight |
 | manifest non-JSON output | `manifest_output_not_json` | helper preflight |
+| manifest JSON missing `status` | `manifest_output_missing_status` | helper preflight |
 | adapter non-zero exit | `adapter_non_zero_exit` | governed workflow smoke |
+| adapter timeout | `adapter_timeout` | governed workflow smoke |
 | malformed workflow output | `output_parse_failed` | governed workflow smoke |
 | policy deny before invocation | `policy_denied` | governed workflow smoke |
 
