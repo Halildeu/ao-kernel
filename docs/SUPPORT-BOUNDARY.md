@@ -11,7 +11,7 @@ operator-only, or just contract inventory?"
 | Layer | Included surfaces | Verification |
 |---|---|---|
 | Shipped baseline | module entrypoints, `ao-kernel doctor`, bundled `review_ai_flow`, `examples/demo_review.py`, packaging smoke, `PRJ-KERNEL-API` `system_status` / `doc_nav_check` actions | entrypoint checks, doctor, demo review smoke, behavior tests, CI |
-| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit write contract, real-adapter benchmark full mode | explicit smoke helpers and runbooks |
+| Beta (operator-managed) | `claude-code-cli` helper-backed lane, `gh-cli-pr` helper-backed preflight + live-write readiness probe lane, `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit write contract, real-adapter benchmark full mode, experimental read-only `repo scan` | explicit smoke helpers, runbooks, and schema-backed local artifacts |
 | Contract inventory | bundled defaults, manifests, extensions, example inventory | loader/validator and truth audit only |
 | Deferred | `bug_fix_flow` release closure, live `gh-cli-pr` PR opening, roadmap/spec-only demo flow, adapter-path `cost_usd` reconcile | not a public support claim; internal benchmark/runtime wiring may exist without widening the support boundary (`PB-8.3` verdict `stay_deferred`, `GP-1.3` revalidation ile teyitli) |
 
@@ -79,6 +79,8 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `python3 scripts/kernel_api_write_smoke.py --output text`
 - `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks
+- `python3 -m ao_kernel repo scan --project-root . --output json` for
+  experimental read-only repo intelligence artifacts under `.ao/context/`
 
 Operator prerequisite contract (PB-9.1):
 
@@ -131,6 +133,13 @@ kalır.
 
 `PB-9.4` closeout kararı `stay_beta_operator_managed` olduğu için bu satırların
 support tier'i widening almadan korunur.
+
+The `repo scan` surface is Beta / experimental and read-only for RI-1. It may
+write only `.ao/context/repo_map.json` and
+`.ao/context/repo_index_manifest.json`. It does not create root authority files
+such as `CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, or `CODEX_CONTEXT.md`, and
+does not include AST/import graphing, vector indexing, LLM summaries, MCP tools,
+or context-pack export.
 
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
