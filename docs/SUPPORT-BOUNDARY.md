@@ -188,6 +188,13 @@ repo-intelligence MCP tool is registered, the `repo` CLI surface remains
 limited to `scan`, `index`, and `query`, and `repo query` does not create root
 authority exports, MCP config exports, or `.ao/context/repo_export_plan.json`.
 
+`GP-5.3e` promotes this surface only to a beta explicit-handoff workflow
+building block: a future GP-5 read-only workflow rehearsal may use
+`repo query --output markdown` when the operator supplies that Markdown as
+visible input. This is not production workflow integration and does not add
+automatic prompt injection, MCP tools, root exports, workflow runtime wiring,
+`context_compiler` auto-feed, or real-adapter support widening.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

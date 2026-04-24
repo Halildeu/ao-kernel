@@ -1,15 +1,15 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.3d` no-MCP/no-root-export guard closeout
+**Status:** Active program setup / `GP-5.3e` workflow building-block decision closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `54de6e9` for the `GP-5.3d` no-MCP/no-root-export guard
+**Authority:** `origin/main` at `7f937ec` for the `GP-5.3e` workflow building-block decision
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.3d` - no-MCP/no-root-export guard
-**Branch:** `codex/gp5-3d-no-mcp-root-export`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3d`
+**Current slice:** `GP-5.3e` - repo-intelligence workflow building-block decision
+**Branch:** `codex/gp5-3e-workflow-building-block`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3e`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
-`GP-5.3b` completed, `GP-5.3c` completed
+`GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -325,6 +325,18 @@ exports, or `.ao/context/repo_export_plan.json`.
 The detailed decision record is
 `.claude/plans/GP-5.3d-NO-MCP-NO-ROOT-EXPORT-GUARD.md`.
 
+**GP-5.3e closeout candidate:**
+
+`GP-5.3e` promotes repo-intelligence read-only retrieval to a beta workflow
+building block only through explicit operator-visible handoff. The allowed path
+is `repo query --output markdown` supplied by the operator as visible input to a
+future GP-5 read-only workflow rehearsal. This is not production workflow
+integration: no automatic prompt injection, no MCP tool, no root export, no
+`context_compiler` auto-feed, and no real-adapter support widening are implied.
+
+The detailed decision record is
+`.claude/plans/GP-5.3e-REPO-INTELLIGENCE-WORKFLOW-BUILDING-BLOCK-DECISION.md`.
+
 **DoD:**
 
 1. Retrieval output is evidence-backed, bounded, and stale-safe.
@@ -528,8 +540,8 @@ promotion.
 | 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Completed on `main`; beta read-only evidence contract strengthened; no support widening. |
 | 5 | `GP-5.3b` | Agent context handoff contract | Completed on `main`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
 | 6 | `GP-5.3c` | Workflow opt-in design contract | Completed on `main`; schema-backed future opt-in; runtime remains unwired. |
-| 7 | `GP-5.3d` | No-MCP/no-root-export guard | Closeout candidate: negative boundary pinned; no support widening. |
-| 8 | `GP-5.3e` | Repo-intelligence workflow building-block promotion decision | Next unblocked decision slice after `GP-5.3d`. |
+| 7 | `GP-5.3d` | No-MCP/no-root-export guard | Completed on `main`; negative boundary pinned; no support widening. |
+| 8 | `GP-5.3e` | Repo-intelligence workflow building-block promotion decision | Closeout candidate: beta explicit-handoff building block; no production support widening. |
 | 9 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 10 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
@@ -553,7 +565,11 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5 opens with no support widening.
+GP-5.3e closes the repo-intelligence pre-rehearsal decision gate with
+`promote_beta_explicit_handoff_building_block`. Repo-intelligence read-only
+Markdown may now be used as explicit operator-provided context in future GP-5
+read-only workflow rehearsals. This is still not production workflow
+integration and does not widen real-adapter or live-write support.
 
 Current product wording remains:
 
@@ -561,6 +577,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.3c`, then start `GP-5.3d` no-MCP/no-root-export
-   guard unless protected environment/credential attestation is provided first
-   for `GP-5.1b`.
+5. next step: merge `GP-5.3e`, then start `GP-5.4a` governed read-only
+   workflow rehearsal unless protected environment/credential attestation is
+   provided first for `GP-5.1b`.
