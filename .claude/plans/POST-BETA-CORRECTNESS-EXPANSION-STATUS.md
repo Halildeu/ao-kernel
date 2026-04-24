@@ -126,7 +126,8 @@ ayrı ayrı görünür kılmak.
 - **RI-5a export-plan preview:** PR `#457` merged at `a2144da`; closeout PR `#458` merged at `0a6eacb`
 - **RI-5b design gate issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`closed by PR #460`)
 - **RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (`closed by PR #465`)
-- **RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (`closes with closeout PR`)
+- **RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (`closed by PR #467`)
+- **RI-5b post-closeout next-slice cleanup issue:** [#468](https://github.com/Halildeu/ao-kernel/issues/468) (`closes with this status cleanup PR`)
 - **Current mode:** stable maintenance / no active general-purpose widening
   gate. RI-5b is merged as Beta/operator-managed root export, not a production
   platform claim. Future stable widening still requires protected
@@ -1484,16 +1485,18 @@ This is not support widening and does not grant root authority write support.
 9. Closeout evidence:
    PR CI passed, local validation recorded in the RI-5 record includes lint,
    mypy, targeted tests, doctor, packaging smoke, full coverage, and diff check
-10. Next slice:
-   RI-5b confirmed create-only root export design gate. Implementation must not
-   start until the design gate pins `CONFIRM_RI5B_ROOT_EXPORT_V1`, create-only
-   default behavior, path ownership checks, root snapshot/rollback evidence,
-   and deny-path tests for missing/stale plans, existing-file conflicts,
-   symlinks, and path escapes.
+10. Subsequent slices:
+   RI-5b confirmed create-only root export design and implementation have since
+   closed. The preview-only RI-5a boundary remains historical context; current
+   status is no active RI-5 widening slice beyond Beta/operator-managed
+   create-only root export.
 
 ## 34. RI-5b Confirmed Create-Only Root Export Design Gate
 
-`RI-5b` design gate is complete. This is not the implementation slice.
+`RI-5b` design gate and create-only implementation are complete. The remaining
+root export expansion lanes are not active; overwrite/update, higher-authority
+targets, MCP/root export tooling, `context_compiler` wiring, or support
+widening require a new scoped design gate from current `origin/main`.
 
 1. Issue:
    [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`closed`)
@@ -1517,7 +1520,16 @@ This is not support widening and does not grant root authority write support.
    - deny paths cover missing/stale plans, existing-file conflicts, symlinks,
      path escapes, unsupported targets, and invalid confirmation
    - root snapshot and rollback/no-corruption evidence is required
-8. Closeout:
-   local `main` synchronized with `origin/main`; design branch/worktree cleaned
-9. Next slice:
-   RI-5b create-only implementation PR from current `origin/main`.
+8. Implementation:
+   PR [#465](https://github.com/Halildeu/ao-kernel/pull/465), merged to `main`
+   at `6234476`; issue [#464](https://github.com/Halildeu/ao-kernel/issues/464)
+   closed
+9. Closeout:
+   local `main` synchronized with `origin/main`; design and implementation
+   branch/worktree cleanup completed; closeout issue
+   [#466](https://github.com/Halildeu/ao-kernel/issues/466) closed by PR
+   [#467](https://github.com/Halildeu/ao-kernel/pull/467)
+10. Next slice:
+   none active. Any widening beyond Beta/operator-managed create-only root
+   export requires a new scoped issue, design gate, branch, PR, and support
+   boundary decision.

@@ -666,5 +666,9 @@ Final product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next scoped runtime slice: `RI-5b` create-only root export implementation
-   from current `origin/main`.
+5. next scoped runtime slice: none active. `RI-5b` create-only root export has
+   merged as Beta/operator-managed with `support_widening=false`; any future
+   overwrite/update, higher-authority export target, MCP wiring,
+   `context_compiler` integration, real-adapter promotion, or production
+   platform claim must open as a new scoped issue/branch from current
+   `origin/main`.
