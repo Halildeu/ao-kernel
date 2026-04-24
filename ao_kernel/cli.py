@@ -142,27 +142,36 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
 def _cmd_repo_index(args: argparse.Namespace) -> int:
     import json as _json
     import os as _os
+    from dataclasses import replace as _replace
     from pathlib import Path as _Path
 
     from ao_kernel._internal.repo_intelligence.artifacts import (
         REPO_CHUNKS_FILENAME,
         REPO_VECTOR_INDEX_MANIFEST_FILENAME,
+        validate_repo_vector_index_manifest,
         validate_repo_chunks,
     )
     from ao_kernel.context.embedding_config import resolve_embedding_config
+    from ao_kernel.context.vector_store_resolver import resolve_vector_store
     from ao_kernel.repo_intelligence import (
+        CONFIRM_VECTOR_INDEX,
         build_repo_vector_write_plan,
+        write_repo_vector_index_manifest_artifact,
+        write_repo_vectors,
         write_repo_vector_write_plan_artifact,
     )
 
     if args.dry_run and args.write_vectors:
         print("repo index accepts exactly one mode: --dry-run or --write-vectors", file=sys.stderr)
         return 1
-    if args.write_vectors:
-        print("repo index --write-vectors is not implemented in this tranche; use --dry-run", file=sys.stderr)
+    if not args.dry_run and not args.write_vectors:
+        print("repo index requires --dry-run or --write-vectors", file=sys.stderr)
         return 1
-    if not args.dry_run:
-        print("repo index currently requires --dry-run", file=sys.stderr)
+    if args.write_vectors and args.confirm_vector_index != CONFIRM_VECTOR_INDEX:
+        print(
+            f"repo index --write-vectors requires --confirm-vector-index {CONFIRM_VECTOR_INDEX}",
+            file=sys.stderr,
+        )
         return 1
 
     project_root = _Path(args.project_root or ".").resolve()
@@ -199,6 +208,7 @@ def _cmd_repo_index(args: argparse.Namespace) -> int:
     if previous_index_manifest_path.is_file():
         try:
             previous_index_manifest = _load_repo_json_artifact(previous_index_manifest_path)
+            validate_repo_vector_index_manifest(previous_index_manifest)
         except Exception as exc:  # noqa: BLE001 - stale cleanup planning must be explicit
             print(f"invalid prior repo vector index manifest: {exc}", file=sys.stderr)
             return 1
@@ -206,6 +216,11 @@ def _cmd_repo_index(args: argparse.Namespace) -> int:
     embedding_config = resolve_embedding_config(workspace=workspace_dir)
     embedding_provider = args.embedding_provider or embedding_config.provider
     embedding_model = args.embedding_model or embedding_config.model
+    effective_embedding_config = _replace(
+        embedding_config,
+        provider=embedding_provider,
+        model=embedding_model,
+    )
     try:
         embedding_dimension = _parse_repo_embedding_dimension(
             args.embedding_dimension or _os.environ.get("AO_KERNEL_EMBEDDING_DIMENSION")
@@ -222,34 +237,95 @@ def _cmd_repo_index(args: argparse.Namespace) -> int:
             embedding_dimension=embedding_dimension,
             previous_index_manifest=previous_index_manifest,
         )
-        write_result = write_repo_vector_write_plan_artifact(
-            context_dir=context_dir,
-            vector_write_plan=vector_write_plan,
-        )
     except Exception as exc:  # noqa: BLE001 - schema/config failures are command failures
         print(f"repo vector write-plan failed: {exc}", file=sys.stderr)
         return 1
 
+    if args.dry_run:
+        try:
+            write_result = write_repo_vector_write_plan_artifact(
+                context_dir=context_dir,
+                vector_write_plan=vector_write_plan,
+            )
+        except Exception as exc:  # noqa: BLE001 - schema/write failures are command failures
+            print(f"repo vector write-plan failed: {exc}", file=sys.stderr)
+            return 1
+        summary = {
+            "status": "ok",
+            "command": "repo index",
+            "dry_run": True,
+            "project_root": ".",
+            "workspace_root": _repo_display_workspace(project_root, workspace_dir),
+            "summary": vector_write_plan["summary"],
+            "embedding_space": vector_write_plan["embedding_space"],
+            "artifacts": write_result["artifacts"],
+        }
+        if args.output == "json":
+            print(_json.dumps(summary, indent=2, sort_keys=True))
+        else:
+            print("repo index dry-run complete")
+            print("project_root: .")
+            print(f"workspace_root: {summary['workspace_root']}")
+            print(f"planned_upserts: {vector_write_plan['summary']['planned_upserts']}")
+            print(f"planned_deletes: {vector_write_plan['summary']['planned_deletes']}")
+            print("artifacts:")
+            for artifact in write_result["artifacts"]:
+                print(f"- {artifact['path']}")
+        return 0
+
+    if not effective_embedding_config.resolve_api_key():
+        print("embedding API key is required for repo vector writes", file=sys.stderr)
+        return 1
+
+    vector_store = None
+    owns_vector_store = False
+    try:
+        vector_store, owns_vector_store = resolve_vector_store(workspace=workspace_dir)
+        if vector_store is None:
+            print("repo index --write-vectors requires a configured vector backend", file=sys.stderr)
+            return 1
+        write_result = write_repo_vector_write_plan_artifact(
+            context_dir=context_dir,
+            vector_write_plan=vector_write_plan,
+        )
+        vector_index_manifest = write_repo_vectors(
+            project_root=project_root,
+            vector_write_plan=vector_write_plan,
+            vector_store=vector_store,
+            embedding_config=effective_embedding_config,
+        )
+        index_write_result = write_repo_vector_index_manifest_artifact(
+            context_dir=context_dir,
+            vector_index_manifest=vector_index_manifest,
+        )
+    except Exception as exc:  # noqa: BLE001 - schema/config failures are command failures
+        print(f"repo vector index failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if owns_vector_store and vector_store is not None:
+            vector_store.close()
     summary = {
         "status": "ok",
         "command": "repo index",
-        "dry_run": True,
+        "dry_run": False,
         "project_root": ".",
         "workspace_root": _repo_display_workspace(project_root, workspace_dir),
-        "summary": vector_write_plan["summary"],
-        "embedding_space": vector_write_plan["embedding_space"],
-        "artifacts": write_result["artifacts"],
+        "summary": vector_index_manifest["summary"],
+        "embedding_space": vector_index_manifest["embedding_space"],
+        "artifacts": [*write_result["artifacts"], *index_write_result["artifacts"]],
     }
     if args.output == "json":
         print(_json.dumps(summary, indent=2, sort_keys=True))
     else:
-        print("repo index dry-run complete")
+        print("repo index vector write complete")
         print("project_root: .")
         print(f"workspace_root: {summary['workspace_root']}")
-        print(f"planned_upserts: {vector_write_plan['summary']['planned_upserts']}")
-        print(f"planned_deletes: {vector_write_plan['summary']['planned_deletes']}")
+        print(f"indexed_keys: {vector_index_manifest['summary']['indexed_keys']}")
+        print(f"deleted_keys: {vector_index_manifest['summary']['deleted_keys']}")
         print("artifacts:")
         for artifact in write_result["artifacts"]:
+            print(f"- {artifact['path']}")
+        for artifact in index_write_result["artifacts"]:
             print(f"- {artifact['path']}")
     return 0
 
@@ -988,26 +1064,26 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     index_mode = index_p.add_mutually_exclusive_group()
     index_mode.add_argument("--dry-run", action="store_true", help="Write a deterministic vector write-plan only")
-    index_mode.add_argument("--write-vectors", action="store_true", help="Reserved for explicit vector writes")
+    index_mode.add_argument("--write-vectors", action="store_true", help="Write repo chunk vectors to configured backend")
     index_p.add_argument(
         "--confirm-vector-index",
         default="",
-        help="Reserved confirmation token for future vector writes",
+        help="Required confirmation token for --write-vectors",
     )
     index_p.add_argument(
         "--embedding-provider",
         default=None,
-        help="Embedding provider identity for dry-run key planning",
+        help="Embedding provider identity for vector planning/writes",
     )
     index_p.add_argument(
         "--embedding-model",
         default=None,
-        help="Embedding model identity for dry-run key planning",
+        help="Embedding model identity for vector planning/writes",
     )
     index_p.add_argument(
         "--embedding-dimension",
         default=None,
-        help="Embedding dimension for dry-run key planning (default: 1536 or AO_KERNEL_EMBEDDING_DIMENSION)",
+        help="Embedding dimension for vector planning/writes (default: 1536 or AO_KERNEL_EMBEDDING_DIMENSION)",
     )
     index_p.add_argument(
         "--output",

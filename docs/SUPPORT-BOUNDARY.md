@@ -158,8 +158,18 @@ The `repo index --dry-run` surface is Beta / experimental dry-run only. It reads
 repo chunk vector keys, planned upserts, planned stale-key deletes, and embedding
 space identity. It does not call an embedding provider, connect to a vector
 backend, write vectors, use network access, expose an MCP tool, or write root
-authority files. Real `repo index --write-vectors` support is not shipped in
-this tranche.
+authority files.
+
+The `repo index --write-vectors` surface is Beta / experimental explicit-write
+only. It requires
+`--confirm-vector-index I_UNDERSTAND_REPO_VECTOR_WRITES`, a configured vector
+backend, and an embedding API key. It may write only
+`.ao/context/repo_vector_write_plan.json` and
+`.ao/context/repo_vector_index_manifest.json`, plus records in the configured
+vector backend under the `repo_chunk::<project_identity>::<embedding_space>::`
+namespace. It deletes stale keys only inside the same recorded project identity
+and embedding space. It does not write root authority files, expose MCP tools,
+or provide retrieval integration.
 
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
