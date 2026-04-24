@@ -11,8 +11,12 @@ from ao_kernel._internal.shared.utils import now_iso8601, write_json_atomic
 from ao_kernel.config import load_default
 
 REPO_MAP_FILENAME = "repo_map.json"
+PYTHON_IMPORT_GRAPH_FILENAME = "import_graph.json"
+PYTHON_SYMBOL_INDEX_FILENAME = "symbol_index.json"
 REPO_INDEX_MANIFEST_FILENAME = "repo_index_manifest.json"
 REPO_MAP_SCHEMA_NAME = "repo-map.schema.v1.json"
+PYTHON_IMPORT_GRAPH_SCHEMA_NAME = "python-import-graph.schema.v1.json"
+PYTHON_SYMBOL_INDEX_SCHEMA_NAME = "python-symbol-index.schema.v1.json"
 REPO_INDEX_MANIFEST_SCHEMA_NAME = "repo-index-manifest.schema.v1.json"
 
 JsonDict = dict[str, Any]
@@ -28,25 +32,55 @@ def validate_repo_index_manifest(manifest: Mapping[str, Any]) -> None:
     _validate(manifest, REPO_INDEX_MANIFEST_SCHEMA_NAME)
 
 
-def write_repo_scan_artifacts(*, context_dir: str | Path, repo_map: Mapping[str, Any]) -> JsonDict:
-    """Write RI-1 artifacts under an explicit context directory.
+def validate_python_import_graph(import_graph: Mapping[str, Any]) -> None:
+    """Validate a Python import graph document against the bundled schema."""
+    _validate(import_graph, PYTHON_IMPORT_GRAPH_SCHEMA_NAME)
+
+
+def validate_python_symbol_index(symbol_index: Mapping[str, Any]) -> None:
+    """Validate a Python symbol index document against the bundled schema."""
+    _validate(symbol_index, PYTHON_SYMBOL_INDEX_SCHEMA_NAME)
+
+
+def write_repo_scan_artifacts(
+    *,
+    context_dir: str | Path,
+    repo_map: Mapping[str, Any],
+    import_graph: Mapping[str, Any] | None = None,
+    symbol_index: Mapping[str, Any] | None = None,
+) -> JsonDict:
+    """Write repo-intelligence artifacts under an explicit context directory.
 
     The caller owns workspace discovery and directory creation. This helper
     only accepts explicit output location information and never searches for
     ``.ao``.
     """
     context = Path(context_dir)
-    repo_map_path = context / REPO_MAP_FILENAME
     manifest_path = context / REPO_INDEX_MANIFEST_FILENAME
 
     validate_repo_map(repo_map)
-    write_json_atomic(repo_map_path, dict(repo_map))
+    documents: list[tuple[str, str, Mapping[str, Any]]] = [
+        (REPO_MAP_FILENAME, REPO_MAP_SCHEMA_NAME, repo_map),
+    ]
+    if import_graph is not None:
+        validate_python_import_graph(import_graph)
+        documents.append((PYTHON_IMPORT_GRAPH_FILENAME, PYTHON_IMPORT_GRAPH_SCHEMA_NAME, import_graph))
+    if symbol_index is not None:
+        validate_python_symbol_index(symbol_index)
+        documents.append((PYTHON_SYMBOL_INDEX_FILENAME, PYTHON_SYMBOL_INDEX_SCHEMA_NAME, symbol_index))
 
-    repo_map_record = _artifact_record(
-        path=repo_map_path,
-        display_path=_display_path(context, REPO_MAP_FILENAME),
-        schema_ref=REPO_MAP_SCHEMA_NAME,
-    )
+    artifact_records: list[JsonDict] = []
+    for filename, schema_ref, document in documents:
+        artifact_path = context / filename
+        write_json_atomic(artifact_path, dict(document))
+        artifact_records.append(
+            _artifact_record(
+                path=artifact_path,
+                display_path=_display_path(context, filename),
+                schema_ref=schema_ref,
+            )
+        )
+
     manifest = {
         "schema_version": "1",
         "artifact_kind": "repo_index_manifest",
@@ -56,10 +90,10 @@ def write_repo_scan_artifacts(*, context_dir: str | Path, repo_map: Mapping[str,
             "generated_at": now_iso8601(),
         },
         "schema_refs": [
-            REPO_MAP_SCHEMA_NAME,
+            *(schema_ref for _filename, schema_ref, _document in documents),
             REPO_INDEX_MANIFEST_SCHEMA_NAME,
         ],
-        "artifacts": [repo_map_record],
+        "artifacts": artifact_records,
     }
     validate_repo_index_manifest(manifest)
     write_json_atomic(manifest_path, manifest)
@@ -72,7 +106,7 @@ def write_repo_scan_artifacts(*, context_dir: str | Path, repo_map: Mapping[str,
     return {
         "schema_version": "1",
         "artifact_kind": "repo_scan_write_result",
-        "artifacts": [repo_map_record, manifest_record],
+        "artifacts": [*artifact_records, manifest_record],
     }
 
 

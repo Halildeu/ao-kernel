@@ -80,7 +80,8 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks
 - `python3 -m ao_kernel repo scan --project-root . --output json` for
-  experimental read-only repo intelligence artifacts under `.ao/context/`
+  experimental read-only repo intelligence artifacts under `.ao/context/`,
+  including Python AST-derived import graph and top-level symbol index outputs
 
 Operator prerequisite contract (PB-9.1):
 
