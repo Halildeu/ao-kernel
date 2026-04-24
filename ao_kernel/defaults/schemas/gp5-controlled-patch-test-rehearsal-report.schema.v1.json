@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gp5-controlled-patch-test-rehearsal-report.schema.v1.json",
+  "title": "GP-5.5b controlled patch/test rehearsal report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "runtime_patch_support_widening",
+    "remote_side_effects_allowed",
+    "active_main_worktree_touched",
+    "source_repo",
+    "target_worktree",
+    "patch",
+    "write_ownership",
+    "apply_boundary",
+    "test_plan",
+    "rollback_plan",
+    "cleanup",
+    "evidence_artifacts",
+    "promotion_decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_controlled_patch_test_rehearsal_report" },
+    "program_id": { "const": "GP-5.5b" },
+    "overall_status": { "enum": ["pass", "blocked"] },
+    "decision": {
+      "enum": [
+        "pass_controlled_local_patch_test_rehearsal_no_support_widening",
+        "blocked_controlled_local_patch_test_rehearsal_no_support_widening"
+      ]
+    },
+    "support_widening": { "const": false },
+    "runtime_patch_support_widening": { "const": false },
+    "remote_side_effects_allowed": { "const": false },
+    "active_main_worktree_touched": { "const": false },
+    "blocked_reason": { "type": "string", "minLength": 1 },
+    "source_repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "head_sha", "dirty_state"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "head_sha": { "type": "string", "minLength": 7 },
+        "dirty_state": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "target_worktree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "separate_from_operator_main",
+        "dirty_state_preflight",
+        "dirty_state_after_rollback",
+        "cleanup_required"
+      ],
+      "properties": {
+        "kind": { "const": "disposable_worktree" },
+        "path": { "type": "string", "minLength": 1 },
+        "separate_from_operator_main": { "const": true },
+        "dirty_state_preflight": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dirty_state_after_rollback": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cleanup_required": { "const": true }
+      }
+    },
+    "patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "patch_id",
+        "changed_paths",
+        "lines_added",
+        "lines_removed",
+        "diff_preview_status",
+        "apply_status"
+      ],
+      "properties": {
+        "patch_id": { "type": "string", "minLength": 1 },
+        "changed_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "lines_added": { "type": "integer", "minimum": 0 },
+        "lines_removed": { "type": "integer", "minimum": 0 },
+        "diff_preview_status": { "const": "pass" },
+        "apply_status": { "enum": ["pass", "blocked_not_approved", "not_run"] },
+        "reverse_diff_id": { "type": "string", "minLength": 1 },
+        "reverse_diff_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "write_ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_scoped_claims_required",
+        "owner_agent_id",
+        "apply_claims",
+        "rollback_claims",
+        "claims_released",
+        "live_claims_after"
+      ],
+      "properties": {
+        "path_scoped_claims_required": { "const": true },
+        "owner_agent_id": { "type": "string", "minLength": 1 },
+        "apply_claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/claim" }
+        },
+        "rollback_claims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/claim" }
+        },
+        "claims_released": { "type": "boolean" },
+        "live_claims_after": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "apply_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diff_preview_artifact_required",
+        "explicit_operator_approval_required",
+        "explicit_operator_approval_observed",
+        "write_without_preview_allowed"
+      ],
+      "properties": {
+        "diff_preview_artifact_required": { "const": true },
+        "explicit_operator_approval_required": { "const": true },
+        "explicit_operator_approval_observed": { "type": "boolean" },
+        "write_without_preview_allowed": { "const": false }
+      }
+    },
+    "test_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targeted_tests_required",
+        "explainable_selection_required",
+        "targeted_test_commands",
+        "targeted_test_status",
+        "full_gate_fallback_required",
+        "full_gate_fallback_command",
+        "full_gate_fallback_status"
+      ],
+      "properties": {
+        "targeted_tests_required": { "const": true },
+        "explainable_selection_required": { "const": true },
+        "selection_reason": { "type": "string" },
+        "targeted_test_commands": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "targeted_test_status": { "enum": ["pass", "not_run"] },
+        "full_gate_fallback_required": { "const": true },
+        "full_gate_fallback_command": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "full_gate_fallback_status": { "enum": ["available_not_run", "not_run"] }
+      }
+    },
+    "rollback_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reverse_diff_required",
+        "rollback_status",
+        "rollback_verification_status",
+        "idempotency_check_status"
+      ],
+      "properties": {
+        "reverse_diff_required": { "const": true },
+        "rollback_status": { "enum": ["pass", "not_run"] },
+        "rollback_verification_status": { "enum": ["pass", "not_run"] },
+        "idempotency_check_status": { "enum": ["pass", "not_run"] }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worktree_remove_attempted", "worktree_removed", "temp_root_removed"],
+      "properties": {
+        "worktree_remove_attempted": { "type": "boolean" },
+        "worktree_removed": { "type": "boolean" },
+        "temp_root_removed": { "type": "boolean" },
+        "retained_reason": { "type": "string" }
+      }
+    },
+    "evidence_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diff_preview_artifact",
+        "apply_decision_artifact",
+        "reverse_diff_artifact"
+      ],
+      "properties": {
+        "diff_preview_artifact": { "$ref": "#/$defs/artifact" },
+        "apply_decision_artifact": { "$ref": "#/$defs/artifact" },
+        "reverse_diff_artifact": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "next_gate", "reason"],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "next_gate": { "const": "GP-5.6a" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["present", "not_created"] },
+        "path": { "type": "string" },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["area", "resource_id", "claim_id", "fencing_token"],
+      "properties": {
+        "area": { "type": "string", "minLength": 1 },
+        "resource_id": { "type": "string", "minLength": 1 },
+        "claim_id": { "type": "string", "minLength": 1 },
+        "fencing_token": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

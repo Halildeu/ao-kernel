@@ -162,6 +162,7 @@ aligned with the current support boundary.
 | `claude-code-cli` smoke fails | `python3 scripts/claude_code_cli_smoke.py --output text` | Beta lane incident unless the shipped baseline also fails |
 | `gh-cli-pr` smoke fails | `python3 scripts/gh_cli_pr_smoke.py --output text` | Beta/deferred lane incident unless shipped baseline also fails |
 | GP-5 controlled patch/test contract fails | Validate `gp5-controlled-patch-test-contract.schema.v1.json` and run `pytest -q tests/test_gp5_controlled_patch_test_contract.py` | Design-gate blocker only; not a stable shipped baseline incident |
+| GP-5.5b controlled patch/test rehearsal fails | `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` and `pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py` | Rehearsal-gate blocker only; do not widen write-side support |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
 
 ### 3.4 GP-5 controlled patch/test rehearsal skeleton
@@ -183,6 +184,37 @@ controlled patch/test rehearsal must be blocked unless the operator can collect:
 
 If any item is missing, the result is `blocked` for GP-5 support widening. It
 does not change the shipped baseline support claim.
+
+### 3.5 GP-5.5b controlled local patch/test rehearsal
+
+`GP-5.5b` provides one deterministic local rehearsal command:
+
+```bash
+python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json
+```
+
+Expected pass evidence:
+
+1. `gp5_controlled_patch_test_rehearsal_report` validates against
+   `gp5-controlled-patch-test-rehearsal-report.schema.v1.json`;
+2. `overall_status=pass`;
+3. `support_widening=false`;
+4. `runtime_patch_support_widening=false`;
+5. `remote_side_effects_allowed=false`;
+6. `active_main_worktree_touched=false`;
+7. `target_worktree.kind=disposable_worktree`;
+8. apply and rollback path-scoped claims are present and released;
+9. targeted verification and rollback verification pass;
+10. rollback idempotency passes;
+11. cleanup shows the disposable worktree and temporary root were removed.
+
+Without `--approve-apply`, the command must stop after preview and emit a
+schema-valid `blocked` report. That is an expected safety behavior, not a
+runtime incident.
+
+This rehearsal does not enable live remote PR creation, arbitrary repository
+patching, real-adapter live-write, or production write-side support. Those
+remain GP-5.6+ gates.
 
 ## 4. Evidence to collect
 

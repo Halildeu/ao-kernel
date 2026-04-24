@@ -124,14 +124,14 @@ def test_controlled_patch_test_contract_requires_rollback_and_test_evidence() ->
     assert "True was expected" in errors
 
 
-def test_controlled_patch_test_docs_stay_design_only() -> None:
+def test_controlled_patch_test_docs_keep_no_support_widening_boundary() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     public_beta = (repo_root / "docs" / "PUBLIC-BETA.md").read_text(encoding="utf-8")
     support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(encoding="utf-8")
     runbook = (repo_root / "docs" / "OPERATIONS-RUNBOOK.md").read_text(encoding="utf-8")
 
     assert "GP-5 controlled patch/test lane" in public_beta
-    assert "Contract / design-only" in public_beta
+    assert "Rehearsal / no support widening" in public_beta
     assert "gp5-controlled-patch-test-contract.schema.v1.json" in public_beta
     assert "support_widening=false" in support_boundary
     assert "GP-5 controlled patch/test rehearsal skeleton" in runbook

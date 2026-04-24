@@ -213,6 +213,19 @@ verification, cleanup evidence, and an incident/runbook reference. It records
 This is not runtime write support widening and does not promote live remote PR
 creation or real-adapter live-write support.
 
+`GP-5.5b` adds the first controlled local patch/test rehearsal command,
+`python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json`.
+It creates a disposable detached worktree, previews a deterministic patch,
+requires explicit apply approval, acquires path-scoped apply and rollback
+claims, runs a targeted verification command, rolls back through the reverse
+diff, verifies rollback idempotency, and removes the worktree. The report is
+validated by `gp5-controlled-patch-test-rehearsal-report.schema.v1.json` and
+records `support_widening=false`, `runtime_patch_support_widening=false`,
+`remote_side_effects_allowed=false`, and `active_main_worktree_touched=false`.
+This is rehearsal evidence only. It does not make arbitrary patch generation,
+live remote PR creation, real-adapter live-write, or production write-side
+support shipped.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor
