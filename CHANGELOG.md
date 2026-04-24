@@ -65,6 +65,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   evidence-backed operator-managed beta, but no production-certified
   real-adapter support claim or general-purpose production platform claim is
   granted.
+- Opened the `GP-4` CI-managed live adapter gate design program. This records
+  the missing gate required before future real-adapter production support can
+  be reconsidered; it adds no secrets, live default CI calls, runtime changes,
+  version bump, tag, publish, or support widening.
 
 ## [4.0.0] - 2026-04-24
 

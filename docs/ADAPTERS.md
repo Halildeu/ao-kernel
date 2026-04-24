@@ -233,6 +233,9 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - Expected operator prerequisite: valid Claude Code session auth
 - This lane is not the default shipped demo; the shipped baseline remains
   bundled `review_ai_flow` + bundled `codex-stub`
+- Future production-certified support requires a protected CI-managed live
+  adapter gate or equivalent release gate. `GP-4` is a design program for that
+  missing gate, not a support widening.
 
 ### Failure modes
 

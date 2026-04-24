@@ -149,5 +149,9 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
 - Bu doküman, ao-kernel'in genel amaçlı bir production coding automation
   platformu olduğunu iddia etmez; destek vaadi dar ve açıkça tablolanmış
   yüzeyler içindir.
+- `GP-4` CI-managed live adapter gate tasarımı support widening değildir.
+  `claude-code-cli` production-certified support için gelecekte protected
+  manual/scheduled live gate veya eşdeğer release gate gerekir; bu dokümanda
+  shipped veya beta satırı otomatik değişmez.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.
