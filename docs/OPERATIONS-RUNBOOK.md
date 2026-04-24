@@ -161,7 +161,28 @@ aligned with the current support boundary.
 | Policy/command deny looks wrong | Targeted executor policy tests plus workflow evidence `events.jsonl` | Blocker only if shipped baseline policy contract regresses |
 | `claude-code-cli` smoke fails | `python3 scripts/claude_code_cli_smoke.py --output text` | Beta lane incident unless the shipped baseline also fails |
 | `gh-cli-pr` smoke fails | `python3 scripts/gh_cli_pr_smoke.py --output text` | Beta/deferred lane incident unless shipped baseline also fails |
+| GP-5 controlled patch/test contract fails | Validate `gp5-controlled-patch-test-contract.schema.v1.json` and run `pytest -q tests/test_gp5_controlled_patch_test_contract.py` | Design-gate blocker only; not a stable shipped baseline incident |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
+
+### 3.4 GP-5 controlled patch/test rehearsal skeleton
+
+This is a design skeleton, not shipped runtime write support. A future GP-5
+controlled patch/test rehearsal must be blocked unless the operator can collect:
+
+1. disposable or dedicated worktree path, with proof it is not the active
+   operator `main` worktree;
+2. preflight dirty-state output for the target worktree;
+3. path-scoped write ownership claim ids and release evidence;
+4. diff preview artifact and changed-path list;
+5. explicit apply decision record;
+6. targeted test commands plus the full-gate fallback decision;
+7. reverse-diff rollback artifact;
+8. rollback verification and idempotency evidence;
+9. cleanup evidence showing the disposable/dedicated worktree was removed or
+   intentionally retained for investigation.
+
+If any item is missing, the result is `blocked` for GP-5 support widening. It
+does not change the shipped baseline support claim.
 
 ## 4. Evidence to collect
 
