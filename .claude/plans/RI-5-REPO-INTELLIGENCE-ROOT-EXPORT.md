@@ -1,17 +1,21 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** RI-5a implementation slice
+**Status:** RI-5a merged; RI-5b gated
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `5959f27`
+**Authority:** `origin/main` at `a2144da`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
 **Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
+**Implementation PR:** [#457](https://github.com/Halildeu/ao-kernel/pull/457)
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
-**Tracking branch:** `codex/ri5a-export-plan-preview`
-**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-preview`
-**Base:** `origin/main` at `5959f27`
-**Next slice:** RI-5a export-plan preview PR
-**Implementation:** In progress; preview-only implementation added in this branch
+**Implementation branch:** cleaned after merge
+**Implementation worktree:** cleaned after merge
+**Tracking branch:** `codex/ri5a-closeout-status`
+**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-closeout-status`
+**Base:** `origin/main` at `a2144da`
+**Next slice:** RI-5b confirmed create-only root export design gate
+**Implementation:** Merged to `main` at `a2144da`; preview-only export-plan
+support is live as Beta / experimental.
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -146,8 +150,8 @@ acceptance item is checked, CI is green, and the PR is merged into
 | 6 | Export narrow public facade | [x] Done | `ao_kernel/repo_intelligence/__init__.py` exports builder/validator/writer |
 | 7 | Update docs and changelog | [x] Done | Support boundary and public beta rows |
 | 8 | Run local validation gates | [x] Done | ruff, mypy, targeted tests, help, doctor, packaging smoke, full coverage, diff check |
-| 9 | Open PR and wait for CI | [ ] Pending | PR URL and green CI |
-| 10 | Merge, fast-forward local `main`, cleanup branch/worktree | [ ] Pending | `rev-list 0 0`, branch cleanup |
+| 9 | Open PR and wait for CI | [x] Done | PR [#457](https://github.com/Halildeu/ao-kernel/pull/457); CI green |
+| 10 | Merge, fast-forward local `main`, cleanup branch/worktree | [x] Done | `origin/main` at `a2144da`; local `main` synchronized; implementation branch/worktree cleaned |
 
 ### Artifact Contract
 
@@ -259,7 +263,8 @@ Expected behavior:
 
 ### Validation Checklist
 
-Run these before opening the RI-5a implementation PR:
+These gates were required before opening and merging the RI-5a implementation
+PR:
 
 ```text
 ruff check ao_kernel/ tests/
@@ -272,8 +277,7 @@ git diff --check
 git ls-files -o --exclude-standard
 ```
 
-Run the full coverage gate before merge unless the implementation PR is
-docs-only:
+Run the full coverage gate before merge unless the follow-up PR is docs-only:
 
 ```text
 pytest tests/ --ignore=tests/benchmarks --cov=ao_kernel --cov-branch --cov-report=term-missing
@@ -293,16 +297,60 @@ RI-5a is complete only when:
 8. RI-5a worktree and branch are cleaned only after content parity with
    `main` is verified.
 
+## RI-5a Closeout Verdict
+
+RI-5a is closed as `complete_preview_only`.
+
+Support tier:
+
+```text
+Beta / experimental preview-only
+```
+
+User-visible command:
+
+```text
+python3 -m ao_kernel repo export-plan \
+  --project-root . \
+  --workspace-root .ao \
+  --targets codex,agents \
+  --output json
+```
+
+The command reads existing repo-intelligence artifacts and writes only:
+
+```text
+.ao/context/repo_export_plan.json
+```
+
+It does not create, update, truncate, or delete root authority files. It does
+not call an LLM, use network access, query or write a vector backend, expose an
+MCP tool, or auto-feed `context_compiler`.
+
+Closeout evidence:
+
+1. PR [#457](https://github.com/Halildeu/ao-kernel/pull/457) merged to `main`
+   at `a2144da`.
+2. CI passed before merge.
+3. Local validation recorded in the tracking log includes lint, mypy,
+   targeted tests, doctor, packaging smoke, full coverage, and diff check.
+4. Local `main` was fast-forwarded to `origin/main` and implementation
+   branch/worktree cleanup was completed.
+
+RI-5a does not grant root-export support widening. It only makes the future
+write intent explicit and machine-readable.
+
 ## RI-5b - Explicit Confirmed Root Export
 
-RI-5b may add a write command only after RI-5a merges:
+RI-5b may add a write command only after a separate design gate opens from the
+current `origin/main`:
 
 ```text
 python3 -m ao_kernel repo export \
   --project-root . \
   --workspace-root .ao \
   --targets codex,agents \
-  --confirm-root-export I_UNDERSTAND_ROOT_AUTHORITY_FILE_WRITES
+  --confirm-root-export CONFIRM_RI5B_ROOT_EXPORT_V1
 ```
 
 The write path must be fail-closed:
@@ -318,6 +366,24 @@ The write path must be fail-closed:
 
 The first RI-5b implementation should prefer create-only writes. Overwrite
 support can be a later tranche if needed.
+
+### RI-5b Entry Gate
+
+Do not start RI-5b implementation until a dedicated design gate records all of
+these constraints:
+
+1. branch and worktree are created from current `origin/main`;
+2. `.ao/context/repo_export_plan.json` is the write intent input, not a hidden
+   recomputation side effect;
+3. default behavior is create-only, with no overwrite support in the first
+   write slice;
+4. exact confirmation token is `CONFIRM_RI5B_ROOT_EXPORT_V1`;
+5. tests include root snapshot before/after, rollback/no-root-corruption
+   checks, stale-plan denial, missing-plan denial, path escape denial, symlink
+   denial, and existing-file conflict denial;
+6. path-scoped ownership is checked for any root target before write;
+7. support docs remain Beta / operator-managed or Deferred until live write
+   evidence and rollback evidence exist.
 
 ## Non-Negotiable Boundaries
 
@@ -433,3 +499,5 @@ CHANGELOG.md
 | 2026-04-24 | RI-5a tracker rebased | Tracking branch rebased onto `origin/main` at `523317f` after GP-5.9 closeout; tracker remains docs-only and implementation has not started. |
 | 2026-04-24 | RI-5a implementation started | Dedicated branch `codex/ri5a-export-plan-preview` opened from `origin/main` at `5959f27`; preview-only schema, builder, artifact writer, CLI, docs, and tests added. |
 | 2026-04-24 | RI-5a local validation passed | `ruff check ao_kernel/ tests/`; `mypy ao_kernel/`; targeted pytest `28 passed`; `python3 -m ao_kernel repo export-plan --help`; `python3 -m ao_kernel doctor` (`8 OK, 1 WARN, 0 FAIL`); `python3 scripts/packaging_smoke.py`; full coverage `3046 passed, 1 skipped`, total coverage `85.44%`; `git diff --check`. |
+| 2026-04-24 | RI-5a implementation merged | PR [#457](https://github.com/Halildeu/ao-kernel/pull/457) merged to `main` at `a2144da`; `repo export-plan` is live as Beta / experimental preview-only and still writes no root authority files. |
+| 2026-04-24 | RI-5a cleanup completed | Local `main` synchronized with `origin/main`, implementation branch/worktree cleaned, and RI-5b is gated behind a separate confirmed create-only root export design slice. |

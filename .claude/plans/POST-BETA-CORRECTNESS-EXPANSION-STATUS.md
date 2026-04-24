@@ -48,7 +48,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.7b full production rehearsal execution gate:** `.claude/plans/GP-5.7b-FULL-PRODUCTION-REHEARSAL-GATE.md`
 - **Son tamamlanan GP-5.8 operations support package:** `.claude/plans/GP-5.8-OPERATIONS-SUPPORT-PACKAGE.md`
 - **Aktif GP-5.9 production platform claim decision:** `.claude/plans/GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md`
-- **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
+- **Son tamamlanan RI-5a export-plan preview:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
@@ -121,7 +121,7 @@ ayrı ayrı görünür kılmak.
 - **GP-5.7b issue:** [#451](https://github.com/Halildeu/ao-kernel/issues/451) (`closed after GP-5.7b PR`)
 - **GP-5.8 issue:** [#453](https://github.com/Halildeu/ao-kernel/issues/453) (`closed after GP-5.8 PR`)
 - **GP-5.9 issue:** [#455](https://github.com/Halildeu/ao-kernel/issues/455) (`active`)
-- **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
+- **RI-5a export-plan preview:** PR `#457` merged at `a2144da`; next slice is RI-5b confirmed create-only root export design gate
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
   integration gates, write-side rollback evidence, and an explicit closeout
@@ -1449,3 +1449,36 @@ live adapter gate'i tasarlar.
    - no active GP-4 widening gate
    - future widening requires a new explicit gate after protected live evidence
      exists
+
+## 33. RI-5a Repo Intelligence Export-Plan Preview Closeout
+
+`RI-5a` is complete as a preview-only root/context export planning surface.
+This is not support widening and does not grant root authority write support.
+
+1. Design record:
+   `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
+2. Design gate:
+   PR [#423](https://github.com/Halildeu/ao-kernel/pull/423)
+3. Tracker closeout:
+   PR [#426](https://github.com/Halildeu/ao-kernel/pull/426)
+4. Implementation:
+   PR [#457](https://github.com/Halildeu/ao-kernel/pull/457), merged to
+   `main` at `a2144da`
+5. User-visible command:
+   `python3 -m ao_kernel repo export-plan --project-root . --workspace-root .ao --targets codex,agents --output json`
+6. Writes:
+   only `.ao/context/repo_export_plan.json`
+7. Explicitly not included:
+   root authority file writes, LLM calls, network access, vector backend
+   query/write, MCP exposure, and `context_compiler` auto-injection
+8. Support boundary:
+   `Beta / experimental preview-only`
+9. Closeout evidence:
+   PR CI passed, local validation recorded in the RI-5 record includes lint,
+   mypy, targeted tests, doctor, packaging smoke, full coverage, and diff check
+10. Next slice:
+   RI-5b confirmed create-only root export design gate. Implementation must not
+   start until the design gate pins `CONFIRM_RI5B_ROOT_EXPORT_V1`, create-only
+   default behavior, path ownership checks, root snapshot/rollback evidence,
+   and deny-path tests for missing/stale plans, existing-file conflicts,
+   symlinks, and path escapes.
