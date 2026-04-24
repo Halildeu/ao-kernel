@@ -1,6 +1,6 @@
 # Post-Beta Correctness and Expansion Status
 
-**Durum tarihi:** 2026-04-24
+**Durum tarihi:** 2026-04-25
 **Amaç:** Public Beta closeout sonrasında kalan correctness debt'ini
 fail-closed disiplinle kapatmak, support-surface widening kararlarını kanıtla
 yönetmek ve genel amaçlı production çizgisine geçiş için gerçek gap'leri
@@ -11,6 +11,7 @@ ayrı ayrı görünür kılmak.
 ## 1. SSOT Sınırları
 
 - **Execution status / backlog:** bu dosya
+- **Aktif general-purpose production promotion tracker:** `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md`
 - **Tarihsel closeout snapshot:** `.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`
 - **Son tamamlanan implementation contract:** `.claude/plans/PB-8-GENERAL-PURPOSE-PRODUCTIONIZATION-ROADMAP.md` (`PB-8` closeout)
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
@@ -128,11 +129,14 @@ ayrı ayrı görünür kılmak.
 - **RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (`closed by PR #465`)
 - **RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (`closed by PR #467`)
 - **RI-5b post-closeout next-slice cleanup issue:** [#468](https://github.com/Halildeu/ao-kernel/issues/468) (`closes with this status cleanup PR`)
-- **Current mode:** stable maintenance / no active general-purpose widening
-  gate. RI-5b is merged as Beta/operator-managed root export, not a production
-  platform claim. Future stable widening still requires protected
-  live-adapter evidence, repo-intelligence integration gates, write-side
-  rollback evidence, and an explicit closeout decision.
+- **GPP-0 production promotion tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470) (`open`)
+- **Current mode:** stable maintenance + written general-purpose production
+  promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
+  a production platform claim. GPP-0 creates the trackable promotion program;
+  no support widening, release, runtime adapter promotion, or production claim is
+  made by GPP-0. Future stable widening still requires protected live-adapter
+  evidence, repo-intelligence integration gates, write-side rollback evidence,
+  and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -205,7 +209,7 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — stable maintenance / no active general-purpose widening gate
+### Current mode — stable maintenance + GPP-0 tracking
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
 kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,
@@ -223,6 +227,11 @@ Bu nedenle `claude-code-cli` lane hâlâ `Beta (operator-managed)` kalır;
 production-certified real-adapter support, stable support widening ve genel
 amaçlı production coding automation platform claim'i verilmez. `SM-1` stable
 maintenance baseline ve `SM-2` stable baseline evidence refresh geçerlidir.
+
+`GPP-0`, bu kapanmış kararları tersine çevirmez. Yalnızca kalan production
+promotion gap'lerini `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md`
+altında yazılı, sıralı ve kanıt-gated hale getirir. `GPP-0` merge olduktan
+sonraki tek aktif hat `GPP-1` protected live-adapter prerequisite olacaktır.
 
 Mevcut yol:
 
