@@ -97,7 +97,7 @@ itself.
 | Slice | Goal | Exit |
 |---|---|---|
 | `GP-4.1` workflow design stub | Add non-secret workflow skeleton or documented manual gate contract | implemented by `.github/workflows/live-adapter-gate.yml`; report remains `blocked`; no live secrets, no live calls, CI-safe |
-| `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | local tests validate report schema |
+| `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | implemented by schema-backed `live-adapter-gate-evidence.v1.json`; local tests validate schema; no live execution or support widening |
 | `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | no repository secret values committed |
 | `GP-4.4` live rehearsal | Run protected manual gate once and record artifacts | only if project-owned credentials exist |
 | `GP-4.5` support-boundary decision | Decide promote/keep beta/defer | requires all prior slices and docs parity |
@@ -141,9 +141,28 @@ The report intentionally says `overall_status="blocked"` and
 `finding_code="live_gate_not_implemented"`. A successful workflow run means
 the contract artifact was emitted; it does not mean the live adapter passed.
 
+## GP-4.2 Implementation
+
+`GP-4.2` adds the schema-backed evidence artifact contract for the manual gate:
+
+1. schema: `ao_kernel/defaults/schemas/live-adapter-gate-evidence.schema.v1.json`;
+2. helper: `build_live_adapter_gate_evidence_artifact()`;
+3. validator: `validate_live_adapter_gate_evidence_artifact()`;
+4. expected artifact: `live-adapter-gate-evidence.v1.json`.
+
+The artifact records the required future evidence slots:
+
+1. gate contract report;
+2. protected live preflight report;
+3. protected governed workflow-smoke report;
+4. protected environment attestation.
+
+The current artifact is intentionally blocked. It may be schema-valid and
+uploaded by CI, but it still says `support_widening=false` and
+`production_certified=false`.
+
 ## Next Step
 
-The next implementation slice should be `GP-4.2`: define the evidence artifact
-contract for actual protected live gate outcomes. It must still avoid support
-widening until protected live evidence exists and support docs are explicitly
-updated.
+The next implementation slice should be `GP-4.3`: define the protected
+GitHub environment / secret contract and fork-safety rules. It must not commit
+secret values and must not widen support without protected live evidence.

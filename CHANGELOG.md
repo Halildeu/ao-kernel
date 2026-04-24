@@ -74,6 +74,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `live-adapter-gate-contract.v1.json` artifact and deliberately performs no
   secret access, live adapter execution, version bump, tag, publish, or support
   widening.
+- Added the `GP-4.2` live adapter evidence artifact contract. The manual
+  `live-adapter-gate` workflow now also emits schema-backed
+  `live-adapter-gate-evidence.v1.json`, with required live preflight,
+  governed workflow-smoke, and protected-environment evidence slots recorded as
+  blocked promotion gates. This still performs no secret access, live adapter
+  execution, version bump, tag, publish, or support widening.
 
 ## [4.0.0] - 2026-04-24
 

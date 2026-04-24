@@ -62,15 +62,18 @@ jobs:
           python3 scripts/live_adapter_gate_contract.py \
             --output json \
             --report-path live-adapter-gate-contract.v1.json \
+            --evidence-path live-adapter-gate-evidence.v1.json \
             --target-ref "$TARGET_REF" \
             --reason "$DISPATCH_REASON" \
             --requested-by "$REQUESTED_BY" \
             --event-name "$EVENT_NAME" \
             --head-sha "$HEAD_SHA"
 
-      - name: Upload contract artifact
+      - name: Upload gate artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: live-adapter-gate-contract-${{ github.run_id }}
-          path: live-adapter-gate-contract.v1.json
+          name: live-adapter-gate-evidence-${{ github.run_id }}
+          path: |
+            live-adapter-gate-contract.v1.json
+            live-adapter-gate-evidence.v1.json
           if-no-files-found: error

@@ -109,6 +109,10 @@ tek başına support tier'ı yükseltmez.
 widening değildir: sadece manual contract artifact üretir, canlı `claude`
 çağrısı yapmaz ve artifact içinde `overall_status="blocked"` /
 `finding_code="live_gate_not_implemented"` beklenir.
+`GP-4.2` bu gate'e schema-backed `live-adapter-gate-evidence.v1.json` artifact
+contract'ını ekler. Artifact, preflight/workflow-smoke/protected-environment
+kanıt slotlarını promotion blocker olarak listeler; yine canlı adapter çağrısı,
+secret okuma veya support widening içermez.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify
@@ -154,6 +158,8 @@ The following do not, by themselves, justify a broader support claim:
   recorded evidence artifacts
 - a CI-safe live-gate skeleton that emits a blocked contract artifact without
   executing a protected live adapter identity
+- a schema-valid live-gate evidence artifact that still marks required live
+  evidence slots as blocked and `support_widening=false`
 - a roadmap/spec document
 - a contract loader or truth-audit warning surface
 - a smoke passing only in one operator environment without the support docs

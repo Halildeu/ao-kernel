@@ -153,8 +153,11 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   `claude-code-cli` production-certified support için gelecekte protected
   manual/scheduled live gate veya eşdeğer release gate gerekir; bu dokümanda
   shipped veya beta satırı otomatik değişmez.
-- `GP-4.1` manual workflow skeleton'ı sadece
-  `live-adapter-gate-contract.v1.json` artifact'i üretir. Bu artifact bugün
-  `overall_status="blocked"` döner ve canlı adapter execution kanıtı değildir.
+- `GP-4.1` manual workflow skeleton'ı
+  `live-adapter-gate-contract.v1.json` artifact'i üretir. `GP-4.2` bunun
+  yanına schema-backed `live-adapter-gate-evidence.v1.json` artifact'ini
+  ekler. Bu artifact bugün `overall_status="blocked"` /
+  `support_widening=false` / `production_certified=false` döner ve canlı
+  adapter execution kanıtı değildir.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.

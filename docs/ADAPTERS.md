@@ -239,6 +239,10 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - `GP-4.1` adds a manual `live-adapter-gate` workflow skeleton that emits a
   blocked contract artifact only. It does not call `claude`, does not read
   secrets, and does not promote this lane.
+- `GP-4.2` adds a schema-backed `live-adapter-gate-evidence.v1.json` artifact
+  beside the contract artifact. It records missing preflight/workflow-smoke
+  and protected-environment evidence as promotion blockers; it still does not
+  call `claude`, read secrets, or promote this lane.
 
 ### Failure modes
 
