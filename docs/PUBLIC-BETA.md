@@ -80,7 +80,7 @@ Stable rules:
 | Yüzey | Durum | Not |
 |---|---|---|
 | Historical Public Beta pre-release | Beta | `4.0.0b2` remains a pre-release pin for operators that intentionally stay on that line; stable support is the shipped baseline above |
-| `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py --output text --timeout-seconds 30` sonucu `overall_status: pass` olmalıdır. Bu smoke içinde hem `auth_status` hem `prompt_access` check'i geçmelidir; yalnız `claude auth status` yeşili yeterli kabul edilmez. Governed workflow evidence için ek komut: `python3 scripts/claude_code_cli_workflow_smoke.py --output text --timeout-seconds 60`. Varsayılan shipped demo değildir. `GP-3.6` closeout verdict'i `close_keep_operator_beta`; production-certified read-only değildir. Gerekçe: external `claude` binary/session auth operatör durumudur, `KB-001`/`KB-002` açıktır ve live `claude-code-cli` gate'i CI-managed değildir |
+| `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py --output text --timeout-seconds 30` sonucu `overall_status: pass` olmalıdır. Bu smoke içinde hem `auth_status` hem `prompt_access` check'i geçmelidir; yalnız `claude auth status` yeşili yeterli kabul edilmez. Governed workflow evidence için ek komut: `python3 scripts/claude_code_cli_workflow_smoke.py --output text --timeout-seconds 60`. Varsayılan shipped demo değildir. `GP-3.6` closeout verdict'i `close_keep_operator_beta`; `GP-4.5` closeout verdict'i `close_no_widening_keep_operator_beta`; production-certified read-only değildir. Gerekçe: external `claude` binary/session auth operatör durumudur, `KB-001`/`KB-002` açıktır ve protected live gate evidence hâlâ blocked durumdadır |
 | `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py --output text` preflight yoludur ve side-effect-safe `gh pr create --dry-run` zincirini çalıştırır. Live-write probe (`--mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch>`) explicit opt-in + create->verify->rollback ister. Varsayılan disposable guard keyword `sandbox`'dır; repo adında bu keyword yoksa lane `blocked` döner (`gh_pr_live_write_repo_not_disposable`). `GP-2.5a` sandbox rehearsal geçmiştir, fakat `--keep-live-write-pr-open` lane'i hâlâ riskli sayar ve `blocked` döner. Support widening değildir |
 | `PRJ-KERNEL-API` write-side actions | Beta (operator-managed write contract) | `project_status`, `roadmap_follow`, `roadmap_finish` runtime-backed. `workspace_root` zorunlu, varsayılan `dry_run=true`, gerçek yazma için `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` gerekir; conflict/idempotency/audit davranışı behavior testlerle pinlidir. Operator smoke: `python3 scripts/kernel_api_write_smoke.py --output text` |
 | Real-adapter benchmark tam modu | Beta (operator-managed) | Deterministik stub lane kadar stabil değildir; adapter-altı gerçek tier sınırları yukarıdaki satırlarda tanımlanır |
@@ -171,5 +171,10 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   karar `blocked_no_rehearsal`dir; required environment ve project-owned
   credential attested olmadığı için live rehearsal denenmez ve support boundary
   değişmez.
+- `GP-4.5` support-boundary closeout kararı
+  `close_no_widening_keep_operator_beta` olarak kapanmıştır. Bu karar
+  `claude-code-cli` lane'ini Beta/operator-managed tutar; shipped baseline,
+  production-certified real-adapter support ve genel amaçlı production platform
+  claim'i genişlemez.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.

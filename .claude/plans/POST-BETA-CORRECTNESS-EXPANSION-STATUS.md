@@ -27,9 +27,12 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-3 evidence completeness record:** `.claude/plans/GP-3.4-CLAUDE-CODE-CLI-EVIDENCE-COMPLETENESS.md`
 - **Son tamamlanan GP-3 support-boundary decision record:** `.claude/plans/GP-3.5-CLAUDE-CODE-CLI-SUPPORT-BOUNDARY-DECISION.md`
 - **Son tamamlanan GP-3 closeout decision:** `.claude/plans/GP-3.6-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-CLOSEOUT.md`
-- **Aktif GP-4 CI-managed live adapter gate design:** `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`
+- **Son tamamlanan GP-4 CI-managed live adapter gate design:** `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`
 - **Son tamamlanan GP-4.1 CI-safe live adapter gate skeleton:** `.claude/plans/GP-4.1-CI-SAFE-LIVE-ADAPTER-GATE-SKELETON.md`
 - **Son tamamlanan GP-4.2 live adapter evidence artifact contract:** `.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`
+- **Son tamamlanan GP-4.3 protected environment / secret contract:** `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`
+- **Son tamamlanan GP-4.4 protected live rehearsal blocked decision:** `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`
+- **Son tamamlanan GP-4.5 support-boundary closeout:** `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -80,12 +83,13 @@ ayrı ayrı görünür kılmak.
 - **GP-3.4 issue:** [#394](https://github.com/Halildeu/ao-kernel/issues/394) (`closed`)
 - **GP-3.5 issue:** [#396](https://github.com/Halildeu/ao-kernel/issues/396) (`closed`)
 - **GP-3.6 issue:** [#398](https://github.com/Halildeu/ao-kernel/issues/398) (`closed by closeout PR`)
-- **GP-4 tracker issue:** [#400](https://github.com/Halildeu/ao-kernel/issues/400) (`open`)
+- **GP-4 tracker issue:** [#400](https://github.com/Halildeu/ao-kernel/issues/400) (`closes with GP-4.5 PR`)
 - **GP-4.1 issue:** [#402](https://github.com/Halildeu/ao-kernel/issues/402) (`closed`)
 - **GP-4.2 issue:** [#404](https://github.com/Halildeu/ao-kernel/issues/404) (`closes with GP-4.2 PR`)
 - **GP-4.3 issue:** [#407](https://github.com/Halildeu/ao-kernel/issues/407) (`closes with GP-4.3 PR`)
 - **GP-4.4 issue:** [#410](https://github.com/Halildeu/ao-kernel/issues/410) (`closes with GP-4.4 PR`)
-- **Sıradaki gate:** `GP-4.5` support-boundary closeout. Bu support widening değildir; stable support boundary unchanged kalır.
+- **GP-4.5 issue:** [#413](https://github.com/Halildeu/ao-kernel/issues/413) (`closes with GP-4.5 PR`)
+- **Current mode:** stable maintenance / no active support-widening gate. Future widening requires a new explicit gate.
 
 ## 2. Başlangıç Gerçeği
 
@@ -139,11 +143,12 @@ ayrı ayrı görünür kılmak.
 | `SM-3` program status active-section cleanup | Completed ([#382](https://github.com/Halildeu/ao-kernel/issues/382), record `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`) | yaşayan status dosyasındaki stale historical `ST-2` anlatımını temizlemek | no active widening gate + historical records clearly non-active |
 | `SM-4` historical beta pin wording | Completed ([#384](https://github.com/Halildeu/ao-kernel/issues/384), record `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`) | `4.0.0b2` beta pinini aktif kanal gibi değil historical pre-release yolu gibi anlatmak | stable `4.0.0` remains default + no support widening |
 | `GP-3` production-certified adapter promotion | Completed ([#386](https://github.com/Halildeu/ao-kernel/issues/386), [#388](https://github.com/Halildeu/ao-kernel/issues/388), [#390](https://github.com/Halildeu/ao-kernel/issues/390), [#392](https://github.com/Halildeu/ao-kernel/issues/392), [#394](https://github.com/Halildeu/ao-kernel/issues/394), [#396](https://github.com/Halildeu/ao-kernel/issues/396), [#398](https://github.com/Halildeu/ao-kernel/issues/398), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | final verdict `close_keep_operator_beta`; support boundary unchanged |
-| `GP-4` CI-managed live adapter gate design | Active ([#400](https://github.com/Halildeu/ao-kernel/issues/400), design `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`) | GP-3'te eksik kalan project-owned live-adapter gate'i support widening olmadan tasarlamak | design-only, no secrets, no live default CI call, no support widening |
+| `GP-4` CI-managed live adapter gate design | Completed by GP-4.5 closeout ([#400](https://github.com/Halildeu/ao-kernel/issues/400), design `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`) | GP-3'te eksik kalan project-owned live-adapter gate'i support widening olmadan tasarlamak | final verdict `close_no_widening_keep_operator_beta`; no secrets, no live default CI call, no support widening |
 | `GP-4.1` CI-safe live adapter gate skeleton | Completed on `main` ([#402](https://github.com/Halildeu/ao-kernel/issues/402), record `.claude/plans/GP-4.1-CI-SAFE-LIVE-ADAPTER-GATE-SKELETON.md`) | workflow-dispatch-only contract artifact yüzeyini eklemek | no secrets, no live adapter execution, report `overall_status=blocked`, no support widening |
 | `GP-4.2` live adapter evidence artifact contract | Completed by GP-4.2 PR ([#404](https://github.com/Halildeu/ao-kernel/issues/404), record `.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`) | live gate evidence artifact shape'i schema-backed hale getirmek | schema validation + blocked evidence slots + no live adapter execution + no support widening |
 | `GP-4.3` protected environment / secret contract | Completed by GP-4.3 PR ([#407](https://github.com/Halildeu/ao-kernel/issues/407), record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`) | protected GitHub environment, secret handle ve fork-safety contract'ini schema-backed hale getirmek | no secret values, no environment creation, no live adapter execution, no support widening |
 | `GP-4.4` protected live rehearsal blocked decision | Completed by GP-4.4 PR ([#410](https://github.com/Halildeu/ao-kernel/issues/410), record `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`) | protected live rehearsal prerequisite eksikse fake live success üretmeden blocked decision kaydetmek | schema validation + blocked rehearsal decision artifact + no live adapter execution + no support widening |
+| `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -154,15 +159,19 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — GP-4.5 support-boundary closeout
+### Current mode — stable maintenance / no active widening gate
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
-kapanmıştır. `GP-4.2` live adapter evidence artifact contract hattını,
-`GP-4.3` protected environment / secret contract hattını ve `GP-4.4` protected
-live rehearsal blocked decision hattını tamamlamıştır. Sıradaki GP-4 slice
-`GP-4.5` support-boundary closeout hattıdır.
-Bu support widening değildir; `SM-1` stable maintenance baseline ve `SM-2`
-stable baseline evidence refresh geçerlidir.
+kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,
+`GP-4.3` protected environment contract, `GP-4.4` blocked rehearsal decision ve
+`GP-4.5` support-boundary closeout tamamlanmıştır.
+
+Final GP-4 verdict: `close_no_widening_keep_operator_beta`.
+
+Bu nedenle `claude-code-cli` lane hâlâ `Beta (operator-managed)` kalır;
+production-certified real-adapter support, stable support widening ve genel
+amaçlı production coding automation platform claim'i verilmez. `SM-1` stable
+maintenance baseline ve `SM-2` stable baseline evidence refresh geçerlidir.
 
 Mevcut yol:
 
@@ -175,12 +184,10 @@ Mevcut yol:
 7. `GP-3.6` program closeout — completed; final verdict `close_keep_operator_beta`
 
 Promotion sadece code path + behavior tests + smoke + docs + runbook + CI
-evidence aynı yönde ise yapılır. `GP-3` closeout sonucunda CI-managed live
-adapter gate'i ve açık known-bug durumu yeterli olmadığı için lane
-`Beta (operator-managed)` kaldı. `GP-4.1`, bu eksik gate için manual workflow
-contract skeleton'ı ekledi; `GP-4.2` ise bu gate'in evidence artifact shape'ini
-schema-backed hale getirir. Live secrets, default CI live call veya support
-promotion içermez.
+evidence aynı yönde ise yapılır. `GP-4` bu eksik gate'in contract/evidence
+yüzeyini hazırladı, ancak required protected environment ve project-owned
+credential attested olmadığı için live rehearsal `blocked_no_rehearsal` kaldı.
+Bu yüzden support boundary değişmedi.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.
@@ -1090,8 +1097,8 @@ live adapter gate'i tasarlar.
 1. Tracker: [#400](https://github.com/Halildeu/ao-kernel/issues/400)
 2. Design record:
    `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`
-3. Current decision:
-   - `design_only_no_widening`
+3. Final decision:
+   - `close_no_widening_keep_operator_beta`
 4. Preferred direction:
    - protected manual or scheduled workflow using restricted GitHub
      environment secrets
@@ -1136,5 +1143,14 @@ live adapter gate'i tasarlar.
    - rehearsal decision artifact `live-adapter-gate-rehearsal-decision.v1.json`
    - expected decision status `blocked_no_rehearsal`
    - no live adapter execution, no secret value, no support widening
-11. Next slice:
-   - `GP-4.5` support-boundary closeout
+11. `GP-4.5` closeout:
+   - record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`
+   - slice issue [#413](https://github.com/Halildeu/ao-kernel/issues/413)
+   - final verdict `close_no_widening_keep_operator_beta`
+   - `claude-code-cli` remains `Beta (operator-managed)`
+   - production-certified real-adapter support not granted
+   - general-purpose production platform claim not granted
+12. Next slice:
+   - no active GP-4 widening gate
+   - future widening requires a new explicit gate after protected live evidence
+     exists

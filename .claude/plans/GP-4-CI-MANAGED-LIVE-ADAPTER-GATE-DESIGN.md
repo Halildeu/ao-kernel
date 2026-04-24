@@ -1,6 +1,6 @@
 # GP-4 — CI-Managed Live Adapter Gate Design
 
-**Status:** Active design program
+**Status:** Completed with no support widening
 **Date:** 2026-04-24
 **Tracker:** [#400](https://github.com/Halildeu/ao-kernel/issues/400)
 **Predecessor:** `GP-3` closeout
@@ -17,9 +17,9 @@ gate before any future support widening is attempted.
 
 ## Current Decision
 
-**Decision:** `design_only_no_widening`
+**Decision:** `close_no_widening_keep_operator_beta`
 
-This slice does not:
+This program closed after `GP-4.5` without support widening. It does not:
 
 1. add CI secrets;
 2. run live external adapter calls in default CI;
@@ -100,7 +100,7 @@ itself.
 | `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | implemented by schema-backed `live-adapter-gate-evidence.v1.json`; local tests validate schema; no live execution or support widening |
 | `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | implemented by schema-backed `live-adapter-gate-environment-contract.v1.json`; no repository secret values, no live execution, no support widening |
 | `GP-4.4` live rehearsal decision | Run protected manual gate once, or record blocked decision if prerequisites are absent | implemented as blocked decision artifact; no protected environment/credential attested, no live execution |
-| `GP-4.5` support-boundary decision | Decide promote/keep beta/defer | requires all prior slices and docs parity |
+| `GP-4.5` support-boundary decision | Decide promote/keep beta/defer | completed with verdict `close_no_widening_keep_operator_beta` |
 
 ## Promotion Preconditions
 
@@ -191,8 +191,33 @@ environment and project-owned credential are not attested. The workflow still
 does not create environments, read secrets, bind `environment:`, call `claude`,
 or widen support.
 
+## GP-4.5 Closeout
+
+`GP-4.5` closes the program with verdict
+`close_no_widening_keep_operator_beta`.
+
+Evidence considered:
+
+1. `GP-4.1` contract artifact remains blocked;
+2. `GP-4.2` evidence artifact records missing live preflight, governed
+   workflow-smoke, and protected-environment evidence slots;
+3. `GP-4.3` records required protected environment and secret handle, but does
+   not attest either as configured;
+4. `GP-4.4` records `decision="blocked_no_rehearsal"`;
+5. support docs still identify `claude-code-cli` as
+   `Beta (operator-managed)`.
+
+Final impact:
+
+1. no stable support widening;
+2. no production-certified real-adapter support;
+3. no general-purpose production platform claim;
+4. no version bump, tag, publish, secret, environment binding, or live
+   `claude` invocation.
+
 ## Next Step
 
-The next implementation slice should be `GP-4.5`: close the support-boundary
-decision for `claude-code-cli` against the blocked GP-4 evidence. It must still
-avoid support widening unless protected live evidence and docs parity exist.
+There is no active GP-4 widening gate after this closeout. A future widening
+attempt must open a new explicit gate only after the protected environment,
+project-owned credential, protected live preflight, protected governed workflow
+smoke, docs parity, and release/CI evidence all exist.

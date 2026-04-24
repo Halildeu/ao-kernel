@@ -362,3 +362,34 @@ def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
     assert "secrets." not in workflow
     assert "\n    environment:" not in workflow
     assert "contents: read" in workflow
+
+
+def test_gp4_closeout_docs_keep_support_boundary_narrow() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    expected_verdict = "close_no_widening_keep_operator_beta"
+    docs = [
+        ".claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md",
+        ".claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md",
+        ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
+        "docs/SUPPORT-BOUNDARY.md",
+        "docs/PUBLIC-BETA.md",
+        "docs/ADAPTERS.md",
+        "docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md",
+        "docs/OPERATIONS-RUNBOOK.md",
+    ]
+
+    for doc in docs:
+        text = (repo_root / doc).read_text(encoding="utf-8")
+        assert "GP-4.5" in text, doc
+        assert expected_verdict in text, doc
+
+    status = (repo_root / ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(
+        encoding="utf-8"
+    )
+    assert "stable maintenance / no active widening gate" in status
+
+    decision = (repo_root / ".claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md").read_text(
+        encoding="utf-8"
+    )
+    assert "No support tier changes" in decision
+    assert "No live `claude` invocation is made by the gate." in decision

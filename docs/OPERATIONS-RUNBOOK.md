@@ -60,6 +60,8 @@ rehearsal decision artifact'inde
 beklenir; hepsi `overall_status="blocked"` / `support_widening=false`
 semantiğindedir. Workflow'un yeşil olması production-certified
 `claude-code-cli` support anlamına gelmez.
+`GP-4.5` closeout kararı `close_no_widening_keep_operator_beta` olduğu için bu
+yüzey artık aktif widening gate değil, blocked/no-widening operasyon kaydıdır.
 
 Prerequisite contract (operator-managed lanes):
 
