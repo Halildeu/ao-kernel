@@ -1,0 +1,76 @@
+name: Live Adapter Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this design-only gate was dispatched"
+        required: true
+        type: string
+      target_ref:
+        description: "Protected ref to evaluate; GP-4.1 skeleton allows main only"
+        required: false
+        default: "main"
+        type: string
+      adapter_lane:
+        description: "Adapter lane under gate design"
+        required: false
+        default: "claude-code-cli"
+        type: choice
+        options:
+          - claude-code-cli
+
+permissions:
+  contents: read
+
+jobs:
+  live-adapter-gate-contract:
+    name: live-adapter-gate-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate GP-4.1 dispatch scope
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
+          ADAPTER_LANE: ${{ inputs.adapter_lane }}
+        run: |
+          if [ "$TARGET_REF" != "main" ]; then
+            echo "::error::GP-4.1 skeleton only allows target_ref=main"
+            exit 1
+          fi
+          if [ "$ADAPTER_LANE" != "claude-code-cli" ]; then
+            echo "::error::GP-4.1 skeleton only covers claude-code-cli"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.target_ref }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Emit design-only contract report
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
+          DISPATCH_REASON: ${{ inputs.reason }}
+          REQUESTED_BY: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          python3 scripts/live_adapter_gate_contract.py \
+            --output json \
+            --report-path live-adapter-gate-contract.v1.json \
+            --target-ref "$TARGET_REF" \
+            --reason "$DISPATCH_REASON" \
+            --requested-by "$REQUESTED_BY" \
+            --event-name "$EVENT_NAME" \
+            --head-sha "$HEAD_SHA"
+
+      - name: Upload contract artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: live-adapter-gate-contract-${{ github.run_id }}
+          path: live-adapter-gate-contract.v1.json
+          if-no-files-found: error

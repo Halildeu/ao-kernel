@@ -69,6 +69,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the missing gate required before future real-adapter production support can
   be reconsidered; it adds no secrets, live default CI calls, runtime changes,
   version bump, tag, publish, or support widening.
+- Added the `GP-4.1` CI-safe live adapter gate skeleton. The new manual
+  `live-adapter-gate` workflow emits a blocked
+  `live-adapter-gate-contract.v1.json` artifact and deliberately performs no
+  secret access, live adapter execution, version bump, tag, publish, or support
+  widening.
 
 ## [4.0.0] - 2026-04-24
 
