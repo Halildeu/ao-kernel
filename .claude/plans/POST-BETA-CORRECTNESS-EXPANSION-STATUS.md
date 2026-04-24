@@ -20,6 +20,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan stable evidence refresh:** `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
 - **Son tamamlanan status truth cleanup:** `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`
 - **Son tamamlanan historical beta pin wording cleanup:** `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`
+- **Aktif GP-3 promotion roadmap:** `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -63,7 +64,8 @@ ayrı ayrı görünür kılmak.
 - **SM-2 issue:** [#380](https://github.com/Halildeu/ao-kernel/issues/380) (`closed by evidence refresh PR`)
 - **SM-3 issue:** [#382](https://github.com/Halildeu/ao-kernel/issues/382) (`closed by status cleanup PR`)
 - **SM-4 issue:** [#384](https://github.com/Halildeu/ao-kernel/issues/384) (`closed by docs wording PR`)
-- **Aktif gate:** yok. SM-1 stable maintenance baseline geçerlidir; yeni support widening ancak ayrı promotion issue/contract ile açılır.
+- **GP-3 tracker issue:** [#386](https://github.com/Halildeu/ao-kernel/issues/386) (`open`)
+- **Aktif gate:** `GP-3.0` production-certified adapter promotion scope freeze. Stable support boundary unchanged kalır; promotion ancak sonraki evidence gates ile mümkündür.
 
 ## 2. Başlangıç Gerçeği
 
@@ -116,6 +118,7 @@ ayrı ayrı görünür kılmak.
 | `SM-2` stable baseline evidence refresh | Completed ([#380](https://github.com/Halildeu/ao-kernel/issues/380), evidence `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`) | SM-1 sonrası shipped baseline kanıtını tazelemek | entrypoints + doctor + truth inventory + wheel-installed packaging smoke + targeted tests |
 | `SM-3` program status active-section cleanup | Completed ([#382](https://github.com/Halildeu/ao-kernel/issues/382), record `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`) | yaşayan status dosyasındaki stale historical `ST-2` anlatımını temizlemek | no active widening gate + historical records clearly non-active |
 | `SM-4` historical beta pin wording | Completed ([#384](https://github.com/Halildeu/ao-kernel/issues/384), record `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`) | `4.0.0b2` beta pinini aktif kanal gibi değil historical pre-release yolu gibi anlatmak | stable `4.0.0` remains default + no support widening |
+| `GP-3` production-certified adapter promotion | Active ([#386](https://github.com/Halildeu/ao-kernel/issues/386), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | `GP-3.0` scope freeze + `GP-3.1` prerequisite truth refresh next |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -126,24 +129,25 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — stable maintenance
+### Current mode — GP-3 promotion scope freeze
 
-Aktif runtime/support-widening slice yoktur. `SM-1` stable maintenance
-baseline geçerlidir; `SM-2` stable baseline evidence refresh son kanıt
-kaydıdır. `SM-3` ve `SM-4` yalnız yaşayan status / operator-facing docs
-wording drift'ini temizler.
+`GP-3` parent promotion programı açılmıştır. Bu, support widening değildir.
+Aktif implementation slice `GP-3.0` scope freeze'dir ve stable support
+boundary unchanged kalır. `SM-1` stable maintenance baseline ve `SM-2` stable
+baseline evidence refresh geçerlidir.
 
-Varsayılan yol:
+Mevcut yol:
 
-1. shipped baseline bugfix
-2. docs/runtime/test parity cleanup
-3. CI/package/release/rollback hygiene
-4. known-bug registry / runbook clarification
-5. evidence hygiene without widening support
+1. `GP-3.0` scope freeze / roadmap kayıt
+2. `GP-3.1` `claude-code-cli` prerequisite truth refresh
+3. `GP-3.2` governed workflow repeatability
+4. `GP-3.3` failure-mode matrix
+5. `GP-3.4` evidence completeness
+6. `GP-3.5` support-boundary decision
 
-Support widening istenirse `GP-3` gibi ayrı bir promotion programı açılır.
-Bu program başlamadan önce ayrı issue, karar notu, support-boundary diff'i,
-runtime/test/smoke kanıtı ve PR gerekir.
+Promotion sadece code path + behavior tests + smoke + docs + runbook + CI
+evidence aynı yönde ise yapılır. Aksi halde lane `Beta (operator-managed)`
+kalır.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.
@@ -836,3 +840,25 @@ operator-facing dil netleştirildi.
    - `docs/ROLLBACK.md` labels the beta rollback path as historical
      pre-release rollback
    - `docs/PUBLIC-BETA.md` keeps stable `4.0.0` as the default user path
+
+## 25. GP-3 Production-Certified Adapter Promotion Snapshot
+
+Stable maintenance sonrası ilk kontrollü promotion programı açıldı.
+
+1. Tracker: [#386](https://github.com/Halildeu/ao-kernel/issues/386)
+2. Roadmap:
+   `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
+3. Initial lane:
+   - `claude-code-cli` read-only governed workflow lane
+4. Current slice:
+   - `GP-3.0` scope freeze
+5. Boundary:
+   - runtime değişikliği yok
+   - version bump/tag/publish yok
+   - stable support boundary widening yok
+6. Next implementation slice:
+   - `GP-3.1` prerequisite truth refresh
+7. Promotion rule:
+   - no promotion from one-off smoke, manifest inventory, or docs-only changes
+   - promotion requires code path, behavior tests, smoke, docs, runbook, and CI
+     evidence alignment
