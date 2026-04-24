@@ -64,6 +64,29 @@ The helper is the current smoke SSOT for `claude-code-cli`. It performs four che
 
 Helper çıkışı `blocked` ise bu lane certification-pass veya production-tier sayılamaz.
 
+### 1.2 Governed workflow smoke
+
+Helper preflight `pass` olduktan sonra gerçek workflow path'ini doğrulamak için:
+
+```bash
+python3 scripts/claude_code_cli_workflow_smoke.py --output text --timeout-seconds 60
+```
+
+Bu smoke helper-level manifest probe'dan daha kapsamlıdır:
+
+1. kontrollü disposable workspace hazırlar,
+2. `governed_review_claude_code_cli` workflow'unu read-only prompt ile çalıştırır,
+3. `review_findings` artifact'inin schema-valid materialize olduğunu doğrular,
+4. `events.jsonl` içinde `step_started`, `policy_checked`, `adapter_invoked`,
+   `step_completed` ve terminal `workflow_completed` eventlerini arar,
+5. `adapter-claude-code-cli.jsonl` evidence log'unun varlığını ve temel redaction
+   kontrolünü doğrular.
+
+**Success criterion:** `overall_status: pass` ve `final_state: completed`.
+
+Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. GP-2.4d
+verdict kapanana kadar bu lane Beta (operator-managed) olarak kalır.
+
 2026-04-22 canlı ayrım:
 
 - Aynı makinede ilk preflight, `claude auth status` yeşil olmasına rağmen
@@ -268,7 +291,7 @@ The `policy_worktree_profile.worktree.cleanup_on_completion = true` setting plus
 ## 5. Evidence & troubleshooting
 
 Every run writes JSONL evidence under `.ao/evidence/workflows/{run_id}/`:
-- `adapter-claude-code-cli.jsonl` — the adapter invocation envelope (redacted per `evidence_redaction` patterns).
+- `adapter-claude-code-cli.jsonl` — captured adapter stdout/stderr evidence log (redacted per `evidence_redaction` patterns).
 - `policy_checked` / `policy_denied` events — emitted whenever `policy_worktree_profile.enabled=true` and the executor runs the policy check layer. `policy_checked.payload.violation_kinds` / `policy_denied.payload.violation_kinds` carry the aggregate `PolicyViolation.kind` list for the live scope, including adapter CLI command kinds.
 
 Common violation kinds and the fix:
