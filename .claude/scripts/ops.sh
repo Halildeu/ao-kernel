@@ -156,6 +156,7 @@ run_preflight() {
     printf '⚠ Preflight completed with warnings\n'
     if [ "$current_dirty" -eq 1 ]; then
       printf '  - current worktree dirty\n'
+      printf '  - do not run pull/rebase/switch until changes are committed, stashed, or archived\n'
     fi
     if [ "$upstream" = "(none)" ] && [ "$branch" != "main" ]; then
       printf '  - branch has no upstream yet\n'

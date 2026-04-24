@@ -455,20 +455,38 @@ Komut exit 1 dönerse DUR, kullanıcı ile karar ver:
 
 ### Worktree-per-branch denkliği
 
-Her worktree ayrı short-lived branch'te çalışır. Session başlangıç:
+Her implementation/runtime/docs patch işi ayrı short-lived branch + ayrı
+worktree'de çalışır. Primary checkout (`/Users/halilkocoglu/Documents/ao-kernel`)
+yalnız `main` doğrulama, `origin/main` senkronizasyonu ve final release
+kontrolü içindir; primary checkout üstünde feature branch ile edit yapılmaz.
+Session başlangıç:
 
 ```bash
 # Primary worktree (/Users/halilkocoglu/Documents/ao-kernel)
 cd /Users/halilkocoglu/Documents/ao-kernel
-git checkout main && git pull
+bash .claude/scripts/ops.sh preflight
 
-# Feature → ya primary'de short-lived branch'e geç, ya yeni worktree yarat
-git worktree add ../ao-kernel-feat-X -b feat/X origin/main
+# Feature/docs/runtime işi → ayrı worktree zorunlu
+git worktree add ../ao-kernel-feat-X -b codex/feat-X origin/main
+cd ../ao-kernel-feat-X
+bash .claude/scripts/ops.sh preflight
 
 # Bitince
 bash .claude/scripts/ops.sh close-worktree ../ao-kernel-feat-X
-git branch -D feat/X  # merge edildikten sonra
+git branch -D codex/feat-X  # merge edildikten ve origin/main doğrulandıktan sonra
 ```
+
+### Origin/main authority ve dirty-state koruma
+
+- Merge sonrası tek authority `origin/main` kabul edilir. Lokal `main` veya
+  merge edilmiş worktree state'i karar kaynağı değildir; önce `git fetch origin
+  main --prune`, sonra clean primary checkout üzerinde `git merge --ff-only
+  origin/main` ile hizalanır.
+- `git pull`, `git rebase`, `git switch`, `git checkout` veya worktree kaldırma
+  işlemleri dirty state üstünde çalıştırılmaz. Önce değişiklikler commit edilir,
+  stash edilir veya `ops.sh archive-worktree <path>` ile arşivlenir.
+- Dirty state korunmadan branch değiştirme, rebase/pull yapma veya worktree
+  kapatma veri kaybı riski sayılır ve işlem durdurulur.
 
 ### Version bump — base freshness zorunlu
 
@@ -486,6 +504,8 @@ Farklı worktree'lerde çalışan Claude/Codex session'ları için:
 - Birden fazla attached worktree varsa edit başlamadan önce `ops.sh overlap-check`
   ile path-overlap görünürlüğü alınır
 - Shared implementation branch yok — her session fresh branch from main
+- Primary checkout üstünde feature branch yok — edit işi için ayrı worktree
+  zorunlu
 - Backup branch (`backup/*`) sadece kurtarma için, üstünde impl yapılmaz
 
 ## 18. Pre-commit Hook: Stale Base Version Bump Engeli (2026-04-20)

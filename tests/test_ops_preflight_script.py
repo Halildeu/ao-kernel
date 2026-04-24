@@ -123,6 +123,7 @@ def test_ops_preflight_warns_on_dirty_worktree(tmp_path: Path) -> None:
     assert "Current worktree: dirty" in proc.stdout
     assert "⚠ Preflight completed with warnings" in proc.stdout
     assert "  - current worktree dirty" in proc.stdout
+    assert "do not run pull/rebase/switch" in proc.stdout
 
 
 def test_ops_preflight_fails_on_forbidden_branch_pattern(
@@ -135,6 +136,44 @@ def test_ops_preflight_fails_on_forbidden_branch_pattern(
 
     assert proc.returncode == 1
     assert "YASAK branch pattern: claude/stale" in proc.stdout
+
+
+def test_ops_preflight_rejects_feature_branch_on_primary_worktree(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    _git(work, "checkout", "-b", "codex/primary-edit", "origin/main")
+
+    proc = _run_preflight(work)
+
+    assert proc.returncode == 1
+    assert "Primary checkout üstünde feature branch yasak" in proc.stdout
+    assert "Ayrı worktree zorunlu" in proc.stdout
+
+
+def test_ops_preflight_allows_feature_branch_on_secondary_worktree(
+    tmp_path: Path,
+) -> None:
+    work = _init_remote_clone(tmp_path)
+    wt = tmp_path / "feature-wt"
+    _run(
+        [
+            "git",
+            "worktree",
+            "add",
+            "-b",
+            "codex/secondary-edit",
+            wt.as_posix(),
+            "origin/main",
+        ],
+        cwd=work,
+    )
+
+    proc = _run_preflight(wt)
+
+    assert proc.returncode == 0
+    assert "Branch: codex/secondary-edit" in proc.stdout
+    assert "✓ Branch fresh" in proc.stdout
 
 
 def test_ops_overlap_check_clean_single_worktree(tmp_path: Path) -> None:
