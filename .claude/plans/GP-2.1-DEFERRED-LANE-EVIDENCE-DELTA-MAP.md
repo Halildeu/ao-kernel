@@ -1,6 +1,6 @@
 # GP-2.1 — Deferred Lane Evidence-Delta Map
 
-**Status:** Active  
+**Status:** Completed
 **Date:** 2026-04-23  
 **Tracker:** [#331](https://github.com/Halildeu/ao-kernel/issues/331)  
 **Parent program:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`

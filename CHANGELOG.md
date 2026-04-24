@@ -19,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `gh-cli-pr` created, verified, closed, and cleaned up a draft PR in
   `Halildeu/ao-kernel-sandbox`. This does not widen the stable support
   boundary; full remote PR opening remains outside the shipped baseline.
+- Added the `GP-2` parent closeout decision record. The deferred support-lane
+  reprioritization program is complete, with no automatic stable support
+  widening for `claude-code-cli`, `gh-cli-pr`, `bug_fix_flow`, or adapter-path
+  `cost_usd`.
 
 ## [4.0.0] - 2026-04-24
 

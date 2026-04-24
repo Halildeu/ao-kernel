@@ -1,9 +1,10 @@
 # GP-2 — Deferred Support-Lane Backlog Reprioritization
 
-**Status:** Active
+**Status:** Completed
 **Date:** 2026-04-24
 **Tracker:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
-**Execution mode:** Kapsam disiplini, tek aktif planning/runtime tranche
+**Closeout decision:** `.claude/plans/GP-2-CLOSEOUT-DECISION.md`
+**Execution mode:** Kapsam disiplini, completed planning/runtime tranche
 
 ## Amaç
 
@@ -13,6 +14,22 @@ kanıt odaklı ve uygulanabilir bir sıraya indirmek.
 Bu hattın amacı doğrudan widening implementasyonu değildir.
 Amaç, bir sonraki runtime slice açılmadan önce backlog sırasını ve
 giriş kapılarını netleştirmektir.
+
+## Closeout Verdict
+
+`GP-2` tamamlandı. Backlog sırası ve kanıt boşlukları yazılı hale getirildi,
+`claude-code-cli` ve `gh-cli-pr` operator-managed lane'leri doğrulandı, fakat
+stable shipped support boundary genişletilmedi.
+
+Final karar:
+
+1. `claude-code-cli` production-certified değildir; Beta/operator-managed kalır.
+2. `gh-cli-pr` live-write readiness sandbox rehearsal geçti, fakat full remote
+   PR opening stable shipped support değildir.
+3. `bug_fix_flow`, roadmap/spec demo ve adapter-path `cost_usd` public support
+   claim olarak deferred kalır.
+4. Bundan sonraki support widening işi ayrı promotion decision programı
+   gerektirir; GP-2 içinde otomatik widening yoktur.
 
 ## Başlangıç Gerçeği
 
@@ -159,11 +176,14 @@ giriş kapılarını netleştirmektir.
 
 ## Başarı Kriterleri
 
-1. `GP-2.1` sonunda deferred satırların sırasi tartışmasızdır.
-2. `GP-2.2` ilk runtime/evidence slice olarak tamamlanmıştır.
-3. `GP-2.3` post-stable next-slice kararını tamamlamıştır.
-4. `GP-2.4` certification contract'ı açık issue/contract ile aktiftir.
-5. Status SSOT'ta aktif issue/contract alanı günceldir.
+1. `GP-2.1` sonunda deferred satırların sırası tartışmasız hale geldi.
+2. `GP-2.2` ilk runtime/evidence slice olarak tamamlandı.
+3. `GP-2.3` post-stable next-slice kararını tamamladı.
+4. `GP-2.4` certification contract'ı `operator_managed_beta_keep` verdict'iyle
+   kapandı.
+5. `GP-2.5a` disposable sandbox rehearsal geçti ve `rehearsal_pass_keep_beta`
+   verdict'iyle kapandı.
+6. Status SSOT artık GP-2 için aktif runtime gate taşımıyor.
 
 ## Risk Register
 
@@ -173,3 +193,10 @@ giriş kapılarını netleştirmektir.
 | Overclaim drift | Yüksek | PUBLIC-BETA ve SUPPORT-BOUNDARY parity zorunlu |
 | Paralel lane açma | Orta | tek aktif runtime slice kuralı |
 | Karar kaydı eksikliği | Orta | issue + contract + status üçlüsü zorunlu |
+
+## Next Boundary
+
+GP-2 sonrası varsayılan yol maintenance'tır. `gh-cli-pr`, `claude-code-cli`,
+`bug_fix_flow` veya extension yüzeylerinden herhangi biri stable support'a
+alınacaksa yeni bir promotion programı açılır ve tek lane/tek PR disiplini
+korunur.
