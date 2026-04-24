@@ -89,7 +89,8 @@ Operator prerequisite contract (PB-9.1):
 2. `gh-cli-pr` preflight lane için `gh` binary + aktif auth + repo context
    (`gh repo view`) çözümü gerekir; preflight side-effect-safe dry-run zinciridir.
 3. `gh-cli-pr` live-write probe yalnız explicit
-   `--mode live-write --allow-live-write --head ... --base ...` ile açılır.
+   `--mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head ... --base ...`
+   ile açılır.
 4. Live-write probe varsayılan disposable guard keyword `sandbox` uygular;
    repo adı bu keyword'ü içermiyorsa lane bilerek `blocked` olur.
 5. `--keep-live-write-pr-open` lane'i bilinçli riskli kabul ettirir ve
