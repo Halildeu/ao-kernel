@@ -171,6 +171,15 @@ namespace. It deletes stale keys only inside the same recorded project identity
 and embedding space. It does not write root authority files, expose MCP tools,
 or provide retrieval integration.
 
+The `repo query` surface is Beta / experimental read-only retrieval. It reads
+`.ao/context/repo_vector_index_manifest.json` and the configured vector backend,
+requires an embedding API key to embed the query, and returns only candidates
+that match the recorded `repo_chunk::<project_identity>::<embedding_space>::`
+namespace plus repo chunk metadata. It validates current source line ranges and
+content hashes before returning snippets, and excludes stale candidates by
+default. It does not write root authority files, `.ao/context` artifacts, vector
+backend records, expose MCP tools, or feed `context_compiler` automatically.
+
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
 alınmıştır. `GP-1.3` re-evaluation, bu durumun kararını değiştirmemiştir.

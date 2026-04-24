@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- Added the RI-4d read-only `repo query` boundary over explicit repo vector
+  indexes. The new surface requires an existing vector index manifest,
+  configured vector backend, and embedding API key; it returns schema-backed
+  repo chunk candidates without vector writes, `.ao/context` artifact writes,
+  MCP exposure, root exports, or `context_compiler` auto-injection.
 - Recorded the `GP-2.5a` disposable sandbox live-write rehearsal evidence:
   `gh-cli-pr` created, verified, closed, and cleaned up a draft PR in
   `Halildeu/ao-kernel-sandbox`. This does not widen the stable support
