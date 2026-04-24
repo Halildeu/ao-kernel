@@ -64,7 +64,7 @@ giriş kapılarını netleştirmektir.
   **Deferred** kalır; behavior/evidence assertions mevcut ama support widening
   üretmez.
 
-### `GP-2.3` — Post-stable adapter certification entry decision (Active)
+### `GP-2.3` — Post-stable adapter certification entry decision (Completed)
 
 - Issue: [#361](https://github.com/Halildeu/ao-kernel/issues/361)
 - Contract:
@@ -79,6 +79,28 @@ giriş kapılarını netleştirmektir.
   - Runtime değişikliği yok
   - Version bump, tag veya publish yok
   - Stable support boundary unchanged kalır
+- Closeout:
+  - Next active issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+  - Next active contract:
+    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+
+### `GP-2.4` — `claude-code-cli` read-only certification contract (Active)
+
+- Issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+- Contract:
+  `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+- Hedef: `claude-code-cli` read-only real-adapter certification için
+  prerequisite, smoke, evidence, failure-mode ve support-boundary karar
+  kapılarını tek contract altında toplamak.
+- Sıra:
+  1. `GP-2.4a` preflight evidence contract
+  2. `GP-2.4b` governed workflow smoke evidence
+  3. `GP-2.4c` failure-mode matrix
+  4. `GP-2.4d` support boundary verdict
+- Sınır:
+  - `claude-code-cli` henüz production-certified değildir
+  - Live-write yok
+  - Stable support boundary unchanged kalır
 
 ## Gate Modeli
 
@@ -91,8 +113,9 @@ giriş kapılarını netleştirmektir.
 
 1. `GP-2.1` sonunda deferred satırların sırasi tartışmasızdır.
 2. `GP-2.2` ilk runtime/evidence slice olarak tamamlanmıştır.
-3. `GP-2.3` post-stable next-slice kararını açık issue/contract ile taşır.
-4. Status SSOT'ta aktif issue/contract alanı günceldir.
+3. `GP-2.3` post-stable next-slice kararını tamamlamıştır.
+4. `GP-2.4` certification contract'ı açık issue/contract ile aktiftir.
+5. Status SSOT'ta aktif issue/contract alanı günceldir.
 
 ## Risk Register
 

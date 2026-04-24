@@ -1,6 +1,6 @@
 # GP-2.3 — Post-Stable Adapter Certification Entry Decision
 
-**Status:** Active
+**Status:** Completed
 **Date:** 2026-04-24
 **Tracker:** [#361](https://github.com/Halildeu/ao-kernel/issues/361)
 **Parent:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
@@ -82,6 +82,20 @@ tek tek cevaplamalıdır:
    - Later: extension/support widening
 4. Stable support boundary unchanged kalıyor.
 5. Bir sonraki slice için uygulanacak contract soruları açık.
+
+## Closeout
+
+`GP-2.3` karar slice'ı tamamlandı. Handoff:
+
+1. Next active issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+2. Next active contract:
+   `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+3. Chosen first lane:
+   `claude-code-cli` read-only real-adapter certification
+4. Support boundary impact:
+   unchanged; certification contract support widening değildir
+5. Next default:
+   `GP-2.4a` preflight evidence contract
 
 ## Kanıt Komutları
 
