@@ -22,6 +22,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan historical beta pin wording cleanup:** `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`
 - **Aktif GP-3 promotion roadmap:** `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
 - **Son tamamlanan GP-3 prerequisite truth refresh:** `.claude/plans/GP-3.1-CLAUDE-CODE-CLI-PREREQUISITE-TRUTH-REFRESH.md`
+- **Aktif GP-3 repeatability record:** `.claude/plans/GP-3.2-CLAUDE-CODE-CLI-GOVERNED-WORKFLOW-REPEATABILITY.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -66,8 +67,9 @@ ayrı ayrı görünür kılmak.
 - **SM-3 issue:** [#382](https://github.com/Halildeu/ao-kernel/issues/382) (`closed by status cleanup PR`)
 - **SM-4 issue:** [#384](https://github.com/Halildeu/ao-kernel/issues/384) (`closed by docs wording PR`)
 - **GP-3 tracker issue:** [#386](https://github.com/Halildeu/ao-kernel/issues/386) (`open`)
-- **GP-3.1 issue:** [#388](https://github.com/Halildeu/ao-kernel/issues/388) (`open until PR merge`)
-- **Aktif gate:** `GP-3.1` `claude-code-cli` prerequisite truth refresh. Stable support boundary unchanged kalır; promotion ancak sonraki evidence gates ile mümkündür.
+- **GP-3.1 issue:** [#388](https://github.com/Halildeu/ao-kernel/issues/388) (`closed`)
+- **GP-3.2 issue:** [#390](https://github.com/Halildeu/ao-kernel/issues/390) (`open until PR merge`)
+- **Aktif gate:** `GP-3.2` `claude-code-cli` governed workflow repeatability. Stable support boundary unchanged kalır; promotion ancak sonraki evidence gates ile mümkündür.
 
 ## 2. Başlangıç Gerçeği
 
@@ -120,7 +122,7 @@ ayrı ayrı görünür kılmak.
 | `SM-2` stable baseline evidence refresh | Completed ([#380](https://github.com/Halildeu/ao-kernel/issues/380), evidence `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`) | SM-1 sonrası shipped baseline kanıtını tazelemek | entrypoints + doctor + truth inventory + wheel-installed packaging smoke + targeted tests |
 | `SM-3` program status active-section cleanup | Completed ([#382](https://github.com/Halildeu/ao-kernel/issues/382), record `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`) | yaşayan status dosyasındaki stale historical `ST-2` anlatımını temizlemek | no active widening gate + historical records clearly non-active |
 | `SM-4` historical beta pin wording | Completed ([#384](https://github.com/Halildeu/ao-kernel/issues/384), record `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`) | `4.0.0b2` beta pinini aktif kanal gibi değil historical pre-release yolu gibi anlatmak | stable `4.0.0` remains default + no support widening |
-| `GP-3` production-certified adapter promotion | Active ([#386](https://github.com/Halildeu/ao-kernel/issues/386), [#388](https://github.com/Halildeu/ao-kernel/issues/388), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | `GP-3.1` prerequisite truth refresh recorded; `GP-3.2` repeatability next |
+| `GP-3` production-certified adapter promotion | Active ([#386](https://github.com/Halildeu/ao-kernel/issues/386), [#388](https://github.com/Halildeu/ao-kernel/issues/388), [#390](https://github.com/Halildeu/ao-kernel/issues/390), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | `GP-3.2` repeatability recorded; `GP-3.3` failure-mode matrix next |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -131,19 +133,19 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — GP-3 prerequisite truth refresh
+### Current mode — GP-3 governed workflow repeatability
 
 `GP-3` parent promotion programı açılmıştır. Bu, support widening değildir.
-Aktif implementation slice `GP-3.1` prerequisite truth refresh'tir ve stable
-support boundary unchanged kalır. `SM-1` stable maintenance baseline ve `SM-2`
-stable baseline evidence refresh geçerlidir.
+Aktif implementation slice `GP-3.2` governed workflow repeatability'dir ve
+stable support boundary unchanged kalır. `SM-1` stable maintenance baseline ve
+`SM-2` stable baseline evidence refresh geçerlidir.
 
 Mevcut yol:
 
 1. `GP-3.0` scope freeze / roadmap kayıt — completed
-2. `GP-3.1` `claude-code-cli` prerequisite truth refresh — current PR records pass
-3. `GP-3.2` governed workflow repeatability — next
-4. `GP-3.3` failure-mode matrix
+2. `GP-3.1` `claude-code-cli` prerequisite truth refresh — completed
+3. `GP-3.2` governed workflow repeatability — current PR records 3-pass evidence
+4. `GP-3.3` failure-mode matrix — next
 5. `GP-3.4` evidence completeness
 6. `GP-3.5` support-boundary decision
 
@@ -889,3 +891,34 @@ prerequisite gerçeği tazelendi.
    - `claude-code-cli` remains `Beta (operator-managed)`
 6. Next slice:
    - `GP-3.2` governed workflow repeatability
+
+## 27. GP-3.2 Claude Code CLI Governed Workflow Repeatability Snapshot
+
+`claude-code-cli` governed read-only workflow için tek başarılı smoke yerine
+tekrarlanabilirlik kanıtı üretildi.
+
+1. Tracker: [#390](https://github.com/Halildeu/ao-kernel/issues/390)
+2. Decision record:
+   `.claude/plans/GP-3.2-CLAUDE-CODE-CLI-GOVERNED-WORKFLOW-REPEATABILITY.md`
+3. Command:
+   - `python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60 --cleanup`
+4. Repetition:
+   - run 1: `overall_status="pass"`, `preflight_status="pass"`,
+     final state `completed`
+   - run 2: `overall_status="pass"`, `preflight_status="pass"`,
+     final state `completed`
+   - run 3: `overall_status="pass"`, `preflight_status="pass"`,
+     final state `completed`
+5. Required checks passed in every run:
+   - `final_state`
+   - `evidence_events`
+   - `review_findings_artifact`
+   - `adapter_log`
+   - `review_findings_schema`
+6. Boundary:
+   - runtime değişikliği yok
+   - version bump/tag/publish yok
+   - stable support boundary widening yok
+   - `claude-code-cli` remains `Beta (operator-managed)`
+7. Next slice:
+   - `GP-3.3` failure-mode matrix
