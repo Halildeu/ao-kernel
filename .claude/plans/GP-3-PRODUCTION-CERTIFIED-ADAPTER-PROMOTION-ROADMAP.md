@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, GP-3.4 evidence completeness recorded
+**Status:** Active program, GP-3.5 support-boundary decision recorded
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -54,9 +54,9 @@ Reason:
 | `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed; preflight and workflow smoke passed; no support widening |
 | `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | completed; 3 independent workflow smoke runs passed; no support widening |
 | `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | completed; helper/workflow failure modes fail-closed and typed |
-| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | completed on branch; evidence checks widened and live smoke passed |
-| `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | next; docs/status/support matrix updated |
-| `GP-3.6` closeout | Record final verdict and next allowed path | tracker closed or next lane opened intentionally |
+| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | completed; evidence checks widened and live smoke passed |
+| `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | completed; verdict `keep_operator_beta` |
+| `GP-3.6` closeout | Record final verdict and next allowed path | next; tracker closed or next lane opened intentionally |
 
 ## Promotion Criteria
 
@@ -208,3 +208,34 @@ and recorded a live pass.
    - `claude-code-cli` remains `Beta (operator-managed)`
 
 The next accepted implementation slice is `GP-3.5` support-boundary decision.
+
+## GP-3.5 Support-Boundary Decision
+
+`GP-3.5` reconciled all `claude-code-cli` promotion gates and kept the lane at
+`Beta (operator-managed)`.
+
+1. Decision record:
+   `.claude/plans/GP-3.5-CLAUDE-CODE-CLI-SUPPORT-BOUNDARY-DECISION.md`
+2. Tracker: [#396](https://github.com/Halildeu/ao-kernel/issues/396)
+3. Verdict: `keep_operator_beta`
+4. Fresh evidence:
+   - preflight smoke `overall_status="pass"`
+   - governed workflow smoke `overall_status="pass"`
+   - workflow final state `completed`
+   - run id `25af3707-9f8b-497f-bdb1-32cd82e7cd52`
+5. Positive gates:
+   - prerequisite truth refreshed
+   - repeatability proven by three independent runs
+   - failure-mode matrix fail-closed
+   - evidence completeness checks behavior-tested
+6. Blockers to production-certified read-only:
+   - external `claude` binary and local session auth remain operator state
+   - `KB-001` and `KB-002` remain open
+   - no CI-managed live `claude-code-cli` governed workflow gate exists
+   - adapter-path `cost_usd` / token usage remains explicit non-claim
+7. Boundary:
+   - no stable support widening
+   - no version bump, tag, or publish
+   - `claude-code-cli` remains `Beta (operator-managed)`
+
+The next accepted implementation slice is `GP-3.6` program closeout.

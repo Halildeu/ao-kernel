@@ -1,6 +1,6 @@
 # GP-3.4 — Claude Code CLI Evidence Completeness
 
-**Status:** Completed on branch, pending PR merge
+**Status:** Completed on main
 **Date:** 2026-04-24
 **Tracker:** [#394](https://github.com/Halildeu/ao-kernel/issues/394)
 **Parent tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)

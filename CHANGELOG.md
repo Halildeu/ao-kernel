@@ -56,6 +56,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   governed workflow smoke now checks canonical event order and semantic
   `review_findings` contents, pins adapter-log secret-like leaks as failures,
   and keeps adapter-path `cost_usd` / token usage as an explicit non-claim.
+- Recorded the `GP-3.5` `claude-code-cli` support-boundary decision. Fresh
+  preflight and governed workflow smoke passed, but the final verdict remains
+  `keep_operator_beta`; no stable support widening, version bump, tag, or
+  publish is included.
 
 ## [4.0.0] - 2026-04-24
 
