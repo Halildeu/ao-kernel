@@ -76,7 +76,8 @@ schema version and update the support docs through a separate decision gate.
 
 ## Next Slice
 
-`GP-4.3` should define the protected GitHub environment / secret contract and
-fork-safety rules. It should still avoid committing secret values and should not
-run live adapters unless project-owned credentials and protected dispatch rules
-exist.
+`GP-4.3` has since added the protected GitHub environment / secret contract in
+`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. The next slice
+is `GP-4.4`: either run a protected live rehearsal after project-owned
+credentials exist, or record an explicit blocked decision without support
+widening.

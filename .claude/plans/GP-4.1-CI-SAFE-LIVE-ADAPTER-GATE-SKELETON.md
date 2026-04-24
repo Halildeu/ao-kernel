@@ -76,6 +76,7 @@ governed workflow smoke evidence.
 ## Next Slice
 
 `GP-4.2` has since added the schema-backed evidence artifact contract in
-`.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`. The next
-active GP-4 slice is `GP-4.3`: protected GitHub environment / secret contract
-and fork-safety rules.
+`.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`, and
+`GP-4.3` has added the protected environment / secret contract in
+`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. The next GP-4
+slice is `GP-4.4`: protected live rehearsal or explicit blocked decision.

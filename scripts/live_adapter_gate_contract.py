@@ -14,9 +14,12 @@ if str(_REPO_ROOT) not in sys.path:
 
 from ao_kernel.live_adapter_gate import (  # noqa: E402
     EVIDENCE_ARTIFACT,
+    ENVIRONMENT_CONTRACT_ARTIFACT,
+    build_live_adapter_gate_environment_contract,
     build_live_adapter_gate_report,
     build_live_adapter_gate_evidence_artifact,
     render_live_adapter_gate_text,
+    write_live_adapter_gate_environment_contract,
     write_live_adapter_gate_evidence_artifact,
     write_live_adapter_gate_report,
 )
@@ -27,8 +30,9 @@ def main() -> int:
         prog="live_adapter_gate_contract.py",
         description=(
             "Emit the design-only GP-4.1 live-adapter gate contract report. "
-            "This command also writes the GP-4.2 evidence artifact and never "
-            "executes a live external adapter."
+            "This command also writes the GP-4.2 evidence artifact plus the "
+            "GP-4.3 protected environment contract and never executes a live "
+            "external adapter."
         ),
     )
     parser.add_argument(
@@ -48,6 +52,12 @@ def main() -> int:
         type=Path,
         default=Path(EVIDENCE_ARTIFACT),
         help="Path for the canonical GP-4.2 evidence artifact.",
+    )
+    parser.add_argument(
+        "--environment-contract-path",
+        type=Path,
+        default=Path(ENVIRONMENT_CONTRACT_ARTIFACT),
+        help="Path for the canonical GP-4.3 protected environment contract.",
     )
     parser.add_argument("--target-ref", default="main", help="Protected target ref being evaluated.")
     parser.add_argument("--reason", default="", help="Manual dispatch reason.")
@@ -69,6 +79,13 @@ def main() -> int:
         contract_report_path=args.report_path.name,
     )
     write_live_adapter_gate_evidence_artifact(args.evidence_path, evidence_artifact)
+    environment_contract = build_live_adapter_gate_environment_contract(
+        generated_at=report["generated_at"],
+    )
+    write_live_adapter_gate_environment_contract(
+        args.environment_contract_path,
+        environment_contract,
+    )
 
     if args.output == "json":
         print(json.dumps(report, indent=2, sort_keys=True))

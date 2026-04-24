@@ -159,5 +159,11 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   ekler. Bu artifact bugün `overall_status="blocked"` /
   `support_widening=false` / `production_certified=false` döner ve canlı
   adapter execution kanıtı değildir.
+- `GP-4.3` protected environment / secret contract hattı
+  `live-adapter-gate-environment-contract.v1.json` artifact'ini ekler. Bu
+  artifact required environment olarak `ao-kernel-live-adapter-gate` ve secret
+  handle olarak `AO_CLAUDE_CODE_CLI_AUTH` adlarını tanımlar; secret değeri
+  içermez, environment oluşturmaz, canlı `claude` çağırmaz ve support widening
+  yapmaz.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.

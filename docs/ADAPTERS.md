@@ -243,6 +243,10 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
   beside the contract artifact. It records missing preflight/workflow-smoke
   and protected-environment evidence as promotion blockers; it still does not
   call `claude`, read secrets, or promote this lane.
+- `GP-4.3` adds `live-adapter-gate-environment-contract.v1.json`. It defines
+  the required protected environment (`ao-kernel-live-adapter-gate`) and secret
+  handle (`AO_CLAUDE_CODE_CLI_AUTH`) without committing secret values, binding a
+  live environment, invoking `claude`, or promoting this lane.
 
 ### Failure modes
 

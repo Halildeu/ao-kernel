@@ -98,7 +98,7 @@ itself.
 |---|---|---|
 | `GP-4.1` workflow design stub | Add non-secret workflow skeleton or documented manual gate contract | implemented by `.github/workflows/live-adapter-gate.yml`; report remains `blocked`; no live secrets, no live calls, CI-safe |
 | `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | implemented by schema-backed `live-adapter-gate-evidence.v1.json`; local tests validate schema; no live execution or support widening |
-| `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | no repository secret values committed |
+| `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | implemented by schema-backed `live-adapter-gate-environment-contract.v1.json`; no repository secret values, no live execution, no support widening |
 | `GP-4.4` live rehearsal | Run protected manual gate once and record artifacts | only if project-owned credentials exist |
 | `GP-4.5` support-boundary decision | Decide promote/keep beta/defer | requires all prior slices and docs parity |
 
@@ -161,8 +161,25 @@ The current artifact is intentionally blocked. It may be schema-valid and
 uploaded by CI, but it still says `support_widening=false` and
 `production_certified=false`.
 
+## GP-4.3 Implementation
+
+`GP-4.3` adds the schema-backed protected environment / secret contract:
+
+1. schema: `ao_kernel/defaults/schemas/live-adapter-gate-environment.schema.v1.json`;
+2. helper: `build_live_adapter_gate_environment_contract()`;
+3. validator: `validate_live_adapter_gate_environment_contract()`;
+4. expected artifact: `live-adapter-gate-environment-contract.v1.json`.
+
+The contract names the future protected GitHub environment
+`ao-kernel-live-adapter-gate`, requires maintainer review, forbids fork and
+pull-request secret exposure, and names `AO_CLAUDE_CODE_CLI_AUTH` as the
+project-owned Claude Code CLI auth handle. It does not create the environment,
+read a secret, call `claude`, or widen support.
+
 ## Next Step
 
-The next implementation slice should be `GP-4.3`: define the protected
-GitHub environment / secret contract and fork-safety rules. It must not commit
-secret values and must not widen support without protected live evidence.
+The next implementation slice should be `GP-4.4`: either run a protected live
+rehearsal after the required environment and credential are configured, or
+record an explicit blocked decision if project-owned credentials are not
+available. It must still avoid support widening until protected live evidence
+and docs parity exist.

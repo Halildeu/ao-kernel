@@ -12,13 +12,18 @@ from jsonschema.exceptions import ValidationError
 from ao_kernel.live_adapter_gate import (
     BLOCKED_FINDING,
     EVIDENCE_ARTIFACT,
+    ENVIRONMENT_CONTRACT_ARTIFACT,
     build_live_adapter_gate_evidence_artifact,
+    build_live_adapter_gate_environment_contract,
     build_live_adapter_gate_report,
     live_adapter_gate_report_sha256,
     load_live_adapter_gate_evidence_schema,
+    load_live_adapter_gate_environment_schema,
     render_live_adapter_gate_text,
     validate_live_adapter_gate_evidence_artifact,
+    validate_live_adapter_gate_environment_contract,
     write_live_adapter_gate_evidence_artifact,
+    write_live_adapter_gate_environment_contract,
     write_live_adapter_gate_report,
 )
 
@@ -74,6 +79,13 @@ def test_live_adapter_gate_evidence_schema_is_valid() -> None:
     assert schema["$id"] == "urn:ao:live-adapter-gate-evidence:v1"
 
 
+def test_live_adapter_gate_environment_schema_is_valid() -> None:
+    schema = load_live_adapter_gate_environment_schema()
+
+    Draft202012Validator.check_schema(schema)
+    assert schema["$id"] == "urn:ao:live-adapter-gate-environment:v1"
+
+
 def test_build_live_adapter_gate_evidence_artifact_is_schema_valid_and_blocked() -> None:
     report = build_live_adapter_gate_report(
         target_ref="main",
@@ -110,6 +122,47 @@ def test_build_live_adapter_gate_evidence_artifact_is_schema_valid_and_blocked()
     assert requirements["protected_environment_attestation"]["status"] == "blocked"
 
 
+def test_build_live_adapter_gate_environment_contract_is_schema_valid_and_blocked() -> None:
+    contract = build_live_adapter_gate_environment_contract(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+
+    validate_live_adapter_gate_environment_contract(contract)
+    assert contract["schema_version"] == "1"
+    assert contract["artifact_kind"] == "live_adapter_gate_environment_contract"
+    assert contract["program_id"] == "GP-4.3"
+    assert contract["overall_status"] == "blocked"
+    assert contract["finding_code"] == "live_gate_protected_environment_not_attested"
+    assert contract["live_execution_allowed"] is False
+    assert contract["support_widening"] is False
+    assert contract["protected_environment"] == {
+        "name": "ao-kernel-live-adapter-gate",
+        "required": True,
+        "required_reviewers": True,
+        "prevent_self_review": True,
+        "allowed_refs": ["main"],
+        "detail": (
+            "Future live execution must run through this protected GitHub "
+            "environment or an explicitly approved release-gate equivalent."
+        ),
+    }
+    assert contract["trigger_policy"]["forks_allowed"] is False
+    assert contract["trigger_policy"]["pull_request_secrets_allowed"] is False
+    assert "pull_request" in contract["trigger_policy"]["forbidden_events"]
+    assert contract["required_secrets"] == [
+        {
+            "secret_id": "AO_CLAUDE_CODE_CLI_AUTH",
+            "required": True,
+            "exposure": "github_environment_secret",
+            "secret_value_committed": False,
+            "purpose": (
+                "Project-owned Claude Code CLI auth material or equivalent "
+                "non-API-key credential required for protected live rehearsal."
+            ),
+        }
+    ]
+
+
 def test_live_adapter_gate_evidence_schema_rejects_support_widening() -> None:
     report = build_live_adapter_gate_report(generated_at="2026-04-24T00:00:00Z")
     artifact = build_live_adapter_gate_evidence_artifact(report)
@@ -117,6 +170,16 @@ def test_live_adapter_gate_evidence_schema_rejects_support_widening() -> None:
 
     with pytest.raises(ValidationError):
         validate_live_adapter_gate_evidence_artifact(artifact)
+
+
+def test_live_adapter_gate_environment_schema_rejects_fake_live_execution() -> None:
+    contract = build_live_adapter_gate_environment_contract(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+    contract["live_execution_allowed"] = True
+
+    with pytest.raises(ValidationError):
+        validate_live_adapter_gate_environment_contract(contract)
 
 
 def test_write_live_adapter_gate_evidence_artifact_round_trips_json(tmp_path: Path) -> None:
@@ -129,6 +192,20 @@ def test_write_live_adapter_gate_evidence_artifact_round_trips_json(tmp_path: Pa
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert payload == artifact
     validate_live_adapter_gate_evidence_artifact(payload)
+    assert path.read_text(encoding="utf-8").endswith("\n")
+
+
+def test_write_live_adapter_gate_environment_contract_round_trips_json(tmp_path: Path) -> None:
+    contract = build_live_adapter_gate_environment_contract(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+    path = tmp_path / ENVIRONMENT_CONTRACT_ARTIFACT
+
+    write_live_adapter_gate_environment_contract(path, contract)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload == contract
+    validate_live_adapter_gate_environment_contract(payload)
     assert path.read_text(encoding="utf-8").endswith("\n")
 
 
@@ -146,6 +223,7 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     report_path = tmp_path / "contract.json"
     evidence_path = tmp_path / "evidence.json"
+    environment_contract_path = tmp_path / "environment.json"
 
     result = subprocess.run(
         [
@@ -157,6 +235,8 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
             str(report_path),
             "--evidence-path",
             str(evidence_path),
+            "--environment-contract-path",
+            str(environment_contract_path),
             "--target-ref",
             "main",
             "--reason",
@@ -178,12 +258,16 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
     stdout_payload = json.loads(result.stdout)
     file_payload = json.loads(report_path.read_text(encoding="utf-8"))
     evidence_payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+    environment_payload = json.loads(environment_contract_path.read_text(encoding="utf-8"))
     assert stdout_payload == file_payload
     assert stdout_payload["overall_status"] == "blocked"
     assert stdout_payload["live_execution_attempted"] is False
     validate_live_adapter_gate_evidence_artifact(evidence_payload)
+    validate_live_adapter_gate_environment_contract(environment_payload)
     assert evidence_payload["source_report"]["path"] == report_path.name
     assert evidence_payload["support_widening"] is False
+    assert environment_payload["support_widening"] is False
+    assert environment_payload["live_execution_allowed"] is False
 
 
 def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
@@ -196,7 +280,9 @@ def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
     assert "live_adapter_gate_contract.py" in workflow
     assert "live-adapter-gate-contract.v1.json" in workflow
     assert "live-adapter-gate-evidence.v1.json" in workflow
+    assert "live-adapter-gate-environment-contract.v1.json" in workflow
     assert "claude_code_cli_smoke.py" not in workflow
     assert "claude_code_cli_workflow_smoke.py" not in workflow
     assert "secrets." not in workflow
+    assert "\n    environment:" not in workflow
     assert "contents: read" in workflow

@@ -83,7 +83,8 @@ ayrı ayrı görünür kılmak.
 - **GP-4 tracker issue:** [#400](https://github.com/Halildeu/ao-kernel/issues/400) (`open`)
 - **GP-4.1 issue:** [#402](https://github.com/Halildeu/ao-kernel/issues/402) (`closed`)
 - **GP-4.2 issue:** [#404](https://github.com/Halildeu/ao-kernel/issues/404) (`closes with GP-4.2 PR`)
-- **Sıradaki gate:** `GP-4.3` protected environment / secret contract. Bu support widening değildir; stable support boundary unchanged kalır.
+- **GP-4.3 issue:** [#407](https://github.com/Halildeu/ao-kernel/issues/407) (`closes with GP-4.3 PR`)
+- **Sıradaki gate:** `GP-4.4` protected live rehearsal veya explicit blocked decision. Bu support widening değildir; stable support boundary unchanged kalır.
 
 ## 2. Başlangıç Gerçeği
 
@@ -140,6 +141,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4` CI-managed live adapter gate design | Active ([#400](https://github.com/Halildeu/ao-kernel/issues/400), design `.claude/plans/GP-4-CI-MANAGED-LIVE-ADAPTER-GATE-DESIGN.md`) | GP-3'te eksik kalan project-owned live-adapter gate'i support widening olmadan tasarlamak | design-only, no secrets, no live default CI call, no support widening |
 | `GP-4.1` CI-safe live adapter gate skeleton | Completed on `main` ([#402](https://github.com/Halildeu/ao-kernel/issues/402), record `.claude/plans/GP-4.1-CI-SAFE-LIVE-ADAPTER-GATE-SKELETON.md`) | workflow-dispatch-only contract artifact yüzeyini eklemek | no secrets, no live adapter execution, report `overall_status=blocked`, no support widening |
 | `GP-4.2` live adapter evidence artifact contract | Completed by GP-4.2 PR ([#404](https://github.com/Halildeu/ao-kernel/issues/404), record `.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`) | live gate evidence artifact shape'i schema-backed hale getirmek | schema validation + blocked evidence slots + no live adapter execution + no support widening |
+| `GP-4.3` protected environment / secret contract | Completed by GP-4.3 PR ([#407](https://github.com/Halildeu/ao-kernel/issues/407), record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`) | protected GitHub environment, secret handle ve fork-safety contract'ini schema-backed hale getirmek | no secret values, no environment creation, no live adapter execution, no support widening |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -150,12 +152,13 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — GP-4.3 protected environment / secret contract
+### Current mode — GP-4.4 protected live rehearsal decision
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
-kapanmıştır. `GP-4.2` live adapter evidence artifact contract hattını
-tamamlamıştır. Sıradaki GP-4 slice `GP-4.3` protected GitHub environment /
-secret contract ve fork-safety kurallarını netleştirmektir.
+kapanmıştır. `GP-4.2` live adapter evidence artifact contract hattını,
+`GP-4.3` protected environment / secret contract hattını tamamlamıştır.
+Sıradaki GP-4 slice `GP-4.4` protected live rehearsal veya project-owned
+credential yoksa explicit blocked decision hattıdır.
 Bu support widening değildir; `SM-1` stable maintenance baseline ve `SM-2`
 stable baseline evidence refresh geçerlidir.
 
@@ -1116,5 +1119,14 @@ live adapter gate'i tasarlar.
    - expected artifact status `blocked`, `support_widening=false`,
      `production_certified=false`
    - no live adapter execution, no secret access, no support widening
-9. Next slice:
-   - `GP-4.3` protected environment / secret contract and fork-safety rules
+9. `GP-4.3` slice:
+   - record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`
+   - schema `ao_kernel/defaults/schemas/live-adapter-gate-environment.schema.v1.json`
+   - environment contract artifact `live-adapter-gate-environment-contract.v1.json`
+   - required protected environment `ao-kernel-live-adapter-gate`
+   - required secret handle `AO_CLAUDE_CODE_CLI_AUTH`
+   - expected contract status `blocked`, `live_execution_allowed=false`,
+     `support_widening=false`
+   - no live adapter execution, no secret value, no support widening
+10. Next slice:
+   - `GP-4.4` protected live rehearsal or explicit blocked decision

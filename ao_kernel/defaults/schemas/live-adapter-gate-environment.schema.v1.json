@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:live-adapter-gate-environment:v1",
+  "title": "Live Adapter Gate Protected Environment Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "gate_id",
+    "adapter_id",
+    "support_tier",
+    "overall_status",
+    "finding_code",
+    "generated_at",
+    "protected_environment",
+    "trigger_policy",
+    "required_secrets",
+    "live_execution_allowed",
+    "support_widening",
+    "promotion_blockers",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "live_adapter_gate_environment_contract"
+    },
+    "program_id": {
+      "const": "GP-4.3"
+    },
+    "gate_id": {
+      "const": "ci-managed-live-adapter-gate"
+    },
+    "adapter_id": {
+      "const": "claude-code-cli"
+    },
+    "support_tier": {
+      "const": "Beta (operator-managed)"
+    },
+    "overall_status": {
+      "const": "blocked"
+    },
+    "finding_code": {
+      "const": "live_gate_protected_environment_not_attested"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "protected_environment": {
+      "$ref": "#/$defs/protected_environment"
+    },
+    "trigger_policy": {
+      "$ref": "#/$defs/trigger_policy"
+    },
+    "required_secrets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/required_secret"
+      }
+    },
+    "live_execution_allowed": {
+      "const": false
+    },
+    "support_widening": {
+      "const": false
+    },
+    "promotion_blockers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "protected_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "required",
+        "required_reviewers",
+        "prevent_self_review",
+        "allowed_refs",
+        "detail"
+      ],
+      "properties": {
+        "name": {
+          "const": "ao-kernel-live-adapter-gate"
+        },
+        "required": {
+          "const": true
+        },
+        "required_reviewers": {
+          "const": true
+        },
+        "prevent_self_review": {
+          "const": true
+        },
+        "allowed_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "const": "main"
+          }
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "trigger_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_events",
+        "forbidden_events",
+        "allowed_refs",
+        "forks_allowed",
+        "pull_request_secrets_allowed",
+        "detail"
+      ],
+      "properties": {
+        "allowed_events": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["workflow_dispatch", "schedule"]
+          }
+        },
+        "forbidden_events": {
+          "type": "array",
+          "minItems": 1,
+          "contains": {
+            "const": "pull_request"
+          },
+          "items": {
+            "enum": ["pull_request", "pull_request_target", "push"]
+          }
+        },
+        "allowed_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "const": "main"
+          }
+        },
+        "forks_allowed": {
+          "const": false
+        },
+        "pull_request_secrets_allowed": {
+          "const": false
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "required_secret": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "secret_id",
+        "required",
+        "exposure",
+        "secret_value_committed",
+        "purpose"
+      ],
+      "properties": {
+        "secret_id": {
+          "const": "AO_CLAUDE_CODE_CLI_AUTH"
+        },
+        "required": {
+          "const": true
+        },
+        "exposure": {
+          "const": "github_environment_secret"
+        },
+        "secret_value_committed": {
+          "const": false
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
