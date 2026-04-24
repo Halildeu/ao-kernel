@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+from typing import Any
 
 import ao_kernel
 
@@ -135,6 +137,154 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
         for artifact in write_result["artifacts"]:
             print(f"- {artifact['path']}")
     return 0
+
+
+def _cmd_repo_index(args: argparse.Namespace) -> int:
+    import json as _json
+    import os as _os
+    from pathlib import Path as _Path
+
+    from ao_kernel._internal.repo_intelligence.artifacts import (
+        REPO_CHUNKS_FILENAME,
+        REPO_VECTOR_INDEX_MANIFEST_FILENAME,
+        validate_repo_chunks,
+    )
+    from ao_kernel.context.embedding_config import resolve_embedding_config
+    from ao_kernel.repo_intelligence import (
+        build_repo_vector_write_plan,
+        write_repo_vector_write_plan_artifact,
+    )
+
+    if args.dry_run and args.write_vectors:
+        print("repo index accepts exactly one mode: --dry-run or --write-vectors", file=sys.stderr)
+        return 1
+    if args.write_vectors:
+        print("repo index --write-vectors is not implemented in this tranche; use --dry-run", file=sys.stderr)
+        return 1
+    if not args.dry_run:
+        print("repo index currently requires --dry-run", file=sys.stderr)
+        return 1
+
+    project_root = _Path(args.project_root or ".").resolve()
+    if not project_root.is_dir():
+        print(f"project root not found: {project_root}", file=sys.stderr)
+        return 1
+
+    workspace_dir = _resolve_repo_workspace_dir(project_root, args.workspace_root)
+    if not workspace_dir.is_dir():
+        print(
+            f".ao workspace not found at {workspace_dir}. Run 'ao-kernel init' first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    context_dir = workspace_dir / "context"
+    repo_chunks_path = context_dir / REPO_CHUNKS_FILENAME
+    if not repo_chunks_path.is_file():
+        print(
+            f"repo chunk manifest not found: {repo_chunks_path}. Run 'ao-kernel repo scan' first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        repo_chunks = _load_repo_json_artifact(repo_chunks_path)
+        validate_repo_chunks(repo_chunks)
+    except Exception as exc:  # noqa: BLE001 - CLI fail-closed with concise stderr
+        print(f"invalid repo chunk manifest: {exc}", file=sys.stderr)
+        return 1
+
+    previous_index_manifest = None
+    previous_index_manifest_path = context_dir / REPO_VECTOR_INDEX_MANIFEST_FILENAME
+    if previous_index_manifest_path.is_file():
+        try:
+            previous_index_manifest = _load_repo_json_artifact(previous_index_manifest_path)
+        except Exception as exc:  # noqa: BLE001 - stale cleanup planning must be explicit
+            print(f"invalid prior repo vector index manifest: {exc}", file=sys.stderr)
+            return 1
+
+    embedding_config = resolve_embedding_config(workspace=workspace_dir)
+    embedding_provider = args.embedding_provider or embedding_config.provider
+    embedding_model = args.embedding_model or embedding_config.model
+    try:
+        embedding_dimension = _parse_repo_embedding_dimension(
+            args.embedding_dimension or _os.environ.get("AO_KERNEL_EMBEDDING_DIMENSION")
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    try:
+        vector_write_plan = build_repo_vector_write_plan(
+            repo_chunks=repo_chunks,
+            embedding_provider=embedding_provider,
+            embedding_model=embedding_model,
+            embedding_dimension=embedding_dimension,
+            previous_index_manifest=previous_index_manifest,
+        )
+        write_result = write_repo_vector_write_plan_artifact(
+            context_dir=context_dir,
+            vector_write_plan=vector_write_plan,
+        )
+    except Exception as exc:  # noqa: BLE001 - schema/config failures are command failures
+        print(f"repo vector write-plan failed: {exc}", file=sys.stderr)
+        return 1
+
+    summary = {
+        "status": "ok",
+        "command": "repo index",
+        "dry_run": True,
+        "project_root": ".",
+        "workspace_root": _repo_display_workspace(project_root, workspace_dir),
+        "summary": vector_write_plan["summary"],
+        "embedding_space": vector_write_plan["embedding_space"],
+        "artifacts": write_result["artifacts"],
+    }
+    if args.output == "json":
+        print(_json.dumps(summary, indent=2, sort_keys=True))
+    else:
+        print("repo index dry-run complete")
+        print("project_root: .")
+        print(f"workspace_root: {summary['workspace_root']}")
+        print(f"planned_upserts: {vector_write_plan['summary']['planned_upserts']}")
+        print(f"planned_deletes: {vector_write_plan['summary']['planned_deletes']}")
+        print("artifacts:")
+        for artifact in write_result["artifacts"]:
+            print(f"- {artifact['path']}")
+    return 0
+
+
+def _resolve_repo_workspace_dir(project_root: Path, workspace_root: str | None) -> Path:
+    raw = Path(workspace_root or ".ao")
+    return raw.resolve() if raw.is_absolute() else (project_root / raw).resolve()
+
+
+def _repo_display_workspace(project_root: Path, workspace_dir: Path) -> str:
+    try:
+        return workspace_dir.relative_to(project_root).as_posix()
+    except ValueError:
+        return str(workspace_dir)
+
+
+def _load_repo_json_artifact(path: Path) -> dict[str, Any]:
+    import json as _json
+
+    data = _json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("artifact must be a JSON object")
+    return data
+
+
+def _parse_repo_embedding_dimension(raw: str | int | None) -> int:
+    if raw is None or raw == "":
+        return 1536
+    try:
+        dimension = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"AO_KERNEL_EMBEDDING_DIMENSION must be a positive integer, got {raw!r}") from exc
+    if dimension <= 0:
+        raise ValueError(f"AO_KERNEL_EMBEDDING_DIMENSION must be positive, got {dimension}")
+    return dimension
 
 
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
@@ -825,6 +975,46 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Command output format (default: text)",
     )
+    index_p = repo_sub.add_parser("index", help="Plan repo chunk vector indexing")
+    index_p.add_argument(
+        "--project-root",
+        default=".",
+        help="Repository root to index (default: current directory)",
+    )
+    index_p.add_argument(
+        "--workspace-root",
+        default=".ao",
+        help="ao-kernel workspace root relative to project root (default: .ao)",
+    )
+    index_mode = index_p.add_mutually_exclusive_group()
+    index_mode.add_argument("--dry-run", action="store_true", help="Write a deterministic vector write-plan only")
+    index_mode.add_argument("--write-vectors", action="store_true", help="Reserved for explicit vector writes")
+    index_p.add_argument(
+        "--confirm-vector-index",
+        default="",
+        help="Reserved confirmation token for future vector writes",
+    )
+    index_p.add_argument(
+        "--embedding-provider",
+        default=None,
+        help="Embedding provider identity for dry-run key planning",
+    )
+    index_p.add_argument(
+        "--embedding-model",
+        default=None,
+        help="Embedding model identity for dry-run key planning",
+    )
+    index_p.add_argument(
+        "--embedding-dimension",
+        default=None,
+        help="Embedding dimension for dry-run key planning (default: 1536 or AO_KERNEL_EMBEDDING_DIMENSION)",
+    )
+    index_p.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
+    )
 
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
@@ -1386,7 +1576,12 @@ def main(argv: list[str] | None = None) -> int:
         repo_cmd = getattr(args, "repo_command", None)
         if repo_cmd == "scan":
             return _cmd_repo_scan(args)
-        print("Usage: ao-kernel repo scan [--project-root PATH] [--output {text,json}]", file=sys.stderr)
+        if repo_cmd == "index":
+            return _cmd_repo_index(args)
+        print(
+            "Usage: ao-kernel repo {scan,index} [--project-root PATH] [--output {text,json}]",
+            file=sys.stderr,
+        )
         return 1
 
     # Executor subcommand (PR-C6)

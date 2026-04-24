@@ -20,16 +20,21 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     REPO_INDEX_MANIFEST_SCHEMA_NAME,
     REPO_MAP_FILENAME,
     REPO_MAP_SCHEMA_NAME,
+    REPO_VECTOR_WRITE_PLAN_FILENAME,
+    REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME,
     validate_python_import_graph,
     validate_python_symbol_index,
     validate_repo_chunks,
     validate_repo_index_manifest,
     validate_repo_map,
+    validate_repo_vector_write_plan,
     write_repo_scan_artifacts,
+    write_repo_vector_write_plan_artifact,
 )
 from ao_kernel._internal.repo_intelligence.context_pack_builder import build_agent_context_pack
 from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_python_ast_indexes
 from ao_kernel._internal.repo_intelligence.repo_chunker import build_repo_chunks
+from ao_kernel._internal.repo_intelligence.repo_vector_plan import build_repo_vector_write_plan
 from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 from ao_kernel.config import load_default
 
@@ -49,17 +54,20 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     import_graph_schema = load_default("schemas", PYTHON_IMPORT_GRAPH_SCHEMA_NAME)
     symbol_index_schema = load_default("schemas", PYTHON_SYMBOL_INDEX_SCHEMA_NAME)
     repo_chunks_schema = load_default("schemas", REPO_CHUNKS_SCHEMA_NAME)
+    vector_write_plan_schema = load_default("schemas", REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME)
     manifest_schema = load_default("schemas", REPO_INDEX_MANIFEST_SCHEMA_NAME)
 
     Draft202012Validator.check_schema(repo_map_schema)
     Draft202012Validator.check_schema(import_graph_schema)
     Draft202012Validator.check_schema(symbol_index_schema)
     Draft202012Validator.check_schema(repo_chunks_schema)
+    Draft202012Validator.check_schema(vector_write_plan_schema)
     Draft202012Validator.check_schema(manifest_schema)
     assert repo_map_schema["$id"] == "urn:ao:repo-map:v1"
     assert import_graph_schema["$id"] == "urn:ao:python-import-graph:v1"
     assert symbol_index_schema["$id"] == "urn:ao:python-symbol-index:v1"
     assert repo_chunks_schema["$id"] == "urn:ao:repo-chunks:v1"
+    assert vector_write_plan_schema["$id"] == "urn:ao:repo-vector-write-plan:v1"
     assert manifest_schema["$id"] == "urn:ao:repo-index-manifest:v1"
 
 
@@ -177,6 +185,33 @@ def test_artifact_writer_delegates_to_shared_atomic_writer(tmp_path: Path, monke
     write_repo_scan_artifacts(context_dir=project / ".ao" / "context", repo_map=repo_map)
 
     assert calls == [REPO_MAP_FILENAME, REPO_INDEX_MANIFEST_FILENAME]
+
+
+def test_write_repo_vector_write_plan_artifact_writes_schema_backed_output(tmp_path: Path) -> None:
+    project = _repo_with_workspace(tmp_path)
+    repo_map = scan_repo(project)
+    import_graph, symbol_index = build_python_ast_indexes(project, repo_map)
+    repo_chunks = build_repo_chunks(project, repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    vector_write_plan = build_repo_vector_write_plan(
+        repo_chunks=repo_chunks,
+        embedding_provider="openai",
+        embedding_model="text-embedding-3-small",
+        embedding_dimension=1536,
+    )
+
+    result = write_repo_vector_write_plan_artifact(
+        context_dir=project / ".ao" / "context",
+        vector_write_plan=vector_write_plan,
+    )
+    written_plan = json.loads((project / ".ao" / "context" / REPO_VECTOR_WRITE_PLAN_FILENAME).read_text(encoding="utf-8"))
+
+    validate_repo_vector_write_plan(written_plan)
+    assert [item["path"] for item in result["artifacts"]] == [
+        ".ao/context/repo_vector_write_plan.json",
+    ]
+    assert result["artifacts"][0]["schema_ref"] == REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME
+    assert written_plan["summary"]["embedding_calls"] == 0
+    assert written_plan["summary"]["vector_writes"] == 0
 
 
 def test_artifact_writer_delegates_agent_pack_to_shared_text_writer(tmp_path: Path, monkeypatch: Any) -> None:
