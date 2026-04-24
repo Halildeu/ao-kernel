@@ -214,8 +214,8 @@ bilerek stable disina almak.
 
 ### ST-6 — Operations Readiness
 
-**Durum:** Implementation PR active via
-[#351](https://github.com/Halildeu/ao-kernel/issues/351) and
+**Durum:** Completed on `main` via
+[#353](https://github.com/Halildeu/ao-kernel/pull/353) and
 `.claude/plans/ST-6-OPERATIONS-READINESS.md`.
 
 **Amac:** Stable release'i isletilebilir hale getirmek.
@@ -236,6 +236,8 @@ bilerek stable disina almak.
 - Emergency rollback ve yanked release karari yazili.
 
 ### ST-7 — Stable Release Candidate
+
+**Durum:** Next active gate after `ST-6` closeout.
 
 **Amac:** `4.0.0` stable icin final aday cikarmak.
 
