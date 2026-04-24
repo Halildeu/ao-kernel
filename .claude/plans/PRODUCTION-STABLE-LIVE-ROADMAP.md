@@ -237,8 +237,10 @@ bilerek stable disina almak.
 
 ### ST-7 — Stable Release Candidate
 
-**Durum:** Implementation PR active via
-[#355](https://github.com/Halildeu/ao-kernel/issues/355) and
+**Durum:** Completed on `main` via
+[#355](https://github.com/Halildeu/ao-kernel/issues/355), contract PR
+[#356](https://github.com/Halildeu/ao-kernel/pull/356), implementation PR
+[#357](https://github.com/Halildeu/ao-kernel/pull/357), and
 `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md`.
 
 **Amac:** `4.0.0` stable icin final aday cikarmak.
@@ -258,6 +260,9 @@ bilerek stable disina almak.
 - Release blocker listesi bos.
 
 ### ST-8 — Stable Publish ve Post-Publish Verification
+
+**Durum:** Active via [#358](https://github.com/Halildeu/ao-kernel/issues/358)
+and `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md`.
 
 **Amac:** Stable'i canliya almak ve public install gercegini dogrulamak.
 

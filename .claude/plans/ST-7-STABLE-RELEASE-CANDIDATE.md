@@ -1,7 +1,9 @@
 # ST-7 — Stable Release Candidate
 
-**Durum:** Implementation PR active via
-[#355](https://github.com/Halildeu/ao-kernel/issues/355)
+**Durum:** Completed on `main` via issue
+[#355](https://github.com/Halildeu/ao-kernel/issues/355), contract PR
+[#356](https://github.com/Halildeu/ao-kernel/pull/356), and implementation PR
+[#357](https://github.com/Halildeu/ao-kernel/pull/357).
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-6` completed via
 [#354](https://github.com/Halildeu/ao-kernel/pull/354).
@@ -116,14 +118,16 @@ ST-7 tamamlandığında:
 5. `pip install ao-kernel` için stable live iddiası hâlâ yapılmamıştır; bu
    iddia yalnız `ST-8` publish ve public install verify sonrası yapılır.
 
-## 8. Implementation Decision
+## 8. Implementation Result
 
-ST-7 implementation PR'i `4.0.0` source candidate hazırlar:
+ST-7 implementation PR'i `4.0.0` source candidate hazırladı:
 
-1. `pyproject.toml` ve `ao_kernel/__init__.py` version değerleri `4.0.0` olur.
-2. `CHANGELOG.md` `[4.0.0]` entry'si narrow stable boundary'yi açık yazar.
+1. `pyproject.toml` ve `ao_kernel/__init__.py` version değerleri `4.0.0` oldu.
+2. `CHANGELOG.md` `[4.0.0]` entry'si narrow stable boundary'yi açık yazıyor.
 3. README ve support docs stable install dilini beta/pre-release dilinden
    ayırır.
 4. Public package live claim'i yapılmaz; tag/publish/post-publish verify
    `ST-8` kapsamındadır.
 5. Support widening yapılmaz.
+6. PR CI gate'leri yeşil kapandı: test matrix, coverage, benchmark-fast,
+   packaging-smoke, scorecard.
