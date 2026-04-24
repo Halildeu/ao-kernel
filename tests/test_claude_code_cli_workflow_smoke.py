@@ -158,6 +158,37 @@ def test_workflow_smoke_classifies_adapter_non_zero_exit(
     assert report.checks[0].finding_code == "adapter_non_zero_exit"
 
 
+def test_workflow_smoke_classifies_adapter_timeout(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(workflow_smoke, "_prepare_workspace", lambda root: None)
+
+    def _fail_timeout(
+        workspace_root: Path,
+        run_id: str,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        raise AdapterInvocationFailedError(
+            reason="timeout",
+            detail=f"claude exceeded {timeout_seconds}s",
+        )
+
+    monkeypatch.setattr(workflow_smoke, "_run_workflow", _fail_timeout)
+
+    report = run_claude_code_cli_workflow_smoke(
+        skip_preflight=True,
+        workspace_root=tmp_path,
+        timeout_seconds=1.0,
+    )
+
+    assert report.overall_status == "blocked"
+    assert report.findings == ("adapter_timeout",)
+    assert report.checks[0].finding_code == "adapter_timeout"
+    assert "fail-closed" in report.checks[0].detail
+
+
 def _seed_completed_run(tmp_path: Path, *, omit_event: str | None = None) -> str:
     run_id = str(uuid.uuid4())
     create_run(

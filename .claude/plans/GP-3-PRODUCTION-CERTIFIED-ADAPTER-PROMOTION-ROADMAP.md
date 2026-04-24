@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, GP-3.2 governed workflow repeatability recorded
+**Status:** Active program, GP-3.3 failure-mode matrix recorded
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -52,9 +52,9 @@ Reason:
 |---|---|---|
 | `GP-3.0` scope freeze | Record promotion boundary, first lane, and gates | completed; roadmap/status PR merged, no runtime change |
 | `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed; preflight and workflow smoke passed; no support widening |
-| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | completed on branch; 3 independent workflow smoke runs passed; no support widening |
-| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | next; behavior assertions or helper contract updates merged |
-| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | evidence gaps closed or deferred explicitly |
+| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | completed; 3 independent workflow smoke runs passed; no support widening |
+| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | completed on branch; helper/workflow failure modes fail-closed and typed |
+| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | next; evidence gaps closed or deferred explicitly |
 | `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | docs/status/support matrix updated |
 | `GP-3.6` closeout | Record final verdict and next allowed path | tracker closed or next lane opened intentionally |
 
@@ -153,3 +153,31 @@ repeat successfully in independent temp workspaces.
 
 The next accepted implementation slice is `GP-3.3` failure-mode matrix. Passing
 repeatability does not prove failure behavior or general operator support.
+
+## GP-3.3 Failure-Mode Matrix
+
+`GP-3.3` classified the `claude-code-cli` preflight and governed workflow
+failure modes that must block promotion.
+
+1. Decision record:
+   `.claude/plans/GP-3.3-CLAUDE-CODE-CLI-FAILURE-MODE-MATRIX.md`
+2. Tracker: [#392](https://github.com/Halildeu/ao-kernel/issues/392)
+3. Covered categories:
+   - missing binary
+   - auth missing or malformed
+   - prompt denied
+   - timeout
+   - malformed output
+   - policy denied
+4. Test delta:
+   - `manifest_output_missing_status`
+   - `adapter_timeout`
+5. Validation:
+   `python3 -m pytest -q tests/test_claude_code_cli_smoke.py tests/test_claude_code_cli_workflow_smoke.py`
+6. Boundary:
+   - no runtime behavior change
+   - no version bump, tag, or publish
+   - no stable support widening
+   - `claude-code-cli` remains `Beta (operator-managed)`
+
+The next accepted implementation slice is `GP-3.4` evidence completeness.
