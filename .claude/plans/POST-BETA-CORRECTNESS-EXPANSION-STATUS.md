@@ -17,6 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Son tamamlanan GP closeout decision:** `.claude/plans/GP-2-CLOSEOUT-DECISION.md`
 - **Son tamamlanan maintenance baseline:** `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`
+- **Son tamamlanan stable evidence refresh:** `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -57,6 +58,7 @@ ayrı ayrı görünür kılmak.
 - **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`closed after closeout`)
 - **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`closed after closeout`)
 - **SM-1 issue:** [#378](https://github.com/Halildeu/ao-kernel/issues/378) (`closed by maintenance baseline PR`)
+- **SM-2 issue:** [#380](https://github.com/Halildeu/ao-kernel/issues/380) (`closed by evidence refresh PR`)
 - **Aktif gate:** yok. SM-1 stable maintenance baseline geçerlidir; yeni support widening ancak ayrı promotion issue/contract ile açılır.
 
 ## 2. Başlangıç Gerçeği
@@ -107,6 +109,7 @@ ayrı ayrı görünür kılmak.
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
 | `GP-2` deferred support-lane backlog reprioritization | Completed ([#329](https://github.com/Halildeu/ao-kernel/issues/329), closeout decision `.claude/plans/GP-2-CLOSEOUT-DECISION.md`) | `GP-1` ve `v4.0.0` stable sonrası deferred/support widening lane'lerini tek anlamlı sıraya indirip post-stable support-lane gates yürütmek | GP-2.5a sandbox rehearsal evidence + support boundary unchanged verdict |
 | `SM-1` stable maintenance baseline | Completed ([#378](https://github.com/Halildeu/ao-kernel/issues/378), decision `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`) | GP-2 sonrası varsayılan çalışma modunu maintenance olarak sabitlemek | no active widening gate + support-boundary prerequisite drift fixed |
+| `SM-2` stable baseline evidence refresh | Completed ([#380](https://github.com/Halildeu/ao-kernel/issues/380), evidence `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`) | SM-1 sonrası shipped baseline kanıtını tazelemek | entrypoints + doctor + truth inventory + wheel-installed packaging smoke + targeted tests |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |

@@ -26,6 +26,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added the `SM-1` stable maintenance baseline decision record and aligned the
   operator-facing `gh-cli-pr` live-write prerequisite prose with the explicit
   sandbox `--repo` requirement.
+- Added the `SM-2` stable baseline evidence refresh, recording entrypoint,
+  doctor, truth inventory, wheel-installed packaging smoke, and targeted test
+  results without runtime changes or support widening.
 
 ## [4.0.0] - 2026-04-24
 
