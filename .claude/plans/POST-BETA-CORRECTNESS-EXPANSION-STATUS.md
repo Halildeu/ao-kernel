@@ -16,8 +16,8 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md` (`ST-1 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md` (`ST-2 active`)
+- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-6-OPERATIONS-READINESS.md` (`ST-6 completed`)
+- **Aktif decision/ordering contract:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md` (`ST-7 next`)
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -43,8 +43,9 @@ ayrı ayrı görünür kılmak.
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
-- **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`open`)
-- **Aktif issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`ST-2 stable support boundary freeze`)
+- **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
+- **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closing after closeout`)
+- **Aktif gate:** `ST-7` stable release candidate (`issue to open after ST-6 closeout`)
 
 ## 2. Başlangıç Gerçeği
 
@@ -93,7 +94,10 @@ ayrı ayrı görünür kılmak.
 | `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), latest slice [#333](https://github.com/Halildeu/ao-kernel/issues/333) closed) | `GP-1` sonrası deferred lane'leri tek anlamlı sıraya indirip ilk aktif runtime tranche'i seçmek | deferred lane evidence-delta map + `Now/Next/Later` kararı + GP-2.2 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
-| `ST-2` stable support boundary freeze | Active ([#344](https://github.com/Halildeu/ao-kernel/issues/344)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
+| `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
+| `ST-5` deferred correctness closure | Completed on `main` ([#348](https://github.com/Halildeu/ao-kernel/issues/348), [#350](https://github.com/Halildeu/ao-kernel/pull/350)) | known deferred correctness kalemlerini stable blocker olmaktan çıkarıp açık support boundary'ye bağlamak | deferred bug contract + stable impact decision |
+| `ST-6` operations readiness | Completed on `main` ([#351](https://github.com/Halildeu/ao-kernel/issues/351), [#353](https://github.com/Halildeu/ao-kernel/pull/353)) | stable release öncesi incident, rollback, upgrade, known-bugs ve release-gate runbook'unu işletilebilir hale getirmek | operations runbook + rollback matrix + fresh-venv verification + packaging smoke parity |
+| `ST-7` stable release candidate | Next | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
 
 ## 5. Şimdi
 
@@ -354,7 +358,7 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-6` operations readiness implementation.
+Aktif slice: `ST-7` stable release candidate preparation.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
@@ -362,16 +366,18 @@ Aktif slice: `ST-6` operations readiness implementation.
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
 4. Completed contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
 5. Completed contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-6. Son kapanan PR: [#350](https://github.com/Halildeu/ao-kernel/pull/350)
+6. Son kapanan PR: [#353](https://github.com/Halildeu/ao-kernel/pull/353)
 7. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
    real-adapter/live-write promotion istenirse ayrı gate gerekir.
 8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
    promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
-9. Aktif issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
-10. Aktif contract: `.claude/plans/ST-6-OPERATIONS-READINESS.md`
-11. Stable release'e doğrudan geçilmez; önce `ST-6` ve `ST-7` gates kapanır.
-12. Aktif iş: runbook/rollback/upgrade/support/known-bugs operational readiness
-   parity patch.
+9. Son kapanan issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
+   (`ST-6` closeout sonrası kapatılacak)
+10. Aktif contract: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
+11. Stable release'e doğrudan geçilmez; önce `ST-7` release-candidate gate
+   branch/PR ile kapanır.
+12. Aktif iş: `ST-7` için exact release-candidate checklist, version/changelog
+   finalization ve stable docs install language hazırlığı.
 
 `PB-8.2` completion kaydı:
 

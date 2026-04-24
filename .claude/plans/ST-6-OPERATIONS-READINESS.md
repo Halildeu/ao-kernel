@@ -1,7 +1,8 @@
 # ST-6 — Operations Readiness
 
-**Durum:** Implementation PR active via
-[#351](https://github.com/Halildeu/ao-kernel/issues/351)
+**Durum:** Completed on `main` via
+[#353](https://github.com/Halildeu/ao-kernel/pull/353);
+tracking issue [#351](https://github.com/Halildeu/ao-kernel/issues/351)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-5` completed via
 [#350](https://github.com/Halildeu/ao-kernel/pull/350).
@@ -41,6 +42,20 @@ ST-6 implementation PR'i runtime feature eklemez. Karar:
 
 No support widening, no stable tag, no publish.
 
+## 2.2 Closeout Verdict
+
+ST-6 is complete for the narrow stable candidate gate:
+
+1. Operator incident triage is command-first for install, demo, doctor, policy,
+   adapter smoke, publish, and package verification failures.
+2. Rollback guidance separates bad merge, failed publish, bad published
+   package, exceptional yank, and beta-only regression cases.
+3. Release verification guidance uses fresh-venv exact package install and the
+   same wheel-installed smoke path used by CI.
+4. Known bugs and support boundary docs explicitly stop stable release work if
+   the shipped baseline is affected.
+5. No runtime support was widened, and no stable tag/publish was performed.
+
 ## 3. Kapsam Dışı
 
 - Stable `4.0.0` tag veya PyPI publish.
@@ -75,4 +90,10 @@ Readiness implementation PR:
 git diff --check
 python3 -m ao_kernel doctor
 python3 scripts/packaging_smoke.py
+```
+
+Closeout PR:
+
+```bash
+git diff --check
 ```
