@@ -92,6 +92,8 @@ closeout verdict'i `close_keep_operator_beta` olduğu için lane Beta
 (operator-managed) olarak kalır. Fresh smoke'ların geçmesi operator setup'ını
 doğrular; external `claude` binary/session auth, açık `KB-001`/`KB-002` ve
 CI-managed live adapter gate'i olmaması support widening'i engeller.
+`GP-4` bu eksik gate'i tasarım konusu yapar; runbook'taki lokal helper geçişi
+tek başına production-certified support değildir.
 
 ### 1.3 Failure-mode matrix
 
