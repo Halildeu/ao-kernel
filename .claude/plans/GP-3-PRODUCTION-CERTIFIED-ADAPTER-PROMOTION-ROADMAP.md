@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, GP-3.3 failure-mode matrix recorded
+**Status:** Active program, GP-3.4 evidence completeness recorded
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -53,9 +53,9 @@ Reason:
 | `GP-3.0` scope freeze | Record promotion boundary, first lane, and gates | completed; roadmap/status PR merged, no runtime change |
 | `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed; preflight and workflow smoke passed; no support widening |
 | `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | completed; 3 independent workflow smoke runs passed; no support widening |
-| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | completed on branch; helper/workflow failure modes fail-closed and typed |
-| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | next; evidence gaps closed or deferred explicitly |
-| `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | docs/status/support matrix updated |
+| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | completed; helper/workflow failure modes fail-closed and typed |
+| `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | completed on branch; evidence checks widened and live smoke passed |
+| `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | next; docs/status/support matrix updated |
 | `GP-3.6` closeout | Record final verdict and next allowed path | tracker closed or next lane opened intentionally |
 
 ## Promotion Criteria
@@ -181,3 +181,30 @@ failure modes that must block promotion.
    - `claude-code-cli` remains `Beta (operator-managed)`
 
 The next accepted implementation slice is `GP-3.4` evidence completeness.
+
+## GP-3.4 Evidence Completeness
+
+`GP-3.4` widened the `claude-code-cli` governed workflow smoke evidence checks
+and recorded a live pass.
+
+1. Decision record:
+   `.claude/plans/GP-3.4-CLAUDE-CODE-CLI-EVIDENCE-COMPLETENESS.md`
+2. Tracker: [#394](https://github.com/Halildeu/ao-kernel/issues/394)
+3. Added smoke checks:
+   - `event_order`
+   - `review_findings_contents`
+4. Added negative coverage:
+   - out-of-order required events
+   - adapter log secret-like leak
+5. Live smoke:
+   - `overall_status="pass"`
+   - final state `completed`
+   - run id `d269c4f7-78d5-4773-b609-a0891513e464`
+6. Cost/usage:
+   - explicit non-claim for adapter-path `cost_usd` / token usage completeness
+7. Boundary:
+   - no stable support widening
+   - no version bump, tag, or publish
+   - `claude-code-cli` remains `Beta (operator-managed)`
+
+The next accepted implementation slice is `GP-3.5` support-boundary decision.

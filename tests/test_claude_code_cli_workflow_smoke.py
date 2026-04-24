@@ -45,11 +45,19 @@ def test_verify_claude_workflow_evidence_accepts_complete_success(
     assert {check.name for check in checks} == {
         "final_state",
         "evidence_events",
+        "event_order",
         "review_findings_artifact",
         "adapter_log",
         "review_findings_schema",
+        "review_findings_contents",
     }
     assert all(check.status == "pass" for check in checks)
+    contents = next(check for check in checks if check.name == "review_findings_contents")
+    assert contents.observed == {
+        "schema_version": "1",
+        "findings_count": 0,
+        "summary_present": True,
+    }
 
 
 def test_verify_claude_workflow_evidence_rejects_missing_policy_checked(
@@ -63,6 +71,49 @@ def test_verify_claude_workflow_evidence_rejects_missing_policy_checked(
     assert evidence.status == "fail"
     assert "policy_checked" in evidence.detail
     assert evidence.finding_code == "evidence_events_missing"
+
+
+def test_verify_claude_workflow_evidence_rejects_out_of_order_events(
+    tmp_path: Path,
+) -> None:
+    run_id = _seed_completed_run(
+        tmp_path,
+        event_kinds=[
+            "step_started",
+            "adapter_invoked",
+            "policy_checked",
+            "step_completed",
+            "workflow_completed",
+        ],
+    )
+
+    checks = verify_claude_workflow_evidence(tmp_path, run_id)
+    required = next(check for check in checks if check.name == "evidence_events")
+    order = next(check for check in checks if check.name == "event_order")
+
+    assert required.status == "pass"
+    assert order.status == "fail"
+    assert order.finding_code == "evidence_event_order_invalid"
+
+
+def test_verify_claude_workflow_evidence_rejects_adapter_log_secret_leak(
+    tmp_path: Path,
+) -> None:
+    run_id = _seed_completed_run(
+        tmp_path,
+        adapter_log_record={
+            "adapter_id": "claude-code-cli",
+            "stdout": "sk-ant-leaked",
+            "stderr": "",
+        },
+    )
+
+    checks = verify_claude_workflow_evidence(tmp_path, run_id)
+    adapter_log = next(check for check in checks if check.name == "adapter_log")
+
+    assert adapter_log.status == "fail"
+    assert adapter_log.finding_code == "adapter_log_missing_or_unredacted"
+    assert adapter_log.observed["redaction_leaks"] == ["sk-ant-"]
 
 
 def test_workflow_smoke_classifies_output_parse_fail_closed(
@@ -189,7 +240,14 @@ def test_workflow_smoke_classifies_adapter_timeout(
     assert "fail-closed" in report.checks[0].detail
 
 
-def _seed_completed_run(tmp_path: Path, *, omit_event: str | None = None) -> str:
+def _seed_completed_run(
+    tmp_path: Path,
+    *,
+    omit_event: str | None = None,
+    event_kinds: list[str] | None = None,
+    artifact_payload: dict[str, object] | None = None,
+    adapter_log_record: dict[str, object] | None = None,
+) -> str:
     run_id = str(uuid.uuid4())
     create_run(
         tmp_path,
@@ -209,28 +267,22 @@ def _seed_completed_run(tmp_path: Path, *, omit_event: str | None = None) -> str
     artifact_rel = "artifacts/review-findings.json"
     artifact_path = run_dir / artifact_rel
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
-    artifact_path.write_text(
-        json.dumps(
-            {
-                "schema_version": "1",
-                "findings": [],
-                "summary": "synthetic smoke success",
-            }
-        ),
-        encoding="utf-8",
-    )
+    artifact_payload = artifact_payload or {
+        "schema_version": "1",
+        "findings": [],
+        "summary": "synthetic smoke success",
+    }
+    artifact_path.write_text(json.dumps(artifact_payload), encoding="utf-8")
+    adapter_log_record = adapter_log_record or {
+        "adapter_id": "claude-code-cli",
+        "stdout": "{}",
+        "stderr": "",
+    }
     (run_dir / "adapter-claude-code-cli.jsonl").write_text(
-        json.dumps(
-            {
-                "adapter_id": "claude-code-cli",
-                "stdout": "{}",
-                "stderr": "",
-            }
-        )
-        + "\n",
+        json.dumps(adapter_log_record) + "\n",
         encoding="utf-8",
     )
-    event_kinds = [
+    event_kinds = event_kinds or [
         "step_started",
         "policy_checked",
         "adapter_invoked",

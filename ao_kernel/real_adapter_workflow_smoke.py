@@ -181,12 +181,16 @@ def verify_claude_workflow_evidence(
     checks: list[WorkflowSmokeCheck] = [
         _check_final_state(record),
         _check_required_events(events_path, events),
+        _check_event_order(events_path, events),
     ]
     artifact_check, artifact_path = _check_review_artifact(workspace_root, run_id, record)
     checks.append(artifact_check)
     checks.append(_check_adapter_log(run_dir / f"adapter-{_ADAPTER_ID}.jsonl"))
     if artifact_path is not None:
-        checks.append(_check_schema_valid_artifact(artifact_path))
+        schema_check = _check_schema_valid_artifact(artifact_path)
+        checks.append(schema_check)
+        if schema_check.status == "pass":
+            checks.append(_check_review_artifact_contents(artifact_path))
     return tuple(checks)
 
 
@@ -373,6 +377,41 @@ def _check_required_events(
     )
 
 
+def _check_event_order(
+    events_path: Path,
+    events: Sequence[Mapping[str, Any]],
+) -> WorkflowSmokeCheck:
+    expected = [
+        "step_started",
+        "policy_checked",
+        "adapter_invoked",
+        "step_completed",
+        "workflow_completed",
+    ]
+    seen = [str(event.get("kind")) for event in events]
+    cursor = 0
+    positions: dict[str, int] = {}
+    for index, kind in enumerate(seen):
+        if cursor >= len(expected):
+            break
+        if kind == expected[cursor]:
+            positions[kind] = index
+            cursor += 1
+    status: Literal["pass", "fail"] = "pass" if cursor == len(expected) else "fail"
+    return WorkflowSmokeCheck(
+        name="event_order",
+        status=status,
+        detail=(
+            "required event order present"
+            if status == "pass"
+            else "required event order missing or out of order"
+        ),
+        finding_code=None if status == "pass" else "evidence_event_order_invalid",
+        path=str(events_path),
+        observed={"expected": expected, "seen": seen, "positions": positions},
+    )
+
+
 def _check_review_artifact(
     workspace_root: Path,
     run_id: str,
@@ -425,7 +464,16 @@ def _check_review_artifact(
 
 
 def _check_schema_valid_artifact(artifact_path: Path) -> WorkflowSmokeCheck:
-    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return WorkflowSmokeCheck(
+            name="review_findings_schema",
+            status="fail",
+            detail=f"review_findings artifact is not JSON: {exc.msg}",
+            finding_code="review_findings_artifact_not_json",
+            path=str(artifact_path),
+        )
     schema = load_default("schemas", "review-findings.schema.v1.json")
     errors = list(Draft202012Validator(schema).iter_errors(payload))
     status: Literal["pass", "fail"] = "pass" if not errors else "fail"
@@ -439,6 +487,37 @@ def _check_schema_valid_artifact(artifact_path: Path) -> WorkflowSmokeCheck:
         ),
         finding_code=None if not errors else "review_findings_schema_invalid",
         path=str(artifact_path),
+    )
+
+
+def _check_review_artifact_contents(artifact_path: Path) -> WorkflowSmokeCheck:
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    findings = payload.get("findings") if isinstance(payload, Mapping) else None
+    summary = payload.get("summary") if isinstance(payload, Mapping) else None
+    ok = (
+        isinstance(payload, Mapping)
+        and payload.get("schema_version") == "1"
+        and isinstance(findings, list)
+        and isinstance(summary, str)
+        and bool(summary.strip())
+    )
+    return WorkflowSmokeCheck(
+        name="review_findings_contents",
+        status="pass" if ok else "fail",
+        detail=(
+            "review_findings semantic fields present"
+            if ok
+            else "review_findings semantic fields missing or empty"
+        ),
+        finding_code=None if ok else "review_findings_contents_invalid",
+        path=str(artifact_path),
+        observed={
+            "schema_version": (
+                payload.get("schema_version") if isinstance(payload, Mapping) else None
+            ),
+            "findings_count": len(findings) if isinstance(findings, list) else None,
+            "summary_present": isinstance(summary, str) and bool(summary.strip()),
+        },
     )
 
 
