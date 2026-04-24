@@ -17,8 +17,8 @@ operator-only, or just contract inventory?"
 
 ### 1.1 ST-2 stable candidate freeze
 
-For the possible future `4.0.0` stable release, the stable support candidate is
-the `Shipped baseline` layer only. This freeze deliberately excludes:
+For the `4.0.0` stable candidate, the stable support set is the `Shipped
+baseline` layer only. This freeze deliberately excludes:
 
 - operator-managed beta lanes,
 - live-write / remote side-effect flows,

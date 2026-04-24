@@ -9,6 +9,8 @@ stable and beta channels.
 
 ```bash
 pip install -U ao-kernel
+# exact pin after v4.0.0 publish
+pip install ao-kernel==4.0.0
 ```
 
 ### Public Beta channel
@@ -19,8 +21,10 @@ pip install --pre ao-kernel
 pip install ao-kernel==4.0.0b2
 ```
 
-Do not assume `pip install ao-kernel` will pick the beta. It stays on the
-stable channel unless you ask for a pre-release explicitly.
+Do not assume `pip install ao-kernel` will pick a beta. It stays on the stable
+channel unless you ask for a pre-release explicitly. The exact
+`ao-kernel==4.0.0` pin is live only after the `v4.0.0` publish workflow and
+fresh-venv public install verification pass.
 
 ## 1.1 Stable support boundary
 

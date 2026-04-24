@@ -7,15 +7,58 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Changed — Stable support boundary freeze
+No unreleased changes.
 
-- Added the ST-2 stable support boundary freeze decision:
-  - stable candidate support remains the narrow shipped baseline only
-  - operator-managed beta lanes are not promoted into stable support
-  - deferred lanes remain deferred unless later ST gates provide new evidence
-  - current known bugs do not block the shipped baseline
-- Clarified upgrade and rollback docs so stable checks do not fall back to
-  beta/operator-managed lanes.
+## [4.0.0] - 2026-04-24
+
+### Changed — Stable release candidate
+
+`v4.0.0` prepares the narrow stable runtime line from the proven `4.0.0b2`
+Public Beta baseline. This release candidate does **not** claim that
+ao-kernel is a general-purpose production coding automation platform. It makes
+the governed runtime baseline stable while keeping beta and deferred lanes
+outside the stable support boundary.
+
+- Stable shipped baseline remains narrow:
+  - CLI/module entrypoints
+  - `ao-kernel doctor`
+  - bundled `review_ai_flow` + bundled `codex-stub`
+  - `examples/demo_review.py`
+  - policy command enforcement
+  - wheel-installed packaging smoke
+  - documented read-only `PRJ-KERNEL-API` actions
+- Added and closed the stable gate sequence:
+  - `ST-2` stable support boundary freeze
+  - `ST-5` deferred correctness closure
+  - `ST-6` operations readiness
+  - `ST-7` stable release candidate contract
+- Clarified upgrade, rollback, known-bugs, and operations docs so stable
+  checks do not fall back to beta/operator-managed lanes.
+- Operator-managed lanes remain outside stable support:
+  - `claude-code-cli`
+  - `gh-cli-pr`
+  - `PRJ-KERNEL-API` write-side actions
+  - real-adapter benchmark full mode
+- Deferred lanes remain deferred:
+  - `bug_fix_flow` release closure
+  - full remote PR opening
+  - roadmap/spec demo widening
+  - adapter-path `cost_usd` as a public support claim
+- Known bugs currently affect operator-managed beta lanes only; there is no
+  known shipped-baseline blocker.
+- Legacy `save_store()` and `allow_overwrite=True` compatibility is retained
+  for this narrow stable line. Their deprecation text now targets a future
+  major release instead of promising removal/default flip inside `4.0.0`.
+- Version bump `4.0.0b2 -> 4.0.0` (git tag target: `v4.0.0`).
+
+### Migration note
+
+- Until the stable tag is pushed and the publish workflow succeeds,
+  `pip install ao-kernel` may still resolve to the previous stable package.
+- After publish verification, `pip install ao-kernel` and
+  `pip install ao-kernel==4.0.0` are the intended stable install paths.
+- Public Beta users who need the prior pre-release line can still pin
+  `ao-kernel==4.0.0b2`.
 
 ## [4.0.0b2] - 2026-04-24
 
@@ -1861,8 +1904,10 @@ objections were grep-verified and absorbed.
   catch the new error or restore a healthy file.
 - **`save_store` deprecated.** Production write paths must route
   through `save_store_cas(...)` or the `canonical_store` mutator
-  helpers; `save_store()` emits a `DeprecationWarning` since v3.0.0
-  and will be removed in v4.0.0.
+  helpers; `save_store()` emits a `DeprecationWarning` since v3.0.0.
+  It was originally targeted for a v4.0.0 removal; the v4.0.0 stable
+  line retained compatibility and retargeted removal to a future major
+  release.
 - **Evidence contract clarified.** CLAUDE.md §2 now documents the
   dual form: MCP events land in JSONL (fsync-only, daily-rotated),
   while workspace artefacts keep the SHA256 integrity manifest. The

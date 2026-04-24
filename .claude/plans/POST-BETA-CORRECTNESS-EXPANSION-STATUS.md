@@ -377,8 +377,8 @@ Aktif slice: `ST-7` stable release candidate preparation.
 10. Aktif contract: `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md`
 11. Stable release'e doğrudan geçilmez; önce `ST-7` release-candidate gate
    branch/PR ile kapanır.
-12. Aktif iş: `ST-7` için exact release-candidate checklist, version/changelog
-   finalization ve stable docs install language hazırlığı.
+12. Aktif iş: `ST-7` implementation PR ile `4.0.0` source candidate version,
+   changelog ve stable docs install language hazırlığı.
 
 `PB-8.2` completion kaydı:
 
