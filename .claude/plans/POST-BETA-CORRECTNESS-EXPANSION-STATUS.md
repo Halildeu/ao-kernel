@@ -33,6 +33,8 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-4.3 protected environment / secret contract:** `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`
 - **Son tamamlanan GP-4.4 protected live rehearsal blocked decision:** `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`
 - **Son tamamlanan GP-4.5 support-boundary closeout:** `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`
+- **Son tamamlanan GP-5 roadmap setup:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
+- **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
@@ -91,6 +93,7 @@ ayrı ayrı görünür kılmak.
 - **GP-4.4 issue:** [#410](https://github.com/Halildeu/ao-kernel/issues/410) (`closes with GP-4.4 PR`)
 - **GP-4.5 issue:** [#413](https://github.com/Halildeu/ao-kernel/issues/413) (`closes with GP-4.5 PR`)
 - **GP-5 tracker issue:** [#424](https://github.com/Halildeu/ao-kernel/issues/424) (`active`)
+- **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
   integration gates, write-side rollback evidence, and an explicit closeout
@@ -154,7 +157,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4.3` protected environment / secret contract | Completed by GP-4.3 PR ([#407](https://github.com/Halildeu/ao-kernel/issues/407), record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`) | protected GitHub environment, secret handle ve fork-safety contract'ini schema-backed hale getirmek | no secret values, no environment creation, no live adapter execution, no support widening |
 | `GP-4.4` protected live rehearsal blocked decision | Completed by GP-4.4 PR ([#410](https://github.com/Halildeu/ao-kernel/issues/410), record `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`) | protected live rehearsal prerequisite eksikse fake live success üretmeden blocked decision kaydetmek | schema validation + blocked rehearsal decision artifact + no live adapter execution + no support widening |
 | `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
-| `GP-5` general-purpose platform integration | Active setup | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | roadmap PR first; no support widening until GP-5.9 closeout |
+| `GP-5` general-purpose platform integration | Active setup / `GP-5.0a` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | roadmap merged; `GP-5.0a` adds evidence gates + `RI-5` / `GP-5.3` interface contract; no support widening until GP-5.9 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -203,8 +206,42 @@ Bu yüzden support boundary değişmedi.
 Amaç, genel amaçlı production coding automation platform claim'ini hemen
 vermek değil; repo-intelligence context, protected real-adapter evidence,
 governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops
-support widening kapılarını sırayla kapatmaktır. İlk aktif slice
-`GP-5.0` roadmap/authority freeze'dir ve support boundary'yi genişletmez.
+support widening kapılarını sırayla kapatmaktır. `GP-5.0` roadmap/authority
+freeze tamamlandı; aktif slice `GP-5.0a` Claude/MCP consultation absorb ve
+`RI-5` / `GP-5.3` interface contract kayıt işidir. Bu slice support boundary'yi
+genişletmez.
+
+`GP-5.0a` ile yazılı hale getirilen ek kapılar:
+
+1. Packaging freshness: release/support readiness yalnız wheel-installed
+   fresh-venv smoke ile kanıtlanır; editable-install geçişi yeterli değildir.
+2. Shipped-baseline non-regression: her widening slice mevcut stable baseline
+   entrypoints, doctor, demo review ve packaging smoke davranışını korur.
+3. Cost/token evidence: real-adapter ve governed workflow kanıtı adapter
+   identity, elapsed time, token usage varsa token bilgisi ve `cost_usd` ya da
+   açık `usage_missing` / `cost_unavailable` nedeni taşır.
+4. `RI-5` / `GP-5.3` ownership: `RI-5` explicit root/context export planını,
+   `GP-5.3` governed workflow context handoff'unu sahiplenir; ilk
+   `GP-5.3a` / `GP-5.3b` dilimleri `RI-5a` export-plan dosyasını gerektirmez.
+5. Runbook skeleton: `GP-5.5` ve `GP-5.6` write-side slice'ları incident /
+   rollback runbook iskeletini aynı PR içinde güncellemeden kapanamaz.
+6. Workspace metadata drift: `.ao/workspace.json` içindeki workspace metadata
+   versiyonu runtime package versiyonundan ayrı bir sinyaldir; platform
+   readiness sinyali olarak kullanılmadan önce ayrı küçük investigation/fix
+   slice'ı açılmalıdır.
+
+`GP-5` aktif yol artık:
+
+1. `GP-5.0a` evidence gates + `RI-5` / `GP-5.3` interface contract — current
+2. `GP-5.1a` protected gate prerequisite audit
+3. `GP-5.3a` repo-intelligence retrieval evidence contract
+4. `GP-5.3b` agent context handoff contract
+5. `GP-5.1b` protected workflow binding patch
+
+`GP-5.3a` ve `GP-5.3b`, `GP-5.1a` ile paralel yürüyebilir; çünkü read-only
+retrieval evidence ve manual/stdout handoff protected real-adapter credential'a
+bağlı değildir. Buna rağmen support widening ancak GP-5 closeout kapıları
+tamamlanınca yapılır.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.
