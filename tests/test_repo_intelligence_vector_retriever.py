@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -65,6 +66,19 @@ def _indexed_store(project: Path) -> tuple[InMemoryVectorStore, dict[str, Any]]:
     return store, manifest
 
 
+def _namespace_prefix(manifest: dict[str, Any]) -> str:
+    return (
+        "repo_chunk::"
+        f"{manifest['project']['root_identity_sha256']}::"
+        f"{manifest['embedding_space']['embedding_space_id']}::"
+    )
+
+
+def _first_stored_record(store: InMemoryVectorStore) -> tuple[str, dict[str, Any]]:
+    key, record = next(iter(store._store.items()))  # noqa: SLF001 - test inspects fixture state.
+    return key, dict(record["metadata"])
+
+
 def test_query_repo_vectors_returns_schema_valid_current_chunks(tmp_path: Path) -> None:
     project = _make_project(tmp_path)
     store, manifest = _indexed_store(project)
@@ -84,8 +98,18 @@ def test_query_repo_vectors_returns_schema_valid_current_chunks(tmp_path: Path) 
     assert result["artifact_kind"] == "repo_vector_query_result"
     assert result["summary"]["matches"] >= 1
     assert result["summary"]["embedding_calls"] == 1
+    assert result["query"]["min_similarity"] == 0.3
+    assert result["source_artifacts"]["repo_chunks_sha256"] == manifest["source_artifacts"]["repo_chunks_sha256"]
+    assert len(result["source_artifacts"]["repo_vector_index_manifest_sha256"]) == 64
     assert result["results"][0]["content_status"] == "current"
     assert result["results"][0]["source_path"].startswith("pkg/")
+    assert all(item["similarity"] >= result["query"]["min_similarity"] for item in result["results"])
+    assert all(item["content_status"] == "current" for item in result["results"])
+    assert all(
+        hashlib.sha256(item["snippet"].encode("utf-8")).hexdigest() == item["content_sha256"]
+        for item in result["results"]
+        if not item["snippet_truncated"]
+    )
     assert "return VALUE" in "".join(item["snippet"] for item in result["results"])
 
 
@@ -169,6 +193,58 @@ def test_query_repo_vectors_filters_non_repo_namespace_candidates(tmp_path: Path
     validate_repo_vector_query_result(result)
     assert result["summary"]["filtered_candidates"] >= 1
     assert all(item["key"].startswith("repo_chunk::" + manifest["project"]["root_identity_sha256"]) for item in result["results"])
+
+
+def test_query_repo_vectors_filters_same_prefix_metadata_mismatch(tmp_path: Path) -> None:
+    project = _make_project(tmp_path)
+    store, manifest = _indexed_store(project)
+    _key, metadata = _first_stored_record(store)
+    bad_key = f"{_namespace_prefix(manifest)}repo-chunk-v1:{'d' * 64}"
+    metadata["project_root_identity_sha256"] = "0" * 64
+    store.store(bad_key, [0.1, 0.2, 0.3], metadata=metadata)
+
+    result = query_repo_vectors(
+        project_root=project,
+        vector_index_manifest=manifest,
+        vector_store=store,
+        embedding_config=_embedding_config(),
+        query="run",
+        top_k=10,
+        candidate_limit=20,
+        embed_text_fn=_embed_text,
+    )
+
+    validate_repo_vector_query_result(result)
+    assert result["summary"]["filtered_candidates"] >= 1
+    assert all(item["key"] != bad_key for item in result["results"])
+
+
+def test_query_repo_vectors_excludes_path_escape_candidates(tmp_path: Path) -> None:
+    project = _make_project(tmp_path)
+    store, manifest = _indexed_store(project)
+    _key, metadata = _first_stored_record(store)
+    bad_key = f"{_namespace_prefix(manifest)}repo-chunk-v1:{'e' * 64}"
+    metadata["source_path"] = "../pyproject.toml"
+    store.store(bad_key, [0.1, 0.2, 0.3], metadata=metadata)
+
+    result = query_repo_vectors(
+        project_root=project,
+        vector_index_manifest=manifest,
+        vector_store=store,
+        embedding_config=_embedding_config(),
+        query="run",
+        top_k=10,
+        candidate_limit=20,
+        embed_text_fn=_embed_text,
+    )
+
+    validate_repo_vector_query_result(result)
+    assert result["summary"]["stale_candidates"] >= 1
+    assert all(item["key"] != bad_key for item in result["results"])
+    assert any(
+        item["code"] == "repo_vector_query_source_path_escape" and item["key"] == bad_key
+        for item in result["diagnostics"]
+    )
 
 
 def test_query_repo_vectors_excludes_stale_source_chunks(tmp_path: Path) -> None:

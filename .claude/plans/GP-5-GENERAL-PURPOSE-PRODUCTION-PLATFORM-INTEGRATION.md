@@ -1,14 +1,14 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.1a` audit closeout
+**Status:** Active program setup / `GP-5.3a` retrieval evidence closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `7580303` for the `GP-5.1a` prerequisite audit
+**Authority:** `origin/main` at `3656939` for the `GP-5.3a` retrieval evidence contract
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.1a` - protected gate prerequisite audit
-**Branch:** `codex/gp5-1a-protected-gate-audit`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-1a`
+**Current slice:** `GP-5.3a` - repo-intelligence retrieval evidence contract
+**Branch:** `codex/gp5-3a-retrieval-evidence`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
-closed, `RI-5` opened
+closed, `RI-5` opened, `GP-5.1a` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -256,7 +256,8 @@ integration pillars.
 
 1. `GP-5.3a` - Retrieval evidence quality contract:
    define relevance, stale-result, snippet-boundary, and hash-validation
-   assertions for `repo query`.
+   assertions for `repo query`. Result:
+   `keep_beta_read_only_retrieval_contract`.
 2. `GP-5.3b` - Agent context handoff contract:
    document and test stdout-only Markdown handoff as explicit operator input,
    not hidden prompt injection.
@@ -269,6 +270,21 @@ integration pillars.
 5. `GP-5.3e` - Promotion decision:
    decide whether repo-intelligence read-only context can become a supported
    building block for GP-5 workflows.
+
+**GP-5.3a closeout candidate:**
+
+`GP-5.3a` keeps repo intelligence in beta read-only mode, but strengthens the
+evidence contract that later workflow handoff slices can rely on. The focused
+tests now pin source artifact hashes, `min_similarity`, current-only results,
+untruncated snippet hashes, same-prefix metadata filtering, stale-source
+diagnostics, path-escape exclusion, and CLI read-only behavior.
+
+The detailed decision record is
+`.claude/plans/GP-5.3a-REPO-INTELLIGENCE-RETRIEVAL-EVIDENCE-CONTRACT.md`.
+
+This slice does not consume `.ao/context/repo_export_plan.json`, does not write
+root authority files, does not auto-feed `context_compiler`, and does not widen
+support.
 
 **DoD:**
 
@@ -469,9 +485,9 @@ promotion.
 |---:|---|---|---|
 | 1 | `GP-5.0` | Program roadmap PR | Completed on `main`; no runtime change. |
 | 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Completed on `main`; no runtime change. |
-| 3 | `GP-5.1a` | Protected gate prerequisite audit | Closeout candidate: required environment/secret handle not attested; no secret value in repo. |
-| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Next unblocked slice; use current `repo query` / Markdown context baseline from `RI-4`. |
-| 5 | `GP-5.3b` | Agent context handoff contract | Can follow `GP-5.3a`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
+| 3 | `GP-5.1a` | Protected gate prerequisite audit | Completed on `main`; required environment/secret handle not attested; no secret value in repo. |
+| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Closeout candidate: beta read-only evidence contract strengthened; no support widening. |
+| 5 | `GP-5.3b` | Agent context handoff contract | Next unblocked slice; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
 | 6 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 7 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 8 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
@@ -503,6 +519,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.1a`, then start `GP-5.3a` repo-intelligence
-   retrieval evidence contract unless protected environment/credential
-   attestation is provided first.
+5. next step: merge `GP-5.3a`, then start `GP-5.3b` agent context handoff
+   contract unless protected environment/credential attestation is provided
+   first for `GP-5.1b`.
