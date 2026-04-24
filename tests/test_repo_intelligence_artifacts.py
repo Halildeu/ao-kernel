@@ -8,6 +8,8 @@ from jsonschema import Draft202012Validator
 
 from ao_kernel._internal.repo_intelligence import artifacts
 from ao_kernel._internal.repo_intelligence.artifacts import (
+    AGENT_PACK_FILENAME,
+    AGENT_PACK_FORMAT_REF,
     PYTHON_IMPORT_GRAPH_FILENAME,
     PYTHON_IMPORT_GRAPH_SCHEMA_NAME,
     PYTHON_SYMBOL_INDEX_FILENAME,
@@ -22,6 +24,7 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     validate_repo_map,
     write_repo_scan_artifacts,
 )
+from ao_kernel._internal.repo_intelligence.context_pack_builder import build_agent_context_pack
 from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_python_ast_indexes
 from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 from ao_kernel.config import load_default
@@ -106,6 +109,39 @@ def test_write_repo_scan_artifacts_writes_ast_artifacts_and_manifest_records(tmp
     ]
 
 
+def test_write_repo_scan_artifacts_writes_agent_pack_and_manifest_record(tmp_path: Path) -> None:
+    project = _repo_with_workspace(tmp_path)
+    repo_map = scan_repo(project)
+    import_graph, symbol_index = build_python_ast_indexes(project, repo_map)
+    agent_pack = build_agent_context_pack(repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+
+    result = write_repo_scan_artifacts(
+        context_dir=project / ".ao" / "context",
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+        agent_pack=agent_pack,
+    )
+    context_dir = project / ".ao" / "context"
+    written_agent_pack = (context_dir / AGENT_PACK_FILENAME).read_text(encoding="utf-8")
+    written_manifest = json.loads((context_dir / REPO_INDEX_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+
+    validate_repo_index_manifest(written_manifest)
+    assert "# Agent Context Pack" in written_agent_pack
+    assert [item["path"] for item in result["artifacts"]] == [
+        ".ao/context/repo_map.json",
+        ".ao/context/import_graph.json",
+        ".ao/context/symbol_index.json",
+        ".ao/context/agent_pack.md",
+        ".ao/context/repo_index_manifest.json",
+    ]
+    agent_pack_record = written_manifest["artifacts"][3]
+    assert agent_pack_record["path"] == ".ao/context/agent_pack.md"
+    assert agent_pack_record["format_ref"] == AGENT_PACK_FORMAT_REF
+    assert agent_pack_record["media_type"] == "text/markdown"
+    assert "schema_ref" not in agent_pack_record
+
+
 def test_artifact_writer_delegates_to_shared_atomic_writer(tmp_path: Path, monkeypatch: Any) -> None:
     project = _repo_with_workspace(tmp_path)
     repo_map = scan_repo(project)
@@ -121,3 +157,24 @@ def test_artifact_writer_delegates_to_shared_atomic_writer(tmp_path: Path, monke
     write_repo_scan_artifacts(context_dir=project / ".ao" / "context", repo_map=repo_map)
 
     assert calls == [REPO_MAP_FILENAME, REPO_INDEX_MANIFEST_FILENAME]
+
+
+def test_artifact_writer_delegates_agent_pack_to_shared_text_writer(tmp_path: Path, monkeypatch: Any) -> None:
+    project = _repo_with_workspace(tmp_path)
+    repo_map = scan_repo(project)
+    calls: list[str] = []
+    real_writer = artifacts.write_text_atomic
+
+    def tracking_writer(path: Path, content: str) -> None:
+        calls.append(path.name)
+        real_writer(path, content)
+
+    monkeypatch.setattr(artifacts, "write_text_atomic", tracking_writer)
+
+    write_repo_scan_artifacts(
+        context_dir=project / ".ao" / "context",
+        repo_map=repo_map,
+        agent_pack="# Agent Context Pack\n",
+    )
+
+    assert calls == [AGENT_PACK_FILENAME]

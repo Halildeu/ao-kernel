@@ -81,7 +81,8 @@ These are real, testable surfaces, but they are not the default shipped demo:
 - real-adapter benchmark full-mode runbooks
 - `python3 -m ao_kernel repo scan --project-root . --output json` for
   experimental read-only repo intelligence artifacts under `.ao/context/`,
-  including Python AST-derived import graph and top-level symbol index outputs
+  including Python AST-derived import graph, top-level symbol index outputs,
+  and a deterministic Markdown agent context pack
 
 Operator prerequisite contract (PB-9.1):
 
@@ -143,12 +144,13 @@ kalır.
 `PB-9.4` closeout kararı `stay_beta_operator_managed` olduğu için bu satırların
 support tier'i widening almadan korunur.
 
-The `repo scan` surface is Beta / experimental and read-only for RI-1. It may
-write only `.ao/context/repo_map.json` and
-`.ao/context/repo_index_manifest.json`. It does not create root authority files
-such as `CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, or `CODEX_CONTEXT.md`, and
-does not include AST/import graphing, vector indexing, LLM summaries, MCP tools,
-or context-pack export.
+The `repo scan` surface is Beta / experimental and read-only. It may write only
+schema-backed local artifacts under `.ao/context/`: `repo_map.json`,
+`import_graph.json`, `symbol_index.json`, `agent_pack.md`, and
+`repo_index_manifest.json`. It does not create root authority files such as
+`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, or `CODEX_CONTEXT.md`, and does not
+include vector indexing, LLM summaries, MCP tools, target-specific exports, or
+root context-pack export.
 
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına

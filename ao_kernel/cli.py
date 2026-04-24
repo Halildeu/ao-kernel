@@ -71,7 +71,12 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
     import json as _json
     from pathlib import Path as _Path
 
-    from ao_kernel.repo_intelligence import build_python_ast_indexes, scan_repo, write_repo_scan_artifacts
+    from ao_kernel.repo_intelligence import (
+        build_agent_context_pack,
+        build_python_ast_indexes,
+        scan_repo,
+        write_repo_scan_artifacts,
+    )
 
     project_root = _Path(args.project_root or ".").resolve()
     if not project_root.is_dir():
@@ -91,11 +96,17 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
 
     repo_map = scan_repo(project_root)
     import_graph, symbol_index = build_python_ast_indexes(project_root, repo_map)
+    agent_pack = build_agent_context_pack(
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+    )
     write_result = write_repo_scan_artifacts(
         context_dir=context_dir,
         repo_map=repo_map,
         import_graph=import_graph,
         symbol_index=symbol_index,
+        agent_pack=agent_pack,
     )
     summary = {
         "status": "ok",
