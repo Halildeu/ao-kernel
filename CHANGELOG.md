@@ -86,6 +86,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `ao-kernel-live-adapter-gate` protected environment and
   `AO_CLAUDE_CODE_CLI_AUTH` secret handle without committing secret values,
   binding a live environment, calling `claude`, or widening support.
+- Added the `GP-4.4` protected live rehearsal blocked decision. The manual
+  `live-adapter-gate` workflow now also emits schema-backed
+  `live-adapter-gate-rehearsal-decision.v1.json` with
+  `decision="blocked_no_rehearsal"` because the protected environment and
+  project-owned credential are not attested; it still does not bind a live
+  environment, call `claude`, or widen support.
 
 ## [4.0.0] - 2026-04-24
 

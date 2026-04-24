@@ -33,11 +33,17 @@ ENVIRONMENT_CONTRACT_SCHEMA_NAME = "live-adapter-gate-environment.schema.v1.json
 ENVIRONMENT_CONTRACT_ARTIFACT = "live-adapter-gate-environment-contract.v1.json"
 PROTECTED_ENVIRONMENT_NAME = "ao-kernel-live-adapter-gate"
 ENVIRONMENT_CONTRACT_FINDING = "live_gate_protected_environment_not_attested"
+REHEARSAL_DECISION_PROGRAM_ID = "GP-4.4"
+REHEARSAL_DECISION_ARTIFACT_KIND = "live_adapter_gate_rehearsal_decision"
+REHEARSAL_DECISION_SCHEMA_NAME = "live-adapter-gate-rehearsal-decision.schema.v1.json"
+REHEARSAL_DECISION_ARTIFACT = "live-adapter-gate-rehearsal-decision.v1.json"
+REHEARSAL_DECISION_FINDING = "live_gate_rehearsal_blocked_missing_protected_prerequisites"
 
 
 CheckStatus = Literal["pass", "blocked", "skipped"]
 OverallStatus = Literal["blocked"]
 EvidenceRequirementStatus = Literal["present", "blocked"]
+PrerequisiteStatus = Literal["blocked", "not_attested"]
 
 
 class LiveAdapterGateTrigger(TypedDict):
@@ -176,6 +182,45 @@ class LiveAdapterGateEnvironmentContract(TypedDict):
     live_execution_allowed: bool
     support_widening: bool
     promotion_blockers: list[str]
+    findings: list[str]
+
+
+class LiveAdapterGatePrerequisiteStatus(TypedDict):
+    """Single prerequisite for a future protected live rehearsal."""
+
+    prerequisite_id: str
+    status: PrerequisiteStatus
+    finding_code: str
+    detail: str
+
+
+class LiveAdapterGateRehearsalPromotionDecision(TypedDict):
+    """Fail-closed GP-4.4 promotion decision."""
+
+    support_widening_allowed: bool
+    production_certified: bool
+    next_gate: str
+    reason: str
+
+
+class LiveAdapterGateRehearsalDecision(TypedDict):
+    """Machine-readable GP-4.4 protected live rehearsal decision."""
+
+    schema_version: str
+    artifact_kind: str
+    program_id: str
+    gate_id: str
+    adapter_id: str
+    support_tier: str
+    overall_status: OverallStatus
+    decision: str
+    finding_code: str
+    generated_at: str
+    live_rehearsal_attempted: bool
+    live_execution_allowed: bool
+    support_widening: bool
+    prerequisite_status: list[LiveAdapterGatePrerequisiteStatus]
+    promotion_decision: LiveAdapterGateRehearsalPromotionDecision
     findings: list[str]
 
 
@@ -417,6 +462,76 @@ def build_live_adapter_gate_environment_contract(
     }
 
 
+def build_live_adapter_gate_rehearsal_decision(
+    *,
+    generated_at: str | None = None,
+) -> LiveAdapterGateRehearsalDecision:
+    """Build the GP-4.4 protected live rehearsal decision artifact.
+
+    The current decision is fail-closed: no protected environment or
+    project-owned credential is attested, so no live adapter call is attempted
+    and support remains unchanged.
+    """
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": REHEARSAL_DECISION_ARTIFACT_KIND,
+        "program_id": REHEARSAL_DECISION_PROGRAM_ID,
+        "gate_id": GATE_ID,
+        "adapter_id": ADAPTER_ID,
+        "support_tier": SUPPORT_TIER,
+        "overall_status": "blocked",
+        "decision": "blocked_no_rehearsal",
+        "finding_code": REHEARSAL_DECISION_FINDING,
+        "generated_at": generated_at or utc_timestamp(),
+        "live_rehearsal_attempted": False,
+        "live_execution_allowed": False,
+        "support_widening": False,
+        "prerequisite_status": [
+            {
+                "prerequisite_id": "protected_environment_attestation",
+                "status": "not_attested",
+                "finding_code": "live_gate_protected_environment_not_attested",
+                "detail": (
+                    f"Required GitHub environment {PROTECTED_ENVIRONMENT_NAME!r} "
+                    "is not attested by this repository lane."
+                ),
+            },
+            {
+                "prerequisite_id": "project_owned_credential",
+                "status": "not_attested",
+                "finding_code": "live_gate_project_owned_credential_not_attested",
+                "detail": (
+                    "Required project-owned Claude Code CLI credential handle "
+                    "AO_CLAUDE_CODE_CLI_AUTH is not attested by this lane."
+                ),
+            },
+            {
+                "prerequisite_id": "protected_live_preflight",
+                "status": "blocked",
+                "finding_code": "live_gate_preflight_not_collected",
+                "detail": "Protected live preflight cannot run before environment and credential attestation.",
+            },
+            {
+                "prerequisite_id": "governed_workflow_smoke",
+                "status": "blocked",
+                "finding_code": "live_gate_workflow_smoke_not_collected",
+                "detail": "Governed workflow smoke cannot run before protected live preflight passes.",
+            },
+        ],
+        "promotion_decision": {
+            "support_widening_allowed": False,
+            "production_certified": False,
+            "next_gate": "GP-4.5",
+            "reason": (
+                "GP-4.4 records an explicit blocked decision because protected "
+                "live rehearsal prerequisites are not attested."
+            ),
+        },
+        "findings": [REHEARSAL_DECISION_FINDING],
+    }
+
+
 def load_live_adapter_gate_evidence_schema() -> dict[str, Any]:
     """Load the bundled GP-4.2 evidence artifact JSON Schema."""
 
@@ -431,6 +546,13 @@ def load_live_adapter_gate_environment_schema() -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
+def load_live_adapter_gate_rehearsal_decision_schema() -> dict[str, Any]:
+    """Load the bundled GP-4.4 protected live rehearsal decision JSON Schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(REHEARSAL_DECISION_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
 def validate_live_adapter_gate_evidence_artifact(artifact: object) -> None:
     """Validate a GP-4.2 evidence artifact against the bundled schema."""
 
@@ -441,6 +563,12 @@ def validate_live_adapter_gate_environment_contract(contract: object) -> None:
     """Validate a GP-4.3 protected environment contract against the bundled schema."""
 
     Draft202012Validator(load_live_adapter_gate_environment_schema()).validate(contract)
+
+
+def validate_live_adapter_gate_rehearsal_decision(decision: object) -> None:
+    """Validate a GP-4.4 protected live rehearsal decision against the bundled schema."""
+
+    Draft202012Validator(load_live_adapter_gate_rehearsal_decision_schema()).validate(decision)
 
 
 def write_live_adapter_gate_report(path: Path, report: LiveAdapterGateReport) -> None:
@@ -464,6 +592,14 @@ def write_live_adapter_gate_environment_contract(path: Path, contract: LiveAdapt
     validate_live_adapter_gate_environment_contract(contract)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_live_adapter_gate_rehearsal_decision(path: Path, decision: LiveAdapterGateRehearsalDecision) -> None:
+    """Write a canonical GP-4.4 protected live rehearsal decision to ``path``."""
+
+    validate_live_adapter_gate_rehearsal_decision(decision)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(decision, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def render_live_adapter_gate_text(report: LiveAdapterGateReport) -> str:

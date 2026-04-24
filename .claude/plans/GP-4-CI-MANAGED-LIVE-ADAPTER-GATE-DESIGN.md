@@ -99,7 +99,7 @@ itself.
 | `GP-4.1` workflow design stub | Add non-secret workflow skeleton or documented manual gate contract | implemented by `.github/workflows/live-adapter-gate.yml`; report remains `blocked`; no live secrets, no live calls, CI-safe |
 | `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | implemented by schema-backed `live-adapter-gate-evidence.v1.json`; local tests validate schema; no live execution or support widening |
 | `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | implemented by schema-backed `live-adapter-gate-environment-contract.v1.json`; no repository secret values, no live execution, no support widening |
-| `GP-4.4` live rehearsal | Run protected manual gate once and record artifacts | only if project-owned credentials exist |
+| `GP-4.4` live rehearsal decision | Run protected manual gate once, or record blocked decision if prerequisites are absent | implemented as blocked decision artifact; no protected environment/credential attested, no live execution |
 | `GP-4.5` support-boundary decision | Decide promote/keep beta/defer | requires all prior slices and docs parity |
 
 ## Promotion Preconditions
@@ -176,10 +176,23 @@ pull-request secret exposure, and names `AO_CLAUDE_CODE_CLI_AUTH` as the
 project-owned Claude Code CLI auth handle. It does not create the environment,
 read a secret, call `claude`, or widen support.
 
+## GP-4.4 Implementation
+
+`GP-4.4` records the protected live rehearsal decision:
+
+1. schema:
+   `ao_kernel/defaults/schemas/live-adapter-gate-rehearsal-decision.schema.v1.json`;
+2. helper: `build_live_adapter_gate_rehearsal_decision()`;
+3. validator: `validate_live_adapter_gate_rehearsal_decision()`;
+4. expected artifact: `live-adapter-gate-rehearsal-decision.v1.json`.
+
+The decision is `blocked_no_rehearsal` because the required protected
+environment and project-owned credential are not attested. The workflow still
+does not create environments, read secrets, bind `environment:`, call `claude`,
+or widen support.
+
 ## Next Step
 
-The next implementation slice should be `GP-4.4`: either run a protected live
-rehearsal after the required environment and credential are configured, or
-record an explicit blocked decision if project-owned credentials are not
-available. It must still avoid support widening until protected live evidence
-and docs parity exist.
+The next implementation slice should be `GP-4.5`: close the support-boundary
+decision for `claude-code-cli` against the blocked GP-4 evidence. It must still
+avoid support widening unless protected live evidence and docs parity exist.

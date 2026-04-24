@@ -78,5 +78,6 @@ governed workflow smoke evidence.
 `GP-4.2` has since added the schema-backed evidence artifact contract in
 `.claude/plans/GP-4.2-LIVE-ADAPTER-EVIDENCE-ARTIFACT-CONTRACT.md`, and
 `GP-4.3` has added the protected environment / secret contract in
-`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. The next GP-4
-slice is `GP-4.4`: protected live rehearsal or explicit blocked decision.
+`.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`. `GP-4.4`
+has since recorded the protected live rehearsal blocked decision in
+`.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`.

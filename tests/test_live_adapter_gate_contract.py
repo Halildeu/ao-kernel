@@ -13,17 +13,22 @@ from ao_kernel.live_adapter_gate import (
     BLOCKED_FINDING,
     EVIDENCE_ARTIFACT,
     ENVIRONMENT_CONTRACT_ARTIFACT,
+    REHEARSAL_DECISION_ARTIFACT,
     build_live_adapter_gate_evidence_artifact,
     build_live_adapter_gate_environment_contract,
+    build_live_adapter_gate_rehearsal_decision,
     build_live_adapter_gate_report,
     live_adapter_gate_report_sha256,
     load_live_adapter_gate_evidence_schema,
     load_live_adapter_gate_environment_schema,
+    load_live_adapter_gate_rehearsal_decision_schema,
     render_live_adapter_gate_text,
     validate_live_adapter_gate_evidence_artifact,
     validate_live_adapter_gate_environment_contract,
+    validate_live_adapter_gate_rehearsal_decision,
     write_live_adapter_gate_evidence_artifact,
     write_live_adapter_gate_environment_contract,
+    write_live_adapter_gate_rehearsal_decision,
     write_live_adapter_gate_report,
 )
 
@@ -84,6 +89,13 @@ def test_live_adapter_gate_environment_schema_is_valid() -> None:
 
     Draft202012Validator.check_schema(schema)
     assert schema["$id"] == "urn:ao:live-adapter-gate-environment:v1"
+
+
+def test_live_adapter_gate_rehearsal_decision_schema_is_valid() -> None:
+    schema = load_live_adapter_gate_rehearsal_decision_schema()
+
+    Draft202012Validator.check_schema(schema)
+    assert schema["$id"] == "urn:ao:live-adapter-gate-rehearsal-decision:v1"
 
 
 def test_build_live_adapter_gate_evidence_artifact_is_schema_valid_and_blocked() -> None:
@@ -163,6 +175,38 @@ def test_build_live_adapter_gate_environment_contract_is_schema_valid_and_blocke
     ]
 
 
+def test_build_live_adapter_gate_rehearsal_decision_is_schema_valid_and_blocked() -> None:
+    decision = build_live_adapter_gate_rehearsal_decision(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+
+    validate_live_adapter_gate_rehearsal_decision(decision)
+    assert decision["schema_version"] == "1"
+    assert decision["artifact_kind"] == "live_adapter_gate_rehearsal_decision"
+    assert decision["program_id"] == "GP-4.4"
+    assert decision["overall_status"] == "blocked"
+    assert decision["decision"] == "blocked_no_rehearsal"
+    assert decision["finding_code"] == "live_gate_rehearsal_blocked_missing_protected_prerequisites"
+    assert decision["live_rehearsal_attempted"] is False
+    assert decision["live_execution_allowed"] is False
+    assert decision["support_widening"] is False
+    assert decision["promotion_decision"] == {
+        "support_widening_allowed": False,
+        "production_certified": False,
+        "next_gate": "GP-4.5",
+        "reason": (
+            "GP-4.4 records an explicit blocked decision because protected "
+            "live rehearsal prerequisites are not attested."
+        ),
+    }
+
+    prerequisites = {item["prerequisite_id"]: item for item in decision["prerequisite_status"]}
+    assert prerequisites["protected_environment_attestation"]["status"] == "not_attested"
+    assert prerequisites["project_owned_credential"]["status"] == "not_attested"
+    assert prerequisites["protected_live_preflight"]["status"] == "blocked"
+    assert prerequisites["governed_workflow_smoke"]["status"] == "blocked"
+
+
 def test_live_adapter_gate_evidence_schema_rejects_support_widening() -> None:
     report = build_live_adapter_gate_report(generated_at="2026-04-24T00:00:00Z")
     artifact = build_live_adapter_gate_evidence_artifact(report)
@@ -180,6 +224,16 @@ def test_live_adapter_gate_environment_schema_rejects_fake_live_execution() -> N
 
     with pytest.raises(ValidationError):
         validate_live_adapter_gate_environment_contract(contract)
+
+
+def test_live_adapter_gate_rehearsal_decision_schema_rejects_fake_live_execution() -> None:
+    decision = build_live_adapter_gate_rehearsal_decision(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+    decision["live_rehearsal_attempted"] = True
+
+    with pytest.raises(ValidationError):
+        validate_live_adapter_gate_rehearsal_decision(decision)
 
 
 def test_write_live_adapter_gate_evidence_artifact_round_trips_json(tmp_path: Path) -> None:
@@ -209,6 +263,20 @@ def test_write_live_adapter_gate_environment_contract_round_trips_json(tmp_path:
     assert path.read_text(encoding="utf-8").endswith("\n")
 
 
+def test_write_live_adapter_gate_rehearsal_decision_round_trips_json(tmp_path: Path) -> None:
+    decision = build_live_adapter_gate_rehearsal_decision(
+        generated_at="2026-04-24T00:00:00Z",
+    )
+    path = tmp_path / REHEARSAL_DECISION_ARTIFACT
+
+    write_live_adapter_gate_rehearsal_decision(path, decision)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload == decision
+    validate_live_adapter_gate_rehearsal_decision(payload)
+    assert path.read_text(encoding="utf-8").endswith("\n")
+
+
 def test_render_live_adapter_gate_text_marks_no_live_execution() -> None:
     report = build_live_adapter_gate_report(generated_at="2026-04-24T00:00:00Z")
     rendered = render_live_adapter_gate_text(report)
@@ -224,6 +292,7 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
     report_path = tmp_path / "contract.json"
     evidence_path = tmp_path / "evidence.json"
     environment_contract_path = tmp_path / "environment.json"
+    rehearsal_decision_path = tmp_path / "rehearsal-decision.json"
 
     result = subprocess.run(
         [
@@ -237,6 +306,8 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
             str(evidence_path),
             "--environment-contract-path",
             str(environment_contract_path),
+            "--rehearsal-decision-path",
+            str(rehearsal_decision_path),
             "--target-ref",
             "main",
             "--reason",
@@ -259,15 +330,19 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
     file_payload = json.loads(report_path.read_text(encoding="utf-8"))
     evidence_payload = json.loads(evidence_path.read_text(encoding="utf-8"))
     environment_payload = json.loads(environment_contract_path.read_text(encoding="utf-8"))
+    rehearsal_decision_payload = json.loads(rehearsal_decision_path.read_text(encoding="utf-8"))
     assert stdout_payload == file_payload
     assert stdout_payload["overall_status"] == "blocked"
     assert stdout_payload["live_execution_attempted"] is False
     validate_live_adapter_gate_evidence_artifact(evidence_payload)
     validate_live_adapter_gate_environment_contract(environment_payload)
+    validate_live_adapter_gate_rehearsal_decision(rehearsal_decision_payload)
     assert evidence_payload["source_report"]["path"] == report_path.name
     assert evidence_payload["support_widening"] is False
     assert environment_payload["support_widening"] is False
     assert environment_payload["live_execution_allowed"] is False
+    assert rehearsal_decision_payload["support_widening"] is False
+    assert rehearsal_decision_payload["live_rehearsal_attempted"] is False
 
 
 def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
@@ -281,6 +356,7 @@ def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
     assert "live-adapter-gate-contract.v1.json" in workflow
     assert "live-adapter-gate-evidence.v1.json" in workflow
     assert "live-adapter-gate-environment-contract.v1.json" in workflow
+    assert "live-adapter-gate-rehearsal-decision.v1.json" in workflow
     assert "claude_code_cli_smoke.py" not in workflow
     assert "claude_code_cli_workflow_smoke.py" not in workflow
     assert "secrets." not in workflow

@@ -166,5 +166,10 @@ Canlı snapshot üretimi için: `python3 scripts/truth_inventory_ratchet.py --ou
   handle olarak `AO_CLAUDE_CODE_CLI_AUTH` adlarını tanımlar; secret değeri
   içermez, environment oluşturmaz, canlı `claude` çağırmaz ve support widening
   yapmaz.
+- `GP-4.4` protected live rehearsal decision hattı
+  `live-adapter-gate-rehearsal-decision.v1.json` artifact'ini ekler. Bugünkü
+  karar `blocked_no_rehearsal`dir; required environment ve project-owned
+  credential attested olmadığı için live rehearsal denenmez ve support boundary
+  değişmez.
 - `docs/roadmap/DEMO-SCRIPT-SPEC.md` roadmap/spec dokümanıdır; canlı
   CLI komut listesi değildir.
