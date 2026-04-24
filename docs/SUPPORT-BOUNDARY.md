@@ -113,6 +113,12 @@ widening değildir: sadece manual contract artifact üretir, canlı `claude`
 contract'ını ekler. Artifact, preflight/workflow-smoke/protected-environment
 kanıt slotlarını promotion blocker olarak listeler; yine canlı adapter çağrısı,
 secret okuma veya support widening içermez.
+`GP-4.3` ayrıca `live-adapter-gate-environment-contract.v1.json` artifact'ini
+ekler. Bu contract required protected environment adını
+`ao-kernel-live-adapter-gate`, required secret handle adını
+`AO_CLAUDE_CODE_CLI_AUTH` olarak kaydeder; secret değeri commit etmez,
+environment oluşturmaz ve artifact hâlâ `live_execution_allowed=false` /
+`support_widening=false` döner.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify

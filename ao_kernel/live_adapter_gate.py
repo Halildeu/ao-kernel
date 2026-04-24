@@ -27,6 +27,12 @@ EVIDENCE_ARTIFACT_KIND = "live_adapter_gate_evidence"
 EVIDENCE_SCHEMA_NAME = "live-adapter-gate-evidence.schema.v1.json"
 CONTRACT_REPORT_ARTIFACT = "live-adapter-gate-contract.v1.json"
 EVIDENCE_ARTIFACT = "live-adapter-gate-evidence.v1.json"
+ENVIRONMENT_CONTRACT_PROGRAM_ID = "GP-4.3"
+ENVIRONMENT_CONTRACT_ARTIFACT_KIND = "live_adapter_gate_environment_contract"
+ENVIRONMENT_CONTRACT_SCHEMA_NAME = "live-adapter-gate-environment.schema.v1.json"
+ENVIRONMENT_CONTRACT_ARTIFACT = "live-adapter-gate-environment-contract.v1.json"
+PROTECTED_ENVIRONMENT_NAME = "ao-kernel-live-adapter-gate"
+ENVIRONMENT_CONTRACT_FINDING = "live_gate_protected_environment_not_attested"
 
 
 CheckStatus = Literal["pass", "blocked", "skipped"]
@@ -117,6 +123,59 @@ class LiveAdapterGateEvidenceArtifact(TypedDict):
     source_report: LiveAdapterGateSourceReport
     evidence_requirements: list[LiveAdapterGateEvidenceRequirement]
     promotion_decision: LiveAdapterGatePromotionDecision
+    findings: list[str]
+
+
+class LiveAdapterGateProtectedEnvironment(TypedDict):
+    """Protected GitHub environment requirements for the future live gate."""
+
+    name: str
+    required: bool
+    required_reviewers: bool
+    prevent_self_review: bool
+    allowed_refs: list[str]
+    detail: str
+
+
+class LiveAdapterGateTriggerPolicy(TypedDict):
+    """Fork-safe trigger policy for future live execution."""
+
+    allowed_events: list[str]
+    forbidden_events: list[str]
+    allowed_refs: list[str]
+    forks_allowed: bool
+    pull_request_secrets_allowed: bool
+    detail: str
+
+
+class LiveAdapterGateSecretRequirement(TypedDict):
+    """Named secret requirement without storing a secret value."""
+
+    secret_id: str
+    required: bool
+    exposure: str
+    secret_value_committed: bool
+    purpose: str
+
+
+class LiveAdapterGateEnvironmentContract(TypedDict):
+    """Machine-readable GP-4.3 protected environment contract."""
+
+    schema_version: str
+    artifact_kind: str
+    program_id: str
+    gate_id: str
+    adapter_id: str
+    support_tier: str
+    overall_status: OverallStatus
+    finding_code: str
+    generated_at: str
+    protected_environment: LiveAdapterGateProtectedEnvironment
+    trigger_policy: LiveAdapterGateTriggerPolicy
+    required_secrets: list[LiveAdapterGateSecretRequirement]
+    live_execution_allowed: bool
+    support_widening: bool
+    promotion_blockers: list[str]
     findings: list[str]
 
 
@@ -290,6 +349,74 @@ def build_live_adapter_gate_evidence_artifact(
     }
 
 
+def build_live_adapter_gate_environment_contract(
+    *,
+    generated_at: str | None = None,
+) -> LiveAdapterGateEnvironmentContract:
+    """Build the GP-4.3 protected environment / secret contract artifact.
+
+    The contract names the required GitHub environment and secret handles, but
+    it deliberately does not prove that the environment exists and never stores
+    a secret value. A later GP-4 slice must attach a real attestation before live
+    execution or support widening can be considered.
+    """
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": ENVIRONMENT_CONTRACT_ARTIFACT_KIND,
+        "program_id": ENVIRONMENT_CONTRACT_PROGRAM_ID,
+        "gate_id": GATE_ID,
+        "adapter_id": ADAPTER_ID,
+        "support_tier": SUPPORT_TIER,
+        "overall_status": "blocked",
+        "finding_code": ENVIRONMENT_CONTRACT_FINDING,
+        "generated_at": generated_at or utc_timestamp(),
+        "protected_environment": {
+            "name": PROTECTED_ENVIRONMENT_NAME,
+            "required": True,
+            "required_reviewers": True,
+            "prevent_self_review": True,
+            "allowed_refs": ["main"],
+            "detail": (
+                "Future live execution must run through this protected GitHub "
+                "environment or an explicitly approved release-gate equivalent."
+            ),
+        },
+        "trigger_policy": {
+            "allowed_events": ["workflow_dispatch", "schedule"],
+            "forbidden_events": ["pull_request", "pull_request_target", "push"],
+            "allowed_refs": ["main"],
+            "forks_allowed": False,
+            "pull_request_secrets_allowed": False,
+            "detail": (
+                "Project-owned live credentials must never be exposed to fork or "
+                "untrusted pull_request contexts."
+            ),
+        },
+        "required_secrets": [
+            {
+                "secret_id": "AO_CLAUDE_CODE_CLI_AUTH",
+                "required": True,
+                "exposure": "github_environment_secret",
+                "secret_value_committed": False,
+                "purpose": (
+                    "Project-owned Claude Code CLI auth material or equivalent "
+                    "non-API-key credential required for protected live rehearsal."
+                ),
+            }
+        ],
+        "live_execution_allowed": False,
+        "support_widening": False,
+        "promotion_blockers": [
+            "github_environment_not_attested",
+            "project_owned_credential_not_verified",
+            "live_preflight_not_collected",
+            "governed_workflow_smoke_not_collected",
+        ],
+        "findings": [ENVIRONMENT_CONTRACT_FINDING],
+    }
+
+
 def load_live_adapter_gate_evidence_schema() -> dict[str, Any]:
     """Load the bundled GP-4.2 evidence artifact JSON Schema."""
 
@@ -297,10 +424,23 @@ def load_live_adapter_gate_evidence_schema() -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
+def load_live_adapter_gate_environment_schema() -> dict[str, Any]:
+    """Load the bundled GP-4.3 protected environment contract JSON Schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(ENVIRONMENT_CONTRACT_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
 def validate_live_adapter_gate_evidence_artifact(artifact: object) -> None:
     """Validate a GP-4.2 evidence artifact against the bundled schema."""
 
     Draft202012Validator(load_live_adapter_gate_evidence_schema()).validate(artifact)
+
+
+def validate_live_adapter_gate_environment_contract(contract: object) -> None:
+    """Validate a GP-4.3 protected environment contract against the bundled schema."""
+
+    Draft202012Validator(load_live_adapter_gate_environment_schema()).validate(contract)
 
 
 def write_live_adapter_gate_report(path: Path, report: LiveAdapterGateReport) -> None:
@@ -316,6 +456,14 @@ def write_live_adapter_gate_evidence_artifact(path: Path, artifact: LiveAdapterG
     validate_live_adapter_gate_evidence_artifact(artifact)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_live_adapter_gate_environment_contract(path: Path, contract: LiveAdapterGateEnvironmentContract) -> None:
+    """Write a canonical GP-4.3 protected environment contract to ``path``."""
+
+    validate_live_adapter_gate_environment_contract(contract)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def render_live_adapter_gate_text(report: LiveAdapterGateReport) -> str:

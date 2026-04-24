@@ -80,6 +80,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   governed workflow-smoke, and protected-environment evidence slots recorded as
   blocked promotion gates. This still performs no secret access, live adapter
   execution, version bump, tag, publish, or support widening.
+- Added the `GP-4.3` protected environment / secret contract. The manual
+  `live-adapter-gate` workflow now also emits schema-backed
+  `live-adapter-gate-environment-contract.v1.json`, naming the required
+  `ao-kernel-live-adapter-gate` protected environment and
+  `AO_CLAUDE_CODE_CLI_AUTH` secret handle without committing secret values,
+  binding a live environment, calling `claude`, or widening support.
 
 ## [4.0.0] - 2026-04-24
 

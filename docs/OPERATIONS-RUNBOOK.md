@@ -45,10 +45,16 @@ python3 scripts/kernel_api_write_smoke.py --output text
 `live-adapter-gate` workflow'u (`GP-4.1`/`GP-4.2`) farklı bir yüzeydir: bugün
 canlı adapter çalıştırmaz. Manual workflow
 `live-adapter-gate-contract.v1.json` ve schema-backed
-`live-adapter-gate-evidence.v1.json` artifact'lerini üretir; artifact'lerin
-`overall_status="blocked"` / `finding_code="live_gate_not_implemented"` /
-`support_widening=false` dönmesi beklenir. Workflow'un yeşil olması
-production-certified `claude-code-cli` support anlamına gelmez.
+`live-adapter-gate-evidence.v1.json` artifact'lerini üretir. `GP-4.3` aynı
+bundle'a `live-adapter-gate-environment-contract.v1.json` artifact'ini ekler.
+Bu üçüncü artifact required protected environment
+`ao-kernel-live-adapter-gate` ve secret handle `AO_CLAUDE_CODE_CLI_AUTH`
+adlarını kaydeder, ama secret değerlerini okumaz veya yazmaz. Contract/evidence
+artifact'lerinde `finding_code="live_gate_not_implemented"`, environment
+contract artifact'inde `finding_code="live_gate_protected_environment_not_attested"`
+beklenir; hepsi `overall_status="blocked"` / `support_widening=false`
+semantiğindedir. Workflow'un yeşil olması production-certified
+`claude-code-cli` support anlamına gelmez.
 
 Prerequisite contract (operator-managed lanes):
 
