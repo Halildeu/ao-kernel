@@ -41,6 +41,27 @@ Do not resolve these by changing wording alone. They require code path,
 behavioral evidence, CI/protected-gate evidence where applicable, and support
 boundary updates in the same slice.
 
+## GP-5.9 closeout interpretation
+
+GP-5.9 closes the production platform claim decision as
+`keep_narrow_stable_runtime`. This does not add a stable shipped-baseline
+blocker, and it does not mark `KB-001` or `KB-002` as shipped-baseline bugs.
+They remain promotion blockers for broader claims because the affected lanes are
+still beta/operator-managed or sandbox-only.
+
+The following promotion blockers remain non-bug prerequisites rather than
+shipped-baseline defects:
+
+1. protected live adapter gate remains unattested;
+2. real-adapter usage/cost evidence is missing for production certification;
+3. `claude-code-cli` authentication remains operator-managed;
+4. `gh-cli-pr` live-write remains sandbox/disposable only;
+5. repo-intelligence context handoff remains explicit and not runtime auto-fed.
+
+Future promotion must close these with behavior and protected-gate evidence. A
+documentation-only change cannot convert the GP-5.9 non-promotion decision into
+a production platform claim.
+
 ## Release readiness rule
 
 Before a stable release candidate, this file must answer two questions:

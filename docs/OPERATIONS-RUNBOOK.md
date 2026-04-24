@@ -168,6 +168,7 @@ aligned with the current support boundary.
 | GP-5.6a disposable PR write rehearsal fails | Validate `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_disposable_pr_write_rehearsal.py` | Remote side-effect rehearsal blocker only; close/delete any sandbox residue before retry |
 | GP-5.7a full production rehearsal contract fails | Validate `gp5-full-production-rehearsal-contract.schema.v1.json` and run `pytest -q tests/test_gp5_full_production_rehearsal_contract.py` | Contract-gate blocker only; do not claim production platform readiness |
 | GP-5.7b full production rehearsal execution gate fails | Validate `gp5-full-production-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_full_production_rehearsal.py` | Aggregation-gate blocker only; inspect failed subreport before rerunning any live sandbox write |
+| GP-5.9 production claim decision fails | Validate `gp5-production-platform-claim-decision.schema.v1.json` and run `python3 scripts/gp5_platform_claim_decision.py --output json` | Claim-decision blocker only; preserve `keep_narrow_stable_runtime` unless evidence changes |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
 
 ### 3.4 GP-5 controlled patch/test rehearsal skeleton
@@ -428,6 +429,32 @@ twine check dist/*
 
 For published releases, also verify exact-pin and bare fresh-venv install
 outside the repo checkout.
+
+### 3.10 GP-5.9 production claim decision incidents
+
+`GP-5.9` is a decision gate, not a runtime promotion. The expected closeout on
+the current evidence set is `keep_narrow_stable_runtime`. If the command
+blocks, treat it as an evidence/documentation parity failure, not as permission
+to widen support.
+
+Run:
+
+```bash
+python3 scripts/gp5_platform_claim_decision.py \
+  --output json \
+  --report-path /tmp/gp59-platform-claim-decision.json
+```
+
+Operator response:
+
+1. inspect `evidence_surfaces[*].findings` first;
+2. inspect `gp58_operations_package.findings` if the GP-5.8 package is no
+   longer ready;
+3. inspect `promotion_blockers` to understand why a production platform claim is
+   not granted;
+4. keep `support_widening=false` and `production_platform_claim=false` unless a
+   new scoped promotion slice supplies protected live-adapter evidence,
+   cost/token evidence, and support-boundary changes together.
 
 ## 4. Evidence to collect
 
