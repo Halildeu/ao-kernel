@@ -44,6 +44,7 @@ ayrı ayrı görünür kılmak.
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
 - **GP-2.3 issue:** [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`closeout after handoff`)
 - **GP-2.4 issue:** [#363](https://github.com/Halildeu/ao-kernel/issues/363) (`open`)
+- **GP-2.4a issue:** [#365](https://github.com/Halildeu/ao-kernel/issues/365) (`closed after merge`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
 - **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
@@ -380,7 +381,7 @@ sertifikasyon kanıt paketini uygulanabilir alt dilimlere indirmektir.
 4. Aktif contract:
    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
 5. GP-2.4 sıra:
-   - `GP-2.4a`: preflight evidence contract
+   - `GP-2.4a`: preflight evidence contract (`closed after merge`)
    - `GP-2.4b`: governed workflow smoke evidence
    - `GP-2.4c`: failure-mode matrix
    - `GP-2.4d`: support boundary verdict
@@ -677,7 +678,18 @@ açıldı.
    - live-write yok
    - stable support boundary unchanged
 5. Current local baseline probe:
-   - `python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 10`
+   - `python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 30`
    - `overall_status=pass`
    - `version`, `auth_status`, `prompt_access`, `manifest_invocation` checks pass
    - API key env route not present; session auth path used
+   - note: 10 saniyelik probe aynı oturumda `prompt_smoke_timeout`
+     üretebildiği için certification prerequisite 30 saniye timeout kullanır
+6. `GP-2.4a` closeout:
+   - issue: [#365](https://github.com/Halildeu/ao-kernel/issues/365)
+   - `tests/test_claude_code_cli_smoke.py` now pins the helper JSON evidence
+     contract shape
+   - `auth_status=pass` + `prompt_access=fail` remains `blocked`
+   - API key/env-token presence is observed but cannot turn prompt failure into
+     certification success
+7. Next default:
+   - `GP-2.4b` governed workflow smoke evidence

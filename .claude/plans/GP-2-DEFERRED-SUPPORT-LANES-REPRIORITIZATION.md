@@ -93,10 +93,16 @@ giriş kapılarını netleştirmektir.
   prerequisite, smoke, evidence, failure-mode ve support-boundary karar
   kapılarını tek contract altında toplamak.
 - Sıra:
-  1. `GP-2.4a` preflight evidence contract
+  1. `GP-2.4a` preflight evidence contract (Completed via [#365](https://github.com/Halildeu/ao-kernel/issues/365))
   2. `GP-2.4b` governed workflow smoke evidence
   3. `GP-2.4c` failure-mode matrix
   4. `GP-2.4d` support boundary verdict
+- Son ilerleme:
+  - `tests/test_claude_code_cli_smoke.py` helper JSON output contract'ını pinler
+  - `auth_status=pass` + `prompt_access=fail` blocker olarak kalır
+  - API key/env-token presence başarı sinyali sayılmaz
+- Next default:
+  - `GP-2.4b` governed workflow smoke evidence
 - Sınır:
   - `claude-code-cli` henüz production-certified değildir
   - Live-write yok
