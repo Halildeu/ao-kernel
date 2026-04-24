@@ -42,6 +42,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   preflight and governed workflow smoke both passed, but the lane remains
   `Beta (operator-managed)` until repeatability, failure-mode, evidence,
   runbook, docs, and support-boundary gates close.
+- Recorded the `GP-3.2` `claude-code-cli` governed workflow repeatability
+  evidence: three independent read-only workflow smoke runs passed with
+  `completed` final state, required evidence events, `review_findings`
+  artifact, redacted adapter log, and schema validation. This does not widen
+  support; failure-mode classification remains next.
 
 ## [4.0.0] - 2026-04-24
 

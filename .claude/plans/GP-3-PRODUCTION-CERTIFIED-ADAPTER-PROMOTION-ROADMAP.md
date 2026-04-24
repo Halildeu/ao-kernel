@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, GP-3.1 prerequisite truth refresh recorded
+**Status:** Active program, GP-3.2 governed workflow repeatability recorded
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -51,9 +51,9 @@ Reason:
 | Slice | Goal | Exit |
 |---|---|---|
 | `GP-3.0` scope freeze | Record promotion boundary, first lane, and gates | completed; roadmap/status PR merged, no runtime change |
-| `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed on branch; preflight and workflow smoke passed; no support widening |
-| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | next; smoke contract updated or lane remains beta |
-| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | behavior assertions or helper contract updates merged |
+| `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed; preflight and workflow smoke passed; no support widening |
+| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | completed on branch; 3 independent workflow smoke runs passed; no support widening |
+| `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | next; behavior assertions or helper contract updates merged |
 | `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | evidence gaps closed or deferred explicitly |
 | `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | docs/status/support matrix updated |
 | `GP-3.6` closeout | Record final verdict and next allowed path | tracker closed or next lane opened intentionally |
@@ -124,3 +124,32 @@ refresh.
 The next accepted implementation slice is `GP-3.2` governed workflow
 repeatability. A single passing smoke is not enough for production-certified
 support.
+
+## GP-3.2 Repeatability Evidence
+
+`GP-3.2` checked whether the `claude-code-cli` governed read-only workflow can
+repeat successfully in independent temp workspaces.
+
+1. Decision record:
+   `.claude/plans/GP-3.2-CLAUDE-CODE-CLI-GOVERNED-WORKFLOW-REPEATABILITY.md`
+2. Tracker: [#390](https://github.com/Halildeu/ao-kernel/issues/390)
+3. Command:
+   `python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60 --cleanup`
+4. Repetition:
+   - run 1: `overall_status="pass"`, final state `completed`
+   - run 2: `overall_status="pass"`, final state `completed`
+   - run 3: `overall_status="pass"`, final state `completed`
+5. Required checks:
+   - `final_state`
+   - `evidence_events`
+   - `review_findings_artifact`
+   - `adapter_log`
+   - `review_findings_schema`
+6. Boundary:
+   - no runtime change
+   - no version bump, tag, or publish
+   - no stable support widening
+   - `claude-code-cli` remains `Beta (operator-managed)`
+
+The next accepted implementation slice is `GP-3.3` failure-mode matrix. Passing
+repeatability does not prove failure behavior or general operator support.

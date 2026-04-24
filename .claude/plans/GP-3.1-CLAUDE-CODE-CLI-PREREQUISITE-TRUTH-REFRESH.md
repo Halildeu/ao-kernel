@@ -1,6 +1,6 @@
 # GP-3.1 — Claude Code CLI Prerequisite Truth Refresh
 
-**Status:** Completed on branch, pending PR merge
+**Status:** Completed on `main`
 **Date:** 2026-04-24
 **Tracker:** [#388](https://github.com/Halildeu/ao-kernel/issues/388)
 **Parent tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
