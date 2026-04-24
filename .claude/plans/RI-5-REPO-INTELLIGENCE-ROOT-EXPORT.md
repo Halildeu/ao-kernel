@@ -2,14 +2,14 @@
 
 **Status:** RI-5a tracking plan
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `d7f7b37`
+**Authority:** `origin/main` at `523317f`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
 **Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
 **Tracking branch:** `codex/ri5a-export-plan-tracker`
 **Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker`
-**Base:** `origin/main` at `d7f7b37`
+**Base:** `origin/main` at `523317f`
 **Next slice:** RI-5a export-plan preview implementation
 **Implementation:** Not started; this document is the implementation tracker
 **Rule:** Never work directly on `main`.
@@ -137,8 +137,8 @@ acceptance item is checked, CI is green, and the PR is merged into
 
 | Step | Work | Status | Evidence |
 |---|---|---|---|
-| 0 | Create dedicated RI-5a worktree from current `origin/main` | [ ] Pending | `git worktree list` |
-| 1 | Pin this document to the RI-5a branch/worktree/base | [ ] Pending | Header and tracking log updated |
+| 0 | Create dedicated RI-5a worktree from current `origin/main` | [x] Done | `git worktree list`; rebased to `origin/main` at `523317f` |
+| 1 | Pin this document to the RI-5a branch/worktree/base | [x] Done | Header and tracking log updated |
 | 2 | Add `repo-export-plan.schema.v1.json` | [ ] Pending | Schema file and schema validation test |
 | 3 | Add deterministic export-plan builder | [ ] Pending | `export_plan.py` unit tests |
 | 4 | Add artifact write path for `.ao/context/repo_export_plan.json` only | [ ] Pending | CLI root-write regression test |
@@ -429,3 +429,4 @@ CHANGELOG.md
 | 2026-04-24 | Design gate opened | RI-5 is explicitly separated from RI-4 and split into preview-only RI-5a plus confirmed create-only RI-5b. |
 | 2026-04-24 | Design gate merged | PR [#423](https://github.com/Halildeu/ao-kernel/pull/423) merged to `main` at `33c4d22`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch/worktree cleanup completed and local `main` is synchronized with `origin/main`. |
 | 2026-04-24 | RI-5a tracker opened | Dedicated tracking branch `codex/ri5a-export-plan-tracker` and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker` opened from `origin/main` at `d7f7b37`. This tracker adds scope lock, work breakdown, artifact contract, CLI contract, test matrix, validation checklist, and PR exit criteria before implementation starts. |
+| 2026-04-24 | RI-5a tracker rebased | Tracking branch rebased onto `origin/main` at `523317f` after GP-5.9 closeout; tracker remains docs-only and implementation has not started. |
