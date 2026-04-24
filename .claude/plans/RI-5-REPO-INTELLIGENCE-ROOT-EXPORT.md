@@ -1,11 +1,13 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** Design gate only
+**Status:** Design gate accepted on `main`
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `b2e404b`
-**Branch:** `codex/repo-intelligence-ri5-plan`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5-plan`
-**Base:** `origin/main` at `b2e404b`
+**Authority:** `origin/main` at `33c4d22`
+**Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
+**Planning branch:** cleaned after merge
+**Planning worktree:** cleaned after merge
+**Base:** `origin/main` at `33c4d22`
+**Next slice:** RI-5a export-plan preview implementation
 **Implementation:** Not started
 **Rule:** Never work directly on `main`.
 
@@ -239,3 +241,4 @@ CHANGELOG.md
 | Date | Status | Notes |
 |---|---|---|
 | 2026-04-24 | Design gate opened | RI-5 is explicitly separated from RI-4 and split into preview-only RI-5a plus confirmed create-only RI-5b. |
+| 2026-04-24 | Design gate merged | PR [#423](https://github.com/Halildeu/ao-kernel/pull/423) merged to `main` at `33c4d22`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch/worktree cleanup completed and local `main` is synchronized with `origin/main`. |

@@ -2,13 +2,13 @@
 
 **Status:** Completed on `main`
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `b2e404b`
+**Authority:** `origin/main` at `33c4d22`
 **Closed PRs:** [#419](https://github.com/Halildeu/ao-kernel/pull/419),
 [#421](https://github.com/Halildeu/ao-kernel/pull/421),
 [#422](https://github.com/Halildeu/ao-kernel/pull/422)
 **Implementation branches:** cleaned after merge
 **Implementation worktrees:** cleaned after merge
-**Base:** `origin/main` at `b2e404b`
+**Base:** `origin/main` at `33c4d22`
 **Next slice:** RI-5 explicit root/context export design gate
 **Rule:** Never work directly on `main`.
 
