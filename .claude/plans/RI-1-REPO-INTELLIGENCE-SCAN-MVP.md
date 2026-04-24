@@ -1,6 +1,6 @@
 # RI-1 — Repo Intelligence Scan MVP
 
-**Status:** Baseline refreshed / implementation pending
+**Status:** Implemented / validation passed / PR pending
 **Date:** 2026-04-24
 **Branch:** `codex/repo-intelligence-scan`
 **Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence`
@@ -235,37 +235,37 @@ third-party ignore parser unless already present in project dependencies.
 
 RI-1 is complete only when all items below are true:
 
-- [ ] New work stays on `codex/repo-intelligence-scan`, not `main`.
-- [ ] Work is done in the dedicated repo-intelligence worktree.
-- [ ] Uncommitted changes are checked and preserved before any branch refresh.
-- [ ] Branch is refreshed on current `origin/main` before Step 1 begins.
-- [ ] Post-refresh `HEAD` is based on the current `origin/main`.
-- [ ] `python3 -m ao_kernel repo scan --project-root . --output json` works.
-- [ ] The command writes only under `.ao/context/`.
-- [ ] `repo_map.json` validates against bundled schema.
-- [ ] `repo_index_manifest.json` validates against bundled schema.
-- [ ] Bundled schemas are loaded through `load_default` / `importlib.resources`.
-- [ ] Artifact writes use `write_json_atomic` or an equally atomic tmp+fsync+rename path.
-- [ ] Artifact-writer tests verify writes delegate to `write_json_atomic`;
+- [x] New work stays on `codex/repo-intelligence-scan`, not `main`.
+- [x] Work is done in the dedicated repo-intelligence worktree.
+- [x] Uncommitted changes are checked and preserved before any branch refresh.
+- [x] Branch is refreshed on current `origin/main` before Step 1 begins.
+- [x] Post-refresh `HEAD` is based on the current `origin/main`.
+- [x] `python3 -m ao_kernel repo scan --project-root . --output json` works.
+- [x] The command writes only under `.ao/context/`.
+- [x] `repo_map.json` validates against bundled schema.
+- [x] `repo_index_manifest.json` validates against bundled schema.
+- [x] Bundled schemas are loaded through `load_default` / `importlib.resources`.
+- [x] Artifact writes use `write_json_atomic` or an equally atomic tmp+fsync+rename path.
+- [x] Artifact-writer tests verify writes delegate to `write_json_atomic`;
       low-level atomic mechanics are not re-tested independently.
-- [ ] `--output` default and `--output json` behavior are pinned and tested.
-- [ ] Repeated scan on the same tree has deterministic sorted content.
-- [ ] `.ao/context/` is created safely when missing.
-- [ ] Missing `.ao/` fails with a clear `ao-kernel init` hint.
-- [ ] Default ignore rules are covered by tests.
-- [ ] Symlinks are not followed.
-- [ ] Path output is repo-relative POSIX style.
-- [ ] `ao_kernel/repo_intelligence/__init__.py` exposes only pre-approved narrow symbols.
-- [ ] Unit tests cover language detection.
-- [ ] Unit tests cover ignore rules.
-- [ ] Unit tests cover scanner output.
-- [ ] Unit tests cover artifact writing and schema validation.
-- [ ] CLI behavior test covers the primary command.
-- [ ] Docs mark this as `Beta / experimental read-only repo intelligence scan`.
-- [ ] Existing shipped baseline docs are not widened accidentally.
-- [ ] Overall coverage remains above the repo gate (`--fail-under=85`).
-- [ ] Focused tests pass.
-- [ ] Packaging smoke passes with `python3 scripts/packaging_smoke.py`.
+- [x] `--output` default and `--output json` behavior are pinned and tested.
+- [x] Repeated scan on the same tree has deterministic sorted content.
+- [x] `.ao/context/` is created safely when missing.
+- [x] Missing `.ao/` fails with a clear `ao-kernel init` hint.
+- [x] Default ignore rules are covered by tests.
+- [x] Symlinks are not followed.
+- [x] Path output is repo-relative POSIX style.
+- [x] `ao_kernel/repo_intelligence/__init__.py` exposes only pre-approved narrow symbols.
+- [x] Unit tests cover language detection.
+- [x] Unit tests cover ignore rules.
+- [x] Unit tests cover scanner output.
+- [x] Unit tests cover artifact writing and schema validation.
+- [x] CLI behavior test covers the primary command.
+- [x] Docs mark this as `Beta / experimental read-only repo intelligence scan`.
+- [x] Existing shipped baseline docs are not widened accidentally.
+- [x] Overall coverage remains above the repo gate (`--fail-under=85`).
+- [x] Focused tests pass.
+- [x] Packaging smoke passes with `python3 scripts/packaging_smoke.py`.
 
 ## Step-by-Step Plan
 
@@ -306,64 +306,78 @@ Step 0 notes:
 
 ### Step 1 — Schemas
 
-- [ ] Add `repo-map.schema.v1.json`.
-- [ ] Add `repo-index-manifest.schema.v1.json`.
-- [ ] Add minimal schema validation tests.
-- [ ] Use `load_default("schemas", ...)` / `importlib.resources` for schema loading.
+- [x] Add `repo-map.schema.v1.json`.
+- [x] Add `repo-index-manifest.schema.v1.json`.
+- [x] Add minimal schema validation tests.
+- [x] Use `load_default("schemas", ...)` / `importlib.resources` for schema loading.
 
 ### Step 2 — Internal Primitives
 
-- [ ] Add `ao_kernel/_internal/repo_intelligence/__init__.py`.
-- [ ] Add `language_detector.py`.
-- [ ] Add `ignore_rules.py`.
-- [ ] Add `artifacts.py`.
-- [ ] Add `scanner.py`.
-- [ ] Use shared `write_json_atomic` for artifact writes.
-- [ ] Ensure `artifacts.py` accepts explicit `context_dir` / output paths and
+- [x] Add `ao_kernel/_internal/repo_intelligence/__init__.py`.
+- [x] Add `language_detector.py`.
+- [x] Add `ignore_rules.py`.
+- [x] Add `artifacts.py`.
+- [x] Add `scanner.py`.
+- [x] Use shared `write_json_atomic` for artifact writes.
+- [x] Ensure `artifacts.py` accepts explicit `context_dir` / output paths and
       performs no `.ao` discovery.
-- [ ] Keep direct filesystem writes inside `.ao/context/`.
+- [x] Keep direct filesystem writes inside `.ao/context/`.
 
 ### Step 3 — Public Facade
 
-- [ ] Add `ao_kernel/repo_intelligence/__init__.py`.
-- [ ] Expose only stable, narrow functions needed by CLI/tests.
-- [ ] Public facade exports are limited to:
+- [x] Add `ao_kernel/repo_intelligence/__init__.py`.
+- [x] Expose only stable, narrow functions needed by CLI/tests.
+- [x] Public facade exports are limited to:
   - `scan_repo`
   - `write_repo_scan_artifacts`
 
 ### Step 4 — CLI
 
-- [ ] Add `repo` subparser.
-- [ ] Add `repo scan` command.
-- [ ] Support `--project-root`.
-- [ ] Support `--output text|json`, defaulting to `text`.
-- [ ] Ensure missing `.ao/` produces a clear error.
-- [ ] Ensure CLI owns `.ao/context/` creation before artifact writing.
+- [x] Add `repo` subparser.
+- [x] Add `repo scan` command.
+- [x] Support `--project-root`.
+- [x] Support `--output text|json`, defaulting to `text`.
+- [x] Ensure missing `.ao/` produces a clear error.
+- [x] Ensure CLI owns `.ao/context/` creation before artifact writing.
 
 ### Step 5 — Tests
 
-- [ ] Add language detector tests.
-- [ ] Add ignore rules tests.
-- [ ] Add scanner tests.
-- [ ] Add artifact/schema validation tests.
-- [ ] Add artifact test proving delegation to `write_json_atomic`.
-- [ ] Add CLI behavior test.
-- [ ] Add CLI test for missing `.ao/` error with `ao-kernel init` hint.
+- [x] Add language detector tests.
+- [x] Add ignore rules tests.
+- [x] Add scanner tests.
+- [x] Add artifact/schema validation tests.
+- [x] Add artifact test proving delegation to `write_json_atomic`.
+- [x] Add CLI behavior test.
+- [x] Add CLI test for missing `.ao/` error with `ao-kernel init` hint.
 
 ### Step 6 — Docs / Boundary
 
-- [ ] Update `docs/PUBLIC-BETA.md`.
-- [ ] Update `docs/SUPPORT-BOUNDARY.md`.
-- [ ] Ensure wording says Beta / experimental read-only.
-- [ ] Ensure no stable support widening claim is introduced.
+- [x] Update `docs/PUBLIC-BETA.md`.
+- [x] Update `docs/SUPPORT-BOUNDARY.md`.
+- [x] Ensure wording says Beta / experimental read-only.
+- [x] Ensure no stable support widening claim is introduced.
 
 ### Step 7 — Validation
 
-- [ ] Run focused test suite for RI-1.
-- [ ] Run relevant CLI smoke.
-- [ ] Run `python3 -m ao_kernel doctor`.
-- [ ] Run `python3 scripts/packaging_smoke.py`.
-- [ ] Check `git diff --check`.
+- [x] Run focused test suite for RI-1.
+- [x] Run relevant CLI smoke.
+- [x] Run `python3 -m ao_kernel doctor`.
+- [x] Run `python3 scripts/packaging_smoke.py`.
+- [x] Check `git diff --check`.
+
+Validation notes:
+
+1. Focused RI-1 suite: `15 passed`.
+2. Module CLI smoke: `python3 -m ao_kernel repo scan --project-root . --output json`
+   passed in a temporary project with `PYTHONPATH` pointed at this worktree.
+3. `ruff check ao_kernel/ tests/` passed.
+4. `mypy ao_kernel/` passed.
+5. `python3 -m ao_kernel doctor` returned `8 OK, 1 WARN, 0 FAIL`; existing
+   WARN is bundled extension truth inventory, not RI-1.
+6. Full coverage suite passed: `2908 passed, 1 skipped`, total coverage
+   `85.58%`, above the `85%` gate.
+7. `python3 scripts/packaging_smoke.py` passed and included the new
+   `repo_intelligence` package files and schemas in the built wheel.
 
 ## Risk Register
 
@@ -395,3 +409,5 @@ These are explicitly out of RI-1:
 | 2026-04-24 | Claude MCP review | Conditional pass. Step 0 refresh is a hard gate; schema loading, atomic writes, CLI output behavior, facade exports, and coverage gate were tightened. |
 | 2026-04-24 | Claude MCP ping-pong | Accepted valid refinements, rejected the package-version misread and graceful missing-`.ao` skip, and fixed artifact ownership: CLI owns `.ao` checks/context-dir creation; `artifacts.py` receives explicit paths only. |
 | 2026-04-24 | Step 0 complete | Plan committed, branch rebased onto `origin/main` at `71b456b`, package version verified as `4.0.0`, support boundary exists, CLI/schema patterns inspected, transient lock preserved outside commit scope. |
+| 2026-04-24 | RI-1 implemented | Added schema-backed read-only scanner, atomic artifact writer, narrow public facade, CLI `repo scan`, tests, and Beta/experimental support-boundary docs. |
+| 2026-04-24 | Validation passed | Focused tests, CLI smoke, ruff, mypy, doctor, full coverage gate, diff check, and packaging smoke passed. |

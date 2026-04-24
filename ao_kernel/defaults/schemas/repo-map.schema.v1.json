@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-map:v1",
+  "title": "Repo Intelligence Map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generator",
+    "project",
+    "summary",
+    "files",
+    "ignored",
+    "languages",
+    "python",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "repo_map"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "root_name", "name", "root_identity_sha256"],
+      "properties": {
+        "root": {
+          "const": "."
+        },
+        "root_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root_identity_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "included_files",
+        "included_directories",
+        "ignored_paths",
+        "diagnostics",
+        "languages",
+        "python_packages",
+        "python_modules",
+        "python_entrypoints"
+      ],
+      "properties": {
+        "included_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "included_directories": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ignored_paths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostics": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "languages": {
+          "$ref": "#/$defs/language_counts"
+        },
+        "python_packages": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "python_modules": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "python_entrypoints": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/file_record"
+      }
+    },
+    "ignored": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["patterns", "paths"],
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ignored_record"
+          }
+        }
+      }
+    },
+    "languages": {
+      "$ref": "#/$defs/language_counts"
+    },
+    "python": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidates", "entrypoints"],
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/python_candidate"
+          }
+        },
+        "entrypoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entrypoint_candidate"
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "language_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "file_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "size_bytes", "language"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "kind": {
+          "const": "file"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ignored_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "reason"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "kind": {
+          "enum": ["directory", "file", "symlink"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "python_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "module"],
+      "properties": {
+        "kind": {
+          "enum": ["package", "module"]
+        },
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "entrypoint_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name", "path", "reason"],
+      "properties": {
+        "kind": {
+          "enum": ["python_file", "console_script"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "code", "message"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

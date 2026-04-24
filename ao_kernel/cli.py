@@ -67,6 +67,50 @@ def _cmd_mcp_serve(args: argparse.Namespace) -> int:
         raise
 
 
+def _cmd_repo_scan(args: argparse.Namespace) -> int:
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.repo_intelligence import scan_repo, write_repo_scan_artifacts
+
+    project_root = _Path(args.project_root or ".").resolve()
+    if not project_root.is_dir():
+        print(f"project root not found: {project_root}", file=sys.stderr)
+        return 1
+
+    workspace_dir = project_root / ".ao"
+    if not workspace_dir.is_dir():
+        print(
+            f".ao workspace not found under {project_root}. Run 'ao-kernel init' first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    context_dir = workspace_dir / "context"
+    context_dir.mkdir(parents=True, exist_ok=True)
+
+    repo_map = scan_repo(project_root)
+    write_result = write_repo_scan_artifacts(context_dir=context_dir, repo_map=repo_map)
+    summary = {
+        "status": "ok",
+        "command": "repo scan",
+        "project_root": ".",
+        "project_root_name": project_root.name,
+        "summary": repo_map["summary"],
+        "artifacts": write_result["artifacts"],
+    }
+    if args.output == "json":
+        print(_json.dumps(summary, indent=2, sort_keys=True))
+    else:
+        print("repo scan complete")
+        print("project_root: .")
+        print(f"included_files: {repo_map['summary']['included_files']}")
+        print("artifacts:")
+        for artifact in write_result["artifacts"]:
+            print(f"- {artifact['path']}")
+    return 0
+
+
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
     """v3.4.0 CLI: scan ledger for orphan spend entries and stamp
     missing markers. Idempotent + cursor-based."""
@@ -741,6 +785,21 @@ def _build_parser() -> argparse.ArgumentParser:
     serve_p.add_argument("--host", default="127.0.0.1", help="HTTP bind host (default: 127.0.0.1)")
     serve_p.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
 
+    repo_p = sub.add_parser("repo", help="Repository intelligence commands")
+    repo_sub = repo_p.add_subparsers(dest="repo_command")
+    scan_p = repo_sub.add_parser("scan", help="Scan repository and write read-only repo-intelligence artifacts")
+    scan_p.add_argument(
+        "--project-root",
+        default=".",
+        help="Repository root to scan (default: current directory)",
+    )
+    scan_p.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
+    )
+
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
         "metrics",
@@ -1294,6 +1353,14 @@ def main(argv: list[str] | None = None) -> int:
         from ao_kernel.i18n import msg
 
         print(msg("usage_mcp_serve"))
+        return 1
+
+    # Repo-intelligence subcommand (RI-1)
+    if cmd == "repo":
+        repo_cmd = getattr(args, "repo_command", None)
+        if repo_cmd == "scan":
+            return _cmd_repo_scan(args)
+        print("Usage: ao-kernel repo scan [--project-root PATH] [--output {text,json}]", file=sys.stderr)
         return 1
 
     # Executor subcommand (PR-C6)
