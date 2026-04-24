@@ -237,7 +237,8 @@ bilerek stable disina almak.
 
 ### ST-7 — Stable Release Candidate
 
-**Durum:** Next active gate after `ST-6` closeout.
+**Durum:** Active via [#355](https://github.com/Halildeu/ao-kernel/issues/355)
+and `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md`.
 
 **Amac:** `4.0.0` stable icin final aday cikarmak.
 
