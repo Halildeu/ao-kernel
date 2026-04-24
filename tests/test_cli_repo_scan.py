@@ -32,9 +32,13 @@ def test_repo_scan_json_output_writes_only_context_artifacts(tmp_path: Path, cap
     assert payload["summary"]["included_files"] == 3
     assert [item["path"] for item in payload["artifacts"]] == [
         ".ao/context/repo_map.json",
+        ".ao/context/import_graph.json",
+        ".ao/context/symbol_index.json",
         ".ao/context/repo_index_manifest.json",
     ]
     assert (project / ".ao" / "context" / "repo_map.json").is_file()
+    assert (project / ".ao" / "context" / "import_graph.json").is_file()
+    assert (project / ".ao" / "context" / "symbol_index.json").is_file()
     assert (project / ".ao" / "context" / "repo_index_manifest.json").is_file()
     assert not (project / "CLAUDE.md").exists()
     assert not (project / "AGENTS.md").exists()

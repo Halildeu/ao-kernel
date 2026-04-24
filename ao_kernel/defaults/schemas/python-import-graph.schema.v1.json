@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:python-import-graph:v1",
+  "title": "Python Import Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generator",
+    "project",
+    "summary",
+    "modules",
+    "edges",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "python_import_graph"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["python_modules", "import_edges", "diagnostics"],
+      "properties": {
+        "python_modules": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "import_edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostics": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/module_record"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/import_edge"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "root_name", "name", "root_identity_sha256"],
+      "properties": {
+        "root": {
+          "const": "."
+        },
+        "root_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root_identity_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "module_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "module", "path", "symbols"],
+      "properties": {
+        "kind": {
+          "enum": ["package", "module"]
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "symbols": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "import_edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source_module",
+        "source_path",
+        "target",
+        "target_module",
+        "imported_name",
+        "alias",
+        "level",
+        "resolved",
+        "lineno"
+      ],
+      "properties": {
+        "kind": {
+          "enum": ["import", "from_import"]
+        },
+        "source_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "imported_name": {
+          "type": ["string", "null"]
+        },
+        "alias": {
+          "type": ["string", "null"]
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resolved": {
+          "type": "boolean"
+        },
+        "lineno": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "code", "message"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        },
+        "lineno": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
