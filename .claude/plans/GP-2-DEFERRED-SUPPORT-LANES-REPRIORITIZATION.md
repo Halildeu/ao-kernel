@@ -94,8 +94,8 @@ giriş kapılarını netleştirmektir.
   kapılarını tek contract altında toplamak.
 - Sıra:
   1. `GP-2.4a` preflight evidence contract (Completed via [#365](https://github.com/Halildeu/ao-kernel/issues/365))
-  2. `GP-2.4b` governed workflow smoke evidence (Completed via [#367](https://github.com/Halildeu/ao-kernel/issues/367) implementation branch; pending PR merge)
-  3. `GP-2.4c` failure-mode matrix
+  2. `GP-2.4b` governed workflow smoke evidence (Completed via [#367](https://github.com/Halildeu/ao-kernel/issues/367))
+  3. `GP-2.4c` failure-mode matrix (Completed via [#369](https://github.com/Halildeu/ao-kernel/issues/369) implementation branch; pending PR merge)
   4. `GP-2.4d` support boundary verdict
 - Son ilerleme:
   - `tests/test_claude_code_cli_smoke.py` helper JSON output contract'ını pinler
@@ -105,8 +105,12 @@ giriş kapılarını netleştirmektir.
     canlı governed workflow smoke'u `completed` state, schema-valid
     `review_findings`, `policy_checked` dahil evidence seti ve redacted
     adapter log doğrulamasıyla geçti
+  - helper/workflow negative matrix stable finding code'larla pinlendi:
+    `claude_binary_missing`, `claude_not_logged_in`, `prompt_access_denied`,
+    `manifest_smoke_timeout`, `manifest_output_not_json`,
+    `adapter_non_zero_exit`, `output_parse_failed`, `policy_denied`
 - Next default:
-  - `GP-2.4c` failure-mode matrix
+  - `GP-2.4d` support boundary verdict
 - Sınır:
   - `claude-code-cli` henüz production-certified değildir
   - Live-write yok

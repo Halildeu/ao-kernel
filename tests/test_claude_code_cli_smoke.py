@@ -118,6 +118,44 @@ def _prompt_access_denied_runner(
     raise AssertionError(f"unexpected argv: {cmd!r}")
 
 
+def _auth_not_logged_in_runner(
+    argv: Sequence[str],
+    cwd: Path | None,
+    timeout: float | None,
+) -> CommandResult:
+    cmd = tuple(argv)
+    if cmd == ("/fake/claude", "--version"):
+        return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+    if cmd == ("/fake/claude", "auth", "status"):
+        return _result(
+            cmd,
+            stdout=json.dumps(
+                {
+                    "loggedIn": False,
+                    "authMethod": None,
+                    "orgName": None,
+                }
+            ),
+        )
+    if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+        return _result(cmd, stdout="ok\n")
+    if cmd[:1] == ("/fake/claude",):
+        return _result(
+            cmd,
+            stdout=json.dumps(
+                {
+                    "status": "ok",
+                    "review_findings": {
+                        "schema_version": "1",
+                        "findings": [],
+                        "summary": "smoke ok",
+                    },
+                }
+            ),
+        )
+    raise AssertionError(f"unexpected argv: {cmd!r}")
+
+
 def _json_payload(report: Any) -> dict[str, object]:
     # Exercise the same JSON-safe shape emitted by scripts/claude_code_cli_smoke.py.
     return json.loads(json.dumps(report.as_dict()))
@@ -216,6 +254,25 @@ def test_api_key_env_presence_is_observed_not_primary_success_signal() -> None:
         check for check in payload["checks"] if check["name"] == "auth_status"
     )
     assert auth_check["observed"]["fallback_api_key_env_present"] is True
+
+
+def test_auth_status_not_logged_in_blocks_preflight_contract() -> None:
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=_auth_not_logged_in_runner,
+        env={},
+    )
+
+    payload = _json_payload(report)
+
+    assert payload["overall_status"] == "blocked"
+    assert "claude_not_logged_in" in payload["findings"]
+    auth_check = next(
+        check for check in payload["checks"] if check["name"] == "auth_status"
+    )
+    assert auth_check["status"] == "fail"
+    assert auth_check["finding_code"] == "claude_not_logged_in"
+    assert auth_check["observed"]["loggedIn"] is False
 
 
 def test_prompt_access_denied_is_classified_explicitly() -> None:
@@ -416,6 +473,87 @@ def test_manifest_contract_mismatch_is_reported() -> None:
         check for check in report.checks if check.name == "manifest_invocation"
     )
     assert manifest_check.finding_code == "manifest_cli_contract_mismatch"
+
+
+def test_manifest_timeout_is_reported_without_success_promotion() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:1] == ("/fake/claude",):
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout or 20.0)
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "manifest_smoke_timeout" in report.findings
+    manifest_check = next(
+        check for check in report.checks if check.name == "manifest_invocation"
+    )
+    assert manifest_check.finding_code == "manifest_smoke_timeout"
+    assert manifest_check.observed["timed_out"] == "true"
+
+
+def test_manifest_non_json_output_is_contract_failure() -> None:
+    def runner(
+        argv: Sequence[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        cmd = tuple(argv)
+        if cmd == ("/fake/claude", "--version"):
+            return _result(cmd, stdout="2.1.87 (Claude Code)\n")
+        if cmd == ("/fake/claude", "auth", "status"):
+            return _result(
+                cmd,
+                stdout=json.dumps(
+                    {
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "orgName": "Test Org",
+                    }
+                ),
+            )
+        if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
+            return _result(cmd, stdout="ok\n")
+        if cmd[:1] == ("/fake/claude",):
+            return _result(cmd, stdout="not json\n")
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_claude_code_cli_smoke(
+        which=lambda command: "/fake/claude",
+        runner=runner,
+        env={},
+    )
+
+    assert report.overall_status == "blocked"
+    assert "manifest_output_not_json" in report.findings
+    manifest_check = next(
+        check for check in report.checks if check.name == "manifest_invocation"
+    )
+    assert manifest_check.finding_code == "manifest_output_not_json"
 
 
 def test_success_path_returns_pass_report() -> None:

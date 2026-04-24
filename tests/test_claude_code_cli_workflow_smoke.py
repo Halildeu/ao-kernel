@@ -6,8 +6,18 @@ import json
 import uuid
 from pathlib import Path
 
+from pytest import MonkeyPatch
+
+import ao_kernel.real_adapter_workflow_smoke as workflow_smoke
+from ao_kernel.executor.errors import (
+    AdapterInvocationFailedError,
+    AdapterOutputParseError,
+    PolicyViolation,
+    PolicyViolationError,
+)
 from ao_kernel.real_adapter_workflow_smoke import (
     _operator_managed_policy,
+    run_claude_code_cli_workflow_smoke,
     verify_claude_workflow_evidence,
 )
 from ao_kernel.workflow import create_run, update_run
@@ -52,6 +62,100 @@ def test_verify_claude_workflow_evidence_rejects_missing_policy_checked(
 
     assert evidence.status == "fail"
     assert "policy_checked" in evidence.detail
+    assert evidence.finding_code == "evidence_events_missing"
+
+
+def test_workflow_smoke_classifies_output_parse_fail_closed(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(workflow_smoke, "_prepare_workspace", lambda root: None)
+
+    def _fail_output_parse(
+        workspace_root: Path,
+        run_id: str,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        raise AdapterOutputParseError(
+            raw_excerpt="not-json",
+            detail="stdout neither a valid JSON output_envelope",
+        )
+
+    monkeypatch.setattr(workflow_smoke, "_run_workflow", _fail_output_parse)
+
+    report = run_claude_code_cli_workflow_smoke(
+        skip_preflight=True,
+        workspace_root=tmp_path,
+    )
+
+    assert report.overall_status == "blocked"
+    assert report.findings == ("output_parse_failed",)
+    assert report.checks[0].name == "workflow_run"
+    assert report.checks[0].finding_code == "output_parse_failed"
+    assert "fail-closed" in report.checks[0].detail
+
+
+def test_workflow_smoke_classifies_policy_denial_before_promotion(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(workflow_smoke, "_prepare_workspace", lambda root: None)
+
+    def _fail_policy(
+        workspace_root: Path,
+        run_id: str,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        violation = PolicyViolation(
+            kind="command_not_allowlisted",
+            detail="claude denied by test policy",
+            policy_ref="ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+            field_path="command_allowlist",
+        )
+        raise PolicyViolationError(violations=[violation])
+
+    monkeypatch.setattr(workflow_smoke, "_run_workflow", _fail_policy)
+
+    report = run_claude_code_cli_workflow_smoke(
+        skip_preflight=True,
+        workspace_root=tmp_path,
+    )
+
+    assert report.overall_status == "blocked"
+    assert report.findings == ("policy_denied",)
+    assert report.checks[0].finding_code == "policy_denied"
+    assert "command_not_allowlisted" in report.checks[0].detail
+
+
+def test_workflow_smoke_classifies_adapter_non_zero_exit(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(workflow_smoke, "_prepare_workspace", lambda root: None)
+
+    def _fail_non_zero(
+        workspace_root: Path,
+        run_id: str,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        raise AdapterInvocationFailedError(
+            reason="non_zero_exit",
+            detail="claude exited 1",
+        )
+
+    monkeypatch.setattr(workflow_smoke, "_run_workflow", _fail_non_zero)
+
+    report = run_claude_code_cli_workflow_smoke(
+        skip_preflight=True,
+        workspace_root=tmp_path,
+    )
+
+    assert report.overall_status == "blocked"
+    assert report.findings == ("adapter_non_zero_exit",)
+    assert report.checks[0].finding_code == "adapter_non_zero_exit"
 
 
 def _seed_completed_run(tmp_path: Path, *, omit_event: str | None = None) -> str:

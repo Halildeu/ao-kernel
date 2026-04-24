@@ -26,6 +26,11 @@ from jsonschema import Draft202012Validator
 from ao_kernel.adapters import AdapterRegistry
 from ao_kernel.config import load_default
 from ao_kernel.executor import Executor, MultiStepDriver
+from ao_kernel.executor.errors import (
+    AdapterInvocationFailedError,
+    AdapterOutputParseError,
+    PolicyViolationError,
+)
 from ao_kernel.init_cmd import run as init_workspace
 from ao_kernel.real_adapter_smoke import ClaudeCodeSmokeReport, run_claude_code_cli_smoke
 from ao_kernel.workflow import WorkflowRegistry, create_run, load_run
@@ -66,6 +71,7 @@ class WorkflowSmokeCheck:
     name: str
     status: Literal["pass", "fail", "skip"]
     detail: str
+    finding_code: str | None = None
     path: str | None = None
     observed: Mapping[str, Any] = field(default_factory=dict)
 
@@ -106,6 +112,7 @@ def run_claude_code_cli_workflow_smoke(
                     name="helper_preflight",
                     status="fail",
                     detail="claude-code-cli helper smoke did not pass",
+                    finding_code="helper_preflight_blocked",
                     observed=preflight.as_dict(),
                 ),
             )
@@ -139,6 +146,7 @@ def run_claude_code_cli_workflow_smoke(
             cleanup_requested=cleanup,
         )
     except Exception as exc:  # noqa: BLE001 - operator smoke must summarize failures
+        finding_code, detail = _classify_workflow_exception(exc)
         return _finalize_report(
             run_id=locals().get("run_id"),
             workspace_root=root,
@@ -148,7 +156,8 @@ def run_claude_code_cli_workflow_smoke(
                 WorkflowSmokeCheck(
                     name="workflow_run",
                     status="fail",
-                    detail=f"{type(exc).__name__}: {exc}",
+                    detail=detail,
+                    finding_code=finding_code,
                 ),
             ),
             cleanup_requested=cleanup,
@@ -358,6 +367,7 @@ def _check_required_events(
         name="evidence_events",
         status=status,
         detail="required event kinds present" if not missing else f"missing: {missing}",
+        finding_code="evidence_events_missing" if missing else None,
         path=str(events_path),
         observed={"required": sorted(_REQUIRED_EVENT_KINDS), "seen": sorted(observed)},
     )
@@ -381,6 +391,7 @@ def _check_review_artifact(
                 name="review_findings_artifact",
                 status="fail",
                 detail=f"{_REVIEW_STEP_NAME!r} step record missing",
+                finding_code="review_step_missing",
             ),
             None,
         )
@@ -392,6 +403,7 @@ def _check_review_artifact(
                 name="review_findings_artifact",
                 status="fail",
                 detail="review_findings capability output ref missing",
+                finding_code="review_findings_artifact_missing",
             ),
             None,
         )
@@ -404,6 +416,7 @@ def _check_review_artifact(
             name="review_findings_artifact",
             status=status,
             detail="artifact materialized" if status == "pass" else "artifact file missing",
+            finding_code=None if status == "pass" else "review_findings_artifact_missing",
             path=str(artifact_path),
             observed={"artifact_ref": artifact_ref},
         ),
@@ -424,6 +437,7 @@ def _check_schema_valid_artifact(artifact_path: Path) -> WorkflowSmokeCheck:
             if not errors
             else "; ".join(error.message for error in errors[:3])
         ),
+        finding_code=None if not errors else "review_findings_schema_invalid",
         path=str(artifact_path),
     )
 
@@ -447,6 +461,7 @@ def _check_adapter_log(adapter_log_path: Path) -> WorkflowSmokeCheck:
             if status == "pass"
             else "adapter log missing or contains unredacted secret-like token"
         ),
+        finding_code=None if status == "pass" else "adapter_log_missing_or_unredacted",
         path=str(adapter_log_path),
         observed={"records": len(records), "redaction_leaks": redaction_leaks},
     )
@@ -462,7 +477,7 @@ def _finalize_report(
     cleanup_requested: bool,
 ) -> ClaudeWorkflowSmokeReport:
     findings = tuple(
-        f"{check.name}: {check.detail}"
+        check.finding_code or f"{check.name}: {check.detail}"
         for check in checks
         if check.status == "fail"
     )
@@ -482,6 +497,26 @@ def _finalize_report(
         findings=findings,
         cleanup_requested=cleanup_requested,
     )
+
+
+def _classify_workflow_exception(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, AdapterOutputParseError):
+        return (
+            "output_parse_failed",
+            f"workflow fail-closed on adapter output parse: {exc.detail}",
+        )
+    if isinstance(exc, PolicyViolationError):
+        kinds = [violation.kind for violation in exc.violations]
+        return (
+            "policy_denied",
+            f"workflow fail-closed on policy denial: {kinds}",
+        )
+    if isinstance(exc, AdapterInvocationFailedError):
+        return (
+            f"adapter_{exc.reason}",
+            f"workflow fail-closed on adapter invocation failure: {exc.reason}",
+        )
+    return "workflow_run_failed", f"{type(exc).__name__}: {exc}"
 
 
 def _read_resume_token(events_path: Path) -> str:
