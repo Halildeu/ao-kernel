@@ -217,6 +217,10 @@ def test_repo_query_markdown_output_is_agent_readable_and_read_only(tmp_path: Pa
     assert captured.err == ""
     assert captured.out.startswith("# Repo Query Context Pack\n")
     assert "## Generation Boundary" in captured.out
+    assert "## Handoff Contract" in captured.out
+    assert "stdout-only Markdown" in captured.out
+    assert "No hidden injection" in captured.out
+    assert "context_compiler" in captured.out
     assert "| Text | where is main |" in captured.out
     assert "```python\n" in captured.out
     assert "def main():" in captured.out
