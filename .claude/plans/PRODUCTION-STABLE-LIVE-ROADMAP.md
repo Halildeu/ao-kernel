@@ -51,6 +51,8 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
   sınıflandırıldı ve support boundary genişletilmedi.
 - `SM-1` stable maintenance baseline geçerlidir; aktif support-widening gate
   yoktur.
+- `SM-2` stable evidence refresh tamamlandı; entrypoint, doctor, truth
+  inventory, wheel-installed packaging smoke ve targeted tests tekrar geçti.
 
 ## 4. Closed Drift Kayitlari
 
@@ -356,11 +358,17 @@ dogrulanir.
    - active widening gate: none
    - default path: stable maintenance
    - future widening: separate promotion program only
-8. Varsayılan sıra:
+8. Son tamamlanan stable evidence refresh `SM-2`:
+   `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
+   - entrypoints: `ao-kernel 4.0.0`
+   - doctor: `8 OK, 1 WARN, 0 FAIL`
+   - packaging smoke: wheel install + `demo_review.py --cleanup` completed
+   - targeted tests: `3 passed, 1 skipped`
+9. Varsayılan sıra:
    - `Now`: stable maintenance, bugfix, and evidence hygiene
    - `Next`: ayrı bir promotion programı açılırsa tek lane support widening
    - `Later`: genel amaçlı production platform claim'i
-9. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+10. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
    production platform claim'i için support boundary genişlememiştir. `GP-2`
    closeout ve `GP-2.5a` sandbox rehearsal support widening'i otomatik açmaz;
    ayrı promotion decision gerekir.
