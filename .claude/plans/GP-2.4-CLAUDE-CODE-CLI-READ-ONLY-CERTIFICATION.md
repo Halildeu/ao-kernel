@@ -1,8 +1,9 @@
 # GP-2.4 — Claude Code CLI Read-Only Certification Contract
 
-**Status:** Active
+**Status:** Completed
 **Date:** 2026-04-24
 **Tracker:** [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+**Verdict issue:** [#371](https://github.com/Halildeu/ao-kernel/issues/371)
 **Parent:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 **Handoff from:** `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
 
@@ -46,7 +47,8 @@ kapatıldıktan sonra verilir.
 | Side-effect scope | read-only; live write yok |
 | Required helper | `python3 scripts/claude_code_cli_smoke.py --output json` |
 | Existing runbook | `docs/BENCHMARK-REAL-ADAPTER-RUNBOOK.md` |
-| Current support tier | Beta (operator-managed) |
+| Final support tier | Beta (operator-managed) |
+| Final verdict | `operator_managed_beta_keep` |
 
 ## Work Breakdown
 
@@ -99,8 +101,7 @@ Closeout:
 
 ### `GP-2.4b` — Governed Workflow Smoke Evidence
 
-Status: completed in [#367](https://github.com/Halildeu/ao-kernel/issues/367)
-implementation branch; pending PR merge.
+Status: completed by issue [#367](https://github.com/Halildeu/ao-kernel/issues/367).
 
 Hedef: helper-level manifest smoke dışında governed workflow path'inin read-only
 şekilde çalıştığını kanıtlamak.
@@ -144,13 +145,12 @@ Closeout:
 5. `review_findings` artifact'i schema-valid materialize oldu:
    `artifacts/invoke_review_agent-review_findings-attempt1.json`.
 6. `adapter-claude-code-cli.jsonl` redaction kontrolünden geçti.
-7. Support boundary unchanged kalır; GP-2.4c failure-mode matrix ve GP-2.4d
-   verdict kapanmadan production certification yoktur.
+7. Support boundary unchanged kalır; `GP-2.4d` verdict sonucunda lane
+   production-certified yapılmadı.
 
 ### `GP-2.4c` — Failure-Mode Matrix
 
-Status: completed in [#369](https://github.com/Halildeu/ao-kernel/issues/369)
-implementation branch; pending PR merge.
+Status: completed by issue [#369](https://github.com/Halildeu/ao-kernel/issues/369).
 
 Hedef: production claim'i için gerekli negatif yolları fake-green bırakmamak.
 
@@ -186,10 +186,12 @@ Closeout:
 | policy deny | `policy_denied` | `test_workflow_smoke_classifies_policy_denial_before_promotion` |
 
 `WorkflowSmokeCheck` artık `finding_code` taşır; `findings[]` stable code'ları
-önceler, prose-only failure üretmez. Support boundary unchanged kalır; GP-2.4d
-verdict kapanmadan production certification yoktur.
+önceler, prose-only failure üretmez. Support boundary unchanged kalır; `GP-2.4d`
+verdict sonucunda lane production-certified yapılmadı.
 
 ### `GP-2.4d` — Support Boundary Verdict
+
+Status: completed by issue [#371](https://github.com/Halildeu/ao-kernel/issues/371).
 
 Hedef: certification sonucunu tek karara indirmek.
 
@@ -208,6 +210,32 @@ Karar kuralları:
    `claude-code-cli` promotion kararını sınırlayabilir.
 4. Live-write kapsamı bu kararın dışında kalır; `gh-cli-pr` rollback
    rehearsal ayrı lane'dir.
+
+Closeout:
+
+| Karar alanı | Sonuç |
+|---|---|
+| Final verdict | `operator_managed_beta_keep` |
+| Stable support boundary impact | Unchanged |
+| Public tier | `Beta (operator-managed)` |
+| Production-certified read-only? | Hayır |
+| Shipped demo impact | Yok; default shipped demo `review_ai_flow + codex-stub` kalır |
+| Next GP lane | `gh-cli-pr` live-write rollback rehearsal |
+
+Gerekçe:
+
+1. `GP-2.4a`, `GP-2.4b` ve `GP-2.4c` evidence kapıları kapanmıştır; lane
+   helper preflight, governed workflow smoke ve negative failure-mode matrix
+   üretir.
+2. Bu kanıtlar lane'i "fake green olmayan operator-managed beta" seviyesine
+   yükseltir; ancak `claude-code-cli` hâlâ repo-native değildir ve operator
+   ortamındaki external `claude` PATH binary, session auth ve prompt access
+   prerequisite'lerine bağlıdır.
+3. `KB-001` ve `KB-002` shipped baseline'ı etkilemez; fakat production-certified
+   read-only support claim için ortam-bağımsızlık ve CI-managed live adapter
+   garantisi hâlâ eksiktir.
+4. Bu nedenle support tier genişlemez. Lane kullanılabilir, kanıtlı ve
+   işletilebilir bir Beta/operator-managed yüzey olarak kalır.
 
 ## Out of Scope
 
@@ -235,7 +263,7 @@ komutları yazılacaktır.
 
 ## Exit Criteria
 
-1. `GP-2.4a..d` çıktıları tamamlanır.
-2. Certification verdict tek değere iner.
+1. `GP-2.4a..d` çıktıları tamamlandı.
+2. Certification verdict tek değere indi: `operator_managed_beta_keep`.
 3. Docs/runtime/tests/CI/support boundary aynı kararı anlatır.
-4. Stable support boundary yalnız kanıt kapıları kapanırsa genişler.
+4. Stable support boundary genişlemedi.

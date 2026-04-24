@@ -337,12 +337,14 @@ dogrulanir.
 3. `ST-2`, `ST-5`, `ST-6`, `ST-7` ve `ST-8` tamamlandi; `v4.0.0` stable live.
 4. `GP-2.3` tamamlandı: post-stable ilk giriş kapısı
    `claude-code-cli` read-only certification olarak seçildi.
-5. Aktif post-stable contract hattı `GP-2.4`:
+5. Son tamamlanan post-stable contract hattı `GP-2.4`:
    `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+   - Final verdict: `operator_managed_beta_keep`
 6. Varsayılan sıra:
-   - `Now`: `GP-2.4` `claude-code-cli` read-only certification contract
-   - `Next`: `gh-cli-pr` live-write rollback rehearsal
-   - `Later`: extension/support widening
+   - `Now`: `gh-cli-pr` live-write rollback rehearsal
+   - `Next`: extension/support widening
+   - `Later`: genel amaçlı production platform claim'i
 7. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
-   production platform claim'i için `GP-2.4` certification ve sonraki rollback
-   kanıtları gerekir.
+   production platform claim'i için `GP-2.4` sonucunda support boundary
+   genişlememiştir. Sıradaki kanıt hattı `gh-cli-pr` live-write rollback
+   rehearsal'dır.

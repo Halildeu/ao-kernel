@@ -84,8 +84,9 @@ Bu smoke helper-level manifest probe'dan daha kapsamlıdır:
 
 **Success criterion:** `overall_status: pass` ve `final_state: completed`.
 
-Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. GP-2.4d
-verdict kapanana kadar bu lane Beta (operator-managed) olarak kalır.
+Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. `GP-2.4d`
+final verdict'i `operator_managed_beta_keep` olduğu için lane Beta
+(operator-managed) olarak kalır.
 
 ### 1.3 Failure-mode matrix
 
