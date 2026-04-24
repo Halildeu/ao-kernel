@@ -243,7 +243,7 @@ Contract PR için minimum:
 ```bash
 python3 -m pytest -q tests/test_gh_cli_pr_smoke.py
 python3 scripts/gh_cli_pr_smoke.py --mode preflight --output json --timeout-seconds 20
-python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head main --base main --output json --timeout-seconds 20
+python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo Halildeu/ao-kernel-sandbox --head main --base main --output json --timeout-seconds 20
 python3 scripts/truth_inventory_ratchet.py --output json
 python3 -m pytest -q tests/test_cli_entrypoints.py tests/test_doctor_cmd.py
 ```

@@ -23,6 +23,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   reprioritization program is complete, with no automatic stable support
   widening for `claude-code-cli`, `gh-cli-pr`, `bug_fix_flow`, or adapter-path
   `cost_usd`.
+- Added the `SM-1` stable maintenance baseline decision record and aligned the
+  operator-facing `gh-cli-pr` live-write prerequisite prose with the explicit
+  sandbox `--repo` requirement.
 
 ## [4.0.0] - 2026-04-24
 

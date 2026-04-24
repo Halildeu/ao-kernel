@@ -37,9 +37,9 @@ python3 scripts/claude_code_cli_smoke.py --output text
 python3 scripts/gh_cli_pr_smoke.py --output text
 python3 scripts/kernel_api_write_smoke.py --output text
 # Optional readiness probe (live-write, explicit opt-in + disposable guard):
-# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>
+# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch>
 # Optional: persist canonical JSON evidence artifact
-# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch> --output json --report-path /tmp/gh-cli-pr-live-write.report.json
+# python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch> --output json --report-path /tmp/gh-cli-pr-live-write.report.json
 ```
 
 Prerequisite contract (operator-managed lanes):
@@ -50,7 +50,8 @@ Prerequisite contract (operator-managed lanes):
 2. `gh-cli-pr` preflight için `gh` binary + aktif auth + repo context çözümü
    gerekir; preflight lane side-effect-safe dry-run'dır.
 3. `gh-cli-pr` live-write probe için explicit
-   `--mode live-write --allow-live-write --head ... --base ...` zorunludur.
+   `--mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head ... --base ...`
+   zorunludur.
 4. Varsayılan disposable guard keyword `sandbox`'dır; repo adı keyword'ü
    taşımıyorsa probe bilerek `blocked` döner.
 5. `--keep-live-write-pr-open` lane'i riskli kabul ettirir; bu sonucu support

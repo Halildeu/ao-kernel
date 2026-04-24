@@ -148,7 +148,7 @@ Final karar:
 - No-side-effect kanıt:
   - `python3 scripts/gh_cli_pr_smoke.py --mode preflight --output json --timeout-seconds 20`
     -> `overall_status=pass`
-  - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head main --base main --output json --timeout-seconds 20`
+  - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo Halildeu/ao-kernel-sandbox --head main --base main --output json --timeout-seconds 20`
     -> `overall_status=blocked`, finding `gh_pr_live_write_same_head_base`
 - Live-write kanıt:
   - target repo: `Halildeu/ao-kernel-sandbox`

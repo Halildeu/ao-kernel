@@ -49,6 +49,8 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
   veya karar bekleyen yuzeylerdir.
 - Post-beta programda GP-2 hattı tamamlandı; deferred support lane'leri kanıtla
   sınıflandırıldı ve support boundary genişletilmedi.
+- `SM-1` stable maintenance baseline geçerlidir; aktif support-widening gate
+  yoktur.
 
 ## 4. Closed Drift Kayitlari
 
@@ -349,11 +351,16 @@ dogrulanir.
    - `claude-code-cli`: Beta/operator-managed
    - `gh-cli-pr`: Beta/operator-managed; sandbox rehearsal passed
    - full remote PR opening: not stable shipped support
-7. Varsayılan sıra:
+7. Son tamamlanan maintenance baseline `SM-1`:
+   `.claude/plans/SM-1-STABLE-MAINTENANCE-BASELINE.md`
+   - active widening gate: none
+   - default path: stable maintenance
+   - future widening: separate promotion program only
+8. Varsayılan sıra:
    - `Now`: stable maintenance, bugfix, and evidence hygiene
    - `Next`: ayrı bir promotion programı açılırsa tek lane support widening
    - `Later`: genel amaçlı production platform claim'i
-8. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+9. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
    production platform claim'i için support boundary genişlememiştir. `GP-2`
    closeout ve `GP-2.5a` sandbox rehearsal support widening'i otomatik açmaz;
    ayrı promotion decision gerekir.
