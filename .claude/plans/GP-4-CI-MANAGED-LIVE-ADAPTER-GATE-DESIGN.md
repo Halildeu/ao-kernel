@@ -96,7 +96,7 @@ itself.
 
 | Slice | Goal | Exit |
 |---|---|---|
-| `GP-4.1` workflow design stub | Add non-secret workflow skeleton or documented manual gate contract | no live secrets, no live calls, CI-safe |
+| `GP-4.1` workflow design stub | Add non-secret workflow skeleton or documented manual gate contract | implemented by `.github/workflows/live-adapter-gate.yml`; report remains `blocked`; no live secrets, no live calls, CI-safe |
 | `GP-4.2` evidence artifact contract | Define/upload JSON report shapes for live gate | local tests validate report schema |
 | `GP-4.3` protected environment contract | Document required GitHub environment/secrets and fork safety | no repository secret values committed |
 | `GP-4.4` live rehearsal | Run protected manual gate once and record artifacts | only if project-owned credentials exist |
@@ -128,8 +128,22 @@ Current tier remains:
 3. shipped stable baseline: unchanged;
 4. general-purpose production coding automation platform claim: not granted.
 
+## GP-4.1 Implementation
+
+`GP-4.1` adds a manual contract skeleton:
+
+1. workflow: `.github/workflows/live-adapter-gate.yml`;
+2. report builder: `ao_kernel/live_adapter_gate.py`;
+3. script wrapper: `scripts/live_adapter_gate_contract.py`;
+4. expected artifact: `live-adapter-gate-contract.v1.json`.
+
+The report intentionally says `overall_status="blocked"` and
+`finding_code="live_gate_not_implemented"`. A successful workflow run means
+the contract artifact was emitted; it does not mean the live adapter passed.
+
 ## Next Step
 
-The next implementation slice should be `GP-4.1`: add a CI-safe manual workflow
-design stub or a narrower written workflow contract. It must not introduce live
-secrets or run live adapter calls by default.
+The next implementation slice should be `GP-4.2`: define the evidence artifact
+contract for actual protected live gate outcomes. It must still avoid support
+widening until protected live evidence exists and support docs are explicitly
+updated.

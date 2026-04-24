@@ -42,6 +42,12 @@ python3 scripts/kernel_api_write_smoke.py --output text
 # python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch> --output json --report-path /tmp/gh-cli-pr-live-write.report.json
 ```
 
+`live-adapter-gate` workflow'u (`GP-4.1`) farklı bir yüzeydir: bugün canlı
+adapter çalıştırmaz. Manual workflow yalnız `live-adapter-gate-contract.v1.json`
+artifact'i üretir ve bu artifact'in `overall_status="blocked"` /
+`finding_code="live_gate_not_implemented"` dönmesi beklenir. Workflow'un yeşil
+olması production-certified `claude-code-cli` support anlamına gelmez.
+
 Prerequisite contract (operator-managed lanes):
 
 1. `claude-code-cli` lane için `claude auth status` tek başına yeterli sinyal

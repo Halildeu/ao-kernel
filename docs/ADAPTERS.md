@@ -236,6 +236,9 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - Future production-certified support requires a protected CI-managed live
   adapter gate or equivalent release gate. `GP-4` is a design program for that
   missing gate, not a support widening.
+- `GP-4.1` adds a manual `live-adapter-gate` workflow skeleton that emits a
+  blocked contract artifact only. It does not call `claude`, does not read
+  secrets, and does not promote this lane.
 
 ### Failure modes
 

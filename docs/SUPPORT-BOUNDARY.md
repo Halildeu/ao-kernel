@@ -105,6 +105,10 @@ reddedilmiştir çünkü external `claude` binary/session auth operatör durumud
 `KB-001`/`KB-002` açıktır ve live adapter gate'i CI-managed değildir.
 `GP-4` bu eksik CI-managed live adapter gate'i tasarlar, fakat tasarım kaydı
 tek başına support tier'ı yükseltmez.
+`GP-4.1` ile eklenen `live-adapter-gate` workflow skeleton'ı da support
+widening değildir: sadece manual contract artifact üretir, canlı `claude`
+çağrısı yapmaz ve artifact içinde `overall_status="blocked"` /
+`finding_code="live_gate_not_implemented"` beklenir.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
 disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify
@@ -148,6 +152,8 @@ The following do not, by themselves, justify a broader support claim:
 - a runbook describing an operator flow
 - a CI/live-gate design document without a protected implementation and
   recorded evidence artifacts
+- a CI-safe live-gate skeleton that emits a blocked contract artifact without
+  executing a protected live adapter identity
 - a roadmap/spec document
 - a contract loader or truth-audit warning surface
 - a smoke passing only in one operator environment without the support docs
