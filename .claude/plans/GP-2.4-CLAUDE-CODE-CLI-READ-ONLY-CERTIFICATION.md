@@ -99,6 +99,9 @@ Closeout:
 
 ### `GP-2.4b` — Governed Workflow Smoke Evidence
 
+Status: completed in [#367](https://github.com/Halildeu/ao-kernel/issues/367)
+implementation branch; pending PR merge.
+
 Hedef: helper-level manifest smoke dışında governed workflow path'inin read-only
 şekilde çalıştığını kanıtlamak.
 
@@ -113,7 +116,7 @@ Kapsam:
    - `adapter_invoked`
    - `step_completed`
    - terminal workflow state
-4. Adapter invocation envelope redacted halde yazılır.
+4. Adapter stdout/stderr evidence log redacted halde yazılır.
 5. Output parse fail-closed davranışı korunur.
 
 DoD:
@@ -121,6 +124,28 @@ DoD:
 1. Read-only workflow smoke tekrarlanabilir komutla belgelenir.
 2. Evidence/artifact path'leri docs ve runbook ile aynı şeyi söyler.
 3. Smoke başarısı repo root/PYTHONPATH kontaminasyonuna dayanmaz.
+
+Closeout:
+
+1. `ao_kernel.real_adapter_workflow_smoke` governed workflow smoke helper'ını
+   sağlar.
+2. `scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60`
+   canlı koşuda `overall_status=pass`, `final_state=completed` döndürdü.
+3. Kanıt run'ı:
+   - `run_id=c17e1456-2e4c-40fd-8942-c4880bd6fcc8`
+   - workspace:
+     `/private/var/folders/ly/mwks8pvj07q2s1njtcnjjk2c0000gn/T/ao-kernel-claude-workflow-smoke-7q53d5w2`
+4. Doğrulanan evidence seti:
+   - `step_started`
+   - `policy_checked`
+   - `adapter_invoked`
+   - `step_completed`
+   - `workflow_completed`
+5. `review_findings` artifact'i schema-valid materialize oldu:
+   `artifacts/invoke_review_agent-review_findings-attempt1.json`.
+6. `adapter-claude-code-cli.jsonl` redaction kontrolünden geçti.
+7. Support boundary unchanged kalır; GP-2.4c failure-mode matrix ve GP-2.4d
+   verdict kapanmadan production certification yoktur.
 
 ### `GP-2.4c` — Failure-Mode Matrix
 
@@ -178,7 +203,9 @@ Contract PR için minimum:
 
 ```bash
 python3 -m pytest -q tests/test_claude_code_cli_smoke.py
+python3 -m pytest -q tests/test_claude_code_cli_workflow_smoke.py
 python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 30
+python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60
 python3 scripts/truth_inventory_ratchet.py --output json
 python3 -m pytest -q tests/test_cli_entrypoints.py tests/test_doctor_cmd.py
 ```

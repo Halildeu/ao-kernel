@@ -691,5 +691,19 @@ açıldı.
    - `auth_status=pass` + `prompt_access=fail` remains `blocked`
    - API key/env-token presence is observed but cannot turn prompt failure into
      certification success
-7. Next default:
-   - `GP-2.4b` governed workflow smoke evidence
+7. `GP-2.4b` closeout:
+   - issue: [#367](https://github.com/Halildeu/ao-kernel/issues/367)
+   - `ao_kernel.real_adapter_workflow_smoke` and
+     `scripts/claude_code_cli_workflow_smoke.py` run the real governed
+     workflow path
+   - live command:
+     `python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60`
+   - live result:
+     `overall_status=pass`, `final_state=completed`,
+     `run_id=c17e1456-2e4c-40fd-8942-c4880bd6fcc8`
+   - verified:
+     `review_findings` schema-valid artifact, `policy_checked`,
+     `adapter_invoked`, `step_completed`, `workflow_completed`, redacted
+     `adapter-claude-code-cli.jsonl`
+8. Next default:
+   - `GP-2.4c` failure-mode matrix
