@@ -1,12 +1,13 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.9` production platform claim decision
+**Status:** Completed / closed with no support widening
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `7bc757a` after the `GP-5.8` operations support package
-**Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.9` - production platform claim decision
-**Branch:** `codex/gp5-9-platform-claim-decision`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-9`
+**Authority:** `origin/main` at `639ffe1` during status truth cleanup
+**Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424) (closed)
+**Final slice:** `GP-5.9` - production platform claim decision (closed)
+**Final decision:** `keep_narrow_stable_runtime`
+**Branch:** cleaned after merge (`codex/gp5-9-platform-claim-decision`)
+**Worktree:** cleaned after merge (`/Users/halilkocoglu/Documents/ao-kernel-gp5-9`)
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
@@ -548,16 +549,15 @@ branch protection / required checks decision notes are present before GP-5.9.
 This slice does not widen support. Its output must keep
 `support_widening=false` and `production_platform_claim=false`.
 
-**GP-5.9 active claim decision slice:**
+**GP-5.9 completed claim decision slice:**
 
-`GP-5.9` adds `scripts/gp5_platform_claim_decision.py` and
+`GP-5.9` added `scripts/gp5_platform_claim_decision.py` and
 `gp5-production-platform-claim-decision.schema.v1.json`. The command evaluates
 success criteria `BC-1..BC-10` and records the closeout decision.
 
-Current expected decision is `keep_narrow_stable_runtime`: protected
-real-adapter evidence and real-adapter cost/token evidence are still absent, so
-the stable runtime remains narrow and no general-purpose production platform
-claim is granted.
+Final decision is `keep_narrow_stable_runtime`: protected real-adapter evidence
+and real-adapter cost/token evidence are still absent, so the stable runtime
+remains narrow and no general-purpose production platform claim is granted.
 
 ### GP-5.9 - General-Purpose Platform Release Candidate
 
@@ -631,7 +631,7 @@ promotion.
 | 13.5 | `GP-5.7a` | Full production rehearsal contract | Completed on `main`; schema-backed execution matrix; no support widening. |
 | 13.6 | `GP-5.7b` | Full production rehearsal execution gate | Completed on `main`; aggregates three clean pass chains plus one fail-closed chain; no live default write and no support widening. |
 | 13.8 | `GP-5.8` | Operations and support package | Completed on `main`; runbook/known-bugs/support-boundary/branch-protection readiness package; no support widening. |
-| 14 | `GP-5.9` | Production platform claim decision | Active; closeout decision is expected to keep the narrow stable runtime unless protected evidence changes. |
+| 14 | `GP-5.9` | Production platform claim decision | Completed on `main`; final decision `keep_narrow_stable_runtime`; no support widening. |
 
 ## 8. Standard Slice DoD
 
@@ -647,24 +647,24 @@ Every GP-5 slice must include:
 8. rollback/cleanup evidence if side-effectful;
 9. written decision and next slice.
 
-## 9. Current Decision
+## 9. Program Closeout
 
-GP-5.9 is the active production platform claim decision gate. It starts only
-after GP-5.8 made operations support and support-boundary evidence visible. The
+GP-5.9 closed the production platform claim decision gate after GP-5.8 made
+operations support and support-boundary evidence visible. The
 script `scripts/gp5_platform_claim_decision.py` produces
 `gp5_production_platform_claim_decision` and fails closed unless GP-5.8 remains
 ready and GP-5.9 support/status surfaces are present.
 
-This is still not a general-purpose production platform claim. It does not
+The closeout decision is still not a general-purpose production platform claim.
+It does not
 enable arbitrary repository PR creation, real-adapter production support, or
 runtime workflow wiring from repo-intelligence output to write-side action.
 
-Current product wording remains:
+Final product wording remains:
 
 1. stable production runtime: yes, narrow baseline;
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. current step: close `GP-5.9` production platform claim decision as
-   `keep_narrow_stable_runtime` unless protected environment/credential
-   attestation arrives first for `GP-5.1b`.
+5. next scoped runtime slice: `RI-5b` create-only root export implementation
+   from current `origin/main`.
