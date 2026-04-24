@@ -101,7 +101,7 @@ def run_claude_code_cli_workflow_smoke(
     if not skip_preflight:
         preflight = run_claude_code_cli_smoke(timeout_seconds=timeout_seconds)
         if preflight.overall_status != "pass":
-            checks = (
+            checks: tuple[WorkflowSmokeCheck, ...] = (
                 WorkflowSmokeCheck(
                     name="helper_preflight",
                     status="fail",
