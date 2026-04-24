@@ -1,14 +1,15 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** RI-4e implementation PR
+**Status:** Completed on `main`
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `58ef3df`
+**Authority:** `origin/main` at `b2e404b`
 **Closed PRs:** [#419](https://github.com/Halildeu/ao-kernel/pull/419),
-[#421](https://github.com/Halildeu/ao-kernel/pull/421)
-**Branch:** `codex/repo-query-markdown-context`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-query-markdown-context`
-**Base:** `origin/main` at `58ef3df`
-**Next slice:** RI-4e stdout-only agent-readable query context output
+[#421](https://github.com/Halildeu/ao-kernel/pull/421),
+[#422](https://github.com/Halildeu/ao-kernel/pull/422)
+**Implementation branches:** cleaned after merge
+**Implementation worktrees:** cleaned after merge
+**Base:** `origin/main` at `b2e404b`
+**Next slice:** RI-5 explicit root/context export design gate
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -52,12 +53,13 @@ RI-4 must be implemented in this order:
    Completed on `main` via
    [#421](https://github.com/Halildeu/ao-kernel/pull/421).
 5. `RI-4e` - stdout-only agent-readable query context output for manual
-   Claude/Codex use. In progress in the current PR.
+   Claude/Codex use. Completed on `main` via
+   [#422](https://github.com/Halildeu/ao-kernel/pull/422).
 
-The current PR must not auto-wire repo vectors into general context
-compilation. It only renders already-validated `repo query` results as
-Markdown on stdout so operators can inspect and manually feed retrieved chunks
-to agents without root exports, `.ao/context` artifact writes, MCP exposure, or
+RI-4 intentionally does not auto-wire repo vectors into general context
+compilation. It renders already-validated `repo query` results as Markdown on
+stdout so operators can inspect and manually feed retrieved chunks to agents
+without root exports, `.ao/context` query artifact writes, MCP exposure, or
 vector backend mutations.
 
 ## Non-Negotiable Boundaries
@@ -562,3 +564,4 @@ Acceptance:
 | 2026-04-24 | RI-4d merge closeout | PR [#421](https://github.com/Halildeu/ao-kernel/pull/421) merged to `main` at `58ef3df`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. |
 | 2026-04-24 | RI-4e implementation | Added stdout-only `repo query --output markdown` context rendering for manual agent use; no context compiler auto-injection, MCP tool, vector writes, root exports, or artifact writes. |
 | 2026-04-24 | RI-4e validation | Full ruff, full mypy, focused repo-intelligence tests, CLI markdown smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2975 passed, 1 skipped`, total coverage `85.40%`. |
+| 2026-04-24 | RI-4e merge closeout | PR [#422](https://github.com/Halildeu/ao-kernel/pull/422) merged to `main` at `b2e404b`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch/worktree cleanup completed and local `main` is synchronized with `origin/main`. |
