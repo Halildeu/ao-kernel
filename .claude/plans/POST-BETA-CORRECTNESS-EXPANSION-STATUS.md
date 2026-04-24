@@ -17,7 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
+- **Aktif certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -42,13 +42,14 @@ ayrı ayrı görünür kılmak.
 - **GP-2.1 issue:** [#331](https://github.com/Halildeu/ao-kernel/issues/331) (`closed`)
 - **GP-2.2 issue:** [#333](https://github.com/Halildeu/ao-kernel/issues/333) (`closed`)
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
-- **GP-2.3 issue:** [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`open`)
+- **GP-2.3 issue:** [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`closeout after handoff`)
+- **GP-2.4 issue:** [#363](https://github.com/Halildeu/ao-kernel/issues/363) (`open`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
 - **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
 - **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`closed after closeout`)
 - **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`closed after closeout`)
-- **Aktif gate:** `GP-2.3` post-stable adapter certification entry decision. Runtime/support widening yok; yalnız sıradaki gate seçimi.
+- **Aktif gate:** `GP-2.4` `claude-code-cli` read-only certification contract. Runtime/support widening yok; certification kanıt kapıları hazırlanıyor.
 
 ## 2. Başlangıç Gerçeği
 
@@ -96,7 +97,7 @@ ayrı ayrı görünür kılmak.
 | `PB-8` general-purpose productionization roadmap | Completed on `main` ([#288](https://github.com/Halildeu/ao-kernel/issues/288), [#300](https://github.com/Halildeu/ao-kernel/pull/300), [#301](https://github.com/Halildeu/ao-kernel/pull/301)) | widening kararlarını tranche bazında kapatmak ve support closeout parity'yi tamamlamak | tracker closeout + docs/runbook/release-gate parity |
 | `PB-9` production claim readiness gates | Completed on `main` ([#302](https://github.com/Halildeu/ao-kernel/issues/302), closed tranche [#303](https://github.com/Halildeu/ao-kernel/issues/303), closed tranche [#306](https://github.com/Halildeu/ao-kernel/issues/306), closed tranche [#309](https://github.com/Halildeu/ao-kernel/issues/309), closed tranche [#312](https://github.com/Halildeu/ao-kernel/issues/312)) | production claim kararını gate bazlı ve kanıt odaklı yürütmek | roadmap + decision records + tracker closeout |
 | `GP-1` general-purpose production widening | Completed on `main` ([#316](https://github.com/Halildeu/ao-kernel/issues/316), [#327](https://github.com/Halildeu/ao-kernel/pull/327), [#326](https://github.com/Halildeu/ao-kernel/issues/326)) | PB-9 sonrası widening kararlarını tranche bazında ve gate-first disiplinde tamamlamak | GP-1.1..GP-1.5 decision records + closeout parity |
-| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), active slice [#361](https://github.com/Halildeu/ao-kernel/issues/361)) | `GP-1` ve `v4.0.0` stable sonrası deferred/support widening lane'lerini tek anlamlı sıraya indirip ilk post-stable certification gate'ini seçmek | GP-2.2 closeout + GP-2.3 `Now/Next/Later` post-stable karar kaydı |
+| `GP-2` deferred support-lane backlog reprioritization | Active ([#329](https://github.com/Halildeu/ao-kernel/issues/329), active slice [#363](https://github.com/Halildeu/ao-kernel/issues/363)) | `GP-1` ve `v4.0.0` stable sonrası deferred/support widening lane'lerini tek anlamlı sıraya indirip ilk post-stable certification gate'ini yürütmek | GP-2.3 handoff + GP-2.4 certification contract |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -364,26 +365,28 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `GP-2.3` post-stable adapter certification entry decision
-([#361](https://github.com/Halildeu/ao-kernel/issues/361)).
+Aktif slice: `GP-2.4` `claude-code-cli` read-only certification contract
+([#363](https://github.com/Halildeu/ao-kernel/issues/363)).
 
-Bu slice runtime/support widening yapmaz. Amaç `v4.0.0` stable sonrası ilk
-gerçek widening giriş kapısını seçmek ve sonraki implementation contract'ının
-sorularını sabitlemektir.
+Bu slice runtime/support widening yapmaz. Amaç `claude-code-cli` lane'i için
+sertifikasyon kanıt paketini uygulanabilir alt dilimlere indirmektir.
 
-1. Son kapanan slice: `ST-8` stable publish and post-publish verification
+1. Son kapanan stable slice: `ST-8` stable publish and post-publish verification
    ([#358](https://github.com/Halildeu/ao-kernel/issues/358))
 2. Son kapanan GP slice: `GP-2.2` adapter-path `cost_usd` reconcile
    completeness closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
-3. Aktif contract:
-   `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
-4. Karar sırası:
-   - `Now`: `claude-code-cli` read-only real-adapter certification
-   - `Next`: `gh-cli-pr` live-write rollback rehearsal
-   - `Later`: extension/support widening ve genel amaçlı platform claim'i
-5. Stable live iddiası geçerlidir: `pip install ao-kernel` ve exact pin
+3. Son karar slice'ı: `GP-2.3` post-stable entry decision
+   ([#361](https://github.com/Halildeu/ao-kernel/issues/361))
+4. Aktif contract:
+   `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+5. GP-2.4 sıra:
+   - `GP-2.4a`: preflight evidence contract
+   - `GP-2.4b`: governed workflow smoke evidence
+   - `GP-2.4c`: failure-mode matrix
+   - `GP-2.4d`: support boundary verdict
+6. Stable live iddiası geçerlidir: `pip install ao-kernel` ve exact pin
    `ao-kernel==4.0.0` fresh venv içinde `4.0.0` kurmuştur.
-6. Stable support boundary unchanged kalır; `GP-2.3` yeni production adapter
+7. Stable support boundary unchanged kalır; `GP-2.4` yeni production adapter
    claim'i üretmez.
 
 `PB-8.2` completion kaydı:
@@ -636,7 +639,7 @@ Her merge sonrası bu dosyada en az şu alanlar güncellenecek:
 `ST-8` stable publish closeout sonrası aktif karar slice'ı `GP-2.3` olarak
 açıldı.
 
-1. Issue: [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`open`)
+1. Issue: [#361](https://github.com/Halildeu/ao-kernel/issues/361) (`closeout after handoff`)
 2. Active contract:
    `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
 3. Scope:
@@ -651,3 +654,30 @@ açıldı.
    - `Now`: `claude-code-cli` read-only real-adapter certification
    - `Next`: `gh-cli-pr` live-write rollback rehearsal
    - `Later`: extension/support widening
+6. Closeout:
+   - next active issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363)
+   - next active contract:
+     `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+
+## 19. GP-2.4 Claude Code CLI Certification Snapshot
+
+`GP-2.3` handoff sonrası aktif contract slice `GP-2.4` olarak açıldı.
+
+1. Issue: [#363](https://github.com/Halildeu/ao-kernel/issues/363) (`open`)
+2. Active contract:
+   `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+3. Scope:
+   - `claude-code-cli` read-only certification evidence package
+   - preflight helper contract
+   - governed workflow smoke requirements
+   - failure-mode matrix
+   - support boundary verdict criteria
+4. Sınır:
+   - runtime support widening yok
+   - live-write yok
+   - stable support boundary unchanged
+5. Current local baseline probe:
+   - `python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 10`
+   - `overall_status=pass`
+   - `version`, `auth_status`, `prompt_access`, `manifest_invocation` checks pass
+   - API key env route not present; session auth path used

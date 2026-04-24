@@ -148,9 +148,10 @@ kanitli pre-release'e cevirmek.
 
 ### ST-3 — Real Adapter Certification Decision
 
-**Durum:** Parked for support widening. Post-stable entry ordering is tracked
-by `GP-2.3` ([#361](https://github.com/Halildeu/ao-kernel/issues/361)); the
-default first certification candidate is `claude-code-cli` read-only.
+**Durum:** Parked for support widening. Post-stable first certification
+contract is tracked by `GP-2.4`
+([#363](https://github.com/Halildeu/ao-kernel/issues/363)); the active
+candidate is `claude-code-cli` read-only.
 Not a blocker for the narrow stable runtime release because real-adapter lanes
 are not stable shipped claims after `ST-2`.
 
@@ -334,12 +335,14 @@ dogrulanir.
 2. `ST-1` tamamlandi: current `main` icin `4.0.0b2` pre-release publish ve
    PyPI exact pin verify.
 3. `ST-2`, `ST-5`, `ST-6`, `ST-7` ve `ST-8` tamamlandi; `v4.0.0` stable live.
-4. Aktif post-stable karar hattı `GP-2.3`:
-   `.claude/plans/GP-2.3-POST-STABLE-ADAPTER-CERTIFICATION-ENTRY.md`
-5. Varsayılan sıra:
-   - `Now`: `claude-code-cli` read-only real-adapter certification
+4. `GP-2.3` tamamlandı: post-stable ilk giriş kapısı
+   `claude-code-cli` read-only certification olarak seçildi.
+5. Aktif post-stable contract hattı `GP-2.4`:
+   `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
+6. Varsayılan sıra:
+   - `Now`: `GP-2.4` `claude-code-cli` read-only certification contract
    - `Next`: `gh-cli-pr` live-write rollback rehearsal
    - `Later`: extension/support widening
-6. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
-   production platform claim'i için `GP-2.3` sonrası certification ve
-   rollback kanıtları gerekir.
+7. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+   production platform claim'i için `GP-2.4` certification ve sonraki rollback
+   kanıtları gerekir.
