@@ -8,6 +8,18 @@ from ao_kernel.cli import main
 from ao_kernel._internal.repo_intelligence.repo_vector_indexer import CONFIRM_VECTOR_INDEX
 from ao_kernel.context.semantic_retrieval import cosine_similarity
 
+ROOT_AUTHORITY_EXPORT_FILES = (
+    "CLAUDE.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "CODEX_CONTEXT.md",
+)
+ROOT_MCP_EXPORT_FILES = (
+    ".mcp.json",
+    "mcp.json",
+    ".cursor/mcp.json",
+)
+
 
 class _FakeVectorStore:
     def __init__(self) -> None:
@@ -72,6 +84,12 @@ def _context_snapshot(project: Path) -> dict[str, bytes]:
         for item in sorted(context_dir.rglob("*"))
         if item.is_file()
     }
+
+
+def _assert_no_root_or_mcp_exports(project: Path) -> None:
+    for relative_path in (*ROOT_AUTHORITY_EXPORT_FILES, *ROOT_MCP_EXPORT_FILES):
+        assert not (project / relative_path).exists()
+    assert not (project / ".ao" / "context" / "repo_export_plan.json").exists()
 
 
 def _scan_and_write_vectors(project: Path, store: _FakeVectorStore, capsys: Any, monkeypatch: Any) -> None:
@@ -185,10 +203,7 @@ def test_repo_query_returns_matches_without_writing_root_files(tmp_path: Path, c
     assert payload["query_result"]["artifact_kind"] == "repo_vector_query_result"
     assert all(item["source_path"].startswith("pkg/") for item in payload["results"])
     assert _context_snapshot(project) == context_before
-    assert not (project / "CLAUDE.md").exists()
-    assert not (project / "AGENTS.md").exists()
-    assert not (project / "ARCHITECTURE.md").exists()
-    assert not (project / "CODEX_CONTEXT.md").exists()
+    _assert_no_root_or_mcp_exports(project)
 
 
 def test_repo_query_markdown_output_is_agent_readable_and_read_only(tmp_path: Path, capsys, monkeypatch) -> None:
@@ -225,10 +240,7 @@ def test_repo_query_markdown_output_is_agent_readable_and_read_only(tmp_path: Pa
     assert "```python\n" in captured.out
     assert "def main():" in captured.out
     assert _context_snapshot(project) == context_before
-    assert not (project / "CLAUDE.md").exists()
-    assert not (project / "AGENTS.md").exists()
-    assert not (project / "ARCHITECTURE.md").exists()
-    assert not (project / "CODEX_CONTEXT.md").exists()
+    _assert_no_root_or_mcp_exports(project)
 
 
 def test_repo_query_default_output_is_text(tmp_path: Path, capsys, monkeypatch) -> None:

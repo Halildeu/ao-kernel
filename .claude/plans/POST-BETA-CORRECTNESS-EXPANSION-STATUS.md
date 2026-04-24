@@ -37,7 +37,8 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.1a protected gate prerequisite audit:** `.claude/plans/GP-5.1a-PROTECTED-GATE-PREREQUISITE-AUDIT.md`
 - **Son tamamlanan GP-5.3a repo-intelligence retrieval evidence contract:** `.claude/plans/GP-5.3a-REPO-INTELLIGENCE-RETRIEVAL-EVIDENCE-CONTRACT.md`
 - **Son tamamlanan GP-5.3b agent context handoff contract:** `.claude/plans/GP-5.3b-AGENT-CONTEXT-HANDOFF-CONTRACT.md`
-- **Aktif GP-5.3c workflow opt-in design contract:** `.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`
+- **Son tamamlanan GP-5.3c workflow opt-in design contract:** `.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`
+- **Aktif GP-5.3d no-MCP/no-root-export guard:** `.claude/plans/GP-5.3d-NO-MCP-NO-ROOT-EXPORT-GUARD.md`
 - **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
@@ -100,7 +101,8 @@ ayrı ayrı görünür kılmak.
 - **GP-5.1a issue:** [#429](https://github.com/Halildeu/ao-kernel/issues/429) (`closed after GP-5.1a PR`)
 - **GP-5.3a issue:** [#431](https://github.com/Halildeu/ao-kernel/issues/431) (`closed after GP-5.3a PR`)
 - **GP-5.3b issue:** [#433](https://github.com/Halildeu/ao-kernel/issues/433) (`closed after GP-5.3b PR`)
-- **GP-5.3c issue:** [#435](https://github.com/Halildeu/ao-kernel/issues/435) (`closes with GP-5.3c PR`)
+- **GP-5.3c issue:** [#435](https://github.com/Halildeu/ao-kernel/issues/435) (`closed after GP-5.3c PR`)
+- **GP-5.3d issue:** [#437](https://github.com/Halildeu/ao-kernel/issues/437) (`closes with GP-5.3d PR`)
 - **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
@@ -165,7 +167,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4.3` protected environment / secret contract | Completed by GP-4.3 PR ([#407](https://github.com/Halildeu/ao-kernel/issues/407), record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`) | protected GitHub environment, secret handle ve fork-safety contract'ini schema-backed hale getirmek | no secret values, no environment creation, no live adapter execution, no support widening |
 | `GP-4.4` protected live rehearsal blocked decision | Completed by GP-4.4 PR ([#410](https://github.com/Halildeu/ao-kernel/issues/410), record `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`) | protected live rehearsal prerequisite eksikse fake live success üretmeden blocked decision kaydetmek | schema validation + blocked rehearsal decision artifact + no live adapter execution + no support widening |
 | `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
-| `GP-5` general-purpose platform integration | Active setup / `GP-5.3c` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a` pins retrieval evidence; `GP-5.3b` pins explicit handoff; `GP-5.3c` defines future opt-in contract; no support widening until GP-5.9 closeout |
+| `GP-5` general-purpose platform integration | Active setup / `GP-5.3d` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a` pins retrieval evidence; `GP-5.3b` pins explicit handoff; `GP-5.3c` defines future opt-in contract; `GP-5.3d` pins no-MCP/no-root-export guard; no support widening until GP-5.9 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -216,9 +218,10 @@ vermek değil; repo-intelligence context, protected real-adapter evidence,
 governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops
 support widening kapılarını sırayla kapatmaktır. `GP-5.0` roadmap/authority
 freeze, `GP-5.0a` Claude/MCP consultation absorb, `GP-5.1a` protected gate
-prerequisite audit, `GP-5.3a` retrieval evidence contract ve `GP-5.3b` agent
-context handoff contract tamamlandı. Aktif slice `GP-5.3c` workflow opt-in
-design contract closeout adayıdır. Bu slice support boundary'yi genişletmez.
+prerequisite audit, `GP-5.3a` retrieval evidence contract, `GP-5.3b` agent
+context handoff contract ve `GP-5.3c` workflow opt-in design contract
+tamamlandı. Aktif slice `GP-5.3d` no-MCP/no-root-export guard closeout
+adayıdır. Bu slice support boundary'yi genişletmez.
 
 `GP-5.0a` ile yazılı hale getirilen ek kapılar:
 
@@ -244,9 +247,10 @@ design contract closeout adayıdır. Bu slice support boundary'yi genişletmez.
 1. `GP-5.1a` protected gate prerequisite audit — completed on `main`
 2. `GP-5.3a` repo-intelligence retrieval evidence contract — completed on `main`
 3. `GP-5.3b` agent context handoff contract — completed on `main`
-4. `GP-5.3c` workflow opt-in design — current closeout candidate
-5. `GP-5.3d` no-MCP/no-root-export guard — next unblocked slice after `GP-5.3c`
-6. `GP-5.1b` protected workflow binding patch — blocked until attestation
+4. `GP-5.3c` workflow opt-in design — completed on `main`
+5. `GP-5.3d` no-MCP/no-root-export guard — current closeout candidate
+6. `GP-5.3e` repo-intelligence workflow building-block promotion decision — next unblocked slice
+7. `GP-5.1b` protected workflow binding patch — blocked until attestation
 
 `GP-5.3a` ve `GP-5.3b`, `GP-5.1a` ile paralel yürüyebilir; çünkü read-only
 retrieval evidence ve manual/stdout handoff protected real-adapter credential'a
@@ -312,6 +316,17 @@ repo-intelligence contract slice'larını engellemez.
 5. Mevcut `compile_context()` arbitrary `repo_query_context` session input'unu
    ingest etmez.
 6. Runtime schema/executor/`context_compiler` wiring yoktur; support boundary
+   genişlemez.
+
+`GP-5.3d` closeout adayı:
+
+1. Karar: `keep_beta_read_only_negative_boundary_pinned`.
+2. MCP tool registry/dispatch yüzeyi repo-intelligence tool'u expose etmez.
+3. `repo` CLI subcommand listesi `scan`, `index`, `query` dışına çıkmaz.
+4. CLI help yüzeyi MCP/root-export flag'i advertise etmez.
+5. `repo query` root authority file, MCP config export veya
+   `.ao/context/repo_export_plan.json` yazmaz.
+6. `RI-5a` export-plan preview bu slice için `not_used`; support boundary
    genişlemez.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate

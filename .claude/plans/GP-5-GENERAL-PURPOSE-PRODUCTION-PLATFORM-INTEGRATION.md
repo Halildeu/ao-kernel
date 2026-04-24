@@ -1,15 +1,15 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.3c` workflow opt-in design closeout
+**Status:** Active program setup / `GP-5.3d` no-MCP/no-root-export guard closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `5eedaa0` for the `GP-5.3c` workflow opt-in design contract
+**Authority:** `origin/main` at `54de6e9` for the `GP-5.3d` no-MCP/no-root-export guard
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.3c` - workflow opt-in design contract
-**Branch:** `codex/gp5-3c-workflow-opt-in`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3c`
+**Current slice:** `GP-5.3d` - no-MCP/no-root-export guard
+**Branch:** `codex/gp5-3d-no-mcp-root-export`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3d`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
-`GP-5.3b` completed
+`GP-5.3b` completed, `GP-5.3c` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -313,6 +313,18 @@ tool, no root export, and no automatic `context_compiler` feed.
 The detailed decision record is
 `.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`.
 
+**GP-5.3d closeout candidate:**
+
+`GP-5.3d` keeps repo-intelligence integration in beta read-only mode, but adds
+regression guards for the negative boundary that matters before any workflow
+promotion decision. The MCP tool surface remains free of repo-intelligence
+tools, the `repo` CLI surface remains limited to `scan`, `index`, and `query`,
+and `repo query` is pinned not to create root authority files, MCP config
+exports, or `.ao/context/repo_export_plan.json`.
+
+The detailed decision record is
+`.claude/plans/GP-5.3d-NO-MCP-NO-ROOT-EXPORT-GUARD.md`.
+
 **DoD:**
 
 1. Retrieval output is evidence-backed, bounded, and stale-safe.
@@ -515,13 +527,15 @@ promotion.
 | 3 | `GP-5.1a` | Protected gate prerequisite audit | Completed on `main`; required environment/secret handle not attested; no secret value in repo. |
 | 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Completed on `main`; beta read-only evidence contract strengthened; no support widening. |
 | 5 | `GP-5.3b` | Agent context handoff contract | Completed on `main`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
-| 6 | `GP-5.3c` | Workflow opt-in design contract | Closeout candidate: schema-backed future opt-in; runtime remains unwired. |
-| 7 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
-| 8 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
-| 9 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
-| 10 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
-| 11 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
-| 12 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
+| 6 | `GP-5.3c` | Workflow opt-in design contract | Completed on `main`; schema-backed future opt-in; runtime remains unwired. |
+| 7 | `GP-5.3d` | No-MCP/no-root-export guard | Closeout candidate: negative boundary pinned; no support widening. |
+| 8 | `GP-5.3e` | Repo-intelligence workflow building-block promotion decision | Next unblocked decision slice after `GP-5.3d`. |
+| 9 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
+| 10 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
+| 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
+| 12 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
+| 13 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
+| 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
 
