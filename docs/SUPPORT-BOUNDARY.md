@@ -203,6 +203,16 @@ supplied through `--intent-file`. This is still beta rehearsal evidence only:
 `support_widening=false`, no live real adapter, no MCP/root export, no
 `context_compiler` auto-feed, and no write-side support.
 
+`GP-5.5a` adds only the controlled patch/test design contract,
+`gp5-controlled-patch-test-contract.schema.v1.json`. The contract requires a
+disposable or dedicated worktree, path-scoped ownership, diff preview, explicit
+apply decision, explainable targeted tests with full-gate fallback, rollback
+verification, cleanup evidence, and an incident/runbook reference. It records
+`support_widening=false`, `runtime_patch_application_enabled=false`,
+`remote_side_effects_allowed=false`, and `active_main_worktree_allowed=false`.
+This is not runtime write support widening and does not promote live remote PR
+creation or real-adapter live-write support.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

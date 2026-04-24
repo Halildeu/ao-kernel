@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:gp5-controlled-patch-test-contract:v1",
+  "title": "GP-5 controlled patch/test contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "decision",
+    "lane_status",
+    "support_widening",
+    "runtime_patch_application_enabled",
+    "remote_side_effects_allowed",
+    "active_main_worktree_allowed",
+    "target_worktree",
+    "write_ownership",
+    "diff_preview",
+    "apply_boundary",
+    "test_plan",
+    "rollback_plan",
+    "evidence_requirements",
+    "excluded_surfaces",
+    "promotion_decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_controlled_patch_test_contract" },
+    "program_id": { "const": "GP-5.5a" },
+    "decision": { "const": "design_contract_ready_no_runtime_write_support" },
+    "lane_status": { "const": "contract_design_only" },
+    "support_widening": { "const": false },
+    "runtime_patch_application_enabled": { "const": false },
+    "remote_side_effects_allowed": { "const": false },
+    "active_main_worktree_allowed": { "const": false },
+    "target_worktree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "separate_from_operator_main",
+        "cleanup_required",
+        "dirty_state_preflight_required"
+      ],
+      "properties": {
+        "kind": { "enum": ["disposable_worktree", "dedicated_worktree"] },
+        "separate_from_operator_main": { "const": true },
+        "cleanup_required": { "const": true },
+        "dirty_state_preflight_required": { "const": true }
+      }
+    },
+    "write_ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_scoped_claims_required",
+        "owner_record_required",
+        "takeover_or_handoff_record_required"
+      ],
+      "properties": {
+        "path_scoped_claims_required": { "const": true },
+        "owner_record_required": { "const": true },
+        "takeover_or_handoff_record_required": { "const": true }
+      }
+    },
+    "diff_preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preview_required",
+        "preview_artifact_required",
+        "files_changed_required"
+      ],
+      "properties": {
+        "preview_required": { "const": true },
+        "preview_artifact_required": { "const": true },
+        "files_changed_required": { "const": true }
+      }
+    },
+    "apply_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "explicit_operator_approval_required",
+        "write_without_preview_allowed",
+        "future_runtime_rehearsal_required"
+      ],
+      "properties": {
+        "explicit_operator_approval_required": { "const": true },
+        "write_without_preview_allowed": { "const": false },
+        "future_runtime_rehearsal_required": { "const": true }
+      }
+    },
+    "test_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targeted_tests_required",
+        "explainable_selection_required",
+        "fallback_full_gate_required",
+        "commands"
+      ],
+      "properties": {
+        "targeted_tests_required": { "const": true },
+        "explainable_selection_required": { "const": true },
+        "fallback_full_gate_required": { "const": true },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "rollback_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reverse_diff_required",
+        "rollback_verification_required",
+        "cleanup_evidence_required",
+        "idempotency_check_required"
+      ],
+      "properties": {
+        "reverse_diff_required": { "const": true },
+        "rollback_verification_required": { "const": true },
+        "cleanup_evidence_required": { "const": true },
+        "idempotency_check_required": { "const": true }
+      }
+    },
+    "evidence_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changed_paths",
+        "diff_preview_artifact",
+        "apply_decision_record",
+        "tests_run",
+        "rollback_evidence",
+        "cleanup_evidence",
+        "incident_runbook_reference"
+      ],
+      "properties": {
+        "changed_paths": { "const": true },
+        "diff_preview_artifact": { "const": true },
+        "apply_decision_record": { "const": true },
+        "tests_run": { "const": true },
+        "rollback_evidence": { "const": true },
+        "cleanup_evidence": { "const": true },
+        "incident_runbook_reference": { "const": true }
+      }
+    },
+    "excluded_surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_remote_pr",
+        "real_adapter_live_write",
+        "production_support_claim"
+      ],
+      "properties": {
+        "live_remote_pr": { "const": false },
+        "real_adapter_live_write": { "const": false },
+        "production_support_claim": { "const": false }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "next_gate",
+        "reason"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "next_gate": { "const": "GP-5.5b" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

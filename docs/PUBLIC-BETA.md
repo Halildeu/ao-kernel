@@ -98,6 +98,7 @@ Stable rules:
 |---|---|---|
 | Extension loader + manifest validation | Shipped infra | Loader/validator kodu ve truth-tier audit gerçektir; bu, her bundled manifestin end-to-end production-ready olduğu anlamına gelmez |
 | Bundled `defaults/registry`, `defaults/extensions`, `defaults/operations`, `defaults/adapters` içeriği | Contract inventory | Ağaçta görünmesi destek vaadi değildir; ancak ilgili doküman/test/Public Beta matrisi o yüzeyi ayrıca işaretliyorsa destekli sayılır |
+| GP-5 controlled patch/test lane | Contract / design-only | `gp5-controlled-patch-test-contract.schema.v1.json` future controlled local patch/test rehearsal için disposable/dedicated worktree, path-scoped ownership, diff preview, explicit apply decision, targeted tests, rollback, cleanup ve runbook evidence gerektirir. Bu satır runtime patch support, live remote PR, real-adapter live-write veya production support widening değildir |
 | `examples/hello-llm/` | Example-only | SDK kullanım örneğidir; Public Beta destek vaadinin parçası değildir |
 
 ### Truth-tier yorum kuralı

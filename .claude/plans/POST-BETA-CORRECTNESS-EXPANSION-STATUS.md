@@ -40,7 +40,8 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.3c workflow opt-in design contract:** `.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`
 - **Son tamamlanan GP-5.3d no-MCP/no-root-export guard:** `.claude/plans/GP-5.3d-NO-MCP-NO-ROOT-EXPORT-GUARD.md`
 - **Son tamamlanan GP-5.3e workflow building-block decision:** `.claude/plans/GP-5.3e-REPO-INTELLIGENCE-WORKFLOW-BUILDING-BLOCK-DECISION.md`
-- **Aktif GP-5.4a governed read-only workflow rehearsal:** `.claude/plans/GP-5.4a-GOVERNED-READ-ONLY-WORKFLOW-REHEARSAL.md`
+- **Son tamamlanan GP-5.4a governed read-only workflow rehearsal:** `.claude/plans/GP-5.4a-GOVERNED-READ-ONLY-WORKFLOW-REHEARSAL.md`
+- **Aktif GP-5.5a controlled patch/test design:** `.claude/plans/GP-5.5a-CONTROLLED-PATCH-TEST-DESIGN.md`
 - **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
@@ -106,7 +107,8 @@ ayrı ayrı görünür kılmak.
 - **GP-5.3c issue:** [#435](https://github.com/Halildeu/ao-kernel/issues/435) (`closed after GP-5.3c PR`)
 - **GP-5.3d issue:** [#437](https://github.com/Halildeu/ao-kernel/issues/437) (`closed after GP-5.3d PR`)
 - **GP-5.3e issue:** [#439](https://github.com/Halildeu/ao-kernel/issues/439) (`closed after GP-5.3e PR`)
-- **GP-5.4a issue:** [#441](https://github.com/Halildeu/ao-kernel/issues/441) (`active closeout candidate`)
+- **GP-5.4a issue:** [#441](https://github.com/Halildeu/ao-kernel/issues/441) (`closed after GP-5.4a PR`)
+- **GP-5.5a issue:** [#443](https://github.com/Halildeu/ao-kernel/issues/443) (`active closeout candidate`)
 - **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
@@ -364,6 +366,21 @@ repo-intelligence contract slice'larını engellemez.
    repo retrieval semantic correctness iddiası vermez.
 6. Sıradaki unblocked slice `GP-5.5a` controlled patch/test design'dır;
    `GP-5.1b` protected gate attestation gelene kadar bloklu kalır.
+
+`GP-5.5a` closeout adayı:
+
+1. Karar: `design_contract_ready_no_runtime_write_support`.
+2. `gp5-controlled-patch-test-contract.schema.v1.json` future controlled
+   local patch/test rehearsal için zorunlu evidence alanlarını pinler:
+   disposable/dedicated worktree, path ownership, diff preview, explicit apply
+   decision, targeted tests + full-gate fallback, rollback, cleanup ve runbook.
+3. `runtime_patch_application_enabled=false`,
+   `remote_side_effects_allowed=false`, `active_main_worktree_allowed=false`
+   ve `support_widening=false` zorunludur.
+4. Existing lower-level `patch_preview` / `patch_apply` / `patch_rollback`
+   runtime varlığı bu slice'ta GP-5 support widening üretmez.
+5. Sıradaki unblocked slice `GP-5.5b` controlled local patch/test rehearsal'dır;
+   `GP-5.6a` remote PR rehearsal GP-5.5 rollback evidence olmadan başlamaz.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.
