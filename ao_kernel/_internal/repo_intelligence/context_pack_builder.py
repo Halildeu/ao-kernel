@@ -11,6 +11,7 @@ MAX_ENTRYPOINTS = 80
 MAX_MODULES = 120
 MAX_IMPORT_EDGES = 200
 MAX_SYMBOLS = 200
+MAX_CHUNKS = 160
 MAX_DIAGNOSTICS = 120
 
 
@@ -19,6 +20,7 @@ def build_agent_context_pack(
     repo_map: Mapping[str, Any],
     import_graph: Mapping[str, Any],
     symbol_index: Mapping[str, Any],
+    repo_chunks: Mapping[str, Any] | None = None,
 ) -> str:
     """Render a deterministic Markdown context pack from local artifacts."""
     lines: list[str] = [
@@ -27,18 +29,20 @@ def build_agent_context_pack(
         "## Generation Boundary",
         "",
         "- Source: local ao-kernel repo-intelligence artifacts.",
-        "- Scope: deterministic repository map, Python import graph, and top-level symbol index.",
-        "- Excluded: LLM summary, vector indexing, MCP tools, root exports, and target-specific exports.",
+        "- Scope: deterministic repository map, Python import graph, top-level symbol index, and chunk manifest.",
+        "- Excluded: LLM summary, embedding calls, vector writes, MCP tools, root exports, and target-specific exports.",
         "",
     ]
     _append_project(lines, repo_map)
-    _append_summary(lines, repo_map, import_graph, symbol_index)
+    _append_summary(lines, repo_map, import_graph, symbol_index, repo_chunks)
     _append_languages(lines, repo_map)
     _append_entrypoints(lines, repo_map)
     _append_modules(lines, import_graph)
     _append_import_edges(lines, import_graph)
     _append_symbols(lines, symbol_index)
-    _append_diagnostics(lines, repo_map, import_graph)
+    if repo_chunks is not None:
+        _append_chunks(lines, repo_chunks)
+    _append_diagnostics(lines, repo_map, import_graph, repo_chunks)
     _append_files(lines, repo_map)
     _append_limits(lines)
     return "\n".join(lines).rstrip() + "\n"
@@ -61,10 +65,12 @@ def _append_summary(
     repo_map: Mapping[str, Any],
     import_graph: Mapping[str, Any],
     symbol_index: Mapping[str, Any],
+    repo_chunks: Mapping[str, Any] | None,
 ) -> None:
     repo_summary = _mapping(repo_map.get("summary"))
     graph_summary = _mapping(import_graph.get("summary"))
     symbol_summary = _mapping(symbol_index.get("summary"))
+    chunk_summary = _mapping(repo_chunks.get("summary")) if repo_chunks is not None else {}
     rows = [
         ("Included files", _int(repo_summary.get("included_files"))),
         ("Included directories", _int(repo_summary.get("included_directories"))),
@@ -75,7 +81,10 @@ def _append_summary(
         ("Python entrypoints", _int(repo_summary.get("python_entrypoints"))),
         ("Import edges", _int(graph_summary.get("import_edges"))),
         ("Symbols", _int(symbol_summary.get("symbols"))),
+        ("Chunks", _int(chunk_summary.get("chunks"))),
+        ("Chunked source files", _int(chunk_summary.get("source_files"))),
         ("AST diagnostics", _int(graph_summary.get("diagnostics"))),
+        ("Chunk diagnostics", _int(chunk_summary.get("diagnostics"))),
     ]
     lines.extend(["## Repository Summary", "", "| Metric | Count |", "|---|---:|"])
     lines.extend(f"| {_md(metric)} | {count} |" for metric, count in rows)
@@ -162,7 +171,31 @@ def _append_symbols(lines: list[str], symbol_index: Mapping[str, Any]) -> None:
     )
 
 
-def _append_diagnostics(lines: list[str], repo_map: Mapping[str, Any], import_graph: Mapping[str, Any]) -> None:
+def _append_chunks(lines: list[str], repo_chunks: Mapping[str, Any]) -> None:
+    chunks = _sorted_records(_list(repo_chunks.get("chunks")), ("source_path", "start_line", "end_line", "chunk_id"))
+    lines.extend(["## Repo Chunks", ""])
+    _append_limited_table(
+        lines,
+        records=chunks,
+        columns=[
+            ("Path", "source_path"),
+            ("Kind", "kind"),
+            ("Module", "module"),
+            ("Symbol", "symbol"),
+            ("Start", "start_line"),
+            ("End", "end_line"),
+            ("Tokens", "token_estimate"),
+        ],
+        limit=MAX_CHUNKS,
+    )
+
+
+def _append_diagnostics(
+    lines: list[str],
+    repo_map: Mapping[str, Any],
+    import_graph: Mapping[str, Any],
+    repo_chunks: Mapping[str, Any] | None,
+) -> None:
     diagnostic_records: list[Mapping[str, Any]] = [
         {"source": "repo_map", **item}
         for item in _list(repo_map.get("diagnostics"))
@@ -173,6 +206,12 @@ def _append_diagnostics(lines: list[str], repo_map: Mapping[str, Any], import_gr
         for item in _list(import_graph.get("diagnostics"))
         if isinstance(item, Mapping)
     )
+    if repo_chunks is not None:
+        diagnostic_records.extend(
+            {"source": "repo_chunks", **item}
+            for item in _list(repo_chunks.get("diagnostics"))
+            if isinstance(item, Mapping)
+        )
     diagnostics = _sorted_records(diagnostic_records, ("path", "code", "source", "lineno", "offset"))
     lines.extend(["## Diagnostics", ""])
     _append_limited_table(
@@ -215,6 +254,7 @@ def _append_limits(lines: list[str]) -> None:
             f"| Python Modules | {MAX_MODULES} |",
             f"| Import Edges | {MAX_IMPORT_EDGES} |",
             f"| Top-Level Symbols | {MAX_SYMBOLS} |",
+            f"| Repo Chunks | {MAX_CHUNKS} |",
             f"| Diagnostics | {MAX_DIAGNOSTICS} |",
             f"| Source Files | {MAX_FILES} |",
             "",

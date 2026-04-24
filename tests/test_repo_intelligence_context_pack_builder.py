@@ -5,6 +5,7 @@ from typing import Any
 
 from ao_kernel._internal.repo_intelligence.context_pack_builder import build_agent_context_pack
 from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_python_ast_indexes
+from ao_kernel._internal.repo_intelligence.repo_chunker import build_repo_chunks
 from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 
 
@@ -37,21 +38,33 @@ def _make_context_pack_repo(tmp_path: Path) -> Path:
     return project
 
 
-def _stable_artifacts(project: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _stable_artifacts(project: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     repo_map = scan_repo(project)
     import_graph, symbol_index = build_python_ast_indexes(project, repo_map)
-    return repo_map, import_graph, symbol_index
+    repo_chunks = build_repo_chunks(project, repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    return repo_map, import_graph, symbol_index, repo_chunks
 
 
 def test_build_agent_context_pack_is_deterministic_and_omits_timestamps(tmp_path: Path) -> None:
     project = _make_context_pack_repo(tmp_path)
-    repo_map, import_graph, symbol_index = _stable_artifacts(project)
+    repo_map, import_graph, symbol_index, repo_chunks = _stable_artifacts(project)
 
-    first = build_agent_context_pack(repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    first = build_agent_context_pack(
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
+    )
     repo_map["generator"]["generated_at"] = "2099-01-01T00:00:00Z"
     import_graph["generator"]["generated_at"] = "2099-01-01T00:00:01Z"
     symbol_index["generator"]["generated_at"] = "2099-01-01T00:00:02Z"
-    second = build_agent_context_pack(repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    repo_chunks["generator"]["generated_at"] = "2099-01-01T00:00:03Z"
+    second = build_agent_context_pack(
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
+    )
 
     assert first == second
     assert "generated_at" not in first
@@ -60,9 +73,14 @@ def test_build_agent_context_pack_is_deterministic_and_omits_timestamps(tmp_path
 
 def test_build_agent_context_pack_renders_core_sections(tmp_path: Path) -> None:
     project = _make_context_pack_repo(tmp_path)
-    repo_map, import_graph, symbol_index = _stable_artifacts(project)
+    repo_map, import_graph, symbol_index, repo_chunks = _stable_artifacts(project)
 
-    pack = build_agent_context_pack(repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    pack = build_agent_context_pack(
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
+    )
 
     assert "# Agent Context Pack" in pack
     assert "## Generation Boundary" in pack
@@ -73,6 +91,8 @@ def test_build_agent_context_pack_renders_core_sections(tmp_path: Path) -> None:
     assert "| pkg.main | pkg/main.py | module |" in pack
     assert "| pkg.main | pkg.worker.Worker | from_import |" in pack
     assert "| pkg.main.App | class | pkg/main.py |" in pack
+    assert "## Repo Chunks" in pack
+    assert "| pkg/main.py | symbol | pkg.main | App |" in pack
     assert "| README.md | markdown |" in pack
     assert "No LLM summary" not in pack
     assert "LLM summary" in pack

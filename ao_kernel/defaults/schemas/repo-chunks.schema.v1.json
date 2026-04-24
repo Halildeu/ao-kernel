@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-chunks:v1",
+  "title": "Repo Intelligence Chunks",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generator",
+    "project",
+    "chunker",
+    "source_artifacts",
+    "summary",
+    "chunks",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "repo_chunks"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "chunker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "strategy",
+        "max_chunk_bytes",
+        "target_chunk_bytes",
+        "overlap_lines",
+        "max_file_bytes",
+        "max_chunks_per_file"
+      ],
+      "properties": {
+        "name": {
+          "const": "ao-kernel-repo-chunker"
+        },
+        "version": {
+          "const": "repo-chunker.v1"
+        },
+        "strategy": {
+          "const": "python_symbol_then_line_window"
+        },
+        "max_chunk_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_chunk_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "overlap_lines": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_file_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_chunks_per_file": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "source_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo_map_sha256",
+        "import_graph_sha256",
+        "symbol_index_sha256"
+      ],
+      "properties": {
+        "repo_map_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "import_graph_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "symbol_index_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chunks", "source_files", "skipped_files", "diagnostics"],
+      "properties": {
+        "chunks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostics": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "chunks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/chunk_record"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "root_name", "name", "root_identity_sha256"],
+      "properties": {
+        "root": {
+          "const": "."
+        },
+        "root_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root_identity_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "chunk_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chunk_id",
+        "source_path",
+        "language",
+        "kind",
+        "start_line",
+        "end_line",
+        "byte_start",
+        "byte_end",
+        "content_sha256",
+        "token_estimate"
+      ],
+      "properties": {
+        "chunk_id": {
+          "type": "string",
+          "pattern": "^repo-chunk-v1:[0-9a-f]{64}$"
+        },
+        "source_path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": ["symbol", "module", "file_slice"]
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "byte_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byte_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "token_estimate": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "code", "message"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "pattern": "^/"
+          }
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        },
+        "lineno": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

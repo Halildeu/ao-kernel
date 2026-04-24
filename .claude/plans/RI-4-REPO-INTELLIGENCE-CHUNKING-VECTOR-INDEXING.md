@@ -458,3 +458,4 @@ Questions to answer before implementation:
 | Date | Status | Notes |
 |---|---|---|
 | 2026-04-24 | Design gate | Added RI-4 chunking/vector indexing plan before implementation. |
+| 2026-04-24 | RI-4a implementation | Added deterministic `repo_chunks.json` chunk manifest generation only; no embedding calls, vector writes, network, `repo index`, or root exports. |
