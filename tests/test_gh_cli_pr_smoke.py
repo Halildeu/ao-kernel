@@ -350,6 +350,68 @@ def test_clean_pass_reports_repo_and_dry_run_success() -> None:
     assert dry_run_check.status == "pass"
 
 
+def test_repo_override_uses_positional_repo_view_arg() -> None:
+    repo_view_called = False
+
+    def runner(
+        argv: tuple[str, ...] | list[str],
+        cwd: Path | None,
+        timeout: float | None,
+    ) -> CommandResult:
+        nonlocal repo_view_called
+        cmd = tuple(argv)
+        if cmd == ("/fake/gh", "--version"):
+            return _result(cmd, stdout="gh version 2.83.2 (2025-12-10)\n")
+        if cmd == ("/fake/gh", "auth", "status", "--json", "hosts"):
+            return _result(
+                cmd,
+                stdout=(
+                    '{"hosts":{"github.com":[{"state":"success","active":true,'
+                    '"host":"github.com","login":"Halildeu",'
+                    '"tokenSource":"keyring","scopes":"repo",'
+                    '"gitProtocol":"https"}]}}'
+                ),
+            )
+        if cmd == (
+            "/fake/gh",
+            "repo",
+            "view",
+            "Halildeu/ao-kernel-sandbox",
+            "--json",
+            "nameWithOwner,defaultBranchRef,isPrivate,url",
+        ):
+            repo_view_called = True
+            return _result(
+                cmd,
+                stdout=(
+                    '{"nameWithOwner":"Halildeu/ao-kernel-sandbox",'
+                    '"defaultBranchRef":{"name":"main"},'
+                    '"isPrivate":true,'
+                    '"url":"https://github.com/Halildeu/ao-kernel-sandbox"}'
+                ),
+            )
+        if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
+            return _result(
+                cmd,
+                stdout=(
+                    "Would have created a Pull Request with:\n"
+                    "Title: ao-kernel gh-cli-pr smoke probe\n"
+                ),
+            )
+        raise AssertionError(f"unexpected argv: {cmd!r}")
+
+    report = run_gh_cli_pr_smoke(
+        which=lambda command: "/fake/gh",
+        runner=runner,
+        cwd=Path("/tmp"),
+        repo="Halildeu/ao-kernel-sandbox",
+    )
+
+    assert report.overall_status == "pass"
+    assert report.repo_name == "Halildeu/ao-kernel-sandbox"
+    assert repo_view_called is True
+
+
 def test_live_write_requires_explicit_opt_in() -> None:
     create_called = False
 

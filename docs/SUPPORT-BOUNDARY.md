@@ -74,8 +74,8 @@ These are real, testable surfaces, but they are not the default shipped demo:
 
 - `python3 scripts/claude_code_cli_smoke.py --output text`
 - `python3 scripts/gh_cli_pr_smoke.py --output text`
-- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch>`
-- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head <branch> --base <branch> --output json --report-path <artifact.json>`
+- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch>`
+- `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch> --output json --report-path <artifact.json>`
 - `python3 scripts/kernel_api_write_smoke.py --output text`
 - `PRJ-KERNEL-API` write-side actions (`project_status`, `roadmap_follow`, `roadmap_finish`) with explicit `workspace_root`, default `dry_run=true`, and `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` for real writes
 - real-adapter benchmark full-mode runbooks
@@ -101,10 +101,13 @@ Operator prerequisite contract (PB-9.1):
 baseline'a veya production-certified read-only tier'ına yükselmez.
 
 `gh-cli-pr` live-write probe, `PB-8.1` ile explicit precondition (opt-in,
-disposable repo, explicit `--head` + `--base`) ve create -> verify -> rollback
-zincirine taşınmıştır. `--keep-live-write-pr-open` seçeneği lane'i riskli kabul
-eder ve rapor `blocked` döner. Bu probe'un varlığı tek başına live remote PR
-opening support tier'ını widen etmez; public boundary satırı deferred kalır.
+disposable repo, explicit `--repo` + `--head` + `--base`) ve create -> verify
+-> rollback zincirine taşınmıştır. `GP-2.5a` disposable sandbox rehearsal
+geçmiştir; created PR verify edildikten sonra rollback ile kapatılmış ve head
+branch cleanup doğrulanmıştır. `--keep-live-write-pr-open` seçeneği lane'i
+riskli kabul eder ve rapor `blocked` döner. Bu probe'un varlığı tek başına live
+remote PR opening support tier'ını widen etmez; public boundary satırı deferred
+kalır.
 
 `PB-9.4` closeout kararı `stay_beta_operator_managed` olduğu için bu satırların
 support tier'i widening almadan korunur.

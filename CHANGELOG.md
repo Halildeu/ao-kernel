@@ -7,7 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-No unreleased changes.
+### Fixed
+
+- `gh-cli-pr` smoke helper now passes repo overrides to `gh repo view` as the
+  positional repository argument supported by current GitHub CLI versions. The
+  regression is pinned by `tests/test_gh_cli_pr_smoke.py`.
+
+### Changed
+
+- Recorded the `GP-2.5a` disposable sandbox live-write rehearsal evidence:
+  `gh-cli-pr` created, verified, closed, and cleaned up a draft PR in
+  `Halildeu/ao-kernel-sandbox`. This does not widen the stable support
+  boundary; full remote PR opening remains outside the shipped baseline.
 
 ## [4.0.0] - 2026-04-24
 

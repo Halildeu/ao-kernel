@@ -344,7 +344,7 @@ def run_gh_cli_pr_smoke(
 
     repo_view_argv = [binary_path, "repo", "view"]
     if repo:
-        repo_view_argv.extend(("--repo", repo))
+        repo_view_argv.append(repo)
     repo_view_argv.extend(
         ("--json", "nameWithOwner,defaultBranchRef,isPrivate,url")
     )

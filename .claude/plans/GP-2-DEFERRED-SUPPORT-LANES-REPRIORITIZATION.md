@@ -119,9 +119,10 @@ giriş kapılarını netleştirmektir.
   - Live-write yok
   - Stable support boundary unchanged kalır
 
-### `GP-2.5` — `gh-cli-pr` live-write rollback rehearsal (Active)
+### `GP-2.5` — `gh-cli-pr` live-write rollback rehearsal (Completed)
 
 - Issue: [#373](https://github.com/Halildeu/ao-kernel/issues/373)
+- Live rehearsal issue: [#375](https://github.com/Halildeu/ao-kernel/issues/375)
 - Contract:
   `.claude/plans/GP-2.5-GH-CLI-PR-LIVE-WRITE-ROLLBACK-REHEARSAL.md`
 - Hedef: `GP-2.3` kararındaki next lane'i açmadan önce remote side-effect,
@@ -132,12 +133,22 @@ giriş kapılarını netleştirmektir.
     -> `overall_status=pass`
   - `python3 scripts/gh_cli_pr_smoke.py --mode live-write --allow-live-write --head main --base main --output json --timeout-seconds 20`
     -> `overall_status=blocked`, finding `gh_pr_live_write_same_head_base`
-- Next default:
-  - `GP-2.5a` disposable sandbox live-write rehearsal, ayrı onay/issue ile
+- Live-write kanıt:
+  - target repo: `Halildeu/ao-kernel-sandbox`
+  - head branch: `smoke/gp25-livewrite-20260424T024918Z`
+  - created PR: `https://github.com/Halildeu/ao-kernel-sandbox/pull/1`
+  - final state: `CLOSED`
+  - remote head cleanup: verified deleted (`404 Not Found`)
+  - report: `/tmp/ao-kernel-gp25a-gh-cli-pr-live-write/gh-cli-pr-live-write.report.json`
+- Helper fix:
+  - `gh repo view` repo override artık current GitHub CLI ile uyumlu positional
+    repo arg kullanır; regression `tests/test_gh_cli_pr_smoke.py` içinde pinlidir.
+- Verdict:
+  - `rehearsal_pass_keep_beta`
 - Sınır:
-  - Bu contract PR'ı runtime değişikliği yapmaz.
-  - `gh-cli-pr` tam E2E remote PR açılışı hâlâ deferred support yüzeyidir.
-  - Gerçek remote PR create bu contract PR'ında çalıştırılmaz.
+  - `gh-cli-pr` live-write readiness probe Beta/operator-managed kalır.
+  - `gh-cli-pr` tam E2E remote PR açılışı hâlâ stable shipped support değildir.
+  - Support widening ancak ayrı promotion decision PR'ı ile açılır.
 
 ## Gate Modeli
 
