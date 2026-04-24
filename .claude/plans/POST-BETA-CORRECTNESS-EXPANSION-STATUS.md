@@ -129,14 +129,16 @@ ayrı ayrı görünür kılmak.
 - **RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (`closed by PR #465`)
 - **RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (`closed by PR #467`)
 - **RI-5b post-closeout next-slice cleanup issue:** [#468](https://github.com/Halildeu/ao-kernel/issues/468) (`closes with this status cleanup PR`)
-- **GPP-0 production promotion tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470) (`open`)
+- **GPP-0 production promotion tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470) (`closed by PR #471`)
+- **GPP-1 protected live-adapter prerequisite attestation:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
+- **GPP-1 issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472) (`open`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
-  a production platform claim. GPP-0 creates the trackable promotion program;
-  no support widening, release, runtime adapter promotion, or production claim is
-  made by GPP-0. Future stable widening still requires protected live-adapter
-  evidence, repo-intelligence integration gates, write-side rollback evidence,
-  and an explicit closeout decision.
+  a production platform claim. GPP-1 live attestation currently exits as
+  `blocked_attestation_missing`; no support widening, release, runtime adapter
+  promotion, or production claim is made by GPP-1. Future stable widening still
+  requires protected live-adapter evidence, repo-intelligence integration gates,
+  write-side rollback evidence, and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -232,6 +234,11 @@ maintenance baseline ve `SM-2` stable baseline evidence refresh geçerlidir.
 promotion gap'lerini `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md`
 altında yazılı, sıralı ve kanıt-gated hale getirir. `GPP-0` merge olduktan
 sonraki tek aktif hat `GPP-1` protected live-adapter prerequisite olacaktır.
+
+`GPP-1` closeout adayı canlı attestation sonucu `blocked_attestation_missing`
+kararındadır: `ao-kernel-live-adapter-gate` environment yoktur,
+`AO_CLAUDE_CODE_CLI_AUTH` secret handle attested değildir ve GPP-2 runtime
+binding hattı bu prerequisite kapanmadan başlamaz.
 
 Mevcut yol:
 
