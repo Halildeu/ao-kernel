@@ -364,11 +364,16 @@ dogrulanir.
    - doctor: `8 OK, 1 WARN, 0 FAIL`
    - packaging smoke: wheel install + `demo_review.py --cleanup` completed
    - targeted tests: `3 passed, 1 skipped`
-9. Varsayılan sıra:
-   - `Now`: stable maintenance, bugfix, and evidence hygiene
-   - `Next`: ayrı bir promotion programı açılırsa tek lane support widening
+9. `GP-3` production-certified adapter promotion programı açıldı:
+   `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
+   - first lane: `claude-code-cli` read-only governed workflow
+   - current slice: `GP-3.0` scope freeze
+   - stable support boundary: unchanged
+10. Varsayılan sıra:
+   - `Now`: `GP-3.0` scope freeze, then `GP-3.1` prerequisite truth refresh
+   - `Next`: one-lane promotion evidence gates
    - `Later`: genel amaçlı production platform claim'i
-10. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
+11. Bu roadmap stable runtime release'i tamamlanmış sayar; genel amaçlı
    production platform claim'i için support boundary genişlememiştir. `GP-2`
    closeout ve `GP-2.5a` sandbox rehearsal support widening'i otomatik açmaz;
    ayrı promotion decision gerekir.

@@ -35,6 +35,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added the `SM-4` historical beta pin wording cleanup, clarifying that
   `4.0.0b2` is an intentional historical Public Beta pre-release path while
   stable `4.0.0` remains the default user and rollback path.
+- Opened the `GP-3` production-certified adapter promotion roadmap. The first
+  candidate lane is `claude-code-cli` read-only governed workflow, but this
+  roadmap does not widen support without later evidence gates.
 
 ## [4.0.0] - 2026-04-24
 
