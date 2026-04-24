@@ -165,6 +165,7 @@ aligned with the current support boundary.
 | GP-5.5b controlled patch/test rehearsal fails | `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` and `pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py` | Rehearsal-gate blocker only; do not widen write-side support |
 | GP-5.6a disposable PR write rehearsal fails | Validate `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_disposable_pr_write_rehearsal.py` | Remote side-effect rehearsal blocker only; close/delete any sandbox residue before retry |
 | GP-5.7a full production rehearsal contract fails | Validate `gp5-full-production-rehearsal-contract.schema.v1.json` and run `pytest -q tests/test_gp5_full_production_rehearsal_contract.py` | Contract-gate blocker only; do not claim production platform readiness |
+| GP-5.7b full production rehearsal execution gate fails | Validate `gp5-full-production-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_full_production_rehearsal.py` | Aggregation-gate blocker only; inspect failed subreport before rerunning any live sandbox write |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
 
 ### 3.4 GP-5 controlled patch/test rehearsal skeleton
@@ -298,6 +299,34 @@ Expected contract evidence:
 
 If this contract fails, do not run a best-effort full rehearsal. Fix the
 contract or status boundary first, then open GP-5.7b as the execution slice.
+
+### 3.8 GP-5.7b full production rehearsal execution gate
+
+`GP-5.7b` aggregates pre-existing JSON reports. It does not create live remote
+PRs or rerun the underlying side-effectful rehearsals by itself.
+
+Required matrix command:
+
+```bash
+python3 scripts/gp5_full_production_rehearsal.py \
+  --matrix-file /tmp/gp57b-matrix.json \
+  --output json \
+  --report-path /tmp/gp57b-report.json
+```
+
+Expected pass evidence:
+
+1. `gp5_full_production_rehearsal_report` validates against
+   `gp5-full-production-rehearsal-report.schema.v1.json`;
+2. the GP-5.7a contract report is `contract_ready`;
+3. at least three clean chains pass;
+4. at least one failure chain is blocked fail-closed;
+5. every subreport keeps `support_widening=false`;
+6. the final report keeps `production_platform_claim=false`.
+
+If the gate blocks, inspect `blocked_reason`, `clean_runs[*].findings`, and
+`failure_runs[*].findings`. Do not substitute a production repository or
+unbounded live adapter run to force a pass.
 
 ## 4. Evidence to collect
 

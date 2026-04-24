@@ -245,6 +245,14 @@ three clean rehearsals and one fail-closed rehearsal. The contract records
 execution itself and does not make `ao-kernel` a general-purpose production
 coding automation platform.
 
+`GP-5.7b` adds the full production rehearsal execution gate
+`scripts/gp5_full_production_rehearsal.py` and
+`gp5-full-production-rehearsal-report.schema.v1.json`. It aggregates existing
+GP-5.7a, GP-5.4a, GP-5.5b, and GP-5.6a evidence reports and requires at least
+three clean pass chains plus one fail-closed chain. The gate records
+`support_widening=false` and `production_platform_claim=false`; it does not run
+live remote writes by default and does not widen stable support.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

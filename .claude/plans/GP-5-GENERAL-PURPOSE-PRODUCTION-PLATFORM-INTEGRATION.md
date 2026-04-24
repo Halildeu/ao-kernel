@@ -1,17 +1,17 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.7a` full production rehearsal contract
+**Status:** Active program setup / `GP-5.7b` full production rehearsal execution gate
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `d1097aa` after the `GP-5.6a` disposable PR write rehearsal
+**Authority:** `origin/main` at `0a3c2f9` after the `GP-5.7a` full production rehearsal contract
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.7a` - full production rehearsal contract
-**Branch:** `codex/gp5-7a-full-rehearsal-contract`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-7a`
+**Current slice:** `GP-5.7b` - full production rehearsal execution gate
+**Branch:** `codex/gp5-7b-full-rehearsal-gate`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-7b`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
 `GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed,
-`GP-5.5b` completed, `GP-5.6a` completed
+`GP-5.5b` completed, `GP-5.6a` completed, `GP-5.7a` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -480,7 +480,7 @@ issue/task
 
 **Release impact:** Candidate gate for broader platform beta.
 
-**GP-5.7a active contract slice:**
+**GP-5.7a completed contract slice:**
 
 `GP-5.7a` does not run the full rehearsal. It turns GP-5.7 into a
 schema-backed contract so the first execution slice cannot invent success
@@ -496,6 +496,25 @@ The detailed decision record is
 
 This slice keeps `production_platform_claim=false`. GP-5.7b remains the first
 slice allowed to execute the complete rehearsal matrix.
+
+**GP-5.7b active execution gate:**
+
+`GP-5.7b` adds `scripts/gp5_full_production_rehearsal.py` and
+`gp5-full-production-rehearsal-report.schema.v1.json`. The command consumes a
+matrix of pre-existing GP-5.7a/GP-5.4a/GP-5.5b/GP-5.6a evidence reports and
+aggregates them into a single pass/blocked decision. It does not run live
+remote writes by default and does not widen support.
+
+Pass requires three clean chains and one fail-closed chain:
+
+1. read-only `review_ai_flow + codex-stub` rehearsal;
+2. controlled local patch/test/rollback rehearsal;
+3. disposable PR write/rollback rehearsal;
+4. blocked failure scenario proving the chain does not silently pass unsafe
+   conditions.
+
+The detailed decision record is
+`.claude/plans/GP-5.7b-FULL-PRODUCTION-REHEARSAL-GATE.md`.
 
 ### GP-5.8 - Operations and Support Widening Package
 
@@ -586,7 +605,9 @@ promotion.
 | 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Completed on `main`; wheel-installed `review_ai_flow + codex-stub` with explicit repo-intelligence handoff fixture; no production support widening. |
 | 12 | `GP-5.5a` | Controlled patch/test design | Completed on `main`; schema-backed contract and runbook skeleton; no runtime write support widening. |
 | 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Completed on `main`; disposable worktree preview/apply/test/rollback/idempotency/cleanup evidence; no support widening. |
-| 13 | `GP-5.6a` | Disposable PR write rehearsal | Active closeout candidate: requires GP-5.5b report, sandbox-only PR create/verify/close/branch-delete evidence; no support widening. |
+| 13 | `GP-5.6a` | Disposable PR write rehearsal | Completed on `main`; requires GP-5.5b report, sandbox-only PR create/verify/close/branch-delete evidence; no support widening. |
+| 13.5 | `GP-5.7a` | Full production rehearsal contract | Completed on `main`; schema-backed execution matrix; no support widening. |
+| 13.6 | `GP-5.7b` | Full production rehearsal execution gate | Active; aggregates three clean pass chains plus one fail-closed chain; no live default write and no support widening. |
 | 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
@@ -605,17 +626,16 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5.6a is the active remote side-effect rehearsal gate. It starts only after
-GP-5.5b local rollback evidence exists and must keep live writes constrained to
-a disposable sandbox repository. The script
-`scripts/gp5_disposable_pr_write_rehearsal.py` produces
-`gp5_disposable_pr_write_rehearsal_report` and fails closed unless the operator
-supplies a valid GP-5.5b report, `--allow-live-write`, a `sandbox`-guarded
-repo, and a `smoke/gp56a-*` head branch.
+GP-5.7b is the active aggregation gate. It starts only after GP-5.7a has fixed
+the rehearsal contract and consumes previously generated GP-5.4a, GP-5.5b, and
+GP-5.6a evidence reports. The script
+`scripts/gp5_full_production_rehearsal.py` produces
+`gp5_full_production_rehearsal_report` and fails closed unless the matrix
+contains at least three clean pass chains and one fail-closed chain.
 
-This is still not `gh-cli-pr` production remote PR support. It does not enable
-arbitrary repository PR creation, live remote PR support for user projects, or
-runtime workflow wiring from controlled patch output to PR opening.
+This is still not a general-purpose production platform claim. It does not
+enable arbitrary repository PR creation, real-adapter production support, or
+runtime workflow wiring from repo-intelligence output to write-side action.
 
 Current product wording remains:
 
@@ -623,6 +643,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. current step: close `GP-5.6a` disposable PR write rehearsal; next step after
-   that is `GP-5.7` full production rehearsal planning unless protected
-   environment/credential attestation arrives first for `GP-5.1b`.
+5. current step: close `GP-5.7b` full production rehearsal execution gate; next
+   step after that is GP-5.8 operations/support widening package unless
+   protected environment/credential attestation arrives first for `GP-5.1b`.
