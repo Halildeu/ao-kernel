@@ -16,8 +16,8 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-6-OPERATIONS-READINESS.md` (`ST-6 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md` (`ST-7 active`)
+- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md` (`ST-7 completed`)
+- **Aktif decision/ordering contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 active`)
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -45,8 +45,9 @@ ayrı ayrı görünür kılmak.
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
 - **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
-- **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`active`)
-- **Aktif gate:** `ST-7` stable release candidate
+- **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`closed after closeout`)
+- **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`active`)
+- **Aktif gate:** `ST-8` stable publish and post-publish verification
 
 ## 2. Başlangıç Gerçeği
 
@@ -98,7 +99,8 @@ ayrı ayrı görünür kılmak.
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
 | `ST-5` deferred correctness closure | Completed on `main` ([#348](https://github.com/Halildeu/ao-kernel/issues/348), [#350](https://github.com/Halildeu/ao-kernel/pull/350)) | known deferred correctness kalemlerini stable blocker olmaktan çıkarıp açık support boundary'ye bağlamak | deferred bug contract + stable impact decision |
 | `ST-6` operations readiness | Completed on `main` ([#351](https://github.com/Halildeu/ao-kernel/issues/351), [#353](https://github.com/Halildeu/ao-kernel/pull/353)) | stable release öncesi incident, rollback, upgrade, known-bugs ve release-gate runbook'unu işletilebilir hale getirmek | operations runbook + rollback matrix + fresh-venv verification + packaging smoke parity |
-| `ST-7` stable release candidate | Active ([#355](https://github.com/Halildeu/ao-kernel/issues/355)) | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
+| `ST-7` stable release candidate | Completed on `main` ([#355](https://github.com/Halildeu/ao-kernel/issues/355), [#356](https://github.com/Halildeu/ao-kernel/pull/356), [#357](https://github.com/Halildeu/ao-kernel/pull/357)) | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
+| `ST-8` stable publish and post-publish verification | Active ([#358](https://github.com/Halildeu/ao-kernel/issues/358)) | `4.0.0` stable tag/publish ve public install gerçeğini doğrulamak | publish workflow success + PyPI exact/bare install verify + installed demo smoke |
 
 ## 5. Şimdi
 
@@ -359,7 +361,7 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-7` stable release candidate preparation.
+Aktif slice: `ST-8` stable publish and post-publish verification.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
@@ -367,18 +369,19 @@ Aktif slice: `ST-7` stable release candidate preparation.
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
 4. Completed contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
 5. Completed contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-6. Son kapanan PR: [#353](https://github.com/Halildeu/ao-kernel/pull/353)
+6. Son kapanan PR: [#357](https://github.com/Halildeu/ao-kernel/pull/357)
 7. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
    real-adapter/live-write promotion istenirse ayrı gate gerekir.
 8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
    promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
-9. Son kapanan issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
-   (`ST-6` closed)
-10. Aktif contract: `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md`
-11. Stable release'e doğrudan geçilmez; önce `ST-7` release-candidate gate
-   branch/PR ile kapanır.
-12. Aktif iş: `ST-7` implementation PR ile `4.0.0` source candidate version,
-   changelog ve stable docs install language hazırlığı.
+9. Son kapanan issue: [#355](https://github.com/Halildeu/ao-kernel/issues/355)
+   (`ST-7` closed after closeout)
+10. Aktif contract:
+   `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md`
+11. Stable live iddiası yalnız `ST-8` tag/publish ve public fresh-venv verify
+   sonrası yapılır.
+12. Aktif iş: `v4.0.0` tag push, publish workflow izleme, PyPI exact/bare
+   install verification ve status closeout.
 
 `PB-8.2` completion kaydı:
 
