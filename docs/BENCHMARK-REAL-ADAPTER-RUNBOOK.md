@@ -76,9 +76,12 @@ Bu smoke helper-level manifest probe'dan daha kapsamlıdır:
 
 1. kontrollü disposable workspace hazırlar,
 2. `governed_review_claude_code_cli` workflow'unu read-only prompt ile çalıştırır,
-3. `review_findings` artifact'inin schema-valid materialize olduğunu doğrular,
+3. `review_findings` artifact'inin materialize olduğunu, schema-valid olduğunu
+   ve `schema_version` / `findings` / `summary` semantik alanlarını taşıdığını
+   doğrular,
 4. `events.jsonl` içinde `step_started`, `policy_checked`, `adapter_invoked`,
-   `step_completed` ve terminal `workflow_completed` eventlerini arar,
+   `step_completed` ve terminal `workflow_completed` eventlerini arar ve bu
+   eventlerin canonical sırada göründüğünü doğrular,
 5. `adapter-claude-code-cli.jsonl` evidence log'unun varlığını ve temel redaction
    kontrolünü doğrular.
 

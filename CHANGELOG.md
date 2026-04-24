@@ -52,6 +52,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   malformed manifest JSON missing `status`, and workflow adapter timeout as
   fail-closed promotion blockers, with operator-facing failure codes aligned in
   the real-adapter runbook.
+- Recorded the `GP-3.4` `claude-code-cli` evidence completeness gate. The
+  governed workflow smoke now checks canonical event order and semantic
+  `review_findings` contents, pins adapter-log secret-like leaks as failures,
+  and keeps adapter-path `cost_usd` / token usage as an explicit non-claim.
 
 ## [4.0.0] - 2026-04-24
 
