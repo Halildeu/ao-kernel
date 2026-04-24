@@ -235,6 +235,16 @@ records `support_widening=false`, `production_remote_pr_support=false`, and
 `arbitrary_repo_support=false`. This does not make full remote PR opening a
 stable shipped support surface.
 
+`GP-5.7a` adds the full production rehearsal contract
+`gp5-full-production-rehearsal-contract.schema.v1.json`. It requires the future
+execution slice to prove the complete issue/task -> repo intelligence ->
+explicit context handoff -> adapter reasoning -> patch plan -> controlled
+patch/test -> disposable PR rehearsal -> rollback/closeout chain with at least
+three clean rehearsals and one fail-closed rehearsal. The contract records
+`support_widening=false` and `production_platform_claim=false`; it is not the
+execution itself and does not make `ao-kernel` a general-purpose production
+coding automation platform.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

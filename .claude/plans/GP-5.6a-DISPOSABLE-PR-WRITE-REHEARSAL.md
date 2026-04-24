@@ -1,12 +1,12 @@
 # GP-5.6a - Disposable PR Write Rehearsal
 
-**Status:** Active closeout candidate
+**Status:** Completed on `main`
 **Date:** 2026-04-24
 **Issue:** [#447](https://github.com/Halildeu/ao-kernel/issues/447)
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Branch:** `codex/gp5-6a-disposable-pr-rehearsal`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-6a`
-**Authority:** `origin/main` at `93a6ce2`
+**Branch:** `codex/gp5-6a-disposable-pr-rehearsal` (merged)
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-6a` (removed after merge)
+**Authority:** `origin/main` at `d1097aa`
 
 ## Scope
 
@@ -86,7 +86,7 @@ python3 scripts/gp5_disposable_pr_write_rehearsal.py \
 
 ## Decision
 
-Expected closeout decision:
+Closeout decision:
 `pass_disposable_pr_write_rehearsal_no_support_widening`.
 
 This proves only disposable sandbox create/verify/close/delete discipline. It
