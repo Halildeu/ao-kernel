@@ -1,27 +1,32 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** RI-5b create-only implementation active
+**Status:** RI-5b create-only implementation merged / closed
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `91c1bc0`
+**Authority:** `origin/main` at `6234476`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
 **Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
-**Implementation PR:** [#457](https://github.com/Halildeu/ao-kernel/pull/457)
+**RI-5a implementation PR:** [#457](https://github.com/Halildeu/ao-kernel/pull/457)
 **RI-5b issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
 **RI-5b design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
 **RI-5b design record:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
-**RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464)
-**RI-5b implementation branch:** `codex/ri5b-create-only-root-export`
-**RI-5b implementation worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5b-create-only-root-export`
+**RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (closed)
+**RI-5b implementation PR:** [#465](https://github.com/Halildeu/ao-kernel/pull/465)
+**RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466)
+**RI-5b implementation branch:** cleaned after merge
+**RI-5b implementation worktree:** cleaned after merge
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
 **Implementation branch:** cleaned after merge
 **Implementation worktree:** cleaned after merge
 **RI-5b design branch:** cleaned after merge
 **RI-5b design worktree:** cleaned after merge
-**Base:** `origin/main` at `91c1bc0`
-**Next slice:** RI-5b implementation review / merge
-**Implementation:** Merged to `main` at `a2144da`; preview-only export-plan
-support is live as Beta / experimental.
+**Base:** `origin/main` at `6234476`
+**Next slice:** none active. Any overwrite, higher-authority target, support
+promotion, MCP wiring, or context compiler integration requires a separate
+design gate.
+**Implementation:** RI-5a preview-only export-plan support is live as Beta /
+experimental. RI-5b confirmed create-only root export is merged as Beta /
+operator-managed at `6234476` with `support_widening=false`.
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -518,3 +523,5 @@ CHANGELOG.md
 | 2026-04-24 | RI-5b design cleanup completed | Local `main` synchronized with `origin/main`; design branch/worktree cleaned; next allowed slice is RI-5b create-only implementation from current `origin/main`. |
 | 2026-04-24 | RI-5b implementation started | Issue [#464](https://github.com/Halildeu/ao-kernel/issues/464), branch `codex/ri5b-create-only-root-export`, and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5b-create-only-root-export` opened from current `origin/main` at `49c4482`. |
 | 2026-04-24 | RI-5b local validation passed | `ruff check` on touched Python/tests; `mypy ao_kernel/`; targeted pytest `36 passed`; repo-intelligence pytest `95 passed`; `python3 -m ao_kernel repo export --help`; `python3 -m ao_kernel doctor` (`8 OK, 1 WARN, 0 FAIL`); `python3 scripts/packaging_smoke.py`; fresh-venv installed-wheel `repo scan -> export-plan -> export` smoke; full coverage `3061 passed, 1 skipped`, total coverage `85.31%`; `git diff --check`. |
+| 2026-04-24 | RI-5b implementation merged | PR [#465](https://github.com/Halildeu/ao-kernel/pull/465) squash-merged to `main` at `6234476`; issue [#464](https://github.com/Halildeu/ao-kernel/issues/464) closed; CI passed including lint, typecheck, Python 3.11/3.12/3.13 tests, coverage, benchmark-fast, packaging-smoke, and scorecard. |
+| 2026-04-24 | RI-5b implementation cleanup completed | Local `main` synchronized with `origin/main`; implementation branch/worktree and remote branch cleaned. Closeout issue [#466](https://github.com/Halildeu/ao-kernel/issues/466) records this status cleanup. |
