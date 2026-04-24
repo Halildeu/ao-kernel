@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-intelligence-workflow-context-opt-in:v1",
+  "title": "Repo Intelligence Workflow Context Opt-In Contract",
+  "description": "Contract-only schema for a future explicit workflow/context-compiler opt-in that consumes repo-intelligence context. This schema is not wired into workflow runtime by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "enabled",
+    "support_tier",
+    "handoff_mode",
+    "input",
+    "source_evidence",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "repo_intelligence_workflow_context_opt_in"
+    },
+    "enabled": {
+      "type": "boolean",
+      "const": true,
+      "description": "A valid opt-in contract is always explicit. Omitted or false is not an opt-in."
+    },
+    "support_tier": {
+      "type": "string",
+      "enum": ["beta_read_only_context"],
+      "description": "This contract cannot claim production support by itself."
+    },
+    "handoff_mode": {
+      "type": "string",
+      "enum": ["operator_markdown_stdout", "query_result_json_artifact"]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "operator_visible",
+        "automatic_prompt_injection",
+        "context_compiler_feed"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "repo_query"
+        },
+        "operator_visible": {
+          "type": "boolean",
+          "const": true
+        },
+        "automatic_prompt_injection": {
+          "type": "boolean",
+          "const": false
+        },
+        "context_compiler_feed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "requires_explicit_workflow_config", "requires_behavior_tests"],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "const": true
+            },
+            "requires_explicit_workflow_config": {
+              "type": "boolean",
+              "const": true
+            },
+            "requires_behavior_tests": {
+              "type": "boolean",
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "source_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo_chunks_sha256",
+        "repo_vector_index_manifest_sha256",
+        "vector_namespace_key_prefix",
+        "content_status"
+      ],
+      "properties": {
+        "repo_chunks_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "repo_vector_index_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "vector_namespace_key_prefix": {
+          "type": "string",
+          "pattern": "^repo_chunk::[^:]+::[^:]+::$"
+        },
+        "content_status": {
+          "type": "string",
+          "const": "current_only"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "write_root_authority_files",
+        "write_context_artifacts",
+        "mcp_tool_exposure",
+        "vector_writes",
+        "hidden_prompt_injection"
+      ],
+      "properties": {
+        "write_root_authority_files": {
+          "type": "boolean",
+          "const": false
+        },
+        "write_context_artifacts": {
+          "type": "boolean",
+          "const": false
+        },
+        "mcp_tool_exposure": {
+          "type": "boolean",
+          "const": false
+        },
+        "vector_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "hidden_prompt_injection": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}

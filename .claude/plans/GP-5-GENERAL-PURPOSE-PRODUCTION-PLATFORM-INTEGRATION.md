@@ -1,14 +1,15 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.3b` context handoff closeout
+**Status:** Active program setup / `GP-5.3c` workflow opt-in design closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `91fd16f` for the `GP-5.3b` context handoff contract
+**Authority:** `origin/main` at `5eedaa0` for the `GP-5.3c` workflow opt-in design contract
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.3b` - agent context handoff contract
-**Branch:** `codex/gp5-3b-agent-context-handoff`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3b`
+**Current slice:** `GP-5.3c` - workflow opt-in design contract
+**Branch:** `codex/gp5-3c-workflow-opt-in`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3c`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
-closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed
+closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
+`GP-5.3b` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -264,7 +265,8 @@ integration pillars.
    `keep_beta_explicit_stdout_handoff_contract`.
 3. `GP-5.3c` - Workflow opt-in design:
    design a future `context_compiler` opt-in flag that can consume query
-   results only with explicit config and behavior tests.
+   results only with explicit config and behavior tests. Result:
+   `design_only_no_runtime_auto_feed`.
 4. `GP-5.3d` - No-MCP/no-root-export guard:
    add regression checks that `repo query` does not write MCP tools, root
    context files, or `.ao/context` query artifacts.
@@ -298,6 +300,18 @@ automatically.
 
 The detailed decision record is
 `.claude/plans/GP-5.3b-AGENT-CONTEXT-HANDOFF-CONTRACT.md`.
+
+**GP-5.3c closeout candidate:**
+
+`GP-5.3c` keeps workflow integration design-only. It adds a schema-backed
+future opt-in contract, proves current workflows do not declare
+repo-intelligence auto-feed, and proves current `compile_context()` does not
+ingest arbitrary `repo_query_context` from session input. The runtime remains
+unchanged: no workflow-definition widening, no executor integration, no MCP
+tool, no root export, and no automatic `context_compiler` feed.
+
+The detailed decision record is
+`.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`.
 
 **DoD:**
 
@@ -500,13 +514,14 @@ promotion.
 | 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Completed on `main`; no runtime change. |
 | 3 | `GP-5.1a` | Protected gate prerequisite audit | Completed on `main`; required environment/secret handle not attested; no secret value in repo. |
 | 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Completed on `main`; beta read-only evidence contract strengthened; no support widening. |
-| 5 | `GP-5.3b` | Agent context handoff contract | Closeout candidate: explicit stdout/manual handoff; no `context_compiler` auto-feed. |
-| 6 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
-| 7 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
-| 8 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
-| 9 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
-| 10 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
-| 11 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
+| 5 | `GP-5.3b` | Agent context handoff contract | Completed on `main`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
+| 6 | `GP-5.3c` | Workflow opt-in design contract | Closeout candidate: schema-backed future opt-in; runtime remains unwired. |
+| 7 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
+| 8 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
+| 9 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
+| 10 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
+| 11 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
+| 12 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
 
@@ -532,6 +547,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.3b`, then start `GP-5.3c` workflow opt-in design
-   unless protected environment/credential attestation is provided first for
-   `GP-5.1b`.
+5. next step: merge `GP-5.3c`, then start `GP-5.3d` no-MCP/no-root-export
+   guard unless protected environment/credential attestation is provided first
+   for `GP-5.1b`.
