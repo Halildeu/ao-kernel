@@ -214,8 +214,9 @@ bilerek stable disina almak.
 
 ### ST-6 — Operations Readiness
 
-**Durum:** Active via [#351](https://github.com/Halildeu/ao-kernel/issues/351)
-and `.claude/plans/ST-6-OPERATIONS-READINESS.md`.
+**Durum:** Implementation PR active via
+[#351](https://github.com/Halildeu/ao-kernel/issues/351) and
+`.claude/plans/ST-6-OPERATIONS-READINESS.md`.
 
 **Amac:** Stable release'i isletilebilir hale getirmek.
 

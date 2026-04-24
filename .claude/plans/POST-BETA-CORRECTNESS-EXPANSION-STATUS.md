@@ -354,7 +354,7 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-6` operations readiness contract.
+Aktif slice: `ST-6` operations readiness implementation.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
@@ -370,6 +370,8 @@ Aktif slice: `ST-6` operations readiness contract.
 9. Aktif issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
 10. Aktif contract: `.claude/plans/ST-6-OPERATIONS-READINESS.md`
 11. Stable release'e doğrudan geçilmez; önce `ST-6` ve `ST-7` gates kapanır.
+12. Aktif iş: runbook/rollback/upgrade/support/known-bugs operational readiness
+   parity patch.
 
 `PB-8.2` completion kaydı:
 
