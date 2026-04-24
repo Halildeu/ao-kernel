@@ -183,10 +183,21 @@ must copy or supply it as visible agent input. It does not write root authority
 files, `.ao/context` artifacts, vector backend records, expose MCP tools, or
 feed `context_compiler` automatically.
 
+The `repo export-plan` surface is Beta / experimental preview-only root export
+planning. It reads existing repo-intelligence artifacts and writes only
+`.ao/context/repo_export_plan.json`, plus the same JSON plan to stdout when
+`--output json` is selected. The initial targets are `codex` and `agents`,
+mapping to preview records for `CODEX_CONTEXT.md` and `AGENTS.md`. It does not
+create, update, truncate, or delete root authority files, call an LLM, use
+network access, query or write vector backends, expose MCP tools, feed
+`context_compiler`, or perform RI-5b writes.
+
 `GP-5.3d` pins this negative boundary with regression tests: no
 repo-intelligence MCP tool is registered, the `repo` CLI surface remains
-limited to `scan`, `index`, and `query`, and `repo query` does not create root
-authority exports, MCP config exports, or `.ao/context/repo_export_plan.json`.
+limited to `scan`, `index`, `query`, and preview-only `export-plan`. The
+`repo query` command does not create root authority exports, MCP config
+exports, or `.ao/context/repo_export_plan.json`, while `repo export-plan` may
+create only that preview artifact.
 
 `GP-5.3e` promotes this surface only to a beta explicit-handoff workflow
 building block: a future GP-5 read-only workflow rehearsal may use

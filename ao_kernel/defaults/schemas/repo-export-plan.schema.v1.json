@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-export-plan:v1",
+  "title": "Repo Intelligence Root Export Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generator",
+    "project_root",
+    "project_root_name",
+    "workspace_root",
+    "source_artifacts",
+    "targets",
+    "confirmation",
+    "summary",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "artifact_kind": {
+      "const": "repo_export_plan"
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {
+          "const": "ao-kernel-repo-export-planner"
+        },
+        "version": {
+          "const": "repo-export-plan.v1"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "project_root": {
+      "const": "."
+    },
+    "project_root_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_root": {
+      "$ref": "#/$defs/relative_path"
+    },
+    "source_artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/source_artifact"
+      },
+      "minProperties": 1
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/target"
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_for_write", "token", "scope"],
+      "properties": {
+        "required_for_write": {
+          "const": true
+        },
+        "token": {
+          "const": "CONFIRM_RI5B_ROOT_EXPORT_V1"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_count",
+        "create",
+        "update",
+        "unchanged",
+        "blocked",
+        "missing_required_source_artifacts"
+      ],
+      "properties": {
+        "target_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "create": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "update": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unchanged": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing_required_source_artifacts": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^/"
+      }
+    },
+    "source_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "required", "present"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "root_path",
+        "action",
+        "existing_file",
+        "existing_sha256",
+        "generated_content_sha256",
+        "generated_byte_count",
+        "generated_line_count",
+        "content_source",
+        "confirmation_token",
+        "diagnostics"
+      ],
+      "properties": {
+        "target": {
+          "enum": ["codex", "agents"]
+        },
+        "root_path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "action": {
+          "enum": ["create", "update", "unchanged", "blocked"]
+        },
+        "existing_file": {
+          "type": "boolean"
+        },
+        "existing_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generated_content_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "generated_byte_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "generated_line_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "content_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confirmation_token": {
+          "const": "CONFIRM_RI5B_ROOT_EXPORT_V1"
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/diagnostic"
+          }
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": ["info", "warning", "error"]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

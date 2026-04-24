@@ -44,7 +44,7 @@ def test_repo_cli_has_no_root_export_or_mcp_subcommand() -> None:
     repo_parser = command_subparsers[0].choices["repo"]
     repo_subparsers = [action for action in repo_parser._subparsers._group_actions if action.dest == "repo_command"]
     assert len(repo_subparsers) == 1
-    assert set(repo_subparsers[0].choices) == {"scan", "index", "query"}
+    assert set(repo_subparsers[0].choices) == {"scan", "index", "query", "export-plan"}
 
 
 @pytest.mark.parametrize(
@@ -54,6 +54,7 @@ def test_repo_cli_has_no_root_export_or_mcp_subcommand() -> None:
         ["repo", "scan", "--help"],
         ["repo", "index", "--help"],
         ["repo", "query", "--help"],
+        ["repo", "export-plan", "--help"],
     ],
 )
 def test_repo_cli_help_does_not_advertise_root_export_or_mcp_flags(argv: list[str], capsys) -> None:

@@ -456,9 +456,75 @@ def _cmd_repo_query(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_repo_export_plan(args: argparse.Namespace) -> int:
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.repo_intelligence import (
+        build_repo_export_plan,
+        validate_repo_export_plan,
+        write_repo_export_plan_artifact,
+    )
+
+    project_root = _Path(args.project_root or ".").resolve()
+    if not project_root.is_dir():
+        print(f"project root not found: {project_root}", file=sys.stderr)
+        return 1
+
+    workspace_dir = _resolve_repo_workspace_dir(project_root, args.workspace_root)
+    if not workspace_dir.is_dir():
+        print(
+            f".ao workspace not found at {workspace_dir}. Run 'ao-kernel init' first.",
+            file=sys.stderr,
+        )
+        return 1
+    if not _repo_workspace_is_inside_project(project_root, workspace_dir):
+        print(f"workspace root must be inside project root: {workspace_dir}", file=sys.stderr)
+        return 1
+
+    context_dir = workspace_dir / "context"
+    context_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        targets = _parse_repo_export_targets(args.targets)
+        export_plan = build_repo_export_plan(
+            project_root=project_root,
+            workspace_root=workspace_dir,
+            targets=targets,
+        )
+        validate_repo_export_plan(export_plan)
+        write_result = write_repo_export_plan_artifact(
+            context_dir=context_dir,
+            export_plan=export_plan,
+        )
+    except Exception as exc:  # noqa: BLE001 - CLI fail-closed with concise stderr
+        print(f"repo export-plan failed: {exc}", file=sys.stderr)
+        return 1
+
+    if args.output == "json":
+        print(_json.dumps(export_plan, indent=2, sort_keys=True))
+    else:
+        print("repo export-plan complete")
+        print("project_root: .")
+        print(f"workspace_root: {_repo_display_workspace(project_root, workspace_dir)}")
+        print(f"targets: {','.join(item['target'] for item in export_plan['targets'])}")
+        print(f"blocked: {export_plan['summary']['blocked']}")
+        print("artifacts:")
+        for artifact in write_result["artifacts"]:
+            print(f"- {artifact['path']}")
+    return 0
+
+
 def _resolve_repo_workspace_dir(project_root: Path, workspace_root: str | None) -> Path:
     raw = Path(workspace_root or ".ao")
     return raw.resolve() if raw.is_absolute() else (project_root / raw).resolve()
+
+
+def _repo_workspace_is_inside_project(project_root: Path, workspace_dir: Path) -> bool:
+    try:
+        workspace_dir.relative_to(project_root)
+    except ValueError:
+        return False
+    return True
 
 
 def _repo_display_workspace(project_root: Path, workspace_dir: Path) -> str:
@@ -507,6 +573,15 @@ def _parse_nonnegative_float(raw: str | float | None, field_name: str) -> float:
     if value < 0:
         raise ValueError(f"{field_name} must be non-negative, got {value}")
     return value
+
+
+def _parse_repo_export_targets(raw: str | None) -> list[str]:
+    if raw is None:
+        return ["codex", "agents"]
+    targets = [item.strip() for item in raw.split(",") if item.strip()]
+    if not targets:
+        raise ValueError("--targets must include at least one target")
+    return targets
 
 
 def _cmd_cost_reconcile(args: argparse.Namespace) -> int:
@@ -1299,6 +1374,28 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Command output format (default: text)",
     )
+    export_plan_p = repo_sub.add_parser("export-plan", help="Preview root context export plan without root writes")
+    export_plan_p.add_argument(
+        "--project-root",
+        default=".",
+        help="Repository root to inspect (default: current directory)",
+    )
+    export_plan_p.add_argument(
+        "--workspace-root",
+        default=".ao",
+        help="ao-kernel workspace root relative to project root (default: .ao)",
+    )
+    export_plan_p.add_argument(
+        "--targets",
+        default="codex,agents",
+        help="Comma-separated preview targets: codex,agents (default: codex,agents)",
+    )
+    export_plan_p.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
+    )
 
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
@@ -1864,8 +1961,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repo_index(args)
         if repo_cmd == "query":
             return _cmd_repo_query(args)
+        if repo_cmd == "export-plan":
+            return _cmd_repo_export_plan(args)
         print(
-            "Usage: ao-kernel repo {scan,index,query} [--project-root PATH] [--output {text,json}]",
+            "Usage: ao-kernel repo {scan,index,query,export-plan} [--project-root PATH] [--output {text,json}]",
             file=sys.stderr,
         )
         return 1

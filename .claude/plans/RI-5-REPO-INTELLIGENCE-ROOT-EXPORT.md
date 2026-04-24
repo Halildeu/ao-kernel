@@ -1,17 +1,17 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** RI-5a tracking plan
+**Status:** RI-5a implementation slice
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `523317f`
+**Authority:** `origin/main` at `5959f27`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
 **Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
-**Tracking branch:** `codex/ri5a-export-plan-tracker`
-**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker`
-**Base:** `origin/main` at `523317f`
-**Next slice:** RI-5a export-plan preview implementation
-**Implementation:** Not started; this document is the implementation tracker
+**Tracking branch:** `codex/ri5a-export-plan-preview`
+**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-preview`
+**Base:** `origin/main` at `5959f27`
+**Next slice:** RI-5a export-plan preview PR
+**Implementation:** In progress; preview-only implementation added in this branch
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -137,15 +137,15 @@ acceptance item is checked, CI is green, and the PR is merged into
 
 | Step | Work | Status | Evidence |
 |---|---|---|---|
-| 0 | Create dedicated RI-5a worktree from current `origin/main` | [x] Done | `git worktree list`; rebased to `origin/main` at `523317f` |
+| 0 | Create dedicated RI-5a worktree from current `origin/main` | [x] Done | `git worktree list`; branch `codex/ri5a-export-plan-preview` from `origin/main` at `5959f27` |
 | 1 | Pin this document to the RI-5a branch/worktree/base | [x] Done | Header and tracking log updated |
-| 2 | Add `repo-export-plan.schema.v1.json` | [ ] Pending | Schema file and schema validation test |
-| 3 | Add deterministic export-plan builder | [ ] Pending | `export_plan.py` unit tests |
-| 4 | Add artifact write path for `.ao/context/repo_export_plan.json` only | [ ] Pending | CLI root-write regression test |
-| 5 | Add `repo export-plan` CLI | [ ] Pending | CLI help and behavior tests |
-| 6 | Export narrow public facade | [ ] Pending | `ao_kernel/repo_intelligence/__init__.py` test/import |
-| 7 | Update docs and changelog | [ ] Pending | Support boundary and public beta rows |
-| 8 | Run local validation gates | [ ] Pending | Command outputs recorded in tracking log |
+| 2 | Add `repo-export-plan.schema.v1.json` | [x] Done | Schema file and schema validation test |
+| 3 | Add deterministic export-plan builder | [x] Done | `export_plan.py` unit tests |
+| 4 | Add artifact write path for `.ao/context/repo_export_plan.json` only | [x] Done | CLI root-write regression test |
+| 5 | Add `repo export-plan` CLI | [x] Done | CLI help and behavior tests |
+| 6 | Export narrow public facade | [x] Done | `ao_kernel/repo_intelligence/__init__.py` exports builder/validator/writer |
+| 7 | Update docs and changelog | [x] Done | Support boundary and public beta rows |
+| 8 | Run local validation gates | [x] Done | ruff, mypy, targeted tests, help, doctor, packaging smoke, full coverage, diff check |
 | 9 | Open PR and wait for CI | [ ] Pending | PR URL and green CI |
 | 10 | Merge, fast-forward local `main`, cleanup branch/worktree | [ ] Pending | `rev-list 0 0`, branch cleanup |
 
@@ -356,6 +356,7 @@ ao_kernel/cli.py
 ao_kernel/repo_intelligence/__init__.py
 tests/test_repo_intelligence_export_plan.py
 tests/test_cli_repo_export_plan.py
+tests/test_repo_intelligence_no_mcp_root_export_guard.py
 docs/PUBLIC-BETA.md
 docs/SUPPORT-BOUNDARY.md
 CHANGELOG.md
@@ -375,18 +376,18 @@ CHANGELOG.md
 
 ## Acceptance - RI-5a
 
-- [ ] Runs in a dedicated worktree.
-- [ ] Produces deterministic `.ao/context/repo_export_plan.json`.
-- [ ] Validates the export plan against a bundled JSON schema.
-- [ ] Uses repo-relative POSIX paths.
-- [ ] Records source artifact digests and generated content digests.
-- [ ] Detects existing root files without modifying them.
-- [ ] Does not write root files.
-- [ ] Does not call an LLM.
-- [ ] Does not use network access.
-- [ ] Does not write vectors or query vector backends.
-- [ ] Has unit tests and CLI behavior tests.
-- [ ] Updates support-boundary docs as Beta / experimental preview only.
+- [x] Runs in a dedicated worktree.
+- [x] Produces deterministic `.ao/context/repo_export_plan.json`.
+- [x] Validates the export plan against a bundled JSON schema.
+- [x] Uses repo-relative POSIX paths.
+- [x] Records source artifact digests and generated content digests.
+- [x] Detects existing root files without modifying them.
+- [x] Does not write root files.
+- [x] Does not call an LLM.
+- [x] Does not use network access.
+- [x] Does not write vectors or query vector backends.
+- [x] Has unit tests and CLI behavior tests.
+- [x] Updates support-boundary docs as Beta / experimental preview only.
 
 ## Acceptance - RI-5b
 
@@ -430,3 +431,5 @@ CHANGELOG.md
 | 2026-04-24 | Design gate merged | PR [#423](https://github.com/Halildeu/ao-kernel/pull/423) merged to `main` at `33c4d22`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch/worktree cleanup completed and local `main` is synchronized with `origin/main`. |
 | 2026-04-24 | RI-5a tracker opened | Dedicated tracking branch `codex/ri5a-export-plan-tracker` and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker` opened from `origin/main` at `d7f7b37`. This tracker adds scope lock, work breakdown, artifact contract, CLI contract, test matrix, validation checklist, and PR exit criteria before implementation starts. |
 | 2026-04-24 | RI-5a tracker rebased | Tracking branch rebased onto `origin/main` at `523317f` after GP-5.9 closeout; tracker remains docs-only and implementation has not started. |
+| 2026-04-24 | RI-5a implementation started | Dedicated branch `codex/ri5a-export-plan-preview` opened from `origin/main` at `5959f27`; preview-only schema, builder, artifact writer, CLI, docs, and tests added. |
+| 2026-04-24 | RI-5a local validation passed | `ruff check ao_kernel/ tests/`; `mypy ao_kernel/`; targeted pytest `28 passed`; `python3 -m ao_kernel repo export-plan --help`; `python3 -m ao_kernel doctor` (`8 OK, 1 WARN, 0 FAIL`); `python3 scripts/packaging_smoke.py`; full coverage `3046 passed, 1 skipped`, total coverage `85.44%`; `git diff --check`. |
