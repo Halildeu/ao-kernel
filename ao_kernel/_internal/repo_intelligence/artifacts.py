@@ -13,11 +13,13 @@ from ao_kernel.config import load_default
 REPO_MAP_FILENAME = "repo_map.json"
 PYTHON_IMPORT_GRAPH_FILENAME = "import_graph.json"
 PYTHON_SYMBOL_INDEX_FILENAME = "symbol_index.json"
+REPO_CHUNKS_FILENAME = "repo_chunks.json"
 AGENT_PACK_FILENAME = "agent_pack.md"
 REPO_INDEX_MANIFEST_FILENAME = "repo_index_manifest.json"
 REPO_MAP_SCHEMA_NAME = "repo-map.schema.v1.json"
 PYTHON_IMPORT_GRAPH_SCHEMA_NAME = "python-import-graph.schema.v1.json"
 PYTHON_SYMBOL_INDEX_SCHEMA_NAME = "python-symbol-index.schema.v1.json"
+REPO_CHUNKS_SCHEMA_NAME = "repo-chunks.schema.v1.json"
 REPO_INDEX_MANIFEST_SCHEMA_NAME = "repo-index-manifest.schema.v1.json"
 AGENT_PACK_FORMAT_REF = "agent-pack-markdown.v1"
 
@@ -44,12 +46,18 @@ def validate_python_symbol_index(symbol_index: Mapping[str, Any]) -> None:
     _validate(symbol_index, PYTHON_SYMBOL_INDEX_SCHEMA_NAME)
 
 
+def validate_repo_chunks(repo_chunks: Mapping[str, Any]) -> None:
+    """Validate a repo chunks document against the bundled schema."""
+    _validate(repo_chunks, REPO_CHUNKS_SCHEMA_NAME)
+
+
 def write_repo_scan_artifacts(
     *,
     context_dir: str | Path,
     repo_map: Mapping[str, Any],
     import_graph: Mapping[str, Any] | None = None,
     symbol_index: Mapping[str, Any] | None = None,
+    repo_chunks: Mapping[str, Any] | None = None,
     agent_pack: str | None = None,
 ) -> JsonDict:
     """Write repo-intelligence artifacts under an explicit context directory.
@@ -71,6 +79,9 @@ def write_repo_scan_artifacts(
     if symbol_index is not None:
         validate_python_symbol_index(symbol_index)
         documents.append((PYTHON_SYMBOL_INDEX_FILENAME, PYTHON_SYMBOL_INDEX_SCHEMA_NAME, symbol_index))
+    if repo_chunks is not None:
+        validate_repo_chunks(repo_chunks)
+        documents.append((REPO_CHUNKS_FILENAME, REPO_CHUNKS_SCHEMA_NAME, repo_chunks))
 
     artifact_records: list[JsonDict] = []
     for filename, schema_ref, document in documents:

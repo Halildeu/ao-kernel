@@ -74,6 +74,7 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
     from ao_kernel.repo_intelligence import (
         build_agent_context_pack,
         build_python_ast_indexes,
+        build_repo_chunks,
         scan_repo,
         write_repo_scan_artifacts,
     )
@@ -96,16 +97,24 @@ def _cmd_repo_scan(args: argparse.Namespace) -> int:
 
     repo_map = scan_repo(project_root)
     import_graph, symbol_index = build_python_ast_indexes(project_root, repo_map)
+    repo_chunks = build_repo_chunks(
+        project_root,
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+    )
     agent_pack = build_agent_context_pack(
         repo_map=repo_map,
         import_graph=import_graph,
         symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
     )
     write_result = write_repo_scan_artifacts(
         context_dir=context_dir,
         repo_map=repo_map,
         import_graph=import_graph,
         symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
         agent_pack=agent_pack,
     )
     summary = {

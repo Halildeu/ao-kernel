@@ -14,18 +14,22 @@ from ao_kernel._internal.repo_intelligence.artifacts import (
     PYTHON_IMPORT_GRAPH_SCHEMA_NAME,
     PYTHON_SYMBOL_INDEX_FILENAME,
     PYTHON_SYMBOL_INDEX_SCHEMA_NAME,
+    REPO_CHUNKS_FILENAME,
+    REPO_CHUNKS_SCHEMA_NAME,
     REPO_INDEX_MANIFEST_FILENAME,
     REPO_INDEX_MANIFEST_SCHEMA_NAME,
     REPO_MAP_FILENAME,
     REPO_MAP_SCHEMA_NAME,
     validate_python_import_graph,
     validate_python_symbol_index,
+    validate_repo_chunks,
     validate_repo_index_manifest,
     validate_repo_map,
     write_repo_scan_artifacts,
 )
 from ao_kernel._internal.repo_intelligence.context_pack_builder import build_agent_context_pack
 from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_python_ast_indexes
+from ao_kernel._internal.repo_intelligence.repo_chunker import build_repo_chunks
 from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 from ao_kernel.config import load_default
 
@@ -44,15 +48,18 @@ def test_bundled_repo_intelligence_schemas_are_valid() -> None:
     repo_map_schema = load_default("schemas", REPO_MAP_SCHEMA_NAME)
     import_graph_schema = load_default("schemas", PYTHON_IMPORT_GRAPH_SCHEMA_NAME)
     symbol_index_schema = load_default("schemas", PYTHON_SYMBOL_INDEX_SCHEMA_NAME)
+    repo_chunks_schema = load_default("schemas", REPO_CHUNKS_SCHEMA_NAME)
     manifest_schema = load_default("schemas", REPO_INDEX_MANIFEST_SCHEMA_NAME)
 
     Draft202012Validator.check_schema(repo_map_schema)
     Draft202012Validator.check_schema(import_graph_schema)
     Draft202012Validator.check_schema(symbol_index_schema)
+    Draft202012Validator.check_schema(repo_chunks_schema)
     Draft202012Validator.check_schema(manifest_schema)
     assert repo_map_schema["$id"] == "urn:ao:repo-map:v1"
     assert import_graph_schema["$id"] == "urn:ao:python-import-graph:v1"
     assert symbol_index_schema["$id"] == "urn:ao:python-symbol-index:v1"
+    assert repo_chunks_schema["$id"] == "urn:ao:repo-chunks:v1"
     assert manifest_schema["$id"] == "urn:ao:repo-index-manifest:v1"
 
 
@@ -113,29 +120,42 @@ def test_write_repo_scan_artifacts_writes_agent_pack_and_manifest_record(tmp_pat
     project = _repo_with_workspace(tmp_path)
     repo_map = scan_repo(project)
     import_graph, symbol_index = build_python_ast_indexes(project, repo_map)
-    agent_pack = build_agent_context_pack(repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    repo_chunks = build_repo_chunks(project, repo_map=repo_map, import_graph=import_graph, symbol_index=symbol_index)
+    agent_pack = build_agent_context_pack(
+        repo_map=repo_map,
+        import_graph=import_graph,
+        symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
+    )
 
     result = write_repo_scan_artifacts(
         context_dir=project / ".ao" / "context",
         repo_map=repo_map,
         import_graph=import_graph,
         symbol_index=symbol_index,
+        repo_chunks=repo_chunks,
         agent_pack=agent_pack,
     )
     context_dir = project / ".ao" / "context"
+    written_repo_chunks = json.loads((context_dir / REPO_CHUNKS_FILENAME).read_text(encoding="utf-8"))
     written_agent_pack = (context_dir / AGENT_PACK_FILENAME).read_text(encoding="utf-8")
     written_manifest = json.loads((context_dir / REPO_INDEX_MANIFEST_FILENAME).read_text(encoding="utf-8"))
 
+    validate_repo_chunks(written_repo_chunks)
     validate_repo_index_manifest(written_manifest)
     assert "# Agent Context Pack" in written_agent_pack
     assert [item["path"] for item in result["artifacts"]] == [
         ".ao/context/repo_map.json",
         ".ao/context/import_graph.json",
         ".ao/context/symbol_index.json",
+        ".ao/context/repo_chunks.json",
         ".ao/context/agent_pack.md",
         ".ao/context/repo_index_manifest.json",
     ]
-    agent_pack_record = written_manifest["artifacts"][3]
+    repo_chunks_record = written_manifest["artifacts"][3]
+    assert repo_chunks_record["path"] == ".ao/context/repo_chunks.json"
+    assert repo_chunks_record["schema_ref"] == REPO_CHUNKS_SCHEMA_NAME
+    agent_pack_record = written_manifest["artifacts"][4]
     assert agent_pack_record["path"] == ".ao/context/agent_pack.md"
     assert agent_pack_record["format_ref"] == AGENT_PACK_FORMAT_REF
     assert agent_pack_record["media_type"] == "text/markdown"
