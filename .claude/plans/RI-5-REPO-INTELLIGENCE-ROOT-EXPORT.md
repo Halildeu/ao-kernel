@@ -1,14 +1,17 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** Design gate accepted on `main`
+**Status:** RI-5a tracking plan
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `33c4d22`
+**Authority:** `origin/main` at `523317f`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
+**Closeout PR:** [#426](https://github.com/Halildeu/ao-kernel/pull/426)
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
-**Base:** `origin/main` at `33c4d22`
+**Tracking branch:** `codex/ri5a-export-plan-tracker`
+**Tracking worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker`
+**Base:** `origin/main` at `523317f`
 **Next slice:** RI-5a export-plan preview implementation
-**Implementation:** Not started
+**Implementation:** Not started; this document is the implementation tracker
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -106,6 +109,189 @@ AGENTS.md
 ARCHITECTURE.md
 CODEX_CONTEXT.md
 ```
+
+## RI-5a Implementation Tracker
+
+This section is the single tracking surface for RI-5a. Update it in the RI-5a
+implementation PR as work progresses. Do not start RI-5b until every RI-5a
+acceptance item is checked, CI is green, and the PR is merged into
+`origin/main`.
+
+### Scope Lock
+
+| Item | Decision | Status |
+|---|---|---|
+| Root file writes | Forbidden in RI-5a | Locked |
+| `.ao/context/repo_export_plan.json` | Only new generated artifact | Locked |
+| `CODEX_CONTEXT.md` | Preview target only | Locked |
+| `AGENTS.md` | Preview target only | Locked |
+| `CLAUDE.md` | Deferred, not a RI-5a target | Locked |
+| `ARCHITECTURE.md` | Deferred, not a RI-5a target | Locked |
+| LLM calls | Forbidden | Locked |
+| Network access | Forbidden | Locked |
+| Vector backend query/write | Forbidden | Locked |
+| MCP exposure | Forbidden | Locked |
+| `context_compiler` auto-injection | Forbidden | Locked |
+
+### Work Breakdown
+
+| Step | Work | Status | Evidence |
+|---|---|---|---|
+| 0 | Create dedicated RI-5a worktree from current `origin/main` | [x] Done | `git worktree list`; rebased to `origin/main` at `523317f` |
+| 1 | Pin this document to the RI-5a branch/worktree/base | [x] Done | Header and tracking log updated |
+| 2 | Add `repo-export-plan.schema.v1.json` | [ ] Pending | Schema file and schema validation test |
+| 3 | Add deterministic export-plan builder | [ ] Pending | `export_plan.py` unit tests |
+| 4 | Add artifact write path for `.ao/context/repo_export_plan.json` only | [ ] Pending | CLI root-write regression test |
+| 5 | Add `repo export-plan` CLI | [ ] Pending | CLI help and behavior tests |
+| 6 | Export narrow public facade | [ ] Pending | `ao_kernel/repo_intelligence/__init__.py` test/import |
+| 7 | Update docs and changelog | [ ] Pending | Support boundary and public beta rows |
+| 8 | Run local validation gates | [ ] Pending | Command outputs recorded in tracking log |
+| 9 | Open PR and wait for CI | [ ] Pending | PR URL and green CI |
+| 10 | Merge, fast-forward local `main`, cleanup branch/worktree | [ ] Pending | `rev-list 0 0`, branch cleanup |
+
+### Artifact Contract
+
+The RI-5a artifact must be deterministic for identical inputs except the
+standard `generator.generated_at` timestamp, matching the existing
+repo-intelligence artifact pattern. Tests should normalize that timestamp
+before comparing repeated runs.
+
+```text
+.ao/context/repo_export_plan.json
+```
+
+Minimum top-level fields:
+
+```json
+{
+  "schema_version": "1",
+  "artifact_kind": "repo_export_plan",
+  "generator": {
+    "name": "ao-kernel-repo-export-planner",
+    "version": "repo-export-plan.v1",
+    "generated_at": "ISO-8601 timestamp"
+  },
+  "project_root": ".",
+  "workspace_root": ".ao",
+  "source_artifacts": {},
+  "targets": [],
+  "confirmation": {},
+  "diagnostics": []
+}
+```
+
+Required source artifact records:
+
+| Field | Meaning |
+|---|---|
+| `path` | Repo-relative POSIX path |
+| `sha256` | Current file digest |
+| `required` | Whether RI-5a needs this artifact for the selected targets |
+| `present` | Whether the artifact exists |
+
+Required target records:
+
+| Field | Meaning |
+|---|---|
+| `target` | Stable target id, initially `codex` or `agents` |
+| `root_path` | Proposed root file path |
+| `action` | `create`, `update`, `unchanged`, or `blocked` |
+| `existing_file` | Whether the root file exists now |
+| `existing_sha256` | Existing root file digest when present |
+| `generated_content_sha256` | Digest of deterministic generated content |
+| `generated_byte_count` | Byte count of deterministic generated content |
+| `generated_line_count` | Line count of deterministic generated content |
+| `content_source` | Source artifact or template version |
+| `diagnostics` | Structured reasons for warnings or blocked actions |
+
+### Action Matrix
+
+| Condition | Action | Write allowed in RI-5a |
+|---|---|---:|
+| Target root file is absent | `create` | No |
+| Target root file exists and content digest matches | `unchanged` | No |
+| Target root file exists and digest differs | `blocked` | No |
+| Target root path is a symlink | `blocked` | No |
+| Target root path escapes project root | `blocked` | No |
+| Required source artifact is missing | `blocked` | No |
+| Target is unsupported | `blocked` or CLI error | No |
+
+`update` may remain in the schema for forward compatibility, but the first
+RI-5b write implementation should still default to create-only.
+
+### CLI Contract
+
+Primary command:
+
+```text
+python3 -m ao_kernel repo export-plan \
+  --project-root . \
+  --workspace-root .ao \
+  --targets codex,agents \
+  --output json
+```
+
+Expected behavior:
+
+1. Create `.ao/context` if needed through the existing safe workspace path.
+2. Write only `.ao/context/repo_export_plan.json`.
+3. Print the same JSON plan to stdout when `--output json` is selected.
+4. Use repo-relative POSIX paths.
+5. Fail closed on invalid project/workspace roots.
+6. Fail closed or mark targets blocked on missing required source artifacts.
+7. Never create, update, truncate, or delete root authority files.
+
+### Test Matrix
+
+| Test | Expected proof |
+|---|---|
+| Missing required source artifact | Fails closed or blocked diagnostics |
+| Present source artifacts | Stable source digests in plan |
+| Absent `CODEX_CONTEXT.md` | Target action is `create` |
+| Existing matching root file | Target action is `unchanged` |
+| Existing different root file | Target action is `blocked` |
+| Root symlink target | Target action is `blocked` |
+| Path escape target | Target action is `blocked` |
+| Target order changes | Output order remains deterministic |
+| CLI run | Only `.ao/context/repo_export_plan.json` is written |
+| CLI root snapshot | `CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, `CODEX_CONTEXT.md` unchanged |
+| Schema validation | Generated plan validates against bundled schema |
+
+### Validation Checklist
+
+Run these before opening the RI-5a implementation PR:
+
+```text
+ruff check ao_kernel/ tests/
+mypy ao_kernel/
+pytest tests/test_repo_intelligence_export_plan.py tests/test_cli_repo_export_plan.py -q
+python3 -m ao_kernel repo export-plan --help
+python3 -m ao_kernel doctor
+python3 scripts/packaging_smoke.py
+git diff --check
+git ls-files -o --exclude-standard
+```
+
+Run the full coverage gate before merge unless the implementation PR is
+docs-only:
+
+```text
+pytest tests/ --ignore=tests/benchmarks --cov=ao_kernel --cov-branch --cov-report=term-missing
+```
+
+### PR Exit Criteria
+
+RI-5a is complete only when:
+
+1. Local validation passes.
+2. PR CI passes.
+3. `repo_export_plan.json` is schema-backed and deterministic.
+4. Tests prove no root authority file is written or modified.
+5. Docs still mark this as Beta / experimental preview only.
+6. PR is merged to `origin/main`.
+7. Local `main` is fast-forwarded to `origin/main`.
+8. RI-5a worktree and branch are cleaned only after content parity with
+   `main` is verified.
 
 ## RI-5b - Explicit Confirmed Root Export
 
@@ -242,3 +428,5 @@ CHANGELOG.md
 |---|---|---|
 | 2026-04-24 | Design gate opened | RI-5 is explicitly separated from RI-4 and split into preview-only RI-5a plus confirmed create-only RI-5b. |
 | 2026-04-24 | Design gate merged | PR [#423](https://github.com/Halildeu/ao-kernel/pull/423) merged to `main` at `33c4d22`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. Post-merge branch/worktree cleanup completed and local `main` is synchronized with `origin/main`. |
+| 2026-04-24 | RI-5a tracker opened | Dedicated tracking branch `codex/ri5a-export-plan-tracker` and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5a-export-plan-tracker` opened from `origin/main` at `d7f7b37`. This tracker adds scope lock, work breakdown, artifact contract, CLI contract, test matrix, validation checklist, and PR exit criteria before implementation starts. |
+| 2026-04-24 | RI-5a tracker rebased | Tracking branch rebased onto `origin/main` at `523317f` after GP-5.9 closeout; tracker remains docs-only and implementation has not started. |
