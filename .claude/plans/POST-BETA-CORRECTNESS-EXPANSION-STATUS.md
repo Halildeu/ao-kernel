@@ -17,7 +17,7 @@ ayrı ayrı görünür kılmak.
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-6-OPERATIONS-READINESS.md` (`ST-6 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md` (`ST-7 next`)
+- **Aktif decision/ordering contract:** `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md` (`ST-7 active`)
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -44,8 +44,9 @@ ayrı ayrı görünür kılmak.
 - **GP-2.2b issue:** [#336](https://github.com/Halildeu/ao-kernel/issues/336) (`closed`)
 - **ST-1 issue:** [#340](https://github.com/Halildeu/ao-kernel/issues/340) (`closed after closeout`)
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
-- **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closing after closeout`)
-- **Aktif gate:** `ST-7` stable release candidate (`issue to open after ST-6 closeout`)
+- **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
+- **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`active`)
+- **Aktif gate:** `ST-7` stable release candidate
 
 ## 2. Başlangıç Gerçeği
 
@@ -97,7 +98,7 @@ ayrı ayrı görünür kılmak.
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
 | `ST-5` deferred correctness closure | Completed on `main` ([#348](https://github.com/Halildeu/ao-kernel/issues/348), [#350](https://github.com/Halildeu/ao-kernel/pull/350)) | known deferred correctness kalemlerini stable blocker olmaktan çıkarıp açık support boundary'ye bağlamak | deferred bug contract + stable impact decision |
 | `ST-6` operations readiness | Completed on `main` ([#351](https://github.com/Halildeu/ao-kernel/issues/351), [#353](https://github.com/Halildeu/ao-kernel/pull/353)) | stable release öncesi incident, rollback, upgrade, known-bugs ve release-gate runbook'unu işletilebilir hale getirmek | operations runbook + rollback matrix + fresh-venv verification + packaging smoke parity |
-| `ST-7` stable release candidate | Next | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
+| `ST-7` stable release candidate | Active ([#355](https://github.com/Halildeu/ao-kernel/issues/355)) | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
 
 ## 5. Şimdi
 
@@ -372,8 +373,8 @@ Aktif slice: `ST-7` stable release candidate preparation.
 8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
    promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
 9. Son kapanan issue: [#351](https://github.com/Halildeu/ao-kernel/issues/351)
-   (`ST-6` closeout sonrası kapatılacak)
-10. Aktif contract: `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
+   (`ST-6` closed)
+10. Aktif contract: `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md`
 11. Stable release'e doğrudan geçilmez; önce `ST-7` release-candidate gate
    branch/PR ile kapanır.
 12. Aktif iş: `ST-7` için exact release-candidate checklist, version/changelog
