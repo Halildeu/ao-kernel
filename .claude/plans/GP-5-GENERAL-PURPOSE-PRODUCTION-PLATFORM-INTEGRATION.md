@@ -2,11 +2,12 @@
 
 **Status:** Active program setup
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `b2e404b`
+**Authority:** `origin/main` at `33c4d22`
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
 **Branch:** `codex/gp5-platform-integration-roadmap`
 **Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-platform-integration`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
+closed, `RI-5` opened
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -66,6 +67,10 @@ It remains `Beta / experimental read-only`. It must not be auto-wired into
 context compilation, MCP, root context exports, or live coding workflows until
 the gates below close.
 
+`RI-5` is now the separate design gate for explicit root/context export.
+GP-5 must coordinate with that work, but must not treat root export as already
+available or required for the first repo-intelligence integration slices.
+
 ## 3. Non-Negotiable Program Rules
 
 1. `origin/main` is the only authority after each merge.
@@ -92,7 +97,7 @@ the gates below close.
 2. `SUPPORT-BOUNDARY.md`;
 3. `PUBLIC-BETA.md`;
 4. `GP-3` and `GP-4` closeouts;
-5. `RI-4` repo-intelligence status.
+5. `RI-4` repo-intelligence closeout and `RI-5` root/export design gate.
 
 **Work:**
 

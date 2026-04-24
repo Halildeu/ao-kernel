@@ -174,6 +174,10 @@ kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,
 
 Final GP-4 verdict: `close_no_widening_keep_operator_beta`.
 
+Historical GP-4 closeout mode before GP-5 opened was
+`stable maintenance / no active widening gate`. GP-5 changes the active
+planning mode, not the GP-4 verdict or support boundary.
+
 Bu nedenle `claude-code-cli` lane hâlâ `Beta (operator-managed)` kalır;
 production-certified real-adapter support, stable support widening ve genel
 amaçlı production coding automation platform claim'i verilmez. `SM-1` stable
