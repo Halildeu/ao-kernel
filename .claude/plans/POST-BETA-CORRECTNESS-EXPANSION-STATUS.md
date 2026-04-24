@@ -50,7 +50,7 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.9 production platform claim decision:** `.claude/plans/GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md`
 - **Son tamamlanan RI-5a export-plan preview:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Son tamamlanan RI-5b confirmed create-only root export design gate:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
-- **Aktif RI-5b create-only root export implementation:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
+- **Son tamamlanan RI-5b create-only root export implementation:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Son tamamlanan GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
@@ -125,12 +125,13 @@ ayrı ayrı görünür kılmak.
 - **GP-5.9 issue:** [#455](https://github.com/Halildeu/ao-kernel/issues/455) (`closed`)
 - **RI-5a export-plan preview:** PR `#457` merged at `a2144da`; closeout PR `#458` merged at `0a6eacb`
 - **RI-5b design gate issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (`closed by PR #460`)
-- **RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (`active`)
-- **Current mode:** stable maintenance + active RI-5b beta/operator-managed
-  root export implementation. This is not a production platform claim; future
-  stable widening still requires protected live-adapter evidence,
-  repo-intelligence integration gates, write-side rollback evidence, and an
-  explicit closeout decision.
+- **RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (`closed by PR #465`)
+- **RI-5b closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466) (`closes with closeout PR`)
+- **Current mode:** stable maintenance / no active general-purpose widening
+  gate. RI-5b is merged as Beta/operator-managed root export, not a production
+  platform claim. Future stable widening still requires protected
+  live-adapter evidence, repo-intelligence integration gates, write-side
+  rollback evidence, and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -192,7 +193,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
 | `GP-5` general-purpose platform integration | Completed / closed with no support widening | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve operations support paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a..GP-5.3e` close repo-intelligence handoff gates; `GP-5.4a` read-only rehearsal passed; `GP-5.5b` local patch/test rehearsal passed; `GP-5.6a` disposable PR rehearsal passed; `GP-5.7a` defines the full rehearsal contract; `GP-5.7b` aggregates execution evidence; `GP-5.8` packages operations readiness; `GP-5.9` closed with `keep_narrow_stable_runtime`; no production support widening |
 | `RI-5b` confirmed create-only root export design gate | Completed ([#459](https://github.com/Halildeu/ao-kernel/issues/459), [#460](https://github.com/Halildeu/ao-kernel/pull/460)) | RI-5a preview planından root authority file create-only write yoluna geçmeden önce exact confirmation, path ownership, deny matrix ve rollback evidence kontratını kilitlemek | docs/status-only design gate; no runtime `repo export`; no root write; no support widening |
-| `RI-5b` create-only root export implementation | Active / local validation passed ([#464](https://github.com/Halildeu/ao-kernel/issues/464)) | RI-5a preview planını exact-token, path-owned, create-only root write yoluna bağlamak | Beta/operator-managed; consumes `.ao/context/repo_export_plan.json`; no overwrite/update/MCP/LLM/network; support_widening=false; targeted tests, packaging smoke, installed-wheel export smoke, and full coverage gate passed in branch |
+| `RI-5b` create-only root export implementation | Completed / merged ([#464](https://github.com/Halildeu/ao-kernel/issues/464), [#465](https://github.com/Halildeu/ao-kernel/pull/465)) | RI-5a preview planını exact-token, path-owned, create-only root write yoluna bağlamak | Beta/operator-managed; consumes `.ao/context/repo_export_plan.json`; no overwrite/update/MCP/LLM/network; support_widening=false; targeted tests, packaging smoke, installed-wheel export smoke, full coverage gate and CI passed; branch/worktree cleaned |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -203,7 +204,7 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — stable maintenance + active RI-5b beta root export slice
+### Current mode — stable maintenance / no active general-purpose widening gate
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
 kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,

@@ -1,19 +1,26 @@
 # RI-5b - Confirmed Create-Only Root Export Design Gate
 
-**Status:** Design gate merged / implementation active in RI-5b slice
+**Status:** Design gate merged / RI-5b implementation merged
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `91c1bc0`
+**Authority:** `origin/main` at `6234476`
 **Issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
 **Design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
+**Implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464) (closed)
+**Implementation PR:** [#465](https://github.com/Halildeu/ao-kernel/pull/465)
+**Closeout issue:** [#466](https://github.com/Halildeu/ao-kernel/issues/466)
 **Design branch:** cleaned after merge
 **Design worktree:** cleaned after merge
-**Base:** `origin/main` at `91c1bc0`
+**Implementation branch:** cleaned after merge
+**Implementation worktree:** cleaned after merge
+**Base:** `origin/main` at `6234476`
 **Previous slice:** RI-5a export-plan preview merged by PR
 [#457](https://github.com/Halildeu/ao-kernel/pull/457) and closed out by PR
 [#458](https://github.com/Halildeu/ao-kernel/pull/458)
-**Next allowed slice:** RI-5b create-only implementation PR from current
-`origin/main`
-**Support impact:** none; no support widening
+**Next allowed slice:** none active. Overwrite/update, higher-authority target
+promotion, MCP/root export tooling, or context compiler wiring requires a new
+design gate.
+**Support impact:** Beta/operator-managed root export only; no stable support
+widening.
 
 ## Purpose
 
@@ -272,3 +279,5 @@ management.
 | 2026-04-24 | Design branch cleanup completed | Local `main` synchronized with `origin/main`; design branch and worktree cleaned. Next allowed slice is RI-5b create-only implementation from current `origin/main`. |
 | 2026-04-24 | Implementation started | Issue [#464](https://github.com/Halildeu/ao-kernel/issues/464) and branch `codex/ri5b-create-only-root-export` opened from `origin/main` at `49c4482`; runtime code, CLI, schema, tests, docs, and status updates live in that implementation slice. |
 | 2026-04-24 | Implementation local validation passed | Targeted deny/happy-path tests, schema validation, CLI behavior tests, mypy, packaging smoke, fresh-venv installed-wheel `repo export` smoke, doctor, and full coverage gate all passed in the RI-5b implementation worktree. |
+| 2026-04-24 | Implementation merged | PR [#465](https://github.com/Halildeu/ao-kernel/pull/465) merged to `main` at `6234476`; issue [#464](https://github.com/Halildeu/ao-kernel/issues/464) closed. |
+| 2026-04-24 | Implementation cleanup completed | Local `main` synchronized with `origin/main`; implementation branch/worktree and remote branch cleaned; closeout issue [#466](https://github.com/Halildeu/ao-kernel/issues/466) records status cleanup. |
