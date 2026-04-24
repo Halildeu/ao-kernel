@@ -2,10 +2,13 @@
 
 **Status:** Active program setup
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `33c4d22`
+**Authority:** `origin/main` at `d7f7b37` for the `GP-5.0a` consultation
+absorb slice
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Branch:** `codex/gp5-platform-integration-roadmap`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-platform-integration`
+**Current slice:** `GP-5.0a` - evidence gates and `RI-5` / `GP-5.3`
+interface contract
+**Branch:** `codex/gp5-0a-ri5-interface-gates`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-0a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
@@ -84,6 +87,13 @@ available or required for the first repo-intelligence integration slices.
    an implicit later session.
 9. Every slice ends with a written decision: `promote`, `keep_beta`,
    `defer`, or `retire`.
+10. Existing shipped-baseline checks are non-regression gates for every
+    support-widening slice.
+11. Wheel-installed fresh-venv smoke remains the trusted packaging/install
+    signal; editable-install success is not sufficient release evidence.
+12. Real-adapter evidence must preserve adapter identity, elapsed time, token
+    accounting when available, and `cost_usd` attribution or an explicit
+    `usage_missing` / `cost_unavailable` reason.
 
 ## 4. Program Phases
 
@@ -114,6 +124,36 @@ available or required for the first repo-intelligence integration slices.
 3. Repo-intelligence appears in the production integration critical path.
 
 **Release impact:** Documentation / program status only.
+
+### GP-5.0a - Evidence Gates and RI-5 / GP-5.3 Interface Contract
+
+**Goal:** Absorb the Claude/MCP consultation into the written program before
+runtime integration starts.
+
+**Work:**
+
+1. Add explicit success criteria for wheel-installed packaging freshness,
+   shipped-baseline non-regression, and adapter cost/token visibility.
+2. Add explicit risks for `RI-5` / `GP-5.3` interface conflict, permanently
+   absent protected credentials, and workspace metadata drift.
+3. Define the interface boundary between `RI-5` root/context export and
+   `GP-5.3` workflow context handoff.
+4. Mark `GP-5.3a` and `GP-5.3b` as allowed to proceed in parallel with
+   `GP-5.1a`, because retrieval evidence and manual handoff do not require the
+   protected live-adapter gate.
+5. Require runbook skeleton updates before write-side slices can close.
+
+**DoD:**
+
+1. The GP-5 success criteria include packaging freshness, baseline
+   non-regression, and cost/token evidence.
+2. The risk register records the `RI-5` / `GP-5.3` interface conflict and
+   protected-environment absence as first-class program risks.
+3. `RI-5` owns explicit root export; `GP-5.3` owns governed workflow context
+   handoff; neither path silently auto-feeds the other.
+4. The status SSOT records the next active slices and parallelization rule.
+
+**Release impact:** Documentation / program status only; no support widening.
 
 ### GP-5.1 - Protected Live Adapter Gate Implementation
 
@@ -185,6 +225,23 @@ integration pillars.
 4. no root authority writes;
 5. no automatic `context_compiler` feed.
 
+**RI-5 / GP-5.3 interface contract:**
+
+1. `RI-5` owns explicit root/context export planning and confirmed root-file
+   writes. Its preview output is `.ao/context/repo_export_plan.json`.
+2. `GP-5.3` owns governed workflow context handoff. Its first supported input
+   is explicit operator-provided stdout Markdown from `repo query`.
+3. `GP-5.3a` and `GP-5.3b` must not require `.ao/context/repo_export_plan.json`;
+   they can proceed while `RI-5a` is still implementing export-plan preview.
+4. `GP-5.3c` may design a future `context_compiler` opt-in, but it cannot
+   consume `RI-5` export artifacts until the `RI-5a` schema, digest contract,
+   and stale-plan behavior are merged on `origin/main`.
+5. GP-5 never writes `CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, or
+   `CODEX_CONTEXT.md` through a hidden workflow side effect.
+6. Any future machine-readable handoff must carry source paths, source hashes,
+   line ranges, namespace, freshness state, and support tier; missing metadata
+   is a fail-closed condition, not a best-effort prompt.
+
 **Work slices:**
 
 1. `GP-5.3a` - Retrieval evidence quality contract:
@@ -211,6 +268,8 @@ integration pillars.
    authority files.
 4. Support docs state exactly whether the surface is standalone beta,
    workflow-beta, or production-supported.
+5. Every slice states whether `RI-5` export artifacts are `not_used`,
+   `optional_input`, `required_input`, or `deferred`.
 
 **Release impact:** Beta integration gate first; no automatic production claim.
 
@@ -266,6 +325,8 @@ worktree with rollback.
    worktree.
 2. Test selection is explainable and can fall back to full test gates.
 3. Rollback path is verified before any support widening.
+4. Incident/runbook skeletons are updated for the patch/test lane in the same
+   slice that introduces or rehearses the write behavior.
 
 **Release impact:** Write-side beta only until live-write PR gates pass.
 
@@ -288,6 +349,8 @@ sandbox and rollback evidence.
 1. Remote side effects are bounded and reversible in test rehearsal.
 2. Evidence proves both creation and rollback.
 3. No production support claim is made for arbitrary user repositories.
+4. Incident/runbook skeletons describe remote branch, PR, credential, cleanup,
+   and rollback failure handling before the slice can close.
 
 **Release impact:** Deferred-to-beta decision only after rehearsal evidence.
 
@@ -367,6 +430,9 @@ verification only after gate closeout.
 | `BC-5` | Remote PR live-write is rehearsed only in disposable/sandbox targets with rollback evidence. |
 | `BC-6` | Docs, runtime, tests, CI, support boundary, known bugs, and runbooks match. |
 | `BC-7` | No fake green: missing auth, missing vector backend, blocked protected env, or denied policy are explicit non-pass states. |
+| `BC-8` | Packaging freshness is proven through wheel-installed fresh-venv smoke from outside the repo root; editable install does not satisfy release readiness. |
+| `BC-9` | Existing shipped-baseline behavior remains green before and after each widening slice. |
+| `BC-10` | Real-adapter and governed workflow evidence include elapsed time, adapter identity, token usage when available, and `cost_usd` attribution or explicit unavailable/missing reason. |
 
 ## 6. Risk Register
 
@@ -380,6 +446,9 @@ verification only after gate closeout.
 | `R6` support overclaim | Docs imply production platform before gates pass | Support-boundary update required in the same PR as any widening decision. |
 | `R7` cost/secret exposure | Protected gate leaks credentials or runs too often | Protected environment, manual/scheduled trigger, timeout, cost guard, fork isolation. |
 | `R8` merge overwrite | Parallel sessions lose work | Dedicated worktrees, branch sync checks, overlap review, no destructive cleanup. |
+| `R9` RI-5 / GP-5.3 interface conflict | Root export and workflow context handoff evolve different artifact contracts | Keep ownership split explicit; GP-5.3a/3b use stdout Markdown first; `context_compiler` opt-in waits for RI-5a schema on `origin/main`. |
+| `R10` protected environment permanently absent | Live-adapter promotion stays blocked and local auth is mistaken for support | Keep `blocked` as non-pass; allow repo-intelligence read-only slices to proceed without support widening. |
+| `R11` workspace metadata drift | MCP/workspace status reports stale version or kind while runtime package is current | Add a small investigation/fix slice before using workspace metadata as a platform-readiness signal. |
 
 ## 7. First Backlog
 
@@ -388,16 +457,17 @@ promotion.
 
 | Order | Slice | Output | Notes |
 |---:|---|---|---|
-| 1 | `GP-5.0` | This program roadmap PR | No runtime change. Establishes the integration authority. |
-| 2 | `GP-5.1a` | Protected gate prerequisite audit | Check whether GitHub environment/secret can exist; no secret value in repo. |
-| 3 | `GP-5.1b` | Protected workflow binding patch | Bind live gate to protected environment with blocked semantics preserved. |
-| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Use current `repo query` / Markdown context baseline from `RI-4`. |
-| 5 | `GP-5.3b` | Agent context handoff contract | Explicit stdout/manual handoff; no `context_compiler` auto-feed. |
-| 6 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
-| 7 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
-| 8 | `GP-5.5a` | Controlled patch/test design | No remote side effects. |
-| 9 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback required. |
-| 10 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
+| 1 | `GP-5.0` | Program roadmap PR | Completed on `main`; no runtime change. |
+| 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Current slice; no runtime change. |
+| 3 | `GP-5.1a` | Protected gate prerequisite audit | Check whether GitHub environment/secret can exist; no secret value in repo. |
+| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | May run in parallel with `GP-5.1a`; use current `repo query` / Markdown context baseline from `RI-4`. |
+| 5 | `GP-5.3b` | Agent context handoff contract | May run in parallel with `GP-5.1a`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
+| 6 | `GP-5.1b` | Protected workflow binding patch | Bind live gate to protected environment with blocked semantics preserved. |
+| 7 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
+| 8 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
+| 9 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
+| 10 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
+| 11 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
 
@@ -423,4 +493,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge this roadmap, then start `GP-5.1a`.
+5. next step: merge `GP-5.0a`, then start `GP-5.1a` and the independent
+   `GP-5.3a` / `GP-5.3b` repo-intelligence contract slices without support
+   widening.
