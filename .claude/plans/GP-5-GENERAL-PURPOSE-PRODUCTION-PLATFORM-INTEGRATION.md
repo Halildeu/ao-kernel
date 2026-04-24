@@ -1,17 +1,18 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.7b` full production rehearsal execution gate
+**Status:** Active program setup / `GP-5.8` operations and support package
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `0a3c2f9` after the `GP-5.7a` full production rehearsal contract
+**Authority:** `origin/main` at `fef3c23` after the `GP-5.7b` full production rehearsal execution gate
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.7b` - full production rehearsal execution gate
-**Branch:** `codex/gp5-7b-full-rehearsal-gate`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-7b`
+**Current slice:** `GP-5.8` - operations and support package
+**Branch:** `codex/gp5-8-ops-support-package`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-8`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
 `GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed,
-`GP-5.5b` completed, `GP-5.6a` completed, `GP-5.7a` completed
+`GP-5.5b` completed, `GP-5.6a` completed, `GP-5.7a` completed,
+`GP-5.7b` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -497,7 +498,7 @@ The detailed decision record is
 This slice keeps `production_platform_claim=false`. GP-5.7b remains the first
 slice allowed to execute the complete rehearsal matrix.
 
-**GP-5.7b active execution gate:**
+**GP-5.7b completed execution gate:**
 
 `GP-5.7b` adds `scripts/gp5_full_production_rehearsal.py` and
 `gp5-full-production-rehearsal-report.schema.v1.json`. The command consumes a
@@ -516,7 +517,7 @@ Pass requires three clean chains and one fail-closed chain:
 The detailed decision record is
 `.claude/plans/GP-5.7b-FULL-PRODUCTION-REHEARSAL-GATE.md`.
 
-### GP-5.8 - Operations and Support Widening Package
+### GP-5.8 - Operations Support Package
 
 **Goal:** Make the platform operable before making a broader claim.
 
@@ -536,6 +537,16 @@ The detailed decision record is
 3. Known bug registry has no shipped-blocker affecting the widened claim.
 
 **Release impact:** Required before any production platform claim.
+
+**GP-5.8 active operations package slice:**
+
+`GP-5.8` adds `scripts/gp5_operations_support_package.py` and
+`gp5-operations-support-package.schema.v1.json`. The command validates that
+operator runbooks, known-bug interpretation, support-boundary wording, and
+branch protection / required checks decision notes are present before GP-5.9.
+
+This slice does not widen support. Its output must keep
+`support_widening=false` and `production_platform_claim=false`.
 
 ### GP-5.9 - General-Purpose Platform Release Candidate
 
@@ -607,7 +618,8 @@ promotion.
 | 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Completed on `main`; disposable worktree preview/apply/test/rollback/idempotency/cleanup evidence; no support widening. |
 | 13 | `GP-5.6a` | Disposable PR write rehearsal | Completed on `main`; requires GP-5.5b report, sandbox-only PR create/verify/close/branch-delete evidence; no support widening. |
 | 13.5 | `GP-5.7a` | Full production rehearsal contract | Completed on `main`; schema-backed execution matrix; no support widening. |
-| 13.6 | `GP-5.7b` | Full production rehearsal execution gate | Active; aggregates three clean pass chains plus one fail-closed chain; no live default write and no support widening. |
+| 13.6 | `GP-5.7b` | Full production rehearsal execution gate | Completed on `main`; aggregates three clean pass chains plus one fail-closed chain; no live default write and no support widening. |
+| 13.8 | `GP-5.8` | Operations and support package | Active; runbook/known-bugs/support-boundary/branch-protection readiness package; no support widening. |
 | 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
@@ -626,12 +638,11 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5.7b is the active aggregation gate. It starts only after GP-5.7a has fixed
-the rehearsal contract and consumes previously generated GP-5.4a, GP-5.5b, and
-GP-5.6a evidence reports. The script
-`scripts/gp5_full_production_rehearsal.py` produces
-`gp5_full_production_rehearsal_report` and fails closed unless the matrix
-contains at least three clean pass chains and one fail-closed chain.
+GP-5.8 is the active operations package gate. It starts only after GP-5.7b has
+made the full rehearsal evidence chain aggregatable. The script
+`scripts/gp5_operations_support_package.py` produces
+`gp5_operations_support_package` and fails closed unless runbook, known-bugs,
+support-boundary, and branch-protection/required-checks notes are present.
 
 This is still not a general-purpose production platform claim. It does not
 enable arbitrary repository PR creation, real-adapter production support, or
@@ -643,6 +654,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. current step: close `GP-5.7b` full production rehearsal execution gate; next
-   step after that is GP-5.8 operations/support widening package unless
+5. current step: close `GP-5.8` operations/support package; next step after
+   that is GP-5.9 production platform claim decision unless
    protected environment/credential attestation arrives first for `GP-5.1b`.

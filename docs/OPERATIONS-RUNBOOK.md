@@ -161,6 +161,8 @@ aligned with the current support boundary.
 | Policy/command deny looks wrong | Targeted executor policy tests plus workflow evidence `events.jsonl` | Blocker only if shipped baseline policy contract regresses |
 | `claude-code-cli` smoke fails | `python3 scripts/claude_code_cli_smoke.py --output text` | Beta lane incident unless the shipped baseline also fails |
 | `gh-cli-pr` smoke fails | `python3 scripts/gh_cli_pr_smoke.py --output text` | Beta/deferred lane incident unless shipped baseline also fails |
+| Repo intelligence scan/query fails | `python3 -m ao_kernel repo scan --project-root . --output json`, then `python3 -m ao_kernel repo query --project-root . --workspace-root .ao --query "..." --output json` | Beta/experimental lane incident unless shipped baseline doctor/demo also fails |
+| Vector backend indexing fails | `python3 -m ao_kernel repo index --project-root . --workspace-root .ao --dry-run --output json`; live vector writes require explicit `--write-vectors` confirmation | Beta/experimental explicit-write incident; do not treat as shipped baseline failure |
 | GP-5 controlled patch/test contract fails | Validate `gp5-controlled-patch-test-contract.schema.v1.json` and run `pytest -q tests/test_gp5_controlled_patch_test_contract.py` | Design-gate blocker only; not a stable shipped baseline incident |
 | GP-5.5b controlled patch/test rehearsal fails | `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` and `pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py` | Rehearsal-gate blocker only; do not widen write-side support |
 | GP-5.6a disposable PR write rehearsal fails | Validate `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_disposable_pr_write_rehearsal.py` | Remote side-effect rehearsal blocker only; close/delete any sandbox residue before retry |
@@ -327,6 +329,105 @@ Expected pass evidence:
 If the gate blocks, inspect `blocked_reason`, `clean_runs[*].findings`, and
 `failure_runs[*].findings`. Do not substitute a production repository or
 unbounded live adapter run to force a pass.
+
+### 3.9 GP-5.8 operations support package
+
+`GP-5.8` records operator recovery coverage before any GP-5 production claim.
+It does not widen support, does not add live writes, and does not change
+release gates.
+
+Package command:
+
+```bash
+python3 scripts/gp5_operations_support_package.py \
+  --output json \
+  --report-path /tmp/gp58-ops-support-package.json
+```
+
+#### GP-5.8 adapter incidents
+
+For `claude-code-cli`, start with
+`python3 scripts/claude_code_cli_smoke.py --output text`, not raw
+`claude auth status`. If prompt access is blocked, keep the lane
+Beta/operator-managed and do not claim production-certified adapter support.
+The protected live-adapter gate remains the promotion boundary.
+
+For `gh-cli-pr`, start with `python3 scripts/gh_cli_pr_smoke.py --output text`.
+Live-write probes require explicit `--mode live-write --allow-live-write` and a
+disposable `sandbox` repository.
+
+#### GP-5.8 repo-intelligence incidents
+
+For read-only local inventory, start with `repo scan` and then `repo query`:
+
+```bash
+python3 -m ao_kernel repo scan --project-root . --output json
+python3 -m ao_kernel repo query --project-root . --workspace-root .ao \
+  --query "where is review_ai_flow invoked" \
+  --output json
+```
+
+If `repo query` fails because no vector manifest/backend exists, treat it as a
+beta repo-intelligence incident. Do not auto-feed context into workflow runtime
+to bypass the failure.
+
+#### GP-5.8 vector backend incidents
+
+Start with dry-run:
+
+```bash
+python3 -m ao_kernel repo index --project-root . --workspace-root .ao \
+  --dry-run \
+  --output json
+```
+
+Live vector writes require `repo index --write-vectors`, explicit confirmation,
+a configured vector backend, and an embedding API key. Missing credentials or
+backend config is a blocked beta lane, not a stable shipped-baseline incident.
+
+#### GP-5.8 write-side incidents
+
+For controlled local patch/test rehearsals, inspect path-scoped claims,
+preview artifacts, and reverse diff artifacts. First commands:
+
+```bash
+python3 scripts/gp5_controlled_patch_test_rehearsal.py \
+  --approve-apply \
+  --output json \
+  --report-path /tmp/gp55b-local-patch-report.json
+pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py
+```
+
+If rollback fails, stop widening. Keep the worktree if needed for investigation
+and record why cleanup was intentionally retained.
+
+#### GP-5.8 PR rollback incidents
+
+For disposable PR write rehearsals, close the sandbox PR and delete the sandbox
+branch before retrying:
+
+```bash
+gh pr close <url> --repo <owner>/<sandbox-repo>
+gh api -X DELETE repos/<owner>/<sandbox-repo>/git/refs/heads/<head>
+```
+
+If branch delete returns not found after cleanup verification, record that as
+successful cleanup evidence only if the subsequent `gh api .../git/ref/heads`
+probe confirms absence.
+
+#### GP-5.8 packaging/release incidents
+
+Packaging remains a release blocker when it affects the shipped channel. First
+commands:
+
+```bash
+python3 scripts/packaging_smoke.py
+python3 -m build
+twine check dist/*
+```
+
+For published releases, also verify exact-pin and bare fresh-venv install
+outside the repo checkout.
 
 ## 4. Evidence to collect
 
