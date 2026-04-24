@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:gp5-read-only-rehearsal-report:v1",
+  "title": "GP-5 read-only workflow rehearsal report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "repo_intelligence_handoff",
+    "workflow_rehearsal"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_read_only_workflow_rehearsal_report" },
+    "overall_status": { "enum": ["pass", "blocked"] },
+    "decision": {
+      "enum": [
+        "pass_read_only_rehearsal_no_support_widening",
+        "blocked_read_only_rehearsal_no_support_widening"
+      ]
+    },
+    "support_widening": { "const": false },
+    "repo_intelligence_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "source",
+        "repo_query_command_contract",
+        "generation_steps",
+        "markdown_sha256",
+        "markdown_bytes",
+        "hidden_injection",
+        "mcp_tool_used",
+        "root_export_used",
+        "context_compiler_auto_feed"
+      ],
+      "properties": {
+        "mode": { "const": "explicit_operator_markdown" },
+        "source": { "enum": ["deterministic_contract_fixture"] },
+        "repo_query_command_contract": { "type": "string", "minLength": 1 },
+        "generation_steps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "markdown_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "markdown_bytes": { "type": "integer", "minimum": 1 },
+        "hidden_injection": { "const": false },
+        "mcp_tool_used": { "const": false },
+        "root_export_used": { "const": false },
+        "context_compiler_auto_feed": { "const": false }
+      }
+    },
+    "workflow_rehearsal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_id",
+        "adapter_id",
+        "execution_mode",
+        "command",
+        "returncode",
+        "final_state",
+        "remote_side_effects",
+        "stdout_sha256",
+        "stderr_sha256"
+      ],
+      "properties": {
+        "workflow_id": { "const": "review_ai_flow" },
+        "adapter_id": { "const": "codex-stub" },
+        "execution_mode": { "const": "wheel_installed_temp_venv" },
+        "command": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "returncode": { "type": "integer" },
+        "final_state": { "type": ["string", "null"] },
+        "remote_side_effects": { "const": false },
+        "stdout_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "stderr_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "blocked_reason": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "overall_status": { "const": "blocked" } } },
+      "then": { "required": ["blocked_reason"] }
+    }
+  ]
+}

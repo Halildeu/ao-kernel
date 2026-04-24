@@ -39,7 +39,8 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.3b agent context handoff contract:** `.claude/plans/GP-5.3b-AGENT-CONTEXT-HANDOFF-CONTRACT.md`
 - **Son tamamlanan GP-5.3c workflow opt-in design contract:** `.claude/plans/GP-5.3c-WORKFLOW-OPT-IN-DESIGN-CONTRACT.md`
 - **Son tamamlanan GP-5.3d no-MCP/no-root-export guard:** `.claude/plans/GP-5.3d-NO-MCP-NO-ROOT-EXPORT-GUARD.md`
-- **Aktif GP-5.3e workflow building-block decision:** `.claude/plans/GP-5.3e-REPO-INTELLIGENCE-WORKFLOW-BUILDING-BLOCK-DECISION.md`
+- **Son tamamlanan GP-5.3e workflow building-block decision:** `.claude/plans/GP-5.3e-REPO-INTELLIGENCE-WORKFLOW-BUILDING-BLOCK-DECISION.md`
+- **Aktif GP-5.4a governed read-only workflow rehearsal:** `.claude/plans/GP-5.4a-GOVERNED-READ-ONLY-WORKFLOW-REHEARSAL.md`
 - **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
@@ -104,7 +105,8 @@ ayrı ayrı görünür kılmak.
 - **GP-5.3b issue:** [#433](https://github.com/Halildeu/ao-kernel/issues/433) (`closed after GP-5.3b PR`)
 - **GP-5.3c issue:** [#435](https://github.com/Halildeu/ao-kernel/issues/435) (`closed after GP-5.3c PR`)
 - **GP-5.3d issue:** [#437](https://github.com/Halildeu/ao-kernel/issues/437) (`closed after GP-5.3d PR`)
-- **GP-5.3e issue:** [#439](https://github.com/Halildeu/ao-kernel/issues/439) (`closes with GP-5.3e PR`)
+- **GP-5.3e issue:** [#439](https://github.com/Halildeu/ao-kernel/issues/439) (`closed after GP-5.3e PR`)
+- **GP-5.4a issue:** [#441](https://github.com/Halildeu/ao-kernel/issues/441) (`active closeout candidate`)
 - **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
@@ -252,8 +254,8 @@ boundary'yi genişletmez.
 3. `GP-5.3b` agent context handoff contract — completed on `main`
 4. `GP-5.3c` workflow opt-in design — completed on `main`
 5. `GP-5.3d` no-MCP/no-root-export guard — completed on `main`
-6. `GP-5.3e` repo-intelligence workflow building-block promotion decision — current closeout candidate
-7. `GP-5.4a` governed read-only workflow rehearsal — next unblocked slice
+6. `GP-5.3e` repo-intelligence workflow building-block promotion decision — completed on `main`
+7. `GP-5.4a` governed read-only workflow rehearsal — current closeout candidate
 8. `GP-5.1b` protected workflow binding patch — blocked until attestation
 
 `GP-5.3a` ve `GP-5.3b`, `GP-5.1a` ile paralel yürüyebilir; çünkü read-only
@@ -345,6 +347,22 @@ repo-intelligence contract slice'larını engellemez.
 5. `RI-5a` export-plan preview bu slice için `not_used`; support boundary
    yalnız beta wording seviyesinde netleşir.
 6. Sıradaki unblocked slice `GP-5.4a` governed read-only workflow rehearsal'dır;
+   `GP-5.1b` protected gate attestation gelene kadar bloklu kalır.
+
+`GP-5.4a` closeout adayı:
+
+1. Karar: `pass_read_only_rehearsal_no_support_widening`.
+2. `python3 scripts/gp5_read_only_rehearsal.py --output json` wheel-installed
+   temporary virtualenv içinde `review_ai_flow + codex-stub` demo yolunu
+   çalıştırır.
+3. Repo-intelligence context yalnız `--intent-file` ile görünür workflow
+   intent input'u olarak verilir; MCP tool, root export,
+   `context_compiler` auto-feed veya workflow runtime wiring yoktur.
+4. Evidence artifact `gp5-read-only-rehearsal-report.schema.v1.json` ile
+   validate edilir ve `support_widening=false` taşır.
+5. Bu slice production real-adapter support, live-write support veya arbitrary
+   repo retrieval semantic correctness iddiası vermez.
+6. Sıradaki unblocked slice `GP-5.5a` controlled patch/test design'dır;
    `GP-5.1b` protected gate attestation gelene kadar bloklu kalır.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
