@@ -13,19 +13,21 @@ pip install -U ao-kernel
 pip install ao-kernel==4.0.0
 ```
 
-### Public Beta channel
+### Historical Public Beta pre-release / future pre-release testing
 
 ```bash
-pip install --pre ao-kernel
-# or pin explicitly
 pip install ao-kernel==4.0.0b2
+# or intentionally follow the latest available pre-release
+pip install --pre ao-kernel
 ```
 
 Do not assume `pip install ao-kernel` will pick a beta. It stays on the stable
-channel unless you ask for a pre-release explicitly. `v4.0.0` is live on PyPI;
-post-publish verification confirmed both `pip install ao-kernel` and
-`pip install ao-kernel==4.0.0` resolve to `ao-kernel 4.0.0` in fresh virtual
-environments.
+channel unless you ask for a pre-release explicitly. `4.0.0b2` is a historical
+Public Beta pre-release pin, not the normal production upgrade path. `--pre`
+is for intentional pre-release testing and may resolve to a newer pre-release
+if one exists later. `v4.0.0` is live on PyPI; post-publish verification
+confirmed both `pip install ao-kernel` and `pip install ao-kernel==4.0.0`
+resolve to `ao-kernel 4.0.0` in fresh virtual environments.
 
 ## 1.1 Stable support boundary
 

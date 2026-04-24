@@ -22,9 +22,11 @@ pip install ao-kernel==4.0.0b2
 pip install --pre ao-kernel
 ```
 
-`--pre` yalnız pre-release hattını bilinçli takip etmek için kullanılmalıdır;
-stable `4.0.0` canlı hale geldiğinde varsayılan kullanıcı yolu stable kanal
-olur.
+`4.0.0b2` historical Public Beta pre-release pin'idir. Normal kullanıcı ve
+stable rollback yolu değildir. `--pre` yalnız pre-release hattını bilinçli
+takip eden operatörler için kullanılmalıdır; gelecekte yeni pre-release varsa
+onu da seçebilir. Stable `4.0.0` canlı hale geldiğinde varsayılan kullanıcı
+yolu stable kanal olur.
 
 ## Operational References
 

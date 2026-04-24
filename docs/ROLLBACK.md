@@ -14,11 +14,15 @@ pip install --force-reinstall ao-kernel
 `ao-kernel` stable channel pin'i dokümana sabit yazılmaz; bu komut pre-release
 flag olmadan en güncel stable hattı geri yükler.
 
-### Return to the documented beta pin
+### Return to the historical Public Beta pre-release pin
 
 ```bash
 pip install --force-reinstall ao-kernel==4.0.0b2
 ```
+
+This is not the normal stable rollback path. Use it only when intentionally
+returning an operator-managed environment to the historical Public Beta
+pre-release line. The default rollback path remains the stable channel above.
 
 After either rollback, verify:
 

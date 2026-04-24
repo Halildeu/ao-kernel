@@ -32,6 +32,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Added the `SM-3` program-status cleanup, removing stale historical `ST-2`
   wording from the living status board while keeping stable maintenance / no
   active widening as the current mode.
+- Added the `SM-4` historical beta pin wording cleanup, clarifying that
+  `4.0.0b2` is an intentional historical Public Beta pre-release path while
+  stable `4.0.0` remains the default user and rollback path.
 
 ## [4.0.0] - 2026-04-24
 
