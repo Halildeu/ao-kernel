@@ -16,8 +16,8 @@ ayrı ayrı görünür kılmak.
 - **Son extension decision record:** `.claude/plans/PB-6.3-CONTEXT-ORCHESTRATION-DECISION.md`
 - **Program roadmap:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
-- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-7-STABLE-RELEASE-CANDIDATE.md` (`ST-7 completed`)
-- **Aktif decision/ordering contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 active`)
+- **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
+- **Aktif decision/ordering contract:** `.claude/plans/GP-2-DEFERRED-SUPPORT-LANES-REPRIORITIZATION.md` (`post-stable next-slice selection`)
 - **GP-2.2 closeout contract:** `.claude/plans/GP-2.2-COST-USD-RECONCILE-COMPLETENESS.md`
 - **PB-9.2 karar notu:** `.claude/plans/PB-9.2-TRUTH-INVENTORY-DEBT-RATCHET.md`
 - **PB-9.3 karar notu:** `.claude/plans/PB-9.3-WRITE-LIVE-EVIDENCE-REHEARSAL.md`
@@ -46,13 +46,13 @@ ayrı ayrı görünür kılmak.
 - **ST-2 issue:** [#344](https://github.com/Halildeu/ao-kernel/issues/344) (`closed`)
 - **ST-6 issue:** [#351](https://github.com/Halildeu/ao-kernel/issues/351) (`closed`)
 - **ST-7 issue:** [#355](https://github.com/Halildeu/ao-kernel/issues/355) (`closed after closeout`)
-- **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`active`)
-- **Aktif gate:** `ST-8` stable publish and post-publish verification
+- **ST-8 issue:** [#358](https://github.com/Halildeu/ao-kernel/issues/358) (`closed after closeout`)
+- **Aktif gate:** none; `v4.0.0` stable live completed. Next runtime/support widening work requires a new scoped slice under `GP-2` or a follow-up roadmap.
 
 ## 2. Başlangıç Gerçeği
 
 - `WP-5` ile `WP-9` production hardening programı `main` üzerinde kapanmıştır.
-- Repo bugün dar ama kanıtlı bir Public Beta / governed runtime yüzeyine sahiptir.
+- Repo bugün dar ama kanıtlı bir stable governed runtime yüzeyine sahiptir.
 - Support boundary hâlâ bilerek dardır; `review_ai_flow + codex-stub` shipped
   baseline, gerçek adapter lane'leri ise operator-managed beta durumundadır.
 - Public Beta closeout sonrası `PB-8.4` docs/runbook/release-gate parity
@@ -61,6 +61,8 @@ ayrı ayrı görünür kılmak.
   ve `PB-9.4` production claim decision closeout dilimleri kapanmıştır.
 - `GP-1` tracker kapanmıştır; `GP-1.1..GP-1.5` kararları tamamlanmış ve
   support boundary `stay_beta_operator_managed` çizgisinde korunmuştur.
+- `ST-8` tamamlanmıştır: `v4.0.0` PyPI üzerinde canlıdır, exact pin ve bare
+  stable install fresh venv içinde `ao-kernel 4.0.0` döndürmüştür.
 - Repo bugün hâlâ genel amaçlı production coding automation platformu değildir;
   bu programın amacı o iddiayı hemen widen etmek değil, önce kalan debt'i
   kontrollü kapatmaktır.
@@ -100,7 +102,7 @@ ayrı ayrı görünür kılmak.
 | `ST-5` deferred correctness closure | Completed on `main` ([#348](https://github.com/Halildeu/ao-kernel/issues/348), [#350](https://github.com/Halildeu/ao-kernel/pull/350)) | known deferred correctness kalemlerini stable blocker olmaktan çıkarıp açık support boundary'ye bağlamak | deferred bug contract + stable impact decision |
 | `ST-6` operations readiness | Completed on `main` ([#351](https://github.com/Halildeu/ao-kernel/issues/351), [#353](https://github.com/Halildeu/ao-kernel/pull/353)) | stable release öncesi incident, rollback, upgrade, known-bugs ve release-gate runbook'unu işletilebilir hale getirmek | operations runbook + rollback matrix + fresh-venv verification + packaging smoke parity |
 | `ST-7` stable release candidate | Completed on `main` ([#355](https://github.com/Halildeu/ao-kernel/issues/355), [#356](https://github.com/Halildeu/ao-kernel/pull/356), [#357](https://github.com/Halildeu/ao-kernel/pull/357)) | `4.0.0` stable için final aday branch/PR hazırlamak | version/changelog/docs final + full CI + installed-package smoke |
-| `ST-8` stable publish and post-publish verification | Active ([#358](https://github.com/Halildeu/ao-kernel/issues/358)) | `4.0.0` stable tag/publish ve public install gerçeğini doğrulamak | publish workflow success + PyPI exact/bare install verify + installed demo smoke |
+| `ST-8` stable publish and post-publish verification | Completed ([#358](https://github.com/Halildeu/ao-kernel/issues/358), tag `v4.0.0`, publish workflow [`24866683491`](https://github.com/Halildeu/ao-kernel/actions/runs/24866683491)) | `4.0.0` stable tag/publish ve public install gerçeğini doğrulamak | publish workflow success + PyPI exact/bare install verify + installed demo smoke |
 
 ## 5. Şimdi
 
@@ -361,7 +363,9 @@ Not:
 
 ## 8. Anlık Öncelik
 
-Aktif slice: `ST-8` stable publish and post-publish verification.
+Aktif slice: none. `ST-8` stable publish and post-publish verification
+tamamlandı; sıradaki runtime/support widening işi yeni scoped slice olarak
+açılmalıdır.
 
 1. Son kapanan slice: `GP-2.2` adapter-path `cost_usd` reconcile completeness
    closeout ([#333](https://github.com/Halildeu/ao-kernel/issues/333))
@@ -369,19 +373,18 @@ Aktif slice: `ST-8` stable publish and post-publish verification.
 3. Completed contract: `.claude/plans/ST-1-RELEASABLE-PRE-RELEASE-GATE.md`
 4. Completed contract: `.claude/plans/ST-2-STABLE-SUPPORT-BOUNDARY-FREEZE.md`
 5. Completed contract: `.claude/plans/ST-5-DEFERRED-CORRECTNESS-CLOSURE.md`
-6. Son kapanan PR: [#357](https://github.com/Halildeu/ao-kernel/pull/357)
+6. Son kapanan PR: ST-8 closeout PR
 7. ST-2 freeze kararı: dar stable runtime için ST-3/ST-4 blocker değildir;
    real-adapter/live-write promotion istenirse ayrı gate gerekir.
 8. ST-5 closeout kararı: deferred correctness kalemleri stable shipped baseline'a
    promote edilmiyor; tamamı `deferred` veya spec-only kalıyor.
-9. Son kapanan issue: [#355](https://github.com/Halildeu/ao-kernel/issues/355)
-   (`ST-7` closed after closeout)
-10. Aktif contract:
+9. Son kapanan issue: [#358](https://github.com/Halildeu/ao-kernel/issues/358)
+   (`ST-8` closed after closeout)
+10. Completed contract:
    `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md`
-11. Stable live iddiası yalnız `ST-8` tag/publish ve public fresh-venv verify
-   sonrası yapılır.
-12. Aktif iş: `v4.0.0` tag push, publish workflow izleme, PyPI exact/bare
-   install verification ve status closeout.
+11. Stable live iddiası artık geçerlidir: `pip install ao-kernel` ve exact pin
+   `ao-kernel==4.0.0` fresh venv içinde `4.0.0` kurmuştur.
+12. Aktif iş: yeni scoped slice seçilmeden runtime/support widening yapılmaz.
 
 `PB-8.2` completion kaydı:
 

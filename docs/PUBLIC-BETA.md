@@ -1,10 +1,10 @@
-# Support Matrix SSOT (v4.0.0 stable candidate + beta lanes)
+# Support Matrix SSOT (v4.0.0 stable + beta lanes)
 
-> **Sürüm durumu (2026-04-24)**: bu source tree `4.0.0` stable candidate
-> için hazırlanmıştır. Public package live claim'i yalnız `v4.0.0` tag'i,
-> publish workflow success ve fresh-venv public install verify sonrası
-> yapılır. Bu doküman stable shipped baseline, beta lanes, deferred lanes ve
-> known bugs için operator-facing SSOT'tur.
+> **Sürüm durumu (2026-04-24)**: `v4.0.0` tag'i publish edilmiştir ve
+> `ao-kernel==4.0.0` PyPI üzerinde canlıdır. Fresh-venv doğrulaması hem exact
+> pin (`ao-kernel==4.0.0`) hem stable kanal (`pip install ao-kernel`) için
+> `ao-kernel 4.0.0` sonucunu verdi. Bu doküman stable shipped baseline, beta
+> lanes, deferred lanes ve known bugs için operator-facing SSOT'tur.
 
 ## Kurulum
 
@@ -12,7 +12,7 @@
 
 ```bash
 pip install ao-kernel
-pip install ao-kernel==4.0.0  # exact stable pin after v4.0.0 publish
+pip install ao-kernel==4.0.0  # exact stable pin
 ```
 
 ### Historical Public Beta pre-release
@@ -36,11 +36,11 @@ olur.
 
 ## Stable Support Boundary
 
-`ST-2` froze the support boundary and `ST-7` keeps it unchanged for the
-`4.0.0` stable candidate. The stable support set is exactly the `Shipped`
-table below unless a later gate changes this document with new evidence.
+`ST-2` froze the support boundary and `ST-8` published it unchanged for
+`4.0.0` stable. The stable support set is exactly the `Shipped` table below
+unless a later gate changes this document with new evidence.
 
-Stable candidate rules:
+Stable rules:
 
 1. `Beta`, `Deferred`, `Contract inventory`, and `Example-only` rows are not
    stable shipped support claims.
@@ -53,7 +53,7 @@ Stable candidate rules:
 5. This boundary still does not claim ao-kernel is a general-purpose
    production coding automation platform.
 
-## Shipped (v4.0.0 stable candidate)
+## Shipped (v4.0.0 stable)
 
 | Yüzey | Durum | Not |
 |---|---|---|
@@ -61,7 +61,7 @@ Stable candidate rules:
 | `python -m ao_kernel version` | Shipped | Module entrypoint kontratı |
 | `python -m ao_kernel.cli version` | Shipped | CLI module kontratı |
 | Bundled `review_ai_flow` + bundled `codex-stub` | Shipped | Desteklenen demo workflow |
-| `examples/demo_review.py` | Shipped | Disposable workspace + canlı smoke `completed`; komut, `ao-kernel` kurulu bir Python environment'ı içinde çalıştırılmalıdır |
+| `examples/demo_review.py` | Shipped | Disposable workspace + public package fresh-venv smoke `completed`; komut, `ao-kernel` kurulu bir Python environment'ı içinde çalıştırılmalıdır |
 | `ao-kernel doctor` | Shipped | Workspace health check + bundled extension truth audit; may emit WARN while quarantined inventory remains |
 | `PRJ-KERNEL-API` read-only runtime-backed actions | Shipped | `system_status` and `doc_nav_check`; explicit bootstrap handlers, offline, read-only, behavior-tested |
 | CI coverage gate 85% | Shipped | `pyproject.toml` ile hizalı (`test.yml --fail-under=85`) |

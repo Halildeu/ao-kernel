@@ -3,6 +3,7 @@
 **Durum tarihi:** 2026-04-24
 **Rol:** Public Beta / post-beta correctness hattindan production stable live
 release'e gecis icin takip edilebilir program kontrati.
+**Sonuç:** `v4.0.0` stable runtime baseline live on PyPI.
 **Kapsam mottosu:** once gercegi kilitle, sonra support'u genislet.
 
 ## 1. Hedef
@@ -25,16 +26,19 @@ Iki farkli hedef birbirine karistirilmeyecek:
 
 | Seviye | Anlam | Stable icin durum |
 |---|---|---|
-| Stable runtime release | Dar support boundary ile guvenilir, paketlenmis, isletilebilir cekirdek | `4.0.0` icin hedeflenebilir |
+| Stable runtime release | Dar support boundary ile guvenilir, paketlenmis, isletilebilir cekirdek | `v4.0.0` ile live |
 | General-purpose production coding automation platform | Gercek adapter'lar, live-write E2E, multi-agent safety ve operator runbook'lariyla genis platform | Ancak sertifikasyon kapilari kapandiktan sonra iddia edilir |
 
-`4.0.0` stable release dar ama dogru bir production runtime olabilir. "Genel
-amacli production coding automation platform" iddiasi, gercek adapter
+`4.0.0` stable release dar ama dogru bir production runtime olarak live'dir.
+"Genel amacli production coding automation platform" iddiasi, gercek adapter
 sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
 
 ## 3. Mevcut Baseline
 
 - `main` temiz ve `origin/main` ile senkron.
+- Public tag `v4.0.0` mevcut; PyPI exact pin `ao-kernel==4.0.0` ve bare
+  stable install `pip install ao-kernel` fresh venv ile doğrulandı.
+- GitHub Release `v4.0.0` latest release olarak yayımlandı.
 - `ST-1` release PR package metadata hedefi `4.0.0b2` idi ve tamamlandi.
 - Public tag `v4.0.0-beta.2` mevcut; PyPI exact pin
   `ao-kernel==4.0.0b2` fresh venv ile dogrulandi.
@@ -46,34 +50,31 @@ sertifikasyonu ve live-write rollback kanitlari kapanmadan kullanilmayacak.
 - Post-beta programda GP-2 hattinda deferred support lane'leri kanitla
   kapatiliyor.
 
-## 4. Immediate Drift Kayitlari
+## 4. Closed Drift Kayitlari
 
-Stable roadmap baslamadan once su drift'ler kapatilacak veya karar notuna
-baglanacak:
+Stable roadmap boyunca şu drift'ler kapatıldı veya karar notuna bağlandı:
 
-1. `docs/PUBLIC-BETA.md` stable kanal orneginde stale surum yazimi varsa
-   hard-code yerine kural yazacak.
+1. `docs/PUBLIC-BETA.md` stable kanal dili `v4.0.0` live sonucuna çekildi.
 2. `.claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md` icinde GP-2.2b
    issue/status satirlari merge sonrasi gercekle hizalanacak.
 3. Adapter-path `cost_usd` reconcile icin "runtime fix gerekir mi, yoksa
    evidence/test/docs closeout yeterli mi" karari GP-2.2d'de kapanacak.
-4. `v4.0.0-beta.1` tag'i main'in gerisinde kaldigi icin bir sonraki public
-   beta/stable release eski tag uzerinden degil current `main` uzerinden
-   cikacak.
+4. `v4.0.0-beta.1` tag'i main'in gerisinde kaldigi icin stable release eski
+   tag üzerinden değil current `main` üzerinden çıktı.
 
 ## 5. Release Stratejisi
 
-Stable'a dogrudan ziplanmayacak. Varsayilan yol:
+Stable'a dogrudan ziplanmadi. Tamamlanan yol:
 
 1. `4.0.0b2` pre-release cikti ve fresh install / wheel / docs / smoke /
    runbook kanitlari toplandi.
-2. Siradaki adim `ST-2` stable support boundary freeze'dir.
-3. Support boundary genisletilecekse sadece kanitli yuzeyleri genislet.
-4. Blocker kalmazsa `4.0.0` stable tag ve PyPI publish yap.
+2. `ST-2` stable support boundary freeze tamamlandi.
+3. `ST-5` ve `ST-6` ile deferred correctness ve operations readiness kapandı.
+4. `ST-7` source candidate merge edildi.
+5. `ST-8` ile `v4.0.0` tag, PyPI publish ve public install verify tamamlandı.
 
-Eger `4.0.0b2` sirasinda shipped yuzeyi degistiren runtime bug bulunursa,
-stable yerine yeni beta devam eder. Stable release, takvim karari degil gate
-kararidir.
+Stable release takvim kararı değil gate kararıydı; gate'ler geçtikten sonra
+canlıya alındı.
 
 ## 6. Work Packages
 
@@ -261,7 +262,10 @@ bilerek stable disina almak.
 
 ### ST-8 — Stable Publish ve Post-Publish Verification
 
-**Durum:** Active via [#358](https://github.com/Halildeu/ao-kernel/issues/358)
+**Durum:** Completed via [#358](https://github.com/Halildeu/ao-kernel/issues/358),
+tag `v4.0.0`, publish workflow
+[`24866683491`](https://github.com/Halildeu/ao-kernel/actions/runs/24866683491),
+GitHub Release [`v4.0.0`](https://github.com/Halildeu/ao-kernel/releases/tag/v4.0.0),
 and `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md`.
 
 **Amac:** Stable'i canliya almak ve public install gercegini dogrulamak.

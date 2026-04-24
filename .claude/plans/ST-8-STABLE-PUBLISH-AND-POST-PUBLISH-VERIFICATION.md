@@ -1,7 +1,11 @@
 # ST-8 — Stable Publish and Post-Publish Verification
 
-**Durum:** Active via issue
-[#358](https://github.com/Halildeu/ao-kernel/issues/358).
+**Durum:** Completed via issue
+[#358](https://github.com/Halildeu/ao-kernel/issues/358), tag `v4.0.0`,
+publish workflow
+[`24866683491`](https://github.com/Halildeu/ao-kernel/actions/runs/24866683491),
+PyPI verification, and GitHub Release
+[`v4.0.0`](https://github.com/Halildeu/ao-kernel/releases/tag/v4.0.0).
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-7` completed via
 [#357](https://github.com/Halildeu/ao-kernel/pull/357).
@@ -100,3 +104,25 @@ ST-8 tamamlandığında:
 6. Status dosyaları stable live sonucunu ve kalan support boundary'yi yazar.
 7. Issue [#358](https://github.com/Halildeu/ao-kernel/issues/358) closeout
    comment ile kapatılır.
+
+## 8. Completion Evidence
+
+ST-8 completion sonucu:
+
+1. `v4.0.0` tag'i origin'e push edildi.
+2. `publish.yml` workflow `24866683491` başarılı oldu.
+3. PyPI project page `https://pypi.org/project/ao-kernel/4.0.0/` `HTTP/2 200`
+   döndü.
+4. PyPI JSON `info.version == "4.0.0"` ve release key `4.0.0` içeriyor.
+5. Fresh venv exact pin install `ao-kernel==4.0.0` başarılı oldu.
+6. Fresh venv bare stable install `ao-kernel` doğrudan `4.0.0` kurdu.
+7. `ao-kernel version`, `python -m ao_kernel version` ve
+   `python -m ao_kernel.cli version` `ao-kernel 4.0.0` döndürdü.
+8. Public package doctor `0 FAIL` döndürdü.
+9. Public package ile `examples/demo_review.py --cleanup` `completed` oldu.
+10. GitHub Release `v4.0.0` oluşturuldu ve latest release olarak işaretlendi.
+
+Sonuç: `ao-kernel` dar stable runtime baseline için public stable live'dır.
+Bu sonuç, genel amaçlı production coding automation platform claim'ini
+genişletmez; o claim hâlâ gerçek adapter/live-write sertifikasyon kapılarına
+bağlıdır.

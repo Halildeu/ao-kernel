@@ -75,7 +75,7 @@ Rollback does not widen support. If a stable shipped baseline check fails,
 either rollback to the last known-good package or ship a corrective release.
 Do not substitute an operator-managed beta lane as the stable path.
 
-For the current stable candidate boundary:
+For the current stable boundary:
 
 - shipped baseline regressions are release blockers,
 - beta/operator-managed regressions stay in [`KNOWN-BUGS.md`](KNOWN-BUGS.md),
