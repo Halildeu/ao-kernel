@@ -87,6 +87,25 @@ Bu smoke helper-level manifest probe'dan daha kapsamlıdır:
 Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. GP-2.4d
 verdict kapanana kadar bu lane Beta (operator-managed) olarak kalır.
 
+### 1.3 Failure-mode matrix
+
+Certification kararında yeşil sayılabilecek tek durum `overall_status: pass`'tir.
+Aşağıdaki stable finding code'lar ise promotion blocker'dır:
+
+| Failure | Stable finding code | Nerede yüzeye çıkar |
+|---|---|---|
+| `claude` binary missing | `claude_binary_missing` | helper preflight |
+| `auth_status` not logged in | `claude_not_logged_in` | helper preflight |
+| `prompt_access` fail despite auth pass | `prompt_access_denied` | helper preflight |
+| manifest invocation timeout | `manifest_smoke_timeout` | helper preflight |
+| manifest non-JSON output | `manifest_output_not_json` | helper preflight |
+| adapter non-zero exit | `adapter_non_zero_exit` | governed workflow smoke |
+| malformed workflow output | `output_parse_failed` | governed workflow smoke |
+| policy deny before invocation | `policy_denied` | governed workflow smoke |
+
+Bu matrix, "auth yeşil ama prompt erişimi yok" ve "workflow koştu ama output
+parse edilmedi" gibi fake-green durumlarını production certification dışı tutar.
+
 2026-04-22 canlı ayrım:
 
 - Aynı makinede ilk preflight, `claude auth status` yeşil olmasına rağmen

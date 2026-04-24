@@ -705,5 +705,15 @@ açıldı.
      `review_findings` schema-valid artifact, `policy_checked`,
      `adapter_invoked`, `step_completed`, `workflow_completed`, redacted
      `adapter-claude-code-cli.jsonl`
-8. Next default:
-   - `GP-2.4c` failure-mode matrix
+8. `GP-2.4c` closeout:
+   - issue: [#369](https://github.com/Halildeu/ao-kernel/issues/369)
+   - helper-level negative tests pin:
+     `claude_binary_missing`, `claude_not_logged_in`,
+     `prompt_access_denied`, `manifest_smoke_timeout`,
+     `manifest_output_not_json`
+   - workflow-level fail-closed tests pin:
+     `adapter_non_zero_exit`, `output_parse_failed`, `policy_denied`
+   - `WorkflowSmokeCheck.finding_code` makes workflow smoke failures stable
+     machine-readable evidence instead of prose-only failures
+9. Next default:
+   - `GP-2.4d` support boundary verdict

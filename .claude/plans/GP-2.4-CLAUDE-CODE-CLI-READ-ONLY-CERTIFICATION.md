@@ -149,6 +149,9 @@ Closeout:
 
 ### `GP-2.4c` — Failure-Mode Matrix
 
+Status: completed in [#369](https://github.com/Halildeu/ao-kernel/issues/369)
+implementation branch; pending PR merge.
+
 Hedef: production claim'i için gerekli negatif yolları fake-green bırakmamak.
 
 Minimum failure matrix:
@@ -168,6 +171,23 @@ DoD:
 1. En az helper-level negative tests var.
 2. En az workflow-level fail-closed path doğrulanır.
 3. Hata sınıfları `docs/KNOWN-BUGS.md` ve runbook diliyle çelişmez.
+
+Closeout:
+
+| Failure | Finding code / kanıt | Test |
+|---|---|---|
+| `claude` binary missing | `claude_binary_missing`, remaining checks `skip` | `test_binary_missing_blocks_and_skips_remaining_checks` |
+| `auth_status` not logged in | `claude_not_logged_in` | `test_auth_status_not_logged_in_blocks_preflight_contract` |
+| `prompt_access` fail | `prompt_access_denied`; `auth_status=pass` başarıya çeviremez | `test_auth_status_pass_prompt_access_fail_blocks_preflight_contract` |
+| manifest invocation timeout | `manifest_smoke_timeout` | `test_manifest_timeout_is_reported_without_success_promotion` |
+| manifest non-JSON output | `manifest_output_not_json` | `test_manifest_non_json_output_is_contract_failure` |
+| adapter non-zero exit | `adapter_non_zero_exit` | `test_workflow_smoke_classifies_adapter_non_zero_exit` |
+| malformed workflow output | `output_parse_failed` | `test_workflow_smoke_classifies_output_parse_fail_closed` |
+| policy deny | `policy_denied` | `test_workflow_smoke_classifies_policy_denial_before_promotion` |
+
+`WorkflowSmokeCheck` artık `finding_code` taşır; `findings[]` stable code'ları
+önceler, prose-only failure üretmez. Support boundary unchanged kalır; GP-2.4d
+verdict kapanmadan production certification yoktur.
 
 ### `GP-2.4d` — Support Boundary Verdict
 
