@@ -87,8 +87,8 @@ Bu smoke helper-level manifest probe'dan daha kapsamlıdır:
 
 **Success criterion:** `overall_status: pass` ve `final_state: completed`.
 
-Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. `GP-3.5`
-support-boundary verdict'i `keep_operator_beta` olduğu için lane Beta
+Bu komut `claude-code-cli` yüzeyini production-certified yapmaz. `GP-3.6`
+closeout verdict'i `close_keep_operator_beta` olduğu için lane Beta
 (operator-managed) olarak kalır. Fresh smoke'ların geçmesi operator setup'ını
 doğrular; external `claude` binary/session auth, açık `KB-001`/`KB-002` ve
 CI-managed live adapter gate'i olmaması support widening'i engeller.
