@@ -1,25 +1,26 @@
 # GP-5.9 - Production Platform Claim Decision
 
-**Status:** Active implementation slice
+**Status:** Completed / closed with no support widening
 **Date:** 2026-04-24
-**Issue:** [#455](https://github.com/Halildeu/ao-kernel/issues/455)
-**Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Branch:** `codex/gp5-9-platform-claim-decision`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-9`
-**Authority:** `origin/main` at `7bc757a` after `GP-5.8`
+**Issue:** [#455](https://github.com/Halildeu/ao-kernel/issues/455) (closed)
+**Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424) (closed)
+**Status cleanup issue:** [#462](https://github.com/Halildeu/ao-kernel/issues/462)
+**Branch:** cleaned after merge (`codex/gp5-9-platform-claim-decision`)
+**Worktree:** cleaned after merge (`/Users/halilkocoglu/Documents/ao-kernel-gp5-9`)
+**Authority:** `origin/main` at `639ffe1` during status truth cleanup
 **Support impact:** no support widening
 **release_gate_impact=decision-record-only**
 
 ## Purpose
 
-`GP-5.9` closes the GP-5 general-purpose production platform integration
+`GP-5.9` closed the GP-5 general-purpose production platform integration
 program with a schema-backed decision. It evaluates the current evidence
 against GP-5 success criteria `BC-1..BC-10` and records whether support can be
 widened.
 
 The current evidence does not justify a general-purpose production platform
 claim because protected real-adapter evidence and real-adapter cost/token
-evidence remain absent. Therefore the expected closeout decision is:
+evidence remain absent. Therefore the final closeout decision is:
 
 ```text
 keep_narrow_stable_runtime
@@ -68,3 +69,18 @@ result when evidence is sufficient to decide but insufficient to widen support.
 Future promotion requires a new scoped program or slice with protected
 real-adapter evidence, cost/token attribution, and support-boundary changes in
 the same PR.
+
+## Closeout
+
+`GP-5.9` closed with:
+
+1. `decision=keep_narrow_stable_runtime`;
+2. `support_widening=false`;
+3. `production_platform_claim=false`;
+4. `BC-1` blocked by missing protected live-adapter gate attestation;
+5. `BC-10` blocked by missing real-adapter usage/cost evidence.
+
+No adapter, workflow, repo-intelligence, write-side, remote PR, or support tier
+was promoted by this decision. The next active runtime work must be opened as a
+new scoped slice from current `origin/main`; current recommendation is
+`RI-5b` create-only root export implementation.
