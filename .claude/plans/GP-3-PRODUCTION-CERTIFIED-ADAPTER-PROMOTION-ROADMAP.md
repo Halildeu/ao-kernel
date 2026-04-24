@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, scope freeze recorded
+**Status:** Active program, GP-3.1 prerequisite truth refresh recorded
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -50,9 +50,9 @@ Reason:
 
 | Slice | Goal | Exit |
 |---|---|---|
-| `GP-3.0` scope freeze | Record promotion boundary, first lane, and gates | roadmap/status PR merged, no runtime change |
-| `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | pass/fail evidence recorded; blockers mapped |
-| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | smoke contract updated or lane remains beta |
+| `GP-3.0` scope freeze | Record promotion boundary, first lane, and gates | completed; roadmap/status PR merged, no runtime change |
+| `GP-3.1` prerequisite truth refresh | Re-run `claude-code-cli` binary/auth/prompt-access truth checks | completed on branch; preflight and workflow smoke passed; no support widening |
+| `GP-3.2` governed workflow repeatability | Run/read the governed workflow smoke path and pin repeatability requirements | next; smoke contract updated or lane remains beta |
 | `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | behavior assertions or helper contract updates merged |
 | `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | evidence gaps closed or deferred explicitly |
 | `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | docs/status/support matrix updated |
@@ -98,3 +98,29 @@ Every implementation slice must record:
 `GP-3.0` opens the program but does not promote anything. The only accepted
 next implementation slice is `GP-3.1` for `claude-code-cli` prerequisite truth
 refresh.
+
+## GP-3.1 Evidence Refresh
+
+`GP-3.1` refreshed the current operator-environment truth for
+`claude-code-cli`.
+
+1. Decision record:
+   `.claude/plans/GP-3.1-CLAUDE-CODE-CLI-PREREQUISITE-TRUTH-REFRESH.md`
+2. Tracker: [#388](https://github.com/Halildeu/ao-kernel/issues/388)
+3. Preflight command:
+   `python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 30`
+4. Workflow command:
+   `python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60 --cleanup`
+5. Result:
+   - preflight `overall_status="pass"`
+   - workflow `overall_status="pass"`
+   - workflow final state `completed`
+6. Boundary:
+   - no runtime change
+   - no version bump, tag, or publish
+   - no stable support widening
+   - `claude-code-cli` remains `Beta (operator-managed)`
+
+The next accepted implementation slice is `GP-3.2` governed workflow
+repeatability. A single passing smoke is not enough for production-certified
+support.

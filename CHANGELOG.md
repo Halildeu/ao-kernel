@@ -38,6 +38,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Opened the `GP-3` production-certified adapter promotion roadmap. The first
   candidate lane is `claude-code-cli` read-only governed workflow, but this
   roadmap does not widen support without later evidence gates.
+- Recorded the `GP-3.1` `claude-code-cli` prerequisite truth refresh. Live
+  preflight and governed workflow smoke both passed, but the lane remains
+  `Beta (operator-managed)` until repeatability, failure-mode, evidence,
+  runbook, docs, and support-boundary gates close.
 
 ## [4.0.0] - 2026-04-24
 
