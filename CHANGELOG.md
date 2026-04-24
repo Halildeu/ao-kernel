@@ -60,6 +60,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   preflight and governed workflow smoke passed, but the final verdict remains
   `keep_operator_beta`; no stable support widening, version bump, tag, or
   publish is included.
+- Closed the `GP-3` production-certified adapter promotion program with final
+  verdict `close_keep_operator_beta`. The first real-adapter lane remains
+  evidence-backed operator-managed beta, but no production-certified
+  real-adapter support claim or general-purpose production platform claim is
+  granted.
 
 ## [4.0.0] - 2026-04-24
 

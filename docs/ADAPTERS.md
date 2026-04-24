@@ -49,7 +49,7 @@ The `adapter_kind` field is a closed enum that tells ao-kernel how to route invo
 | Surface | Current status | Meaning |
 |---|---|---|
 | Bundled `codex-stub` | Shipped baseline | Deterministic demo + CI surface; the default supported adapter path in this repo |
-| `claude-code-cli` walkthroughs and manifests | Beta (operator-managed) | Helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`; governed workflow smoke lives at `python3 scripts/claude_code_cli_workflow_smoke.py`; `GP-3.5` verdict `keep_operator_beta` olduğu için lane default shipped demo veya production-certified adapter değildir |
+| `claude-code-cli` walkthroughs and manifests | Beta (operator-managed) | Helper-backed preflight lives at `python3 scripts/claude_code_cli_smoke.py`; governed workflow smoke lives at `python3 scripts/claude_code_cli_workflow_smoke.py`; `GP-3.6` verdict `close_keep_operator_beta` olduğu için lane default shipped demo veya production-certified adapter değildir |
 | `gh-cli-pr` walkthroughs and manifests | Beta (operator-managed preflight + live-write readiness probe) | Default helper yolu preflight (`python3 scripts/gh_cli_pr_smoke.py`), live-write probe ise explicit opt-in (`--mode live-write --allow-live-write --repo <owner>/<sandbox-repo> --head <branch> --base <branch>`) + disposable guard + create->verify->rollback zinciri ister. `GP-2.5a` sandbox rehearsal geçmiştir, fakat `--keep-live-write-pr-open` lane'i riskli sayar ve `blocked` döner; gerçek remote PR açılışı hâlâ stable shipped support yüzeyi değildir |
 | `custom-cli` / `custom-http` | Escape hatch | Operator-owned integration responsibility; contract-compatible does not mean ao-kernel ships vendor-specific production support |
 
@@ -229,7 +229,7 @@ HTTP adapters must explicitly set `exposure_modes` to include `"http_header"` vi
 - Current tier: **Beta (operator-managed)**
 - Helper-backed preflight: `python3 scripts/claude_code_cli_smoke.py`
 - Governed workflow smoke: `python3 scripts/claude_code_cli_workflow_smoke.py`
-- Support-boundary verdict: `GP-3.5` `keep_operator_beta`
+- Support-boundary verdict: `GP-3.6` `close_keep_operator_beta`
 - Expected operator prerequisite: valid Claude Code session auth
 - This lane is not the default shipped demo; the shipped baseline remains
   bundled `review_ai_flow` + bundled `codex-stub`

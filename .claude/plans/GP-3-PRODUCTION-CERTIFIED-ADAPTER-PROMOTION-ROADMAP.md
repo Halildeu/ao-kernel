@@ -1,6 +1,6 @@
 # GP-3 — Production-Certified Adapter Promotion Roadmap
 
-**Status:** Active program, GP-3.5 support-boundary decision recorded
+**Status:** Completed program, final verdict `close_keep_operator_beta`
 **Date:** 2026-04-24
 **Tracker:** [#386](https://github.com/Halildeu/ao-kernel/issues/386)
 **Parent context:** `v4.0.0` narrow stable live + `GP-2` closeout +
@@ -8,13 +8,13 @@
 
 ## Purpose
 
-`GP-3` is the first post-stable promotion program for moving one real adapter
+`GP-3` was the first post-stable promotion program for moving one real adapter
 lane from `Beta (operator-managed)` toward a production-certified support
 claim.
 
-The program does not widen support by being opened. Promotion requires code
-path evidence, behavior tests, smoke, docs parity, runbook guidance, and CI
-evidence to agree.
+The program closed without widening support. It proved the first lane is
+evidence-backed operator-managed beta, but did not prove production-certified
+real-adapter support.
 
 ## Current Baseline
 
@@ -56,7 +56,7 @@ Reason:
 | `GP-3.3` failure-mode matrix | Classify missing binary, auth missing, prompt denied, timeout, malformed output, policy denied | completed; helper/workflow failure modes fail-closed and typed |
 | `GP-3.4` evidence completeness | Verify artifacts, events, cost/usage fields, and operator-readable failure metadata | completed; evidence checks widened and live smoke passed |
 | `GP-3.5` support-boundary decision | Decide `promote_read_only`, `keep_operator_beta`, or `defer` | completed; verdict `keep_operator_beta` |
-| `GP-3.6` closeout | Record final verdict and next allowed path | next; tracker closed or next lane opened intentionally |
+| `GP-3.6` closeout | Record final verdict and next allowed path | completed; verdict `close_keep_operator_beta` |
 
 ## Promotion Criteria
 
@@ -239,3 +239,26 @@ The next accepted implementation slice is `GP-3.5` support-boundary decision.
    - `claude-code-cli` remains `Beta (operator-managed)`
 
 The next accepted implementation slice is `GP-3.6` program closeout.
+
+## GP-3.6 Program Closeout
+
+`GP-3.6` closed the promotion program without support widening.
+
+1. Decision record:
+   `.claude/plans/GP-3.6-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-CLOSEOUT.md`
+2. Tracker: [#398](https://github.com/Halildeu/ao-kernel/issues/398)
+3. Parent tracker: [#386](https://github.com/Halildeu/ao-kernel/issues/386)
+4. Final verdict: `close_keep_operator_beta`
+5. Result:
+   - `claude-code-cli` remains `Beta (operator-managed)`
+   - production-certified read-only claim is not granted
+   - stable shipped baseline is unchanged
+   - no version bump, tag, or publish
+6. Reason:
+   - external `claude` binary/session auth remains operator state
+   - `KB-001` and `KB-002` remain open
+   - no CI-managed live `claude-code-cli` governed workflow gate exists
+   - adapter-path `cost_usd` / token usage remains explicit non-claim
+
+Future promotion work must open a new scoped lane; it cannot infer widening
+from this closeout.

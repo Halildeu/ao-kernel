@@ -20,12 +20,13 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan stable evidence refresh:** `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`
 - **Son tamamlanan status truth cleanup:** `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`
 - **Son tamamlanan historical beta pin wording cleanup:** `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`
-- **Aktif GP-3 promotion roadmap:** `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
+- **Son tamamlanan GP-3 promotion roadmap:** `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`
 - **Son tamamlanan GP-3 prerequisite truth refresh:** `.claude/plans/GP-3.1-CLAUDE-CODE-CLI-PREREQUISITE-TRUTH-REFRESH.md`
 - **Son tamamlanan GP-3 repeatability record:** `.claude/plans/GP-3.2-CLAUDE-CODE-CLI-GOVERNED-WORKFLOW-REPEATABILITY.md`
 - **Son tamamlanan GP-3 failure-mode matrix:** `.claude/plans/GP-3.3-CLAUDE-CODE-CLI-FAILURE-MODE-MATRIX.md`
 - **Son tamamlanan GP-3 evidence completeness record:** `.claude/plans/GP-3.4-CLAUDE-CODE-CLI-EVIDENCE-COMPLETENESS.md`
 - **Son tamamlanan GP-3 support-boundary decision record:** `.claude/plans/GP-3.5-CLAUDE-CODE-CLI-SUPPORT-BOUNDARY-DECISION.md`
+- **Son tamamlanan GP-3 closeout decision:** `.claude/plans/GP-3.6-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-CLOSEOUT.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
 - **Son tamamlanan stable-gate contract:** `.claude/plans/ST-8-STABLE-PUBLISH-AND-POST-PUBLISH-VERIFICATION.md` (`ST-8 completed`)
 - **Son tamamlanan certification contract:** `.claude/plans/GP-2.4-CLAUDE-CODE-CLI-READ-ONLY-CERTIFICATION.md`
@@ -69,13 +70,14 @@ ayrı ayrı görünür kılmak.
 - **SM-2 issue:** [#380](https://github.com/Halildeu/ao-kernel/issues/380) (`closed by evidence refresh PR`)
 - **SM-3 issue:** [#382](https://github.com/Halildeu/ao-kernel/issues/382) (`closed by status cleanup PR`)
 - **SM-4 issue:** [#384](https://github.com/Halildeu/ao-kernel/issues/384) (`closed by docs wording PR`)
-- **GP-3 tracker issue:** [#386](https://github.com/Halildeu/ao-kernel/issues/386) (`open`)
+- **GP-3 tracker issue:** [#386](https://github.com/Halildeu/ao-kernel/issues/386) (`closed by GP-3.6 closeout PR`)
 - **GP-3.1 issue:** [#388](https://github.com/Halildeu/ao-kernel/issues/388) (`closed`)
 - **GP-3.2 issue:** [#390](https://github.com/Halildeu/ao-kernel/issues/390) (`closed`)
 - **GP-3.3 issue:** [#392](https://github.com/Halildeu/ao-kernel/issues/392) (`closed`)
 - **GP-3.4 issue:** [#394](https://github.com/Halildeu/ao-kernel/issues/394) (`closed`)
-- **GP-3.5 issue:** [#396](https://github.com/Halildeu/ao-kernel/issues/396)
-- **Aktif gate:** `GP-3.6` program closeout next. `GP-3.5` kararı `keep_operator_beta`; stable support boundary unchanged kalır.
+- **GP-3.5 issue:** [#396](https://github.com/Halildeu/ao-kernel/issues/396) (`closed`)
+- **GP-3.6 issue:** [#398](https://github.com/Halildeu/ao-kernel/issues/398) (`closed by closeout PR`)
+- **Aktif gate:** Stable maintenance mode / no active widening gate. `GP-3` final verdict `close_keep_operator_beta`; stable support boundary unchanged kalır.
 
 ## 2. Başlangıç Gerçeği
 
@@ -128,7 +130,7 @@ ayrı ayrı görünür kılmak.
 | `SM-2` stable baseline evidence refresh | Completed ([#380](https://github.com/Halildeu/ao-kernel/issues/380), evidence `.claude/plans/SM-2-STABLE-BASELINE-EVIDENCE-REFRESH.md`) | SM-1 sonrası shipped baseline kanıtını tazelemek | entrypoints + doctor + truth inventory + wheel-installed packaging smoke + targeted tests |
 | `SM-3` program status active-section cleanup | Completed ([#382](https://github.com/Halildeu/ao-kernel/issues/382), record `.claude/plans/SM-3-PROGRAM-STATUS-ACTIVE-SECTION-CLEANUP.md`) | yaşayan status dosyasındaki stale historical `ST-2` anlatımını temizlemek | no active widening gate + historical records clearly non-active |
 | `SM-4` historical beta pin wording | Completed ([#384](https://github.com/Halildeu/ao-kernel/issues/384), record `.claude/plans/SM-4-HISTORICAL-BETA-PIN-WORDING.md`) | `4.0.0b2` beta pinini aktif kanal gibi değil historical pre-release yolu gibi anlatmak | stable `4.0.0` remains default + no support widening |
-| `GP-3` production-certified adapter promotion | Active ([#386](https://github.com/Halildeu/ao-kernel/issues/386), [#388](https://github.com/Halildeu/ao-kernel/issues/388), [#390](https://github.com/Halildeu/ao-kernel/issues/390), [#392](https://github.com/Halildeu/ao-kernel/issues/392), [#394](https://github.com/Halildeu/ao-kernel/issues/394), [#396](https://github.com/Halildeu/ao-kernel/issues/396), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | `GP-3.5` verdict `keep_operator_beta`; `GP-3.6` closeout next |
+| `GP-3` production-certified adapter promotion | Completed ([#386](https://github.com/Halildeu/ao-kernel/issues/386), [#388](https://github.com/Halildeu/ao-kernel/issues/388), [#390](https://github.com/Halildeu/ao-kernel/issues/390), [#392](https://github.com/Halildeu/ao-kernel/issues/392), [#394](https://github.com/Halildeu/ao-kernel/issues/394), [#396](https://github.com/Halildeu/ao-kernel/issues/396), [#398](https://github.com/Halildeu/ao-kernel/issues/398), roadmap `.claude/plans/GP-3-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-ROADMAP.md`) | ilk real-adapter lane'i production-certified read-only seviyesine aday yapmak | final verdict `close_keep_operator_beta`; support boundary unchanged |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -139,12 +141,11 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — GP-3 closeout next
+### Current mode — Stable maintenance / no active widening
 
-`GP-3` parent promotion programı açılmıştır. Bu, support widening değildir.
-`GP-3.5` support-boundary decision tamamlanmıştır ve stable support boundary
-unchanged kalır. Sıradaki slice `GP-3.6` program closeout'tur. `SM-1` stable
-maintenance baseline ve `SM-2` stable baseline evidence refresh geçerlidir.
+`GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
+kapanmıştır. Bu, support widening değildir. `SM-1` stable maintenance baseline
+ve `SM-2` stable baseline evidence refresh geçerlidir.
 
 Mevcut yol:
 
@@ -154,12 +155,12 @@ Mevcut yol:
 4. `GP-3.3` failure-mode matrix — completed
 5. `GP-3.4` evidence completeness — completed
 6. `GP-3.5` support-boundary decision — completed; verdict `keep_operator_beta`
-7. `GP-3.6` program closeout — next
+7. `GP-3.6` program closeout — completed; final verdict `close_keep_operator_beta`
 
 Promotion sadece code path + behavior tests + smoke + docs + runbook + CI
-evidence aynı yönde ise yapılır. `GP-3.5` kararında CI-managed live adapter
-gate'i ve açık known-bug durumu yeterli olmadığı için lane
-`Beta (operator-managed)` kalır.
+evidence aynı yönde ise yapılır. `GP-3` closeout sonucunda CI-managed live
+adapter gate'i ve açık known-bug durumu yeterli olmadığı için lane
+`Beta (operator-managed)` kaldı. Aktif widening gate yoktur.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.
@@ -1029,3 +1030,34 @@ kapandı.
    - `claude-code-cli` remains `Beta (operator-managed)`
 8. Next slice:
    - `GP-3.6` program closeout
+
+## 31. GP-3.6 Production-Certified Adapter Promotion Closeout
+
+`GP-3` parent promotion programı kapandı.
+
+1. Tracker: [#398](https://github.com/Halildeu/ao-kernel/issues/398)
+2. Parent tracker: [#386](https://github.com/Halildeu/ao-kernel/issues/386)
+3. Decision record:
+   `.claude/plans/GP-3.6-PRODUCTION-CERTIFIED-ADAPTER-PROMOTION-CLOSEOUT.md`
+4. Final verdict:
+   - `close_keep_operator_beta`
+5. Final support boundary:
+   - stable shipped baseline unchanged
+   - `claude-code-cli` remains `Beta (operator-managed)`
+   - production-certified read-only claim not granted
+   - general-purpose production coding automation platform claim not granted
+6. Fresh closeout smoke:
+   - `python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 30`
+   - result: `overall_status="pass"`
+   - `python3 scripts/claude_code_cli_workflow_smoke.py --output json --timeout-seconds 60 --cleanup`
+   - result: `overall_status="pass"`, final state `completed`
+   - run id: `58939f02-2efc-4d0d-ac55-b3418fcbe7ae`
+7. Closeout reason:
+   - positive evidence exists, but not enough for ao-kernel-owned production
+     support
+   - external `claude` binary/session auth remains operator state
+   - `KB-001` and `KB-002` remain open
+   - no CI-managed live `claude-code-cli` governed workflow gate exists
+   - adapter-path `cost_usd` / token usage remains explicit non-claim
+8. Next mode:
+   - stable maintenance / no active widening gate
