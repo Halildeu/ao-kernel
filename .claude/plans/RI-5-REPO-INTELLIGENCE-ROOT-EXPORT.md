@@ -1,6 +1,6 @@
 # RI-5 - Repo Intelligence Explicit Root/Context Export Design Gate
 
-**Status:** RI-5b design gate merged; implementation gated
+**Status:** RI-5b create-only implementation active
 **Date:** 2026-04-24
 **Authority:** `origin/main` at `91c1bc0`
 **Planning PR:** [#423](https://github.com/Halildeu/ao-kernel/pull/423)
@@ -9,6 +9,9 @@
 **RI-5b issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
 **RI-5b design PR:** [#460](https://github.com/Halildeu/ao-kernel/pull/460)
 **RI-5b design record:** `.claude/plans/RI-5b-CONFIRMED-CREATE-ONLY-ROOT-EXPORT-DESIGN-GATE.md`
+**RI-5b implementation issue:** [#464](https://github.com/Halildeu/ao-kernel/issues/464)
+**RI-5b implementation branch:** `codex/ri5b-create-only-root-export`
+**RI-5b implementation worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri5b-create-only-root-export`
 **Planning branch:** cleaned after merge
 **Planning worktree:** cleaned after merge
 **Implementation branch:** cleaned after merge
@@ -16,7 +19,7 @@
 **RI-5b design branch:** cleaned after merge
 **RI-5b design worktree:** cleaned after merge
 **Base:** `origin/main` at `91c1bc0`
-**Next slice:** RI-5b create-only implementation PR from current `origin/main`
+**Next slice:** RI-5b implementation review / merge
 **Implementation:** Merged to `main` at `a2144da`; preview-only export-plan
 support is live as Beta / experimental.
 **Rule:** Never work directly on `main`.
@@ -466,16 +469,16 @@ CHANGELOG.md
 
 ## Acceptance - RI-5b
 
-- [ ] Starts only after RI-5a is merged.
-- [ ] Requires exact confirmation token.
-- [ ] Requires explicit target allowlist.
-- [ ] Writes only supported root files.
-- [ ] Refuses symlink targets and path escapes.
-- [ ] Refuses stale or missing export plans.
-- [ ] Defaults to create-only root writes.
-- [ ] Does not call an LLM.
-- [ ] Does not use network access.
-- [ ] Has unit tests and CLI behavior tests for deny paths and happy path.
+- [x] Starts only after RI-5a is merged.
+- [x] Requires exact confirmation token.
+- [x] Requires explicit target allowlist.
+- [x] Writes only supported root files.
+- [x] Refuses symlink targets and path escapes.
+- [x] Refuses stale or missing export plans.
+- [x] Defaults to create-only root writes.
+- [x] Does not call an LLM.
+- [x] Does not use network access.
+- [x] Has unit tests and CLI behavior tests for deny paths and happy path.
 
 ## Rejected Approaches
 
@@ -513,3 +516,5 @@ CHANGELOG.md
 | 2026-04-24 | RI-5b design gate opened | Issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) and branch `codex/ri5b-root-export-design-gate` opened from `origin/main` at `0a6eacb`; runtime implementation remains blocked until design gate merge. |
 | 2026-04-24 | RI-5b design gate merged | PR [#460](https://github.com/Halildeu/ao-kernel/pull/460) merged to `main` at `91c1bc0`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) closed; runtime implementation remains a separate next slice. |
 | 2026-04-24 | RI-5b design cleanup completed | Local `main` synchronized with `origin/main`; design branch/worktree cleaned; next allowed slice is RI-5b create-only implementation from current `origin/main`. |
+| 2026-04-24 | RI-5b implementation started | Issue [#464](https://github.com/Halildeu/ao-kernel/issues/464), branch `codex/ri5b-create-only-root-export`, and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5b-create-only-root-export` opened from current `origin/main` at `49c4482`. |
+| 2026-04-24 | RI-5b local validation passed | `ruff check` on touched Python/tests; `mypy ao_kernel/`; targeted pytest `36 passed`; repo-intelligence pytest `95 passed`; `python3 -m ao_kernel repo export --help`; `python3 -m ao_kernel doctor` (`8 OK, 1 WARN, 0 FAIL`); `python3 scripts/packaging_smoke.py`; fresh-venv installed-wheel `repo scan -> export-plan -> export` smoke; full coverage `3061 passed, 1 skipped`, total coverage `85.31%`; `git diff --check`. |

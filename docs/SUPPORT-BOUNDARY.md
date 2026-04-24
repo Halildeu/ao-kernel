@@ -192,12 +192,24 @@ create, update, truncate, or delete root authority files, call an LLM, use
 network access, query or write vector backends, expose MCP tools, feed
 `context_compiler`, or perform RI-5b writes.
 
-`GP-5.3d` pins this negative boundary with regression tests: no
-repo-intelligence MCP tool is registered, the `repo` CLI surface remains
-limited to `scan`, `index`, `query`, and preview-only `export-plan`. The
-`repo query` command does not create root authority exports, MCP config
-exports, or `.ao/context/repo_export_plan.json`, while `repo export-plan` may
-create only that preview artifact.
+The `repo export` surface is Beta / operator-managed confirmed write. It
+consumes only `.ao/context/repo_export_plan.json`, requires
+`--confirm-root-export CONFIRM_RI5B_ROOT_EXPORT_V1`, explicit `--targets`, and
+enabled path-scoped coordination policy. The first implementation supports only
+`codex -> CODEX_CONTEXT.md` and `agents -> AGENTS.md`, writes only absent root
+files, treats matching existing files as unchanged, and fails closed for
+conflicts, update actions, symlinks, path escapes, stale source artifacts,
+missing plans, or unavailable ownership. It does not overwrite, call an LLM,
+use network access, query or write vector backends, expose MCP tools, feed
+`context_compiler`, or grant support widening. The result payload validates
+against `repo-root-export-result.schema.v1.json` and carries
+`support_widening=false`.
+
+`GP-5.3d` pins the negative MCP and non-export boundary with regression tests:
+no repo-intelligence MCP tool is registered; `repo scan`, `repo index`, and
+`repo query` remain free of root authority export side effects; `repo
+export-plan` may create only the preview artifact; and `repo export` is the
+only confirmed root-write entrypoint.
 
 `GP-5.3e` promotes this surface only to a beta explicit-handoff workflow
 building block: a future GP-5 read-only workflow rehearsal may use

@@ -28,6 +28,7 @@ REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME = "repo-vector-write-plan.schema.v1.json"
 REPO_VECTOR_INDEX_MANIFEST_SCHEMA_NAME = "repo-vector-index-manifest.schema.v1.json"
 REPO_VECTOR_QUERY_RESULT_SCHEMA_NAME = "repo-vector-query-result.schema.v1.json"
 REPO_EXPORT_PLAN_SCHEMA_NAME = "repo-export-plan.schema.v1.json"
+REPO_ROOT_EXPORT_RESULT_SCHEMA_NAME = "repo-root-export-result.schema.v1.json"
 AGENT_PACK_FORMAT_REF = "agent-pack-markdown.v1"
 
 JsonDict = dict[str, Any]
@@ -76,6 +77,11 @@ def validate_repo_vector_query_result(vector_query_result: Mapping[str, Any]) ->
 def validate_repo_export_plan(export_plan: Mapping[str, Any]) -> None:
     """Validate a repo export-plan preview document against the bundled schema."""
     _validate(export_plan, REPO_EXPORT_PLAN_SCHEMA_NAME)
+
+
+def validate_repo_root_export_result(root_export_result: Mapping[str, Any]) -> None:
+    """Validate a confirmed repo root export result document."""
+    _validate(root_export_result, REPO_ROOT_EXPORT_RESULT_SCHEMA_NAME)
 
 
 def write_repo_scan_artifacts(
