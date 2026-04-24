@@ -1,6 +1,6 @@
 # RI-5b - Confirmed Create-Only Root Export Design Gate
 
-**Status:** Design gate merged / implementation gated
+**Status:** Design gate merged / implementation active in RI-5b slice
 **Date:** 2026-04-24
 **Authority:** `origin/main` at `91c1bc0`
 **Issue:** [#459](https://github.com/Halildeu/ao-kernel/issues/459) (closed)
@@ -251,17 +251,17 @@ management.
 
 ## Acceptance For Future RI-5b Implementation
 
-- [ ] Starts only after this design gate merges.
-- [ ] Adds runtime code in a separate branch and PR.
-- [ ] Requires exact confirmation token.
-- [ ] Requires explicit target allowlist.
-- [ ] Consumes `.ao/context/repo_export_plan.json`.
-- [ ] Defaults to create-only root writes.
-- [ ] Refuses overwrite/update in the first slice.
-- [ ] Checks path-scoped ownership before any root write.
-- [ ] Proves root snapshots and rollback/no-corruption behavior.
-- [ ] Emits machine-readable evidence.
-- [ ] Keeps `support_widening=false`.
+- [x] Starts only after this design gate merges.
+- [x] Adds runtime code in a separate branch and PR.
+- [x] Requires exact confirmation token.
+- [x] Requires explicit target allowlist.
+- [x] Consumes `.ao/context/repo_export_plan.json`.
+- [x] Defaults to create-only root writes.
+- [x] Refuses overwrite/update in the first slice.
+- [x] Checks path-scoped ownership before any root write.
+- [x] Proves root snapshots and rollback/no-corruption behavior.
+- [x] Emits machine-readable evidence.
+- [x] Keeps `support_widening=false`.
 
 ## Tracking Log
 
@@ -270,3 +270,5 @@ management.
 | 2026-04-24 | Design gate opened | Dedicated branch `codex/ri5b-root-export-design-gate` and worktree `/Users/halilkocoglu/Documents/ao-kernel-ri5b-root-export-design-gate` opened from `origin/main` at `0a6eacb`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) created. |
 | 2026-04-24 | Design gate merged | PR [#460](https://github.com/Halildeu/ao-kernel/pull/460) merged to `main` at `91c1bc0`; issue [#459](https://github.com/Halildeu/ao-kernel/issues/459) closed; runtime implementation remains gated. |
 | 2026-04-24 | Design branch cleanup completed | Local `main` synchronized with `origin/main`; design branch and worktree cleaned. Next allowed slice is RI-5b create-only implementation from current `origin/main`. |
+| 2026-04-24 | Implementation started | Issue [#464](https://github.com/Halildeu/ao-kernel/issues/464) and branch `codex/ri5b-create-only-root-export` opened from `origin/main` at `49c4482`; runtime code, CLI, schema, tests, docs, and status updates live in that implementation slice. |
+| 2026-04-24 | Implementation local validation passed | Targeted deny/happy-path tests, schema validation, CLI behavior tests, mypy, packaging smoke, fresh-venv installed-wheel `repo export` smoke, doctor, and full coverage gate all passed in the RI-5b implementation worktree. |

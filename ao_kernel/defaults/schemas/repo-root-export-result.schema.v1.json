@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-root-export-result:v1",
+  "title": "Repo Intelligence Confirmed Root Export Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "project_root",
+    "workspace_root",
+    "plan_path",
+    "confirmation",
+    "targets",
+    "summary",
+    "support_widening"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "repo_root_export_result" },
+    "project_root": { "const": "." },
+    "workspace_root": { "$ref": "#/$defs/relative_path" },
+    "plan_path": { "$ref": "#/$defs/relative_path" },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_token", "provided", "accepted"],
+      "properties": {
+        "required_token": { "const": "CONFIRM_RI5B_ROOT_EXPORT_V1" },
+        "provided": { "type": "boolean" },
+        "accepted": { "type": "boolean" }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/target_result" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_count",
+        "written_count",
+        "unchanged_count",
+        "denied_count",
+        "skipped_count"
+      ],
+      "properties": {
+        "target_count": { "type": "integer", "minimum": 0 },
+        "written_count": { "type": "integer", "minimum": 0 },
+        "unchanged_count": { "type": "integer", "minimum": 0 },
+        "denied_count": { "type": "integer", "minimum": 0 },
+        "skipped_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "support_widening": { "const": false }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "^/" }
+    },
+    "nullable_sha256": {
+      "anyOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exists", "sha256"],
+      "properties": {
+        "exists": { "type": "boolean" },
+        "sha256": { "$ref": "#/$defs/nullable_sha256" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "status",
+        "resource_id",
+        "claim_id",
+        "fencing_token"
+      ],
+      "properties": {
+        "required": { "const": true },
+        "status": { "enum": ["released"] },
+        "resource_id": { "type": "string", "minLength": 1 },
+        "claim_id": { "type": "string", "minLength": 1 },
+        "fencing_token": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "target_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "root_path",
+        "action_from_plan",
+        "result",
+        "deny_code",
+        "message",
+        "before",
+        "after",
+        "generated_content_sha256",
+        "generated_byte_count",
+        "ownership"
+      ],
+      "properties": {
+        "target": { "enum": ["codex", "agents"] },
+        "root_path": { "$ref": "#/$defs/relative_path" },
+        "action_from_plan": { "enum": ["create", "unchanged"] },
+        "result": { "enum": ["written", "unchanged"] },
+        "deny_code": { "type": "null" },
+        "message": { "type": "string", "minLength": 1 },
+        "before": { "$ref": "#/$defs/snapshot" },
+        "after": { "$ref": "#/$defs/snapshot" },
+        "generated_content_sha256": { "$ref": "#/$defs/sha256" },
+        "generated_byte_count": { "type": "integer", "minimum": 0 },
+        "ownership": { "$ref": "#/$defs/ownership" }
+      }
+    }
+  }
+}

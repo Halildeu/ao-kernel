@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- Added the RI-5b confirmed create-only `repo export` surface. It consumes the
+  existing `.ao/context/repo_export_plan.json` artifact, requires the exact
+  `CONFIRM_RI5B_ROOT_EXPORT_V1` token and explicit targets, requires
+  path-scoped coordination ownership, writes only absent `CODEX_CONTEXT.md` /
+  `AGENTS.md` root files, validates a schema-backed result payload, and keeps
+  `support_widening=false`. Overwrite/update/MCP/LLM/network behavior remains
+  outside the shipped boundary.
 - Added the RI-5a preview-only `repo export-plan` surface. It reads existing
   repo-intelligence artifacts, writes only
   `.ao/context/repo_export_plan.json`, validates the plan against bundled

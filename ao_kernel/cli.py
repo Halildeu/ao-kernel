@@ -514,6 +514,41 @@ def _cmd_repo_export_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_repo_export(args: argparse.Namespace) -> int:
+    import json as _json
+    from pathlib import Path as _Path
+
+    from ao_kernel.repo_intelligence import export_repo_roots
+
+    project_root = _Path(args.project_root or ".").resolve()
+    workspace_dir = _resolve_repo_workspace_dir(project_root, args.workspace_root)
+    try:
+        targets = _parse_repo_export_targets(args.targets)
+        result = export_repo_roots(
+            project_root=project_root,
+            workspace_root=workspace_dir,
+            targets=targets,
+            confirm_root_export=args.confirm_root_export,
+        )
+    except Exception as exc:  # noqa: BLE001 - CLI fail-closed with concise stderr
+        print(f"repo export failed: {exc}", file=sys.stderr)
+        return 1
+
+    if args.output == "json":
+        print(_json.dumps(result, indent=2, sort_keys=True))
+    else:
+        print("repo export complete")
+        print("project_root: .")
+        print(f"workspace_root: {result['workspace_root']}")
+        print(f"plan_path: {result['plan_path']}")
+        print(f"targets: {','.join(item['target'] for item in result['targets'])}")
+        print(f"written: {result['summary']['written_count']}")
+        print(f"unchanged: {result['summary']['unchanged_count']}")
+        for item in result["targets"]:
+            print(f"- {item['target']} -> {item['root_path']}: {item['result']}")
+    return 0
+
+
 def _resolve_repo_workspace_dir(project_root: Path, workspace_root: str | None) -> Path:
     raw = Path(workspace_root or ".ao")
     return raw.resolve() if raw.is_absolute() else (project_root / raw).resolve()
@@ -1396,6 +1431,33 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Command output format (default: text)",
     )
+    export_p = repo_sub.add_parser("export", help="Confirmed create-only root context export")
+    export_p.add_argument(
+        "--project-root",
+        default=".",
+        help="Repository root to inspect (default: current directory)",
+    )
+    export_p.add_argument(
+        "--workspace-root",
+        default=".ao",
+        help="ao-kernel workspace root relative to project root (default: .ao)",
+    )
+    export_p.add_argument(
+        "--targets",
+        required=True,
+        help="Explicit comma-separated root export targets: codex,agents",
+    )
+    export_p.add_argument(
+        "--confirm-root-export",
+        default="",
+        help="Required token: CONFIRM_RI5B_ROOT_EXPORT_V1",
+    )
+    export_p.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Command output format (default: text)",
+    )
 
     # Metrics subcommands (PR-B5)
     metrics_p = sub.add_parser(
@@ -1963,8 +2025,10 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_repo_query(args)
         if repo_cmd == "export-plan":
             return _cmd_repo_export_plan(args)
+        if repo_cmd == "export":
+            return _cmd_repo_export(args)
         print(
-            "Usage: ao-kernel repo {scan,index,query,export-plan} [--project-root PATH] [--output {text,json}]",
+            "Usage: ao-kernel repo {scan,index,query,export-plan,export} [--project-root PATH] [--output {text,json}]",
             file=sys.stderr,
         )
         return 1

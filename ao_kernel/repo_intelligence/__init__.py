@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ao_kernel._internal.repo_intelligence.artifacts import (
+    validate_repo_root_export_result,
     validate_repo_export_plan,
     write_repo_export_plan_artifact,
     write_repo_scan_artifacts,
@@ -26,6 +27,10 @@ from ao_kernel._internal.repo_intelligence.export_plan import (
     build_repo_export_plan,
     supported_repo_export_targets,
 )
+from ao_kernel._internal.repo_intelligence.root_exporter import (
+    RepoRootExportError,
+    export_repo_roots,
+)
 
 __all__ = [
     "build_agent_context_pack",
@@ -35,10 +40,13 @@ __all__ = [
     "build_repo_chunks",
     "build_repo_vector_write_plan",
     "CONFIRM_VECTOR_INDEX",
+    "RepoRootExportError",
+    "export_repo_roots",
     "query_repo_vectors",
     "scan_repo",
     "supported_repo_export_targets",
     "validate_repo_export_plan",
+    "validate_repo_root_export_result",
     "write_repo_export_plan_artifact",
     "write_repo_scan_artifacts",
     "write_repo_vector_index_manifest_artifact",
