@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- Added agent-readable Markdown output for the RI-4 repo query boundary via
+  `repo query --output markdown`. The output is stdout-only and keeps the same
+  read-only support boundary: no root exports, `.ao/context` artifact writes,
+  vector writes, MCP exposure, or `context_compiler` auto-injection.
 - Added the RI-4d read-only `repo query` boundary over explicit repo vector
   indexes. The new surface requires an existing vector index manifest,
   configured vector backend, and embedding API key; it returns schema-backed

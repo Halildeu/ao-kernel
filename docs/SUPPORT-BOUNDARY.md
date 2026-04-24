@@ -177,8 +177,10 @@ requires an embedding API key to embed the query, and returns only candidates
 that match the recorded `repo_chunk::<project_identity>::<embedding_space>::`
 namespace plus repo chunk metadata. It validates current source line ranges and
 content hashes before returning snippets, and excludes stale candidates by
-default. It does not write root authority files, `.ao/context` artifacts, vector
-backend records, expose MCP tools, or feed `context_compiler` automatically.
+default. The optional Markdown output is a stdout-only, agent-readable preview
+of the same query result. It does not write root authority files, `.ao/context`
+artifacts, vector backend records, expose MCP tools, or feed
+`context_compiler` automatically.
 
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına

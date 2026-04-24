@@ -191,6 +191,42 @@ def test_repo_query_returns_matches_without_writing_root_files(tmp_path: Path, c
     assert not (project / "CODEX_CONTEXT.md").exists()
 
 
+def test_repo_query_markdown_output_is_agent_readable_and_read_only(tmp_path: Path, capsys, monkeypatch) -> None:
+    project = _make_cli_project(tmp_path)
+    store = _FakeVectorStore()
+    _scan_and_write_vectors(project, store, capsys, monkeypatch)
+    context_before = _context_snapshot(project)
+
+    rc = main(
+        [
+            "repo",
+            "query",
+            "--project-root",
+            str(project),
+            "--query",
+            "where is main",
+            "--path-prefix",
+            "pkg/",
+            "--output",
+            "markdown",
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert rc == 0
+    assert captured.err == ""
+    assert captured.out.startswith("# Repo Query Context Pack\n")
+    assert "## Generation Boundary" in captured.out
+    assert "| Text | where is main |" in captured.out
+    assert "```python\n" in captured.out
+    assert "def main():" in captured.out
+    assert _context_snapshot(project) == context_before
+    assert not (project / "CLAUDE.md").exists()
+    assert not (project / "AGENTS.md").exists()
+    assert not (project / "ARCHITECTURE.md").exists()
+    assert not (project / "CODEX_CONTEXT.md").exists()
+
+
 def test_repo_query_default_output_is_text(tmp_path: Path, capsys, monkeypatch) -> None:
     project = _make_cli_project(tmp_path)
     store = _FakeVectorStore()

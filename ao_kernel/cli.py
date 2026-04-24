@@ -342,7 +342,7 @@ def _cmd_repo_query(args: argparse.Namespace) -> int:
     )
     from ao_kernel.context.embedding_config import resolve_embedding_config
     from ao_kernel.context.vector_store_resolver import resolve_vector_store
-    from ao_kernel.repo_intelligence import query_repo_vectors
+    from ao_kernel.repo_intelligence import build_repo_query_context_pack, query_repo_vectors
 
     project_root = _Path(args.project_root or ".").resolve()
     if not project_root.is_dir():
@@ -440,6 +440,8 @@ def _cmd_repo_query(args: argparse.Namespace) -> int:
     }
     if args.output == "json":
         print(_json.dumps(summary, indent=2, sort_keys=True))
+    elif args.output == "markdown":
+        print(build_repo_query_context_pack(query_result=query_result), end="")
     else:
         print("repo query complete")
         print("project_root: .")
@@ -1293,7 +1295,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     query_p.add_argument(
         "--output",
-        choices=["text", "json"],
+        choices=["text", "json", "markdown"],
         default="text",
         help="Command output format (default: text)",
     )

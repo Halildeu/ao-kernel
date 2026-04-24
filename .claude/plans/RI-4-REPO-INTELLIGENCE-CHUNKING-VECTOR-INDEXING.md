@@ -1,13 +1,14 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** RI-4d implementation PR
+**Status:** RI-4e implementation PR
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `c559195`
-**Closed PR:** [#419](https://github.com/Halildeu/ao-kernel/pull/419)
-**Branch:** `codex/repo-intelligence-retrieval`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-retrieval`
-**Base:** `origin/main` at `c559195`
-**Next slice:** RI-4d read-only repo query surface, separate PR only
+**Authority:** `origin/main` at `58ef3df`
+**Closed PRs:** [#419](https://github.com/Halildeu/ao-kernel/pull/419),
+[#421](https://github.com/Halildeu/ao-kernel/pull/421)
+**Branch:** `codex/repo-query-markdown-context`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-query-markdown-context`
+**Base:** `origin/main` at `58ef3df`
+**Next slice:** RI-4e stdout-only agent-readable query context output
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -48,11 +49,16 @@ RI-4 must be implemented in this order:
 3. `RI-4c` - explicit opt-in vector write path. Completed on `main` via
    [#419](https://github.com/Halildeu/ao-kernel/pull/419).
 4. `RI-4d` - read-only retrieval boundary over the existing repo vector index.
-   In progress in the current PR.
+   Completed on `main` via
+   [#421](https://github.com/Halildeu/ao-kernel/pull/421).
+5. `RI-4e` - stdout-only agent-readable query context output for manual
+   Claude/Codex use. In progress in the current PR.
 
 The current PR must not auto-wire repo vectors into general context
-compilation. It first closes the RI-4d retrieval boundary: read-only query
-surface, evidence contract, support tier, and failure-mode tests.
+compilation. It only renders already-validated `repo query` results as
+Markdown on stdout so operators can inspect and manually feed retrieved chunks
+to agents without root exports, `.ao/context` artifact writes, MCP exposure, or
+vector backend mutations.
 
 ## Non-Negotiable Boundaries
 
@@ -472,6 +478,48 @@ Acceptance:
       context compiler auto-injection.
 - [x] Unit and CLI tests use mocked/in-memory vector store and embeddings.
 
+### RI-4e - Manual query context output
+
+RI-4e is the first agent-facing output slice after retrieval. It remains a
+manual, read-only bridge: `repo query --output markdown` renders the same
+schema-backed query result as Markdown on stdout. It does not write
+`CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, `CODEX_CONTEXT.md`, or any
+`.ao/context` query artifact.
+
+Scope decision:
+
+1. Use the existing `repo query` command; do not add a new root export command.
+2. Markdown output is stdout-only and deterministic for the same query result.
+3. The output includes generation boundary, query filters, retrieval summary,
+   source artifact hashes, current snippets, diagnostics, and pack limits.
+4. It does not call an LLM, write vectors, delete vectors, expose MCP tools, or
+   feed `context_compiler` automatically.
+5. It keeps repo chunks distinct from canonical/session memory decisions.
+
+Planned files:
+
+```text
+ao_kernel/_internal/repo_intelligence/context_pack_builder.py
+ao_kernel/cli.py
+ao_kernel/repo_intelligence/__init__.py
+tests/test_repo_intelligence_context_pack_builder.py
+tests/test_cli_repo_query.py
+docs/PUBLIC-BETA.md
+docs/SUPPORT-BOUNDARY.md
+CHANGELOG.md
+```
+
+Acceptance:
+
+- [x] `repo query --output markdown` renders agent-readable Markdown on stdout.
+- [x] Markdown output includes retrieved snippets with source path, line range,
+      similarity, module, symbol, token estimate, and content status.
+- [x] Markdown output includes the same read-only boundary and memory boundary.
+- [x] No root files, `.ao/context` artifacts, vector writes, MCP tools, or
+      context compiler auto-injection.
+- [x] Unit and CLI tests cover renderer determinism, code-fence safety, and
+      read-only CLI behavior.
+
 ## Rejected Approaches
 
 | Approach | Decision | Reason |
@@ -511,3 +559,6 @@ Acceptance:
 | 2026-04-24 | RI-4d gate | Next work is a read-only retrieval boundary slice. Automatic `context_compiler`, MCP, or root authority integration remains deferred until the query surface has behavior tests and support-boundary evidence. |
 | 2026-04-24 | RI-4d implementation | Added read-only `repo query` retrieval over the existing repo vector index manifest and configured vector backend; no context compiler auto-injection, MCP tool, vector writes, root exports, or artifact writes. |
 | 2026-04-24 | RI-4d validation | Full ruff, full mypy, focused repo-intelligence tests, CLI query smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2970 passed, 1 skipped`, total coverage `85.37%`. |
+| 2026-04-24 | RI-4d merge closeout | PR [#421](https://github.com/Halildeu/ao-kernel/pull/421) merged to `main` at `58ef3df`; CI passed including lint, typecheck, coverage, Python 3.11/3.12/3.13 tests, benchmark-fast, packaging-smoke, extras-install, and scorecard. |
+| 2026-04-24 | RI-4e implementation | Added stdout-only `repo query --output markdown` context rendering for manual agent use; no context compiler auto-injection, MCP tool, vector writes, root exports, or artifact writes. |
+| 2026-04-24 | RI-4e validation | Full ruff, full mypy, focused repo-intelligence tests, CLI markdown smoke, doctor, packaging smoke, and full coverage suite passed. Full coverage: `2975 passed, 1 skipped`, total coverage `85.40%`. |
