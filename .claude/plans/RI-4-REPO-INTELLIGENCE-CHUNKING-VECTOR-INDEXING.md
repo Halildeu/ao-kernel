@@ -1,10 +1,10 @@
 # RI-4 - Repo Intelligence Chunking and Vector Indexing Design Gate
 
-**Status:** RI-4a implementation PR
+**Status:** RI-4b implementation PR
 **Date:** 2026-04-24
-**Branch:** `codex/repo-intelligence-chunks`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-chunks`
-**Base:** `origin/main` at `cc9734b`
+**Branch:** `codex/repo-intelligence-vector-plan`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-repo-intelligence-vector-plan`
+**Base:** `origin/main` at `cbce91e`
 **Rule:** Never work directly on `main`.
 
 ## Operational Rules
@@ -380,13 +380,13 @@ docs/SUPPORT-BOUNDARY.md
 
 Acceptance:
 
-- [ ] `repo index --dry-run` reads `repo_chunks.json`.
-- [ ] Dry-run emits `.ao/context/repo_vector_write_plan.json`.
-- [ ] Dry-run performs no embedding calls.
-- [ ] Dry-run performs no vector store writes.
-- [ ] Planned keys are deterministic.
-- [ ] Stale-key deletion plan is deterministic.
-- [ ] Missing or invalid chunk manifest fails closed.
+- [x] `repo index --dry-run` reads `repo_chunks.json`.
+- [x] Dry-run emits `.ao/context/repo_vector_write_plan.json`.
+- [x] Dry-run performs no embedding calls.
+- [x] Dry-run performs no vector store writes.
+- [x] Planned keys are deterministic.
+- [x] Stale-key deletion plan is deterministic.
+- [x] Missing or invalid chunk manifest fails closed.
 
 ### RI-4c - Explicit vector write
 
@@ -460,3 +460,5 @@ Questions to answer before implementation:
 | 2026-04-24 | Design gate | Added RI-4 chunking/vector indexing plan before implementation. |
 | 2026-04-24 | RI-4a implementation | Added deterministic `repo_chunks.json` chunk manifest generation only; no embedding calls, vector writes, network, `repo index`, or root exports. |
 | 2026-04-24 | RI-4a validation | Full suite passed with branch coverage above the 85% gate; full ruff, full mypy, focused repo-intelligence tests, CLI smoke, and packaging smoke passed. |
+| 2026-04-24 | RI-4b implementation | Added deterministic `repo index --dry-run` vector write-plan generation only; no embedding calls, vector backend connection, vector writes, network, or root exports. |
+| 2026-04-24 | RI-4b validation | Full suite passed with branch coverage above the 85% gate; full ruff, full mypy, focused repo-intelligence tests, CLI scan/index smoke, doctor, and packaging smoke passed. |

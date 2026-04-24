@@ -149,8 +149,17 @@ schema-backed local artifacts under `.ao/context/`: `repo_map.json`,
 `import_graph.json`, `symbol_index.json`, `repo_chunks.json`, `agent_pack.md`,
 and `repo_index_manifest.json`. It does not create root authority files such as
 `CLAUDE.md`, `AGENTS.md`, `ARCHITECTURE.md`, or `CODEX_CONTEXT.md`, and does not
-include embedding calls, vector indexing, LLM summaries, MCP tools,
+include embedding calls, vector writes, LLM summaries, MCP tools,
 target-specific exports, or root context-pack export.
+
+The `repo index --dry-run` surface is Beta / experimental dry-run only. It reads
+`.ao/context/repo_chunks.json` and may write only
+`.ao/context/repo_vector_write_plan.json`. The write-plan records deterministic
+repo chunk vector keys, planned upserts, planned stale-key deletes, and embedding
+space identity. It does not call an embedding provider, connect to a vector
+backend, write vectors, use network access, expose an MCP tool, or write root
+authority files. Real `repo index --write-vectors` support is not shipped in
+this tranche.
 
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına

@@ -16,11 +16,14 @@ PYTHON_SYMBOL_INDEX_FILENAME = "symbol_index.json"
 REPO_CHUNKS_FILENAME = "repo_chunks.json"
 AGENT_PACK_FILENAME = "agent_pack.md"
 REPO_INDEX_MANIFEST_FILENAME = "repo_index_manifest.json"
+REPO_VECTOR_WRITE_PLAN_FILENAME = "repo_vector_write_plan.json"
+REPO_VECTOR_INDEX_MANIFEST_FILENAME = "repo_vector_index_manifest.json"
 REPO_MAP_SCHEMA_NAME = "repo-map.schema.v1.json"
 PYTHON_IMPORT_GRAPH_SCHEMA_NAME = "python-import-graph.schema.v1.json"
 PYTHON_SYMBOL_INDEX_SCHEMA_NAME = "python-symbol-index.schema.v1.json"
 REPO_CHUNKS_SCHEMA_NAME = "repo-chunks.schema.v1.json"
 REPO_INDEX_MANIFEST_SCHEMA_NAME = "repo-index-manifest.schema.v1.json"
+REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME = "repo-vector-write-plan.schema.v1.json"
 AGENT_PACK_FORMAT_REF = "agent-pack-markdown.v1"
 
 JsonDict = dict[str, Any]
@@ -49,6 +52,11 @@ def validate_python_symbol_index(symbol_index: Mapping[str, Any]) -> None:
 def validate_repo_chunks(repo_chunks: Mapping[str, Any]) -> None:
     """Validate a repo chunks document against the bundled schema."""
     _validate(repo_chunks, REPO_CHUNKS_SCHEMA_NAME)
+
+
+def validate_repo_vector_write_plan(vector_write_plan: Mapping[str, Any]) -> None:
+    """Validate a repo vector write-plan document against the bundled schema."""
+    _validate(vector_write_plan, REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME)
 
 
 def write_repo_scan_artifacts(
@@ -133,6 +141,28 @@ def write_repo_scan_artifacts(
         "schema_version": "1",
         "artifact_kind": "repo_scan_write_result",
         "artifacts": [*artifact_records, manifest_record],
+    }
+
+
+def write_repo_vector_write_plan_artifact(
+    *,
+    context_dir: str | Path,
+    vector_write_plan: Mapping[str, Any],
+) -> JsonDict:
+    """Write the repo vector dry-run plan under an explicit context directory."""
+    context = Path(context_dir)
+    validate_repo_vector_write_plan(vector_write_plan)
+    artifact_path = context / REPO_VECTOR_WRITE_PLAN_FILENAME
+    write_json_atomic(artifact_path, dict(vector_write_plan))
+    artifact_record = _artifact_record(
+        path=artifact_path,
+        display_path=_display_path(context, REPO_VECTOR_WRITE_PLAN_FILENAME),
+        schema_ref=REPO_VECTOR_WRITE_PLAN_SCHEMA_NAME,
+    )
+    return {
+        "schema_version": "1",
+        "artifact_kind": "repo_vector_write_plan_write_result",
+        "artifacts": [artifact_record],
     }
 
 
