@@ -1,14 +1,12 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup
+**Status:** Active program setup / `GP-5.1a` audit closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `d7f7b37` for the `GP-5.0a` consultation
-absorb slice
+**Authority:** `origin/main` at `7580303` for the `GP-5.1a` prerequisite audit
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.0a` - evidence gates and `RI-5` / `GP-5.3`
-interface contract
-**Branch:** `codex/gp5-0a-ri5-interface-gates`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-0a`
+**Current slice:** `GP-5.1a` - protected gate prerequisite audit
+**Branch:** `codex/gp5-1a-protected-gate-audit`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-1a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
@@ -159,6 +157,18 @@ runtime integration starts.
 
 **Goal:** Convert the GP-4 live-adapter gate design from blocked contract into
 an executable protected gate.
+
+**GP-5.1a audit result:** `blocked_unattested_keep_operator_beta`.
+
+`GP-5.1a` checked the current GitHub environment and secret-handle metadata
+without creating environments, reading secret values, binding workflow
+environments, or invoking `claude`. The only configured environment is `pypi`;
+the required `ao-kernel-live-adapter-gate` environment is absent, and
+`AO_CLAUDE_CODE_CLI_AUTH` is not attested as a repository or environment
+secret handle. Therefore `GP-5.1b` must not bind the workflow yet.
+
+The detailed decision record is
+`.claude/plans/GP-5.1a-PROTECTED-GATE-PREREQUISITE-AUDIT.md`.
 
 **Work:**
 
@@ -458,11 +468,11 @@ promotion.
 | Order | Slice | Output | Notes |
 |---:|---|---|---|
 | 1 | `GP-5.0` | Program roadmap PR | Completed on `main`; no runtime change. |
-| 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Current slice; no runtime change. |
-| 3 | `GP-5.1a` | Protected gate prerequisite audit | Check whether GitHub environment/secret can exist; no secret value in repo. |
-| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | May run in parallel with `GP-5.1a`; use current `repo query` / Markdown context baseline from `RI-4`. |
-| 5 | `GP-5.3b` | Agent context handoff contract | May run in parallel with `GP-5.1a`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
-| 6 | `GP-5.1b` | Protected workflow binding patch | Bind live gate to protected environment with blocked semantics preserved. |
+| 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Completed on `main`; no runtime change. |
+| 3 | `GP-5.1a` | Protected gate prerequisite audit | Closeout candidate: required environment/secret handle not attested; no secret value in repo. |
+| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Next unblocked slice; use current `repo query` / Markdown context baseline from `RI-4`. |
+| 5 | `GP-5.3b` | Agent context handoff contract | Can follow `GP-5.3a`; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
+| 6 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 7 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 8 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
 | 9 | `GP-5.5a` | Controlled patch/test design | No remote side effects; runbook skeleton update required. |
@@ -493,6 +503,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.0a`, then start `GP-5.1a` and the independent
-   `GP-5.3a` / `GP-5.3b` repo-intelligence contract slices without support
-   widening.
+5. next step: merge `GP-5.1a`, then start `GP-5.3a` repo-intelligence
+   retrieval evidence contract unless protected environment/credential
+   attestation is provided first.
