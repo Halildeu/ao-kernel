@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gp5-production-platform-claim-decision.schema.v1.json",
+  "title": "GP-5.9 production platform claim decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "issue",
+    "tracker",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "stable_runtime_boundary",
+    "promoted_tiers",
+    "success_criteria",
+    "promotion_blockers",
+    "evidence_surfaces",
+    "gp58_operations_package",
+    "support_boundary",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_production_platform_claim_decision" },
+    "program_id": { "const": "GP-5.9" },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "const": 455 },
+        "url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "tracker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "const": 424 },
+        "url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "overall_status": { "enum": ["closed", "blocked"] },
+    "decision": {
+      "enum": [
+        "promote_general_purpose_platform",
+        "promote_limited_platform_beta",
+        "keep_narrow_stable_runtime",
+        "defer_support_widening"
+      ]
+    },
+    "support_widening": { "type": "boolean" },
+    "production_platform_claim": { "type": "boolean" },
+    "stable_runtime_boundary": {
+      "enum": ["narrow_production_runtime", "general_purpose_platform"]
+    },
+    "promoted_tiers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "blocked_reason": { "type": "string", "minLength": 1 },
+    "success_criteria": {
+      "type": "array",
+      "minItems": 10,
+      "items": { "$ref": "#/$defs/success_criterion" }
+    },
+    "promotion_blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "evidence_surfaces": {
+      "type": "array",
+      "minItems": 8,
+      "items": { "$ref": "#/$defs/evidence_surface" }
+    },
+    "gp58_operations_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "decision", "findings"],
+      "properties": {
+        "status": { "enum": ["ready", "blocked", "missing"] },
+        "decision": { "type": "string", "minLength": 1 },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "support_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stable_boundary_unchanged",
+        "general_purpose_claim_granted",
+        "findings"
+      ],
+      "properties": {
+        "stable_boundary_unchanged": { "type": "boolean" },
+        "general_purpose_claim_granted": { "type": "boolean" },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "overall_status": { "const": "blocked" } } },
+      "then": { "required": ["blocked_reason"] }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": { "enum": ["keep_narrow_stable_runtime", "defer_support_widening"] }
+        }
+      },
+      "then": {
+        "properties": {
+          "support_widening": { "const": false },
+          "production_platform_claim": { "const": false },
+          "stable_runtime_boundary": { "const": "narrow_production_runtime" },
+          "promoted_tiers": { "maxItems": 0 },
+          "promotion_blockers": { "minItems": 1 },
+          "support_boundary": {
+            "properties": {
+              "stable_boundary_unchanged": { "const": true },
+              "general_purpose_claim_granted": { "const": false }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "promote_general_purpose_platform" } } },
+      "then": {
+        "properties": {
+          "support_widening": { "const": true },
+          "production_platform_claim": { "const": true },
+          "stable_runtime_boundary": { "const": "general_purpose_platform" },
+          "promoted_tiers": { "minItems": 1 },
+          "promotion_blockers": { "maxItems": 0 },
+          "support_boundary": {
+            "properties": {
+              "general_purpose_claim_granted": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "decision": { "const": "promote_limited_platform_beta" } } },
+      "then": {
+        "properties": {
+          "support_widening": { "const": true },
+          "production_platform_claim": { "const": false },
+          "stable_runtime_boundary": { "const": "narrow_production_runtime" },
+          "promoted_tiers": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "success_criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "summary", "evidence", "blockers"],
+      "properties": {
+        "id": {
+          "enum": [
+            "BC-1",
+            "BC-2",
+            "BC-3",
+            "BC-4",
+            "BC-5",
+            "BC-6",
+            "BC-7",
+            "BC-8",
+            "BC-9",
+            "BC-10"
+          ]
+        },
+        "status": { "enum": ["pass", "partial", "blocked"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "evidence_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "status", "source_path", "required_tokens", "findings"],
+      "properties": {
+        "surface": {
+          "enum": [
+            "gp5_program_plan",
+            "gp5_status",
+            "gp58_plan",
+            "gp59_plan",
+            "public_beta",
+            "support_boundary",
+            "known_bugs",
+            "operations_runbook",
+            "gp58_script",
+            "packaging_smoke"
+          ]
+        },
+        "status": { "enum": ["ready", "blocked"] },
+        "source_path": { "type": "string", "minLength": 1 },
+        "required_tokens": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

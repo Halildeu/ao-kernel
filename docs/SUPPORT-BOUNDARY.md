@@ -261,6 +261,15 @@ wording are present before GP-5.9. The gate records `support_widening=false`
 and `production_platform_claim=false`; it does not promote any tier and does
 not make `ao-kernel` a general-purpose production coding automation platform.
 
+`GP-5.9` adds the production platform claim decision gate
+`scripts/gp5_platform_claim_decision.py` and
+`gp5-production-platform-claim-decision.schema.v1.json`. The closeout decision
+is `keep_narrow_stable_runtime`: the stable runtime remains narrow and
+supported, but the general-purpose production platform claim is not granted.
+The gate records `support_widening=false` and
+`production_platform_claim=false`; no adapter, write-side, remote PR, or
+repo-intelligence tier is promoted by this decision.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor
