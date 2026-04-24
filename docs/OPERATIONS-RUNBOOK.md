@@ -164,6 +164,7 @@ aligned with the current support boundary.
 | GP-5 controlled patch/test contract fails | Validate `gp5-controlled-patch-test-contract.schema.v1.json` and run `pytest -q tests/test_gp5_controlled_patch_test_contract.py` | Design-gate blocker only; not a stable shipped baseline incident |
 | GP-5.5b controlled patch/test rehearsal fails | `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` and `pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py` | Rehearsal-gate blocker only; do not widen write-side support |
 | GP-5.6a disposable PR write rehearsal fails | Validate `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_disposable_pr_write_rehearsal.py` | Remote side-effect rehearsal blocker only; close/delete any sandbox residue before retry |
+| GP-5.7a full production rehearsal contract fails | Validate `gp5-full-production-rehearsal-contract.schema.v1.json` and run `pytest -q tests/test_gp5_full_production_rehearsal_contract.py` | Contract-gate blocker only; do not claim production platform readiness |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
 
 ### 3.4 GP-5 controlled patch/test rehearsal skeleton
@@ -269,6 +270,34 @@ If the rehearsal leaves a sandbox PR or branch behind, close the PR manually
 with `gh pr close <url> --repo <owner>/<sandbox-repo>` and delete the branch
 with `gh api -X DELETE repos/<owner>/<sandbox-repo>/git/refs/heads/<head>`.
 Do not rerun against a production repo to compensate for sandbox failures.
+
+### 3.7 GP-5.7a full production rehearsal contract
+
+`GP-5.7a` is a contract gate, not an executable full rehearsal. Validate the
+contract schema and docs boundary before starting GP-5.7b:
+
+```bash
+pytest -q tests/test_gp5_full_production_rehearsal_contract.py
+```
+
+Expected contract evidence:
+
+1. `gp5_full_production_rehearsal_contract` validates against
+   `gp5-full-production-rehearsal-contract.schema.v1.json`;
+2. `support_widening=false`;
+3. `production_platform_claim=false`;
+4. protected real-adapter promotion remains gated on GP-5.1b attestation;
+5. GP-5.3e, GP-5.4a, GP-5.5b, and GP-5.6a are referenced as preconditions;
+6. the target chain is exactly issue/task -> repo intelligence -> explicit
+   context handoff -> adapter reasoning -> patch plan -> controlled patch/test
+   -> disposable PR rehearsal -> rollback/closeout;
+7. the future execution matrix includes at least three clean rehearsals;
+8. the future execution matrix includes at least one fail-closed rehearsal;
+9. remote PR rehearsal remains disposable/sandbox-only and rejects arbitrary
+   user repositories.
+
+If this contract fails, do not run a best-effort full rehearsal. Fix the
+contract or status boundary first, then open GP-5.7b as the execution slice.
 
 ## 4. Evidence to collect
 

@@ -1,17 +1,17 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.6a` disposable PR write rehearsal
+**Status:** Active program setup / `GP-5.7a` full production rehearsal contract
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `93a6ce2` for the `GP-5.5b` controlled local patch/test rehearsal
+**Authority:** `origin/main` at `d1097aa` after the `GP-5.6a` disposable PR write rehearsal
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.6a` - disposable PR write rehearsal
-**Branch:** `codex/gp5-6a-disposable-pr-rehearsal`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-6a`
+**Current slice:** `GP-5.7a` - full production rehearsal contract
+**Branch:** `codex/gp5-7a-full-rehearsal-contract`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-7a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
 `GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed,
-`GP-5.5b` completed
+`GP-5.5b` completed, `GP-5.6a` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -433,7 +433,7 @@ sandbox and rollback evidence.
 
 **Release impact:** Deferred-to-beta decision only after rehearsal evidence.
 
-**GP-5.6a active closeout candidate:**
+**GP-5.6a closeout:**
 
 `GP-5.6a` adds a schema-backed disposable PR write rehearsal wrapper around
 the existing `gh-cli-pr` live-write smoke. It requires a passing `GP-5.5b`
@@ -449,6 +449,9 @@ The detailed decision record is
 This is not `gh-cli-pr` production support widening. The report is required to
 carry `support_widening=false`, `production_remote_pr_support=false`, and
 `arbitrary_repo_support=false`.
+
+The detailed decision record is
+`.claude/plans/GP-5.6a-DISPOSABLE-PR-WRITE-REHEARSAL.md`.
 
 ### GP-5.7 - Full Production Rehearsal
 
@@ -476,6 +479,23 @@ issue/task
    decision.
 
 **Release impact:** Candidate gate for broader platform beta.
+
+**GP-5.7a active contract slice:**
+
+`GP-5.7a` does not run the full rehearsal. It turns GP-5.7 into a
+schema-backed contract so the first execution slice cannot invent success
+criteria mid-run. The contract requires three clean rehearsals, at least one
+fail-closed rehearsal, explicit repo-intelligence handoff, controlled
+patch/test rollback evidence, disposable PR rollback evidence, and
+`support_widening=false`.
+
+The schema is
+`ao_kernel/defaults/schemas/gp5-full-production-rehearsal-contract.schema.v1.json`.
+The detailed decision record is
+`.claude/plans/GP-5.7a-FULL-PRODUCTION-REHEARSAL-CONTRACT.md`.
+
+This slice keeps `production_platform_claim=false`. GP-5.7b remains the first
+slice allowed to execute the complete rehearsal matrix.
 
 ### GP-5.8 - Operations and Support Widening Package
 

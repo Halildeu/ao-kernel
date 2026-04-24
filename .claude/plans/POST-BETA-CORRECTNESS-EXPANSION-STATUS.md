@@ -43,7 +43,8 @@ ayrı ayrı görünür kılmak.
 - **Son tamamlanan GP-5.4a governed read-only workflow rehearsal:** `.claude/plans/GP-5.4a-GOVERNED-READ-ONLY-WORKFLOW-REHEARSAL.md`
 - **Son tamamlanan GP-5.5a controlled patch/test design:** `.claude/plans/GP-5.5a-CONTROLLED-PATCH-TEST-DESIGN.md`
 - **Son tamamlanan GP-5.5b controlled local patch/test rehearsal:** `.claude/plans/GP-5.5b-CONTROLLED-LOCAL-PATCH-TEST-REHEARSAL.md`
-- **Aktif GP-5.6a disposable PR write rehearsal:** `.claude/plans/GP-5.6a-DISPOSABLE-PR-WRITE-REHEARSAL.md`
+- **Son tamamlanan GP-5.6a disposable PR write rehearsal:** `.claude/plans/GP-5.6a-DISPOSABLE-PR-WRITE-REHEARSAL.md`
+- **Aktif GP-5.7a full production rehearsal contract:** `.claude/plans/GP-5.7a-FULL-PRODUCTION-REHEARSAL-CONTRACT.md`
 - **Son tamamlanan RI-5 design gate:** `.claude/plans/RI-5-REPO-INTELLIGENCE-ROOT-EXPORT.md`
 - **Aktif GP-5 integration roadmap:** `.claude/plans/GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md`
 - **Production stable live roadmap:** `.claude/plans/PRODUCTION-STABLE-LIVE-ROADMAP.md`
@@ -112,7 +113,8 @@ ayrı ayrı görünür kılmak.
 - **GP-5.4a issue:** [#441](https://github.com/Halildeu/ao-kernel/issues/441) (`closed after GP-5.4a PR`)
 - **GP-5.5a issue:** [#443](https://github.com/Halildeu/ao-kernel/issues/443) (`closed after GP-5.5a PR`)
 - **GP-5.5b issue:** [#445](https://github.com/Halildeu/ao-kernel/issues/445) (`closed after GP-5.5b PR`)
-- **GP-5.6a issue:** [#447](https://github.com/Halildeu/ao-kernel/issues/447) (`active closeout candidate`)
+- **GP-5.6a issue:** [#447](https://github.com/Halildeu/ao-kernel/issues/447) (`closed after GP-5.6a PR`)
+- **GP-5.7a issue:** [#449](https://github.com/Halildeu/ao-kernel/issues/449) (`active`)
 - **RI-5 design gate:** PR `#426` merged; next slice is RI-5a export-plan preview implementation
 - **Current mode:** GP-5 active integration planning / no support widening yet.
   Future widening requires protected live-adapter evidence, repo-intelligence
@@ -177,7 +179,7 @@ ayrı ayrı görünür kılmak.
 | `GP-4.3` protected environment / secret contract | Completed by GP-4.3 PR ([#407](https://github.com/Halildeu/ao-kernel/issues/407), record `.claude/plans/GP-4.3-PROTECTED-ENVIRONMENT-SECRET-CONTRACT.md`) | protected GitHub environment, secret handle ve fork-safety contract'ini schema-backed hale getirmek | no secret values, no environment creation, no live adapter execution, no support widening |
 | `GP-4.4` protected live rehearsal blocked decision | Completed by GP-4.4 PR ([#410](https://github.com/Halildeu/ao-kernel/issues/410), record `.claude/plans/GP-4.4-PROTECTED-LIVE-REHEARSAL-BLOCKED-DECISION.md`) | protected live rehearsal prerequisite eksikse fake live success üretmeden blocked decision kaydetmek | schema validation + blocked rehearsal decision artifact + no live adapter execution + no support widening |
 | `GP-4.5` support-boundary closeout | Completed by GP-4.5 PR ([#413](https://github.com/Halildeu/ao-kernel/issues/413), record `.claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md`) | blocked GP-4 evidence against support boundary kararını kapatmak | verdict `close_no_widening_keep_operator_beta`; `claude-code-cli` remains Beta/operator-managed |
-| `GP-5` general-purpose platform integration | Active setup / `GP-5.3e` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a` pins retrieval evidence; `GP-5.3b` pins explicit handoff; `GP-5.3c` defines future opt-in contract; `GP-5.3d` pins no-MCP/no-root-export guard; `GP-5.3e` decides beta explicit-handoff building-block use; no production support widening until GP-5.9 closeout |
+| `GP-5` general-purpose platform integration | Active setup / `GP-5.7a` current | repo intelligence, protected real-adapter gate, governed read-only E2E, controlled patch/test, disposable PR rehearsal ve ops widening paketini tek entegrasyon programına bağlamak | `GP-5.1a` completed blocked protected gate audit; `GP-5.3a..GP-5.3e` close repo-intelligence handoff gates; `GP-5.4a` read-only rehearsal passed; `GP-5.5b` local patch/test rehearsal passed; `GP-5.6a` disposable PR rehearsal passed; `GP-5.7a` now defines the full rehearsal contract; no production support widening until GP-5.9 closeout |
 | `ST-0` production stable truth closeout | Completed on `main` ([#338](https://github.com/Halildeu/ao-kernel/pull/338), [#339](https://github.com/Halildeu/ao-kernel/pull/339)) | stable/live yol haritasını eklemek ve GP-2.2 drift'i kapatmak | production stable roadmap + GP-2.2 closeout verdict |
 | `ST-1` releasable pre-release gate | Completed on `main` ([#340](https://github.com/Halildeu/ao-kernel/issues/340), [#341](https://github.com/Halildeu/ao-kernel/pull/341), [#342](https://github.com/Halildeu/ao-kernel/pull/342)) | current `main`i `4.0.0b2` pre-release gate'e hazırlamak ve publish etmek | release contract + exact file/test/publish checklist + PyPI exact pin verify |
 | `ST-2` stable support boundary freeze | Completed on `main` ([#344](https://github.com/Halildeu/ao-kernel/issues/344), [#347](https://github.com/Halildeu/ao-kernel/pull/347)) | `4.0.0` stable öncesinde shipped/beta/deferred/known-bug boundary'yi kanıtla dondurmak | support matrix evidence map + docs parity + stable blocker decision |
@@ -230,9 +232,10 @@ support widening kapılarını sırayla kapatmaktır. `GP-5.0` roadmap/authority
 freeze, `GP-5.0a` Claude/MCP consultation absorb, `GP-5.1a` protected gate
 prerequisite audit, `GP-5.3a` retrieval evidence contract, `GP-5.3b` agent
 context handoff contract, `GP-5.3c` workflow opt-in design contract ve
-`GP-5.3d` no-MCP/no-root-export guard tamamlandı. Aktif slice `GP-5.3e`
-workflow building-block decision closeout adayıdır. Bu slice production support
-boundary'yi genişletmez.
+`GP-5.3d` no-MCP/no-root-export guard tamamlandı. `GP-5.3e`, `GP-5.4a`,
+`GP-5.5a`, `GP-5.5b` ve `GP-5.6a` da kapanmıştır. Aktif slice `GP-5.7a`
+full production rehearsal contract'tır. Bu slice production support boundary'yi
+genişletmez.
 
 `GP-5.0a` ile yazılı hale getirilen ek kapılar:
 
@@ -261,8 +264,12 @@ boundary'yi genişletmez.
 4. `GP-5.3c` workflow opt-in design — completed on `main`
 5. `GP-5.3d` no-MCP/no-root-export guard — completed on `main`
 6. `GP-5.3e` repo-intelligence workflow building-block promotion decision — completed on `main`
-7. `GP-5.4a` governed read-only workflow rehearsal — current closeout candidate
-8. `GP-5.1b` protected workflow binding patch — blocked until attestation
+7. `GP-5.4a` governed read-only workflow rehearsal — completed on `main`
+8. `GP-5.5a` controlled patch/test design — completed on `main`
+9. `GP-5.5b` controlled local patch/test rehearsal — completed on `main`
+10. `GP-5.6a` disposable PR write rehearsal — completed on `main`
+11. `GP-5.7a` full production rehearsal contract — current active slice
+12. `GP-5.1b` protected workflow binding patch — blocked until attestation
 
 `GP-5.3a` ve `GP-5.3b`, `GP-5.1a` ile paralel yürüyebilir; çünkü read-only
 retrieval evidence ve manual/stdout handoff protected real-adapter credential'a
@@ -341,7 +348,7 @@ repo-intelligence contract slice'larını engellemez.
 6. `RI-5a` export-plan preview bu slice için `not_used`; support boundary
    genişlemez.
 
-`GP-5.3e` closeout adayı:
+`GP-5.3e` completed:
 
 1. Karar: `promote_beta_explicit_handoff_building_block`.
 2. `repo query --output markdown` çıktısı future GP-5 read-only workflow
@@ -355,7 +362,7 @@ repo-intelligence contract slice'larını engellemez.
 6. Sıradaki unblocked slice `GP-5.4a` governed read-only workflow rehearsal'dır;
    `GP-5.1b` protected gate attestation gelene kadar bloklu kalır.
 
-`GP-5.4a` closeout adayı:
+`GP-5.4a` completed:
 
 1. Karar: `pass_read_only_rehearsal_no_support_widening`.
 2. `python3 scripts/gp5_read_only_rehearsal.py --output json` wheel-installed
@@ -386,7 +393,7 @@ repo-intelligence contract slice'larını engellemez.
 5. `GP-5.5b` controlled local patch/test rehearsal tamamlandı; aktif closeout
    adayı `GP-5.6a` disposable PR write rehearsal'dır.
 
-`GP-5.5b` closeout adayı:
+`GP-5.5b` completed:
 
 1. Karar: `pass_controlled_local_patch_test_rehearsal_no_support_widening`.
 2. `gp5-controlled-patch-test-rehearsal-report.schema.v1.json` local
@@ -401,9 +408,9 @@ repo-intelligence contract slice'larını engellemez.
 5. Sıradaki unblocked slice `GP-5.6a` disposable PR write rehearsal'dır;
    remote PR rehearsal GP-5.5b rollback evidence olmadan başlamaz.
 
-`GP-5.6a` closeout adayı:
+`GP-5.6a` completed:
 
-1. Karar adayı: `pass_disposable_pr_write_rehearsal_no_support_widening`.
+1. Karar: `pass_disposable_pr_write_rehearsal_no_support_widening`.
 2. `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` remote
    side-effect evidence'ını pinler: GP-5.5b precondition, sandbox repo guard,
    explicit `--allow-live-write`, ephemeral branch create/seed, draft PR
@@ -413,9 +420,22 @@ repo-intelligence contract slice'larını engellemez.
    yapmaz; live path explicit opt-in ve `sandbox` keyword guard ister.
 4. Bu slice `support_widening=false`, `production_remote_pr_support=false` ve
    `arbitrary_repo_support=false` taşır.
-5. Sıradaki unblocked slice `GP-5.7` full production rehearsal planning'dir;
+5. Sıradaki unblocked slice `GP-5.7a` full production rehearsal contract'tır;
    fakat protected live-adapter environment/credential attestation gelirse
    `GP-5.1b` öne alınabilir.
+
+`GP-5.7a` active:
+
+1. Karar hedefi: `contract_ready_no_support_widening`.
+2. `gp5-full-production-rehearsal-contract.schema.v1.json` GP-5.7 yürütme
+   matrisini pinler: issue/task, repo intelligence, explicit context handoff,
+   adapter reasoning, patch plan, controlled patch/test, disposable PR rehearsal
+   ve rollback/closeout zinciri.
+3. Contract en az üç clean rehearsal ve en az bir fail-closed rehearsal ister.
+4. `support_widening=false` ve `production_platform_claim=false` schema
+   seviyesinde zorunludur.
+5. Bu slice full rehearsal çalıştırmaz; `GP-5.7b` execution slice'ını açılabilir
+   hale getirir.
 
 Tarihi `ST`, `PB` ve `GP` kayıtları aşağıda korunur; bunlar güncel aktif gate
 değildir.

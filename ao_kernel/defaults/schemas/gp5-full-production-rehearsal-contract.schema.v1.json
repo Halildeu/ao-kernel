@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gp5-full-production-rehearsal-contract.schema.v1.json",
+  "title": "GP-5.7a full production rehearsal contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "issue",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "protected_real_adapter_gate",
+    "precondition_reports",
+    "target_chain",
+    "clean_rehearsal_matrix",
+    "failure_rehearsal_matrix",
+    "evidence_requirements",
+    "promotion_decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gp5_full_production_rehearsal_contract" },
+    "program_id": { "const": "GP-5.7a" },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "minLength": 1 }
+      }
+    },
+    "overall_status": { "enum": ["contract_ready", "blocked"] },
+    "decision": {
+      "enum": [
+        "contract_ready_no_support_widening",
+        "blocked_no_support_widening"
+      ]
+    },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "protected_real_adapter_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_for_promotion",
+        "attestation_status",
+        "live_adapter_execution_allowed_in_this_slice",
+        "blocked_gate"
+      ],
+      "properties": {
+        "required_for_promotion": { "const": true },
+        "attestation_status": {
+          "enum": ["blocked_unattested", "attested"]
+        },
+        "live_adapter_execution_allowed_in_this_slice": { "const": false },
+        "blocked_gate": { "enum": ["GP-5.1b", "none"] }
+      }
+    },
+    "precondition_reports": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate", "status", "artifact", "support_widening"],
+        "properties": {
+          "gate": {
+            "enum": ["GP-5.3e", "GP-5.4a", "GP-5.5b", "GP-5.6a"]
+          },
+          "status": {
+            "enum": ["completed", "pass", "closed"]
+          },
+          "artifact": { "type": "string", "minLength": 1 },
+          "support_widening": { "const": false }
+        }
+      }
+    },
+    "target_chain": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "issue_or_task" },
+        { "const": "repo_scan_index_query" },
+        { "const": "explicit_context_handoff" },
+        { "const": "adapter_reasoning" },
+        { "const": "patch_plan" },
+        { "const": "controlled_patch" },
+        { "const": "tests" },
+        { "const": "disposable_pr_rehearsal" },
+        { "const": "rollback_closeout" }
+      ],
+      "items": false,
+      "minItems": 9,
+      "maxItems": 9
+    },
+    "clean_rehearsal_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_clean_runs", "runs"],
+      "properties": {
+        "required_clean_runs": { "const": 3 },
+        "runs": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/clean_run" }
+        }
+      }
+    },
+    "failure_rehearsal_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_failure_runs", "scenarios"],
+      "properties": {
+        "required_failure_runs": { "const": 1 },
+        "scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/failure_scenario" }
+        }
+      }
+    },
+    "evidence_requirements": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requirement_id", "status_before_gp57b"],
+        "properties": {
+          "requirement_id": {
+            "enum": [
+              "issue_or_task_reference",
+              "repo_intelligence_artifacts",
+              "context_handoff_pack",
+              "adapter_identity_and_usage",
+              "patch_plan_artifact",
+              "controlled_patch_test_report",
+              "disposable_pr_write_report",
+              "rollback_closeout_report"
+            ]
+          },
+          "status_before_gp57b": { "enum": ["required"] }
+        }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "next_gate",
+        "release_impact",
+        "reason"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "next_gate": { "const": "GP-5.7b" },
+        "release_impact": { "const": "contract_only_no_runtime_change" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "clean_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "target",
+        "repo_intelligence_context",
+        "adapter",
+        "patch_test",
+        "pr_rehearsal",
+        "expected_outcome"
+      ],
+      "properties": {
+        "run_id": { "type": "string", "minLength": 1 },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "non_disposable_pr_target",
+            "arbitrary_user_repo"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "disposable_fixture_repo",
+                "sandbox_repo",
+                "supported_target_candidate"
+              ]
+            },
+            "non_disposable_pr_target": { "const": false },
+            "arbitrary_user_repo": { "const": false }
+          }
+        },
+        "repo_intelligence_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "hidden_injection",
+            "root_export_required"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "explicit_stdout_markdown",
+                "schema_backed_export_when_available"
+              ]
+            },
+            "hidden_injection": { "const": false },
+            "root_export_required": { "const": false }
+          }
+        },
+        "adapter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "production_certified",
+            "usage_or_unavailable_reason_required"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "codex_stub_rehearsal",
+                "protected_real_adapter_when_attested"
+              ]
+            },
+            "production_certified": { "const": false },
+            "usage_or_unavailable_reason_required": { "const": true }
+          }
+        },
+        "patch_test": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "controlled_worktree_required",
+            "rollback_required"
+          ],
+          "properties": {
+            "controlled_worktree_required": { "const": true },
+            "rollback_required": { "const": true }
+          }
+        },
+        "pr_rehearsal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "disposable_pr_required",
+            "remote_rollback_required",
+            "arbitrary_repo_support"
+          ],
+          "properties": {
+            "disposable_pr_required": { "const": true },
+            "remote_rollback_required": { "const": true },
+            "arbitrary_repo_support": { "const": false }
+          }
+        },
+        "expected_outcome": {
+          "enum": ["pass_or_blocked_with_evidence"]
+        }
+      }
+    },
+    "failure_scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "trigger",
+        "expected_status",
+        "support_widening"
+      ],
+      "properties": {
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "trigger": {
+          "enum": [
+            "missing_gp55b_precondition",
+            "non_disposable_pr_repo",
+            "protected_real_adapter_unattested",
+            "missing_rollback_cleanup",
+            "stale_repo_intelligence_context"
+          ]
+        },
+        "expected_status": { "const": "blocked" },
+        "support_widening": { "const": false }
+      }
+    }
+  }
+}
