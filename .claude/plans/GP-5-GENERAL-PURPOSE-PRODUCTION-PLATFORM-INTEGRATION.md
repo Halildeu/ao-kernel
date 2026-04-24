@@ -1,16 +1,17 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.5b` controlled local patch/test rehearsal closeout
+**Status:** Active program setup / `GP-5.6a` disposable PR write rehearsal
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `e2d5f91` for the `GP-5.5a` controlled patch/test design
+**Authority:** `origin/main` at `93a6ce2` for the `GP-5.5b` controlled local patch/test rehearsal
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.5b` - controlled local patch/test rehearsal
-**Branch:** `codex/gp5-5b-controlled-patch-rehearsal`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-5b`
+**Current slice:** `GP-5.6a` - disposable PR write rehearsal
+**Branch:** `codex/gp5-6a-disposable-pr-rehearsal`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-6a`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
 closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed,
 `GP-5.3b` completed, `GP-5.3c` completed, `GP-5.3d` completed,
-`GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed
+`GP-5.3e` completed, `GP-5.4a` completed, `GP-5.5a` completed,
+`GP-5.5b` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -432,6 +433,23 @@ sandbox and rollback evidence.
 
 **Release impact:** Deferred-to-beta decision only after rehearsal evidence.
 
+**GP-5.6a active closeout candidate:**
+
+`GP-5.6a` adds a schema-backed disposable PR write rehearsal wrapper around
+the existing `gh-cli-pr` live-write smoke. It requires a passing `GP-5.5b`
+controlled local patch/test report before any remote write, then with explicit
+`--allow-live-write` creates an ephemeral sandbox branch, seeds one
+deterministic evidence file, creates a draft PR, verifies it open, closes it,
+verifies final state `CLOSED`, deletes the remote branch, and verifies branch
+deletion.
+
+The detailed decision record is
+`.claude/plans/GP-5.6a-DISPOSABLE-PR-WRITE-REHEARSAL.md`.
+
+This is not `gh-cli-pr` production support widening. The report is required to
+carry `support_widening=false`, `production_remote_pr_support=false`, and
+`arbitrary_repo_support=false`.
+
 ### GP-5.7 - Full Production Rehearsal
 
 **Goal:** Run the complete platform chain under controlled conditions.
@@ -547,8 +565,8 @@ promotion.
 | 10 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 11 | `GP-5.4a` | Read-only E2E workflow rehearsal | Completed on `main`; wheel-installed `review_ai_flow + codex-stub` with explicit repo-intelligence handoff fixture; no production support widening. |
 | 12 | `GP-5.5a` | Controlled patch/test design | Completed on `main`; schema-backed contract and runbook skeleton; no runtime write support widening. |
-| 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Active closeout candidate: disposable worktree preview/apply/test/rollback/idempotency/cleanup evidence; no support widening. |
-| 13 | `GP-5.6a` | Disposable PR write rehearsal | Sandbox-only, rollback and runbook update required. |
+| 12.5 | `GP-5.5b` | Controlled local patch/test rehearsal | Completed on `main`; disposable worktree preview/apply/test/rollback/idempotency/cleanup evidence; no support widening. |
+| 13 | `GP-5.6a` | Disposable PR write rehearsal | Active closeout candidate: requires GP-5.5b report, sandbox-only PR create/verify/close/branch-delete evidence; no support widening. |
 | 14 | `GP-5.9` | Production platform claim decision | Only after all prior gate evidence exists. |
 
 ## 8. Standard Slice DoD
@@ -567,17 +585,17 @@ Every GP-5 slice must include:
 
 ## 9. Current Decision
 
-GP-5.5b closes the first controlled local patch/test rehearsal gate with
-`pass_controlled_local_patch_test_rehearsal_no_support_widening`. The slice
-adds a schema-backed report and a deterministic local command that creates a
-disposable detached worktree, previews a patch, requires explicit
-`--approve-apply`, acquires path-scoped claims for apply and rollback, runs a
-targeted verification command, rolls back through the reverse diff, checks
-rollback idempotency, and removes the worktree.
+GP-5.6a is the active remote side-effect rehearsal gate. It starts only after
+GP-5.5b local rollback evidence exists and must keep live writes constrained to
+a disposable sandbox repository. The script
+`scripts/gp5_disposable_pr_write_rehearsal.py` produces
+`gp5_disposable_pr_write_rehearsal_report` and fails closed unless the operator
+supplies a valid GP-5.5b report, `--allow-live-write`, a `sandbox`-guarded
+repo, and a `smoke/gp56a-*` head branch.
 
-This is still not runtime patch support widening. It does not enable live
-remote PR creation, real-adapter live-write support, arbitrary repository
-patch generation, or production write-side support.
+This is still not `gh-cli-pr` production remote PR support. It does not enable
+arbitrary repository PR creation, live remote PR support for user projects, or
+runtime workflow wiring from controlled patch output to PR opening.
 
 Current product wording remains:
 
@@ -585,6 +603,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step after `GP-5.5b`: start `GP-5.6a` disposable PR write rehearsal
-   unless protected environment/credential attestation arrives first for
-   `GP-5.1b`.
+5. current step: close `GP-5.6a` disposable PR write rehearsal; next step after
+   that is `GP-5.7` full production rehearsal planning unless protected
+   environment/credential attestation arrives first for `GP-5.1b`.

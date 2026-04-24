@@ -226,6 +226,15 @@ This is rehearsal evidence only. It does not make arbitrary patch generation,
 live remote PR creation, real-adapter live-write, or production write-side
 support shipped.
 
+`GP-5.6a` adds the first disposable PR write rehearsal wrapper,
+`python3 scripts/gp5_disposable_pr_write_rehearsal.py`. It requires a passing
+GP-5.5b local rehearsal report before any remote write and only runs live with
+explicit `--allow-live-write` against a `sandbox`-guarded repo. Its report is
+validated by `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and
+records `support_widening=false`, `production_remote_pr_support=false`, and
+`arbitrary_repo_support=false`. This does not make full remote PR opening a
+stable shipped support surface.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

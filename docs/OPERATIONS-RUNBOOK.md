@@ -163,6 +163,7 @@ aligned with the current support boundary.
 | `gh-cli-pr` smoke fails | `python3 scripts/gh_cli_pr_smoke.py --output text` | Beta/deferred lane incident unless shipped baseline also fails |
 | GP-5 controlled patch/test contract fails | Validate `gp5-controlled-patch-test-contract.schema.v1.json` and run `pytest -q tests/test_gp5_controlled_patch_test_contract.py` | Design-gate blocker only; not a stable shipped baseline incident |
 | GP-5.5b controlled patch/test rehearsal fails | `python3 scripts/gp5_controlled_patch_test_rehearsal.py --approve-apply --output json` and `pytest -q tests/test_gp5_controlled_patch_test_rehearsal.py` | Rehearsal-gate blocker only; do not widen write-side support |
+| GP-5.6a disposable PR write rehearsal fails | Validate `gp5-disposable-pr-write-rehearsal-report.schema.v1.json` and run `pytest -q tests/test_gp5_disposable_pr_write_rehearsal.py` | Remote side-effect rehearsal blocker only; close/delete any sandbox residue before retry |
 | Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
 
 ### 3.4 GP-5 controlled patch/test rehearsal skeleton
@@ -216,6 +217,59 @@ This rehearsal does not enable live remote PR creation, arbitrary repository
 patching, real-adapter live-write, or production write-side support. Those
 remain GP-5.6+ gates.
 
+### 3.6 GP-5.6a disposable PR write rehearsal
+
+`GP-5.6a` is the first bounded remote PR side-effect rehearsal. It must start
+from a passing GP-5.5b local patch/test report:
+
+```bash
+python3 scripts/gp5_controlled_patch_test_rehearsal.py \
+  --approve-apply \
+  --output json \
+  --report-path /tmp/gp55b-local-patch-report.json
+```
+
+Safety path without remote writes:
+
+```bash
+python3 scripts/gp5_disposable_pr_write_rehearsal.py \
+  --local-patch-report /tmp/gp55b-local-patch-report.json \
+  --repo Halildeu/ao-kernel-sandbox \
+  --base main \
+  --output json \
+  --report-path /tmp/gp56a-blocked.json
+```
+
+Live sandbox path:
+
+```bash
+python3 scripts/gp5_disposable_pr_write_rehearsal.py \
+  --local-patch-report /tmp/gp55b-local-patch-report.json \
+  --allow-live-write \
+  --repo Halildeu/ao-kernel-sandbox \
+  --base main \
+  --output json \
+  --report-path /tmp/gp56a-disposable-pr-write-report.json
+```
+
+Expected live pass evidence:
+
+1. `gp5_disposable_pr_write_rehearsal_report` validates against
+   `gp5-disposable-pr-write-rehearsal-report.schema.v1.json`;
+2. the target repo satisfies the default `sandbox` guard;
+3. remote head branch starts with `smoke/gp56a-`;
+4. a sandbox branch is created and seeded with one evidence file;
+5. `gh-cli-pr` creates a draft PR, verifies it open, and closes it;
+6. final PR state verifies as `CLOSED`;
+7. remote branch delete verifies;
+8. `support_widening=false`, `production_remote_pr_support=false`, and
+   `arbitrary_repo_support=false`.
+
+If the rehearsal leaves a sandbox PR or branch behind, close the PR manually
+with `gh pr close <url> --repo <owner>/<sandbox-repo>` and delete the branch
+with `gh api -X DELETE repos/<owner>/<sandbox-repo>/git/refs/heads/<head>`.
+Do not rerun against a production repo to compensate for sandbox failures.
+
 ## 4. Evidence to collect
 
 For any Sev 1 or Sev 2 incident, collect:
@@ -230,6 +284,10 @@ For any Sev 1 or Sev 2 incident, collect:
   `.ao/evidence/workflows/<run_id>/adapter-*.jsonl`
 - helper smoke report artifact path (opsiyonel ama önerilen):
   `--report-path` ile üretilen `gh-cli-pr-live-write.report.json`
+- GP-5.6a disposable PR write rehearsal artifact path, if the incident touches
+  remote write-side rehearsal:
+  `--report-path` ile üretilen
+  `gp5-disposable-pr-write-rehearsal-report.json`
 
 ## 5. Exit criteria
 
