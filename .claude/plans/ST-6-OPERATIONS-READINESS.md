@@ -1,6 +1,6 @@
 # ST-6 — Operations Readiness
 
-**Durum:** Active contract via
+**Durum:** Implementation PR active via
 [#351](https://github.com/Halildeu/ao-kernel/issues/351)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-5` completed via
@@ -23,6 +23,23 @@ anlamlı hale getirir.
 | Support boundary | Stable shipped, beta, deferred, known bugs ayrımı tutarlı mı? | `docs/SUPPORT-BOUNDARY.md`, `docs/PUBLIC-BETA.md` |
 | Known bugs | Stable shipped blocker status açık mı? | `docs/KNOWN-BUGS.md` |
 | Release gates | Required checks, packaging smoke ve publish verify yazılı mı? | `.github/workflows/*`, roadmap docs |
+
+## 2.1 Implementation Decision
+
+ST-6 implementation PR'i runtime feature eklemez. Karar:
+
+1. Operator incident akışı `OPERATIONS-RUNBOOK.md` içinde command-first hale
+   getirilecek.
+2. Rollback dokümanı merge, failed publish, bad published package, yank ve
+   beta-only regression kararlarını ayıracak.
+3. Upgrade dokümanı release doğrulamasında editable install yerine fresh venv
+   exact package install ve `scripts/packaging_smoke.py` kullanacağını yazacak.
+4. `KNOWN-BUGS.md` stable shipped blocker sorusunu release gate olarak açık
+   soracak.
+5. `SUPPORT-BOUNDARY.md` operational readiness'ın support boundary'yi
+   genişletmediğini yazacak.
+
+No support widening, no stable tag, no publish.
 
 ## 3. Kapsam Dışı
 

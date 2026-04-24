@@ -23,3 +23,14 @@ lanes into stable shipped support.
 If a bug only affects a beta/operator-managed lane while the shipped baseline
 is green, do not silently widen support to cover the broken lane. Update this
 registry and keep the support tier narrow until the issue is resolved.
+
+## Release readiness rule
+
+Before a stable release candidate, this file must answer two questions:
+
+1. Is there any known bug that affects the shipped baseline?
+2. If a known bug remains open, is it explicitly outside stable shipped support?
+
+If the answer to the first question is yes, the stable release gate stops until
+the bug is fixed or the support boundary is narrowed. If the answer to the
+second question is no, update this registry before continuing release work.

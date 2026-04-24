@@ -95,6 +95,35 @@ Prerequisite contract:
 guard arkasındadır. Gerçek live-write denemesi yalnız disposable ortamda,
 explicit `AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1` ile yapılmalıdır.
 
+## 3.1 Release operator verification
+
+For a release candidate or freshly published package, run this from a checkout
+that contains `examples/demo_review.py`, but prefer an isolated verification
+environment over the current editable install:
+
+```bash
+python3 -m venv /tmp/ao-kernel-release-verify
+/tmp/ao-kernel-release-verify/bin/python -m pip install -U pip
+/tmp/ao-kernel-release-verify/bin/python -m pip install ao-kernel==<version>
+/tmp/ao-kernel-release-verify/bin/ao-kernel version
+/tmp/ao-kernel-release-verify/bin/python -m ao_kernel version
+/tmp/ao-kernel-release-verify/bin/python -m ao_kernel.cli version
+/tmp/ao-kernel-release-verify/bin/ao-kernel doctor
+/tmp/ao-kernel-release-verify/bin/python examples/demo_review.py --cleanup
+```
+
+For pre-release validation, replace the install command with either an exact
+pre-release pin or `--pre`. Do not use an editable install as release evidence.
+
+From a source checkout, the equivalent package gate is:
+
+```bash
+python3 scripts/packaging_smoke.py
+```
+
+This script builds the sdist/wheel, installs the wheel into a fresh venv, and
+runs the shipped entrypoint/demo checks outside the editable install path.
+
 ## 4. Expected warnings
 
 These do not automatically mean the upgrade failed:

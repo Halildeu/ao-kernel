@@ -151,6 +151,17 @@ If a surface is not simultaneously backed by:
 
 then treat it as not widened.
 
+## 4.1 Stable operations rule
+
+For the narrow stable candidate, operational readiness follows the same support
+boundary:
+
+- shipped baseline failure is a release blocker,
+- beta/operator-managed failure is handled through smoke output and
+  `KNOWN-BUGS.md`,
+- deferred support claims do not become stable because a runbook exists,
+- publish readiness requires the same wheel-installed smoke used by CI.
+
 ## 5. Related documents
 
 - [`PUBLIC-BETA.md`](PUBLIC-BETA.md)

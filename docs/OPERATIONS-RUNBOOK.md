@@ -125,6 +125,22 @@ stay narrow. Actions:
 3. If it is new, add it before describing the lane as reliable.
 4. Keep the lane in Beta / operator-managed status until a fix is verified.
 
+### 3.3 Failure-to-command map
+
+Use this table when triaging an operator report. It keeps the first response
+aligned with the current support boundary.
+
+| Failure report | First command(s) | Stable impact |
+|---|---|---|
+| Install or import fails | `python -m pip show ao-kernel`, `ao-kernel version`, `python -m ao_kernel version` | Stable blocker if package install or module entrypoint fails for the shipped channel |
+| Demo does not complete | `python3 examples/demo_review.py --cleanup`, then `python3 scripts/packaging_smoke.py` from a checkout | Stable blocker if the installed-package demo fails |
+| Doctor reports `FAIL` | `ao-kernel doctor` and capture the JSON/text output | Stable blocker if the failing check is part of the shipped baseline |
+| Doctor reports extension truth `WARN` only | `python3 scripts/truth_inventory_ratchet.py --output json` | Not automatically a blocker; compare with `SUPPORT-BOUNDARY.md` |
+| Policy/command deny looks wrong | Targeted executor policy tests plus workflow evidence `events.jsonl` | Blocker only if shipped baseline policy contract regresses |
+| `claude-code-cli` smoke fails | `python3 scripts/claude_code_cli_smoke.py --output text` | Beta lane incident unless the shipped baseline also fails |
+| `gh-cli-pr` smoke fails | `python3 scripts/gh_cli_pr_smoke.py --output text` | Beta/deferred lane incident unless shipped baseline also fails |
+| Publish or package verification fails | `python3 scripts/packaging_smoke.py`, `twine check dist/*`, post-publish fresh-venv install | Release blocker; do not publish or announce readiness |
+
 ## 4. Evidence to collect
 
 For any Sev 1 or Sev 2 incident, collect:
@@ -149,7 +165,26 @@ An incident is considered closed only when:
 3. the known-bugs registry is updated if the issue remains open but bounded,
 4. upgrade / rollback guidance does not contradict the current runtime state.
 
-## 6. Related documents
+## 6. Release readiness gates
+
+Before a stable release candidate can move forward, the operator must have a
+green gate bundle:
+
+1. PR CI: `lint`, Python `test` matrix, `coverage`, `typecheck`,
+   `benchmark-fast`, and `packaging-smoke`.
+2. Advisory PR surface: `scorecard` should run on pull requests, but it is
+   advisory and must not be described as a hard release blocker unless branch
+   protection changes.
+3. Publish workflow: tag-triggered `publish.yml` must run
+   `scripts/packaging_smoke.py`, `twine check dist/*`, and PyPI trusted
+   publishing successfully.
+4. Post-publish verification: install the exact published version in a fresh
+   venv, then run the entrypoint, doctor, and demo commands from section 2.
+
+Merge is not publish. A release is only live after the tag workflow succeeds
+and the public package install path is verified.
+
+## 7. Related documents
 
 - [`PUBLIC-BETA.md`](PUBLIC-BETA.md) — release support matrix
 - [`SUPPORT-BOUNDARY.md`](SUPPORT-BOUNDARY.md) — narrative support tiers

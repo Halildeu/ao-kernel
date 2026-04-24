@@ -50,6 +50,19 @@ release boundary. That means:
 - a published package may need a package reinstall or follow-up release,
 - both may be needed if the bad state already reached users.
 
+### 3.1 Emergency decision matrix
+
+| Bad state | Preferred action | Notes |
+|---|---|---|
+| Bad PR merged but no tag published | Revert or fix-forward on `main` | Do not create a release tag until the shipped baseline is green again |
+| Tag pushed but publish workflow failed before upload | Fix the release workflow/package issue and retag only according to repository release policy | Do not announce the version as live |
+| Package published and shipped baseline fails | Prefer fast corrective release; use package-level rollback for affected operators | Update `KNOWN-BUGS.md` only if the issue remains bounded and understood |
+| Package published and install is dangerous or misleading for most users | Consider yanking the release in PyPI, then publish a corrective version | Yank is exceptional; record the reason in the release issue/changelog |
+| Only beta/operator-managed lane regresses | Keep stable package; update known bugs/operator guidance | Do not yank or rollback the shipped baseline for beta-only regressions |
+
+After any rollback, yank, or fix-forward decision, rerun the shipped baseline
+commands and record the exact version/commit used for verification.
+
 ## 4. Beta lane rule
 
 If only an operator-managed beta lane regresses while the shipped baseline
