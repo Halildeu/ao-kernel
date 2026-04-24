@@ -253,6 +253,14 @@ three clean pass chains plus one fail-closed chain. The gate records
 `support_widening=false` and `production_platform_claim=false`; it does not run
 live remote writes by default and does not widen stable support.
 
+`GP-5.8` adds the operations/support package gate
+`scripts/gp5_operations_support_package.py` and
+`gp5-operations-support-package.schema.v1.json`. It checks that runbooks,
+known-bug interpretation, branch-protection implications, and support-boundary
+wording are present before GP-5.9. The gate records `support_widening=false`
+and `production_platform_claim=false`; it does not promote any tier and does
+not make `ao-kernel` a general-purpose production coding automation platform.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor
