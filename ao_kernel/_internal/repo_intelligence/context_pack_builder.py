@@ -62,6 +62,12 @@ def build_repo_query_context_pack(*, query_result: Mapping[str, Any]) -> str:
         "- Excluded: LLM summary, vector writes, MCP tools, root exports, and `context_compiler` auto-injection.",
         "- Memory boundary: repo chunks remain distinct from canonical/session memory decisions.",
         "",
+        "## Handoff Contract",
+        "",
+        "- Handoff mode: stdout-only Markdown, copied or supplied by the operator as explicit agent input.",
+        "- No hidden injection: ao-kernel does not feed this pack into prompts, MCP tools, root exports, or `context_compiler` automatically.",
+        "- Support tier: beta read-only retrieval context; not a production semantic-correctness guarantee.",
+        "",
     ]
     _append_query_project(lines, query_result)
     _append_query_request(lines, query_result)

@@ -1,14 +1,14 @@
 # GP-5 - General-Purpose Production Platform Integration
 
-**Status:** Active program setup / `GP-5.3a` retrieval evidence closeout
+**Status:** Active program setup / `GP-5.3b` context handoff closeout
 **Date:** 2026-04-24
-**Authority:** `origin/main` at `3656939` for the `GP-5.3a` retrieval evidence contract
+**Authority:** `origin/main` at `91fd16f` for the `GP-5.3b` context handoff contract
 **Tracker:** [#424](https://github.com/Halildeu/ao-kernel/issues/424)
-**Current slice:** `GP-5.3a` - repo-intelligence retrieval evidence contract
-**Branch:** `codex/gp5-3a-retrieval-evidence`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3a`
+**Current slice:** `GP-5.3b` - agent context handoff contract
+**Branch:** `codex/gp5-3b-agent-context-handoff`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gp5-3b`
 **Predecessors:** `v4.0.0` stable runtime, `GP-3`, `GP-4`, `RI-4`
-closed, `RI-5` opened, `GP-5.1a` completed
+closed, `RI-5` opened, `GP-5.1a` completed, `GP-5.3a` completed
 **Motto:** Kapsam disiplini: once kanitli entegrasyon, sonra support widening.
 
 ## 1. Purpose
@@ -260,7 +260,8 @@ integration pillars.
    `keep_beta_read_only_retrieval_contract`.
 2. `GP-5.3b` - Agent context handoff contract:
    document and test stdout-only Markdown handoff as explicit operator input,
-   not hidden prompt injection.
+   not hidden prompt injection. Result:
+   `keep_beta_explicit_stdout_handoff_contract`.
 3. `GP-5.3c` - Workflow opt-in design:
    design a future `context_compiler` opt-in flag that can consume query
    results only with explicit config and behavior tests.
@@ -285,6 +286,18 @@ The detailed decision record is
 This slice does not consume `.ao/context/repo_export_plan.json`, does not write
 root authority files, does not auto-feed `context_compiler`, and does not widen
 support.
+
+**GP-5.3b closeout candidate:**
+
+`GP-5.3b` keeps repo intelligence in beta read-only mode, but makes the
+Markdown context handoff explicit in runtime output, tests, and support docs.
+The only supported handoff is operator-visible stdout Markdown copied or
+supplied as explicit agent input. The pack states that `ao-kernel` does not
+inject it into prompts, MCP tools, root exports, or `context_compiler`
+automatically.
+
+The detailed decision record is
+`.claude/plans/GP-5.3b-AGENT-CONTEXT-HANDOFF-CONTRACT.md`.
 
 **DoD:**
 
@@ -486,8 +499,8 @@ promotion.
 | 1 | `GP-5.0` | Program roadmap PR | Completed on `main`; no runtime change. |
 | 2 | `GP-5.0a` | Claude/MCP consultation absorb + RI-5/GP-5.3 interface contract | Completed on `main`; no runtime change. |
 | 3 | `GP-5.1a` | Protected gate prerequisite audit | Completed on `main`; required environment/secret handle not attested; no secret value in repo. |
-| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Closeout candidate: beta read-only evidence contract strengthened; no support widening. |
-| 5 | `GP-5.3b` | Agent context handoff contract | Next unblocked slice; explicit stdout/manual handoff; no `context_compiler` auto-feed. |
+| 4 | `GP-5.3a` | Repo-intelligence retrieval evidence contract | Completed on `main`; beta read-only evidence contract strengthened; no support widening. |
+| 5 | `GP-5.3b` | Agent context handoff contract | Closeout candidate: explicit stdout/manual handoff; no `context_compiler` auto-feed. |
 | 6 | `GP-5.1b` | Protected workflow binding patch | Blocked until `ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are attested. |
 | 7 | `GP-5.2a` | `claude-code-cli` protected gate rehearsal | Only after GP-5.1 can produce real protected evidence. |
 | 8 | `GP-5.4a` | Read-only E2E workflow rehearsal | Requires repo-intelligence handoff plus adapter gate evidence. |
@@ -519,6 +532,6 @@ Current product wording remains:
 2. general-purpose production coding automation platform: not yet;
 3. real adapter production-certified support: not yet;
 4. repo-intelligence production workflow integration: not yet;
-5. next step: merge `GP-5.3a`, then start `GP-5.3b` agent context handoff
-   contract unless protected environment/credential attestation is provided
-   first for `GP-5.1b`.
+5. next step: merge `GP-5.3b`, then start `GP-5.3c` workflow opt-in design
+   unless protected environment/credential attestation is provided first for
+   `GP-5.1b`.

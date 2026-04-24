@@ -113,6 +113,10 @@ def test_build_repo_query_context_pack_is_deterministic_and_agent_readable() -> 
     assert "generated_at" not in first
     assert "# Repo Query Context Pack" in first
     assert "## Generation Boundary" in first
+    assert "## Handoff Contract" in first
+    assert "stdout-only Markdown" in first
+    assert "explicit agent input" in first
+    assert "No hidden injection" in first
     assert "context_compiler" in first
     assert "| Text | where is run defined |" in first
     assert "| Matches | 1 |" in first
