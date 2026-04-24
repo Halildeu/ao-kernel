@@ -24,13 +24,16 @@ kapatıldıktan sonra verilir.
    fallback kabul edilir, primary recovery yolu değildir.
 3. `claude auth status` tek başına yeterli değildir; gerçek `claude -p`
    prompt probe belirleyici sinyaldir.
-4. Current local baseline probe `2026-04-24` tarihinde geçti:
+4. Current local baseline probe `2026-04-24` tarihinde 30 saniyelik helper
+   timeout ile geçti:
    - `claude --version`: `2.1.87 (Claude Code)`
    - `claude auth status`: pass, auth method `claude.ai`
    - `claude -p "reply with the single token ok"`: pass
    - bundled manifest invocation smoke: pass
    - API key env route: not present
-5. Bu baseline operator ortamının sağlıklı olduğunu gösterir; destek sınırını
+5. Aynı oturumda 10 saniyelik probe `prompt_smoke_timeout` üretebildiği için
+   certification prerequisite komutu 30 saniye timeout ile koşulacaktır.
+6. Bu baseline operator ortamının sağlıklı olduğunu gösterir; destek sınırını
    tek başına genişletmez.
 
 ## Certification Adayı
@@ -48,6 +51,8 @@ kapatıldıktan sonra verilir.
 ## Work Breakdown
 
 ### `GP-2.4a` — Preflight Evidence Contract
+
+Status: Completed by issue [#365](https://github.com/Halildeu/ao-kernel/issues/365).
 
 Hedef: helper smoke sonucunu machine-readable certification evidence olarak
 pinlemek.
@@ -77,6 +82,20 @@ DoD:
 1. Helper output contract test veya snapshot assertion ile pinli.
 2. Known bugs `KB-001` ve `KB-002` support boundary kararına bağlandı.
 3. Docs, helper smoke'u certification prerequisite olarak anlatıyor.
+
+Closeout:
+
+1. `tests/test_claude_code_cli_smoke.py` passing preflight JSON output shape'ini
+   top-level ve per-check zorunlu alanlarla pinler.
+2. Canonical passing check seti pinlidir:
+   `version`, `auth_status`, `prompt_access`, `manifest_invocation`.
+3. `auth_status=pass` + `prompt_access=fail` overall `blocked` kalır;
+   `KB-001` sınıfı fake green üretemez.
+4. `ANTHROPIC_API_KEY` varlığı gözlemlenir fakat prompt access fail durumunu
+   başarıya çeviremez; `KB-002` fallback/token route'u primary certification
+   path değildir.
+5. Support boundary unchanged kalır; helper pass tek başına production
+   certification değildir.
 
 ### `GP-2.4b` — Governed Workflow Smoke Evidence
 
@@ -158,7 +177,8 @@ Karar kuralları:
 Contract PR için minimum:
 
 ```bash
-python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 10
+python3 -m pytest -q tests/test_claude_code_cli_smoke.py
+python3 scripts/claude_code_cli_smoke.py --output json --timeout-seconds 30
 python3 scripts/truth_inventory_ratchet.py --output json
 python3 -m pytest -q tests/test_cli_entrypoints.py tests/test_doctor_cmd.py
 ```
@@ -172,4 +192,3 @@ komutları yazılacaktır.
 2. Certification verdict tek değere iner.
 3. Docs/runtime/tests/CI/support boundary aynı kararı anlatır.
 4. Stable support boundary yalnız kanıt kapıları kapanırsa genişler.
-
