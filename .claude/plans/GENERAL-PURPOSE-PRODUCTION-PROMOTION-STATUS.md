@@ -1,11 +1,13 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-0 tracker active
+**Status:** GPP-1 prerequisite attestation closeout
 **Date:** 2026-04-25
-**Authority:** `origin/main` at `1b8078f`
-**Issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Branch:** `codex/gpp0-production-promotion-tracker`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp0-production-promotion-tracker`
+**Authority:** `origin/main` at `f3823be`
+**Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
+**Current slice issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472)
+**Current slice record:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
+**Branch:** `codex/gpp1-live-adapter-prereq-attestation`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1-live-adapter-prereq-attestation`
 **Mode:** written, trackable, fail-closed promotion program
 **Support impact:** none
 **Release impact:** none
@@ -47,6 +49,16 @@ Last live verification on current `origin/main` showed:
     guarded and not production-supported.
 12. Controlled local patch/test rehearsal passed in a disposable worktree with
     rollback, but `support_widening=false`.
+13. GPP-1 live attestation on 2026-04-25 still shows only GitHub environment
+    `pypi`; `ao-kernel-live-adapter-gate` is absent.
+14. `gh secret list --repo Halildeu/ao-kernel` returned no visible repository
+    secret handles.
+15. `gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel`
+    returned `HTTP 404`, because the required environment is absent.
+16. `.github/workflows/live-adapter-gate.yml` still has only
+    `workflow_dispatch` among live-gate trigger/secret/environment grep terms;
+    no `environment:`, `secrets.`, `pull_request`, or `pull_request_target`
+    binding is present.
 
 ## 3. Current Verdict
 
@@ -83,9 +95,9 @@ The final production claim stays closed until `GPP-9` passes.
 
 | WP | Status | Goal | Exit decision |
 |---|---|---|---|
-| `GPP-0` | Active | Create written tracker and acceptance model | `tracker_ready_no_support_widening` |
-| `GPP-1` | Not started | Protected live-adapter prerequisite attestation | `prerequisites_ready` / `blocked_attestation_missing` |
-| `GPP-2` | Not started | Protected live-adapter gate runtime binding | `live_gate_ready` / `blocked_gate_unready` |
+| `GPP-0` | Completed | Create written tracker and acceptance model | `tracker_ready_no_support_widening` |
+| `GPP-1` | Closeout candidate | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
+| `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until `GPP-1` can exit `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -98,6 +110,9 @@ The final production claim stays closed until `GPP-9` passes.
 
 **Goal:** Make the remaining production promotion work written, discoverable,
 and executable step by step.
+
+**Status:** completed on `main` by PR
+[#471](https://github.com/Halildeu/ao-kernel/pull/471).
 
 **Entry criteria:**
 
@@ -132,6 +147,10 @@ and executable step by step.
 **Goal:** Establish project-owned protected live-adapter prerequisites before
 any workflow binding or support promotion.
 
+**Status:** closeout candidate.
+
+**Exit decision:** `blocked_attestation_missing`.
+
 **Entry criteria:**
 
 1. `GPP-0` merged.
@@ -146,11 +165,17 @@ any workflow binding or support promotion.
 
 **Acceptance criteria:**
 
-1. GitHub environment inventory contains `ao-kernel-live-adapter-gate`.
-2. Required secret handle is attested at repository or environment scope.
-3. Fork-triggered PR contexts cannot access protected credentials.
-4. Missing environment or secret produces `blocked_attestation_missing`.
-5. Status docs and support boundary still say no support widening.
+1. GitHub environment inventory contains `ao-kernel-live-adapter-gate`: not
+   met; only `pypi` is currently visible.
+2. Required secret handle is attested at repository or environment scope: not
+   met; repository secret list is empty and environment-scoped secret lookup
+   returns `HTTP 404`.
+3. Fork-triggered PR contexts cannot access protected credentials: met for the
+   current design-only workflow, because the workflow is `workflow_dispatch`
+   only and has no `environment:` or `secrets.` reference.
+4. Missing environment or secret produces `blocked_attestation_missing`: met by
+   this slice.
+5. Status docs and support boundary still say no support widening: met.
 
 **Validation:**
 
@@ -159,16 +184,23 @@ any workflow binding or support promotion.
 3. workflow file inspection for no accidental secret exposure
 4. schema-backed prerequisite report if implemented
 
+**Decision record:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
+
 ## 8. GPP-2 - Protected Live-Adapter Gate Runtime Binding
 
 **Goal:** Convert the current design-only `live-adapter-gate.yml` into a
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
+**Status:** blocked by GPP-1.
+
 **Entry criteria:**
 
 1. `GPP-1` exit decision is `prerequisites_ready`.
 2. Protected environment and credential handle are attested.
+
+Current GPP-1 exit decision is `blocked_attestation_missing`, so GPP-2 cannot
+start yet.
 
 **Acceptance criteria:**
 
@@ -412,16 +444,17 @@ accident.
 
 ## 16. Current Active Work
 
-The active work is `GPP-0`.
+The active work is `GPP-1` closeout.
 
-After `GPP-0` merges, the next active work is:
+GPP-1 currently exits as:
 
 ```text
-GPP-1 - Protected Live-Adapter Prerequisite
+blocked_attestation_missing
 ```
 
-No other runtime/support-widening work should start until `GPP-1` exits with
-`prerequisites_ready` or an explicit blocked decision.
+No runtime/support-widening work should start from `GPP-2` until a future
+attestation proves `ao-kernel-live-adapter-gate` and
+`AO_CLAUDE_CODE_CLI_AUTH` are present and fork-safe.
 
 ## 17. Risk Register
 
@@ -440,4 +473,6 @@ No other runtime/support-widening work should start until `GPP-1` exits with
 |---|---|---|
 | 2026-04-25 | GPP-0 issue opened | Issue [#470](https://github.com/Halildeu/ao-kernel/issues/470) created to track the written production-promotion program. |
 | 2026-04-25 | GPP-0 branch opened | Branch `codex/gpp0-production-promotion-tracker` and dedicated worktree opened from `origin/main` at `1b8078f`. |
-
+| 2026-04-25 | GPP-0 merged | PR [#471](https://github.com/Halildeu/ao-kernel/pull/471) merged at `f3823be`; tracker is live on `main`. |
+| 2026-04-25 | GPP-1 issue opened | Issue [#472](https://github.com/Halildeu/ao-kernel/issues/472) created for protected live-adapter prerequisite attestation. |
+| 2026-04-25 | GPP-1 attestation recorded | Live GitHub environment/secret evidence keeps GPP-1 at `blocked_attestation_missing`; GPP-2 remains blocked. |
