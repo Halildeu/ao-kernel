@@ -135,12 +135,12 @@ def save_store(workspace_root: Path, store: dict[str, Any]) -> None:
     Deprecated since v3.0.0. New code should use :func:`save_store_cas`
     or rely on the mutator helpers (``promote_decision``, ``forget``, ...)
     which route through the locked + CAS-aware path. Scheduled for
-    removal in v4.0.0.
+    removal in a future major release.
     """
     warnings.warn(
         "save_store() is deprecated since v3.0.0; use save_store_cas() "
         "or the canonical_store mutator helpers instead. Scheduled for "
-        "removal in v4.0.0.",
+        "removal in a future major release.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -305,7 +305,7 @@ def promote_decision(
             raise :class:`CanonicalRevisionConflict`. ``None`` + the
             default ``allow_overwrite=True`` preserves the v2.x behavior.
         allow_overwrite: Default ``True`` for backward compatibility.
-            v4.0.0 will flip this to ``False`` and require callers to
+            A future major release will flip this to ``False`` and require callers to
             opt in to overwriting stale revisions.
     """
     now = _now_iso()

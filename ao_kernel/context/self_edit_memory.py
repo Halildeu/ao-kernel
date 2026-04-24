@@ -115,8 +115,8 @@ def forget(
     Routes through the canonical CAS helper (CNS-20260414-010 Stage A),
     so the lock and revision guards are shared with ``promote_decision``.
     ``expected_revision`` / ``allow_overwrite`` match the pattern: default
-    ``allow_overwrite=True`` preserves v2.x behavior until v4.0.0 flips the
-    default.
+    ``allow_overwrite=True`` preserves v2.x behavior until a future major
+    release flips the default.
     """
     full_key = f"memory.{key}" if not key.startswith("memory.") else key
 

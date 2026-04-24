@@ -1,10 +1,10 @@
-# Public Beta (v4.0.0b2) — Support Matrix SSOT
+# Support Matrix SSOT (v4.0.0 stable candidate + beta lanes)
 
-> **Sürüm durumu (2026-04-24)**: stable kanal `pip install ao-kernel`
-> komutuyla, Public Beta ise explicit pre-release pin veya `--pre` ile
-> kurulur. Bu doküman `v4.0.0b2` için canlı destek matrisi ve
-> operator-facing SSOT'tur; stable kanalın exact sürüm numarası release
-> anında PyPI'dan doğrulanır, burada hard-code edilmez.
+> **Sürüm durumu (2026-04-24)**: bu source tree `4.0.0` stable candidate
+> için hazırlanmıştır. Public package live claim'i yalnız `v4.0.0` tag'i,
+> publish workflow success ve fresh-venv public install verify sonrası
+> yapılır. Bu doküman stable shipped baseline, beta lanes, deferred lanes ve
+> known bugs için operator-facing SSOT'tur.
 
 ## Kurulum
 
@@ -12,17 +12,19 @@
 
 ```bash
 pip install ao-kernel
+pip install ao-kernel==4.0.0  # exact stable pin after v4.0.0 publish
 ```
 
-### Public Beta pre-release
+### Historical Public Beta pre-release
 
 ```bash
 pip install ao-kernel==4.0.0b2
 pip install --pre ao-kernel
 ```
 
-`pip install ao-kernel` varsayılan olarak stable kanalda kalır; pre-release
-istemek gerekir.
+`--pre` yalnız pre-release hattını bilinçli takip etmek için kullanılmalıdır;
+stable `4.0.0` canlı hale geldiğinde varsayılan kullanıcı yolu stable kanal
+olur.
 
 ## Operational References
 
@@ -32,11 +34,11 @@ istemek gerekir.
 - [`ROLLBACK.md`](ROLLBACK.md)
 - [`KNOWN-BUGS.md`](KNOWN-BUGS.md)
 
-## Stable Candidate Freeze (ST-2)
+## Stable Support Boundary
 
-`ST-2` freezes the support boundary for a possible future `4.0.0` stable
-release. The stable candidate support set is exactly the `Shipped` table below
-unless a later ST gate changes this document with new evidence.
+`ST-2` froze the support boundary and `ST-7` keeps it unchanged for the
+`4.0.0` stable candidate. The stable support set is exactly the `Shipped`
+table below unless a later gate changes this document with new evidence.
 
 Stable candidate rules:
 
@@ -51,7 +53,7 @@ Stable candidate rules:
 5. This boundary still does not claim ao-kernel is a general-purpose
    production coding automation platform.
 
-## Shipped (v4.0.0b2)
+## Shipped (v4.0.0 stable candidate)
 
 | Yüzey | Durum | Not |
 |---|---|---|
@@ -75,7 +77,7 @@ Stable candidate rules:
 
 | Yüzey | Durum | Not |
 |---|---|---|
-| Public Beta yüzeyinin tamamı | Beta | Stable kanal pre-release kurmaz; genel kullanım için explicit pre-release install gerekir |
+| Historical Public Beta pre-release | Beta | `4.0.0b2` remains a pre-release pin for operators that intentionally stay on that line; stable support is the shipped baseline above |
 | `claude-code-cli` helper-backed real-adapter lane | Beta (operator-managed) | `python3 scripts/claude_code_cli_smoke.py --output text` sonucu `overall_status: pass` olmalıdır. Bu smoke içinde hem `auth_status` hem `prompt_access` check'i geçmelidir; yalnız `claude auth status` yeşili yeterli kabul edilmez. Varsayılan shipped demo değildir. `PB-6.6` closeout verdict'i: `stay_beta_operator_managed` |
 | `gh-cli-pr` helper-backed preflight lane | Beta (operator-managed preflight + live-write readiness probe) | Varsayılan `python3 scripts/gh_cli_pr_smoke.py --output text` preflight yoludur ve side-effect-safe `gh pr create --dry-run` zincirini çalıştırır. Live-write probe (`--mode live-write --allow-live-write --head <branch> --base <branch>`) explicit opt-in + create->verify->rollback ister. Varsayılan disposable guard keyword `sandbox`'dır; repo adında bu keyword yoksa lane `blocked` döner (`gh_pr_live_write_repo_not_disposable`). `--keep-live-write-pr-open` lane'i riskli sayar ve `blocked` döner. Support widening değildir |
 | `PRJ-KERNEL-API` write-side actions | Beta (operator-managed write contract) | `project_status`, `roadmap_follow`, `roadmap_finish` runtime-backed. `workspace_root` zorunlu, varsayılan `dry_run=true`, gerçek yazma için `confirm_write=I_UNDERSTAND_SIDE_EFFECTS` gerekir; conflict/idempotency/audit davranışı behavior testlerle pinlidir. Operator smoke: `python3 scripts/kernel_api_write_smoke.py --output text` |

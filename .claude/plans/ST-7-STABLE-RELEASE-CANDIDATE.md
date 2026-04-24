@@ -1,6 +1,6 @@
 # ST-7 — Stable Release Candidate
 
-**Durum:** Active contract via
+**Durum:** Implementation PR active via
 [#355](https://github.com/Halildeu/ao-kernel/issues/355)
 **Umbrella:** [#329](https://github.com/Halildeu/ao-kernel/issues/329)
 **Precondition:** `ST-6` completed via
@@ -56,9 +56,16 @@ ST-7 implementation PR'ı merge edilmeden önce aşağıdaki kanıt paketi gerek
 ```bash
 git diff --check
 python3 -m ao_kernel doctor
-python3 examples/demo_review.py --cleanup
 python3 scripts/packaging_smoke.py
 ```
+
+Raw `python3 examples/demo_review.py --cleanup` is valid only when the current
+Python environment already has `ao-kernel` installed. It is not standalone
+release evidence from an uninstalled source checkout because the demo switches
+into a disposable temp workspace before running `python -m ao_kernel init`.
+`scripts/packaging_smoke.py` is the authoritative release gate because it
+builds the wheel, installs it into a fresh venv, and then runs the installed
+demo path.
 
 CI tarafında ayrıca şunlar yeşil olmalıdır:
 
@@ -108,3 +115,15 @@ ST-7 tamamlandığında:
    açık kalmıştır.
 5. `pip install ao-kernel` için stable live iddiası hâlâ yapılmamıştır; bu
    iddia yalnız `ST-8` publish ve public install verify sonrası yapılır.
+
+## 8. Implementation Decision
+
+ST-7 implementation PR'i `4.0.0` source candidate hazırlar:
+
+1. `pyproject.toml` ve `ao_kernel/__init__.py` version değerleri `4.0.0` olur.
+2. `CHANGELOG.md` `[4.0.0]` entry'si narrow stable boundary'yi açık yazar.
+3. README ve support docs stable install dilini beta/pre-release dilinden
+   ayırır.
+4. Public package live claim'i yapılmaz; tag/publish/post-publish verify
+   `ST-8` kapsamındadır.
+5. Support widening yapılmaz.

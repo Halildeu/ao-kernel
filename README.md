@@ -8,11 +8,16 @@ ao-kernel is **not** a general-purpose agent framework or a blanket "production 
 
 ```bash
 pip install ao-kernel                # Core (only jsonschema dependency)
+pip install ao-kernel==4.0.0         # Exact stable pin after v4.0.0 publish
 pip install ao-kernel[llm]           # LLM modules (tenacity + tiktoken)
 pip install ao-kernel[mcp]           # MCP server support
 pip install ao-kernel[otel]          # OpenTelemetry instrumentation
 pip install ao-kernel[llm,mcp,otel]  # Everything
 ```
+
+`4.0.0` stable source changes do not by themselves mean the public package is
+live. Treat the exact `ao-kernel==4.0.0` install path as live only after the
+tag-triggered publish workflow and fresh-venv public install verification pass.
 
 **For production-grade live LLM calls**, install the `[llm]` extra. Without it the runtime still dispatches requests, but two guarantees weaken: **retry / backoff** (`tenacity`) degrades to a single-attempt call so transient 429 / 5xx responses fail the request instead of being retried, and **exact token counting** (`tiktoken`) falls back to a heuristic estimator (~4 chars/token) so budget accounting is approximate. The core install is fully sufficient for policy evaluation, evidence replay, workflow inspection, and MCP server hosting.
 
@@ -89,7 +94,7 @@ See [`docs/PUBLIC-BETA.md`](docs/PUBLIC-BETA.md) for the support matrix (Shipped
 
 Treat the repo in three layers:
 
-- **Runtime-backed / supported**: core CLI and SDK surfaces, evidence tooling, worktree policy enforcement, bundled `review_ai_flow`, and `examples/demo_review.py`.
+- **Stable shipped baseline**: entrypoint/version commands, `ao-kernel doctor`, bundled `review_ai_flow` + `codex-stub`, `examples/demo_review.py`, policy command enforcement, wheel-installed packaging smoke, and documented read-only `PRJ-KERNEL-API` actions.
 - **Operator / evaluation only**: benchmark docs, real-adapter runbooks, prompt experiment runbooks, and other opt-in validation paths that are intentionally outside the default deterministic CI/demo lane.
 - **Contract / reference inventory**: bundled JSON defaults, adapter manifests, registry files, and example code such as `examples/hello-llm/`. Their presence in the tree is useful reference material, not blanket proof that every surface is production-ready end to end. The bundled extension inventory is especially narrow at runtime today: `PRJ-HELLO` is the explicit bootstrap-backed smoke path; the rest of the bundled manifests should be treated as contract inventory unless a support doc says otherwise.
 
