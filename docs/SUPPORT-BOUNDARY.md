@@ -183,6 +183,11 @@ must copy or supply it as visible agent input. It does not write root authority
 files, `.ao/context` artifacts, vector backend records, expose MCP tools, or
 feed `context_compiler` automatically.
 
+The bundled
+`repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
+future opt-in shape. It is not wired into workflow definitions, executor
+runtime, MCP, root exports, or `context_compiler` in the shipped runtime.
+
 `PB-8.3` ile `bug_fix_flow` içindeki `open_pr` adımı ayrıca workflow-level
 explicit opt-in guard (`AO_KERNEL_ALLOW_GH_CLI_PR_LIVE_WRITE=1`) arkasına
 alınmıştır. `GP-1.3` re-evaluation, bu durumun kararını değiştirmemiştir.
