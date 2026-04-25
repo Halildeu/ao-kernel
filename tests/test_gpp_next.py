@@ -47,6 +47,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         payload["pending_external_actions"][0]["decision"]
         == "environment_created_secret_and_reviewer_still_missing"
     )
+    assert payload["pending_external_actions"][1]["id"] == "GPP-2c"
+    assert payload["pending_external_actions"][1]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/485"
+    assert payload["pending_external_actions"][1]["status"] == "blocked_external_admin_decision_required"
+    assert (
+        payload["pending_external_actions"][1]["decision"]
+        == "missing_environment_secret_and_non_self_reviewer_gate"
+    )
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
 

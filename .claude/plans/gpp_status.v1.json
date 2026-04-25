@@ -58,6 +58,15 @@
       "status": "partially_provisioned_blocked",
       "decision": "environment_created_secret_and_reviewer_still_missing",
       "required_before": "GPP-2 runtime binding"
+    },
+    {
+      "id": "GPP-2c",
+      "title": "Reviewer and credential gate resolution",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/485",
+      "record": ".claude/plans/GPP-2c-REVIEWER-AND-CREDENTIAL-GATE.md",
+      "status": "blocked_external_admin_decision_required",
+      "decision": "missing_environment_secret_and_non_self_reviewer_gate",
+      "required_before": "GPP-2 runtime binding"
     }
   ],
   "support_widening_allowed": false,
@@ -107,6 +116,7 @@
   "next_allowed_actions": [
     "keep GPP-2 blocked",
     "track external admin provisioning in issue #482",
+    "resolve reviewer and credential gate in issue #485",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
     "configure required reviewer protection or record an explicitly approved equivalent release gate",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",

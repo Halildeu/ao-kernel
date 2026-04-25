@@ -139,6 +139,7 @@ ayrı ayrı görünür kılmak.
 - **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`closed by PR #479`)
 - **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **GPP-2b external/admin provisioning issue:** [#482](https://github.com/Halildeu/ao-kernel/issues/482)
+- **GPP-2c reviewer/credential gate issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -150,11 +151,12 @@ ayrı ayrı görünür kılmak.
   protected environment, reviewer model, and credential handle. The protected
   environment has since been partially provisioned with `main` branch policy
   and admin bypass disabled, but reviewer protection and
-  `AO_CLAUDE_CODE_CLI_AUTH` remain missing. No support
+  `AO_CLAUDE_CODE_CLI_AUTH` remain missing. GPP-2c now tracks that final
+  reviewer/credential gate decision. No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b. Future stable widening still requires protected
-  live-adapter evidence, repo-intelligence integration gates, write-side
-  rollback evidence, and an explicit closeout decision.
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c. Future stable widening still requires
+  protected live-adapter evidence, repo-intelligence integration gates,
+  write-side rollback evidence, and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
