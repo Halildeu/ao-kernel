@@ -1,14 +1,14 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-1b agent operating program contract active
+**Status:** GPP-2 blocked after GPP-1b contract merge
 **Date:** 2026-04-25
-**Authority:** `origin/main` at `0ad7209`
+**Authority:** `origin/main` at `c579089`
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474)
-**Current slice record:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
+**Current slice issue:** none active; GPP-2 is blocked
+**Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
-**Branch:** `codex/gpp1b-agent-operating-program-contract`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract`
+**Branch:** none active
+**Worktree:** none active
 **Mode:** written, trackable, fail-closed promotion program
 **Support impact:** none
 **Release impact:** none
@@ -60,8 +60,8 @@ Last live verification on current `origin/main` showed:
     `workflow_dispatch` among live-gate trigger/secret/environment grep terms;
     no `environment:`, `secrets.`, `pull_request`, or `pull_request_target`
     binding is present.
-17. GPP-1b adds a machine-readable operator contract so Codex and Claude Code
-    read the same active work package and blocked gates from repo state instead
+17. GPP-1b added a machine-readable operator contract so Codex and Claude Code
+    read the same current work package and blocked gates from repo state instead
     of chat memory.
 
 ## 3. Current Verdict
@@ -101,7 +101,7 @@ The final production claim stays closed until `GPP-9` passes.
 |---|---|---|---|
 | `GPP-0` | Completed | Create written tracker and acceptance model | `tracker_ready_no_support_widening` |
 | `GPP-1` | Completed | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
-| `GPP-1b` | Active | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
+| `GPP-1b` | Completed | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until `GPP-1` can exit `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -197,7 +197,7 @@ any workflow binding or support promotion.
 **Goal:** Make Codex and Claude Code follow the repo-owned GPP program state
 before choosing or implementing the next work package.
 
-**Status:** active.
+**Status:** completed by PR [#475](https://github.com/Halildeu/ao-kernel/pull/475).
 
 **Exit decision target:** `agent_operating_contract_ready_no_support_widening`.
 
@@ -205,13 +205,13 @@ before choosing or implementing the next work package.
 
 1. Add `AGENTS.md` startup and execution contract.
 2. Add `.claude/plans/gpp_status.v1.json` as the machine-readable GPP status.
-3. Add `scripts/gpp_next.py` to print the active WP and blocked gates.
-4. Add tests that pin the active WP, blocked WP, and no-widening guards.
+3. Add `scripts/gpp_next.py` to print the current/active WP and blocked gates.
+4. Add tests that pin the current WP, blocked WP, and no-widening guards.
 5. Keep `GPP-2` blocked.
 
 **Acceptance criteria:**
 
-1. `python3 scripts/gpp_next.py` reports `GPP-1b` as active.
+1. `python3 scripts/gpp_next.py` reports `GPP-2` as blocked after the merge.
 2. `python3 scripts/gpp_next.py --output json` returns valid JSON.
 3. `support_widening_allowed`, `production_platform_claim_allowed`, and
    `live_adapter_execution_allowed` are all `false`.
@@ -480,17 +480,10 @@ accident.
 
 ## 17. Current Active Work
 
-The active work is `GPP-1b`.
-
-GPP-1b target exit is:
-
-```text
-agent_operating_contract_ready_no_support_widening
-```
-
-No runtime/support-widening work should start from `GPP-2` until a future
-attestation proves `ao-kernel-live-adapter-gate` and
-`AO_CLAUDE_CODE_CLI_AUTH` are present and fork-safe.
+No runtime/support-widening work is active. `GPP-2` is the current blocked
+program head and must not start until a future attestation proves
+`ao-kernel-live-adapter-gate` and `AO_CLAUDE_CODE_CLI_AUTH` are present and
+fork-safe.
 
 ## 18. Risk Register
 
@@ -514,4 +507,6 @@ attestation proves `ao-kernel-live-adapter-gate` and
 | 2026-04-25 | GPP-1 attestation recorded | Live GitHub environment/secret evidence keeps GPP-1 at `blocked_attestation_missing`; GPP-2 remains blocked. |
 | 2026-04-25 | GPP-1 merged | PR [#473](https://github.com/Halildeu/ao-kernel/pull/473) merged at `0ad7209`; protected live-adapter prerequisite remains blocked. |
 | 2026-04-25 | GPP-1b issue opened | Issue [#474](https://github.com/Halildeu/ao-kernel/issues/474) created for agent operating program contract. |
-| 2026-04-25 | GPP-1b contract added | `AGENTS.md`, `.claude/plans/gpp_status.v1.json`, and `scripts/gpp_next.py` make the active program state machine-readable for Codex/Claude operator sessions. |
+| 2026-04-25 | GPP-1b contract added | `AGENTS.md`, `.claude/plans/gpp_status.v1.json`, and `scripts/gpp_next.py` make the current program state machine-readable for Codex/Claude operator sessions. |
+| 2026-04-25 | GPP-1b merged | PR [#475](https://github.com/Halildeu/ao-kernel/pull/475) merged at `c579089`; status now holds at `GPP-2` blocked. |
+| 2026-04-25 | GPP-1c issue opened | Issue [#476](https://github.com/Halildeu/ao-kernel/issues/476) tracks this status closeout so operator sessions do not see stale `GPP-1b active` state. |

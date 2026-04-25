@@ -134,14 +134,16 @@ ayrı ayrı görünür kılmak.
 - **GPP-1 issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472) (`closed by PR #473`)
 - **GPP-1b agent operating program contract:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
 - **GPP machine-readable status:** `.claude/plans/gpp_status.v1.json`
-- **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`open`)
+- **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`closed by PR #475`)
+- **GPP-1c status closeout issue:** [#476](https://github.com/Halildeu/ao-kernel/issues/476) (`open`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
-  `blocked_attestation_missing`. GPP-1b makes Codex/Claude operator sessions
-  read that blocked state from repo-owned program status before acting. No
-  support widening, release, runtime adapter promotion, or production claim is
-  made by GPP-1b. Future stable widening still requires protected live-adapter
+  `blocked_attestation_missing`. GPP-1b is merged and makes Codex/Claude
+  operator sessions read that blocked state from repo-owned program status
+  before acting. Current program status holds at `GPP-2` blocked. No support
+  widening, release, runtime adapter promotion, or production claim is made by
+  GPP-1b/GPP-1c. Future stable widening still requires protected live-adapter
   evidence, repo-intelligence integration gates, write-side rollback evidence,
   and an explicit closeout decision.
 
@@ -216,7 +218,7 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — stable maintenance + GPP-1b operator contract
+### Current mode — stable maintenance + GPP-2 blocked
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
 kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,
@@ -247,7 +249,7 @@ binding hattı bu prerequisite kapanmadan başlamaz.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve
-`scripts/gpp_next.py` üzerinden aynı aktif work package ve blocked gate
+`scripts/gpp_next.py` üzerinden aynı current work package ve blocked gate
 gerçeğini okumasıdır.
 
 Mevcut yol:

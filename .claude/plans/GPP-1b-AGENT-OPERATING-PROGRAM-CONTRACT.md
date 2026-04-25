@@ -1,11 +1,11 @@
 # GPP-1b - Agent Operating Program Contract
 
-**Status:** active
+**Status:** completed by PR [#475](https://github.com/Halildeu/ao-kernel/pull/475)
 **Date:** 2026-04-25
 **Parent tracker:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
 **Slice issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474)
-**Branch:** `codex/gpp1b-agent-operating-program-contract`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract`
+**Branch:** `codex/gpp1b-agent-operating-program-contract` (merged)
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract` (removed after merge)
 **Base authority:** `origin/main` at `0ad7209`
 **Target exit decision:** `agent_operating_contract_ready_no_support_widening`
 **Support impact:** none
@@ -85,4 +85,3 @@ Required local validation:
 3. `python3 scripts/gpp_next.py --output json`
 4. `pytest -q tests/test_gpp_next.py`
 5. `python3 -m ao_kernel doctor`
-

@@ -14,8 +14,8 @@ bash .claude/scripts/ops.sh preflight
 python3 scripts/gpp_next.py
 ```
 
-Son komut GPP programının aktif work package'ını, blocked hatları ve izinli
-sonraki adımı gösterir.
+Son komut GPP programının current/active work package'ını, blocked hatları ve
+izinli sonraki adımı gösterir.
 
 ## Çalışma Kuralı
 
@@ -25,8 +25,8 @@ sonraki adımı gösterir.
 3. Her work package tek issue, tek branch, tek PR ve tek exit decision üretir.
 4. Primary checkout sadece `main` sync ve doğrulama içindir; feature/runtime
    editleri primary checkout üstünde yapılmaz.
-5. Aynı anda GPP status dosyasında izin verilen aktif iş dışında runtime veya
-   support-widening işi başlatılmaz.
+5. GPP status dosyası blocked durum gösteriyorsa runtime veya support-widening
+   işi başlatılmaz.
 6. Merge sonrası `origin/main` fast-forward edilir, worktree ve branch
    temizlenir.
 
@@ -38,8 +38,8 @@ sonraki adımı gösterir.
 3. Docs-only PR ile support tier genişletilmez.
 4. `support_widening=true` veya `production_platform_claim=true` yalnız GPP
    full matrix ve explicit closeout kararı olmadan yazılmaz.
-5. GPP-2 live-adapter runtime binding, `GPP-1`/`GPP-1b` kararları aşılmadan
-   başlatılmaz.
+5. GPP-2 live-adapter runtime binding, protected prerequisite attestation
+   `prerequisites_ready` olmadan başlatılmaz.
 
 ## Current Program
 
@@ -55,8 +55,8 @@ Makine-okunur durum:
 .claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md
 ```
 
-Aktif kontrat:
+Current program head:
 
 ```text
-GPP-1b - Agent Operating Program Contract
+GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)
 ```
