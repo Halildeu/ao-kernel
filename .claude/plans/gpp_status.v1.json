@@ -9,7 +9,7 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": null,
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
     "exit_decision": "blocked_attestation_missing",
     "blocked_until": "a future prerequisite attestation proves the protected environment and credential handle exist",
     "allowed_scope": []
@@ -47,6 +47,17 @@
       "title": "Protected Live-Adapter Gate Runtime Binding",
       "reason": "ao-kernel-live-adapter-gate environment and AO_CLAUDE_CODE_CLI_AUTH handle are not attested",
       "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the protected environment and credential handle exist"
+    }
+  ],
+  "pending_external_actions": [
+    {
+      "id": "GPP-2b",
+      "title": "External admin provisioning for protected live-adapter gate",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
+      "record": ".claude/plans/GPP-2b-EXTERNAL-ADMIN-PROVISIONING.md",
+      "status": "open",
+      "decision": "external_admin_prerequisites_required",
+      "required_before": "GPP-2 runtime binding"
     }
   ],
   "support_widening_allowed": false,
@@ -95,7 +106,9 @@
   ],
   "next_allowed_actions": [
     "keep GPP-2 blocked",
-    "perform external admin provisioning for ao-kernel-live-adapter-gate and AO_CLAUDE_CODE_CLI_AUTH before another attestation slice",
+    "track external admin provisioning in issue #482",
+    "provision ao-kernel-live-adapter-gate and AO_CLAUDE_CODE_CLI_AUTH outside the repo without reading secret values",
+    "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],
   "last_updated": "2026-04-25"

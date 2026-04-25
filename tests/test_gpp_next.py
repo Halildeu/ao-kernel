@@ -30,6 +30,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
     assert payload["current_wp"]["exit_decision"] == "blocked_attestation_missing"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -39,6 +40,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
+    assert payload["pending_external_actions"][0]["id"] == "GPP-2b"
+    assert payload["pending_external_actions"][0]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
 
@@ -50,6 +53,7 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert "protected environment and credential handle exist" in payload["blocked_wps"][0]["blocked_until"]
     assert payload["support_widening_allowed"] is False
