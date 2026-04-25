@@ -32,6 +32,13 @@
       "decision": "agent_operating_contract_ready_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/474",
       "pr": "https://github.com/Halildeu/ao-kernel/pull/475"
+    },
+    {
+      "id": "GPP-2a",
+      "decision": "still_blocked_protected_prerequisites_missing",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/480",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/481",
+      "record": ".claude/plans/GPP-2a-PROTECTED-LIVE-ADAPTER-PREREQUISITE-RE-ATTESTATION.md"
     }
   ],
   "blocked_wps": [
@@ -39,7 +46,7 @@
       "id": "GPP-2",
       "title": "Protected Live-Adapter Gate Runtime Binding",
       "reason": "ao-kernel-live-adapter-gate environment and AO_CLAUDE_CODE_CLI_AUTH handle are not attested",
-      "blocked_until": "GPP-1 can exit prerequisites_ready in a future attestation slice"
+      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the protected environment and credential handle exist"
     }
   ],
   "support_widening_allowed": false,
@@ -88,7 +95,7 @@
   ],
   "next_allowed_actions": [
     "keep GPP-2 blocked",
-    "open a future admin/provisioning attestation slice only after protected prerequisites exist",
+    "perform external admin provisioning for ao-kernel-live-adapter-gate and AO_CLAUDE_CODE_CLI_AUTH before another attestation slice",
     "do not widen support or claim production platform readiness"
   ],
   "last_updated": "2026-04-25"

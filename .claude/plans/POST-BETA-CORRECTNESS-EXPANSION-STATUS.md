@@ -136,17 +136,19 @@ ayrı ayrı görünür kılmak.
 - **GPP machine-readable status:** `.claude/plans/gpp_status.v1.json`
 - **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`closed by PR #475`)
 - **GPP-1c status closeout issue:** [#476](https://github.com/Halildeu/ao-kernel/issues/476) (`closed by PR #477`)
-- **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`open`)
+- **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`closed by PR #479`)
+- **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
   `blocked_attestation_missing`. GPP-1b is merged and makes Codex/Claude
   operator sessions read that blocked state from repo-owned program status
-  before acting. Current program status holds at `GPP-2` blocked. No support
-  widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c. Future stable widening still requires protected live-adapter
-  evidence, repo-intelligence integration gates, write-side rollback evidence,
-  and an explicit closeout decision.
+  before acting. Current program status holds at `GPP-2` blocked. GPP-2a
+  re-attestation reconfirmed the missing protected environment and credential
+  handle. No support widening, release, runtime adapter promotion, or production
+  claim is made by GPP-1b/GPP-1c/GPP-2a. Future stable widening still requires
+  protected live-adapter evidence, repo-intelligence integration gates,
+  write-side rollback evidence, and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -247,6 +249,10 @@ sonraki tek aktif hat `GPP-1` protected live-adapter prerequisite olacaktır.
 kararındadır: `ao-kernel-live-adapter-gate` environment yoktur,
 `AO_CLAUDE_CODE_CLI_AUTH` secret handle attested değildir ve GPP-2 runtime
 binding hattı bu prerequisite kapanmadan başlamaz.
+
+`GPP-2a` re-attestation bu sonucu tekrar doğrular: live environment inventory
+yalnız `pypi` döndürür, `ao-kernel-live-adapter-gate` environment secret lookup
+`HTTP 404` döndürür ve runtime binding hâlâ başlamaz.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve
