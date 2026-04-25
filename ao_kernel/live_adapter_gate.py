@@ -38,10 +38,15 @@ REHEARSAL_DECISION_ARTIFACT_KIND = "live_adapter_gate_rehearsal_decision"
 REHEARSAL_DECISION_SCHEMA_NAME = "live-adapter-gate-rehearsal-decision.schema.v1.json"
 REHEARSAL_DECISION_ARTIFACT = "live-adapter-gate-rehearsal-decision.v1.json"
 REHEARSAL_DECISION_FINDING = "live_gate_rehearsal_blocked_missing_protected_prerequisites"
+ATTESTATION_PROGRAM_ID = "GPP-2d"
+ATTESTATION_ARTIFACT_KIND = "live_adapter_gate_prerequisite_attestation"
+ATTESTATION_ARTIFACT = "live-adapter-gate-attestation.v1.json"
+REQUIRED_SECRET_ID = "AO_CLAUDE_CODE_CLI_AUTH"
 
 
 CheckStatus = Literal["pass", "blocked", "skipped"]
 OverallStatus = Literal["blocked"]
+AttestationStatus = Literal["ready", "blocked"]
 EvidenceRequirementStatus = Literal["present", "blocked"]
 PrerequisiteStatus = Literal["blocked", "not_attested"]
 
@@ -221,6 +226,37 @@ class LiveAdapterGateRehearsalDecision(TypedDict):
     support_widening: bool
     prerequisite_status: list[LiveAdapterGatePrerequisiteStatus]
     promotion_decision: LiveAdapterGateRehearsalPromotionDecision
+    findings: list[str]
+
+
+class LiveAdapterGateAttestationCheck(TypedDict):
+    """Single metadata-only prerequisite attestation check."""
+
+    name: str
+    status: CheckStatus
+    finding_code: str | None
+    detail: str
+
+
+class LiveAdapterGateAttestationArtifact(TypedDict):
+    """Metadata-only protected live-adapter prerequisite attestation."""
+
+    schema_version: str
+    artifact_kind: str
+    program_id: str
+    gate_id: str
+    adapter_id: str
+    support_tier: str
+    overall_status: AttestationStatus
+    finding_code: str | None
+    generated_at: str
+    environment_name: str
+    required_secret_id: str
+    equivalent_release_gate_approved: bool
+    runtime_binding_allowed: bool
+    live_execution_allowed: bool
+    support_widening: bool
+    checks: list[LiveAdapterGateAttestationCheck]
     findings: list[str]
 
 
@@ -532,6 +568,211 @@ def build_live_adapter_gate_rehearsal_decision(
     }
 
 
+def _status(
+    condition: bool,
+    *,
+    finding_code: str | None,
+    pass_detail: str,
+    blocked_detail: str,
+) -> LiveAdapterGateAttestationCheck:
+    """Build one fail-closed attestation check."""
+
+    if condition:
+        return {
+            "name": "",
+            "status": "pass",
+            "finding_code": None,
+            "detail": pass_detail,
+        }
+    return {
+        "name": "",
+        "status": "blocked",
+        "finding_code": finding_code,
+        "detail": blocked_detail,
+    }
+
+
+def _as_dict(payload: object) -> dict[str, Any]:
+    """Return ``payload`` as a dictionary or an empty dictionary."""
+
+    return payload if isinstance(payload, dict) else {}
+
+
+def _as_list(payload: object) -> list[Any]:
+    """Return ``payload`` as a list or an empty list."""
+
+    return payload if isinstance(payload, list) else []
+
+
+def _named_items(payload: object, *, container_key: str | None = None) -> list[dict[str, Any]]:
+    """Extract named dictionaries from a GitHub API payload."""
+
+    if container_key and isinstance(payload, dict):
+        payload = payload.get(container_key, [])
+    return [item for item in _as_list(payload) if isinstance(item, dict)]
+
+
+def _branch_policy_names(branch_policy_payload: object) -> list[str]:
+    """Return deployment branch policy names from GitHub API output."""
+
+    return sorted(
+        item["name"]
+        for item in _named_items(branch_policy_payload, container_key="branch_policies")
+        if isinstance(item.get("name"), str)
+    )
+
+
+def _secret_names(secret_payload: object) -> list[str]:
+    """Return secret names without reading secret values."""
+
+    return sorted(item["name"] for item in _named_items(secret_payload) if isinstance(item.get("name"), str))
+
+
+def _collaborator_logins(collaborator_payload: object) -> list[str]:
+    """Return visible collaborator logins from GitHub API output."""
+
+    return sorted(item["login"] for item in _named_items(collaborator_payload) if isinstance(item.get("login"), str))
+
+
+def _required_reviewer_rules(environment_payload: object) -> list[dict[str, Any]]:
+    """Return required-reviewer environment protection rules."""
+
+    environment = _as_dict(environment_payload)
+    return [
+        rule
+        for rule in _as_list(environment.get("protection_rules", []))
+        if isinstance(rule, dict) and rule.get("type") == "required_reviewers"
+    ]
+
+
+def _has_branch_policy_rule(environment_payload: object) -> bool:
+    """Return whether the environment has a branch-policy protection rule."""
+
+    environment = _as_dict(environment_payload)
+    return any(
+        isinstance(rule, dict) and rule.get("type") == "branch_policy"
+        for rule in _as_list(environment.get("protection_rules", []))
+    )
+
+
+def build_live_adapter_gate_attestation(
+    *,
+    environment_payload: object,
+    branch_policy_payload: object,
+    secret_payload: object,
+    collaborator_payload: object,
+    environment_name: str = PROTECTED_ENVIRONMENT_NAME,
+    required_secret_id: str = REQUIRED_SECRET_ID,
+    actor_login: str = "",
+    equivalent_release_gate_approved: bool = False,
+    generated_at: str | None = None,
+) -> LiveAdapterGateAttestationArtifact:
+    """Build a metadata-only protected live-adapter prerequisite attestation.
+
+    This helper consumes GitHub API metadata only. It never accepts or emits
+    secret values and it never grants support widening. ``runtime_binding`` can
+    only become allowed when all prerequisites are metadata-attested; live
+    execution remains a separate downstream gate.
+    """
+
+    environment = _as_dict(environment_payload)
+    environment_exists = environment.get("name") == environment_name
+    admin_bypass_disabled = environment_exists and environment.get("can_admins_bypass") is False
+    deployment_policy = _as_dict(environment.get("deployment_branch_policy"))
+    custom_branch_policy = deployment_policy.get("custom_branch_policies") is True
+    branch_policy_names = _branch_policy_names(branch_policy_payload)
+    main_only_branch_policy = branch_policy_names == ["main"]
+    branch_policy_ok = _has_branch_policy_rule(environment) and custom_branch_policy and main_only_branch_policy
+
+    secret_present = required_secret_id in _secret_names(secret_payload)
+    reviewer_rules = _required_reviewer_rules(environment)
+    reviewer_gate_configured = bool(reviewer_rules)
+    prevent_self_review = any(rule.get("prevent_self_review") is True for rule in reviewer_rules)
+    collaborators = _collaborator_logins(collaborator_payload)
+    non_self_collaborators = [login for login in collaborators if not actor_login or login != actor_login]
+    non_self_reviewer_possible = len(non_self_collaborators) >= 1
+    reviewer_gate_ok = (reviewer_gate_configured and prevent_self_review and non_self_reviewer_possible) or (
+        equivalent_release_gate_approved
+    )
+
+    check_specs = [
+        (
+            "protected_environment",
+            environment_exists,
+            "live_gate_environment_missing",
+            f"GitHub environment {environment_name!r} exists.",
+            f"GitHub environment {environment_name!r} is missing.",
+        ),
+        (
+            "admin_bypass",
+            admin_bypass_disabled,
+            "live_gate_admin_bypass_enabled",
+            "Environment admin bypass is disabled.",
+            "Environment admin bypass is not disabled.",
+        ),
+        (
+            "deployment_branch_policy",
+            branch_policy_ok,
+            "live_gate_branch_policy_not_main_only",
+            "Environment deployment branch policy is restricted to main.",
+            f"Environment deployment branch policy is not restricted to main; observed={branch_policy_names!r}.",
+        ),
+        (
+            "credential_handle",
+            secret_present,
+            "live_gate_credential_handle_missing",
+            f"Environment secret handle {required_secret_id!r} is present by name.",
+            f"Environment secret handle {required_secret_id!r} is missing.",
+        ),
+        (
+            "reviewer_gate",
+            reviewer_gate_ok,
+            "live_gate_reviewer_gate_missing",
+            "Reviewer protection or an explicitly approved equivalent release gate is present.",
+            "Required reviewer protection is missing and no equivalent release gate is approved.",
+        ),
+        (
+            "support_boundary",
+            True,
+            None,
+            "Attestation never widens support or certifies production.",
+            "",
+        ),
+    ]
+    checks: list[LiveAdapterGateAttestationCheck] = []
+    for name, condition, finding_code, pass_detail, blocked_detail in check_specs:
+        check = _status(
+            condition,
+            finding_code=finding_code,
+            pass_detail=pass_detail,
+            blocked_detail=blocked_detail,
+        )
+        check["name"] = name
+        checks.append(check)
+
+    findings = [check["finding_code"] for check in checks if check["finding_code"]]
+    overall_status: AttestationStatus = "ready" if not findings else "blocked"
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": ATTESTATION_ARTIFACT_KIND,
+        "program_id": ATTESTATION_PROGRAM_ID,
+        "gate_id": GATE_ID,
+        "adapter_id": ADAPTER_ID,
+        "support_tier": SUPPORT_TIER,
+        "overall_status": overall_status,
+        "finding_code": None if overall_status == "ready" else findings[0],
+        "generated_at": generated_at or utc_timestamp(),
+        "environment_name": environment_name,
+        "required_secret_id": required_secret_id,
+        "equivalent_release_gate_approved": equivalent_release_gate_approved,
+        "runtime_binding_allowed": overall_status == "ready",
+        "live_execution_allowed": False,
+        "support_widening": False,
+        "checks": checks,
+        "findings": findings,
+    }
+
+
 def load_live_adapter_gate_evidence_schema() -> dict[str, Any]:
     """Load the bundled GP-4.2 evidence artifact JSON Schema."""
 
@@ -602,6 +843,13 @@ def write_live_adapter_gate_rehearsal_decision(path: Path, decision: LiveAdapter
     path.write_text(json.dumps(decision, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def write_live_adapter_gate_attestation(path: Path, artifact: LiveAdapterGateAttestationArtifact) -> None:
+    """Write a metadata-only live-adapter prerequisite attestation."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def render_live_adapter_gate_text(report: LiveAdapterGateReport) -> str:
     """Render a concise operator-facing summary for logs."""
 
@@ -616,6 +864,26 @@ def render_live_adapter_gate_text(report: LiveAdapterGateReport) -> str:
         "checks:",
     ]
     for check in report["checks"]:
+        suffix = f" ({check['finding_code']})" if check["finding_code"] else ""
+        lines.append(f"- {check['name']}: {check['status']}{suffix}")
+    return "\n".join(lines)
+
+
+def render_live_adapter_gate_attestation_text(artifact: LiveAdapterGateAttestationArtifact) -> str:
+    """Render a concise operator-facing attestation summary."""
+
+    lines = [
+        f"program_id: {artifact['program_id']}",
+        f"gate_id: {artifact['gate_id']}",
+        f"adapter_id: {artifact['adapter_id']}",
+        f"overall_status: {artifact['overall_status']}",
+        f"finding_code: {artifact['finding_code'] or 'none'}",
+        f"runtime_binding_allowed: {str(artifact['runtime_binding_allowed']).lower()}",
+        f"live_execution_allowed: {str(artifact['live_execution_allowed']).lower()}",
+        f"support_widening: {str(artifact['support_widening']).lower()}",
+        "checks:",
+    ]
+    for check in artifact["checks"]:
         suffix = f" ({check['finding_code']})" if check["finding_code"] else ""
         lines.append(f"- {check['name']}: {check['status']}{suffix}")
     return "\n".join(lines)

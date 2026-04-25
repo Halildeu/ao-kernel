@@ -10,10 +10,12 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 from ao_kernel.live_adapter_gate import (
+    ATTESTATION_ARTIFACT,
     BLOCKED_FINDING,
     EVIDENCE_ARTIFACT,
     ENVIRONMENT_CONTRACT_ARTIFACT,
     REHEARSAL_DECISION_ARTIFACT,
+    build_live_adapter_gate_attestation,
     build_live_adapter_gate_evidence_artifact,
     build_live_adapter_gate_environment_contract,
     build_live_adapter_gate_rehearsal_decision,
@@ -23,6 +25,7 @@ from ao_kernel.live_adapter_gate import (
     load_live_adapter_gate_environment_schema,
     load_live_adapter_gate_rehearsal_decision_schema,
     render_live_adapter_gate_text,
+    write_live_adapter_gate_attestation,
     validate_live_adapter_gate_evidence_artifact,
     validate_live_adapter_gate_environment_contract,
     validate_live_adapter_gate_rehearsal_decision,
@@ -205,6 +208,140 @@ def test_build_live_adapter_gate_rehearsal_decision_is_schema_valid_and_blocked(
     assert prerequisites["project_owned_credential"]["status"] == "not_attested"
     assert prerequisites["protected_live_preflight"]["status"] == "blocked"
     assert prerequisites["governed_workflow_smoke"]["status"] == "blocked"
+
+
+def test_build_live_adapter_gate_attestation_blocks_current_partial_gate() -> None:
+    artifact = build_live_adapter_gate_attestation(
+        environment_payload={
+            "name": "ao-kernel-live-adapter-gate",
+            "can_admins_bypass": False,
+            "deployment_branch_policy": {"custom_branch_policies": True, "protected_branches": False},
+            "protection_rules": [{"id": 53201958, "type": "branch_policy"}],
+        },
+        branch_policy_payload={"branch_policies": [{"name": "main", "type": "branch"}]},
+        secret_payload=[],
+        collaborator_payload=[{"login": "Halildeu", "role_name": "admin"}],
+        actor_login="Halildeu",
+        generated_at="2026-04-25T00:00:00Z",
+    )
+
+    assert artifact["artifact_kind"] == "live_adapter_gate_prerequisite_attestation"
+    assert artifact["program_id"] == "GPP-2d"
+    assert artifact["overall_status"] == "blocked"
+    assert artifact["finding_code"] == "live_gate_credential_handle_missing"
+    assert artifact["runtime_binding_allowed"] is False
+    assert artifact["live_execution_allowed"] is False
+    assert artifact["support_widening"] is False
+
+    checks = {check["name"]: check for check in artifact["checks"]}
+    assert checks["protected_environment"]["status"] == "pass"
+    assert checks["admin_bypass"]["status"] == "pass"
+    assert checks["deployment_branch_policy"]["status"] == "pass"
+    assert checks["credential_handle"]["status"] == "blocked"
+    assert checks["credential_handle"]["finding_code"] == "live_gate_credential_handle_missing"
+    assert checks["reviewer_gate"]["status"] == "blocked"
+    assert checks["reviewer_gate"]["finding_code"] == "live_gate_reviewer_gate_missing"
+
+
+def test_build_live_adapter_gate_attestation_allows_ready_metadata_only_state() -> None:
+    artifact = build_live_adapter_gate_attestation(
+        environment_payload={
+            "name": "ao-kernel-live-adapter-gate",
+            "can_admins_bypass": False,
+            "deployment_branch_policy": {"custom_branch_policies": True, "protected_branches": False},
+            "protection_rules": [
+                {"id": 1, "type": "branch_policy"},
+                {"id": 2, "type": "required_reviewers", "prevent_self_review": True},
+            ],
+        },
+        branch_policy_payload={"branch_policies": [{"name": "main", "type": "branch"}]},
+        secret_payload=[{"name": "AO_CLAUDE_CODE_CLI_AUTH", "updatedAt": "2026-04-25T00:00:00Z"}],
+        collaborator_payload=[
+            {"login": "Halildeu", "role_name": "admin"},
+            {"login": "release-reviewer", "role_name": "maintain"},
+        ],
+        actor_login="Halildeu",
+        generated_at="2026-04-25T00:00:00Z",
+    )
+
+    assert artifact["overall_status"] == "ready"
+    assert artifact["finding_code"] is None
+    assert artifact["runtime_binding_allowed"] is True
+    assert artifact["live_execution_allowed"] is False
+    assert artifact["support_widening"] is False
+    assert artifact["findings"] == []
+
+
+def test_write_live_adapter_gate_attestation_round_trips_json(tmp_path: Path) -> None:
+    artifact = build_live_adapter_gate_attestation(
+        environment_payload={},
+        branch_policy_payload={},
+        secret_payload=[],
+        collaborator_payload=[],
+        generated_at="2026-04-25T00:00:00Z",
+    )
+    path = tmp_path / ATTESTATION_ARTIFACT
+
+    write_live_adapter_gate_attestation(path, artifact)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload == artifact
+    assert path.read_text(encoding="utf-8").endswith("\n")
+
+
+def test_live_adapter_gate_attestation_cli_uses_fixture_metadata(tmp_path: Path) -> None:
+    environment_path = tmp_path / "environment.json"
+    branch_policies_path = tmp_path / "branch-policies.json"
+    secrets_path = tmp_path / "secrets.json"
+    collaborators_path = tmp_path / "collaborators.json"
+    artifact_path = tmp_path / ATTESTATION_ARTIFACT
+
+    environment_path.write_text(
+        json.dumps(
+            {
+                "name": "ao-kernel-live-adapter-gate",
+                "can_admins_bypass": False,
+                "deployment_branch_policy": {"custom_branch_policies": True, "protected_branches": False},
+                "protection_rules": [{"id": 53201958, "type": "branch_policy"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    branch_policies_path.write_text(
+        json.dumps({"branch_policies": [{"name": "main", "type": "branch"}]}),
+        encoding="utf-8",
+    )
+    secrets_path.write_text("[]", encoding="utf-8")
+    collaborators_path.write_text(json.dumps([{"login": "Halildeu", "role_name": "admin"}]), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/live_adapter_gate_attest.py",
+            "--environment-json",
+            str(environment_path),
+            "--branch-policies-json",
+            str(branch_policies_path),
+            "--secrets-json",
+            str(secrets_path),
+            "--collaborators-json",
+            str(collaborators_path),
+            "--artifact-path",
+            str(artifact_path),
+            "--output",
+            "json",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    stdout_payload = json.loads(completed.stdout)
+    file_payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert stdout_payload == file_payload
+    assert stdout_payload["overall_status"] == "blocked"
+    assert stdout_payload["finding_code"] == "live_gate_credential_handle_missing"
 
 
 def test_live_adapter_gate_evidence_schema_rejects_support_widening() -> None:

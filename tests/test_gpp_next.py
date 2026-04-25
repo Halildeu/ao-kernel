@@ -54,6 +54,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         payload["pending_external_actions"][1]["decision"]
         == "missing_environment_secret_and_non_self_reviewer_gate"
     )
+    assert payload["pending_external_actions"][2]["id"] == "GPP-2d"
+    assert payload["pending_external_actions"][2]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/487"
+    assert payload["pending_external_actions"][2]["status"] == "implemented_no_support_widening"
+    assert (
+        payload["pending_external_actions"][2]["decision"]
+        == "repeatable_attestation_available_current_gate_still_blocked"
+    )
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
 
