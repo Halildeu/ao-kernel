@@ -28,9 +28,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
 
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
-    assert payload["current_wp"]["id"] == "GPP-1b"
-    assert payload["current_wp"]["status"] == "active"
-    assert payload["current_wp"]["exit_decision"] == "agent_operating_contract_ready_no_support_widening"
+    assert payload["current_wp"]["id"] == "GPP-2"
+    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["exit_decision"] == "blocked_attestation_missing"
+    assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -43,7 +44,8 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-1b"
+    assert payload["current_wp"]["id"] == "GPP-2"
+    assert payload["current_wp"]["status"] == "blocked"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert payload["support_widening_allowed"] is False
 
@@ -63,13 +65,14 @@ def test_gpp_next_rejects_fake_support_widening(tmp_path: Path) -> None:
         raise AssertionError("expected GppStatusError for fake support widening")
 
 
-def test_gpp_next_text_output_names_active_and_blocked_work() -> None:
+def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     mod = _module()
     payload = mod.load_status(_status_path())
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    assert "Active WP: GPP-1b - Agent Operating Program Contract" in rendered
+    assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
+    assert "Current status: blocked" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
@@ -85,6 +88,6 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-1b"
+    assert payload["current_wp"]["id"] == "GPP-2"
+    assert payload["current_wp"]["status"] == "blocked"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
-

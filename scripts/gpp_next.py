@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the active GPP work package for Codex/Claude operator sessions."""
+"""Print the current GPP work package for Codex/Claude operator sessions."""
 
 from __future__ import annotations
 
@@ -94,12 +94,14 @@ def render_text(payload: dict[str, Any], *, git_summary: dict[str, str] | None =
 
     current_wp = payload["current_wp"]
     blocked_wps = payload["blocked_wps"]
+    current_label = "Active WP" if current_wp.get("status") == "active" else "Current WP"
+    status_label = "Active status" if current_wp.get("status") == "active" else "Current status"
     lines = [
         f"Program: {payload.get('program_title', payload['program_id'])}",
         f"Authority ref: {payload['authority_ref']}",
         f"Authority head at last update: {payload.get('authority_head_at_last_update', 'unknown')}",
-        f"Active WP: {current_wp['id']} - {current_wp['title']}",
-        f"Active status: {current_wp.get('status', 'unknown')}",
+        f"{current_label}: {current_wp['id']} - {current_wp['title']}",
+        f"{status_label}: {current_wp.get('status', 'unknown')}",
         f"Exit decision: {current_wp.get('exit_decision', 'unset')}",
         f"Support widening allowed: {str(payload['support_widening_allowed']).lower()}",
         f"Production platform claim allowed: {str(payload['production_platform_claim_allowed']).lower()}",

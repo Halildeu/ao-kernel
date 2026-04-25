@@ -3,24 +3,17 @@
   "program_id": "general-purpose-production-promotion",
   "program_title": "General-Purpose Production Promotion",
   "authority_ref": "origin/main",
-  "authority_head_at_last_update": "0ad7209",
+  "authority_head_at_last_update": "c579089",
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-1b",
-    "title": "Agent Operating Program Contract",
-    "status": "active",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/474",
-    "branch": "codex/gpp1b-agent-operating-program-contract",
-    "worktree": "/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract",
-    "exit_decision": "agent_operating_contract_ready_no_support_widening",
-    "allowed_scope": [
-      "agent instructions",
-      "program status",
-      "small helper script",
-      "tests",
-      "docs"
-    ]
+    "id": "GPP-2",
+    "title": "Protected Live-Adapter Gate Runtime Binding",
+    "status": "blocked",
+    "issue": null,
+    "exit_decision": "blocked_attestation_missing",
+    "blocked_until": "a future prerequisite attestation proves the protected environment and credential handle exist",
+    "allowed_scope": []
   },
   "completed_wps": [
     {
@@ -34,6 +27,12 @@
       "decision": "blocked_attestation_missing",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/472",
       "pr": "https://github.com/Halildeu/ao-kernel/pull/473"
+    },
+    {
+      "id": "GPP-1b",
+      "decision": "agent_operating_contract_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/474",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/475"
     }
   ],
   "blocked_wps": [
@@ -89,9 +88,9 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "complete GPP-1b docs/status/script/test PR",
     "keep GPP-2 blocked",
-    "open a future admin/provisioning attestation slice only after protected prerequisites exist"
+    "open a future admin/provisioning attestation slice only after protected prerequisites exist",
+    "do not widen support or claim production platform readiness"
   ],
   "last_updated": "2026-04-25"
 }

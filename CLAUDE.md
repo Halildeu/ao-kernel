@@ -651,7 +651,8 @@ SSOT dosyaları:
 
 Kurallar:
 
-1. Aktif GPP work package dışında runtime/support-widening işi başlatılmaz.
+1. GPP status dosyasında current/active work package okunmadan
+   runtime/support-widening işi başlatılmaz.
 2. `scripts/gpp_next.py` `GPP-2` veya başka bir hattı blocked gösteriyorsa
    ajan o hattı kodlamaz; önce blocked kararını değiştirecek kanıt gerekir.
 3. `support_widening_allowed=false` ve `production_platform_claim_allowed=false`
