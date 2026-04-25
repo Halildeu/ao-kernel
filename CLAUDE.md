@@ -628,3 +628,34 @@ Repo-side merge governance özeti:
    Runtime closure tamamlanmadan anlatı genişletilmez. Bir yüzey ancak
    code path + davranışsal test + packaging smoke + support matrix birlikte
    mevcutsa "destekli" kabul edilir.
+
+## 21. GPP Agent Operating Contract (2026-04-25)
+
+Codex ve Claude Code, general-purpose production promotion programında sıradaki
+işi sohbet hafızasından değil repo içi SSOT'lardan okur.
+
+Zorunlu başlangıç:
+
+```bash
+git status --short --branch
+git rev-list --left-right --count HEAD...origin/main
+bash .claude/scripts/ops.sh preflight
+python3 scripts/gpp_next.py
+```
+
+SSOT dosyaları:
+
+- İnsan-okur program status: `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md`
+- Makine-okur program status: `.claude/plans/gpp_status.v1.json`
+- Ajan startup kontratı: `AGENTS.md`
+
+Kurallar:
+
+1. Aktif GPP work package dışında runtime/support-widening işi başlatılmaz.
+2. `scripts/gpp_next.py` `GPP-2` veya başka bir hattı blocked gösteriyorsa
+   ajan o hattı kodlamaz; önce blocked kararını değiştirecek kanıt gerekir.
+3. `support_widening_allowed=false` ve `production_platform_claim_allowed=false`
+   değerleri yalnız explicit GPP full-matrix promotion PR'ı ile değişebilir.
+4. Local/operator smoke, project-owned production evidence sayılmaz.
+5. Her GPP slice tek issue, tek dedicated worktree, tek short-lived branch, tek
+   PR ve tek exit decision ile kapanır.
