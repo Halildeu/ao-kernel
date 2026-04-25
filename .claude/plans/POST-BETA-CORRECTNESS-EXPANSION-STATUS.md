@@ -142,6 +142,7 @@ ayrı ayrı görünür kılmak.
 - **GPP-2c reviewer/credential gate issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
 - **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487) (`closed by PR #488`)
 - **GPP-2e single-admin equivalent gate decision issue:** [#489](https://github.com/Halildeu/ao-kernel/issues/489)
+- **GPP-2f independent release gate architecture issue:** [#491](https://github.com/Halildeu/ao-kernel/issues/491)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -158,9 +159,13 @@ ayrı ayrı görünür kılmak.
   attestation tooling so future prerequisite checks do not rely on manual issue
   comments. GPP-2e records that the single-admin equivalent release gate is
   not approved, so `--equivalent-release-gate-approved` cannot be used for
-  production prerequisite attestation without a future explicit approval. No support
+  production prerequisite attestation without a future explicit approval.
+  GPP-2f clarifies the required control as an independent release gate, not a
+  product end-user account. Acceptable future models are GitHub-native release
+  authority, GitHub App deployment protection, or OIDC-backed external secret
+  broker. No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e. Future stable widening still
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e/GPP-2f. Future stable widening still
   requires protected live-adapter evidence, repo-intelligence integration
   gates, write-side rollback evidence, and an explicit closeout decision.
 
@@ -274,6 +279,10 @@ protection yoktur ve runtime binding hâlâ başlamaz.
 equivalent release gate kararını `not_approved` olarak kaydeder; bu nedenle
 `--equivalent-release-gate-approved` flag'i production prerequisite attestation
 için kullanılamaz.
+
+`GPP-2f`, bu gate'in son kullanıcı hesabı değil bağımsız release authority
+olduğunu kaydeder. Kabul edilebilir modeller GitHub-native release authority,
+GitHub App deployment protection veya OIDC-backed external secret broker'dır.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve

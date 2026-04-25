@@ -52,14 +52,20 @@
       "decision": "decision_recorded_not_approved_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/489",
       "record": ".claude/plans/GPP-2e-SINGLE-ADMIN-EQUIVALENT-GATE-DECISION.md"
+    },
+    {
+      "id": "GPP-2f",
+      "decision": "independent_release_gate_required_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/491",
+      "record": ".claude/plans/GPP-2f-INDEPENDENT-RELEASE-GATE-ARCHITECTURE.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
       "title": "Protected Live-Adapter Gate Runtime Binding",
-      "reason": "AO_CLAUDE_CODE_CLI_AUTH handle and reviewer/equivalent gate are not attested",
-      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the credential handle and reviewer/equivalent gate exist"
+      "reason": "AO_CLAUDE_CODE_CLI_AUTH handle and an independent release gate are not attested",
+      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the credential handle and an approved independent release gate exist"
     }
   ],
   "pending_external_actions": [
@@ -74,11 +80,11 @@
     },
     {
       "id": "GPP-2c",
-      "title": "Reviewer and credential gate resolution",
+      "title": "Independent release gate and credential resolution",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/485",
       "record": ".claude/plans/GPP-2c-REVIEWER-AND-CREDENTIAL-GATE.md",
-      "status": "blocked_external_admin_decision_required",
-      "decision": "missing_environment_secret_and_non_self_reviewer_gate",
+      "status": "blocked_external_independent_gate_decision_required",
+      "decision": "missing_environment_secret_and_independent_release_gate",
       "required_before": "GPP-2 runtime binding"
     }
   ],
@@ -124,17 +130,19 @@
     "treat local operator auth as production evidence",
     "start GPP-2 runtime binding while GPP-2 is blocked",
     "use --equivalent-release-gate-approved while GPP-2e remains not_approved",
+    "treat a product end-user account as release authority",
     "set support_widening=true without explicit GPP-9 promotion decision",
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
     "keep GPP-2 blocked",
     "track external admin provisioning in issue #482",
-    "resolve reviewer and credential gate in issue #485",
+    "resolve independent release gate and credential handling in issue #485",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
+    "choose one independent release gate model before any GPP-2 runtime binding",
     "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
-    "configure required reviewer protection or record an explicitly approved equivalent release gate",
+    "configure GitHub-native release authority, GitHub App deployment protection, or OIDC secret broker gate",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],
