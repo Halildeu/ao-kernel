@@ -70,12 +70,15 @@ Until a future explicit approval and attestation exist:
 
 ## Future Implementation Slices
 
-The next implementation slice selected the first model:
+The first implementation slice selected GitHub-native reviewer/team, then the
+operator superseded that provisioning path with the deployment protection bot
+model:
 
 1. `GPP-2g-github-release-authority`: selected as the first provisioning path
    by `.claude/plans/GPP-2g-GITHUB-NATIVE-RELEASE-AUTHORITY-AND-CLAUDE-MCP-CONSULTATION.md`.
-2. `GPP-2g-deployment-protection-app`: remains an acceptable fallback if the
-   GitHub-native reviewer/team path cannot be provisioned.
+2. `GPP-2h-deployment-protection-bot-gate`: supersedes the GPP-2g provisioning
+   path and selects the GitHub App deployment protection rule as the active
+   release authority model.
 3. `GPP-2g-oidc-secret-broker`: remains an acceptable fallback if the project
    chooses brokered credential release instead of environment secrets.
 

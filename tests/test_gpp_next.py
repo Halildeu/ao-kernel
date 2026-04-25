@@ -64,6 +64,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2h"
+        and item["decision"] == "github_app_deployment_protection_rule_selected_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/495"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -79,11 +86,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["pending_external_actions"][1]["title"] == "Independent release gate and credential resolution"
     assert (
         payload["pending_external_actions"][1]["status"]
-        == "blocked_external_github_native_release_authority_provisioning_required"
+        == "blocked_external_deployment_protection_bot_provisioning_required"
     )
     assert (
         payload["pending_external_actions"][1]["decision"]
-        == "github_native_release_authority_selected_secret_and_reviewer_still_missing"
+        == "github_app_deployment_protection_selected_secret_and_app_gate_still_missing"
     )
     assert {item["id"] for item in payload["pending_external_actions"]} == {"GPP-2b", "GPP-2c"}
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
@@ -97,8 +104,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         for action in payload["forbidden_actions"]
     )
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
+    assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "provision the selected GitHub-native release authority before any GPP-2 runtime binding"
+        action == "implement deployment protection attestation support before any GPP-2 runtime binding"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action == "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding"
         for action in payload["next_allowed_actions"]
     )
     assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
@@ -145,11 +157,27 @@ def test_gpp2g_claude_mcp_consultation_is_advisory_only() -> None:
     assert "GitHub-native release authority" in decision
     assert "It is not an application end-user account." in decision
     assert "The consultation path is advisory only." in decision
+    assert "**Provisioning path superseded by:** `GPP-2h`" in decision
     assert "mcp__ao-kernel__ao_workspace_status" in decision
     assert "mcp__ao-kernel__ao_quality_gate" in decision
     assert "mcp__ao-kernel__ao_memory_write" in decision
     assert "mcp__ao-kernel__ao_llm_call" in decision
     assert "does not unblock `GPP-2`" in decision
+
+
+def test_gpp2h_selects_deployment_protection_bot_not_bot_user() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2h-DEPLOYMENT-PROTECTION-BOT-GATE-DECISION.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `github_app_deployment_protection_rule_selected`" in decision
+    assert "supersedes the first provisioning path selected in `GPP-2g`" in decision
+    assert "GitHub App deployment protection rule" in decision
+    assert "The model is a policy bot, not a user-like reviewer account." in decision
+    assert "PAT-backed bot account listed as required reviewer" in decision
+    assert "GPP-2i - deployment protection attestation support" in decision
+    assert "does not unblock `GPP-2`" in decision
+    assert "does not widen support" in decision
 
 
 def test_gpp_next_load_status_validates_required_guards() -> None:

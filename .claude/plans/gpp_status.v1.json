@@ -64,6 +64,12 @@
       "decision": "github_native_release_authority_selected_claude_mcp_advisory_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/493",
       "record": ".claude/plans/GPP-2g-GITHUB-NATIVE-RELEASE-AUTHORITY-AND-CLAUDE-MCP-CONSULTATION.md"
+    },
+    {
+      "id": "GPP-2h",
+      "decision": "github_app_deployment_protection_rule_selected_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/495",
+      "record": ".claude/plans/GPP-2h-DEPLOYMENT-PROTECTION-BOT-GATE-DECISION.md"
     }
   ],
   "blocked_wps": [
@@ -89,8 +95,8 @@
       "title": "Independent release gate and credential resolution",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/485",
       "record": ".claude/plans/GPP-2c-REVIEWER-AND-CREDENTIAL-GATE.md",
-      "status": "blocked_external_github_native_release_authority_provisioning_required",
-      "decision": "github_native_release_authority_selected_secret_and_reviewer_still_missing",
+      "status": "blocked_external_deployment_protection_bot_provisioning_required",
+      "decision": "github_app_deployment_protection_selected_secret_and_app_gate_still_missing",
       "required_before": "GPP-2 runtime binding"
     }
   ],
@@ -137,6 +143,7 @@
     "start GPP-2 runtime binding while GPP-2 is blocked",
     "use --equivalent-release-gate-approved while GPP-2e remains not_approved",
     "treat a product end-user account as release authority",
+    "treat a PAT-backed bot user as release authority",
     "treat Claude MCP consultation as release authority",
     "use ao_memory_write or ao_llm_call during Claude MCP consultation",
     "include credential material in Claude MCP prompts or tool payloads",
@@ -148,11 +155,12 @@
     "track external admin provisioning in issue #482",
     "resolve independent release gate and credential handling in issue #485",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
-    "provision the selected GitHub-native release authority before any GPP-2 runtime binding",
+    "implement deployment protection attestation support before any GPP-2 runtime binding",
+    "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding",
     "use Claude MCP consultation only as advisory review, not release authority",
     "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
-    "configure GitHub-native required reviewer or team protection on ao-kernel-live-adapter-gate",
+    "configure GitHub App deployment protection on ao-kernel-live-adapter-gate after attestation support exists",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],
