@@ -13,6 +13,11 @@ This record defines the decision boundary for using a single-admin equivalent
 release gate instead of a true non-self GitHub environment reviewer for the
 protected live-adapter gate.
 
+The reviewer term here refers to a GitHub-native release authority model, not a
+product end-user account. `GPP-2f` broadens the accepted future architecture to
+an independent release gate: GitHub-native release authority, GitHub App
+deployment protection, or OIDC-backed external secret broker.
+
 It does not approve that equivalent gate. It prevents the
 `--equivalent-release-gate-approved` attestation option from being used as an
 implicit shortcut.
@@ -45,7 +50,7 @@ The single-admin equivalent release gate is **not approved**.
 
 The preferred resolution remains:
 
-1. Add or designate a second maintainer reviewer.
+1. Add or designate an independent release authority.
 2. Configure required reviewers on `ao-kernel-live-adapter-gate`.
 3. Enable prevent-self-review or an equivalent non-self approval mechanism.
 4. Add `AO_CLAUDE_CODE_CLI_AUTH` as an environment secret handle without

@@ -50,6 +50,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2f"
+        and item["decision"] == "independent_release_gate_required_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/491"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -62,10 +69,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert payload["pending_external_actions"][1]["id"] == "GPP-2c"
     assert payload["pending_external_actions"][1]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/485"
-    assert payload["pending_external_actions"][1]["status"] == "blocked_external_admin_decision_required"
+    assert payload["pending_external_actions"][1]["title"] == "Independent release gate and credential resolution"
+    assert payload["pending_external_actions"][1]["status"] == "blocked_external_independent_gate_decision_required"
     assert (
         payload["pending_external_actions"][1]["decision"]
-        == "missing_environment_secret_and_non_self_reviewer_gate"
+        == "missing_environment_secret_and_independent_release_gate"
     )
     assert {item["id"] for item in payload["pending_external_actions"]} == {"GPP-2b", "GPP-2c"}
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
@@ -77,6 +85,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action == "use --equivalent-release-gate-approved while GPP-2e remains not_approved"
         for action in payload["forbidden_actions"]
+    )
+    assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
+    assert any(
+        action == "choose one independent release gate model before any GPP-2 runtime binding"
+        for action in payload["next_allowed_actions"]
     )
 
 
@@ -91,6 +104,19 @@ def test_gpp2e_equivalent_gate_decision_defaults_to_not_approved() -> None:
     assert "must not be used for production prerequisite attestation" in decision
 
 
+def test_gpp2f_independent_release_gate_replaces_end_user_reviewer_model() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2f-INDEPENDENT-RELEASE-GATE-ARCHITECTURE.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `independent_release_gate_required`" in decision
+    assert "not a product end-user account" in decision
+    assert "GitHub-native release authority" in decision
+    assert "GitHub App deployment protection rule" in decision
+    assert "OIDC-backed external secret broker" in decision
+    assert "Product end-user accounts must not be treated as release authority" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -100,7 +126,7 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     assert payload["current_wp"]["status"] == "blocked"
     assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
-    assert "credential handle and reviewer/equivalent gate exist" in payload["blocked_wps"][0]["blocked_until"]
+    assert "credential handle and an approved independent release gate exist" in payload["blocked_wps"][0]["blocked_until"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -130,7 +156,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "- GPP-2: AO_CLAUDE_CODE_CLI_AUTH handle and reviewer/equivalent gate" in rendered
+    assert "- GPP-2: AO_CLAUDE_CODE_CLI_AUTH handle and an independent release gate" in rendered
     assert "divergence: 0\t0" in rendered
 
 

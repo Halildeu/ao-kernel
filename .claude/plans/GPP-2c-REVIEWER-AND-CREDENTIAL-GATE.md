@@ -1,4 +1,4 @@
-# GPP-2c - Reviewer and Credential Gate Decision
+# GPP-2c - Independent Release Gate and Credential Decision
 
 **Status:** blocked; external/admin decision required
 **Date:** 2026-04-25
@@ -16,6 +16,10 @@ provisioning.
 This is deliberately a governance/admin gate, not runtime implementation. It
 does not bind `.github/workflows/live-adapter-gate.yml`, does not create or read
 secret values, does not execute a live adapter, and does not widen support.
+
+`Reviewer` in the original slice title means GitHub-native release authority,
+not an application end-user account. `GPP-2f` supersedes the vocabulary with
+the broader independent release gate requirement.
 
 ## 2. Current Live Evidence
 
@@ -49,21 +53,22 @@ The environment shell is now present and partially hardened:
 The gate is still incomplete:
 
 1. `AO_CLAUDE_CODE_CLI_AUTH` is not present as an environment secret handle.
-2. Required reviewer protection is not configured.
-3. A true non-self reviewer gate is not currently possible while only one
-   collaborator is visible.
+2. No approved independent release gate is configured.
+3. The GitHub-native reviewer/team model is only one possible implementation;
+   a GitHub App deployment protection rule or OIDC-backed secret broker may
+   satisfy the same trust-boundary requirement in a future slice.
 
 ## 4. Acceptable Resolution Paths
 
 ### Preferred Path
 
-1. Add or designate a second maintainer reviewer.
+1. Add or designate a release authority reviewer or team.
 2. Configure `ao-kernel-live-adapter-gate` required reviewers with
    prevent-self-review.
 3. Set `AO_CLAUDE_CODE_CLI_AUTH` under the environment without printing or
    reading back the secret value.
 4. Open a follow-up attestation PR that proves the handle exists and the
-   reviewer gate is present.
+   independent release gate is present.
 
 ### Alternative Path
 
@@ -86,8 +91,7 @@ slice. That slice must prove:
 2. deployment branch policy still allows only the intended `main` path;
 3. `can_admins_bypass=false`;
 4. `AO_CLAUDE_CODE_CLI_AUTH` exists under the environment;
-5. reviewer protection or an explicitly approved equivalent release gate is
-   present;
+5. an approved independent release gate is present;
 6. fork-triggered contexts cannot read protected credentials.
 
 Only then may `GPP-2` runtime binding start.
@@ -100,4 +104,3 @@ Only then may `GPP-2` runtime binding start.
 4. No production-platform claim.
 5. No secret value readback.
 6. No local operator auth treated as project-owned evidence.
-

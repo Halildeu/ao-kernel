@@ -1,12 +1,12 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 blocked; single-admin equivalent gate not approved
+**Status:** GPP-2 blocked; independent release gate required
 **Date:** 2026-04-25
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#489](https://github.com/Halildeu/ao-kernel/issues/489)
-for single-admin equivalent gate decision tracking
+**Current slice issue:** [#491](https://github.com/Halildeu/ao-kernel/issues/491)
+for independent release gate architecture decision tracking
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -73,9 +73,8 @@ Last live verification on current `origin/main` showed:
     project-owned/attested.
 19. GPP-2b opened issue
     [#482](https://github.com/Halildeu/ao-kernel/issues/482) to track the
-    external/admin provisioning work. Live collaborator inventory currently
-    shows only `Halildeu`, so the protected reviewer model still needs a
-    non-triggering reviewer/admin or an explicitly approved equivalent gate.
+    external/admin provisioning work. The protected gate requires an
+    independent release authority; this is not a product end-user account.
 20. GPP-2b partially provisioned the GitHub environment: the environment exists,
     deployment branch policy includes `main`, and admin bypass is disabled.
     Required reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` are still
@@ -85,6 +84,10 @@ Last live verification on current `origin/main` showed:
     single-admin equivalent release gate is not approved; the
     `--equivalent-release-gate-approved` attestation option must not be used
     until a future explicit approval supersedes this decision.
+22. GPP-2f records the required trust boundary as an independent release gate.
+    Acceptable future models are GitHub-native release authority, GitHub App
+    deployment protection, or OIDC-backed external secret broker. Product
+    end-user accounts are not release authority.
 
 ## 3. Current Verdict
 
@@ -129,6 +132,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2c` | Blocked external/admin decision | Reviewer and credential gate resolution | `AO_CLAUDE_CODE_CLI_AUTH` and non-self reviewer/equivalent gate still missing |
 | `GPP-2d` | Implemented / no support widening | Metadata-only live gate attestation tool | repeatable attestation is available; current live gate still blocked |
 | `GPP-2e` | Completed / no support widening | Single-admin equivalent gate decision | `not_approved`; equivalent gate override cannot be used without a future explicit approval |
+| `GPP-2f` | Completed / no support widening | Independent release gate architecture decision | independent release gate required; product end-user account is not release authority |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -518,12 +522,16 @@ reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` must still be completed
 before another prerequisite attestation can attempt to unblock `GPP-2`.
 GPP-2c is tracked in
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) to resolve the
-remaining reviewer and credential gate decision. GPP-2d adds
+remaining independent release gate and credential decision. GPP-2d adds
 `scripts/live_adapter_gate_attest.py` so the next prerequisite attestation uses
 repeatable metadata-only evidence instead of hand-written command snippets.
 GPP-2e records the single-admin equivalent gate as `not_approved`; the
 attestation override `--equivalent-release-gate-approved` is forbidden until a
 future explicit approval supersedes [#489](https://github.com/Halildeu/ao-kernel/issues/489).
+GPP-2f clarifies that the gate is an independent release authority, not a
+product end-user account. Acceptable future models are GitHub-native release
+authority, GitHub App deployment protection, or OIDC-backed external secret
+broker.
 
 ## 18. Risk Register
 
@@ -560,3 +568,4 @@ future explicit approval supersedes [#489](https://github.com/Halildeu/ao-kernel
 | 2026-04-25 | GPP-2d issue opened | Issue [#487](https://github.com/Halildeu/ao-kernel/issues/487) tracks a metadata-only attestation tool for repeatable protected gate evidence. |
 | 2026-04-25 | GPP-2d merged | PR [#488](https://github.com/Halildeu/ao-kernel/pull/488) added `scripts/live_adapter_gate_attest.py`; live attestation remains blocked by missing credential handle and reviewer/equivalent gate. |
 | 2026-04-25 | GPP-2e issue opened | Issue [#489](https://github.com/Halildeu/ao-kernel/issues/489) tracks the single-admin equivalent gate decision; current repo decision is `not_approved`, so the attestation override remains forbidden. |
+| 2026-04-26 | GPP-2f issue opened | Issue [#491](https://github.com/Halildeu/ao-kernel/issues/491) tracks the independent release gate architecture decision; product end-user accounts are explicitly not release authority. |
