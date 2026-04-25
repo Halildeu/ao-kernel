@@ -131,14 +131,19 @@ ayrı ayrı görünür kılmak.
 - **RI-5b post-closeout next-slice cleanup issue:** [#468](https://github.com/Halildeu/ao-kernel/issues/468) (`closes with this status cleanup PR`)
 - **GPP-0 production promotion tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470) (`closed by PR #471`)
 - **GPP-1 protected live-adapter prerequisite attestation:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
-- **GPP-1 issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472) (`open`)
+- **GPP-1 issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472) (`closed by PR #473`)
+- **GPP-1b agent operating program contract:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
+- **GPP machine-readable status:** `.claude/plans/gpp_status.v1.json`
+- **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`open`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
-  a production platform claim. GPP-1 live attestation currently exits as
-  `blocked_attestation_missing`; no support widening, release, runtime adapter
-  promotion, or production claim is made by GPP-1. Future stable widening still
-  requires protected live-adapter evidence, repo-intelligence integration gates,
-  write-side rollback evidence, and an explicit closeout decision.
+  a production platform claim. GPP-1 live attestation exited as
+  `blocked_attestation_missing`. GPP-1b makes Codex/Claude operator sessions
+  read that blocked state from repo-owned program status before acting. No
+  support widening, release, runtime adapter promotion, or production claim is
+  made by GPP-1b. Future stable widening still requires protected live-adapter
+  evidence, repo-intelligence integration gates, write-side rollback evidence,
+  and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -211,7 +216,7 @@ ayrı ayrı görünür kılmak.
 
 ## 5. Şimdi
 
-### Current mode — stable maintenance + GPP-0 tracking
+### Current mode — stable maintenance + GPP-1b operator contract
 
 `GP-3` parent promotion programı `close_keep_operator_beta` kararıyla
 kapanmıştır. `GP-4.1` workflow skeleton, `GP-4.2` evidence artifact,
@@ -239,6 +244,11 @@ sonraki tek aktif hat `GPP-1` protected live-adapter prerequisite olacaktır.
 kararındadır: `ao-kernel-live-adapter-gate` environment yoktur,
 `AO_CLAUDE_CODE_CLI_AUTH` secret handle attested değildir ve GPP-2 runtime
 binding hattı bu prerequisite kapanmadan başlamaz.
+
+`GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
+operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve
+`scripts/gpp_next.py` üzerinden aynı aktif work package ve blocked gate
+gerçeğini okumasıdır.
 
 Mevcut yol:
 

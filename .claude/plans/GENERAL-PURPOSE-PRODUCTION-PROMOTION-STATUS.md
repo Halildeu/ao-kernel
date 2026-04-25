@@ -1,13 +1,14 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-1 prerequisite attestation closeout
+**Status:** GPP-1b agent operating program contract active
 **Date:** 2026-04-25
-**Authority:** `origin/main` at `f3823be`
+**Authority:** `origin/main` at `0ad7209`
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#472](https://github.com/Halildeu/ao-kernel/issues/472)
-**Current slice record:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
-**Branch:** `codex/gpp1-live-adapter-prereq-attestation`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1-live-adapter-prereq-attestation`
+**Current slice issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474)
+**Current slice record:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
+**Machine-readable status:** `.claude/plans/gpp_status.v1.json`
+**Branch:** `codex/gpp1b-agent-operating-program-contract`
+**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract`
 **Mode:** written, trackable, fail-closed promotion program
 **Support impact:** none
 **Release impact:** none
@@ -59,6 +60,9 @@ Last live verification on current `origin/main` showed:
     `workflow_dispatch` among live-gate trigger/secret/environment grep terms;
     no `environment:`, `secrets.`, `pull_request`, or `pull_request_target`
     binding is present.
+17. GPP-1b adds a machine-readable operator contract so Codex and Claude Code
+    read the same active work package and blocked gates from repo state instead
+    of chat memory.
 
 ## 3. Current Verdict
 
@@ -96,7 +100,8 @@ The final production claim stays closed until `GPP-9` passes.
 | WP | Status | Goal | Exit decision |
 |---|---|---|---|
 | `GPP-0` | Completed | Create written tracker and acceptance model | `tracker_ready_no_support_widening` |
-| `GPP-1` | Closeout candidate | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
+| `GPP-1` | Completed | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
+| `GPP-1b` | Active | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until `GPP-1` can exit `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -147,7 +152,8 @@ and executable step by step.
 **Goal:** Establish project-owned protected live-adapter prerequisites before
 any workflow binding or support promotion.
 
-**Status:** closeout candidate.
+**Status:** completed on `main` by PR
+[#473](https://github.com/Halildeu/ao-kernel/pull/473).
 
 **Exit decision:** `blocked_attestation_missing`.
 
@@ -186,7 +192,37 @@ any workflow binding or support promotion.
 
 **Decision record:** `.claude/plans/GPP-1-PROTECTED-LIVE-ADAPTER-PREREQUISITE-ATTESTATION.md`
 
-## 8. GPP-2 - Protected Live-Adapter Gate Runtime Binding
+## 8. GPP-1b - Agent Operating Program Contract
+
+**Goal:** Make Codex and Claude Code follow the repo-owned GPP program state
+before choosing or implementing the next work package.
+
+**Status:** active.
+
+**Exit decision target:** `agent_operating_contract_ready_no_support_widening`.
+
+**Scope:**
+
+1. Add `AGENTS.md` startup and execution contract.
+2. Add `.claude/plans/gpp_status.v1.json` as the machine-readable GPP status.
+3. Add `scripts/gpp_next.py` to print the active WP and blocked gates.
+4. Add tests that pin the active WP, blocked WP, and no-widening guards.
+5. Keep `GPP-2` blocked.
+
+**Acceptance criteria:**
+
+1. `python3 scripts/gpp_next.py` reports `GPP-1b` as active.
+2. `python3 scripts/gpp_next.py --output json` returns valid JSON.
+3. `support_widening_allowed`, `production_platform_claim_allowed`, and
+   `live_adapter_execution_allowed` are all `false`.
+4. `GPP-2` remains listed as blocked.
+5. `AGENTS.md` tells Codex and Claude Code to read repo state before acting.
+6. No live adapter execution, credential binding, support widening, release, or
+   production claim is introduced.
+
+**Decision record:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
+
+## 9. GPP-2 - Protected Live-Adapter Gate Runtime Binding
 
 **Goal:** Convert the current design-only `live-adapter-gate.yml` into a
 protected manual gate that can actually run a real adapter under project-owned
@@ -221,7 +257,7 @@ start yet.
 3. negative/fail-closed runs are recorded
 4. local tests for artifact schema and status mapping
 
-## 9. GPP-3 - Real-Adapter Usage and Cost Evidence
+## 10. GPP-3 - Real-Adapter Usage and Cost Evidence
 
 **Goal:** Close or explicitly decide the `BC-10` blocker from `GP-5.9`.
 
@@ -247,7 +283,7 @@ start yet.
 3. live or simulated unavailable-usage path
 4. support-boundary wording check
 
-## 10. GPP-4 - Production-Certified Read-Only Adapter Decision
+## 11. GPP-4 - Production-Certified Read-Only Adapter Decision
 
 **Goal:** Decide whether `claude-code-cli` can move from
 `Beta (operator-managed)` to production-certified read-only.
@@ -274,7 +310,7 @@ start yet.
 3. support-boundary grep for tier consistency
 4. no production write support is implied
 
-## 11. GPP-5 - Repo-Intelligence Workflow Integration
+## 12. GPP-5 - Repo-Intelligence Workflow Integration
 
 **Goal:** Move repo intelligence from explicit operator handoff toward
 governed workflow integration without hidden prompt injection.
@@ -304,7 +340,7 @@ governed workflow integration without hidden prompt injection.
 4. disabled-config test
 5. negative grep for hidden MCP/root export/context compiler wiring
 
-## 12. GPP-6 - Read-Only Production E2E
+## 13. GPP-6 - Read-Only Production E2E
 
 **Goal:** Prove the first complete read-only coding automation chain with real
 adapter and repo intelligence.
@@ -342,7 +378,7 @@ repo scan/index/query
 3. event-order assertions
 4. runbook reproduction check
 
-## 13. GPP-7 - Controlled Write-Side Production Candidate
+## 14. GPP-7 - Controlled Write-Side Production Candidate
 
 **Goal:** Promote local patch/test from rehearsal-only toward a production
 candidate under disposable/dedicated worktree controls.
@@ -371,7 +407,7 @@ candidate under disposable/dedicated worktree controls.
 3. rollback artifact verification
 4. path ownership event checks
 
-## 14. GPP-8 - Remote PR Live-Write Promotion Candidate
+## 15. GPP-8 - Remote PR Live-Write Promotion Candidate
 
 **Goal:** Move `gh-cli-pr` from preflight/disposable rehearsal toward a
 production candidate without granting arbitrary repository write support by
@@ -401,7 +437,7 @@ accident.
 3. no side effects remaining
 4. docs/runbook/known-bugs parity
 
-## 15. GPP-9 - Full Production Matrix and Claim Decision
+## 16. GPP-9 - Full Production Matrix and Claim Decision
 
 **Goal:** Decide the general-purpose production claim with complete evidence.
 
@@ -442,21 +478,21 @@ accident.
 4. wheel-installed packaging smoke
 5. protected live-adapter evidence artifacts
 
-## 16. Current Active Work
+## 17. Current Active Work
 
-The active work is `GPP-1` closeout.
+The active work is `GPP-1b`.
 
-GPP-1 currently exits as:
+GPP-1b target exit is:
 
 ```text
-blocked_attestation_missing
+agent_operating_contract_ready_no_support_widening
 ```
 
 No runtime/support-widening work should start from `GPP-2` until a future
 attestation proves `ao-kernel-live-adapter-gate` and
 `AO_CLAUDE_CODE_CLI_AUTH` are present and fork-safe.
 
-## 17. Risk Register
+## 18. Risk Register
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -467,7 +503,7 @@ attestation proves `ao-kernel-live-adapter-gate` and
 | Remote PR writes leak to arbitrary repos | Production side effect risk | Disposable guard + explicit allow flag + rollback evidence |
 | Full matrix becomes stale | Fake green promotion | Require fresh artifacts from current `origin/main` |
 
-## 18. Tracking Log
+## 19. Tracking Log
 
 | Date | Event | Notes |
 |---|---|---|
@@ -476,3 +512,6 @@ attestation proves `ao-kernel-live-adapter-gate` and
 | 2026-04-25 | GPP-0 merged | PR [#471](https://github.com/Halildeu/ao-kernel/pull/471) merged at `f3823be`; tracker is live on `main`. |
 | 2026-04-25 | GPP-1 issue opened | Issue [#472](https://github.com/Halildeu/ao-kernel/issues/472) created for protected live-adapter prerequisite attestation. |
 | 2026-04-25 | GPP-1 attestation recorded | Live GitHub environment/secret evidence keeps GPP-1 at `blocked_attestation_missing`; GPP-2 remains blocked. |
+| 2026-04-25 | GPP-1 merged | PR [#473](https://github.com/Halildeu/ao-kernel/pull/473) merged at `0ad7209`; protected live-adapter prerequisite remains blocked. |
+| 2026-04-25 | GPP-1b issue opened | Issue [#474](https://github.com/Halildeu/ao-kernel/issues/474) created for agent operating program contract. |
+| 2026-04-25 | GPP-1b contract added | `AGENTS.md`, `.claude/plans/gpp_status.v1.json`, and `scripts/gpp_next.py` make the active program state machine-readable for Codex/Claude operator sessions. |

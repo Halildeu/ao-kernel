@@ -1,0 +1,97 @@
+{
+  "schema_version": "1",
+  "program_id": "general-purpose-production-promotion",
+  "program_title": "General-Purpose Production Promotion",
+  "authority_ref": "origin/main",
+  "authority_head_at_last_update": "0ad7209",
+  "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+  "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
+  "current_wp": {
+    "id": "GPP-1b",
+    "title": "Agent Operating Program Contract",
+    "status": "active",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/474",
+    "branch": "codex/gpp1b-agent-operating-program-contract",
+    "worktree": "/Users/halilkocoglu/Documents/ao-kernel-gpp1b-agent-operating-program-contract",
+    "exit_decision": "agent_operating_contract_ready_no_support_widening",
+    "allowed_scope": [
+      "agent instructions",
+      "program status",
+      "small helper script",
+      "tests",
+      "docs"
+    ]
+  },
+  "completed_wps": [
+    {
+      "id": "GPP-0",
+      "decision": "tracker_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/470",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/471"
+    },
+    {
+      "id": "GPP-1",
+      "decision": "blocked_attestation_missing",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/472",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/473"
+    }
+  ],
+  "blocked_wps": [
+    {
+      "id": "GPP-2",
+      "title": "Protected Live-Adapter Gate Runtime Binding",
+      "reason": "ao-kernel-live-adapter-gate environment and AO_CLAUDE_CODE_CLI_AUTH handle are not attested",
+      "blocked_until": "GPP-1 can exit prerequisites_ready in a future attestation slice"
+    }
+  ],
+  "support_widening_allowed": false,
+  "production_platform_claim_allowed": false,
+  "live_adapter_execution_allowed": false,
+  "required_startup_checks": [
+    {
+      "id": "git_status",
+      "command": "git status --short --branch"
+    },
+    {
+      "id": "origin_divergence",
+      "command": "git rev-list --left-right --count HEAD...origin/main"
+    },
+    {
+      "id": "branch_preflight",
+      "command": "bash .claude/scripts/ops.sh preflight"
+    },
+    {
+      "id": "program_status",
+      "command": "python3 scripts/gpp_next.py"
+    }
+  ],
+  "required_workflow": [
+    "read GPP status",
+    "open one issue",
+    "create one dedicated worktree",
+    "create one short-lived branch",
+    "change only the active work-package scope",
+    "run validation",
+    "commit and push",
+    "open one PR",
+    "wait for CI",
+    "merge only after checks are green",
+    "fast-forward main from origin/main",
+    "remove merged worktree and branch"
+  ],
+  "forbidden_actions": [
+    "work from stale local main",
+    "pull or rebase with uncommitted changes",
+    "edit feature/runtime scope in primary checkout",
+    "treat local operator auth as production evidence",
+    "start GPP-2 runtime binding while GPP-2 is blocked",
+    "set support_widening=true without explicit GPP-9 promotion decision",
+    "set production_platform_claim=true without explicit GPP-9 promotion decision"
+  ],
+  "next_allowed_actions": [
+    "complete GPP-1b docs/status/script/test PR",
+    "keep GPP-2 blocked",
+    "open a future admin/provisioning attestation slice only after protected prerequisites exist"
+  ],
+  "last_updated": "2026-04-25"
+}
