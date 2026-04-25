@@ -3,7 +3,6 @@
   "program_id": "general-purpose-production-promotion",
   "program_title": "General-Purpose Production Promotion",
   "authority_ref": "origin/main",
-  "authority_head_at_last_update": "c579089",
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {

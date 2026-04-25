@@ -99,7 +99,6 @@ def render_text(payload: dict[str, Any], *, git_summary: dict[str, str] | None =
     lines = [
         f"Program: {payload.get('program_title', payload['program_id'])}",
         f"Authority ref: {payload['authority_ref']}",
-        f"Authority head at last update: {payload.get('authority_head_at_last_update', 'unknown')}",
         f"{current_label}: {current_wp['id']} - {current_wp['title']}",
         f"{status_label}: {current_wp.get('status', 'unknown')}",
         f"Exit decision: {current_wp.get('exit_decision', 'unset')}",
@@ -133,6 +132,9 @@ def render_text(payload: dict[str, Any], *, git_summary: dict[str, str] | None =
         lines.append(git_summary.get("status", "status unavailable"))
         lines.append(f"divergence: {git_summary.get('divergence', 'unavailable')}")
         lines.append(f"origin/main head: {git_summary.get('origin_head', 'unavailable')}")
+
+    if payload.get("authority_head_at_last_update"):
+        lines.extend(["", f"Authority head at last status edit: {payload['authority_head_at_last_update']}"])
 
     return "\n".join(lines) + "\n"
 
