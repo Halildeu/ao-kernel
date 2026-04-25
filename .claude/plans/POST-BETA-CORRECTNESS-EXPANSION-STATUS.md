@@ -137,7 +137,7 @@ ayrı ayrı görünür kılmak.
 - **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`closed by PR #475`)
 - **GPP-1c status closeout issue:** [#476](https://github.com/Halildeu/ao-kernel/issues/476) (`closed by PR #477`)
 - **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`closed by PR #479`)
-- **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`open`)
+- **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as

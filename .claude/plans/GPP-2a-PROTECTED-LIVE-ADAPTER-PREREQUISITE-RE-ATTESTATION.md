@@ -1,9 +1,10 @@
 # GPP-2a - Protected Live-Adapter Prerequisite Re-Attestation
 
-**Status:** completed by this PR
+**Status:** completed by PR [#481](https://github.com/Halildeu/ao-kernel/pull/481)
 **Date:** 2026-04-25
 **Parent tracker:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
 **Slice issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480)
+**Slice PR:** [#481](https://github.com/Halildeu/ao-kernel/pull/481)
 **Branch:** `codex/gpp2a-prereq-reattest`
 **Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-gpp2a-prereq-reattest`
 **Target decision:** `still_blocked_protected_prerequisites_missing`

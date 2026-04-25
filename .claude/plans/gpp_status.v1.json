@@ -37,6 +37,7 @@
       "id": "GPP-2a",
       "decision": "still_blocked_protected_prerequisites_missing",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/480",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/481",
       "record": ".claude/plans/GPP-2a-PROTECTED-LIVE-ADAPTER-PREREQUISITE-RE-ATTESTATION.md"
     }
   ],

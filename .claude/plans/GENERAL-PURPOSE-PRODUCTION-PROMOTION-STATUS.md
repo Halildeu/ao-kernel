@@ -518,4 +518,4 @@ fork-safe.
 | 2026-04-25 | GPP-1d issue opened | Issue [#478](https://github.com/Halildeu/ao-kernel/issues/478) tracks removal of moving authority SHAs from live status so merge commits do not create stale SSOT drift. |
 | 2026-04-25 | GPP-1d merged | PR [#479](https://github.com/Halildeu/ao-kernel/pull/479) merged; live authority head is now read from git signals instead of static status text. |
 | 2026-04-25 | GPP-2a issue opened | Issue [#480](https://github.com/Halildeu/ao-kernel/issues/480) created to re-attest protected live-adapter prerequisites before any GPP-2 runtime binding. |
-| 2026-04-25 | GPP-2a re-attestation recorded | Live evidence still shows only `pypi` environment and `ao-kernel-live-adapter-gate` secret lookup returns `HTTP 404`; GPP-2 remains blocked. |
+| 2026-04-25 | GPP-2a re-attestation recorded | PR [#481](https://github.com/Halildeu/ao-kernel/pull/481) records live evidence: only `pypi` environment exists and `ao-kernel-live-adapter-gate` secret lookup returns `HTTP 404`; GPP-2 remains blocked. |
