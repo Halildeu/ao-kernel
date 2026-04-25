@@ -2,7 +2,8 @@
 
 **Status:** GPP-2 blocked after GPP-1b contract merge
 **Date:** 2026-04-25
-**Authority:** `origin/main` at `c579089`
+**Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
+the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
 **Current slice issue:** none active; GPP-2 is blocked
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
@@ -510,3 +511,4 @@ fork-safe.
 | 2026-04-25 | GPP-1b contract added | `AGENTS.md`, `.claude/plans/gpp_status.v1.json`, and `scripts/gpp_next.py` make the current program state machine-readable for Codex/Claude operator sessions. |
 | 2026-04-25 | GPP-1b merged | PR [#475](https://github.com/Halildeu/ao-kernel/pull/475) merged at `c579089`; status now holds at `GPP-2` blocked. |
 | 2026-04-25 | GPP-1c issue opened | Issue [#476](https://github.com/Halildeu/ao-kernel/issues/476) tracks this status closeout so operator sessions do not see stale `GPP-1b active` state. |
+| 2026-04-25 | GPP-1d issue opened | Issue [#478](https://github.com/Halildeu/ao-kernel/issues/478) tracks removal of moving authority SHAs from live status so merge commits do not create stale SSOT drift. |

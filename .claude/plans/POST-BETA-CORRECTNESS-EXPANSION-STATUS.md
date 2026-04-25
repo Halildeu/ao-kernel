@@ -135,7 +135,8 @@ ayrı ayrı görünür kılmak.
 - **GPP-1b agent operating program contract:** `.claude/plans/GPP-1b-AGENT-OPERATING-PROGRAM-CONTRACT.md`
 - **GPP machine-readable status:** `.claude/plans/gpp_status.v1.json`
 - **GPP-1b issue:** [#474](https://github.com/Halildeu/ao-kernel/issues/474) (`closed by PR #475`)
-- **GPP-1c status closeout issue:** [#476](https://github.com/Halildeu/ao-kernel/issues/476) (`open`)
+- **GPP-1c status closeout issue:** [#476](https://github.com/Halildeu/ao-kernel/issues/476) (`closed by PR #477`)
+- **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`open`)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
