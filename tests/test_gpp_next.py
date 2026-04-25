@@ -57,6 +57,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2g"
+        and item["decision"] == "github_native_release_authority_selected_claude_mcp_advisory_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/493"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -70,10 +77,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["pending_external_actions"][1]["id"] == "GPP-2c"
     assert payload["pending_external_actions"][1]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/485"
     assert payload["pending_external_actions"][1]["title"] == "Independent release gate and credential resolution"
-    assert payload["pending_external_actions"][1]["status"] == "blocked_external_independent_gate_decision_required"
+    assert (
+        payload["pending_external_actions"][1]["status"]
+        == "blocked_external_github_native_release_authority_provisioning_required"
+    )
     assert (
         payload["pending_external_actions"][1]["decision"]
-        == "missing_environment_secret_and_independent_release_gate"
+        == "github_native_release_authority_selected_secret_and_reviewer_still_missing"
     )
     assert {item["id"] for item in payload["pending_external_actions"]} == {"GPP-2b", "GPP-2c"}
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
@@ -88,7 +98,16 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "choose one independent release gate model before any GPP-2 runtime binding"
+        action == "provision the selected GitHub-native release authority before any GPP-2 runtime binding"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
+    assert any(
+        action == "use ao_memory_write or ao_llm_call during Claude MCP consultation"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action == "use Claude MCP consultation only as advisory review, not release authority"
         for action in payload["next_allowed_actions"]
     )
 
@@ -115,6 +134,22 @@ def test_gpp2f_independent_release_gate_replaces_end_user_reviewer_model() -> No
     assert "GitHub App deployment protection rule" in decision
     assert "OIDC-backed external secret broker" in decision
     assert "Product end-user accounts must not be treated as release authority" in decision
+
+
+def test_gpp2g_claude_mcp_consultation_is_advisory_only() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2g-GITHUB-NATIVE-RELEASE-AUTHORITY-AND-CLAUDE-MCP-CONSULTATION.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `github_native_release_authority_selected_claude_mcp_advisory`" in decision
+    assert "GitHub-native release authority" in decision
+    assert "It is not an application end-user account." in decision
+    assert "The consultation path is advisory only." in decision
+    assert "mcp__ao-kernel__ao_workspace_status" in decision
+    assert "mcp__ao-kernel__ao_quality_gate" in decision
+    assert "mcp__ao-kernel__ao_memory_write" in decision
+    assert "mcp__ao-kernel__ao_llm_call" in decision
+    assert "does not unblock `GPP-2`" in decision
 
 
 def test_gpp_next_load_status_validates_required_guards() -> None:

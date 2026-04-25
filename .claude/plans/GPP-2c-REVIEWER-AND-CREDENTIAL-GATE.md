@@ -54,13 +54,14 @@ The gate is still incomplete:
 
 1. `AO_CLAUDE_CODE_CLI_AUTH` is not present as an environment secret handle.
 2. No approved independent release gate is configured.
-3. The GitHub-native reviewer/team model is only one possible implementation;
-   a GitHub App deployment protection rule or OIDC-backed secret broker may
-   satisfy the same trust-boundary requirement in a future slice.
+3. GPP-2g selects the GitHub-native reviewer/team model as the first
+   provisioning path.
+4. A GitHub App deployment protection rule or OIDC-backed secret broker remains
+   an acceptable fallback if the selected path cannot be provisioned.
 
 ## 4. Acceptable Resolution Paths
 
-### Preferred Path
+### Selected First Path
 
 1. Add or designate a release authority reviewer or team.
 2. Configure `ao-kernel-live-adapter-gate` required reviewers with
