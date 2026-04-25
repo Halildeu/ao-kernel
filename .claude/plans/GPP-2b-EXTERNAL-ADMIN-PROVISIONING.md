@@ -1,6 +1,6 @@
 # GPP-2b - External Admin Provisioning Tracker
 
-**Status:** open external/admin action
+**Status:** partially provisioned; still blocked
 **Date:** 2026-04-25
 **Issue:** [#482](https://github.com/Halildeu/ao-kernel/issues/482)
 **Program head:** `GPP-2` remains blocked
@@ -45,18 +45,34 @@ gh api 'repos/Halildeu/ao-kernel/collaborators?per_page=100' \
 # {"login":"Halildeu","role_name":"admin"}
 ```
 
+Additional partial provisioning completed on 2026-04-25:
+
+```bash
+gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate \
+  --jq '{name:.name, can_admins_bypass:.can_admins_bypass, protection_rules:.protection_rules, deployment_branch_policy:.deployment_branch_policy}'
+# {"can_admins_bypass":false,"deployment_branch_policy":{"custom_branch_policies":true,"protected_branches":false},"name":"ao-kernel-live-adapter-gate","protection_rules":[{"id":53201958,"node_id":"GA_kwDOSA13rs4DK8wm","type":"branch_policy"}]}
+
+gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate/deployment-branch-policies \
+  --jq '.branch_policies[] | {name:.name, type:.type}'
+# {"name":"main","type":"branch"}
+
+gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel
+# empty
+```
+
 ## 3. Current Decision
 
 `GPP-2` stays blocked.
 
 The project-owned protected live-adapter gate is not ready because:
 
-1. `ao-kernel-live-adapter-gate` is not present in the GitHub environment
-   inventory.
-2. `AO_CLAUDE_CODE_CLI_AUTH` is not visible as a repository secret handle.
-3. Environment-scoped secret attestation cannot pass until the environment
-   exists.
-4. Only one repository collaborator is visible, so the protected reviewer model
+1. `ao-kernel-live-adapter-gate` is now present, but only the branch-policy
+   protection rule is configured.
+2. Deployment branch policy is custom and currently includes `main`.
+3. Admin bypass is disabled.
+4. `AO_CLAUDE_CODE_CLI_AUTH` is not visible as an environment secret handle.
+5. Required reviewer protection is not configured.
+6. Only one repository collaborator is visible, so the protected reviewer model
    needs a non-triggering reviewer/admin or an explicitly approved equivalent
    release gate before self-review prevention can be meaningful.
 
@@ -64,18 +80,18 @@ The project-owned protected live-adapter gate is not ready because:
 
 Complete issue [#482](https://github.com/Halildeu/ao-kernel/issues/482):
 
-1. Create or designate GitHub environment `ao-kernel-live-adapter-gate`.
-2. Configure environment protection to match the existing contract:
-   - allowed deployment ref: `main`;
+1. Keep GitHub environment `ao-kernel-live-adapter-gate` present.
+2. Keep deployment branch policy restricted to `main`.
+3. Configure the remaining environment protection required by the contract:
    - required reviewers enabled;
    - prevent self-review enabled;
    - fork-triggered events cannot access protected credentials.
-3. Add at least one non-triggering maintainer reviewer, or record an explicitly
+4. Add at least one non-triggering maintainer reviewer, or record an explicitly
    approved release-gate equivalent if the repository remains single-admin.
-4. Store project-owned Claude Code CLI credential material, or an explicitly
+5. Store project-owned Claude Code CLI credential material, or an explicitly
    approved non-API-key equivalent, as environment secret handle
    `AO_CLAUDE_CODE_CLI_AUTH`.
-5. Do not commit, print, or read back the secret value.
+6. Do not commit, print, or read back the secret value.
 
 ## 5. Follow-Up Gate
 
@@ -83,12 +99,14 @@ After #482 is complete, open a fresh prerequisite attestation slice. That slice
 must collect live evidence that:
 
 1. `gh api repos/Halildeu/ao-kernel/environments --jq '.environments[].name'`
-   includes `ao-kernel-live-adapter-gate`;
-2. `gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel`
+   still includes `ao-kernel-live-adapter-gate`;
+2. `gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate/deployment-branch-policies`
+   still includes only the intended `main` policy;
+3. `gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel`
    lists `AO_CLAUDE_CODE_CLI_AUTH`;
-3. environment protection evidence is compatible with the protected gate
+4. environment protection evidence is compatible with the protected gate
    contract;
-4. fork-triggered contexts cannot read protected credentials.
+5. fork-triggered contexts cannot read protected credentials.
 
 Only if the follow-up attestation exits `prerequisites_ready` can `GPP-2`
 runtime binding begin.
@@ -101,4 +119,3 @@ runtime binding begin.
 4. No production-platform claim.
 5. No secret value readback.
 6. No local operator auth treated as project-owned production evidence.
-

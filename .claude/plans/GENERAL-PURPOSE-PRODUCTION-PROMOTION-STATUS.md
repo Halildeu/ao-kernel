@@ -42,8 +42,9 @@ Last live verification on current `origin/main` showed:
    `support_widening=false`, and `production_platform_claim=false`.
 7. `live_adapter_gate_contract.py` returned `overall_status=blocked` because
    the protected live-adapter gate is still design-only.
-8. GitHub environment inventory still showed only `pypi`; the required
-   `ao-kernel-live-adapter-gate` environment is not present.
+8. GitHub environment inventory now includes `ao-kernel-live-adapter-gate`.
+   The environment has custom branch policy enabled for `main` and
+   `can_admins_bypass=false`.
 9. `AO_CLAUDE_CODE_CLI_AUTH` was not attested as a repository or environment
    secret handle.
 10. Local `claude-code-cli` operator smoke passed, but that is operator-managed
@@ -52,12 +53,13 @@ Last live verification on current `origin/main` showed:
     guarded and not production-supported.
 12. Controlled local patch/test rehearsal passed in a disposable worktree with
     rollback, but `support_widening=false`.
-13. GPP-1 live attestation on 2026-04-25 still shows only GitHub environment
-    `pypi`; `ao-kernel-live-adapter-gate` is absent.
+13. GPP-1 live attestation on 2026-04-25 showed only GitHub environment
+    `pypi`; at that point `ao-kernel-live-adapter-gate` was absent.
 14. `gh secret list --repo Halildeu/ao-kernel` returned no visible repository
     secret handles.
 15. `gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel`
-    returned `HTTP 404`, because the required environment is absent.
+    returns an empty list; the environment exists, but the required credential
+    handle is not present.
 16. `.github/workflows/live-adapter-gate.yml` still has only
     `workflow_dispatch` among live-gate trigger/secret/environment grep terms;
     no `environment:`, `secrets.`, `pull_request`, or `pull_request_target`
@@ -65,14 +67,19 @@ Last live verification on current `origin/main` showed:
 17. GPP-1b added a machine-readable operator contract so Codex and Claude Code
     read the same current work package and blocked gates from repo state instead
     of chat memory.
-18. GPP-2a re-attestation on 2026-04-25 reconfirmed the same blocker:
-    `ao-kernel-live-adapter-gate` is absent, environment secret lookup returns
-    `HTTP 404`, and `AO_CLAUDE_CODE_CLI_AUTH` is not project-owned/attested.
+18. GPP-2a re-attestation on 2026-04-25 reconfirmed the same then-current
+    blocker: `ao-kernel-live-adapter-gate` was absent, environment secret
+    lookup returned `HTTP 404`, and `AO_CLAUDE_CODE_CLI_AUTH` was not
+    project-owned/attested.
 19. GPP-2b opened issue
     [#482](https://github.com/Halildeu/ao-kernel/issues/482) to track the
     external/admin provisioning work. Live collaborator inventory currently
     shows only `Halildeu`, so the protected reviewer model still needs a
     non-triggering reviewer/admin or an explicitly approved equivalent gate.
+20. GPP-2b partially provisioned the GitHub environment: the environment exists,
+    deployment branch policy includes `main`, and admin bypass is disabled.
+    Required reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` are still
+    missing, so `GPP-2` remains blocked.
 
 ## 3. Current Verdict
 
@@ -113,7 +120,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-1` | Completed | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
 | `GPP-1b` | Completed | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
 | `GPP-2a` | Completed | Protected live-adapter prerequisite re-attestation | `still_blocked_protected_prerequisites_missing` |
-| `GPP-2b` | External/admin open | Protected live-adapter environment and credential provisioning | tracked in [#482](https://github.com/Halildeu/ao-kernel/issues/482); no runtime change |
+| `GPP-2b` | Partially provisioned / blocked | Protected live-adapter environment and credential provisioning | environment exists; `main` branch policy and admin-bypass-off are set; reviewer protection and credential handle still missing |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -183,17 +190,20 @@ any workflow binding or support promotion.
 
 **Acceptance criteria:**
 
-1. GitHub environment inventory contains `ao-kernel-live-adapter-gate`: not
-   met; only `pypi` is currently visible.
-2. Required secret handle is attested at repository or environment scope: not
-   met; repository secret list is empty and environment-scoped secret lookup
-   returns `HTTP 404`.
-3. Fork-triggered PR contexts cannot access protected credentials: met for the
+1. GitHub environment inventory contains `ao-kernel-live-adapter-gate`: met.
+2. Deployment branch policy is restricted through custom branch policies and
+   includes `main`: met.
+3. Admin bypass is disabled on `ao-kernel-live-adapter-gate`: met.
+4. Required secret handle is attested at repository or environment scope: not
+   met; environment-scoped secret lookup returns an empty list.
+5. Required reviewer protection is configured or an explicitly approved
+   equivalent release gate is documented: not met.
+6. Fork-triggered PR contexts cannot access protected credentials: met for the
    current design-only workflow, because the workflow is `workflow_dispatch`
    only and has no `environment:` or `secrets.` reference.
-4. Missing environment or secret produces `blocked_attestation_missing`: met by
+7. Missing secret or reviewer protection produces `blocked_attestation_missing`: met by
    this slice.
-5. Status docs and support boundary still say no support widening: met.
+8. Status docs and support boundary still say no support widening: met.
 
 **Validation:**
 
@@ -495,8 +505,9 @@ accident.
 No runtime/support-widening work is active. `GPP-2` is the current blocked
 program head. GPP-2b is tracked in
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) as an external/admin
-provisioning action and must complete before another prerequisite attestation
-can attempt to unblock `GPP-2`.
+provisioning action. The environment and `main` branch policy are present, but
+reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` must still be completed
+before another prerequisite attestation can attempt to unblock `GPP-2`.
 
 ## 18. Risk Register
 
@@ -526,5 +537,6 @@ can attempt to unblock `GPP-2`.
 | 2026-04-25 | GPP-1d issue opened | Issue [#478](https://github.com/Halildeu/ao-kernel/issues/478) tracks removal of moving authority SHAs from live status so merge commits do not create stale SSOT drift. |
 | 2026-04-25 | GPP-1d merged | PR [#479](https://github.com/Halildeu/ao-kernel/pull/479) merged; live authority head is now read from git signals instead of static status text. |
 | 2026-04-25 | GPP-2a issue opened | Issue [#480](https://github.com/Halildeu/ao-kernel/issues/480) created to re-attest protected live-adapter prerequisites before any GPP-2 runtime binding. |
-| 2026-04-25 | GPP-2a re-attestation recorded | PR [#481](https://github.com/Halildeu/ao-kernel/pull/481) records live evidence: only `pypi` environment exists and `ao-kernel-live-adapter-gate` secret lookup returns `HTTP 404`; GPP-2 remains blocked. |
+| 2026-04-25 | GPP-2a re-attestation recorded | PR [#481](https://github.com/Halildeu/ao-kernel/pull/481) recorded then-current evidence: only `pypi` environment existed and `ao-kernel-live-adapter-gate` secret lookup returned `HTTP 404`; GPP-2 remained blocked. |
 | 2026-04-25 | GPP-2b external/admin issue opened | Issue [#482](https://github.com/Halildeu/ao-kernel/issues/482) tracks protected environment, reviewer, and credential provisioning required before `GPP-2` can start. |
+| 2026-04-25 | GPP-2b partial provisioning recorded | `ao-kernel-live-adapter-gate` now exists, custom deployment branch policy includes `main`, and admin bypass is disabled. Reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` remain missing, so #482 stays open and `GPP-2` stays blocked. |

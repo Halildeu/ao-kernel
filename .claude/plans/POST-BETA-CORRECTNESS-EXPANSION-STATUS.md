@@ -147,7 +147,10 @@ ayrı ayrı görünür kılmak.
   before acting. Current program status holds at `GPP-2` blocked. GPP-2a
   re-attestation reconfirmed the missing protected environment and credential
   handle. GPP-2b now tracks the external/admin provisioning work for the
-  protected environment, reviewer model, and credential handle. No support
+  protected environment, reviewer model, and credential handle. The protected
+  environment has since been partially provisioned with `main` branch policy
+  and admin bypass disabled, but reviewer protection and
+  `AO_CLAUDE_CODE_CLI_AUTH` remain missing. No support
   widening, release, runtime adapter promotion, or production claim is made by
   GPP-1b/GPP-1c/GPP-2a/GPP-2b. Future stable widening still requires protected
   live-adapter evidence, repo-intelligence integration gates, write-side
@@ -249,13 +252,15 @@ altında yazılı, sıralı ve kanıt-gated hale getirir. `GPP-0` merge olduktan
 sonraki tek aktif hat `GPP-1` protected live-adapter prerequisite olacaktır.
 
 `GPP-1` closeout adayı canlı attestation sonucu `blocked_attestation_missing`
-kararındadır: `ao-kernel-live-adapter-gate` environment yoktur,
-`AO_CLAUDE_CODE_CLI_AUTH` secret handle attested değildir ve GPP-2 runtime
-binding hattı bu prerequisite kapanmadan başlamaz.
+kararındaydı: o anda `ao-kernel-live-adapter-gate` environment yoktu,
+`AO_CLAUDE_CODE_CLI_AUTH` secret handle attested değildi ve GPP-2 runtime
+binding hattı bu prerequisite kapanmadan başlayamazdı.
 
-`GPP-2a` re-attestation bu sonucu tekrar doğrular: live environment inventory
-yalnız `pypi` döndürür, `ao-kernel-live-adapter-gate` environment secret lookup
-`HTTP 404` döndürür ve runtime binding hâlâ başlamaz.
+`GPP-2a` re-attestation bu sonucu tekrar doğruladı. Sonraki GPP-2b admin
+adımında `ao-kernel-live-adapter-gate` environment oluşturuldu, `main` branch
+policy eklendi ve admin bypass kapatıldı. Buna rağmen
+`AO_CLAUDE_CODE_CLI_AUTH` environment secret handle yoktur, required reviewer
+protection yoktur ve runtime binding hâlâ başlamaz.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve
@@ -334,7 +339,7 @@ retrieval evidence ve manual/stdout handoff protected real-adapter credential'a
 bağlı değildir. Buna rağmen support widening ancak GP-5 closeout kapıları
 tamamlanınca yapılır.
 
-`GP-5.1a` canlı audit sonucu:
+`GP-5.1a` canlı audit sonucu GPP-2b öncesinde:
 
 1. GitHub environments inventory yalnız `pypi` döndürdü.
 2. Required environment `ao-kernel-live-adapter-gate` yoktur.
@@ -344,6 +349,15 @@ tamamlanınca yapılır.
 5. `.github/workflows/live-adapter-gate.yml` hâlâ `workflow_dispatch` only,
    `environment:` binding yok, `secrets.` referansı yok ve live adapter
    çalıştırmıyor.
+
+GPP-2b sonrası canlı delta:
+
+1. `ao-kernel-live-adapter-gate` environment artık vardır.
+2. Custom deployment branch policy açıktır ve `main` policy kaydı vardır.
+3. `can_admins_bypass=false`.
+4. `AO_CLAUDE_CODE_CLI_AUTH` environment secret handle hâlâ yoktur.
+5. Required reviewer protection hâlâ yoktur.
+6. `GPP-2` hâlâ blocked durumdadır; support widening ve production claim yoktur.
 6. `scripts/live_adapter_gate_contract.py` blocked evidence üretmeye devam
    ediyor: `overall_status=blocked`, `decision=blocked_no_rehearsal`,
    `support_widening=false`.
