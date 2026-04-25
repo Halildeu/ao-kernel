@@ -55,8 +55,8 @@
       "title": "External admin provisioning for protected live-adapter gate",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
       "record": ".claude/plans/GPP-2b-EXTERNAL-ADMIN-PROVISIONING.md",
-      "status": "open",
-      "decision": "external_admin_prerequisites_required",
+      "status": "partially_provisioned_blocked",
+      "decision": "environment_created_secret_and_reviewer_still_missing",
       "required_before": "GPP-2 runtime binding"
     }
   ],
@@ -107,7 +107,8 @@
   "next_allowed_actions": [
     "keep GPP-2 blocked",
     "track external admin provisioning in issue #482",
-    "provision ao-kernel-live-adapter-gate and AO_CLAUDE_CODE_CLI_AUTH outside the repo without reading secret values",
+    "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
+    "configure required reviewer protection or record an explicitly approved equivalent release gate",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],

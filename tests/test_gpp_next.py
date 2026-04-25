@@ -42,6 +42,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"][0]["id"] == "GPP-2b"
     assert payload["pending_external_actions"][0]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
+    assert payload["pending_external_actions"][0]["status"] == "partially_provisioned_blocked"
+    assert (
+        payload["pending_external_actions"][0]["decision"]
+        == "environment_created_secret_and_reviewer_still_missing"
+    )
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
 
