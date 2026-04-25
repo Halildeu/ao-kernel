@@ -70,15 +70,18 @@ Until a future explicit approval and attestation exist:
 
 ## Future Implementation Slices
 
-The next implementation slice must choose one model:
+The next implementation slice selected the first model:
 
-1. `GPP-2g-github-release-authority`
-2. `GPP-2g-deployment-protection-app`
-3. `GPP-2g-oidc-secret-broker`
+1. `GPP-2g-github-release-authority`: selected as the first provisioning path
+   by `.claude/plans/GPP-2g-GITHUB-NATIVE-RELEASE-AUTHORITY-AND-CLAUDE-MCP-CONSULTATION.md`.
+2. `GPP-2g-deployment-protection-app`: remains an acceptable fallback if the
+   GitHub-native reviewer/team path cannot be provisioned.
+3. `GPP-2g-oidc-secret-broker`: remains an acceptable fallback if the project
+   chooses brokered credential release instead of environment secrets.
 
-Only after a model is implemented and `AO_CLAUDE_CODE_CLI_AUTH` or the selected
-broker handle is attested may a follow-up prerequisite attestation attempt to
-unblock `GPP-2`.
+Only after the selected model is provisioned and `AO_CLAUDE_CODE_CLI_AUTH` or
+the selected broker handle is attested may a follow-up prerequisite attestation
+attempt to unblock `GPP-2`.
 
 ## Exit State
 
