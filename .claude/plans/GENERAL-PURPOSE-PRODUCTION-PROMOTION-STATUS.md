@@ -1,6 +1,6 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 blocked after GPP-1b contract merge
+**Status:** GPP-2 blocked after GPP-2a prerequisite re-attestation
 **Date:** 2026-04-25
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
@@ -41,7 +41,7 @@ Last live verification on current `origin/main` showed:
    `support_widening=false`, and `production_platform_claim=false`.
 7. `live_adapter_gate_contract.py` returned `overall_status=blocked` because
    the protected live-adapter gate is still design-only.
-8. GitHub environment inventory showed only `pypi`; the required
+8. GitHub environment inventory still showed only `pypi`; the required
    `ao-kernel-live-adapter-gate` environment is not present.
 9. `AO_CLAUDE_CODE_CLI_AUTH` was not attested as a repository or environment
    secret handle.
@@ -64,6 +64,9 @@ Last live verification on current `origin/main` showed:
 17. GPP-1b added a machine-readable operator contract so Codex and Claude Code
     read the same current work package and blocked gates from repo state instead
     of chat memory.
+18. GPP-2a re-attestation on 2026-04-25 reconfirmed the same blocker:
+    `ao-kernel-live-adapter-gate` is absent, environment secret lookup returns
+    `HTTP 404`, and `AO_CLAUDE_CODE_CLI_AUTH` is not project-owned/attested.
 
 ## 3. Current Verdict
 
@@ -103,7 +106,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-0` | Completed | Create written tracker and acceptance model | `tracker_ready_no_support_widening` |
 | `GPP-1` | Completed | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
 | `GPP-1b` | Completed | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
-| `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until `GPP-1` can exit `prerequisites_ready` |
+| `GPP-2a` | Completed | Protected live-adapter prerequisite re-attestation | `still_blocked_protected_prerequisites_missing` |
+| `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -229,15 +233,15 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked by GPP-1.
+**Status:** blocked by GPP-2a re-attestation.
 
 **Entry criteria:**
 
 1. `GPP-1` exit decision is `prerequisites_ready`.
 2. Protected environment and credential handle are attested.
 
-Current GPP-1 exit decision is `blocked_attestation_missing`, so GPP-2 cannot
-start yet.
+Current GPP-2a exit decision is
+`still_blocked_protected_prerequisites_missing`, so GPP-2 cannot start yet.
 
 **Acceptance criteria:**
 
@@ -512,3 +516,6 @@ fork-safe.
 | 2026-04-25 | GPP-1b merged | PR [#475](https://github.com/Halildeu/ao-kernel/pull/475) merged at `c579089`; status now holds at `GPP-2` blocked. |
 | 2026-04-25 | GPP-1c issue opened | Issue [#476](https://github.com/Halildeu/ao-kernel/issues/476) tracks this status closeout so operator sessions do not see stale `GPP-1b active` state. |
 | 2026-04-25 | GPP-1d issue opened | Issue [#478](https://github.com/Halildeu/ao-kernel/issues/478) tracks removal of moving authority SHAs from live status so merge commits do not create stale SSOT drift. |
+| 2026-04-25 | GPP-1d merged | PR [#479](https://github.com/Halildeu/ao-kernel/pull/479) merged; live authority head is now read from git signals instead of static status text. |
+| 2026-04-25 | GPP-2a issue opened | Issue [#480](https://github.com/Halildeu/ao-kernel/issues/480) created to re-attest protected live-adapter prerequisites before any GPP-2 runtime binding. |
+| 2026-04-25 | GPP-2a re-attestation recorded | Live evidence still shows only `pypi` environment and `ao-kernel-live-adapter-gate` secret lookup returns `HTTP 404`; GPP-2 remains blocked. |
