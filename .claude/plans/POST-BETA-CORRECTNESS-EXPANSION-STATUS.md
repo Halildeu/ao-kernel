@@ -140,6 +140,7 @@ ayrı ayrı görünür kılmak.
 - **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **GPP-2b external/admin provisioning issue:** [#482](https://github.com/Halildeu/ao-kernel/issues/482)
 - **GPP-2c reviewer/credential gate issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
+- **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -152,11 +153,13 @@ ayrı ayrı görünür kılmak.
   environment has since been partially provisioned with `main` branch policy
   and admin bypass disabled, but reviewer protection and
   `AO_CLAUDE_CODE_CLI_AUTH` remain missing. GPP-2c now tracks that final
-  reviewer/credential gate decision. No support
+  reviewer/credential gate decision. GPP-2d adds repeatable metadata-only
+  attestation tooling so future prerequisite checks do not rely on manual issue
+  comments. No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c. Future stable widening still requires
-  protected live-adapter evidence, repo-intelligence integration gates,
-  write-side rollback evidence, and an explicit closeout decision.
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d. Future stable widening still
+  requires protected live-adapter evidence, repo-intelligence integration
+  gates, write-side rollback evidence, and an explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 

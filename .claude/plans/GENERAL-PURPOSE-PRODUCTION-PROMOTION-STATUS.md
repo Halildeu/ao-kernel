@@ -122,6 +122,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2a` | Completed | Protected live-adapter prerequisite re-attestation | `still_blocked_protected_prerequisites_missing` |
 | `GPP-2b` | Partially provisioned / blocked | Protected live-adapter environment and credential provisioning | environment exists; `main` branch policy and admin-bypass-off are set; reviewer protection and credential handle still missing |
 | `GPP-2c` | Blocked external/admin decision | Reviewer and credential gate resolution | `AO_CLAUDE_CODE_CLI_AUTH` and non-self reviewer/equivalent gate still missing |
+| `GPP-2d` | Implemented / no support widening | Metadata-only live gate attestation tool | repeatable attestation is available; current live gate still blocked |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -511,7 +512,9 @@ reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` must still be completed
 before another prerequisite attestation can attempt to unblock `GPP-2`.
 GPP-2c is tracked in
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) to resolve the
-remaining reviewer and credential gate decision.
+remaining reviewer and credential gate decision. GPP-2d adds
+`scripts/live_adapter_gate_attest.py` so the next prerequisite attestation uses
+repeatable metadata-only evidence instead of hand-written command snippets.
 
 ## 18. Risk Register
 
@@ -545,3 +548,4 @@ remaining reviewer and credential gate decision.
 | 2026-04-25 | GPP-2b external/admin issue opened | Issue [#482](https://github.com/Halildeu/ao-kernel/issues/482) tracks protected environment, reviewer, and credential provisioning required before `GPP-2` can start. |
 | 2026-04-25 | GPP-2b partial provisioning recorded | `ao-kernel-live-adapter-gate` now exists, custom deployment branch policy includes `main`, and admin bypass is disabled. Reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` remain missing, so #482 stays open and `GPP-2` stays blocked. |
 | 2026-04-25 | GPP-2c issue opened | Issue [#485](https://github.com/Halildeu/ao-kernel/issues/485) tracks the remaining protected reviewer and credential gate: add/designate a non-self reviewer or explicitly approve an equivalent release gate, and set `AO_CLAUDE_CODE_CLI_AUTH` without secret readback. |
+| 2026-04-25 | GPP-2d issue opened | Issue [#487](https://github.com/Halildeu/ao-kernel/issues/487) tracks a metadata-only attestation tool for repeatable protected gate evidence. |

@@ -67,6 +67,15 @@
       "status": "blocked_external_admin_decision_required",
       "decision": "missing_environment_secret_and_non_self_reviewer_gate",
       "required_before": "GPP-2 runtime binding"
+    },
+    {
+      "id": "GPP-2d",
+      "title": "Metadata-only live gate attestation tool",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/487",
+      "record": ".claude/plans/GPP-2d-METADATA-ONLY-LIVE-GATE-ATTESTATION.md",
+      "status": "implemented_no_support_widening",
+      "decision": "repeatable_attestation_available_current_gate_still_blocked",
+      "required_before": "future prerequisite attestation"
     }
   ],
   "support_widening_allowed": false,
@@ -117,6 +126,7 @@
     "keep GPP-2 blocked",
     "track external admin provisioning in issue #482",
     "resolve reviewer and credential gate in issue #485",
+    "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
     "configure required reviewer protection or record an explicitly approved equivalent release gate",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
