@@ -140,7 +140,8 @@ ayrı ayrı görünür kılmak.
 - **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **GPP-2b external/admin provisioning issue:** [#482](https://github.com/Halildeu/ao-kernel/issues/482)
 - **GPP-2c reviewer/credential gate issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
-- **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487)
+- **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487) (`closed by PR #488`)
+- **GPP-2e single-admin equivalent gate decision issue:** [#489](https://github.com/Halildeu/ao-kernel/issues/489)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -155,9 +156,11 @@ ayrı ayrı görünür kılmak.
   `AO_CLAUDE_CODE_CLI_AUTH` remain missing. GPP-2c now tracks that final
   reviewer/credential gate decision. GPP-2d adds repeatable metadata-only
   attestation tooling so future prerequisite checks do not rely on manual issue
-  comments. No support
+  comments. GPP-2e records that the single-admin equivalent release gate is
+  not approved, so `--equivalent-release-gate-approved` cannot be used for
+  production prerequisite attestation without a future explicit approval. No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d. Future stable widening still
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e. Future stable widening still
   requires protected live-adapter evidence, repo-intelligence integration
   gates, write-side rollback evidence, and an explicit closeout decision.
 
@@ -266,6 +269,11 @@ adımında `ao-kernel-live-adapter-gate` environment oluşturuldu, `main` branch
 policy eklendi ve admin bypass kapatıldı. Buna rağmen
 `AO_CLAUDE_CODE_CLI_AUTH` environment secret handle yoktur, required reviewer
 protection yoktur ve runtime binding hâlâ başlamaz.
+
+`GPP-2d` metadata-only attestation tooling'i merge edildi. `GPP-2e` single-admin
+equivalent release gate kararını `not_approved` olarak kaydeder; bu nedenle
+`--equivalent-release-gate-approved` flag'i production prerequisite attestation
+için kullanılamaz.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve

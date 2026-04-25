@@ -39,14 +39,27 @@
       "issue": "https://github.com/Halildeu/ao-kernel/issues/480",
       "pr": "https://github.com/Halildeu/ao-kernel/pull/481",
       "record": ".claude/plans/GPP-2a-PROTECTED-LIVE-ADAPTER-PREREQUISITE-RE-ATTESTATION.md"
+    },
+    {
+      "id": "GPP-2d",
+      "decision": "repeatable_attestation_available_current_gate_still_blocked",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/487",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/488",
+      "record": ".claude/plans/GPP-2d-METADATA-ONLY-LIVE-GATE-ATTESTATION.md"
+    },
+    {
+      "id": "GPP-2e",
+      "decision": "decision_recorded_not_approved_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/489",
+      "record": ".claude/plans/GPP-2e-SINGLE-ADMIN-EQUIVALENT-GATE-DECISION.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
       "title": "Protected Live-Adapter Gate Runtime Binding",
-      "reason": "ao-kernel-live-adapter-gate environment and AO_CLAUDE_CODE_CLI_AUTH handle are not attested",
-      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the protected environment and credential handle exist"
+      "reason": "AO_CLAUDE_CODE_CLI_AUTH handle and reviewer/equivalent gate are not attested",
+      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the credential handle and reviewer/equivalent gate exist"
     }
   ],
   "pending_external_actions": [
@@ -67,15 +80,6 @@
       "status": "blocked_external_admin_decision_required",
       "decision": "missing_environment_secret_and_non_self_reviewer_gate",
       "required_before": "GPP-2 runtime binding"
-    },
-    {
-      "id": "GPP-2d",
-      "title": "Metadata-only live gate attestation tool",
-      "issue": "https://github.com/Halildeu/ao-kernel/issues/487",
-      "record": ".claude/plans/GPP-2d-METADATA-ONLY-LIVE-GATE-ATTESTATION.md",
-      "status": "implemented_no_support_widening",
-      "decision": "repeatable_attestation_available_current_gate_still_blocked",
-      "required_before": "future prerequisite attestation"
     }
   ],
   "support_widening_allowed": false,
@@ -119,6 +123,7 @@
     "edit feature/runtime scope in primary checkout",
     "treat local operator auth as production evidence",
     "start GPP-2 runtime binding while GPP-2 is blocked",
+    "use --equivalent-release-gate-approved while GPP-2e remains not_approved",
     "set support_widening=true without explicit GPP-9 promotion decision",
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
@@ -126,6 +131,7 @@
     "keep GPP-2 blocked",
     "track external admin provisioning in issue #482",
     "resolve reviewer and credential gate in issue #485",
+    "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
     "configure required reviewer protection or record an explicitly approved equivalent release gate",
