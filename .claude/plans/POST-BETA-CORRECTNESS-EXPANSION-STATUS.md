@@ -143,6 +143,8 @@ ayrı ayrı görünür kılmak.
 - **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487) (`closed by PR #488`)
 - **GPP-2e single-admin equivalent gate decision issue:** [#489](https://github.com/Halildeu/ao-kernel/issues/489)
 - **GPP-2f independent release gate architecture issue:** [#491](https://github.com/Halildeu/ao-kernel/issues/491)
+- **GPP-2g Claude MCP consultation protocol issue:** [#493](https://github.com/Halildeu/ao-kernel/issues/493)
+- **GPP-2h deployment protection bot gate issue:** [#495](https://github.com/Halildeu/ao-kernel/issues/495)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -163,11 +165,14 @@ ayrı ayrı görünür kılmak.
   GPP-2f clarifies the required control as an independent release gate, not a
   product end-user account. Acceptable future models are GitHub-native release
   authority, GitHub App deployment protection, or OIDC-backed external secret
-  broker. No support
+  broker. GPP-2g records Claude/MCP consultation as advisory only; GPP-2h
+  selects GitHub App deployment protection as the active bot gate model and
+  rejects PAT-backed bot reviewers. No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e/GPP-2f. Future stable widening still
-  requires protected live-adapter evidence, repo-intelligence integration
-  gates, write-side rollback evidence, and an explicit closeout decision.
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e/GPP-2f/GPP-2g/GPP-2h.
+  Future stable widening still requires protected live-adapter evidence,
+  repo-intelligence integration gates, write-side rollback evidence, and an
+  explicit closeout decision.
 
 ## 2. Başlangıç Gerçeği
 
@@ -283,6 +288,9 @@ için kullanılamaz.
 `GPP-2f`, bu gate'in son kullanıcı hesabı değil bağımsız release authority
 olduğunu kaydeder. Kabul edilebilir modeller GitHub-native release authority,
 GitHub App deployment protection veya OIDC-backed external secret broker'dır.
+`GPP-2g`, Claude/MCP danışmanlığını advisory-only olarak sınırlar. `GPP-2h`,
+aktif provisioning yolunu GitHub App deployment protection bot gate olarak
+seçer; PAT destekli bot kullanıcı reviewer modeli kabul edilmez.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve

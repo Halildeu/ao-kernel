@@ -5,8 +5,8 @@
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#493](https://github.com/Halildeu/ao-kernel/issues/493)
-for GitHub-native release authority and Claude MCP consultation protocol
+**Current slice issue:** [#495](https://github.com/Halildeu/ao-kernel/issues/495)
+for deployment protection bot gate decision
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -92,6 +92,10 @@ Last live verification on current `origin/main` showed:
     model and records Claude Code + ao-kernel MCP as advisory consultation
     only. Claude/MCP consultation does not approve release gates, credentials,
     support widening, or production-platform claims.
+24. GPP-2h supersedes the first provisioning path from required reviewer/team
+    to GitHub App deployment protection. A PAT-backed bot user is rejected;
+    the selected model is a policy bot connected to environment deployment
+    protection. GPP-2 remains blocked.
 
 ## 3. Current Verdict
 
@@ -137,7 +141,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2d` | Implemented / no support widening | Metadata-only live gate attestation tool | repeatable attestation is available; current live gate still blocked |
 | `GPP-2e` | Completed / no support widening | Single-admin equivalent gate decision | `not_approved`; equivalent gate override cannot be used without a future explicit approval |
 | `GPP-2f` | Completed / no support widening | Independent release gate architecture decision | independent release gate required; product end-user account is not release authority |
-| `GPP-2g` | Completed / no support widening | GitHub-native release authority selection and Claude MCP consultation protocol | GitHub-native release authority selected; Claude/MCP is advisory only |
+| `GPP-2g` | Completed / no support widening | GitHub-native release authority selection and Claude MCP consultation protocol | provisioning path superseded by GPP-2h; Claude/MCP advisory protocol remains active |
+| `GPP-2h` | Completed / no support widening | Deployment protection bot gate decision | GitHub App deployment protection selected; PAT-backed bot reviewer rejected |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -538,10 +543,12 @@ product end-user account. Acceptable future models are GitHub-native release
 authority, GitHub App deployment protection, or OIDC-backed external secret
 broker. GPP-2g selects GitHub-native release authority as the first
 provisioning path and records Claude/MCP consultation as an advisory review
-protocol only. The next external/admin action is to configure a required
-reviewer or team on `ao-kernel-live-adapter-gate` and set
-`AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a fresh
-metadata attestation can unblock `GPP-2`.
+protocol only. GPP-2h supersedes the GPP-2g provisioning path and selects a
+GitHub App deployment protection bot gate. The next repo-code action is to add
+metadata-only attestation support for the selected deployment protection model.
+Only after that support exists should an external/admin step configure the app
+gate and set `AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a
+fresh metadata attestation can unblock `GPP-2`.
 
 ## 18. Risk Register
 
@@ -553,7 +560,8 @@ metadata attestation can unblock `GPP-2`.
 | Repo-intelligence hidden injection | Context trust boundary breaks | Explicit opt-in + metadata fail-closed tests |
 | Remote PR writes leak to arbitrary repos | Production side effect risk | Disposable guard + explicit allow flag + rollback evidence |
 | Full matrix becomes stale | Fake green promotion | Require fresh artifacts from current `origin/main` |
-| Advisory consultation mistaken for release authority | Protected gate can be falsely unblocked | Claude/MCP protocol is advisory only; GitHub-native reviewer/team or approved equivalent gate remains required |
+| Advisory consultation mistaken for release authority | Protected gate can be falsely unblocked | Claude/MCP protocol is advisory only; deployment protection app or explicitly approved equivalent gate remains required |
+| Bot account mistaken for deployment protection | Same operator can rubber-stamp the gate | PAT-backed bot reviewer is rejected; use GitHub App deployment protection |
 
 ## 19. Tracking Log
 
@@ -581,3 +589,4 @@ metadata attestation can unblock `GPP-2`.
 | 2026-04-25 | GPP-2e issue opened | Issue [#489](https://github.com/Halildeu/ao-kernel/issues/489) tracks the single-admin equivalent gate decision; current repo decision is `not_approved`, so the attestation override remains forbidden. |
 | 2026-04-26 | GPP-2f issue opened | Issue [#491](https://github.com/Halildeu/ao-kernel/issues/491) tracks the independent release gate architecture decision; product end-user accounts are explicitly not release authority. |
 | 2026-04-26 | GPP-2g issue opened | Issue [#493](https://github.com/Halildeu/ao-kernel/issues/493) tracks GitHub-native release authority selection and Claude/MCP advisory consultation protocol. |
+| 2026-04-26 | GPP-2h issue opened | Issue [#495](https://github.com/Halildeu/ao-kernel/issues/495) tracks deployment protection bot gate selection; GitHub App deployment protection supersedes the required-reviewer provisioning path. |

@@ -6,6 +6,7 @@
 **Decision:** `github_native_release_authority_selected_claude_mcp_advisory`
 **Support impact:** none
 **Runtime impact:** none
+**Provisioning path superseded by:** `GPP-2h`
 
 ## Purpose
 
@@ -129,7 +130,14 @@ or PR summary. Do not add `ao_memory_write` or `ao_llm_call`.
 
 ## Next Provisioning Step
 
-The next admin/provisioning action stays external to this PR:
+This provisioning path was superseded by
+`.claude/plans/GPP-2h-DEPLOYMENT-PROTECTION-BOT-GATE-DECISION.md`.
+
+The selected first path is now GitHub App deployment protection, not a
+human/team required-reviewer path. The Claude/MCP advisory consultation
+protocol in this record remains active.
+
+The previous admin/provisioning action was:
 
 1. configure GitHub-native required reviewer/team protection on
    `ao-kernel-live-adapter-gate`;
