@@ -139,12 +139,13 @@ ayrı ayrı görünür kılmak.
 - **GPP-1d authority-head cleanup issue:** [#478](https://github.com/Halildeu/ao-kernel/issues/478) (`closed by PR #479`)
 - **GPP-2a protected prerequisite re-attestation issue:** [#480](https://github.com/Halildeu/ao-kernel/issues/480) (`closes by PR #481`)
 - **GPP-2b external/admin provisioning issue:** [#482](https://github.com/Halildeu/ao-kernel/issues/482)
-- **GPP-2c reviewer/credential gate issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
+- **GPP-2c release-gate/credential issue:** [#485](https://github.com/Halildeu/ao-kernel/issues/485)
 - **GPP-2d metadata-only live gate attestation issue:** [#487](https://github.com/Halildeu/ao-kernel/issues/487) (`closed by PR #488`)
 - **GPP-2e single-admin equivalent gate decision issue:** [#489](https://github.com/Halildeu/ao-kernel/issues/489)
 - **GPP-2f independent release gate architecture issue:** [#491](https://github.com/Halildeu/ao-kernel/issues/491)
 - **GPP-2g Claude MCP consultation protocol issue:** [#493](https://github.com/Halildeu/ao-kernel/issues/493)
 - **GPP-2h deployment protection bot gate issue:** [#495](https://github.com/Halildeu/ao-kernel/issues/495)
+- **GPP-2i deployment protection attestation support issue:** [#497](https://github.com/Halildeu/ao-kernel/issues/497)
 - **Current mode:** stable maintenance + written general-purpose production
   promotion tracking. RI-5b is merged as Beta/operator-managed root export, not
   a production platform claim. GPP-1 live attestation exited as
@@ -153,11 +154,11 @@ ayrı ayrı görünür kılmak.
   before acting. Current program status holds at `GPP-2` blocked. GPP-2a
   re-attestation reconfirmed the missing protected environment and credential
   handle. GPP-2b now tracks the external/admin provisioning work for the
-  protected environment, reviewer model, and credential handle. The protected
+  protected environment, independent release-gate model, and credential handle. The protected
   environment has since been partially provisioned with `main` branch policy
-  and admin bypass disabled, but reviewer protection and
+  and admin bypass disabled, but the selected deployment-protection app gate and
   `AO_CLAUDE_CODE_CLI_AUTH` remain missing. GPP-2c now tracks that final
-  reviewer/credential gate decision. GPP-2d adds repeatable metadata-only
+  release-gate/credential decision. GPP-2d adds repeatable metadata-only
   attestation tooling so future prerequisite checks do not rely on manual issue
   comments. GPP-2e records that the single-admin equivalent release gate is
   not approved, so `--equivalent-release-gate-approved` cannot be used for
@@ -167,9 +168,12 @@ ayrı ayrı görünür kılmak.
   authority, GitHub App deployment protection, or OIDC-backed external secret
   broker. GPP-2g records Claude/MCP consultation as advisory only; GPP-2h
   selects GitHub App deployment protection as the active bot gate model and
-  rejects PAT-backed bot reviewers. No support
+  rejects PAT-backed bot reviewers. GPP-2i adds metadata-only attestation
+  support for the selected app gate, but the live gate remains blocked until
+  the app rule and `AO_CLAUDE_CODE_CLI_AUTH` handle are actually provisioned.
+  No support
   widening, release, runtime adapter promotion, or production claim is made by
-  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e/GPP-2f/GPP-2g/GPP-2h.
+  GPP-1b/GPP-1c/GPP-2a/GPP-2b/GPP-2c/GPP-2d/GPP-2e/GPP-2f/GPP-2g/GPP-2h/GPP-2i.
   Future stable widening still requires protected live-adapter evidence,
   repo-intelligence integration gates, write-side rollback evidence, and an
   explicit closeout decision.
@@ -277,8 +281,8 @@ binding hattı bu prerequisite kapanmadan başlayamazdı.
 `GPP-2a` re-attestation bu sonucu tekrar doğruladı. Sonraki GPP-2b admin
 adımında `ao-kernel-live-adapter-gate` environment oluşturuldu, `main` branch
 policy eklendi ve admin bypass kapatıldı. Buna rağmen
-`AO_CLAUDE_CODE_CLI_AUTH` environment secret handle yoktur, required reviewer
-protection yoktur ve runtime binding hâlâ başlamaz.
+`AO_CLAUDE_CODE_CLI_AUTH` environment secret handle yoktur, selected deployment
+protection app rule yoktur ve runtime binding hâlâ başlamaz.
 
 `GPP-2d` metadata-only attestation tooling'i merge edildi. `GPP-2e` single-admin
 equivalent release gate kararını `not_approved` olarak kaydeder; bu nedenle
@@ -290,7 +294,9 @@ olduğunu kaydeder. Kabul edilebilir modeller GitHub-native release authority,
 GitHub App deployment protection veya OIDC-backed external secret broker'dır.
 `GPP-2g`, Claude/MCP danışmanlığını advisory-only olarak sınırlar. `GPP-2h`,
 aktif provisioning yolunu GitHub App deployment protection bot gate olarak
-seçer; PAT destekli bot kullanıcı reviewer modeli kabul edilmez.
+seçer; PAT destekli bot kullanıcı reviewer modeli kabul edilmez. `GPP-2i`,
+bu seçili bot gate için metadata-only attestation desteğini ekler; canlı gate
+app rule ve credential handle provision edilene kadar blocked kalır.
 
 `GPP-1b`, bu blocked runtime sonucunu değiştirmez. Amacı Codex ve Claude Code
 operatör oturumlarının `.claude/plans/gpp_status.v1.json` ve
@@ -386,7 +392,7 @@ GPP-2b sonrası canlı delta:
 2. Custom deployment branch policy açıktır ve `main` policy kaydı vardır.
 3. `can_admins_bypass=false`.
 4. `AO_CLAUDE_CODE_CLI_AUTH` environment secret handle hâlâ yoktur.
-5. Required reviewer protection hâlâ yoktur.
+5. Selected deployment-protection app rule hâlâ yoktur.
 6. `GPP-2` hâlâ blocked durumdadır; support widening ve production claim yoktur.
 6. `scripts/live_adapter_gate_contract.py` blocked evidence üretmeye devam
    ediyor: `overall_status=blocked`, `decision=blocked_no_rehearsal`,

@@ -71,10 +71,11 @@ The project-owned protected live-adapter gate is not ready because:
 2. Deployment branch policy is custom and currently includes `main`.
 3. Admin bypass is disabled.
 4. `AO_CLAUDE_CODE_CLI_AUTH` is not visible as an environment secret handle.
-5. Required reviewer protection is not configured.
-6. Only one repository collaborator is visible, so the protected reviewer model
-   needs a non-triggering reviewer/admin or an explicitly approved equivalent
-   release gate before self-review prevention can be meaningful.
+5. The current selected release-gate model, superseded by GPP-2h/GPP-2i, is a
+   GitHub App deployment protection rule; that app rule is not configured.
+6. Only one repository collaborator is visible, so the earlier protected
+   reviewer model remains unsuitable unless explicitly superseded by a real
+   independent release authority.
 
 ## 4. Required External/Admin Work
 
@@ -82,12 +83,10 @@ Complete issue [#482](https://github.com/Halildeu/ao-kernel/issues/482):
 
 1. Keep GitHub environment `ao-kernel-live-adapter-gate` present.
 2. Keep deployment branch policy restricted to `main`.
-3. Configure the remaining environment protection required by the contract:
-   - required reviewers enabled;
-   - prevent self-review enabled;
-   - fork-triggered events cannot access protected credentials.
-4. Add at least one non-triggering maintainer reviewer, or record an explicitly
-   approved release-gate equivalent if the repository remains single-admin.
+3. Configure the selected GitHub App deployment protection rule on
+   `ao-kernel-live-adapter-gate` with app slug
+   `ao-kernel-live-adapter-gate`.
+4. Fork-triggered events must not access protected credentials.
 5. Store project-owned Claude Code CLI credential material, or an explicitly
    approved non-API-key equivalent, as environment secret handle
    `AO_CLAUDE_CODE_CLI_AUTH`.
@@ -104,8 +103,8 @@ must collect live evidence that:
    still includes only the intended `main` policy;
 3. `gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel`
    lists `AO_CLAUDE_CODE_CLI_AUTH`;
-4. environment protection evidence is compatible with the protected gate
-   contract;
+4. deployment protection evidence includes the selected enabled GitHub App rule
+   with slug `ao-kernel-live-adapter-gate`;
 5. fork-triggered contexts cannot read protected credentials.
 
 Only if the follow-up attestation exits `prerequisites_ready` can `GPP-2`

@@ -40,9 +40,10 @@ The alternate models from `GPP-2f` stay valid fallback options:
 1. GitHub App deployment protection rule;
 2. OIDC-backed external secret broker.
 
-They are not selected for the first provisioning path because they add more
-infrastructure before the current blocked gate has even proven the basic
-environment reviewer and credential-handle contract.
+They were not selected for the first provisioning path because they added more
+infrastructure before the current blocked gate had proven the basic environment
+reviewer and credential-handle contract. GPP-2h later superseded that first
+path and selected GitHub App deployment protection.
 
 ## Current Blocking State
 

@@ -76,7 +76,7 @@ The gate is still incomplete:
 ### Selected Active Path
 
 1. Implement metadata-only attestation support for GitHub App deployment
-   protection evidence.
+   protection evidence. Completed by `GPP-2i`.
 2. Configure a GitHub App or policy service as the deployment protection gate
    for `ao-kernel-live-adapter-gate`.
 3. Set `AO_CLAUDE_CODE_CLI_AUTH` under the environment without printing or
@@ -105,7 +105,8 @@ slice. That slice must prove:
 2. deployment branch policy still allows only the intended `main` path;
 3. `can_admins_bypass=false`;
 4. `AO_CLAUDE_CODE_CLI_AUTH` exists under the environment;
-5. an approved independent release gate is present;
+5. the selected deployment protection app gate is present, or a future
+   explicit decision selects another independent release-gate model;
 6. fork-triggered contexts cannot read protected credentials.
 
 Only then may `GPP-2` runtime binding start.

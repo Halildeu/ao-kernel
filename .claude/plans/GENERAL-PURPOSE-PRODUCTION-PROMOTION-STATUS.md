@@ -5,8 +5,8 @@
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#495](https://github.com/Halildeu/ao-kernel/issues/495)
-for deployment protection bot gate decision
+**Current slice issue:** [#497](https://github.com/Halildeu/ao-kernel/issues/497)
+for deployment protection attestation support
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -77,8 +77,8 @@ Last live verification on current `origin/main` showed:
     independent release authority; this is not a product end-user account.
 20. GPP-2b partially provisioned the GitHub environment: the environment exists,
     deployment branch policy includes `main`, and admin bypass is disabled.
-    Required reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` are still
-    missing, so `GPP-2` remains blocked.
+    The selected GitHub App deployment protection rule and
+    `AO_CLAUDE_CODE_CLI_AUTH` are still missing, so `GPP-2` remains blocked.
 21. GPP-2d merged metadata-only attestation tooling so the live gate can be
     checked repeatably without reading secret values. GPP-2e records that the
     single-admin equivalent release gate is not approved; the
@@ -96,6 +96,9 @@ Last live verification on current `origin/main` showed:
     to GitHub App deployment protection. A PAT-backed bot user is rejected;
     the selected model is a policy bot connected to environment deployment
     protection. GPP-2 remains blocked.
+25. GPP-2i adds metadata-only attestation support for the selected GitHub App
+    deployment protection model. The current live gate remains blocked because
+    the app rule and `AO_CLAUDE_CODE_CLI_AUTH` handle are not yet attested.
 
 ## 3. Current Verdict
 
@@ -136,13 +139,14 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-1` | Completed | Protected live-adapter prerequisite attestation | `blocked_attestation_missing` |
 | `GPP-1b` | Completed | Agent operating program contract | `agent_operating_contract_ready_no_support_widening` |
 | `GPP-2a` | Completed | Protected live-adapter prerequisite re-attestation | `still_blocked_protected_prerequisites_missing` |
-| `GPP-2b` | Partially provisioned / blocked | Protected live-adapter environment and credential provisioning | environment exists; `main` branch policy and admin-bypass-off are set; reviewer protection and credential handle still missing |
-| `GPP-2c` | Blocked external/admin decision | Reviewer and credential gate resolution | `AO_CLAUDE_CODE_CLI_AUTH` and non-self reviewer/equivalent gate still missing |
+| `GPP-2b` | Partially provisioned / blocked | Protected live-adapter environment and credential provisioning | environment exists; `main` branch policy and admin-bypass-off are set; deployment protection app gate and credential handle still missing |
+| `GPP-2c` | Blocked external/admin decision | Deployment-protection and credential gate resolution | `AO_CLAUDE_CODE_CLI_AUTH` and selected deployment protection app gate still missing |
 | `GPP-2d` | Implemented / no support widening | Metadata-only live gate attestation tool | repeatable attestation is available; current live gate still blocked |
 | `GPP-2e` | Completed / no support widening | Single-admin equivalent gate decision | `not_approved`; equivalent gate override cannot be used without a future explicit approval |
 | `GPP-2f` | Completed / no support widening | Independent release gate architecture decision | independent release gate required; product end-user account is not release authority |
 | `GPP-2g` | Completed / no support widening | GitHub-native release authority selection and Claude MCP consultation protocol | provisioning path superseded by GPP-2h; Claude/MCP advisory protocol remains active |
 | `GPP-2h` | Completed / no support widening | Deployment protection bot gate decision | GitHub App deployment protection selected; PAT-backed bot reviewer rejected |
+| `GPP-2i` | Completed / no support widening | Deployment protection attestation support | selected app-gate metadata is recognized; current live gate still blocked |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -218,13 +222,13 @@ any workflow binding or support promotion.
 3. Admin bypass is disabled on `ao-kernel-live-adapter-gate`: met.
 4. Required secret handle is attested at repository or environment scope: not
    met; environment-scoped secret lookup returns an empty list.
-5. Required reviewer protection is configured or an explicitly approved
-   equivalent release gate is documented: not met.
+5. Independent release gate is configured: not met; GPP-2h/GPP-2i selected
+   GitHub App deployment protection, and the app rule is not yet attested.
 6. Fork-triggered PR contexts cannot access protected credentials: met for the
    current design-only workflow, because the workflow is `workflow_dispatch`
    only and has no `environment:` or `secrets.` reference.
-7. Missing secret or reviewer protection produces `blocked_attestation_missing`: met by
-   this slice.
+7. Missing secret or selected deployment-protection gate produces
+   `blocked_attestation_missing`: met by this slice.
 8. Status docs and support boundary still say no support widening: met.
 
 **Validation:**
@@ -528,8 +532,9 @@ No runtime/support-widening work is active. `GPP-2` is the current blocked
 program head. GPP-2b is tracked in
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) as an external/admin
 provisioning action. The environment and `main` branch policy are present, but
-reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` must still be completed
-before another prerequisite attestation can attempt to unblock `GPP-2`.
+the selected deployment-protection app gate and `AO_CLAUDE_CODE_CLI_AUTH` must
+still be completed before another prerequisite attestation can attempt to
+unblock `GPP-2`.
 GPP-2c is tracked in
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) to resolve the
 remaining independent release gate and credential decision. GPP-2d adds
@@ -544,11 +549,11 @@ authority, GitHub App deployment protection, or OIDC-backed external secret
 broker. GPP-2g selects GitHub-native release authority as the first
 provisioning path and records Claude/MCP consultation as an advisory review
 protocol only. GPP-2h supersedes the GPP-2g provisioning path and selects a
-GitHub App deployment protection bot gate. The next repo-code action is to add
-metadata-only attestation support for the selected deployment protection model.
-Only after that support exists should an external/admin step configure the app
-gate and set `AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a
-fresh metadata attestation can unblock `GPP-2`.
+GitHub App deployment protection bot gate. GPP-2i adds metadata-only
+attestation support for that selected model. The next external/admin step is to
+configure the app gate with slug `ao-kernel-live-adapter-gate` and set
+`AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a fresh
+metadata attestation can unblock `GPP-2`.
 
 ## 18. Risk Register
 
@@ -581,12 +586,13 @@ fresh metadata attestation can unblock `GPP-2`.
 | 2026-04-25 | GPP-1d merged | PR [#479](https://github.com/Halildeu/ao-kernel/pull/479) merged; live authority head is now read from git signals instead of static status text. |
 | 2026-04-25 | GPP-2a issue opened | Issue [#480](https://github.com/Halildeu/ao-kernel/issues/480) created to re-attest protected live-adapter prerequisites before any GPP-2 runtime binding. |
 | 2026-04-25 | GPP-2a re-attestation recorded | PR [#481](https://github.com/Halildeu/ao-kernel/pull/481) recorded then-current evidence: only `pypi` environment existed and `ao-kernel-live-adapter-gate` secret lookup returned `HTTP 404`; GPP-2 remained blocked. |
-| 2026-04-25 | GPP-2b external/admin issue opened | Issue [#482](https://github.com/Halildeu/ao-kernel/issues/482) tracks protected environment, reviewer, and credential provisioning required before `GPP-2` can start. |
-| 2026-04-25 | GPP-2b partial provisioning recorded | `ao-kernel-live-adapter-gate` now exists, custom deployment branch policy includes `main`, and admin bypass is disabled. Reviewer protection and `AO_CLAUDE_CODE_CLI_AUTH` remain missing, so #482 stays open and `GPP-2` stays blocked. |
-| 2026-04-25 | GPP-2c issue opened | Issue [#485](https://github.com/Halildeu/ao-kernel/issues/485) tracks the remaining protected reviewer and credential gate: add/designate a non-self reviewer or explicitly approve an equivalent release gate, and set `AO_CLAUDE_CODE_CLI_AUTH` without secret readback. |
+| 2026-04-25 | GPP-2b external/admin issue opened | Issue [#482](https://github.com/Halildeu/ao-kernel/issues/482) tracks protected environment, independent release gate, and credential provisioning required before `GPP-2` can start. |
+| 2026-04-25 | GPP-2b partial provisioning recorded | `ao-kernel-live-adapter-gate` now exists, custom deployment branch policy includes `main`, and admin bypass is disabled. The selected deployment-protection app gate and `AO_CLAUDE_CODE_CLI_AUTH` remain missing, so #482 stays open and `GPP-2` stays blocked. |
+| 2026-04-25 | GPP-2c issue opened | Issue [#485](https://github.com/Halildeu/ao-kernel/issues/485) tracks the remaining independent release gate and credential gate: configure the selected deployment-protection app gate and set `AO_CLAUDE_CODE_CLI_AUTH` without secret readback. |
 | 2026-04-25 | GPP-2d issue opened | Issue [#487](https://github.com/Halildeu/ao-kernel/issues/487) tracks a metadata-only attestation tool for repeatable protected gate evidence. |
-| 2026-04-25 | GPP-2d merged | PR [#488](https://github.com/Halildeu/ao-kernel/pull/488) added `scripts/live_adapter_gate_attest.py`; live attestation remains blocked by missing credential handle and reviewer/equivalent gate. |
+| 2026-04-25 | GPP-2d merged | PR [#488](https://github.com/Halildeu/ao-kernel/pull/488) added `scripts/live_adapter_gate_attest.py`; live attestation remains blocked by missing credential handle and, after GPP-2h/GPP-2i, the selected deployment-protection app gate. |
 | 2026-04-25 | GPP-2e issue opened | Issue [#489](https://github.com/Halildeu/ao-kernel/issues/489) tracks the single-admin equivalent gate decision; current repo decision is `not_approved`, so the attestation override remains forbidden. |
 | 2026-04-26 | GPP-2f issue opened | Issue [#491](https://github.com/Halildeu/ao-kernel/issues/491) tracks the independent release gate architecture decision; product end-user accounts are explicitly not release authority. |
 | 2026-04-26 | GPP-2g issue opened | Issue [#493](https://github.com/Halildeu/ao-kernel/issues/493) tracks GitHub-native release authority selection and Claude/MCP advisory consultation protocol. |
 | 2026-04-26 | GPP-2h issue opened | Issue [#495](https://github.com/Halildeu/ao-kernel/issues/495) tracks deployment protection bot gate selection; GitHub App deployment protection supersedes the required-reviewer provisioning path. |
+| 2026-04-26 | GPP-2i issue opened | Issue [#497](https://github.com/Halildeu/ao-kernel/issues/497) tracks metadata-only attestation support for the selected deployment protection bot gate. |

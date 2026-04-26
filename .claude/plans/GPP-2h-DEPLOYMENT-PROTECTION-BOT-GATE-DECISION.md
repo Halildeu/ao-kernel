@@ -80,13 +80,13 @@ Current live gate state:
 4. `AO_CLAUDE_CODE_CLI_AUTH` is still not attested as an environment secret
    handle;
 5. no GitHub App deployment protection rule is implemented or attested;
-6. `scripts/live_adapter_gate_attest.py` currently checks required reviewer or
-   equivalent release gate metadata, not the selected deployment protection
-   bot metadata shape.
+6. before GPP-2i, `scripts/live_adapter_gate_attest.py` checked required
+   reviewer or equivalent release gate metadata, not the selected deployment
+   protection bot metadata shape.
 
 ## Next Implementation Slices
 
-The next repo-code slice should be narrow:
+The next repo-code slice has been implemented:
 
 ```text
 GPP-2i - deployment protection attestation support
@@ -102,6 +102,9 @@ Scope for `GPP-2i`:
    but credential-missing states;
 4. keep all support/runtime/production flags false;
 5. do not create the GitHub App, set secrets, or run a live adapter.
+
+`GPP-2i` closes with the live gate still blocked until external/admin
+provisioning supplies the selected app gate and credential handle.
 
 The later external/admin provisioning step should configure the GitHub App
 deployment protection rule in `ao-kernel-live-adapter-gate`, then set

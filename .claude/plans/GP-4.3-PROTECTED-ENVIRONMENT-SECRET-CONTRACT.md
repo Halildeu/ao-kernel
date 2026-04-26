@@ -39,8 +39,10 @@ The required future environment is:
 |---|---|
 | Environment name | `ao-kernel-live-adapter-gate` |
 | Allowed refs | `main` |
-| Required reviewers | `true` |
-| Prevent self-review | `true` |
+| Release gate model | GitHub App deployment protection rule |
+| Deployment protection app slug | `ao-kernel-live-adapter-gate` |
+| Required reviewers | `false` |
+| Prevent self-review | `false` |
 | Fork secrets | `false` |
 | Forbidden events | `pull_request`, `pull_request_target`, `push` |
 
@@ -65,8 +67,9 @@ The new environment contract artifact is intentionally blocked:
 
 The current repository environment inventory does not include
 `ao-kernel-live-adapter-gate`; only `pypi` exists at implementation time. A
-later slice must either configure and attest that environment or record an
-explicit release-gate equivalent.
+later slice must either configure and attest that environment with the selected
+deployment-protection app gate or record an explicit superseding release-gate
+decision.
 
 ## Non-Goals
 

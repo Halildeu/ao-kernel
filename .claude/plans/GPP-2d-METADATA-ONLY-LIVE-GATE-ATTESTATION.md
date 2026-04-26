@@ -37,8 +37,9 @@ The attestation evaluates metadata only:
 2. admin bypass is disabled;
 3. deployment branch policy is restricted to `main`;
 4. environment secret handle `AO_CLAUDE_CODE_CLI_AUTH` exists by name;
-5. required reviewer gate exists, or an explicitly approved equivalent release
-   gate is supplied;
+5. the currently selected independent release gate is present. GPP-2h/GPP-2i
+   supersede the original required-reviewer path with a GitHub App deployment
+   protection rule named `ao-kernel-live-adapter-gate`;
 6. support boundary remains closed.
 
 Secret values are never accepted, read, printed, or written.
@@ -48,9 +49,11 @@ Secret values are never accepted, read, printed, or written.
 With current live metadata, the artifact must be `blocked` because:
 
 1. `AO_CLAUDE_CODE_CLI_AUTH` is still missing under the environment;
-2. required reviewer protection is still missing;
-3. only one collaborator is visible, so a non-self reviewer gate is not yet
-   possible.
+2. the selected GitHub App deployment protection rule is still missing.
+
+The earlier required-reviewer/equivalent-gate wording is historical. Current
+attestation treats `--equivalent-release-gate-approved` as recorded metadata
+only; it does not satisfy the selected deployment-protection bot gate.
 
 `runtime_binding_allowed=false`, `live_execution_allowed=false`, and
 `support_widening=false` remain the expected result until a future attestation
@@ -71,4 +74,3 @@ proves prerequisites ready.
 2. Unit tests cover a synthetic metadata-ready state.
 3. CLI fixture test proves deterministic artifact writing without live GitHub.
 4. `python3 scripts/gpp_next.py` still reports `GPP-2` blocked.
-
