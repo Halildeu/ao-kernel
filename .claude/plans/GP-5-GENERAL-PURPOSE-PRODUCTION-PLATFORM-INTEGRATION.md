@@ -170,8 +170,9 @@ creating environments, reading secret values, binding workflow environments, or
 invoking `claude`. At that time the required `ao-kernel-live-adapter-gate`
 environment was absent. GPP-2b later partially provisioned that environment
 with `main` deployment branch policy and `can_admins_bypass=false`, but
-`AO_CLAUDE_CODE_CLI_AUTH` and required reviewer protection are still not
-attested. Therefore `GP-5.1b` must not bind the workflow yet.
+`AO_CLAUDE_CODE_CLI_AUTH` and the selected GitHub App deployment protection
+rule are still not attested. Therefore `GP-5.1b` must not bind the workflow
+yet.
 
 The detailed decision record is
 `.claude/plans/GP-5.1a-PROTECTED-GATE-PREREQUISITE-AUDIT.md`.
@@ -605,7 +606,7 @@ verification only after gate closeout.
 | `R7` cost/secret exposure | Protected gate leaks credentials or runs too often | Protected environment, manual/scheduled trigger, timeout, cost guard, fork isolation. |
 | `R8` merge overwrite | Parallel sessions lose work | Dedicated worktrees, branch sync checks, overlap review, no destructive cleanup. |
 | `R9` RI-5 / GP-5.3 interface conflict | Root export and workflow context handoff evolve different artifact contracts | Keep ownership split explicit; GP-5.3a/3b use stdout Markdown first; `context_compiler` opt-in waits for RI-5a schema on `origin/main`. |
-| `R10` protected gate partially provisioned but incomplete | Live-adapter promotion stays blocked and local auth is mistaken for support | Keep `blocked` as non-pass until environment secret and reviewer protection are attested; allow repo-intelligence read-only slices to proceed without support widening. |
+| `R10` protected gate partially provisioned but incomplete | Live-adapter promotion stays blocked and local auth is mistaken for support | Keep `blocked` as non-pass until the environment secret and selected deployment-protection app gate are attested; allow repo-intelligence read-only slices to proceed without support widening. |
 | `R11` workspace metadata drift | MCP/workspace status reports stale version or kind while runtime package is current | Add a small investigation/fix slice before using workspace metadata as a platform-readiness signal. |
 
 ## 7. First Backlog

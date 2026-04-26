@@ -94,6 +94,9 @@
       "required": [
         "name",
         "required",
+        "release_gate_model",
+        "deployment_protection_app_required",
+        "deployment_protection_app_slug",
         "required_reviewers",
         "prevent_self_review",
         "allowed_refs",
@@ -106,11 +109,20 @@
         "required": {
           "const": true
         },
-        "required_reviewers": {
+        "release_gate_model": {
+          "const": "github_app_deployment_protection_rule"
+        },
+        "deployment_protection_app_required": {
           "const": true
         },
+        "deployment_protection_app_slug": {
+          "const": "ao-kernel-live-adapter-gate"
+        },
+        "required_reviewers": {
+          "const": false
+        },
         "prevent_self_review": {
-          "const": true
+          "const": false
         },
         "allowed_refs": {
           "type": "array",

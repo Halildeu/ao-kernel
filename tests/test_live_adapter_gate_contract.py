@@ -15,6 +15,7 @@ from ao_kernel.live_adapter_gate import (
     EVIDENCE_ARTIFACT,
     ENVIRONMENT_CONTRACT_ARTIFACT,
     REHEARSAL_DECISION_ARTIFACT,
+    REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG,
     build_live_adapter_gate_attestation,
     build_live_adapter_gate_evidence_artifact,
     build_live_adapter_gate_environment_contract,
@@ -153,12 +154,15 @@ def test_build_live_adapter_gate_environment_contract_is_schema_valid_and_blocke
     assert contract["protected_environment"] == {
         "name": "ao-kernel-live-adapter-gate",
         "required": True,
-        "required_reviewers": True,
-        "prevent_self_review": True,
+        "release_gate_model": "github_app_deployment_protection_rule",
+        "deployment_protection_app_required": True,
+        "deployment_protection_app_slug": REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG,
+        "required_reviewers": False,
+        "prevent_self_review": False,
         "allowed_refs": ["main"],
         "detail": (
             "Future live execution must run through this protected GitHub "
-            "environment or an explicitly approved release-gate equivalent."
+            "environment and the selected GitHub App deployment protection gate."
         ),
     }
     assert contract["trigger_policy"]["forks_allowed"] is False
@@ -239,8 +243,8 @@ def test_build_live_adapter_gate_attestation_blocks_current_partial_gate() -> No
     assert checks["deployment_branch_policy"]["status"] == "pass"
     assert checks["credential_handle"]["status"] == "blocked"
     assert checks["credential_handle"]["finding_code"] == "live_gate_credential_handle_missing"
-    assert checks["reviewer_gate"]["status"] == "blocked"
-    assert checks["reviewer_gate"]["finding_code"] == "live_gate_reviewer_gate_missing"
+    assert checks["deployment_protection_gate"]["status"] == "blocked"
+    assert checks["deployment_protection_gate"]["finding_code"] == "live_gate_deployment_protection_missing"
 
 
 def test_build_live_adapter_gate_attestation_allows_ready_metadata_only_state() -> None:
@@ -260,16 +264,77 @@ def test_build_live_adapter_gate_attestation_allows_ready_metadata_only_state() 
             {"login": "Halildeu", "role_name": "admin"},
             {"login": "release-reviewer", "role_name": "maintain"},
         ],
+        deployment_protection_payload={
+            "custom_deployment_protection_rules": [
+                {
+                    "id": 10,
+                    "enabled": True,
+                    "app": {"slug": REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG},
+                }
+            ]
+        },
         actor_login="Halildeu",
         generated_at="2026-04-25T00:00:00Z",
     )
 
+    assert artifact["release_gate_model"] == "github_app_deployment_protection_rule"
+    assert artifact["required_deployment_protection_app_slug"] == REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG
     assert artifact["overall_status"] == "ready"
     assert artifact["finding_code"] is None
     assert artifact["runtime_binding_allowed"] is True
     assert artifact["live_execution_allowed"] is False
     assert artifact["support_widening"] is False
     assert artifact["findings"] == []
+
+
+def test_build_live_adapter_gate_attestation_rejects_wrong_deployment_protection_app() -> None:
+    artifact = build_live_adapter_gate_attestation(
+        environment_payload={
+            "name": "ao-kernel-live-adapter-gate",
+            "can_admins_bypass": False,
+            "deployment_branch_policy": {"custom_branch_policies": True, "protected_branches": False},
+            "protection_rules": [{"id": 1, "type": "branch_policy"}],
+        },
+        branch_policy_payload={"branch_policies": [{"name": "main", "type": "branch"}]},
+        secret_payload=[{"name": "AO_CLAUDE_CODE_CLI_AUTH", "updatedAt": "2026-04-25T00:00:00Z"}],
+        collaborator_payload=[],
+        deployment_protection_payload={
+            "custom_deployment_protection_rules": [
+                {"id": 10, "enabled": True, "app": {"slug": "some-other-app"}}
+            ]
+        },
+        generated_at="2026-04-25T00:00:00Z",
+    )
+
+    checks = {check["name"]: check for check in artifact["checks"]}
+    assert artifact["overall_status"] == "blocked"
+    assert artifact["finding_code"] == "live_gate_deployment_protection_missing"
+    assert checks["credential_handle"]["status"] == "pass"
+    assert checks["deployment_protection_gate"]["status"] == "blocked"
+    assert "some-other-app" in checks["deployment_protection_gate"]["detail"]
+
+
+def test_equivalent_release_gate_flag_does_not_bypass_selected_bot_gate() -> None:
+    artifact = build_live_adapter_gate_attestation(
+        environment_payload={
+            "name": "ao-kernel-live-adapter-gate",
+            "can_admins_bypass": False,
+            "deployment_branch_policy": {"custom_branch_policies": True, "protected_branches": False},
+            "protection_rules": [{"id": 1, "type": "branch_policy"}],
+        },
+        branch_policy_payload={"branch_policies": [{"name": "main", "type": "branch"}]},
+        secret_payload=[{"name": "AO_CLAUDE_CODE_CLI_AUTH", "updatedAt": "2026-04-25T00:00:00Z"}],
+        collaborator_payload=[],
+        deployment_protection_payload={},
+        equivalent_release_gate_approved=True,
+        generated_at="2026-04-25T00:00:00Z",
+    )
+
+    checks = {check["name"]: check for check in artifact["checks"]}
+    assert artifact["equivalent_release_gate_approved"] is True
+    assert artifact["overall_status"] == "blocked"
+    assert artifact["finding_code"] == "live_gate_deployment_protection_missing"
+    assert checks["deployment_protection_gate"]["status"] == "blocked"
 
 
 def test_write_live_adapter_gate_attestation_round_trips_json(tmp_path: Path) -> None:
@@ -294,6 +359,7 @@ def test_live_adapter_gate_attestation_cli_uses_fixture_metadata(tmp_path: Path)
     branch_policies_path = tmp_path / "branch-policies.json"
     secrets_path = tmp_path / "secrets.json"
     collaborators_path = tmp_path / "collaborators.json"
+    deployment_protection_path = tmp_path / "deployment-protection.json"
     artifact_path = tmp_path / ATTESTATION_ARTIFACT
 
     environment_path.write_text(
@@ -313,6 +379,10 @@ def test_live_adapter_gate_attestation_cli_uses_fixture_metadata(tmp_path: Path)
     )
     secrets_path.write_text("[]", encoding="utf-8")
     collaborators_path.write_text(json.dumps([{"login": "Halildeu", "role_name": "admin"}]), encoding="utf-8")
+    deployment_protection_path.write_text(
+        json.dumps({"custom_deployment_protection_rules": []}),
+        encoding="utf-8",
+    )
 
     completed = subprocess.run(
         [
@@ -326,6 +396,8 @@ def test_live_adapter_gate_attestation_cli_uses_fixture_metadata(tmp_path: Path)
             str(secrets_path),
             "--collaborators-json",
             str(collaborators_path),
+            "--deployment-protection-json",
+            str(deployment_protection_path),
             "--artifact-path",
             str(artifact_path),
             "--output",

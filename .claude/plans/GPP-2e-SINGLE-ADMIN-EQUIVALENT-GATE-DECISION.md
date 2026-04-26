@@ -30,7 +30,9 @@ The live gate currently has these properties:
 2. Admin bypass is disabled.
 3. Deployment branch policy is restricted to `main`.
 4. Environment secret handle `AO_CLAUDE_CODE_CLI_AUTH` is absent.
-5. Required reviewer protection is absent.
+5. Required reviewer protection was absent at the time of this decision; the
+   active path was later superseded by the selected GitHub App deployment
+   protection gate.
 6. Only one collaborator, `Halildeu`, is visible through the GitHub
    collaborators API.
 
@@ -48,7 +50,7 @@ support_widening: false
 
 The single-admin equivalent release gate is **not approved**.
 
-The preferred resolution remains:
+The preferred resolution at the time was:
 
 1. Add or designate an independent release authority.
 2. Configure required reviewers on `ao-kernel-live-adapter-gate`.
@@ -59,6 +61,10 @@ The preferred resolution remains:
 
 An equivalent single-admin release gate can only be used after a future explicit
 decision changes this record from `not_approved` to `approved`.
+
+GPP-2h/GPP-2i later supersede the reviewer provisioning path with a GitHub App
+deployment protection rule. This record still blocks the single-admin
+equivalent-gate override.
 
 ## Contract
 

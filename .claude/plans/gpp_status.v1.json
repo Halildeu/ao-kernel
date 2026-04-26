@@ -70,6 +70,12 @@
       "decision": "github_app_deployment_protection_rule_selected_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/495",
       "record": ".claude/plans/GPP-2h-DEPLOYMENT-PROTECTION-BOT-GATE-DECISION.md"
+    },
+    {
+      "id": "GPP-2i",
+      "decision": "deployment_protection_attestation_supported_gate_still_blocked",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/497",
+      "record": ".claude/plans/GPP-2i-DEPLOYMENT-PROTECTION-ATTESTATION-SUPPORT.md"
     }
   ],
   "blocked_wps": [
@@ -87,7 +93,7 @@
       "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
       "record": ".claude/plans/GPP-2b-EXTERNAL-ADMIN-PROVISIONING.md",
       "status": "partially_provisioned_blocked",
-      "decision": "environment_created_secret_and_reviewer_still_missing",
+      "decision": "environment_created_secret_and_app_gate_still_missing",
       "required_before": "GPP-2 runtime binding"
     },
     {
@@ -95,8 +101,8 @@
       "title": "Independent release gate and credential resolution",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/485",
       "record": ".claude/plans/GPP-2c-REVIEWER-AND-CREDENTIAL-GATE.md",
-      "status": "blocked_external_deployment_protection_bot_provisioning_required",
-      "decision": "github_app_deployment_protection_selected_secret_and_app_gate_still_missing",
+      "status": "blocked_external_deployment_protection_bot_and_secret_provisioning_required",
+      "decision": "attestation_support_ready_secret_and_app_gate_still_missing",
       "required_before": "GPP-2 runtime binding"
     }
   ],
@@ -155,12 +161,11 @@
     "track external admin provisioning in issue #482",
     "resolve independent release gate and credential handling in issue #485",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
-    "implement deployment protection attestation support before any GPP-2 runtime binding",
     "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding",
     "use Claude MCP consultation only as advisory review, not release authority",
     "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
-    "configure GitHub App deployment protection on ao-kernel-live-adapter-gate after attestation support exists",
+    "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],

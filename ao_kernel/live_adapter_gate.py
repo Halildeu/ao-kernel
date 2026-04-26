@@ -42,6 +42,8 @@ ATTESTATION_PROGRAM_ID = "GPP-2d"
 ATTESTATION_ARTIFACT_KIND = "live_adapter_gate_prerequisite_attestation"
 ATTESTATION_ARTIFACT = "live-adapter-gate-attestation.v1.json"
 REQUIRED_SECRET_ID = "AO_CLAUDE_CODE_CLI_AUTH"
+SELECTED_RELEASE_GATE_MODEL = "github_app_deployment_protection_rule"
+REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG = "ao-kernel-live-adapter-gate"
 
 
 CheckStatus = Literal["pass", "blocked", "skipped"]
@@ -142,6 +144,9 @@ class LiveAdapterGateProtectedEnvironment(TypedDict):
 
     name: str
     required: bool
+    release_gate_model: str
+    deployment_protection_app_required: bool
+    deployment_protection_app_slug: str
     required_reviewers: bool
     prevent_self_review: bool
     allowed_refs: list[str]
@@ -253,6 +258,8 @@ class LiveAdapterGateAttestationArtifact(TypedDict):
     environment_name: str
     required_secret_id: str
     equivalent_release_gate_approved: bool
+    release_gate_model: str
+    required_deployment_protection_app_slug: str
     runtime_binding_allowed: bool
     live_execution_allowed: bool
     support_widening: bool
@@ -455,12 +462,15 @@ def build_live_adapter_gate_environment_contract(
         "protected_environment": {
             "name": PROTECTED_ENVIRONMENT_NAME,
             "required": True,
-            "required_reviewers": True,
-            "prevent_self_review": True,
+            "release_gate_model": SELECTED_RELEASE_GATE_MODEL,
+            "deployment_protection_app_required": True,
+            "deployment_protection_app_slug": REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG,
+            "required_reviewers": False,
+            "prevent_self_review": False,
             "allowed_refs": ["main"],
             "detail": (
                 "Future live execution must run through this protected GitHub "
-                "environment or an explicitly approved release-gate equivalent."
+                "environment and the selected GitHub App deployment protection gate."
             ),
         },
         "trigger_policy": {
@@ -645,6 +655,75 @@ def _required_reviewer_rules(environment_payload: object) -> list[dict[str, Any]
     ]
 
 
+def _deployment_protection_rules(deployment_protection_payload: object) -> list[dict[str, Any]]:
+    """Return GitHub App deployment protection rules from supported payload shapes."""
+
+    if isinstance(deployment_protection_payload, list):
+        return [item for item in deployment_protection_payload if isinstance(item, dict)]
+    if not isinstance(deployment_protection_payload, dict):
+        return []
+    candidates: list[dict[str, Any]] = []
+    for key in (
+        "custom_deployment_protection_rules",
+        "deployment_protection_rules",
+        "protection_rules",
+    ):
+        candidates.extend(_named_items(deployment_protection_payload, container_key=key))
+    if not candidates and any(key in deployment_protection_payload for key in ("app", "name", "slug")):
+        candidates.append(deployment_protection_payload)
+    return candidates
+
+
+def _deployment_protection_rule_names(deployment_protection_payload: object) -> list[str]:
+    """Return readable deployment-protection rule app identities."""
+
+    names: list[str] = []
+    for rule in _deployment_protection_rules(deployment_protection_payload):
+        app = _as_dict(rule.get("app"))
+        for candidate in (
+            app.get("slug"),
+            app.get("name"),
+            rule.get("app_slug"),
+            rule.get("app_name"),
+            rule.get("slug"),
+            rule.get("name"),
+        ):
+            if isinstance(candidate, str) and candidate:
+                names.append(candidate)
+                break
+    return sorted(set(names))
+
+
+def _deployment_protection_gate_ok(
+    deployment_protection_payload: object,
+    *,
+    required_app_slug: str,
+) -> bool:
+    """Return whether the selected GitHub App deployment protection gate exists."""
+
+    if not required_app_slug:
+        return False
+    for rule in _deployment_protection_rules(deployment_protection_payload):
+        if rule.get("enabled") is False:
+            continue
+        app = _as_dict(rule.get("app"))
+        identities = {
+            value
+            for value in (
+                app.get("slug"),
+                app.get("name"),
+                rule.get("app_slug"),
+                rule.get("app_name"),
+                rule.get("slug"),
+                rule.get("name"),
+            )
+            if isinstance(value, str) and value
+        }
+        if required_app_slug in identities:
+            return True
+    return False
+
+
 def _has_branch_policy_rule(environment_payload: object) -> bool:
     """Return whether the environment has a branch-policy protection rule."""
 
@@ -661,8 +740,10 @@ def build_live_adapter_gate_attestation(
     branch_policy_payload: object,
     secret_payload: object,
     collaborator_payload: object,
+    deployment_protection_payload: object | None = None,
     environment_name: str = PROTECTED_ENVIRONMENT_NAME,
     required_secret_id: str = REQUIRED_SECRET_ID,
+    required_deployment_protection_app_slug: str = REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG,
     actor_login: str = "",
     equivalent_release_gate_approved: bool = False,
     generated_at: str | None = None,
@@ -685,14 +766,11 @@ def build_live_adapter_gate_attestation(
     branch_policy_ok = _has_branch_policy_rule(environment) and custom_branch_policy and main_only_branch_policy
 
     secret_present = required_secret_id in _secret_names(secret_payload)
-    reviewer_rules = _required_reviewer_rules(environment)
-    reviewer_gate_configured = bool(reviewer_rules)
-    prevent_self_review = any(rule.get("prevent_self_review") is True for rule in reviewer_rules)
-    collaborators = _collaborator_logins(collaborator_payload)
-    non_self_collaborators = [login for login in collaborators if not actor_login or login != actor_login]
-    non_self_reviewer_possible = len(non_self_collaborators) >= 1
-    reviewer_gate_ok = (reviewer_gate_configured and prevent_self_review and non_self_reviewer_possible) or (
-        equivalent_release_gate_approved
+    deployment_protection_payload = deployment_protection_payload or {}
+    deployment_rule_names = _deployment_protection_rule_names(deployment_protection_payload)
+    deployment_protection_gate_ok = _deployment_protection_gate_ok(
+        deployment_protection_payload,
+        required_app_slug=required_deployment_protection_app_slug,
     )
 
     check_specs = [
@@ -725,11 +803,17 @@ def build_live_adapter_gate_attestation(
             f"Environment secret handle {required_secret_id!r} is missing.",
         ),
         (
-            "reviewer_gate",
-            reviewer_gate_ok,
-            "live_gate_reviewer_gate_missing",
-            "Reviewer protection or an explicitly approved equivalent release gate is present.",
-            "Required reviewer protection is missing and no equivalent release gate is approved.",
+            "deployment_protection_gate",
+            deployment_protection_gate_ok,
+            "live_gate_deployment_protection_missing",
+            (
+                "Selected GitHub App deployment protection gate "
+                f"{required_deployment_protection_app_slug!r} is present."
+            ),
+            (
+                "Selected GitHub App deployment protection gate "
+                f"{required_deployment_protection_app_slug!r} is missing; observed={deployment_rule_names!r}."
+            ),
         ),
         (
             "support_boundary",
@@ -765,6 +849,8 @@ def build_live_adapter_gate_attestation(
         "environment_name": environment_name,
         "required_secret_id": required_secret_id,
         "equivalent_release_gate_approved": equivalent_release_gate_approved,
+        "release_gate_model": SELECTED_RELEASE_GATE_MODEL,
+        "required_deployment_protection_app_slug": required_deployment_protection_app_slug,
         "runtime_binding_allowed": overall_status == "ready",
         "live_execution_allowed": False,
         "support_widening": False,

@@ -71,6 +71,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2i"
+        and item["decision"] == "deployment_protection_attestation_supported_gate_still_blocked"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/497"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -79,18 +86,18 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["pending_external_actions"][0]["status"] == "partially_provisioned_blocked"
     assert (
         payload["pending_external_actions"][0]["decision"]
-        == "environment_created_secret_and_reviewer_still_missing"
+        == "environment_created_secret_and_app_gate_still_missing"
     )
     assert payload["pending_external_actions"][1]["id"] == "GPP-2c"
     assert payload["pending_external_actions"][1]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/485"
     assert payload["pending_external_actions"][1]["title"] == "Independent release gate and credential resolution"
     assert (
         payload["pending_external_actions"][1]["status"]
-        == "blocked_external_deployment_protection_bot_provisioning_required"
+        == "blocked_external_deployment_protection_bot_and_secret_provisioning_required"
     )
     assert (
         payload["pending_external_actions"][1]["decision"]
-        == "github_app_deployment_protection_selected_secret_and_app_gate_still_missing"
+        == "attestation_support_ready_secret_and_app_gate_still_missing"
     )
     assert {item["id"] for item in payload["pending_external_actions"]} == {"GPP-2b", "GPP-2c"}
     assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
@@ -106,11 +113,12 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "implement deployment protection attestation support before any GPP-2 runtime binding"
+        action == "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding"
         for action in payload["next_allowed_actions"]
     )
     assert any(
-        action == "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding"
+        action
+        == "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate"
         for action in payload["next_allowed_actions"]
     )
     assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
@@ -176,6 +184,20 @@ def test_gpp2h_selects_deployment_protection_bot_not_bot_user() -> None:
     assert "The model is a policy bot, not a user-like reviewer account." in decision
     assert "PAT-backed bot account listed as required reviewer" in decision
     assert "GPP-2i - deployment protection attestation support" in decision
+    assert "does not unblock `GPP-2`" in decision
+    assert "does not widen support" in decision
+
+
+def test_gpp2i_attestation_support_keeps_gate_blocked() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2i-DEPLOYMENT-PROTECTION-ATTESTATION-SUPPORT.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `deployment_protection_attestation_supported_gate_still_blocked`" in decision
+    assert "`release_gate_model = github_app_deployment_protection_rule`" in decision
+    assert "`required_deployment_protection_app_slug = ao-kernel-live-adapter-gate`" in decision
+    assert "deployment_protection_gate: blocked (live_gate_deployment_protection_missing)" in decision
+    assert "`--equivalent-release-gate-approved` does not satisfy" in decision
     assert "does not unblock `GPP-2`" in decision
     assert "does not widen support" in decision
 
