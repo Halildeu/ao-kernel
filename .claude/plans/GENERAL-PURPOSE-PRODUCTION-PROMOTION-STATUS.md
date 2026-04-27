@@ -1,13 +1,13 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 protected workflow bound; live execution not started
-**Date:** 2026-04-27
+**Status:** GPP-2 protected workflow evidence fail-closed; policy response missing
+**Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#521](https://github.com/Halildeu/ao-kernel/issues/521)
-for protected live gate runtime binding
-**Current slice record:** `.claude/plans/GPP-2m-PROTECTED-LIVE-GATE-RUNTIME-BINDING.md`
+**Current slice issue:** [#523](https://github.com/Halildeu/ao-kernel/issues/523)
+for protected live gate workflow evidence
+**Current slice record:** `.claude/plans/GPP-2n-PROTECTED-WORKFLOW-EVIDENCE.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -121,6 +121,13 @@ Last live verification on current `origin/main` showed:
     `workflow_dispatch` only, contains no `secrets.` expression, and still
     does not invoke a live adapter. Deployment protection inactivity, denial,
     timeout, or failure is fail-closed evidence, not approval.
+30. GPP-2n dispatched `Live Adapter Gate` from `main` on run
+    `25020015357`. GitHub created deployment `4503862042` for
+    `ao-kernel-live-adapter-gate`, held job `73277880393` in `waiting`, exposed
+    `current_user_can_approve=false`, produced no artifacts, and after bounded
+    observation the run was cancelled. This is fail-closed evidence that the
+    protected environment is on the execution path, but the deployment
+    protection app/policy service did not return a decision.
 
 ## 3. Current Verdict
 
@@ -173,7 +180,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2k` | Completed / no support widening | Protected live gate provisioning runbook | operator/admin checklist ready; current live gate still blocked |
 | `GPP-2l` | Completed / no support widening | Protected live gate prerequisites-ready attestation | protected prerequisites ready; runtime binding not started |
 | `GPP-2m` | Completed / no support widening | Protected live gate runtime binding | workflow bound to protected environment; live execution still disabled |
-| `GPP-2` | Bound / no live execution | Protected live-adapter gate runtime binding | protected workflow binding is present; next slice may collect protected workflow evidence fail-closed |
+| `GPP-2n` | Completed / no support widening | Protected live gate workflow evidence | protected workflow reached environment gate and failed closed because policy response is missing |
+| `GPP-2` | Blocked / policy response missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must respond before further runtime work |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -302,7 +310,7 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** partially bound by GPP-2m; live execution still disabled.
+**Status:** blocked by GPP-2n fail-closed protected workflow evidence.
 
 **Entry criteria:**
 
@@ -311,7 +319,9 @@ evidence.
 
 GPP-2l records ready protected prerequisite metadata. GPP-2m binds the manual
 workflow to `ao-kernel-live-adapter-gate` without invoking a live adapter or
-using the protected credential value.
+using the protected credential value. GPP-2n proves the bound workflow reaches
+the protected environment gate, but the deployment protection app/policy
+service does not yet return an approval, denial, timeout, or failure decision.
 
 **Acceptance criteria:**
 
@@ -319,7 +329,8 @@ using the protected credential value.
    GPP-2m.
 2. Manual dispatch can run `claude-code-cli` preflight: not yet met; live
    execution remains disabled.
-3. A governed workflow smoke runs through the protected gate.
+3. A governed workflow smoke runs through the protected gate: not yet met; the
+   protected job remained waiting before any steps ran.
 4. Evidence artifact records adapter identity, workflow identity, event order,
    timeout, redaction status, artifact paths, and failure mode.
 5. Missing auth, missing binary, timeout, prompt denial, malformed output, and
@@ -557,11 +568,13 @@ accident.
 
 ## 17. Current Active Work
 
-No live execution/support-widening work is active. `GPP-2` is now bound to the
-protected environment, but it is not yet live-execution capable. GPP-2l records
-a metadata-only `overall_status=ready` prerequisite attestation, and GPP-2m
-binds `.github/workflows/live-adapter-gate.yml` to
-`ao-kernel-live-adapter-gate` without using secret values. GPP-2b
+No live execution/support-widening work is active. `GPP-2` is blocked on the
+deployment protection app/policy service response path. GPP-2l records a
+metadata-only `overall_status=ready` prerequisite attestation, GPP-2m binds
+`.github/workflows/live-adapter-gate.yml` to
+`ao-kernel-live-adapter-gate` without using secret values, and GPP-2n proves
+the bound workflow reaches that protected environment but stays waiting without
+a policy decision. GPP-2b
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) and GPP-2c
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) are resolved at the
 metadata prerequisite level: the protected environment exists, admin bypass is
@@ -580,14 +593,15 @@ only. GPP-2h selects GitHub App deployment protection, GPP-2i adds attestation
 support for that model, GPP-2j refreshes blocked metadata, and GPP-2k adds the
 operator provisioning runbook.
 
-The next GPP-2 slice may collect protected workflow evidence from `main`.
-It must keep fork and pull-request contexts away from protected credentials,
-must not use `AO_CLAUDE_CODE_CLI_AUTH` through a `secrets.` expression until a
-later live-execution slice explicitly permits it, and must keep
-`live_execution_allowed=false`, `support_widening=false`, and
-`production_platform_claim=false`. If the deployment protection app webhook or
-policy endpoint is inactive, denies, times out, or fails, the protected
-deployment must remain blocked or failed.
+The next GPP-2 action is to activate or configure the
+`ao-kernel-live-adapter-gate` deployment protection app/policy service so it
+responds to protected deployment callbacks. Do not repeatedly dispatch
+`.github/workflows/live-adapter-gate.yml` until that service is expected to
+respond. Any follow-up must keep fork and pull-request contexts away from
+protected credentials, must not use `AO_CLAUDE_CODE_CLI_AUTH` through a
+`secrets.` expression until a later live-execution slice explicitly permits it,
+and must keep `live_execution_allowed=false`, `support_widening=false`, and
+`production_platform_claim=false`.
 
 ## 18. Risk Register
 
@@ -601,6 +615,7 @@ deployment must remain blocked or failed.
 | Full matrix becomes stale | Fake green promotion | Require fresh artifacts from current `origin/main` |
 | Advisory consultation mistaken for release authority | Protected gate can be falsely unblocked | Claude/MCP protocol is advisory only; deployment protection app or explicitly approved equivalent gate remains required |
 | Bot account mistaken for deployment protection | Same operator can rubber-stamp the gate | PAT-backed bot reviewer is rejected; use GitHub App deployment protection |
+| Deployment protection app installed but inactive | Protected workflow waits forever and produces no artifacts | Treat waiting/cancelled runs as fail-closed; activate policy service before repeating evidence dispatch |
 
 ## 19. Tracking Log
 
@@ -638,3 +653,5 @@ deployment must remain blocked or failed.
 | 2026-04-27 | GPP-2l prerequisites ready | `scripts/live_adapter_gate_attest.py` reports `overall_status=ready`; protected environment/admin bypass/branch policy, `AO_CLAUDE_CODE_CLI_AUTH`, and the selected deployment protection app gate pass. Runtime binding has not started and live execution/support widening remain false. |
 | 2026-04-27 | GPP-2m issue opened | Issue [#521](https://github.com/Halildeu/ao-kernel/issues/521) tracks protected live gate workflow binding. |
 | 2026-04-27 | GPP-2m workflow bound | `.github/workflows/live-adapter-gate.yml` is bound to `ao-kernel-live-adapter-gate`; triggers remain manual-only, no `secrets.` expression is present, and live execution/support widening remain false. |
+| 2026-04-28 | GPP-2n issue opened | Issue [#523](https://github.com/Halildeu/ao-kernel/issues/523) tracks protected workflow evidence collection after the environment binding. |
+| 2026-04-28 | GPP-2n evidence fail-closed | Workflow run `25020015357` reached `ao-kernel-live-adapter-gate` and stayed waiting for deployment protection app response; no steps or artifacts ran, `current_user_can_approve=false`, and the run was cancelled after bounded observation. |
