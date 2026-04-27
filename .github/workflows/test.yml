@@ -271,3 +271,4 @@ jobs:
           pip_install -e ".[mcp]"      && python -c "import mcp; print('mcp OK')"
           pip_install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
           pip_install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"
+          pip_install -e ".[policy-service]" && python -c "import jwt; print('policy-service OK')"
