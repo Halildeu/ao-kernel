@@ -31,11 +31,15 @@ if str(_REPO_ROOT) not in sys.path:
 from ao_kernel._internal.repo_intelligence.context_pack_builder import (  # noqa: E402
     build_repo_query_context_pack,
 )
+from ao_kernel.repo_intelligence import validate_repo_intelligence_workflow_opt_in  # noqa: E402
 from ao_kernel.config import load_default  # noqa: E402
 
 JsonDict = dict[str, Any]
 
 _FINAL_STATE_RE = re.compile(r"^\[demo\] final state: (?P<state>\S+)\s*$", re.MULTILINE)
+_REVIEW_ARTIFACT_RE = re.compile(r"^\[demo\] review artifact: (?P<path>.+?)\s*$", re.MULTILINE)
+_EVENTS_RE = re.compile(r"^\[demo\] events: (?P<path>.+?)\s*$", re.MULTILINE)
+_EXPECTED_NAMESPACE = "repo_chunk::ao-kernel::space::"
 _REPO_QUERY_COMMAND = (
     'python3 -m ao_kernel repo query --project-root . --workspace-root .ao '
     '--query "where is review_ai_flow invoked" --path-prefix ao_kernel/defaults/workflows/ '
@@ -119,6 +123,21 @@ def run_installed_demo_with_handoff(
         smoke_cwd.mkdir()
         handoff_file = temp_root / "repo-intelligence-handoff.md"
         handoff_file.write_text(handoff_markdown, encoding="utf-8")
+        opt_in_validation = validate_repo_intelligence_workflow_opt_in(
+            _workflow_opt_in_config(handoff_file.name),
+            project_root=temp_root,
+        )
+        if opt_in_validation["status"] != "accepted":
+            return {
+                "command": [],
+                "returncode": 1,
+                "stdout": "",
+                "stderr": json.dumps(opt_in_validation, sort_keys=True),
+                "final_state": None,
+                "opt_in_validation": opt_in_validation,
+                "review_findings_artifact_path": None,
+                "evidence_timeline_path": None,
+            }
 
         _run_checked([sys.executable, "-m", "build", "--outdir", str(dist_dir)], cwd=repo_root)
         _run_checked([sys.executable, "-m", "venv", str(venv_dir)], cwd=repo_root)
@@ -150,13 +169,18 @@ def run_installed_demo_with_handoff(
         "stdout": proc.stdout,
         "stderr": proc.stderr,
         "final_state": parse_demo_final_state(proc.stdout),
+        "opt_in_validation": opt_in_validation,
+        "review_findings_artifact_path": parse_demo_review_artifact_path(proc.stdout),
+        "evidence_timeline_path": parse_demo_events_path(proc.stdout),
     }
 
 
 def build_rehearsal_report(*, handoff: JsonDict, workflow_result: JsonDict) -> JsonDict:
     final_state = workflow_result.get("final_state")
     returncode = int(workflow_result.get("returncode", 1))
-    passed = returncode == 0 and final_state == "completed"
+    opt_in_validation = workflow_result.get("opt_in_validation") or _accepted_opt_in_validation_fixture(handoff)
+    opt_in_accepted = opt_in_validation.get("status") == "accepted"
+    passed = returncode == 0 and final_state == "completed" and opt_in_accepted
     stdout = str(workflow_result.get("stdout", ""))
     stderr = str(workflow_result.get("stderr", ""))
     report: JsonDict = {
@@ -170,6 +194,7 @@ def build_rehearsal_report(*, handoff: JsonDict, workflow_result: JsonDict) -> J
         ),
         "support_widening": False,
         "repo_intelligence_handoff": handoff["metadata"],
+        "repo_intelligence_opt_in_validation": opt_in_validation,
         "workflow_rehearsal": {
             "workflow_id": "review_ai_flow",
             "adapter_id": "codex-stub",
@@ -178,14 +203,21 @@ def build_rehearsal_report(*, handoff: JsonDict, workflow_result: JsonDict) -> J
             "returncode": returncode,
             "final_state": final_state,
             "remote_side_effects": False,
+            "write_side_workflow_support_implied": False,
+            "real_adapter_called": False,
+            "review_findings_artifact_path": workflow_result.get("review_findings_artifact_path"),
+            "evidence_timeline_path": workflow_result.get("evidence_timeline_path"),
             "stdout_sha256": hashlib.sha256(stdout.encode("utf-8")).hexdigest(),
             "stderr_sha256": hashlib.sha256(stderr.encode("utf-8")).hexdigest(),
         },
     }
     if not passed:
-        report["blocked_reason"] = (
-            f"demo returncode={returncode}, final_state={final_state!r}"
-        )
+        if not opt_in_accepted:
+            report["blocked_reason"] = "repo_intelligence_opt_in_validation_not_accepted"
+        else:
+            report["blocked_reason"] = (
+                f"demo returncode={returncode}, final_state={final_state!r}"
+            )
     return report
 
 
@@ -194,6 +226,20 @@ def parse_demo_final_state(stdout: str) -> str | None:
     if match is None:
         return None
     return match.group("state")
+
+
+def parse_demo_review_artifact_path(stdout: str) -> str | None:
+    match = _REVIEW_ARTIFACT_RE.search(stdout)
+    if match is None:
+        return None
+    return match.group("path")
+
+
+def parse_demo_events_path(stdout: str) -> str | None:
+    match = _EVENTS_RE.search(stdout)
+    if match is None:
+        return None
+    return match.group("path")
 
 
 def validate_report(report: JsonDict) -> None:
@@ -232,6 +278,51 @@ def _venv_bin_dir(venv_dir: Path) -> Path:
     if os.name == "nt":
         return venv_dir / "Scripts"
     return venv_dir / "bin"
+
+
+def _workflow_opt_in_config(handoff_path: str) -> JsonDict:
+    return {
+        "enabled": True,
+        "source": "explicit_handoff_file",
+        "handoff_path": handoff_path,
+        "require_fresh": True,
+        "expected_namespace": _EXPECTED_NAMESPACE,
+        "support_tier": "beta_explicit_handoff",
+    }
+
+
+def _accepted_opt_in_validation_fixture(handoff: JsonDict) -> JsonDict:
+    return {
+        "status": "accepted",
+        "enabled": True,
+        "decision": "accepted_repo_intelligence_workflow_opt_in",
+        "handoff": {
+            "path": "deterministic_contract_fixture",
+            "markdown_sha256": handoff["metadata"]["markdown_sha256"],
+            "mode": "explicit_operator_markdown",
+            "support_tier": "beta_explicit_handoff",
+        },
+        "source_metadata": {
+            "vector_namespace_key_prefix": _EXPECTED_NAMESPACE,
+            "repo_chunks_sha256": "c" * 64,
+            "repo_vector_index_manifest_sha256": "d" * 64,
+            "freshness_state": "current_only",
+            "stale_candidates": 0,
+            "retrieved_chunks": 1,
+            "source_paths": ["ao_kernel/defaults/workflows/review_ai_flow.v1.json"],
+            "content_sha256": ["e" * 64],
+        },
+        "safety": {
+            "hidden_injection": False,
+            "root_export": False,
+            "mcp_exposure": False,
+            "context_compiler_auto_feed": False,
+            "vector_writes": False,
+            "artifact_writes": False,
+        },
+        "support_widening": False,
+        "production_platform_claim": False,
+    }
 
 
 def _query_result_fixture() -> JsonDict:

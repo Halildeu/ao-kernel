@@ -11,6 +11,7 @@
     "decision",
     "support_widening",
     "repo_intelligence_handoff",
+    "repo_intelligence_opt_in_validation",
     "workflow_rehearsal"
   ],
   "properties": {
@@ -55,6 +56,68 @@
         "context_compiler_auto_feed": { "const": false }
       }
     },
+    "repo_intelligence_opt_in_validation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "enabled",
+        "decision",
+        "support_widening",
+        "production_platform_claim"
+      ],
+      "properties": {
+        "status": { "enum": ["accepted", "blocked"] },
+        "enabled": { "const": true },
+        "decision": {
+          "enum": [
+            "accepted_repo_intelligence_workflow_opt_in",
+            "blocked_repo_intelligence_workflow_opt_in"
+          ]
+        },
+        "support_widening": { "const": false },
+        "production_platform_claim": { "const": false },
+        "handoff": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["markdown_sha256"],
+          "properties": {
+            "markdown_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "mode": { "enum": ["explicit_operator_markdown"] },
+            "support_tier": { "enum": ["beta_explicit_handoff"] }
+          }
+        },
+        "source_metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "vector_namespace_key_prefix": {
+              "type": "string",
+              "pattern": "^repo_chunk::[^:]+::[^:]+::$"
+            },
+            "freshness_state": { "enum": ["current_only"] },
+            "stale_candidates": { "const": 0 },
+            "retrieved_chunks": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "safety": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "hidden_injection": { "const": false },
+            "root_export": { "const": false },
+            "mcp_exposure": { "const": false },
+            "context_compiler_auto_feed": { "const": false },
+            "vector_writes": { "const": false },
+            "artifact_writes": { "const": false }
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "workflow_rehearsal": {
       "type": "object",
       "additionalProperties": false,
@@ -66,6 +129,10 @@
         "returncode",
         "final_state",
         "remote_side_effects",
+        "write_side_workflow_support_implied",
+        "real_adapter_called",
+        "review_findings_artifact_path",
+        "evidence_timeline_path",
         "stdout_sha256",
         "stderr_sha256"
       ],
@@ -75,12 +142,15 @@
         "execution_mode": { "const": "wheel_installed_temp_venv" },
         "command": {
           "type": "array",
-          "items": { "type": "string" },
-          "minItems": 1
+          "items": { "type": "string" }
         },
         "returncode": { "type": "integer" },
         "final_state": { "type": ["string", "null"] },
         "remote_side_effects": { "const": false },
+        "write_side_workflow_support_implied": { "const": false },
+        "real_adapter_called": { "const": false },
+        "review_findings_artifact_path": { "type": ["string", "null"] },
+        "evidence_timeline_path": { "type": ["string", "null"] },
         "stdout_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
         "stderr_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
       }
@@ -91,6 +161,27 @@
     {
       "if": { "properties": { "overall_status": { "const": "blocked" } } },
       "then": { "required": ["blocked_reason"] }
+    },
+    {
+      "if": { "properties": { "overall_status": { "const": "pass" } } },
+      "then": {
+        "properties": {
+          "repo_intelligence_opt_in_validation": {
+            "properties": {
+              "status": { "const": "accepted" }
+            }
+          },
+          "workflow_rehearsal": {
+            "required": ["command"],
+            "properties": {
+              "command": { "minItems": 1 },
+              "final_state": { "const": "completed" },
+              "review_findings_artifact_path": { "type": "string", "minLength": 1 },
+              "evidence_timeline_path": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
     }
   ]
 }
