@@ -30,8 +30,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/523"
-    assert payload["current_wp"]["exit_decision"] == "protected_workflow_evidence_fail_closed_policy_response_missing"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/525"
+    assert payload["current_wp"]["exit_decision"] == "policy_decision_core_ready_service_not_deployed"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -106,20 +106,27 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2o"
+        and item["decision"] == "policy_decision_core_ready_service_not_deployed"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/525"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
-        "activate or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook so it responds to protected deployment callbacks",
-        "rerun the protected workflow evidence slice from main after the policy service can approve, deny, or fail explicitly",
+        "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook so it calls the repo-owned policy decision core or an equivalent fail-closed policy",
+        "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
     ]
     assert payload["blocked_wps"] == [
         {
             "id": "GPP-2",
             "reason": (
-                "protected workflow dispatch reached ao-kernel-live-adapter-gate but no deployment "
-                "protection app approval arrived; the job stayed waiting, produced no artifacts, and "
-                "was cancelled after bounded observation"
+                "repo-owned deployment-protection policy decision core is ready, but the GitHub App "
+                "webhook/policy service is not yet deployed or configured to respond to protected "
+                "deployment callbacks"
             ),
         }
     ]
@@ -135,11 +142,16 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "resolve the deployment-protection policy service response gap before any further live-adapter runtime work"
+        action == "deploy or configure the deployment-protection policy service response path before any further live-adapter runtime work"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action == "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -235,9 +247,9 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/523"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/525"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
-    assert "policy_response_missing" in payload["current_wp"]["exit_decision"]
+    assert payload["current_wp"]["exit_decision"] == "policy_decision_core_ready_service_not_deployed"
     assert payload["support_widening_allowed"] is False
 
 
@@ -267,7 +279,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "Blocked work packages:\n- GPP-2: protected workflow dispatch reached" in rendered
+    assert "Blocked work packages:\n- GPP-2: repo-owned deployment-protection policy decision core is ready" in rendered
     assert "divergence: 0\t0" in rendered
 
 
