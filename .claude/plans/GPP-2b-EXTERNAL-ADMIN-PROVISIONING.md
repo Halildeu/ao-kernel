@@ -60,6 +60,34 @@ gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel
 # empty
 ```
 
+Fresh post-RI-6 metadata refresh on 2026-04-27 after PR
+[#514](https://github.com/Halildeu/ao-kernel/pull/514) merged:
+
+```bash
+python3 scripts/live_adapter_gate_attest.py --artifact-path /tmp/gpp-2-post-ri6-attestation.json --output text
+# overall_status: blocked
+# finding_code: live_gate_credential_handle_missing
+# runtime_binding_allowed: false
+# live_execution_allowed: false
+# support_widening: false
+# checks:
+# - protected_environment: pass
+# - admin_bypass: pass
+# - deployment_branch_policy: pass
+# - credential_handle: blocked (live_gate_credential_handle_missing)
+# - deployment_protection_gate: blocked (live_gate_deployment_protection_missing)
+# - support_boundary: pass
+
+gh api /apps/ao-kernel-live-adapter-gate --jq '{slug:.slug,id:.id,name:.name}'
+# HTTP 404 Not Found
+
+gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate/deployment_protection_rules
+# {"total_count":0,"custom_deployment_protection_rules":[]}
+
+gh secret list --env ao-kernel-live-adapter-gate --repo Halildeu/ao-kernel --json name,updatedAt
+# []
+```
+
 ## 3. Current Decision
 
 `GPP-2` stays blocked.
