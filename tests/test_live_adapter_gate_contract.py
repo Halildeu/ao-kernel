@@ -554,13 +554,14 @@ def test_script_emits_json_and_report_file(tmp_path: Path) -> None:
     assert rehearsal_decision_payload["live_rehearsal_attempted"] is False
 
 
-def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
+def test_live_adapter_gate_workflow_is_protected_manual_contract_only() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     workflow = (repo_root / ".github/workflows/live-adapter-gate.yml").read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in workflow
     assert "\n  push:" not in workflow
     assert "\n  pull_request:" not in workflow
+    assert "\n  pull_request_target:" not in workflow
     assert "live_adapter_gate_contract.py" in workflow
     assert "live-adapter-gate-contract.v1.json" in workflow
     assert "live-adapter-gate-evidence.v1.json" in workflow
@@ -569,7 +570,7 @@ def test_live_adapter_gate_workflow_is_manual_contract_only() -> None:
     assert "claude_code_cli_smoke.py" not in workflow
     assert "claude_code_cli_workflow_smoke.py" not in workflow
     assert "secrets." not in workflow
-    assert "\n    environment:" not in workflow
+    assert "\n    environment:\n      name: ao-kernel-live-adapter-gate\n" in workflow
     assert "contents: read" in workflow
 
 

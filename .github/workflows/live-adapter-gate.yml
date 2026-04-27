@@ -27,6 +27,8 @@ jobs:
   live-adapter-gate-contract:
     name: live-adapter-gate-contract
     runs-on: ubuntu-latest
+    environment:
+      name: ao-kernel-live-adapter-gate
     timeout-minutes: 5
     steps:
       - name: Validate GP-4.1 dispatch scope
