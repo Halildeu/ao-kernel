@@ -29,9 +29,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "ready"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/519"
-    assert payload["current_wp"]["exit_decision"] == "prerequisites_ready_runtime_binding_not_started"
+    assert payload["current_wp"]["status"] == "bound"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/521"
+    assert payload["current_wp"]["exit_decision"] == "protected_workflow_bound_live_execution_still_disabled"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -92,6 +92,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2m"
+        and item["decision"] == "protected_workflow_bound_live_execution_still_disabled"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/521"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -109,17 +116,16 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "start the next controlled GPP-2 runtime-binding slice from ready prerequisites"
+        action == "start the next controlled GPP-2 protected workflow evidence slice from the bound workflow"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action == "dispatch .github/workflows/live-adapter-gate.yml only from main through ao-kernel-live-adapter-gate"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "bind .github/workflows/live-adapter-gate.yml to ao-kernel-live-adapter-gate only in a dedicated issue/branch/PR"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "reference AO_CLAUDE_CODE_CLI_AUTH only as a protected environment secret handle"
+        == "do not reference AO_CLAUDE_CODE_CLI_AUTH through secrets context until a later live execution slice explicitly permits it"
         for action in payload["next_allowed_actions"]
     )
     assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
@@ -209,10 +215,10 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     payload = mod.load_status(_status_path())
 
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "ready"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/519"
+    assert payload["current_wp"]["status"] == "bound"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/521"
     assert payload["blocked_wps"] == []
-    assert "runtime_binding_not_started" in payload["current_wp"]["exit_decision"]
+    assert "live_execution_still_disabled" in payload["current_wp"]["exit_decision"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -238,7 +244,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
     assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
-    assert "Current status: ready" in rendered
+    assert "Current status: bound" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
@@ -255,5 +261,5 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     payload = json.loads(captured.out)
     assert result == 0
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "ready"
+    assert payload["current_wp"]["status"] == "bound"
     assert payload["blocked_wps"] == []

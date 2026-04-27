@@ -5,8 +5,8 @@ live-adapter prerequisite gate tracked in
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) and
 [#485](https://github.com/Halildeu/ao-kernel/issues/485).
 
-It is not a runtime-binding guide. Completing the checklist only prepares the
-metadata-only attestation that may later decide whether `GPP-2` can start.
+It is not a live-execution guide. Completing the checklist prepares or repairs
+the metadata-only attestation that the protected workflow binding depends on.
 
 Current selected model:
 
@@ -16,14 +16,15 @@ Current selected model:
 | Deployment protection model | GitHub App deployment protection rule |
 | Required app slug | `ao-kernel-live-adapter-gate` |
 | Required credential handle | `AO_CLAUDE_CODE_CLI_AUTH` |
-| Current program head | `GPP-2` blocked |
+| Current program head | `GPP-2` workflow bound; live execution disabled |
 
 ## Preconditions
 
 Before changing GitHub admin state:
 
 1. `main` must be clean and synchronized with `origin/main`.
-2. `python3 scripts/gpp_next.py` must still report `GPP-2` as blocked.
+2. `python3 scripts/gpp_next.py` must still report `support_widening=false`,
+   `production_platform_claim=false`, and `live_adapter_execution_allowed=false`.
 3. The operator must have GitHub admin permission for `Halildeu/ao-kernel`.
 4. The operator must know the GitHub App or policy service that owns slug
    `ao-kernel-live-adapter-gate`, or open a decision PR before changing the
@@ -41,6 +42,14 @@ Provisioned state after GPP-2l:
    `ao-kernel-live-adapter-gate` is attached and enabled.
 5. `AO_CLAUDE_CODE_CLI_AUTH` exists as an environment secret handle by
    metadata.
+
+Runtime-binding state after GPP-2m:
+
+1. `.github/workflows/live-adapter-gate.yml` is bound to
+   `ao-kernel-live-adapter-gate`.
+2. The workflow remains `workflow_dispatch` only.
+3. The workflow contains no `secrets.` expression.
+4. The workflow does not invoke a live adapter.
 
 Blocked interpretation for a fresh or drifted setup:
 
@@ -180,10 +189,10 @@ python3 scripts/live_adapter_gate_attest.py \
   --output text
 ```
 
-Ready metadata means the next prerequisite slice may record
-`prerequisites_ready`. It still does not authorize runtime binding inside this
-admin checklist, live adapter execution, support widening, or a production
-platform claim.
+Ready metadata plus the GPP-2m workflow binding means a later controlled slice
+may collect protected workflow evidence from `main`. It still does not
+authorize live adapter execution, support widening, or a production platform
+claim.
 
 ## Evidence Comment Template
 
@@ -210,7 +219,8 @@ operator-only secret handoff details.
 
 ## Blocked Interpretations
 
-Keep `GPP-2` blocked when any of these remain true:
+Keep protected workflow evidence blocked or failed when any of these remain
+true:
 
 1. app lookup returns `HTTP 404`;
 2. deployment protection rule list is empty or missing the selected app;
@@ -248,7 +258,7 @@ If the wrong credential handle is set:
 4. No product end-user account treated as release authority.
 5. No PAT-backed bot user treated as release authority.
 6. No `--equivalent-release-gate-approved` while #489 remains not approved.
-7. No `GPP-2` runtime binding until a follow-up attestation permits it.
+7. No bypass of the protected workflow binding.
 8. No live adapter execution.
 9. No support widening.
 10. No production platform claim.

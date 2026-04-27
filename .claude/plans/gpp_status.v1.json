@@ -8,15 +8,15 @@
   "current_wp": {
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
-    "status": "ready",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/519",
-    "exit_decision": "prerequisites_ready_runtime_binding_not_started",
-    "ready_after": "protected live gate attestation reports overall_status=ready with live_execution_allowed=false",
+    "status": "bound",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/521",
+    "exit_decision": "protected_workflow_bound_live_execution_still_disabled",
+    "ready_after": "protected live gate workflow is bound to ao-kernel-live-adapter-gate with live_execution_allowed=false",
     "allowed_scope": [
-      "open a dedicated GPP-2 runtime binding issue, branch, and PR",
-      "bind the live-adapter gate workflow to ao-kernel-live-adapter-gate",
-      "reference AO_CLAUDE_CODE_CLI_AUTH only by protected environment secret handle",
-      "keep live execution disabled until protected workflow evidence is recorded"
+      "open a dedicated GPP-2 protected workflow evidence issue, branch, and PR",
+      "dispatch the live-adapter gate workflow only from main through ao-kernel-live-adapter-gate",
+      "observe deployment protection app inactivity, denial, or timeout as fail-closed evidence",
+      "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
     ]
   },
   "completed_wps": [
@@ -99,6 +99,12 @@
       "decision": "protected_live_gate_prerequisites_ready_runtime_binding_not_started",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/519",
       "record": ".claude/plans/GPP-2l-PROTECTED-LIVE-GATE-PREREQUISITES-READY.md"
+    },
+    {
+      "id": "GPP-2m",
+      "decision": "protected_workflow_bound_live_execution_still_disabled",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/521",
+      "record": ".claude/plans/GPP-2m-PROTECTED-LIVE-GATE-RUNTIME-BINDING.md"
     }
   ],
   "blocked_wps": [],
@@ -155,14 +161,14 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "start the next controlled GPP-2 runtime-binding slice from ready prerequisites",
+    "start the next controlled GPP-2 protected workflow evidence slice from the bound workflow",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
-    "bind .github/workflows/live-adapter-gate.yml to ao-kernel-live-adapter-gate only in a dedicated issue/branch/PR",
-    "reference AO_CLAUDE_CODE_CLI_AUTH only as a protected environment secret handle",
+    "dispatch .github/workflows/live-adapter-gate.yml only from main through ao-kernel-live-adapter-gate",
+    "do not reference AO_CLAUDE_CODE_CLI_AUTH through secrets context until a later live execution slice explicitly permits it",
     "keep fork and pull_request contexts away from protected credentials",
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
-    "do not treat an inactive or failing deployment protection webhook as approval; fail closed instead",
+    "treat inactive, denied, timed out, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
   "last_updated": "2026-04-27"
