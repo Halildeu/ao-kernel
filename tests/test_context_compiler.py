@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 
 from ao_kernel.context.context_compiler import CompiledContext, compile_context
+from ao_kernel.context.agent_coordination import compile_context_sdk
 from ao_kernel.context.profile_router import (
     DEFAULT_PROFILE,
     detect_profile,
@@ -167,3 +169,41 @@ class TestContextCompiler:
         startup = compile_context(ctx, profile="STARTUP")
         task = compile_context(ctx, profile="TASK_EXECUTION")
         assert startup.items_included < task.items_included  # STARTUP has lower max
+
+    def test_compile_context_has_no_repo_intelligence_auto_feed_parameter(self):
+        parameter_names = set(inspect.signature(compile_context).parameters)
+
+        assert "repo_intelligence_context" not in parameter_names
+        assert "repo_query_context" not in parameter_names
+        assert "context_compiler_feed" not in parameter_names
+
+    def test_compile_context_sdk_has_no_repo_intelligence_auto_feed_parameter(self):
+        parameter_names = set(inspect.signature(compile_context_sdk).parameters)
+
+        assert "repo_intelligence_context" not in parameter_names
+        assert "repo_query_context" not in parameter_names
+        assert "context_compiler_feed" not in parameter_names
+
+    def test_repo_intelligence_context_payload_is_not_compiled_from_session_root(self):
+        ctx = {
+            "session_id": "test",
+            "repo_intelligence_context": {
+                "enabled": True,
+                "source": "explicit_handoff_file",
+                "content": "repo-intelligence hidden payload must not be rendered",
+            },
+            "repo_query_context": {
+                "content": "repo query hidden payload must not be rendered",
+            },
+            "context_compiler_feed": {
+                "enabled": True,
+            },
+            "ephemeral_decisions": [],
+        }
+
+        result = compile_context(ctx, profile="TASK_EXECUTION")
+
+        assert result.preamble == ""
+        assert result.items_included == 0
+        assert result.items_excluded == 0
+        assert result.selection_log == []
