@@ -1,12 +1,12 @@
 # General-Purpose Production Promotion Status
 
 **Status:** GPP-2 blocked; independent release gate required
-**Date:** 2026-04-25
+**Date:** 2026-04-27
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#497](https://github.com/Halildeu/ao-kernel/issues/497)
-for deployment protection attestation support
+**Current slice issue:** [#515](https://github.com/Halildeu/ao-kernel/issues/515)
+for protected live gate metadata refresh
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -99,6 +99,11 @@ Last live verification on current `origin/main` showed:
 25. GPP-2i adds metadata-only attestation support for the selected GitHub App
     deployment protection model. The current live gate remains blocked because
     the app rule and `AO_CLAUDE_CODE_CLI_AUTH` handle are not yet attested.
+26. GPP-2j refreshed live metadata on 2026-04-27 after RI-6 closeout. The
+    protected environment, admin-bypass-off setting, and branch policy still
+    pass; the selected GitHub App slug returns `HTTP 404`, deployment
+    protection rules are empty, and `AO_CLAUDE_CODE_CLI_AUTH` is not listed as
+    an environment secret handle. `GPP-2` remains blocked.
 
 ## 3. Current Verdict
 
@@ -147,6 +152,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2g` | Completed / no support widening | GitHub-native release authority selection and Claude MCP consultation protocol | provisioning path superseded by GPP-2h; Claude/MCP advisory protocol remains active |
 | `GPP-2h` | Completed / no support widening | Deployment protection bot gate decision | GitHub App deployment protection selected; PAT-backed bot reviewer rejected |
 | `GPP-2i` | Completed / no support widening | Deployment protection attestation support | selected app-gate metadata is recognized; current live gate still blocked |
+| `GPP-2j` | Completed / no support widening | Protected live gate metadata refresh after RI-6 closeout | current live gate still blocked; selected app gate and credential handle missing |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -550,7 +556,10 @@ broker. GPP-2g selects GitHub-native release authority as the first
 provisioning path and records Claude/MCP consultation as an advisory review
 protocol only. GPP-2h supersedes the GPP-2g provisioning path and selects a
 GitHub App deployment protection bot gate. GPP-2i adds metadata-only
-attestation support for that selected model. The next external/admin step is to
+attestation support for that selected model. GPP-2j refreshed the live metadata
+after RI-6 closeout and reconfirmed the same blocked state: app slug lookup
+returns `HTTP 404`, deployment protection rules are empty, and
+`AO_CLAUDE_CODE_CLI_AUTH` is not listed. The next external/admin step is to
 configure the app gate with slug `ao-kernel-live-adapter-gate` and set
 `AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a fresh
 metadata attestation can unblock `GPP-2`.
@@ -596,3 +605,5 @@ metadata attestation can unblock `GPP-2`.
 | 2026-04-26 | GPP-2g issue opened | Issue [#493](https://github.com/Halildeu/ao-kernel/issues/493) tracks GitHub-native release authority selection and Claude/MCP advisory consultation protocol. |
 | 2026-04-26 | GPP-2h issue opened | Issue [#495](https://github.com/Halildeu/ao-kernel/issues/495) tracks deployment protection bot gate selection; GitHub App deployment protection supersedes the required-reviewer provisioning path. |
 | 2026-04-26 | GPP-2i issue opened | Issue [#497](https://github.com/Halildeu/ao-kernel/issues/497) tracks metadata-only attestation support for the selected deployment protection bot gate. |
+| 2026-04-27 | GPP-2j issue opened | Issue [#515](https://github.com/Halildeu/ao-kernel/issues/515) tracks the post-RI-6 metadata refresh for the protected live gate. |
+| 2026-04-27 | GPP-2j live metadata refreshed | `scripts/live_adapter_gate_attest.py` still reports `overall_status=blocked`; protected environment/admin bypass/branch policy pass, but `AO_CLAUDE_CODE_CLI_AUTH` and the selected deployment protection app gate remain missing. |
