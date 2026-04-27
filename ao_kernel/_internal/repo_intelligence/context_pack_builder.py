@@ -71,6 +71,7 @@ def build_repo_query_context_pack(*, query_result: Mapping[str, Any]) -> str:
     ]
     _append_query_project(lines, query_result)
     _append_query_request(lines, query_result)
+    _append_query_handoff_provenance(lines, query_result)
     _append_query_summary(lines, query_result)
     _append_query_source_artifacts(lines, query_result)
     _append_query_results(lines, query_result)
@@ -332,6 +333,26 @@ def _append_query_request(lines: list[str], query_result: Mapping[str, Any]) -> 
     lines.append("")
 
 
+def _append_query_handoff_provenance(lines: list[str], query_result: Mapping[str, Any]) -> None:
+    rows = [
+        ("Command contract", "python3 -m ao_kernel repo query --output markdown"),
+        ("Output mode", "stdout-only Markdown"),
+        ("Read/write mode", "read-only retrieval; no artifact, vector, root, MCP, or memory writes"),
+        ("Support tier", "beta_explicit_handoff"),
+        ("Freshness state", _query_freshness_state(query_result)),
+        ("Freshness requirement", "returned chunks must have content_status=current"),
+        ("Namespace requirement", "vector keys must match the recorded repo_chunk namespace prefix"),
+        ("Source validation", "source path, line range, and content SHA256 are validated before rendering"),
+        ("Hidden injection", "disabled; operator must provide this Markdown as visible input"),
+        ("Root export", "disabled"),
+        ("MCP exposure", "disabled"),
+        ("context_compiler auto-feed", "disabled"),
+    ]
+    lines.extend(["## Handoff Provenance", "", "| Field | Value |", "|---|---|"])
+    lines.extend(f"| {_md(field)} | {_md(value)} |" for field, value in rows)
+    lines.append("")
+
+
 def _append_query_summary(lines: list[str], query_result: Mapping[str, Any]) -> None:
     summary = _mapping(query_result.get("summary"))
     rows = [
@@ -350,14 +371,17 @@ def _append_query_summary(lines: list[str], query_result: Mapping[str, Any]) -> 
 
 def _append_query_source_artifacts(lines: list[str], query_result: Mapping[str, Any]) -> None:
     source_artifacts = _mapping(query_result.get("source_artifacts"))
+    summary = _mapping(query_result.get("summary"))
     rows = [
         ("repo_chunks_sha256", _string(source_artifacts.get("repo_chunks_sha256"))),
         (
             "repo_vector_index_manifest_sha256",
             _string(source_artifacts.get("repo_vector_index_manifest_sha256")),
         ),
+        ("freshness_state", _query_freshness_state(query_result)),
+        ("stale_candidates", _string(summary.get("stale_candidates"))),
     ]
-    lines.extend(["## Source Artifacts", "", "| Artifact | SHA256 |", "|---|---|"])
+    lines.extend(["## Source Artifacts", "", "| Artifact | Value |", "|---|---|"])
     lines.extend(f"| {_md(name)} | {_md(value)} |" for name, value in rows)
     lines.append("")
 
@@ -433,6 +457,17 @@ def _append_query_limits(lines: list[str]) -> None:
             "",
         ]
     )
+
+
+def _query_freshness_state(query_result: Mapping[str, Any]) -> str:
+    results = [item for item in _list(query_result.get("results")) if isinstance(item, Mapping)]
+    summary = _mapping(query_result.get("summary"))
+    stale_candidates = _int(summary.get("stale_candidates"))
+    if stale_candidates:
+        return "stale_candidates_excluded"
+    if all(_string(item.get("content_status")) == "current" for item in results):
+        return "current_only"
+    return "unknown_or_incomplete"
 
 
 def _append_code_block(lines: list[str], *, text: str, language: str) -> None:
