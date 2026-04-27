@@ -61,6 +61,8 @@ The current boundary deliberately excludes:
 5. Missing metadata, stale sources, hash mismatch, unknown namespace, path
    escape, or disabled config must produce `blocked` or `fail`, not fake pass.
 6. Support tier wording must move with behavior and tests.
+7. Each `RI-6.N` follow-up phase must use its own dedicated issue, branch, PR,
+   validation record, and closeout decision.
 
 ## 4. Phase Board
 
@@ -86,8 +88,9 @@ checkout and installed-package path where practical.
 1. Run `repo scan` on the repository.
 2. Run `repo index --dry-run`.
 3. Run `repo export-plan`.
-4. Run `repo export` only in an isolated fixture or temporary workspace where
-   create-only root writes are safe.
+4. Run `repo export` only in a `pytest tmp_path` fixture or `mktemp -d`
+   temporary workspace where create-only root writes are safe. The primary
+   checkout and its `.ao/` directory must not be the export target.
 5. Record expected fail-closed behavior for `repo query` when vector backend or
    embedding configuration is absent.
 
@@ -285,6 +288,7 @@ evidence. That remains blocked until:
 | Namespace confusion | Cross-project retrieval leakage | Recorded namespace and project identity checks |
 | Root authority corruption | Agent contract drift | Create-only root export stays separate and confirmed |
 | MCP tool overreach | Repo intelligence becomes implicit agent memory | Design gate before implementation |
+| Embedding credential exposure | Secret leak in evidence, logs, prompts, or tool payloads | Resolve credentials only through environment/config; never place secret values in CLI args, MCP params, evidence artifacts, or consultation prompts |
 | GPP-2 bypass | False production platform claim | Keep `support_widening=false` and `production_platform_claim=false` |
 
 ## 13. Tracking Checklist
