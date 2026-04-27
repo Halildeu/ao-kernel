@@ -114,14 +114,30 @@ def test_build_repo_query_context_pack_is_deterministic_and_agent_readable() -> 
     assert "# Repo Query Context Pack" in first
     assert "## Generation Boundary" in first
     assert "## Handoff Contract" in first
+    assert "## Handoff Provenance" in first
     assert "stdout-only Markdown" in first
     assert "explicit agent input" in first
     assert "No hidden injection" in first
     assert "context_compiler" in first
+    assert "| Command contract | python3 -m ao_kernel repo query --output markdown |" in first
+    assert "| Read/write mode | read-only retrieval; no artifact, vector, root, MCP, or memory writes |" in first
+    assert "| Support tier | beta_explicit_handoff |" in first
+    assert "| Freshness state | current_only |" in first
+    assert "| Freshness requirement | returned chunks must have content_status=current |" in first
+    assert "| Namespace requirement | vector keys must match the recorded repo_chunk namespace prefix |" in first
+    assert "| Source validation | source path, line range, and content SHA256 are validated before rendering |" in first
+    assert "| Hidden injection | disabled; operator must provide this Markdown as visible input |" in first
+    assert "| Root export | disabled |" in first
+    assert "| MCP exposure | disabled |" in first
+    assert "| context_compiler auto-feed | disabled |" in first
     assert "| Text | where is run defined |" in first
     assert "| Matches | 1 |" in first
+    assert "| freshness_state | current_only |" in first
+    assert "| stale_candidates | 0 |" in first
     assert "### 1. `pkg/main.py:3-4`" in first
     assert "| Symbol | run |" in first
+    assert "| Content status | current |" in first
+    assert "| Content SHA256 | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee |" in first
     assert "```python\n" in first
     assert "def run():" in first
     assert "return VALUE" in first
@@ -160,6 +176,27 @@ def test_build_repo_query_context_pack_preserves_retrieval_rank_order() -> None:
     pack = build_repo_query_context_pack(query_result=query_result)
 
     assert pack.index("pkg/main.py:3-4") < pack.index("aaa/early_path.py:1-1")
+
+
+def test_build_repo_query_context_pack_marks_stale_candidates_excluded() -> None:
+    query_result = _query_result()
+    query_result["summary"]["stale_candidates"] = 2
+
+    pack = build_repo_query_context_pack(query_result=query_result)
+
+    assert "| Freshness state | stale_candidates_excluded |" in pack
+    assert "| freshness_state | stale_candidates_excluded |" in pack
+    assert "| stale_candidates | 2 |" in pack
+
+
+def test_build_repo_query_context_pack_marks_incomplete_freshness() -> None:
+    query_result = _query_result()
+    query_result["results"][0].pop("content_status")
+
+    pack = build_repo_query_context_pack(query_result=query_result)
+
+    assert "| Freshness state | unknown_or_incomplete |" in pack
+    assert "| freshness_state | unknown_or_incomplete |" in pack
 
 
 def _query_result() -> dict[str, Any]:
