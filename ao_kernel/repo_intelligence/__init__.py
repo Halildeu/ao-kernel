@@ -31,6 +31,7 @@ from ao_kernel._internal.repo_intelligence.root_exporter import (
     RepoRootExportError,
     export_repo_roots,
 )
+from ao_kernel._internal.repo_intelligence.workflow_opt_in import validate_repo_intelligence_workflow_opt_in
 
 __all__ = [
     "build_agent_context_pack",
@@ -52,4 +53,5 @@ __all__ = [
     "write_repo_vector_index_manifest_artifact",
     "write_repo_vectors",
     "write_repo_vector_write_plan_artifact",
+    "validate_repo_intelligence_workflow_opt_in",
 ]
