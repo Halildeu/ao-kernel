@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from ao_kernel.cli import _build_parser, main
-from ao_kernel.mcp_server import TOOL_DEFINITIONS, TOOL_DISPATCH
+from ao_kernel.mcp_server import TOOL_DEFINITIONS, TOOL_DISPATCH, create_tool_gateway
 
 
 DISALLOWED_REPO_MCP_TOOL_NAMES = {
@@ -26,6 +26,15 @@ DISALLOWED_REPO_CLI_FLAGS = {
 
 def test_repo_intelligence_is_not_exposed_as_mcp_tool() -> None:
     tool_names = {str(tool["name"]) for tool in TOOL_DEFINITIONS}
+
+    assert tool_names == set(TOOL_DISPATCH)
+    assert tool_names.isdisjoint(DISALLOWED_REPO_MCP_TOOL_NAMES)
+    assert not any(name.startswith("ao_repo_") for name in tool_names)
+    assert not any("repo_intelligence" in name for name in tool_names)
+
+
+def test_repo_intelligence_is_not_registered_in_mcp_tool_gateway() -> None:
+    tool_names = {str(tool["name"]) for tool in create_tool_gateway().list_tools()}
 
     assert tool_names == set(TOOL_DISPATCH)
     assert tool_names.isdisjoint(DISALLOWED_REPO_MCP_TOOL_NAMES)
