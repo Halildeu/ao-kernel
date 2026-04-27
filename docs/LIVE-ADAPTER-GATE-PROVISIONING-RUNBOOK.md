@@ -77,6 +77,19 @@ Policy decision core after GPP-2o:
    GitHub App service calls it or an equivalent fail-closed policy and posts a
    deployment callback review.
 
+Policy webhook service scaffold after GPP-2p:
+
+1. `ao_kernel/live_adapter_gate_policy_service.py` verifies
+   `X-Hub-Signature-256` with HMAC-SHA256.
+2. The service boundary accepts only `deployment_protection_rule` events.
+3. It builds the GitHub callback request body with `environment_name`, `state`,
+   and `comment`.
+4. `scripts/live_adapter_gate_policy_service_smoke.py` writes a local callback
+   request artifact for fixture validation.
+5. The scaffold does not perform the network POST. GPP-2 remains blocked until
+   a hosted service is configured with webhook secret and GitHub App auth and
+   posts the deployment callback review.
+
 Blocked interpretation for a fresh or drifted setup:
 
 1. GitHub App slug `ao-kernel-live-adapter-gate` is not visible.
@@ -134,6 +147,29 @@ GitHub payload with trusted context proving the approved workflow identity,
 ready protected prerequisite attestation, `main`, no pull-request context, and
 closed live-execution/support/production-claim boundaries. Missing enriched
 context must produce `reject`, not approval.
+
+The GPP-2p service scaffold defines the webhook/callback boundary that a hosted
+service can wrap:
+
+1. verify `X-Hub-Signature-256` with a runtime webhook secret;
+2. reject non-`deployment_protection_rule` events before policy evaluation;
+3. evaluate the policy decision;
+4. build the callback request for GitHub's custom deployment protection review
+   endpoint;
+5. attach GitHub App authentication outside the repository and POST the
+   callback request.
+
+Local smoke validation is allowed with fixtures:
+
+```bash
+python3 scripts/live_adapter_gate_policy_service_smoke.py \
+  --payload <deployment-protection-payload.json> \
+  --allow-unsigned-fixture \
+  --artifact-path /tmp/live-adapter-gate-policy-service-callback-request.v1.json \
+  --output text
+```
+
+Do not use `--allow-unsigned-fixture` in the hosted service.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -296,9 +332,10 @@ If the selected deployment protection app is attached but does not respond:
 
 1. do not bypass the environment gate;
 2. do not repeatedly dispatch waiting workflow runs;
-3. deploy or configure the app webhook/policy service so it evaluates
-   `ao_kernel.live_adapter_gate_policy` or an equivalent fail-closed policy and
-   returns an explicit approve, deny, timeout, or failure decision;
+3. deploy or configure the app webhook/policy service so it verifies GitHub
+   webhook signatures, evaluates the repo-owned policy modules or an
+   equivalent fail-closed policy, attaches GitHub App auth outside the repo,
+   and returns an explicit approve, deny, timeout, or failure decision;
 4. rerun protected workflow evidence from `main` only after the service is
    expected to respond.
 

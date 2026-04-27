@@ -1,13 +1,13 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 policy decision core ready; service deployment/config still blocked
+**Status:** GPP-2 policy webhook service scaffold ready; service deployment/config still blocked
 **Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#525](https://github.com/Halildeu/ao-kernel/issues/525)
-for deployment protection policy decision core
-**Current slice record:** `.claude/plans/GPP-2o-POLICY-DECISION-CORE.md`
+**Current slice issue:** [#527](https://github.com/Halildeu/ao-kernel/issues/527)
+for deployment protection policy webhook service scaffold
+**Current slice record:** `.claude/plans/GPP-2p-POLICY-WEBHOOK-SERVICE-SCAFFOLD.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -135,6 +135,13 @@ Last live verification on current `origin/main` showed:
     live-execution/support/production-claim boundaries. GPP-2 remains blocked
     until this policy is deployed or configured behind the GitHub App webhook
     and new protected workflow evidence is collected.
+32. GPP-2p adds the repo-owned webhook service boundary for that policy. It
+    verifies GitHub `X-Hub-Signature-256`, accepts only
+    `deployment_protection_rule`, builds the GitHub callback request body
+    (`environment_name`, `state`, `comment`), and emits a local artifact
+    without posting to GitHub. GPP-2 remains blocked until a hosted service is
+    configured with webhook secret and GitHub App auth and new protected
+    workflow evidence is collected.
 
 ## 3. Current Verdict
 
@@ -189,7 +196,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2m` | Completed / no support widening | Protected live gate runtime binding | workflow bound to protected environment; live execution still disabled |
 | `GPP-2n` | Completed / no support widening | Protected live gate workflow evidence | protected workflow reached environment gate and failed closed because policy response is missing |
 | `GPP-2o` | Completed / no support widening | Deployment protection policy decision core | repo-owned decision core and CLI ready; service is not yet deployed/configured |
-| `GPP-2` | Blocked / service deployment/config missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be deployed/configured before further runtime work |
+| `GPP-2p` | Completed / no support widening | Deployment protection policy webhook service scaffold | repo-owned webhook/callback request scaffold ready; service is not yet deployed/configured |
+| `GPP-2` | Blocked / service deployment/config missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be deployed/configured with webhook secret and GitHub App auth before further runtime work |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -318,8 +326,8 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked after GPP-2o; policy decision core exists, but service
-deployment/configuration is still missing.
+**Status:** blocked after GPP-2p; policy decision core and webhook scaffold
+exist, but service deployment/configuration is still missing.
 
 **Entry criteria:**
 
@@ -333,7 +341,9 @@ the protected environment gate, but the deployment protection app/policy
 service did not return an approval, denial, timeout, or failure decision.
 GPP-2o adds the repo-owned policy decision core and CLI that the service can
 use, but no webhook/service deployment or GitHub callback review evidence has
-been recorded.
+been recorded. GPP-2p adds the repo-owned webhook service boundary and callback
+request artifact, but no hosted endpoint, webhook secret, GitHub App auth, or
+actual callback POST evidence has been recorded.
 
 **Acceptance criteria:**
 
@@ -588,7 +598,9 @@ metadata-only `overall_status=ready` prerequisite attestation, GPP-2m binds
 the bound workflow reaches that protected environment but stays waiting without
 a policy decision, and GPP-2o adds the repo-owned decision core that can return
 `approve_contract_gate` or `reject` once it is placed behind the GitHub App
-webhook. GPP-2b
+webhook. GPP-2p adds the repo-owned webhook service scaffold that verifies
+GitHub signatures, constrains the event, and builds the deployment callback
+request without posting it. GPP-2b
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) and GPP-2c
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) are resolved at the
 metadata prerequisite level: the protected environment exists, admin bypass is
@@ -610,8 +622,9 @@ operator provisioning runbook.
 The next GPP-2 action is to deploy or configure the
 `ao-kernel-live-adapter-gate` deployment protection app/policy service so it
 receives protected deployment callbacks, enriches them with trusted context,
-evaluates `ao_kernel.live_adapter_gate_policy` or an equivalent fail-closed
-policy, and posts an explicit GitHub deployment review callback. Do not repeatedly dispatch
+evaluates the repo-owned policy modules or an equivalent fail-closed policy,
+attaches GitHub App auth outside the repo, and posts an explicit GitHub
+deployment review callback. Do not repeatedly dispatch
 `.github/workflows/live-adapter-gate.yml` until that service is expected to
 respond. Any follow-up must keep fork and pull-request contexts away from
 protected credentials, must not use `AO_CLAUDE_CODE_CLI_AUTH` through a
@@ -633,6 +646,7 @@ and must keep `live_execution_allowed=false`, `support_widening=false`, and
 | Bot account mistaken for deployment protection | Same operator can rubber-stamp the gate | PAT-backed bot reviewer is rejected; use GitHub App deployment protection |
 | Deployment protection app installed but inactive | Protected workflow waits forever and produces no artifacts | Treat waiting/cancelled runs as fail-closed; activate policy service before repeating evidence dispatch |
 | Policy decision core exists but is not deployed | Protected workflow still receives no app response | Treat GPP-2o as implementation readiness only; deploy/configure webhook before rerunning evidence |
+| Webhook scaffold exists but has no runtime auth | Callback artifact exists but GitHub still receives no review | Treat GPP-2p as implementation readiness only; deploy with webhook secret and GitHub App auth before rerunning evidence |
 
 ## 19. Tracking Log
 
@@ -674,3 +688,5 @@ and must keep `live_execution_allowed=false`, `support_widening=false`, and
 | 2026-04-28 | GPP-2n evidence fail-closed | Workflow run `25020015357` reached `ao-kernel-live-adapter-gate` and stayed waiting for deployment protection app response; no steps or artifacts ran, `current_user_can_approve=false`, and the run was cancelled after bounded observation. |
 | 2026-04-28 | GPP-2o issue opened | Issue [#525](https://github.com/Halildeu/ao-kernel/issues/525) tracks the repo-owned deployment protection policy decision core. |
 | 2026-04-28 | GPP-2o decision core added | `ao_kernel/live_adapter_gate_policy.py` and `scripts/live_adapter_gate_policy_decision.py` add fail-closed policy evaluation; service deployment/configuration remains required before rerunning protected workflow evidence. |
+| 2026-04-28 | GPP-2p issue opened | Issue [#527](https://github.com/Halildeu/ao-kernel/issues/527) tracks the repo-owned deployment protection policy webhook service scaffold. |
+| 2026-04-28 | GPP-2p webhook scaffold added | `ao_kernel/live_adapter_gate_policy_service.py` and `scripts/live_adapter_gate_policy_service_smoke.py` add webhook signature/event checks and callback request artifact generation; hosted service deployment/configuration remains required before rerunning protected workflow evidence. |
