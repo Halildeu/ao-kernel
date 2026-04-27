@@ -29,9 +29,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "bound"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/521"
-    assert payload["current_wp"]["exit_decision"] == "protected_workflow_bound_live_execution_still_disabled"
+    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/523"
+    assert payload["current_wp"]["exit_decision"] == "protected_workflow_evidence_fail_closed_policy_response_missing"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -99,11 +99,30 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2n"
+        and item["decision"] == "protected_workflow_evidence_fail_closed_policy_response_missing"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/523"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
-    assert payload["pending_external_actions"] == []
-    assert payload["blocked_wps"] == []
+    assert payload["pending_external_actions"] == [
+        "activate or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook so it responds to protected deployment callbacks",
+        "rerun the protected workflow evidence slice from main after the policy service can approve, deny, or fail explicitly",
+    ]
+    assert payload["blocked_wps"] == [
+        {
+            "id": "GPP-2",
+            "reason": (
+                "protected workflow dispatch reached ao-kernel-live-adapter-gate but no deployment "
+                "protection app approval arrived; the job stayed waiting, produced no artifacts, and "
+                "was cancelled after bounded observation"
+            ),
+        }
+    ]
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action == "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded"
@@ -116,11 +135,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "start the next controlled GPP-2 protected workflow evidence slice from the bound workflow"
+        action == "resolve the deployment-protection policy service response gap before any further live-adapter runtime work"
         for action in payload["next_allowed_actions"]
     )
     assert any(
-        action == "dispatch .github/workflows/live-adapter-gate.yml only from main through ao-kernel-live-adapter-gate"
+        action == "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -215,10 +234,10 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     payload = mod.load_status(_status_path())
 
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "bound"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/521"
-    assert payload["blocked_wps"] == []
-    assert "live_execution_still_disabled" in payload["current_wp"]["exit_decision"]
+    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/523"
+    assert payload["blocked_wps"][0]["id"] == "GPP-2"
+    assert "policy_response_missing" in payload["current_wp"]["exit_decision"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -244,11 +263,11 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
     assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
-    assert "Current status: bound" in rendered
+    assert "Current status: blocked" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "Blocked work packages:\n- none" in rendered
+    assert "Blocked work packages:\n- GPP-2: protected workflow dispatch reached" in rendered
     assert "divergence: 0\t0" in rendered
 
 
@@ -261,5 +280,5 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     payload = json.loads(captured.out)
     assert result == 0
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "bound"
-    assert payload["blocked_wps"] == []
+    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["blocked_wps"][0]["id"] == "GPP-2"

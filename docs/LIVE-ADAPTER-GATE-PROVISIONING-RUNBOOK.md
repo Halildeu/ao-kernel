@@ -16,7 +16,7 @@ Current selected model:
 | Deployment protection model | GitHub App deployment protection rule |
 | Required app slug | `ao-kernel-live-adapter-gate` |
 | Required credential handle | `AO_CLAUDE_CODE_CLI_AUTH` |
-| Current program head | `GPP-2` workflow bound; live execution disabled |
+| Current program head | `GPP-2` blocked on deployment protection policy response |
 
 ## Preconditions
 
@@ -50,6 +50,18 @@ Runtime-binding state after GPP-2m:
 2. The workflow remains `workflow_dispatch` only.
 3. The workflow contains no `secrets.` expression.
 4. The workflow does not invoke a live adapter.
+
+Protected workflow evidence after GPP-2n:
+
+1. Workflow run `25020015357` was dispatched from `main`.
+2. GitHub created deployment `4503862042` for
+   `ao-kernel-live-adapter-gate`.
+3. Job `73277880393` stayed `waiting` before any workflow step ran.
+4. Pending deployment metadata reported `current_user_can_approve=false` and
+   no reviewers.
+5. No `live-adapter-gate-*.json` artifacts were produced.
+6. The run was cancelled after bounded observation and is fail-closed
+   evidence, not approval.
 
 Blocked interpretation for a fresh or drifted setup:
 
@@ -97,6 +109,10 @@ Minimum approval inputs for the app:
    promotion decision;
 8. `production_platform_claim_allowed=false` remains true until a later
    explicit promotion decision.
+
+The GPP-2n evidence shows that merely attaching the app is not enough. The app
+or backing policy service must actively respond to deployment protection
+callbacks. A waiting run with no app decision must be treated as blocked.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -189,10 +205,11 @@ python3 scripts/live_adapter_gate_attest.py \
   --output text
 ```
 
-Ready metadata plus the GPP-2m workflow binding means a later controlled slice
-may collect protected workflow evidence from `main`. It still does not
-authorize live adapter execution, support widening, or a production platform
-claim.
+Ready metadata plus the GPP-2m workflow binding allowed GPP-2n to collect
+protected workflow evidence from `main`. That evidence failed closed because
+the deployment protection app/policy service did not return a decision. It
+still does not authorize live adapter execution, support widening, or a
+production platform claim.
 
 ## Evidence Comment Template
 
@@ -229,7 +246,11 @@ true:
 5. branch policy is not restricted to `main`;
 6. attestation reports `overall_status=blocked`;
 7. the evidence came from local operator auth rather than project-owned
-   protected gate metadata.
+   protected gate metadata;
+8. a protected workflow run remains `waiting` for the deployment protection app
+   and produces no artifacts;
+9. pending deployment metadata reports `current_user_can_approve=false` and no
+   app decision.
 
 ## Rollback and Remediation
 
@@ -250,6 +271,15 @@ If the wrong credential handle is set:
 3. set `AO_CLAUDE_CODE_CLI_AUTH` through the approved secret handoff path;
 4. verify only with `gh secret list --env ... --json name,updatedAt`.
 
+If the selected deployment protection app is attached but does not respond:
+
+1. do not bypass the environment gate;
+2. do not repeatedly dispatch waiting workflow runs;
+3. activate or configure the app webhook/policy service so it returns an
+   explicit approve, deny, timeout, or failure decision;
+4. rerun protected workflow evidence from `main` only after the service is
+   expected to respond.
+
 ## Forbidden Actions
 
 1. No secret value readback.
@@ -259,6 +289,8 @@ If the wrong credential handle is set:
 5. No PAT-backed bot user treated as release authority.
 6. No `--equivalent-release-gate-approved` while #489 remains not approved.
 7. No bypass of the protected workflow binding.
-8. No live adapter execution.
-9. No support widening.
-10. No production platform claim.
+8. No repeated protected workflow dispatch while the policy service is known
+   not to respond.
+9. No live adapter execution.
+10. No support widening.
+11. No production platform claim.
