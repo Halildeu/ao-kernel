@@ -134,6 +134,18 @@ Result:
 23 passed
 ```
 
+Full-rehearsal aggregation regression:
+
+```bash
+pytest -q tests/test_gp5_full_production_rehearsal.py tests/test_gp5_read_only_rehearsal.py
+```
+
+Result:
+
+```text
+14 passed
+```
+
 Real deterministic rehearsal:
 
 ```bash
@@ -187,4 +199,3 @@ Closeout conditions:
 | Production platform claim | not performed |
 | Live adapter execution | not performed |
 | GPP-2 blocked state | preserved |
-
