@@ -16,7 +16,7 @@ Current selected model:
 | Deployment protection model | GitHub App deployment protection rule |
 | Required app slug | `ao-kernel-live-adapter-gate` |
 | Required credential handle | `AO_CLAUDE_CODE_CLI_AUTH` |
-| Current program head | `GPP-2` blocked on deployment protection policy response |
+| Current program head | `GPP-2` blocked on policy service deployment/configuration |
 
 ## Preconditions
 
@@ -62,6 +62,20 @@ Protected workflow evidence after GPP-2n:
 5. No `live-adapter-gate-*.json` artifacts were produced.
 6. The run was cancelled after bounded observation and is fail-closed
    evidence, not approval.
+
+Policy decision core after GPP-2o:
+
+1. `ao_kernel/live_adapter_gate_policy.py` evaluates deployment-protection
+   callback payloads plus service-enriched verified context.
+2. `scripts/live_adapter_gate_policy_decision.py` can render a local policy
+   decision artifact for validation.
+3. Raw/unverified webhook payloads reject fail-closed.
+4. `approve_contract_gate` is only for the design-only protected gate and still
+   records `live_execution_allowed=false`, `support_widening_allowed=false`,
+   and `production_platform_claim_allowed=false`.
+5. The policy core is not a deployed webhook. GPP-2 remains blocked until the
+   GitHub App service calls it or an equivalent fail-closed policy and posts a
+   deployment callback review.
 
 Blocked interpretation for a fresh or drifted setup:
 
@@ -113,6 +127,13 @@ Minimum approval inputs for the app:
 The GPP-2n evidence shows that merely attaching the app is not enough. The app
 or backing policy service must actively respond to deployment protection
 callbacks. A waiting run with no app decision must be treated as blocked.
+
+The GPP-2o decision core gives that backing service a deterministic local
+policy surface. Before approving a callback, the service must enrich the raw
+GitHub payload with trusted context proving the approved workflow identity,
+ready protected prerequisite attestation, `main`, no pull-request context, and
+closed live-execution/support/production-claim boundaries. Missing enriched
+context must produce `reject`, not approval.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -275,8 +296,9 @@ If the selected deployment protection app is attached but does not respond:
 
 1. do not bypass the environment gate;
 2. do not repeatedly dispatch waiting workflow runs;
-3. activate or configure the app webhook/policy service so it returns an
-   explicit approve, deny, timeout, or failure decision;
+3. deploy or configure the app webhook/policy service so it evaluates
+   `ao_kernel.live_adapter_gate_policy` or an equivalent fail-closed policy and
+   returns an explicit approve, deny, timeout, or failure decision;
 4. rerun protected workflow evidence from `main` only after the service is
    expected to respond.
 
