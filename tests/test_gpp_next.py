@@ -29,9 +29,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
-    assert payload["current_wp"]["exit_decision"] == "blocked_attestation_missing"
+    assert payload["current_wp"]["status"] == "ready"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/519"
+    assert payload["current_wp"]["exit_decision"] == "prerequisites_ready_runtime_binding_not_started"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -85,29 +85,18 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2l"
+        and item["decision"] == "protected_live_gate_prerequisites_ready_runtime_binding_not_started"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/519"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
-    assert payload["pending_external_actions"][0]["id"] == "GPP-2b"
-    assert payload["pending_external_actions"][0]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
-    assert payload["pending_external_actions"][0]["status"] == "partially_provisioned_blocked"
-    assert (
-        payload["pending_external_actions"][0]["decision"]
-        == "environment_created_secret_and_app_gate_still_missing"
-    )
-    assert payload["pending_external_actions"][1]["id"] == "GPP-2c"
-    assert payload["pending_external_actions"][1]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/485"
-    assert payload["pending_external_actions"][1]["title"] == "Independent release gate and credential resolution"
-    assert (
-        payload["pending_external_actions"][1]["status"]
-        == "blocked_external_deployment_protection_bot_and_secret_provisioning_required"
-    )
-    assert (
-        payload["pending_external_actions"][1]["decision"]
-        == "attestation_support_ready_secret_and_app_gate_still_missing"
-    )
-    assert {item["id"] for item in payload["pending_external_actions"]} == {"GPP-2b", "GPP-2c"}
-    assert {item["id"] for item in payload["blocked_wps"]} == {"GPP-2"}
+    assert payload["pending_external_actions"] == []
+    assert payload["blocked_wps"] == []
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action == "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded"
@@ -120,17 +109,17 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
-        action == "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding"
+        action == "start the next controlled GPP-2 runtime-binding slice from ready prerequisites"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate"
+        == "bind .github/workflows/live-adapter-gate.yml to ao-kernel-live-adapter-gate only in a dedicated issue/branch/PR"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "follow docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md for external/admin provisioning before the next prerequisite attestation"
+        == "reference AO_CLAUDE_CODE_CLI_AUTH only as a protected environment secret handle"
         for action in payload["next_allowed_actions"]
     )
     assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
@@ -220,10 +209,10 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     payload = mod.load_status(_status_path())
 
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/482"
-    assert payload["blocked_wps"][0]["id"] == "GPP-2"
-    assert "credential handle and an approved independent release gate exist" in payload["blocked_wps"][0]["blocked_until"]
+    assert payload["current_wp"]["status"] == "ready"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/519"
+    assert payload["blocked_wps"] == []
+    assert "runtime_binding_not_started" in payload["current_wp"]["exit_decision"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -249,11 +238,11 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
     assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
-    assert "Current status: blocked" in rendered
+    assert "Current status: ready" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "- GPP-2: AO_CLAUDE_CODE_CLI_AUTH handle and an independent release gate" in rendered
+    assert "Blocked work packages:\n- none" in rendered
     assert "divergence: 0\t0" in rendered
 
 
@@ -266,5 +255,5 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     payload = json.loads(captured.out)
     assert result == 0
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
-    assert payload["blocked_wps"][0]["id"] == "GPP-2"
+    assert payload["current_wp"]["status"] == "ready"
+    assert payload["blocked_wps"] == []

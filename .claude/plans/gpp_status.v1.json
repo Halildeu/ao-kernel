@@ -8,11 +8,16 @@
   "current_wp": {
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
-    "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
-    "exit_decision": "blocked_attestation_missing",
-    "blocked_until": "a future prerequisite attestation proves the protected environment and credential handle exist",
-    "allowed_scope": []
+    "status": "ready",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/519",
+    "exit_decision": "prerequisites_ready_runtime_binding_not_started",
+    "ready_after": "protected live gate attestation reports overall_status=ready with live_execution_allowed=false",
+    "allowed_scope": [
+      "open a dedicated GPP-2 runtime binding issue, branch, and PR",
+      "bind the live-adapter gate workflow to ao-kernel-live-adapter-gate",
+      "reference AO_CLAUDE_CODE_CLI_AUTH only by protected environment secret handle",
+      "keep live execution disabled until protected workflow evidence is recorded"
+    ]
   },
   "completed_wps": [
     {
@@ -88,36 +93,16 @@
       "decision": "protected_live_gate_provisioning_runbook_ready_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/517",
       "record": ".claude/plans/GPP-2k-PROTECTED-LIVE-GATE-PROVISIONING-RUNBOOK.md"
-    }
-  ],
-  "blocked_wps": [
-    {
-      "id": "GPP-2",
-      "title": "Protected Live-Adapter Gate Runtime Binding",
-      "reason": "AO_CLAUDE_CODE_CLI_AUTH handle and an independent release gate are not attested",
-      "blocked_until": "a future prerequisite attestation exits prerequisites_ready after the credential handle and an approved independent release gate exist"
-    }
-  ],
-  "pending_external_actions": [
-    {
-      "id": "GPP-2b",
-      "title": "External admin provisioning for protected live-adapter gate",
-      "issue": "https://github.com/Halildeu/ao-kernel/issues/482",
-      "record": ".claude/plans/GPP-2b-EXTERNAL-ADMIN-PROVISIONING.md",
-      "status": "partially_provisioned_blocked",
-      "decision": "environment_created_secret_and_app_gate_still_missing",
-      "required_before": "GPP-2 runtime binding"
     },
     {
-      "id": "GPP-2c",
-      "title": "Independent release gate and credential resolution",
-      "issue": "https://github.com/Halildeu/ao-kernel/issues/485",
-      "record": ".claude/plans/GPP-2c-REVIEWER-AND-CREDENTIAL-GATE.md",
-      "status": "blocked_external_deployment_protection_bot_and_secret_provisioning_required",
-      "decision": "attestation_support_ready_secret_and_app_gate_still_missing",
-      "required_before": "GPP-2 runtime binding"
+      "id": "GPP-2l",
+      "decision": "protected_live_gate_prerequisites_ready_runtime_binding_not_started",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/519",
+      "record": ".claude/plans/GPP-2l-PROTECTED-LIVE-GATE-PREREQUISITES-READY.md"
     }
   ],
+  "blocked_wps": [],
+  "pending_external_actions": [],
   "support_widening_allowed": false,
   "production_platform_claim_allowed": false,
   "live_adapter_execution_allowed": false,
@@ -158,7 +143,8 @@
     "pull or rebase with uncommitted changes",
     "edit feature/runtime scope in primary checkout",
     "treat local operator auth as production evidence",
-    "start GPP-2 runtime binding while GPP-2 is blocked",
+    "treat metadata-ready prerequisites as live adapter execution approval",
+    "run a live adapter before a later protected runtime evidence slice permits it",
     "use --equivalent-release-gate-approved while GPP-2e remains not_approved",
     "treat a product end-user account as release authority",
     "treat a PAT-backed bot user as release authority",
@@ -169,17 +155,14 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "keep GPP-2 blocked",
-    "track external admin provisioning in issue #482",
-    "resolve independent release gate and credential handling in issue #485",
+    "start the next controlled GPP-2 runtime-binding slice from ready prerequisites",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
-    "provision the selected GitHub App deployment protection rule before any GPP-2 runtime binding",
     "use Claude MCP consultation only as advisory review, not release authority",
-    "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
-    "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
-    "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate",
-    "follow docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md for external/admin provisioning before the next prerequisite attestation",
-    "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
+    "bind .github/workflows/live-adapter-gate.yml to ao-kernel-live-adapter-gate only in a dedicated issue/branch/PR",
+    "reference AO_CLAUDE_CODE_CLI_AUTH only as a protected environment secret handle",
+    "keep fork and pull_request contexts away from protected credentials",
+    "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
+    "do not treat an inactive or failing deployment protection webhook as approval; fail closed instead",
     "do not widen support or claim production platform readiness"
   ],
   "last_updated": "2026-04-27"

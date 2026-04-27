@@ -1,12 +1,12 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 blocked; independent release gate required
+**Status:** GPP-2 prerequisites ready; runtime binding not started
 **Date:** 2026-04-27
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#517](https://github.com/Halildeu/ao-kernel/issues/517)
-for protected live gate provisioning runbook
+**Current slice issue:** [#519](https://github.com/Halildeu/ao-kernel/issues/519)
+for protected live gate prerequisites-ready attestation
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -109,6 +109,13 @@ Last live verification on current `origin/main` showed:
     `AO_CLAUDE_CODE_CLI_AUTH` handle can be provisioned without secret
     readback. `GPP-2` remains blocked until a future metadata attestation exits
     `prerequisites_ready`.
+28. GPP-2l records the post-provisioning metadata attestation on 2026-04-27.
+    `scripts/live_adapter_gate_attest.py` now reports `overall_status=ready`,
+    the selected deployment protection app rule passes, and
+    `AO_CLAUDE_CODE_CLI_AUTH` is listed as an environment secret handle.
+    Runtime binding has not started; `live_execution_allowed=false`,
+    `support_widening=false`, and `production_platform_claim=false` remain
+    closed.
 
 ## 3. Current Verdict
 
@@ -159,7 +166,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2i` | Completed / no support widening | Deployment protection attestation support | selected app-gate metadata is recognized; current live gate still blocked |
 | `GPP-2j` | Completed / no support widening | Protected live gate metadata refresh after RI-6 closeout | current live gate still blocked; selected app gate and credential handle missing |
 | `GPP-2k` | Completed / no support widening | Protected live gate provisioning runbook | operator/admin checklist ready; current live gate still blocked |
-| `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
+| `GPP-2l` | Completed / no support widening | Protected live gate prerequisites-ready attestation | protected prerequisites ready; runtime binding not started |
+| `GPP-2` | Ready / not started | Protected live-adapter gate runtime binding | prerequisites ready; next slice may bind the workflow fail-closed |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -540,38 +548,35 @@ accident.
 
 ## 17. Current Active Work
 
-No runtime/support-widening work is active. `GPP-2` is the current blocked
-program head. GPP-2b is tracked in
-[#482](https://github.com/Halildeu/ao-kernel/issues/482) as an external/admin
-provisioning action. The environment and `main` branch policy are present, but
-the selected deployment-protection app gate and `AO_CLAUDE_CODE_CLI_AUTH` must
-still be completed before another prerequisite attestation can attempt to
-unblock `GPP-2`.
-GPP-2c is tracked in
-[#485](https://github.com/Halildeu/ao-kernel/issues/485) to resolve the
-remaining independent release gate and credential decision. GPP-2d adds
-`scripts/live_adapter_gate_attest.py` so the next prerequisite attestation uses
-repeatable metadata-only evidence instead of hand-written command snippets.
-GPP-2e records the single-admin equivalent gate as `not_approved`; the
-attestation override `--equivalent-release-gate-approved` is forbidden until a
-future explicit approval supersedes [#489](https://github.com/Halildeu/ao-kernel/issues/489).
+No live execution/support-widening work is active. `GPP-2` is now ready to
+start a controlled runtime-binding slice because GPP-2l records a
+metadata-only `overall_status=ready` prerequisite attestation. GPP-2b
+[#482](https://github.com/Halildeu/ao-kernel/issues/482) and GPP-2c
+[#485](https://github.com/Halildeu/ao-kernel/issues/485) are resolved at the
+metadata prerequisite level: the protected environment exists, admin bypass is
+disabled, `main` branch policy is present, the selected GitHub App deployment
+protection rule is enabled, and `AO_CLAUDE_CODE_CLI_AUTH` is listed as an
+environment secret handle.
+
+GPP-2d provides `scripts/live_adapter_gate_attest.py` for repeatable
+metadata-only evidence. GPP-2e still records the single-admin equivalent gate
+as `not_approved`; the attestation override
+`--equivalent-release-gate-approved` remains forbidden until a future explicit
+approval supersedes [#489](https://github.com/Halildeu/ao-kernel/issues/489).
 GPP-2f clarifies that the gate is an independent release authority, not a
-product end-user account. Acceptable future models are GitHub-native release
-authority, GitHub App deployment protection, or OIDC-backed external secret
-broker. GPP-2g selects GitHub-native release authority as the first
-provisioning path and records Claude/MCP consultation as an advisory review
-protocol only. GPP-2h supersedes the GPP-2g provisioning path and selects a
-GitHub App deployment protection bot gate. GPP-2i adds metadata-only
-attestation support for that selected model. GPP-2j refreshed the live metadata
-after RI-6 closeout and reconfirmed the same blocked state: app slug lookup
-returns `HTTP 404`, deployment protection rules are empty, and
-`AO_CLAUDE_CODE_CLI_AUTH` is not listed. GPP-2k adds
-[`docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md`](../../docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md)
-as the operator/admin checklist for completing #482/#485 without secret
-readback. The next external/admin step is to configure the app gate with slug
-`ao-kernel-live-adapter-gate` and set `AO_CLAUDE_CODE_CLI_AUTH` without
-reading the secret value; only a fresh metadata attestation can unblock
-`GPP-2`.
+product end-user account. GPP-2g records Claude/MCP consultation as advisory
+only. GPP-2h selects GitHub App deployment protection, GPP-2i adds attestation
+support for that model, GPP-2j refreshes blocked metadata, and GPP-2k adds the
+operator provisioning runbook.
+
+The next GPP-2 slice may bind `.github/workflows/live-adapter-gate.yml` to
+`environment: ao-kernel-live-adapter-gate` and reference
+`AO_CLAUDE_CODE_CLI_AUTH` only by protected secret handle. That slice must keep
+fork and pull-request contexts away from protected credentials and must keep
+`live_execution_allowed=false`, `support_widening=false`, and
+`production_platform_claim=false` unless a later explicit evidence slice
+changes those guards. If the deployment protection app webhook/policy endpoint
+is inactive or fails, the protected deployment must remain blocked.
 
 ## 18. Risk Register
 
@@ -618,3 +623,5 @@ reading the secret value; only a fresh metadata attestation can unblock
 | 2026-04-27 | GPP-2j live metadata refreshed | `scripts/live_adapter_gate_attest.py` still reports `overall_status=blocked`; protected environment/admin bypass/branch policy pass, but `AO_CLAUDE_CODE_CLI_AUTH` and the selected deployment protection app gate remain missing. |
 | 2026-04-27 | GPP-2k issue opened | Issue [#517](https://github.com/Halildeu/ao-kernel/issues/517) tracks the protected live gate provisioning runbook for #482/#485. |
 | 2026-04-27 | GPP-2k provisioning runbook added | `docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md` records the no-secret-readback checklist, metadata verification commands, and evidence template for the selected deployment protection app gate. |
+| 2026-04-27 | GPP-2l issue opened | Issue [#519](https://github.com/Halildeu/ao-kernel/issues/519) tracks the post-provisioning prerequisites-ready attestation. |
+| 2026-04-27 | GPP-2l prerequisites ready | `scripts/live_adapter_gate_attest.py` reports `overall_status=ready`; protected environment/admin bypass/branch policy, `AO_CLAUDE_CODE_CLI_AUTH`, and the selected deployment protection app gate pass. Runtime binding has not started and live execution/support widening remain false. |
