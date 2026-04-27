@@ -9,11 +9,11 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/525",
-    "exit_decision": "policy_decision_core_ready_service_not_deployed",
-    "ready_after": "deployment protection policy service is deployed/configured behind the GitHub App and produces protected workflow evidence with live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/527",
+    "exit_decision": "policy_webhook_service_scaffold_ready_service_not_deployed",
+    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, posts callback reviews, and produces protected workflow evidence with live_execution_allowed=false",
     "allowed_scope": [
-      "use the repo-owned policy decision core to implement or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
+      "use the repo-owned policy service scaffold to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
       "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
     ]
@@ -116,16 +116,22 @@
       "decision": "policy_decision_core_ready_service_not_deployed",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/525",
       "record": ".claude/plans/GPP-2o-POLICY-DECISION-CORE.md"
+    },
+    {
+      "id": "GPP-2p",
+      "decision": "policy_webhook_service_scaffold_ready_service_not_deployed",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/527",
+      "record": ".claude/plans/GPP-2p-POLICY-WEBHOOK-SERVICE-SCAFFOLD.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned deployment-protection policy decision core is ready, but the GitHub App webhook/policy service is not yet deployed or configured to respond to protected deployment callbacks"
+      "reason": "repo-owned policy webhook service scaffold is ready, but the GitHub App service is not yet deployed/configured with webhook secret and GitHub App auth to post deployment callback reviews"
     }
   ],
   "pending_external_actions": [
-    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook so it calls the repo-owned policy decision core or an equivalent fail-closed policy",
+    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
   ],
   "support_widening_allowed": false,
@@ -180,10 +186,11 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "deploy or configure the deployment-protection policy service response path before any further live-adapter runtime work",
+    "deploy or configure the deployment-protection policy service using the repo-owned service scaffold before any further live-adapter runtime work",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
     "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active",
+    "use scripts/live_adapter_gate_policy_service_smoke.py only for local webhook/callback artifact validation, not live callback posting",
     "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution",
     "do not reference AO_CLAUDE_CODE_CLI_AUTH through secrets context until a later live execution slice explicitly permits it",
     "keep fork and pull_request contexts away from protected credentials",
