@@ -65,6 +65,7 @@ metrics = [
     "prometheus-client>=0.20.0",
 ]
 policy-service = [
+    "gunicorn>=22.0.0",
     "PyJWT[crypto]>=2.8.0",
 ]
 # Meta-extras (PR-A6, widened in PR-B5 for metrics)

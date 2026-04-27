@@ -109,6 +109,23 @@ Deployable policy webhook runtime after GPP-2q:
    endpoint is configured in the GitHub App and live callback response evidence
    exists.
 
+Container deployment package after GPP-2r:
+
+1. `deploy/live-adapter-gate-policy-service/Dockerfile` packages the GPP-2q
+   WSGI runtime with `gunicorn`.
+2. The image exposes `8000`, serves `GET /healthz`, and runs
+   `ao_kernel.live_adapter_gate_policy_runtime:application`.
+3. `.dockerignore` keeps local caches, build artifacts, and git metadata out
+   of the build context.
+4. `scripts/live_adapter_gate_policy_container_smoke.py` builds the image,
+   runs it on loopback, and checks `/healthz` without runtime secrets or
+   unbounded Docker waits.
+5. GitHub Actions job `policy-container-smoke` runs the same no-secret
+   container build and `/healthz` check in CI.
+6. The container package is ready for an external host, but GPP-2 remains
+   blocked until that host is public, the GitHub App webhook URL is configured,
+   and callback response evidence exists.
+
 Blocked interpretation for a fresh or drifted setup:
 
 1. GitHub App slug `ao-kernel-live-adapter-gate` is not visible.
@@ -218,6 +235,27 @@ AO_GITHUB_APP_PRIVATE_KEY_PEM
 or use `AO_GITHUB_APP_PRIVATE_KEY_PATH` when the hosting provider mounts the
 private key as a secret file. Do not commit, print, echo, read back, or paste
 these values into issues, PRs, MCP prompts, logs, or chat.
+
+The GPP-2r container package can be built from the repository root:
+
+```bash
+docker build \
+  -f deploy/live-adapter-gate-policy-service/Dockerfile \
+  -t ao-kernel-live-adapter-gate-policy-service:local \
+  .
+```
+
+Local container health smoke is metadata/deployability evidence only:
+
+```bash
+python3 scripts/live_adapter_gate_policy_container_smoke.py \
+  --image ao-kernel-live-adapter-gate-policy-service:smoke \
+  --build-timeout-seconds 600
+```
+
+That smoke must not be treated as GitHub callback evidence. It does not
+configure runtime secrets, receive GitHub webhooks, post callback reviews,
+dispatch the protected workflow, or execute a live adapter.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -380,11 +418,11 @@ If the selected deployment protection app is attached but does not respond:
 
 1. do not bypass the environment gate;
 2. do not repeatedly dispatch waiting workflow runs;
-3. deploy or configure the app webhook/policy service using the GPP-2q WSGI
-   runtime or an equivalent fail-closed implementation so it verifies GitHub
-   webhook signatures, evaluates the repo-owned policy modules, attaches
-   GitHub App auth outside the repo, and returns an explicit approve, deny,
-   timeout, or failure decision;
+3. deploy or configure the app webhook/policy service using the GPP-2r
+   container package, the GPP-2q WSGI runtime, or an equivalent fail-closed
+   implementation so it verifies GitHub webhook signatures, evaluates the
+   repo-owned policy modules, attaches GitHub App auth outside the repo, and
+   returns an explicit approve, deny, timeout, or failure decision;
 4. rerun protected workflow evidence from `main` only after the service is
    expected to respond.
 
