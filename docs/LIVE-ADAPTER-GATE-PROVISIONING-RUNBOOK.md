@@ -32,13 +32,17 @@ Before changing GitHub admin state:
    secret handoff path. Do not paste it into issues, PRs, logs, MCP prompts, or
    chat.
 
-Current known provisioned state:
+Provisioned state after GPP-2l:
 
 1. GitHub environment `ao-kernel-live-adapter-gate` exists.
 2. Admin bypass is disabled.
 3. The environment uses a custom branch policy that includes `main`.
+4. GitHub App deployment protection rule
+   `ao-kernel-live-adapter-gate` is attached and enabled.
+5. `AO_CLAUDE_CODE_CLI_AUTH` exists as an environment secret handle by
+   metadata.
 
-Current known missing state:
+Blocked interpretation for a fresh or drifted setup:
 
 1. GitHub App slug `ao-kernel-live-adapter-gate` is not visible.
 2. No custom deployment protection rule is attached to the environment.
