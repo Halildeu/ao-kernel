@@ -1,11 +1,12 @@
 # RI-6 - Repo Intelligence Priority Roadmap
 
-**Status:** draft roadmap slice
+**Status:** completed roadmap sequence
 **Date:** 2026-04-27
-**Authority:** `origin/main`
+**Authority:** `origin/main` at `bc7a4dc`
 **Issue:** [#499](https://github.com/Halildeu/ao-kernel/issues/499)
-**Branch:** `codex/ri-roadmap-prioritization`
-**Worktree:** `/Users/halilkocoglu/Documents/ao-kernel-ri-roadmap-prioritization`
+**Closeout reconciliation issue:** [#513](https://github.com/Halildeu/ao-kernel/issues/513)
+**Original branch:** `codex/ri-roadmap-prioritization`
+**Closeout branch:** `codex/ri6-7-roadmap-closeout`
 **Program constraint:** `GPP-2` remains blocked
 **Support impact:** none
 **Production claim impact:** none
@@ -68,15 +69,30 @@ The current boundary deliberately excludes:
 
 | Phase | Status | Goal | Support impact |
 |---|---|---|---|
-| `RI-6.0` | This slice | Written priority roadmap | none |
-| `RI-6.1` | Proposed | Repo-intelligence evidence refresh | none |
-| `RI-6.2` | Proposed | Explicit handoff hardening | Beta wording only if docs need clarification |
-| `RI-6.3` | Proposed | Workflow opt-in input contract implementation | no production claim |
-| `RI-6.4` | Proposed | Deterministic read-only workflow rehearsal refresh | no production claim |
-| `RI-6.5` | Proposed | MCP read-only design gate, no implementation by default | none |
-| `RI-6.6` | Proposed | Context compiler opt-in design gate, no auto-feed | none |
+| `RI-6.0` | Completed on `main` | Written priority roadmap | none |
+| `RI-6.1` | Completed on `main` | Repo-intelligence evidence refresh | none |
+| `RI-6.2` | Completed on `main` | Explicit handoff hardening | Beta explicit handoff only |
+| `RI-6.3` | Completed on `main` | Workflow opt-in input contract validation | no production claim |
+| `RI-6.4` | Completed on `main` | Deterministic read-only workflow rehearsal refresh | no production claim |
+| `RI-6.5` | Completed on `main` | MCP read-only design gate, no implementation | none |
+| `RI-6.6` | Completed on `main` | Context compiler opt-in design gate, no auto-feed | none |
 | `GPP-5` | Future / gated | Repo-intelligence workflow integration candidate | requires explicit GPP slice |
 | `GPP-6` | Future / gated | Read-only production E2E with real adapter | blocked on GPP-2/GPP-4 |
+
+## 4.1 Closeout Ledger
+
+| Phase | Issue | PR | Merge commit | Closeout decision |
+|---|---|---|---|---|
+| `RI-6.0` | [#499](https://github.com/Halildeu/ao-kernel/issues/499) | [#500](https://github.com/Halildeu/ao-kernel/pull/500) | `61cbd67` | `repo_intelligence_priority_roadmap_ready_no_support_widening` |
+| `RI-6.1` | [#501](https://github.com/Halildeu/ao-kernel/issues/501) | [#502](https://github.com/Halildeu/ao-kernel/pull/502) | `8463088` | `repo_intelligence_evidence_refreshed_no_support_widening` |
+| `RI-6.2` | [#503](https://github.com/Halildeu/ao-kernel/issues/503) | [#504](https://github.com/Halildeu/ao-kernel/pull/504) | `3417670` | `repo_intelligence_handoff_hardened_no_support_widening` |
+| `RI-6.3` | [#505](https://github.com/Halildeu/ao-kernel/issues/505) | [#506](https://github.com/Halildeu/ao-kernel/pull/506) | `f8b634f` | `repo_intelligence_workflow_opt_in_validation_ready_no_support_widening` |
+| `RI-6.4` | [#507](https://github.com/Halildeu/ao-kernel/issues/507) | [#508](https://github.com/Halildeu/ao-kernel/pull/508) | `c599014` | `repo_intelligence_read_only_rehearsal_refreshed_no_support_widening` |
+| `RI-6.5` | [#509](https://github.com/Halildeu/ao-kernel/issues/509) | [#510](https://github.com/Halildeu/ao-kernel/pull/510) | `65d1613` | `repo_intelligence_mcp_design_gate_closed_no_tool_no_support_widening` |
+| `RI-6.6` | [#511](https://github.com/Halildeu/ao-kernel/issues/511) | [#512](https://github.com/Halildeu/ao-kernel/pull/512) | `bc7a4dc` | `repo_intelligence_context_compiler_design_gate_closed_no_auto_feed_no_support_widening` |
+
+The sequence is complete as a Beta/read-only roadmap sequence. It does not
+start `GPP-5` or `GPP-6`; those remain future gated work packages.
 
 ## 5. RI-6.1 - Evidence Refresh
 
@@ -268,6 +284,25 @@ no context_compiler auto-feed
 Repo-intelligence roadmap work can improve Beta quality independently, but it
 cannot create a general-purpose production claim while `GPP-2` is blocked.
 
+After `RI-6.6`, the completed sequence establishes only this product boundary:
+
+```text
+repo_intelligence_support=beta_explicit_handoff
+repo_intelligence_mcp_tool=false
+context_compiler_auto_feed=false
+query_or_handoff_root_export=false
+live_adapter_execution=false
+support_widening=false
+production_platform_claim=false
+```
+
+This boundary is intentionally narrower than workflow production integration.
+The accepted path is operator-visible context handoff plus explicit validation
+and deterministic read-only rehearsal evidence. No completed RI-6 phase grants
+authority for hidden prompt injection, MCP exposure, automatic compiler feed,
+root authority export, real-adapter execution, remote PR writes, or arbitrary
+production repository writes.
+
 `GPP-6` requires a complete read-only chain with protected real-adapter
 evidence. That remains blocked until:
 
@@ -299,8 +334,15 @@ evidence. That remains blocked until:
 - [x] Validate documentation formatting.
 - [x] Run `python3 scripts/gpp_next.py` and confirm `GPP-2` remains blocked.
 - [x] Record closeout decision for `RI-6.0`.
-- [ ] Open the next implementation/evidence issue only after this roadmap is
+- [x] Open the next implementation/evidence issue only after this roadmap is
       reviewed or merged.
+- [x] Complete `RI-6.1` evidence refresh.
+- [x] Complete `RI-6.2` explicit handoff hardening.
+- [x] Complete `RI-6.3` workflow opt-in validation.
+- [x] Complete `RI-6.4` deterministic read-only rehearsal refresh.
+- [x] Complete `RI-6.5` MCP read-only design gate.
+- [x] Complete `RI-6.6` context compiler opt-in design gate.
+- [x] Reconcile roadmap status after RI-6 sequence closeout.
 
 ## 14. RI-6.0 Closeout Criteria
 
@@ -323,4 +365,31 @@ Recorded closeout decision for this slice:
 
 ```text
 repo_intelligence_priority_roadmap_ready_no_support_widening
+```
+
+## 15. RI-6 Sequence Closeout
+
+The full RI-6 sequence is complete on `origin/main` as of merge commit
+`bc7a4dc`.
+
+Validation for the closeout reconciliation slice:
+
+```bash
+git status --short --branch
+git rev-list --left-right --count HEAD...origin/main
+bash .claude/scripts/ops.sh preflight
+python3 scripts/gpp_next.py
+git diff --check
+```
+
+Expected sequence-level closeout decision:
+
+```text
+repo_intelligence_ri6_sequence_closed_beta_explicit_handoff_no_support_widening
+```
+
+Recorded sequence-level closeout decision:
+
+```text
+repo_intelligence_ri6_sequence_closed_beta_explicit_handoff_no_support_widening
 ```
