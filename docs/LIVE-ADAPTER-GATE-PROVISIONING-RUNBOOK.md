@@ -90,6 +90,25 @@ Policy webhook service scaffold after GPP-2p:
    a hosted service is configured with webhook secret and GitHub App auth and
    posts the deployment callback review.
 
+Deployable policy webhook runtime after GPP-2q:
+
+1. `ao_kernel/live_adapter_gate_policy_runtime.py` exposes a WSGI entrypoint:
+   `ao_kernel.live_adapter_gate_policy_runtime:application`.
+2. The hosted runtime accepts `POST /github/deployment-protection` and serves
+   `GET /healthz`.
+3. It reads webhook and GitHub App auth material only from runtime
+   environment variables or private-key file paths:
+   `AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET`, `AO_GITHUB_APP_ID`, and either
+   `AO_GITHUB_APP_PRIVATE_KEY_PEM` or `AO_GITHUB_APP_PRIVATE_KEY_PATH`.
+4. It uses the GPP-2p service boundary for signature/event/policy evaluation,
+   extracts the GitHub App installation id, mints an installation token, and
+   posts the deployment protection review callback.
+5. Runtime responses are redacted and do not echo webhook secrets, private
+   keys, installation tokens, or `AO_CLAUDE_CODE_CLI_AUTH`.
+6. The runtime is deployable, but GPP-2 remains blocked until a public hosted
+   endpoint is configured in the GitHub App and live callback response evidence
+   exists.
+
 Blocked interpretation for a fresh or drifted setup:
 
 1. GitHub App slug `ao-kernel-live-adapter-gate` is not visible.
@@ -170,6 +189,35 @@ python3 scripts/live_adapter_gate_policy_service_smoke.py \
 ```
 
 Do not use `--allow-unsigned-fixture` in the hosted service.
+
+The GPP-2q runtime can be deployed by installing the policy-service optional
+extra and pointing a WSGI server at the repo-owned entrypoint:
+
+```bash
+pip install "ao-kernel[policy-service]"
+```
+
+```text
+ao_kernel.live_adapter_gate_policy_runtime:application
+```
+
+The GitHub App webhook URL should point at the hosted path:
+
+```text
+https://<host>/github/deployment-protection
+```
+
+Configure these runtime secrets through the hosting provider's secret manager:
+
+```text
+AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET
+AO_GITHUB_APP_ID
+AO_GITHUB_APP_PRIVATE_KEY_PEM
+```
+
+or use `AO_GITHUB_APP_PRIVATE_KEY_PATH` when the hosting provider mounts the
+private key as a secret file. Do not commit, print, echo, read back, or paste
+these values into issues, PRs, MCP prompts, logs, or chat.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -332,10 +380,11 @@ If the selected deployment protection app is attached but does not respond:
 
 1. do not bypass the environment gate;
 2. do not repeatedly dispatch waiting workflow runs;
-3. deploy or configure the app webhook/policy service so it verifies GitHub
-   webhook signatures, evaluates the repo-owned policy modules or an
-   equivalent fail-closed policy, attaches GitHub App auth outside the repo,
-   and returns an explicit approve, deny, timeout, or failure decision;
+3. deploy or configure the app webhook/policy service using the GPP-2q WSGI
+   runtime or an equivalent fail-closed implementation so it verifies GitHub
+   webhook signatures, evaluates the repo-owned policy modules, attaches
+   GitHub App auth outside the repo, and returns an explicit approve, deny,
+   timeout, or failure decision;
 4. rerun protected workflow evidence from `main` only after the service is
    expected to respond.
 

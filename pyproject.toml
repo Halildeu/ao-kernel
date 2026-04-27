@@ -64,6 +64,9 @@ pgvector = [
 metrics = [
     "prometheus-client>=0.20.0",
 ]
+policy-service = [
+    "PyJWT[crypto]>=2.8.0",
+]
 # Meta-extras (PR-A6, widened in PR-B5 for metrics)
 coding = [
     "ao-kernel[llm]",
