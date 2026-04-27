@@ -82,6 +82,12 @@
       "decision": "protected_live_gate_metadata_refreshed_still_blocked_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/515",
       "record": ".claude/plans/GPP-2j-PROTECTED-LIVE-GATE-METADATA-REFRESH.md"
+    },
+    {
+      "id": "GPP-2k",
+      "decision": "protected_live_gate_provisioning_runbook_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/517",
+      "record": ".claude/plans/GPP-2k-PROTECTED-LIVE-GATE-PROVISIONING-RUNBOOK.md"
     }
   ],
   "blocked_wps": [
@@ -172,6 +178,7 @@
     "use scripts/live_adapter_gate_attest.py for the next prerequisite attestation",
     "provision AO_CLAUDE_CODE_CLI_AUTH under ao-kernel-live-adapter-gate without reading secret values",
     "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate",
+    "follow docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md for external/admin provisioning before the next prerequisite attestation",
     "run a follow-up prerequisite attestation slice only after issue #482 acceptance criteria are met",
     "do not widen support or claim production platform readiness"
   ],

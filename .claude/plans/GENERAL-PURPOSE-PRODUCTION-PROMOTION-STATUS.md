@@ -5,8 +5,8 @@
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#515](https://github.com/Halildeu/ao-kernel/issues/515)
-for protected live gate metadata refresh
+**Current slice issue:** [#517](https://github.com/Halildeu/ao-kernel/issues/517)
+for protected live gate provisioning runbook
 **Current slice record:** `.claude/plans/gpp_status.v1.json`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -104,6 +104,11 @@ Last live verification on current `origin/main` showed:
     pass; the selected GitHub App slug returns `HTTP 404`, deployment
     protection rules are empty, and `AO_CLAUDE_CODE_CLI_AUTH` is not listed as
     an environment secret handle. `GPP-2` remains blocked.
+27. GPP-2k adds an operator/admin provisioning runbook for #482/#485 so the
+    selected GitHub App deployment protection rule and
+    `AO_CLAUDE_CODE_CLI_AUTH` handle can be provisioned without secret
+    readback. `GPP-2` remains blocked until a future metadata attestation exits
+    `prerequisites_ready`.
 
 ## 3. Current Verdict
 
@@ -153,6 +158,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2h` | Completed / no support widening | Deployment protection bot gate decision | GitHub App deployment protection selected; PAT-backed bot reviewer rejected |
 | `GPP-2i` | Completed / no support widening | Deployment protection attestation support | selected app-gate metadata is recognized; current live gate still blocked |
 | `GPP-2j` | Completed / no support widening | Protected live gate metadata refresh after RI-6 closeout | current live gate still blocked; selected app gate and credential handle missing |
+| `GPP-2k` | Completed / no support widening | Protected live gate provisioning runbook | operator/admin checklist ready; current live gate still blocked |
 | `GPP-2` | Blocked | Protected live-adapter gate runtime binding | blocked until a future attestation exits `prerequisites_ready` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -559,10 +565,13 @@ GitHub App deployment protection bot gate. GPP-2i adds metadata-only
 attestation support for that selected model. GPP-2j refreshed the live metadata
 after RI-6 closeout and reconfirmed the same blocked state: app slug lookup
 returns `HTTP 404`, deployment protection rules are empty, and
-`AO_CLAUDE_CODE_CLI_AUTH` is not listed. The next external/admin step is to
-configure the app gate with slug `ao-kernel-live-adapter-gate` and set
-`AO_CLAUDE_CODE_CLI_AUTH` without reading the secret value; only a fresh
-metadata attestation can unblock `GPP-2`.
+`AO_CLAUDE_CODE_CLI_AUTH` is not listed. GPP-2k adds
+[`docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md`](../../docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md)
+as the operator/admin checklist for completing #482/#485 without secret
+readback. The next external/admin step is to configure the app gate with slug
+`ao-kernel-live-adapter-gate` and set `AO_CLAUDE_CODE_CLI_AUTH` without
+reading the secret value; only a fresh metadata attestation can unblock
+`GPP-2`.
 
 ## 18. Risk Register
 
@@ -607,3 +616,5 @@ metadata attestation can unblock `GPP-2`.
 | 2026-04-26 | GPP-2i issue opened | Issue [#497](https://github.com/Halildeu/ao-kernel/issues/497) tracks metadata-only attestation support for the selected deployment protection bot gate. |
 | 2026-04-27 | GPP-2j issue opened | Issue [#515](https://github.com/Halildeu/ao-kernel/issues/515) tracks the post-RI-6 metadata refresh for the protected live gate. |
 | 2026-04-27 | GPP-2j live metadata refreshed | `scripts/live_adapter_gate_attest.py` still reports `overall_status=blocked`; protected environment/admin bypass/branch policy pass, but `AO_CLAUDE_CODE_CLI_AUTH` and the selected deployment protection app gate remain missing. |
+| 2026-04-27 | GPP-2k issue opened | Issue [#517](https://github.com/Halildeu/ao-kernel/issues/517) tracks the protected live gate provisioning runbook for #482/#485. |
+| 2026-04-27 | GPP-2k provisioning runbook added | `docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md` records the no-secret-readback checklist, metadata verification commands, and evidence template for the selected deployment protection app gate. |

@@ -62,6 +62,11 @@ semantiğindedir. Workflow'un yeşil olması production-certified
 `claude-code-cli` support anlamına gelmez.
 `GP-4.5` closeout kararı `close_no_widening_keep_operator_beta` olduğu için bu
 yüzey artık aktif widening gate değil, blocked/no-widening operasyon kaydıdır.
+Protected live-adapter admin provisioning is covered by
+[`LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md`](LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md).
+Use that checklist for #482/#485 before any follow-up prerequisite attestation;
+it is metadata-only guidance and does not authorize runtime binding, secret
+readback, live adapter execution, support widening, or a production claim.
 
 Prerequisite contract (operator-managed lanes):
 
@@ -507,6 +512,7 @@ and the public package install path is verified.
 
 - [`PUBLIC-BETA.md`](PUBLIC-BETA.md) — release support matrix
 - [`SUPPORT-BOUNDARY.md`](SUPPORT-BOUNDARY.md) — narrative support tiers
+- [`LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md`](LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md) — protected live-adapter gate admin checklist
 - [`UPGRADE-NOTES.md`](UPGRADE-NOTES.md) — upgrade checklist
 - [`ROLLBACK.md`](ROLLBACK.md) — rollback procedures
 - [`KNOWN-BUGS.md`](KNOWN-BUGS.md) — active known-bugs registry

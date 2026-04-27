@@ -78,6 +78,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2k"
+        and item["decision"] == "protected_live_gate_provisioning_runbook_ready_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/517"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -119,6 +126,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action
         == "configure GitHub App deployment protection on ao-kernel-live-adapter-gate with app slug ao-kernel-live-adapter-gate"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "follow docs/LIVE-ADAPTER-GATE-PROVISIONING-RUNBOOK.md for external/admin provisioning before the next prerequisite attestation"
         for action in payload["next_allowed_actions"]
     )
     assert any(action == "treat Claude MCP consultation as release authority" for action in payload["forbidden_actions"])
