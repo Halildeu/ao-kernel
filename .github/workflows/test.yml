@@ -147,6 +147,23 @@ jobs:
       - name: Build wheel and run packaging smoke
         run: python scripts/packaging_smoke.py
 
+  policy-container-smoke:
+    name: policy-container-smoke
+    runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Build and health-check policy service container
+        run: |
+          python scripts/live_adapter_gate_policy_container_smoke.py \
+            --image ao-kernel-live-adapter-gate-policy-service:ci \
+            --build-timeout-seconds 600 \
+            --timeout-seconds 90
+
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
@@ -271,4 +288,4 @@ jobs:
           pip_install -e ".[mcp]"      && python -c "import mcp; print('mcp OK')"
           pip_install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
           pip_install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"
-          pip_install -e ".[policy-service]" && python -c "import jwt; print('policy-service OK')"
+          pip_install -e ".[policy-service]" && python -c "import gunicorn, jwt; print('policy-service OK')"
