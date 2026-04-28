@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gpp5-repo-intelligence-closeout.schema.v1.json",
+  "title": "GPP-5d repo-intelligence closeout preflight",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "issue",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution_allowed",
+    "work_packages",
+    "contract_surfaces",
+    "negative_runtime_guards",
+    "program_flags",
+    "gpp6_readiness",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gpp5_repo_intelligence_closeout_preflight" },
+    "program_id": { "const": "GPP-5d" },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "const": 559 },
+        "url": { "const": "https://github.com/Halildeu/ao-kernel/issues/559" }
+      }
+    },
+    "overall_status": { "enum": ["closed", "blocked"] },
+    "decision": {
+      "enum": [
+        "repo_intelligence_read_only_workflow_surface_closed_no_support_widening",
+        "blocked_repo_intelligence_closeout_no_support_widening"
+      ]
+    },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution_allowed": { "const": false },
+    "blocked_reason": { "type": "string", "minLength": 1 },
+    "work_packages": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/work_package_summary" }
+    },
+    "contract_surfaces": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/contract_surface_summary" }
+    },
+    "negative_runtime_guards": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/negative_runtime_guard" }
+    },
+    "program_flags": { "$ref": "#/$defs/program_flags" },
+    "gpp6_readiness": { "$ref": "#/$defs/gpp6_readiness" },
+    "next_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "overall_status": { "const": "blocked" } } },
+      "then": { "required": ["blocked_reason"] }
+    },
+    {
+      "if": { "properties": { "overall_status": { "const": "closed" } } },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": "repo_intelligence_read_only_workflow_surface_closed_no_support_widening"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "finding_list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "work_package_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "decision", "issue", "record", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ready", "blocked"] },
+        "decision": { "type": "string", "minLength": 1 },
+        "issue": { "type": "string", "minLength": 1 },
+        "record": { "type": "string", "minLength": 1 },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "contract_surface_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "status", "schema_ref", "public_api", "findings"],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ready", "blocked"] },
+        "schema_ref": { "type": "string", "minLength": 1 },
+        "public_api": { "type": "string", "minLength": 1 },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "negative_runtime_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["guard", "status", "findings"],
+      "properties": {
+        "guard": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["pass", "fail"] },
+        "scanned_files": { "type": "integer", "minimum": 0 },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "program_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed",
+        "findings"
+      ],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "support_widening_allowed": { "type": ["boolean", "null"] },
+        "production_platform_claim_allowed": { "type": ["boolean", "null"] },
+        "live_adapter_execution_allowed": { "type": ["boolean", "null"] },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "gpp6_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "entry_criteria",
+        "blockers",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "status": { "enum": ["ready", "blocked_by_upstream_gates"] },
+        "entry_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    }
+  }
+}
