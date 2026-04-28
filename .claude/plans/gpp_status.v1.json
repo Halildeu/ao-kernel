@@ -201,6 +201,12 @@
       "decision": "repo_intelligence_product_onboarding_contract_ready_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/553",
       "record": ".claude/plans/GPP-5a-REPO-INTELLIGENCE-PRODUCT-ONBOARDING.md"
+    },
+    {
+      "id": "GPP-5b",
+      "decision": "repo_intelligence_explicit_workflow_context_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/555",
+      "record": ".claude/plans/GPP-5b-REPO-INTELLIGENCE-WORKFLOW-CONTEXT.md"
     }
   ],
   "blocked_wps": [
@@ -280,7 +286,7 @@
   "next_allowed_actions": [
     "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement",
     "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
-    "continue GPP-5 repo-intelligence workflow integration only behind explicit opt-in or read-only onboarding while support_widening_allowed=false and production_platform_claim_allowed=false",
+    "continue GPP-5 repo-intelligence output contract and read-only workflow surface work behind explicit opt-in while support_widening_allowed=false and production_platform_claim_allowed=false",
     "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only",
     "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
     "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",

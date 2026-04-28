@@ -310,7 +310,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
-| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding contract ready; workflow context ingestion still must remain explicit opt-in/read-only |
+| `GPP-5b` | Completed / no support widening | Repo-intelligence explicit workflow context resolver | product onboarding + explicit handoff validation compose into visible read-only handoff pointer; no auto-feed or runtime execution |
+| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding and workflow-context resolver ready; output contract and read-only workflow surface remain |
 | `GPP-6` | Not started | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
@@ -621,6 +622,18 @@ GPP-5 remains open for explicit read-only workflow integration. GPP-2 remains
 blocked, and this slice does not authorize live-adapter execution, support
 widening, production platform claims, hidden prompt injection, MCP exposure,
 root export requirements, or context-compiler auto-feed.
+
+**GPP-5b closeout:** PR for issue
+[#555](https://github.com/Halildeu/ao-kernel/issues/555) adds a workflow-level
+resolver that composes the product onboarding contract with the existing
+explicit repo-query handoff validator. The accepted result is a visible handoff
+pointer and source metadata only. It does not return hidden prompt content,
+write context artifacts, expose MCP tools, enable root export, auto-feed the
+context compiler, call adapters, or run live-adapter code.
+
+GPP-5 remains open for output contract and read-only workflow surface work.
+GPP-2 remains blocked, and support widening / production platform claims remain
+closed.
 
 ## 13. GPP-6 - Read-Only Production E2E
 
