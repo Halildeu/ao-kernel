@@ -78,6 +78,53 @@ dry-run check-runs only after it is explicitly hosted and configured with
 GitHub App runtime secrets; this container package alone is not release
 authority and does not change branch protection.
 
+## Autonomous Cloud Run Deployment
+
+The repository deploy workflow can mirror the immutable GHCR image into Google
+Artifact Registry, deploy it to Cloud Run, health-check `/healthz`, and upload
+deploy evidence:
+
+```text
+.github/workflows/ao-release-gate-deploy-cloud-run.yml
+```
+
+Required repository variables:
+
+```text
+GCP_PROJECT_ID
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_SERVICE_ACCOUNT
+GCP_CLOUD_RUN_REGION
+GCP_ARTIFACT_REGISTRY_LOCATION
+GCP_ARTIFACT_REGISTRY_REPOSITORY
+RELEASE_GATE_SERVICE_NAME
+AO_RELEASE_GATE_GITHUB_APP_ID
+AO_RELEASE_GATE_WEBHOOK_SECRET_NAME
+AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_SECRET_NAME
+```
+
+Optional repository variables:
+
+```text
+AO_RELEASE_GATE_WEBHOOK_SECRET_VERSION
+AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_SECRET_VERSION
+```
+
+`AO_RELEASE_GATE_WEBHOOK_SECRET_NAME` and
+`AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_SECRET_NAME` are Secret Manager object
+names, not secret values. The workflow must not read those values back. Cloud
+Run resolves them at runtime into:
+
+```text
+AO_RELEASE_GATE_WEBHOOK_SECRET
+AO_GITHUB_APP_PRIVATE_KEY_PEM
+```
+
+The deploy workflow proves only that the service revision is hosted and
+`GET /healthz` responds. It does not prove that the GitHub App webhook URL is
+configured, does not post a check-run, does not collect real PR evidence, does
+not change branch protection, and does not enable merge authority.
+
 ## Local No-Secret Smoke
 
 The local container smoke only builds the image and checks `/healthz`. It does
