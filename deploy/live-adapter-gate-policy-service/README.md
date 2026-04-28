@@ -73,6 +73,33 @@ The two `*_SECRET_NAME` variables are secret-manager object names, not secret
 values. The workflow must not read back secret values. It passes those names to
 Cloud Run so the hosted service receives runtime secrets from Secret Manager.
 
+To provision those repository variables without using the GitHub UI, generate a
+local template, fill it with non-secret values, dry-run it, then apply it:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --write-template /tmp/policy-service-cloud-run-repo-variables.json
+```
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --dry-run \
+  --output text
+```
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --output text
+```
+
+The tool validates required handles, rejects unknown variables, refuses common
+credential-shaped values, and sends values to `gh variable set` through stdin so
+they are not placed in the command line or rendered in stdout. Do not put
+webhook secrets, private keys, tokens, or `AO_CLAUDE_CODE_CLI_AUTH` in that
+JSON file.
+
 The deployed public GitHub App webhook URL has this shape:
 
 ```text

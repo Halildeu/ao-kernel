@@ -350,6 +350,63 @@ Interpretation:
 4. Treat the attestation artifact as bootstrap metadata only. Hosted health
    evidence and protected callback evidence still require later steps.
 
+Repository-variable bootstrap helper:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --write-template /tmp/policy-service-cloud-run-repo-variables.json
+```
+
+Fill the template only with non-secret repository variable values:
+
+```text
+GCP_PROJECT_ID
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_SERVICE_ACCOUNT
+GCP_CLOUD_RUN_REGION
+GCP_ARTIFACT_REGISTRY_LOCATION
+GCP_ARTIFACT_REGISTRY_REPOSITORY
+POLICY_SERVICE_NAME
+AO_GITHUB_APP_ID
+AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME
+AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME
+```
+
+The two `*_SECRET_NAME` values are Secret Manager object names, not secret
+values. Webhook secrets, GitHub App private keys, tokens, passwords, and
+`AO_CLAUDE_CODE_CLI_AUTH` must stay outside this JSON file.
+
+Validate without writing:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --dry-run \
+  --output text
+```
+
+Apply through the GitHub CLI:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --output text
+```
+
+Interpretation:
+
+1. The helper only writes GitHub repository variables with `gh variable set`.
+2. Variable values are supplied to `gh` through stdin and are not rendered in
+   stdout.
+3. The helper rejects unknown variables, missing required handles, runtime
+   secret variable names, and common credential-shaped values.
+4. It does not read back variable values, read Secret Manager values, deploy
+   Cloud Run, configure the GitHub App webhook URL, post a callback, dispatch
+   the protected live-adapter workflow, or run a live adapter.
+5. After applying, rerun
+   `scripts/policy_service_cloud_run_bootstrap_attest.py --fail-on-blocked` to
+   prove only that the required repository variable handles exist.
+
 ### 3. Attach the Deployment Protection Rule
 
 Attach the GitHub App as a custom deployment protection rule on environment:
