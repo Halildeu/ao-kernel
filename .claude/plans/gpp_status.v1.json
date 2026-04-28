@@ -219,6 +219,12 @@
       "decision": "repo_intelligence_read_only_workflow_surface_closed_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/559",
       "record": ".claude/plans/GPP-5d-REPO-INTELLIGENCE-CLOSEOUT.md"
+    },
+    {
+      "id": "GPP-6a",
+      "decision": "read_only_e2e_preflight_ready_execution_blocked_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/561",
+      "record": ".claude/plans/GPP-6a-READ-ONLY-E2E-PREFLIGHT.md"
     }
   ],
   "blocked_wps": [
@@ -298,7 +304,7 @@
   "next_allowed_actions": [
     "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement",
     "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
-    "use GPP-5d repo-intelligence closeout evidence for GPP-6 preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false",
+    "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false",
     "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only",
     "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
     "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",
