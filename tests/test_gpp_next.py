@@ -30,8 +30,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/533"
-    assert payload["current_wp"]["exit_decision"] == "policy_container_publish_path_ready_service_not_hosted"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
+    assert (
+        payload["current_wp"]["exit_decision"]
+        == "autonomous_release_gate_selected_policy_service_still_not_hosted"
+    )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -141,10 +144,19 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2u"
+        and item["decision"] == "autonomous_github_app_release_gate_selected_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
+        "implement and install the ao-release-gate GitHub App or equivalent GitHub App required-check authority without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+        "validate whether GitHub App pull request approvals count for the current branch protection; if not, cut over to a required ao-release-gate status check",
         "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
     ]
@@ -152,13 +164,24 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         {
             "id": "GPP-2",
             "reason": (
-                "repo-owned policy webhook container image publish path is ready, but the GitHub App service is "
-                "not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to "
-                "post deployment callback reviews"
+                "repo-owned policy webhook container image publish path is ready and the autonomous GitHub App "
+                "release-gate model is selected, but the deployment-protection service is not yet publicly "
+                "hosted/configured and the ao-release-gate required status-check authority is not yet "
+                "implemented/cut over"
             ),
         }
     ]
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
+    assert any(
+        action
+        == "implement a dry-run ao-release-gate GitHub App required status check before any human-free merge automation"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise"
+        for action in payload["next_allowed_actions"]
+    )
     assert any(
         action == "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded"
         for action in payload["next_allowed_actions"]
@@ -169,6 +192,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
+    assert any(action == "use admin bypass to merge GPP program PRs" for action in payload["forbidden_actions"])
+    assert any(action == "treat Codex or Claude output as release authority" for action in payload["forbidden_actions"])
     assert any(
         action
         == "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work"
@@ -289,6 +314,23 @@ def test_gpp2i_attestation_support_keeps_gate_blocked() -> None:
     assert "does not widen support" in decision
 
 
+def test_gpp2u_selects_autonomous_github_app_release_gate_not_admin_bypass() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2u-AUTONOMOUS-GITHUB-APP-RELEASE-GATE.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `autonomous_github_app_release_gate_selected_no_support_widening`" in decision
+    assert "GitHub App release gate" in decision
+    assert "`ao-release-gate`" in decision
+    assert "required status check" in decision
+    assert "PAT-backed bot" in decision
+    assert "Admin bypass is rejected." in decision
+    assert "Claude/Codex release authority is rejected." in decision
+    assert "dry-run" in decision
+    assert "does not unblock GPP-2" in decision
+    assert "does not widen support" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -296,9 +338,12 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/533"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
-    assert payload["current_wp"]["exit_decision"] == "policy_container_publish_path_ready_service_not_hosted"
+    assert (
+        payload["current_wp"]["exit_decision"]
+        == "autonomous_release_gate_selected_policy_service_still_not_hosted"
+    )
     assert payload["support_widening_allowed"] is False
 
 

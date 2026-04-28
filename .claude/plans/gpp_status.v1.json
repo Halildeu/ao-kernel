@@ -9,9 +9,9 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
-    "exit_decision": "policy_container_publish_path_ready_service_not_hosted",
-    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, posts callback reviews, and produces protected workflow evidence with live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/537",
+    "exit_decision": "autonomous_release_gate_selected_policy_service_still_not_hosted",
+    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, ao-release-gate required status-check authority is implemented/cut over, callback reviews are posted, and protected workflow evidence is produced with live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
@@ -140,15 +140,23 @@
       "decision": "policy_container_publish_path_ready_service_not_hosted",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
       "record": ".claude/plans/GPP-2s-POLICY-CONTAINER-IMAGE-PUBLISH.md"
+    },
+    {
+      "id": "GPP-2u",
+      "decision": "autonomous_github_app_release_gate_selected_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/537",
+      "record": ".claude/plans/GPP-2u-AUTONOMOUS-GITHUB-APP-RELEASE-GATE.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy webhook container image publish path is ready, but the GitHub App service is not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to post deployment callback reviews"
+      "reason": "repo-owned policy webhook container image publish path is ready and the autonomous GitHub App release-gate model is selected, but the deployment-protection service is not yet publicly hosted/configured and the ao-release-gate required status-check authority is not yet implemented/cut over"
     }
   ],
   "pending_external_actions": [
+    "implement and install the ao-release-gate GitHub App or equivalent GitHub App required-check authority without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+    "validate whether GitHub App pull request approvals count for the current branch protection; if not, cut over to a required ao-release-gate status check",
     "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
   ],
@@ -198,12 +206,16 @@
     "treat a product end-user account as release authority",
     "treat a PAT-backed bot user as release authority",
     "treat Claude MCP consultation as release authority",
+    "treat Codex or Claude output as release authority",
+    "use admin bypass to merge GPP program PRs",
     "use ao_memory_write or ao_llm_call during Claude MCP consultation",
     "include credential material in Claude MCP prompts or tool payloads",
     "set support_widening=true without explicit GPP-9 promotion decision",
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
+    "implement a dry-run ao-release-gate GitHub App required status check before any human-free merge automation",
+    "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise",
     "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
