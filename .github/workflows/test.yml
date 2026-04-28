@@ -164,6 +164,23 @@ jobs:
             --build-timeout-seconds 600 \
             --timeout-seconds 90
 
+  release-gate-container-smoke:
+    name: release-gate-container-smoke
+    runs-on: ubuntu-latest
+    needs: [event-gate]
+    if: needs.event-gate.outputs.should_run == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Build and health-check ao-release-gate service container
+        run: |
+          python scripts/ao_release_gate_container_smoke.py \
+            --image ao-kernel-ao-release-gate-service:ci \
+            --build-timeout-seconds 600 \
+            --timeout-seconds 90
+
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
