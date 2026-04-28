@@ -1,0 +1,23 @@
+{$AO_GATE_HOSTNAME} {
+	encode zstd gzip
+
+	@policyWebhook path /github/deployment-protection
+	reverse_proxy @policyWebhook live-adapter-gate-policy:8000
+
+	@releaseGateWebhook path /github/ao-release-gate
+	reverse_proxy @releaseGateWebhook ao-release-gate:8000
+
+	@policyHealth path /policy/healthz
+	handle @policyHealth {
+		rewrite * /healthz
+		reverse_proxy live-adapter-gate-policy:8000
+	}
+
+	@releaseGateHealth path /release-gate/healthz
+	handle @releaseGateHealth {
+		rewrite * /healthz
+		reverse_proxy ao-release-gate:8000
+	}
+
+	respond /healthz 200
+}

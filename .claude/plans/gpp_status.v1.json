@@ -9,12 +9,13 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/563",
-    "exit_decision": "internal_vault_gate_secret_contract_ready_service_not_hosted_no_support_widening",
-    "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints with internal vault-backed runtime secret ids, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/565",
+    "exit_decision": "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening",
+    "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints from the internal operator host bundle or equivalent infrastructure with internal vault-backed runtime secret ids, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service on operator-owned internal infrastructure without secret value exposure",
       "use the repo-owned ao-release-gate GHCR image or container package to deploy or configure the ao-release-gate GitHub App check-run service on operator-owned internal infrastructure without secret value exposure",
+      "use deploy/internal-gate-host or equivalent operator-owned infrastructure as the no-paid-cloud default host bundle for both GPP-2 gate services",
       "configure hosted gate runtimes with internal vault secret ids rather than committed, echoed, or repository-stored secret values",
       "document or build end-user onboarding paths that do not require users to self-host the GPP-2 policy service, vault, webhook secret, GitHub App private key, or Cloud Run project",
       "repeat protected workflow evidence collection from main after the policy service responds",
@@ -205,6 +206,12 @@
       "record": ".claude/plans/GPP-2ad-INTERNAL-VAULT-GATE-SECRET-CONTRACT.md"
     },
     {
+      "id": "GPP-2ae",
+      "decision": "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/565",
+      "record": ".claude/plans/GPP-2ae-INTERNAL-OPERATOR-HOST-BUNDLE.md"
+    },
+    {
       "id": "GPP-5a",
       "decision": "repo_intelligence_product_onboarding_contract_ready_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/553",
@@ -238,12 +245,12 @@
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, and internal vault-backed secret-id runtime contract are ready, but neither service is publicly hosted/configured with vault-backed runtime secrets, webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
+      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, and internal operator host bundle are ready, but neither service is publicly hosted/configured with vault-backed runtime secrets, webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
     }
   ],
   "pending_external_actions": [
-    "host the operator-owned policy service on public HTTPS using the repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
-    "host the operator-owned ao-release-gate service on public HTTPS using the repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
+    "host the operator-owned policy service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
+    "host the operator-owned ao-release-gate service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
     "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the hosted /github/deployment-protection endpoint and can post deployment callback reviews",
     "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with vault-backed runtime webhook secret and GitHub App authentication outside the repo",
     "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
@@ -311,6 +318,7 @@
     "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
     "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false",
     "prefer the internal operator host plus vault-backed secret-id path for GPP-2 service hosting unless a later decision reselects Cloud Run",
+    "use deploy/internal-gate-host as the default no-paid-cloud operator host bundle and validate it with scripts/internal_gate_host_bootstrap_attest.py before collecting hosted evidence",
     "configure ao_kernel.live_adapter_gate_policy_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
     "configure ao_kernel.ao_release_gate_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
     "configure or verify the GitHub App webhook URL only after the hosted policy service endpoint is health-checked",
