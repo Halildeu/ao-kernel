@@ -11,7 +11,7 @@
     "status": "blocked",
     "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
     "exit_decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
-    "ready_after": "policy service deploy workflow has completed from trusted main, hosted endpoint is configured as the GitHub App webhook URL, callback review evidence exists, and protected workflow evidence confirms live_execution_allowed=false",
+    "ready_after": "policy service deploy workflow has completed from trusted main, the ao-release-gate deploy workflow has completed from main, hosted endpoints are configured with runtime secrets and webhook URLs, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, callback review evidence exists, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
@@ -148,6 +148,42 @@
       "record": ".claude/plans/GPP-2t-AUTONOMOUS-POLICY-SERVICE-DEPLOYMENT.md"
     },
     {
+      "id": "GPP-2u",
+      "decision": "autonomous_github_app_release_gate_selected_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/537",
+      "record": ".claude/plans/GPP-2u-AUTONOMOUS-GITHUB-APP-RELEASE-GATE.md"
+    },
+    {
+      "id": "GPP-2v",
+      "decision": "ao_release_gate_dry_run_scaffold_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/539",
+      "record": ".claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md"
+    },
+    {
+      "id": "GPP-2w",
+      "decision": "ao_release_gate_check_run_service_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/541",
+      "record": ".claude/plans/GPP-2w-AO-RELEASE-GATE-CHECK-RUN-SERVICE.md"
+    },
+    {
+      "id": "GPP-2x",
+      "decision": "ao_release_gate_container_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/543",
+      "record": ".claude/plans/GPP-2x-AO-RELEASE-GATE-CONTAINER.md"
+    },
+    {
+      "id": "GPP-2y",
+      "decision": "ao_release_gate_publish_path_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/545",
+      "record": ".claude/plans/GPP-2y-AO-RELEASE-GATE-CONTAINER-PUBLISH.md"
+    },
+    {
+      "id": "GPP-2aa",
+      "decision": "ao_release_gate_autonomous_deploy_path_ready_service_not_bootstrapped",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/547",
+      "record": ".claude/plans/GPP-2aa-AO-RELEASE-GATE-AUTONOMOUS-DEPLOY.md"
+    },
+    {
       "id": "GPP-2ab",
       "decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
@@ -157,7 +193,7 @@
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned autonomous Cloud Run deployment path is ready, and metadata-only bootstrap attestation tool is ready, but the required GitHub repository variable handles are currently missing; Google Cloud OIDC trust, Secret Manager objects, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
+      "reason": "repo-owned autonomous policy service deploy path, metadata-only policy bootstrap attestation tool, ao-release-gate dry-run decision scaffold, check-run service surface, release-gate container package, release-gate image publish path, and release-gate autonomous deploy path are ready, but required policy GitHub repository variable handles are currently missing and neither the release-gate service nor the deployment-protection service is publicly hosted/configured with webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
     }
   ],
   "pending_external_actions": [
@@ -165,6 +201,11 @@
     "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
     "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
     "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
+    "bootstrap the ao-release-gate Cloud Run deploy trust path and run the trusted deploy workflow from main without treating health evidence as check-run evidence",
+    "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with runtime webhook secret and GitHub App authentication outside the repo",
+    "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
+    "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
+    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
   ],
   "support_widening_allowed": false,
@@ -213,6 +254,8 @@
     "treat a product end-user account as release authority",
     "treat a PAT-backed bot user as release authority",
     "treat Claude MCP consultation as release authority",
+    "treat Codex or Claude output as release authority",
+    "use admin bypass to merge GPP program PRs",
     "use ao_memory_write or ao_llm_call during Claude MCP consultation",
     "include credential material in Claude MCP prompts or tool payloads",
     "set support_widening=true without explicit GPP-9 promotion decision",
@@ -222,13 +265,21 @@
     "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only",
     "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
     "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",
+    "bootstrap and run the ao-release-gate Cloud Run deploy workflow from main before collecting real PR evidence",
+    "deploy or host the ao-release-gate check-run service in dry-run mode and collect real PR evidence before any branch protection cutover",
+    "collect ao-release-gate dry-run check-run evidence on real PRs before any branch protection cutover",
+    "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise",
+    "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
     "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active",
     "use scripts/live_adapter_gate_policy_service_smoke.py only for local webhook/callback artifact validation, not live callback posting",
     "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution",
     "use scripts/live_adapter_gate_policy_container_smoke.py only for no-secret local container health validation, not live callback posting",
+    "use scripts/ao_release_gate_container_smoke.py only for no-secret local container health validation, not check-run posting",
+    "publish or pull ghcr.io/halildeu/ao-kernel-ao-release-gate-service only as a deploy artifact, not hosted service evidence",
     "publish or pull ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service only as a deploy artifact, not hosted service evidence",
+    "configure ao_kernel.ao_release_gate_runtime:application only with runtime secret manager values, never committed or echoed secret material",
     "configure ao_kernel.live_adapter_gate_policy_runtime:application only with runtime secret manager values, never committed or echoed secret material",
     "do not reference AO_CLAUDE_CODE_CLI_AUTH through secrets context until a later live execution slice explicitly permits it",
     "keep fork and pull_request contexts away from protected credentials",

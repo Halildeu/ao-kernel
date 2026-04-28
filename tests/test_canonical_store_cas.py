@@ -7,6 +7,7 @@ import warnings
 
 import pytest
 
+from ao_kernel.context import canonical_store
 from ao_kernel.context.canonical_store import (
     load_store,
     promote_decision,
@@ -108,6 +109,25 @@ class TestPromoteDecisionCAS:
         assert cd.key == "x"
 
     def test_promote_with_matching_revision(self, project_with_ao):
+        rev = store_revision(load_store(project_with_ao))
+        cd = promote_decision(
+            project_with_ao,
+            key="x", value=1, confidence=0.9,
+            expected_revision=rev,
+            allow_overwrite=False,
+        )
+        assert cd.key == "x"
+
+    def test_promote_with_matching_empty_revision_survives_clock_tick(
+        self, project_with_ao, monkeypatch
+    ):
+        tick = {"count": 0}
+
+        def ticking_now() -> str:
+            tick["count"] += 1
+            return f"2026-04-28T00:00:{tick['count']:02d}Z"
+
+        monkeypatch.setattr(canonical_store, "_now_iso", ticking_now)
         rev = store_revision(load_store(project_with_ao))
         cd = promote_decision(
             project_with_ao,
