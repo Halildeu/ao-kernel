@@ -9,9 +9,9 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/537",
-    "exit_decision": "autonomous_release_gate_selected_policy_service_still_not_hosted",
-    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, ao-release-gate required status-check authority is implemented/cut over, callback reviews are posted, and protected workflow evidence is produced with live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/539",
+    "exit_decision": "ao_release_gate_dry_run_scaffold_ready_policy_service_still_not_hosted",
+    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, ao-release-gate GitHub App check-run posting is wired and required by branch protection, callback reviews are posted, and protected workflow evidence is produced with live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
@@ -146,16 +146,23 @@
       "decision": "autonomous_github_app_release_gate_selected_no_support_widening",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/537",
       "record": ".claude/plans/GPP-2u-AUTONOMOUS-GITHUB-APP-RELEASE-GATE.md"
+    },
+    {
+      "id": "GPP-2v",
+      "decision": "ao_release_gate_dry_run_scaffold_ready_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/539",
+      "record": ".claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy webhook container image publish path is ready and the autonomous GitHub App release-gate model is selected, but the deployment-protection service is not yet publicly hosted/configured and the ao-release-gate required status-check authority is not yet implemented/cut over"
+      "reason": "repo-owned policy webhook container image publish path and ao-release-gate dry-run decision scaffold are ready, but the deployment-protection service is not yet publicly hosted/configured and ao-release-gate is not yet installed/wired to post a required GitHub App check-run"
     }
   ],
   "pending_external_actions": [
-    "implement and install the ao-release-gate GitHub App or equivalent GitHub App required-check authority without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+    "install and wire the ao-release-gate GitHub App or equivalent GitHub App required-check authority to call ao_kernel.ao_release_gate without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+    "collect dry-run ao-release-gate evidence on real PRs before granting merge authority or changing branch protection",
     "validate whether GitHub App pull request approvals count for the current branch protection; if not, cut over to a required ao-release-gate status check",
     "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
@@ -214,7 +221,8 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "implement a dry-run ao-release-gate GitHub App required status check before any human-free merge automation",
+    "wire the ao-release-gate dry-run evaluator into a GitHub App webhook/check-run posting path without merge authority",
+    "collect ao-release-gate dry-run check-run evidence on real PRs before any branch protection cutover",
     "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise",
     "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",

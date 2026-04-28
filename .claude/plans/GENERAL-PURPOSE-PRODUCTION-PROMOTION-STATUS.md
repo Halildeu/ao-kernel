@@ -1,13 +1,13 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 autonomous GitHub App release-gate model selected; hosted service deployment/config and release-gate implementation still blocked
+**Status:** GPP-2 `ao-release-gate` dry-run scaffold ready; hosted service deployment/config and GitHub App wiring still blocked
 **Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#537](https://github.com/Halildeu/ao-kernel/issues/537)
-for autonomous GitHub App release-gate selection
-**Current slice record:** `.claude/plans/GPP-2u-AUTONOMOUS-GITHUB-APP-RELEASE-GATE.md`
+**Current slice issue:** [#539](https://github.com/Halildeu/ao-kernel/issues/539)
+for `ao-release-gate` dry-run scaffold
+**Current slice record:** `.claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -172,6 +172,13 @@ Last live verification on current `origin/main` showed:
     rejected. This does not unblock GPP-2; the deployment-protection service is
     still not hosted and `ao-release-gate` is not yet implemented, dry-run
     validated, installed, or required by branch protection.
+37. GPP-2v adds the repo-owned dry-run `ao-release-gate` decision scaffold.
+    `ao_kernel/ao_release_gate.py` and `scripts/ao_release_gate_decision.py`
+    evaluate PR-shaped evidence, GPP status, CI status, branch freshness, diff
+    scope, and forbidden authority signals without posting to GitHub or merging
+    anything. GPP-2 remains blocked until the GitHub App is installed/wired to
+    post the required check-run, branch protection is cut over after dry-run
+    evidence, and the deployment-protection policy service is hosted.
 
 ## 3. Current Verdict
 
@@ -231,7 +238,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2r` | Completed / no support widening | Policy webhook container deploy package | repo-owned container image package and bounded no-secret health smoke/CI job ready; hosted service is not yet deployed/configured |
 | `GPP-2s` | Completed / no support widening | Policy container image publication | repo-owned GHCR image publish path ready; hosted service is not yet deployed/configured |
 | `GPP-2u` | Completed / no support widening | Autonomous GitHub App release-gate decision | `ao-release-gate` required status-check model selected; app implementation/cutover still required |
-| `GPP-2` | Blocked / hosted service and release-gate implementation missing | Protected live-adapter gate runtime binding | deployment protection app/policy service image/container must be hosted/configured, and `ao-release-gate` must be implemented/cut over before human-free program merges |
+| `GPP-2v` | Completed / no support widening | `ao-release-gate` dry-run scaffold | side-effect-free decision core and CLI ready; GitHub App wiring/cutover still required |
+| `GPP-2` | Blocked / hosted service and release-gate wiring missing | Protected live-adapter gate runtime binding | deployment protection app/policy service image/container must be hosted/configured, and `ao-release-gate` must be installed/wired/cut over before human-free program merges |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
@@ -360,11 +368,12 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked after GPP-2u; policy decision core, webhook scaffold,
+**Status:** blocked after GPP-2v; policy decision core, webhook scaffold,
 deployable WSGI runtime, container package, and GHCR image publication path
-exist, and the autonomous GitHub App release-gate model is selected. Hosted
-service deployment/configuration and release-gate implementation/cutover are
-still missing.
+exist. The autonomous GitHub App release-gate model is selected, and the
+repo-owned dry-run decision scaffold now exists. Hosted service
+deployment/configuration, GitHub App check-run posting, and branch-protection
+cutover are still missing.
 
 **Entry criteria:**
 
@@ -394,6 +403,10 @@ emit a required status check/check-run for human-free PR merges. That app has
 not yet been implemented, installed, dry-run validated, or required by branch
 protection; GitHub App PR-review counting remains a spike only, not the durable
 enforcement path.
+GPP-2v adds the side-effect-free evaluator and CLI that a future GitHub App can
+call to produce an `ao-release-gate` check-run decision. It produces dry-run
+artifacts only; it does not post to GitHub, grant merge authority, or change
+branch protection.
 
 **Acceptance criteria:**
 
@@ -641,8 +654,8 @@ accident.
 ## 17. Current Active Work
 
 No live execution/support-widening work is active. `GPP-2` is blocked on the
-deployment protection app/policy service response path and the newly selected
-autonomous release-gate implementation path. GPP-2l records a metadata-only
+deployment protection app/policy service response path and the autonomous
+release-gate wiring/cutover path. GPP-2l records a metadata-only
 `overall_status=ready` prerequisite attestation, GPP-2m binds
 `.github/workflows/live-adapter-gate.yml` to
 `ao-kernel-live-adapter-gate` without using secret values, GPP-2n proves the
@@ -659,9 +672,11 @@ deployed to a public host or configured in the GitHub App webhook settings.
 GPP-2s adds the GHCR image publication path for that container, but the image
 has not yet been deployed to a public host or configured in the GitHub App
 webhook settings. GPP-2u selects `ao-release-gate`, a GitHub App required
-status-check authority for no-human-approval program PR merges, but that app is
-not yet implemented, installed, dry-run validated, or required by branch
-protection.
+status-check authority for no-human-approval program PR merges. GPP-2v adds
+`ao_kernel/ao_release_gate.py` and `scripts/ao_release_gate_decision.py` as the
+dry-run decision core and CLI that can produce future `ao-release-gate`
+check-run output, but the GitHub App is not yet installed/wired to post that
+check-run and branch protection does not yet require it.
 GPP-2b
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) and GPP-2c
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) are resolved at the
@@ -680,14 +695,18 @@ product end-user account. GPP-2g records Claude/MCP consultation as advisory
 only. GPP-2h selects GitHub App deployment protection, GPP-2i adds attestation
 support for that model, GPP-2j refreshes blocked metadata, GPP-2k adds the
 operator provisioning runbook, and GPP-2u selects a separate GitHub App release
-gate for PR merge automation. Existing PR
-[#536](https://github.com/Halildeu/ao-kernel/pull/536) can stay blocked by
-review-required branch protection until an independent approval or the future
+gate for PR merge automation. GPP-2v provides the dry-run evaluator for that
+release gate while keeping `merge_authority_enabled=false`. Existing PRs
+[#536](https://github.com/Halildeu/ao-kernel/pull/536) and
+[#538](https://github.com/Halildeu/ao-kernel/pull/538) can stay blocked by
+review-required branch protection until independent approval or the future
 `ao-release-gate` required-check cutover exists; admin bypass remains
 forbidden.
 
-The next GPP-2 action is to implement a dry-run `ao-release-gate` GitHub App
-required status check, then deploy or configure the
+The next GPP-2 action is to wire the dry-run `ao-release-gate` evaluator into a
+GitHub App webhook/check-run posting path without merge authority, collect
+dry-run evidence on real PRs, and only then cut branch protection/rulesets over
+to require `ao-release-gate`. In parallel, deploy or configure the
 `ao-kernel-live-adapter-gate` deployment protection app/policy service using
 the GPP-2s GHCR image, the GPP-2r container package, the GPP-2q WSGI runtime,
 or an equivalent fail-closed implementation so it receives protected deployment
@@ -721,6 +740,7 @@ keep `live_execution_allowed=false`, `support_widening=false`, and
 | Container package exists but is not hosted | Local image health does not prove GitHub can call the app | Treat GPP-2r as packaging readiness only; deploy to a public host and configure GitHub App webhook before rerunning evidence |
 | Container image exists but service is not hosted | GHCR image publication does not prove GitHub can call the app | Treat GPP-2s as deploy artifact readiness only; deploy the image to a public host and configure GitHub App webhook before rerunning evidence |
 | Human review requirement blocks autonomous program PRs | Green CI still cannot merge without manual approval | Implement `ao-release-gate` as a GitHub App required status check; reject admin bypass, PAT-backed bots, and Claude/Codex release authority |
+| Dry-run release gate mistaken for merge authority | A scaffold could be overclaimed as production release control | GPP-2v sets `dry_run=true` and `merge_authority_enabled=false`; require GitHub App wiring and real PR evidence before branch-protection cutover |
 
 ## 19. Tracking Log
 
@@ -772,3 +792,5 @@ keep `live_execution_allowed=false`, `support_widening=false`, and
 | 2026-04-28 | GPP-2s image publish path added | `.github/workflows/policy-container-publish.yml` builds, no-secret smokes, and publishes trusted non-PR images to `ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service`; public hosting and GitHub App webhook configuration remain required before rerunning protected workflow evidence. |
 | 2026-04-28 | GPP-2u issue opened | Issue [#537](https://github.com/Halildeu/ao-kernel/issues/537) tracks the autonomous GitHub App release-gate decision for no-human-approval program PR merges. |
 | 2026-04-28 | GPP-2u release-gate model selected | `ao-release-gate` required status-check model is selected; GitHub App review counting remains a spike, and admin bypass/PAT-backed bot/Codex-Claude release authority remains rejected. |
+| 2026-04-28 | GPP-2v issue opened | Issue [#539](https://github.com/Halildeu/ao-kernel/issues/539) tracks the `ao-release-gate` dry-run decision scaffold. |
+| 2026-04-28 | GPP-2v dry-run scaffold added | `ao_kernel/ao_release_gate.py` and `scripts/ao_release_gate_decision.py` produce side-effect-free future check-run decisions; GitHub App wiring, dry-run evidence, and branch-protection cutover remain required. |

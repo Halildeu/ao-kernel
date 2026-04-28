@@ -30,10 +30,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/539"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "autonomous_release_gate_selected_policy_service_still_not_hosted"
+        == "ao_release_gate_dry_run_scaffold_ready_policy_service_still_not_hosted"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -151,11 +151,19 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2v"
+        and item["decision"] == "ao_release_gate_dry_run_scaffold_ready_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/539"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
-        "implement and install the ao-release-gate GitHub App or equivalent GitHub App required-check authority without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+        "install and wire the ao-release-gate GitHub App or equivalent GitHub App required-check authority to call ao_kernel.ao_release_gate without PAT-backed bot users, admin bypass, or Codex/Claude release authority",
+        "collect dry-run ao-release-gate evidence on real PRs before granting merge authority or changing branch protection",
         "validate whether GitHub App pull request approvals count for the current branch protection; if not, cut over to a required ao-release-gate status check",
         "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
@@ -164,17 +172,21 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         {
             "id": "GPP-2",
             "reason": (
-                "repo-owned policy webhook container image publish path is ready and the autonomous GitHub App "
-                "release-gate model is selected, but the deployment-protection service is not yet publicly "
-                "hosted/configured and the ao-release-gate required status-check authority is not yet "
-                "implemented/cut over"
+                "repo-owned policy webhook container image publish path and ao-release-gate dry-run decision "
+                "scaffold are ready, but the deployment-protection service is not yet publicly hosted/configured "
+                "and ao-release-gate is not yet installed/wired to post a required GitHub App check-run"
             ),
         }
     ]
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action
-        == "implement a dry-run ao-release-gate GitHub App required status check before any human-free merge automation"
+        == "wire the ao-release-gate dry-run evaluator into a GitHub App webhook/check-run posting path without merge authority"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "collect ao-release-gate dry-run check-run evidence on real PRs before any branch protection cutover"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -331,6 +343,25 @@ def test_gpp2u_selects_autonomous_github_app_release_gate_not_admin_bypass() -> 
     assert "does not widen support" in decision
 
 
+def test_gpp2v_adds_dry_run_release_gate_scaffold_without_merge_authority() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**Decision:** `ao_release_gate_dry_run_scaffold_ready_no_support_widening`" in decision
+    assert "`ao-release-gate`" in decision
+    assert "`ao_kernel/ao_release_gate.py`" in decision
+    assert "`scripts/ao_release_gate_decision.py`" in decision
+    assert "`merge_authority_enabled=false`" in decision
+    assert "No check-run POST to GitHub." in decision
+    assert "No branch protection/ruleset change." in decision
+    assert "No admin bypass." in decision
+    assert "No PAT-backed bot." in decision
+    assert "No Claude/Codex release authority." in decision
+    assert "does not unblock GPP-2" in decision
+    assert "authorize human-free merges yet" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -338,11 +369,11 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/539"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "autonomous_release_gate_selected_policy_service_still_not_hosted"
+        == "ao_release_gate_dry_run_scaffold_ready_policy_service_still_not_hosted"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -373,7 +404,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "Blocked work packages:\n- GPP-2: repo-owned policy webhook container image publish path is ready" in rendered
+    assert "Blocked work packages:\n- GPP-2: repo-owned policy webhook container image publish path" in rendered
     assert "divergence: 0\t0" in rendered
 
 
