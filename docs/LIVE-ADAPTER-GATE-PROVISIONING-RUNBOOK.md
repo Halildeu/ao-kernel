@@ -289,6 +289,124 @@ token through its secret manager. Do not put registry credentials, webhook
 secrets, GitHub App private keys, or live adapter credentials in the container
 image.
 
+Autonomous Cloud Run deployment path after GPP-2t:
+
+1. `.github/workflows/policy-service-deploy-cloud-run.yml` runs only from a
+   successful trusted `Publish Policy Container` workflow on `main`, or by
+   trusted `workflow_dispatch`.
+2. The workflow authenticates to Google Cloud with GitHub OIDC, not a committed
+   cloud key.
+3. It mirrors the immutable GHCR image tag to Google Artifact Registry and
+   deploys that immutable image to Cloud Run.
+4. Runtime secrets are supplied to Cloud Run by Secret Manager object name and
+   version. The workflow must not run `gcloud secrets versions access`, print
+   secret values, or use `secrets.*`.
+5. The public Cloud Run URL must route:
+
+```text
+GET  /healthz
+POST /github/deployment-protection
+```
+
+6. The workflow health-checks `/healthz` and uploads
+   `policy-service-deploy.v1.json` evidence with:
+
+```text
+secret_value_readback=false
+live_adapter_execution=false
+github_callback_post=false
+support_widening=false
+production_platform_claim=false
+```
+
+7. The GitHub App webhook URL should be the deployed Cloud Run URL plus
+   `/github/deployment-protection`. The deploy workflow exposes that URL in
+   its summary and evidence, but does not treat a health check as callback
+   evidence.
+8. Do not rerun protected workflow evidence until the deployed URL is configured
+   in the GitHub App and the service is expected to answer real
+   `deployment_protection_rule` deliveries.
+
+Bootstrap attestation after GPP-2ab:
+
+```bash
+python3 scripts/policy_service_cloud_run_bootstrap_attest.py \
+  --artifact-path /tmp/policy-service-cloud-run-bootstrap-attestation.v1.json \
+  --output text \
+  --fail-on-blocked
+```
+
+Interpretation:
+
+1. `overall_status=metadata_ready` means only that the required GitHub
+   repository variable handles are present by name/timestamp.
+2. Missing required variables block deployment workflow dispatch until the
+   handles are provisioned.
+3. The attestation does not read variable values, read Secret Manager values,
+   prove Workload Identity trust, prove Google service-account permissions,
+   prove Artifact Registry, deploy Cloud Run, configure the GitHub App webhook
+   URL, post a callback, dispatch the protected live-adapter workflow, or run a
+   live adapter.
+4. Treat the attestation artifact as bootstrap metadata only. Hosted health
+   evidence and protected callback evidence still require later steps.
+
+Repository-variable bootstrap helper:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --write-template /tmp/policy-service-cloud-run-repo-variables.json
+```
+
+Fill the template only with non-secret repository variable values:
+
+```text
+GCP_PROJECT_ID
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_SERVICE_ACCOUNT
+GCP_CLOUD_RUN_REGION
+GCP_ARTIFACT_REGISTRY_LOCATION
+GCP_ARTIFACT_REGISTRY_REPOSITORY
+POLICY_SERVICE_NAME
+AO_GITHUB_APP_ID
+AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME
+AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME
+```
+
+The two `*_SECRET_NAME` values are Secret Manager object names, not secret
+values. Webhook secrets, GitHub App private keys, tokens, passwords, and
+`AO_CLAUDE_CODE_CLI_AUTH` must stay outside this JSON file.
+
+Validate without writing:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --dry-run \
+  --output text
+```
+
+Apply through the GitHub CLI:
+
+```bash
+python3 scripts/policy_service_cloud_run_repo_variables.py \
+  --config-json /tmp/policy-service-cloud-run-repo-variables.json \
+  --output text
+```
+
+Interpretation:
+
+1. The helper only writes GitHub repository variables with `gh variable set`.
+2. Variable values are supplied to `gh` through stdin and are not rendered in
+   stdout.
+3. The helper rejects unknown variables, missing required handles, runtime
+   secret variable names, and common credential-shaped values.
+4. It does not read back variable values, read Secret Manager values, deploy
+   Cloud Run, configure the GitHub App webhook URL, post a callback, dispatch
+   the protected live-adapter workflow, or run a live adapter.
+5. After applying, rerun
+   `scripts/policy_service_cloud_run_bootstrap_attest.py --fail-on-blocked` to
+   prove only that the required repository variable handles exist.
+
 ### 3. Attach the Deployment Protection Rule
 
 Attach the GitHub App as a custom deployment protection rule on environment:
@@ -341,14 +459,21 @@ Expected interpretation:
 3. deployment branch policy is custom and includes `main`;
 4. protection rules include the expected branch policy metadata.
 
+Optional public app lookup:
+
 ```bash
 gh api /apps/ao-kernel-live-adapter-gate --jq '{slug:.slug,id:.id,name:.name}'
 ```
 
-Expected interpretation:
+Interpretation:
 
-1. the command returns app metadata, not `HTTP 404`;
-2. `slug` is `ao-kernel-live-adapter-gate`.
+1. If the command returns metadata, `slug` must be
+   `ao-kernel-live-adapter-gate`.
+2. If the command returns `HTTP 404`, do not treat that response alone as a
+   blocker. User-owned or otherwise non-public GitHub Apps can still appear in
+   the environment's custom deployment protection rule inventory below.
+3. For this runbook, the authoritative GitHub App metadata is the enabled
+   deployment protection rule attached to `ao-kernel-live-adapter-gate`.
 
 ```bash
 gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate/deployment_protection_rules
@@ -414,8 +539,9 @@ operator-only secret handoff details.
 Keep protected workflow evidence blocked or failed when any of these remain
 true:
 
-1. app lookup returns `HTTP 404`;
-2. deployment protection rule list is empty or missing the selected app;
+1. deployment protection rule list is empty or missing the selected app;
+2. public app lookup returns `HTTP 404` and the environment deployment
+   protection rule inventory also fails to show the selected app;
 3. `AO_CLAUDE_CODE_CLI_AUTH` is absent from environment secret metadata;
 4. admin bypass is enabled;
 5. branch policy is not restricted to `main`;

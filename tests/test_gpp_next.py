@@ -30,10 +30,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/547"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/549"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "ao_release_gate_autonomous_deploy_path_ready_service_not_bootstrapped"
+        == "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -145,6 +145,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         for item in payload["completed_wps"]
     )
     assert any(
+        item["id"] == "GPP-2t"
+        and item["decision"] == "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/535"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
+    assert any(
         item["id"] == "GPP-2u"
         and item["decision"] == "autonomous_github_app_release_gate_selected_no_support_widening"
         and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/537"
@@ -186,14 +193,29 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2ab"
+        and item["decision"] == "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/549"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
+        (
+            "run scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository "
+            "variable handles before dispatching the Cloud Run deploy workflow, while treating metadata_ready as "
+            "repository-variable evidence only"
+        ),
+        "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
+        "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
+        "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
         "bootstrap the ao-release-gate Cloud Run deploy trust path and run the trusted deploy workflow from main without treating health evidence as check-run evidence",
         "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with runtime webhook secret and GitHub App authentication outside the repo",
         "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
-        "validate whether GitHub App pull request approvals count for the current branch protection; if not, cut over to a required ao-release-gate status check",
+        "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
         "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
     ]
@@ -201,11 +223,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         {
             "id": "GPP-2",
             "reason": (
-                "repo-owned policy webhook container image publish path, ao-release-gate dry-run decision "
-                "scaffold, check-run service surface, release-gate container package, release-gate "
-                "image publish path, and release-gate autonomous deploy path are ready, but neither the "
-                "release-gate service nor the deployment-protection service is publicly hosted/configured "
-                "with webhook evidence or cut over with protected evidence"
+                "repo-owned autonomous policy service deploy path, metadata-only policy bootstrap attestation "
+                "tool, ao-release-gate dry-run decision scaffold, check-run service surface, release-gate "
+                "container package, release-gate image publish path, and release-gate autonomous deploy path are "
+                "ready, but required policy GitHub repository variable handles are currently missing and neither "
+                "the release-gate service nor the deployment-protection service is publicly hosted/configured "
+                "with webhook evidence, dry-run check-run evidence, callback review evidence, or protected "
+                "workflow cutover evidence"
             ),
         }
     ]
@@ -244,7 +268,16 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat Codex or Claude output as release authority" for action in payload["forbidden_actions"])
     assert any(
         action
-        == "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work"
+        == "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action == "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -487,6 +520,22 @@ def test_gpp2aa_adds_release_gate_deploy_path_without_cutover_or_merge_authority
     assert "AO_CLAUDE_CODE_CLI_AUTH" in decision
 
 
+def test_gpp2ab_policy_cloud_run_bootstrap_attestation_is_metadata_only() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2ab-POLICY-CLOUD-RUN-BOOTSTRAP-ATTESTATION.md"
+    ).read_text(encoding="utf-8")
+
+    assert "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing" in decision
+    assert "gh variable list --json name,updatedAt" in decision
+    assert "A `metadata_ready` attestation means only" in decision
+    assert "Google Cloud OIDC trust is not proven" in decision
+    assert "Cloud Run deployment" in decision
+    assert "AO_CLAUDE_CODE_CLI_AUTH" in decision
+    assert "`live_execution_allowed=false`" in decision
+    assert "`support_widening=false`" in decision
+    assert "`production_platform_claim=false`" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -494,11 +543,11 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/547"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/549"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "ao_release_gate_autonomous_deploy_path_ready_service_not_bootstrapped"
+        == "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -529,7 +578,8 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "Blocked work packages:\n- GPP-2: repo-owned policy webhook container image publish path" in rendered
+    assert "metadata-only policy bootstrap attestation tool" in rendered
+    assert "ao-release-gate dry-run decision scaffold" in rendered
     assert "divergence: 0\t0" in rendered
 
 
