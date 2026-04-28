@@ -402,14 +402,21 @@ Expected interpretation:
 3. deployment branch policy is custom and includes `main`;
 4. protection rules include the expected branch policy metadata.
 
+Optional public app lookup:
+
 ```bash
 gh api /apps/ao-kernel-live-adapter-gate --jq '{slug:.slug,id:.id,name:.name}'
 ```
 
-Expected interpretation:
+Interpretation:
 
-1. the command returns app metadata, not `HTTP 404`;
-2. `slug` is `ao-kernel-live-adapter-gate`.
+1. If the command returns metadata, `slug` must be
+   `ao-kernel-live-adapter-gate`.
+2. If the command returns `HTTP 404`, do not treat that response alone as a
+   blocker. User-owned or otherwise non-public GitHub Apps can still appear in
+   the environment's custom deployment protection rule inventory below.
+3. For this runbook, the authoritative GitHub App metadata is the enabled
+   deployment protection rule attached to `ao-kernel-live-adapter-gate`.
 
 ```bash
 gh api repos/Halildeu/ao-kernel/environments/ao-kernel-live-adapter-gate/deployment_protection_rules
@@ -475,8 +482,9 @@ operator-only secret handoff details.
 Keep protected workflow evidence blocked or failed when any of these remain
 true:
 
-1. app lookup returns `HTTP 404`;
-2. deployment protection rule list is empty or missing the selected app;
+1. deployment protection rule list is empty or missing the selected app;
+2. public app lookup returns `HTTP 404` and the environment deployment
+   protection rule inventory also fails to show the selected app;
 3. `AO_CLAUDE_CODE_CLI_AUTH` is absent from environment secret metadata;
 4. admin bypass is enabled;
 5. branch policy is not restricted to `main`;
