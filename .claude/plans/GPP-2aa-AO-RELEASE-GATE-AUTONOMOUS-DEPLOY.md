@@ -47,13 +47,25 @@ does not widen support, and it does not claim production readiness.
      credential-shaped values;
    - sends values to `gh variable set` through stdin and renders names only.
 
-4. `tests/test_ao_release_gate_cloud_run_repo_variables.py`
+4. `scripts/ao_release_gate_cloud_run_bootstrap_attest.py`
+   - emits a metadata-only bootstrap attestation from
+     `gh variable list --json name,updatedAt`;
+   - records only repository variable names and timestamps;
+   - blocks deploy workflow dispatch when required variable handles are
+     missing.
+
+5. `tests/test_ao_release_gate_cloud_run_repo_variables.py`
    - pins template shape, required-variable validation, secret-looking value
      rejection, stdin-based `gh` writes, and redacted dry-run output.
 
-5. `deploy/ao-release-gate-service/README.md`
+6. `tests/test_ao_release_gate_cloud_run_bootstrap_attest.py`
+   - pins metadata-ready and blocked attestation shape, redaction, CLI exit
+     behavior, and no secret-value readback.
+
+7. `deploy/ao-release-gate-service/README.md`
    - records the Cloud Run variable and Secret Manager contract.
    - documents the UI-free repository variable bootstrap helper.
+   - documents the metadata-only bootstrap attestation.
 
 ## Trust Boundary
 
@@ -149,7 +161,8 @@ Still blocked:
 
 1. cloud OIDC/service-account/Secret Manager bootstrap is not attested by this
    PR; the helper only provisions repository variable handles after an operator
-   supplies real non-secret cloud resource names;
+   supplies real non-secret cloud resource names, and the attestation proves
+   only that those handles exist by metadata;
 2. no Cloud Run deployment run has completed from `main` in this slice;
 3. the `ao-release-gate` GitHub App webhook URL is not proven configured to the
    Cloud Run endpoint;
@@ -169,8 +182,9 @@ Still closed:
 
 ```bash
 python3 -m json.tool .claude/plans/gpp_status.v1.json
-pytest -q tests/test_ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_deploy_workflow.py tests/test_ao_release_gate_container_publish_workflow.py tests/test_gpp_next.py
-python3 -m ruff check scripts/ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_deploy_workflow.py tests/test_ao_release_gate_container_publish_workflow.py tests/test_gpp_next.py
+pytest -q tests/test_ao_release_gate_cloud_run_bootstrap_attest.py tests/test_ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_deploy_workflow.py tests/test_ao_release_gate_container_publish_workflow.py tests/test_gpp_next.py
+python3 -m ruff check scripts/ao_release_gate_cloud_run_bootstrap_attest.py scripts/ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_cloud_run_bootstrap_attest.py tests/test_ao_release_gate_cloud_run_repo_variables.py tests/test_ao_release_gate_deploy_workflow.py tests/test_ao_release_gate_container_publish_workflow.py tests/test_gpp_next.py
+python3 scripts/ao_release_gate_cloud_run_bootstrap_attest.py --artifact-path /tmp/ao-release-gate-cloud-run-bootstrap-attestation.v1.json --output text
 actionlint .github/workflows/ao-release-gate-deploy-cloud-run.yml .github/workflows/ao-release-gate-container-publish.yml
 python3 scripts/gpp_next.py
 git diff --check

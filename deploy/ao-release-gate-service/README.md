@@ -147,6 +147,23 @@ they are not placed in the command line or rendered in stdout. Do not put
 webhook secrets, private keys, tokens, or `AO_CLAUDE_CODE_CLI_AUTH` in that
 JSON file.
 
+Before dispatching or relying on the deploy workflow, run the metadata-only
+bootstrap attestation:
+
+```bash
+python3 scripts/ao_release_gate_cloud_run_bootstrap_attest.py \
+  --artifact-path /tmp/ao-release-gate-cloud-run-bootstrap-attestation.v1.json \
+  --output text \
+  --fail-on-blocked
+```
+
+That attestation checks only GitHub repository variable handles with
+`gh variable list --json name,updatedAt`. It does not read variable values,
+does not access Secret Manager, does not prove Google Cloud Workload Identity
+or Cloud Run permissions, does not deploy the service, does not post a
+check-run, and does not change branch protection. Missing repository variables
+mean the Cloud Run deployment must stay blocked.
+
 The deploy workflow proves only that the service revision is hosted and
 `GET /healthz` responds. It does not prove that the GitHub App webhook URL is
 configured, does not post a check-run, does not collect real PR evidence, does
