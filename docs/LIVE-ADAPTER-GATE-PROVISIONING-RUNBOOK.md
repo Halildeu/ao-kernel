@@ -327,6 +327,29 @@ production_platform_claim=false
    in the GitHub App and the service is expected to answer real
    `deployment_protection_rule` deliveries.
 
+Bootstrap attestation after GPP-2ab:
+
+```bash
+python3 scripts/policy_service_cloud_run_bootstrap_attest.py \
+  --artifact-path /tmp/policy-service-cloud-run-bootstrap-attestation.v1.json \
+  --output text \
+  --fail-on-blocked
+```
+
+Interpretation:
+
+1. `overall_status=metadata_ready` means only that the required GitHub
+   repository variable handles are present by name/timestamp.
+2. Missing required variables block deployment workflow dispatch until the
+   handles are provisioned.
+3. The attestation does not read variable values, read Secret Manager values,
+   prove Workload Identity trust, prove Google service-account permissions,
+   prove Artifact Registry, deploy Cloud Run, configure the GitHub App webhook
+   URL, post a callback, dispatch the protected live-adapter workflow, or run a
+   live adapter.
+4. Treat the attestation artifact as bootstrap metadata only. Hosted health
+   evidence and protected callback evidence still require later steps.
+
 ### 3. Attach the Deployment Protection Rule
 
 Attach the GitHub App as a custom deployment protection rule on environment:

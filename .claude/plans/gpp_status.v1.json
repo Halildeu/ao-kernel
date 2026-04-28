@@ -9,9 +9,9 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/535",
-    "exit_decision": "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped",
-    "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, posts callback reviews, and produces protected workflow evidence with live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
+    "exit_decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
+    "ready_after": "policy service deploy workflow has completed from trusted main, hosted endpoint is configured as the GitHub App webhook URL, callback review evidence exists, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
@@ -146,15 +146,22 @@
       "decision": "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/535",
       "record": ".claude/plans/GPP-2t-AUTONOMOUS-POLICY-SERVICE-DEPLOYMENT.md"
+    },
+    {
+      "id": "GPP-2ab",
+      "decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
+      "record": ".claude/plans/GPP-2ab-POLICY-CLOUD-RUN-BOOTSTRAP-ATTESTATION.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned autonomous Cloud Run deployment path is ready, but cloud OIDC/secret-manager bootstrap, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
+      "reason": "repo-owned autonomous Cloud Run deployment path is ready, and metadata-only bootstrap attestation tool is ready, but the required GitHub repository variable handles are currently missing; Google Cloud OIDC trust, Secret Manager objects, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
     }
   ],
   "pending_external_actions": [
+    "run scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository variable handles before dispatching the Cloud Run deploy workflow, while treating metadata_ready as repository-variable evidence only",
     "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
     "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
     "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
@@ -212,6 +219,7 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
+    "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only",
     "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
     "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",

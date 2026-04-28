@@ -83,6 +83,23 @@ The deploy workflow does not dispatch the protected live-adapter workflow, post
 GitHub deployment protection callbacks itself, or run a live adapter. It only
 deploys and health-checks the webhook service.
 
+Before dispatching or relying on this deploy path, run the metadata-only
+bootstrap attestation:
+
+```bash
+python3 scripts/policy_service_cloud_run_bootstrap_attest.py \
+  --artifact-path /tmp/policy-service-cloud-run-bootstrap-attestation.v1.json \
+  --output text \
+  --fail-on-blocked
+```
+
+That attestation checks only GitHub repository variable handles with
+`gh variable list --json name,updatedAt`. It does not read variable values,
+does not access Secret Manager, does not prove Google Cloud Workload Identity
+or Cloud Run permissions, does not deploy the service, and does not post a
+GitHub deployment protection callback. Missing repository variables mean the
+Cloud Run deployment must stay blocked.
+
 ## Runtime
 
 Required hosting secrets:

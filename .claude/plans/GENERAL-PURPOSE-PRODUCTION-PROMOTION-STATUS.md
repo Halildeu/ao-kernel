@@ -1,13 +1,13 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 autonomous policy service deploy path ready; cloud/bootstrap and callback evidence still blocked
+**Status:** GPP-2 Cloud Run bootstrap attestation tool ready; repository variables, GCP trust, hosting, and callback evidence still blocked
 **Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#535](https://github.com/Halildeu/ao-kernel/issues/535)
-for autonomous deployment protection policy service deployment
-**Current slice record:** `.claude/plans/GPP-2t-AUTONOMOUS-POLICY-SERVICE-DEPLOYMENT.md`
+**Current slice issue:** [#549](https://github.com/Halildeu/ao-kernel/issues/549)
+for policy service Cloud Run bootstrap attestation
+**Current slice record:** `.claude/plans/GPP-2ab-POLICY-CLOUD-RUN-BOOTSTRAP-ATTESTATION.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -174,6 +174,14 @@ Last live verification on current `origin/main` showed:
     deployment produces evidence from `main`, the GitHub App webhook URL is
     configured to the deployed endpoint, and protected workflow evidence
     confirms an explicit callback response.
+37. GPP-2ab adds a metadata-only bootstrap attestation tool for the GitHub
+    repository variable handles required by the Cloud Run deployment workflow.
+    The current live metadata check reports all required handles missing.
+    `metadata_ready` would mean only that the variable handles are present by
+    name/timestamp. It would not prove Google Cloud OIDC trust,
+    service-account permissions, Secret Manager objects, Cloud Run hosting,
+    GitHub App webhook configuration, callback posting, live adapter execution,
+    support widening, or production-platform readiness.
 
 ## 3. Current Verdict
 
@@ -233,6 +241,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2r` | Completed / no support widening | Policy webhook container deploy package | repo-owned container image package and bounded no-secret health smoke/CI job ready; hosted service is not yet deployed/configured |
 | `GPP-2s` | Completed / no support widening | Policy container image publication | repo-owned GHCR image publish path ready; hosted service is not yet deployed/configured |
 | `GPP-2t` | Completed / no support widening | Autonomous policy service deployment path | repo-owned Cloud Run OIDC deploy path ready; cloud bootstrap, hosted health evidence, GitHub App webhook config, and callback evidence are not yet attested |
+| `GPP-2ab` | Completed / no support widening | Policy Cloud Run bootstrap attestation | metadata-only attestation tool ready; required repository variable handles are currently missing; GCP trust, Secret Manager objects, hosted service evidence, GitHub App webhook config, and callback evidence are not yet attested |
 | `GPP-2` | Blocked / hosted service bootstrap/config/evidence missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be hosted/configured with webhook URL, webhook secret, and GitHub App auth and must post callback evidence before further runtime work |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -362,9 +371,11 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked after GPP-2s; policy decision core, webhook scaffold,
-deployable WSGI runtime, container package, and GHCR image publication path
-exist, but hosted service deployment/configuration is still missing.
+**Status:** blocked after GPP-2ab; policy decision core, webhook scaffold,
+deployable WSGI runtime, container package, GHCR image publication path,
+Cloud Run deploy automation, and metadata-only bootstrap attestation tooling
+exist, but required repository variables, GCP trust, hosted service
+deployment/configuration, and callback evidence are still missing.
 
 **Entry criteria:**
 
@@ -388,7 +399,13 @@ tooling with CI validation, but no public hosted endpoint, webhook URL, runtime
 secret manager configuration, or live callback evidence has been recorded.
 GPP-2s adds a GHCR image publication path for trusted non-PR builds, but no
 public hosted endpoint, webhook URL, runtime secret manager configuration, or
-live callback evidence has been recorded.
+live callback evidence has been recorded. GPP-2t adds an autonomous Cloud Run
+deploy path, but no GCP trust bootstrap, hosted health evidence, webhook URL
+configuration, or callback evidence has been recorded. GPP-2ab adds a
+metadata-only repository variable bootstrap attestation tool for that deploy
+path, and the current live metadata check reports required handles missing.
+Even after a future `metadata_ready`, that status is not Google Cloud OIDC,
+Secret Manager, Cloud Run, webhook, or callback evidence.
 
 **Acceptance criteria:**
 
@@ -655,7 +672,12 @@ has not yet been deployed to a public host or configured in the GitHub App
 webhook settings. GPP-2t adds the autonomous Cloud Run deploy path for the
 policy service, but cloud OIDC/Secret Manager bootstrap, hosted health evidence
 from `main`, GitHub App webhook URL configuration, and live callback evidence
-are not yet attested.
+are not yet attested. GPP-2ab adds a metadata-only bootstrap attestation tool
+for the Cloud Run deploy workflow's required GitHub repository variable
+handles, and the current live metadata check reports required handles missing.
+A future `metadata_ready` must be treated only as repository-variable evidence,
+not GCP trust, hosted service, webhook configuration, callback, or live
+execution evidence.
 GPP-2b
 [#482](https://github.com/Halildeu/ao-kernel/issues/482) and GPP-2c
 [#485](https://github.com/Halildeu/ao-kernel/issues/485) are resolved at the
@@ -675,8 +697,10 @@ only. GPP-2h selects GitHub App deployment protection, GPP-2i adds attestation
 support for that model, GPP-2j refreshes blocked metadata, and GPP-2k adds the
 operator provisioning runbook.
 
-The next GPP-2 action is to bootstrap or run the autonomous policy service
-deployment path: GitHub OIDC trust, Google service-account permissions,
+The next GPP-2 action is to run
+`scripts/policy_service_cloud_run_bootstrap_attest.py`, provision any missing
+repository variable handles, then bootstrap or run the autonomous policy
+service deployment path: GitHub OIDC trust, Google service-account permissions,
 Artifact Registry, Cloud Run, and Secret Manager object handles must exist
 without secret value readback, then the deploy workflow must produce hosted
 `/healthz` evidence from a trusted `main` image. After that, configure or verify
@@ -711,6 +735,8 @@ and must keep `live_execution_allowed=false`, `support_widening=false`, and
 | Container package exists but is not hosted | Local image health does not prove GitHub can call the app | Treat GPP-2r as packaging readiness only; deploy to a public host and configure GitHub App webhook before rerunning evidence |
 | Container image exists but service is not hosted | GHCR image publication does not prove GitHub can call the app | Treat GPP-2s as deploy artifact readiness only; deploy the image to a public host and configure GitHub App webhook before rerunning evidence |
 | Deploy workflow exists but cloud bootstrap is missing | Automation path cannot produce hosted evidence | Treat GPP-2t as deploy automation readiness only; bootstrap OIDC/Secret Manager/Cloud Run and verify hosted health before rerunning protected workflow evidence |
+| Missing repository variables bypassed | Deploy workflow could be dispatched before non-secret handles exist | Run GPP-2ab attestation with `--fail-on-blocked` and provision missing GitHub repository variables before deploy dispatch |
+| `metadata_ready` mistaken for cloud readiness | Deployment could be treated as unblocked without GCP trust or hosting proof | Treat GPP-2ab as repository-variable metadata only; separately prove OIDC, service account permissions, Secret Manager objects, Cloud Run health, webhook URL, and callback evidence |
 
 ## 19. Tracking Log
 
@@ -762,3 +788,5 @@ and must keep `live_execution_allowed=false`, `support_widening=false`, and
 | 2026-04-28 | GPP-2s image publish path added | `.github/workflows/policy-container-publish.yml` builds, no-secret smokes, and publishes trusted non-PR images to `ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service`; public hosting and GitHub App webhook configuration remain required before rerunning protected workflow evidence. |
 | 2026-04-28 | GPP-2t issue opened | Issue [#535](https://github.com/Halildeu/ao-kernel/issues/535) tracks the autonomous policy service deployment path. |
 | 2026-04-28 | GPP-2t deploy path added | `.github/workflows/policy-service-deploy-cloud-run.yml` can mirror trusted GHCR images to Artifact Registry, deploy Cloud Run with OIDC and Secret Manager references, health-check `/healthz`, and upload no-secret deployment evidence; cloud bootstrap, GitHub App webhook URL configuration, and callback evidence remain required before rerunning protected workflow evidence. |
+| 2026-04-28 | GPP-2ab issue opened | Issue [#549](https://github.com/Halildeu/ao-kernel/issues/549) tracks metadata-only Cloud Run bootstrap attestation for the policy service deploy path. |
+| 2026-04-28 | GPP-2ab bootstrap attestation added | `scripts/policy_service_cloud_run_bootstrap_attest.py` checks required GitHub repository variable handles with `gh variable list --json name,updatedAt`, ignores values, and records that current live metadata is `overall_status=blocked` because all required handles are missing; GCP trust, Secret Manager objects, Cloud Run hosting, webhook URL configuration, callback posting, live execution, support widening, and production-platform claims remain unproven. |
