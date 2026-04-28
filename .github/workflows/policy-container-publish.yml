@@ -1,0 +1,87 @@
+name: Publish Policy Container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ao_kernel/**"
+      - "deploy/live-adapter-gate-policy-service/**"
+      - "pyproject.toml"
+      - ".github/workflows/policy-container-publish.yml"
+  pull_request:
+    branches: [main]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
+    paths:
+      - "ao_kernel/**"
+      - "deploy/live-adapter-gate-policy-service/**"
+      - "pyproject.toml"
+      - ".github/workflows/policy-container-publish.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual policy container publication reason"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DOCKERFILE: deploy/live-adapter-gate-policy-service/Dockerfile
+  IMAGE_NAME: ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service
+
+jobs:
+  publish-policy-container:
+    name: publish-policy-container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Build policy service image
+        id: build
+        run: |
+          image_sha="${IMAGE_NAME}:sha-${GITHUB_SHA}"
+          docker build -f "$DOCKERFILE" -t "$image_sha" .
+          echo "image_sha=$image_sha" >> "$GITHUB_OUTPUT"
+
+      - name: No-secret container health smoke
+        run: |
+          python scripts/live_adapter_gate_policy_container_smoke.py \
+            --skip-build \
+            --image "${{ steps.build.outputs.image_sha }}" \
+            --timeout-seconds 90
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish policy service image
+        if: github.event_name != 'pull_request'
+        run: |
+          image_sha="${{ steps.build.outputs.image_sha }}"
+          docker push "$image_sha"
+
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            image_main="${IMAGE_NAME}:main"
+            docker tag "$image_sha" "$image_main"
+            docker push "$image_main"
+            {
+              echo "Published policy service image:"
+              echo "- \`$image_sha\`"
+              echo "- \`$image_main\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Published policy service image: \`$image_sha\`" >> "$GITHUB_STEP_SUMMARY"
+          fi

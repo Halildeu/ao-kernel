@@ -126,6 +126,24 @@ Container deployment package after GPP-2r:
    blocked until that host is public, the GitHub App webhook URL is configured,
    and callback response evidence exists.
 
+Container image publication after GPP-2s:
+
+1. `.github/workflows/policy-container-publish.yml` builds the same GPP-2r
+   container image for PR validation and trusted main/manual publication.
+2. The workflow runs
+   `scripts/live_adapter_gate_policy_container_smoke.py --skip-build` before
+   any image push.
+3. Pull request events build and smoke the image but do not push to GHCR.
+4. Trusted non-PR events publish to:
+   `ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service`.
+5. Published tags include immutable `sha-<commit>` tags and the moving `main`
+   tag for the current main image.
+6. The publication workflow does not reference `AO_CLAUDE_CODE_CLI_AUTH`,
+   webhook secrets, GitHub App private keys, or any live adapter credential.
+7. A published image is deployable input, not hosted-service evidence. GPP-2
+   remains blocked until the image is actually running behind a public URL and
+   posts deployment protection callback reviews.
+
 Blocked interpretation for a fresh or drifted setup:
 
 1. GitHub App slug `ao-kernel-live-adapter-gate` is not visible.
@@ -256,6 +274,20 @@ python3 scripts/live_adapter_gate_policy_container_smoke.py \
 That smoke must not be treated as GitHub callback evidence. It does not
 configure runtime secrets, receive GitHub webhooks, post callback reviews,
 dispatch the protected workflow, or execute a live adapter.
+
+After GPP-2s, trusted main builds publish a GHCR image that hosting providers
+can pull:
+
+```text
+ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service:sha-<commit>
+ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service:main
+```
+
+Prefer the immutable `sha-<commit>` tag for hosted deployments. If a hosting
+provider cannot pull the package anonymously, give that provider a GHCR read
+token through its secret manager. Do not put registry credentials, webhook
+secrets, GitHub App private keys, or live adapter credentials in the container
+image.
 
 ### 3. Attach the Deployment Protection Rule
 
@@ -418,11 +450,12 @@ If the selected deployment protection app is attached but does not respond:
 
 1. do not bypass the environment gate;
 2. do not repeatedly dispatch waiting workflow runs;
-3. deploy or configure the app webhook/policy service using the GPP-2r
-   container package, the GPP-2q WSGI runtime, or an equivalent fail-closed
-   implementation so it verifies GitHub webhook signatures, evaluates the
-   repo-owned policy modules, attaches GitHub App auth outside the repo, and
-   returns an explicit approve, deny, timeout, or failure decision;
+3. deploy or configure the app webhook/policy service using the GPP-2s GHCR
+   image, the GPP-2r container package, the GPP-2q WSGI runtime, or an
+   equivalent fail-closed implementation so it verifies GitHub webhook
+   signatures, evaluates the repo-owned policy modules, attaches GitHub App
+   auth outside the repo, and returns an explicit approve, deny, timeout, or
+   failure decision;
 4. rerun protected workflow evidence from `main` only after the service is
    expected to respond.
 

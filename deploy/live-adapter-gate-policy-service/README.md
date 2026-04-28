@@ -18,6 +18,21 @@ docker build \
   .
 ```
 
+## Published Image
+
+The repository publication workflow builds this same Dockerfile, runs the
+no-secret `/healthz` smoke, and publishes trusted non-PR builds to GHCR:
+
+```text
+ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service:sha-<commit>
+ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service:main
+```
+
+Use the immutable `sha-<commit>` tag for hosted deployments whenever possible.
+If the hosting provider cannot pull the package anonymously, configure a GHCR
+read token through that provider's secret manager. Do not bake registry tokens
+or runtime secrets into the image.
+
 ## Runtime
 
 Required hosting secrets:
