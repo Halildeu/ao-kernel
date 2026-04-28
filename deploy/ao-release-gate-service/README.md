@@ -120,6 +120,33 @@ AO_RELEASE_GATE_WEBHOOK_SECRET
 AO_GITHUB_APP_PRIVATE_KEY_PEM
 ```
 
+To provision those repository variables without using the GitHub UI, generate a
+local template, fill it with non-secret values, dry-run it, then apply it:
+
+```bash
+python3 scripts/ao_release_gate_cloud_run_repo_variables.py \
+  --write-template /tmp/ao-release-gate-cloud-run-repo-variables.json
+```
+
+```bash
+python3 scripts/ao_release_gate_cloud_run_repo_variables.py \
+  --config-json /tmp/ao-release-gate-cloud-run-repo-variables.json \
+  --dry-run \
+  --output text
+```
+
+```bash
+python3 scripts/ao_release_gate_cloud_run_repo_variables.py \
+  --config-json /tmp/ao-release-gate-cloud-run-repo-variables.json \
+  --output text
+```
+
+The tool validates required handles, rejects unknown variables, refuses common
+credential-shaped values, and sends values to `gh variable set` through stdin so
+they are not placed in the command line or rendered in stdout. Do not put
+webhook secrets, private keys, tokens, or `AO_CLAUDE_CODE_CLI_AUTH` in that
+JSON file.
+
 The deploy workflow proves only that the service revision is hosted and
 `GET /healthz` responds. It does not prove that the GitHub App webhook URL is
 configured, does not post a check-run, does not collect real PR evidence, does
