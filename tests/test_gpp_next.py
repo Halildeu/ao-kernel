@@ -30,10 +30,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/563"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/565"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "internal_vault_gate_secret_contract_ready_service_not_hosted_no_support_widening"
+        == "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -215,6 +215,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         for item in payload["completed_wps"]
     )
     assert any(
+        item["id"] == "GPP-2ae"
+        and item["decision"] == "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/565"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
+    assert any(
         item["id"] == "GPP-5a"
         and item["decision"] == "repo_intelligence_product_onboarding_contract_ready_no_support_widening"
         and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/553"
@@ -253,8 +260,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
-        "host the operator-owned policy service on public HTTPS using the repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
-        "host the operator-owned ao-release-gate service on public HTTPS using the repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
+        "host the operator-owned policy service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
+        "host the operator-owned ao-release-gate service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids without secret value readback",
         "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the hosted /github/deployment-protection endpoint and can post deployment callback reviews",
         "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with vault-backed runtime webhook secret and GitHub App authentication outside the repo",
         "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
@@ -270,10 +277,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
             "id": "GPP-2",
             "reason": (
                 "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, "
-                "GHCR publish paths, Cloud Run deploy paths, and internal vault-backed secret-id runtime "
-                "contract are ready, but neither service is publicly hosted/configured with vault-backed "
-                "runtime secrets, webhook evidence, dry-run check-run evidence, callback review evidence, or "
-                "protected workflow cutover evidence"
+                "GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime "
+                "contract, and internal operator host bundle are ready, but neither service is publicly "
+                "hosted/configured with vault-backed runtime secrets, webhook evidence, dry-run check-run "
+                "evidence, callback review evidence, or protected workflow cutover evidence"
             ),
         }
     ]
@@ -339,6 +346,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action
         == "prefer the internal operator host plus vault-backed secret-id path for GPP-2 service hosting unless a later decision reselects Cloud Run"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "use deploy/internal-gate-host as the default no-paid-cloud operator host bundle and validate it with scripts/internal_gate_host_bootstrap_attest.py before collecting hosted evidence"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -636,6 +648,24 @@ def test_gpp2ad_records_internal_vault_gate_secret_contract() -> None:
     assert "`production_platform_claim=false`" in decision
 
 
+def test_gpp2ae_records_internal_operator_host_bundle() -> None:
+    decision = (_repo_root() / ".claude/plans/GPP-2ae-INTERNAL-OPERATOR-HOST-BUNDLE.md").read_text(encoding="utf-8")
+
+    assert "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening" in decision
+    assert "deploy/internal-gate-host/" in decision
+    assert "ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service" in decision
+    assert "ghcr.io/halildeu/ao-kernel-ao-release-gate-service" in decision
+    assert "AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID" in decision
+    assert "AO_RELEASE_GATE_WEBHOOK_SECRET_ID" in decision
+    assert "AO_GITHUB_APP_PRIVATE_KEY_PEM_ID" in decision
+    assert "End users must not be asked" in decision
+    assert "python3 scripts/internal_gate_host_bootstrap_attest.py" in decision
+    assert "does not" in decision
+    assert "`live_execution_allowed=false`" in decision
+    assert "`support_widening=false`" in decision
+    assert "`production_platform_claim=false`" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -643,11 +673,11 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/563"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/565"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "internal_vault_gate_secret_contract_ready_service_not_hosted_no_support_widening"
+        == "internal_operator_host_bundle_ready_service_not_hosted_no_support_widening"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -679,6 +709,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
     assert "internal vault-backed secret-id runtime contract" in rendered
+    assert "internal operator host bundle" in rendered
     assert "webhook runtimes, container packages" in rendered
     assert "publicly hosted/configured with vault-backed runtime secrets" in rendered
     assert "divergence: 0\t0" in rendered

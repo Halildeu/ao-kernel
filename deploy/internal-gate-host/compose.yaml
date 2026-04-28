@@ -1,0 +1,63 @@
+name: ao-kernel-gpp2-gates
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      live-adapter-gate-policy:
+        condition: service_healthy
+      ao-release-gate:
+        condition: service_healthy
+    environment:
+      AO_GATE_HOSTNAME: ${AO_GATE_HOSTNAME:?set AO_GATE_HOSTNAME to the public HTTPS host}
+    ports:
+      - "${AO_GATE_HTTP_BIND:-80}:80"
+      - "${AO_GATE_HTTPS_BIND:-443}:443"
+    volumes:
+      - ${AO_GATE_CADDYFILE:-./Caddyfile.example}:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  live-adapter-gate-policy:
+    image: ${AO_POLICY_SERVICE_IMAGE:-ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service:main}
+    restart: unless-stopped
+    environment:
+      PORT: "8000"
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+      WEB_THREADS: ${WEB_THREADS:-4}
+      WEB_TIMEOUT: ${WEB_TIMEOUT:-30}
+      SECRETS_PROVIDER: ${SECRETS_PROVIDER:-hashicorp_vault}
+      VAULT_ADDR: ${VAULT_ADDR:?set VAULT_ADDR on the operator host}
+      VAULT_TOKEN: ${VAULT_TOKEN:?set VAULT_TOKEN on the operator host}
+      VAULT_SECRET_MOUNT: ${VAULT_SECRET_MOUNT:-secret}
+      AO_GITHUB_API_URL: ${AO_GITHUB_API_URL:-https://api.github.com}
+      AO_GITHUB_APP_ID: ${AO_GITHUB_APP_ID:?set AO_GITHUB_APP_ID on the operator host}
+      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set vault secret id}
+      AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID: ${AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID:?set vault secret id}
+      AO_POLICY_SERVICE_MAX_BODY_BYTES: ${AO_POLICY_SERVICE_MAX_BODY_BYTES:-1048576}
+
+  ao-release-gate:
+    image: ${AO_RELEASE_GATE_SERVICE_IMAGE:-ghcr.io/halildeu/ao-kernel-ao-release-gate-service:main}
+    restart: unless-stopped
+    environment:
+      PORT: "8000"
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+      WEB_THREADS: ${WEB_THREADS:-4}
+      WEB_TIMEOUT: ${WEB_TIMEOUT:-30}
+      SECRETS_PROVIDER: ${SECRETS_PROVIDER:-hashicorp_vault}
+      VAULT_ADDR: ${VAULT_ADDR:?set VAULT_ADDR on the operator host}
+      VAULT_TOKEN: ${VAULT_TOKEN:?set VAULT_TOKEN on the operator host}
+      VAULT_SECRET_MOUNT: ${VAULT_SECRET_MOUNT:-secret}
+      AO_GITHUB_API_URL: ${AO_GITHUB_API_URL:-https://api.github.com}
+      AO_GITHUB_APP_ID: ${AO_GITHUB_APP_ID:?set AO_GITHUB_APP_ID on the operator host}
+      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set vault secret id}
+      AO_RELEASE_GATE_WEBHOOK_SECRET_ID: ${AO_RELEASE_GATE_WEBHOOK_SECRET_ID:?set vault secret id}
+      AO_RELEASE_GATE_GPP_STATUS_PATH: /app/gpp_status.v1.json
+      AO_RELEASE_GATE_MAX_BODY_BYTES: ${AO_RELEASE_GATE_MAX_BODY_BYTES:-1048576}
+    volumes:
+      - ../../.claude/plans/gpp_status.v1.json:/app/gpp_status.v1.json:ro
+
+volumes:
+  caddy-data:
+  caddy-config:
