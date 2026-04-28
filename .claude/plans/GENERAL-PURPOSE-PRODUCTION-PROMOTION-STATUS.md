@@ -311,7 +311,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
 | `GPP-5b` | Completed / no support widening | Repo-intelligence explicit workflow context resolver | product onboarding + explicit handoff validation compose into visible read-only handoff pointer; no auto-feed or runtime execution |
-| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding and workflow-context resolver ready; output contract and read-only workflow surface remain |
+| `GPP-5c` | Completed / no support widening | Repo-intelligence read-only workflow surface output contract | accepted workflow context converts to a visible pointer + source metadata payload; no Markdown body, auto-feed, MCP, root export, or runtime execution |
+| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding, workflow-context resolver, and output contract ready; runtime ingestion remains disabled and read-only surface closeout remains |
 | `GPP-6` | Not started | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
@@ -634,6 +635,20 @@ context compiler, call adapters, or run live-adapter code.
 GPP-5 remains open for output contract and read-only workflow surface work.
 GPP-2 remains blocked, and support widening / production platform claims remain
 closed.
+
+**GPP-5c closeout:** PR for issue
+[#557](https://github.com/Halildeu/ao-kernel/issues/557) adds a read-only
+workflow surface output contract on top of the accepted explicit workflow
+context. The accepted output carries handoff path, Markdown SHA-256, namespace,
+source artifact hashes, freshness state, stale candidate count, source paths,
+line ranges, and source content hashes. It explicitly excludes Markdown body
+text and keeps hidden prompt injection, context compiler auto-feed, MCP
+exposure, root export, artifact/vector writes, live adapter execution, support
+widening, and production platform claims disabled.
+
+GPP-5 remains open for read-only workflow surface closeout and GPP-6
+preparation. GPP-2 remains blocked, and this slice does not authorize runtime
+adapter execution or support/production promotion.
 
 ## 13. GPP-6 - Read-Only Production E2E
 

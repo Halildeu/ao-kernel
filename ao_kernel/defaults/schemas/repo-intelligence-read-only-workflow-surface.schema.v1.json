@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-intelligence-read-only-workflow-surface:v1",
+  "title": "Repo Intelligence Read-Only Workflow Surface Output Contract",
+  "description": "Accepted output contract for an explicit repo-intelligence workflow surface. It carries visible handoff and source metadata only and does not authorize hidden prompt injection, context-compiler auto-feed, MCP exposure, root export, artifact/vector writes, live adapter execution, support widening, or production platform claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "status",
+    "enabled",
+    "decision",
+    "support_tier",
+    "source",
+    "retrieved_sources",
+    "surface",
+    "safety",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution_allowed"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "repo_intelligence_read_only_workflow_surface"
+    },
+    "status": {
+      "type": "string",
+      "const": "accepted"
+    },
+    "enabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "decision": {
+      "type": "string",
+      "const": "accepted_repo_intelligence_read_only_workflow_surface"
+    },
+    "support_tier": {
+      "type": "string",
+      "const": "beta_read_only_workflow_surface"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_context_decision",
+        "workflow_context_support_tier",
+        "handoff_support_tier",
+        "handoff_path",
+        "markdown_sha256",
+        "vector_namespace_key_prefix",
+        "repo_chunks_sha256",
+        "repo_vector_index_manifest_sha256",
+        "freshness_state",
+        "stale_candidates",
+        "retrieved_chunks"
+      ],
+      "properties": {
+        "workflow_context_decision": {
+          "type": "string",
+          "const": "accepted_repo_intelligence_workflow_context"
+        },
+        "workflow_context_support_tier": {
+          "type": "string",
+          "const": "beta_explicit_read_only_workflow_context"
+        },
+        "handoff_support_tier": {
+          "type": "string",
+          "const": "beta_explicit_handoff"
+        },
+        "handoff_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "markdown_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "vector_namespace_key_prefix": {
+          "type": "string",
+          "pattern": "^repo_chunk::[^:]+::[^:]+::$"
+        },
+        "repo_chunks_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "repo_vector_index_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "freshness_state": {
+          "type": "string",
+          "const": "current_only"
+        },
+        "stale_candidates": {
+          "type": "integer",
+          "const": 0
+        },
+        "retrieved_chunks": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "retrieved_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_path",
+          "start_line",
+          "end_line",
+          "content_sha256"
+        ],
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "minLength": 1,
+            "not": {
+              "pattern": "^(?:/|.*(?:^|/)\\.\\.(?:/|$))"
+            }
+          },
+          "start_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "end_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "consumer",
+        "operator_visible",
+        "requires_visible_agent_input",
+        "includes_markdown_body",
+        "automatic_prompt_injection",
+        "context_compiler_auto_feed",
+        "write_context_artifacts"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "operator_visible_read_only_context_pointer"
+        },
+        "consumer": {
+          "type": "string",
+          "const": "workflow_runtime"
+        },
+        "operator_visible": {
+          "type": "boolean",
+          "const": true
+        },
+        "requires_visible_agent_input": {
+          "type": "boolean",
+          "const": true
+        },
+        "includes_markdown_body": {
+          "type": "boolean",
+          "const": false
+        },
+        "automatic_prompt_injection": {
+          "type": "boolean",
+          "const": false
+        },
+        "context_compiler_auto_feed": {
+          "type": "boolean",
+          "const": false
+        },
+        "write_context_artifacts": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hidden_prompt_injection",
+        "mcp_tool_exposure",
+        "root_export",
+        "context_compiler_auto_feed",
+        "vector_writes",
+        "artifact_writes",
+        "live_adapter_execution",
+        "support_widening",
+        "production_platform_claim"
+      ],
+      "properties": {
+        "hidden_prompt_injection": {
+          "type": "boolean",
+          "const": false
+        },
+        "mcp_tool_exposure": {
+          "type": "boolean",
+          "const": false
+        },
+        "root_export": {
+          "type": "boolean",
+          "const": false
+        },
+        "context_compiler_auto_feed": {
+          "type": "boolean",
+          "const": false
+        },
+        "vector_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "artifact_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        },
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "support_widening": {
+      "type": "boolean",
+      "const": false
+    },
+    "production_platform_claim": {
+      "type": "boolean",
+      "const": false
+    },
+    "live_adapter_execution_allowed": {
+      "type": "boolean",
+      "const": false
+    }
+  }
+}
