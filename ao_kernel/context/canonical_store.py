@@ -38,6 +38,8 @@ from ao_kernel.errors import (
     CanonicalStoreCorruptedError,
 )
 
+_EMPTY_STORE_UPDATED_AT = "1970-01-01T00:00:00Z"
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -80,7 +82,14 @@ def _lock_path(workspace_root: Path) -> Path:
 
 
 def _empty_store() -> dict[str, Any]:
-    return {"version": "v1", "decisions": {}, "facts": {}, "updated_at": _now_iso()}
+    return {
+        "version": "v1",
+        "decisions": {},
+        "facts": {},
+        # Missing-file reads are snapshots, not persisted writes. Keep their
+        # revision deterministic; write paths stamp the real update time.
+        "updated_at": _EMPTY_STORE_UPDATED_AT,
+    }
 
 
 def store_revision(store: dict[str, Any]) -> str:
