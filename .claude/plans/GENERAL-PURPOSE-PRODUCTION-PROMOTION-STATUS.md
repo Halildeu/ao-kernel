@@ -239,6 +239,11 @@ Last live verification on current `origin/main` showed:
     GitHub App private key. GPP-2 remains blocked on operator-owned hosted
     callback evidence; repo-intelligence onboarding can be prioritized only as
     explicit opt-in/read-only work with no support widening.
+45. GPP-5d closes the repo-intelligence read-only workflow surface with a
+    schema-backed preflight over GPP-5a/GPP-5b/GPP-5c records, public APIs,
+    schemas, and negative runtime guards. GPP-6 preparation may use this
+    closeout as repo-intelligence evidence, but GPP-6 execution remains
+    blocked by GPP-2 and GPP-4.
 
 ## 3. Current Verdict
 
@@ -312,7 +317,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
 | `GPP-5b` | Completed / no support widening | Repo-intelligence explicit workflow context resolver | product onboarding + explicit handoff validation compose into visible read-only handoff pointer; no auto-feed or runtime execution |
 | `GPP-5c` | Completed / no support widening | Repo-intelligence read-only workflow surface output contract | accepted workflow context converts to a visible pointer + source metadata payload; no Markdown body, auto-feed, MCP, root export, or runtime execution |
-| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding, workflow-context resolver, and output contract ready; runtime ingestion remains disabled and read-only surface closeout remains |
+| `GPP-5d` | Completed / no support widening | Repo-intelligence read-only workflow surface closeout preflight | schema-backed closeout verifies GPP-5a/GPP-5b/GPP-5c, public APIs, schemas, and negative runtime guards; GPP-6 execution remains blocked by GPP-2/GPP-4 |
+| `GPP-5` | Completed as read-only building block / no support widening | Repo-intelligence explicit workflow integration | onboarding, workflow-context resolver, output contract, and closeout preflight ready; runtime ingestion remains disabled |
 | `GPP-6` | Not started | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
@@ -646,9 +652,23 @@ text and keeps hidden prompt injection, context compiler auto-feed, MCP
 exposure, root export, artifact/vector writes, live adapter execution, support
 widening, and production platform claims disabled.
 
-GPP-5 remains open for read-only workflow surface closeout and GPP-6
-preparation. GPP-2 remains blocked, and this slice does not authorize runtime
-adapter execution or support/production promotion.
+After GPP-5c, GPP-5 remained open for read-only workflow surface closeout and
+GPP-6 preparation. GPP-2 remained blocked, and that slice did not authorize
+runtime adapter execution or support/production promotion.
+
+**GPP-5d closeout:** PR for issue
+[#559](https://github.com/Halildeu/ao-kernel/issues/559) adds the
+schema-backed closeout preflight for GPP-5. The preflight verifies the
+GPP-5a/GPP-5b/GPP-5c records, public repo-intelligence APIs, JSON schemas,
+context compiler negative guard, workflow-definition negative guard, MCP
+negative guard, and program flags. GPP-5 is now closed as a read-only building
+block only.
+
+GPP-6 preparation may use this closeout as repo-intelligence evidence, but
+GPP-6 execution remains blocked until GPP-2 protected gate evidence and the
+GPP-4 read-only adapter decision are ready. This closeout does not authorize
+runtime ingestion, live-adapter execution, support widening, or production
+platform claims.
 
 ## 13. GPP-6 - Read-Only Production E2E
 
@@ -670,7 +690,7 @@ repo scan/index/query
 
 1. `GPP-4` has a production-certified read-only adapter decision or explicit
    protected beta permission for this rehearsal.
-2. `GPP-5` workflow context ingestion is ready.
+2. `GPP-5d` repo-intelligence closeout is ready.
 
 **Acceptance criteria:**
 
@@ -889,13 +909,16 @@ policy modules, attach GitHub App auth at runtime, and post an explicit GitHub
 deployment review callback. In parallel, bootstrap/run the trusted dry-run
 `ao-release-gate` deploy path from `main`, configure that check-run service's
 GitHub App webhook URL, collect real PR check-run evidence, and only then cut
-branch protection/rulesets over to require `ao-release-gate`. Do not repeatedly dispatch
-`.github/workflows/live-adapter-gate.yml` until that service is expected to
-respond. Any follow-up must keep fork and pull-request contexts away from
-protected credentials, must not use `AO_CLAUDE_CODE_CLI_AUTH` through a
-`secrets.` expression until a later live-execution slice explicitly permits it,
-must reject PAT-backed bots and admin bypass for PR merge automation, and must
-keep `live_execution_allowed=false`, `support_widening=false`, and
+branch protection/rulesets over to require `ao-release-gate`. Do not
+repeatedly dispatch `.github/workflows/live-adapter-gate.yml` until that
+service is expected to respond. GPP-5d closes repo-intelligence as a read-only
+building block for future GPP-6 preparation, but GPP-6 execution remains
+blocked by GPP-2 and GPP-4. Any follow-up must keep fork and pull-request
+contexts away from protected credentials, must not use
+`AO_CLAUDE_CODE_CLI_AUTH` through a `secrets.` expression until a later
+live-execution slice explicitly permits it, must reject PAT-backed bots and
+admin bypass for PR merge automation, and must keep
+`live_execution_allowed=false`, `support_widening=false`, and
 `production_platform_claim=false`.
 
 ## 18. Risk Register
@@ -925,6 +948,7 @@ keep `live_execution_allowed=false`, `support_widening=false`, and
 | Release-gate deploy health mistaken for release authority | A hosted `/healthz` response could be overclaimed as required-check enforcement | GPP-2aa records `check_run_post=false`, `real_pr_evidence=false`, `branch_protection_cutover=false`, and `merge_authority_enabled=false`; require real PR evidence and explicit cutover |
 | Missing repository variables bypassed | Deploy workflow could be dispatched before non-secret handles exist | Run GPP-2ab attestation with `--fail-on-blocked` and provision missing GitHub repository variables before deploy dispatch |
 | `metadata_ready` mistaken for cloud readiness | Deployment could be treated as unblocked without GCP trust or hosting proof | Treat GPP-2ab as repository-variable metadata only; separately prove OIDC, service account permissions, Secret Manager objects, Cloud Run health, webhook URL, and callback evidence |
+| GPP-5 closeout mistaken for GPP-6 approval | Read-only repo-intelligence evidence could be overclaimed as protected E2E readiness | GPP-5d records `gpp6_readiness=blocked_by_upstream_gates`; require GPP-2 protected gate evidence and GPP-4 adapter decision before GPP-6 execution |
 
 ## 19. Tracking Log
 
@@ -990,3 +1014,5 @@ keep `live_execution_allowed=false`, `support_widening=false`, and
 | 2026-04-28 | GPP-2aa deploy path added | `.github/workflows/ao-release-gate-deploy-cloud-run.yml` can mirror the trusted immutable release-gate image to Artifact Registry, deploy Cloud Run with Secret Manager references, health-check `/healthz`, and upload deploy evidence; webhook configuration, real PR check-run evidence, branch-protection cutover, and deployment-protection hosting remain required. |
 | 2026-04-28 | GPP-2ab issue opened | Issue [#549](https://github.com/Halildeu/ao-kernel/issues/549) tracks metadata-only Cloud Run bootstrap attestation for the policy service deploy path. |
 | 2026-04-28 | GPP-2ab bootstrap attestation added | `scripts/policy_service_cloud_run_bootstrap_attest.py` checks required GitHub repository variable handles with `gh variable list --json name,updatedAt`, ignores values, and records that current live metadata is `overall_status=blocked` because all required handles are missing; GCP trust, Secret Manager objects, Cloud Run hosting, webhook URL configuration, callback posting, live execution, support widening, and production-platform claims remain unproven. |
+| 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
+| 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |

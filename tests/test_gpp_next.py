@@ -228,6 +228,13 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-5d"
+        and item["decision"] == "repo_intelligence_read_only_workflow_surface_closed_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/559"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
@@ -327,7 +334,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "continue GPP-5 repo-intelligence read-only workflow surface closeout and GPP-6 preparation behind explicit opt-in while support_widening_allowed=false and production_platform_claim_allowed=false"
+        == "use GPP-5d repo-intelligence closeout evidence for GPP-6 preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false"
         for action in payload["next_allowed_actions"]
     )
     assert any(
