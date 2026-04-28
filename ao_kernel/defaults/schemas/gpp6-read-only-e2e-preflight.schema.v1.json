@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/gpp6-read-only-e2e-preflight.schema.v1.json",
+  "title": "GPP-6a read-only E2E preflight",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "issue",
+    "overall_status",
+    "decision",
+    "execution_status",
+    "upstream_blockers",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution_allowed",
+    "protected_workflow_dispatch_allowed",
+    "remote_write_allowed",
+    "gpp5d_closeout",
+    "entry_criteria",
+    "execution_plan",
+    "program_flags",
+    "safety",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "gpp6_read_only_e2e_preflight" },
+    "program_id": { "const": "GPP-6a" },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "const": 561 },
+        "url": { "const": "https://github.com/Halildeu/ao-kernel/issues/561" }
+      }
+    },
+    "overall_status": { "enum": ["ready", "blocked"] },
+    "decision": {
+      "enum": [
+        "read_only_e2e_preflight_ready_execution_blocked_no_support_widening",
+        "read_only_e2e_preflight_ready_no_support_widening",
+        "blocked_read_only_e2e_preflight_no_support_widening"
+      ]
+    },
+    "execution_status": {
+      "enum": ["blocked_by_upstream_gates", "ready_for_protected_rehearsal"]
+    },
+    "upstream_blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution_allowed": { "const": false },
+    "protected_workflow_dispatch_allowed": { "const": false },
+    "remote_write_allowed": { "const": false },
+    "blocked_reason": { "type": "string", "minLength": 1 },
+    "gpp5d_closeout": { "$ref": "#/$defs/completed_wp_summary" },
+    "entry_criteria": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/entry_criterion" }
+    },
+    "execution_plan": {
+      "type": "array",
+      "minItems": 6,
+      "items": { "$ref": "#/$defs/execution_step" }
+    },
+    "program_flags": { "$ref": "#/$defs/program_flags" },
+    "safety": { "$ref": "#/$defs/safety" },
+    "next_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "overall_status": { "const": "blocked" } } },
+      "then": { "required": ["blocked_reason"] }
+    },
+    {
+      "if": { "properties": { "overall_status": { "const": "ready" } } },
+      "then": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "read_only_e2e_preflight_ready_execution_blocked_no_support_widening",
+              "read_only_e2e_preflight_ready_no_support_widening"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "finding_list": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "completed_wp_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "decision", "issue", "record", "findings"],
+      "properties": {
+        "id": { "const": "GPP-5d" },
+        "status": { "enum": ["ready", "blocked"] },
+        "decision": { "type": "string", "minLength": 1 },
+        "issue": { "type": "string", "minLength": 1 },
+        "record": { "type": "string", "minLength": 1 },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "entry_criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "required_for_execution", "evidence", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ready", "blocked", "missing"] },
+        "required_for_execution": { "const": true },
+        "evidence": { "type": "string" },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "execution_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step",
+        "status",
+        "protected_workflow_dispatch",
+        "live_adapter_execution",
+        "remote_side_effects"
+      ],
+      "properties": {
+        "step": { "type": "string", "minLength": 1 },
+        "status": { "const": "not_executed" },
+        "protected_workflow_dispatch": { "const": false },
+        "live_adapter_execution": { "const": false },
+        "remote_side_effects": { "const": false }
+      }
+    },
+    "program_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed",
+        "findings"
+      ],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "support_widening_allowed": { "type": ["boolean", "null"] },
+        "production_platform_claim_allowed": { "type": ["boolean", "null"] },
+        "live_adapter_execution_allowed": { "type": ["boolean", "null"] },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "protected_workflow_dispatch",
+        "live_adapter_execution",
+        "remote_write",
+        "context_compiler_auto_feed",
+        "mcp_repo_intelligence",
+        "root_export",
+        "artifact_writes",
+        "vector_writes",
+        "secret_value_readback",
+        "support_widening",
+        "production_platform_claim",
+        "findings"
+      ],
+      "properties": {
+        "status": { "enum": ["pass", "fail"] },
+        "protected_workflow_dispatch": { "const": false },
+        "live_adapter_execution": { "const": false },
+        "remote_write": { "const": false },
+        "context_compiler_auto_feed": { "const": false },
+        "mcp_repo_intelligence": { "const": false },
+        "root_export": { "const": false },
+        "artifact_writes": { "const": false },
+        "vector_writes": { "const": false },
+        "secret_value_readback": { "const": false },
+        "support_widening": { "const": false },
+        "production_platform_claim": { "const": false },
+        "findings": { "$ref": "#/$defs/finding_list" }
+      }
+    }
+  }
+}

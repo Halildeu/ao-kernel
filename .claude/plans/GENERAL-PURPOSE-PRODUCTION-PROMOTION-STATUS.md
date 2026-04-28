@@ -244,6 +244,12 @@ Last live verification on current `origin/main` showed:
     schemas, and negative runtime guards. GPP-6 preparation may use this
     closeout as repo-intelligence evidence, but GPP-6 execution remains
     blocked by GPP-2 and GPP-4.
+46. GPP-6a adds a preparation-only read-only E2E preflight. The preflight
+    report is ready and records `execution_status=blocked_by_upstream_gates`
+    because GPP-2 protected gate evidence and the GPP-4 read-only adapter
+    decision are still missing. It does not dispatch protected workflows, call
+    live adapters, write artifacts/vectors, perform remote writes, widen
+    support, or claim production-platform readiness.
 
 ## 3. Current Verdict
 
@@ -319,7 +325,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-5c` | Completed / no support widening | Repo-intelligence read-only workflow surface output contract | accepted workflow context converts to a visible pointer + source metadata payload; no Markdown body, auto-feed, MCP, root export, or runtime execution |
 | `GPP-5d` | Completed / no support widening | Repo-intelligence read-only workflow surface closeout preflight | schema-backed closeout verifies GPP-5a/GPP-5b/GPP-5c, public APIs, schemas, and negative runtime guards; GPP-6 execution remains blocked by GPP-2/GPP-4 |
 | `GPP-5` | Completed as read-only building block / no support widening | Repo-intelligence explicit workflow integration | onboarding, workflow-context resolver, output contract, and closeout preflight ready; runtime ingestion remains disabled |
-| `GPP-6` | Not started | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
+| `GPP-6a` | Completed / preparation only / no support widening | Read-only E2E preflight contract | preflight ready; execution blocked by GPP-2 protected gate and GPP-4 adapter decision |
+| `GPP-6` | Preparation only / execution blocked | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
 | `GPP-9` | Not started | Full production matrix + claim decision | `promote_general_purpose_production` / `promote_general_purpose_beta` / `keep_narrow_stable_runtime` |
@@ -708,6 +715,17 @@ repo scan/index/query
 3. event-order assertions
 4. runbook reproduction check
 
+**GPP-6a preflight:** PR for issue
+[#561](https://github.com/Halildeu/ao-kernel/issues/561) adds a
+preparation-only GPP-6 preflight. The report records the target chain and entry
+criteria, verifies GPP-5d closeout evidence, and pins
+`execution_status=blocked_by_upstream_gates` because `GPP-2` remains blocked
+and `GPP-4` is missing.
+
+This slice does not dispatch protected workflows, invoke live adapters, write
+repo-intelligence artifacts or vectors, perform remote writes, widen support,
+or claim production-platform readiness. GPP-6 execution remains blocked.
+
 ## 14. GPP-7 - Controlled Write-Side Production Candidate
 
 **Goal:** Promote local patch/test from rehearsal-only toward a production
@@ -911,10 +929,10 @@ deployment review callback. In parallel, bootstrap/run the trusted dry-run
 GitHub App webhook URL, collect real PR check-run evidence, and only then cut
 branch protection/rulesets over to require `ao-release-gate`. Do not
 repeatedly dispatch `.github/workflows/live-adapter-gate.yml` until that
-service is expected to respond. GPP-5d closes repo-intelligence as a read-only
-building block for future GPP-6 preparation, but GPP-6 execution remains
-blocked by GPP-2 and GPP-4. Any follow-up must keep fork and pull-request
-contexts away from protected credentials, must not use
+service is expected to respond. GPP-6a records read-only E2E preflight
+preparation, but GPP-6 execution remains blocked by GPP-2 and GPP-4. Any
+follow-up must keep fork and pull-request contexts away from protected
+credentials, must not use
 `AO_CLAUDE_CODE_CLI_AUTH` through a `secrets.` expression until a later
 live-execution slice explicitly permits it, must reject PAT-backed bots and
 admin bypass for PR merge automation, and must keep
@@ -949,6 +967,7 @@ admin bypass for PR merge automation, and must keep
 | Missing repository variables bypassed | Deploy workflow could be dispatched before non-secret handles exist | Run GPP-2ab attestation with `--fail-on-blocked` and provision missing GitHub repository variables before deploy dispatch |
 | `metadata_ready` mistaken for cloud readiness | Deployment could be treated as unblocked without GCP trust or hosting proof | Treat GPP-2ab as repository-variable metadata only; separately prove OIDC, service account permissions, Secret Manager objects, Cloud Run health, webhook URL, and callback evidence |
 | GPP-5 closeout mistaken for GPP-6 approval | Read-only repo-intelligence evidence could be overclaimed as protected E2E readiness | GPP-5d records `gpp6_readiness=blocked_by_upstream_gates`; require GPP-2 protected gate evidence and GPP-4 adapter decision before GPP-6 execution |
+| GPP-6 preflight mistaken for E2E execution approval | A preparation report could be overclaimed as a protected adapter run | GPP-6a records `execution_status=blocked_by_upstream_gates`, `protected_workflow_dispatch_allowed=false`, and `live_adapter_execution_allowed=false`; require GPP-2/GPP-4 before any execution |
 
 ## 19. Tracking Log
 
@@ -1016,3 +1035,5 @@ admin bypass for PR merge automation, and must keep
 | 2026-04-28 | GPP-2ab bootstrap attestation added | `scripts/policy_service_cloud_run_bootstrap_attest.py` checks required GitHub repository variable handles with `gh variable list --json name,updatedAt`, ignores values, and records that current live metadata is `overall_status=blocked` because all required handles are missing; GCP trust, Secret Manager objects, Cloud Run hosting, webhook URL configuration, callback posting, live execution, support widening, and production-platform claims remain unproven. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
+| 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |
+| 2026-04-28 | GPP-6a preflight added | `scripts/gpp6_read_only_e2e_preflight.py` records GPP-6 preparation as ready while keeping execution blocked by GPP-2 and GPP-4 with no live adapter, protected workflow dispatch, remote write, support widening, or production claim. |
