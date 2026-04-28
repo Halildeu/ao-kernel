@@ -5,6 +5,7 @@ import json
 import sys
 import types
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Mapping
 
 import pytest
@@ -15,13 +16,17 @@ from ao_kernel.live_adapter_gate_policy_runtime import (
     DEFAULT_WEBHOOK_PATH,
     GITHUB_APP_ID_ENV,
     GITHUB_APP_PRIVATE_KEY_ENV,
+    GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV,
     WEBHOOK_SECRET_ENV,
+    WEBHOOK_SECRET_ID_ENV,
     CallbackPostResult,
     GithubAppConfig,
     GithubAppDeploymentReviewClient,
     PolicyRuntimeConfigError,
     build_github_app_jwt,
     handle_live_adapter_gate_policy_webhook,
+    load_github_app_config,
+    load_webhook_secret,
     policy_runtime_wsgi_app,
 )
 from ao_kernel.live_adapter_gate_policy_service import (
@@ -38,8 +43,7 @@ def _approved_payload() -> dict[str, object]:
         "sha": "abc123",
         "ref": "refs/heads/main",
         "deployment_callback_url": (
-            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/"
-            "deployment_protection_rule"
+            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/deployment_protection_rule"
         ),
         "repository": {"full_name": "Halildeu/ao-kernel"},
         "installation": {"id": 12345},
@@ -230,6 +234,52 @@ def test_build_github_app_jwt_reports_missing_optional_dependency(monkeypatch: p
         build_github_app_jwt(app_id="1", private_key_pem="private-key", now_seconds=1000)
 
     assert "policy-service extra" in str(exc_info.value)
+
+
+def test_runtime_loads_policy_secrets_from_internal_vault_stub(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    vault_path = tmp_path / ".secrets" / "vault.json"
+    vault_path.parent.mkdir()
+    vault_path.write_text(
+        json.dumps(
+            {
+                "gpp2/policy/webhook-secret": " secret-from-vault ",
+                "gpp2/github/private-key-pem": " private-key-from-vault ",
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("SECRETS_PROVIDER", "vault_stub")
+    env = {
+        GITHUB_APP_ID_ENV: "3522435",
+        WEBHOOK_SECRET_ID_ENV: "gpp2/policy/webhook-secret",
+        GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV: "gpp2/github/private-key-pem",
+    }
+
+    assert load_webhook_secret(env) == "secret-from-vault"
+    config = load_github_app_config(env)
+    assert config.app_id == "3522435"
+    assert config.private_key_pem == "private-key-from-vault"
+
+
+def test_runtime_reports_missing_vault_secret_without_echoing_secret_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".secrets").mkdir()
+    (tmp_path / ".secrets" / "vault.json").write_text("{}", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("SECRETS_PROVIDER", "vault_stub")
+
+    with pytest.raises(PolicyRuntimeConfigError) as exc_info:
+        load_webhook_secret({WEBHOOK_SECRET_ID_ENV: "gpp2/policy/missing-secret"})
+
+    assert exc_info.value.finding_code == "live_gate_policy_runtime_webhook_secret_missing"
+    assert "gpp2/policy/missing-secret" not in str(exc_info.value)
 
 
 def test_wsgi_health_endpoint() -> None:

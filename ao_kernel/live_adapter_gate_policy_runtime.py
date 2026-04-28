@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypedDict, cast
 
+from ao_kernel._internal.secrets.factory import create_provider_from_env
 from ao_kernel.live_adapter_gate_policy_service import (
     LiveAdapterGateDeploymentReviewRequest,
     LiveAdapterGatePolicyServiceResult,
@@ -26,8 +27,10 @@ DEFAULT_HTTP_TIMEOUT_SECONDS = 10.0
 DEFAULT_GITHUB_APP_JWT_TTL_SECONDS = 540
 
 WEBHOOK_SECRET_ENV = "AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET"
+WEBHOOK_SECRET_ID_ENV = "AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID"
 GITHUB_APP_ID_ENV = "AO_GITHUB_APP_ID"
 GITHUB_APP_PRIVATE_KEY_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PEM"
+GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PEM_ID"
 GITHUB_APP_PRIVATE_KEY_PATH_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PATH"
 GITHUB_API_URL_ENV = "AO_GITHUB_API_URL"
 MAX_BODY_BYTES_ENV = "AO_POLICY_SERVICE_MAX_BODY_BYTES"
@@ -234,6 +237,7 @@ def load_github_app_config(env: Mapping[str, str] | None = None) -> GithubAppCon
     app_id = _required_env(source, GITHUB_APP_ID_ENV)
     private_key_pem = source.get(GITHUB_APP_PRIVATE_KEY_ENV)
     private_key_path = source.get(GITHUB_APP_PRIVATE_KEY_PATH_ENV)
+    private_key_secret_id = source.get(GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV)
     if private_key_pem is None and private_key_path:
         try:
             private_key_pem = Path(private_key_path).read_text(encoding="utf-8")
@@ -242,15 +246,43 @@ def load_github_app_config(env: Mapping[str, str] | None = None) -> GithubAppCon
                 "live_gate_policy_runtime_private_key_read_failed",
                 f"Could not read GitHub App private key from {GITHUB_APP_PRIVATE_KEY_PATH_ENV}.",
             ) from exc
+    if not private_key_pem and private_key_secret_id:
+        private_key_pem = _resolve_runtime_secret(
+            source,
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV,
+            missing_code="live_gate_policy_runtime_private_key_secret_missing",
+            provider_code="live_gate_policy_runtime_secret_provider_failed",
+        )
     if not private_key_pem:
         raise PolicyRuntimeConfigError(
             "live_gate_policy_runtime_private_key_missing",
-            f"Set {GITHUB_APP_PRIVATE_KEY_ENV} or {GITHUB_APP_PRIVATE_KEY_PATH_ENV} in the hosted service.",
+            f"Set {GITHUB_APP_PRIVATE_KEY_ENV}, {GITHUB_APP_PRIVATE_KEY_PATH_ENV}, "
+            f"or {GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV} in the hosted service.",
         )
     return GithubAppConfig(
         app_id=app_id,
         private_key_pem=private_key_pem,
         api_url=source.get(GITHUB_API_URL_ENV, DEFAULT_GITHUB_API_URL),
+    )
+
+
+def load_webhook_secret(env: Mapping[str, str] | None = None) -> str:
+    """Load the GitHub webhook secret from direct env or a vault secret id."""
+
+    source = os.environ if env is None else env
+    direct_secret = source.get(WEBHOOK_SECRET_ENV)
+    if direct_secret:
+        return direct_secret
+    if source.get(WEBHOOK_SECRET_ID_ENV):
+        return _resolve_runtime_secret(
+            source,
+            WEBHOOK_SECRET_ID_ENV,
+            missing_code="live_gate_policy_runtime_webhook_secret_missing",
+            provider_code="live_gate_policy_runtime_secret_provider_failed",
+        )
+    raise PolicyRuntimeConfigError(
+        "live_gate_policy_runtime_env_missing",
+        f"Set {WEBHOOK_SECRET_ENV} or {WEBHOOK_SECRET_ID_ENV} in the hosted service runtime.",
     )
 
 
@@ -348,7 +380,9 @@ def extract_installation_id(payload: Mapping[str, Any]) -> int | None:
     return None
 
 
-def policy_runtime_wsgi_app(environ: Mapping[str, Any], start_response: Callable[[str, list[tuple[str, str]]], None]) -> Iterable[bytes]:
+def policy_runtime_wsgi_app(
+    environ: Mapping[str, Any], start_response: Callable[[str, list[tuple[str, str]]], None]
+) -> Iterable[bytes]:
     """WSGI entrypoint for hosted deployment-protection webhook services."""
 
     method = str(environ.get("REQUEST_METHOD", "GET")).upper()
@@ -360,7 +394,7 @@ def policy_runtime_wsgi_app(environ: Mapping[str, Any], start_response: Callable
 
     try:
         body = _read_wsgi_body(environ)
-        webhook_secret = _required_env(os.environ, WEBHOOK_SECRET_ENV)
+        webhook_secret = load_webhook_secret(os.environ)
         config = load_github_app_config(os.environ)
         result = handle_live_adapter_gate_policy_webhook(
             body,
@@ -415,6 +449,31 @@ def _required_env(env: Mapping[str, str], name: str) -> str:
         "live_gate_policy_runtime_env_missing",
         f"Set {name} in the hosted service runtime.",
     )
+
+
+def _resolve_runtime_secret(
+    env: Mapping[str, str],
+    secret_id_env: str,
+    *,
+    missing_code: str,
+    provider_code: str,
+) -> str:
+    secret_id = env.get(secret_id_env, "").strip()
+    if not secret_id:
+        raise PolicyRuntimeConfigError(missing_code, f"Set {secret_id_env} in the hosted service runtime.")
+    try:
+        secret_value = create_provider_from_env().get(secret_id)
+    except Exception as exc:
+        raise PolicyRuntimeConfigError(
+            provider_code,
+            f"Configured secrets provider could not resolve {secret_id_env}.",
+        ) from exc
+    if not secret_value:
+        raise PolicyRuntimeConfigError(
+            missing_code,
+            f"Configured {secret_id_env} did not resolve to a runtime secret.",
+        )
+    return secret_value
 
 
 def _runtime_result(

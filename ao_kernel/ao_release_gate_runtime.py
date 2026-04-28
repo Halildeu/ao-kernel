@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypedDict, cast
 
+from ao_kernel._internal.secrets.factory import create_provider_from_env
 from ao_kernel.ao_release_gate_service import (
     AoReleaseGateCheckRunRequest,
     AoReleaseGateServiceResult,
@@ -27,8 +28,10 @@ DEFAULT_GITHUB_APP_JWT_TTL_SECONDS = 540
 DEFAULT_GPP_STATUS_PATH = ".claude/plans/gpp_status.v1.json"
 
 WEBHOOK_SECRET_ENV = "AO_RELEASE_GATE_WEBHOOK_SECRET"
+WEBHOOK_SECRET_ID_ENV = "AO_RELEASE_GATE_WEBHOOK_SECRET_ID"
 GITHUB_APP_ID_ENV = "AO_GITHUB_APP_ID"
 GITHUB_APP_PRIVATE_KEY_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PEM"
+GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PEM_ID"
 GITHUB_APP_PRIVATE_KEY_PATH_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PATH"
 GITHUB_API_URL_ENV = "AO_GITHUB_API_URL"
 GPP_STATUS_PATH_ENV = "AO_RELEASE_GATE_GPP_STATUS_PATH"
@@ -236,6 +239,7 @@ def load_github_app_config(env: Mapping[str, str] | None = None) -> GithubAppCon
     app_id = _required_env(source, GITHUB_APP_ID_ENV)
     private_key_pem = source.get(GITHUB_APP_PRIVATE_KEY_ENV)
     private_key_path = source.get(GITHUB_APP_PRIVATE_KEY_PATH_ENV)
+    private_key_secret_id = source.get(GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV)
     if private_key_pem is None and private_key_path:
         try:
             private_key_pem = Path(private_key_path).read_text(encoding="utf-8")
@@ -244,15 +248,43 @@ def load_github_app_config(env: Mapping[str, str] | None = None) -> GithubAppCon
                 "ao_release_gate_runtime_private_key_read_failed",
                 f"Could not read GitHub App private key from {GITHUB_APP_PRIVATE_KEY_PATH_ENV}.",
             ) from exc
+    if not private_key_pem and private_key_secret_id:
+        private_key_pem = _resolve_runtime_secret(
+            source,
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV,
+            missing_code="ao_release_gate_runtime_private_key_secret_missing",
+            provider_code="ao_release_gate_runtime_secret_provider_failed",
+        )
     if not private_key_pem:
         raise ReleaseGateRuntimeConfigError(
             "ao_release_gate_runtime_private_key_missing",
-            f"Set {GITHUB_APP_PRIVATE_KEY_ENV} or {GITHUB_APP_PRIVATE_KEY_PATH_ENV} in the hosted service.",
+            f"Set {GITHUB_APP_PRIVATE_KEY_ENV}, {GITHUB_APP_PRIVATE_KEY_PATH_ENV}, "
+            f"or {GITHUB_APP_PRIVATE_KEY_SECRET_ID_ENV} in the hosted service.",
         )
     return GithubAppConfig(
         app_id=app_id,
         private_key_pem=private_key_pem,
         api_url=source.get(GITHUB_API_URL_ENV, DEFAULT_GITHUB_API_URL),
+    )
+
+
+def load_webhook_secret(env: Mapping[str, str] | None = None) -> str:
+    """Load the GitHub webhook secret from direct env or a vault secret id."""
+
+    source = os.environ if env is None else env
+    direct_secret = source.get(WEBHOOK_SECRET_ENV)
+    if direct_secret:
+        return direct_secret
+    if source.get(WEBHOOK_SECRET_ID_ENV):
+        return _resolve_runtime_secret(
+            source,
+            WEBHOOK_SECRET_ID_ENV,
+            missing_code="ao_release_gate_runtime_webhook_secret_missing",
+            provider_code="ao_release_gate_runtime_secret_provider_failed",
+        )
+    raise ReleaseGateRuntimeConfigError(
+        "ao_release_gate_runtime_env_missing",
+        f"Set {WEBHOOK_SECRET_ENV} or {WEBHOOK_SECRET_ID_ENV} in the hosted service runtime.",
     )
 
 
@@ -381,7 +413,7 @@ def release_gate_runtime_wsgi_app(
 
     try:
         body = _read_wsgi_body(environ)
-        webhook_secret = _required_env(os.environ, WEBHOOK_SECRET_ENV)
+        webhook_secret = load_webhook_secret(os.environ)
         config = load_github_app_config(os.environ)
         gpp_status = load_gpp_status(os.environ)
         result = handle_ao_release_gate_webhook(
@@ -438,6 +470,31 @@ def _required_env(env: Mapping[str, str], name: str) -> str:
         "ao_release_gate_runtime_env_missing",
         f"Set {name} in the hosted service runtime.",
     )
+
+
+def _resolve_runtime_secret(
+    env: Mapping[str, str],
+    secret_id_env: str,
+    *,
+    missing_code: str,
+    provider_code: str,
+) -> str:
+    secret_id = env.get(secret_id_env, "").strip()
+    if not secret_id:
+        raise ReleaseGateRuntimeConfigError(missing_code, f"Set {secret_id_env} in the hosted service runtime.")
+    try:
+        secret_value = create_provider_from_env().get(secret_id)
+    except Exception as exc:
+        raise ReleaseGateRuntimeConfigError(
+            provider_code,
+            f"Configured secrets provider could not resolve {secret_id_env}.",
+        ) from exc
+    if not secret_value:
+        raise ReleaseGateRuntimeConfigError(
+            missing_code,
+            f"Configured {secret_id_env} did not resolve to a runtime secret.",
+        )
+    return secret_value
 
 
 def _runtime_result(
@@ -504,9 +561,7 @@ def _redacted_runtime_payload(result: ReleaseGateRuntimeResult) -> dict[str, obj
         "release_gate_decision": decision["decision"] if decision is not None else None,
         "dry_run": decision["dry_run"] if decision is not None else None,
         "merge_authority_enabled": decision["merge_authority_enabled"] if decision is not None else None,
-        "check_run_conclusion": (
-            decision["github_check_run"]["conclusion"] if decision is not None else None
-        ),
+        "check_run_conclusion": (decision["github_check_run"]["conclusion"] if decision is not None else None),
         "check_run_post": result["check_run_post"],
         "findings": service_result["findings"],
     }
