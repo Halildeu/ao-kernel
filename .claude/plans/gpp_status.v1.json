@@ -9,11 +9,11 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/531",
-    "exit_decision": "policy_webhook_container_ready_service_not_hosted",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
+    "exit_decision": "policy_container_publish_path_ready_service_not_hosted",
     "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, posts callback reviews, and produces protected workflow evidence with live_execution_allowed=false",
     "allowed_scope": [
-      "use the repo-owned policy service container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
+      "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
       "repeat protected workflow evidence collection from main after the policy service responds",
       "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
     ]
@@ -134,16 +134,22 @@
       "decision": "policy_webhook_container_ready_service_not_hosted",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/531",
       "record": ".claude/plans/GPP-2r-POLICY-WEBHOOK-CONTAINER.md"
+    },
+    {
+      "id": "GPP-2s",
+      "decision": "policy_container_publish_path_ready_service_not_hosted",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
+      "record": ".claude/plans/GPP-2s-POLICY-CONTAINER-IMAGE-PUBLISH.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy webhook container is ready, but the GitHub App service is not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to post deployment callback reviews"
+      "reason": "repo-owned policy webhook container image publish path is ready, but the GitHub App service is not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to post deployment callback reviews"
     }
   ],
   "pending_external_actions": [
-    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned container with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
+    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
   ],
   "support_widening_allowed": false,
@@ -198,13 +204,14 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "deploy or configure the deployment-protection policy service using the repo-owned container package before any further live-adapter runtime work",
+    "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
     "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active",
     "use scripts/live_adapter_gate_policy_service_smoke.py only for local webhook/callback artifact validation, not live callback posting",
     "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution",
     "use scripts/live_adapter_gate_policy_container_smoke.py only for no-secret local container health validation, not live callback posting",
+    "publish or pull ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service only as a deploy artifact, not hosted service evidence",
     "configure ao_kernel.live_adapter_gate_policy_runtime:application only with runtime secret manager values, never committed or echoed secret material",
     "do not reference AO_CLAUDE_CODE_CLI_AUTH through secrets context until a later live execution slice explicitly permits it",
     "keep fork and pull_request contexts away from protected credentials",
