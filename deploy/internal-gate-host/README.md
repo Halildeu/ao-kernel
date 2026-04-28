@@ -43,6 +43,33 @@ https://<AO_GATE_HOSTNAME>/policy/healthz
 https://<AO_GATE_HOSTNAME>/release-gate/healthz
 ```
 
+## Hosted Health Evidence Probe
+
+After the operator host is deployed and DNS/HTTPS are live, collect the
+no-secret hosted health evidence with:
+
+```bash
+python3 scripts/internal_gate_host_health_probe.py \
+  --host <AO_GATE_HOSTNAME> \
+  --artifact-path internal-gate-host-health-evidence.json \
+  --output text \
+  --fail-on-blocked
+```
+
+The probe performs only `GET` requests against the two public health endpoints.
+It expects the policy service health payload to report `program_id=GPP-2q` and
+the `ao-release-gate` health payload to report `program_id=GPP-2w`.
+
+The resulting artifact can record `public_https_hosting_evidence=true` only
+when both services respond over HTTPS. Local `http://127.0.0.1` rehearsal is
+available with `--allow-http-localhost`, but that produces only
+`local_health_ready` and must not be treated as public hosted evidence.
+
+The probe does not configure GitHub webhooks, read secret values, post
+deployment-protection callback reviews, post `ao-release-gate` check-runs,
+change branch protection, dispatch protected workflows, or execute a live
+adapter.
+
 ## Runtime Secret Contract
 
 The services read secret values only at runtime. The checked-in bundle uses
