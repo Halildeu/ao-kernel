@@ -1,16 +1,16 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 end-user boundary recorded after policy Cloud Run bootstrap
-attestation and `ao-release-gate` autonomous deploy paths; operator-owned
-repository variables, GCP trust, hosting, callback/check-run evidence, and
-cutover still blocked
+**Status:** GPP-2 internal vault gate secret contract recorded after Cloud Run
+bootstrap and `ao-release-gate` autonomous deploy paths; operator-owned
+internal hosting, vault-backed runtime configuration, callback/check-run
+evidence, and cutover still blocked
 **Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#551](https://github.com/Halildeu/ao-kernel/issues/551)
-for operator gate and end-user onboarding boundary
-**Current slice record:** `.claude/plans/GPP-2ac-OPERATOR-GATE-END-USER-BOUNDARY.md`
+**Current slice issue:** [#563](https://github.com/Halildeu/ao-kernel/issues/563)
+for internal vault gate secret contract
+**Current slice record:** `.claude/plans/GPP-2ad-INTERNAL-VAULT-GATE-SECRET-CONTRACT.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -239,12 +239,21 @@ Last live verification on current `origin/main` showed:
     GitHub App private key. GPP-2 remains blocked on operator-owned hosted
     callback evidence; repo-intelligence onboarding can be prioritized only as
     explicit opt-in/read-only work with no support widening.
-45. GPP-5d closes the repo-intelligence read-only workflow surface with a
+45. GPP-2ad records the internal vault path. The policy service and
+    `ao-release-gate` runtimes now accept vault-backed secret ids for webhook
+    secrets and the GitHub App private key while preserving direct env/path
+    compatibility. This makes the preferred GPP-2 unblock route
+    operator-owned internal hosting plus vault-backed runtime configuration,
+    not a Cloud Run-only path and not an end-user setup requirement. GPP-2
+    remains blocked until public HTTPS health, GitHub App webhook, callback
+    review, real PR dry-run check-run, branch-protection cutover, and protected
+    workflow evidence exist.
+46. GPP-5d closes the repo-intelligence read-only workflow surface with a
     schema-backed preflight over GPP-5a/GPP-5b/GPP-5c records, public APIs,
     schemas, and negative runtime guards. GPP-6 preparation may use this
     closeout as repo-intelligence evidence, but GPP-6 execution remains
     blocked by GPP-2 and GPP-4.
-46. GPP-6a adds a preparation-only read-only E2E preflight. The preflight
+47. GPP-6a adds a preparation-only read-only E2E preflight. The preflight
     report is ready and records `execution_status=blocked_by_upstream_gates`
     because GPP-2 protected gate evidence and the GPP-4 read-only adapter
     decision are still missing. It does not dispatch protected workflows, call
@@ -317,7 +326,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2aa` | Completed / no support widening | `ao-release-gate` autonomous deploy path | Cloud Run deploy workflow ready; cloud bootstrap, webhook config, real PR evidence, and branch-protection cutover still required |
 | `GPP-2ab` | Completed / no support widening | Policy Cloud Run bootstrap attestation | metadata-only attestation tool ready; required repository variable handles are currently missing; GCP trust, Secret Manager objects, hosted service evidence, GitHub App webhook config, and callback evidence are not yet attested |
 | `GPP-2ac` | Completed / no support widening | Operator gate and end-user onboarding boundary | GPP-2 gate hosting is operator-owned platform infrastructure; end users must not self-host Cloud Run, vault, webhook, or GitHub App private-key setup |
-| `GPP-2` | Blocked / hosted service bootstrap/config/evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be hosted/configured and post callback evidence, and `ao-release-gate` must be deployed/hosted/evidenced/cut over before human-free program merges |
+| `GPP-2ad` | Completed / no support widening | Internal vault gate secret contract | policy and release-gate runtimes accept vault-backed secret ids; services are still not hosted/evidenced |
+| `GPP-2` | Blocked / internal hosting/config/evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be hosted/configured with vault-backed runtime secrets and post callback evidence, and `ao-release-gate` must be deployed/hosted/evidenced/cut over before human-free program merges |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
@@ -451,13 +461,13 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked after GPP-2ac; policy decision core, webhook scaffold,
+**Status:** blocked after GPP-2ad; policy decision core, webhook scaffold,
 deployable WSGI runtime, container package, GHCR image publication path,
 Cloud Run deploy automation, metadata-only bootstrap attestation tooling,
-`ao-release-gate` dry-run/check-run/container/publish/deploy automation, and
-release-gate fail-closed policy records and operator/end-user boundary
-decision exist, but required operator-owned repository variables, GCP trust,
-hosted service deployment/configuration, real PR check-run evidence,
+internal vault-backed secret-id runtime support, `ao-release-gate`
+dry-run/check-run/container/publish/deploy automation, and release-gate
+fail-closed policy records and operator/end-user boundary decision exist, but
+operator-owned hosted service deployment/configuration, real PR check-run evidence,
 branch-protection cutover, and callback evidence are still
 missing.
 
@@ -518,6 +528,14 @@ release-gate hosting path are operator-owned platform infrastructure. They are
 not setup requirements for product end users, and they do not block read-only
 repo-intelligence onboarding design work that avoids live execution and support
 widening.
+GPP-2ad adds internal vault-backed secret-id resolution to both hosted gate
+runtimes. This lets the operator run the repo-owned containers on internal
+platform infrastructure with secret ids such as
+`AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID`,
+`AO_RELEASE_GATE_WEBHOOK_SECRET_ID`, and
+`AO_GITHUB_APP_PRIVATE_KEY_PEM_ID`. It does not host either service, configure
+GitHub webhooks, post callbacks/check-runs, grant merge authority, or unblock
+live adapter execution.
 
 **Acceptance criteria:**
 

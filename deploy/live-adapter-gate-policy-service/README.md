@@ -143,6 +143,25 @@ or:
 AO_GITHUB_APP_PRIVATE_KEY_PATH
 ```
 
+Operator-owned internal hosts may resolve the same runtime secrets from the
+ao-kernel secrets provider interface instead of injecting secret values
+directly. Configure a supported provider such as `vault_stub` or
+`hashicorp_vault` with provider-local credentials, then pass secret ids:
+
+```text
+SECRETS_PROVIDER=hashicorp_vault
+VAULT_ADDR=<operator vault URL>
+VAULT_TOKEN=<operator vault token>
+VAULT_SECRET_MOUNT=secret
+AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID=gpp2/policy/webhook-secret
+AO_GITHUB_APP_PRIVATE_KEY_PEM_ID=gpp2/github/private-key-pem
+```
+
+For local operator rehearsals, `SECRETS_PROVIDER=vault_stub` reads
+`.secrets/vault.json` from the service working directory. That file is local
+operator material and must not be committed or copied into PRs, issues, logs,
+or chat.
+
 Optional runtime settings:
 
 ```text
@@ -169,6 +188,11 @@ GET /healthz
 Do not pass `AO_CLAUDE_CODE_CLI_AUTH` to this service. The protected live
 adapter credential remains unavailable to the policy service until a later GPP
 slice explicitly permits live execution.
+
+The internal vault path changes only how runtime secret values are resolved by
+the operator-owned hosted service. It does not remove the need for a public
+HTTPS route that GitHub can reach, a configured GitHub App webhook URL, a
+deployment-protection callback post, and protected workflow evidence.
 
 ## Local No-Secret Smoke
 
