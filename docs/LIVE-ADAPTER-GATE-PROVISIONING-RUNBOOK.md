@@ -289,6 +289,44 @@ token through its secret manager. Do not put registry credentials, webhook
 secrets, GitHub App private keys, or live adapter credentials in the container
 image.
 
+Autonomous Cloud Run deployment path after GPP-2t:
+
+1. `.github/workflows/policy-service-deploy-cloud-run.yml` runs only from a
+   successful trusted `Publish Policy Container` workflow on `main`, or by
+   trusted `workflow_dispatch`.
+2. The workflow authenticates to Google Cloud with GitHub OIDC, not a committed
+   cloud key.
+3. It mirrors the immutable GHCR image tag to Google Artifact Registry and
+   deploys that immutable image to Cloud Run.
+4. Runtime secrets are supplied to Cloud Run by Secret Manager object name and
+   version. The workflow must not run `gcloud secrets versions access`, print
+   secret values, or use `secrets.*`.
+5. The public Cloud Run URL must route:
+
+```text
+GET  /healthz
+POST /github/deployment-protection
+```
+
+6. The workflow health-checks `/healthz` and uploads
+   `policy-service-deploy.v1.json` evidence with:
+
+```text
+secret_value_readback=false
+live_adapter_execution=false
+github_callback_post=false
+support_widening=false
+production_platform_claim=false
+```
+
+7. The GitHub App webhook URL should be the deployed Cloud Run URL plus
+   `/github/deployment-protection`. The deploy workflow exposes that URL in
+   its summary and evidence, but does not treat a health check as callback
+   evidence.
+8. Do not rerun protected workflow evidence until the deployed URL is configured
+   in the GitHub App and the service is expected to answer real
+   `deployment_protection_rule` deliveries.
+
 ### 3. Attach the Deployment Protection Rule
 
 Attach the GitHub App as a custom deployment protection rule on environment:

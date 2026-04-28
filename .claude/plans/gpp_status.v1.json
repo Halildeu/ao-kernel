@@ -9,8 +9,8 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
-    "exit_decision": "policy_container_publish_path_ready_service_not_hosted",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/535",
+    "exit_decision": "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped",
     "ready_after": "deployment protection policy service is deployed/configured with webhook secret and GitHub App auth, posts callback reviews, and produces protected workflow evidence with live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
@@ -140,16 +140,24 @@
       "decision": "policy_container_publish_path_ready_service_not_hosted",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/533",
       "record": ".claude/plans/GPP-2s-POLICY-CONTAINER-IMAGE-PUBLISH.md"
+    },
+    {
+      "id": "GPP-2t",
+      "decision": "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/535",
+      "record": ".claude/plans/GPP-2t-AUTONOMOUS-POLICY-SERVICE-DEPLOYMENT.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy webhook container image publish path is ready, but the GitHub App service is not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to post deployment callback reviews"
+      "reason": "repo-owned autonomous Cloud Run deployment path is ready, but cloud OIDC/secret-manager bootstrap, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
     }
   ],
   "pending_external_actions": [
-    "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
+    "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
+    "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
+    "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
   ],
   "support_widening_allowed": false,
@@ -204,7 +212,8 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work",
+    "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
+    "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
     "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active",

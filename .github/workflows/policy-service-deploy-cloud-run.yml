@@ -1,0 +1,218 @@
+name: Deploy Policy Service to Cloud Run
+
+on:
+  workflow_run:
+    workflows: ["Publish Policy Container"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Trusted policy service deployment reason"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+env:
+  GHCR_IMAGE_NAME: ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+  GCP_CLOUD_RUN_REGION: ${{ vars.GCP_CLOUD_RUN_REGION }}
+  GCP_ARTIFACT_REGISTRY_LOCATION: ${{ vars.GCP_ARTIFACT_REGISTRY_LOCATION }}
+  GCP_ARTIFACT_REGISTRY_REPOSITORY: ${{ vars.GCP_ARTIFACT_REGISTRY_REPOSITORY }}
+  POLICY_SERVICE_NAME: ${{ vars.POLICY_SERVICE_NAME }}
+  AO_GITHUB_APP_ID: ${{ vars.AO_GITHUB_APP_ID }}
+  AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME: ${{ vars.AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME }}
+  AO_POLICY_SERVICE_WEBHOOK_SECRET_VERSION: ${{ vars.AO_POLICY_SERVICE_WEBHOOK_SECRET_VERSION || 'latest' }}
+  AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME: ${{ vars.AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME }}
+  AO_GITHUB_APP_PRIVATE_KEY_SECRET_VERSION: ${{ vars.AO_GITHUB_APP_PRIVATE_KEY_SECRET_VERSION || 'latest' }}
+
+jobs:
+  deploy-policy-service:
+    name: deploy-policy-service
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event != 'pull_request'
+      )
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate trusted deploy configuration
+        env:
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
+        run: |
+          set -euo pipefail
+
+          required_vars=(
+            GCP_PROJECT_ID
+            GCP_WORKLOAD_IDENTITY_PROVIDER
+            GCP_SERVICE_ACCOUNT
+            GCP_CLOUD_RUN_REGION
+            GCP_ARTIFACT_REGISTRY_LOCATION
+            GCP_ARTIFACT_REGISTRY_REPOSITORY
+            POLICY_SERVICE_NAME
+            AO_GITHUB_APP_ID
+            AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME
+            AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME
+          )
+
+          missing=0
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Required repository variable $name is not configured."
+              missing=1
+            fi
+          done
+
+          source_sha="${WORKFLOW_RUN_HEAD_SHA:-$GITHUB_SHA}"
+          if [ -z "$source_sha" ]; then
+            echo "::error::Could not determine source SHA for policy image deployment."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - id: images
+        name: Resolve immutable source and deployment images
+        env:
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
+        run: |
+          set -euo pipefail
+
+          source_sha="${WORKFLOW_RUN_HEAD_SHA:-$GITHUB_SHA}"
+          ghcr_image="${GHCR_IMAGE_NAME}:sha-${source_sha}"
+          gar_host="${GCP_ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev"
+          gar_image="${gar_host}/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPOSITORY}/${POLICY_SERVICE_NAME}:sha-${source_sha}"
+
+          {
+            echo "source_sha=$source_sha"
+            echo "ghcr_image=$ghcr_image"
+            echo "gar_host=$gar_host"
+            echo "gar_image=$gar_image"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud with OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Log in to GHCR for source image pull
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Configure Artifact Registry Docker auth
+        run: gcloud auth configure-docker "${{ steps.images.outputs.gar_host }}" --quiet
+
+      - name: Mirror immutable GHCR image to Artifact Registry
+        run: |
+          set -euo pipefail
+
+          docker pull "${{ steps.images.outputs.ghcr_image }}"
+          docker tag "${{ steps.images.outputs.ghcr_image }}" "${{ steps.images.outputs.gar_image }}"
+          docker push "${{ steps.images.outputs.gar_image }}"
+
+      - id: deploy
+        name: Deploy policy service revision
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.POLICY_SERVICE_NAME }}
+          region: ${{ env.GCP_CLOUD_RUN_REGION }}
+          image: ${{ steps.images.outputs.gar_image }}
+          flags: "--allow-unauthenticated --ingress=all --port=8000"
+          env_vars: |
+            AO_GITHUB_APP_ID=${{ env.AO_GITHUB_APP_ID }}
+            PORT=8000
+          secrets: |
+            AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET=${{ env.AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME }}:${{ env.AO_POLICY_SERVICE_WEBHOOK_SECRET_VERSION }}
+            AO_GITHUB_APP_PRIVATE_KEY_PEM=${{ env.AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME }}:${{ env.AO_GITHUB_APP_PRIVATE_KEY_SECRET_VERSION }}
+
+      - name: Health-check deployed policy service
+        run: |
+          set -euo pipefail
+
+          mkdir -p policy-service-deploy-evidence
+          service_url="${{ steps.deploy.outputs.url }}"
+          curl -fsS --retry 5 --retry-delay 5 --retry-connrefused \
+            "$service_url/healthz" \
+            > policy-service-deploy-evidence/healthz.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("policy-service-deploy-evidence/healthz.json").read_text(encoding="utf-8"))
+          if payload.get("status") != "ok":
+              raise SystemExit(f"unexpected policy service health status: {payload!r}")
+          PY
+
+      - name: Write deployment evidence
+        env:
+          SERVICE_URL: ${{ steps.deploy.outputs.url }}
+          SOURCE_SHA: ${{ steps.images.outputs.source_sha }}
+          GHCR_IMAGE: ${{ steps.images.outputs.ghcr_image }}
+          GAR_IMAGE: ${{ steps.images.outputs.gar_image }}
+        run: |
+          set -euo pipefail
+
+          jq -n \
+            --arg schema_version "1" \
+            --arg program_id "GPP-2t" \
+            --arg service_name "$POLICY_SERVICE_NAME" \
+            --arg cloud_run_region "$GCP_CLOUD_RUN_REGION" \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg source_image "$GHCR_IMAGE" \
+            --arg deployed_image "$GAR_IMAGE" \
+            --arg service_url "$SERVICE_URL" \
+            --arg webhook_url "$SERVICE_URL/github/deployment-protection" \
+            --arg health_url "$SERVICE_URL/healthz" \
+            '{
+              schema_version: $schema_version,
+              program_id: $program_id,
+              status: "policy_service_deployed_health_checked",
+              service_name: $service_name,
+              cloud_run_region: $cloud_run_region,
+              source_sha: $source_sha,
+              source_image: $source_image,
+              deployed_image: $deployed_image,
+              service_url: $service_url,
+              webhook_url: $webhook_url,
+              health_url: $health_url,
+              health_checked: true,
+              secret_value_readback: false,
+              live_adapter_execution: false,
+              github_callback_post: false,
+              production_platform_claim: false,
+              support_widening: false
+            }' > policy-service-deploy-evidence/policy-service-deploy.v1.json
+
+          {
+            echo "Policy service deployment evidence"
+            echo
+            echo "- Source image: \`$GHCR_IMAGE\`"
+            echo "- Deployed image: \`$GAR_IMAGE\`"
+            echo "- Health URL: \`$SERVICE_URL/healthz\`"
+            echo "- GitHub App webhook URL: \`$SERVICE_URL/github/deployment-protection\`"
+            echo "- Secret value readback: \`false\`"
+            echo "- Live adapter execution: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: policy-service-deploy-${{ steps.images.outputs.source_sha }}
+          path: policy-service-deploy-evidence/

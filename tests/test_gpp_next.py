@@ -30,8 +30,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/533"
-    assert payload["current_wp"]["exit_decision"] == "policy_container_publish_path_ready_service_not_hosted"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/535"
+    assert payload["current_wp"]["exit_decision"] == "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped"
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -141,20 +141,29 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2t"
+        and item["decision"] == "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/535"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
-        "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
+        "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
+        "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
+        "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
     ]
     assert payload["blocked_wps"] == [
         {
             "id": "GPP-2",
             "reason": (
-                "repo-owned policy webhook container image publish path is ready, but the GitHub App service is "
-                "not yet publicly hosted/configured with webhook URL, webhook secret, and GitHub App auth to "
-                "post deployment callback reviews"
+                "repo-owned autonomous Cloud Run deployment path is ready, but cloud OIDC/secret-manager "
+                "bootstrap, hosted service evidence, GitHub App webhook URL configuration, and live deployment "
+                "callback review evidence are not yet attested"
             ),
         }
     ]
@@ -171,7 +180,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(
         action
-        == "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package before any further live-adapter runtime work"
+        == "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action == "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -296,9 +309,9 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/533"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/535"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
-    assert payload["current_wp"]["exit_decision"] == "policy_container_publish_path_ready_service_not_hosted"
+    assert payload["current_wp"]["exit_decision"] == "policy_service_autonomous_deploy_path_ready_service_not_bootstrapped"
     assert payload["support_widening_allowed"] is False
 
 
@@ -328,7 +341,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "Blocked work packages:\n- GPP-2: repo-owned policy webhook container image publish path is ready" in rendered
+    assert "Blocked work packages:\n- GPP-2: repo-owned autonomous Cloud Run deployment path is ready" in rendered
     assert "divergence: 0\t0" in rendered
 
 

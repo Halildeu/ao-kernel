@@ -33,6 +33,56 @@ If the hosting provider cannot pull the package anonymously, configure a GHCR
 read token through that provider's secret manager. Do not bake registry tokens
 or runtime secrets into the image.
 
+## Autonomous Cloud Run Deployment
+
+The repository also contains a trusted, non-PR deployment workflow:
+
+```text
+.github/workflows/policy-service-deploy-cloud-run.yml
+```
+
+That workflow is designed to run after the policy container publish workflow
+completes successfully on `main`, or by trusted manual dispatch. It uses
+GitHub OIDC to authenticate to Google Cloud, mirrors the immutable GHCR image
+to Artifact Registry, deploys the policy service to Cloud Run, verifies
+`GET /healthz`, and uploads a deployment evidence artifact.
+
+Required repository variables for that workflow:
+
+```text
+GCP_PROJECT_ID
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_SERVICE_ACCOUNT
+GCP_CLOUD_RUN_REGION
+GCP_ARTIFACT_REGISTRY_LOCATION
+GCP_ARTIFACT_REGISTRY_REPOSITORY
+POLICY_SERVICE_NAME
+AO_GITHUB_APP_ID
+AO_POLICY_SERVICE_WEBHOOK_SECRET_NAME
+AO_GITHUB_APP_PRIVATE_KEY_SECRET_NAME
+```
+
+Optional repository variables:
+
+```text
+AO_POLICY_SERVICE_WEBHOOK_SECRET_VERSION
+AO_GITHUB_APP_PRIVATE_KEY_SECRET_VERSION
+```
+
+The two `*_SECRET_NAME` variables are secret-manager object names, not secret
+values. The workflow must not read back secret values. It passes those names to
+Cloud Run so the hosted service receives runtime secrets from Secret Manager.
+
+The deployed public GitHub App webhook URL has this shape:
+
+```text
+https://<cloud-run-service-url>/github/deployment-protection
+```
+
+The deploy workflow does not dispatch the protected live-adapter workflow, post
+GitHub deployment protection callbacks itself, or run a live adapter. It only
+deploys and health-checks the webhook service.
+
 ## Runtime
 
 Required hosting secrets:
