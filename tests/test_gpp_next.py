@@ -30,10 +30,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/549"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/551"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing"
+        == "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -200,17 +200,31 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         and (_repo_root() / item["record"]).exists()
         for item in payload["completed_wps"]
     )
+    assert any(
+        item["id"] == "GPP-2ac"
+        and item["decision"] == "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening"
+        and item["issue"] == "https://github.com/Halildeu/ao-kernel/issues/551"
+        and (_repo_root() / item["record"]).exists()
+        for item in payload["completed_wps"]
+    )
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
     assert payload["pending_external_actions"] == [
         (
-            "run scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository "
-            "variable handles before dispatching the Cloud Run deploy workflow, while treating metadata_ready as "
+            "if the operator chooses to unblock GPP-2 with Cloud Run, run "
+            "scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository "
+            "variable handles before dispatching the deploy workflow, while treating metadata_ready as "
             "repository-variable evidence only"
         ),
-        "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
-        "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
+        (
+            "bootstrap the operator-owned policy service deploy trust path with GitHub OIDC, Google service-account "
+            "permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback"
+        ),
+        (
+            "run or observe the autonomous Cloud Run deployment workflow from a trusted main image only after "
+            "operator-owned billing/project/trust handles are intentionally available"
+        ),
         "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
         "bootstrap the ao-release-gate Cloud Run deploy trust path and run the trusted deploy workflow from main without treating health evidence as check-run evidence",
         "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with runtime webhook secret and GitHub App authentication outside the repo",
@@ -218,6 +232,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
         "deploy or configure the ao-kernel-live-adapter-gate GitHub App deployment-protection policy service/webhook using the repo-owned GHCR image or container package with webhook secret verification and GitHub App auth so it posts deployment callback reviews",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
+        (
+            "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most "
+            "GitHub App installation, repository selection, and explicit opt-in configuration"
+        ),
     ]
     assert payload["blocked_wps"] == [
         {
@@ -225,11 +243,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
             "reason": (
                 "repo-owned autonomous policy service deploy path, metadata-only policy bootstrap attestation "
                 "tool, ao-release-gate dry-run decision scaffold, check-run service surface, release-gate "
-                "container package, release-gate image publish path, and release-gate autonomous deploy path are "
-                "ready, but required policy GitHub repository variable handles are currently missing and neither "
-                "the release-gate service nor the deployment-protection service is publicly hosted/configured "
-                "with webhook evidence, dry-run check-run evidence, callback review evidence, or protected "
-                "workflow cutover evidence"
+                "container package, release-gate image publish path, release-gate autonomous deploy path, and "
+                "operator-owned end-user onboarding boundary are ready, but required policy GitHub repository "
+                "variable handles are currently missing and neither the release-gate service nor the "
+                "deployment-protection service is publicly hosted/configured with webhook evidence, dry-run "
+                "check-run evidence, callback review evidence, or protected workflow cutover evidence"
             ),
         }
     ]
@@ -263,9 +281,34 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         for action in payload["forbidden_actions"]
     )
     assert any(action == "treat a product end-user account as release authority" for action in payload["forbidden_actions"])
+    assert any(
+        action
+        == "require product end users to self-host the GPP-2 deployment-protection policy service, vault, webhook secret, GitHub App private key, or Cloud Run project"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action
+        == "require product end users to self-host the ao-release-gate check-run service, webhook, or branch-protection cutover"
+        for action in payload["forbidden_actions"]
+    )
     assert any(action == "treat a PAT-backed bot user as release authority" for action in payload["forbidden_actions"])
     assert any(action == "use admin bypass to merge GPP program PRs" for action in payload["forbidden_actions"])
     assert any(action == "treat Codex or Claude output as release authority" for action in payload["forbidden_actions"])
+    assert any(
+        action
+        == "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "open GPP-5 repo-intelligence workflow integration only as explicit opt-in or read-only work while support_widening_allowed=false and production_platform_claim_allowed=false"
+        for action in payload["next_allowed_actions"]
+    )
     assert any(
         action
         == "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only"
@@ -536,6 +579,26 @@ def test_gpp2ab_policy_cloud_run_bootstrap_attestation_is_metadata_only() -> Non
     assert "`production_platform_claim=false`" in decision
 
 
+def test_gpp2ac_keeps_gate_operator_owned_and_end_user_onboarding_simple() -> None:
+    decision = (
+        _repo_root() / ".claude/plans/GPP-2ac-OPERATOR-GATE-END-USER-BOUNDARY.md"
+    ).read_text(encoding="utf-8")
+
+    assert "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening" in decision
+    assert "self-host them to use the product" in decision
+    assert "Operator-owned platform infrastructure" in decision
+    assert "GitHub App private-key storage" in decision
+    assert "`ao-release-gate` GitHub App check-run service hosting" in decision
+    assert "real PR dry-run check-run evidence" in decision
+    assert "install the product's GitHub App" in decision
+    assert "select repositories" in decision
+    assert "repo-intelligence" in decision
+    assert "GitHub is not bypassed" in decision
+    assert "`live_execution_allowed=false`" in decision
+    assert "`support_widening=false`" in decision
+    assert "`production_platform_claim=false`" in decision
+
+
 def test_gpp_next_load_status_validates_required_guards() -> None:
     mod = _module()
 
@@ -543,11 +606,11 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/549"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/551"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing"
+        == "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -580,6 +643,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Live adapter execution allowed: false" in rendered
     assert "metadata-only policy bootstrap attestation tool" in rendered
     assert "ao-release-gate dry-run decision scaffold" in rendered
+    assert "operator-owned end-user onboarding boundary" in rendered
     assert "divergence: 0\t0" in rendered
 
 
