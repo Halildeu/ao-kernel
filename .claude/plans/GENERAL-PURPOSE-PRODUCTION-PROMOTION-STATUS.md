@@ -1,13 +1,14 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 Cloud Run bootstrap attestation tool ready; repository variables, GCP trust, hosting, and callback evidence still blocked
+**Status:** GPP-2 end-user boundary recorded; operator-owned gate hosting,
+GCP trust, webhook configuration, and callback evidence still blocked
 **Date:** 2026-04-28
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#549](https://github.com/Halildeu/ao-kernel/issues/549)
-for policy service Cloud Run bootstrap attestation
-**Current slice record:** `.claude/plans/GPP-2ab-POLICY-CLOUD-RUN-BOOTSTRAP-ATTESTATION.md`
+**Current slice issue:** [#551](https://github.com/Halildeu/ao-kernel/issues/551)
+for operator gate and end-user onboarding boundary
+**Current slice record:** `.claude/plans/GPP-2ac-OPERATOR-GATE-END-USER-BOUNDARY.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -176,12 +177,19 @@ Last live verification on current `origin/main` showed:
     confirms an explicit callback response.
 37. GPP-2ab adds a metadata-only bootstrap attestation tool for the GitHub
     repository variable handles required by the Cloud Run deployment workflow.
-    The current live metadata check reports all required handles missing.
+    The current live metadata check reports required handles missing.
     `metadata_ready` would mean only that the variable handles are present by
     name/timestamp. It would not prove Google Cloud OIDC trust,
     service-account permissions, Secret Manager objects, Cloud Run hosting,
     GitHub App webhook configuration, callback posting, live adapter execution,
     support widening, or production-platform readiness.
+38. GPP-2ac records the product boundary after the Cloud Run/vault/webhook
+    discussion. The deployment-protection policy service is operator-owned
+    platform infrastructure, not an end-user setup requirement. End users must
+    not be required to self-host Cloud Run, a vault, a webhook secret, or a
+    GitHub App private key. GPP-2 remains blocked on operator-owned hosted
+    callback evidence; repo-intelligence onboarding can be prioritized only as
+    explicit opt-in/read-only work with no support widening.
 
 ## 3. Current Verdict
 
@@ -242,6 +250,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2s` | Completed / no support widening | Policy container image publication | repo-owned GHCR image publish path ready; hosted service is not yet deployed/configured |
 | `GPP-2t` | Completed / no support widening | Autonomous policy service deployment path | repo-owned Cloud Run OIDC deploy path ready; cloud bootstrap, hosted health evidence, GitHub App webhook config, and callback evidence are not yet attested |
 | `GPP-2ab` | Completed / no support widening | Policy Cloud Run bootstrap attestation | metadata-only attestation tool ready; required repository variable handles are currently missing; GCP trust, Secret Manager objects, hosted service evidence, GitHub App webhook config, and callback evidence are not yet attested |
+| `GPP-2ac` | Completed / no support widening | Operator gate and end-user onboarding boundary | GPP-2 gate hosting is operator-owned platform infrastructure; end users must not self-host Cloud Run, vault, webhook, or GitHub App private-key setup |
 | `GPP-2` | Blocked / hosted service bootstrap/config/evidence missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be hosted/configured with webhook URL, webhook secret, and GitHub App auth and must post callback evidence before further runtime work |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -371,11 +380,12 @@ before choosing or implementing the next work package.
 protected manual gate that can actually run a real adapter under project-owned
 evidence.
 
-**Status:** blocked after GPP-2ab; policy decision core, webhook scaffold,
+**Status:** blocked after GPP-2ac; policy decision core, webhook scaffold,
 deployable WSGI runtime, container package, GHCR image publication path,
-Cloud Run deploy automation, and metadata-only bootstrap attestation tooling
-exist, but required repository variables, GCP trust, hosted service
-deployment/configuration, and callback evidence are still missing.
+Cloud Run deploy automation, metadata-only bootstrap attestation tooling, and
+operator/end-user boundary decision exist, but operator-owned GCP trust,
+hosted service deployment/configuration, and callback evidence are still
+missing.
 
 **Entry criteria:**
 
@@ -406,6 +416,10 @@ metadata-only repository variable bootstrap attestation tool for that deploy
 path, and the current live metadata check reports required handles missing.
 Even after a future `metadata_ready`, that status is not Google Cloud OIDC,
 Secret Manager, Cloud Run, webhook, or callback evidence.
+GPP-2ac records that this hosting path is operator-owned platform
+infrastructure. It is not a setup requirement for product end users, and it
+does not block read-only repo-intelligence onboarding design work that avoids
+live execution and support widening.
 
 **Acceptance criteria:**
 

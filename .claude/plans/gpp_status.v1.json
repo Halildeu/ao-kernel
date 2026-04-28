@@ -9,11 +9,12 @@
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
-    "exit_decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
-    "ready_after": "policy service deploy workflow has completed from trusted main, hosted endpoint is configured as the GitHub App webhook URL, callback review evidence exists, and protected workflow evidence confirms live_execution_allowed=false",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/551",
+    "exit_decision": "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening",
+    "ready_after": "operator-owned policy service deploy workflow has completed from trusted main, hosted endpoint is configured as the GitHub App webhook URL, callback review evidence exists, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service without secret value exposure",
+      "document or build end-user onboarding paths that do not require users to self-host the GPP-2 policy service, vault, webhook secret, GitHub App private key, or Cloud Run project",
       "repeat protected workflow evidence collection from main after the policy service responds",
       "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
     ]
@@ -152,20 +153,27 @@
       "decision": "policy_cloud_run_bootstrap_attestation_tool_ready_variables_missing",
       "issue": "https://github.com/Halildeu/ao-kernel/issues/549",
       "record": ".claude/plans/GPP-2ab-POLICY-CLOUD-RUN-BOOTSTRAP-ATTESTATION.md"
+    },
+    {
+      "id": "GPP-2ac",
+      "decision": "operator_owned_gate_end_user_onboarding_boundary_recorded_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/551",
+      "record": ".claude/plans/GPP-2ac-OPERATOR-GATE-END-USER-BOUNDARY.md"
     }
   ],
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned autonomous Cloud Run deployment path is ready, and metadata-only bootstrap attestation tool is ready, but the required GitHub repository variable handles are currently missing; Google Cloud OIDC trust, Secret Manager objects, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
+      "reason": "repo-owned autonomous Cloud Run deployment path and metadata-only bootstrap attestation tooling are ready, and the policy service is now explicitly operator-owned platform infrastructure rather than an end-user setup requirement; GPP-2 remains blocked because Google Cloud OIDC trust, Secret Manager objects, hosted service evidence, GitHub App webhook URL configuration, and live deployment callback review evidence are not yet attested"
     }
   ],
   "pending_external_actions": [
-    "run scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository variable handles before dispatching the Cloud Run deploy workflow, while treating metadata_ready as repository-variable evidence only",
-    "bootstrap the policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
-    "run or observe the autonomous Cloud Run deployment workflow from a trusted main image until it produces health evidence for the policy service endpoint",
+    "if the operator chooses to unblock GPP-2 with Cloud Run, run scripts/policy_service_cloud_run_bootstrap_attest.py and provision any missing GitHub repository variable handles before dispatching the deploy workflow, while treating metadata_ready as repository-variable evidence only",
+    "bootstrap the operator-owned policy service deploy trust path with GitHub OIDC, Google service-account permissions, Artifact Registry, Cloud Run, and Secret Manager object handles without secret value readback",
+    "run or observe the autonomous Cloud Run deployment workflow from a trusted main image only after operator-owned billing/project/trust handles are intentionally available",
     "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the deployed /github/deployment-protection endpoint and can post deployment callback reviews",
-    "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly"
+    "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
+    "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration"
   ],
   "support_widening_allowed": false,
   "production_platform_claim_allowed": false,
@@ -211,6 +219,7 @@
     "run a live adapter before a later protected runtime evidence slice permits it",
     "use --equivalent-release-gate-approved while GPP-2e remains not_approved",
     "treat a product end-user account as release authority",
+    "require product end users to self-host the GPP-2 deployment-protection policy service, vault, webhook secret, GitHub App private key, or Cloud Run project",
     "treat a PAT-backed bot user as release authority",
     "treat Claude MCP consultation as release authority",
     "use ao_memory_write or ao_llm_call during Claude MCP consultation",
@@ -219,6 +228,9 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
+    "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement",
+    "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
+    "open GPP-5 repo-intelligence workflow integration only as explicit opt-in or read-only work while support_widening_allowed=false and production_platform_claim_allowed=false",
     "run scripts/policy_service_cloud_run_bootstrap_attest.py to verify required GitHub repository variable handles before dispatching the Cloud Run deploy workflow, and treat metadata_ready as repository-variable evidence only",
     "bootstrap or run the autonomous deployment-protection policy service deploy path using GitHub OIDC, Cloud Run, Artifact Registry, and Secret Manager handles before any further live-adapter runtime work",
     "configure or verify the GitHub App webhook URL only after the deployed policy service endpoint is health-checked",
