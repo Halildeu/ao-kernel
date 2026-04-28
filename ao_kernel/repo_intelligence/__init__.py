@@ -34,6 +34,9 @@ from ao_kernel._internal.repo_intelligence.root_exporter import (
 from ao_kernel._internal.repo_intelligence.workflow_opt_in import validate_repo_intelligence_workflow_opt_in
 from ao_kernel._internal.repo_intelligence.product_onboarding import validate_repo_intelligence_product_onboarding
 from ao_kernel._internal.repo_intelligence.workflow_context import resolve_repo_intelligence_workflow_context
+from ao_kernel._internal.repo_intelligence.workflow_surface import (
+    build_repo_intelligence_read_only_workflow_surface,
+)
 
 __all__ = [
     "build_agent_context_pack",
@@ -58,4 +61,5 @@ __all__ = [
     "validate_repo_intelligence_workflow_opt_in",
     "validate_repo_intelligence_product_onboarding",
     "resolve_repo_intelligence_workflow_context",
+    "build_repo_intelligence_read_only_workflow_surface",
 ]
