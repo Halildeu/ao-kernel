@@ -309,7 +309,8 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2` | Blocked / hosted service bootstrap/config/evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | deployment protection app/policy service must be hosted/configured and post callback evidence, and `ao-release-gate` must be deployed/hosted/evidenced/cut over before human-free program merges |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
-| `GPP-5` | Not started | Repo-intelligence explicit workflow integration | `workflow_context_ready` / `keep_beta_explicit_handoff` |
+| `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
+| `GPP-5` | Started / no support widening | Repo-intelligence explicit workflow integration | onboarding contract ready; workflow context ingestion still must remain explicit opt-in/read-only |
 | `GPP-6` | Not started | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
@@ -607,6 +608,19 @@ governed workflow integration without hidden prompt injection.
 3. missing metadata test
 4. disabled-config test
 5. negative grep for hidden MCP/root export/context compiler wiring
+
+**GPP-5a closeout:** PR for issue
+[#553](https://github.com/Halildeu/ao-kernel/issues/553) defines the
+product-facing onboarding contract before workflow ingestion is widened. The
+accepted user path is GitHub App installation, explicit repository selection,
+and optional repo-local `.ao/config.yml` style configuration. Product users are
+not required to host Cloud Run, vault/Secret Manager, webhook endpoints, GitHub
+App private keys, deployment-protection services, or `ao-release-gate`.
+
+GPP-5 remains open for explicit read-only workflow integration. GPP-2 remains
+blocked, and this slice does not authorize live-adapter execution, support
+widening, production platform claims, hidden prompt injection, MCP exposure,
+root export requirements, or context-compiler auto-feed.
 
 ## 13. GPP-6 - Read-Only Production E2E
 

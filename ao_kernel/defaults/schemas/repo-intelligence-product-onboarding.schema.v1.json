@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:repo-intelligence-product-onboarding:v1",
+  "title": "Repo Intelligence Product Onboarding Contract",
+  "description": "Product-facing repo-intelligence onboarding contract. It requires only GitHub App installation, explicit repository selection, and optional repo-local configuration from product users; it does not authorize hosted gate setup, live adapter execution, hidden prompt injection, or support widening.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "enabled",
+    "support_tier",
+    "setup",
+    "workflow",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "repo_intelligence_product_onboarding"
+    },
+    "enabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "support_tier": {
+      "type": "string",
+      "const": "beta_read_only_product_onboarding"
+    },
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_app", "repo_local_config", "end_user_infrastructure"],
+      "properties": {
+        "github_app": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["installation", "repository_selection", "permission_boundary"],
+          "properties": {
+            "installation": {
+              "type": "string",
+              "const": "required"
+            },
+            "repository_selection": {
+              "type": "string",
+              "const": "selected_repositories"
+            },
+            "permission_boundary": {
+              "type": "string",
+              "const": "read_only_repo_intelligence"
+            }
+          }
+        },
+        "repo_local_config": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "required"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "enum": [
+                ".ao/config.yml",
+                ".ao/config.yaml",
+                ".ao/repo-intelligence.yml",
+                ".ao/repo-intelligence.yaml",
+                ".ao/repo-intelligence.json"
+              ]
+            },
+            "required": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        },
+        "end_user_infrastructure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cloud_run_required",
+            "vault_required",
+            "webhook_required",
+            "github_app_private_key_required",
+            "release_gate_service_required",
+            "deployment_protection_service_required"
+          ],
+          "properties": {
+            "cloud_run_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "vault_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "webhook_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "github_app_private_key_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "release_gate_service_required": {
+              "type": "boolean",
+              "const": false
+            },
+            "deployment_protection_service_required": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "activation", "default_enabled", "default_auto_feed"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "read_only"
+        },
+        "activation": {
+          "type": "string",
+          "const": "explicit_opt_in"
+        },
+        "default_enabled": {
+          "type": "boolean",
+          "const": false
+        },
+        "default_auto_feed": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hidden_prompt_injection",
+        "mcp_tool_exposure",
+        "root_export_required",
+        "context_compiler_auto_feed",
+        "implicit_vector_writes",
+        "implicit_artifact_writes",
+        "live_adapter_execution",
+        "support_widening",
+        "production_platform_claim"
+      ],
+      "properties": {
+        "hidden_prompt_injection": {
+          "type": "boolean",
+          "const": false
+        },
+        "mcp_tool_exposure": {
+          "type": "boolean",
+          "const": false
+        },
+        "root_export_required": {
+          "type": "boolean",
+          "const": false
+        },
+        "context_compiler_auto_feed": {
+          "type": "boolean",
+          "const": false
+        },
+        "implicit_vector_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "implicit_artifact_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        },
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}
