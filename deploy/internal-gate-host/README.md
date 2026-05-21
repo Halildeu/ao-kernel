@@ -80,9 +80,23 @@ SECRETS_PROVIDER=hashicorp_vault
 VAULT_ADDR=<operator vault URL>
 VAULT_TOKEN=<operator vault token>
 VAULT_SECRET_MOUNT=secret
-AO_GITHUB_APP_PRIVATE_KEY_PEM_ID=gpp2/github/private-key-pem
+
+# Per-service GitHub App identity (Codex 019e4a10 Decision 2 AGREE_A:
+# two Apps, one App per service):
+AO_POLICY_GITHUB_APP_ID=<policy-github-app-id>
+AO_POLICY_GITHUB_APP_PRIVATE_KEY_PEM_ID=gpp2/github/policy-private-key-pem
+AO_RELEASE_GATE_GITHUB_APP_ID=<release-gate-github-app-id>
+AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_PEM_ID=gpp2/github/release-gate-private-key-pem
+
+# Webhook secret ids stay per-service (each App gets its own
+# webhook secret in vault):
 AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID=gpp2/policy/webhook-secret
 AO_RELEASE_GATE_WEBHOOK_SECRET_ID=gpp2/release-gate/webhook-secret
+
+# Legacy single-App fallback (compose.yaml accepts this when the
+# per-service env above is unset; kept for backward compatibility):
+# AO_GITHUB_APP_ID=<github-app-id>
+# AO_GITHUB_APP_PRIVATE_KEY_PEM_ID=gpp2/github/private-key-pem
 ```
 
 `VAULT_TOKEN`, webhook secret values, and the GitHub App private key are

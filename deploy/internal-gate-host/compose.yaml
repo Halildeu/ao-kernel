@@ -32,8 +32,16 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN:?set VAULT_TOKEN on the operator host}
       VAULT_SECRET_MOUNT: ${VAULT_SECRET_MOUNT:-secret}
       AO_GITHUB_API_URL: ${AO_GITHUB_API_URL:-https://api.github.com}
-      AO_GITHUB_APP_ID: ${AO_GITHUB_APP_ID:?set AO_GITHUB_APP_ID on the operator host}
-      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set vault secret id}
+      # Per-service GitHub App identity (Codex `019e4a10` Decision 2
+      # PARTIAL → AGREE_A absorb). Two GitHub Apps is the chosen
+      # routing model: one App per service, one webhook URL per App,
+      # one private-key secret-id per App. Fallback to the legacy
+      # shared `AO_GITHUB_APP_ID` / `AO_GITHUB_APP_PRIVATE_KEY_PEM_ID`
+      # preserves backward compatibility for operators who deployed
+      # against a single App before this split landed; new operators
+      # supply only the per-service env.
+      AO_GITHUB_APP_ID: ${AO_POLICY_GITHUB_APP_ID:-${AO_GITHUB_APP_ID:?set AO_POLICY_GITHUB_APP_ID (preferred) or AO_GITHUB_APP_ID (legacy) on the operator host}}
+      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_POLICY_GITHUB_APP_PRIVATE_KEY_PEM_ID:-${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set AO_POLICY_GITHUB_APP_PRIVATE_KEY_PEM_ID (preferred) or AO_GITHUB_APP_PRIVATE_KEY_PEM_ID (legacy) — vault secret id}}
       AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID: ${AO_LIVE_ADAPTER_GATE_WEBHOOK_SECRET_ID:?set vault secret id}
       AO_POLICY_SERVICE_MAX_BODY_BYTES: ${AO_POLICY_SERVICE_MAX_BODY_BYTES:-1048576}
 
@@ -50,8 +58,11 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN:?set VAULT_TOKEN on the operator host}
       VAULT_SECRET_MOUNT: ${VAULT_SECRET_MOUNT:-secret}
       AO_GITHUB_API_URL: ${AO_GITHUB_API_URL:-https://api.github.com}
-      AO_GITHUB_APP_ID: ${AO_GITHUB_APP_ID:?set AO_GITHUB_APP_ID on the operator host}
-      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set vault secret id}
+      # Per-service GitHub App identity (see policy-service block for
+      # the full rationale; same fallback pattern applies for the
+      # release-gate App).
+      AO_GITHUB_APP_ID: ${AO_RELEASE_GATE_GITHUB_APP_ID:-${AO_GITHUB_APP_ID:?set AO_RELEASE_GATE_GITHUB_APP_ID (preferred) or AO_GITHUB_APP_ID (legacy) on the operator host}}
+      AO_GITHUB_APP_PRIVATE_KEY_PEM_ID: ${AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_PEM_ID:-${AO_GITHUB_APP_PRIVATE_KEY_PEM_ID:?set AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_PEM_ID (preferred) or AO_GITHUB_APP_PRIVATE_KEY_PEM_ID (legacy) — vault secret id}}
       AO_RELEASE_GATE_WEBHOOK_SECRET_ID: ${AO_RELEASE_GATE_WEBHOOK_SECRET_ID:?set vault secret id}
       AO_RELEASE_GATE_GPP_STATUS_PATH: /app/gpp_status.v1.json
       AO_RELEASE_GATE_MAX_BODY_BYTES: ${AO_RELEASE_GATE_MAX_BODY_BYTES:-1048576}
