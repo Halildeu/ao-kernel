@@ -33,7 +33,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "internal_gate_host_health_probe_ready_hosting_evidence_not_collected_no_support_widening"
+        == "internal_gate_host_health_probe_collected_webhook_config_not_collected_no_support_widening"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -267,17 +267,14 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
+    # GPP-2af hosting evidence collected (source: platform-k8s-gitops#938);
+    # the first two entries (host + collect public HTTPS health evidence
+    # for policy-service and ao-release-gate) are no longer pending. The
+    # remaining six external-action items (webhook URL config, dry-run
+    # check-run, branch protection cutover, support widening guard) stay
+    # unchanged. Audit trail of the GPP-2af closure lives in
+    # `current_wp.evidence_collected[]`.
     assert payload["pending_external_actions"] == [
-        (
-            "host the operator-owned policy service on public HTTPS using deploy/internal-gate-host or equivalent "
-            "repo-owned container package and internal vault-backed runtime secret ids, then collect no-secret "
-            "public HTTPS health evidence with scripts/internal_gate_host_health_probe.py"
-        ),
-        (
-            "host the operator-owned ao-release-gate service on public HTTPS using deploy/internal-gate-host or "
-            "equivalent repo-owned container package and internal vault-backed runtime secret ids, then collect "
-            "no-secret public HTTPS health evidence with scripts/internal_gate_host_health_probe.py"
-        ),
         "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the hosted /github/deployment-protection endpoint and can post deployment callback reviews",
         "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with vault-backed runtime webhook secret and GitHub App authentication outside the repo",
         "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
@@ -288,14 +285,21 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
             "GitHub App installation, repository selection, and explicit opt-in configuration"
         ),
     ]
+    # GPP-2af health evidence collected (source: platform-k8s-gitops#938);
+    # the blocker reason narrative now starts from "evidence is collected"
+    # and lists the remaining gates (webhook + dry-run check-run + callback
+    # review + protected workflow cutover). Substantive blocker condition
+    # is unchanged — GPP-2 still blocked until the four remaining gates
+    # are met.
     assert payload["blocked_wps"] == [
         {
             "id": "GPP-2",
             "reason": (
                 "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, "
                 "GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime "
-                "contract, internal operator host bundle, and no-secret hosted health probe are ready, but "
-                "neither service has collected public HTTPS health evidence or been configured with GitHub "
+                "contract, internal operator host bundle, and no-secret hosted health probe are ready, "
+                "public HTTPS health evidence is collected (source: Halildeu/platform-k8s-gitops#938, "
+                "artifact sha256 96e805d6…), but neither service has been configured with GitHub "
                 "webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow "
                 "cutover evidence"
             ),
@@ -720,7 +724,7 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "internal_gate_host_health_probe_ready_hosting_evidence_not_collected_no_support_widening"
+        == "internal_gate_host_health_probe_collected_webhook_config_not_collected_no_support_widening"
     )
     assert payload["support_widening_allowed"] is False
 
