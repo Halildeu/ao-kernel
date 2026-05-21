@@ -10,8 +10,8 @@
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
     "issue": "https://github.com/Halildeu/ao-kernel/issues/567",
-    "exit_decision": "internal_gate_host_health_probe_ready_hosting_evidence_not_collected_no_support_widening",
-    "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints from the internal operator host bundle or equivalent infrastructure with internal vault-backed runtime secret ids, public HTTPS health evidence is collected, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
+    "exit_decision": "internal_gate_host_health_probe_collected_webhook_config_not_collected_no_support_widening",
+    "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints from the internal operator host bundle or equivalent infrastructure with internal vault-backed runtime secret ids, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service on operator-owned internal infrastructure without secret value exposure",
       "use the repo-owned ao-release-gate GHCR image or container package to deploy or configure the ao-release-gate GitHub App check-run service on operator-owned internal infrastructure without secret value exposure",
@@ -21,6 +21,29 @@
       "document or build end-user onboarding paths that do not require users to self-host the GPP-2 policy service, vault, webhook secret, GitHub App private key, or Cloud Run project",
       "repeat protected workflow evidence collection from main after the policy service responds",
       "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
+    ],
+    "evidence_collected": [
+      {
+        "type": "hosted_health_ready",
+        "collected_at": "2026-05-21T11:17:22Z",
+        "source_repo_pr": "Halildeu/platform-k8s-gitops#938",
+        "source_repo_merge_commit": "ddddb17957d88521627620a7ed1ad47da347d4ba",
+        "artifact_path": ".ao/evidence/gpp2/internal-gate-host-health-evidence.json",
+        "artifact_sha256": "96e805d667b4a1a25b95dcf89dffeaa59a6ac5c8f36e23eea6c05b3a673d7acc",
+        "probe_script_sha256": "2c6eb9bb2932fd48d26982a8b43f9112944cf8ac718bc9220010f3877fbf28fe",
+        "policy_image_digest": "ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service@sha256:25b7b3a99be99149a785108d076fbfae70b07118bd1c03b5d80e426ae6ac7ab2",
+        "release_gate_image_digest": "ghcr.io/halildeu/ao-kernel-ao-release-gate-service@sha256:2858ae8011c473bf04b2a229c595ef0b268b2330873738d8036eea7593ff110d",
+        "policy_public_url": "https://testai.acik.com/ao-gate/policy/healthz",
+        "release_gate_public_url": "https://testai.acik.com/ao-gate/release-gate/healthz",
+        "program_ids": [
+          "GPP-2q",
+          "GPP-2w"
+        ],
+        "public_https_health": true,
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      }
     ]
   },
   "completed_wps": [
@@ -252,12 +275,10 @@
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, internal operator host bundle, and no-secret hosted health probe are ready, but neither service has collected public HTTPS health evidence or been configured with GitHub webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
+      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, internal operator host bundle, and no-secret hosted health probe are ready, public HTTPS health evidence is collected (source: Halildeu/platform-k8s-gitops#938, artifact sha256 96e805d6…), but neither service has been configured with GitHub webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
     }
   ],
   "pending_external_actions": [
-    "host the operator-owned policy service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids, then collect no-secret public HTTPS health evidence with scripts/internal_gate_host_health_probe.py",
-    "host the operator-owned ao-release-gate service on public HTTPS using deploy/internal-gate-host or equivalent repo-owned container package and internal vault-backed runtime secret ids, then collect no-secret public HTTPS health evidence with scripts/internal_gate_host_health_probe.py",
     "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the hosted /github/deployment-protection endpoint and can post deployment callback reviews",
     "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with vault-backed runtime webhook secret and GitHub App authentication outside the repo",
     "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
@@ -350,5 +371,5 @@
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
-  "last_updated": "2026-04-28"
+  "last_updated": "2026-05-21T11:17:22Z"
 }
