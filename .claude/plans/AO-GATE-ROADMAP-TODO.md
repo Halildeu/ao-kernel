@@ -1,10 +1,13 @@
 # AO Gate / Repo Intelligence Roadmap Todo
 
-**Status:** draft / editable tracking plan  
-**Date:** 2026-04-28  
-**Owner model:** operator-owned gate infrastructure, product-facing repo-intelligence onboarding  
-**Current program blocker:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding` remains blocked / fail-closed  
-**Decision baseline:** `testai.acik.com/ao-gate` path-based hosting is the preferred internal operator-host path
+**Status:** active / editable tracking plan
+**Date:** 2026-05-22
+**Owner model:** operator-owned gate infrastructure, product-facing repo-intelligence onboarding
+**Current program blocker:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding` remains blocked / fail-closed
+**Decision baseline:** `testai.acik.com/ao-gate` path-based hosting is the
+preferred internal operator-host path; local AI review gate evidence is now the
+preferred next simplification step before further deployment-protection
+callback work.
 
 ## How To Use This Todo
 
@@ -23,6 +26,9 @@
 - [ ] No secret value, private key, webhook secret, or Vault token is committed, echoed, pasted into chat, or stored in evidence.
 - [ ] Claude/Codex consultation remains advisory and is not release authority.
 - [ ] Admin bypass is not used for GPP program PRs.
+- [ ] Local AI review gate evidence is local operator evidence only; it does not
+  close GPP-2, widen support, claim production readiness, or replace later
+  protected-runtime evidence.
 
 ## Public URL Contract
 
@@ -71,15 +77,16 @@ location = /ao-gate/github/ao-release-gate {
 
 | ID | Work package | Repo / surface | Status | Blocking rule | Exit evidence |
 |---|---|---|---|---|---|
-| AO-GATE-1 | Path-based edge plan and runbook | `platform-k8s-gitops` | Not started | No live apply | PR with nginx route, host compose/env example, runbook, rollback |
-| AO-GATE-2 | Operator host service rehearsal | `staging-sw` | Not started | AO-GATE-1 merged | Localhost health JSON for both services |
-| AO-GATE-3 | Public `/ao-gate` nginx route apply | `staging-sw` | Not started | Localhost health passed | Public JSON health via `testai.acik.com/ao-gate/*` |
-| AO-GATE-4 | Public HTTPS health evidence | `ao-kernel` | Not started | Public route returns JSON | `public_https_hosting_evidence=true` artifact |
-| AO-GATE-5 | GitHub App webhook config evidence | GitHub App | Not started | AO-GATE-4 passed | Webhook URLs configured to `/ao-gate/github/*` |
-| AO-GATE-6 | `ao-release-gate` dry-run PR evidence | GitHub PR | Not started | Webhook evidence present | Real PR dry-run check-run evidence |
-| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | Not started | Policy webhook configured | Callback review evidence or fail-closed evidence |
-| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | Not started | Dry-run check-run evidence present | Required `ao-release-gate` check blocks merge without pass |
-| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | Not started | Evidence chain complete | GPP status updated without support widening |
+| AO-GATE-1 | Path-based edge plan and runbook | `platform-k8s-gitops` | DONE | No live apply | PR with nginx route, host compose/env example, runbook, rollback |
+| AO-GATE-2 | Operator host service rehearsal | `staging-sw` | DONE | AO-GATE-1 merged | Localhost health JSON for both services |
+| AO-GATE-3 | Public `/ao-gate` nginx route apply | `staging-sw` | DONE | Localhost health passed | Public JSON health via `testai.acik.com/ao-gate/*` |
+| AO-GATE-4 | Public HTTPS health evidence | `ao-kernel` | DONE | Public route returns JSON | `public_https_hosting_evidence=true` artifact |
+| AO-GATE-5 | GitHub App webhook config evidence | GitHub App | DONE | AO-GATE-4 passed | Webhook URLs configured to `/ao-gate/github/*` |
+| AO-GATE-6 | `ao-release-gate` dry-run PR evidence | GitHub PR | EVIDENCE CAPTURED | Webhook evidence present | Real PR dry-run check-run evidence |
+| LOCAL-GATE-1 | Local AI review evidence gate | `ao-kernel` | PLANNED | GPP-2 remains blocked; no production claim | Local no-secret evidence JSON + fail-closed tests |
+| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | DEFERRED | Local gate pivot recorded first; policy callback still needs production topology | Callback review evidence or fail-closed evidence |
+| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | DEFERRED | Enforce-mode success/failure evidence first | Required `ao-release-gate` check blocks merge without pass |
+| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | BLOCKED | Evidence chain complete | GPP status updated without support widening |
 | RI-NEXT | Repo Intelligence read-only E2E continuation | `ao-kernel` | Blocked | GPP-2 and GPP-4 blockers | GPP-6 execution path reopened |
 
 ## Evidence Artifact Paths
@@ -95,6 +102,7 @@ selects a more specific location.
 | AO-GATE-4 | `internal-gate-host-health-evidence.json` from `scripts/internal_gate_host_health_probe.py` |
 | AO-GATE-5 | `docs/evidence/ao-gate/github-app-webhook-config.v1.md`, with no secret material |
 | AO-GATE-6 | `docs/evidence/ao-gate/ao-release-gate-dry-run-pr.v1.md`, with PR number and commit SHA |
+| LOCAL-GATE-1 | `.ao/evidence/local-gate/<timestamp>-<work-package>.json`, with no secret material |
 | AO-GATE-7 | `docs/evidence/ao-gate/deployment-protection-callback.v1.md`, with no secret material |
 | AO-GATE-8 | `docs/evidence/ao-gate/ao-release-gate-required-check-cutover.v1.md` |
 | AO-GATE-9 | `.claude/plans/gpp_status.v1.json` and `GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md` update PR |
@@ -103,9 +111,9 @@ selects a more specific location.
 
 **Goal:** Prepare the durable, reviewable infrastructure plan without changing live runtime.
 
-**Branch:** `codex/ao-gate-path-edge-plan`  
-**Repo:** `platform-k8s-gitops`  
-**Live change:** no  
+**Branch:** `codex/ao-gate-path-edge-plan`
+**Repo:** `platform-k8s-gitops`
+**Live change:** no
 **Exit decision:** `ao_gate_path_edge_plan_ready_no_live_change`
 
 ### Todo
@@ -137,8 +145,8 @@ selects a more specific location.
 
 **Goal:** Run the two gate services on localhost high ports before public route exposure.
 
-**Repo / surface:** `staging-sw` operator host  
-**Live public change:** no  
+**Repo / surface:** `staging-sw` operator host
+**Live public change:** no
 **Exit decision:** `ao_gate_localhost_health_ready_no_public_route_claim`
 
 ### Todo
@@ -174,8 +182,8 @@ selects a more specific location.
 
 **Goal:** Expose only the planned `/ao-gate` paths through existing `platform-web-nginx`.
 
-**Repo / surface:** `staging-sw` operator host  
-**Live public change:** yes  
+**Repo / surface:** `staging-sw` operator host
+**Live public change:** yes
 **Exit decision:** `ao_gate_public_path_routes_ready_health_probe_pending`
 
 ### Pre-Apply Record
@@ -215,7 +223,7 @@ selects a more specific location.
 
 **Goal:** Produce no-secret hosted health evidence for GPP-2.
 
-**Repo:** `ao-kernel`  
+**Repo:** `ao-kernel`
 **Exit decision:** `internal_gate_host_public_https_health_evidence_collected_no_support_widening`
 
 ### Todo
@@ -250,7 +258,7 @@ selects a more specific location.
 
 **Goal:** Point GitHub App webhook delivery at the hosted gate endpoints after health evidence passes.
 
-**Surface:** GitHub App settings  
+**Surface:** GitHub App settings
 **Exit decision:** `github_app_webhook_configured_after_health_evidence_no_support_widening`
 
 ### Todo
@@ -275,7 +283,7 @@ selects a more specific location.
 
 **Goal:** Prove the check-run service can post a dry-run release gate result on a real PR.
 
-**Surface:** GitHub PR  
+**Surface:** GitHub PR
 **Exit decision:** `ao_release_gate_real_pr_dry_run_check_run_evidence_ready`
 
 ### Todo
@@ -288,11 +296,45 @@ selects a more specific location.
 - [ ] Record status, conclusion, URL, PR number, and commit SHA.
 - [ ] Keep branch protection/ruleset unchanged.
 
+## LOCAL-GATE-1: Local AI Review Evidence Gate
+
+**Goal:** Turn the operator's current local "implementer AI + reviewer AI"
+practice into a repeatable, no-secret, fail-closed local evidence gate before
+continuing heavier deployment-protection callback work.
+
+**Branch:** `codex/gpp2-local-ai-review-gate`
+**Repo:** `ao-kernel`
+**Live change:** no
+**Exit decision:** `local_ai_review_gate_planned_or_implemented_no_production_claim`
+
+### Todo
+
+- [ ] Add or implement `scripts/local_gpp_gate.py`.
+- [ ] Define reviewer evidence JSON with `AGREE`, `REVISE`, and `BLOCK`
+  verdict handling.
+- [ ] Fail closed when reviewer evidence is missing or non-`AGREE`.
+- [ ] Fail closed on forbidden actions, scope mismatch, secret risk, test
+  failure, `support_widening=true`, `production_platform_claim=true`, or
+  `live_adapter_execution=true`.
+- [ ] Emit `.ao/evidence/local-gate/<timestamp>-<work-package>.json` only when
+  explicitly requested.
+- [ ] Add tests for missing review, negative review, positive review, and
+  forbidden flag cases.
+- [ ] Keep this evidence local/operator-scoped; do not wire it to branch
+  protection in this slice.
+
+### Acceptance
+
+- [ ] `python3 scripts/gpp_next.py` still reports GPP-2 blocked.
+- [ ] Local gate tests pass.
+- [ ] Demo evidence artifact contains no secret material.
+- [ ] Docs state that local evidence does not claim production readiness.
+
 ## AO-GATE-7: Deployment-Protection Callback Evidence
 
 **Goal:** Prove the policy service handles deployment-protection callback review behavior.
 
-**Surface:** GitHub deployment protection  
+**Surface:** GitHub deployment protection
 **Exit decision:** `deployment_protection_callback_evidence_ready_fail_closed_preserved`
 
 ### Todo
@@ -309,7 +351,7 @@ selects a more specific location.
 
 **Goal:** Make `ao-release-gate` the durable autonomous merge/release enforcement path after dry-run evidence.
 
-**Surface:** GitHub repository rules  
+**Surface:** GitHub repository rules
 **Exit decision:** `ao_release_gate_required_status_check_cutover_ready_no_admin_bypass`
 
 ### Todo
@@ -326,7 +368,7 @@ selects a more specific location.
 
 **Goal:** Update program state only after the evidence chain exists.
 
-**Repo:** `ao-kernel`  
+**Repo:** `ao-kernel`
 **Exit decision:** `gpp2_protected_gate_runtime_binding_evidence_ready_no_support_widening`
 
 ### Required Evidence Checklist
@@ -362,7 +404,7 @@ selects a more specific location.
 
 **Goal:** Continue the general product path once upstream gates are ready.
 
-**Current status:** blocked by GPP-2 and GPP-4  
+**Current status:** blocked by GPP-2 and GPP-4
 **GPP-4 dependency:** production-certified read-only adapter decision for the real adapter path.
 
 ### Product User Surface
@@ -402,6 +444,7 @@ service, or branch-protection cutover.
 |---|---|---|
 | 2026-04-28 | Initial editable roadmap todo created from Codex + Claude advisory review | Codex |
 | 2026-05-21 | AO-GATE-1..4 + AO-GATE-9 completed; AO-GATE-5..8 remain operator-bound. Codex thread 019e4a10 plan+post-impl AGREE v2.1 + Decision 1 Alt-B + Decision 2 AGREE_A. | Claude |
+| 2026-05-22 | AO-GATE-5..6 evidence captured; AO-GATE-7..8 remain blocked. Local AI review gate pivot added as the next simplification step before more deployment-protection callback work. | Codex |
 
 ## Post-Merge Status (2026-05-21)
 
@@ -427,6 +470,7 @@ ao-kernel#570 (config contract per-service split) + platform-k8s-gitops#942 (git
 |---|---|---|
 | AO-GATE-5 | ✅ DONE (2026-05-22) | Two GitHub Apps created (`ao-kernel-live-adapter-gate-policy` id=3800120 + `ao-release-gate` id=3800233); Vault PEM + webhook-secret seeded (`/pem` and `/value` field-name suffix per ao-kernel `hashicorp_vault_provider.py` contract); `.env` updated per-service; containers Healthy + HMAC verification confirmed (origin returns sig-verified 4xx for ping = `wrong_event` not `signature_invalid`) |
 | AO-GATE-6 | ✅ Evidence captured (2026-05-22) | Webhook delivery chain GREEN via smee.io non-production dry-run proxy (TCP/443 outbound; office firewall blocks TCP+UDP/7844, cloudflared infeasible). PR #572 opened → release-gate App posted check-run `ao-release-gate` conclusion=`failure` output_title=`deny_missing_evidence` (correct fail-closed posture, advisory only — no branch protection cutover) |
+| LOCAL-GATE-1 | ⏳ Planned (2026-05-22) | Local operator trust model pivot: implementer AI + reviewer AI + local fail-closed evidence gate before continuing production callback topology. This does not close GPP-2 and does not replace AO-GATE-7/AO-GATE-8 protected-runtime evidence. |
 | AO-GATE-7 | ⏳ Blocked on App slug reconciliation + production topology | (a) Policy App slug drift: new App is `ao-kernel-live-adapter-gate-policy` but repo constant `REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG = "ao-kernel-live-adapter-gate"` and protected environment name expect old slug (`ao_kernel/live_adapter_gate.py:34,46`; `ao_kernel/defaults/schemas/live-adapter-gate-environment.schema.v1.json:107,119`); decision needed: rename new App OR update constant/schema/tests/attestation to new slug. (b) Production topology: smee.io is dry-run only; deployment-protection callback path needs publicly-reachable HTTPS endpoint with verified-context. (c) After (a)+(b): `workflow_dispatch` on `live-adapter-gate.yml` with `target_ref=main`, capture deployment_protection_rule webhook id + policy origin signature_verified + callback POST result + workflow run id |
 | AO-GATE-8 | ⏳ Blocked on AO-GATE-6 + AO-GATE-7 | Branch protection cutover: required ao-release-gate check; admin bypass YASAK. Additional gate: at least one **positive `success` conclusion path** demonstrated (not only fail-closed `failure / deny_missing_evidence`) OR explicit documented decision that required check stays advisory until enrichment model produces verified-context |
 

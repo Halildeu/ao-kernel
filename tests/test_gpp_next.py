@@ -275,8 +275,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # 'ao-kernel-live-adapter-gate-policy' vs repo constant), production-
     # suitable callback topology (smee.io is non-production dry-run),
     # callback review evidence, enforce-mode positive/negative paths,
-    # and branch-protection cutover (admin bypass YASAK). Audit trail
-    # of PHASE 7 + 8 lives in `current_wp.evidence_collected[]`.
+    # branch-protection cutover (admin bypass YASAK), and the local
+    # AI-review evidence gate pivot. Audit trail of PHASE 7 + 8 lives
+    # in `current_wp.evidence_collected[]`.
     assert payload["pending_external_actions"] == [
         "resolve policy App slug drift: either rename new GitHub App from 'ao-kernel-live-adapter-gate-policy' to canonical 'ao-kernel-live-adapter-gate' or migrate repo constants/schema/tests/attestation to new slug",
         "establish production-suitable deployment-protection callback topology; smee.io remains non-production dry-run only",
@@ -285,6 +286,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
         "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
         "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
+        "define and implement the local AI review evidence gate as GPP-2A local/operator evidence before continuing heavier deployment-protection callback topology work",
         (
             "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most "
             "GitHub App installation, repository selection, and explicit opt-in configuration"
@@ -362,6 +364,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action
         == "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "use the local AI review evidence gate as a preparatory operator-controlled trust mechanism only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness"
         for action in payload["next_allowed_actions"]
     )
     assert any(
