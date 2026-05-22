@@ -10,7 +10,7 @@
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
     "issue": "https://github.com/Halildeu/ao-kernel/issues/567",
-    "exit_decision": "internal_gate_host_health_probe_collected_webhook_config_not_collected_no_support_widening",
+    "exit_decision": "webhook_delivery_chain_and_shadow_dry_run_check_run_collected_policy_callback_and_cutover_blocked_no_support_widening",
     "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints from the internal operator host bundle or equivalent infrastructure with internal vault-backed runtime secret ids, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service on operator-owned internal infrastructure without secret value exposure",
@@ -40,6 +40,96 @@
           "GPP-2w"
         ],
         "public_https_health": true,
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      },
+      {
+        "type": "webhook_delivery_chain",
+        "collected_at": "2026-05-22T05:25:02Z",
+        "source_repo_pr": "Halildeu/ao-kernel#572",
+        "source_repo_merge_commit": "b50f4282161cc1080e62dda82b27622539c51867",
+        "program_ids": ["GPP-2q", "GPP-2w"],
+        "delivery_path": "github_webhook -> smee_io_channel -> smee_client_node -> 127.0.0.1:18081_or_18082",
+        "proxy_topology": "smee_io_non_production_dry_run",
+        "proxy_rationale": "vodafone_tr_isp_inbound_443_filter + office_firewall_blocks_cloudflare_tunnel_7844",
+        "production_topology_ready": false,
+        "policy_app_slug_drift_observed": true,
+        "origin_signature_verified": true,
+        "origin_secret_values_recorded": false,
+        "deliveries_observed": [
+          {
+            "delivery_id": "3821291463692517376",
+            "app_slug": "ao-kernel-live-adapter-gate-policy",
+            "app_id": 3800120,
+            "event": "ping",
+            "redelivery": true,
+            "github_side_status_code": 200,
+            "delivered_at": "2026-05-22T05:25:02.171Z",
+            "origin_result": "wrong_event",
+            "origin_signature_verified": true
+          },
+          {
+            "delivery_id": "3821291464340537344",
+            "app_slug": "ao-release-gate",
+            "app_id": 3800233,
+            "event": "ping",
+            "redelivery": true,
+            "github_side_status_code": 200,
+            "delivered_at": "2026-05-22T05:25:02.495Z",
+            "origin_result": "wrong_event",
+            "origin_signature_verified": true
+          },
+          {
+            "delivery_id": "3821291735833657344",
+            "app_slug": "ao-release-gate",
+            "app_id": 3800233,
+            "event": "pull_request",
+            "action": "closed",
+            "redelivery": true,
+            "github_side_status_code": 200,
+            "delivered_at": "2026-05-22T05:27:08.95Z",
+            "origin_result": "accepted",
+            "origin_signature_verified": true
+          }
+        ],
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      },
+      {
+        "type": "dry_run_check_run_posted",
+        "collected_at": "2026-05-22T07:58:24Z",
+        "source_repo_pr": "Halildeu/ao-kernel#572",
+        "source_repo_merge_commit": "b50f4282161cc1080e62dda82b27622539c51867",
+        "program_ids": ["GPP-2w"],
+        "trigger_pr": "Halildeu/ao-kernel#572",
+        "trigger_pr_old_head": "9cf7825a6b8fa1a609eed52e3006d3118fe089ba",
+        "trigger_pr_new_head": "c7118f86c76f99e42eb984944d1c91b1fd69ea35",
+        "trigger_event": "pull_request",
+        "trigger_action": "synchronize",
+        "delivery_id": "3821311223138353152",
+        "delivery_github_side_status_code": 200,
+        "delivery_delivered_at": "2026-05-22T07:58:23.394Z",
+        "origin_signature_verified": true,
+        "runtime_status": "check_run_posted",
+        "check_run_app_slug": "ao-release-gate",
+        "check_run_app_id": 3800233,
+        "check_run_name": "ao-release-gate",
+        "check_run_head_sha": "c7118f86c76f99e42eb984944d1c91b1fd69ea35",
+        "check_run_status": "completed",
+        "check_run_conclusion": "neutral",
+        "check_run_output_title": "ao-release-gate: deny_missing_evidence",
+        "conclusion_mode": "shadow",
+        "conclusion_mode_source": "runtime_default_env_unset",
+        "release_gate_image_digest": "ghcr.io/halildeu/ao-kernel-ao-release-gate-service@sha256:ecc51506439f3b1ad2e75847140075d2af539925eb5192fea892be93a6ae0f48",
+        "release_gate_image_ref": "ghcr.io/halildeu/ao-kernel-ao-release-gate-service:main",
+        "release_gate_container_started_at": "2026-05-22T07:57:05Z",
+        "shadow_enforce_mode_pr": "Halildeu/ao-kernel#573",
+        "shadow_enforce_mode_merge_commit": "54c0526d8c14244fca6bb5b73f2f27a2df02c1d7",
+        "branch_protection_cutover_done": false,
+        "ao_release_gate_required_check": false,
+        "secrets_recorded": false,
         "live_adapter_execution": false,
         "support_widening": false,
         "production_platform_claim": false
@@ -275,13 +365,15 @@
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, internal operator host bundle, and no-secret hosted health probe are ready, public HTTPS health evidence is collected (source: Halildeu/platform-k8s-gitops#938, artifact sha256 96e805d6…), but neither service has been configured with GitHub webhook evidence, dry-run check-run evidence, callback review evidence, or protected workflow cutover evidence"
+      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, internal operator host bundle, no-secret hosted health probe, public HTTPS health evidence, GitHub App webhook delivery chain evidence via smee.io non-production proxy, and ao-release-gate shadow dry-run check-run evidence are all collected, but deployment-protection callback review evidence, policy App slug reconciliation (new App slug 'ao-kernel-live-adapter-gate-policy' vs repo constant 'ao-kernel-live-adapter-gate'), production-suitable topology for the policy callback path (smee.io is dry-run only), protected workflow evidence, enforce-mode success/failure evidence, and branch-protection/ruleset cutover remain missing"
     }
   ],
   "pending_external_actions": [
-    "configure or verify the ao-kernel-live-adapter-gate GitHub App webhook URL points to the hosted /github/deployment-protection endpoint and can post deployment callback reviews",
-    "configure the ao-release-gate GitHub App webhook URL to the hosted /github/ao-release-gate endpoint with vault-backed runtime webhook secret and GitHub App authentication outside the repo",
-    "collect dry-run ao-release-gate check-run evidence on real PRs before granting merge authority or changing branch protection",
+    "resolve policy App slug drift: either rename new GitHub App from 'ao-kernel-live-adapter-gate-policy' to canonical 'ao-kernel-live-adapter-gate' or migrate repo constants/schema/tests/attestation to new slug",
+    "establish production-suitable deployment-protection callback topology; smee.io remains non-production dry-run only",
+    "collect deployment-protection callback review evidence from live-adapter-gate workflow_dispatch (no live adapter execution)",
+    "before AO-GATE-8 cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path",
+    "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
     "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
     "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
     "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration"
@@ -371,5 +463,5 @@
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
-  "last_updated": "2026-05-21T11:17:22Z"
+  "last_updated": "2026-05-22T07:58:24Z"
 }
