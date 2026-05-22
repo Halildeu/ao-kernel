@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:local-ai-review-evidence:v1",
+  "title": "Local AI Review Evidence",
+  "description": "Evidence file authored by an independent reviewer AI for a local GPP operator-merge decision. The implementer AI changes the repo, an independent reviewer AI reviews the change, and the operator decides whether to merge. This file records the reviewer verdict and the no-secret review context the local GPP gate validates. No secret material may appear in any field, including agent identifiers and findings strings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repo",
+    "work_package",
+    "implementer",
+    "reviewer",
+    "scope_reviewed",
+    "checks_considered",
+    "findings",
+    "secrets_recorded",
+    "live_adapter_execution",
+    "support_widening",
+    "production_platform_claim"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "local-ai-review-evidence.v1",
+      "description": "Schema contract version. Must be the literal 'local-ai-review-evidence.v1'."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository the review applies to, for example 'Halildeu/ao-kernel'."
+    },
+    "work_package": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GPP work package identifier the review applies to, for example 'GPP-2ag'."
+    },
+    "implementer": {
+      "$ref": "#/$defs/identity",
+      "description": "The AI agent that changed the repository."
+    },
+    "reviewer": {
+      "$ref": "#/$defs/reviewer",
+      "description": "The independent AI agent that reviewed the change and recorded a verdict."
+    },
+    "scope_reviewed": {
+      "$ref": "#/$defs/scope",
+      "description": "The git scope the reviewer actually reviewed."
+    },
+    "checks_considered": {
+      "type": "array",
+      "description": "Named checks the reviewer considered, each with a pass or fail status. Must include a 'tests' entry and a 'secret_scan' entry for the local gate to allow an operator-merge recommendation.",
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Short reviewer-authored finding strings. No secret material is permitted. A finding string that starts with 'FORBIDDEN:' signals that the reviewer detected a forbidden action and the local gate must fail closed.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "secrets_recorded": {
+      "type": "boolean",
+      "description": "Whether the reviewer recorded any secret material in this evidence. Must be false; the local gate fails closed when true."
+    },
+    "live_adapter_execution": {
+      "type": "boolean",
+      "description": "Whether reviewing this change involved executing a live adapter. Must be false; the local gate fails closed when true."
+    },
+    "support_widening": {
+      "type": "boolean",
+      "description": "Whether the reviewed change widens support. Must be false; the local gate fails closed when true."
+    },
+    "production_platform_claim": {
+      "type": "boolean",
+      "description": "Whether the reviewed change claims production platform readiness. Must be false; the local gate fails closed when true."
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "provider"],
+      "properties": {
+        "agent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Agent label, for example 'codex' or 'claude'. No secret material."
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "google", "xai"],
+          "description": "AI provider. Cross-provider review is required: the implementer provider and reviewer provider must differ."
+        }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "provider", "verdict"],
+      "properties": {
+        "agent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reviewer agent label, for example 'codex' or 'claude'. No secret material."
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "google", "xai"],
+          "description": "Reviewer AI provider. Must differ from the implementer provider."
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["AGREE", "REVISE", "BLOCK"],
+          "description": "Reviewer verdict. Only 'AGREE' allows the local gate to recommend an operator merge. 'REVISE' and 'BLOCK' fail closed."
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_ref", "head_ref", "changed_files"],
+      "properties": {
+        "base_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Git base ref the change is measured against, for example 'origin/main'."
+        },
+        "head_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Git head ref under review, for example 'codex/example'."
+        },
+        "changed_files": {
+          "type": "array",
+          "description": "Repo-relative paths the reviewer reviewed. Must be a non-empty list of strings for the local gate to treat scope as reviewed.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Check name, for example 'tests' or 'secret_scan'."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Check outcome the reviewer considered."
+        }
+      }
+    }
+  }
+}
