@@ -162,7 +162,7 @@ webhook/App configuration, no live adapter.
 | Slice | Scope | Gate |
 |---|---|---|
 | **GPP-2B-1** | This mapping record (this PR). | docs only |
-| **GPP-2B-2** | A machine-checkable mapping test: assert every local-gate check name has either a documented `ao-release-gate` counterpart or an explicit `local-only` marker, so the mapping cannot silently drift. | docs + test |
+| **GPP-2B-2** | A machine-checkable mapping test pinning the §3.1 table to both gates' live check sets: every local-gate check (8, from `local-gpp-gate-evidence.schema.v1.json`) and every `ao-release-gate` check (18, from `build_ao_release_gate_decision`) must appear in the table with a documented counterpart or an explicit `local-only` marker, so the mapping cannot silently drift on either side. Implemented as `tests/test_gpp2b_mapping_drift_guard.py`. | docs + test |
 | **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract (design only — no service wiring). | docs + schema |
 | **GPP-2B-4** | Unit/schema-level conclusion-mapping test against the side-effect-free decision core: assert `build_ao_release_gate_decision(..., conclusion_mode=...)` maps decisions to GitHub conclusions correctly — `allow_autonomous_merge` → `success`; `deny_*` / `error_fail_closed` → `neutral` under `shadow` and `failure` under `enforce`. Pure in-process unit test; the hosted runtime mode is not changed, no check-run is posted to any PR, branch protection is untouched. | docs + test |
 
