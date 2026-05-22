@@ -312,14 +312,19 @@ continuing heavier deployment-protection callback work.
 - [ ] Add or implement `scripts/local_gpp_gate.py`.
 - [ ] Define reviewer evidence JSON with `AGREE`, `REVISE`, and `BLOCK`
   verdict handling.
+- [ ] Require implementer/reviewer provider separation when both identities are
+  declared; same-provider review fails closed.
 - [ ] Fail closed when reviewer evidence is missing or non-`AGREE`.
 - [ ] Fail closed on forbidden actions, scope mismatch, secret risk, test
   failure, `support_widening=true`, `production_platform_claim=true`, or
   `live_adapter_execution=true`.
 - [ ] Emit `.ao/evidence/local-gate/<timestamp>-<work-package>.json` only when
-  explicitly requested.
+  explicitly requested; keep generated evidence local by default because
+  `.ao/evidence/` is gitignored.
 - [ ] Add tests for missing review, negative review, positive review, and
   forbidden flag cases.
+- [ ] Add a no-secret reviewer-evidence template or helper so review evidence is
+  repeatable and not copied from free-form chat.
 - [ ] Keep this evidence local/operator-scoped; do not wire it to branch
   protection in this slice.
 

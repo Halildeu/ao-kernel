@@ -70,10 +70,12 @@ The local gate must:
 2. require an independent reviewer evidence file;
 3. validate that reviewer verdict is `AGREE` before allowing an
    operator-merge recommendation;
-4. fail closed on missing review, `REVISE`, `BLOCK`, test failure, secret risk,
-   forbidden action, or scope mismatch;
-5. emit a durable no-secret JSON artifact under `.ao/evidence/local-gate/`;
-6. explicitly keep `support_widening=false`,
+4. verify implementer and reviewer provider separation when both identities are
+   declared;
+5. fail closed on missing review, `REVISE`, `BLOCK`, same-provider review,
+   test failure, secret risk, forbidden action, or scope mismatch;
+6. emit a durable no-secret JSON artifact under `.ao/evidence/local-gate/`;
+7. explicitly keep `support_widening=false`,
    `production_platform_claim=false`, and `live_adapter_execution=false`.
 
 ## 4. Non-Goals
@@ -110,6 +112,10 @@ reviewer evidence JSON
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
   "work_package": "GPP-2ag",
+  "implementer": {
+    "agent": "codex-or-claude",
+    "provider": "openai-or-anthropic"
+  },
   "reviewer": {
     "agent": "codex-or-claude",
     "provider": "openai-or-anthropic",
@@ -144,6 +150,7 @@ reviewer evidence JSON
     "tests_passed": true,
     "secret_scan_passed": true,
     "reviewer_agree": true,
+    "cross_provider_verified": true,
     "forbidden_actions_absent": true
   },
   "support_widening": false,
@@ -155,18 +162,32 @@ reviewer evidence JSON
 ## 6. Initial Implementation Plan
 
 1. Add `scripts/local_gpp_gate.py`.
-2. Add a JSON-schema-like validator in code for reviewer evidence.
+2. Add a real JSON Schema contract for reviewer evidence and validate it with
+   the existing JSON Schema toolchain rather than a free-form parser.
 3. Add unit tests covering:
    - missing reviewer evidence fails;
    - reviewer `REVISE` fails;
    - reviewer `BLOCK` fails;
+   - implementer and reviewer with the same provider fails;
    - reviewer `AGREE` plus passing checks succeeds;
    - forbidden-action flag fails;
    - `support_widening=true`, `production_platform_claim=true`, or
      `live_adapter_execution=true` fails.
 4. Add a sample no-secret fixture under `tests/fixtures/local_gpp_gate/`.
-5. Emit evidence only when requested with an explicit output path.
-6. Do not wire this to branch protection in this slice.
+5. Add a no-secret reviewer-evidence template or helper so the reviewer output
+   path is repeatable instead of ad hoc chat text.
+6. Emit evidence only when requested with an explicit output path, for example:
+
+   ```bash
+   python3 scripts/local_gpp_gate.py \
+     --review-evidence tests/fixtures/local_gpp_gate/reviewer_agree.v1.json \
+     --output .ao/evidence/local-gate/demo-gpp-2ag.json
+   ```
+
+7. Keep `.ao/evidence/local-gate/` local by default because `.ao/evidence/` is
+   gitignored. Commit only curated no-secret fixtures or deliberate evidence
+   summaries.
+8. Do not wire this to branch protection in this slice.
 
 ## 7. Acceptance
 
