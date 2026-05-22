@@ -116,21 +116,24 @@ corresponds to `deny_missing_evidence` or `deny_policy_violation` depending on
 the finding. Both gates are fail-closed: a malformed or absent input yields the
 deny/closed side, never allow.
 
-## 4. Gap analysis
+## 4. Gap analysis (historical — closed by GPP-2D-2b)
 
 - **Category B is not a gap.** GitHub-context checks belong to the
   GitHub-side gate by construction; the local gate is not expected to perform
   them.
-- **Category C is the substantive gap.** The local gate's distinguishing
-  value — the **cross-AI peer review** verdict (`reviewer_agree`,
-  `cross_provider_verified`) — has no counterpart in `ao-release-gate`. The
-  `ao-release-gate` decision core evaluates PR evidence, CI, scope, and
-  boundary signals autonomously; it does not consume a reviewer-AI verdict.
+- **Category C was the substantive gap (now closed).** The local gate's
+  distinguishing value — the **cross-AI peer review** verdict
+  (`reviewer_agree`, `cross_provider_verified`) — previously had no counterpart
+  in `ao-release-gate`. GPP-2D-2b closes this gap by wiring the
+  `review_evidence` and `review_evidence_context_bound` checks into the
+  `ao-release-gate` decision core; the core now consumes the local-gpp-gate
+  evidence under the §5.1 acceptance profile.
 
-If `ao-release-gate` becomes a required status check while the cross-AI review
-verdict remains outside its inputs, the GitHub-enforced gate would be strictly
-weaker than the local gate on the cross-AI-review dimension. GPP-2B must record
-how that dimension is handled before any AO-GATE-8 cutover.
+The cross-AI review dimension is therefore inside `ao-release-gate` from
+GPP-2D-2b onward. The remaining blockers before AO-GATE-8 cutover are
+operational, not structural: the GitHub Actions workflow (GPP-2D-2c shadow
+job), the enforce-mode flip (GPP-2D-3), and the branch-protection cutover
+(GPP-2D-5).
 
 ## 5. Gap-handling options
 
@@ -165,12 +168,13 @@ GPP-2B implementation slice (GPP-2B-3) plus a Codex consultation.
 
 Resolved via Codex consultation (thread `019e50c8`): **Option 1**.
 
-**Decision.** `ao-release-gate` will eventually require attested cross-AI
-review evidence. Option 2 would leave the required check deliberately weaker
-than the local gate on the Category-C dimension. GPP-2B-3 closes the gap's
-**design decision** only — the runtime enforcement gap closes later, when
-`ao-release-gate` actually consumes the artifact and enters the
-required-check / enforce chain. GPP-2 stays `blocked`.
+**Decision.** `ao-release-gate` requires attested cross-AI review evidence.
+Option 2 would have left the required check deliberately weaker than the
+local gate on the Category-C dimension. GPP-2B-3 closed the gap's **design
+decision**; GPP-2D-2b landed the runtime consumption inside
+`build_ao_release_gate_decision`. The required-check / enforce / branch-
+protection chain still has to land (GPP-2D-2c workflow, GPP-2D-3 enforce-mode
+flip, GPP-2D-5 branch-protection cutover). GPP-2 stays `blocked`.
 
 **Accepted artifact.** The existing no-secret `local-gpp-gate-evidence.v1`
 gate output, consumed as-is. No new evidence artifact is introduced, and no
@@ -189,9 +193,9 @@ constrains only the acceptance-critical fields (`decision` =
 = `true`; the closed GPP guard flags) and permits the artifact's other fields.
 It deliberately omits a `$ref` / `allOf` to `local-gpp-gate-evidence.schema.v1.json`
 because the bundled-schema loader resolves single files only and builds no
-registry for an external `$ref`. The future check therefore validates in two
-steps: **first** the full `local-gpp-gate-evidence.schema.v1.json`, **then**
-this acceptance profile.
+registry for an external `$ref`. The implemented verifier therefore validates
+in two steps: **first** the full `local-gpp-gate-evidence.schema.v1.json`,
+**then** this acceptance profile.
 
 **Implemented in GPP-2D-2b.** The acceptance profile is now wired into
 `build_ao_release_gate_decision` as two fail-closed checks (`review_evidence`
@@ -231,7 +235,7 @@ webhook/App configuration, no live adapter.
 |---|---|---|
 | **GPP-2B-1** | This mapping record (this PR). | docs only |
 | **GPP-2B-2** | A machine-checkable mapping test pinning the §3.1 table to both gates' live check sets: every local-gate check (8, from `local-gpp-gate-evidence.schema.v1.json`) and every `ao-release-gate` check (18, from `build_ao_release_gate_decision`) must appear in the table with a documented counterpart or an explicit `local-only` marker, so the mapping cannot silently drift on either side. Implemented as `tests/test_gpp2b_mapping_drift_guard.py`. | docs + test |
-| **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract (design only — no service wiring). Resolved as Option 1 in §5.1; acceptance-profile schema `ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json` + contract test `tests/test_gpp2b3_review_evidence_input_schema.py`. | docs + schema + test |
+| **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract. Historical scope was design only — no service wiring; subsequently wired in GPP-2D-2b. Resolved as Option 1 in §5.1; acceptance-profile schema `ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json` + contract test `tests/test_gpp2b3_review_evidence_input_schema.py`. | docs + schema + test |
 | **GPP-2B-4** | Unit/schema-level conclusion-mapping test against the side-effect-free decision core: assert `build_ao_release_gate_decision(..., conclusion_mode=...)` maps decisions to GitHub conclusions correctly — `allow_autonomous_merge` → `success`; `deny_*` / `error_fail_closed` → `neutral` under `shadow` and `failure` under `enforce`. Pure in-process unit test; the hosted runtime mode is not changed, no check-run is posted to any PR, branch protection is untouched. Implemented as `tests/test_ao_release_gate.py::test_check_run_conclusion_mapping` (6 decisions x shadow/enforce). | docs + test |
 
 Real enforce-mode evidence on live PRs — switching the hosted runtime to
