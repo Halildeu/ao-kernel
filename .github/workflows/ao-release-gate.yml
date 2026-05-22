@@ -194,11 +194,24 @@ jobs:
         # decision.json, this step invokes the synthesizer to write a
         # synthetic error_fail_closed artifact so every shadow run still
         # emits an auditable decision record.
+        #
+        # Bootstrap path: on the PR that first introduces this workflow,
+        # the trusted-base checkout does not yet carry
+        # `scripts/ao_release_gate_synthesize_error_decision.py`; that
+        # script ships in the same PR. In that case the fallback writes
+        # a minimal inline JSON artifact so the shadow job still exits 0
+        # and uploads a record. Once this PR merges, future runs on real
+        # PRs find the synthesizer on main and use the canonical path.
         if: always()
+        continue-on-error: true
         working-directory: base
         run: |
           if [ ! -f decision.json ]; then
-            python scripts/ao_release_gate_synthesize_error_decision.py decision.json
+            if [ -f scripts/ao_release_gate_synthesize_error_decision.py ]; then
+              python scripts/ao_release_gate_synthesize_error_decision.py decision.json
+            else
+              printf '%s\n' '{"schema_version": "1", "artifact_kind": "ao_release_gate_decision", "program_id": "GPP-2v", "app_slug": "ao-release-gate", "dry_run": true, "merge_authority_enabled": false, "conclusion_mode": "shadow", "decision": "error_fail_closed", "allow": false, "finding_code": "error_fail_closed", "reason": "Synthesizer script not present on the base ref (bootstrap or transition).", "context": {}, "checks": [], "findings": ["ao_release_gate_shadow_pre_decision_step_failed"], "github_check_run": {"name": "ao-release-gate", "status": "completed", "conclusion": "neutral", "title": "ao-release-gate: error_fail_closed", "summary": "bootstrap fallback", "text": "Findings: ao_release_gate_shadow_pre_decision_step_failed"}}' > decision.json
+            fi
           fi
           # Shadow advisory job: always exits 0 regardless of the synthesized
           # or core-produced decision body.

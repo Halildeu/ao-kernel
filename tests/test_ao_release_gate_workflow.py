@@ -196,6 +196,29 @@ def test_workflow_synthesizes_decision_when_prior_steps_fail() -> None:
     assert "python -c" not in text
 
 
+def test_workflow_synthesis_step_has_bootstrap_fallback() -> None:
+    """The shadow workflow is itself a base-ref-trusted system; on the PR
+    that first introduces it the synthesizer script is not yet on the
+    base ref. The synthesis step must fall back to an inline JSON
+    artifact so the bootstrap PR still produces an audit record and the
+    job exits 0; subsequent PRs (after this one merges to main) find the
+    synthesizer on main and use the canonical path.
+    """
+    text = _workflow_text()
+    # The fallback branch exists.
+    assert "Synthesizer script not present on the base ref" in text
+    # The synthesis step itself carries continue-on-error so even an
+    # unexpected catastrophic fallback failure does not break the job.
+    synthesis_index = text.index("Synthesize error_fail_closed decision when prior steps failed")
+    upload_index = text.index("Upload audit artifact")
+    synthesis_block = text[synthesis_index:upload_index]
+    assert "continue-on-error: true" in synthesis_block, (
+        "synthesis step must carry continue-on-error as belt-and-suspenders"
+    )
+    # The bootstrap fallback still emits the workflow-only finding code.
+    assert "ao_release_gate_shadow_pre_decision_step_failed" in text
+
+
 def test_workflow_does_not_forward_pull_request_issue_url() -> None:
     """The pull_request webhook field `issue_url` is the PR's own API URL,
     NOT the GPP work-package issue URL. Forwarding it to the builder
