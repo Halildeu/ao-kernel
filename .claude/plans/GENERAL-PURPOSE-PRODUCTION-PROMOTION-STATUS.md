@@ -1,17 +1,19 @@
 # General-Purpose Production Promotion Status
 
-**Status:** GPP-2 internal gate host health probe recorded after internal
-operator host bundle, Cloud Run bootstrap paths, `ao-release-gate` autonomous
-deploy paths, and internal vault secret-id contract; operator-owned public
-hosting evidence, webhook configuration, callback/check-run evidence, and
-cutover still blocked
-**Date:** 2026-04-28
+**Status:** GPP-2 public HTTPS health evidence, GitHub App webhook delivery
+chain evidence, and `ao-release-gate` shadow dry-run check-run evidence are
+recorded; deployment-protection callback evidence, production callback
+topology, enforce-mode success/failure evidence, and branch-protection cutover
+remain blocked. The next simplification step is a local AI review evidence
+gate that codifies the current operator workflow without claiming production
+readiness.
+**Date:** 2026-05-22
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
 **Current slice issue:** [#567](https://github.com/Halildeu/ao-kernel/issues/567)
-for internal gate host health probe
-**Current slice record:** `.claude/plans/GPP-2af-INTERNAL-GATE-HOST-HEALTH-PROBE.md`
+for GPP-2 protected live-adapter gate runtime binding
+**Current slice record:** `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -30,6 +32,30 @@ until the work packages below close with evidence. Completing a roadmap or
 decision record is not enough; production support requires runtime behavior,
 tests, smoke evidence, CI or protected-gate evidence, docs, runbooks, known-bug
 state, and support-boundary wording to agree.
+
+## 1a. 2026-05-22 Scope Correction
+
+The GPP-2 deployment-protection path has collected useful hosted health,
+webhook delivery, and shadow dry-run check-run evidence. It also introduced
+substantial operator infrastructure: GitHub Apps, Vault-backed private keys,
+webhook secrets, public callback routes, smee.io dry-run proxying, and
+production endpoint decisions.
+
+For the immediate operator-controlled workflow, the core trust requirement is
+smaller:
+
+```text
+implementer AI changes the repo
+reviewer AI reviews independently
+local gate validates rules, tests, scope, secrets, and reviewer verdict
+operator decides whether to merge
+```
+
+Therefore the next planning slice is `GPP-2ag`, a local AI review evidence gate.
+This local gate is preparatory/local evidence only. It does not close GPP-2,
+does not replace AO-GATE-7 deployment-protection callback evidence, does not
+change branch protection, does not execute live adapters, and does not widen
+support or claim production platform readiness.
 
 ## 2. Current Baseline
 
@@ -1090,6 +1116,9 @@ admin bypass for PR merge automation, and must keep
 | 2026-04-28 | GPP-2ae host bundle added | `deploy/internal-gate-host` composes Caddy, the policy service container, and `ao-release-gate` with vault-backed secret ids; `scripts/internal_gate_host_bootstrap_attest.py` records metadata readiness only, with no Docker run, vault access, webhook configuration, callback/check-run posting, live adapter execution, support widening, or production claim. |
 | 2026-04-28 | GPP-2af issue opened | Issue [#567](https://github.com/Halildeu/ao-kernel/issues/567) tracks the no-secret hosted health probe for the internal gate host path. |
 | 2026-04-28 | GPP-2af health probe added | `scripts/internal_gate_host_health_probe.py` can collect public HTTPS health evidence for `/policy/healthz` and `/release-gate/healthz`; it does not configure webhooks, post callbacks/check-runs, change branch protection, dispatch protected workflows, execute live adapters, widen support, or claim production readiness. |
+| 2026-05-21 | GPP-2 public HTTPS hosting evidence recorded | platform-k8s-gitops#938 and ao-kernel#569 recorded no-secret hosted health evidence for the policy service and `ao-release-gate`; GPP-2 remained blocked. |
+| 2026-05-22 | GPP-2 webhook and shadow check-run evidence recorded | ao-kernel#572/#574 recorded GitHub App webhook delivery chain evidence through smee.io non-production dry-run proxy and a real `ao-release-gate` shadow check-run; GPP-2 remained blocked pending callback, topology, enforce-mode, and cutover evidence. |
+| 2026-05-22 | GPP-2ag local AI review gate pivot planned | `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md` records the scope correction: codify the current local implementer-AI + reviewer-AI trust model before continuing the heavier deployment-protection callback path. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
 | 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |
