@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-release-gate-review-evidence-input:v1",
+  "title": "ao-release-gate Attested Review Evidence Input",
+  "description": "GPP-2B-3 design-only acceptance profile for the attested cross-AI review evidence that a future ao-release-gate check would consume to close the Category-C gap (see .claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md section 5.1). The accepted artifact is the existing no-secret local-gpp-gate-evidence.v1 gate output, consumed as-is; no new evidence artifact is introduced. This is an acceptance profile, not a standalone structural validator: it constrains only the acceptance-critical fields and permits the artifact's other fields. A future ao-release-gate check MUST first validate the artifact against local-gpp-gate-evidence.schema.v1.json, then validate the same artifact against this acceptance profile. No service wiring exists: ao_release_gate.py does not read this contract, no check-run is posted, branch protection is unchanged, and GPP-2 stays blocked.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "decision",
+    "repo",
+    "work_package",
+    "checks",
+    "gpp_2_status",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "local-gpp-gate-evidence.v1",
+      "description": "The attested artifact must be a local-gpp-gate-evidence.v1 gate output."
+    },
+    "decision": {
+      "const": "operator_may_merge",
+      "description": "ao-release-gate accepts the attestation only when the local gate recorded operator_may_merge. A fail_closed artifact is not accepting evidence and maps to deny_missing_evidence."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository the local gate evaluated. The future check compares this against the normalized PR repository."
+    },
+    "work_package": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GPP work package or slice the local gate evaluated. The future check compares this against the PR's explicitly declared reviewed slice, not blindly against gpp_status.current_wp.id, because the current work package may be the parent GPP-2 while the artifact carries a slice id such as GPP-2B-3."
+    },
+    "checks": {
+      "type": "object",
+      "required": [
+        "reviewer_agree",
+        "cross_provider_verified"
+      ],
+      "properties": {
+        "reviewer_agree": {
+          "const": true,
+          "description": "The independent reviewer AI returned AGREE."
+        },
+        "cross_provider_verified": {
+          "const": true,
+          "description": "The implementer AI provider and the reviewer AI provider differ."
+        }
+      },
+      "description": "The acceptance profile constrains only the two Category-C checks. The full checks object (all eight local-gate checks) is validated separately against local-gpp-gate-evidence.schema.v1.json; additional check keys are permitted here by design."
+    },
+    "gpp_2_status": {
+      "const": "blocked",
+      "description": "The attested artifact must confirm GPP-2 is still blocked."
+    },
+    "support_widening": {
+      "const": false,
+      "description": "The attested artifact must confirm support widening stays closed."
+    },
+    "production_platform_claim": {
+      "const": false,
+      "description": "The attested artifact must confirm no production platform claim."
+    },
+    "live_adapter_execution": {
+      "const": false,
+      "description": "The attested artifact must confirm no live adapter execution."
+    }
+  }
+}
