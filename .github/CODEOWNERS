@@ -1,9 +1,9 @@
 # Default owner
-* @Halildeu
+* @Halildeu @gladyatore-lab
 
 # Governance-sensitive surfaces
-/.github/ @Halildeu
-/.claude/ @Halildeu
-/CLAUDE.md @Halildeu
-/ao_kernel/defaults/policies/ @Halildeu
-/docs/ @Halildeu
+/.github/ @Halildeu @gladyatore-lab
+/.claude/ @Halildeu @gladyatore-lab
+/CLAUDE.md @Halildeu @gladyatore-lab
+/ao_kernel/defaults/policies/ @Halildeu @gladyatore-lab
+/docs/ @Halildeu @gladyatore-lab
