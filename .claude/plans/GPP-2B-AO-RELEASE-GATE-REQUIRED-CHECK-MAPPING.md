@@ -66,7 +66,7 @@ stays `blocked`.
 
 ### 3.1 Check correspondence
 
-| Local gate check (8) | ao-release-gate check(s) (18) | Category |
+| Local gate check (8) | ao-release-gate check(s) (20) | Category |
 |---|---|---|
 | `startup_preflight_passed` | `payload_shape`, `repository` | A — evaluation context is structurally valid |
 | `gpp_status_checked` | `gpp_status`, `gpp_closed_boundaries` | A — GPP-2 blocked + support/production/live-adapter guards false |
@@ -74,9 +74,8 @@ stays `blocked`.
 | `tests_passed` | `required_checks` | A — tests/CI pass (local: reviewer-recorded `tests`; ao-gate: live required CI checks) |
 | `secret_scan_passed` | `secret_boundary` | A — no secret material |
 | `forbidden_actions_absent` | `admin_bypass_boundary`, `bot_boundary`, `agent_authority_boundary`, `live_adapter_boundary` | A — no forbidden action / authority |
-| `reviewer_agree` | *(none)* | C — cross-AI reviewer verdict, local-only |
-| `cross_provider_verified` | *(none)* | C — implementer ≠ reviewer provider, local-only |
-| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency` | B — GitHub PR-context checks, ao-release-gate-only |
+| `reviewer_agree`, `cross_provider_verified` | `review_evidence` | A — cross-AI reviewer AGREE + cross-provider verdict consumed by ao-release-gate via the local-gpp-gate-evidence acceptance profile (GPP-2D-2b) |
+| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency`, `review_evidence_context_bound` | B — GitHub PR-context checks, ao-release-gate-only |
 
 - **Category A** — both gates verify the same governance condition from
   different vantage points (local repo state vs. GitHub PR payload). These are
@@ -86,10 +85,16 @@ stays `blocked`.
   context is structurally valid."
 - **Category B** — GitHub-PR-context checks (fork, event, branch freshness,
   base/issue link, plus `gpp_issue_consistency`, which matches the PR payload's
-  issue URL against the current GPP work package). The local gate has no PR
-  payload and cannot perform these; they are inherently ao-release-gate-only
-  and require no reconciliation.
-- **Category C** — the cross-AI peer review verdict. See §4.
+  issue URL against the current GPP work package, and
+  `review_evidence_context_bound`, which binds the local-gate evidence to the
+  PR head SHA, repository, reviewed slice, diff digest, and changed-files
+  count). The local gate has no PR payload and cannot perform these; they are
+  inherently ao-release-gate-only and require no reconciliation.
+- **Category C** — historical: the cross-AI peer review verdict was previously
+  unmappable (local-only) and tracked in §4 as the substantive gap. GPP-2D-2b
+  closes that gap by wiring the ao-release-gate decision core to consume the
+  local-gate evidence under the §5.1 acceptance profile, so the C rows are now
+  Category A. See §4 for the gap-closure record.
 
 ### 3.2 Decision-value mapping
 

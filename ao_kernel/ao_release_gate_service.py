@@ -185,6 +185,7 @@ def build_ao_release_gate_service_result(
     headers: Mapping[str, str],
     *,
     gpp_status: object,
+    review_evidence: object = None,
     webhook_secret: str | None = None,
     require_signature: bool = True,
     generated_at: str | None = None,
@@ -200,6 +201,12 @@ def build_ao_release_gate_service_result(
     ``conclusion_mode`` is forwarded to the core decision builder so the
     GitHub check-run conclusion stays mode-aware (``shadow`` maps deny/error
     to ``neutral``, ``enforce`` keeps the historical ``failure``).
+
+    ``review_evidence`` is the untrusted ``local-gpp-gate-evidence.v1``
+    attestation forwarded to the decision core. The HTTP-layer source of
+    this evidence (PR-committed file, artifact, header) is deferred
+    GPP-2C infrastructure; for now callers may pass ``None`` and accept a
+    ``deny_missing_evidence`` decision from the core.
     """
 
     checks: list[AoReleaseGateServiceCheck] = []
@@ -263,9 +270,7 @@ def build_ao_release_gate_service_result(
         checks.append(_pass("webhook_json", detail="Webhook body decoded as a JSON object."))
 
     pre_policy_blockers = [
-        check["finding_code"]
-        for check in checks
-        if check["status"] == "blocked" and check["finding_code"] is not None
+        check["finding_code"] for check in checks if check["status"] == "blocked" and check["finding_code"] is not None
     ]
     if payload is None or pre_policy_blockers:
         return {
@@ -290,6 +295,7 @@ def build_ao_release_gate_service_result(
     decision = build_ao_release_gate_decision(
         payload,
         gpp_status,
+        review_evidence=review_evidence,
         generated_at=generated_at,
         conclusion_mode=conclusion_mode,
     )
@@ -307,9 +313,7 @@ def build_ao_release_gate_service_result(
         )
 
     findings = [
-        check["finding_code"]
-        for check in checks
-        if check["status"] == "blocked" and check["finding_code"] is not None
+        check["finding_code"] for check in checks if check["status"] == "blocked" and check["finding_code"] is not None
     ]
     return {
         "schema_version": RELEASE_GATE_SERVICE_SCHEMA_VERSION,

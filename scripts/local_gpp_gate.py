@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import hashlib
 import json
 import subprocess
 import sys
@@ -30,6 +29,8 @@ from typing import Any, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
+
+from ao_kernel.ao_release_gate import diff_digest
 
 REVIEW_EVIDENCE_SCHEMA_NAME = "local-ai-review-evidence.schema.v1.json"
 GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
@@ -237,19 +238,6 @@ def _resolve_head_sha(repo_root: Path, head_ref: str) -> str | None:
     return None
 
 
-def _diff_digest(changed_files: list[str]) -> str:
-    """Return the ``sha256:`` prefixed digest of the changed-files list.
-
-    The digest is taken over the newline-joined sorted path list so the
-    evidence is bound to one specific diff. ``changed_files`` is already
-    sorted by ``actual_changed_files``; it is re-sorted here defensively so
-    the digest is order-independent.
-    """
-
-    joined = "\n".join(sorted(changed_files))
-    return "sha256:" + hashlib.sha256(joined.encode("utf-8")).hexdigest()
-
-
 def build_context_binding(
     *,
     repo_root: Path,
@@ -265,6 +253,10 @@ def build_context_binding(
     binding on the unverifiable path. Otherwise returns a block binding the
     evidence to the resolved head SHA and the changed-files digest so a
     future required check can reject stale, forged, or replayed evidence.
+
+    The digest is computed by the canonical ``diff_digest`` in
+    ``ao_kernel.ao_release_gate``, which the future verifier also uses, so
+    emitter and verifier cannot drift.
     """
 
     if changed_files is None:
@@ -275,7 +267,7 @@ def build_context_binding(
     return {
         "head_sha": head_sha,
         "base_ref": base_ref,
-        "diff_digest": _diff_digest(changed_files),
+        "diff_digest": diff_digest(changed_files),
         "changed_files_count": len(changed_files),
     }
 

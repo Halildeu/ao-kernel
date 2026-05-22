@@ -338,6 +338,7 @@ def handle_ao_release_gate_webhook(
     webhook_secret: str,
     github_client: GithubCheckRunClient,
     gpp_status: object,
+    review_evidence: object = None,
     generated_at: str | None = None,
     conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> ReleaseGateRuntimeResult:
@@ -347,12 +348,18 @@ def handle_ao_release_gate_webhook(
     check-run conclusion stays mode-aware. The default ``shadow`` mode keeps
     advisory deliveries from producing red CI; ``enforce`` restores the
     historical ``failure`` mapping required before the AO-GATE-8 cutover.
+
+    ``review_evidence`` is the untrusted ``local-gpp-gate-evidence.v1``
+    attestation forwarded to the service and decision core. The HTTP-layer
+    source is deferred GPP-2C infrastructure; callers may pass ``None``
+    and accept a ``deny_missing_evidence`` decision.
     """
 
     service_result = build_ao_release_gate_service_result(
         body,
         headers,
         gpp_status=gpp_status,
+        review_evidence=review_evidence,
         webhook_secret=webhook_secret,
         require_signature=True,
         generated_at=generated_at,
