@@ -13,15 +13,16 @@
     "exit_decision": "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening",
     "ready_after": "the no-testai near-term release-governance model is selected and recorded, the ao-release-gate required-check path has enforce-mode success and failure evidence on real pull requests, branch protection requires the ao-release-gate status check with admin bypass disallowed, and the final AO-GATE-9 GPP status closeout is recorded; deployment-protection callback topology and callback review evidence are deferred optional future infrastructure",
     "allowed_scope": [
-      "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service on operator-owned internal infrastructure without secret value exposure",
-      "use the repo-owned ao-release-gate GHCR image or container package to deploy or configure the ao-release-gate GitHub App check-run service on operator-owned internal infrastructure without secret value exposure",
-      "use deploy/internal-gate-host or equivalent operator-owned infrastructure as the no-paid-cloud default host bundle for both GPP-2 gate services",
-      "collect no-secret public HTTPS health evidence with scripts/internal_gate_host_health_probe.py after the internal gate host is deployed",
-      "configure hosted gate runtimes with internal vault secret ids rather than committed, echoed, or repository-stored secret values",
-      "document or build end-user onboarding paths that do not require users to self-host the GPP-2 policy service, vault, webhook secret, GitHub App private key, or Cloud Run project",
-      "design or implement a local AI review evidence gate that validates implementer AI plus independent reviewer AI evidence for operator-controlled local merges without changing branch protection or claiming production readiness",
-      "repeat protected workflow evidence collection from main after the policy service responds",
-      "keep live execution disabled until protected workflow evidence explicitly permits a later live run"
+      "collect cross-provider AI review evidence as the operator-controlled GPP-2B review discipline, where the implementer AI provider differs from the reviewer AI provider",
+      "record non-author GitHub code-owner approval as the GPP-2B mechanical merge gate without admin bypass or branch-protection mutation",
+      "produce local_gpp_gate operator evidence as preparatory local trust evidence only; it does not close GPP-2, widen support, or claim production readiness",
+      "maintain the ao-release-gate required-check mapping and the shadow/enforce conclusion-mode matrix",
+      "collect ao-release-gate enforce-mode success and failure evidence on real pull requests",
+      "cut branch protection or rulesets over to require the ao-release-gate status check only after enforce-mode evidence is captured, with admin bypass disallowed",
+      "record the AO-GATE-9 GPP status closeout only after enforce-mode evidence and the required-check cutover both exist",
+      "document end-user onboarding paths that do not require users to self-host any GPP-2 gate service, vault, webhook secret, GitHub App private key, or Cloud Run project",
+      "treat testai.acik.com/ao-gate, smee.io delivery, the deployment-protection callback path, and policy App slug reconciliation as deferred optional GPP-2C infrastructure, not active GPP-2B scope",
+      "keep support widening, production platform claim, and live adapter execution disallowed while GPP-2 stays blocked"
     ],
     "evidence_collected": [
       {

@@ -745,3 +745,37 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     assert payload["current_wp"]["id"] == "GPP-2"
     assert payload["current_wp"]["status"] == "blocked"
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
+
+
+def test_allowed_scope_reflects_no_testai_model() -> None:
+    """current_wp.allowed_scope describes the no-testai active GPP-2B model and
+    does not re-introduce pre-no-testai active hosting / callback scope."""
+    payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    allowed_scope = payload["current_wp"]["allowed_scope"]
+    assert isinstance(allowed_scope, list) and allowed_scope
+    joined = " ".join(allowed_scope).lower()
+
+    # Pre-no-testai active hosting / testai-callback scope must not return.
+    # Covers every removed pre-no-testai allowed_scope item that carried
+    # active hosting / policy-service / health-probe / callback behavior.
+    for stale in (
+        "deploy or configure the ao-kernel-live-adapter-gate github app policy service",
+        "deploy or configure the ao-release-gate github app check-run service",
+        "no-paid-cloud default host bundle",
+        "internal_gate_host_health_probe",
+        "configure hosted gate runtimes",
+        "design or implement a local ai review evidence gate",
+        "repeat protected workflow evidence collection",
+    ):
+        assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
+
+    # The no-testai active GPP-2B path must be present.
+    assert any("cross-provider ai review" in item.lower() for item in allowed_scope)
+    assert any("non-author github" in item.lower() for item in allowed_scope)
+    assert any("local_gpp_gate" in item.lower() for item in allowed_scope)
+    assert any(
+        "ao-release-gate enforce-mode" in item.lower() and "real pull request" in item.lower() for item in allowed_scope
+    )
+    assert any("deferred optional gpp-2c" in item.lower() and "testai" in item.lower() for item in allowed_scope)
+    # allowed_scope must not present GPP-2 as closed or promoted.
+    assert any("gpp-2 stays blocked" in item.lower() for item in allowed_scope)
