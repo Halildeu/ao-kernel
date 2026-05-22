@@ -66,6 +66,13 @@ services:
       AO_RELEASE_GATE_WEBHOOK_SECRET_ID: ${AO_RELEASE_GATE_WEBHOOK_SECRET_ID:?set vault secret id}
       AO_RELEASE_GATE_GPP_STATUS_PATH: /app/gpp_status.v1.json
       AO_RELEASE_GATE_MAX_BODY_BYTES: ${AO_RELEASE_GATE_MAX_BODY_BYTES:-1048576}
+      # GitHub check-run conclusion mode (Codex `019e4e6c` AGREE_B).
+      # `shadow` (default) maps deny/error decisions to `neutral` so the
+      # advisory check does not surface as red CI before the AO-GATE-8
+      # branch-protection cutover. `enforce` restores the historical
+      # `failure` mapping and must be set before `ao-release-gate` is
+      # required on `main`.
+      AO_RELEASE_GATE_CONCLUSION_MODE: ${AO_RELEASE_GATE_CONCLUSION_MODE:-shadow}
     volumes:
       - ../../.claude/plans/gpp_status.v1.json:/app/gpp_status.v1.json:ro
 

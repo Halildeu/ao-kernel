@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any, Literal, Mapping, TypedDict, cast
 
 from ao_kernel.ao_release_gate import (
+    DEFAULT_CONCLUSION_MODE,
     RELEASE_GATE_CHECK_NAME,
     AoReleaseGateDecision,
+    ConclusionMode,
     build_ao_release_gate_decision,
     render_ao_release_gate_decision_text,
 )
@@ -82,6 +84,7 @@ class AoReleaseGateServiceResult(TypedDict):
     delivery_id: str | None
     signature_verified: bool | None
     should_post_check_run: bool
+    conclusion_mode: ConclusionMode
     decision: AoReleaseGateDecision | None
     check_run_request: AoReleaseGateCheckRunRequest
     checks: list[AoReleaseGateServiceCheck]
@@ -186,12 +189,17 @@ def build_ao_release_gate_service_result(
     require_signature: bool = True,
     generated_at: str | None = None,
     github_api_url: str = DEFAULT_GITHUB_API_URL,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateServiceResult:
     """Evaluate a release-gate webhook delivery and build a check-run request.
 
     The function never posts to GitHub. Runtime deployment must attach a GitHub
     App installation token outside this repository and execute the returned
     request shape.
+
+    ``conclusion_mode`` is forwarded to the core decision builder so the
+    GitHub check-run conclusion stays mode-aware (``shadow`` maps deny/error
+    to ``neutral``, ``enforce`` keeps the historical ``failure``).
     """
 
     checks: list[AoReleaseGateServiceCheck] = []
@@ -272,13 +280,19 @@ def build_ao_release_gate_service_result(
             "delivery_id": delivery_id,
             "signature_verified": signature_verified,
             "should_post_check_run": False,
+            "conclusion_mode": conclusion_mode,
             "decision": None,
             "check_run_request": _empty_check_run_request(),
             "checks": checks,
             "findings": pre_policy_blockers,
         }
 
-    decision = build_ao_release_gate_decision(payload, gpp_status, generated_at=generated_at)
+    decision = build_ao_release_gate_decision(
+        payload,
+        gpp_status,
+        generated_at=generated_at,
+        conclusion_mode=conclusion_mode,
+    )
     check_run_request = build_ao_release_gate_check_run_request(decision, github_api_url=github_api_url)
     check_run_ready = check_run_request["url"] is not None and check_run_request["json"] is not None
     if check_run_ready:
@@ -313,6 +327,7 @@ def build_ao_release_gate_service_result(
         "delivery_id": delivery_id,
         "signature_verified": signature_verified,
         "should_post_check_run": check_run_ready,
+        "conclusion_mode": conclusion_mode,
         "decision": decision,
         "check_run_request": check_run_request,
         "checks": checks,
@@ -329,6 +344,7 @@ def render_ao_release_gate_service_text(result: AoReleaseGateServiceResult) -> s
         f"delivery_id: {result['delivery_id'] or '<missing>'}",
         f"signature_verified: {result['signature_verified']}",
         f"should_post_check_run: {str(result['should_post_check_run']).lower()}",
+        f"conclusion_mode: {result['conclusion_mode']}",
         f"check_run_url: {result['check_run_request']['url'] or '<missing>'}",
     ]
     if result["decision"] is not None:
