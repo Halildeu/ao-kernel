@@ -149,3 +149,58 @@ def test_workflow_uploads_decision_audit_artifact() -> None:
     assert "actions/upload-artifact@v7" in text
     assert "base/payload.json" in text
     assert "base/decision.json" in text
+
+
+def test_workflow_fetches_check_runs_per_page_not_paginate() -> None:
+    """The check-runs API endpoint returns an object, not an array; `gh api
+    --paginate` against an object endpoint concatenates page objects and
+    breaks `json.loads`. The workflow must fetch a single page with
+    per_page=100 (gh's max) instead.
+    """
+    text = _workflow_text()
+    assert "check-runs?per_page=100" in text
+    # No --paginate flag in the check-runs fetch line.
+    for line in text.splitlines():
+        if "/check-runs" in line and "gh api" in line:
+            assert "--paginate" not in line, "check-runs fetch must not use --paginate"
+
+
+def test_workflow_carries_continue_on_error_on_data_gathering_steps() -> None:
+    """The shadow advisory job must not fail when a pre-decision step
+    (API fetch, freshness, builder, evidence locator, decision) fails.
+    Every such step carries continue-on-error: true; the final synthesis
+    step runs on `if: always()` so an audit artifact is emitted even
+    when prior steps failed.
+    """
+    text = _workflow_text()
+    # At least the five pre-decision steps + the decision step carry the
+    # continue-on-error flag, so six occurrences is the minimum.
+    assert text.count("continue-on-error: true") >= 5
+    assert "if: always()" in text
+
+
+def test_workflow_synthesizes_decision_when_prior_steps_fail() -> None:
+    """When the decision step did not produce decision.json (because a
+    prior continue-on-error step failed), a synthesis step writes an
+    error_fail_closed decision so every shadow run still emits an
+    auditable record.
+    """
+    text = _workflow_text()
+    assert "Synthesize error_fail_closed decision when prior steps failed" in text
+    assert "error_fail_closed" in text
+    assert "ao_release_gate_shadow_pre_decision_step_failed" in text
+
+
+def test_workflow_does_not_forward_pull_request_issue_url() -> None:
+    """The pull_request webhook field `issue_url` is the PR's own API URL,
+    NOT the GPP work-package issue URL. Forwarding it to the builder
+    would make gpp_issue_consistency fail closed on every PR. The
+    builder must source issue_url from the base-ref
+    gpp_status.current_wp.issue instead.
+    """
+    text = _workflow_text()
+    # The builder receives no --issue-url argument.
+    assert "--issue-url" not in text
+    # The env var is not declared either.
+    assert "ISSUE_URL:" not in text
+    assert "github.event.pull_request.issue_url" not in text

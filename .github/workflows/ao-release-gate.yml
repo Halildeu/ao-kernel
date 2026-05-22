@@ -56,7 +56,6 @@ jobs:
       BASE_REF: ${{ github.event.pull_request.base.ref }}
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       REPO_FULL: ${{ github.repository }}
-      ISSUE_URL: ${{ github.event.pull_request.issue_url }}
       FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
 
     steps:
@@ -105,16 +104,21 @@ jobs:
           python -m pip install -e ".[mcp]"
 
       - name: Fetch PR data and check-runs via GitHub API
+        continue-on-error: true
         working-directory: base
         run: |
           # Fetch PR files (changed_paths) and the head SHA's check-runs.
           # The builder script will exclude ao-release-gate / -shadow
           # entries so the gate does not see its own status.
+          # per_page=100 (gh's max) avoids the --paginate object-concat
+          # pitfall, where multi-page object responses produce concatenated
+          # JSON objects that the builder's json.loads cannot parse.
           gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json files > pr-files.json
-          gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs" --paginate > check-runs.json
+          gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs?per_page=100" > check-runs.json
 
       - name: Compute branch_up_to_date from base
         id: freshness
+        continue-on-error: true
         working-directory: base
         run: |
           # Branch is up to date when the PR base SHA is an ancestor of
@@ -127,6 +131,7 @@ jobs:
           fi
 
       - name: Build API-derived release-gate payload
+        continue-on-error: true
         working-directory: base
         run: |
           python scripts/ao_release_gate_build_payload.py \
@@ -135,7 +140,6 @@ jobs:
             --base-ref "$BASE_REF" \
             --head-ref "$HEAD_REF" \
             --head-sha "$HEAD_SHA" \
-            --issue-url "$ISSUE_URL" \
             --from-fork "$FROM_FORK" \
             --branch-up-to-date "${{ steps.freshness.outputs.branch_up_to_date }}" \
             --gpp-status .claude/plans/gpp_status.v1.json \
@@ -145,6 +149,7 @@ jobs:
 
       - name: Locate optional review evidence on PR head
         id: evidence
+        continue-on-error: true
         run: |
           # Convention: the operator commits the no-secret local-gpp-gate
           # evidence at the repo root of the PR head. Absent evidence
@@ -161,6 +166,7 @@ jobs:
         # --fail-on-deny is supplied. Under the shadow advisory job we
         # never pass that flag, so the job always exits 0; the decision
         # body is captured in the uploaded artifact for audit.
+        continue-on-error: true
         working-directory: base
         run: |
           set +e
@@ -181,9 +187,61 @@ jobs:
           # Shadow advisory: never propagate the decision exit code.
           exit 0
 
-      - name: Upload audit artifact
-        uses: actions/upload-artifact@v7
+      - name: Synthesize error_fail_closed decision when prior steps failed
+        # Pre-decision steps (API fetch, builder, freshness) carry
+        # continue-on-error so a transient failure does not break the
+        # advisory job. When the decision step did not run / did not
+        # produce decision.json, this step writes a synthetic
+        # error_fail_closed artifact so every shadow run still emits an
+        # auditable decision record.
         if: always()
+        working-directory: base
+        run: |
+          if [ ! -f decision.json ]; then
+            python -c "
+            import json, sys
+            from pathlib import Path
+            try:
+                from ao_kernel.live_adapter_gate import utc_timestamp
+                generated_at = utc_timestamp()
+            except Exception:
+                from datetime import datetime, timezone
+                generated_at = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+            synthetic = {
+                'schema_version': '1',
+                'artifact_kind': 'ao_release_gate_decision',
+                'program_id': 'GPP-2v',
+                'generated_at': generated_at,
+                'app_slug': 'ao-release-gate',
+                'dry_run': True,
+                'merge_authority_enabled': False,
+                'conclusion_mode': 'shadow',
+                'decision': 'error_fail_closed',
+                'allow': False,
+                'finding_code': 'error_fail_closed',
+                'reason': 'ao-release-gate shadow workflow could not produce a decision; pre-decision step failed.',
+                'context': {},
+                'checks': [],
+                'findings': ['ao_release_gate_shadow_pre_decision_step_failed'],
+                'github_check_run': {
+                    'name': 'ao-release-gate',
+                    'status': 'completed',
+                    'conclusion': 'neutral',
+                    'title': 'ao-release-gate: error_fail_closed',
+                    'summary': 'Shadow workflow synthesized this decision because a pre-decision step failed.',
+                    'text': 'Findings: ao_release_gate_shadow_pre_decision_step_failed',
+                },
+            }
+            Path('decision.json').write_text(json.dumps(synthetic, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            "
+          fi
+          # Shadow advisory job: always exits 0 regardless of the synthesized
+          # or core-produced decision body.
+          exit 0
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
           name: ao-release-gate-shadow-${{ github.event.pull_request.number }}-${{ github.run_id }}
           path: |

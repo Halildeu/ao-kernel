@@ -34,11 +34,16 @@ def _write_check_runs(path: Path, runs: list[dict[str, str]]) -> None:
     path.write_text(json.dumps({"check_runs": runs}), encoding="utf-8")
 
 
-def _write_gpp_status(path: Path, *, wp_id: str = "GPP-2") -> None:
+def _write_gpp_status(
+    path: Path,
+    *,
+    wp_id: str = "GPP-2",
+    issue: str = "https://github.com/Halildeu/ao-kernel/issues/539",
+) -> None:
     path.write_text(
         json.dumps(
             {
-                "current_wp": {"id": wp_id, "status": "blocked"},
+                "current_wp": {"id": wp_id, "status": "blocked", "issue": issue},
                 "support_widening_allowed": False,
                 "production_platform_claim_allowed": False,
                 "live_adapter_execution_allowed": False,
@@ -77,8 +82,6 @@ def _build_argv(tmp_path: Path, *, output: Path) -> list[str]:
         "codex/test-feature",
         "--head-sha",
         "abc1230000000000000000000000000000000000",
-        "--issue-url",
-        "https://github.com/Halildeu/ao-kernel/issues/999",
         "--from-fork",
         "false",
         "--branch-up-to-date",
@@ -106,7 +109,9 @@ def test_build_payload_emits_expected_shape(tmp_path: Path) -> None:
     assert payload["pull_request"]["base"]["ref"] == "main"
     assert payload["pull_request"]["head"]["sha"] == "abc1230000000000000000000000000000000000"
     assert payload["pull_request"]["head"]["repo"]["fork"] is False
-    assert payload["issue_url"] == "https://github.com/Halildeu/ao-kernel/issues/999"
+    # issue_url is derived from base-ref gpp_status.current_wp.issue,
+    # NOT from any workflow env var or PR-supplied field.
+    assert payload["issue_url"] == "https://github.com/Halildeu/ao-kernel/issues/539"
     assert payload["branch_up_to_date"] is True
     assert payload["event_name"] == "pull_request"
     assert payload["reviewed_slice"] == "GPP-2"
@@ -133,8 +138,6 @@ def test_build_payload_sorts_and_carries_changed_paths(tmp_path: Path) -> None:
             "x",
             "--head-sha",
             "f" * 40,
-            "--issue-url",
-            "https://x",
             "--from-fork",
             "false",
             "--branch-up-to-date",
@@ -206,8 +209,6 @@ def test_build_payload_reviewed_slice_comes_from_base_ref_gpp_status(tmp_path: P
             "x",
             "--head-sha",
             "f" * 40,
-            "--issue-url",
-            "https://x",
             "--from-fork",
             "false",
             "--branch-up-to-date",
@@ -265,8 +266,6 @@ def test_build_payload_from_fork_is_carried(tmp_path: Path) -> None:
             "x",
             "--head-sha",
             "f" * 40,
-            "--issue-url",
-            "https://x",
             "--from-fork",
             "true",
             "--branch-up-to-date",
@@ -283,3 +282,92 @@ def test_build_payload_from_fork_is_carried(tmp_path: Path) -> None:
     )
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["pull_request"]["head"]["repo"]["fork"] is True
+
+
+def test_build_payload_issue_url_comes_from_base_ref_gpp_status(tmp_path: Path) -> None:
+    """The issue_url must be derived from base-ref gpp_status.current_wp.issue,
+    NOT from any PR webhook field. Otherwise the gpp_issue_consistency check
+    would systematically deny by comparing the PR's own API URL against the
+    GPP work-package issue URL.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    _write_check_runs(check_runs, [])
+    _write_gpp_status(gpp_status, issue="https://github.com/Halildeu/ao-kernel/issues/567")
+    mod.main(
+        [
+            "--repository",
+            "Halildeu/ao-kernel",
+            "--pr-number",
+            "1",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "x",
+            "--head-sha",
+            "f" * 40,
+            "--from-fork",
+            "false",
+            "--branch-up-to-date",
+            "true",
+            "--gpp-status",
+            str(gpp_status),
+            "--pr-files-json",
+            str(pr_files),
+            "--check-runs-json",
+            str(check_runs),
+            "--output",
+            str(output),
+        ]
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["issue_url"] == "https://github.com/Halildeu/ao-kernel/issues/567"
+
+
+def test_build_payload_raises_when_gpp_status_missing_issue(tmp_path: Path) -> None:
+    """If the base-ref gpp_status.current_wp lacks an `issue` field, the
+    builder fails fast rather than silently emitting an empty issue_url."""
+    import pytest
+
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    _write_check_runs(check_runs, [])
+    gpp_status.write_text(
+        json.dumps({"current_wp": {"id": "GPP-2", "status": "blocked"}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit):
+        mod.main(
+            [
+                "--repository",
+                "Halildeu/ao-kernel",
+                "--pr-number",
+                "1",
+                "--base-ref",
+                "main",
+                "--head-ref",
+                "x",
+                "--head-sha",
+                "f" * 40,
+                "--from-fork",
+                "false",
+                "--branch-up-to-date",
+                "true",
+                "--gpp-status",
+                str(gpp_status),
+                "--pr-files-json",
+                str(pr_files),
+                "--check-runs-json",
+                str(check_runs),
+                "--output",
+                str(output),
+            ]
+        )
