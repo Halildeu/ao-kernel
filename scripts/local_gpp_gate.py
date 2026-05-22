@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -37,6 +38,8 @@ GATE_EVIDENCE_SCHEMA_VERSION = "local-gpp-gate-evidence.v1"
 
 DEFAULT_STATUS_PATH = Path(".claude/plans/gpp_status.v1.json")
 AGENTS_CONTRACT_PATH = Path("AGENTS.md")
+STARTUP_PREFLIGHT_SCRIPT = Path("scripts/gpp_next.py")
+STARTUP_PREFLIGHT_TIMEOUT_SECONDS = 30
 
 # Conservative denylist of repository surfaces the local AI review gate is
 # not permitted to recommend a merge for. These surfaces (branch
@@ -68,11 +71,15 @@ GATE_CHECK_NAMES = (
 
 
 class LocalGateInvocationError(RuntimeError):
-    """Raised when the gate cannot run due to bad invocation or input.
+    """Raised when the gate cannot produce a durable artifact at all.
 
-    These conditions (missing file, malformed JSON, broken schema
-    toolchain) map to return code 2 and are distinct from a fail-closed
-    gate decision, which still produces a valid artifact and returns 1.
+    This is reserved for conditions where no fail-closed artifact can be
+    written: a broken schema toolchain or an output-write failure. It maps
+    to return code 2.
+
+    Missing, malformed, or schema-invalid reviewer evidence is NOT an
+    invocation error. Those conditions still produce a durable fail_closed
+    artifact and return code 1.
     """
 
 
@@ -156,20 +163,60 @@ def load_review_evidence(path: Path) -> dict[str, Any] | None:
     return cast(dict[str, Any], payload)
 
 
-def _find_check(payload: dict[str, Any], name: str) -> dict[str, Any] | None:
-    """Return the first ``checks_considered`` entry matching ``name``."""
+def _all_checks(payload: dict[str, Any], name: str) -> list[dict[str, Any]]:
+    """Return every ``checks_considered`` entry matching ``name``.
+
+    A required check is evaluated over all entries with the given name so a
+    failing entry cannot hide behind an earlier passing duplicate.
+    """
 
     checks = payload.get("checks_considered", [])
     if not isinstance(checks, list):
+        return []
+    return [check for check in checks if isinstance(check, dict) and check.get("name") == name]
+
+
+def actual_changed_files(
+    repo_root: Path, base_ref: str, head_ref: str
+) -> list[str] | None:
+    """Return the sorted git diff path list for ``base_ref...head_ref``.
+
+    Uses ``git diff --name-only <base>...<head>`` (three-dot) so the diff
+    is measured from the merge base, matching how a reviewer evaluates a
+    branch. Returns ``None`` when git is unavailable, the directory is not
+    a repository, the refs are invalid, or the command otherwise fails;
+    the caller treats ``None`` as "scope cannot be verified" and fails the
+    scope check closed.
+    """
+
+    if not base_ref or not head_ref:
         return None
-    for check in checks:
-        if isinstance(check, dict) and check.get("name") == name:
-            return check
-    return None
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repo_root), "diff", "--name-only", f"{base_ref}...{head_ref}"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=STARTUP_PREFLIGHT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    return sorted(line for line in completed.stdout.splitlines() if line.strip())
 
 
 def _evaluate_startup_preflight(repo_root: Path, status_path: Path, findings: list[str]) -> bool:
-    """Confirm the repo operating contract and GPP status file exist."""
+    """Run the real startup preflight for the local gate.
+
+    The preflight requires the repo operating contract and GPP status file
+    to exist and, on top of that, runs the canonical startup command
+    ``scripts/gpp_next.py`` as a subprocess. The startup command must exit
+    0; a missing script, a subprocess error, a timeout, or a non-zero exit
+    fails the preflight closed. This makes ``startup_preflight_passed`` an
+    honest check: it executes the same startup command an operator session
+    runs, not just a file-existence probe.
+    """
 
     agents_path = repo_root / AGENTS_CONTRACT_PATH
     ok = True
@@ -179,6 +226,45 @@ def _evaluate_startup_preflight(repo_root: Path, status_path: Path, findings: li
     if not status_path.exists():
         findings.append(f"startup preflight: missing GPP status file {status_path}")
         ok = False
+
+    preflight_script = repo_root / STARTUP_PREFLIGHT_SCRIPT
+    if not preflight_script.exists():
+        findings.append(
+            f"startup preflight: missing startup command {STARTUP_PREFLIGHT_SCRIPT}"
+        )
+        return False
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(preflight_script),
+                "--status-path",
+                str(status_path),
+                "--skip-git",
+            ],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=STARTUP_PREFLIGHT_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        findings.append(
+            f"startup preflight: startup command {STARTUP_PREFLIGHT_SCRIPT} timed out "
+            f"after {STARTUP_PREFLIGHT_TIMEOUT_SECONDS}s"
+        )
+        return False
+    except OSError as exc:
+        findings.append(
+            f"startup preflight: startup command {STARTUP_PREFLIGHT_SCRIPT} could not run: {exc}"
+        )
+        return False
+    if completed.returncode != 0:
+        findings.append(
+            f"startup preflight: startup command {STARTUP_PREFLIGHT_SCRIPT} exited "
+            f"{completed.returncode}, expected 0"
+        )
+        return False
     return ok
 
 
@@ -201,6 +287,11 @@ def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
     if not isinstance(current_wp, dict):
         findings.append("gpp status: current_wp is missing or malformed")
         return False
+    if current_wp.get("id") != "GPP-2":
+        findings.append(
+            f"gpp status: current_wp.id is {current_wp.get('id')!r}, expected 'GPP-2'"
+        )
+        return False
     if current_wp.get("status") != "blocked":
         findings.append(
             f"gpp status: current work package status is {current_wp.get('status')!r}, expected 'blocked'"
@@ -219,8 +310,17 @@ def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
     return ok
 
 
-def _evaluate_scope(review: dict[str, Any], findings: list[str]) -> bool:
-    """Confirm the reviewed scope is non-empty and free of forbidden paths."""
+def _evaluate_scope(
+    review: dict[str, Any], actual_files: list[str] | None, findings: list[str]
+) -> bool:
+    """Confirm the reviewed scope is real, non-empty, and forbidden-path free.
+
+    The reviewer-declared ``changed_files`` list is not trusted on its own:
+    it is verified against the actual git diff (``actual_files``). When the
+    actual diff is unavailable the scope check fails closed, and when the
+    declared list does not exactly match the actual diff the scope check
+    fails closed and the finding reports the symmetric difference.
+    """
 
     scope = review.get("scope_reviewed")
     if not isinstance(scope, dict):
@@ -242,35 +342,69 @@ def _evaluate_scope(review: dict[str, Any], findings: list[str]) -> bool:
                     f"scope: changed file {path!r} touches forbidden surface {forbidden!r}"
                 )
                 ok = False
+
+    if actual_files is None:
+        findings.append(
+            "scope: actual git diff unavailable (git skipped or failed); "
+            "cannot verify reviewer-declared scope"
+        )
+        return False
+
+    declared = set(changed_files)
+    actual = set(actual_files)
+    if declared != actual:
+        missing_from_reviewer = sorted(actual - declared)
+        extra_in_reviewer = sorted(declared - actual)
+        findings.append(
+            "scope: reviewer-declared changed_files does not match the actual git diff "
+            f"({len(missing_from_reviewer)} missing from reviewer, "
+            f"{len(extra_in_reviewer)} extra in reviewer); "
+            f"missing={missing_from_reviewer} extra={extra_in_reviewer}"
+        )
+        ok = False
     return ok
 
 
 def _evaluate_tests(review: dict[str, Any], findings: list[str]) -> bool:
-    """Confirm the reviewer recorded a passing 'tests' check."""
+    """Confirm every recorded 'tests' check passed.
 
-    check = _find_check(review, "tests")
-    if check is None:
+    All ``tests`` entries are evaluated, so a duplicate failing entry
+    cannot hide behind an earlier passing one.
+    """
+
+    checks = _all_checks(review, "tests")
+    if not checks:
         findings.append("tests: reviewer evidence has no 'tests' check entry")
         return False
-    if check.get("status") != "pass":
-        findings.append(f"tests: 'tests' check status is {check.get('status')!r}, expected 'pass'")
+    failing = [check for check in checks if check.get("status") != "pass"]
+    if failing:
+        findings.append(
+            f"tests: {len(failing)} of {len(checks)} 'tests' check entries are not 'pass'"
+        )
         return False
     return True
 
 
 def _evaluate_secret_scan(review: dict[str, Any], findings: list[str]) -> bool:
-    """Confirm a passing 'secret_scan' check and no recorded secrets."""
+    """Confirm every 'secret_scan' check passed and no secrets were recorded.
+
+    All ``secret_scan`` entries are evaluated, so a duplicate failing
+    entry cannot hide behind an earlier passing one.
+    """
 
     ok = True
-    check = _find_check(review, "secret_scan")
-    if check is None:
+    checks = _all_checks(review, "secret_scan")
+    if not checks:
         findings.append("secret scan: reviewer evidence has no 'secret_scan' check entry")
         ok = False
-    elif check.get("status") != "pass":
-        findings.append(
-            f"secret scan: 'secret_scan' check status is {check.get('status')!r}, expected 'pass'"
-        )
-        ok = False
+    else:
+        failing = [check for check in checks if check.get("status") != "pass"]
+        if failing:
+            findings.append(
+                f"secret scan: {len(failing)} of {len(checks)} 'secret_scan' check "
+                "entries are not 'pass'"
+            )
+            ok = False
     if review.get("secrets_recorded") is not False:
         findings.append("secret scan: secrets_recorded must be false")
         ok = False
@@ -320,9 +454,12 @@ def _evaluate_forbidden_actions(review: dict[str, Any], findings: list[str]) -> 
             ok = False
     review_findings = review.get("findings", [])
     if isinstance(review_findings, list):
-        for entry in review_findings:
+        for i, entry in enumerate(review_findings):
             if isinstance(entry, str) and entry.startswith(FORBIDDEN_FINDING_PREFIX):
-                findings.append(f"forbidden actions: reviewer flagged a forbidden action: {entry}")
+                findings.append(
+                    "forbidden actions: reviewer evidence contains a "
+                    f"FORBIDDEN-prefixed finding at index {i}"
+                )
                 ok = False
     return ok
 
@@ -332,12 +469,18 @@ def evaluate_gate(
     *,
     repo_root: Path,
     status_path: Path,
+    actual_files: list[str] | None,
 ) -> tuple[dict[str, bool], list[str]]:
     """Run all gate checks and return (check booleans, findings).
 
     ``review`` is ``None`` when the reviewer evidence file is missing or
     schema-invalid; in that case every reviewer-dependent check fails
     closed.
+
+    ``actual_files`` is the actual git diff path list for the reviewed
+    branch (or ``None`` when git was skipped or unavailable). The scope
+    check verifies the reviewer-declared changed-files list against it and
+    fails closed when it is ``None`` or does not match.
     """
 
     findings: list[str] = []
@@ -352,7 +495,7 @@ def evaluate_gate(
         )
         return checks, findings
 
-    checks["scope_allowed"] = _evaluate_scope(review, findings)
+    checks["scope_allowed"] = _evaluate_scope(review, actual_files, findings)
     checks["tests_passed"] = _evaluate_tests(review, findings)
     checks["secret_scan_passed"] = _evaluate_secret_scan(review, findings)
     checks["reviewer_agree"] = _evaluate_reviewer_agree(review, findings)
@@ -361,21 +504,20 @@ def evaluate_gate(
     return checks, findings
 
 
-def _carry_reviewer_findings(review: dict[str, Any] | None) -> list[str]:
-    """Return reviewer-authored finding strings, structurally constrained.
+def _reviewer_findings_count(review: dict[str, Any] | None) -> int:
+    """Return the count of reviewer-authored finding strings.
 
-    Only short reviewer-authored finding strings from the schema-validated
-    ``findings`` array are carried through. Nothing else from the reviewer
-    evidence file (agent identifiers, refs, raw content) is propagated, so
-    the gate output cannot leak arbitrary reviewer text.
+    Only the count is carried into the gate artifact; the reviewer's free
+    text is never propagated, so a sentinel placed in a reviewer finding
+    cannot leak through the gate output.
     """
 
     if review is None:
-        return []
+        return 0
     review_findings = review.get("findings", [])
     if not isinstance(review_findings, list):
-        return []
-    return [f"reviewer finding: {entry}" for entry in review_findings if isinstance(entry, str) and entry]
+        return 0
+    return len(review_findings)
 
 
 def build_gate_evidence(
@@ -389,13 +531,14 @@ def build_gate_evidence(
 ) -> dict[str, Any]:
     """Build the no-secret gate evidence artifact.
 
-    The artifact shape is fixed: only check booleans, the decision, short
-    finding strings, the constant guard flags, and the repo/work-package
-    refs. The raw reviewer evidence file is never embedded.
+    The artifact shape is fixed: only check booleans, the decision,
+    gate-authored finding strings, the reviewer finding count, the
+    constant guard flags, and the repo/work-package refs. Reviewer free
+    text is never embedded; ``findings`` holds only gate-authored strings.
     """
 
     decision = "operator_may_merge" if all(checks.values()) else "fail_closed"
-    findings = _carry_reviewer_findings(review) + list(gate_findings)
+    findings = list(gate_findings)
     return {
         "schema_version": GATE_EVIDENCE_SCHEMA_VERSION,
         "decision": decision,
@@ -404,6 +547,7 @@ def build_gate_evidence(
         "generated_at": generated_at,
         "checks": {name: bool(checks[name]) for name in GATE_CHECK_NAMES},
         "findings": findings,
+        "reviewer_findings_count": _reviewer_findings_count(review),
         "gpp_2_status": "blocked",
         "support_widening": False,
         "production_platform_claim": False,
@@ -426,11 +570,21 @@ def validate_gate_evidence(artifact: object) -> None:
 
 
 def write_gate_evidence(path: Path, artifact: dict[str, Any]) -> None:
-    """Write a validated gate evidence artifact to ``path``."""
+    """Write a validated gate evidence artifact to ``path``.
+
+    An output-write failure (``mkdir`` or ``write_text`` raising
+    ``OSError``) is wrapped as ``LocalGateInvocationError`` because the
+    gate could not produce durable evidence; that maps to return code 2.
+    """
 
     validate_gate_evidence(artifact)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise LocalGateInvocationError(
+            f"could not write gate evidence to {path}: {exc}"
+        ) from exc
 
 
 def render_summary(artifact: dict[str, Any]) -> str:
@@ -449,7 +603,8 @@ def render_summary(artifact: dict[str, Any]) -> str:
     for name in GATE_CHECK_NAMES:
         marker = "pass" if checks[name] else "fail"
         lines.append(f"- {name}: {marker}")
-    lines.extend(["", "Findings:"])
+    lines.extend(["", f"Reviewer findings count: {artifact['reviewer_findings_count']}"])
+    lines.extend(["", "Gate findings:"])
     if artifact["findings"]:
         for finding in artifact["findings"]:
             lines.append(f"- {finding}")
@@ -497,7 +652,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--skip-git",
         action="store_true",
-        help="Reserved no-op for invocation parity with scripts/gpp_next.py.",
+        help=(
+            "Skip the actual-git-diff scope verification. When set, the "
+            "scope check cannot verify the reviewer-declared changed files "
+            "and fails closed."
+        ),
     )
     return parser
 
@@ -506,8 +665,12 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint.
 
     Returns 0 when the decision is operator_may_merge, 1 when the decision
-    is fail_closed, and 2 on an invocation error (missing schema, broken
-    schema toolchain).
+    is fail_closed, and 2 only on an invocation error. Return code 2 is
+    reserved for conditions where the gate cannot produce a durable
+    artifact at all (a broken schema toolchain or an output write
+    failure). Missing, malformed, or schema-invalid reviewer evidence is
+    not an invocation error: it produces a durable fail_closed artifact
+    and returns 1.
     """
 
     parser = build_parser()
@@ -519,7 +682,20 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         review = load_review_evidence(review_path)
-        checks, gate_findings = evaluate_gate(review, repo_root=repo_root, status_path=status_path)
+        actual_files: list[str] | None = None
+        if not args.skip_git and review is not None:
+            scope = review.get("scope_reviewed")
+            if isinstance(scope, dict):
+                base_ref = scope.get("base_ref")
+                head_ref = scope.get("head_ref")
+                if isinstance(base_ref, str) and isinstance(head_ref, str):
+                    actual_files = actual_changed_files(repo_root, base_ref, head_ref)
+        checks, gate_findings = evaluate_gate(
+            review,
+            repo_root=repo_root,
+            status_path=status_path,
+            actual_files=actual_files,
+        )
         repo = "unknown"
         work_package = "unknown"
         if review is not None:

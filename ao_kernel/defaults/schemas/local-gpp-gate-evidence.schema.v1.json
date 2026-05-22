@@ -13,6 +13,7 @@
     "generated_at",
     "checks",
     "findings",
+    "reviewer_findings_count",
     "gpp_2_status",
     "support_widening",
     "production_platform_claim",
@@ -94,11 +95,16 @@
     },
     "findings": {
       "type": "array",
-      "description": "Reviewer-authored finding strings carried through verbatim and gate-authored finding strings explaining any fail-closed check. No secret material is permitted.",
+      "description": "Gate-authored finding strings explaining any fail-closed check. Reviewer free text is never carried through; only gate-authored strings appear here. No secret material is permitted.",
       "items": {
         "type": "string",
         "minLength": 1
       }
+    },
+    "reviewer_findings_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of reviewer-authored finding strings in the source reviewer evidence. Only the count is carried through; the reviewer's free text is never embedded, so a sentinel placed in a reviewer finding cannot leak through the gate output."
     },
     "gpp_2_status": {
       "type": "string",
