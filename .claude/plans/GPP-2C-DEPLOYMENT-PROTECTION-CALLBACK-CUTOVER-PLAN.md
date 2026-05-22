@@ -88,19 +88,14 @@ decision-bound (§4.1); the execution is an agent-doable protected-contract edit
 attest-CLI-default / docs surface and **nothing else** (no App config, webhook,
 callback, dispatch, or `gpp_status` change).
 
-**C2 - production-suitable callback topology.** Webhook delivery currently flows
-`github -> smee.io -> smee client -> 127.0.0.1`. smee.io is a free public
-relay, explicitly non-production: the operator host cannot receive inbound 443
-directly (Vodafone-TR ISP inbound 443 filter; office firewall blocks the
-Cloudflare tunnel port 7844). **Public health evidence is not
-webhook-reachability evidence** - the internal host serves health on
-`/policy/healthz` and `/release-gate/healthz` and webhooks on
-`/github/deployment-protection` and `/github/ao-release-gate`
-(`deploy/internal-gate-host/Caddyfile.example`); the AO-GATE-3/4 public health
-was observed on `testai.acik.com/ao-gate/*/healthz`. C2 must (a) map the
-external `testai.acik.com/ao-gate/...` path-prefix rewrite onto the internal
-service paths, and (b) prove the GitHub App webhook URL resolves to a
-production-suitable route, not smee. Decision-bound (§4.2).
+**C2 - production-suitable callback topology.** Webhook delivery evidence was
+collected through historical dry-run infrastructure (`smee.io` and hosted
+health probes), but the operator decision for the near-term GPP-2 path is to
+remove `testai.acik.com/ao-gate` from the active scope. Public health evidence
+remains historical operator-infra evidence; it is not webhook-reachability
+evidence and it is not required for GPP-2B. If production callback enforcement
+is reopened later, C2 becomes a separate deferred GPP-2C topology decision and
+can choose `testai` or another owner-controlled endpoint at that time.
 
 **C3 - deployment-protection callback review evidence.** After C1 + C2: a
 controlled `deployment_protection_rule` event (per AO-GATE-7 - `workflow_dispatch`
@@ -154,12 +149,10 @@ Resolution deferred to GPP-2C-2 plus a Codex consultation.
 
 ### 4.2 Callback topology (C2)
 
-A production-suitable inbound webhook path is required; smee.io is
-non-production. GPP-2C-2 must verify whether the existing
-`testai.acik.com/ao-gate/github/*` route is genuinely inbound-reachable for
-webhook delivery (and reconcile this with the AO-GATE-4 public-health claim),
-and if not, frame the production-endpoint options - the choice likely carries a
-hosting / spend tradeoff and is an operator/owner call. Deferred to GPP-2C-2.
+The production callback path is removed from the active GPP-2B scope. `testai`
+is not selected as the current production webhook endpoint, and the agent must
+not repoint GitHub Apps to it in this slice. Any production callback topology
+decision is deferred to a later GPP-2C initiative.
 
 ### 4.3 Category-C parity (C5)
 
@@ -167,6 +160,59 @@ Decide (i) runtime ingestion of `cross_ai_review` into `ao-release-gate` vs
 (ii) explicit deferral with cross-AI review kept as process discipline. Either
 way the decision must be recorded before C6 / C7. Deferred to GPP-2C-2 plus a
 Codex consultation.
+
+### 4.4 Resolution (GPP-2C-2)
+
+Resolved via Codex consultation (thread `019e511b`).
+
+**§4.1 App slug - Option A (rename the GitHub App).** The protected-environment
+and deployment-protection contract is established across the repo on the
+canonical `ao-kernel-live-adapter-gate`: `ao_kernel/live_adapter_gate.py`
+(`PROTECTED_ENVIRONMENT_NAME`, `REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG`), the
+two `const`s in `live-adapter-gate-environment.schema.v1.json` (the protected
+environment `name` and the deployment-protection app slug),
+`scripts/live_adapter_gate_attest.py`'s CLI default, plus tests and docs.
+Migrating that whole surface to a `-policy` suffix (Option B) is an
+unnecessarily wide blast radius on a protected-gate attestation contract.
+Resolution: the operator renames the policy GitHub App slug
+`ao-kernel-live-adapter-gate-policy` -> `ao-kernel-live-adapter-gate`; the repo
+constants / schema / tests / defaults are **not** migrated. Single guard: if a
+GitHub App slug collision makes the rename impossible, that collision is
+resolved first and only then is Option B reconsidered. Operator verification
+after the rename: the App slug and the environment's deployment-protection rule
+reference the same App id / slug. GPP-2C-3 records this as an operator action;
+under Option A it carries no repo code change.
+
+**§4.2 Callback topology - testai removed from the active scope.** The operator
+decision is to keep `testai.acik.com/ao-gate` out of the active GPP-2B / near-term
+release-governance path. The `testai` route may remain as historical public
+health evidence and optional future infrastructure, but it is **not** selected
+as the production callback topology for this slice and it must not be treated as
+a remaining active blocker for the simplified local/operator-controlled model.
+No GitHub App webhook URL is repointed to `testai` in this slice, and no
+deployment-protection callback evidence is required for GPP-2B.
+
+The active near-term path is the no-testai model: cross-provider AI review,
+non-author GitHub approval, `local_gpp_gate.py` evidence, and the
+`ao-release-gate` mapping / conclusion matrix. `smee.io` remains only historical
+dry-run evidence. If the project later reopens public callback enforcement, that
+work is a separate deferred GPP-2C / production-topology initiative and can
+choose `testai` or another owner-controlled endpoint at that time.
+
+**§4.3 Category-C parity - explicit deferral.** `cross_ai_review` is **not**
+taken into the mechanical `ao-release-gate` required check for GPP-2C. The
+current 18-check `ao-release-gate` is accepted as sufficient for the C6
+enforce-mode evidence and the C7 cutover. Cross-AI peer review remains a
+HARD-RULE operator / process discipline (every GPP PR is reviewed by a
+different provider). The GPP-2B-3 attested-review-evidence acceptance-profile
+schema is **preserved** as a future design artifact - this is a deferral of
+runtime ingestion, not a reversal of GPP-2B-3. Runtime ingestion of
+`cross_ai_review` into `ao_release_gate.py` is a separate later slice, gated
+behind GPP-2 unblock, because it would code into the currently blocked GPP-2
+runtime surface.
+
+All three resolutions keep GPP-2 `blocked`; GPP-2C-2 makes no GitHub App,
+webhook, branch-protection, ruleset, or runtime change.
 
 ## 5. Operator runbook (gated steps - sketch)
 
@@ -193,7 +239,7 @@ evidence file is created by GPP-2C-1.
 | Slice | Scope | Gate | Class |
 |---|---|---|---|
 | **GPP-2C-1** | This planning record. | docs only | agent |
-| **GPP-2C-2** | Resolve §4.1 / §4.2 / §4.3 via Codex consultation; verify `testai.acik.com/ao-gate` webhook reachability and map external->internal paths; pin evidence target paths. | docs | agent |
+| **GPP-2C-2** | Resolve §4.1 / §4.2 / §4.3 via Codex consultation; record that `testai.acik.com/ao-gate` is removed from the active GPP-2B scope and deferred as optional future callback infrastructure. Resolved in §4.4. | docs | agent |
 | **GPP-2C-3** | Execute the C1 slug resolution. Option A: operator App rename + attestation note. Option B: agent migration of constants / schema / tests / attest-CLI defaults / docs - isolated PR, no runtime / App / webhook change. | docs (+ code/schema/test if Option B) | agent / operator-decision-bound |
 | **GPP-2C-4** | C3 + C4: production callback review evidence + protected-workflow rerun evidence. | operator action + agent verification | operator-gated |
 | **GPP-2C-5** | C6: `ao-release-gate` enforce-mode positive + negative real-PR evidence. | operator action + agent verification | operator-gated |
