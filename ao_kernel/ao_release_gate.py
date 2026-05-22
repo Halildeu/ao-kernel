@@ -37,7 +37,9 @@ ReleaseGateDecisionValue = Literal[
     "error_fail_closed",
 ]
 ReleaseGateCheckStatus = Literal["pass", "blocked"]
-GithubCheckConclusion = Literal["success", "failure"]
+GithubCheckConclusion = Literal["success", "failure", "neutral"]
+ConclusionMode = Literal["shadow", "enforce"]
+DEFAULT_CONCLUSION_MODE: ConclusionMode = "shadow"
 
 
 class AoReleaseGateInputCheck(TypedDict):
@@ -106,6 +108,7 @@ class AoReleaseGateDecision(TypedDict):
     app_slug: str
     dry_run: bool
     merge_authority_enabled: bool
+    conclusion_mode: ConclusionMode
     decision: ReleaseGateDecisionValue
     allow: bool
     finding_code: str | None
@@ -402,16 +405,38 @@ def _reason(decision: ReleaseGateDecisionValue) -> str:
     return "Release gate denied because the PR violates autonomous release policy."
 
 
-def _check_run(decision: ReleaseGateDecisionValue, findings: list[str]) -> AoReleaseGateCheckRun:
-    """Build the future GitHub check-run output shape."""
+def _check_run(
+    decision: ReleaseGateDecisionValue,
+    findings: list[str],
+    *,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
+) -> AoReleaseGateCheckRun:
+    """Build the future GitHub check-run output shape.
+
+    The check-run conclusion is mode-aware:
+
+    - ``allow_autonomous_merge`` always maps to ``success`` (both modes).
+    - In ``shadow`` mode (default), every deny/error decision maps to
+      ``neutral`` so advisory evidence does not surface as red CI before
+      the AO-GATE-8 enforcement cutover.
+    - In ``enforce`` mode, every deny/error decision maps to ``failure``
+      (the original fail-closed behavior required once the check is wired
+      as a required status check).
+    """
 
     allow = decision == ALLOW_AUTONOMOUS_MERGE_DECISION
     summary = _reason(decision)
     text = "Findings: " + ", ".join(findings) if findings else "All release-gate checks passed."
+    if allow:
+        conclusion: GithubCheckConclusion = "success"
+    elif conclusion_mode == "enforce":
+        conclusion = "failure"
+    else:
+        conclusion = "neutral"
     return {
         "name": RELEASE_GATE_CHECK_NAME,
         "status": "completed",
-        "conclusion": "success" if allow else "failure",
+        "conclusion": conclusion,
         "title": f"{RELEASE_GATE_CHECK_NAME}: {decision}",
         "summary": summary,
         "text": text,
@@ -423,8 +448,16 @@ def build_ao_release_gate_decision(
     gpp_status: object,
     *,
     generated_at: str | None = None,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateDecision:
-    """Build a fail-closed dry-run release-gate decision."""
+    """Build a fail-closed dry-run release-gate decision.
+
+    ``conclusion_mode`` controls how deny/error decisions surface on the
+    GitHub check-run: ``shadow`` (default) maps them to ``neutral`` so the
+    advisory check does not produce red CI before AO-GATE-8 enforcement,
+    while ``enforce`` maps them to ``failure`` (the historical behavior
+    needed once the check is required on branch protection).
+    """
 
     context = extract_ao_release_gate_context(payload, gpp_status)
     checks = [
@@ -582,6 +615,7 @@ def build_ao_release_gate_decision(
         "app_slug": RELEASE_GATE_CHECK_NAME,
         "dry_run": True,
         "merge_authority_enabled": False,
+        "conclusion_mode": conclusion_mode,
         "decision": decision,
         "allow": allow,
         "finding_code": None if allow else decision,
@@ -589,7 +623,7 @@ def build_ao_release_gate_decision(
         "context": context,
         "checks": checks,
         "findings": findings,
-        "github_check_run": _check_run(decision, findings),
+        "github_check_run": _check_run(decision, findings, conclusion_mode=conclusion_mode),
     }
 
 
@@ -602,6 +636,7 @@ def render_ao_release_gate_decision_text(decision: AoReleaseGateDecision) -> str
         f"allow: {str(decision['allow']).lower()}",
         f"dry_run: {str(decision['dry_run']).lower()}",
         f"merge_authority_enabled: {str(decision['merge_authority_enabled']).lower()}",
+        f"conclusion_mode: {decision['conclusion_mode']}",
         f"github_check_run: {decision['github_check_run']['name']} {decision['github_check_run']['conclusion']}",
         f"repository: {context['repository'] or '<missing>'}",
         f"pull_request_number: {context['pull_request_number'] or '<missing>'}",

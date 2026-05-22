@@ -44,7 +44,13 @@ It does not unblock GPP-2 and does not authorize human-free merges yet.
    - missing or invalid signatures blocking before policy evaluation;
    - unsupported events and malformed JSON blocking before policy evaluation;
    - successful dry-run check-run request generation;
-   - denied-policy check-run generation with `failure` conclusion;
+   - denied-policy check-run conclusion mapping in both `shadow` (default,
+     `neutral`) and `enforce` (`failure`) modes;
+   - `allow_autonomous_merge` mapping to `success` regardless of mode;
+   - `AO_RELEASE_GATE_CONCLUSION_MODE` env loader defaulting to `shadow`,
+     accepting `enforce`, and raising a stable config error on invalid
+     values;
+   - service result artifact recording the active `conclusion_mode`;
    - runtime check-run POST path using a fake GitHub client;
    - missing installation id blocking before POST;
    - GitHub App client token/check-run POST behavior without returning secret

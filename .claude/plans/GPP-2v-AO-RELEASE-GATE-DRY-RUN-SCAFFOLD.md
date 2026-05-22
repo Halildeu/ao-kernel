@@ -62,8 +62,12 @@ Terminal decisions:
 5. `deny_untrusted_context`
 6. `error_fail_closed`
 
-The dry-run check-run conclusion is `success` only for
-`allow_autonomous_merge`; all deny/error decisions produce `failure`.
+The release-gate decision remains fail-closed. In shadow mode, GitHub
+check-run conclusion is `success` only for `allow_autonomous_merge` and
+`neutral` for deny/error decisions so advisory evidence does not create
+red CI. In enforce mode, `success` is still only `allow_autonomous_merge`
+and all deny/error decisions produce `failure`. AO-GATE-8 must switch to
+enforce mode before requiring the `ao-release-gate` check.
 
 ## Non-Goals
 

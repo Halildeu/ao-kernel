@@ -12,6 +12,7 @@ import pytest
 
 from ao_kernel.ao_release_gate import ALLOW_AUTONOMOUS_MERGE_DECISION, DENY_POLICY_VIOLATION_DECISION
 from ao_kernel.ao_release_gate_runtime import (
+    CONCLUSION_MODE_ENV,
     DEFAULT_HEALTH_PATH,
     DEFAULT_WEBHOOK_PATH,
     GITHUB_APP_ID_ENV,
@@ -26,6 +27,7 @@ from ao_kernel.ao_release_gate_runtime import (
     ReleaseGateRuntimeConfigError,
     build_github_app_jwt,
     handle_ao_release_gate_webhook,
+    load_conclusion_mode,
     load_github_app_config,
     load_webhook_secret,
     release_gate_runtime_wsgi_app,
@@ -144,7 +146,7 @@ def test_runtime_posts_success_check_run_for_allowed_context() -> None:
     assert check_run_json["conclusion"] == "success"
 
 
-def test_runtime_posts_failure_check_run_for_denied_policy() -> None:
+def test_runtime_posts_neutral_check_run_for_denied_policy_in_shadow_mode() -> None:
     payload = _allow_payload()
     payload["admin_bypass_requested"] = True
     body = _body(payload)
@@ -159,11 +161,41 @@ def test_runtime_posts_failure_check_run_for_denied_policy() -> None:
     )
 
     assert result["status"] == "check_run_posted"
+    assert result["service_result"]["conclusion_mode"] == "shadow"
     assert result["service_result"]["decision"] is not None
     assert result["service_result"]["decision"]["decision"] == DENY_POLICY_VIOLATION_DECISION
     assert github_client.calls[0][0] == 12345
     check_run_json = github_client.calls[0][1]["json"]
     assert check_run_json is not None
+    # Shadow mode (default) maps deny/error to ``neutral`` so the advisory
+    # check does not surface as red CI before AO-GATE-8.
+    assert check_run_json["conclusion"] == "neutral"
+
+
+def test_runtime_posts_failure_check_run_for_denied_policy_in_enforce_mode() -> None:
+    payload = _allow_payload()
+    payload["admin_bypass_requested"] = True
+    body = _body(payload)
+    github_client = FakeGithubClient()
+
+    result = handle_ao_release_gate_webhook(
+        body,
+        _headers(body),
+        webhook_secret="secret",
+        github_client=github_client,
+        gpp_status=_gpp_status(),
+        conclusion_mode="enforce",
+    )
+
+    assert result["status"] == "check_run_posted"
+    assert result["service_result"]["conclusion_mode"] == "enforce"
+    assert result["service_result"]["decision"] is not None
+    assert result["service_result"]["decision"]["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert github_client.calls[0][0] == 12345
+    check_run_json = github_client.calls[0][1]["json"]
+    assert check_run_json is not None
+    # Enforce mode restores the historical ``failure`` mapping required
+    # before AO-GATE-8 makes the check a required branch protection gate.
     assert check_run_json["conclusion"] == "failure"
 
 
@@ -316,6 +348,38 @@ def test_runtime_reports_missing_release_gate_vault_secret_without_echoing_secre
 
     assert exc_info.value.finding_code == "ao_release_gate_runtime_webhook_secret_missing"
     assert "gpp2/release/missing-secret" not in str(exc_info.value)
+
+
+def test_load_conclusion_mode_default_shadow() -> None:
+    # No env var set → shadow default keeps the historical hosted
+    # behavior unchanged for operators who have not opted into enforce.
+    assert load_conclusion_mode({}) == "shadow"
+
+
+def test_load_conclusion_mode_enforce() -> None:
+    assert load_conclusion_mode({CONCLUSION_MODE_ENV: "enforce"}) == "enforce"
+    # Whitespace is tolerated so operators who paste-with-padding still
+    # get the intended mode rather than a config error.
+    assert load_conclusion_mode({CONCLUSION_MODE_ENV: " enforce "}) == "enforce"
+
+
+def test_load_conclusion_mode_empty_falls_back_to_default() -> None:
+    # Empty / whitespace-only values fall back to shadow rather than
+    # erroring; this mirrors how the compose default expands when no
+    # operator override is provided.
+    assert load_conclusion_mode({CONCLUSION_MODE_ENV: ""}) == "shadow"
+    assert load_conclusion_mode({CONCLUSION_MODE_ENV: "   "}) == "shadow"
+
+
+def test_load_conclusion_mode_invalid_raises_config_error() -> None:
+    with pytest.raises(ReleaseGateRuntimeConfigError) as exc_info:
+        load_conclusion_mode({CONCLUSION_MODE_ENV: "wat"})
+
+    assert exc_info.value.finding_code == "ao_release_gate_runtime_invalid_conclusion_mode"
+    # The detail must mention the expected values so an operator typo is
+    # easy to fix without echoing secret material.
+    assert "shadow" in str(exc_info.value)
+    assert "enforce" in str(exc_info.value)
 
 
 def test_wsgi_health_endpoint() -> None:

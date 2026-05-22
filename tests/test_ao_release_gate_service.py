@@ -164,7 +164,7 @@ def test_service_builds_success_check_run_for_allowed_dry_run() -> None:
     }
 
 
-def test_service_builds_failure_check_run_for_denied_policy() -> None:
+def test_service_builds_neutral_check_run_for_denied_policy_in_shadow_mode() -> None:
     payload = _allow_payload()
     payload["admin_bypass_requested"] = True
     body = _body(payload)
@@ -178,11 +178,61 @@ def test_service_builds_failure_check_run_for_denied_policy() -> None:
 
     assert result["status"] == "check_run_ready"
     assert result["should_post_check_run"] is True
+    assert result["conclusion_mode"] == "shadow"
     assert result["decision"] is not None
     assert result["decision"]["decision"] == DENY_POLICY_VIOLATION_DECISION
     assert "ao_release_gate_admin_bypass_requested" in result["decision"]["findings"]
     assert result["check_run_request"]["json"] is not None
+    assert result["check_run_request"]["json"]["conclusion"] == "neutral"
+
+
+def test_service_builds_failure_check_run_for_denied_policy_in_enforce_mode() -> None:
+    payload = _allow_payload()
+    payload["admin_bypass_requested"] = True
+    body = _body(payload)
+
+    result = build_ao_release_gate_service_result(
+        body,
+        _headers(body),
+        gpp_status=_gpp_status(),
+        webhook_secret="secret",
+        conclusion_mode="enforce",
+    )
+
+    assert result["status"] == "check_run_ready"
+    assert result["should_post_check_run"] is True
+    assert result["conclusion_mode"] == "enforce"
+    assert result["decision"] is not None
+    assert result["decision"]["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert result["check_run_request"]["json"] is not None
     assert result["check_run_request"]["json"]["conclusion"] == "failure"
+
+
+def test_service_result_includes_conclusion_mode() -> None:
+    payload = _allow_payload()
+    body = _body(payload)
+
+    shadow_result = build_ao_release_gate_service_result(
+        body,
+        _headers(body),
+        gpp_status=_gpp_status(),
+        webhook_secret="secret",
+    )
+    enforce_result = build_ao_release_gate_service_result(
+        body,
+        _headers(body),
+        gpp_status=_gpp_status(),
+        webhook_secret="secret",
+        conclusion_mode="enforce",
+    )
+
+    assert shadow_result["conclusion_mode"] == "shadow"
+    assert enforce_result["conclusion_mode"] == "enforce"
+    # Allow path stays ``success`` in either mode.
+    assert shadow_result["check_run_request"]["json"] is not None
+    assert enforce_result["check_run_request"]["json"] is not None
+    assert shadow_result["check_run_request"]["json"]["conclusion"] == "success"
+    assert enforce_result["check_run_request"]["json"]["conclusion"] == "success"
 
 
 def test_service_render_and_write(tmp_path: Path) -> None:
