@@ -10,8 +10,8 @@
     "title": "Protected Live-Adapter Gate Runtime Binding",
     "status": "blocked",
     "issue": "https://github.com/Halildeu/ao-kernel/issues/567",
-    "exit_decision": "webhook_delivery_chain_and_shadow_dry_run_check_run_collected_policy_callback_and_cutover_blocked_no_support_widening",
-    "ready_after": "operator-owned policy service and ao-release-gate are hosted on public HTTPS endpoints from the internal operator host bundle or equivalent infrastructure with internal vault-backed runtime secret ids, GitHub App webhook URLs are configured, policy callback review evidence exists, real PR dry-run check-run evidence is collected, local AI review gate evidence is available for operator-controlled merges, branch protection requires ao-release-gate after evidence, and protected workflow evidence confirms live_execution_allowed=false",
+    "exit_decision": "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening",
+    "ready_after": "the no-testai near-term release-governance model is selected and recorded, the ao-release-gate required-check path has enforce-mode success and failure evidence on real pull requests, branch protection requires the ao-release-gate status check with admin bypass disallowed, and the final AO-GATE-9 GPP status closeout is recorded; deployment-protection callback topology and callback review evidence are deferred optional future infrastructure",
     "allowed_scope": [
       "use the repo-owned policy service GHCR image or container package to deploy or configure the ao-kernel-live-adapter-gate GitHub App policy service on operator-owned internal infrastructure without secret value exposure",
       "use the repo-owned ao-release-gate GHCR image or container package to deploy or configure the ao-release-gate GitHub App check-run service on operator-owned internal infrastructure without secret value exposure",
@@ -366,18 +366,16 @@
   "blocked_wps": [
     {
       "id": "GPP-2",
-      "reason": "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime contract, internal operator host bundle, no-secret hosted health probe, public HTTPS health evidence, GitHub App webhook delivery chain evidence via smee.io non-production proxy, and ao-release-gate shadow dry-run check-run evidence are all collected, but deployment-protection callback review evidence, policy App slug reconciliation (new App slug 'ao-kernel-live-adapter-gate-policy' vs repo constant 'ao-kernel-live-adapter-gate'), production-suitable topology for the policy callback path (smee.io is dry-run only), protected workflow evidence, enforce-mode success/failure evidence, and branch-protection/ruleset cutover remain missing"
+      "reason": "the no-testai near-term release-governance model is selected and recorded: cross-provider AI review, non-author GitHub approval, local_gpp_gate operator evidence, and the ao-release-gate required-check mapping plus conclusion-mode matrix are the active GPP-2B path; repo-owned policy and ao-release-gate decision cores, container packages, GHCR publish paths, internal operator host bundle, hosted health evidence, webhook delivery chain evidence, and ao-release-gate shadow dry-run check-run evidence are collected; GPP-2 remains blocked pending ao-release-gate enforce-mode success and failure evidence on real pull requests, branch-protection/ruleset cutover that makes ao-release-gate a required status check with admin bypass disallowed, and the final AO-GATE-9/GPP status closeout; deployment-protection callback topology and callback review evidence, including any testai.acik.com/ao-gate or smee.io path, are deferred optional future infrastructure and are not active GPP-2B blockers"
     }
   ],
   "pending_external_actions": [
-    "resolve policy App slug drift: either rename new GitHub App from 'ao-kernel-live-adapter-gate-policy' to canonical 'ao-kernel-live-adapter-gate' or migrate repo constants/schema/tests/attestation to new slug",
-    "establish production-suitable deployment-protection callback topology; smee.io remains non-production dry-run only",
-    "collect deployment-protection callback review evidence from live-adapter-gate workflow_dispatch (no live adapter execution)",
-    "before AO-GATE-8 cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path",
+    "defer production-suitable deployment-protection callback topology, including any testai.acik.com/ao-gate or smee.io path, to an optional future GPP-2C infrastructure initiative",
+    "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B near-term path",
+    "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term GPP-2B blocker",
+    "before branch-protection cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path on real pull requests",
     "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
-    "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
-    "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
-    "define and implement the local AI review evidence gate as GPP-2A local/operator evidence before continuing heavier deployment-protection callback topology work",
+    "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as GPP-2 closure, support widening, live adapter execution approval, or production platform readiness",
     "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration"
   ],
   "support_widening_allowed": false,
@@ -436,26 +434,21 @@
     "set production_platform_claim=true without explicit GPP-9 promotion decision"
   ],
   "next_allowed_actions": [
-    "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement",
-    "use the local AI review evidence gate as a preparatory operator-controlled trust mechanism only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness",
+    "use the no-testai local/operator release-governance model as the active GPP-2 path: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check mapping",
+    "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active GPP-2B blockers",
+    "use the local AI review evidence gate as operator-controlled trust evidence only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness",
     "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
     "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false",
-    "prefer the internal operator host plus vault-backed secret-id path for GPP-2 service hosting unless a later decision reselects Cloud Run",
-    "use deploy/internal-gate-host as the default no-paid-cloud operator host bundle and validate it with scripts/internal_gate_host_bootstrap_attest.py before collecting hosted evidence",
-    "use scripts/internal_gate_host_health_probe.py to collect no-secret public HTTPS health evidence after the internal gate host is deployed and before configuring GitHub App webhooks",
     "configure ao_kernel.live_adapter_gate_policy_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
     "configure ao_kernel.ao_release_gate_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
-    "configure or verify the GitHub App webhook URL only after the hosted policy service endpoint is health-checked",
-    "host the ao-release-gate service in dry-run mode before collecting real PR evidence",
-    "deploy or host the ao-release-gate check-run service in dry-run mode and collect real PR evidence before any branch protection cutover",
-    "collect ao-release-gate dry-run check-run evidence on real PRs before any branch protection cutover",
-    "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise",
-    "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package and internal vault-backed runtime secret ids before any further live-adapter runtime work",
+    "collect ao-release-gate enforce-mode success and failure evidence on real pull requests before any branch-protection cutover",
+    "cut branch protection/ruleset over to require the ao-release-gate status check only after enforce-mode evidence is captured; admin bypass remains disallowed",
+    "do not repoint GitHub App webhooks to testai.acik.com/ao-gate in the no-testai GPP-2B path",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
-    "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active",
+    "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml while deployment-protection callback topology is deferred",
     "use scripts/live_adapter_gate_policy_service_smoke.py only for local webhook/callback artifact validation, not live callback posting",
-    "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution",
+    "use scripts/live_adapter_gate_policy_decision.py only for policy decision evaluation, not live callback posting or live adapter execution",
     "use scripts/live_adapter_gate_policy_container_smoke.py only for no-secret local container health validation, not live callback posting",
     "use scripts/ao_release_gate_container_smoke.py only for no-secret local container health validation, not check-run posting",
     "publish or pull ghcr.io/halildeu/ao-kernel-ao-release-gate-service only as a deploy artifact, not hosted service evidence",
@@ -466,5 +459,5 @@
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
-  "last_updated": "2026-05-22T09:15:00Z"
+  "last_updated": "2026-05-22T20:30:00Z"
 }

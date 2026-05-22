@@ -15,7 +15,7 @@ The GPP-2ag pivot split `GPP-2` into three slices:
 ```text
 GPP-2A: local AI review gate evidence            — DONE (PR #576 + #577)
 GPP-2B: ao-release-gate required check / mapping  — this slice
-GPP-2C: deployment-protection callback / topology — blocked / later
+GPP-2C: deployment-protection callback / topology — deferred optional infra
 ```
 
 This record is the **GPP-2B planning slice**. It maps the two repo-owned merge
@@ -225,21 +225,24 @@ webhook/App configuration, no live adapter.
 
 Real enforce-mode evidence on live PRs — switching the hosted runtime to
 `conclusion_mode="enforce"` and observing a positive (`success`) and a negative
-(`failure`) path on actual pull requests — is **not** a GPP-2B slice. It
-belongs to GPP-2C / AO-GATE-8. The AO-GATE-8 branch-protection cutover (making
-`ao-release-gate` a required status check) stays in GPP-2C and is **out of
-scope for every GPP-2B slice**; it cannot proceed before that real enforce-mode
-evidence exists and the GPP-2C production callback topology is resolved.
+(`failure`) path on actual pull requests — is now the active no-testai GPP-2B
+follow-up after the mapping/test contract exists. The AO-GATE-8
+branch-protection cutover (making `ao-release-gate` a required status check)
+must still wait for that real enforce-mode evidence, but it no longer waits on
+deployment-protection callback topology, `testai.acik.com/ao-gate`, smee.io, or
+policy App slug reconciliation. Those are deferred optional GPP-2C
+infrastructure.
 
 ## 7. Hard stops / non-goals
 
-- No branch protection / ruleset mutation; no AO-GATE-8 cutover.
-- No `ao-release-gate` enforce-mode switch (`DEFAULT_CONCLUSION_MODE` stays
-  `shadow`).
+- No branch protection / ruleset mutation in this planning record.
+- No `ao-release-gate` enforce-mode switch in this planning record
+  (`DEFAULT_CONCLUSION_MODE` stays `shadow`).
 - No real PR check-run posting and no runtime `conclusion_mode` env flip; no
-  enforce-mode evidence collection on live PRs in any GPP-2B slice. A GPP-2B-4
-  unit test may pass `conclusion_mode="enforce"` to the in-process decision
-  function only — real enforce-mode evidence on live PRs is GPP-2C / AO-GATE-8.
+  enforce-mode evidence collection on live PRs in this planning record. A
+  GPP-2B-4 unit test may pass `conclusion_mode="enforce"` to the in-process
+  decision function only; a later evidence slice collects real enforce-mode PR
+  evidence before cutover.
 - No webhook URL or GitHub App configuration change.
 - No live adapter execution.
 - No `--admin` merge.
@@ -249,9 +252,10 @@ evidence exists and the GPP-2C production callback topology is resolved.
 
 ## 8. Follow-up
 
-GPP-2C continues the deployment-protection callback evidence and the
-production-suitable callback topology (AO-GATE-7) and the branch-protection /
-ruleset cutover (AO-GATE-8). Both remain blocked on a production-reachable
-HTTPS endpoint decision; `smee.io` is non-production dry-run only. GPP-2B
-slices do not depend on GPP-2C and may proceed in parallel as docs/schema/test
-work while GPP-2C topology is unresolved.
+The active no-testai path continues with `ao-release-gate` enforce-mode
+success/failure evidence on real PRs, then branch-protection / ruleset cutover
+to require that status check with admin bypass disabled, then AO-GATE-9 closeout.
+Deployment-protection callback evidence, production-suitable callback topology
+(including `testai.acik.com/ao-gate` or any replacement endpoint), smee.io
+delivery, and policy App slug reconciliation are deferred optional GPP-2C
+infrastructure and are not active GPP-2B blockers.

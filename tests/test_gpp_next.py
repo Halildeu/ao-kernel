@@ -33,7 +33,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "webhook_delivery_chain_and_shadow_dry_run_check_run_collected_policy_callback_and_cutover_blocked_no_support_widening"
+        == "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening"
     )
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
@@ -267,73 +267,57 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
-    # PHASE 7 webhook delivery chain evidence + PHASE 8 shadow dry-run
-    # check-run evidence collected (source: Halildeu/ao-kernel#572 +
-    # Halildeu/ao-kernel#573). The two AO-GATE-6 webhook config items and
-    # the dry-run check-run collection item are no longer pending. New
-    # pending items capture: policy App slug drift (new App slug
-    # 'ao-kernel-live-adapter-gate-policy' vs repo constant), production-
-    # suitable callback topology (smee.io is non-production dry-run),
-    # callback review evidence, enforce-mode positive/negative paths,
-    # branch-protection cutover (admin bypass YASAK), and the local
-    # AI-review evidence gate pivot. Audit trail of PHASE 7 + 8 lives
-    # in `current_wp.evidence_collected[]`.
+    # The no-testai near-term decision (GPP-2C plan, PR #585) is synced
+    # into the machine-readable SSOT. Deployment-protection callback
+    # topology (testai.acik.com/ao-gate, smee.io), callback review
+    # evidence, and policy App slug reconciliation are reframed as a
+    # deferred optional GPP-2C initiative; the active near-term path is
+    # ao-release-gate enforce-mode evidence plus the required-check
+    # cutover. GPP-2 stays blocked.
     assert payload["pending_external_actions"] == [
-        "resolve policy App slug drift: either rename new GitHub App from 'ao-kernel-live-adapter-gate-policy' to canonical 'ao-kernel-live-adapter-gate' or migrate repo constants/schema/tests/attestation to new slug",
-        "establish production-suitable deployment-protection callback topology; smee.io remains non-production dry-run only",
-        "collect deployment-protection callback review evidence from live-adapter-gate workflow_dispatch (no live adapter execution)",
-        "before AO-GATE-8 cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path",
+        "defer production-suitable deployment-protection callback topology, including any testai.acik.com/ao-gate or smee.io path, to an optional future GPP-2C infrastructure initiative",
+        "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B near-term path",
+        "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term GPP-2B blocker",
+        "before branch-protection cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path on real pull requests",
         "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
-        "validate whether GitHub App review-counting works for the current branch protection; if not, cut over to a required ao-release-gate status check",
-        "rerun the protected workflow evidence slice from main after the policy service can approve_contract_gate, reject, or fail explicitly",
-        "define and implement the local AI review evidence gate as GPP-2A local/operator evidence before continuing heavier deployment-protection callback topology work",
-        (
-            "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most "
-            "GitHub App installation, repository selection, and explicit opt-in configuration"
-        ),
+        "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as GPP-2 closure, support widening, live adapter execution approval, or production platform readiness",
+        "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration",
     ]
-    # PHASE 7 + 8 evidence collected. Blocker narrative is updated to
-    # reflect the new state: webhook delivery chain via smee.io (non-
-    # production dry-run) + shadow dry-run check-run are now in the
-    # "collected" list; deployment-protection callback review evidence,
-    # policy App slug reconciliation, production-suitable callback
-    # topology, protected workflow evidence, enforce-mode success/failure
-    # evidence, and branch-protection cutover remain missing. Substantive
-    # blocker condition is unchanged — GPP-2 still blocked.
+    # GPP-2 stays blocked. The blocker narrative is synced to the
+    # no-testai near-term model (GPP-2C plan, PR #585): the
+    # deployment-protection callback path is deferred optional future
+    # infrastructure; GPP-2 remains blocked pending ao-release-gate
+    # enforce-mode evidence, the required-check cutover, and the
+    # AO-GATE-9 closeout. Guard flags stay false.
     assert payload["blocked_wps"] == [
         {
             "id": "GPP-2",
-            "reason": (
-                "repo-owned policy and ao-release-gate decision cores, webhook runtimes, container packages, "
-                "GHCR publish paths, Cloud Run deploy paths, internal vault-backed secret-id runtime "
-                "contract, internal operator host bundle, no-secret hosted health probe, public HTTPS "
-                "health evidence, GitHub App webhook delivery chain evidence via smee.io non-production "
-                "proxy, and ao-release-gate shadow dry-run check-run evidence are all collected, but "
-                "deployment-protection callback review evidence, policy App slug reconciliation (new App "
-                "slug 'ao-kernel-live-adapter-gate-policy' vs repo constant 'ao-kernel-live-adapter-gate'), "
-                "production-suitable topology for the policy callback path (smee.io is dry-run only), "
-                "protected workflow evidence, enforce-mode success/failure evidence, and branch-protection/"
-                "ruleset cutover remain missing"
-            ),
+            "reason": "the no-testai near-term release-governance model is selected and recorded: cross-provider AI review, non-author GitHub approval, local_gpp_gate operator evidence, and the ao-release-gate required-check mapping plus conclusion-mode matrix are the active GPP-2B path; repo-owned policy and ao-release-gate decision cores, container packages, GHCR publish paths, internal operator host bundle, hosted health evidence, webhook delivery chain evidence, and ao-release-gate shadow dry-run check-run evidence are collected; GPP-2 remains blocked pending ao-release-gate enforce-mode success and failure evidence on real pull requests, branch-protection/ruleset cutover that makes ao-release-gate a required status check with admin bypass disallowed, and the final AO-GATE-9/GPP status closeout; deployment-protection callback topology and callback review evidence, including any testai.acik.com/ao-gate or smee.io path, are deferred optional future infrastructure and are not active GPP-2B blockers",
         }
     ]
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
-        action == "host the ao-release-gate service in dry-run mode before collecting real PR evidence"
+        action
+        == "use the no-testai local/operator release-governance model as the active GPP-2 path: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check mapping"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "deploy or host the ao-release-gate check-run service in dry-run mode and collect real PR evidence before any branch protection cutover"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action == "collect ao-release-gate dry-run check-run evidence on real PRs before any branch protection cutover"
+        == "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active GPP-2B blockers"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "validate GitHub App review-counting only as a spike; use required status check as the durable enforcement path unless proven otherwise"
+        == "collect ao-release-gate enforce-mode success and failure evidence on real pull requests before any branch-protection cutover"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action
+        == "cut branch protection/ruleset over to require the ao-release-gate status check only after enforce-mode evidence is captured; admin bypass remains disallowed"
+        for action in payload["next_allowed_actions"]
+    )
+    assert any(
+        action == "do not repoint GitHub App webhooks to testai.acik.com/ao-gate in the no-testai GPP-2B path"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -363,12 +347,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat Codex or Claude output as release authority" for action in payload["forbidden_actions"])
     assert any(
         action
-        == "treat the GPP-2 deployment-protection policy service as operator-owned platform infrastructure, not an end-user setup requirement"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "use the local AI review evidence gate as a preparatory operator-controlled trust mechanism only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness"
+        == "use the local AI review evidence gate as operator-controlled trust evidence only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -383,21 +362,6 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "prefer the internal operator host plus vault-backed secret-id path for GPP-2 service hosting unless a later decision reselects Cloud Run"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "use deploy/internal-gate-host as the default no-paid-cloud operator host bundle and validate it with scripts/internal_gate_host_bootstrap_attest.py before collecting hosted evidence"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "use scripts/internal_gate_host_health_probe.py to collect no-secret public HTTPS health evidence after the internal gate host is deployed and before configuring GitHub App webhooks"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
         == "configure ao_kernel.live_adapter_gate_policy_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material"
         for action in payload["next_allowed_actions"]
     )
@@ -408,12 +372,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "configure or verify the GitHub App webhook URL only after the hosted policy service endpoint is health-checked"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml until the ao-kernel-live-adapter-gate policy service is active"
+        == "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml while deployment-protection callback topology is deferred"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -423,7 +382,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "use scripts/live_adapter_gate_policy_decision.py only for policy callback decision evaluation, not live adapter execution"
+        == "use scripts/live_adapter_gate_policy_decision.py only for policy decision evaluation, not live callback posting or live adapter execution"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -444,11 +403,6 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action
         == "publish or pull ghcr.io/halildeu/ao-kernel-ao-release-gate-service only as a deploy artifact, not hosted service evidence"
-        for action in payload["next_allowed_actions"]
-    )
-    assert any(
-        action
-        == "deploy or configure the deployment-protection policy service using the repo-owned GHCR image or container package and internal vault-backed runtime secret ids before any further live-adapter runtime work"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -741,7 +695,7 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     assert payload["blocked_wps"][0]["id"] == "GPP-2"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "webhook_delivery_chain_and_shadow_dry_run_check_run_collected_policy_callback_and_cutover_blocked_no_support_widening"
+        == "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -772,11 +726,11 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "internal vault-backed secret-id runtime contract" in rendered
+    assert "the no-testai near-term release-governance model is selected and recorded" in rendered
     assert "internal operator host bundle" in rendered
-    assert "no-secret hosted health probe" in rendered
-    assert "webhook runtimes, container packages" in rendered
-    assert "public HTTPS health evidence" in rendered
+    assert "GPP-2 remains blocked pending ao-release-gate enforce-mode" in rendered
+    assert "deferred optional future infrastructure" in rendered
+    assert "are not active GPP-2B blockers" in rendered
     assert "divergence: 0\t0" in rendered
 
 

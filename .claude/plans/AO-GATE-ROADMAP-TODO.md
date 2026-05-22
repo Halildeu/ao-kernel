@@ -4,10 +4,12 @@
 **Date:** 2026-05-22
 **Owner model:** operator-owned gate infrastructure, product-facing repo-intelligence onboarding
 **Current program blocker:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding` remains blocked / fail-closed
-**Decision baseline:** `testai.acik.com/ao-gate` path-based hosting is the
-preferred internal operator-host path; local AI review gate evidence is now the
-preferred next simplification step before further deployment-protection
-callback work.
+**Decision baseline:** the active no-testai near-term path is local/operator
+release governance: cross-provider AI review, non-author GitHub approval,
+`local_gpp_gate` evidence, and `ao-release-gate` required-check mapping.
+`testai.acik.com/ao-gate`, smee.io delivery, deployment-protection callback
+evidence, and policy App slug reconciliation are deferred optional GPP-2C
+infrastructure, not active GPP-2B blockers.
 
 ## How To Use This Todo
 
@@ -19,9 +21,9 @@ callback work.
 
 ## Guardrails
 
-- [ ] GPP-2 remains fail-closed until public HTTPS health evidence, webhook evidence, dry-run check-run evidence, callback evidence, and branch protection/ruleset evidence exist.
-- [ ] No GitHub App webhook URL is configured before public HTTPS health evidence passes.
-- [ ] No branch protection/ruleset cutover happens before real PR `ao-release-gate` dry-run check-run evidence exists.
+- [ ] GPP-2 remains fail-closed until `ao-release-gate` enforce-mode success/failure evidence, required-check branch-protection cutover, and AO-GATE-9 closeout exist.
+- [ ] No GitHub App webhook URL is repointed to `testai.acik.com/ao-gate` in the no-testai GPP-2B path.
+- [ ] No branch protection/ruleset cutover happens before real PR `ao-release-gate` enforce-mode success and failure evidence exists.
 - [ ] No live adapter execution is started from this roadmap.
 - [ ] No secret value, private key, webhook secret, or Vault token is committed, echoed, pasted into chat, or stored in evidence.
 - [ ] Claude/Codex consultation remains advisory and is not release authority.
@@ -30,7 +32,12 @@ callback work.
   close GPP-2, widen support, claim production readiness, or replace later
   protected-runtime evidence.
 
-## Public URL Contract
+## Historical / Deferred Public URL Contract
+
+These URLs document the hosted health/callback work already completed or
+rehearsed. They are not part of the active no-testai GPP-2B blocker list.
+Do not repoint GitHub App webhooks to `testai.acik.com/ao-gate` in the
+near-term path.
 
 ```text
 Policy health:
@@ -84,9 +91,9 @@ location = /ao-gate/github/ao-release-gate {
 | AO-GATE-5 | GitHub App webhook config evidence | GitHub App | DONE | AO-GATE-4 passed | Webhook URLs configured to `/ao-gate/github/*` |
 | AO-GATE-6 | `ao-release-gate` dry-run PR evidence | GitHub PR | EVIDENCE CAPTURED | Webhook evidence present | Real PR dry-run check-run evidence |
 | LOCAL-GATE-1 | Local AI review evidence gate | `ao-kernel` | DONE | GPP-2 remains blocked; no production claim | PR #576 pivot plan + PR #577 implementation merged (`bd8eb35`); local no-secret evidence JSON + fail-closed tests |
-| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | DEFERRED | Local gate pivot recorded first; policy callback still needs production topology | Callback review evidence or fail-closed evidence |
-| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | DEFERRED | Enforce-mode success/failure evidence first | Required `ao-release-gate` check blocks merge without pass |
-| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | BLOCKED | Evidence chain complete | GPP status updated without support widening |
+| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | DEFERRED / OPTIONAL | Deferred GPP-2C infrastructure; not an active GPP-2B blocker | Future callback review evidence or explicit superseding decision |
+| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | BLOCKED | Enforce-mode success/failure evidence first | Required `ao-release-gate` check blocks merge without pass; admin bypass disabled |
+| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | BLOCKED | GPP-2B evidence chain complete | GPP status updated without support widening |
 | RI-NEXT | Repo Intelligence read-only E2E continuation | `ao-kernel` | Blocked | GPP-2 and GPP-4 blockers | GPP-6 execution path reopened |
 
 ## Evidence Artifact Paths
@@ -467,12 +474,16 @@ service, or branch-protection cutover.
 |---|---|---|
 | 2026-04-28 | Initial editable roadmap todo created from Codex + Claude advisory review | Codex |
 | 2026-05-21 | AO-GATE-1..4 + AO-GATE-9 completed; AO-GATE-5..8 remain operator-bound. Codex thread 019e4a10 plan+post-impl AGREE v2.1 + Decision 1 Alt-B + Decision 2 AGREE_A. | Claude |
-| 2026-05-22 | AO-GATE-5..6 evidence captured; AO-GATE-7..8 remain blocked. Local AI review gate pivot added as the next simplification step before more deployment-protection callback work. | Codex |
-| 2026-05-22 | LOCAL-GATE-1 (GPP-2A) implemented and merged — PR #576 pivot plan + PR #577 implementation. Local AI review evidence gate is operator-controlled local trust evidence only; GPP-2 remains blocked. AO-GATE-7..8 (GPP-2C) still blocked on policy App slug reconciliation, production callback topology, enforce-mode evidence, and branch-protection cutover. | Claude |
+| 2026-05-22 | AO-GATE-5..6 evidence captured; AO-GATE-7..8 were still treated as blocked at that point. Local AI review gate pivot added as the next simplification step before more deployment-protection callback work. Superseded by the no-testai active-path decision below. | Codex |
+| 2026-05-22 | LOCAL-GATE-1 (GPP-2A) implemented and merged — PR #576 pivot plan + PR #577 implementation. Local AI review evidence gate is operator-controlled local trust evidence only; GPP-2 remains blocked. Superseded blocker framing: AO-GATE-7..8 were still grouped under GPP-2C before the no-testai active-path decision below. | Claude |
+| 2026-05-22 | No-testai active path selected. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation are deferred optional GPP-2C infrastructure, not active GPP-2B blockers. Active GPP-2 blockers are now `ao-release-gate` enforce-mode success/failure evidence, required-check branch-protection cutover with admin bypass disabled, and AO-GATE-9 closeout. | Codex |
 
 ## Post-Merge Status (2026-05-21)
 
-Public HTTPS health hosting evidence collected; GPP-2 SSOT updated. GPP-2 overall remains `blocked` until AO-GATE-5..8.
+Public HTTPS health hosting evidence collected; GPP-2 SSOT updated. After the
+2026-05-22 no-testai decision, GPP-2 remains `blocked` on the narrower active
+path: `ao-release-gate` enforce-mode success/failure evidence, required-check
+branch-protection cutover, and AO-GATE-9 closeout.
 
 ### Completed work packages
 
@@ -495,8 +506,8 @@ ao-kernel#570 (config contract per-service split) + platform-k8s-gitops#942 (git
 | AO-GATE-5 | ✅ DONE (2026-05-22) | Two GitHub Apps created (`ao-kernel-live-adapter-gate-policy` id=3800120 + `ao-release-gate` id=3800233); Vault PEM + webhook-secret seeded (`/pem` and `/value` field-name suffix per ao-kernel `hashicorp_vault_provider.py` contract); `.env` updated per-service; containers Healthy + HMAC verification confirmed (origin returns sig-verified 4xx for ping = `wrong_event` not `signature_invalid`) |
 | AO-GATE-6 | ✅ Evidence captured (2026-05-22) | Webhook delivery chain GREEN via smee.io non-production dry-run proxy (TCP/443 outbound; office firewall blocks TCP+UDP/7844, cloudflared infeasible). PR #572 opened → release-gate App posted check-run `ao-release-gate` conclusion=`failure` output_title=`deny_missing_evidence` (correct fail-closed posture, advisory only — no branch protection cutover) |
 | LOCAL-GATE-1 | ✅ DONE (2026-05-22) | Local operator trust model pivot implemented: implementer AI + reviewer AI + local fail-closed evidence gate. PR #576 pivot plan + PR #577 implementation merged (`bd8eb35`). Operator-controlled local trust evidence only — this does not close GPP-2 and does not replace AO-GATE-7/AO-GATE-8 protected-runtime evidence. |
-| AO-GATE-7 | ⏳ Blocked on App slug reconciliation + production topology | (a) Policy App slug drift: new App is `ao-kernel-live-adapter-gate-policy` but repo constant `REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG = "ao-kernel-live-adapter-gate"` and protected environment name expect old slug (`ao_kernel/live_adapter_gate.py:34,46`; `ao_kernel/defaults/schemas/live-adapter-gate-environment.schema.v1.json:107,119`); decision needed: rename new App OR update constant/schema/tests/attestation to new slug. (b) Production topology: smee.io is dry-run only; deployment-protection callback path needs publicly-reachable HTTPS endpoint with verified-context. (c) After (a)+(b): `workflow_dispatch` on `live-adapter-gate.yml` with `target_ref=main`, capture deployment_protection_rule webhook id + policy origin signature_verified + callback POST result + workflow run id |
-| AO-GATE-8 | ⏳ Blocked on AO-GATE-6 + AO-GATE-7 | Branch protection cutover: required ao-release-gate check; admin bypass YASAK. Additional gate: at least one **positive `success` conclusion path** demonstrated (not only fail-closed `failure / deny_missing_evidence`) OR explicit documented decision that required check stays advisory until enrichment model produces verified-context |
+| AO-GATE-7 | ⏸ Deferred optional GPP-2C infrastructure | Policy App slug reconciliation, production callback topology, and deployment-protection callback review evidence are no longer active GPP-2B blockers. If reopened later, choose `testai` or another owner-controlled endpoint in a separate GPP-2C infrastructure slice. |
+| AO-GATE-8 | ⏳ Active GPP-2B blocker: enforce evidence + cutover | Branch protection cutover: required `ao-release-gate` status check; admin bypass YASAK. Required before cutover: one positive `success` conclusion path and one negative `failure` path on real PRs in enforce mode. |
 
 ### Constraints carried (unchanged from initial draft)
 
