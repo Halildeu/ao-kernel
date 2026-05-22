@@ -168,6 +168,62 @@ Decide (i) runtime ingestion of `cross_ai_review` into `ao-release-gate` vs
 way the decision must be recorded before C6 / C7. Deferred to GPP-2C-2 plus a
 Codex consultation.
 
+### 4.4 Resolution (GPP-2C-2)
+
+Resolved via Codex consultation (thread `019e511b`).
+
+**§4.1 App slug - Option A (rename the GitHub App).** The protected-environment
+and deployment-protection contract is established across the repo on the
+canonical `ao-kernel-live-adapter-gate`: `ao_kernel/live_adapter_gate.py`
+(`PROTECTED_ENVIRONMENT_NAME`, `REQUIRED_DEPLOYMENT_PROTECTION_APP_SLUG`), the
+two `const`s in `live-adapter-gate-environment.schema.v1.json` (the protected
+environment `name` and the deployment-protection app slug),
+`scripts/live_adapter_gate_attest.py`'s CLI default, plus tests and docs.
+Migrating that whole surface to a `-policy` suffix (Option B) is an
+unnecessarily wide blast radius on a protected-gate attestation contract.
+Resolution: the operator renames the policy GitHub App slug
+`ao-kernel-live-adapter-gate-policy` -> `ao-kernel-live-adapter-gate`; the repo
+constants / schema / tests / defaults are **not** migrated. Single guard: if a
+GitHub App slug collision makes the rename impossible, that collision is
+resolved first and only then is Option B reconsidered. Operator verification
+after the rename: the App slug and the environment's deployment-protection rule
+reference the same App id / slug. GPP-2C-3 records this as an operator action;
+under Option A it carries no repo code change.
+
+**§4.2 Callback topology - production endpoints confirmed.** A read-only
+reachability probe (GPP-2C-2) confirmed `testai.acik.com/ao-gate/*` is publicly
+reachable over HTTPS and the `/github/*` routes resolve to the live runtimes:
+`GET /ao-gate/policy/healthz` -> `200` (GPP-2q `ok`);
+`GET /ao-gate/release-gate/healthz` -> `200` (GPP-2w `ok`);
+`GET /ao-gate/github/deployment-protection` -> `404` (GPP-2q `not_found`) and
+`GET /ao-gate/github/ao-release-gate` -> `404` (GPP-2w `not_found`) - the policy
+and release-gate runtimes answering a GET on their POST-only webhook paths. The
+production-suitable webhook endpoints are therefore
+`https://testai.acik.com/ao-gate/github/deployment-protection` (policy /
+deployment-protection) and
+`https://testai.acik.com/ao-gate/github/ao-release-gate` (`ao-release-gate`).
+`smee.io` is retained only as the legacy non-production dry-run delivery path.
+The remaining C2 work is **not** a hosting or spend decision - it is repointing
+the GitHub App webhook URLs to these endpoints, an operator step folded into
+GPP-2C-4. Boundary: this probe proves a public inbound route exists; it does
+**not** prove a GitHub-signed POST is accepted, the signature verified, or the
+callback posted - those stay C3 / C4 evidence.
+
+**§4.3 Category-C parity - explicit deferral.** `cross_ai_review` is **not**
+taken into the mechanical `ao-release-gate` required check for GPP-2C. The
+current 18-check `ao-release-gate` is accepted as sufficient for the C6
+enforce-mode evidence and the C7 cutover. Cross-AI peer review remains a
+HARD-RULE operator / process discipline (every GPP PR is reviewed by a
+different provider). The GPP-2B-3 attested-review-evidence acceptance-profile
+schema is **preserved** as a future design artifact - this is a deferral of
+runtime ingestion, not a reversal of GPP-2B-3. Runtime ingestion of
+`cross_ai_review` into `ao_release_gate.py` is a separate later slice, gated
+behind GPP-2 unblock, because it would code into the currently blocked GPP-2
+runtime surface.
+
+All three resolutions keep GPP-2 `blocked`; GPP-2C-2 makes no GitHub App,
+webhook, branch-protection, ruleset, or runtime change.
+
 ## 5. Operator runbook (gated steps - sketch)
 
 GPP-2C-1 records the shape; GPP-2C-2/4/5/6 refine each into an exact runbook
@@ -193,7 +249,7 @@ evidence file is created by GPP-2C-1.
 | Slice | Scope | Gate | Class |
 |---|---|---|---|
 | **GPP-2C-1** | This planning record. | docs only | agent |
-| **GPP-2C-2** | Resolve §4.1 / §4.2 / §4.3 via Codex consultation; verify `testai.acik.com/ao-gate` webhook reachability and map external->internal paths; pin evidence target paths. | docs | agent |
+| **GPP-2C-2** | Resolve §4.1 / §4.2 / §4.3 via Codex consultation; verify `testai.acik.com/ao-gate` webhook reachability and map external->internal paths; pin evidence target paths. Resolved in §4.4. | docs | agent |
 | **GPP-2C-3** | Execute the C1 slug resolution. Option A: operator App rename + attestation note. Option B: agent migration of constants / schema / tests / attest-CLI defaults / docs - isolated PR, no runtime / App / webhook change. | docs (+ code/schema/test if Option B) | agent / operator-decision-bound |
 | **GPP-2C-4** | C3 + C4: production callback review evidence + protected-workflow rerun evidence. | operator action + agent verification | operator-gated |
 | **GPP-2C-5** | C6: `ao-release-gate` enforce-mode positive + negative real-PR evidence. | operator action + agent verification | operator-gated |
