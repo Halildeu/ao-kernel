@@ -53,9 +53,11 @@ stays `blocked`.
   `ao_kernel/ao_release_gate_service.py` + `ao_release_gate_runtime.py`.
 - A repo-owned GitHub App release gate. Consumes a PR-shaped GitHub payload
   plus the GPP status JSON. Emits an `ao-release-gate` GitHub check-run.
-- Eighteen checks; `decision = allow_autonomous_merge` only when all pass,
-  otherwise one of `deny_policy_violation`, `deny_missing_evidence`,
-  `deny_stale_branch`, `deny_untrusted_context`, `error_fail_closed`.
+- Twenty checks (GPP-2D-2b added `review_evidence` and
+  `review_evidence_context_bound` to the original eighteen);
+  `decision = allow_autonomous_merge` only when all pass, otherwise one of
+  `deny_policy_violation`, `deny_missing_evidence`, `deny_stale_branch`,
+  `deny_untrusted_context`, `error_fail_closed`.
 - Check-run conclusion is mode-aware (`ConclusionMode`): `allow_autonomous_merge`
   → `success` in both modes; any deny/error → `neutral` in `shadow` (default,
   advisory) and `failure` in `enforce`.
@@ -191,30 +193,34 @@ registry for an external `$ref`. The future check therefore validates in two
 steps: **first** the full `local-gpp-gate-evidence.schema.v1.json`, **then**
 this acceptance profile.
 
-**Future check (design only — not implemented in this slice).** A future
-`ao-release-gate` check named `cross_ai_review` would verify that the review
-evidence is present, structurally valid against
-`local-gpp-gate-evidence.schema.v1.json`, conformant to the acceptance profile,
-and context-consistent:
+**Implemented in GPP-2D-2b.** The acceptance profile is now wired into
+`build_ao_release_gate_decision` as two fail-closed checks (`review_evidence`
+and `review_evidence_context_bound`) that verify the review evidence is
+present, structurally valid against `local-gpp-gate-evidence.schema.v1.json`,
+conformant to the acceptance profile, and context-bound to this pull request:
 
 - `repo` equals the normalized PR repository;
-- `work_package` equals the PR's explicitly declared reviewed slice — it is
-  **not** equated blindly to `gpp_status.current_wp.id`, since the current work
-  package may be the parent `GPP-2` while a valid artifact carries a slice id
-  such as `GPP-2B-3` — and implies no work outside the parent `GPP-2` scope;
+- `work_package` equals the PR's explicitly declared reviewed slice
+  (`payload.reviewed_slice`) — it is **not** equated blindly to
+  `gpp_status.current_wp.id`, since the current work package may be the parent
+  `GPP-2` while a valid artifact carries a slice id such as `GPP-2B-3` — and
+  implies no work outside the parent `GPP-2` scope;
+- `context_binding.head_sha` equals the PR head SHA;
+- `context_binding.diff_digest` equals the canonical
+  `ao_kernel.ao_release_gate.diff_digest` over the PR's changed paths;
+- `context_binding.changed_files_count` equals the PR's changed-files count;
 - `gpp_2_status` is `blocked`.
 
-Missing, schema-invalid, non-accepting, or context-mismatched evidence maps to
-`deny_missing_evidence`, with granular finding codes:
-`ao_release_gate_cross_ai_review_evidence_missing`,
-`ao_release_gate_cross_ai_review_evidence_schema_invalid`,
-`ao_release_gate_cross_ai_review_evidence_not_accepting`,
-`ao_release_gate_cross_ai_review_evidence_context_mismatch`.
+Missing, malformed, or non-accepting evidence maps to `deny_missing_evidence`
+(`ao_release_gate_review_evidence_missing`, `..._schema_invalid`,
+`..._not_accepting`, `..._context_unverifiable`); evidence that is accepting
+but cannot be context-bound to this pull request maps to
+`deny_untrusted_context` (`ao_release_gate_review_evidence_context_unbound`).
 
-**Scope.** Design only: no `ao_release_gate.py` change, no service wiring, no
-payload-field handling, no webhook or GitHub App config, no enforce-mode
-switch, no branch-protection cutover, no `gpp_status.v1.json` change. GPP-2
-stays `blocked`; the guard flags stay `false`.
+**Scope (now).** Decision-core wiring landed in GPP-2D-2b. Still not landed:
+the `ao-release-gate` GitHub Actions workflow (GPP-2D-2c shadow job), the
+enforce-mode flip (GPP-2D-3), and the branch-protection cutover (GPP-2D-5).
+GPP-2 stays `blocked`; the guard flags stay `false`.
 
 ## 6. GPP-2B implementation plan (phased)
 
