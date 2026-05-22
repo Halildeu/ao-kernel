@@ -116,6 +116,25 @@ def _reviewed_slice(gpp_status_path: Path) -> str:
     raise SystemExit("gpp_status.v1.json missing current_wp.id")
 
 
+def _work_package_issue_url(gpp_status_path: Path) -> str:
+    """Return the base-ref-trusted work-package issue URL.
+
+    The decision core's gpp_issue_consistency check requires the payload's
+    issue_url to equal the GPP current work-package issue URL exactly. The
+    workflow CANNOT source this from ``pull_request.issue_url`` — that field
+    is the PR's own API URL, not the GPP work-package issue URL — so the
+    builder derives it from the base-ref ``gpp_status.current_wp.issue``.
+    """
+
+    status = json.loads(gpp_status_path.read_text(encoding="utf-8"))
+    current_wp = status.get("current_wp") if isinstance(status, dict) else None
+    if isinstance(current_wp, dict):
+        issue = current_wp.get("issue")
+        if isinstance(issue, str) and issue.strip():
+            return issue.strip()
+    raise SystemExit("gpp_status.v1.json missing current_wp.issue")
+
+
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     """Build the release-gate payload dictionary from trusted inputs."""
 
@@ -130,7 +149,10 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 "repo": {"fork": args.from_fork},
             },
         },
-        "issue_url": args.issue_url,
+        # issue_url comes from the base-ref-trusted gpp_status, NOT from the
+        # pull_request.issue_url webhook field (which is the PR's own API
+        # URL, not the GPP work-package issue URL).
+        "issue_url": _work_package_issue_url(args.gpp_status),
         "branch_up_to_date": args.branch_up_to_date,
         "event_name": "pull_request",
         "reviewed_slice": _reviewed_slice(args.gpp_status),
@@ -154,14 +176,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-ref", required=True)
     parser.add_argument("--head-ref", required=True)
     parser.add_argument("--head-sha", required=True)
-    parser.add_argument("--issue-url", required=True)
     parser.add_argument("--from-fork", type=_bool_arg, required=True)
     parser.add_argument("--branch-up-to-date", type=_bool_arg, required=True)
     parser.add_argument(
         "--gpp-status",
         type=Path,
         required=True,
-        help="Path to the base-ref gpp_status.v1.json (trusted source of reviewed_slice).",
+        help=(
+            "Path to the base-ref gpp_status.v1.json. Trusted source of both "
+            "reviewed_slice (current_wp.id) and issue_url (current_wp.issue)."
+        ),
     )
     parser.add_argument("--pr-files-json", type=Path, required=True)
     parser.add_argument("--check-runs-json", type=Path, required=True)
