@@ -310,17 +310,96 @@ def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
     return ok
 
 
+def _forbidden_surfaces(paths: list[str]) -> list[str]:
+    """Return the sorted forbidden denylist substrings touched by ``paths``.
+
+    Only the matched gate-owned denylist substrings are returned, never the
+    raw paths, so a caller can build a finding string without echoing
+    reviewer-controlled path text into the gate output.
+    """
+
+    matched: set[str] = set()
+    for path in paths:
+        for forbidden in FORBIDDEN_SCOPE_SUBSTRINGS:
+            if forbidden in path:
+                matched.add(forbidden)
+    return sorted(matched)
+
+
 def _evaluate_scope(
-    review: dict[str, Any], actual_files: list[str] | None, findings: list[str]
+    review: dict[str, Any],
+    actual_files: list[str] | None,
+    findings: list[str],
+    *,
+    base_ref: str,
+    head_ref: str,
+    repo: str,
+    work_package: str,
 ) -> bool:
     """Confirm the reviewed scope is real, non-empty, and forbidden-path free.
 
-    The reviewer-declared ``changed_files`` list is not trusted on its own:
-    it is verified against the actual git diff (``actual_files``). When the
-    actual diff is unavailable the scope check fails closed, and when the
-    declared list does not exactly match the actual diff the scope check
-    fails closed and the finding reports the symmetric difference.
+    The reviewer-declared ``changed_files`` list is not trusted on its own.
+    It is verified against the actual git diff (``actual_files``): an
+    unavailable actual diff fails the scope check closed, and a declared
+    list that does not exactly match the actual diff fails closed. The
+    forbidden-surface denylist is applied to both the reviewer-declared
+    list and the actual git diff, so a forbidden file the reviewer omitted
+    from ``changed_files`` still fails the gate closed.
+
+    The reviewer evidence is untrusted input. The reviewer-declared
+    ``scope_reviewed.base_ref`` / ``head_ref`` must equal the operator
+    ``--base-ref`` / ``--head-ref`` (passed in as ``base_ref`` / ``head_ref``),
+    and the reviewer-declared top-level ``repo`` / ``work_package`` must
+    equal the operator ``--repo`` / ``--work-package`` (passed in as
+    ``repo`` / ``work_package``). A mismatch fails the scope check closed,
+    so a reviewer cannot narrow the diff range to hide files or plant a
+    sentinel in the repo/work-package fields.
+
+    Scope findings report only counts and gate-owned denylist substrings;
+    raw reviewer-controlled path strings are never echoed, so a sentinel
+    placed in ``changed_files`` cannot leak into the gate output.
     """
+
+    ok = True
+
+    # The reviewer evidence is untrusted. Its declared base/head refs and
+    # repo/work-package must match the trusted operator-supplied values; a
+    # mismatch fails closed. The mismatch findings name only the trusted
+    # operator-supplied value, never the raw reviewer-declared one, so a
+    # sentinel planted in those reviewer fields cannot leak into the gate
+    # output (the same no-echo discipline used for changed_files).
+    reviewer_base = review.get("scope_reviewed")
+    declared_base_ref = (
+        reviewer_base.get("base_ref") if isinstance(reviewer_base, dict) else None
+    )
+    declared_head_ref = (
+        reviewer_base.get("head_ref") if isinstance(reviewer_base, dict) else None
+    )
+    if declared_base_ref != base_ref:
+        findings.append(
+            "scope: reviewer-declared base_ref does not match operator base_ref "
+            f"{base_ref!r}"
+        )
+        ok = False
+    if declared_head_ref != head_ref:
+        findings.append(
+            "scope: reviewer-declared head_ref does not match operator head_ref "
+            f"{head_ref!r}"
+        )
+        ok = False
+    declared_repo = review.get("repo")
+    if declared_repo != repo:
+        findings.append(
+            f"scope: reviewer-declared repo does not match operator repo {repo!r}"
+        )
+        ok = False
+    declared_work_package = review.get("work_package")
+    if declared_work_package != work_package:
+        findings.append(
+            "scope: reviewer-declared work_package does not match operator "
+            f"work_package {work_package!r}"
+        )
+        ok = False
 
     scope = review.get("scope_reviewed")
     if not isinstance(scope, dict):
@@ -334,14 +413,11 @@ def _evaluate_scope(
         findings.append("scope: changed_files must contain only non-empty strings")
         return False
 
-    ok = True
-    for path in changed_files:
-        for forbidden in FORBIDDEN_SCOPE_SUBSTRINGS:
-            if forbidden in path:
-                findings.append(
-                    f"scope: changed file {path!r} touches forbidden surface {forbidden!r}"
-                )
-                ok = False
+    for forbidden in _forbidden_surfaces(changed_files):
+        findings.append(
+            f"scope: a reviewer-declared changed file touches forbidden surface {forbidden!r}"
+        )
+        ok = False
 
     if actual_files is None:
         findings.append(
@@ -350,16 +426,21 @@ def _evaluate_scope(
         )
         return False
 
+    for forbidden in _forbidden_surfaces(actual_files):
+        findings.append(
+            f"scope: a file in the actual git diff touches forbidden surface {forbidden!r}"
+        )
+        ok = False
+
     declared = set(changed_files)
     actual = set(actual_files)
     if declared != actual:
-        missing_from_reviewer = sorted(actual - declared)
-        extra_in_reviewer = sorted(declared - actual)
+        missing_count = len(actual - declared)
+        extra_count = len(declared - actual)
         findings.append(
-            "scope: reviewer-declared changed_files does not match the actual git diff "
-            f"({len(missing_from_reviewer)} missing from reviewer, "
-            f"{len(extra_in_reviewer)} extra in reviewer); "
-            f"missing={missing_from_reviewer} extra={extra_in_reviewer}"
+            "scope: reviewer-declared changed_files does not match the actual git "
+            f"diff ({missing_count} missing from reviewer, {extra_count} extra in "
+            "reviewer)"
         )
         ok = False
     return ok
@@ -426,7 +507,19 @@ def _evaluate_reviewer_agree(review: dict[str, Any], findings: list[str]) -> boo
 
 
 def _evaluate_cross_provider(review: dict[str, Any], findings: list[str]) -> bool:
-    """Confirm the implementer and reviewer providers differ."""
+    """Confirm the implementer and reviewer providers differ.
+
+    This check enforces the HARD RULE Cross-AI Peer Review at the
+    *provider* level: the implementer's provider must differ from the
+    reviewer's provider. It deliberately does NOT hardcode a specific
+    provider pair (such as Anthropic+OpenAI), so the gate stays reusable
+    across work packages: a future PR may be Codex-implemented and
+    Claude-reviewed, or involve other providers entirely, and a generic
+    ``!=`` covers every such combination. The specific implementer and
+    reviewer identities for any given review are recorded in the reviewer
+    evidence and confirmed by the operator; the gate's job is only to
+    assert the two providers are not the same.
+    """
 
     implementer = review.get("implementer")
     reviewer = review.get("reviewer")
@@ -435,6 +528,8 @@ def _evaluate_cross_provider(review: dict[str, Any], findings: list[str]) -> boo
         return False
     implementer_provider = implementer.get("provider")
     reviewer_provider = reviewer.get("provider")
+    # Generic provider-difference rule: any same-provider pair fails. No
+    # specific provider pair is hardcoded so this gate is reusable.
     if implementer_provider == reviewer_provider:
         findings.append(
             "cross-provider: implementer and reviewer share provider "
@@ -470,6 +565,10 @@ def evaluate_gate(
     repo_root: Path,
     status_path: Path,
     actual_files: list[str] | None,
+    base_ref: str,
+    head_ref: str,
+    repo: str,
+    work_package: str,
 ) -> tuple[dict[str, bool], list[str]]:
     """Run all gate checks and return (check booleans, findings).
 
@@ -481,6 +580,13 @@ def evaluate_gate(
     branch (or ``None`` when git was skipped or unavailable). The scope
     check verifies the reviewer-declared changed-files list against it and
     fails closed when it is ``None`` or does not match.
+
+    ``base_ref`` / ``head_ref`` / ``repo`` / ``work_package`` are the
+    trusted operator-supplied values. The scope check verifies the
+    reviewer-declared ``scope_reviewed.base_ref`` / ``head_ref`` and the
+    top-level ``repo`` / ``work_package`` against them and fails closed on
+    any mismatch, so the untrusted reviewer evidence cannot narrow the
+    diff range or plant sentinels in those fields.
     """
 
     findings: list[str] = []
@@ -495,7 +601,15 @@ def evaluate_gate(
         )
         return checks, findings
 
-    checks["scope_allowed"] = _evaluate_scope(review, actual_files, findings)
+    checks["scope_allowed"] = _evaluate_scope(
+        review,
+        actual_files,
+        findings,
+        base_ref=base_ref,
+        head_ref=head_ref,
+        repo=repo,
+        work_package=work_package,
+    )
     checks["tests_passed"] = _evaluate_tests(review, findings)
     checks["secret_scan_passed"] = _evaluate_secret_scan(review, findings)
     checks["reviewer_agree"] = _evaluate_reviewer_agree(review, findings)
@@ -650,6 +764,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to gpp_status.v1.json (defaults to .claude/plans/gpp_status.v1.json).",
     )
     parser.add_argument(
+        "--base-ref",
+        type=str,
+        default="origin/main",
+        help="Trusted base ref for the scope diff.",
+    )
+    parser.add_argument(
+        "--head-ref",
+        type=str,
+        default="HEAD",
+        help="Trusted head ref for the scope diff.",
+    )
+    parser.add_argument(
+        "--repo",
+        type=str,
+        default="Halildeu/ao-kernel",
+        help="Trusted repository slug for the gate artifact.",
+    )
+    parser.add_argument(
+        "--work-package",
+        type=str,
+        default="GPP-2ag",
+        help="Trusted work-package id for the gate artifact.",
+    )
+    parser.add_argument(
         "--skip-git",
         action="store_true",
         help=(
@@ -682,31 +820,32 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         review = load_review_evidence(review_path)
+        # The git diff is measured between the trusted operator-supplied
+        # base/head refs, never the reviewer-declared ones, so a reviewer
+        # cannot narrow the diff range to hide files from the scope check.
         actual_files: list[str] | None = None
-        if not args.skip_git and review is not None:
-            scope = review.get("scope_reviewed")
-            if isinstance(scope, dict):
-                base_ref = scope.get("base_ref")
-                head_ref = scope.get("head_ref")
-                if isinstance(base_ref, str) and isinstance(head_ref, str):
-                    actual_files = actual_changed_files(repo_root, base_ref, head_ref)
+        if not args.skip_git:
+            actual_files = actual_changed_files(repo_root, args.base_ref, args.head_ref)
         checks, gate_findings = evaluate_gate(
             review,
             repo_root=repo_root,
             status_path=status_path,
             actual_files=actual_files,
+            base_ref=args.base_ref,
+            head_ref=args.head_ref,
+            repo=args.repo,
+            work_package=args.work_package,
         )
-        repo = "unknown"
-        work_package = "unknown"
-        if review is not None:
-            repo = str(review.get("repo", "unknown")) or "unknown"
-            work_package = str(review.get("work_package", "unknown")) or "unknown"
+        # The artifact repo / work_package are taken only from the trusted
+        # operator-supplied values, never from the untrusted reviewer
+        # evidence, so a sentinel planted in the reviewer file cannot reach
+        # the artifact or stdout.
         artifact = build_gate_evidence(
             review=review,
             checks=checks,
             gate_findings=gate_findings,
-            repo=repo,
-            work_package=work_package,
+            repo=args.repo,
+            work_package=args.work_package,
             generated_at=utc_timestamp(),
         )
         validate_gate_evidence(artifact)

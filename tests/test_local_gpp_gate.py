@@ -56,6 +56,10 @@ def _evaluate_fixture(
     actual_files: list[str] | None,
     tmp_path: Path,
     payload_override: dict[str, Any] | None = None,
+    base_ref: str | None = None,
+    head_ref: str | None = None,
+    repo: str | None = None,
+    work_package: str | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Run the gate via ``evaluate_gate`` with an injected ``actual_files``.
 
@@ -64,6 +68,12 @@ def _evaluate_fixture(
     directly with an explicit ``actual_files`` list (FIX 2), builds the
     artifact, writes it through ``write_gate_evidence``, and returns the
     artifact plus the equivalent return code so assertions stay simple.
+
+    The trusted operator ``base_ref`` / ``head_ref`` / ``repo`` /
+    ``work_package`` values default to the values declared in the
+    ``reviewer_agree.v1.json`` fixture (so the happy path still produces
+    ``operator_may_merge``); a test that wants to exercise a reviewer/
+    operator mismatch passes explicit differing values.
     """
 
     mod = _load_module()
@@ -74,23 +84,28 @@ def _evaluate_fixture(
     src = tmp_path / "reviewer.json"
     src.write_text(json.dumps(payload), encoding="utf-8")
     review = mod.load_review_evidence(src)
+    operator_base_ref = "origin/main" if base_ref is None else base_ref
+    operator_head_ref = (
+        "codex/local-gate-1-impl" if head_ref is None else head_ref
+    )
+    operator_repo = "Halildeu/ao-kernel" if repo is None else repo
+    operator_work_package = "GPP-2ag" if work_package is None else work_package
     checks, gate_findings = mod.evaluate_gate(
         review,
         repo_root=_repo_root(),
         status_path=_status_path(),
         actual_files=actual_files,
+        base_ref=operator_base_ref,
+        head_ref=operator_head_ref,
+        repo=operator_repo,
+        work_package=operator_work_package,
     )
-    repo = "unknown"
-    work_package = "unknown"
-    if review is not None:
-        repo = str(review.get("repo", "unknown")) or "unknown"
-        work_package = str(review.get("work_package", "unknown")) or "unknown"
     artifact = mod.build_gate_evidence(
         review=review,
         checks=checks,
         gate_findings=gate_findings,
-        repo=repo,
-        work_package=work_package,
+        repo=operator_repo,
+        work_package=operator_work_package,
         generated_at=mod.utc_timestamp(),
     )
     output = tmp_path / "gate-evidence.json"
@@ -193,6 +208,10 @@ def test_reviewer_agree_renders_operator_may_merge(tmp_path: Path) -> None:
         repo_root=_repo_root(),
         status_path=_status_path(),
         actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        base_ref="origin/main",
+        head_ref="codex/local-gate-1-impl",
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
     )
     artifact = mod.build_gate_evidence(
         review=review,
@@ -537,6 +556,154 @@ def test_scope_skip_git_via_cli_fails_closed(tmp_path: Path) -> None:
     assert artifact["checks"]["scope_allowed"] is False
 
 
+def test_reviewer_declared_base_ref_mismatch_fails_closed(tmp_path: Path) -> None:
+    # FIX A: the git diff base/head refs are operator-controlled. When the
+    # reviewer evidence's scope_reviewed.base_ref does not equal the
+    # operator --base-ref, the untrusted reviewer cannot narrow the diff
+    # range: the scope check fails closed.
+    artifact, code = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        base_ref="origin/some-narrowing-ref",
+    )
+
+    assert code == 1
+    assert artifact["decision"] == "fail_closed"
+    assert artifact["checks"]["scope_allowed"] is False
+    mismatch = [
+        f
+        for f in artifact["findings"]
+        if "reviewer-declared base_ref" in f and "does not match operator base_ref" in f
+    ]
+    assert mismatch
+
+
+def test_reviewer_declared_head_ref_mismatch_fails_closed(tmp_path: Path) -> None:
+    # FIX A: same operator-control guarantee for the head ref. A reviewer
+    # head_ref that does not match the operator --head-ref fails closed.
+    artifact, code = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        head_ref="some-other-head-ref",
+    )
+
+    assert code == 1
+    assert artifact["decision"] == "fail_closed"
+    assert artifact["checks"]["scope_allowed"] is False
+    mismatch = [
+        f
+        for f in artifact["findings"]
+        if "reviewer-declared head_ref" in f and "does not match operator head_ref" in f
+    ]
+    assert mismatch
+
+
+def test_reviewer_declared_repo_mismatch_fails_closed(tmp_path: Path) -> None:
+    # FIX B: a sentinel planted in the reviewer evidence's top-level repo
+    # field must not reach the artifact. When reviewer repo != operator
+    # --repo the scope check fails closed, and the sentinel value appears
+    # neither in the artifact nor on stdout.
+    sentinel = "SENTINEL-reviewer-repo-leak-probe-3f9a1d"
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["repo"] = f"evil/{sentinel}"
+
+    artifact, code = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        payload_override=payload,
+    )
+
+    assert code == 1
+    assert artifact["decision"] == "fail_closed"
+    assert artifact["checks"]["scope_allowed"] is False
+    mismatch = [
+        f
+        for f in artifact["findings"]
+        if "reviewer-declared repo" in f and "does not match operator repo" in f
+    ]
+    assert mismatch
+    # The sentinel from the reviewer-declared repo never reaches the
+    # artifact or any rendered output.
+    raw_output = json.dumps(artifact, sort_keys=True)
+    assert sentinel not in raw_output
+    mod = _load_module()
+    assert sentinel not in mod.render_summary(artifact)
+    assert artifact["repo"] == "Halildeu/ao-kernel"
+
+
+def test_reviewer_declared_work_package_mismatch_fails_closed(tmp_path: Path) -> None:
+    # FIX B: same guarantee for the work_package field. A reviewer-declared
+    # work_package that does not match the operator --work-package fails
+    # closed, and a sentinel planted there never echoes.
+    sentinel = "SENTINEL-reviewer-wp-leak-probe-8b2e4c"
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["work_package"] = f"WP-{sentinel}"
+
+    artifact, code = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        payload_override=payload,
+    )
+
+    assert code == 1
+    assert artifact["decision"] == "fail_closed"
+    assert artifact["checks"]["scope_allowed"] is False
+    mismatch = [
+        f
+        for f in artifact["findings"]
+        if "reviewer-declared work_package" in f
+        and "does not match operator work_package" in f
+    ]
+    assert mismatch
+    raw_output = json.dumps(artifact, sort_keys=True)
+    assert sentinel not in raw_output
+    mod = _load_module()
+    assert sentinel not in mod.render_summary(artifact)
+    assert artifact["work_package"] == "GPP-2ag"
+
+
+def test_artifact_repo_and_work_package_come_from_operator_args(tmp_path: Path) -> None:
+    # FIX B: the artifact repo / work_package are sourced from the operator
+    # args, never the reviewer evidence. Operator values that differ from
+    # the reviewer evidence are a mismatch (fail_closed); operator values
+    # that match produce a successful gate whose artifact carries exactly
+    # the operator-supplied values.
+
+    # Operator args differ from the reviewer evidence -> fail_closed.
+    artifact_mismatch, code_mismatch = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        repo="Halildeu/ao-kernel-fork",
+        work_package="GPP-9zz",
+    )
+    assert code_mismatch == 1
+    assert artifact_mismatch["decision"] == "fail_closed"
+    assert artifact_mismatch["checks"]["scope_allowed"] is False
+    # Even on a mismatch the artifact still carries the operator values,
+    # never the reviewer-declared ones.
+    assert artifact_mismatch["repo"] == "Halildeu/ao-kernel-fork"
+    assert artifact_mismatch["work_package"] == "GPP-9zz"
+
+    # Operator args match the reviewer evidence -> operator_may_merge, and
+    # the artifact repo / work_package are exactly the operator values.
+    artifact_match, code_match = _evaluate_fixture(
+        "reviewer_agree.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        tmp_path=tmp_path,
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
+    )
+    assert code_match == 0
+    assert artifact_match["decision"] == "operator_may_merge"
+    assert artifact_match["repo"] == "Halildeu/ao-kernel"
+    assert artifact_match["work_package"] == "GPP-2ag"
+
+
 def test_duplicate_check_with_one_fail_fails_closed(tmp_path: Path) -> None:
     # FIX 5: a duplicate required-check name where one entry fails must not
     # let the failing entry hide behind an earlier passing one. checks_
@@ -597,6 +764,10 @@ def test_wrong_gpp_id_fails_closed(tmp_path: Path) -> None:
         repo_root=_repo_root(),
         status_path=bad_status,
         actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        base_ref="origin/main",
+        head_ref="codex/local-gate-1-impl",
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
     )
     assert checks["gpp_status_checked"] is False
     wrong_id = [f for f in gate_findings if "expected 'GPP-2'" in f]
@@ -617,6 +788,10 @@ def test_startup_preflight_runs_gpp_next(tmp_path: Path) -> None:
         repo_root=_repo_root(),
         status_path=_status_path(),
         actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        base_ref="origin/main",
+        head_ref="codex/local-gate-1-impl",
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
     )
     assert checks["startup_preflight_passed"] is True
 
@@ -629,6 +804,10 @@ def test_startup_preflight_runs_gpp_next(tmp_path: Path) -> None:
         repo_root=_repo_root(),
         status_path=bad_status,
         actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        base_ref="origin/main",
+        head_ref="codex/local-gate-1-impl",
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
     )
     assert checks_bad["startup_preflight_passed"] is False
     preflight_findings = [f for f in findings_bad if f.startswith("startup preflight:")]

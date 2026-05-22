@@ -61,7 +61,7 @@
       "properties": {
         "startup_preflight_passed": {
           "type": "boolean",
-          "description": "Whether the required repo operating contract files were present."
+          "description": "Whether the repo operating contract (AGENTS.md) and GPP status file are present and the canonical startup command scripts/gpp_next.py exits zero."
         },
         "gpp_status_checked": {
           "type": "boolean",
@@ -69,7 +69,7 @@
         },
         "scope_allowed": {
           "type": "boolean",
-          "description": "Whether the reviewed scope was a non-empty changed-files list with no forbidden surface path."
+          "description": "Whether the reviewed scope is a non-empty changed-files list, free of forbidden surfaces in both the reviewer-declared list and the actual git diff, and an exact match for the actual git diff."
         },
         "tests_passed": {
           "type": "boolean",
