@@ -1,0 +1,200 @@
+# GPP-2B - ao-release-gate Required-Check / Local Gate Evidence Mapping
+
+**Status:** planned / planning slice — contract mapping documentation only
+**Date:** 2026-05-22
+**Parent:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding`
+**Pivot record:** `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md`
+**Support impact:** none
+**Production platform claim:** false
+**Live adapter execution:** false
+
+## 1. Purpose
+
+The GPP-2ag pivot split `GPP-2` into three slices:
+
+```text
+GPP-2A: local AI review gate evidence            — DONE (PR #576 + #577)
+GPP-2B: ao-release-gate required check / mapping  — this slice
+GPP-2C: deployment-protection callback / topology — blocked / later
+```
+
+This record is the **GPP-2B planning slice**. It maps the two repo-owned merge
+gates onto each other so a later GPP-2B implementation slice — and eventually
+the AO-GATE-8 branch-protection cutover — can make the `ao-release-gate`
+required check enforce the same governance the local AI review gate already
+validates.
+
+This slice is **documentation only**: a contract mapping, a gap analysis, and a
+phased plan. It does **not** implement the mapping, change branch protection,
+switch `ao-release-gate` to enforce mode, configure webhooks or GitHub Apps,
+execute live adapters, widen support, or claim production readiness. GPP-2
+stays `blocked`.
+
+## 2. The two gates
+
+### 2.1 Local AI Review Gate — GPP-2A / LOCAL-GATE-1
+
+- Surface: `scripts/local_gpp_gate.py`; schemas
+  `ao_kernel/defaults/schemas/local-ai-review-evidence.schema.v1.json`
+  (input) and `local-gpp-gate-evidence.schema.v1.json` (output).
+- Runs **locally**, operator-controlled. Consumes an independent reviewer-AI
+  evidence file plus local repo state (`AGENTS.md`, `gpp_status.v1.json`, the
+  real `git diff`).
+- Emits a durable no-secret `local-gpp-gate-evidence.v1` artifact.
+- Eight fail-closed checks; `decision = operator_may_merge` only when all eight
+  pass, otherwise `fail_closed`.
+- It is operator-local trust evidence. It does not post to GitHub, does not
+  gate merges mechanically, and does not close GPP-2.
+
+### 2.2 ao-release-gate — GPP-2u / GPP-2v / GPP-2w
+
+- Surface: `ao_kernel/ao_release_gate.py` (`build_ao_release_gate_decision`);
+  CLI `scripts/ao_release_gate_decision.py`; service/runtime
+  `ao_kernel/ao_release_gate_service.py` + `ao_release_gate_runtime.py`.
+- A repo-owned GitHub App release gate. Consumes a PR-shaped GitHub payload
+  plus the GPP status JSON. Emits an `ao-release-gate` GitHub check-run.
+- Eighteen checks; `decision = allow_autonomous_merge` only when all pass,
+  otherwise one of `deny_policy_violation`, `deny_missing_evidence`,
+  `deny_stale_branch`, `deny_untrusted_context`, `error_fail_closed`.
+- Check-run conclusion is mode-aware (`ConclusionMode`): `allow_autonomous_merge`
+  → `success` in both modes; any deny/error → `neutral` in `shadow` (default,
+  advisory) and `failure` in `enforce`.
+- Currently dry-run / shadow only: not hosted as a required status check, no
+  branch-protection cutover (AO-GATE-8 not done).
+
+## 3. Contract mapping
+
+### 3.1 Check correspondence
+
+| Local gate check (8) | ao-release-gate check(s) (18) | Category |
+|---|---|---|
+| `startup_preflight_passed` | `payload_shape`, `repository` | A — evaluation context is structurally valid |
+| `gpp_status_checked` | `gpp_status`, `gpp_closed_boundaries` | A — GPP-2 blocked + support/production/live-adapter guards false |
+| `scope_allowed` | `diff_scope` | A — changed-file scope within bounds |
+| `tests_passed` | `required_checks` | A — tests/CI pass (local: reviewer-recorded `tests`; ao-gate: live required CI checks) |
+| `secret_scan_passed` | `secret_boundary` | A — no secret material |
+| `forbidden_actions_absent` | `admin_bypass_boundary`, `bot_boundary`, `agent_authority_boundary`, `live_adapter_boundary` | A — no forbidden action / authority |
+| `reviewer_agree` | *(none)* | C — cross-AI reviewer verdict, local-only |
+| `cross_provider_verified` | *(none)* | C — implementer ≠ reviewer provider, local-only |
+| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency` | B — GitHub PR-context checks, ao-release-gate-only |
+
+- **Category A** — both gates verify the same governance condition from
+  different vantage points (local repo state vs. GitHub PR payload). These are
+  the directly mappable checks. Some pairings are approximate vantage-point
+  correspondences, not strict equivalences — notably `startup_preflight_passed`
+  ↔ `payload_shape` / `repository`, which both stand for "the evaluation
+  context is structurally valid."
+- **Category B** — GitHub-PR-context checks (fork, event, branch freshness,
+  base/issue link, plus `gpp_issue_consistency`, which matches the PR payload's
+  issue URL against the current GPP work package). The local gate has no PR
+  payload and cannot perform these; they are inherently ao-release-gate-only
+  and require no reconciliation.
+- **Category C** — the cross-AI peer review verdict. See §4.
+
+### 3.2 Decision-value mapping
+
+| Local gate `decision` | ao-release-gate `decision` |
+|---|---|
+| `operator_may_merge` | `allow_autonomous_merge` |
+| `fail_closed` | one of `deny_policy_violation` / `deny_missing_evidence` / `deny_stale_branch` / `deny_untrusted_context` / `error_fail_closed` |
+
+The local gate collapses every failure into a single `fail_closed` plus
+per-check booleans and gate-authored `findings`. `ao-release-gate` classifies
+failures into typed deny reasons. The mapping is therefore one-to-many in the
+fail direction: the single local `fail_closed` value expands into the typed
+`ao-release-gate` deny reasons — a local `fail_closed` whose failing check is
+`forbidden_actions_absent` corresponds to `deny_policy_violation`; a failing
+`gpp_status_checked` / `scope_allowed` / `tests_passed` / `secret_scan_passed`
+corresponds to `deny_missing_evidence` or `deny_policy_violation` depending on
+the finding. Both gates are fail-closed: a malformed or absent input yields the
+deny/closed side, never allow.
+
+## 4. Gap analysis
+
+- **Category B is not a gap.** GitHub-context checks belong to the
+  GitHub-side gate by construction; the local gate is not expected to perform
+  them.
+- **Category C is the substantive gap.** The local gate's distinguishing
+  value — the **cross-AI peer review** verdict (`reviewer_agree`,
+  `cross_provider_verified`) — has no counterpart in `ao-release-gate`. The
+  `ao-release-gate` decision core evaluates PR evidence, CI, scope, and
+  boundary signals autonomously; it does not consume a reviewer-AI verdict.
+
+If `ao-release-gate` becomes a required status check while the cross-AI review
+verdict remains outside its inputs, the GitHub-enforced gate would be strictly
+weaker than the local gate on the cross-AI-review dimension. GPP-2B must record
+how that dimension is handled before any AO-GATE-8 cutover.
+
+## 5. Gap-handling options
+
+The gap-resolution decision is **not made in this slice**. A later GPP-2B
+implementation slice resolves it after a cross-AI consultation. The candidate
+options:
+
+1. **Required attested review evidence.** `ao-release-gate` gains a check that
+   consumes an attested cross-AI review evidence artifact committed to or
+   attached to the PR. The artifact should be the **no-secret
+   `local-gpp-gate-evidence.v1` gate output** (or a new minimal attestation
+   derived from it) — **not** the raw `local-ai-review-evidence.v1` reviewer
+   file, which carries raw reviewer free text. A PR without a present,
+   schema-valid `local-gpp-gate-evidence.v1` recording `operator_may_merge`
+   (which itself already requires `reviewer_agree` + `cross_provider_verified`)
+   would map to `deny_missing_evidence`. This makes the required check enforce
+   cross-AI review mechanically while preserving the LOCAL-GATE-1 no-secret
+   guarantee.
+2. **Operator-local process discipline.** The cross-AI review stays a
+   pre-PR operator-local step validated by the local gate; `ao-release-gate`
+   does not check it. The required check then enforces only CI + scope +
+   boundaries + GPP status, and cross-AI review remains a HARD RULE process
+   discipline, not a mechanical GitHub gate.
+
+Recommendation for the implementation slice: Option 1, consuming the no-secret
+`local-gpp-gate-evidence.v1` gate output (never the raw reviewer file), because
+it keeps the required check from being weaker than the local gate without
+reintroducing raw-reviewer-text leakage. The final choice is deferred to the
+GPP-2B implementation slice (GPP-2B-3) plus a Codex consultation.
+
+## 6. GPP-2B implementation plan (phased)
+
+All slices are docs/schema/test scope. No cutover, no enforce-mode switch, no
+webhook/App configuration, no live adapter.
+
+| Slice | Scope | Gate |
+|---|---|---|
+| **GPP-2B-1** | This mapping record (this PR). | docs only |
+| **GPP-2B-2** | A machine-checkable mapping test: assert every local-gate check name has either a documented `ao-release-gate` counterpart or an explicit `local-only` marker, so the mapping cannot silently drift. | docs + test |
+| **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract (design only — no service wiring). | docs + schema |
+| **GPP-2B-4** | Unit/schema-level conclusion-mapping test against the side-effect-free decision core: assert `build_ao_release_gate_decision(..., conclusion_mode=...)` maps decisions to GitHub conclusions correctly — `allow_autonomous_merge` → `success`; `deny_*` / `error_fail_closed` → `neutral` under `shadow` and `failure` under `enforce`. Pure in-process unit test; the hosted runtime mode is not changed, no check-run is posted to any PR, branch protection is untouched. | docs + test |
+
+Real enforce-mode evidence on live PRs — switching the hosted runtime to
+`conclusion_mode="enforce"` and observing a positive (`success`) and a negative
+(`failure`) path on actual pull requests — is **not** a GPP-2B slice. It
+belongs to GPP-2C / AO-GATE-8. The AO-GATE-8 branch-protection cutover (making
+`ao-release-gate` a required status check) stays in GPP-2C and is **out of
+scope for every GPP-2B slice**; it cannot proceed before that real enforce-mode
+evidence exists and the GPP-2C production callback topology is resolved.
+
+## 7. Hard stops / non-goals
+
+- No branch protection / ruleset mutation; no AO-GATE-8 cutover.
+- No `ao-release-gate` enforce-mode switch (`DEFAULT_CONCLUSION_MODE` stays
+  `shadow`).
+- No real PR check-run posting and no runtime `conclusion_mode` env flip; no
+  enforce-mode evidence collection on live PRs in any GPP-2B slice. A GPP-2B-4
+  unit test may pass `conclusion_mode="enforce"` to the in-process decision
+  function only — real enforce-mode evidence on live PRs is GPP-2C / AO-GATE-8.
+- No webhook URL or GitHub App configuration change.
+- No live adapter execution.
+- No `--admin` merge.
+- No support widening; no production-platform claim.
+- GPP-2 stays `blocked`; `gpp_status.v1.json` guard flags stay `false`.
+- No secret / token / PAT / PEM in docs, schemas, tests, or artifacts.
+
+## 8. Follow-up
+
+GPP-2C continues the deployment-protection callback evidence and the
+production-suitable callback topology (AO-GATE-7) and the branch-protection /
+ruleset cutover (AO-GATE-8). Both remain blocked on a production-reachable
+HTTPS endpoint decision; `smee.io` is non-production dry-run only. GPP-2B
+slices do not depend on GPP-2C and may proceed in parallel as docs/schema/test
+work while GPP-2C topology is unresolved.
