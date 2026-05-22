@@ -2,12 +2,15 @@
 
 **Status:** GPP-2 public HTTPS health evidence, GitHub App webhook delivery
 chain evidence, and `ao-release-gate` shadow dry-run check-run evidence are
-recorded. The local AI review evidence gate (GPP-2A / LOCAL-GATE-1) is now
-implemented and merged (PR #576 pivot plan + PR #577 implementation); it is
-operator-controlled local trust evidence only. deployment-protection callback
-evidence, policy App slug reconciliation, production callback topology,
-enforce-mode success/failure evidence, and branch-protection cutover remain
-missing. GPP-2 stays blocked.
+recorded. The local AI review evidence gate (GPP-2A / LOCAL-GATE-1) is
+implemented and merged (PR #576 pivot plan + PR #577 implementation). The
+active no-testai near-term path is cross-provider AI review, non-author GitHub
+approval, `local_gpp_gate` evidence, and `ao-release-gate` required-check
+mapping. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection
+callback evidence, and policy App slug reconciliation are deferred optional
+GPP-2C infrastructure, not active GPP-2B blockers. GPP-2 still stays blocked
+until `ao-release-gate` enforce-mode success/failure evidence, branch-protection
+required-check cutover, and final AO-GATE-9/GPP closeout are complete.
 **Date:** 2026-05-22
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
@@ -54,25 +57,27 @@ operator decides whether to merge
 
 `GPP-2ag` recorded that scope correction as a local AI review evidence gate.
 That gate is now implemented and merged as `LOCAL-GATE-1` (PR #576 pivot plan
-`7c32879` + PR #577 implementation `bd8eb35`). It is preparatory/local operator
-evidence only: it does not close GPP-2, does not replace AO-GATE-7
-deployment-protection callback evidence, does not change branch protection, does
-not execute live adapters, and does not widen support or claim production
-platform readiness.
+`7c32879` + PR #577 implementation `bd8eb35`). It is local operator evidence
+only: it does not close GPP-2, does not change branch protection, does not
+execute live adapters, and does not widen support or claim production platform
+readiness.
 
 GPP-2 is split into three slices:
 
 - **GPP-2A** — Local AI Review Gate (`LOCAL-GATE-1`): **DONE** (PR #576 + #577).
 - **GPP-2B** — `ao-release-gate` required check / enforcement mapping: **next**
-  (planning only; shadow mode continues; no branch-protection cutover, no
-  enforce mode, no cutover before positive/negative path evidence).
+  (near-term active path; no branch-protection cutover before positive/negative
+  enforce-mode path evidence).
 - **GPP-2C** — deployment-protection callback / production topology
-  (AO-GATE-7 + AO-GATE-8): **blocked / later**, pending policy App slug
-  reconciliation, production-suitable callback topology, enforce-mode
-  success/failure evidence, and branch-protection / ruleset cutover.
+  (AO-GATE-7 plus optional future callback topology): **deferred / later**.
+  `testai.acik.com/ao-gate`, smee.io delivery, callback review evidence, and
+  policy App slug reconciliation are not active GPP-2B blockers.
 
-GPP-2 remains `blocked` until the GPP-2C evidence chain is complete. Post-pivot
-handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`.
+GPP-2 remains `blocked`, but the active blocker list is now narrower: collect
+`ao-release-gate` enforce-mode success and failure evidence on real pull
+requests, cut branch protection/rulesets over to require that status check with
+admin bypass disallowed, then record the final AO-GATE-9/GPP closeout.
+Post-pivot handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`.
 
 ## 2. Current Baseline
 
@@ -1138,6 +1143,7 @@ admin bypass for PR merge automation, and must keep
 | 2026-05-22 | GPP-2 webhook and shadow check-run evidence recorded | ao-kernel#572/#574 recorded GitHub App webhook delivery chain evidence through smee.io non-production dry-run proxy and a real `ao-release-gate` shadow check-run; GPP-2 remained blocked pending callback, topology, enforce-mode, and cutover evidence. |
 | 2026-05-22 | GPP-2ag local AI review gate pivot planned | `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md` records the scope correction: codify the current local implementer-AI + reviewer-AI trust model before continuing the heavier deployment-protection callback path. |
 | 2026-05-22 | LOCAL-GATE-1 (GPP-2A) implemented and merged | PR #576 pivot plan (`7c32879`) + PR #577 implementation (`bd8eb35`) shipped `scripts/local_gpp_gate.py`, the local AI review evidence JSON Schemas, no-secret fixtures, and fail-closed tests. The gate is operator-controlled local trust evidence only and does not close GPP-2. GPP-2 split recorded: GPP-2A (LOCAL-GATE-1) done, GPP-2B (`ao-release-gate` required-check mapping) next, GPP-2C (deployment-protection callback / production topology) blocked. Handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`. |
+| 2026-05-22 | GPP-2 no-testai active blocker sync | The no-testai near-term release-governance model is now the active GPP-2B path: cross-provider AI review, non-author GitHub approval, `local_gpp_gate` evidence, and `ao-release-gate` required-check mapping. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation are deferred optional GPP-2C infrastructure, not active GPP-2B blockers. GPP-2 remains blocked pending `ao-release-gate` enforce-mode success/failure evidence, required-check branch-protection cutover, and final AO-GATE-9 closeout. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
 | 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |
