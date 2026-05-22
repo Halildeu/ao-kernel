@@ -44,6 +44,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output", choices=("json", "text"), default="json", help="Stdout render mode.")
     parser.add_argument(
+        "--review-evidence",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a local-gpp-gate-evidence.v1 attestation. When given, the file is "
+            "loaded and passed to the decision core as untrusted review evidence; when omitted, "
+            "the decision core treats review evidence as missing and the decision is "
+            "deny_missing_evidence."
+        ),
+    )
+    parser.add_argument(
         "--fail-on-deny",
         action="store_true",
         help="Return exit code 1 when the release-gate decision is not allow_autonomous_merge.",
@@ -58,7 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     payload: object = json.loads(args.payload.read_text(encoding="utf-8"))
     gpp_status: object = json.loads(args.gpp_status.read_text(encoding="utf-8"))
-    decision = build_ao_release_gate_decision(payload, gpp_status)
+    review_evidence: object | None = None
+    if args.review_evidence is not None:
+        review_evidence = json.loads(args.review_evidence.read_text(encoding="utf-8"))
+    decision = build_ao_release_gate_decision(payload, gpp_status, review_evidence=review_evidence)
     write_ao_release_gate_decision(args.decision_path, decision)
 
     if args.output == "json":

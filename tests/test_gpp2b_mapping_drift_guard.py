@@ -145,9 +145,12 @@ def test_section_3_1_table_anchor() -> None:
     table = _parse_section_3_1()
     assert table.section_found, f"'{_SECTION_HEADING}' heading missing from {_MAPPING_DOC}"
     assert table.header_found, "§3.1 check-correspondence table header not found"
-    assert len(table.rows) >= 9, (
+    # 8 local-gate checks may share rows (GPP-2D-2b merged reviewer_agree +
+    # cross_provider_verified into one ao-counterpart row), but the table
+    # always carries every local-gate check plus the single ao-only row.
+    assert len(table.rows) >= 8, (
         f"§3.1 table parsed to {len(table.rows)} data rows; "
-        "expected >= 9 (8 local-gate checks + 1 ao-release-gate-only row)"
+        "expected >= 8 (every local-gate check is represented, plus 1 ao-release-gate-only row)"
     )
 
 
