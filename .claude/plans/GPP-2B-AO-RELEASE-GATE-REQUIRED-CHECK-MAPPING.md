@@ -154,6 +154,63 @@ it keeps the required check from being weaker than the local gate without
 reintroducing raw-reviewer-text leakage. The final choice is deferred to the
 GPP-2B implementation slice (GPP-2B-3) plus a Codex consultation.
 
+### 5.1 Resolution (GPP-2B-3)
+
+Resolved via Codex consultation (thread `019e50c8`): **Option 1**.
+
+**Decision.** `ao-release-gate` will eventually require attested cross-AI
+review evidence. Option 2 would leave the required check deliberately weaker
+than the local gate on the Category-C dimension. GPP-2B-3 closes the gap's
+**design decision** only — the runtime enforcement gap closes later, when
+`ao-release-gate` actually consumes the artifact and enters the
+required-check / enforce chain. GPP-2 stays `blocked`.
+
+**Accepted artifact.** The existing no-secret `local-gpp-gate-evidence.v1`
+gate output, consumed as-is. No new evidence artifact is introduced, and no
+replacement for `local-gpp-gate-evidence.schema.v1.json` is introduced —
+`local-gpp-gate-evidence.v1` remains the evidence SSOT. It already encodes
+`reviewer_agree`, `cross_provider_verified`, and `operator_may_merge`, and is
+no-secret by schema construction. A second evidence artifact would duplicate it
+and risk drift. (The acceptance-profile schema added by this slice, described
+next, is a consumption contract — not an evidence schema.)
+
+**Acceptance-profile schema.** GPP-2B-3 adds one design-only schema,
+`ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json`.
+It is an *acceptance profile*, not a standalone structural validator: it
+constrains only the acceptance-critical fields (`decision` =
+`operator_may_merge`; `checks.reviewer_agree` and `checks.cross_provider_verified`
+= `true`; the closed GPP guard flags) and permits the artifact's other fields.
+It deliberately omits a `$ref` / `allOf` to `local-gpp-gate-evidence.schema.v1.json`
+because the bundled-schema loader resolves single files only and builds no
+registry for an external `$ref`. The future check therefore validates in two
+steps: **first** the full `local-gpp-gate-evidence.schema.v1.json`, **then**
+this acceptance profile.
+
+**Future check (design only — not implemented in this slice).** A future
+`ao-release-gate` check named `cross_ai_review` would verify that the review
+evidence is present, structurally valid against
+`local-gpp-gate-evidence.schema.v1.json`, conformant to the acceptance profile,
+and context-consistent:
+
+- `repo` equals the normalized PR repository;
+- `work_package` equals the PR's explicitly declared reviewed slice — it is
+  **not** equated blindly to `gpp_status.current_wp.id`, since the current work
+  package may be the parent `GPP-2` while a valid artifact carries a slice id
+  such as `GPP-2B-3` — and implies no work outside the parent `GPP-2` scope;
+- `gpp_2_status` is `blocked`.
+
+Missing, schema-invalid, non-accepting, or context-mismatched evidence maps to
+`deny_missing_evidence`, with granular finding codes:
+`ao_release_gate_cross_ai_review_evidence_missing`,
+`ao_release_gate_cross_ai_review_evidence_schema_invalid`,
+`ao_release_gate_cross_ai_review_evidence_not_accepting`,
+`ao_release_gate_cross_ai_review_evidence_context_mismatch`.
+
+**Scope.** Design only: no `ao_release_gate.py` change, no service wiring, no
+payload-field handling, no webhook or GitHub App config, no enforce-mode
+switch, no branch-protection cutover, no `gpp_status.v1.json` change. GPP-2
+stays `blocked`; the guard flags stay `false`.
+
 ## 6. GPP-2B implementation plan (phased)
 
 All slices are docs/schema/test scope. No cutover, no enforce-mode switch, no
@@ -163,7 +220,7 @@ webhook/App configuration, no live adapter.
 |---|---|---|
 | **GPP-2B-1** | This mapping record (this PR). | docs only |
 | **GPP-2B-2** | A machine-checkable mapping test pinning the §3.1 table to both gates' live check sets: every local-gate check (8, from `local-gpp-gate-evidence.schema.v1.json`) and every `ao-release-gate` check (18, from `build_ao_release_gate_decision`) must appear in the table with a documented counterpart or an explicit `local-only` marker, so the mapping cannot silently drift on either side. Implemented as `tests/test_gpp2b_mapping_drift_guard.py`. | docs + test |
-| **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract (design only — no service wiring). | docs + schema |
+| **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract (design only — no service wiring). Resolved as Option 1 in §5.1; acceptance-profile schema `ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json` + contract test `tests/test_gpp2b3_review_evidence_input_schema.py`. | docs + schema + test |
 | **GPP-2B-4** | Unit/schema-level conclusion-mapping test against the side-effect-free decision core: assert `build_ao_release_gate_decision(..., conclusion_mode=...)` maps decisions to GitHub conclusions correctly — `allow_autonomous_merge` → `success`; `deny_*` / `error_fail_closed` → `neutral` under `shadow` and `failure` under `enforce`. Pure in-process unit test; the hosted runtime mode is not changed, no check-run is posted to any PR, branch protection is untouched. | docs + test |
 
 Real enforce-mode evidence on live PRs — switching the hosted runtime to
