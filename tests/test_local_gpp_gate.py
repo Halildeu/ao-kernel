@@ -85,9 +85,7 @@ def _evaluate_fixture(
     src.write_text(json.dumps(payload), encoding="utf-8")
     review = mod.load_review_evidence(src)
     operator_base_ref = "origin/main" if base_ref is None else base_ref
-    operator_head_ref = (
-        "codex/local-gate-1-impl" if head_ref is None else head_ref
-    )
+    operator_head_ref = "codex/local-gate-1-impl" if head_ref is None else head_ref
     operator_repo = "Halildeu/ao-kernel" if repo is None else repo
     operator_work_package = "GPP-2ag" if work_package is None else work_package
     checks, gate_findings = mod.evaluate_gate(
@@ -168,9 +166,7 @@ def test_reviewer_unknown_verdict_fails_closed(tmp_path: Path) -> None:
 def test_same_provider_review_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_same_provider.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_same_provider.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -230,9 +226,7 @@ def test_reviewer_agree_renders_operator_may_merge(tmp_path: Path) -> None:
 def test_forbidden_action_flag_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_forbidden_action.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_forbidden_action.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -243,9 +237,7 @@ def test_forbidden_action_flag_fails_closed(tmp_path: Path) -> None:
 def test_support_widening_true_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_support_widening.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_support_widening.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -256,9 +248,7 @@ def test_support_widening_true_fails_closed(tmp_path: Path) -> None:
 def test_production_platform_claim_true_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_production_claim.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_production_claim.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -269,9 +259,7 @@ def test_production_platform_claim_true_fails_closed(tmp_path: Path) -> None:
 def test_live_adapter_execution_true_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_live_adapter.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_live_adapter.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -282,9 +270,7 @@ def test_live_adapter_execution_true_fails_closed(tmp_path: Path) -> None:
 def test_tests_failed_fails_closed(tmp_path: Path) -> None:
     output = tmp_path / "gate-evidence.json"
 
-    code = _run_gate(
-        ["--review-evidence", str(_fixture("reviewer_tests_failed.v1.json")), "--output", str(output)]
-    )
+    code = _run_gate(["--review-evidence", str(_fixture("reviewer_tests_failed.v1.json")), "--output", str(output)])
 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
@@ -572,9 +558,7 @@ def test_reviewer_declared_base_ref_mismatch_fails_closed(tmp_path: Path) -> Non
     assert artifact["decision"] == "fail_closed"
     assert artifact["checks"]["scope_allowed"] is False
     mismatch = [
-        f
-        for f in artifact["findings"]
-        if "reviewer-declared base_ref" in f and "does not match operator base_ref" in f
+        f for f in artifact["findings"] if "reviewer-declared base_ref" in f and "does not match operator base_ref" in f
     ]
     assert mismatch
 
@@ -593,9 +577,7 @@ def test_reviewer_declared_head_ref_mismatch_fails_closed(tmp_path: Path) -> Non
     assert artifact["decision"] == "fail_closed"
     assert artifact["checks"]["scope_allowed"] is False
     mismatch = [
-        f
-        for f in artifact["findings"]
-        if "reviewer-declared head_ref" in f and "does not match operator head_ref" in f
+        f for f in artifact["findings"] if "reviewer-declared head_ref" in f and "does not match operator head_ref" in f
     ]
     assert mismatch
 
@@ -620,9 +602,7 @@ def test_reviewer_declared_repo_mismatch_fails_closed(tmp_path: Path) -> None:
     assert artifact["decision"] == "fail_closed"
     assert artifact["checks"]["scope_allowed"] is False
     mismatch = [
-        f
-        for f in artifact["findings"]
-        if "reviewer-declared repo" in f and "does not match operator repo" in f
+        f for f in artifact["findings"] if "reviewer-declared repo" in f and "does not match operator repo" in f
     ]
     assert mismatch
     # The sentinel from the reviewer-declared repo never reaches the
@@ -655,8 +635,7 @@ def test_reviewer_declared_work_package_mismatch_fails_closed(tmp_path: Path) ->
     mismatch = [
         f
         for f in artifact["findings"]
-        if "reviewer-declared work_package" in f
-        and "does not match operator work_package" in f
+        if "reviewer-declared work_package" in f and "does not match operator work_package" in f
     ]
     assert mismatch
     raw_output = json.dumps(artifact, sort_keys=True)
@@ -829,3 +808,215 @@ def test_output_write_failure_returns_two(tmp_path: Path, capsys: Any) -> None:
     captured = capsys.readouterr()
     assert code == 2
     assert "could not write gate evidence" in captured.err
+
+
+# --- GPP-2D-2a: context-binding ---
+
+
+def _gate_artifact_without_binding(mod: Any) -> dict[str, Any]:
+    """Return a schema-valid gate artifact that carries no context_binding."""
+
+    return mod.build_gate_evidence(
+        review=None,
+        checks={name: True for name in mod.GATE_CHECK_NAMES},
+        gate_findings=[],
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
+        generated_at=mod.utc_timestamp(),
+    )
+
+
+def test_build_context_binding_binds_head_and_diff() -> None:
+    mod = _load_module()
+    changed = ["scripts/local_gpp_gate.py", "tests/test_local_gpp_gate.py"]
+    binding = mod.build_context_binding(
+        repo_root=_repo_root(),
+        base_ref="origin/main",
+        head_ref="HEAD",
+        changed_files=changed,
+    )
+    assert binding is not None
+    assert binding["base_ref"] == "origin/main"
+    assert binding["changed_files_count"] == 2
+    assert len(binding["head_sha"]) == 40
+    assert all(char in "0123456789abcdef" for char in binding["head_sha"])
+    assert binding["diff_digest"].startswith("sha256:")
+    assert len(binding["diff_digest"]) == len("sha256:") + 64
+
+
+def test_build_context_binding_diff_digest_is_order_independent() -> None:
+    mod = _load_module()
+    forward = mod.build_context_binding(
+        repo_root=_repo_root(),
+        base_ref="origin/main",
+        head_ref="HEAD",
+        changed_files=["a.py", "b.py"],
+    )
+    reverse = mod.build_context_binding(
+        repo_root=_repo_root(),
+        base_ref="origin/main",
+        head_ref="HEAD",
+        changed_files=["b.py", "a.py"],
+    )
+    other = mod.build_context_binding(
+        repo_root=_repo_root(),
+        base_ref="origin/main",
+        head_ref="HEAD",
+        changed_files=["a.py", "c.py"],
+    )
+    assert forward is not None and reverse is not None and other is not None
+    # Same file set in any order binds to the same digest.
+    assert forward["diff_digest"] == reverse["diff_digest"]
+    # A different file set binds to a different digest.
+    assert forward["diff_digest"] != other["diff_digest"]
+
+
+def test_build_context_binding_omitted_when_diff_unverified() -> None:
+    # changed_files=None models the --skip-git / git-failed path: the diff
+    # was not verified, so no context binding is emitted.
+    mod = _load_module()
+    assert (
+        mod.build_context_binding(
+            repo_root=_repo_root(),
+            base_ref="origin/main",
+            head_ref="HEAD",
+            changed_files=None,
+        )
+        is None
+    )
+
+
+def test_build_context_binding_omitted_outside_git_repo(tmp_path: Path) -> None:
+    # A non-repository directory cannot resolve a head SHA, so no binding is
+    # built even when a real changed-files list is supplied.
+    mod = _load_module()
+    assert (
+        mod.build_context_binding(
+            repo_root=tmp_path,
+            base_ref="origin/main",
+            head_ref="HEAD",
+            changed_files=["scripts/local_gpp_gate.py"],
+        )
+        is None
+    )
+
+
+def test_build_gate_evidence_includes_context_binding_when_supplied() -> None:
+    mod = _load_module()
+    binding = {
+        "head_sha": "0" * 40,
+        "base_ref": "origin/main",
+        "diff_digest": "sha256:" + "0" * 64,
+        "changed_files_count": 1,
+    }
+    artifact = mod.build_gate_evidence(
+        review=None,
+        checks={name: True for name in mod.GATE_CHECK_NAMES},
+        gate_findings=[],
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
+        generated_at=mod.utc_timestamp(),
+        context_binding=binding,
+    )
+    assert artifact["context_binding"] == binding
+    mod.validate_gate_evidence(artifact)
+
+
+def test_build_gate_evidence_omits_context_binding_when_none() -> None:
+    # Non-breaking: an artifact with no context_binding stays schema-valid,
+    # so existing local-gpp-gate-evidence.v1 artifacts keep validating.
+    mod = _load_module()
+    artifact = _gate_artifact_without_binding(mod)
+    assert "context_binding" not in artifact
+    mod.validate_gate_evidence(artifact)
+
+
+def test_schema_rejects_context_binding_with_bad_head_sha() -> None:
+    mod = _load_module()
+    from jsonschema import Draft202012Validator
+
+    artifact = _gate_artifact_without_binding(mod)
+    artifact["context_binding"] = {
+        "head_sha": "NOT-A-SHA",
+        "base_ref": "origin/main",
+        "diff_digest": "sha256:" + "0" * 64,
+        "changed_files_count": 0,
+    }
+    errors = list(Draft202012Validator(mod.load_gate_evidence_schema()).iter_errors(artifact))
+    assert errors
+
+
+def test_schema_rejects_unknown_context_binding_field() -> None:
+    mod = _load_module()
+    from jsonschema import Draft202012Validator
+
+    artifact = _gate_artifact_without_binding(mod)
+    artifact["context_binding"] = {
+        "head_sha": "0" * 40,
+        "base_ref": "origin/main",
+        "diff_digest": "sha256:" + "0" * 64,
+        "changed_files_count": 0,
+        "unexpected": "value",
+    }
+    errors = list(Draft202012Validator(mod.load_gate_evidence_schema()).iter_errors(artifact))
+    assert errors
+
+
+def test_schema_rejects_context_binding_missing_required_field() -> None:
+    mod = _load_module()
+    from jsonschema import Draft202012Validator
+
+    artifact = _gate_artifact_without_binding(mod)
+    artifact["context_binding"] = {
+        "head_sha": "0" * 40,
+        "base_ref": "origin/main",
+        "diff_digest": "sha256:" + "0" * 64,
+    }
+    errors = list(Draft202012Validator(mod.load_gate_evidence_schema()).iter_errors(artifact))
+    assert errors
+
+
+def test_gate_run_emits_context_binding(tmp_path: Path) -> None:
+    # End-to-end: a gate run over a verified git diff emits context_binding.
+    # base-ref == head-ref gives a verified (empty) diff that does not depend
+    # on the CI checkout depth, so the binding is still emitted deterministically.
+    mod = _load_module()
+    output = tmp_path / "gate-evidence.json"
+    mod.main(
+        [
+            "--review-evidence",
+            str(_fixture("reviewer_agree.v1.json")),
+            "--output",
+            str(output),
+            "--base-ref",
+            "HEAD",
+            "--head-ref",
+            "HEAD",
+        ]
+    )
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    binding = artifact["context_binding"]
+    assert len(binding["head_sha"]) == 40
+    assert binding["base_ref"] == "HEAD"
+    assert binding["changed_files_count"] == 0
+    assert binding["diff_digest"].startswith("sha256:")
+    mod.validate_gate_evidence(artifact)
+
+
+def test_gate_run_skip_git_omits_context_binding(tmp_path: Path) -> None:
+    # --skip-git leaves the diff unverified, so the gate emits no context
+    # binding and the artifact still validates against the schema.
+    mod = _load_module()
+    output = tmp_path / "gate-evidence.json"
+    mod.main(
+        [
+            "--review-evidence",
+            str(_fixture("reviewer_agree.v1.json")),
+            "--output",
+            str(output),
+            "--skip-git",
+        ]
+    )
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    assert "context_binding" not in artifact
+    mod.validate_gate_evidence(artifact)

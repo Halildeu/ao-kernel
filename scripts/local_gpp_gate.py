@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import hashlib
 import json
 import subprocess
 import sys
@@ -204,6 +205,79 @@ def actual_changed_files(
     if completed.returncode != 0:
         return None
     return sorted(line for line in completed.stdout.splitlines() if line.strip())
+
+
+def _resolve_head_sha(repo_root: Path, head_ref: str) -> str | None:
+    """Return the resolved 40-hex git SHA for ``head_ref``.
+
+    Returns ``None`` when git is unavailable, the directory is not a
+    repository, the ref is invalid, or the resolved value is not a
+    canonical 40-character lowercase SHA. The caller then omits the
+    context-binding block so a future ao-release-gate required check fails
+    closed rather than trusting an unverifiable head.
+    """
+
+    if not head_ref:
+        return None
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", head_ref],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=STARTUP_PREFLIGHT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    candidate = completed.stdout.strip()
+    if len(candidate) == 40 and all(char in "0123456789abcdef" for char in candidate):
+        return candidate
+    return None
+
+
+def _diff_digest(changed_files: list[str]) -> str:
+    """Return the ``sha256:`` prefixed digest of the changed-files list.
+
+    The digest is taken over the newline-joined sorted path list so the
+    evidence is bound to one specific diff. ``changed_files`` is already
+    sorted by ``actual_changed_files``; it is re-sorted here defensively so
+    the digest is order-independent.
+    """
+
+    joined = "\n".join(sorted(changed_files))
+    return "sha256:" + hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def build_context_binding(
+    *,
+    repo_root: Path,
+    base_ref: str,
+    head_ref: str,
+    changed_files: list[str] | None,
+) -> dict[str, Any] | None:
+    """Build the optional GPP-2D context-binding block.
+
+    Returns ``None`` when the diff could not be verified (``changed_files``
+    is ``None`` because git was skipped or failed) or the head ref could
+    not be resolved to a canonical SHA, so the gate emits no context
+    binding on the unverifiable path. Otherwise returns a block binding the
+    evidence to the resolved head SHA and the changed-files digest so a
+    future required check can reject stale, forged, or replayed evidence.
+    """
+
+    if changed_files is None:
+        return None
+    head_sha = _resolve_head_sha(repo_root, head_ref)
+    if head_sha is None:
+        return None
+    return {
+        "head_sha": head_sha,
+        "base_ref": base_ref,
+        "diff_digest": _diff_digest(changed_files),
+        "changed_files_count": len(changed_files),
+    }
 
 
 def _evaluate_startup_preflight(repo_root: Path, status_path: Path, findings: list[str]) -> bool:
@@ -642,6 +716,7 @@ def build_gate_evidence(
     repo: str,
     work_package: str,
     generated_at: str,
+    context_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the no-secret gate evidence artifact.
 
@@ -649,11 +724,15 @@ def build_gate_evidence(
     gate-authored finding strings, the reviewer finding count, the
     constant guard flags, and the repo/work-package refs. Reviewer free
     text is never embedded; ``findings`` holds only gate-authored strings.
+
+    ``context_binding``, when supplied, is added verbatim as the optional
+    GPP-2D context-binding block; when ``None`` the key is omitted so
+    existing artifacts and the unverifiable-scope path stay schema-valid.
     """
 
     decision = "operator_may_merge" if all(checks.values()) else "fail_closed"
     findings = list(gate_findings)
-    return {
+    artifact: dict[str, Any] = {
         "schema_version": GATE_EVIDENCE_SCHEMA_VERSION,
         "decision": decision,
         "repo": repo,
@@ -667,6 +746,9 @@ def build_gate_evidence(
         "production_platform_claim": False,
         "live_adapter_execution": False,
     }
+    if context_binding is not None:
+        artifact["context_binding"] = context_binding
+    return artifact
 
 
 def validate_gate_evidence(artifact: object) -> None:
@@ -724,6 +806,18 @@ def render_summary(artifact: dict[str, Any]) -> str:
             lines.append(f"- {finding}")
     else:
         lines.append("- none")
+    binding = artifact.get("context_binding")
+    if binding is not None:
+        lines.extend(
+            [
+                "",
+                "Context binding:",
+                f"- head_sha: {binding['head_sha']}",
+                f"- base_ref: {binding['base_ref']}",
+                f"- diff_digest: {binding['diff_digest']}",
+                f"- changed_files_count: {binding['changed_files_count']}",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -836,6 +930,15 @@ def main(argv: list[str] | None = None) -> int:
             repo=args.repo,
             work_package=args.work_package,
         )
+        # The context binding is derived only from the trusted operator
+        # base/head refs and the verified git diff, never from the reviewer
+        # evidence. It is omitted on the unverifiable-scope path.
+        context_binding = build_context_binding(
+            repo_root=repo_root,
+            base_ref=args.base_ref,
+            head_ref=args.head_ref,
+            changed_files=actual_files,
+        )
         # The artifact repo / work_package are taken only from the trusted
         # operator-supplied values, never from the untrusted reviewer
         # evidence, so a sentinel planted in the reviewer file cannot reach
@@ -847,6 +950,7 @@ def main(argv: list[str] | None = None) -> int:
             repo=args.repo,
             work_package=args.work_package,
             generated_at=utc_timestamp(),
+            context_binding=context_binding,
         )
         validate_gate_evidence(artifact)
         if args.output is not None:
