@@ -1020,3 +1020,28 @@ def test_gate_run_skip_git_omits_context_binding(tmp_path: Path) -> None:
     artifact = json.loads(output.read_text(encoding="utf-8"))
     assert "context_binding" not in artifact
     mod.validate_gate_evidence(artifact)
+
+
+def test_gate_run_invalid_head_ref_fails_closed_without_context_binding(tmp_path: Path) -> None:
+    # An invalid --head-ref makes the git diff fail, leaving the diff
+    # unverified: the gate decides fail_closed and emits no context binding,
+    # so a future required check cannot trust an unverifiable head.
+    mod = _load_module()
+    output = tmp_path / "gate-evidence.json"
+    code = mod.main(
+        [
+            "--review-evidence",
+            str(_fixture("reviewer_agree.v1.json")),
+            "--output",
+            str(output),
+            "--base-ref",
+            "origin/main",
+            "--head-ref",
+            "no-such-ref-gpp2d2a",
+        ]
+    )
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    assert code == 1
+    assert artifact["decision"] == "fail_closed"
+    assert "context_binding" not in artifact
+    mod.validate_gate_evidence(artifact)
