@@ -1,0 +1,192 @@
+name: ao-release-gate
+
+# GPP-2D-2c shadow workflow: runs the ao-release-gate decision core on
+# every pull request and reports the decision as an advisory check-run
+# under the distinct job name `ao-release-gate-shadow`. The required-
+# check name `ao-release-gate` is reserved for the GPP-2D-3 enforce job
+# (not landed yet), so branch protection can never be satisfied by this
+# fail-open advisory job.
+#
+# Design constraints (.claude/plans/GPP-2D-AUTONOMOUS-REQUIRED-CHECK-LANE.md):
+# - §3.2 trusted-base gate: the decision-core code, schemas, and
+#   gpp_status.v1.json are evaluated from the PR base ref, never the PR
+#   head. The PR head is the diff and evidence under inspection, never
+#   the policy authority.
+# - §3.2 triggers on `pull_request`, NEVER `pull_request_target`, with
+#   read-only permissions and no long-lived secrets.
+# - §3.3 untrusted PR input: the payload is built from the GitHub API
+#   plus the base-ref gpp_status, never from a PR-committed JSON file.
+#   The optional review evidence file (local-gpp-gate-evidence.v1.json)
+#   IS read from the PR head, but it is validated hard (full schema +
+#   acceptance profile + context-binding) by the decision core.
+# - §6 advisory: the job always succeeds (advisory) and is never a
+#   required check until the GPP-2D-5 cutover.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: ao-release-gate-shadow-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ao-release-gate-shadow:
+    name: ao-release-gate-shadow
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # GPP-2D design §3.2: the trigger is pull_request only. This guard is
+    # defense in depth in case the trigger config is edited.
+    if: github.event_name == 'pull_request'
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      REPO_FULL: ${{ github.repository }}
+      ISSUE_URL: ${{ github.event.pull_request.issue_url }}
+      FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+
+    steps:
+      - name: Refuse pull_request_target context
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Belt-and-suspenders: the trigger above is pull_request only.
+          # pull_request_target would expose the workflow to PR-controlled
+          # code with write-scoped permissions, which the trusted-base
+          # design forbids.
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "::error::ao-release-gate-shadow only evaluates pull_request events"
+            exit 1
+          fi
+
+      - name: Checkout protected base ref
+        uses: actions/checkout@v6
+        with:
+          # The decision-core code, schemas, and gpp_status.v1.json come
+          # from the base ref. A PR that edits the gate itself cannot
+          # thereby change the gate that judges it (design §3.2).
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          fetch-depth: 1
+
+      - name: Checkout PR head for optional review-evidence file
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          fetch-depth: 1
+          # The PR head is untrusted. We only read the optional review
+          # evidence file from it; the decision core validates it hard
+          # against the bundled schema and acceptance profile.
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install base-ref ao-kernel
+        working-directory: base
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[mcp]"
+
+      - name: Fetch PR data and check-runs via GitHub API
+        working-directory: base
+        run: |
+          # Fetch PR files (changed_paths) and the head SHA's check-runs.
+          # The builder script will exclude ao-release-gate / -shadow
+          # entries so the gate does not see its own status.
+          gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json files > pr-files.json
+          gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs" --paginate > check-runs.json
+
+      - name: Compute branch_up_to_date from base
+        id: freshness
+        working-directory: base
+        run: |
+          # Branch is up to date when the PR base SHA is an ancestor of
+          # HEAD. fetch-depth=1 may miss the ancestry; deepen if needed.
+          git fetch --depth=50 origin "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || true
+          if git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"; then
+            echo "branch_up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch_up_to_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build API-derived release-gate payload
+        working-directory: base
+        run: |
+          python scripts/ao_release_gate_build_payload.py \
+            --repository "$REPO_FULL" \
+            --pr-number "$PR_NUMBER" \
+            --base-ref "$BASE_REF" \
+            --head-ref "$HEAD_REF" \
+            --head-sha "$HEAD_SHA" \
+            --issue-url "$ISSUE_URL" \
+            --from-fork "$FROM_FORK" \
+            --branch-up-to-date "${{ steps.freshness.outputs.branch_up_to_date }}" \
+            --gpp-status .claude/plans/gpp_status.v1.json \
+            --pr-files-json pr-files.json \
+            --check-runs-json check-runs.json \
+            --output payload.json
+
+      - name: Locate optional review evidence on PR head
+        id: evidence
+        run: |
+          # Convention: the operator commits the no-secret local-gpp-gate
+          # evidence at the repo root of the PR head. Absent evidence
+          # makes the core return deny_missing_evidence, which is the
+          # correct fail-closed signal under the shadow advisory job.
+          if [ -f head/local-gpp-gate-evidence.v1.json ]; then
+            echo "path=head/local-gpp-gate-evidence.v1.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate ao-release-gate decision (advisory)
+        # The decision script returns exit 1 on deny only when
+        # --fail-on-deny is supplied. Under the shadow advisory job we
+        # never pass that flag, so the job always exits 0; the decision
+        # body is captured in the uploaded artifact for audit.
+        working-directory: base
+        run: |
+          set +e
+          if [ -n "${{ steps.evidence.outputs.path }}" ]; then
+            python scripts/ao_release_gate_decision.py \
+              --payload payload.json \
+              --gpp-status .claude/plans/gpp_status.v1.json \
+              --review-evidence "../${{ steps.evidence.outputs.path }}" \
+              --decision-path decision.json \
+              --output text
+          else
+            python scripts/ao_release_gate_decision.py \
+              --payload payload.json \
+              --gpp-status .claude/plans/gpp_status.v1.json \
+              --decision-path decision.json \
+              --output text
+          fi
+          # Shadow advisory: never propagate the decision exit code.
+          exit 0
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ao-release-gate-shadow-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: |
+            base/payload.json
+            base/decision.json
+          if-no-files-found: warn
