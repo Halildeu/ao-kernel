@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, TypedDict, cast
 
 from ao_kernel._internal.secrets.factory import create_provider_from_env
+from ao_kernel.ao_release_gate import DEFAULT_CONCLUSION_MODE, ConclusionMode
 from ao_kernel.ao_release_gate_service import (
     AoReleaseGateCheckRunRequest,
     AoReleaseGateServiceResult,
@@ -36,6 +37,7 @@ GITHUB_APP_PRIVATE_KEY_PATH_ENV = "AO_GITHUB_APP_PRIVATE_KEY_PATH"
 GITHUB_API_URL_ENV = "AO_GITHUB_API_URL"
 GPP_STATUS_PATH_ENV = "AO_RELEASE_GATE_GPP_STATUS_PATH"
 MAX_BODY_BYTES_ENV = "AO_RELEASE_GATE_MAX_BODY_BYTES"
+CONCLUSION_MODE_ENV = "AO_RELEASE_GATE_CONCLUSION_MODE"
 
 
 class ReleaseGateRuntimeError(RuntimeError):
@@ -302,6 +304,33 @@ def load_gpp_status(env: Mapping[str, str] | None = None) -> object:
         ) from exc
 
 
+def load_conclusion_mode(env: Mapping[str, str] | None = None) -> ConclusionMode:
+    """Load the runtime conclusion mode from the environment.
+
+    Returns ``shadow`` (the default) when ``AO_RELEASE_GATE_CONCLUSION_MODE``
+    is missing or empty. Returns ``enforce`` only when the env var is set
+    exactly to ``enforce``. Any other non-empty value is treated as a
+    configuration error so a typo cannot silently flip the gate into the
+    unintended mode.
+    """
+
+    source = os.environ if env is None else env
+    raw_value = source.get(CONCLUSION_MODE_ENV)
+    if raw_value is None:
+        return DEFAULT_CONCLUSION_MODE
+    candidate = raw_value.strip()
+    if not candidate:
+        return DEFAULT_CONCLUSION_MODE
+    if candidate == "shadow":
+        return "shadow"
+    if candidate == "enforce":
+        return "enforce"
+    raise ReleaseGateRuntimeConfigError(
+        "ao_release_gate_runtime_invalid_conclusion_mode",
+        f"{CONCLUSION_MODE_ENV} must be 'shadow' or 'enforce'.",
+    )
+
+
 def handle_ao_release_gate_webhook(
     body: bytes,
     headers: Mapping[str, str],
@@ -310,8 +339,15 @@ def handle_ao_release_gate_webhook(
     github_client: GithubCheckRunClient,
     gpp_status: object,
     generated_at: str | None = None,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> ReleaseGateRuntimeResult:
-    """Evaluate one GitHub webhook delivery and post the dry-run check-run."""
+    """Evaluate one GitHub webhook delivery and post the dry-run check-run.
+
+    ``conclusion_mode`` is forwarded to the service boundary so the GitHub
+    check-run conclusion stays mode-aware. The default ``shadow`` mode keeps
+    advisory deliveries from producing red CI; ``enforce`` restores the
+    historical ``failure`` mapping required before the AO-GATE-8 cutover.
+    """
 
     service_result = build_ao_release_gate_service_result(
         body,
@@ -320,6 +356,7 @@ def handle_ao_release_gate_webhook(
         webhook_secret=webhook_secret,
         require_signature=True,
         generated_at=generated_at,
+        conclusion_mode=conclusion_mode,
     )
     if not service_result["should_post_check_run"]:
         finding_code = service_result["finding_code"] or "ao_release_gate_runtime_service_blocked"
@@ -416,12 +453,14 @@ def release_gate_runtime_wsgi_app(
         webhook_secret = load_webhook_secret(os.environ)
         config = load_github_app_config(os.environ)
         gpp_status = load_gpp_status(os.environ)
+        conclusion_mode = load_conclusion_mode(os.environ)
         result = handle_ao_release_gate_webhook(
             body,
             _wsgi_headers(environ),
             webhook_secret=webhook_secret,
             github_client=GithubAppCheckRunClient(config),
             gpp_status=gpp_status,
+            conclusion_mode=conclusion_mode,
         )
         return _wsgi_json(start_response, _status_code_for_runtime_result(result), _redacted_runtime_payload(result))
     except ReleaseGateRuntimeConfigError as exc:
@@ -558,6 +597,7 @@ def _redacted_runtime_payload(result: ReleaseGateRuntimeResult) -> dict[str, obj
         "delivery_id": service_result["delivery_id"],
         "signature_verified": service_result["signature_verified"],
         "should_post_check_run": service_result["should_post_check_run"],
+        "conclusion_mode": service_result["conclusion_mode"],
         "release_gate_decision": decision["decision"] if decision is not None else None,
         "dry_run": decision["dry_run"] if decision is not None else None,
         "merge_authority_enabled": decision["merge_authority_enabled"] if decision is not None else None,

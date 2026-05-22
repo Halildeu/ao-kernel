@@ -47,8 +47,15 @@ protection app:
 
 ## Required Policy Checks
 
-The release gate must deny by default and set the required status check to
-failure unless every required condition passes.
+The release gate must deny by default. In `enforce` mode (the production
+configuration once AO-GATE-8 lands), the check-run conclusion is
+`failure` unless every required condition passes. In `shadow` mode (the
+default during the dry-run rollout), the same deny path posts a `neutral`
+conclusion so the advisory check does not surface as red CI before the
+branch-protection cutover. `allow_autonomous_merge` maps to `success`
+in either mode. Switching from `shadow` to `enforce` is the AO-GATE-8
+prerequisite; the check must not be marked required on `main` until the
+hosted runtime is running in `enforce` mode.
 
 Required conditions:
 

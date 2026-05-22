@@ -110,7 +110,10 @@ def test_release_gate_denies_stale_branch() -> None:
 
     assert decision["decision"] == DENY_STALE_BRANCH_DECISION
     assert decision["allow"] is False
-    assert decision["github_check_run"]["conclusion"] == "failure"
+    # Shadow mode (the default) maps deny/error decisions to ``neutral`` so
+    # advisory deliveries do not surface as red CI before AO-GATE-8.
+    assert decision["conclusion_mode"] == "shadow"
+    assert decision["github_check_run"]["conclusion"] == "neutral"
     assert _find_check(decision, "branch_freshness")["finding_code"] == "ao_release_gate_branch_not_up_to_date"
 
 
@@ -176,6 +179,67 @@ def test_release_gate_render_and_write(tmp_path: Path) -> None:
     assert "decision: allow_autonomous_merge" in rendered
     assert "merge_authority_enabled: false" in rendered
     assert f"github_check_run: {RELEASE_GATE_CHECK_NAME} success" in rendered
+
+
+def test_check_run_conclusion_shadow_neutral_for_deny_missing_evidence() -> None:
+    payload = _allow_payload()
+    payload["required_checks"] = []
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status())
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert decision["conclusion_mode"] == "shadow"
+    assert decision["github_check_run"]["conclusion"] == "neutral"
+
+
+def test_check_run_conclusion_enforce_failure_for_deny_missing_evidence() -> None:
+    payload = _allow_payload()
+    payload["required_checks"] = []
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status(), conclusion_mode="enforce")
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert decision["conclusion_mode"] == "enforce"
+    assert decision["github_check_run"]["conclusion"] == "failure"
+
+
+def test_check_run_conclusion_shadow_neutral_for_deny_policy_violation() -> None:
+    payload = _allow_payload()
+    payload["admin_bypass_requested"] = True
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status())
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert decision["conclusion_mode"] == "shadow"
+    assert decision["github_check_run"]["conclusion"] == "neutral"
+
+
+def test_check_run_conclusion_enforce_failure_for_deny_policy_violation() -> None:
+    payload = _allow_payload()
+    payload["admin_bypass_requested"] = True
+
+    decision = build_ao_release_gate_decision(payload, _gpp_status(), conclusion_mode="enforce")
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert decision["conclusion_mode"] == "enforce"
+    assert decision["github_check_run"]["conclusion"] == "failure"
+
+
+def test_check_run_conclusion_success_for_allow_in_both_modes() -> None:
+    payload = _allow_payload()
+
+    shadow_decision = build_ao_release_gate_decision(payload, _gpp_status())
+    enforce_decision = build_ao_release_gate_decision(payload, _gpp_status(), conclusion_mode="enforce")
+
+    assert shadow_decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert enforce_decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    # The allow path is ``success`` regardless of mode — only deny/error
+    # decisions diverge between ``shadow`` (``neutral``) and ``enforce``
+    # (``failure``).
+    assert shadow_decision["github_check_run"]["conclusion"] == "success"
+    assert enforce_decision["github_check_run"]["conclusion"] == "success"
+    assert shadow_decision["conclusion_mode"] == "shadow"
+    assert enforce_decision["conclusion_mode"] == "enforce"
 
 
 def test_release_gate_cli_writes_dry_run_artifact(tmp_path: Path) -> None:
