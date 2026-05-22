@@ -2,11 +2,12 @@
 
 **Status:** GPP-2 public HTTPS health evidence, GitHub App webhook delivery
 chain evidence, and `ao-release-gate` shadow dry-run check-run evidence are
-recorded; deployment-protection callback evidence, production callback
-topology, enforce-mode success/failure evidence, and branch-protection cutover
-remain blocked. The next simplification step is a local AI review evidence
-gate that codifies the current operator workflow without claiming production
-readiness.
+recorded. The local AI review evidence gate (GPP-2A / LOCAL-GATE-1) is now
+implemented and merged (PR #576 pivot plan + PR #577 implementation); it is
+operator-controlled local trust evidence only. deployment-protection callback
+evidence, policy App slug reconciliation, production callback topology,
+enforce-mode success/failure evidence, and branch-protection cutover remain
+missing. GPP-2 stays blocked.
 **Date:** 2026-05-22
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
@@ -51,11 +52,27 @@ local gate validates rules, tests, scope, secrets, and reviewer verdict
 operator decides whether to merge
 ```
 
-Therefore the next planning slice is `GPP-2ag`, a local AI review evidence gate.
-This local gate is preparatory/local evidence only. It does not close GPP-2,
-does not replace AO-GATE-7 deployment-protection callback evidence, does not
-change branch protection, does not execute live adapters, and does not widen
-support or claim production platform readiness.
+`GPP-2ag` recorded that scope correction as a local AI review evidence gate.
+That gate is now implemented and merged as `LOCAL-GATE-1` (PR #576 pivot plan
+`7c32879` + PR #577 implementation `bd8eb35`). It is preparatory/local operator
+evidence only: it does not close GPP-2, does not replace AO-GATE-7
+deployment-protection callback evidence, does not change branch protection, does
+not execute live adapters, and does not widen support or claim production
+platform readiness.
+
+GPP-2 is split into three slices:
+
+- **GPP-2A** — Local AI Review Gate (`LOCAL-GATE-1`): **DONE** (PR #576 + #577).
+- **GPP-2B** — `ao-release-gate` required check / enforcement mapping: **next**
+  (planning only; shadow mode continues; no branch-protection cutover, no
+  enforce mode, no cutover before positive/negative path evidence).
+- **GPP-2C** — deployment-protection callback / production topology
+  (AO-GATE-7 + AO-GATE-8): **blocked / later**, pending policy App slug
+  reconciliation, production-suitable callback topology, enforce-mode
+  success/failure evidence, and branch-protection / ruleset cutover.
+
+GPP-2 remains `blocked` until the GPP-2C evidence chain is complete. Post-pivot
+handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`.
 
 ## 2. Current Baseline
 
@@ -370,6 +387,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2ad` | Completed / no support widening | Internal vault gate secret contract | policy and release-gate runtimes accept vault-backed secret ids; services are still not hosted/evidenced |
 | `GPP-2ae` | Completed / no support widening | Internal operator host bundle | Caddy + policy service + `ao-release-gate` compose bundle and no-secret metadata attestation ready; services are still not publicly hosted/evidenced |
 | `GPP-2af` | Completed / no support widening | Internal gate host health probe | no-secret public HTTPS health probe ready; actual hosted health evidence, webhooks, callback/check-run evidence, and cutover are still missing |
+| `GPP-2ag` | Completed / no support widening | Local AI review gate pivot + LOCAL-GATE-1 (GPP-2A) | pivot recorded (PR #576) and local AI review evidence gate implemented + merged (PR #577); operator-controlled local trust evidence only, GPP-2 stays blocked |
 | `GPP-2` | Blocked / internal hosting/config/evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | deployment protection app/policy service and `ao-release-gate` must be hosted with public HTTPS health evidence, configured with vault-backed runtime secrets and webhooks, and evidenced/cut over before human-free program merges |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
@@ -1119,6 +1137,7 @@ admin bypass for PR merge automation, and must keep
 | 2026-05-21 | GPP-2 public HTTPS hosting evidence recorded | platform-k8s-gitops#938 and ao-kernel#569 recorded no-secret hosted health evidence for the policy service and `ao-release-gate`; GPP-2 remained blocked. |
 | 2026-05-22 | GPP-2 webhook and shadow check-run evidence recorded | ao-kernel#572/#574 recorded GitHub App webhook delivery chain evidence through smee.io non-production dry-run proxy and a real `ao-release-gate` shadow check-run; GPP-2 remained blocked pending callback, topology, enforce-mode, and cutover evidence. |
 | 2026-05-22 | GPP-2ag local AI review gate pivot planned | `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md` records the scope correction: codify the current local implementer-AI + reviewer-AI trust model before continuing the heavier deployment-protection callback path. |
+| 2026-05-22 | LOCAL-GATE-1 (GPP-2A) implemented and merged | PR #576 pivot plan (`7c32879`) + PR #577 implementation (`bd8eb35`) shipped `scripts/local_gpp_gate.py`, the local AI review evidence JSON Schemas, no-secret fixtures, and fail-closed tests. The gate is operator-controlled local trust evidence only and does not close GPP-2. GPP-2 split recorded: GPP-2A (LOCAL-GATE-1) done, GPP-2B (`ao-release-gate` required-check mapping) next, GPP-2C (deployment-protection callback / production topology) blocked. Handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
 | 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |
