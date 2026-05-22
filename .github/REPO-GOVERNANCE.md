@@ -1,6 +1,6 @@
 # Repo Governance and Merge Gates
 
-**Durum tarihi:** 2026-04-22
+**Durum tarihi:** 2026-05-22
 **Program status SSOT:** [`.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md`](../.claude/plans/PRODUCTION-HARDENING-PROGRAM-STATUS.md)
 **Operasyon protokolü:** `CLAUDE.md` §19 ve §20
 
@@ -54,7 +54,8 @@ Kaynak: `gh api repos/Halildeu/ao-kernel/branches/main/protection`
 Şu an aktif branch protection unsurları:
 
 - required status checks
-- 1 approval
+- 1 approval (`required_approving_review_count = 1`)
+- code-owner review zorunlu (`require_code_owner_reviews = true`)
 - conversation resolution
 - force-push kapalı
 - branch deletion kapalı
@@ -81,24 +82,31 @@ WP-5 hedefi olarak `main` branch protection için beklenen minimum set:
 - `required_conversation_resolution = true`
 - `enforce_admins = true`
 
-### 3.3 Code-owner notu
+### 3.3 Code-owner notu (2026-05-22 güncellemesi)
 
-`CODEOWNERS` dosyası repo içinde şimdi mevcuttur, ancak `require_code_owner_reviews = true`
-ayarının platformda açılması operasyonel bir önkoşula bağlıdır:
+`require_code_owner_reviews = true` platformda **aktiftir** ve `.github/CODEOWNERS`
+artık iki code owner taşır: `@Halildeu` ve `@gladyatore-lab`.
 
-- Şu an canlı GitHub collaborator görünümünde yalnız `@Halildeu` yazma/admin
-  yetkisi ile görünmektedir.
-- Bu durumda code-owner review zorunluluğu tek maintainer döneminde normal
-  merge akışını kilitleyebilir.
+**Single-owner, dual-account, non-author approval lane:** `ao-kernel` tek
+operatör tarafından yönetilen bir repodur. `@gladyatore-lab`, operatörün ikinci
+GitHub hesabıdır — bağımsız bir ikinci insan reviewer DEĞİLDİR. Write
+collaborator + code owner olarak eklenmesinin tek amacı, GitHub'ın "author kendi
+PR'ını approve edemez" kısıtını **branch protection'ı gevşetmeden** aşmaktır:
 
-Bu yüzden code-owner enforcement kararı iki şekilde ele alınmalıdır:
+- Agent-üretimi PR'ların author'ı genelde `@Halildeu` olur; `@gladyatore-lab`
+  non-author code-owner approval'ı sağlar (tersi de geçerlidir).
+- Bu bir branch-protection bypass DEĞİLDİR: `--admin` kullanılmaz,
+  `required_approving_review_count` / `require_code_owner_reviews` kapatılmaz,
+  required status checks aynen korunur.
+- Esas bağımsız teknik review, cross-AI peer review'dur (farklı sağlayıcı —
+  Codex); `@gladyatore-lab` onayı bunun GitHub'daki mekanik kaydıdır.
+- Bu düzenleme support widening, production-platform claim veya live-adapter
+  execution **üretmez**; GPP-2 `blocked` kalır.
 
-1. en az bir ikinci write-access maintainer görünür hale geldiğinde platformda
-   `require_code_owner_reviews = true` açılır
-2. aksi durumda `CODEOWNERS` repo içi ownership ve review hedefi olarak kalır,
-   ama platform enforcement ayrı karar olarak tutulur
-
-Bu nüans `WP-5.3` sırasında açıkça yeniden değerlendirilmelidir.
+Bootstrap: ilk `CODEOWNERS` değişikliği (`@gladyatore-lab`'ın owner eklenmesi)
+`@gladyatore-lab` tarafından açılan PR ile yapıldı; böylece `@Halildeu` (code
+owner + non-author) onu approve edebildi — chicken-and-egg deadlock,
+branch-protection mutation olmadan kırıldı.
 
 ## 4. İşletim Kuralları
 
