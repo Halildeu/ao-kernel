@@ -1,0 +1,32 @@
+{
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "GPP-2ag",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "REVISE"
+  },
+  "scope_reviewed": {
+    "base_ref": "origin/main",
+    "head_ref": "codex/local-gate-1-impl",
+    "changed_files": [
+      "scripts/local_gpp_gate.py"
+    ]
+  },
+  "checks_considered": [
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" }
+  ],
+  "findings": [
+    "reviewer requested a revision before approval"
+  ],
+  "secrets_recorded": false,
+  "live_adapter_execution": false,
+  "support_widening": false,
+  "production_platform_claim": false
+}

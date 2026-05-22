@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:local-gpp-gate-evidence:v1",
+  "title": "Local GPP Gate Evidence",
+  "description": "Durable no-secret artifact emitted by the local GPP AI review gate. It records whether the operator may merge a change after an independent reviewer AI verdict and a fixed set of fail-closed checks. This artifact is local operator evidence only: it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness. The artifact is structurally constrained and never echoes raw reviewer evidence content.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision",
+    "repo",
+    "work_package",
+    "generated_at",
+    "checks",
+    "findings",
+    "reviewer_findings_count",
+    "gpp_2_status",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "local-gpp-gate-evidence.v1",
+      "description": "Schema contract version. Must be the literal 'local-gpp-gate-evidence.v1'."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["operator_may_merge", "fail_closed"],
+      "description": "'operator_may_merge' only when every check passed. Otherwise 'fail_closed'."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository the gate evaluated."
+    },
+    "work_package": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GPP work package identifier the gate evaluated."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the gate produced this artifact."
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startup_preflight_passed",
+        "gpp_status_checked",
+        "scope_allowed",
+        "tests_passed",
+        "secret_scan_passed",
+        "reviewer_agree",
+        "cross_provider_verified",
+        "forbidden_actions_absent"
+      ],
+      "properties": {
+        "startup_preflight_passed": {
+          "type": "boolean",
+          "description": "Whether the repo operating contract (AGENTS.md) and GPP status file are present and the canonical startup command scripts/gpp_next.py exits zero."
+        },
+        "gpp_status_checked": {
+          "type": "boolean",
+          "description": "Whether the GPP status file confirmed the current work package is blocked and the support/production/live-adapter guards are all false."
+        },
+        "scope_allowed": {
+          "type": "boolean",
+          "description": "Whether the reviewed scope is a non-empty changed-files list, free of forbidden surfaces in both the reviewer-declared list and the actual git diff, and an exact match for the actual git diff."
+        },
+        "tests_passed": {
+          "type": "boolean",
+          "description": "Whether the reviewer recorded a 'tests' check with status 'pass'."
+        },
+        "secret_scan_passed": {
+          "type": "boolean",
+          "description": "Whether the reviewer recorded a 'secret_scan' check with status 'pass' and recorded no secret material."
+        },
+        "reviewer_agree": {
+          "type": "boolean",
+          "description": "Whether the reviewer verdict was 'AGREE'."
+        },
+        "cross_provider_verified": {
+          "type": "boolean",
+          "description": "Whether the implementer AI provider and reviewer AI provider differ."
+        },
+        "forbidden_actions_absent": {
+          "type": "boolean",
+          "description": "Whether the reviewer evidence is free of forbidden actions, including no 'FORBIDDEN:' finding and no true support/production/live-adapter flag."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Gate-authored finding strings explaining any fail-closed check. Reviewer free text is never carried through; only gate-authored strings appear here. No secret material is permitted.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "reviewer_findings_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of reviewer-authored finding strings in the source reviewer evidence. Only the count is carried through; the reviewer's free text is never embedded, so a sentinel placed in a reviewer finding cannot leak through the gate output."
+    },
+    "gpp_2_status": {
+      "type": "string",
+      "const": "blocked",
+      "description": "GPP-2 stays blocked. The local gate is operator evidence only and does not close GPP-2."
+    },
+    "support_widening": {
+      "type": "boolean",
+      "const": false,
+      "description": "The local gate never widens support."
+    },
+    "production_platform_claim": {
+      "type": "boolean",
+      "const": false,
+      "description": "The local gate never claims production platform readiness."
+    },
+    "live_adapter_execution": {
+      "type": "boolean",
+      "const": false,
+      "description": "The local gate never executes a live adapter."
+    }
+  }
+}
