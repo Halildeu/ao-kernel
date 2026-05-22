@@ -181,14 +181,19 @@ def test_workflow_carries_continue_on_error_on_data_gathering_steps() -> None:
 
 def test_workflow_synthesizes_decision_when_prior_steps_fail() -> None:
     """When the decision step did not produce decision.json (because a
-    prior continue-on-error step failed), a synthesis step writes an
-    error_fail_closed decision so every shadow run still emits an
-    auditable record.
+    prior continue-on-error step failed), a synthesis step invokes the
+    repo-owned synthesizer script (no fragile inline Python) which writes
+    an error_fail_closed decision so every shadow run still emits an
+    auditable record. The synthesizer itself is unit-tested in
+    test_ao_release_gate_synthesize_error_decision.py.
     """
     text = _workflow_text()
     assert "Synthesize error_fail_closed decision when prior steps failed" in text
-    assert "error_fail_closed" in text
-    assert "ao_release_gate_shadow_pre_decision_step_failed" in text
+    # The workflow invokes the repo-owned synthesizer script; it must not
+    # carry inline `python -c` snippets that would IndentationError under
+    # YAML block-scalar indent stripping.
+    assert "scripts/ao_release_gate_synthesize_error_decision.py decision.json" in text
+    assert "python -c" not in text
 
 
 def test_workflow_does_not_forward_pull_request_issue_url() -> None:
