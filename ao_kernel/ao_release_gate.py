@@ -7,9 +7,13 @@ decision a future ``ao-release-gate`` GitHub App can post.
 
 from __future__ import annotations
 
+import hashlib
 import json
+from importlib import resources
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
+
+from jsonschema import Draft202012Validator
 
 from ao_kernel.live_adapter_gate import utc_timestamp
 
@@ -20,6 +24,38 @@ RELEASE_GATE_ARTIFACT = "ao-release-gate-decision.v1.json"
 RELEASE_GATE_CHECK_NAME = "ao-release-gate"
 EXPECTED_REPOSITORY = "Halildeu/ao-kernel"
 EXPECTED_BASE_REF = "main"
+
+LOCAL_GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
+REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME = "ao-release-gate-review-evidence-input.schema.v1.json"
+
+
+def diff_digest(changed_paths: list[str]) -> str:
+    """Return the ``sha256:`` prefixed digest of a changed-files list.
+
+    Canonical contract between the local-gpp-gate evidence emitter and the
+    ao-release-gate decision-core verifier. The digest is taken over the
+    newline-joined sorted path list so the binding is stable and
+    order-independent. ``scripts/local_gpp_gate.py`` imports this function
+    so emitter and verifier cannot drift.
+    """
+
+    joined = "\n".join(sorted(changed_paths))
+    return "sha256:" + hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def _load_local_gate_evidence_schema() -> dict[str, Any]:
+    """Load the bundled local-gpp-gate-evidence.v1 JSON Schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(LOCAL_GATE_EVIDENCE_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
+def _load_review_evidence_acceptance_schema() -> dict[str, Any]:
+    """Load the bundled ao-release-gate review-evidence acceptance profile."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
 
 ALLOW_AUTONOMOUS_MERGE_DECISION = "allow_autonomous_merge"
 DENY_POLICY_VIOLATION_DECISION = "deny_policy_violation"
@@ -79,6 +115,7 @@ class AoReleaseGateContext(TypedDict):
     pat_backed_bot_actor: bool | None
     codex_or_claude_release_authority: bool | None
     live_adapter_execution_requested: bool | None
+    reviewed_slice: str | None
     gpp_current_wp_id: str | None
     gpp_current_wp_issue: str | None
     gpp_current_wp_status: str | None
@@ -288,7 +325,9 @@ def _blocked(name: str, *, finding_code: str, detail: str) -> AoReleaseGateCheck
     return {"name": name, "status": "blocked", "finding_code": finding_code, "detail": detail}
 
 
-def _check(name: str, condition: bool, *, finding_code: str, pass_detail: str, blocked_detail: str) -> AoReleaseGateCheck:
+def _check(
+    name: str, condition: bool, *, finding_code: str, pass_detail: str, blocked_detail: str
+) -> AoReleaseGateCheck:
     """Build one fail-closed check."""
 
     if condition:
@@ -333,7 +372,9 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
             root.get("forbidden_secret_context_detected"),
             service.get("forbidden_secret_context_detected"),
         ),
-        "admin_bypass_requested": _first_bool(root.get("admin_bypass_requested"), service.get("admin_bypass_requested")),
+        "admin_bypass_requested": _first_bool(
+            root.get("admin_bypass_requested"), service.get("admin_bypass_requested")
+        ),
         "pat_backed_bot_actor": _first_bool(root.get("pat_backed_bot_actor"), service.get("pat_backed_bot_actor")),
         "codex_or_claude_release_authority": _first_bool(
             root.get("codex_or_claude_release_authority"),
@@ -343,6 +384,7 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
             root.get("live_adapter_execution_requested"),
             service.get("live_adapter_execution_requested"),
         ),
+        "reviewed_slice": _first_string(root.get("reviewed_slice"), service.get("reviewed_slice")),
         "gpp_current_wp_id": _first_string(current_wp.get("id")),
         "gpp_current_wp_issue": _first_string(current_wp.get("issue")),
         "gpp_current_wp_status": _first_string(current_wp.get("status")),
@@ -350,6 +392,114 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
         "gpp_production_platform_claim_allowed": _bool(status.get("production_platform_claim_allowed")),
         "gpp_live_adapter_execution_allowed": _bool(status.get("live_adapter_execution_allowed")),
     }
+
+
+def _evaluate_review_evidence_checks(
+    review_evidence: object,
+    context: AoReleaseGateContext,
+) -> list[AoReleaseGateCheck]:
+    """Evaluate the untrusted local-gpp-gate review evidence.
+
+    Returns two fail-closed checks:
+
+    1. ``review_evidence`` — present, dict, schema-valid against
+       ``local-gpp-gate-evidence.schema.v1.json``, and accepting per the
+       ``ao-release-gate-review-evidence-input.schema.v1.json`` profile.
+    2. ``review_evidence_context_bound`` — when the first check passes,
+       confirms ``context_binding`` is present and binds the evidence to
+       this PR's head SHA, changed-files digest, repository, reviewed
+       slice, and file count. When the first check fails the second
+       check is reported with the ``..._context_unverifiable`` finding
+       (a missing-evidence finding) so the decision stays in the
+       missing-evidence bucket rather than wrongly escalating to
+       ``deny_untrusted_context``.
+
+    Reviewer free-text is never echoed into the check details; only
+    gate-authored strings appear.
+    """
+
+    if not isinstance(review_evidence, dict):
+        return [
+            _blocked(
+                "review_evidence",
+                finding_code="ao_release_gate_review_evidence_missing",
+                detail="Local-gpp-gate review evidence is missing or is not a JSON object.",
+            ),
+            _blocked(
+                "review_evidence_context_bound",
+                finding_code="ao_release_gate_review_evidence_context_unverifiable",
+                detail="Context binding cannot be evaluated; review evidence is missing.",
+            ),
+        ]
+
+    full_validator = Draft202012Validator(_load_local_gate_evidence_schema())
+    if list(full_validator.iter_errors(review_evidence)):
+        return [
+            _blocked(
+                "review_evidence",
+                finding_code="ao_release_gate_review_evidence_schema_invalid",
+                detail="Review evidence does not validate against local-gpp-gate-evidence.schema.v1.json.",
+            ),
+            _blocked(
+                "review_evidence_context_bound",
+                finding_code="ao_release_gate_review_evidence_context_unverifiable",
+                detail="Context binding cannot be evaluated; review evidence failed the full local-gpp-gate-evidence schema.",
+            ),
+        ]
+
+    acceptance_validator = Draft202012Validator(_load_review_evidence_acceptance_schema())
+    if list(acceptance_validator.iter_errors(review_evidence)):
+        return [
+            _blocked(
+                "review_evidence",
+                finding_code="ao_release_gate_review_evidence_not_accepting",
+                detail="Review evidence is not an accepting attestation (decision, reviewer AGREE, cross-provider, or guard flag failed the acceptance profile).",
+            ),
+            _blocked(
+                "review_evidence_context_bound",
+                finding_code="ao_release_gate_review_evidence_context_unverifiable",
+                detail="Context binding cannot be evaluated; review evidence failed the acceptance profile.",
+            ),
+        ]
+
+    accepted = _pass(
+        "review_evidence",
+        detail="Review evidence is a schema-valid accepting local-gpp-gate-evidence.v1 attestation.",
+    )
+
+    raw_binding = review_evidence.get("context_binding")
+    binding = raw_binding if isinstance(raw_binding, dict) else None
+    if binding is None:
+        return [
+            accepted,
+            _blocked(
+                "review_evidence_context_bound",
+                finding_code="ao_release_gate_review_evidence_context_unbound",
+                detail="Review evidence has no context_binding block; the evidence cannot be bound to this pull request.",
+            ),
+        ]
+
+    head_match = context["head_sha"] is not None and binding.get("head_sha") == context["head_sha"]
+    repo_match = context["repository"] is not None and review_evidence.get("repo") == context["repository"]
+    slice_match = (
+        context["reviewed_slice"] is not None and review_evidence.get("work_package") == context["reviewed_slice"]
+    )
+    digest_match = binding.get("diff_digest") == diff_digest(context["changed_paths"])
+    count_match = binding.get("changed_files_count") == len(context["changed_paths"])
+
+    if head_match and repo_match and slice_match and digest_match and count_match:
+        bound = _pass(
+            "review_evidence_context_bound",
+            detail="Review evidence context binding matches the pull request head, repository, reviewed slice, diff digest, and changed-files count.",
+        )
+    else:
+        bound = _blocked(
+            "review_evidence_context_bound",
+            finding_code="ao_release_gate_review_evidence_context_unbound",
+            detail="Review evidence context binding does not match the pull request head, repository, reviewed slice, diff digest, or changed-files count.",
+        )
+
+    return [accepted, bound]
 
 
 def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
@@ -365,6 +515,7 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_wrong_repository",
             "ao_release_gate_untrusted_fork",
             "ao_release_gate_pull_request_target_context",
+            "ao_release_gate_review_evidence_context_unbound",
         }
         for finding in findings
     ):
@@ -380,6 +531,10 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_diff_scope_missing",
             "ao_release_gate_gpp_status_missing",
             "ao_release_gate_gpp_issue_mismatch",
+            "ao_release_gate_review_evidence_missing",
+            "ao_release_gate_review_evidence_schema_invalid",
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
         }
         for finding in findings
     ):
@@ -447,6 +602,7 @@ def build_ao_release_gate_decision(
     payload: object,
     gpp_status: object,
     *,
+    review_evidence: object = None,
     generated_at: str | None = None,
     conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateDecision:
@@ -457,6 +613,14 @@ def build_ao_release_gate_decision(
     advisory check does not produce red CI before AO-GATE-8 enforcement,
     while ``enforce`` maps them to ``failure`` (the historical behavior
     needed once the check is required on branch protection).
+
+    ``review_evidence`` is the untrusted ``local-gpp-gate-evidence.v1``
+    attestation supplied by the workflow. When absent, malformed,
+    non-accepting, or not bound to this PR's head, repository, reviewed
+    slice, diff digest, or changed-files count, the gate fails closed. A
+    future ao-release-gate required check will pass this in from the PR
+    head's committed evidence file; the dry-run callers may pass ``None``
+    and accept a ``deny_missing_evidence`` decision.
     """
 
     context = extract_ao_release_gate_context(payload, gpp_status)
@@ -604,6 +768,7 @@ def build_ao_release_gate_decision(
             blocked_detail="Live adapter execution is requested or not explicitly ruled out.",
         ),
     ]
+    checks.extend(_evaluate_review_evidence_checks(review_evidence, context))
     findings = [check["finding_code"] for check in checks if check["finding_code"] is not None]
     decision = _decision_from_findings(findings)
     allow = decision == ALLOW_AUTONOMOUS_MERGE_DECISION

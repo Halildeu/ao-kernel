@@ -7,7 +7,8 @@ pin that table to both gates' *actual* check sets so the mapping cannot
 silently drift:
 
 - the 8 local-gate checks declared in ``local-gpp-gate-evidence.schema.v1.json``
-- the 18 ao-release-gate checks produced by ``build_ao_release_gate_decision``
+- the 20 ao-release-gate checks produced by ``build_ao_release_gate_decision``
+  (GPP-2D-2b added ``review_evidence`` and ``review_evidence_context_bound``)
 
 If either gate gains, loses, or renames a check without the table being
 updated, these tests fail. This is a documentation-integrity test only: it
@@ -145,14 +146,17 @@ def test_section_3_1_table_anchor() -> None:
     table = _parse_section_3_1()
     assert table.section_found, f"'{_SECTION_HEADING}' heading missing from {_MAPPING_DOC}"
     assert table.header_found, "§3.1 check-correspondence table header not found"
-    assert len(table.rows) >= 9, (
+    # 8 local-gate checks may share rows (GPP-2D-2b merged reviewer_agree +
+    # cross_provider_verified into one ao-counterpart row), but the table
+    # always carries every local-gate check plus the single ao-only row.
+    assert len(table.rows) >= 8, (
         f"§3.1 table parsed to {len(table.rows)} data rows; "
-        "expected >= 9 (8 local-gate checks + 1 ao-release-gate-only row)"
+        "expected >= 8 (every local-gate check is represented, plus 1 ao-release-gate-only row)"
     )
 
 
 def test_section_3_1_header_counts_match_actual_check_sets() -> None:
-    """The (8) and (18) counts in the table header match the live gates."""
+    """The (8) and (20) counts in the table header match the live gates."""
     table = _parse_section_3_1()
     local_total = len(_schema_local_check_names())
     ao_total = len(_runtime_ao_release_gate_check_names())

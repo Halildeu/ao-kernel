@@ -10,7 +10,11 @@ from typing import Any, Mapping
 
 import pytest
 
-from ao_kernel.ao_release_gate import ALLOW_AUTONOMOUS_MERGE_DECISION, DENY_POLICY_VIOLATION_DECISION
+from ao_kernel.ao_release_gate import (
+    ALLOW_AUTONOMOUS_MERGE_DECISION,
+    DENY_POLICY_VIOLATION_DECISION,
+    diff_digest,
+)
 from ao_kernel.ao_release_gate_runtime import (
     CONCLUSION_MODE_ENV,
     DEFAULT_HEALTH_PATH,
@@ -49,6 +53,19 @@ def _gpp_status(*, issue: str = "https://github.com/Halildeu/ao-kernel/issues/54
     }
 
 
+# 40-hex placeholder used by _allow_payload() and the matching
+# _review_evidence() factory so the context-binding check passes.
+_ALLOW_HEAD_SHA = "abc1230000000000000000000000000000000000"
+_ALLOW_REVIEWED_SLICE = "GPP-2"
+_ALLOW_CHANGED_PATHS = [
+    "ao_kernel/ao_release_gate_service.py",
+    "ao_kernel/ao_release_gate_runtime.py",
+    "tests/test_ao_release_gate_service.py",
+    "tests/test_ao_release_gate_runtime.py",
+    ".claude/plans/GPP-2w-AO-RELEASE-GATE-CHECK-RUN-SERVICE.md",
+]
+
+
 def _allow_payload() -> dict[str, object]:
     return {
         "repository": {"full_name": "Halildeu/ao-kernel"},
@@ -58,20 +75,15 @@ def _allow_payload() -> dict[str, object]:
             "base": {"ref": "main"},
             "head": {
                 "ref": "codex/gpp-2w-release-gate-service",
-                "sha": "abc123",
+                "sha": _ALLOW_HEAD_SHA,
                 "repo": {"fork": False},
             },
         },
         "issue_url": "https://github.com/Halildeu/ao-kernel/issues/541",
         "branch_up_to_date": True,
         "event_name": "pull_request",
-        "changed_paths": [
-            "ao_kernel/ao_release_gate_service.py",
-            "ao_kernel/ao_release_gate_runtime.py",
-            "tests/test_ao_release_gate_service.py",
-            "tests/test_ao_release_gate_runtime.py",
-            ".claude/plans/GPP-2w-AO-RELEASE-GATE-CHECK-RUN-SERVICE.md",
-        ],
+        "reviewed_slice": _ALLOW_REVIEWED_SLICE,
+        "changed_paths": list(_ALLOW_CHANGED_PATHS),
         "allowed_path_prefixes": [
             "ao_kernel/",
             "tests/",
@@ -86,6 +98,39 @@ def _allow_payload() -> dict[str, object]:
         "pat_backed_bot_actor": False,
         "codex_or_claude_release_authority": False,
         "live_adapter_execution_requested": False,
+    }
+
+
+def _review_evidence() -> dict[str, object]:
+    """Build a valid local-gpp-gate-evidence.v1 attestation bound to _allow_payload()."""
+    return {
+        "schema_version": "local-gpp-gate-evidence.v1",
+        "decision": "operator_may_merge",
+        "repo": "Halildeu/ao-kernel",
+        "work_package": _ALLOW_REVIEWED_SLICE,
+        "generated_at": "2026-04-28T00:00:00Z",
+        "checks": {
+            "startup_preflight_passed": True,
+            "gpp_status_checked": True,
+            "scope_allowed": True,
+            "tests_passed": True,
+            "secret_scan_passed": True,
+            "reviewer_agree": True,
+            "cross_provider_verified": True,
+            "forbidden_actions_absent": True,
+        },
+        "findings": [],
+        "reviewer_findings_count": 0,
+        "gpp_2_status": "blocked",
+        "support_widening": False,
+        "production_platform_claim": False,
+        "live_adapter_execution": False,
+        "context_binding": {
+            "head_sha": _ALLOW_HEAD_SHA,
+            "base_ref": "origin/main",
+            "diff_digest": diff_digest(_ALLOW_CHANGED_PATHS),
+            "changed_files_count": len(_ALLOW_CHANGED_PATHS),
+        },
     }
 
 
@@ -131,6 +176,7 @@ def test_runtime_posts_success_check_run_for_allowed_context() -> None:
         webhook_secret="secret",
         github_client=github_client,
         gpp_status=_gpp_status(),
+        review_evidence=_review_evidence(),
         generated_at="2026-04-28T00:00:00Z",
     )
 
@@ -158,6 +204,7 @@ def test_runtime_posts_neutral_check_run_for_denied_policy_in_shadow_mode() -> N
         webhook_secret="secret",
         github_client=github_client,
         gpp_status=_gpp_status(),
+        review_evidence=_review_evidence(),
     )
 
     assert result["status"] == "check_run_posted"
@@ -184,6 +231,7 @@ def test_runtime_posts_failure_check_run_for_denied_policy_in_enforce_mode() -> 
         webhook_secret="secret",
         github_client=github_client,
         gpp_status=_gpp_status(),
+        review_evidence=_review_evidence(),
         conclusion_mode="enforce",
     )
 
