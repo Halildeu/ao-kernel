@@ -125,6 +125,34 @@
       "type": "boolean",
       "const": false,
       "description": "The local gate never executes a live adapter."
+    },
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["head_sha", "base_ref", "diff_digest", "changed_files_count"],
+      "description": "Optional GPP-2D context-binding block. Present only when the git diff was verified; absent on the unverifiable-scope fail-closed path (git unavailable or --skip-git). It binds the evidence to a specific head commit and changed-files digest so a future ao-release-gate required check can reject stale, forged, or replayed evidence. This block does not change the decision, close GPP-2, or alter the guard flags. It is optional so existing local-gpp-gate-evidence.v1 artifacts stay schema-valid; a future required check enforces its presence itself.",
+      "properties": {
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Resolved 40-character lowercase git SHA of the reviewed head ref. A future ao-release-gate check confirms this equals the pull request head SHA so stale or replayed evidence fails closed."
+        },
+        "base_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Trusted base ref the scope diff was measured against (the three-dot git diff base)."
+        },
+        "diff_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "sha256: prefixed sha256 digest over the newline-joined sorted changed-files path list. Binds the evidence to one specific diff so the same evidence cannot be reused for a different change."
+        },
+        "changed_files_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of changed files in the verified git diff that diff_digest was computed over."
+        }
+      }
     }
   }
 }
