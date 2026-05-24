@@ -32,7 +32,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # completed_wps as historical audit trace.
     assert payload["current_wp"]["id"] == "GPP-3a"
     assert payload["current_wp"]["status"] == "active"
-    assert payload["current_wp"].get("issue") is None
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/615"
     assert (
         payload["current_wp"]["exit_decision"]
         == "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening"
@@ -820,7 +820,7 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     assert payload["current_wp"]["id"] == "GPP-3a"
     assert payload["current_wp"]["status"] == "active"
-    assert payload["current_wp"].get("issue") is None
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/615"
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]

@@ -9,7 +9,7 @@
     "id": "GPP-3a",
     "title": "Real-Adapter Usage/Cost Evidence Schema",
     "status": "active",
-    "issue": null,
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/615",
     "exit_decision": "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening",
     "record": ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
     "ready_after": "the real-adapter usage/cost evidence schema is bundled at ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json, the simulated emitter + ledger converter + validator script is published at scripts/real_adapter_usage_evidence.py with three CLI modes (emit-simulated, from-ledger-event, validate), the schema's root oneOf cross-field constraint is enforced (complete branch vs unavailable branch), the evidence_class vs live_adapter_execution allOf bind is enforced, the simulated path is exercised by tests/test_real_adapter_usage_cost_evidence.py, and the GP-5.9 BC-10 closure path decision is reserved for GPP-3b",
@@ -455,5 +455,5 @@
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T00:30:00Z"
+  "last_updated": "2026-05-25T01:00:00Z"
 }

@@ -2,6 +2,7 @@
 
 > **Status:** schema-ready, simulated-path-ready; BC-10 NOT yet closed.
 > **Slice:** `GPP-3a` (Faz 1 of GPP-3).
+> **Issue:** [#615](https://github.com/Halildeu/ao-kernel/issues/615) (CC-13).
 > **Decision:** `real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening`.
 > **Effective:** see `gpp_status.v1.json::current_wp.closeout_at` once Faz 1 lands.
 
@@ -18,18 +19,24 @@ still emits `BC-10 blocked` after this slice; only GPP-3c's chosen
 closure path (policy exception or extended simulated evidence as
 authority) reclassifies BC-10.
 
-## Scope
+## Scope (this slice changes)
 
 1. `ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json` — new schema
 2. `scripts/real_adapter_usage_evidence.py` — emitter + ledger converter + validator (three CLI modes: `emit-simulated`, `from-ledger-event`, `validate`)
-3. `tests/test_real_adapter_usage_cost_evidence.py` — schema + script drift guards
-4. `docs/PUBLIC-BETA.md` — BC-10 wording update ("schema-ready, not closed")
-5. `docs/SUPPORT-BOUNDARY.md` — `unavailable_reason` taxonomy
-6. `docs/KNOWN-BUGS.md` — BC-10 status update
-7. `.claude/plans/gpp_status.v1.json` — `current_wp` migrates from GPP-2 closed to GPP-3a active; GPP-2 closeout preserved in `completed_wps`; M3 milestone stays `pending`
-8. `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md` — progress table + section reference
-9. `tests/test_gpp_next.py` — drift-guard rewrite for the new `current_wp` truth
-10. `local-ai-review-evidence.v1.json` — reviewer evidence for this PR
+3. `tests/test_real_adapter_usage_cost_evidence.py` — schema + script drift guards (30 tests)
+4. `docs/PUBLIC-BETA.md` — new row for GPP-3a schema/simulated path readiness (BC-10 closure explicitly NOT claimed)
+5. `.claude/plans/gpp_status.v1.json` — `current_wp` migrates from GPP-2 closed to GPP-3a active; GPP-2 closeout preserved in `completed_wps`; M3 milestone stays `pending`
+6. `tests/test_gpp_next.py` — drift-guard rewrite for the new `current_wp` truth
+7. `scripts/local_gpp_gate.py`, `scripts/gpp5_repo_intelligence_closeout.py`, `scripts/gpp6_read_only_e2e_preflight.py` — dual-path GPP-2 closeout helper (current_wp.status=closed OR completed_wps entry)
+8. `tests/test_local_gpp_gate.py`, `tests/test_ao_ma1_design_invariants.py` — drift-guard updates for the dual-path helper + completed_wps preservation
+9. `local-ai-review-evidence.v1.json` — reviewer evidence for this PR
+
+## Scope (unchanged by design)
+
+- `docs/SUPPORT-BOUNDARY.md` — unchanged; GPP-3a is schema/simulated readiness, not a support-boundary widening
+- `docs/KNOWN-BUGS.md` — unchanged; "real-adapter usage/cost evidence missing for production certification" stays accurate
+- `.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md` — unchanged; STATUS.md already references the program structure and M3 stays pending. A docs-only sync slice may revisit STATUS.md as part of GPP-3b.
+- `scripts/gp5_platform_claim_decision.py` — unchanged; BC-10 stays `status="blocked"` until GPP-3c
 
 ## Non-Goals
 
