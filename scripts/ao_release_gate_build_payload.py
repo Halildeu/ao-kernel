@@ -76,24 +76,75 @@ def _changed_paths(pr_files_json_path: Path) -> list[str]:
     return sorted(paths)
 
 
-def _normalized_checks(check_runs_json_path: Path) -> list[dict[str, Any]]:
+def _check_run_sort_key(entry: dict[str, Any]) -> tuple[str, str, int]:
+    """Sort key for picking the latest check-run by name.
+
+    ``gh api .../check-runs`` returns every check-run on the commit,
+    including the ones cancelled by ``concurrency.cancel-in-progress``
+    from a previous workflow attempt. Picking the most recent
+    ``completed_at`` (or ``started_at`` if not yet completed) keeps the
+    gate honest: a stale cancelled run does not permanently mark a check
+    as not-green if the new run is green.
+
+    Falls back to the GitHub check-run id (numeric, monotonically
+    increasing) when timestamps are missing or equal.
+    """
+
+    raw_completed = entry.get("completed_at")
+    completed: str = raw_completed if isinstance(raw_completed, str) else ""
+    raw_started = entry.get("started_at")
+    started: str = raw_started if isinstance(raw_started, str) else ""
+    raw_id = entry.get("id")
+    cid: int = raw_id if isinstance(raw_id, int) else 0
+    return (completed, started, cid)
+
+
+def _normalized_checks(
+    check_runs_json_path: Path,
+    required_checks_allowlist: list[str] | None = None,
+) -> list[dict[str, Any]]:
     """Extract normalized {name, status, conclusion} check-run entries.
 
-    The shadow / enforce jobs of the ao-release-gate itself are excluded so
-    the gate does not see its own pending status as a required-check
-    failure.
+    The shadow / enforce jobs of the ao-release-gate itself are always
+    excluded so the gate does not see its own pending status as a
+    required-check failure.
+
+    When ``required_checks_allowlist`` is supplied, ONLY check-runs whose
+    name is on the allowlist are returned. Advisory / non-blocking jobs
+    (``extras-install`` with ``continue-on-error: true``,
+    ``benchmark-fast``, ``scorecard``) must NOT count toward the required
+    set: their failure or in-progress state must not block the gate. The
+    allowlist is the trusted workflow-side declaration of which CI jobs
+    are required.
+
+    When ``required_checks_allowlist`` is ``None`` or empty, every
+    check-run other than the self-name exclusion is returned (legacy
+    permissive behavior).
+
+    Entries are de-duplicated by name keeping the most recent run
+    (see ``_check_run_sort_key``) so a cancelled previous run does not
+    block a green current run.
     """
 
     data = json.loads(check_runs_json_path.read_text(encoding="utf-8"))
     runs = data.get("check_runs", []) if isinstance(data, dict) else []
     excluded = {"ao-release-gate", "ao-release-gate-shadow"}
-    out: list[dict[str, Any]] = []
+    allow = list(required_checks_allowlist) if required_checks_allowlist else None
+    allow_set = set(allow) if allow is not None else None
+    by_name: dict[str, dict[str, Any]] = {}
     for entry in runs:
         if not isinstance(entry, dict):
             continue
         name = entry.get("name")
         if not isinstance(name, str) or name in excluded:
             continue
+        if allow_set is not None and name not in allow_set:
+            continue
+        existing = by_name.get(name)
+        if existing is None or _check_run_sort_key(entry) > _check_run_sort_key(existing):
+            by_name[name] = entry
+    out: list[dict[str, Any]] = []
+    for name, entry in by_name.items():
         out.append(
             {
                 "name": name,
@@ -101,6 +152,22 @@ def _normalized_checks(check_runs_json_path: Path) -> list[dict[str, Any]]:
                 "conclusion": entry.get("conclusion"),
             }
         )
+    # Fail-closed for allowlisted names that the GitHub API never returned.
+    # Without this, the decision core's _required_checks_are_green would
+    # silently approve a payload where, say, `typecheck` was on the
+    # allowlist but never started on the commit. The synthetic
+    # `status: "missing"` entry fails the not-green check.
+    if allow is not None:
+        present = {entry["name"] for entry in out}
+        for required_name in allow:
+            if required_name not in present:
+                out.append(
+                    {
+                        "name": required_name,
+                        "status": "missing",
+                        "conclusion": None,
+                    }
+                )
     return out
 
 
@@ -158,7 +225,10 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "reviewed_slice": _reviewed_slice(args.gpp_status),
         "changed_paths": _changed_paths(args.pr_files_json),
         "allowed_path_prefixes": list(DEFAULT_ALLOWED_PATH_PREFIXES),
-        "required_checks": _normalized_checks(args.check_runs_json),
+        "required_checks": _normalized_checks(
+            args.check_runs_json,
+            required_checks_allowlist=list(args.required_check) if args.required_check else None,
+        ),
         "forbidden_secret_context_detected": False,
         "admin_bypass_requested": False,
         "pat_backed_bot_actor": False,
@@ -189,6 +259,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--pr-files-json", type=Path, required=True)
     parser.add_argument("--check-runs-json", type=Path, required=True)
+    parser.add_argument(
+        "--required-check",
+        action="append",
+        default=[],
+        help=(
+            "Name of a required CI check; may be repeated. When supplied, the builder filters "
+            "the GitHub API check-runs payload down to this allowlist so advisory / non-blocking "
+            "jobs (extras-install, benchmark-fast, scorecard, ...) cannot block the gate. When "
+            "omitted the builder falls back to the legacy permissive behavior (every check-run "
+            "other than ao-release-gate / ao-release-gate-shadow). The GPP-2D-3 enforce job in "
+            "test.yml passes one --required-check per dependency in its `needs:` graph."
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True, help="Where to write the payload JSON.")
     return parser
 

@@ -55,6 +55,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--conclusion-mode",
+        choices=("shadow", "enforce"),
+        default="shadow",
+        help=(
+            "Decision-core conclusion mode. 'shadow' (default) maps every deny/error decision to "
+            "github_check_run.conclusion=neutral so an advisory check does not produce red CI. "
+            "'enforce' maps deny/error to conclusion=failure (the historical mapping required "
+            "once the check is wired as a required status check on branch protection)."
+        ),
+    )
+    parser.add_argument(
         "--fail-on-deny",
         action="store_true",
         help="Return exit code 1 when the release-gate decision is not allow_autonomous_merge.",
@@ -72,7 +83,12 @@ def main(argv: list[str] | None = None) -> int:
     review_evidence: object | None = None
     if args.review_evidence is not None:
         review_evidence = json.loads(args.review_evidence.read_text(encoding="utf-8"))
-    decision = build_ao_release_gate_decision(payload, gpp_status, review_evidence=review_evidence)
+    decision = build_ao_release_gate_decision(
+        payload,
+        gpp_status,
+        review_evidence=review_evidence,
+        conclusion_mode=args.conclusion_mode,
+    )
     write_ao_release_gate_decision(args.decision_path, decision)
 
     if args.output == "json":
