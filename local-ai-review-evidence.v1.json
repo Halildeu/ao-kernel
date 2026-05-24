@@ -1,74 +1,51 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GOV-1",
+  "work_package": "GPP-2",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
+    "agent": "claude",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gov-1-roadmap-enrichment",
+    "head_ref": "refs/heads/codex/gpp2d6-readiness-correction",
     "changed_files": [
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/PROGRAM-CHANGE-CONTROL.md",
-      ".claude/plans/_TEMPLATES/RETROSPECTIVE-TEMPLATE.md",
-      ".claude/plans/gpp_status.v1.json",
-      ".github/workflows/test.yml",
-      "docs/ROLLBACK-RUNBOOK.md",
+      ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
+      ".github/CODEOWNERS",
       "local-ai-review-evidence.v1.json",
-      "scripts/gpp_next.py",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_gpp_next.py"
+      "tests/test_gpp2d6_automerge_contract.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
-    {"name": "no_runtime_contract_change", "status": "pass"},
-    {"name": "guard_flags_unchanged", "status": "pass"},
-    {"name": "milestones_seven_canonical_ids", "status": "pass"},
-    {"name": "progress_estimates_milestone_and_wp_blocks", "status": "pass"},
-    {"name": "done_milestones_have_evidence_refs", "status": "pass"},
-    {"name": "aggregate_completion_sources_consistent", "status": "pass"},
-    {"name": "progress_output_renders_seven_milestones", "status": "pass"},
-    {"name": "text_output_includes_milestone_summary", "status": "pass"},
-    {"name": "status_md_milestones_section_timeline_free", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"},
-    {"name": "change_control_rules_complete", "status": "pass"},
-    {"name": "rollback_runbook_failure_mode_based", "status": "pass"},
-    {"name": "retrospective_template_five_questions", "status": "pass"},
-    {"name": "ao_release_gate_work_package_dynamic_binding", "status": "pass"},
-    {"name": "reviewed_slice_payload_binding", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "hard_boundary_compliance",
+      "status": "pass"
+    },
+    {
+      "name": "internal_consistency",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "tests: pytest 3387 passed, 2 skipped in the full local test suite (~79s) including seven new GOV-1 drift guards.",
-    "secret_scan: no credential material, PEM, token, or webhook secret value appears in any changed file.",
-    "no_public_sdk_signature_change: ao_kernel package public SDK signatures unchanged; gpp_next.py extends CLI with --output progress and milestone summary in text output but preserves existing text and json modes.",
-    "no_branch_protection_mutation_by_agent: the agent does not call gh api on rulesets, branches/main/protection, or any settings endpoint in this PR.",
-    "no_runtime_contract_change: GOV-1 is docs/SSOT/script/test only; no runtime or schema-breaking change.",
-    "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved.",
-    "milestones_seven_canonical_ids: gpp_status.v1.json carries exactly seven milestones (M0..M6) with status in {done, pending}, gpp_slots, evidence_refs, and closed_at fields.",
-    "progress_estimates_milestone_and_wp_blocks: progress_estimates contains both milestones block (done_count=3, total_count=7, percent=43, next_milestone_id=M3) and wp_weighted block (38/50=76%, estimated=true).",
-    "done_milestones_have_evidence_refs: each done milestone references at least one existing path; closed_at is ISO-parseable.",
-    "aggregate_completion_sources_consistent: aggregate-aware test confirms GPP-2 satisfied by current_wp closed, GPP-2D by evidence_refs path, GPP-5 by completed_children {GPP-5a..d}, and atomic slots via completed_wps.",
-    "progress_output_renders_seven_milestones: scripts/gpp_next.py --output progress prints headline + seven milestone rows + next milestone label.",
-    "text_output_includes_milestone_summary: scripts/gpp_next.py default text output carries the two-line milestone summary before Blocked work packages.",
-    "status_md_milestones_section_timeline_free: STATUS.md introduces a new section 0 Milestones that contains the seven canonical IDs in a table and does not duplicate the global Date header inside the section.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE satisfied.",
-    "change_control_rules_complete: PROGRAM-CHANGE-CONTROL.md records 13 normative rules CC-1..CC-13 covering SSOT mutation, cross-AI review, non-author approval, no admin merge, AI-as-evidence, GPP-9 guard flag flip, ADR supersession, schema bump, branch ruleset mutation, archive tag, rollback, secret protection, and per-slice discipline.",
-    "rollback_runbook_failure_mode_based: ROLLBACK-RUNBOOK.md is failure-mode based with five scenarios (ruleset operator error, code regression, cross-machine recovery, closeout reversal, live execution mishap), each carrying Trigger, Owner, Forbidden, Steps, Evidence, and Supersession PR sections.",
-    "retrospective_template_five_questions: RETROSPECTIVE-TEMPLATE.md defines exactly five questions (worked, incomplete, learned, repeat pattern, retire anti-pattern) plus context header and cross-references; existing closeout records are left unchanged as terminal evidence per plan-time decision.",
-    "ao_release_gate_work_package_dynamic_binding: .github/workflows/test.yml no longer hardcodes the GPP-2 slice identifier as a literal CLI argument; a new Resolve reviewed work package step parses the reviewer-declared work_package, validates it against a strict format regex (uppercase + dash-separated identifier; no shell metacharacters), and passes it to local_gpp_gate.py through the REVIEW_WORK_PACKAGE env var. test_ao_release_gate_enforce_job.py pins the workflow shape + ordering (resolve before patch before local_gate before decision_core).",
-    "reviewed_slice_payload_binding: the same Resolve step also patches the runtime payload.json reviewed_slice field from the reviewer-declared work_package before decision-core evaluation. This keeps the binding-equality contract review_evidence.work_package == payload.reviewed_slice intact for any reviewed slice. test_release_gate_allows_reviewed_slice_distinct_from_current_wp_when_context_bound (new) pins this invariant alongside the existing test_release_gate_denies_when_reviewed_slice_mismatches negative case."
+    "CODEOWNERS narrowing is correct: broad default owner removed while governance, agent contract, release-gate runtime, local gate, policy, schema, and deploy surfaces retain explicit owners.",
+    "Runbook truthfully states GPP-2D-6 remains incomplete because repository auto-merge is disabled and the legacy global required-review setting remains active.",
+    "Legacy enforce_admins=true is recorded as tightening, not as bypass or smoke completion.",
+    "No production readiness, support widening, testai or smee reopening, or live adapter execution is claimed.",
+    "Tests pin CODEOWNERS narrowing, remaining blockers, hard stops, and post-closeout boundary.",
+    "No secrets or credentials in diff."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

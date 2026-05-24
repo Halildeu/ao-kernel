@@ -1,10 +1,13 @@
 # GPP-2D-6 - Auto-Merge Smoke Runbook
 
-> Status: planned / verification contract only.
-> Work package: GPP-2 (still blocked).
+> Status: planned / partially hardened; smoke still blocked by repository
+> auto-merge and the legacy global required-review surface.
+> Work package: post-GPP-2 closeout hardening.
 > Parent lane: GPP-2D - Autonomous required-check lane.
-> This slice does not mutate branch protection, does not edit
-> `.github/CODEOWNERS`, does not enable auto-merge, and does not close GPP-2.
+> This runbook records the CODEOWNERS narrowing and legacy
+> `enforce_admins=true` hardening slice. It does not enable auto-merge, does
+> not relax the legacy global required-review setting, and does not reopen or
+> re-close GPP-2.
 
 ## 1. Purpose
 
@@ -22,63 +25,103 @@ High-risk PRs must still require human / CODEOWNERS review. AI output is
 evidence only; release authority remains the repo-owned `ao-release-gate`
 required check plus GitHub branch protection.
 
-## 2. Current CODEOWNERS state
+## 2. Current governance state
 
-The current `.github/CODEOWNERS` file starts with a broad default rule:
+The earlier `.github/CODEOWNERS` file started with a broad default rule:
 
 ```text
 * @Halildeu @gladyatore-lab
 ```
 
-That default is safe but blocks the GPP-2D-6 low-risk auto-merge smoke: every
-path has a code owner, so every PR remains human-review gated even when
-`ao-release-gate` succeeds.
+That default was safe but blocked the GPP-2D-6 low-risk auto-merge smoke: every
+path had a code owner, so every PR remained code-owner gated even when
+`ao-release-gate` succeeded.
 
-Therefore GPP-2D-6 cannot be honestly accepted until a separate, reviewed
-CODEOWNERS narrowing slice lands after the GPP-2D-5 cutover verification. The
-narrowing must remove the broad `*` default and keep explicit ownership only on
-the high-risk surface set.
+The GPP-2D-6 hardening slice narrows CODEOWNERS by removing the broad `*`
+default owner and keeping code-owner review on governance-sensitive surfaces:
 
-This runbook intentionally does not change CODEOWNERS. Weakening reviewer
-coverage before `ao-release-gate` is source-pinned as a required check would
-reduce governance before the mechanical gate is live.
+```text
+/.github/
+/AGENTS.md
+/CLAUDE.md
+/.claude/
+/ao_kernel/ao_release_gate*.py
+/scripts/ao_release_gate*.py
+/scripts/local_gpp_gate*.py
+/ao_kernel/defaults/schemas/*gate*.json
+/ao_kernel/defaults/policies/
+/deploy/
+```
 
-Short rule: Weakening reviewer coverage before `ao-release-gate` is source-pinned
-is forbidden.
+There is also a separate legacy branch-protection review gate. The live
+metadata check after the GPP-2D-6 hardening refresh showed:
+
+```text
+repository.autoMergeAllowed = false
+legacy_branch_protection.enforce_admins = true
+required_approving_review_count = 1
+require_code_owner_reviews = true
+dismiss_stale_reviews = true
+```
+
+This means the CODEOWNERS narrowing and `enforce_admins=true` tightening are
+necessary but still insufficient for the full GPP-2D-6 acceptance criterion.
+Removing the broad `*` owner can stop low-risk files from being code-owner
+matched, and `enforce_admins=true` makes the legacy surface stricter for admins;
+however `repository.autoMergeAllowed=false` prevents GitHub-native auto-merge,
+and a global `required_approving_review_count=1` still keeps low-risk PRs
+human-review gated.
+
+Therefore GPP-2D-6 cannot be honestly accepted until these conditions are true:
+
+1. GitHub-native auto-merge is enabled for the repository;
+2. the high-risk surface remains human-gated through an explicit, reviewed
+   governance mechanism; and
+3. the low-risk surface no longer has a global non-author review requirement.
+
+This runbook allows the CODEOWNERS narrowing only because `ao-release-gate` is
+already source-pinned as a required check and legacy `enforce_admins=true`
+hardening is active. It does not relax the global required-review setting.
+
+Short rule: weakening reviewer coverage is forbidden unless the replacement
+mechanical gate is already source-pinned, enforced, and verified.
 
 ## 3. Required ordering
 
-1. GPP-2D-5 runbook PR lands.
+1. GPP-2D-5 runbook PR lands. Done.
 2. Operator performs the GPP-2D-5 branch-protection / ruleset cutover:
    `ao-release-gate` required, source-pinned to GitHub Actions, admin bypass
-   disallowed.
+   disallowed. Done.
 
 Cutover invariant: admin bypass disallowed.
 3. Agent records GPP-2D-5 verification outcomes:
    required-check API evidence, admin-bypass-off evidence, negative-path PR
-   blocked by `ao-release-gate`, and positive-path PR allowed by the gate.
-4. A high-risk CODEOWNERS narrowing PR lands with non-author human approval.
-5. GPP-2D-6 auto-merge smoke runs.
-6. GPP-2D-7 / AO-GATE-9 closeout records the final GPP-2 state only after the
-   smoke evidence exists.
+   blocked by `ao-release-gate`, and positive-path PR allowed by the gate. Done.
+4. GPP-2D-7 / AO-GATE-9 closeout records GPP-2 as closed. Done; GPP-2D-6 is
+   now a post-closeout hardening slice, not a closeout prerequisite.
+5. CODEOWNERS narrowing lands and legacy `enforce_admins=true` is verified.
+6. Operator enables GitHub-native auto-merge for the repository and records
+   `repository.autoMergeAllowed=true`.
+7. Operator selects and applies the low-risk review model:
+   - either relax the legacy global review requirement while preserving a
+     high-risk human gate through CODEOWNERS / ruleset policy; or
+   - keep the legacy review requirement and record that full no-human
+     low-risk auto-merge is intentionally not enabled.
+8. GPP-2D-6 auto-merge smoke runs.
 
-Steps 1-3 must complete before any CODEOWNERS narrowing. Steps 1-5 must complete
-before GPP-2 closeout.
+Steps 1-5 are complete or in this hardening PR. Steps 6-8 remain before the
+smoke can be accepted.
 
 ## 4. CODEOWNERS narrowing target
 
-The first narrowing slice keeps code-owner review on the high-risk surface set
-from the GPP-2D design:
+The narrowing slice keeps code-owner review on the high-risk surface set from
+the GPP-2D design:
 
 ```text
 /.github/ @Halildeu @gladyatore-lab
 /AGENTS.md @Halildeu @gladyatore-lab
 /CLAUDE.md @Halildeu @gladyatore-lab
-/.claude/plans/gpp_status.v1.json @Halildeu @gladyatore-lab
-/.claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md @Halildeu @gladyatore-lab
-/.claude/plans/AO-GATE-ROADMAP-TODO.md @Halildeu @gladyatore-lab
-/.claude/plans/GPP-* @Halildeu @gladyatore-lab
-/.claude/plans/AO-* @Halildeu @gladyatore-lab
+/.claude/ @Halildeu @gladyatore-lab
 /ao_kernel/ao_release_gate*.py @Halildeu @gladyatore-lab
 /scripts/ao_release_gate*.py @Halildeu @gladyatore-lab
 /scripts/local_gpp_gate*.py @Halildeu @gladyatore-lab
@@ -87,14 +130,18 @@ from the GPP-2D design:
 /deploy/ @Halildeu @gladyatore-lab
 ```
 
-The exact CODEOWNERS syntax is implemented in the future narrowing PR and must
-be reviewed as a high-risk governance change. The acceptance criterion is the
-behavior, not this draft text: low-risk paths are no longer code-owner-gated;
-the high-risk paths above still are.
+The CODEOWNERS syntax is implemented in this high-risk governance PR and must
+be reviewed by a non-author human reviewer. The acceptance criterion is the
+behavior: low-risk paths are no longer code-owner-gated; the high-risk paths
+above still are.
+
+Narrowing CODEOWNERS is not enough while the legacy branch protection still has
+`required_approving_review_count=1`. The smoke must verify the actual GitHub
+merge gate, not just the CODEOWNERS file contents.
 
 ## 5. Low-risk auto-merge smoke
 
-After the narrowing PR lands, open a low-risk smoke PR that changes only a path
+After this hardening PR lands, open a low-risk smoke PR that changes only a path
 outside the high-risk surface set. Example candidate:
 
 ```text
@@ -158,6 +205,11 @@ Required fields:
 UTC timestamp
 Repository and main head before smoke
 GPP-2D-5 verification evidence link
+GPP-2D-7 closeout evidence link
+Repository auto-merge setting before and after smoke
+Legacy branch-protection enforce_admins setting before smoke
+Legacy branch-protection review setting before smoke
+Operator review-model decision and resulting GitHub metadata
 CODEOWNERS narrowing PR link and merge SHA
 Low-risk PR link, check run IDs, auto-merge enabled timestamp, merge SHA
 High-risk PR link, code-owner block evidence, merge rejection / blocked status
@@ -166,7 +218,8 @@ Support widening: false
 Production platform claim: false
 Live adapter execution: false
 testai / smee dependency: false
-GPP-2 status after smoke: still blocked until GPP-2D-7 closeout
+GPP-2 status after smoke: remains closed; this slice is a post-closeout
+hardening record only
 ```
 
 ## 8. Stop conditions
@@ -175,7 +228,9 @@ Stop and do not continue to GPP-2D-7 if any of these are true:
 
 - `ao-release-gate` is not a source-pinned required check.
 - Admin bypass is enabled or a bypass actor exists.
-- The low-risk smoke still requires code-owner approval.
+- Repository auto-merge is disabled.
+- The low-risk smoke still requires code-owner approval or any global
+  non-author review approval.
 - The high-risk smoke does not require human / CODEOWNERS review.
 - Any merge uses `--admin`.
 - Any PR claims production readiness or widens support.
@@ -187,12 +242,16 @@ Stop and do not continue to GPP-2D-7 if any of these are true:
 
 ## 9. Relation to GPP-2D-7
 
-GPP-2D-7 may close GPP-2 only after:
+GPP-2D-7 already closed GPP-2 under the no-testai release-governance model.
+GPP-2D-6 is therefore a later hardening record, not a prerequisite for the
+current GPP-2 closeout. It may only be marked complete after:
 
 1. GPP-2D-5 verification outcomes are committed.
-2. CODEOWNERS narrowing is merged and reviewed as a high-risk change.
-3. GPP-2D-6 low-risk and high-risk smoke evidence is committed.
-4. `python3 scripts/gpp_next.py` is updated in the closeout slice to reflect the
-   new evidence.
+2. GPP-2D-7 closeout is committed.
+3. GitHub-native auto-merge is enabled by the operator.
+4. The selected review model is recorded and applied by the operator.
+5. CODEOWNERS narrowing and legacy `enforce_admins=true` hardening are merged
+   and reviewed as a high-risk governance change.
+6. GPP-2D-6 low-risk and high-risk smoke evidence is committed.
 
-Until then, GPP-2 remains `blocked`.
+Until then, GPP-2D-6 remains incomplete, but GPP-2 remains `closed`.
