@@ -1453,15 +1453,16 @@ def test_dual_ref_workflow_pattern_produces_accepting_runtime_artifact(tmp_path:
 
 
 def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact(tmp_path: Path) -> None:
-    """End-to-end GPP-2D-3c Actions-shape dogfood (Codex iter-3 absorb,
-    thread 019e5a41): simulate the actual GitHub Actions trusted-base
-    checkout shape (``actions/checkout@v4`` with
+    """End-to-end GPP-2D-3c Actions-shape dogfood (Codex iter-3+4
+    absorb, threads 019e5a41 / 019e5a4b): simulate the actual GitHub
+    Actions trusted-base checkout shape (``actions/checkout@v4`` with
     ``ref: github.event.pull_request.base.sha`` + ``fetch-depth: 1``)
     where branch names like ``main`` and ``codex/...`` are NOT
     guaranteed to exist as local refs. The workflow's ref-binding step
     (``git check-ref-format`` + ``git update-ref``) is what makes the
-    legacy alias path (``--base-ref <branch>`` /
-    ``--head-ref <branch>``) resolvable in that detached clone.
+    legacy alias path (``--base-ref refs/heads/<label>`` /
+    ``--head-ref refs/heads/<label>``) resolvable in that detached
+    clone.
 
     This test exercises the full chain:
 
@@ -1471,8 +1472,10 @@ def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact
       3. Run the workflow's ref-binding step (validate refs, then
          ``git update-ref`` from $BASE_REF -> $BASE_SHA and
          $HEAD_REF -> $HEAD_SHA).
-      4. Run ``main()`` with --base-ref / --head-ref BRANCH NAMES
-         (the legacy alias path the workflow uses) and pin:
+      4. Run ``main()`` with --base-ref / --head-ref FULLY-QUALIFIED
+         refs (``refs/heads/main`` / ``refs/heads/feature-x``) — the
+         legacy alias path the workflow uses, with the iter-4
+         unqualified-revision-lookup drift closed — and pin:
            - code == 0
            - artifact["decision"] == "operator_may_merge"
            - checks.scope_allowed True
@@ -1480,10 +1483,11 @@ def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact
            - context_binding.changed_files_count matches diff
            - artifact passes validate_gate_evidence
 
-    Without step 3, ``git diff main...feature-x`` and
-    ``git rev-parse feature-x`` would fail because those names have
-    no local refs. With step 3, the legacy alias path emits the same
-    accepting artifact the workflow expects.
+    Without step 3, ``git diff refs/heads/main...refs/heads/feature-x``
+    and ``git rev-parse refs/heads/feature-x`` would fail because those
+    refs have no entry in the local ref DB. With step 3, the
+    fully-qualified legacy alias path emits the same accepting
+    artifact the workflow expects.
     """
 
     import subprocess
@@ -1556,8 +1560,8 @@ def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact
         "implementer": {"agent": "claude", "provider": "anthropic"},
         "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
         "scope_reviewed": {
-            "base_ref": "main",
-            "head_ref": "feature-x",
+            "base_ref": "refs/heads/main",
+            "head_ref": "refs/heads/feature-x",
             "changed_files": head_only_files,
         },
         "checks_considered": [
@@ -1581,11 +1585,14 @@ def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact
             str(src),
             "--output",
             str(output),
-            # Legacy alias path mirroring the workflow:
+            # Legacy alias path mirroring the workflow, with the iter-4
+            # fully-qualified ref discipline so a same-named tag or
+            # other object can never drift the resolution off the branch
+            # ref we just bound via git update-ref.
             "--base-ref",
-            "main",
+            "refs/heads/main",
             "--head-ref",
-            "feature-x",
+            "refs/heads/feature-x",
             "--repo",
             "Halildeu/ao-kernel",
             "--work-package",
@@ -1616,6 +1623,161 @@ def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact
     )
     assert context_binding.get("changed_files_count") == len(head_only_files), (
         f"changed_files_count drift: expected {len(head_only_files)}, got {context_binding.get('changed_files_count')}"
+    )
+
+    mod.validate_gate_evidence(artifact)
+
+
+def test_actions_shape_fully_qualified_refs_resist_tag_branch_ambiguity(tmp_path: Path) -> None:
+    """End-to-end GPP-2D-3c ambiguity dogfood (Codex iter-4 absorb,
+    thread 019e5a4b): Git's unqualified revision lookup can drift
+    from a branch label to a same-named tag (or any other object),
+    silently breaking the gate evidence ``context_binding.head_sha``
+    contract. Passing fully-qualified refs (``refs/heads/<label>``)
+    instead of unqualified labels pins resolution to the local
+    branch ref the workflow's ref-binding step just created, and
+    rejects same-named tag ambiguity.
+
+    Test setup:
+      1. Build the standard dogfood repo (main + feature-x).
+      2. Detach HEAD at the base SHA and delete both branch refs
+         (Actions shape).
+      3. Run the workflow's ref-binding step.
+      4. Create a TAG named ``feature-x`` pointing to the BASE SHA
+         (not the head SHA). This is the ambiguity surface.
+      5. PRE-ASSERT that ``git rev-parse feature-x`` (unqualified)
+         returns the TAG's SHA (base_sha), confirming the ambiguity
+         is real in this repo.
+      6. PRE-ASSERT that ``git rev-parse refs/heads/feature-x``
+         (fully-qualified) returns the BRANCH ref's SHA (head_sha),
+         confirming the fully-qualified form bypasses the ambiguity.
+      7. Run ``main()`` with --head-ref refs/heads/feature-x
+         (fully-qualified) and pin context_binding.head_sha ==
+         head_sha. With the unqualified label this would bind to
+         base_sha (the tag's target) instead, and the gate evidence
+         would be wrong without producing a parse error.
+    """
+
+    import subprocess
+
+    head_only_files = ["src/feature_ambig.py"]
+    repo, base_sha, head_sha = _make_dual_ref_dogfood_repo(tmp_path, head_only_files)
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    def git_capture(*args: str) -> str:
+        return subprocess.check_output(
+            ["git", "-C", str(repo), *args],
+            text=True,
+        ).strip()
+
+    # Step 2: detached shape.
+    git("checkout", "--detach", base_sha)
+    git("branch", "-D", "main")
+    git("branch", "-D", "feature-x")
+
+    # Step 3: workflow ref-binding.
+    git("check-ref-format", "refs/heads/main")
+    git("check-ref-format", "refs/heads/feature-x")
+    git("update-ref", "refs/heads/main", base_sha)
+    git("update-ref", "refs/heads/feature-x", head_sha)
+
+    # Step 4: create a tag named "feature-x" pointing to BASE SHA
+    # (NOT head SHA). This is the ambiguity surface.
+    git("tag", "feature-x", base_sha)
+
+    # Step 5: confirm the ambiguity is real for the unqualified label.
+    # Git's unqualified rev-parse prefers the tag here, returning
+    # base_sha rather than the branch ref's head_sha. (Some Git
+    # versions may pick differently; the key invariant we're pinning
+    # is that the fully-qualified ref ALWAYS gives the branch.)
+    unqualified_sha = git_capture("rev-parse", "feature-x")
+    assert unqualified_sha != head_sha, (
+        "ambiguity precondition: unqualified 'feature-x' rev-parse must "
+        f"NOT equal the branch's head_sha when a same-named tag exists. "
+        f"Got {unqualified_sha} == head_sha {head_sha}; the ambiguity "
+        "surface this test needs is absent."
+    )
+
+    # Step 6: confirm the fully-qualified ref pins to the branch.
+    fq_sha = git_capture("rev-parse", "refs/heads/feature-x")
+    assert fq_sha == head_sha, f"refs/heads/feature-x must resolve to the branch's head_sha {head_sha}, got {fq_sha}"
+
+    # Step 7: invoke main() with fully-qualified refs (workflow contract).
+    reviewer_evidence = {
+        "schema_version": "local-ai-review-evidence.v1",
+        "repo": "Halildeu/ao-kernel",
+        "work_package": "GPP-2",
+        "implementer": {"agent": "claude", "provider": "anthropic"},
+        "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
+        "scope_reviewed": {
+            "base_ref": "refs/heads/main",
+            "head_ref": "refs/heads/feature-x",
+            "changed_files": head_only_files,
+        },
+        "checks_considered": [
+            {"name": "tests", "status": "pass"},
+            {"name": "secret_scan", "status": "pass"},
+        ],
+        "findings": ["actions-shape ambiguity dogfood"],
+        "secrets_recorded": False,
+        "live_adapter_execution": False,
+        "support_widening": False,
+        "production_platform_claim": False,
+    }
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(reviewer_evidence), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    code = mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            "--base-ref",
+            "refs/heads/main",
+            "--head-ref",
+            "refs/heads/feature-x",
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2",
+            "--repo-root",
+            str(repo),
+            "--status-path",
+            str(repo / ".claude" / "plans" / "gpp_status.v1.json"),
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+
+    assert code == 0, f"expected exit 0, got {code}; artifact: {artifact}"
+    assert artifact["decision"] == "operator_may_merge", (
+        "fully-qualified refs must produce operator_may_merge even with a "
+        f"same-named tag pointing to a different SHA. Got decision "
+        f"{artifact['decision']}; findings: {artifact.get('findings')}"
+    )
+
+    context_binding = artifact.get("context_binding")
+    assert context_binding is not None, "context_binding must be present"
+    # The crucial pin: with the same-named tag pointing at base_sha,
+    # an unqualified label would bind here to base_sha. The
+    # fully-qualified ref pins to head_sha — that is what this slice's
+    # workflow contract guarantees.
+    assert context_binding["head_sha"] == head_sha, (
+        "context_binding.head_sha must equal the BRANCH ref's head_sha "
+        f"({head_sha}), not the same-named tag's SHA ({base_sha}). "
+        f"Got {context_binding['head_sha']}. A regression that switched "
+        "the workflow back to unqualified labels would bind to the wrong "
+        "object here."
     )
 
     mod.validate_gate_evidence(artifact)
