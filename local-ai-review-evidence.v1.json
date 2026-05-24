@@ -13,9 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-4-enforce-evidence-doc",
+    "head_ref": "refs/heads/codex/gpp2d-6-automerge-smoke-runbook",
     "changed_files": [
-      ".claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE.md",
+      ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+      "tests/test_gpp2d6_automerge_contract.py",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -29,7 +31,7 @@
       "status": "pass"
     },
     {
-      "name": "evidence_doc_only",
+      "name": "runbook_and_drift_guard_only",
       "status": "pass"
     },
     {
@@ -41,11 +43,19 @@
       "status": "pass"
     },
     {
-      "name": "decision_strings_match_live_logs",
+      "name": "codeowners_not_changed",
       "status": "pass"
     },
     {
-      "name": "negative_set_classified_per_live_findings",
+      "name": "broad_codeowners_called_out_as_automerge_blocker",
+      "status": "pass"
+    },
+    {
+      "name": "cutover_before_codeowners_narrowing",
+      "status": "pass"
+    },
+    {
+      "name": "low_risk_and_high_risk_smoke_acceptance_defined",
       "status": "pass"
     },
     {
@@ -58,12 +68,11 @@
     }
   ],
   "findings": [
-    "GPP-2D-4 collects the ao-release-gate enforce-mode evidence from PR #599 / #602 enforce-mode rows plus PR #601 bootstrap-chain context. The doc records 2 real positive enforce-mode runs (PR #599 head e7c95aa, PR #602 head 958a8d8) and 6 negative runs across deny_policy_violation and deny_missing_evidence decision codes, with the actual finding codes Codex iter-1 cross-checked against the live GitHub Actions logs (thread 019e5ac8).",
-    "PR #601's CI run (26364031320, head ddc4539) is explicitly NOT counted as positive enforce evidence — the ao-release-gate enforce job did not exist on its base ref, so the run's job list contains only standard CI jobs. The doc records it as bootstrap-chain context only.",
-    "All decision strings in the doc are the actual ao-release-gate decision-core outputs Codex iter-1 verified in the live job logs: `allow_autonomous_merge` for the positive rows, `deny_policy_violation` with finding `ao_release_gate_diff_out_of_scope` for §3.1, and `deny_missing_evidence` for §3.2. Earlier draft decision wording was corrected to match the live logs.",
-    "Coverage analysis maps each of six enforce-contract properties to specific runs that exercised it: trusted-base discipline (every §2/§3 row), reviewer evidence presence + accepting context (§2 + §3.1 vs §3.2), runtime gate-evidence generation (§2 positives plus the degraded artifact-set example in 26362713579), fully-qualified ref invocation (1fcb5d1 + e7c95aa + 958a8d8 — the iter-4 absorb commit and both positive runs), enforce mode exit-1 behavior (every §3 row), and if: always() audit artifact upload (every §2/§3 row, with the 26362713579 degraded 3-file upload noted explicitly).",
-    "Out-of-scope boundaries are explicit: GPP-2D-5 branch protection cutover is a separate operator slice; AO-GATE-9 / GPP status closeout is a separate slice; support_widening / production_platform_claim_allowed / live_adapter_execution_allowed all stay false; admin bypass and --admin merge are not authorized by this evidence; pre-squash chain rebase is not attempted (archived via ai-post-merge-cleanup.sh tags).",
-    "PR scope is two files: the evidence doc and this reviewer evidence file. No workflow / script / test / runtime changes; no branch protection / ruleset mutation.",
+    "GPP-2D-6 records the auto-merge smoke contract without changing .github/CODEOWNERS, branch protection, rulesets, workflow runtime, or support boundaries. The runbook explicitly states that the current broad CODEOWNERS default is safe but blocks low-risk auto-merge until after the GPP-2D-5 required-check cutover verification.",
+    "The ordering is fail-closed: GPP-2D-5 cutover and post-cutover verification outcomes must exist before any CODEOWNERS narrowing. The CODEOWNERS narrowing itself is a separate high-risk PR with non-author review, and GPP-2D-6 smoke follows only after that narrowing lands.",
+    "Low-risk acceptance requires GitHub-native auto-merge on a path outside the high-risk surface set, with ao-release-gate success, no non-author human review requirement, no --admin merge, and recorded check run IDs / merge SHA. High-risk acceptance requires a PR touching a governance-sensitive path to remain blocked by CODEOWNERS / required review even if ao-release-gate passes.",
+    "The runbook keeps the authority boundary intact: AI output is evidence, release authority is ao-release-gate plus GitHub branch protection, and GPP-2D-7 closeout remains separate. testai, smee, GitHub App webhook callbacks, and deployment-protection callbacks are not reintroduced.",
+    "The human-readable GPP status row is narrowed to the actual post-PR #603 state: enforce job and real-PR enforce evidence are landed; branch-protection cutover, CODEOWNERS narrowing / auto-merge smoke, and AO-GATE-9 closeout remain pending.",
     "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."
   ],
   "secrets_recorded": false,
