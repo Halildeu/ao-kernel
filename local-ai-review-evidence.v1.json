@@ -13,9 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-3c-doc-hygiene-comment-v2",
+    "head_ref": "refs/heads/codex/gpp2d-4-enforce-evidence-doc",
     "changed_files": [
-      ".github/workflows/test.yml",
+      ".claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -29,7 +29,7 @@
       "status": "pass"
     },
     {
-      "name": "doc_hygiene_only",
+      "name": "evidence_doc_only",
       "status": "pass"
     },
     {
@@ -37,11 +37,15 @@
       "status": "pass"
     },
     {
-      "name": "narrowing_matches_evidence_wording",
+      "name": "no_branch_protection_mutation",
       "status": "pass"
     },
     {
-      "name": "option_injection_claim_verified",
+      "name": "decision_strings_match_live_logs",
+      "status": "pass"
+    },
+    {
+      "name": "negative_set_classified_per_live_findings",
       "status": "pass"
     },
     {
@@ -54,12 +58,12 @@
     }
   ],
   "findings": [
-    "PR #602 narrows the workflow's inline comment above the `git check-ref-format refs/heads/$REF` calls so it matches the reviewer evidence wording PR #599 iter-4 landed: 'Git refname-invalid values such as path traversal sequences or control bytes'. The inaccurate 'leading dashes' rejection claim Codex iter-5 flagged on PR #599 is removed.",
-    "Codex live-verified the actual `git check-ref-format` behavior in iter-1 of this PR's review thread (019e5a86): `refs/heads/-foo` exits 0, `refs/heads/../foo` exits 1, control-byte input exits 1. The new comment wording is aligned with the real check semantics.",
-    "The new option-injection-safety sentence documents the structural guarantee: the workflow runs `git update-ref refs/heads/$BASE_REF` / `refs/heads/$HEAD_REF` and then passes `--base-ref refs/heads/$BASE_REF` / `--head-ref refs/heads/$HEAD_REF` to local_gpp_gate.py. The argv token always starts with `refs/heads/`, so a hostile leading dash on $REF becomes `refs/heads/-...` and is no longer at character position 0 of its argv token; argparse parses the token as a value, not an option.",
-    "Runtime contract is unchanged: `git check-ref-format` still rejects refname-invalid values; the fully-qualified `refs/heads/$REF` form continues to reach local_gpp_gate.py as introduced in PR #599 iter-4.",
-    "Scope is the workflow comment text edit plus this reviewer evidence file. No script changes, no test changes, no behavior changes.",
-    "Branch protection is not mutated; GPP-2D-5 remains the operator action that makes ao-release-gate a required status check.",
+    "GPP-2D-4 collects the ao-release-gate enforce-mode evidence from PR #599 / #602 enforce-mode rows plus PR #601 bootstrap-chain context. The doc records 2 real positive enforce-mode runs (PR #599 head e7c95aa, PR #602 head 958a8d8) and 6 negative runs across deny_policy_violation and deny_missing_evidence decision codes, with the actual finding codes Codex iter-1 cross-checked against the live GitHub Actions logs (thread 019e5ac8).",
+    "PR #601's CI run (26364031320, head ddc4539) is explicitly NOT counted as positive enforce evidence — the ao-release-gate enforce job did not exist on its base ref, so the run's job list contains only standard CI jobs. The doc records it as bootstrap-chain context only.",
+    "All decision strings in the doc are the actual ao-release-gate decision-core outputs Codex iter-1 verified in the live job logs: `allow_autonomous_merge` for the positive rows, `deny_policy_violation` with finding `ao_release_gate_diff_out_of_scope` for §3.1, and `deny_missing_evidence` for §3.2. Earlier draft decision wording was corrected to match the live logs.",
+    "Coverage analysis maps each of six enforce-contract properties to specific runs that exercised it: trusted-base discipline (every §2/§3 row), reviewer evidence presence + accepting context (§2 + §3.1 vs §3.2), runtime gate-evidence generation (§2 positives plus the degraded artifact-set example in 26362713579), fully-qualified ref invocation (1fcb5d1 + e7c95aa + 958a8d8 — the iter-4 absorb commit and both positive runs), enforce mode exit-1 behavior (every §3 row), and if: always() audit artifact upload (every §2/§3 row, with the 26362713579 degraded 3-file upload noted explicitly).",
+    "Out-of-scope boundaries are explicit: GPP-2D-5 branch protection cutover is a separate operator slice; AO-GATE-9 / GPP status closeout is a separate slice; support_widening / production_platform_claim_allowed / live_adapter_execution_allowed all stay false; admin bypass and --admin merge are not authorized by this evidence; pre-squash chain rebase is not attempted (archived via ai-post-merge-cleanup.sh tags).",
+    "PR scope is two files: the evidence doc and this reviewer evidence file. No workflow / script / test / runtime changes; no branch protection / ruleset mutation.",
     "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."
   ],
   "secrets_recorded": false,
