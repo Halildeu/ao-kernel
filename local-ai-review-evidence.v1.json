@@ -13,11 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-6-automerge-smoke-runbook",
+    "head_ref": "refs/heads/codex/gpp2d-5-cutover-runbook",
     "changed_files": [
-      ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      "tests/test_gpp2d6_automerge_contract.py",
+      ".claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -31,7 +29,11 @@
       "status": "pass"
     },
     {
-      "name": "runbook_and_drift_guard_only",
+      "name": "runbook_only_doc",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation_by_agent",
       "status": "pass"
     },
     {
@@ -39,23 +41,19 @@
       "status": "pass"
     },
     {
-      "name": "no_branch_protection_mutation",
+      "name": "prerequisites_pinned_against_landed_main",
       "status": "pass"
     },
     {
-      "name": "codeowners_not_changed",
+      "name": "operator_vs_agent_role_split_explicit",
       "status": "pass"
     },
     {
-      "name": "broad_codeowners_called_out_as_automerge_blocker",
+      "name": "rollback_procedure_documented",
       "status": "pass"
     },
     {
-      "name": "cutover_before_codeowners_narrowing",
-      "status": "pass"
-    },
-    {
-      "name": "low_risk_and_high_risk_smoke_acceptance_defined",
+      "name": "high_risk_surface_set_preserved",
       "status": "pass"
     },
     {
@@ -65,15 +63,33 @@
     {
       "name": "no_long_lived_secret",
       "status": "pass"
+    },
+    {
+      "name": "api_pinned_acceptance_signals",
+      "status": "pass"
+    },
+    {
+      "name": "audit_block_format_strict",
+      "status": "pass"
+    },
+    {
+      "name": "rollback_record_format_strict",
+      "status": "pass"
     }
   ],
   "findings": [
-    "GPP-2D-6 records the auto-merge smoke contract without changing .github/CODEOWNERS, branch protection, rulesets, workflow runtime, or support boundaries. The runbook explicitly states that the current broad CODEOWNERS default is safe but blocks low-risk auto-merge until after the GPP-2D-5 required-check cutover verification.",
-    "The ordering is fail-closed: GPP-2D-5 cutover and post-cutover verification outcomes must exist before any CODEOWNERS narrowing. The CODEOWNERS narrowing itself is a separate high-risk PR with non-author review, and GPP-2D-6 smoke follows only after that narrowing lands.",
-    "Low-risk acceptance requires GitHub-native auto-merge on a path outside the high-risk surface set, with ao-release-gate success, no non-author human review requirement, no --admin merge, and recorded check run IDs / merge SHA. High-risk acceptance requires a PR touching a governance-sensitive path to remain blocked by CODEOWNERS / required review even if ao-release-gate passes.",
-    "The runbook keeps the authority boundary intact: AI output is evidence, release authority is ao-release-gate plus GitHub branch protection, and GPP-2D-7 closeout remains separate. testai, smee, GitHub App webhook callbacks, and deployment-protection callbacks are not reintroduced.",
-    "The human-readable GPP status row is narrowed to the actual post-PR #603 state: enforce job and real-PR enforce evidence are landed; branch-protection cutover, CODEOWNERS narrowing / auto-merge smoke, and AO-GATE-9 closeout remain pending.",
-    "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."
+    "GPP-2D-5 agent half: a single runbook file at .claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md that records the exact GitHub UI / API steps the operator (gladyatore-lab or another repo admin) follows to add ao-release-gate as a required status check on main, disable admin bypass, preserve the high-risk CODEOWNERS / surface review model in its current broad-CODEOWNERS form, and the post-cutover verification chain the agent runs afterward. No GitHub setting is changed by this PR; nothing in this slice flips the cutover.",
+    "Prerequisites (§1) pinned to landed main with 9 rows after iter-1+2 absorb (threads 019e5ae3 / 019e5aeb): GPP-2D-3 enforce job (PR #599 a4a0070), GPP-2D-3 bootstrap-prep (PR #601 5e53065), GPP-2D-3 doc-hygiene (PR #602 28d4348), GPP-2D-4 evidence (PR #603 3f884cb), reviewer evidence integrity check **scope-limited** (this runbook PR plus the §3.4 positive-path PR plus the §3.5 verification outcomes PR; the §3.3 negative-path PR is explicitly exempt because its purpose is to commit missing / stale evidence so the gate emits deny_missing_evidence), source-pinned required-check name guarded by an explicit pre-cutover `gh api .../check-runs` query that rejects any non-GitHub-Actions app_id sharing the `ao-release-gate` name (historical risk is real per gpp_status.v1.json), an explicit decision that the existing broad `.github/CODEOWNERS` (`* @Halildeu @gladyatore-lab`) stays in place this slice (CODEOWNERS narrowing is a separate prerequisite slice before GPP-2D-6), cross-AI peer-review chain across the prior 4 PRs, and the standard no-forbidden-action signal from gpp_next.py.",
+    "Operator / agent role split is explicit (design doc §227 alignment). Operator owns §2 cutover steps (open rule, add ao-release-gate as required, disable admin bypass, save, paste the structured audit block from §2.6) plus the rollback save in §4 if needed. Agent owns §3 post-cutover verification (gh api queries for required_status_checks and rulesets, both with API-pinned acceptance signals that go beyond context-name matching) and the verification outcomes file from §3.5.",
+    "Source-pinned required-check is enforced at the API level after iter-1 absorb, not just by string match: §3.1 acceptance requires `checks[].app_id` equal to GitHub Actions for the legacy branch-protection path, and `required[].integration_id` equal to GitHub Actions on the ruleset path. The string-only `contexts` list is read for backward compat but is explicitly NOT acceptance. §1 row 6 pre-empts the collision with a pre-cutover `app_slug` query.",
+    "Audit block format is strict (§2.6 after iter-1 absorb): the operator must paste a structured comment with UTC timestamp, actor, ruleset/rule name + id, required-checks BEFORE/AFTER, the selected check's context + app_id + app_slug + integration_id, bypass actors BEFORE/AFTER, CODEOWNER review change record, screenshot links, and explicit `Admin bypass attempted: false` and `Other rule changes: none` fields. If any field is missing, the cutover is not recorded and §3 verification cannot proceed.",
+    "Post-cutover verification (§3 after iter-1 absorb) splits cleanly between legacy branch-protection and ruleset paths. §3.1 verifies `ao-release-gate` is source-pinned to GitHub Actions on whichever path applies. §3.2 verifies admin bypass is fully off (`bypass_actors == []` on rulesets, `enforce_admins.enabled == true` on legacy). §3.3 negative-path PR includes a non-mutating `gh pr view --json` snapshot step before the intentional merge rejection, so the verification documents both the UI block signal and the API-level reject. §3.4 positive-path PR records the run id, job name, full decision-step output (allow_autonomous_merge / allow:true / conclusion_mode:enforce / github_check_run:ao-release-gate success / review_evidence:pass / review_evidence_context_bound:pass), and the canonical 4-file artifact set link.",
+    "High-risk surface set (§2.4) is preserved verbatim from §3.4 of the design doc: .github/**, CODEOWNERS, AGENTS.md, CLAUDE.md, gpp_status.v1.json, GPP / AO-GATE roadmap / status SSOT docs, ao_release_gate*.py modules, decision and local-gate scripts, schema JSON, deploy / publish workflows, gate host / deploy config, and secret / Vault / GitHub App wiring surfaces. The runbook explicitly forbids weakening any reviewer rule on these surfaces during the cutover save.",
+    "Rollback procedure (§4) after iter-2 absorb covers the full §3 acceptance surface, not just absent-check failures. Explicit rollback triggers now include: source-pin failure (checks[].app_id or required[].integration_id not equal to GitHub Actions, even if the context string matches — the historical external-App-with-same-name risk), duplicate ao-release-gate source collision (more than one entry with that context), ruleset enforcement != active, ruleset conditions.ref_name missing main, admin bypass non-empty (bypass_actors / enforce_admins.enabled == false), negative-path PR merge not blocked, positive-path PR ao-release-gate not SUCCESS or decision step not showing allow_autonomous_merge / conclusion_mode:enforce, high-risk CODEOWNER reviewer rule weakened in the same save, audit block from §2.6 incomplete or contradicting API snapshots. The rollback record format is strict: the agent commits `.claude/plans/GPP-2D-5-ROLLBACK-<YYYYMMDD>.md` containing UTC timestamp, trigger condition, operator actor, ruleset/rule id, BEFORE/AFTER API snapshots, negative/positive PR urls, screenshot refs, explicit `Admin bypass attempted: false`, `GPP-2 status: still blocked`, and a Next slice field. Partial-state leave-as-is is forbidden.",
+    "Verification outcomes file (§3.5 after iter-1 absorb) lands at .claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md with a strict template: cutover audit comment link, full §3.1/§3.2 API snapshots, negative-path PR url plus mergeStateStatus plus ao-release-gate conclusion plus gh pr merge result, positive-path PR url plus run id plus job name plus decision step output plus artifact set link, and `GPP-2 status: still blocked`. GPP-2D-6 / GPP-2D-7 cannot start until this file is committed.",
+    "Out-of-scope boundaries (§5) are explicit: GPP-2D-6 auto-merge smoke is a separate slice; GPP-2D-7 / AO-GATE-9 closeout is a separate slice; CODEOWNERS narrowing to high-risk-only is a separate prerequisite slice before GPP-2D-6; support_widening / production_platform_claim_allowed / live_adapter_execution_allowed stay false; admin bypass authorization is forbidden by this cutover; external testai-hosted App check-run retirement is its own slice if one ever exists.",
+    "PR scope is two files: the runbook doc and this reviewer evidence file. No workflow / script / test / runtime / branch-protection / ruleset mutation. The agent does not click any GitHub Settings button; gh api queries in §3 are read-only.",
+    "GPP-2 stays blocked; the cutover slice does not flip the gpp_status flag. Closing GPP-2 requires both the operator-half cutover (§2 save) and the §3 verification outcomes recorded by the agent, plus the separate GPP-2D-7 / AO-GATE-9 closeout slice."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
