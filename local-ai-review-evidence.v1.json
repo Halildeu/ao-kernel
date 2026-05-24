@@ -13,11 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-5a-retire-smee-collision",
+    "head_ref": "refs/heads/codex/gpp2d-5-verification-outcomes",
     "changed_files": [
-      ".claude/plans/GPP-2D-5A-SMEE-RETIREMENT-EVIDENCE.md",
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      "tests/test_gpp2d5a_smee_retirement.py",
+      ".claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -31,11 +29,7 @@
       "status": "pass"
     },
     {
-      "name": "retirement_evidence_doc",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation_by_agent",
+      "name": "verification_outcomes_doc_only",
       "status": "pass"
     },
     {
@@ -43,19 +37,23 @@
       "status": "pass"
     },
     {
-      "name": "smee_services_inactive_disabled",
+      "name": "no_branch_protection_mutation_by_agent",
       "status": "pass"
     },
     {
-      "name": "external_check_run_collision_identified",
+      "name": "ruleset_acceptance_signals_recorded",
       "status": "pass"
     },
     {
-      "name": "post_retirement_source_pin_acceptance_defined",
+      "name": "negative_path_pr_607_blocked_recorded",
       "status": "pass"
     },
     {
-      "name": "high_risk_surface_set_preserved",
+      "name": "positive_path_pr_608_allow_recorded",
+      "status": "pass"
+    },
+    {
+      "name": "probe_prs_closed_without_merge",
       "status": "pass"
     },
     {
@@ -65,26 +63,17 @@
     {
       "name": "no_long_lived_secret",
       "status": "pass"
-    },
-    {
-      "name": "api_pinned_acceptance_signals",
-      "status": "pass"
-    },
-    {
-      "name": "audit_block_format_strict",
-      "status": "pass"
-    },
-    {
-      "name": "rollback_record_format_strict",
-      "status": "pass"
     }
   ],
   "findings": [
-    "GPP-2D-5A retires the historical smee.io dry-run bridge that was still emitting a same-name external ao-release-gate neutral check-run through GitHub App app_id=3800233. That external source collided with the GitHub Actions ao-release-gate enforce job and blocked the GPP-2D-5 source-pinned required-check cutover prerequisite.",
-    "staging-sw systemd user services smee-policy.service and smee-release.service were stopped and disabled. Post-action readback showed both services inactive and disabled. This removes the no-testai-deferred smee bridge from the active GPP-2B/GPP-2D lane.",
-    "The evidence doc records the exact pre-retirement collision on PR #604 and #605, including app_id=3800233 app_slug=ao-release-gate conclusion=neutral and app_id=15368 app_slug=github-actions conclusion=success. The cutover operator must verify a fresh post-retirement PR head shows only the GitHub Actions source before selecting the required check.",
-    "This slice does not change branch protection, rulesets, CODEOWNERS, workflow runtime, support scope, production claims, or live-adapter execution. It only removes the external same-name check-run source from future PR events.",
-    "GPP-2 stays blocked; branch-protection cutover, post-cutover verification, CODEOWNERS narrowing, auto-merge smoke, and GPP-2D-7 closeout remain separate."
+    "GPP-2D-5 verification outcomes record: the operator (Halildeu, repo owner) saved the 'Protect main' ruleset (id 16803733) on 2026-05-24 with ao-release-gate as a required status check pinned to GitHub Actions integration_id 15368, strict (require up-to-date) true, block force pushes true, and bypass_actors empty. Source-pinned acceptance is verified at the API level, not just by string match.",
+    "Pre-cutover source-pin probe (runbook §1 row 6) confirmed only the GitHub Actions check-run carried the ao-release-gate name (app_slug: github-actions, app_id: 15368). No external App collision.",
+    "Negative-path verification PR #607 (no reviewer evidence committed) produced decision: deny_missing_evidence with conclusion_mode: enforce, ao-release-gate check FAILURE, mergeStateStatus BLOCKED, and gh pr merge --squash rejected by the GitHub API with 'the base branch policy prohibits the merge'. CLI suggested --admin bypass; HARD RULE forbids it and the ruleset bypass_actors empty would reject it regardless. PR closed without merging.",
+    "Positive-path verification PR #608 (schema-valid AGREE reviewer evidence, cross-provider) produced decision: allow_autonomous_merge with conclusion_mode: enforce, ao-release-gate check SUCCESS, github_check_run: ao-release-gate success, runtime head_sha bound to 69a909e1476c9bddad9997cd2cbefeddbb665b83 (the dual-ref iter-4 contract from GPP-2D-3c proved end-to-end against a live required check), full 4-file audit artifact set uploaded. mergeStateStatus remained BLOCKED due to legacy code-owner review (broad CODEOWNERS preserved this slice). PR closed without merging.",
+    "Legacy branch-protection enforce_admins.enabled is false (pre-existing surface, not modified by this cutover). It does not affect ao-release-gate enforcement because the gate is the ruleset's responsibility and the ruleset has bypass_actors empty. Tightening the legacy enforce_admins flag is an explicit out-of-scope later hardening.",
+    "PR scope is two files: the outcomes doc at .claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md and this reviewer evidence file. No workflow / script / test / runtime / branch-protection / ruleset mutation in this PR; the cutover save was an operator UI action recorded in §1.",
+    "Out-of-scope boundaries (§7) are explicit: GPP-2D-6 auto-merge smoke depends on CODEOWNERS narrowing first; GPP-2D-7 / AO-GATE-9 closeout is separate; legacy enforce_admins hardening is separate; probe PRs #607 and #608 are closed without merging; support_widening / production_platform_claim_allowed / live_adapter_execution_allowed stay false; no --admin merge.",
+    "GPP-2 stays blocked. With this outcomes file landed, the remaining work to close GPP-2 is GPP-2D-6 (auto-merge smoke + the CODEOWNERS narrowing it depends on) and GPP-2D-7 (AO-GATE-9 closeout)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
