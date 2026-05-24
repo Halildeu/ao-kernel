@@ -541,19 +541,26 @@ jobs:
           # --review-base-ref / --review-head-ref / --diff-base-ref /
           # --diff-head-ref split, so passing those flags here would
           # produce an "unrecognized arguments" parse error on the base
-          # copy and fail the gate open. Instead we pass the PR base /
-          # head BRANCH NAMES through the legacy --base-ref / --head-ref
-          # aliases. The base copy accepts those names directly:
+          # copy and fail the gate open. Instead we pass the FULLY
+          # QUALIFIED local refs we created above (refs/heads/$BASE_REF
+          # / refs/heads/$HEAD_REF) through the legacy --base-ref /
+          # --head-ref aliases. The base copy accepts those refs
+          # directly:
           #   * scope check string-equality matches the committed reviewer
-          #     evidence's scope_reviewed.base_ref / head_ref (both branch
-          #     names, never SHAs);
-          #   * `git diff base...head` resolves the names through git's
-          #     local refs (created by the update-ref step above) to the
-          #     API-pinned base/head SHAs, so the actual diff is computed
-          #     between the two real PR commits;
-          #   * context_binding.head_sha is produced by git rev-parse on
-          #     the head ref, so it binds to $HEAD_SHA without the reviewer
-          #     evidence ever recording one.
+          #     evidence's scope_reviewed.base_ref / head_ref, which
+          #     record the same fully-qualified refs/heads/* form (never
+          #     SHAs, so the head_sha self-reference fixed point stays
+          #     closed);
+          #   * `git diff refs/heads/<base>...refs/heads/<head>` resolves
+          #     unambiguously to the local branch refs we just bound to
+          #     $BASE_SHA / $HEAD_SHA, so the actual diff always spans
+          #     the two real PR commits;
+          #   * `git rev-parse refs/heads/<head>` pins context_binding
+          #     .head_sha to $HEAD_SHA. Passing the unqualified label
+          #     instead would let Git fall back through unqualified
+          #     revision lookup to a same-named tag or other object,
+          #     breaking the binding contract — fully-qualified refs
+          #     close that drift (Codex iter-4 absorb).
           # Once dual-ref support lands on main, a follow-up slice can
           # upgrade this invocation to --review-* / --diff-*; the
           # head-side scripts/local_gpp_gate.py already exposes the
@@ -563,8 +570,8 @@ jobs:
             --output local-gpp-gate-evidence.v1.json \
             --repo "$REPO_FULL" \
             --work-package "GPP-2" \
-            --base-ref "$BASE_REF" \
-            --head-ref "$HEAD_REF" \
+            --base-ref "refs/heads/$BASE_REF" \
+            --head-ref "refs/heads/$HEAD_REF" \
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 

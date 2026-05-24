@@ -213,7 +213,7 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
 
 
 def test_enforce_job_binds_branch_labels_to_runtime_shas_before_invocation() -> None:
-    """GPP-2D-3c trusted-base ref-binding (Codex iter-3 absorb):
+    """GPP-2D-3c trusted-base ref-binding (Codex iter-3+4 absorb):
     the base checkout is a detached HEAD at the PR base SHA with
     fetch-depth=1; branch names like 'main' and 'codex/...' are NOT
     guaranteed to exist as local refs. The legacy --base-ref /
@@ -222,63 +222,77 @@ def test_enforce_job_binds_branch_labels_to_runtime_shas_before_invocation() -> 
     and `git rev-parse <head_ref>`, so the names MUST be valid refs.
 
     The workflow must therefore (a) validate the API-reported branch
-    labels with `git check-ref-format` to reject anything that isn't
-    a safe Git ref, and (b) bind those labels to the API-reported
-    runtime SHAs via `git update-ref` BEFORE invoking
-    local_gpp_gate.py. Otherwise scope check and context_binding fall
-    back to whatever refs happen to exist in the detached clone,
-    which is an unstable contract.
+    labels with `git check-ref-format`, (b) bind those labels to the
+    API-reported runtime SHAs via `git update-ref` BEFORE invoking
+    local_gpp_gate.py, and (c) for each label the check-ref-format
+    call must precede its update-ref call. Otherwise scope check and
+    context_binding fall back to whatever refs happen to exist in
+    the detached clone, which is an unstable contract.
     """
     block = _gate_job_block()
-    # The "Generate local-gpp-gate evidence at runtime" step must
-    # include both the validation and the binding before invoking
-    # local_gpp_gate.py.
-    assert 'git check-ref-format "refs/heads/$BASE_REF"' in block, (
-        "trusted-base ref-binding must validate $BASE_REF with git check-ref-format"
-    )
-    assert 'git check-ref-format "refs/heads/$HEAD_REF"' in block, (
-        "trusted-base ref-binding must validate $HEAD_REF with git check-ref-format"
-    )
-    assert 'git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"' in block, (
-        "trusted-base ref-binding must map $BASE_REF -> $BASE_SHA via git update-ref"
-    )
-    assert 'git update-ref "refs/heads/$HEAD_REF" "$HEAD_SHA"' in block, (
-        "trusted-base ref-binding must map $HEAD_REF -> $HEAD_SHA via git update-ref"
-    )
-    # The bindings must come BEFORE the local_gpp_gate.py invocation.
+    # Both validation calls and both binding calls must exist.
+    base_check_index = block.find('git check-ref-format "refs/heads/$BASE_REF"')
+    head_check_index = block.find('git check-ref-format "refs/heads/$HEAD_REF"')
+    base_update_index = block.find('git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"')
+    head_update_index = block.find('git update-ref "refs/heads/$HEAD_REF" "$HEAD_SHA"')
     invocation_index = block.find("python scripts/local_gpp_gate.py")
-    update_ref_index = block.find('git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"')
-    assert update_ref_index >= 0 and update_ref_index < invocation_index, (
-        "ref-binding must execute BEFORE the local_gpp_gate.py invocation"
+
+    assert base_check_index >= 0, "trusted-base ref-binding must validate $BASE_REF with git check-ref-format"
+    assert head_check_index >= 0, "trusted-base ref-binding must validate $HEAD_REF with git check-ref-format"
+    assert base_update_index >= 0, "trusted-base ref-binding must map $BASE_REF -> $BASE_SHA via git update-ref"
+    assert head_update_index >= 0, "trusted-base ref-binding must map $HEAD_REF -> $HEAD_SHA via git update-ref"
+    assert invocation_index >= 0, "no local_gpp_gate.py invocation found"
+
+    # Per-label ordering: validate before binding, bind before invocation.
+    assert base_check_index < base_update_index, "$BASE_REF check-ref-format must precede its update-ref"
+    assert head_check_index < head_update_index, "$HEAD_REF check-ref-format must precede its update-ref"
+    assert base_update_index < invocation_index, (
+        "$BASE_REF update-ref must execute BEFORE the local_gpp_gate.py invocation"
+    )
+    assert head_update_index < invocation_index, (
+        "$HEAD_REF update-ref must execute BEFORE the local_gpp_gate.py invocation"
     )
 
 
-def test_enforce_job_passes_branch_name_refs_to_local_gpp_gate() -> None:
-    """GPP-2D-3c bootstrap-safe ref contract (Codex iter-1+2 absorb):
+def test_enforce_job_passes_fully_qualified_refs_to_local_gpp_gate() -> None:
+    """GPP-2D-3c bootstrap-safe ref contract (Codex iter-1+2+4 absorb):
     the workflow runs the base-ref copy of scripts/local_gpp_gate.py,
     which predates the dual-ref --review-* / --diff-* split. Passing
     the dual-ref flags there would parse-error on the base copy and
     silently fail the gate open. Instead the workflow MUST pass the
-    PR base / head BRANCH NAMES through the legacy --base-ref /
-    --head-ref aliases. The base copy:
+    fully-qualified local refs (refs/heads/$BASE_REF /
+    refs/heads/$HEAD_REF) the previous step bound via `git update-ref`
+    through the legacy --base-ref / --head-ref aliases. The base copy
+    then:
 
       * matches scope check by string equality against the committed
-        reviewer evidence's scope_reviewed.base_ref / head_ref (both
-        branch names, never SHAs — committing a SHA would re-introduce
-        the head_sha self-reference fixed point this slice closes);
-      * resolves the names through git for the actual diff and the
-        gate evidence's context_binding.head_sha.
+        reviewer evidence's scope_reviewed.base_ref / head_ref, which
+        also record the same fully-qualified refs/heads/* form (never
+        SHAs — committing a SHA would re-introduce the head_sha
+        self-reference fixed point this slice closes);
+      * resolves the fully-qualified refs unambiguously through git's
+        local ref database for `git diff <base>...<head>` and
+        `git rev-parse <head>`. Unqualified labels are forbidden here
+        because Git's revision-shorthand lookup can drift to a
+        same-named tag or other object (iter-4 ambiguity drift).
 
-    Passing $BASE_SHA / $HEAD_SHA into --base-ref / --head-ref would
-    re-introduce the iter-1 SHA-vs-branch-name string-equality
-    mismatch that produced ao_release_gate_review_evidence_not_accepting
-    on PR #599 b5ecf65."""
+    Passing $BASE_SHA / $HEAD_SHA into the legacy aliases would
+    re-introduce the iter-1 SHA-vs-label string-equality mismatch
+    that produced ao_release_gate_review_evidence_not_accepting on
+    PR #599 b5ecf65. Passing unqualified $BASE_REF / $HEAD_REF would
+    re-open the iter-4 unqualified-revision-lookup drift."""
     block = _gate_job_block()
     invocation_lines: list[str] = []
     current: list[str] = []
     collecting = False
     for line in block.splitlines():
-        if "scripts/local_gpp_gate.py" in line:
+        # Start collecting only at the actual `python scripts/local_gpp_gate.py`
+        # command — comment lines that merely reference the script
+        # (e.g. "# base/scripts/local_gpp_gate.py runs against ...")
+        # must NOT trigger the collector, otherwise unrelated commands
+        # higher up in the step (the build_payload invocation's
+        # --base-ref / --head-ref) get swept into this slice.
+        if line.lstrip().startswith("python scripts/local_gpp_gate.py"):
             collecting = True
         if collecting:
             current.append(line)
@@ -288,16 +302,15 @@ def test_enforce_job_passes_branch_name_refs_to_local_gpp_gate() -> None:
                 collecting = False
     assert invocation_lines, "no local_gpp_gate.py invocation found in the gate job"
     for invocation in invocation_lines:
-        assert '--base-ref "$BASE_REF"' in invocation, (
-            "workflow must pass the PR base BRANCH NAME (env BASE_REF) into --base-ref, "
-            "not $BASE_SHA. invocation:\n" + invocation
+        assert '--base-ref "refs/heads/$BASE_REF"' in invocation, (
+            "workflow must pass refs/heads/$BASE_REF (fully-qualified) into "
+            "--base-ref, not $BASE_SHA or the unqualified label. invocation:\n" + invocation
         )
-        assert '--head-ref "$HEAD_REF"' in invocation, (
-            "workflow must pass the PR head BRANCH NAME (env HEAD_REF) into --head-ref, "
-            "not $HEAD_SHA. invocation:\n" + invocation
+        assert '--head-ref "refs/heads/$HEAD_REF"' in invocation, (
+            "workflow must pass refs/heads/$HEAD_REF (fully-qualified) into "
+            "--head-ref, not $HEAD_SHA or the unqualified label. invocation:\n" + invocation
         )
-        # The SHA env variables must NOT reach the legacy single-ref alias
-        # — that's the iter-1 bug we are pinning against.
+        # The SHA env variables must NOT reach the legacy alias — iter-1 bug.
         assert '--base-ref "$BASE_SHA"' not in invocation, (
             "passing $BASE_SHA into --base-ref re-introduces the iter-1 "
             "scope-check string-equality mismatch.\n" + invocation
@@ -305,6 +318,16 @@ def test_enforce_job_passes_branch_name_refs_to_local_gpp_gate() -> None:
         assert '--head-ref "$HEAD_SHA"' not in invocation, (
             "passing $HEAD_SHA into --head-ref re-introduces the iter-1 "
             "scope-check string-equality mismatch.\n" + invocation
+        )
+        # The unqualified label must NOT reach the legacy alias either —
+        # iter-4 drift (Git unqualified revision lookup -> tag / object).
+        assert '--base-ref "$BASE_REF"' not in invocation, (
+            "passing unqualified $BASE_REF into --base-ref re-opens the iter-4 "
+            "unqualified-revision-lookup drift; use refs/heads/$BASE_REF.\n" + invocation
+        )
+        assert '--head-ref "$HEAD_REF"' not in invocation, (
+            "passing unqualified $HEAD_REF into --head-ref re-opens the iter-4 "
+            "unqualified-revision-lookup drift; use refs/heads/$HEAD_REF.\n" + invocation
         )
 
 
