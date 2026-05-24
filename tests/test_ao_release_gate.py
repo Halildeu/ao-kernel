@@ -428,6 +428,30 @@ def test_release_gate_denies_when_reviewed_slice_mismatches() -> None:
     assert "ao_release_gate_review_evidence_context_unbound" in decision["findings"]
 
 
+def test_release_gate_allows_reviewed_slice_distinct_from_current_wp_when_context_bound() -> None:
+    # GOV-1 dynamic work_package binding positive complement: a slice
+    # whose reviewer-declared work_package differs from the base
+    # `gpp_status.current_wp.id` (e.g. GOV-1 governance enrichment
+    # against a base where current_wp.id="GPP-2") must be ALLOWED when
+    # payload.reviewed_slice and review_evidence.work_package agree
+    # (because the workflow patches payload.reviewed_slice from the
+    # reviewer evidence before decision-core evaluation). This pins the
+    # invariant that release-governance authority lives in
+    # `ao-release-gate` + branch ruleset + non-author approval, not in
+    # the base's static current_wp identity.
+    payload = _allow_payload()
+    payload["reviewed_slice"] = "GOV-1"
+    evidence = _review_evidence(reviewed_slice="GOV-1")
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),  # current_wp.id remains GPP-2
+        review_evidence=evidence,
+        generated_at="2026-05-25T00:00:00Z",
+    )
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+
+
 def test_diff_digest_is_order_independent_prefixed_and_handles_empty() -> None:
     """Canonical digest contract pinned for emitter / verifier agreement."""
     assert diff_digest(["a.py", "b.py"]) == diff_digest(["b.py", "a.py"])

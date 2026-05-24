@@ -480,6 +480,59 @@ jobs:
             echo "path=" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve reviewed work package from reviewer evidence
+        # GOV-1 dynamic work_package binding (Codex thread 019e5bc5
+        # Option B-prime). The workflow previously hardcoded the GPP-2
+        # slice identifier as a literal CLI argument, which failed the
+        # local_gpp_gate scope check for any slice whose reviewer
+        # evidence declared a different work package (e.g. GOV-1,
+        # future GPP-3 / GPP-4 / ...).
+        # This step reads the reviewer-declared work_package, validates
+        # it against a strict format regex (uppercase + dash-separated
+        # identifier; no shell metacharacters), and writes it back into
+        # the runtime payload.json so the decision-core's
+        # review_evidence.work_package == payload.reviewed_slice
+        # binding holds for any reviewed slice. Base gpp_status still
+        # supplies guard flags, issue consistency, and release
+        # governance boundaries — only the reviewed-slice context is
+        # made dynamic. Release authority stays with the ao-release-gate
+        # required check + branch ruleset + non-author approval (CC-5).
+        id: reviewed_wp
+        if: ${{ steps.reviewer.outputs.path != '' }}
+        working-directory: base
+        env:
+          REVIEW_EVIDENCE_PATH: ../${{ steps.reviewer.outputs.path }}
+        run: |
+          REVIEW_WORK_PACKAGE="$(python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ["REVIEW_EVIDENCE_PATH"])
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          wp = payload.get("work_package")
+          if not isinstance(wp, str) or not wp.strip():
+              raise SystemExit("reviewer evidence missing work_package")
+          wp = wp.strip()
+          if not re.fullmatch(r"[A-Z][A-Z0-9]*(?:-[A-Za-z0-9][A-Za-z0-9._]*)*", wp):
+              raise SystemExit("reviewer evidence work_package has invalid format")
+          print(wp)
+          PY
+          )"
+          echo "work_package=$REVIEW_WORK_PACKAGE" >> "$GITHUB_OUTPUT"
+          export REVIEW_WORK_PACKAGE
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload_path = Path("payload.json")
+          payload = json.loads(payload_path.read_text(encoding="utf-8"))
+          payload["reviewed_slice"] = os.environ["REVIEW_WORK_PACKAGE"]
+          payload_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
       - name: Generate local-gpp-gate evidence at runtime from reviewer evidence
         # Trusted-base step (Codex C-prime, thread 019e59f7):
         # base/scripts/local_gpp_gate.py runs against the untrusted PR
@@ -491,6 +544,8 @@ jobs:
         # evidence file cannot offer.
         if: ${{ steps.reviewer.outputs.path != '' }}
         working-directory: base
+        env:
+          REVIEW_WORK_PACKAGE: ${{ steps.reviewed_wp.outputs.work_package }}
         run: |
           # The base checkout was created with fetch-depth=1 (only the
           # base SHA). To diff base...head, head_sha must be in base's
@@ -573,7 +628,7 @@ jobs:
             --review-evidence "../${{ steps.reviewer.outputs.path }}" \
             --output local-gpp-gate-evidence.v1.json \
             --repo "$REPO_FULL" \
-            --work-package "GPP-2" \
+            --work-package "$REVIEW_WORK_PACKAGE" \
             --base-ref "refs/heads/$BASE_REF" \
             --head-ref "refs/heads/$HEAD_REF" \
             --repo-root . \

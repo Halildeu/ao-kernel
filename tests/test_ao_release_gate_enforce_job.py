@@ -207,9 +207,39 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
     assert "scripts/local_gpp_gate.py" in block
     assert "--review-evidence" in block and "local-ai-review-evidence.v1.json" in block
     assert "--output local-gpp-gate-evidence.v1.json" in block
-    assert '--work-package "GPP-2"' in block
+    # GOV-1 dynamic work_package binding: workflow no longer hardcodes "GPP-2";
+    # it resolves the reviewer-declared work_package and passes it via env.
+    assert '--work-package "$REVIEW_WORK_PACKAGE"' in block
+    assert '--work-package "GPP-2"' not in block
+    assert "Resolve reviewed work package from reviewer evidence" in block
+    assert "REVIEW_EVIDENCE_PATH" in block
+    assert "if not re.fullmatch" in block
+    assert 'payload["reviewed_slice"] = os.environ["REVIEW_WORK_PACKAGE"]' in block
     # The step uses `if:` to skip when no reviewer evidence is committed.
     assert "if: ${{ steps.reviewer.outputs.path != '' }}" in block
+
+
+def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:
+    """GOV-1 ordering invariant: the workflow must (a) resolve the
+    reviewer-declared work_package, (b) patch payload.reviewed_slice,
+    (c) invoke local_gpp_gate.py with the resolved work_package, and
+    (d) invoke ao_release_gate_decision.py — strictly in that order.
+    Otherwise decision-core's review_evidence.work_package ==
+    payload.reviewed_slice binding falls back to the base-supplied
+    GPP-2 default and fails any slice whose reviewer evidence declares
+    a different work_package."""
+    block = _gate_job_block()
+    resolve_index = block.find("Resolve reviewed work package from reviewer evidence")
+    patch_index = block.find('payload["reviewed_slice"] = os.environ["REVIEW_WORK_PACKAGE"]')
+    local_gate_index = block.find("python scripts/local_gpp_gate.py")
+    decision_index = block.find("python scripts/ao_release_gate_decision.py")
+    assert resolve_index >= 0, "Resolve step must exist"
+    assert patch_index >= 0, "reviewed_slice patch must exist"
+    assert local_gate_index >= 0, "local_gpp_gate.py invocation must exist"
+    assert decision_index >= 0, "ao_release_gate_decision.py invocation must exist"
+    assert resolve_index < patch_index < local_gate_index < decision_index, (
+        "ordering must be resolve -> patch -> local_gate -> decision_core"
+    )
 
 
 def test_enforce_job_binds_branch_labels_to_runtime_shas_before_invocation() -> None:

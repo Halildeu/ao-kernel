@@ -19,9 +19,12 @@
       ".claude/plans/PROGRAM-CHANGE-CONTROL.md",
       ".claude/plans/_TEMPLATES/RETROSPECTIVE-TEMPLATE.md",
       ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/test.yml",
       "docs/ROLLBACK-RUNBOOK.md",
       "local-ai-review-evidence.v1.json",
       "scripts/gpp_next.py",
+      "tests/test_ao_release_gate.py",
+      "tests/test_ao_release_gate_enforce_job.py",
       "tests/test_gpp_next.py"
     ]
   },
@@ -42,7 +45,9 @@
     {"name": "cross_provider_verified", "status": "pass"},
     {"name": "change_control_rules_complete", "status": "pass"},
     {"name": "rollback_runbook_failure_mode_based", "status": "pass"},
-    {"name": "retrospective_template_five_questions", "status": "pass"}
+    {"name": "retrospective_template_five_questions", "status": "pass"},
+    {"name": "ao_release_gate_work_package_dynamic_binding", "status": "pass"},
+    {"name": "reviewed_slice_payload_binding", "status": "pass"}
   ],
   "findings": [
     "tests: pytest 3387 passed, 2 skipped in the full local test suite (~79s) including seven new GOV-1 drift guards.",
@@ -61,7 +66,9 @@
     "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE satisfied.",
     "change_control_rules_complete: PROGRAM-CHANGE-CONTROL.md records 13 normative rules CC-1..CC-13 covering SSOT mutation, cross-AI review, non-author approval, no admin merge, AI-as-evidence, GPP-9 guard flag flip, ADR supersession, schema bump, branch ruleset mutation, archive tag, rollback, secret protection, and per-slice discipline.",
     "rollback_runbook_failure_mode_based: ROLLBACK-RUNBOOK.md is failure-mode based with five scenarios (ruleset operator error, code regression, cross-machine recovery, closeout reversal, live execution mishap), each carrying Trigger, Owner, Forbidden, Steps, Evidence, and Supersession PR sections.",
-    "retrospective_template_five_questions: RETROSPECTIVE-TEMPLATE.md defines exactly five questions (worked, incomplete, learned, repeat pattern, retire anti-pattern) plus context header and cross-references; existing closeout records are left unchanged as terminal evidence per plan-time decision."
+    "retrospective_template_five_questions: RETROSPECTIVE-TEMPLATE.md defines exactly five questions (worked, incomplete, learned, repeat pattern, retire anti-pattern) plus context header and cross-references; existing closeout records are left unchanged as terminal evidence per plan-time decision.",
+    "ao_release_gate_work_package_dynamic_binding: .github/workflows/test.yml no longer hardcodes the GPP-2 slice identifier as a literal CLI argument; a new Resolve reviewed work package step parses the reviewer-declared work_package, validates it against a strict format regex (uppercase + dash-separated identifier; no shell metacharacters), and passes it to local_gpp_gate.py through the REVIEW_WORK_PACKAGE env var. test_ao_release_gate_enforce_job.py pins the workflow shape + ordering (resolve before patch before local_gate before decision_core).",
+    "reviewed_slice_payload_binding: the same Resolve step also patches the runtime payload.json reviewed_slice field from the reviewer-declared work_package before decision-core evaluation. This keeps the binding-equality contract review_evidence.work_package == payload.reviewed_slice intact for any reviewed slice. test_release_gate_allows_reviewed_slice_distinct_from_current_wp_when_context_bound (new) pins this invariant alongside the existing test_release_gate_denies_when_reviewed_slice_mismatches negative case."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
