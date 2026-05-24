@@ -36,6 +36,33 @@ for GPP-2 protected live-adapter gate runtime binding (closed)
 **Support impact:** none
 **Release impact:** none
 
+## 0. Milestones
+
+The program is structured into seven outcome-based milestones. Machine-readable
+form lives in `.claude/plans/gpp_status.v1.json` under `milestones[]` and
+`progress_estimates`. The canonical progress metric is milestone-based; the
+WP-weighted estimate is a secondary informational indicator. Milestones are
+**not** date-driven — every milestone closes when its constituent GPP slot
+exit decisions are recorded with evidence.
+
+| ID | Milestone | GPP slots | Status | Closed |
+| --- | --- | --- | --- | --- |
+| M0 | Foundation | GPP-0, GPP-1, GPP-1b | Done | `2026-04-25` |
+| M1 | Protected gate runtime + required-check lane | GPP-2, GPP-2D | Done | `2026-05-24` |
+| M2 | Repo-intelligence read-only building block + E2E preflight preparation | GPP-5, GPP-6a | Done | `2026-04-28` |
+| M3 | Real-adapter cost/usage evidence | GPP-3 | Pending | — |
+| M4 | Read-only adapter production decision | GPP-4 | Pending | — |
+| M5 | Read-only E2E execution | GPP-6 | Pending | — |
+| M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
+
+Current progress: **3/7 milestones done (43%); next M3 — Real-adapter
+cost/usage evidence**. WP-weighted estimate: **38/50 (76%; estimated)** —
+treat this as a coarse indicator only; the canonical view is the
+milestone-based count.
+
+Run `python3 scripts/gpp_next.py --output progress` for the live machine
+view.
+
 ## 1. Purpose
 
 This document is the execution SSOT for promoting `ao-kernel` from a narrow

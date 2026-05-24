@@ -46,6 +46,8 @@ def load_status(path: Path) -> dict[str, Any]:
         "required_workflow",
         "forbidden_actions",
         "next_allowed_actions",
+        "milestones",
+        "progress_estimates",
     )
     missing = [key for key in required if key not in payload]
     if missing:
@@ -61,6 +63,15 @@ def load_status(path: Path) -> dict[str, Any]:
 
     if not isinstance(payload["blocked_wps"], list):
         raise GppStatusError("blocked_wps must be a list")
+
+    if not isinstance(payload["milestones"], list):
+        raise GppStatusError("milestones must be a list")
+    if not isinstance(payload["progress_estimates"], dict):
+        raise GppStatusError("progress_estimates must be an object")
+    if "milestones" not in payload["progress_estimates"]:
+        raise GppStatusError("progress_estimates.milestones must be present")
+    if "wp_weighted" not in payload["progress_estimates"]:
+        raise GppStatusError("progress_estimates.wp_weighted must be present")
 
     return payload
 
@@ -89,11 +100,52 @@ def run_git_summary(repo_root: Path) -> dict[str, str]:
     return summary
 
 
+def _next_milestone_title(payload: dict[str, Any], next_id: str | None) -> str | None:
+    """Return the title of the next pending milestone, if known."""
+    if not next_id:
+        return None
+    for m in payload.get("milestones", []):
+        if m.get("id") == next_id:
+            return m.get("title")
+    return None
+
+
+def render_progress(payload: dict[str, Any]) -> str:
+    """Render the milestone + WP-weighted progress summary as text."""
+
+    pe = payload.get("progress_estimates", {})
+    ms_pe = pe.get("milestones", {})
+    wp_pe = pe.get("wp_weighted", {})
+    next_id = ms_pe.get("next_milestone_id")
+    next_title = _next_milestone_title(payload, next_id)
+    next_label = f"{next_id} - {next_title}" if next_id and next_title else (next_id or "none")
+    lines = [
+        f"Milestones: {ms_pe.get('done_count', 0)}/{ms_pe.get('total_count', 0)} done "
+        f"({ms_pe.get('percent', 0)}%; next {next_label})",
+        f"WP-weighted estimate: {wp_pe.get('completed_or_closed_count', 0)}/"
+        f"{wp_pe.get('estimated_total_wps', 0)} ({wp_pe.get('percent', 0)}%; estimated)",
+        "",
+        "Milestones:",
+    ]
+    for m in payload.get("milestones", []):
+        slots = ", ".join(m.get("gpp_slots", []))
+        status = m.get("status", "?")
+        closed = f" closed_at={m['closed_at']}" if m.get("closed_at") else ""
+        lines.append(f"- {m['id']} [{status}] {m.get('title','?')} (slots: {slots}){closed}")
+    return "\n".join(lines) + "\n"
+
+
 def render_text(payload: dict[str, Any], *, git_summary: dict[str, str] | None = None) -> str:
     """Render a concise operator-facing status report."""
 
     current_wp = payload["current_wp"]
     blocked_wps = payload["blocked_wps"]
+    pe = payload.get("progress_estimates", {})
+    ms_pe = pe.get("milestones", {})
+    wp_pe = pe.get("wp_weighted", {})
+    next_id = ms_pe.get("next_milestone_id")
+    next_title = _next_milestone_title(payload, next_id)
+    next_label = f"{next_id} - {next_title}" if next_id and next_title else (next_id or "none")
     current_label = "Active WP" if current_wp.get("status") == "active" else "Current WP"
     status_label = "Active status" if current_wp.get("status") == "active" else "Current status"
     lines = [
@@ -105,6 +157,11 @@ def render_text(payload: dict[str, Any], *, git_summary: dict[str, str] | None =
         f"Support widening allowed: {str(payload['support_widening_allowed']).lower()}",
         f"Production platform claim allowed: {str(payload['production_platform_claim_allowed']).lower()}",
         f"Live adapter execution allowed: {str(payload['live_adapter_execution_allowed']).lower()}",
+        "",
+        f"Milestones: {ms_pe.get('done_count', 0)}/{ms_pe.get('total_count', 0)} done "
+        f"({ms_pe.get('percent', 0)}%; next {next_label})",
+        f"WP-weighted estimate: {wp_pe.get('completed_or_closed_count', 0)}/"
+        f"{wp_pe.get('estimated_total_wps', 0)} ({wp_pe.get('percent', 0)}%; estimated)",
         "",
         "Blocked work packages:",
     ]
@@ -145,7 +202,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--status-path", type=Path, default=None, help="Path to gpp_status.v1.json")
     parser.add_argument("--repo-root", type=Path, default=None, help="Repository root for git summary")
-    parser.add_argument("--output", choices=("text", "json"), default="text", help="Output format")
+    parser.add_argument(
+        "--output",
+        choices=("text", "json", "progress"),
+        default="text",
+        help="Output format: text=full status, json=raw payload, progress=milestone summary",
+    )
     parser.add_argument("--skip-git", action="store_true", help="Do not collect git summary")
     return parser
 
@@ -166,6 +228,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.output == "json":
         print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+
+    if args.output == "progress":
+        print(render_progress(payload), end="")
         return 0
 
     git_summary = None if args.skip_git else run_git_summary(repo_root)
