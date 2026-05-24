@@ -171,6 +171,91 @@ def test_build_payload_excludes_self_check_runs(tmp_path: Path) -> None:
     assert "test (3.13)" in names
 
 
+def test_build_payload_dedupes_check_runs_keeping_latest(tmp_path: Path) -> None:
+    """gh api .../check-runs returns every run on the commit, including
+    cancelled ones from a previous workflow attempt. The builder must
+    de-duplicate by check-run name keeping the most recent
+    completed_at / started_at entry, so a stale cancelled run does not
+    permanently mark a check as not-green (GPP-2D-3 observation note b)."""
+    mod = _load_module()
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    # Two check-runs for the same check name: the older one was cancelled
+    # in_progress, the newer one is the green completion. The builder
+    # must surface the newer one only.
+    check_runs.write_text(
+        json.dumps(
+            {
+                "check_runs": [
+                    {
+                        "id": 100,
+                        "name": "test (3.13)",
+                        "status": "completed",
+                        "conclusion": "cancelled",
+                        "started_at": "2026-05-23T06:00:00Z",
+                        "completed_at": "2026-05-23T06:02:00Z",
+                    },
+                    {
+                        "id": 200,
+                        "name": "test (3.13)",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-05-23T07:00:00Z",
+                        "completed_at": "2026-05-23T07:05:00Z",
+                    },
+                    {
+                        "id": 300,
+                        "name": "lint",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-05-23T07:00:00Z",
+                        "completed_at": "2026-05-23T07:01:00Z",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_gpp_status(gpp_status)
+    output = tmp_path / "payload.json"
+    mod.main(
+        [
+            "--repository",
+            "Halildeu/ao-kernel",
+            "--pr-number",
+            "1",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "x",
+            "--head-sha",
+            "f" * 40,
+            "--from-fork",
+            "false",
+            "--branch-up-to-date",
+            "true",
+            "--gpp-status",
+            str(gpp_status),
+            "--pr-files-json",
+            str(pr_files),
+            "--check-runs-json",
+            str(check_runs),
+            "--output",
+            str(output),
+        ]
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    names = [c["name"] for c in payload["required_checks"]]
+    # `test (3.13)` appears exactly once, and it is the newer success run.
+    assert names.count("test (3.13)") == 1
+    by_name = {c["name"]: c for c in payload["required_checks"]}
+    assert by_name["test (3.13)"]["conclusion"] == "success"
+    # `lint` is also present with its single run.
+    assert by_name["lint"]["conclusion"] == "success"
+
+
 def test_build_payload_defaults_dangerous_flags_to_false(tmp_path: Path) -> None:
     """PR-author-supplied admin_bypass / forbidden_secret / bot / agent /
     live-adapter flags would let a PR self-approve; the builder never

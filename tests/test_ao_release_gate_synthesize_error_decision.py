@@ -1,4 +1,17 @@
-"""Tests for the ao-release-gate shadow fallback synthesizer (GPP-2D-2c)."""
+"""Tests for the ao-release-gate error synthesizer (GPP-2D-3).
+
+The GPP-2D-2c shadow synthesizer was fail-OPEN: it produced an artifact
+AND let the shadow advisory job exit 0. GPP-2D-3 retires that contract
+and rewrites the synthesizer as an enforce-aware audit safety net:
+
+- the default conclusion mode is now ``enforce``;
+- the artifact's ``github_check_run.conclusion`` mirrors the conclusion
+  mode (shadow -> neutral, enforce -> failure);
+- the script never alters the calling step's exit code; the invoking
+  workflow step is responsible for the job conclusion.
+
+These tests pin the new contract.
+"""
 
 from __future__ import annotations
 
@@ -21,60 +34,78 @@ def _load_module() -> Any:
     return module
 
 
-def test_synthesizer_produces_error_fail_closed_decision(tmp_path: Path) -> None:
-    """The synthesizer always emits the canonical error_fail_closed shape."""
+def test_synthesizer_defaults_to_enforce_conclusion_mode(tmp_path: Path) -> None:
+    """The default conclusion mode is now ``enforce`` (it was ``shadow``
+    in the retired GPP-2D-2c synthesizer). When invoked without
+    --conclusion-mode the artifact reflects enforce semantics."""
     mod = _load_module()
     output = tmp_path / "decision.json"
     rc = mod.main([str(output)])
     assert rc == 0
     decision = json.loads(output.read_text(encoding="utf-8"))
-
+    assert decision["conclusion_mode"] == "enforce"
     assert decision["decision"] == "error_fail_closed"
     assert decision["allow"] is False
-    assert decision["dry_run"] is True
-    assert decision["merge_authority_enabled"] is False
+    # Under enforce, deny/error maps to conclusion=failure.
+    assert decision["github_check_run"]["conclusion"] == "failure"
+
+
+def test_synthesizer_supports_shadow_conclusion_mode(tmp_path: Path) -> None:
+    """For audit / debugging the shadow mode is still selectable; the
+    artifact's check-run conclusion then maps to neutral."""
+    mod = _load_module()
+    output = tmp_path / "decision.json"
+    mod.main([str(output), "--conclusion-mode", "shadow"])
+    decision = json.loads(output.read_text(encoding="utf-8"))
     assert decision["conclusion_mode"] == "shadow"
-    assert decision["finding_code"] == "error_fail_closed"
-    assert decision["app_slug"] == "ao-release-gate"
-    assert decision["program_id"] == "GPP-2v"
+    assert decision["github_check_run"]["conclusion"] == "neutral"
 
 
-def test_synthesizer_carries_shadow_pre_decision_finding(tmp_path: Path) -> None:
-    """The synthesizer writes the workflow-only finding code that the
-    decision core never emits, so audit logs can identify shadow-fallback
-    runs distinctly from core-produced error_fail_closed decisions."""
+def test_synthesizer_emits_default_pre_decision_finding(tmp_path: Path) -> None:
+    """The default finding code records the pre-decision crash path
+    distinctly from any decision-core-emitted finding code."""
     mod = _load_module()
     output = tmp_path / "decision.json"
     mod.main([str(output)])
     decision = json.loads(output.read_text(encoding="utf-8"))
-    assert "ao_release_gate_shadow_pre_decision_step_failed" in decision["findings"]
+    assert "ao_release_gate_pre_decision_step_failed" in decision["findings"]
 
 
-def test_synthesizer_github_check_run_is_neutral_shadow_advisory(tmp_path: Path) -> None:
-    """The shadow advisory job posts no check-run, but the synthetic
-    artifact still carries a neutral conclusion so an operator reading
-    the artifact sees the shadow-advisory mapping rather than failure."""
+def test_synthesizer_accepts_custom_reason_and_finding(tmp_path: Path) -> None:
+    """The enforce job uses --reason / --finding-code to record the
+    fail-closed needs-short-circuit reason distinctly from the
+    pre-decision crash reason."""
     mod = _load_module()
     output = tmp_path / "decision.json"
-    mod.main([str(output)])
+    mod.main(
+        [
+            str(output),
+            "--reason",
+            "an upstream required CI job did not succeed",
+            "--finding-code",
+            "ao_release_gate_upstream_required_check_failed",
+        ]
+    )
     decision = json.loads(output.read_text(encoding="utf-8"))
-    check_run = decision["github_check_run"]
-    assert check_run["name"] == "ao-release-gate"
-    assert check_run["status"] == "completed"
-    assert check_run["conclusion"] == "neutral"
+    assert decision["reason"] == "an upstream required CI job did not succeed"
+    assert "ao_release_gate_upstream_required_check_failed" in decision["findings"]
+    assert "ao_release_gate_upstream_required_check_failed" in decision["github_check_run"]["text"]
 
 
 def test_synthesizer_module_imports_and_builds_decision_cleanly() -> None:
-    """A workflow-runtime smoke check: the synthesizer module must import
-    without side effects and produce a well-formed decision when called
-    directly. If the file ever regresses into a Python syntax error or
-    a missing-field bug this would catch it before the shadow workflow
-    ships."""
+    """A workflow-runtime smoke check: the synthesizer module must
+    import without side effects and produce a well-formed decision when
+    called directly."""
     mod = _load_module()
-    decision = mod.build_error_decision()
+    decision = mod.build_error_decision(
+        conclusion_mode="enforce",
+        reason="pre-decision crash",
+        finding_code="ao_release_gate_pre_decision_step_failed",
+    )
     assert decision["decision"] == "error_fail_closed"
     assert decision["allow"] is False
-    assert decision["github_check_run"]["conclusion"] == "neutral"
+    assert decision["conclusion_mode"] == "enforce"
+    assert decision["github_check_run"]["conclusion"] == "failure"
 
 
 def test_synthesizer_output_is_pretty_sorted_json(tmp_path: Path) -> None:
@@ -85,6 +116,5 @@ def test_synthesizer_output_is_pretty_sorted_json(tmp_path: Path) -> None:
     mod.main([str(output)])
     text = output.read_text(encoding="utf-8")
     assert text.endswith("\n")
-    # Sorted keys: a representative key ordering check.
     assert text.index('"allow"') < text.index('"decision"')
     assert text.index('"decision"') < text.index('"findings"')
