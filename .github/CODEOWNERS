@@ -1,9 +1,19 @@
-# Default owner
-* @Halildeu @gladyatore-lab
+# Low-risk files intentionally have no default code owner. Release authority for
+# those paths is the repo-owned ao-release-gate required check plus GitHub branch
+# protection; CODEOWNERS remains focused on governance-sensitive surfaces.
 
-# Governance-sensitive surfaces
+# GitHub governance and workflow surfaces
 /.github/ @Halildeu @gladyatore-lab
-/.claude/ @Halildeu @gladyatore-lab
+
+# Agent and GPP governance surfaces
+/AGENTS.md @Halildeu @gladyatore-lab
 /CLAUDE.md @Halildeu @gladyatore-lab
+/.claude/ @Halildeu @gladyatore-lab
+
+# Release-gate runtime, policy, schema, and deployment surfaces
+/ao_kernel/ao_release_gate*.py @Halildeu @gladyatore-lab
+/scripts/ao_release_gate*.py @Halildeu @gladyatore-lab
+/scripts/local_gpp_gate*.py @Halildeu @gladyatore-lab
+/ao_kernel/defaults/schemas/*gate*.json @Halildeu @gladyatore-lab
 /ao_kernel/defaults/policies/ @Halildeu @gladyatore-lab
-/docs/ @Halildeu @gladyatore-lab
+/deploy/ @Halildeu @gladyatore-lab

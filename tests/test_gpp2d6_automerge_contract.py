@@ -8,23 +8,35 @@ DOC = ROOT / ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md"
 CODEOWNERS = ROOT / ".github/CODEOWNERS"
 
 
-def test_gpp2d6_records_current_broad_codeowners_as_blocking_low_risk_automerge() -> None:
+def test_gpp2d6_records_codeowners_narrowing_and_remaining_review_blockers() -> None:
     doc = DOC.read_text(encoding="utf-8")
     codeowners = CODEOWNERS.read_text(encoding="utf-8")
 
-    assert "* @Halildeu @gladyatore-lab" in codeowners
-    assert "safe but blocks the GPP-2D-6 low-risk auto-merge smoke" in doc
-    assert "This runbook intentionally does not change CODEOWNERS." in doc
-    assert "Weakening reviewer coverage before `ao-release-gate` is source-pinned" in doc
+    assert "* @Halildeu @gladyatore-lab" not in codeowners
+    assert "/.github/ @Halildeu @gladyatore-lab" in codeowners
+    assert "/.claude/ @Halildeu @gladyatore-lab" in codeowners
+    assert "/ao_kernel/ao_release_gate*.py @Halildeu @gladyatore-lab" in codeowners
+    assert "/scripts/local_gpp_gate*.py @Halildeu @gladyatore-lab" in codeowners
+    assert "/deploy/ @Halildeu @gladyatore-lab" in codeowners
+    assert "That default was safe but blocked the GPP-2D-6 low-risk auto-merge smoke" in doc
+    assert "CODEOWNERS narrowing and `enforce_admins=true` tightening are" in doc
+    assert "repository.autoMergeAllowed=false" in doc
+    assert "legacy_branch_protection.enforce_admins = true" in doc
+    assert "required_approving_review_count=1" in doc
+    assert "necessary but still insufficient" in doc
 
 
-def test_gpp2d6_requires_cutover_before_codeowners_narrowing() -> None:
+def test_gpp2d6_requires_cutover_and_operator_review_model_before_smoke() -> None:
     doc = DOC.read_text(encoding="utf-8")
 
     assert "GPP-2D-5 branch-protection / ruleset cutover" in doc
     assert "`ao-release-gate` required, source-pinned to GitHub Actions" in doc
     assert "admin bypass disallowed" in doc
-    assert "Steps 1-3 must complete before any CODEOWNERS narrowing." in doc
+    assert "GPP-2D-7 / AO-GATE-9 closeout records GPP-2 as closed. Done" in doc
+    assert "CODEOWNERS narrowing lands and legacy `enforce_admins=true` is verified." in doc
+    assert "Operator enables GitHub-native auto-merge" in doc
+    assert "Operator selects and applies the low-risk review model" in doc
+    assert "Steps 1-5 are complete or in this hardening PR. Steps 6-8 remain" in doc
 
 
 def test_gpp2d6_pins_low_risk_and_high_risk_smoke_acceptance() -> None:
@@ -46,4 +58,7 @@ def test_gpp2d6_keeps_hard_stops_and_gpp2_closeout_boundary() -> None:
     assert "Production platform claim: false" in doc
     assert "Live adapter execution: false" in doc
     assert "testai / smee dependency: false" in doc
-    assert "Until then, GPP-2 remains `blocked`." in doc
+    assert "Legacy branch-protection enforce_admins setting before smoke" in doc
+    assert "Repository auto-merge is disabled." in doc
+    assert "GPP-2 status after smoke: remains closed" in doc
+    assert "Until then, GPP-2D-6 remains incomplete, but GPP-2 remains `closed`." in doc
