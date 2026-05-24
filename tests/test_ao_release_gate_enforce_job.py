@@ -212,6 +212,45 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
     assert "if: ${{ steps.reviewer.outputs.path != '' }}" in block
 
 
+def test_enforce_job_passes_dual_ref_split_to_local_gpp_gate() -> None:
+    """GPP-2D-3c dual-ref contract (Codex iter-1 absorb): the workflow
+    must pass --review-base-ref / --review-head-ref using the PR base /
+    head BRANCH NAMES (matched against committed reviewer evidence
+    scope_reviewed.base_ref / head_ref), and --diff-base-ref /
+    --diff-head-ref using the runtime base / head SHAs (drive git diff
+    + context_binding.head_sha). Mixing them re-creates the head_sha
+    self-reference fixed point or a scope-check mismatch."""
+    block = _gate_job_block()
+    assert '--review-base-ref "$BASE_REF"' in block, "workflow must pass the PR base BRANCH NAME as --review-base-ref"
+    assert '--review-head-ref "$HEAD_REF"' in block, "workflow must pass the PR head BRANCH NAME as --review-head-ref"
+    assert '--diff-base-ref "$BASE_SHA"' in block, "workflow must pass the runtime base SHA as --diff-base-ref"
+    assert '--diff-head-ref "$HEAD_SHA"' in block, "workflow must pass the runtime head SHA as --diff-head-ref"
+    # The legacy single-ref alias must NOT be passed alongside the dual
+    # split for the local_gpp_gate.py invocation in this gate. The
+    # legacy alias would make the script default review-* and diff-*
+    # to the same value, re-introducing the original bug.
+    invocation_lines: list[str] = []
+    current: list[str] = []
+    collecting = False
+    for line in block.splitlines():
+        if "scripts/local_gpp_gate.py" in line:
+            collecting = True
+        if collecting:
+            current.append(line)
+            if line.rstrip().endswith("> local-gpp-gate.stdout.log 2>&1 || true"):
+                invocation_lines.append("\n".join(current))
+                current = []
+                collecting = False
+    assert invocation_lines, "no local_gpp_gate.py invocation found in the gate job"
+    for invocation in invocation_lines:
+        assert '--base-ref "$BASE_SHA"' not in invocation, (
+            "legacy --base-ref alias must not be used inside the dual-ref invocation"
+        )
+        assert '--head-ref "$HEAD_SHA"' not in invocation, (
+            "legacy --head-ref alias must not be used inside the dual-ref invocation"
+        )
+
+
 def test_enforce_job_uses_per_page_check_runs_not_paginate() -> None:
     block = _gate_job_block()
     assert "check-runs?per_page=100" in block

@@ -853,13 +853,65 @@ def build_parser() -> argparse.ArgumentParser:
         "--base-ref",
         type=str,
         default="origin/main",
-        help="Trusted base ref for the scope diff.",
+        help=(
+            "Legacy single-ref alias used for both the reviewer scope label "
+            "and the git diff. Prefer --review-base-ref + --diff-base-ref "
+            "when the reviewer-visible ref label and the runtime SHA must "
+            "differ (for example inside a CI run that has both)."
+        ),
     )
     parser.add_argument(
         "--head-ref",
         type=str,
         default="HEAD",
-        help="Trusted head ref for the scope diff.",
+        help=(
+            "Legacy single-ref alias used for both the reviewer scope label "
+            "and the git diff. Prefer --review-head-ref + --diff-head-ref "
+            "when the reviewer-visible ref label and the runtime SHA must "
+            "differ (for example inside a CI run that has both)."
+        ),
+    )
+    parser.add_argument(
+        "--review-base-ref",
+        type=str,
+        default=None,
+        help=(
+            "Reviewer-visible base ref label. Matched (string equality) "
+            "against the committed reviewer evidence's "
+            "scope_reviewed.base_ref. Defaults to --base-ref when not set, "
+            "preserving the legacy single-ref contract."
+        ),
+    )
+    parser.add_argument(
+        "--review-head-ref",
+        type=str,
+        default=None,
+        help=(
+            "Reviewer-visible head ref label. Matched (string equality) "
+            "against the committed reviewer evidence's "
+            "scope_reviewed.head_ref. Defaults to --head-ref when not set."
+        ),
+    )
+    parser.add_argument(
+        "--diff-base-ref",
+        type=str,
+        default=None,
+        help=(
+            "Trusted base ref used for the git diff and the gate evidence "
+            "context_binding.base_ref. May be a SHA, a ref name, or any "
+            "value git understands. Defaults to --base-ref when not set."
+        ),
+    )
+    parser.add_argument(
+        "--diff-head-ref",
+        type=str,
+        default=None,
+        help=(
+            "Trusted head ref used for the git diff and the gate evidence "
+            "context_binding.head_sha resolution. May be a SHA, a ref name, "
+            "or any value git understands. Defaults to --head-ref when not "
+            "set."
+        ),
     )
     parser.add_argument(
         "--repo",
@@ -904,31 +956,50 @@ def main(argv: list[str] | None = None) -> int:
     status_path = args.status_path.resolve() if args.status_path else repo_root / DEFAULT_STATUS_PATH
     review_path = args.review_evidence
 
+    # GPP-2D-3c dual-ref contract: the reviewer-visible ref labels are
+    # matched (string equality) against the committed reviewer evidence's
+    # scope_reviewed.base_ref / head_ref, while the diff-resolving refs
+    # drive the git diff and the gate evidence context_binding.head_sha
+    # resolution. Splitting them lets a CI run feed reviewer-visible names
+    # (for example PR base/head branch labels) and runtime SHAs without
+    # creating a head_sha self-reference fixed point at evidence-commit
+    # time. When the --review-* / --diff-* flags are absent the script
+    # falls back to the legacy single-ref --base-ref / --head-ref alias so
+    # existing callers and tests keep working unchanged.
+    review_base_ref = args.review_base_ref if args.review_base_ref is not None else args.base_ref
+    review_head_ref = args.review_head_ref if args.review_head_ref is not None else args.head_ref
+    diff_base_ref = args.diff_base_ref if args.diff_base_ref is not None else args.base_ref
+    diff_head_ref = args.diff_head_ref if args.diff_head_ref is not None else args.head_ref
+
     try:
         review = load_review_evidence(review_path)
         # The git diff is measured between the trusted operator-supplied
-        # base/head refs, never the reviewer-declared ones, so a reviewer
-        # cannot narrow the diff range to hide files from the scope check.
+        # diff-resolving refs, never the reviewer-declared ones, so a
+        # reviewer cannot narrow the diff range to hide files from the
+        # scope check.
         actual_files: list[str] | None = None
         if not args.skip_git:
-            actual_files = actual_changed_files(repo_root, args.base_ref, args.head_ref)
+            actual_files = actual_changed_files(repo_root, diff_base_ref, diff_head_ref)
         checks, gate_findings = evaluate_gate(
             review,
             repo_root=repo_root,
             status_path=status_path,
             actual_files=actual_files,
-            base_ref=args.base_ref,
-            head_ref=args.head_ref,
+            base_ref=review_base_ref,
+            head_ref=review_head_ref,
             repo=args.repo,
             work_package=args.work_package,
         )
         # The context binding is derived only from the trusted operator
-        # base/head refs and the verified git diff, never from the reviewer
-        # evidence. It is omitted on the unverifiable-scope path.
+        # diff-resolving refs and the verified git diff, never from the
+        # reviewer evidence. It is omitted on the unverifiable-scope path.
+        # Using the diff-resolving refs (typically SHAs in CI) makes the
+        # context_binding.head_sha bind to the runtime head rather than
+        # to a reviewer-supplied label that might drift.
         context_binding = build_context_binding(
             repo_root=repo_root,
-            base_ref=args.base_ref,
-            head_ref=args.head_ref,
+            base_ref=diff_base_ref,
+            head_ref=diff_head_ref,
             changed_files=actual_files,
         )
         # The artifact repo / work_package are taken only from the trusted
