@@ -36,92 +36,40 @@
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass",
-      "detail": "3379 passed, 2 skipped in full test suite locally"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass",
-      "detail": "no credential material, no PEM, no token, no webhook secret value in any changed file"
-    },
-    {
-      "name": "no_public_sdk_signature_change",
-      "status": "pass",
-      "detail": "no public SDK API surface change; ao_kernel package signatures unchanged; the gpp_2_status const in two schemas advances from 'blocked' to 'closed' as a closeout state contract change (acceptance profile + local gate evidence schema), and local_gpp_gate.py _evaluate_gpp_status accepts only 'closed' under the AO-GATE-9 closeout"
-    },
-    {
-      "name": "no_branch_protection_mutation_by_agent",
-      "status": "pass",
-      "detail": "agent does not call gh api on rulesets, branches/main/protection, or any settings endpoint; ruleset id 16803733 was operator-set on 2026-05-24"
-    },
-    {
-      "name": "closeout_decision_terminalized",
-      "status": "pass",
-      "detail": "current_wp.exit_decision and current_wp.closeout_decision are byte-equal and contain no 'pending' substring"
-    },
-    {
-      "name": "ready_after_chain_evidence_complete",
-      "status": "pass",
-      "detail": "all four ready_after conditions have concrete artifacts: GPP-2C plan + STATUS.md §1a for #1; PR #603 + PR #599/#602 for #2; ruleset id 16803733 + audit comment for #3; this PR for #4"
-    },
-    {
-      "name": "guard_flags_unchanged",
-      "status": "pass",
-      "detail": "support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved"
-    },
-    {
-      "name": "gpp2c_deferral_preserved",
-      "status": "pass",
-      "detail": "testai.acik.com/ao-gate, smee.io, deployment-protection callback, policy App slug reconciliation remain in pending_external_actions deferred bucket and next_allowed_actions deferred line"
-    },
-    {
-      "name": "gpp2d6_supersession_explicit",
-      "status": "pass",
-      "detail": "GPP-2D-6 low-risk auto-merge smoke and CODEOWNERS narrowing are explicitly recorded as optional later hardening, not GPP-2 closeout prerequisites, in both the closeout record §3.1 and the forbidden_actions supersession item"
-    },
-    {
-      "name": "drift_guard_negative_assertions_present",
-      "status": "pass",
-      "detail": "test_gpp_status_contract_keeps_support_widening_closed asserts 'gpp-2 stays blocked', 'cutover pending', 'collect ao-release-gate enforce-mode success and failure evidence', and 'before branch-protection cutover' are NOT in joined pending+next+allowed_scope"
-    },
-    {
-      "name": "evidence_collected_three_new_types_added",
-      "status": "pass",
-      "detail": "current_wp.evidence_collected gains enforce_mode_required_check_evidence (GPP-2D-4 PR #603), branch_protection_ruleset_cutover (ruleset id 16803733, integration_id 15368, bypass_actors empty), post_cutover_verification_acceptance (PR #609 + #610 follow-up)"
-    },
-    {
-      "name": "cross_provider_verified",
-      "status": "pass",
-      "detail": "implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE satisfied"
-    },
-    {
-      "name": "blocked_wps_empty",
-      "status": "pass",
-      "detail": "blocked_wps == [] after closeout; gpp_next.py render output shows 'Blocked work packages:\\n- none'"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
+    {"name": "closeout_decision_terminalized", "status": "pass"},
+    {"name": "ready_after_chain_evidence_complete", "status": "pass"},
+    {"name": "guard_flags_unchanged", "status": "pass"},
+    {"name": "gpp2c_deferral_preserved", "status": "pass"},
+    {"name": "gpp2d6_supersession_explicit", "status": "pass"},
+    {"name": "drift_guard_negative_assertions_present", "status": "pass"},
+    {"name": "evidence_collected_three_new_types_added", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"},
+    {"name": "blocked_wps_empty", "status": "pass"}
   ],
   "findings": [
-    "Closeout decision string standardized: exit_decision and closeout_decision are byte-equal terminal value 'gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution'.",
-    "current_wp.status transitions blocked → closed; gpp_next.py renders 'Current status: closed' and 'Blocked work packages:\\n- none' as the operator-visible terminal state.",
-    "Three guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain false; the closeout is explicitly NOT support widening, production platform claim, or live adapter execution approval.",
-    "Seven new forbidden_actions added at closeout: (1) treat closeout as support widening / production claim / live adapter execution; (2) reopen testai/smee/callback without GPP supersession; (3) regress to shadow conclusion-mode; (4) remove ao-release-gate from required-check list; (5) add bypass_actors; (6) treat closeout as auto-merge smoke / CODEOWNERS narrowing completion; (7) treat same-name external check-run as satisfying source pin.",
-    "GPP-2D-6 (low-risk auto-merge smoke) and CODEOWNERS narrowing are recorded as optional later hardening slices in closeout record §3.1, NOT as closeout prerequisites; this avoids back-dating future work into the closeout decision.",
-    "GPP-2C (testai.acik.com/ao-gate, smee.io, deployment-protection callback, policy App slug reconciliation) remains deferred optional future infrastructure; reopening requires explicit GPP supersession.",
-    "Legacy main branch protection enforce_admins=false is documented as a pre-existing surface independent of ao-release-gate enforcement; tightening it is an optional later hardening slice (closeout record §3.3).",
-    "Schema enum tightening: gpp_2_status const in two schemas (local-gpp-gate-evidence.schema.v1.json + ao-release-gate-review-evidence-input.schema.v1.json) advances from 'blocked' to 'closed'; pre-prod context permits this advance per HARD RULE.",
-    "local_gpp_gate.py _evaluate_gpp_status accepts only 'closed' under the AO-GATE-9 closeout decision; historical 'blocked'-state artifacts are retained as repo audit trace but are no longer accepting evidence for the current gate, and current accepting artifacts must report gpp_2_status='closed'.",
-    "AO-GATE-ROADMAP-TODO.md AO-GATE-8 + AO-GATE-9 both marked DONE (2026-05-24) for human-readable trace consistency; canonical SSOT remains gpp_status.v1.json + GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md."
+    "tests: pytest 3380 passed, 2 skipped in the full local test suite (~78s) before commit.",
+    "secret_scan: no credential material, PEM, token, or webhook secret value appears in any changed file.",
+    "no_public_sdk_signature_change: ao_kernel package public SDK signatures unchanged; the gpp_2_status const in two schemas (local-gpp-gate-evidence and ao-release-gate-review-evidence-input acceptance profile) advances from blocked to closed as a closeout state contract change; local_gpp_gate.py _evaluate_gpp_status accepts only closed under AO-GATE-9.",
+    "no_branch_protection_mutation_by_agent: the agent does not call gh api on rulesets, branches/main/protection, or any settings endpoint in this PR; ruleset id 16803733 was operator-set on 2026-05-24.",
+    "closeout_decision_terminalized: current_wp.exit_decision and current_wp.closeout_decision are byte-equal and contain no pending substring.",
+    "ready_after_chain_evidence_complete: all four ready_after conditions have concrete artifacts: GPP-2C plan + STATUS.md section 1a for #1; GPP-2D-4 PR #603 + PR #599/#602 for #2; ruleset id 16803733 + integration_id 15368 + bypass_actors empty + operator audit comment PR #605 issuecomment-4529677096 for #3; this PR for #4.",
+    "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved.",
+    "gpp2c_deferral_preserved: testai.acik.com/ao-gate, smee.io, deployment-protection callback, and policy App slug reconciliation remain in pending_external_actions deferred entries and next_allowed_actions deferred line; reopening requires explicit GPP supersession.",
+    "gpp2d6_supersession_explicit: GPP-2D-6 low-risk auto-merge smoke and CODEOWNERS narrowing are explicitly recorded as optional later autonomous-lane hardening, not GPP-2 closeout prerequisites, in both the closeout record section 3.1 and a new forbidden_actions supersession item.",
+    "drift_guard_negative_assertions_present: test_gpp_status_contract_keeps_support_widening_closed asserts gpp-2 stays blocked, cutover pending, collect ao-release-gate enforce-mode success and failure evidence, and before branch-protection cutover are NOT in the joined pending+next+allowed_scope text.",
+    "evidence_collected_three_new_types_added: current_wp.evidence_collected gains enforce_mode_required_check_evidence (GPP-2D-4 PR #603), branch_protection_ruleset_cutover (ruleset id 16803733, integration_id 15368, bypass_actors empty), and post_cutover_verification_acceptance (PR #609 + iter-2 follow-up PR #610).",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); the cross-AI peer review HARD RULE is satisfied.",
+    "blocked_wps_empty: blocked_wps == [] after closeout; gpp_next.py render output shows Blocked work packages followed by - none.",
+    "closeout_supersession_state: seven new forbidden_actions protect the terminal release-governance state: no closeout-as-widening, no testai/smee/callback reopening without GPP supersession, no shadow conclusion-mode regress, no removal of ao-release-gate from the GitHub ruleset required-check list, no bypass_actors additions, no closeout-as-automerge-smoke completion, no same-name external check-run pin claim.",
+    "schema_tightening_state: gpp_2_status const advances blocked to closed in two schemas; local_gpp_gate.py _evaluate_gpp_status accepts only closed; historical blocked-state artifacts remain repo audit trace but are no longer accepting evidence for the current gate.",
+    "active_surface_drift_guard_state: new test_active_doc_surfaces_do_not_carry_stale_blocked_wording scans STATUS.md sections 1 1a 1b, AO-GATE-ROADMAP-TODO.md header + How To Use + Guardrails + Roadmap Board, the two schemas, the local gate script docstring, and AGENTS.md for stale pre-closeout phrases including GPP-2 stays blocked, GPP-2 remains blocked, branch protection is unchanged, No service wiring exists, and Runtime Binding (blocked)."
   ],
-  "scope_constraints": {
-    "no_runtime_contract_change": true,
-    "no_secret_value_in_artifacts": true,
-    "no_admin_bypass": true,
-    "no_branch_protection_mutation_by_agent": true,
-    "support_widening_changed": false,
-    "production_platform_claim_changed": false,
-    "live_adapter_execution_allowed_changed": false
-  },
-  "generated_at": "2026-05-24T20:30:00Z"
+  "secrets_recorded": false,
+  "live_adapter_execution": false,
+  "support_widening": false,
+  "production_platform_claim": false
 }

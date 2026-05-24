@@ -21,7 +21,7 @@ infrastructure, not active GPP-2B blockers.
 
 ## Guardrails
 
-- [ ] GPP-2 remains fail-closed until `ao-release-gate` enforce-mode success/failure evidence, required-check branch-protection cutover, and AO-GATE-9 closeout exist.
+- [x] GPP-2 closeout is recorded (AO-GATE-9, `2026-05-24`); do not treat it as support widening, production platform claim, or live adapter execution approval, and do not regress required-check enforcement (source-pinned `ao-release-gate` ruleset) without explicit GPP supersession.
 - [ ] No GitHub App webhook URL is repointed to `testai.acik.com/ao-gate` in the no-testai GPP-2B path.
 - [ ] No branch protection/ruleset cutover happens before real PR `ao-release-gate` enforce-mode success and failure evidence exists.
 - [ ] No live adapter execution is started from this roadmap.

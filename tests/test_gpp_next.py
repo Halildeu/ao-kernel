@@ -529,6 +529,7 @@ def test_active_doc_surfaces_do_not_carry_stale_blocked_wording() -> None:
     stale_strings = (
         "GPP-2 stays blocked",
         "GPP-2 remains blocked",
+        "GPP-2 remains fail-closed until",
         "GPP-2 stays `blocked`",
         "branch protection is unchanged",
         "No service wiring exists",
