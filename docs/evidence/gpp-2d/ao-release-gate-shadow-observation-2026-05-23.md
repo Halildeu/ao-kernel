@@ -41,7 +41,10 @@ completes.
 - Repository: `Halildeu/ao-kernel`
 - PR: [#594](https://github.com/Halildeu/ao-kernel/pull/594)
 - Branch: `codex/gpp2d-shadow-observation`
-- Head SHA: `9e709c93a7d958e7203ec79f970fd2eb377632d5`
+- Observed shadow-run head SHA: `9e709c93a7d958e7203ec79f970fd2eb377632d5`
+  (the PR's head at the time the captured shadow run executed; subsequent
+  annotation commits on this branch advance the PR head but do not affect
+  the captured run)
 - Base: `main`
 - Diff scope: docs-only (this file).
 
@@ -137,17 +140,24 @@ advisory contract: `allow=false`, `conclusion_mode=shadow`,
 
 ### 2.5 Observation notes (for GPP-2D-3 enforce-job slice)
 
-(a) **Pre-decision check timing.** The shadow workflow runs as its own job
-in `test.yml` that depends only on `event-gate`. When `ao-release-gate-shadow`
-evaluates the payload, the rest of the CI matrix may still be `in_progress`,
-so the `required_checks` aggregate is reported as
-`ao_release_gate_required_checks_not_green` even on PRs that later turn green.
-Design doc §3.5 already calls this out: the enforce job must run **after**
-the CI checks it inspects (either via `needs:` or by polling for check
-completion). GPP-2D-3 should pin a `needs: [lint, typecheck, test, coverage,
-extras-install, release-gate-container-smoke, policy-container-smoke,
-packaging-smoke]` list (or equivalent) so the enforce gate evaluates only
-after the required matrix has settled.
+(a) **Pre-decision check timing.** The shadow lives in its **own workflow
+file** (`.github/workflows/ao-release-gate.yml`), separate from
+`.github/workflows/test.yml` which carries the lint / typecheck / test
+matrix / coverage / smoke jobs. The shadow workflow only depends, inside
+its own file, on `pull_request` event and a defensive event-name guard;
+it has no cross-workflow `needs:` (GitHub Actions does not support
+cross-workflow `needs`). The shadow therefore evaluates the payload as
+soon as it can build, while the rest of the CI matrix in `test.yml` may
+still be `in_progress`, and the `required_checks` aggregate is reported
+as `ao_release_gate_required_checks_not_green` even on PRs that later
+turn fully green. Design doc §3.5 already records both resolution paths:
+the enforce job either runs **in the same workflow** as the CI checks it
+inspects (via `needs:` on those jobs) **or** polls for check completion
+across workflows before evaluating. GPP-2D-3 must pick one of these
+explicitly — moving the enforce job into `test.yml` with a `needs:`
+graph, or keeping it in `ao-release-gate.yml` with a check-run polling
+preflight — so the enforce gate evaluates only after the required matrix
+has settled. Cross-workflow `needs:` is **not** an option.
 
 (b) **Duplicate required-check entries.** The `required_checks` array carries
 each check name twice (e.g. `test (3.13)` appears once with status
