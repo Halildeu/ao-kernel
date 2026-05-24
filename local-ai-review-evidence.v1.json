@@ -50,11 +50,15 @@
       "status": "pass"
     },
     {
-      "name": "dual_ref_split_contract",
+      "name": "bootstrap_safe_ref_contract",
       "status": "pass"
     },
     {
-      "name": "dogfood_drift_guard",
+      "name": "dual_ref_api_ready",
+      "status": "pass"
+    },
+    {
+      "name": "end_to_end_dogfood",
       "status": "pass"
     },
     {
@@ -68,14 +72,15 @@
   ],
   "findings": [
     "GPP-2D-3c retires the GPP-2D-2c advisory shadow workflow in favor of an enforce job inside test.yml under the reserved required-check name ao-release-gate.",
-    "Trusted-base gate is preserved: decision-core code, schemas, and gpp_status come from the PR base SHA; the PR head is checked out only for the raw reviewer evidence file.",
-    "Codex C-prime applied via dual-ref split (Codex iter-1 REVISE absorb, thread 019e5a21): the workflow passes --review-base-ref / --review-head-ref using the PR base / head BRANCH NAMES for scope check (matched against the committed reviewer evidence scope_reviewed.base_ref / head_ref) and --diff-base-ref / --diff-head-ref using the runtime base / head SHAs for the git diff and the gate evidence context_binding.head_sha resolution. The reviewer-visible label is split from the diff-resolving SHA so the committed reviewer evidence carries no head_sha and no head_sha self-reference fixed point arises.",
-    "scripts/local_gpp_gate.py extended with --review-base-ref / --review-head-ref / --diff-base-ref / --diff-head-ref; the legacy --base-ref / --head-ref aliases remain as a backward-compatible single-ref fallback so older callers and pre-GPP-2D-3c tests keep working unchanged.",
+    "Trusted-base gate is preserved: decision-core code, schemas, gpp_status, and scripts/local_gpp_gate.py all come from the PR base SHA. The PR head is checked out only for the raw reviewer evidence file (local-ai-review-evidence.v1.json) — the head-side gate evidence (local-gpp-gate-evidence.v1.json) is generated at CI runtime from that reviewer evidence + the actual git diff.",
+    "Bootstrap-safe ref contract (Codex iter-1+2 absorb, threads 019e5a21 / 019e5a32): the base-ref copy of scripts/local_gpp_gate.py predates the dual-ref --review-* / --diff-* split, so the workflow passes the PR base / head BRANCH NAMES through the legacy --base-ref / --head-ref aliases ($BASE_REF / $HEAD_REF env). The base copy then (a) matches scope check by string equality against the committed reviewer evidence's scope_reviewed.base_ref / head_ref (both branch names — committing a SHA there would re-introduce the head_sha self-reference fixed point), (b) resolves the same names through git for the actual diff, and (c) produces the gate evidence context_binding.head_sha via git rev-parse so it binds to the runtime head SHA without the reviewer evidence ever recording one.",
+    "Dual-ref API ready on the head side: scripts/local_gpp_gate.py exposes --review-base-ref / --review-head-ref (scope-check labels) and --diff-base-ref / --diff-head-ref (git diff + context_binding refs), with the legacy --base-ref / --head-ref aliases as a backward-compatible fallback. Once the head-side script lands on main, a follow-up slice can upgrade the workflow invocation to the explicit dual-ref split with no further script changes.",
     "Enforce contract pins are explicit: --conclusion-mode enforce + --fail-on-deny on every decision invocation, no continue-on-error anywhere on the gate job, audit artifact upload runs on if: always().",
     "Fail-closed needs short-circuit covers event-gate + lint + typecheck + test + coverage + packaging-smoke + policy-container-smoke + release-gate-container-smoke; an event-gate output-missing edge is covered via the if-clause needs.event-gate.result != success path.",
     "Required-check allowlist is the workflow's `needs:` graph; advisory / non-blocking jobs (extras-install, benchmark-fast, scorecard) cannot block the gate via their pending or failing state.",
-    "Drift-guard tests in tests/test_ao_release_gate_enforce_job.py pin every property the reviewer relied on (reserved name, retired shadow, runtime gate-evidence generation step, dual-ref split contract, decision-script invocations, audit artifact upload).",
-    "Behavioral dogfood tests in tests/test_local_gpp_gate.py exercise the dual-ref split: scope check routes to --review-base-ref / --review-head-ref (not --diff-* or the legacy alias), a --review-* mismatch fails scope check closed, and the legacy single-ref alias keeps driving scope check when --review-* are absent.",
+    "Drift-guard tests in tests/test_ao_release_gate_enforce_job.py pin every property the reviewer relied on (reserved name, retired shadow, runtime gate-evidence generation step, branch-name ref contract, decision-script invocations, audit artifact upload). The single-ref vs SHA pin explicitly rejects passing $BASE_SHA / $HEAD_SHA into the legacy alias (the iter-1 bug).",
+    "Behavioral tests in tests/test_local_gpp_gate.py pin the dual-ref API: --review-* drive scope check independently of --diff-* and the legacy alias; a --review-* mismatch fails scope check closed even when --diff-* / legacy refs match; the legacy single-ref alias drives scope check when --review-* are absent.",
+    "End-to-end dogfood test in tests/test_local_gpp_gate.py builds a deterministic tmp git repo and exercises the dual-ref invocation pattern with a real git diff. It pins decision == operator_may_merge, checks.scope_allowed True, context_binding.head_sha == runtime --diff-head-ref SHA, changed_files_count matches the actual diff, and diff_digest is a canonical sha256:<64-hex>.",
     "Branch protection is not mutated by this slice; GPP-2D-5 is the operator action that makes ao-release-gate a required status check.",
     "Real positive / negative enforce-mode evidence on live PRs is not collected here; that is GPP-2D-4 (operator + agent verification).",
     "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."

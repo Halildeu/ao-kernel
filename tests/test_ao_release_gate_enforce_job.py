@@ -212,23 +212,27 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
     assert "if: ${{ steps.reviewer.outputs.path != '' }}" in block
 
 
-def test_enforce_job_passes_dual_ref_split_to_local_gpp_gate() -> None:
-    """GPP-2D-3c dual-ref contract (Codex iter-1 absorb): the workflow
-    must pass --review-base-ref / --review-head-ref using the PR base /
-    head BRANCH NAMES (matched against committed reviewer evidence
-    scope_reviewed.base_ref / head_ref), and --diff-base-ref /
-    --diff-head-ref using the runtime base / head SHAs (drive git diff
-    + context_binding.head_sha). Mixing them re-creates the head_sha
-    self-reference fixed point or a scope-check mismatch."""
+def test_enforce_job_passes_branch_name_refs_to_local_gpp_gate() -> None:
+    """GPP-2D-3c bootstrap-safe ref contract (Codex iter-1+2 absorb):
+    the workflow runs the base-ref copy of scripts/local_gpp_gate.py,
+    which predates the dual-ref --review-* / --diff-* split. Passing
+    the dual-ref flags there would parse-error on the base copy and
+    silently fail the gate open. Instead the workflow MUST pass the
+    PR base / head BRANCH NAMES through the legacy --base-ref /
+    --head-ref aliases. The base copy:
+
+      * matches scope check by string equality against the committed
+        reviewer evidence's scope_reviewed.base_ref / head_ref (both
+        branch names, never SHAs — committing a SHA would re-introduce
+        the head_sha self-reference fixed point this slice closes);
+      * resolves the names through git for the actual diff and the
+        gate evidence's context_binding.head_sha.
+
+    Passing $BASE_SHA / $HEAD_SHA into --base-ref / --head-ref would
+    re-introduce the iter-1 SHA-vs-branch-name string-equality
+    mismatch that produced ao_release_gate_review_evidence_not_accepting
+    on PR #599 b5ecf65."""
     block = _gate_job_block()
-    assert '--review-base-ref "$BASE_REF"' in block, "workflow must pass the PR base BRANCH NAME as --review-base-ref"
-    assert '--review-head-ref "$HEAD_REF"' in block, "workflow must pass the PR head BRANCH NAME as --review-head-ref"
-    assert '--diff-base-ref "$BASE_SHA"' in block, "workflow must pass the runtime base SHA as --diff-base-ref"
-    assert '--diff-head-ref "$HEAD_SHA"' in block, "workflow must pass the runtime head SHA as --diff-head-ref"
-    # The legacy single-ref alias must NOT be passed alongside the dual
-    # split for the local_gpp_gate.py invocation in this gate. The
-    # legacy alias would make the script default review-* and diff-*
-    # to the same value, re-introducing the original bug.
     invocation_lines: list[str] = []
     current: list[str] = []
     collecting = False
@@ -243,11 +247,23 @@ def test_enforce_job_passes_dual_ref_split_to_local_gpp_gate() -> None:
                 collecting = False
     assert invocation_lines, "no local_gpp_gate.py invocation found in the gate job"
     for invocation in invocation_lines:
+        assert '--base-ref "$BASE_REF"' in invocation, (
+            "workflow must pass the PR base BRANCH NAME (env BASE_REF) into --base-ref, "
+            "not $BASE_SHA. invocation:\n" + invocation
+        )
+        assert '--head-ref "$HEAD_REF"' in invocation, (
+            "workflow must pass the PR head BRANCH NAME (env HEAD_REF) into --head-ref, "
+            "not $HEAD_SHA. invocation:\n" + invocation
+        )
+        # The SHA env variables must NOT reach the legacy single-ref alias
+        # — that's the iter-1 bug we are pinning against.
         assert '--base-ref "$BASE_SHA"' not in invocation, (
-            "legacy --base-ref alias must not be used inside the dual-ref invocation"
+            "passing $BASE_SHA into --base-ref re-introduces the iter-1 "
+            "scope-check string-equality mismatch.\n" + invocation
         )
         assert '--head-ref "$HEAD_SHA"' not in invocation, (
-            "legacy --head-ref alias must not be used inside the dual-ref invocation"
+            "passing $HEAD_SHA into --head-ref re-introduces the iter-1 "
+            "scope-check string-equality mismatch.\n" + invocation
         )
 
 

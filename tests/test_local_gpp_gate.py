@@ -1225,3 +1225,218 @@ def test_legacy_base_head_ref_alias_drives_scope_check_when_review_refs_absent(t
     assert "reviewer-declared head_ref does not match" not in findings, (
         f"legacy single-ref alias must drive scope check when --review-* is absent. findings: {findings}"
     )
+
+
+# ---------------------------------------------------------------------------
+# GPP-2D-3c end-to-end dogfood (Codex iter-2 absorb, thread 019e5a32)
+# ---------------------------------------------------------------------------
+#
+# Iter-2 still flagged the dogfood drift-guard as REVISE because the three
+# scope-routing tests above all use --skip-git and only assert the absence
+# of ref-mismatch findings. They do not prove the dual-ref happy path
+# emits an accepting local-gpp-gate-evidence.v1 artifact with the runtime
+# head SHA bound. A future regression could keep scope routing correct
+# but, for example, route context_binding back to the reviewer-visible
+# head ref, omit the binding, or otherwise fail to produce
+# operator_may_merge in dual-ref mode — and the committed regression test
+# would not catch it.
+#
+# This end-to-end dogfood addresses that gap. It builds a deterministic
+# tmp git repo, calls main() with the exact workflow arg pattern, and
+# pins:
+#   - exit code 0
+#   - decision == operator_may_merge
+#   - checks.scope_allowed True
+#   - context_binding.head_sha == runtime --diff-head-ref SHA
+#   - context_binding.changed_files_count matches the actual diff
+#   - context_binding.diff_digest is a 64-hex SHA256
+# ---------------------------------------------------------------------------
+
+
+def _make_dual_ref_dogfood_repo(tmp_path: Path, head_only_files: list[str]) -> tuple[Path, str, str]:
+    """Build a deterministic git repo with two commits on two branches.
+
+    Base commit on ``main`` ships the AGENTS.md + gpp_status.v1.json +
+    scripts/gpp_next.py minimal preflight surface
+    ``scripts/local_gpp_gate.py`` expects. The head branch ``feature-x``
+    adds the files listed in ``head_only_files`` so the
+    ``git diff main...feature-x`` matches those paths exactly.
+
+    Returns the repo path, the base SHA, and the head SHA.
+    """
+
+    import subprocess
+
+    repo = tmp_path / "demo-repo"
+    repo.mkdir()
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    def git_capture(*args: str) -> str:
+        return subprocess.check_output(
+            ["git", "-C", str(repo), *args],
+            text=True,
+        ).strip()
+
+    subprocess.run(
+        ["git", "init", "-b", "main", str(repo)],
+        check=True,
+        capture_output=True,
+    )
+    git("config", "user.email", "dogfood@example.com")
+    git("config", "user.name", "Dogfood")
+    git("config", "commit.gpgsign", "false")
+
+    # Minimal repo operating contract + GPP status file + startup command
+    # so _evaluate_startup_preflight can succeed inside the tmp repo.
+    (repo / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+    plans_dir = repo / ".claude" / "plans"
+    plans_dir.mkdir(parents=True)
+    (plans_dir / "gpp_status.v1.json").write_text(
+        json.dumps(
+            {
+                "current_wp": {"id": "GPP-2", "status": "blocked"},
+                "support_widening_allowed": False,
+                "production_platform_claim_allowed": False,
+                "live_adapter_execution_allowed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir()
+    # Minimal gpp_next.py: accept the flags the gate passes, exit 0. The
+    # gate calls it with --status-path <path> --skip-git as a subprocess
+    # (see _evaluate_startup_preflight).
+    (scripts_dir / "gpp_next.py").write_text(
+        "import argparse, sys\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--status-path')\n"
+        "parser.add_argument('--skip-git', action='store_true')\n"
+        "parser.parse_known_args()\n"
+        "sys.exit(0)\n",
+        encoding="utf-8",
+    )
+    git("add", "AGENTS.md", ".claude/plans/gpp_status.v1.json", "scripts/gpp_next.py")
+    git("commit", "-m", "base")
+    base_sha = git_capture("rev-parse", "HEAD")
+
+    # Head branch adds the head-only files so the diff matches.
+    git("checkout", "-b", "feature-x")
+    for fname in head_only_files:
+        target = repo / fname
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("dogfood feature content\n", encoding="utf-8")
+    git("add", *head_only_files)
+    git("commit", "-m", "feature")
+    head_sha = git_capture("rev-parse", "HEAD")
+
+    return repo, base_sha, head_sha
+
+
+def test_dual_ref_workflow_pattern_produces_accepting_runtime_artifact(tmp_path: Path) -> None:
+    """End-to-end GPP-2D-3c dogfood (Codex iter-2 absorb): exercise the
+    workflow's actual dual-ref invocation pattern against a deterministic
+    tmp git repo and pin that the resulting gate evidence artifact is
+    accepting, with the context_binding.head_sha bound to the runtime
+    --diff-head-ref SHA. This catches future regressions where scope
+    routing stays correct but the rest of the dual-ref happy path
+    silently breaks."""
+
+    head_only_files = ["src/feature.py"]
+    repo, base_sha, head_sha = _make_dual_ref_dogfood_repo(tmp_path, head_only_files)
+
+    reviewer_evidence = {
+        "schema_version": "local-ai-review-evidence.v1",
+        "repo": "Halildeu/ao-kernel",
+        "work_package": "GPP-2",
+        "implementer": {"agent": "claude", "provider": "anthropic"},
+        "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
+        "scope_reviewed": {
+            "base_ref": "main",
+            "head_ref": "feature-x",
+            "changed_files": head_only_files,
+        },
+        "checks_considered": [
+            {"name": "tests", "status": "pass"},
+            {"name": "secret_scan", "status": "pass"},
+        ],
+        "findings": ["dual-ref dogfood test"],
+        "secrets_recorded": False,
+        "live_adapter_execution": False,
+        "support_widening": False,
+        "production_platform_claim": False,
+    }
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(reviewer_evidence), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    code = mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            "--review-base-ref",
+            "main",
+            "--review-head-ref",
+            "feature-x",
+            "--diff-base-ref",
+            base_sha,
+            "--diff-head-ref",
+            head_sha,
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2",
+            "--repo-root",
+            str(repo),
+            "--status-path",
+            str(repo / ".claude" / "plans" / "gpp_status.v1.json"),
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+
+    assert code == 0, f"expected exit 0, got {code}; artifact: {artifact}"
+    assert artifact["decision"] == "operator_may_merge", (
+        f"dual-ref dogfood expected operator_may_merge, got {artifact['decision']}; "
+        f"findings: {artifact.get('findings')}"
+    )
+
+    checks = artifact.get("checks", {})
+    assert checks.get("scope_allowed") is True, (
+        f"checks.scope_allowed must be True in the dual-ref happy path. got checks: {checks}"
+    )
+
+    context_binding = artifact.get("context_binding")
+    assert context_binding is not None, "context_binding must be present when decision == operator_may_merge"
+    assert context_binding["head_sha"] == head_sha, (
+        "context_binding.head_sha must equal the --diff-head-ref runtime SHA, "
+        f"not any reviewer-visible label. Expected {head_sha}, got {context_binding['head_sha']}"
+    )
+    assert context_binding.get("changed_files_count") == len(head_only_files), (
+        "context_binding.changed_files_count must equal the actual git diff size. "
+        f"Expected {len(head_only_files)}, got {context_binding.get('changed_files_count')}"
+    )
+    diff_digest = context_binding.get("diff_digest")
+    # The gate evidence schema emits the digest as "sha256:<64-hex>" (the
+    # canonical ao_kernel.ao_release_gate.diff_digest format) so the
+    # required-check verifier can drop the prefix and reject any other
+    # algorithm.
+    assert isinstance(diff_digest, str) and diff_digest.startswith("sha256:"), (
+        f"context_binding.diff_digest must start with 'sha256:' prefix; got {diff_digest!r}"
+    )
+    digest_hex = diff_digest.split(":", 1)[1]
+    assert len(digest_hex) == 64 and all(c in "0123456789abcdef" for c in digest_hex), (
+        f"context_binding.diff_digest must be sha256:<64-hex>; got {diff_digest!r}"
+    )
+
+    mod.validate_gate_evidence(artifact)
