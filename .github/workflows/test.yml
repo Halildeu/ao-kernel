@@ -515,9 +515,13 @@ jobs:
           #
           # The ref labels are first validated against a strict
           # `git check-ref-format` to reject anything that is not a
-          # safe Git ref (path traversal, leading dashes, control
-          # bytes, etc.); a hostile label cannot inject arguments into
-          # the update-ref command or anywhere downstream.
+          # safe Git ref (refname-invalid values such as path
+          # traversal sequences or control bytes); a hostile label
+          # cannot inject CLI options into the update-ref command or
+          # anywhere downstream because the fully-qualified
+          # `refs/heads/$REF` form is what reaches local_gpp_gate.py,
+          # so a leading dash on $REF becomes `refs/heads/-...` and
+          # is no longer at argv position 0.
           if ! git check-ref-format "refs/heads/$BASE_REF"; then
             echo "ao-release-gate: unsafe BASE_REF '$BASE_REF'; rejecting" >&2
             exit 1
