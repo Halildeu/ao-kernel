@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:real-adapter-usage-cost-evidence:v1",
+  "title": "Real-Adapter Usage and Cost Evidence",
+  "description": "GPP-3a (Faz 1) schema for per-run real-adapter usage/cost evidence. One artifact records a single adapter run (real or simulated): identity, elapsed time, prompt/completion tokens, total cost, the price catalog used to compute the cost, and an explicit unavailable_reason when usage data did not surface. The schema enforces two mutually exclusive evidence shapes via root oneOf: (a) unavailable_reason=null with non-null tokens+cost, or (b) unavailable_reason set to one of usage_missing/token_unavailable/cost_unavailable with explicitly null tokens+cost. evidence_class=simulated requires live_adapter_execution=false; evidence_class=live requires live_adapter_execution=true. The three GP-5/GPP-9 promotion guards (support_widening, production_platform_claim, live_adapter_execution top-level) all default to false at the const level for evidence_class=simulated. The artifact does NOT by itself close GP-5.9 BC-10; GPP-3b records the BC-10 closure path decision and GPP-3c executes it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_class",
+    "adapter_id",
+    "model_id",
+    "run_id",
+    "step_id",
+    "elapsed_seconds",
+    "prompt_tokens",
+    "completion_tokens",
+    "total_cost_usd",
+    "currency",
+    "pricing_source",
+    "unavailable_reason",
+    "observed_at",
+    "live_adapter_execution",
+    "support_widening",
+    "production_platform_claim",
+    "linked_spend_ledger_events"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "real-adapter-usage-cost-evidence.v1",
+      "description": "Schema contract version. Must be the literal 'real-adapter-usage-cost-evidence.v1'."
+    },
+    "evidence_class": {
+      "enum": ["simulated", "live"],
+      "description": "simulated = no real provider API call; the artifact records a structured-fixture path proving the schema and reasoning shape (GPP-3a). live = a real adapter call against a real provider produced this evidence (GPP-3c Option X only; not used in the autonomous path)."
+    },
+    "adapter_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Adapter identifier, for example 'anthropic-claude-3-5-sonnet'. No secret material."
+    },
+    "model_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Provider-canonical model identifier. Matches the spend ledger schema vendor_model_id or model where applicable."
+    },
+    "run_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Workflow run UUID. Matches workflow-run.schema.v1.json::run_id and spend-ledger.schema.v1.json::run_id."
+    },
+    "step_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Step within the workflow run. Opaque identifier assigned by the driver."
+    },
+    "elapsed_seconds": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Wall-clock time from invocation start to completion."
+    },
+    "prompt_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Prompt tokens consumed (includes cached). Null when unavailable_reason is non-null."
+    },
+    "completion_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Completion tokens generated. Null when unavailable_reason is non-null."
+    },
+    "total_cost_usd": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]+\\.[0-9]{1,8}$",
+      "description": "Total USD cost serialized as a decimal string (Decimal precision stability). Null when unavailable_reason is non-null. Computed via ao_kernel.cost.cost_math.compute_cost from the price catalog referenced by pricing_source."
+    },
+    "currency": {
+      "const": "USD",
+      "description": "Currency contract. Only USD is supported in v1."
+    },
+    "pricing_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_type", "source_ref"],
+      "properties": {
+        "source_type": {
+          "enum": ["bundled_catalog", "workspace_catalog", "operator_supplied", "simulated_fixture"],
+          "description": "Where the price catalog used for cost computation came from. simulated_fixture is used by the GPP-3a simulated path; bundled_catalog references the ao_kernel.cost.catalog defaults; workspace_catalog/operator_supplied are for live evidence paths."
+        },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Catalog path, registry id, or fixture name."
+        },
+        "source_digest": {
+          "type": ["string", "null"],
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "Optional SHA-256 digest of the catalog contents at evidence emission time. Null when the catalog has no stable digest (e.g. simulated fixture)."
+        },
+        "retrieved_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Optional ISO 8601 timestamp the catalog was retrieved. Null for simulated paths."
+        }
+      },
+      "description": "Structured reference to the price catalog used by cost_math.compute_cost. Required so a future verifier can replay cost computation deterministically."
+    },
+    "unavailable_reason": {
+      "type": ["string", "null"],
+      "enum": [null, "usage_missing", "token_unavailable", "cost_unavailable"],
+      "description": "When non-null, explains why prompt_tokens/completion_tokens/total_cost_usd are all null. usage_missing = adapter normalize_response did not surface tokens at all. token_unavailable = tokens reported but invalid/incomplete. cost_unavailable = tokens reported but no price catalog entry matched, so cost cannot be computed."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the evidence artifact was emitted."
+    },
+    "live_adapter_execution": {
+      "type": "boolean",
+      "description": "True only when evidence_class is 'live'. Top-level guard mirrored from spend-ledger semantics; pins the artifact to the simulated path under the autonomous GPP-3 closure model."
+    },
+    "support_widening": {
+      "const": false,
+      "description": "Always false. GPP-3a does NOT widen support; widening requires an explicit GPP-9 promotion decision (PROGRAM-CHANGE-CONTROL.md CC-6)."
+    },
+    "production_platform_claim": {
+      "const": false,
+      "description": "Always false. GPP-3a does NOT claim production platform readiness."
+    },
+    "linked_spend_ledger_events": {
+      "type": ["array", "null"],
+      "description": "Optional cross-references to spend-ledger.v1.json events that contributed to this evidence artifact. Null on the simulated path (no spend ledger events emitted). One or more entries on the live path when ledger events exist.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "step_id", "billing_digest"],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "step_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "attempt": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "billing_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "description": "Complete evidence: usage and cost data are present.",
+      "properties": {
+        "unavailable_reason": { "type": "null" },
+        "prompt_tokens": { "type": "integer", "minimum": 0 },
+        "completion_tokens": { "type": "integer", "minimum": 0 },
+        "total_cost_usd": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{1,8}$"
+        }
+      }
+    },
+    {
+      "description": "Unavailable evidence: usage and cost are explicitly null with a documented reason.",
+      "properties": {
+        "unavailable_reason": {
+          "enum": ["usage_missing", "token_unavailable", "cost_unavailable"]
+        },
+        "prompt_tokens": { "type": "null" },
+        "completion_tokens": { "type": "null" },
+        "total_cost_usd": { "type": "null" }
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "description": "evidence_class=simulated requires live_adapter_execution=false.",
+      "if": {
+        "properties": { "evidence_class": { "const": "simulated" } },
+        "required": ["evidence_class"]
+      },
+      "then": {
+        "properties": { "live_adapter_execution": { "const": false } }
+      }
+    },
+    {
+      "description": "evidence_class=live requires live_adapter_execution=true.",
+      "if": {
+        "properties": { "evidence_class": { "const": "live" } },
+        "required": ["evidence_class"]
+      },
+      "then": {
+        "properties": { "live_adapter_execution": { "const": true } }
+      }
+    }
+  ]
+}

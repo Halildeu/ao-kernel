@@ -362,7 +362,20 @@ def _gpp6_readiness(status_payload: JsonDict) -> JsonDict:
     }
     current_wp = status_payload.get("current_wp", {})
     blockers: list[str] = []
-    if not (isinstance(current_wp, dict) and current_wp.get("id") == "GPP-2" and current_wp.get("status") != "blocked"):
+    # GPP-2 is considered closeout-complete when it is either:
+    #   a) currently in current_wp with status="closed", OR
+    #   b) preserved in completed_wps (post-GPP-3a migration).
+    gpp2_closeout_ready = (
+        isinstance(current_wp, dict)
+        and current_wp.get("id") == "GPP-2"
+        and current_wp.get("status") == "closed"
+    ) or any(
+        isinstance(item, dict)
+        and item.get("id") == "GPP-2"
+        and ("closed_at" in item or item.get("status") == "closed")
+        for item in _list(status_payload.get("completed_wps"))
+    )
+    if not gpp2_closeout_ready:
         blockers.append("gpp2_protected_gate_blocked")
     if "GPP-4" not in completed_ids:
         blockers.append("gpp4_real_adapter_read_only_decision_missing")
