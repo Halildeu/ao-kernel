@@ -306,3 +306,248 @@ jobs:
           pip_install -e ".[mcp-http]" && python -c "import starlette, uvicorn; print('mcp-http OK')"
           pip_install -e ".[metrics]"  && python -c "import prometheus_client; print('metrics OK')"
           pip_install -e ".[policy-service]" && python -c "import gunicorn, jwt; print('policy-service OK')"
+
+  ao-release-gate:
+    # GPP-2D-3b enforce job. Replaces the retired GPP-2D-2c advisory
+    # shadow workflow (.github/workflows/ao-release-gate.yml). The
+    # bootstrap-safe pre-requisite for the new CLI args
+    # (--conclusion-mode, --required-check, --reason, --finding-code)
+    # landed in PR-A (#596 -> b2d8485).
+    #
+    # The job lives inside test.yml so it can `needs:` the rest of the
+    # CI matrix and evaluate only after the required upstream jobs
+    # have settled (design doc §3.5; GitHub Actions does not support
+    # cross-workflow `needs:`).
+    #
+    # Hard stops:
+    # - This slice does NOT mutate branch protection. The GPP-2D-5
+    #   operator action is what makes `ao-release-gate` a required
+    #   status check.
+    # - This slice does NOT collect real positive / negative
+    #   enforce-mode evidence on live PRs (GPP-2D-4, operator + agent
+    #   verification).
+    # - No support widening, no production platform claim, no live
+    #   adapter execution. GPP-2 stays blocked.
+    name: ao-release-gate
+    runs-on: ubuntu-latest
+    needs:
+      - event-gate
+      - lint
+      - typecheck
+      - test
+      - coverage
+      - packaging-smoke
+      - policy-container-smoke
+      - release-gate-container-smoke
+    # `always()` so a failed upstream `needs:` job does NOT silently
+    # skip the gate — the fail-closed needs short-circuit below
+    # produces a `failure` conclusion instead.
+    if: always() && needs.event-gate.outputs.should_run == 'true' && github.event_name == 'pull_request'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+    concurrency:
+      group: ao-release-gate-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      REPO_FULL: ${{ github.repository }}
+      FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+
+    steps:
+      - name: Refuse non-pull_request context
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Defense in depth — the job `if:` already restricts this to
+          # pull_request. pull_request_target is the unsafe variant the
+          # trusted-base design forbids.
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "::error::ao-release-gate only evaluates pull_request events"
+            exit 1
+          fi
+
+      - name: Checkout protected base ref
+        uses: actions/checkout@v6
+        with:
+          # Trusted-base gate (design §3.2): the decision-core code,
+          # bundled schemas, and gpp_status.v1.json come from the PR
+          # base ref, never the PR head. A PR that edits the gate
+          # itself cannot thereby change the gate that judges it.
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          fetch-depth: 1
+
+      - name: Fail closed if any required CI job did not succeed
+        # The job runs under `if: always()` so a red matrix does not
+        # make the gate silently skipped. This step inspects every
+        # `needs.*.result` for the required dependency graph and, if
+        # any one is not `success`, writes a fail-closed audit artifact
+        # with `--conclusion-mode enforce` and exits 1 so the gate
+        # posts `failure` (not `skipped`). event-gate is included so
+        # an event-gate failure also fail-closes the gate rather than
+        # leaving it skipped via the job `if:`.
+        if: |
+          needs.event-gate.result != 'success' ||
+          needs.lint.result != 'success' ||
+          needs.typecheck.result != 'success' ||
+          needs.test.result != 'success' ||
+          needs.coverage.result != 'success' ||
+          needs.packaging-smoke.result != 'success' ||
+          needs.policy-container-smoke.result != 'success' ||
+          needs.release-gate-container-smoke.result != 'success'
+        working-directory: base
+        run: |
+          python scripts/ao_release_gate_synthesize_error_decision.py decision.json \
+            --conclusion-mode enforce \
+            --reason "ao-release-gate fail-closed: an upstream required CI job (event-gate/lint/typecheck/test/coverage/packaging-smoke/policy-container-smoke/release-gate-container-smoke) did not succeed" \
+            --finding-code "ao_release_gate_upstream_required_check_failed"
+          # Fail the job so branch protection sees `failure`, not `skipped`.
+          exit 1
+
+      - name: Checkout PR head for optional review-evidence file
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          fetch-depth: 1
+          # The PR head is untrusted; we only read the optional review
+          # evidence file from it. The decision core validates it hard
+          # against the bundled schema and acceptance profile.
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install base-ref ao-kernel
+        working-directory: base
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[mcp]"
+
+      - name: Fetch PR data and check-runs via GitHub API
+        working-directory: base
+        run: |
+          # Fetch PR files (changed_paths) and the head SHA's check-runs.
+          # per_page=100 single page avoids the --paginate object-concat
+          # pitfall. The builder excludes self-name and de-dupes by
+          # name; --required-check below restricts the gate to the
+          # explicit allowlist.
+          gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json files > pr-files.json
+          gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs?per_page=100" > check-runs.json
+
+      - name: Compute branch_up_to_date from base
+        id: freshness
+        working-directory: base
+        run: |
+          git fetch --depth=50 origin "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || true
+          if git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"; then
+            echo "branch_up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch_up_to_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build API-derived release-gate payload
+        working-directory: base
+        run: |
+          # --required-check allowlist matches the job's `needs:` graph.
+          # Advisory / non-blocking jobs (extras-install, benchmark-fast,
+          # scorecard) cannot block the gate via their pending or
+          # failing state. Allowlist names the API does not return are
+          # surfaced as `status: "missing"` placeholders so the decision
+          # core's required-checks-are-green check fails closed.
+          python scripts/ao_release_gate_build_payload.py \
+            --repository "$REPO_FULL" \
+            --pr-number "$PR_NUMBER" \
+            --base-ref "$BASE_REF" \
+            --head-ref "$HEAD_REF" \
+            --head-sha "$HEAD_SHA" \
+            --from-fork "$FROM_FORK" \
+            --branch-up-to-date "${{ steps.freshness.outputs.branch_up_to_date }}" \
+            --gpp-status .claude/plans/gpp_status.v1.json \
+            --pr-files-json pr-files.json \
+            --check-runs-json check-runs.json \
+            --required-check lint \
+            --required-check typecheck \
+            --required-check "test (3.11)" \
+            --required-check "test (3.12)" \
+            --required-check "test (3.13)" \
+            --required-check coverage \
+            --required-check packaging-smoke \
+            --required-check policy-container-smoke \
+            --required-check release-gate-container-smoke \
+            --output payload.json
+
+      - name: Locate optional review evidence on PR head
+        id: evidence
+        run: |
+          if [ -f head/local-gpp-gate-evidence.v1.json ]; then
+            echo "path=head/local-gpp-gate-evidence.v1.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate ao-release-gate decision (enforce)
+        # GPP-2D-3b enforce contract:
+        #   --conclusion-mode enforce maps deny/error to
+        #     github_check_run.conclusion=failure in the artifact body.
+        #   --fail-on-deny exits the script with code 1 on any
+        #     deny_* / error_fail_closed. NO continue-on-error.
+        # Branch protection cutover is GPP-2D-5 (operator action).
+        working-directory: base
+        run: |
+          if [ -n "${{ steps.evidence.outputs.path }}" ]; then
+            python scripts/ao_release_gate_decision.py \
+              --payload payload.json \
+              --gpp-status .claude/plans/gpp_status.v1.json \
+              --review-evidence "../${{ steps.evidence.outputs.path }}" \
+              --decision-path decision.json \
+              --output text \
+              --conclusion-mode enforce \
+              --fail-on-deny
+          else
+            python scripts/ao_release_gate_decision.py \
+              --payload payload.json \
+              --gpp-status .claude/plans/gpp_status.v1.json \
+              --decision-path decision.json \
+              --output text \
+              --conclusion-mode enforce \
+              --fail-on-deny
+          fi
+
+      - name: Synthesize error_fail_closed audit artifact if pre-decision step crashed
+        # Audit safety net. The decision script writes decision.json
+        # before exiting, so a deny/error decision still leaves an
+        # auditable record. This step only fires when none of the
+        # earlier steps produced decision.json. The synthesizer writes
+        # a fail-CLOSED record with --conclusion-mode enforce; it does
+        # NOT alter the job exit code, so the prior step's failure
+        # already marks the job failed.
+        if: always()
+        working-directory: base
+        run: |
+          if [ ! -f decision.json ]; then
+            python scripts/ao_release_gate_synthesize_error_decision.py decision.json \
+              --conclusion-mode enforce \
+              --reason "ao-release-gate could not produce a decision; a pre-decision step failed before the decision core ran." \
+              --finding-code "ao_release_gate_pre_decision_step_failed"
+          fi
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ao-release-gate-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: |
+            base/payload.json
+            base/decision.json
+          if-no-files-found: warn
