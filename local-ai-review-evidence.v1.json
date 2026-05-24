@@ -1,51 +1,74 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-2",
+  "work_package": "GPP-3a",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d6-readiness-correction",
+    "head_ref": "refs/heads/codex/gpp-3a-usage-cost-evidence-schema",
     "changed_files": [
-      ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
-      ".github/CODEOWNERS",
+      ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
+      ".claude/plans/gpp_status.v1.json",
+      "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json",
+      "docs/PUBLIC-BETA.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_gpp2d6_automerge_contract.py"
+      "scripts/gpp5_repo_intelligence_closeout.py",
+      "scripts/gpp6_read_only_e2e_preflight.py",
+      "scripts/local_gpp_gate.py",
+      "scripts/real_adapter_usage_evidence.py",
+      "tests/test_ao_ma1_design_invariants.py",
+      "tests/test_gpp_next.py",
+      "tests/test_local_gpp_gate.py",
+      "tests/test_real_adapter_usage_cost_evidence.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "hard_boundary_compliance",
-      "status": "pass"
-    },
-    {
-      "name": "internal_consistency",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
+    {"name": "guard_flags_unchanged", "status": "pass"},
+    {"name": "schema_self_validates_draft_2020_12", "status": "pass"},
+    {"name": "schema_oneOf_cross_field_complete_branch", "status": "pass"},
+    {"name": "schema_oneOf_cross_field_unavailable_branch", "status": "pass"},
+    {"name": "schema_evidence_class_live_adapter_execution_allOf", "status": "pass"},
+    {"name": "schema_support_widening_const_false", "status": "pass"},
+    {"name": "schema_production_platform_claim_const_false", "status": "pass"},
+    {"name": "ssot_current_wp_migrated_to_gpp3a_active", "status": "pass"},
+    {"name": "ssot_gpp2_closeout_preserved_in_completed_wps", "status": "pass"},
+    {"name": "ssot_milestones_m3_pending_unchanged", "status": "pass"},
+    {"name": "local_gate_gpp2_closeout_helper_accepts_both_locations", "status": "pass"},
+    {"name": "gpp5_gpp6_upstream_gate_helper_accepts_completed_wps", "status": "pass"},
+    {"name": "bc10_remains_blocked_in_gp5_decision", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "CODEOWNERS narrowing is correct: broad default owner removed while governance, agent contract, release-gate runtime, local gate, policy, schema, and deploy surfaces retain explicit owners.",
-    "Runbook truthfully states GPP-2D-6 remains incomplete because repository auto-merge is disabled and the legacy global required-review setting remains active.",
-    "Legacy enforce_admins=true is recorded as tightening, not as bypass or smoke completion.",
-    "No production readiness, support widening, testai or smee reopening, or live adapter execution is claimed.",
-    "Tests pin CODEOWNERS narrowing, remaining blockers, hard stops, and post-closeout boundary.",
-    "No secrets or credentials in diff."
+    "tests: pytest 3419 passed, 2 skipped in the full local test suite (~74s).",
+    "secret_scan: no credential material in any changed file.",
+    "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged.",
+    "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
+    "guard_flags_unchanged: support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed all preserved false (CC-6).",
+    "schema_self_validates_draft_2020_12: Draft202012Validator.check_schema passes on real-adapter-usage-cost-evidence.schema.v1.json.",
+    "schema_oneOf_cross_field_complete_branch: unavailable_reason=null requires tokens/cost non-null with decimal-string pattern.",
+    "schema_oneOf_cross_field_unavailable_branch: usage_missing / token_unavailable / cost_unavailable each force tokens/cost null.",
+    "schema_evidence_class_live_adapter_execution_allOf: simulated bind to live_adapter_execution=false; live bind to true.",
+    "schema_support_widening_const_false: const false guard preserved.",
+    "schema_production_platform_claim_const_false: const false guard preserved.",
+    "ssot_current_wp_migrated_to_gpp3a_active: current_wp.id=GPP-3a, status=active, record=.claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md.",
+    "ssot_gpp2_closeout_preserved_in_completed_wps: GPP-2 entry exists in completed_wps with decision, issue, pr, record, closed_at=2026-05-24T20:00:00Z.",
+    "ssot_milestones_m3_pending_unchanged: M3 still pending (GPP-3a is a child slice); progress 38/50 = 76% unchanged.",
+    "local_gate_gpp2_closeout_helper_accepts_both_locations: _gpp2_closeout_present in scripts/local_gpp_gate.py accepts current_wp.status=closed OR completed_wps entry with closed_at; test renamed to test_missing_gpp2_closeout_fails_closed and pinned via dual-strip mock.",
+    "gpp5_gpp6_upstream_gate_helper_accepts_completed_wps: scripts/gpp5_repo_intelligence_closeout.py and scripts/gpp6_read_only_e2e_preflight.py both accept GPP-2 closeout from current_wp or completed_wps; GPP-6 upstream blockers reduce to gpp4_only as the tests expected.",
+    "bc10_remains_blocked_in_gp5_decision: scripts/gp5_platform_claim_decision.py is intentionally NOT modified; BC-10 stays status=blocked. Closure path decision is reserved for GPP-3b and execution for GPP-3c.",
+    "cross_provider_verified: implementer claude (anthropic) differs from reviewer codex (openai); cross-AI HARD RULE CC-2 satisfied."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
