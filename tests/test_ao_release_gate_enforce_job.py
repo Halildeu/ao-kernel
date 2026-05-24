@@ -156,9 +156,15 @@ def test_enforce_job_runs_with_fail_closed_needs_short_circuit() -> None:
     `needs.*.result` and short-circuits with a fail-closed audit
     artifact + exit 1 when any one is not `success`. event-gate is
     included so an event-gate failure also produces failure, not skip.
+    The `if:` clause also covers the event-gate output-missing edge
+    via `needs.event-gate.result != 'success'`: when event-gate
+    fails/cancels without writing its should_run output, the gate
+    still runs and the fail-closed step posts `failure`.
     """
     block = _gate_job_block()
-    assert "if: always() && needs.event-gate.outputs.should_run == 'true'" in block
+    assert "always() && github.event_name == 'pull_request'" in block
+    assert "needs.event-gate.outputs.should_run == 'true'" in block
+    assert "needs.event-gate.result != 'success'" in block
     assert "Fail closed if any required CI job did not succeed" in block
     for needed in (
         "needs.event-gate.result",

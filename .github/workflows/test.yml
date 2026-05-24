@@ -342,7 +342,19 @@ jobs:
     # `always()` so a failed upstream `needs:` job does NOT silently
     # skip the gate — the fail-closed needs short-circuit below
     # produces a `failure` conclusion instead.
-    if: always() && needs.event-gate.outputs.should_run == 'true' && github.event_name == 'pull_request'
+    #
+    # The `event-gate.result != 'success'` clause covers the edge where
+    # event-gate fails/cancels without ever writing the should_run
+    # output: without it, the `should_run == 'true'` test would be
+    # false (empty string) and the gate would silently skip on
+    # event-gate failure, leaving branch protection blind. Now an
+    # event-gate failure routes through the gate, hits the fail-closed
+    # needs short-circuit, and posts `failure`.
+    if: |
+      always() && github.event_name == 'pull_request' && (
+        needs.event-gate.outputs.should_run == 'true' ||
+        needs.event-gate.result != 'success'
+      )
     timeout-minutes: 10
     permissions:
       contents: read
