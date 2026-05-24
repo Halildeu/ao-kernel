@@ -13,11 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-5a-retire-smee-collision",
+    "head_ref": "refs/heads/codex/gpp2d-5-verification-positive-path",
     "changed_files": [
-      ".claude/plans/GPP-2D-5A-SMEE-RETIREMENT-EVIDENCE.md",
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      "tests/test_gpp2d5a_smee_retirement.py",
+      ".claude/plans/GPP-2D-5-VERIFICATION-POSITIVE-PATH-PROBE.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -31,31 +29,11 @@
       "status": "pass"
     },
     {
-      "name": "retirement_evidence_doc",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation_by_agent",
+      "name": "probe_only",
       "status": "pass"
     },
     {
       "name": "no_runtime_contract_change",
-      "status": "pass"
-    },
-    {
-      "name": "smee_services_inactive_disabled",
-      "status": "pass"
-    },
-    {
-      "name": "external_check_run_collision_identified",
-      "status": "pass"
-    },
-    {
-      "name": "post_retirement_source_pin_acceptance_defined",
-      "status": "pass"
-    },
-    {
-      "name": "high_risk_surface_set_preserved",
       "status": "pass"
     },
     {
@@ -65,26 +43,13 @@
     {
       "name": "no_long_lived_secret",
       "status": "pass"
-    },
-    {
-      "name": "api_pinned_acceptance_signals",
-      "status": "pass"
-    },
-    {
-      "name": "audit_block_format_strict",
-      "status": "pass"
-    },
-    {
-      "name": "rollback_record_format_strict",
-      "status": "pass"
     }
   ],
   "findings": [
-    "GPP-2D-5A retires the historical smee.io dry-run bridge that was still emitting a same-name external ao-release-gate neutral check-run through GitHub App app_id=3800233. That external source collided with the GitHub Actions ao-release-gate enforce job and blocked the GPP-2D-5 source-pinned required-check cutover prerequisite.",
-    "staging-sw systemd user services smee-policy.service and smee-release.service were stopped and disabled. Post-action readback showed both services inactive and disabled. This removes the no-testai-deferred smee bridge from the active GPP-2B/GPP-2D lane.",
-    "The evidence doc records the exact pre-retirement collision on PR #604 and #605, including app_id=3800233 app_slug=ao-release-gate conclusion=neutral and app_id=15368 app_slug=github-actions conclusion=success. The cutover operator must verify a fresh post-retirement PR head shows only the GitHub Actions source before selecting the required check.",
-    "This slice does not change branch protection, rulesets, CODEOWNERS, workflow runtime, support scope, production claims, or live-adapter execution. It only removes the external same-name check-run source from future PR events.",
-    "GPP-2 stays blocked; branch-protection cutover, post-cutover verification, CODEOWNERS narrowing, auto-merge smoke, and GPP-2D-7 closeout remain separate."
+    "GPP-2D-5 §3.4 positive-path verification probe (DO NOT MERGE). Trivial doc file plus this reviewer evidence at the repo root, designed to let the post-cutover ao-release-gate enforce job produce decision: allow_autonomous_merge against the new ruleset that now requires ao-release-gate on main.",
+    "Scope is two files: the probe doc and this reviewer evidence file. No workflow / script / test / runtime / branch-protection / ruleset mutation.",
+    "The probe PR will be closed without merging once the §3.4 acceptance signals (decision: allow_autonomous_merge, conclusion_mode: enforce, review_evidence: pass, 4-file artifact upload) are recorded in .claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md.",
+    "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
