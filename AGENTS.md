@@ -60,3 +60,33 @@ Current program head:
 ```text
 GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)
 ```
+
+Active sublane:
+
+```text
+GPP-2D - Autonomous Required-Check Lane
+  GPP-2D-2c shadow workflow is recorded
+  GPP-2D-3 enforce job, GPP-2D-4 real-PR evidence,
+  GPP-2D-5 branch-protection cutover, GPP-2D-6 auto-merge smoke,
+  and GPP-2D-7 AO-GATE-9 closeout remain pending
+```
+
+Related orchestration:
+
+```text
+AO-MA-1 - Multi-Agent Orchestration Design (docs recorded)
+```
+
+Deferred, not an active blocker:
+
+```text
+GPP-2C - testai / smee / webhook callback integration
+```
+
+Release authority reminder:
+
+```text
+AI agent output is evidence, not release authority.
+Release authority is the repo-owned ao-release-gate required check plus
+GitHub branch protection after the GPP-2D cutover.
+```

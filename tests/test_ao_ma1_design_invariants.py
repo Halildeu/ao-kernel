@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md"
 STATUS = ROOT / ".claude/plans/gpp_status.v1.json"
+AGENTS = ROOT / "AGENTS.md"
 
 
 def test_ao_ma1_keeps_release_authority_in_ao_release_gate() -> None:
@@ -64,3 +65,17 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
     assert status["support_widening_allowed"] is False
     assert status["production_platform_claim_allowed"] is False
     assert status["live_adapter_execution_allowed"] is False
+
+
+def test_agents_contract_names_active_gpp2d_and_ao_ma1_context() -> None:
+    text = AGENTS.read_text(encoding="utf-8")
+
+    assert "GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)" in text
+    assert "GPP-2D - Autonomous Required-Check Lane" in text
+    assert "GPP-2D-3 enforce job" in text
+    assert "GPP-2D-5 branch-protection cutover" in text
+    assert "AO-MA-1 - Multi-Agent Orchestration Design" in text
+    assert "GPP-2C - testai / smee / webhook callback integration" in text
+    assert "Deferred, not an active blocker" in text
+    assert "AI agent output is evidence, not release authority." in text
+    assert "Release authority is the repo-owned ao-release-gate required check plus" in text
