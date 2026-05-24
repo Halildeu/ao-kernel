@@ -47,6 +47,15 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     "AGENTS.md",
     "CLAUDE.md",
     "README.md",
+    # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
+    # job reads `local-ai-review-evidence.v1.json` from the PR head
+    # at the repo root and generates the head-bound
+    # `local-gpp-gate-evidence.v1.json` at CI runtime. The decision
+    # core's `diff_scope` check then requires every committed path
+    # to be in this allowlist. Both files live at the repo root, are
+    # cross-AI-review / local-gate only (never runtime adapter state),
+    # and never widen support or claim production readiness.
+    "local-ai-review-evidence.v1.json",
     "local-gpp-gate-evidence.v1.json",
 )
 
