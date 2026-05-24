@@ -1045,3 +1045,183 @@ def test_gate_run_invalid_head_ref_fails_closed_without_context_binding(tmp_path
     assert artifact["decision"] == "fail_closed"
     assert "context_binding" not in artifact
     mod.validate_gate_evidence(artifact)
+
+
+# ---------------------------------------------------------------------------
+# GPP-2D-3c dual-ref contract (Codex iter-1 absorb, thread 019e5a21)
+# ---------------------------------------------------------------------------
+#
+# The ao-release-gate enforce job inside .github/workflows/test.yml passes
+# four refs to scripts/local_gpp_gate.py:
+#
+#   --review-base-ref "$BASE_REF"     # PR base BRANCH NAME (e.g. "main")
+#   --review-head-ref "$HEAD_REF"     # PR head BRANCH NAME (e.g. "feature")
+#   --diff-base-ref   "$BASE_SHA"     # runtime base SHA (drives git diff +
+#   --diff-head-ref   "$HEAD_SHA"     # the gate evidence context_binding)
+#
+# The reviewer-visible refs are matched (string equality) against the
+# committed reviewer evidence file's scope_reviewed.base_ref / head_ref;
+# the diff-resolving refs drive the runtime git diff and the
+# context_binding.head_sha resolution. Mixing them re-creates either the
+# head_sha self-reference fixed point (if the reviewer evidence had to
+# carry the head SHA) or a scope-check mismatch (if the runtime passed
+# SHAs into the scope-check slot, as PR #599 iter-1 did).
+#
+# The tests below pin three invariants of that contract:
+#   1. --review-base-ref / --review-head-ref drive the scope check, even
+#      when --diff-* and the legacy --base-ref / --head-ref values
+#      differ.
+#   2. --review-* mismatches against the committed reviewer evidence
+#      fail scope check closed, even when --diff-* / legacy --base-ref
+#      / --head-ref match.
+#   3. When --review-* are absent, --base-ref / --head-ref serve as the
+#      legacy single-ref alias and drive scope check, so older callers
+#      and tests keep working unchanged.
+# ---------------------------------------------------------------------------
+
+
+def test_review_refs_drive_scope_check_when_diff_and_legacy_refs_differ(tmp_path: Path) -> None:
+    """GPP-2D-3c dual-ref invariant #1: --review-base-ref /
+    --review-head-ref drive the scope check (string equality with the
+    committed reviewer evidence) even when --diff-* and the legacy
+    --base-ref / --head-ref values are entirely different. This pins
+    that scope check is routed to the reviewer-visible labels, not to
+    the diff-resolving SHAs."""
+
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["scope_reviewed"]["base_ref"] = "PR-base-branch"
+    payload["scope_reviewed"]["head_ref"] = "PR-head-branch"
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            "--review-base-ref",
+            "PR-base-branch",
+            "--review-head-ref",
+            "PR-head-branch",
+            "--diff-base-ref",
+            "deadbeef0000000000000000000000000000beef",
+            "--diff-head-ref",
+            "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00",
+            "--base-ref",
+            "legacy-base-ref-that-must-not-match",
+            "--head-ref",
+            "legacy-head-ref-that-must-not-match",
+            "--skip-git",
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2ag",
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    findings = " ".join(artifact.get("findings", []))
+    assert "reviewer-declared base_ref does not match" not in findings, (
+        f"scope check must route to --review-base-ref, not --diff-base-ref or --base-ref. findings: {findings}"
+    )
+    assert "reviewer-declared head_ref does not match" not in findings, (
+        f"scope check must route to --review-head-ref, not --diff-head-ref or --head-ref. findings: {findings}"
+    )
+
+
+def test_review_ref_mismatch_fails_scope_check_even_when_diff_and_legacy_match(tmp_path: Path) -> None:
+    """GPP-2D-3c dual-ref invariant #2: a --review-base-ref /
+    --review-head-ref value that disagrees with the committed reviewer
+    evidence fails scope check closed, even when --diff-* and the
+    legacy --base-ref / --head-ref values match the reviewer evidence.
+    This pins that scope check looks at --review-* exclusively and
+    cannot be silently routed back to --diff-* or the legacy alias."""
+
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["scope_reviewed"]["base_ref"] = "main"
+    payload["scope_reviewed"]["head_ref"] = "feature-x"
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            "--review-base-ref",
+            "main",
+            "--review-head-ref",
+            "DIFFERENT-HEAD-REF-THAT-MUST-FAIL-SCOPE",
+            "--diff-base-ref",
+            "main",
+            "--diff-head-ref",
+            "feature-x",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "feature-x",
+            "--skip-git",
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2ag",
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    findings = " ".join(artifact.get("findings", []))
+    assert (
+        "reviewer-declared head_ref does not match operator head_ref 'DIFFERENT-HEAD-REF-THAT-MUST-FAIL-SCOPE'"
+        in findings
+    ), f"expected the --review-head-ref mismatch to fail scope check, but findings did not contain it: {findings}"
+    assert artifact["decision"] == "fail_closed", f"a --review-head-ref mismatch must fail closed, got: {artifact}"
+
+
+def test_legacy_base_head_ref_alias_drives_scope_check_when_review_refs_absent(tmp_path: Path) -> None:
+    """GPP-2D-3c dual-ref invariant #3 (backward compatibility): when
+    --review-base-ref / --review-head-ref are not supplied, --base-ref
+    / --head-ref serve as the legacy single-ref alias for both scope
+    check and the git diff. This pins that older callers (including
+    pre-GPP-2D-3c tests inside this file) keep working unchanged."""
+
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["scope_reviewed"]["base_ref"] = "legacy-base"
+    payload["scope_reviewed"]["head_ref"] = "legacy-head"
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            # Intentionally only the legacy single-ref alias; no --review-* / --diff-*.
+            "--base-ref",
+            "legacy-base",
+            "--head-ref",
+            "legacy-head",
+            "--skip-git",
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2ag",
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    findings = " ".join(artifact.get("findings", []))
+    assert "reviewer-declared base_ref does not match" not in findings, (
+        f"legacy single-ref alias must drive scope check when --review-* is absent. findings: {findings}"
+    )
+    assert "reviewer-declared head_ref does not match" not in findings, (
+        f"legacy single-ref alias must drive scope check when --review-* is absent. findings: {findings}"
+    )

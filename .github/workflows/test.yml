@@ -502,13 +502,24 @@ jobs:
           # authority) reads the produced artifact and applies
           # --fail-on-deny there. The audit artifact still records the
           # local-gpp-gate body for debugging.
+          #
+          # GPP-2D-3c dual-ref contract: --review-base-ref / --review-head-ref
+          # match the reviewer-visible ref labels the committed reviewer
+          # evidence wrote into scope_reviewed.base_ref / head_ref (PR
+          # base + head branch names). --diff-base-ref / --diff-head-ref
+          # are the runtime SHAs that drive the actual git diff and the
+          # resulting context_binding.head_sha. This split keeps the
+          # committed reviewer evidence free of any head_sha self-reference
+          # while still binding the runtime gate evidence to the live head.
           python scripts/local_gpp_gate.py \
             --review-evidence "../${{ steps.reviewer.outputs.path }}" \
             --output local-gpp-gate-evidence.v1.json \
             --repo "$REPO_FULL" \
             --work-package "GPP-2" \
-            --base-ref "$BASE_SHA" \
-            --head-ref "$HEAD_SHA" \
+            --review-base-ref "$BASE_REF" \
+            --review-head-ref "$HEAD_REF" \
+            --diff-base-ref "$BASE_SHA" \
+            --diff-head-ref "$HEAD_SHA" \
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 
