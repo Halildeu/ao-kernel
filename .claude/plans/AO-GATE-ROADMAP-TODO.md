@@ -3,7 +3,7 @@
 **Status:** active / editable tracking plan
 **Date:** 2026-05-22
 **Owner model:** operator-owned gate infrastructure, product-facing repo-intelligence onboarding
-**Current program blocker:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding` remains blocked / fail-closed
+**Current program state:** `GPP-2 - Protected Live-Adapter Gate Runtime Binding` is **closed** under the AO-GATE-9 closeout decision (`2026-05-24`); release-governance authority is the source-pinned `ao-release-gate` GitHub Actions ruleset (`integration_id 15368`, `bypass_actors=[]`). Closeout record: `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md`. Support widening, production platform claim, and live adapter execution remain disallowed.
 **Decision baseline:** the active no-testai near-term path is local/operator
 release governance: cross-provider AI review, non-author GitHub approval,
 `local_gpp_gate` evidence, and `ao-release-gate` required-check mapping.
@@ -90,11 +90,11 @@ location = /ao-gate/github/ao-release-gate {
 | AO-GATE-4 | Public HTTPS health evidence | `ao-kernel` | DONE | Public route returns JSON | `public_https_hosting_evidence=true` artifact |
 | AO-GATE-5 | GitHub App webhook config evidence | GitHub App | DONE | AO-GATE-4 passed | Webhook URLs configured to `/ao-gate/github/*` |
 | AO-GATE-6 | `ao-release-gate` dry-run PR evidence | GitHub PR | EVIDENCE CAPTURED | Webhook evidence present | Real PR dry-run check-run evidence |
-| LOCAL-GATE-1 | Local AI review evidence gate | `ao-kernel` | DONE | GPP-2 remains blocked; no production claim | PR #576 pivot plan + PR #577 implementation merged (`bd8eb35`); local no-secret evidence JSON + fail-closed tests |
-| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | DEFERRED / OPTIONAL | Deferred GPP-2C infrastructure; not an active GPP-2B blocker | Future callback review evidence or explicit superseding decision |
-| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | BLOCKED | Enforce-mode success/failure evidence first | Required `ao-release-gate` check blocks merge without pass; admin bypass disabled |
-| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | BLOCKED | GPP-2B evidence chain complete | GPP status updated without support widening |
-| RI-NEXT | Repo Intelligence read-only E2E continuation | `ao-kernel` | Blocked | GPP-2 and GPP-4 blockers | GPP-6 execution path reopened |
+| LOCAL-GATE-1 | Local AI review evidence gate | `ao-kernel` | DONE | Operator-controlled local trust evidence; no production claim | PR #576 pivot plan + PR #577 implementation merged (`bd8eb35`); local no-secret evidence JSON + fail-closed tests |
+| AO-GATE-7 | Deployment-protection callback evidence | GitHub deployment protection | DEFERRED / OPTIONAL | Deferred GPP-2C infrastructure | Future callback review evidence or explicit superseding decision |
+| AO-GATE-8 | Branch protection/ruleset cutover | GitHub repo settings | DONE (2026-05-24) | Enforce-mode evidence captured (GPP-2D-4, PR #603) | Ruleset id `16803733` "Protect main" enforces `ao-release-gate` as required check (`integration_id 15368` source-pinned, `bypass_actors=[]`, admin bypass disallowed); operator audit comment PR #605 issuecomment-4529677096 |
+| AO-GATE-9 | GPP-2 closeout update | `ao-kernel` | DONE (2026-05-24) | AO-GATE-8 + enforce evidence both landed | GPP-2 closed under decision `gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution`; closeout record `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md`; guard flags remain false |
+| RI-NEXT | Repo Intelligence read-only E2E continuation | `ao-kernel` | Blocked | GPP-4 read-only adapter decision blocker (GPP-2 closeout recorded) | GPP-6 execution path reopened |
 
 ## Evidence Artifact Paths
 
@@ -434,7 +434,7 @@ support / claim production readiness. Handoff:
 
 **Goal:** Continue the general product path once upstream gates are ready.
 
-**Current status:** blocked by GPP-2 and GPP-4
+**Current status:** blocked by GPP-4 (GPP-2 closeout recorded under AO-GATE-9, `2026-05-24`)
 **GPP-4 dependency:** production-certified read-only adapter decision for the real adapter path.
 
 ### Product User Surface
@@ -507,7 +507,8 @@ ao-kernel#570 (config contract per-service split) + platform-k8s-gitops#942 (git
 | AO-GATE-6 | ✅ Evidence captured (2026-05-22) | Webhook delivery chain GREEN via smee.io non-production dry-run proxy (TCP/443 outbound; office firewall blocks TCP+UDP/7844, cloudflared infeasible). PR #572 opened → release-gate App posted check-run `ao-release-gate` conclusion=`failure` output_title=`deny_missing_evidence` (correct fail-closed posture, advisory only — no branch protection cutover) |
 | LOCAL-GATE-1 | ✅ DONE (2026-05-22) | Local operator trust model pivot implemented: implementer AI + reviewer AI + local fail-closed evidence gate. PR #576 pivot plan + PR #577 implementation merged (`bd8eb35`). Operator-controlled local trust evidence only — this does not close GPP-2 and does not replace AO-GATE-7/AO-GATE-8 protected-runtime evidence. |
 | AO-GATE-7 | ⏸ Deferred optional GPP-2C infrastructure | Policy App slug reconciliation, production callback topology, and deployment-protection callback review evidence are no longer active GPP-2B blockers. If reopened later, choose `testai` or another owner-controlled endpoint in a separate GPP-2C infrastructure slice. |
-| AO-GATE-8 | ⏳ Active GPP-2B blocker: enforce evidence + cutover | Branch protection cutover: required `ao-release-gate` status check; admin bypass YASAK. Required before cutover: one positive `success` conclusion path and one negative `failure` path on real PRs in enforce mode. |
+| AO-GATE-8 | ✅ DONE (2026-05-24) | Branch protection cutover landed: GitHub ruleset id `16803733` "Protect main" enforces `ao-release-gate` as required status check (`integration_id 15368` source-pinned, `bypass_actors=[]`, admin bypass disallowed). Enforce-mode evidence: 2 positive (`allow_autonomous_merge`) + 6 negative (`deny_policy_violation`, `deny_missing_evidence`) runs recorded in `.claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE.md` (PR #603). Cutover runbook `.claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md` (PR #605). Post-cutover verification `.claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md` (PR #609 + iter-2 follow-up PR #610). |
+| AO-GATE-9 | ✅ DONE (2026-05-24) | GPP-2 closeout recorded under decision `gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution`. Closeout record `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (this slice). `support_widening_allowed`, `production_platform_claim_allowed`, and `live_adapter_execution_allowed` all remain `false`. GPP-2D-6 low-risk auto-merge smoke and CODEOWNERS narrowing remain optional later hardening slices, not closeout prerequisites. |
 
 ### Constraints carried (unchanged from initial draft)
 

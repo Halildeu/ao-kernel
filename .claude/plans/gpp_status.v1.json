@@ -8,21 +8,23 @@
   "current_wp": {
     "id": "GPP-2",
     "title": "Protected Live-Adapter Gate Runtime Binding",
-    "status": "blocked",
+    "status": "closed",
     "issue": "https://github.com/Halildeu/ao-kernel/issues/567",
-    "exit_decision": "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening",
-    "ready_after": "the no-testai near-term release-governance model is selected and recorded, the ao-release-gate required-check path has enforce-mode success and failure evidence on real pull requests, branch protection requires the ao-release-gate status check with admin bypass disallowed, and the final AO-GATE-9 GPP status closeout is recorded; deployment-protection callback topology and callback review evidence are deferred optional future infrastructure",
+    "exit_decision": "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution",
+    "closeout_decision": "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution",
+    "closeout_at": "2026-05-24T20:00:00Z",
+    "closeout_record": ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md",
+    "ready_after": "the no-testai near-term release-governance model was selected and recorded, the ao-release-gate required-check path has enforce-mode success and failure evidence collected on real pull requests, branch protection requires the ao-release-gate status check via the source-pinned GitHub branch ruleset with admin bypass disallowed, and the final AO-GATE-9 GPP status closeout is recorded; deployment-protection callback topology and callback review evidence remain deferred optional future infrastructure",
     "allowed_scope": [
       "collect cross-provider AI review evidence as the operator-controlled GPP-2B review discipline, where the implementer AI provider differs from the reviewer AI provider",
       "record non-author GitHub code-owner approval as the GPP-2B mechanical merge gate without admin bypass or branch-protection mutation",
-      "produce local_gpp_gate operator evidence as preparatory local trust evidence only; it does not close GPP-2, widen support, or claim production readiness",
+      "produce local_gpp_gate operator evidence as preparatory local trust evidence only; it does not widen support, claim production readiness, or replace the ao-release-gate required check",
       "maintain the ao-release-gate required-check mapping and the shadow/enforce conclusion-mode matrix",
-      "collect ao-release-gate enforce-mode success and failure evidence on real pull requests",
-      "cut branch protection or rulesets over to require the ao-release-gate status check only after enforce-mode evidence is captured, with admin bypass disallowed",
-      "record the AO-GATE-9 GPP status closeout only after enforce-mode evidence and the required-check cutover both exist",
+      "preserve the source-pinned ao-release-gate GitHub ruleset required-check binding (integration_id 15368) with bypass_actors empty as the GPP-2 release-governance authority",
+      "treat the AO-GATE-9 GPP status closeout as the final terminal record of the GPP-2 lifecycle",
       "document end-user onboarding paths that do not require users to self-host any GPP-2 gate service, vault, webhook secret, GitHub App private key, or Cloud Run project",
       "treat testai.acik.com/ao-gate, smee.io delivery, the deployment-protection callback path, and policy App slug reconciliation as deferred optional GPP-2C infrastructure, not active GPP-2B scope",
-      "keep support widening, production platform claim, and live adapter execution disallowed while GPP-2 stays blocked"
+      "record GPP-2 closeout as release-governance lifecycle closure only; support widening, production platform claim, live adapter execution, callback infrastructure, and low-risk auto-merge smoke remain separate non-authorized scopes"
     ],
     "evidence_collected": [
       {
@@ -132,6 +134,72 @@
         "branch_protection_cutover_done": false,
         "ao_release_gate_required_check": false,
         "secrets_recorded": false,
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      },
+      {
+        "type": "enforce_mode_required_check_evidence",
+        "collected_at": "2026-05-24T16:33:47Z",
+        "record": ".claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE.md",
+        "source_repo_pr": "Halildeu/ao-kernel#603",
+        "related_implementation_prs": [
+          "Halildeu/ao-kernel#599",
+          "Halildeu/ao-kernel#602"
+        ],
+        "positive_path_runs": 2,
+        "negative_path_runs": 6,
+        "decision_strings_verified": [
+          "allow_autonomous_merge",
+          "deny_policy_violation",
+          "deny_missing_evidence"
+        ],
+        "conclusion_mode": "enforce",
+        "program_ids": ["GPP-2D-4"],
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      },
+      {
+        "type": "branch_protection_ruleset_cutover",
+        "collected_at": "2026-05-24T17:08:16Z",
+        "record": ".claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md",
+        "operator_action_pr": "Halildeu/ao-kernel#605",
+        "ruleset_id": "16803733",
+        "ruleset_name": "Protect main",
+        "ruleset_target": "branch",
+        "ruleset_target_branches": "~DEFAULT_BRANCH",
+        "required_check": "ao-release-gate",
+        "required_check_source_integration_id": "15368",
+        "required_check_source_app_slug": "github-actions",
+        "bypass_actors": [],
+        "strict_required_status_checks": true,
+        "block_force_pushes": true,
+        "admin_bypass_attempted": false,
+        "operator_audit_comment_url": "https://github.com/Halildeu/ao-kernel/pull/605#issuecomment-4529677096",
+        "legacy_branch_protection_preserved": true,
+        "legacy_enforce_admins_enabled": false,
+        "legacy_enforce_admins_note": "pre-existing surface that does not affect ao-release-gate enforcement; tightening it is an optional later hardening slice explicitly out of scope for GPP-2D-5",
+        "program_ids": ["GPP-2D-5"],
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false
+      },
+      {
+        "type": "post_cutover_verification_acceptance",
+        "collected_at": "2026-05-24T19:06:04Z",
+        "record": ".claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md",
+        "outcomes_pr": "Halildeu/ao-kernel#609",
+        "outcomes_iter2_followup_pr": "Halildeu/ao-kernel#610",
+        "outcomes_iter2_merge_commit": "077d943",
+        "ruleset_id_verified": "16803733",
+        "negative_path_probe_pr": "Halildeu/ao-kernel#607",
+        "positive_path_probe_pr": "Halildeu/ao-kernel#608",
+        "probe_prs_closed_without_merge": true,
+        "api_pinned_acceptance_passed": true,
+        "format_strict_audit_block_passed": true,
+        "codeowner_review_unchanged": true,
+        "program_ids": ["GPP-2D-5"],
         "live_adapter_execution": false,
         "support_widening": false,
         "production_platform_claim": false
@@ -364,19 +432,12 @@
       "record": ".claude/plans/GPP-6a-READ-ONLY-E2E-PREFLIGHT.md"
     }
   ],
-  "blocked_wps": [
-    {
-      "id": "GPP-2",
-      "reason": "the no-testai near-term release-governance model is selected and recorded: cross-provider AI review, non-author GitHub approval, local_gpp_gate operator evidence, and the ao-release-gate required-check mapping plus conclusion-mode matrix are the active GPP-2B path; repo-owned policy and ao-release-gate decision cores, container packages, GHCR publish paths, internal operator host bundle, hosted health evidence, webhook delivery chain evidence, and ao-release-gate shadow dry-run check-run evidence are collected; GPP-2 remains blocked pending ao-release-gate enforce-mode success and failure evidence on real pull requests, branch-protection/ruleset cutover that makes ao-release-gate a required status check with admin bypass disallowed, and the final AO-GATE-9/GPP status closeout; deployment-protection callback topology and callback review evidence, including any testai.acik.com/ao-gate or smee.io path, are deferred optional future infrastructure and are not active GPP-2B blockers"
-    }
-  ],
+  "blocked_wps": [],
   "pending_external_actions": [
     "defer production-suitable deployment-protection callback topology, including any testai.acik.com/ao-gate or smee.io path, to an optional future GPP-2C infrastructure initiative",
-    "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B near-term path",
-    "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term GPP-2B blocker",
-    "before branch-protection cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path on real pull requests",
-    "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
-    "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as GPP-2 closure, support widening, live adapter execution approval, or production platform readiness",
+    "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B path under the GPP-2 closeout decision",
+    "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term active blocker under the GPP-2 closeout decision",
+    "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as support widening, live adapter execution approval, production platform readiness, or release authority",
     "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration"
   ],
   "support_widening_allowed": false,
@@ -432,19 +493,27 @@
     "use ao_memory_write or ao_llm_call during Claude MCP consultation",
     "include credential material in Claude MCP prompts or tool payloads",
     "set support_widening=true without explicit GPP-9 promotion decision",
-    "set production_platform_claim=true without explicit GPP-9 promotion decision"
+    "set production_platform_claim=true without explicit GPP-9 promotion decision",
+    "treat GPP-2 closeout as support widening, production platform claim, or live adapter execution approval",
+    "reopen testai.acik.com/ao-gate, smee.io delivery, or deployment-protection callback topology without explicit GPP supersession of the deferred GPP-2C decision",
+    "regress ao-release-gate to shadow conclusion-mode without explicit GPP supersession",
+    "remove ao-release-gate from the GitHub ruleset required-check list without explicit GPP supersession",
+    "add bypass_actors to the ao-release-gate ruleset without explicit GPP supersession",
+    "treat GPP-2 closeout as completion of low-risk auto-merge smoke or CODEOWNERS narrowing without an explicit later GPP-2D-6/hardening record",
+    "treat any same-name external ao-release-gate check-run as satisfying the required-check source pin without explicit ruleset/API verification"
   ],
   "next_allowed_actions": [
-    "use the no-testai local/operator release-governance model as the active GPP-2 path: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check mapping",
-    "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active GPP-2B blockers",
-    "use the local AI review evidence gate as operator-controlled trust evidence only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness",
+    "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
+    "keep the ao-release-gate ruleset bypass_actors list empty; do not add bypass actors without explicit GPP supersession",
+    "preserve the legacy main branch protection enforce_admins surface separately from the ao-release-gate ruleset; tightening that surface is an optional later hardening slice",
+    "continue operating the no-testai local/operator release-governance model with ao-release-gate enforced via GitHub ruleset as the recorded GPP-2 closeout outcome: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check enforcement",
+    "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active blockers under the GPP-2 closeout decision",
+    "use the local AI review evidence gate as operator-controlled trust evidence only; it does not execute live adapters, widen support, claim production readiness, or replace the ao-release-gate required check",
     "prioritize repo-intelligence onboarding as a read-only product workflow that requires GitHub App installation and repository selection, not Cloud Run, vault, webhook, or private-key setup by each user",
-    "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false",
+    "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-4 read-only adapter decision is ready and support_widening_allowed=false and production_platform_claim_allowed=false",
     "configure ao_kernel.live_adapter_gate_policy_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
     "configure ao_kernel.ao_release_gate_runtime:application with internal vault secret ids or direct runtime secret manager values, never committed or echoed secret material",
-    "collect ao-release-gate enforce-mode success and failure evidence on real pull requests before any branch-protection cutover",
-    "cut branch protection/ruleset over to require the ao-release-gate status check only after enforce-mode evidence is captured; admin bypass remains disallowed",
-    "do not repoint GitHub App webhooks to testai.acik.com/ao-gate in the no-testai GPP-2B path",
+    "do not repoint GitHub App webhooks to testai.acik.com/ao-gate under the GPP-2 closeout decision",
     "keep the single-admin equivalent release gate not approved unless issue #489 is explicitly superseded",
     "use Claude MCP consultation only as advisory review, not release authority",
     "do not repeatedly dispatch .github/workflows/live-adapter-gate.yml while deployment-protection callback topology is deferred",
@@ -460,5 +529,5 @@
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
-  "last_updated": "2026-05-22T20:30:00Z"
+  "last_updated": "2026-05-24T20:00:00Z"
 }

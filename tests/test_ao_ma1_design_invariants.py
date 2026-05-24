@@ -61,7 +61,9 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
         in text
     )
     assert status["current_wp"]["id"] == "GPP-2"
-    assert status["current_wp"]["status"] == "blocked"
+    # GPP-2 closeout (AO-GATE-9) is recorded; the three guard flags remain
+    # false. AO-MA-1 stays docs-only and does not change those guards.
+    assert status["current_wp"]["status"] == "closed"
     assert status["support_widening_allowed"] is False
     assert status["production_platform_claim_allowed"] is False
     assert status["live_adapter_execution_allowed"] is False
@@ -70,10 +72,11 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
 def test_agents_contract_names_active_gpp2d_and_ao_ma1_context() -> None:
     text = AGENTS.read_text(encoding="utf-8")
 
-    assert "GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)" in text
+    assert "GPP-2 - Protected Live-Adapter Gate Runtime Binding (closed)" in text
     assert "GPP-2D - Autonomous Required-Check Lane" in text
     assert "GPP-2D-3 enforce job" in text
-    assert "GPP-2D-5 branch-protection cutover" in text
+    assert "GPP-2D-5 branch-protection ruleset cutover" in text
+    assert "GPP-2D-7 AO-GATE-9 GPP-2 closeout" in text
     assert "AO-MA-1 - Multi-Agent Orchestration Design" in text
     assert "GPP-2C - testai / smee / webhook callback integration" in text
     assert "Deferred, not an active blocker" in text

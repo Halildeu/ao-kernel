@@ -65,7 +65,7 @@
         },
         "gpp_status_checked": {
           "type": "boolean",
-          "description": "Whether the GPP status file confirmed the current work package is blocked and the support/production/live-adapter guards are all false."
+          "description": "Whether the GPP status file confirmed the current work package is closed under the AO-GATE-9 closeout decision (2026-05-24) and the support/production/live-adapter guards are all false."
         },
         "scope_allowed": {
           "type": "boolean",
@@ -108,8 +108,8 @@
     },
     "gpp_2_status": {
       "type": "string",
-      "const": "blocked",
-      "description": "GPP-2 stays blocked. The local gate is operator evidence only and does not close GPP-2."
+      "const": "closed",
+      "description": "GPP-2 is closed under the AO-GATE-9 closeout decision. The local gate remains operator-controlled local trust evidence only; it does not by itself close GPP-2 and does not widen support."
     },
     "support_widening": {
       "type": "boolean",

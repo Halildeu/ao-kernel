@@ -58,17 +58,21 @@ Makine-okunur durum:
 Current program head:
 
 ```text
-GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)
+GPP-2 - Protected Live-Adapter Gate Runtime Binding (closed)
 ```
 
 Active sublane:
 
 ```text
-GPP-2D - Autonomous Required-Check Lane
-  GPP-2D-2c shadow workflow is recorded
-  GPP-2D-3 enforce job, GPP-2D-4 real-PR evidence,
-  GPP-2D-5 branch-protection cutover, GPP-2D-6 auto-merge smoke,
-  and GPP-2D-7 AO-GATE-9 closeout remain pending
+GPP-2D - Autonomous Required-Check Lane (fully landed)
+  GPP-2D-2c shadow workflow recorded
+  GPP-2D-3 enforce job + GPP-2D-4 real-PR evidence collected
+  GPP-2D-5 branch-protection ruleset cutover landed
+    (ruleset id 16803733; required check ao-release-gate
+    via integration_id 15368 source-pin; bypass_actors=[])
+  GPP-2D-7 AO-GATE-9 GPP-2 closeout recorded
+  GPP-2D-6 low-risk auto-merge smoke remains optional
+    later hardening, not a closeout prerequisite
 ```
 
 Related orchestration:
