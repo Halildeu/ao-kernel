@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DOC = ROOT / ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md"
+STATUS = ROOT / ".claude/plans/gpp_status.v1.json"
+
+
+def test_ao_ma1_keeps_release_authority_in_ao_release_gate() -> None:
+    text = DOC.read_text(encoding="utf-8")
+
+    assert "AO-MA execution layer" in text
+    assert "GPP-2D merge / release authority layer" in text
+    assert "Agent outputs are evidence, not authority." in text
+    assert (
+        "Release authority = the repo-owned `ao-release-gate` required check plus GitHub branch-protection enforcement."
+        in text
+    )
+    assert "Claude MCP consultation is advisory review only, not release authority." in text
+    assert "No treating Codex, Claude, or any other model output as release authority." in text
+
+
+def test_ao_ma1_pins_agent_roles_parallel_worktrees_and_claim_boundary() -> None:
+    text = DOC.read_text(encoding="utf-8")
+
+    for required_role in (
+        "Planner Agent",
+        "Explorer Agent",
+        "Worker / Implementation Agent",
+        "Reviewer Agent",
+        "Verifier Agent",
+        "Integrator",
+        "Release Gate",
+    ):
+        assert required_role in text
+
+    assert "parallel AI agents with disjoint write scopes" in text
+    assert "Every worker uses a separate worktree and short-lived branch." in text
+    assert "No two workers may edit the same file" in text
+    assert "claim-required coordination set" in text
+    assert "one-agent-one-worktree semantics" in text
+
+
+def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
+    text = DOC.read_text(encoding="utf-8")
+    status = json.loads(STATUS.read_text(encoding="utf-8"))
+
+    assert "AO-MA-1 is a design/docs-only slice" in text
+    assert "GPP-2 stays `blocked`" in text
+    assert "support_widening=false" in text
+    assert "production_platform_claim=false" in text
+    assert "live_adapter_execution=false" in text
+    assert "No admin bypass" in text
+    assert "No branch-protection/ruleset mutation by the agent." in text
+    assert (
+        "No testai.acik.com/ao-gate, smee.io, GitHub App webhook, or deployment-protection callback work in AO-MA-1."
+        in text
+    )
+    assert status["current_wp"]["id"] == "GPP-2"
+    assert status["current_wp"]["status"] == "blocked"
+    assert status["support_widening_allowed"] is False
+    assert status["production_platform_claim_allowed"] is False
+    assert status["live_adapter_execution_allowed"] is False

@@ -10,14 +10,19 @@ mapping. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection
 callback evidence, and policy App slug reconciliation are deferred optional
 GPP-2C infrastructure, not active GPP-2B blockers. GPP-2 still stays blocked
 until `ao-release-gate` enforce-mode success/failure evidence, branch-protection
-required-check cutover, and final AO-GATE-9/GPP closeout are complete.
-**Date:** 2026-05-22
+required-check cutover, and final AO-GATE-9/GPP closeout are complete. The
+GPP-2D autonomous required-check lane has landed through shadow workflow; the
+AO-MA-1 multi-agent orchestration design records how planner/explorer/worker/
+reviewer/verifier/integrator agents feed evidence into that lane without
+becoming release authority.
+**Date:** 2026-05-24
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
 **Current slice issue:** [#567](https://github.com/Halildeu/ao-kernel/issues/567)
 for GPP-2 protected live-adapter gate runtime binding
-**Current slice record:** `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md`
+**Current slice record:** `.claude/plans/GPP-2D-AUTONOMOUS-REQUIRED-CHECK-LANE.md`
+**Related orchestration record:** `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
 **Worktree:** none active
@@ -78,6 +83,21 @@ GPP-2 remains `blocked`, but the active blocker list is now narrower: collect
 requests, cut branch protection/rulesets over to require that status check with
 admin bypass disallowed, then record the final AO-GATE-9/GPP closeout.
 Post-pivot handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`.
+
+## 1b. 2026-05-24 Autonomous Orchestration Alignment
+
+GPP-2D answers the merge-authority question: testai is not required for the
+near-term lane; the required check is the repo-owned `ao-release-gate` GitHub
+Actions workflow, and authority comes from that check plus GitHub branch
+protection. AI outputs are evidence inputs, not release authority.
+
+AO-MA-1 adds the orchestration layer above that gate. Planner, explorer,
+worker, reviewer, verifier, and integrator agents may run in parallel only with
+explicit write scopes, separate worktrees, no-secret artifacts, and bounded
+REVISE loops. This does not change `gpp_status.v1.json`, does not switch
+`ao-release-gate` to enforce mode, does not cut branch protection over, and
+does not close GPP-2. It simply records how multi-agent execution will feed the
+GPP-2D evidence chain once the enforce and cutover slices are ready.
 
 ## 2. Current Baseline
 
@@ -393,7 +413,9 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2ae` | Completed / no support widening | Internal operator host bundle | Caddy + policy service + `ao-release-gate` compose bundle and no-secret metadata attestation ready; services are still not publicly hosted/evidenced |
 | `GPP-2af` | Completed / no support widening | Internal gate host health probe | no-secret public HTTPS health probe ready; actual hosted health evidence, webhooks, callback/check-run evidence, and cutover are still missing |
 | `GPP-2ag` | Completed / no support widening | Local AI review gate pivot + LOCAL-GATE-1 (GPP-2A) | pivot recorded (PR #576) and local AI review evidence gate implemented + merged (PR #577); operator-controlled local trust evidence only, GPP-2 stays blocked |
-| `GPP-2` | Blocked / internal hosting/config/evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | deployment protection app/policy service and `ao-release-gate` must be hosted with public HTTPS health evidence, configured with vault-backed runtime secrets and webhooks, and evidenced/cut over before human-free program merges |
+| `GPP-2D` | In progress / no support widening | Autonomous required-check lane | design, context-binding, decision-core wiring, and shadow workflow are landed; enforce job, real-PR success/failure evidence, branch-protection cutover, auto-merge smoke, and AO-GATE-9 closeout remain pending |
+| `AO-MA-1` | Planned / docs only / no support widening | Multi-agent orchestration design | planner/explorer/worker/reviewer/verifier/integrator model feeds evidence into GPP-2D; it is not release authority and does not close GPP-2 |
+| `GPP-2` | Blocked / enforce evidence and release-gate cutover missing | Protected live-adapter gate runtime binding | active no-testai path requires `ao-release-gate` enforce-mode success/failure evidence on real PRs, branch-protection cutover requiring that status check with admin bypass disabled, auto-merge smoke, and final AO-GATE-9 closeout; deployment-protection callback/testai hosting is deferred optional GPP-2C infrastructure |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
 | `GPP-4` | Not started | `claude-code-cli` production-certified read-only decision | `promote_read_only` / `keep_operator_beta` / `defer` |
 | `GPP-5a` | Completed / no support widening | Repo-intelligence product onboarding contract | GitHub App install + selected repositories + optional `.ao/config.yml`; no end-user Cloud Run, vault, webhook, private key, or gate service hosting |
@@ -1144,6 +1166,8 @@ admin bypass for PR merge automation, and must keep
 | 2026-05-22 | GPP-2ag local AI review gate pivot planned | `.claude/plans/GPP-2ag-LOCAL-AI-REVIEW-GATE-PIVOT.md` records the scope correction: codify the current local implementer-AI + reviewer-AI trust model before continuing the heavier deployment-protection callback path. |
 | 2026-05-22 | LOCAL-GATE-1 (GPP-2A) implemented and merged | PR #576 pivot plan (`7c32879`) + PR #577 implementation (`bd8eb35`) shipped `scripts/local_gpp_gate.py`, the local AI review evidence JSON Schemas, no-secret fixtures, and fail-closed tests. The gate is operator-controlled local trust evidence only and does not close GPP-2. GPP-2 split recorded: GPP-2A (LOCAL-GATE-1) done, GPP-2B (`ao-release-gate` required-check mapping) next, GPP-2C (deployment-protection callback / production topology) blocked. Handoff: `docs/session-handoff-2026-05-22-gpp2-local-gate-1.md`. |
 | 2026-05-22 | GPP-2 no-testai active blocker sync | The no-testai near-term release-governance model is now the active GPP-2B path: cross-provider AI review, non-author GitHub approval, `local_gpp_gate` evidence, and `ao-release-gate` required-check mapping. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation are deferred optional GPP-2C infrastructure, not active GPP-2B blockers. GPP-2 remains blocked pending `ao-release-gate` enforce-mode success/failure evidence, required-check branch-protection cutover, and final AO-GATE-9 closeout. |
+| 2026-05-23 | GPP-2D autonomous required-check lane advanced | GPP-2D design, context-binding, decision-core review-evidence wiring, and the advisory `ao-release-gate-shadow` workflow landed. The required-check enforce job, real-PR success/failure evidence, branch-protection cutover, auto-merge smoke, and AO-GATE-9 closeout remain pending; GPP-2 stays blocked. |
+| 2026-05-24 | AO-MA-1 multi-agent orchestration design recorded | `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md` records the planner/explorer/worker/reviewer/verifier/integrator execution model that feeds evidence into GPP-2D. Agent output remains evidence, not release authority; `ao-release-gate` plus GitHub branch protection remain the merge authority. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
 | 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |
