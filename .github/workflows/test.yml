@@ -496,6 +496,38 @@ jobs:
           # base SHA). To diff base...head, head_sha must be in base's
           # git db. fetch-depth=50 covers typical PR sizes.
           git fetch --depth=50 origin "$HEAD_SHA" 2>/dev/null || true
+          git fetch --depth=50 origin "$BASE_SHA" 2>/dev/null || true
+          #
+          # GPP-2D-3c trusted-base ref-binding (Codex iter-3 absorb):
+          # The base checkout is a detached HEAD at $BASE_SHA. Branch
+          # names like `main` and `codex/...` are NOT guaranteed to
+          # exist as local refs in this clone. The legacy alias path
+          # below resolves them through `git diff <base_ref>...<head_ref>`
+          # and `git rev-parse <head_ref>`, which require the names to
+          # be valid refs. So we explicitly bind the API-reported branch
+          # labels to the API-reported runtime SHAs here, using
+          # `git update-ref` against namespaced refs the script (and
+          # only the script) walks via the legacy alias. This makes
+          # `context_binding.head_sha` always equal $HEAD_SHA and the
+          # diff always span $BASE_SHA...$HEAD_SHA, regardless of
+          # whether the underlying branches still exist or have since
+          # advanced on the remote.
+          #
+          # The ref labels are first validated against a strict
+          # `git check-ref-format` to reject anything that is not a
+          # safe Git ref (path traversal, leading dashes, control
+          # bytes, etc.); a hostile label cannot inject arguments into
+          # the update-ref command or anywhere downstream.
+          if ! git check-ref-format "refs/heads/$BASE_REF"; then
+            echo "ao-release-gate: unsafe BASE_REF '$BASE_REF'; rejecting" >&2
+            exit 1
+          fi
+          if ! git check-ref-format "refs/heads/$HEAD_REF"; then
+            echo "ao-release-gate: unsafe HEAD_REF '$HEAD_REF'; rejecting" >&2
+            exit 1
+          fi
+          git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"
+          git update-ref "refs/heads/$HEAD_REF" "$HEAD_SHA"
           # local_gpp_gate.py exits 1 when its own decision is
           # fail_closed; `|| true` keeps the workflow going so the
           # downstream decision script (the canonical ao-release-gate
@@ -516,11 +548,12 @@ jobs:
           #     evidence's scope_reviewed.base_ref / head_ref (both branch
           #     names, never SHAs);
           #   * `git diff base...head` resolves the names through git's
-          #     own ref lookup, so the actual diff is still computed
-          #     between the two real commits;
+          #     local refs (created by the update-ref step above) to the
+          #     API-pinned base/head SHAs, so the actual diff is computed
+          #     between the two real PR commits;
           #   * context_binding.head_sha is produced by git rev-parse on
-          #     the head ref, so it binds to the runtime head SHA without
-          #     the reviewer evidence ever recording one.
+          #     the head ref, so it binds to $HEAD_SHA without the reviewer
+          #     evidence ever recording one.
           # Once dual-ref support lands on main, a follow-up slice can
           # upgrade this invocation to --review-* / --diff-*; the
           # head-side scripts/local_gpp_gate.py already exposes the
