@@ -58,9 +58,12 @@ protection is mis-edited.
 
 **Steps:**
 
-1. Capture the current API state for both ruleset + legacy protection (agent
-   may read these; only the operator writes).
+1. **Operator-run only.** Operator captures the current API state for both
+   ruleset + legacy protection. The agent does not call `gh api` against
+   these surfaces (CC-9); the operator runs the capture and pastes the
+   no-secret JSON output into a PR comment for the agent to read.
    ```bash
+   # OPERATOR-RUN ONLY:
    gh api repos/Halildeu/ao-kernel/rulesets/16803733 > /tmp/ruleset-before.json
    gh api repos/Halildeu/ao-kernel/branches/main/protection > /tmp/protection-before.json
    ```
@@ -74,14 +77,17 @@ protection is mis-edited.
 3. Operator pastes a structured audit comment in the relevant PR (or a new
    incident PR) that mirrors the §2.6 format from
    `.claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md`.
-4. Agent verifies post-revert state.
+4. **Operator-run only.** Operator captures the post-revert API state and
+   appends it to the same PR audit comment. The agent reads the comment and
+   confirms the diff against the pre-revert capture.
    ```bash
+   # OPERATOR-RUN ONLY:
    gh api repos/Halildeu/ao-kernel/rulesets/16803733 > /tmp/ruleset-after.json
    diff /tmp/ruleset-before.json /tmp/ruleset-after.json
    ```
 
 **Evidence to attach:**
-- Before / after API JSON replays
+- Operator-supplied before / after API JSON replays (pasted in PR comment)
 - Operator audit comment URL
 - Incident timestamp (UTC)
 
@@ -199,12 +205,19 @@ reviewer.
     - Defines the new `current_wp` shape and new `ready_after` cluster.
 2. Open a PR that:
     - Adds the new decision record;
-    - Updates `gpp_status.v1.json` to move the affected slot from `closed`
-      back to a defined `reopened` state (or migrates `current_wp` to the
-      new active wp);
-    - Updates the `milestones[]` entry to `status: "reopened"` + reason;
+    - Migrates `current_wp` to the new active work package (the affected
+      slot remains in `completed_wps` / its closed-state record as audit
+      trace; do NOT re-open the same slot in place);
+    - Updates the affected `milestones[]` entry within the current allowed
+      enum (`done` → leave as-is and add a follow-up milestone if needed,
+      OR keep `pending` if not yet closed). The schema currently allows
+      only `{done, pending}`; introducing a new state such as `reopened`
+      or `superseded` is itself a CC-8 breaking schema change that requires
+      a separate `gpp_status.v2.json` + reader compatibility plan slice
+      BEFORE this reversal PR.
     - Updates STATUS.md §0 and the relevant section to reflect the new
-      state.
+      state (via a new section reference, not by mutating closed slice
+      narrative).
 3. Cross-AI review + non-author approval + CI green + squash merge.
 
 **Evidence to attach:**
@@ -244,10 +257,14 @@ also any external security contact named in `docs/SUPPORT-BOUNDARY.md`.
     - Affected artifact paths.
     - Operator + agent action timeline (UTC).
 3. **Revert live flag.** Operator opens a PR that flips
-   `live_adapter_execution_allowed` back to `false` in `gpp_status.v1.json`,
-   updates the closeout record of the offending slice with an `## Incident`
-   section, and tightens any forbidden-action lines that the incident
-   exposed.
+   `live_adapter_execution_allowed` back to `false` in `gpp_status.v1.json`
+   and tightens any forbidden-action lines that the incident exposed. The
+   PR also adds a NEW incident decision record
+   `.claude/plans/INCIDENT-YYYY-MM-DD-<slug>.md` (or
+   `<SLICE>-SUPERSESSION-YYYY-MM-DD.md`) that references the offending
+   slice's existing closeout record. The closeout record of the offending
+   slice is **NOT mutated in place** (CC-7 + retrospective-template
+   discipline); the incident record is the supersession artifact.
 4. **Rotate.** Any secret material that may have been exposed is rotated by
    the operator (vault, GitHub App private key, webhook secret); the rotation
    is recorded in a no-secret-value attestation file.

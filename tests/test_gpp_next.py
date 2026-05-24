@@ -1051,6 +1051,10 @@ def test_status_md_milestones_section_is_timeline_free() -> None:
         assert f"| {mid} |" in section, f"milestone row for {mid} missing in §0"
     # And must NOT carry a `**Date:**` line of its own (date drift).
     assert "**Date:**" not in section
-    # And must not advertise pre-closeout GPP-2 wording.
+    # GPP-2 reference is required in the slot column for M1.
     assert "GPP-2" in section
-    assert "blocked" not in section.lower() or "Blocked" not in section
+    # Pre-closeout stale wording for GPP-2 must NOT appear in the active §0
+    # (case-insensitive sharp check; covers `blocked` / `Blocked`).
+    assert "gpp-2 blocked" not in section.lower()
+    assert "gpp-2 stays blocked" not in section.lower()
+    assert "gpp-2 remains blocked" not in section.lower()
