@@ -394,6 +394,14 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     assert "tests/" in prefixes
     assert ".claude/plans/" in prefixes
     assert ".github/workflows/" in prefixes
+    # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
+    # job reads the raw reviewer evidence file committed at the repo
+    # head and generates the head-bound gate evidence file at CI
+    # runtime. The decision core's diff_scope check requires every
+    # committed path to be in this allowlist, so any PR that ships
+    # either file at the repo root must find it pinned here.
+    assert "local-ai-review-evidence.v1.json" in prefixes
+    assert "local-gpp-gate-evidence.v1.json" in prefixes
 
 
 def test_build_payload_from_fork_is_carried(tmp_path: Path) -> None:
