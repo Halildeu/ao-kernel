@@ -34,31 +34,37 @@ def _load_module() -> Any:
     return module
 
 
-def test_synthesizer_defaults_to_enforce_conclusion_mode(tmp_path: Path) -> None:
-    """The default conclusion mode is now ``enforce`` (it was ``shadow``
-    in the retired GPP-2D-2c synthesizer). When invoked without
-    --conclusion-mode the artifact reflects enforce semantics."""
+def test_synthesizer_defaults_to_shadow_conclusion_mode(tmp_path: Path) -> None:
+    """The default conclusion mode is ``shadow`` for backward
+    compatibility: the GPP-2D-2c advisory shadow workflow invokes the
+    synthesizer without `--conclusion-mode` (PR-A lands before PR-B
+    swaps that workflow), so a default of shadow keeps the existing
+    shadow fallback artifact at shadow / neutral. The GPP-2D-3b enforce
+    job passes `--conclusion-mode enforce` explicitly so its fallback
+    artifact maps deny/error to conclusion=failure.
+    """
     mod = _load_module()
     output = tmp_path / "decision.json"
     rc = mod.main([str(output)])
     assert rc == 0
     decision = json.loads(output.read_text(encoding="utf-8"))
-    assert decision["conclusion_mode"] == "enforce"
+    assert decision["conclusion_mode"] == "shadow"
     assert decision["decision"] == "error_fail_closed"
     assert decision["allow"] is False
-    # Under enforce, deny/error maps to conclusion=failure.
-    assert decision["github_check_run"]["conclusion"] == "failure"
+    # Under shadow, deny/error maps to conclusion=neutral.
+    assert decision["github_check_run"]["conclusion"] == "neutral"
 
 
-def test_synthesizer_supports_shadow_conclusion_mode(tmp_path: Path) -> None:
-    """For audit / debugging the shadow mode is still selectable; the
-    artifact's check-run conclusion then maps to neutral."""
+def test_synthesizer_supports_explicit_enforce_conclusion_mode(tmp_path: Path) -> None:
+    """The enforce-job workflow passes `--conclusion-mode enforce`
+    explicitly; the artifact's check-run conclusion then maps to
+    failure (matching the job's enforce-mode exit code)."""
     mod = _load_module()
     output = tmp_path / "decision.json"
-    mod.main([str(output), "--conclusion-mode", "shadow"])
+    mod.main([str(output), "--conclusion-mode", "enforce"])
     decision = json.loads(output.read_text(encoding="utf-8"))
-    assert decision["conclusion_mode"] == "shadow"
-    assert decision["github_check_run"]["conclusion"] == "neutral"
+    assert decision["conclusion_mode"] == "enforce"
+    assert decision["github_check_run"]["conclusion"] == "failure"
 
 
 def test_synthesizer_emits_default_pre_decision_finding(tmp_path: Path) -> None:

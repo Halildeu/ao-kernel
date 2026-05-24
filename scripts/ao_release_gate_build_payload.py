@@ -129,7 +129,8 @@ def _normalized_checks(
     data = json.loads(check_runs_json_path.read_text(encoding="utf-8"))
     runs = data.get("check_runs", []) if isinstance(data, dict) else []
     excluded = {"ao-release-gate", "ao-release-gate-shadow"}
-    allow = set(required_checks_allowlist) if required_checks_allowlist else None
+    allow = list(required_checks_allowlist) if required_checks_allowlist else None
+    allow_set = set(allow) if allow is not None else None
     by_name: dict[str, dict[str, Any]] = {}
     for entry in runs:
         if not isinstance(entry, dict):
@@ -137,7 +138,7 @@ def _normalized_checks(
         name = entry.get("name")
         if not isinstance(name, str) or name in excluded:
             continue
-        if allow is not None and name not in allow:
+        if allow_set is not None and name not in allow_set:
             continue
         existing = by_name.get(name)
         if existing is None or _check_run_sort_key(entry) > _check_run_sort_key(existing):
@@ -151,6 +152,22 @@ def _normalized_checks(
                 "conclusion": entry.get("conclusion"),
             }
         )
+    # Fail-closed for allowlisted names that the GitHub API never returned.
+    # Without this, the decision core's _required_checks_are_green would
+    # silently approve a payload where, say, `typecheck` was on the
+    # allowlist but never started on the commit. The synthetic
+    # `status: "missing"` entry fails the not-green check.
+    if allow is not None:
+        present = {entry["name"] for entry in out}
+        for required_name in allow:
+            if required_name not in present:
+                out.append(
+                    {
+                        "name": required_name,
+                        "status": "missing",
+                        "conclusion": None,
+                    }
+                )
     return out
 
 

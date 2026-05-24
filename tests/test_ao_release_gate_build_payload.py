@@ -171,6 +171,74 @@ def test_build_payload_excludes_self_check_runs(tmp_path: Path) -> None:
     assert "test (3.13)" in names
 
 
+def test_build_payload_required_check_allowlist_fails_closed_on_missing_name(tmp_path: Path) -> None:
+    """When the workflow passes `--required-check` with a name the
+    GitHub API never returned (e.g. `typecheck` never started), the
+    builder must surface a synthetic `status: "missing"` placeholder so
+    the decision core's `_required_checks_are_green` returns False.
+    Without this, a payload where one required job is silently absent
+    would be approved by the gate.
+    """
+    mod = _load_module()
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    # API returns only `lint` and `test (3.13)`; `typecheck` never
+    # appeared. The builder must still emit `typecheck` with
+    # status=missing so it fails the required-checks-are-green check.
+    _write_check_runs(
+        check_runs,
+        [
+            {"name": "lint", "status": "completed", "conclusion": "success"},
+            {"name": "test (3.13)", "status": "completed", "conclusion": "success"},
+        ],
+    )
+    _write_gpp_status(gpp_status)
+    output = tmp_path / "payload.json"
+    mod.main(
+        [
+            "--repository",
+            "Halildeu/ao-kernel",
+            "--pr-number",
+            "1",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "x",
+            "--head-sha",
+            "f" * 40,
+            "--from-fork",
+            "false",
+            "--branch-up-to-date",
+            "true",
+            "--gpp-status",
+            str(gpp_status),
+            "--pr-files-json",
+            str(pr_files),
+            "--check-runs-json",
+            str(check_runs),
+            "--required-check",
+            "lint",
+            "--required-check",
+            "test (3.13)",
+            "--required-check",
+            "typecheck",
+            "--output",
+            str(output),
+        ]
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    by_name = {c["name"]: c for c in payload["required_checks"]}
+    # The two API-present names are carried with their real status.
+    assert by_name["lint"]["conclusion"] == "success"
+    assert by_name["test (3.13)"]["conclusion"] == "success"
+    # The allowlisted-but-absent name is surfaced as a not-green
+    # placeholder so the decision core fails closed.
+    assert by_name["typecheck"]["status"] == "missing"
+    assert by_name["typecheck"]["conclusion"] is None
+
+
 def test_build_payload_dedupes_check_runs_keeping_latest(tmp_path: Path) -> None:
     """gh api .../check-runs returns every run on the commit, including
     cancelled ones from a previous workflow attempt. The builder must

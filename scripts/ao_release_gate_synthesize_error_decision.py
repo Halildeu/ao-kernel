@@ -106,11 +106,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--conclusion-mode",
         choices=("shadow", "enforce"),
-        default="enforce",
+        default="shadow",
         help=(
             "Conclusion mode to record in the synthesized artifact. "
-            "'enforce' (default) maps deny/error to github_check_run.conclusion=failure; "
-            "'shadow' maps to neutral. The GPP-2D-3 enforce job uses 'enforce'."
+            "'shadow' (default) maps deny/error to github_check_run.conclusion=neutral so the "
+            "GPP-2D-2c advisory shadow workflow's fallback artifact stays shadow / neutral when "
+            "PR-A lands without PR-B's workflow swap. The GPP-2D-3b enforce job passes "
+            "'--conclusion-mode enforce' explicitly so the enforce-job fallback artifact maps "
+            "deny/error to conclusion=failure."
         ),
     )
     parser.add_argument(
