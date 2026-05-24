@@ -13,15 +13,10 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-3c-enforce-with-runtime-evidence",
+    "head_ref": "refs/heads/codex/gpp2d-3c-doc-hygiene-comment-v2",
     "changed_files": [
-      ".github/workflows/ao-release-gate.yml",
       ".github/workflows/test.yml",
-      "local-ai-review-evidence.v1.json",
-      "scripts/local_gpp_gate.py",
-      "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_ao_release_gate_workflow.py",
-      "tests/test_local_gpp_gate.py"
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -34,47 +29,19 @@
       "status": "pass"
     },
     {
-      "name": "trusted_base_gate",
+      "name": "doc_hygiene_only",
       "status": "pass"
     },
     {
-      "name": "enforce_contract",
+      "name": "no_runtime_contract_change",
       "status": "pass"
     },
     {
-      "name": "fail_closed_needs_short_circuit",
+      "name": "narrowing_matches_evidence_wording",
       "status": "pass"
     },
     {
-      "name": "runtime_gate_evidence_generation",
-      "status": "pass"
-    },
-    {
-      "name": "bootstrap_safe_ref_contract",
-      "status": "pass"
-    },
-    {
-      "name": "trusted_base_ref_binding",
-      "status": "pass"
-    },
-    {
-      "name": "fully_qualified_ref_invocation",
-      "status": "pass"
-    },
-    {
-      "name": "dual_ref_api_ready",
-      "status": "pass"
-    },
-    {
-      "name": "dual_ref_api_dogfood",
-      "status": "pass"
-    },
-    {
-      "name": "actions_shape_dogfood",
-      "status": "pass"
-    },
-    {
-      "name": "actions_shape_ambiguity_dogfood",
+      "name": "option_injection_claim_verified",
       "status": "pass"
     },
     {
@@ -87,22 +54,12 @@
     }
   ],
   "findings": [
-    "GPP-2D-3c retires the GPP-2D-2c advisory shadow workflow in favor of an enforce job inside test.yml under the reserved required-check name ao-release-gate.",
-    "Trusted-base gate is preserved: decision-core code, schemas, gpp_status, and scripts/local_gpp_gate.py all come from the PR base SHA. The PR head is checked out only for the raw reviewer evidence file (local-ai-review-evidence.v1.json) — the head-side gate evidence (local-gpp-gate-evidence.v1.json) is generated at CI runtime from that reviewer evidence + the actual git diff.",
-    "Bootstrap-safe ref contract (Codex iter-1+2 absorb, threads 019e5a21 / 019e5a32): the base-ref copy of scripts/local_gpp_gate.py predates the dual-ref --review-* / --diff-* split, so the workflow passes refs through the legacy --base-ref / --head-ref aliases. Reviewer evidence records the labels (not SHAs), so the committed evidence carries no head_sha and the head_sha self-reference fixed point stays closed.",
-    "Trusted-base ref binding (Codex iter-3 absorb, thread 019e5a41): the actions/checkout@v4 base checkout is a detached HEAD at $BASE_SHA with fetch-depth=1, so branch labels like 'main' and 'codex/...' are NOT guaranteed to exist as local refs. The workflow now (a) fetches $BASE_SHA and $HEAD_SHA to populate the local object DB, (b) validates the API-reported branch labels with `git check-ref-format refs/heads/<label>` against Git refname-invalid values such as path traversal sequences or control bytes, and (c) binds them to the API-pinned runtime SHAs via `git update-ref refs/heads/$BASE_REF $BASE_SHA` and `git update-ref refs/heads/$HEAD_REF $HEAD_SHA` BEFORE invoking local_gpp_gate.py.",
-    "Fully-qualified ref invocation (Codex iter-4 absorb, thread 019e5a4b): even with the ref-binding step above, passing unqualified labels to local_gpp_gate.py would let Git's revision-shorthand lookup drift through tags or other objects (the script calls `git diff <base>...<head>` and `git rev-parse <head>`). The workflow now passes the FULLY QUALIFIED refs refs/heads/$BASE_REF / refs/heads/$HEAD_REF into the legacy --base-ref / --head-ref aliases, pinning resolution to the local branch refs we just created and rejecting same-named tag ambiguity. Reviewer evidence records the same fully-qualified scope_reviewed.base_ref / head_ref so the scope-check string equality matches under that contract.",
-    "Dual-ref API ready on the head side: scripts/local_gpp_gate.py exposes --review-base-ref / --review-head-ref (scope-check labels) and --diff-base-ref / --diff-head-ref (git diff + context_binding refs), with the legacy --base-ref / --head-ref aliases as a backward-compatible fallback. Once the head-side script lands on main, a follow-up slice can upgrade the workflow invocation to the explicit dual-ref split with no further script changes.",
-    "Enforce contract pins are explicit: --conclusion-mode enforce + --fail-on-deny on every decision invocation, no continue-on-error anywhere on the gate job, audit artifact upload runs on if: always().",
-    "Fail-closed needs short-circuit covers event-gate + lint + typecheck + test + coverage + packaging-smoke + policy-container-smoke + release-gate-container-smoke; an event-gate output-missing edge is covered via the if-clause needs.event-gate.result != success path.",
-    "Required-check allowlist is the workflow's `needs:` graph; advisory / non-blocking jobs (extras-install, benchmark-fast, scorecard) cannot block the gate via their pending or failing state.",
-    "Workflow drift-guards in tests/test_ao_release_gate_enforce_job.py pin every property the reviewer relied on: reserved name, retired shadow, runtime gate-evidence generation step, per-label ref-binding ordering (check-ref-format precedes its update-ref; both update-refs precede the local_gpp_gate.py invocation), fully-qualified ref invocation (refs/heads/$BASE_REF + refs/heads/$HEAD_REF in the legacy aliases — both $BASE_SHA / $HEAD_SHA and the unqualified $BASE_REF / $HEAD_REF are explicitly rejected), decision-script invocations, audit artifact upload.",
-    "Dual-ref API drift-guards in tests/test_local_gpp_gate.py: --review-* drive scope check independently of --diff-* and the legacy alias; a --review-* mismatch fails scope check closed even when --diff-* / legacy refs match; the legacy single-ref alias drives scope check when --review-* are absent.",
-    "Dual-ref API end-to-end dogfood in tests/test_local_gpp_gate.py builds a deterministic tmp git repo and exercises the dual-ref invocation pattern with a real git diff. It pins decision == operator_may_merge, checks.scope_allowed True, context_binding.head_sha == --diff-head-ref SHA, changed_files_count matches the actual diff, and diff_digest is sha256:<64-hex>.",
-    "Actions-shape end-to-end dogfood in tests/test_local_gpp_gate.py simulates the GitHub Actions trusted-base checkout shape (detached HEAD at base SHA + fetch-depth=1 + missing branch refs), runs the workflow's check-ref-format + update-ref binding steps, then invokes the legacy alias path with --base-ref refs/heads/main + --head-ref refs/heads/feature-x. It pre-asserts that the branch labels do NOT resolve before binding (so a regression in the binding step would actually be caught) and post-asserts the accepting artifact contract (decision, scope_allowed, context_binding.head_sha == runtime head SHA, changed_files_count, schema validation).",
-    "Actions-shape ambiguity dogfood in tests/test_local_gpp_gate.py creates a TAG with the same name as the head branch but pointing at a DIFFERENT SHA (the base SHA), and pre-asserts the unqualified label `git rev-parse feature-x` returns the TAG'S SHA. It then invokes the legacy alias path with the fully-qualified refs/heads/feature-x and pins context_binding.head_sha == the BRANCH's head_sha, NOT the tag's base_sha. A regression that switched the workflow back to unqualified labels would bind to the wrong object and the test would catch it.",
-    "Branch protection is not mutated by this slice; GPP-2D-5 is the operator action that makes ao-release-gate a required status check.",
-    "Real positive / negative enforce-mode evidence on live PRs is not collected here; that is GPP-2D-4 (operator + agent verification).",
+    "PR #602 narrows the workflow's inline comment above the `git check-ref-format refs/heads/$REF` calls so it matches the reviewer evidence wording PR #599 iter-4 landed: 'Git refname-invalid values such as path traversal sequences or control bytes'. The inaccurate 'leading dashes' rejection claim Codex iter-5 flagged on PR #599 is removed.",
+    "Codex live-verified the actual `git check-ref-format` behavior in iter-1 of this PR's review thread (019e5a86): `refs/heads/-foo` exits 0, `refs/heads/../foo` exits 1, control-byte input exits 1. The new comment wording is aligned with the real check semantics.",
+    "The new option-injection-safety sentence documents the structural guarantee: the workflow runs `git update-ref refs/heads/$BASE_REF` / `refs/heads/$HEAD_REF` and then passes `--base-ref refs/heads/$BASE_REF` / `--head-ref refs/heads/$HEAD_REF` to local_gpp_gate.py. The argv token always starts with `refs/heads/`, so a hostile leading dash on $REF becomes `refs/heads/-...` and is no longer at character position 0 of its argv token; argparse parses the token as a value, not an option.",
+    "Runtime contract is unchanged: `git check-ref-format` still rejects refname-invalid values; the fully-qualified `refs/heads/$REF` form continues to reach local_gpp_gate.py as introduced in PR #599 iter-4.",
+    "Scope is the workflow comment text edit plus this reviewer evidence file. No script changes, no test changes, no behavior changes.",
+    "Branch protection is not mutated; GPP-2D-5 remains the operator action that makes ao-release-gate a required status check.",
     "GPP-2 stays blocked; support_widening_allowed, production_platform_claim_allowed, and live_adapter_execution_allowed all stay false."
   ],
   "secrets_recorded": false,
