@@ -529,5 +529,86 @@
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness"
   ],
-  "last_updated": "2026-05-24T20:00:00Z"
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Foundation",
+      "gpp_slots": ["GPP-0", "GPP-1", "GPP-1b"],
+      "status": "done",
+      "closed_at": "2026-04-25T00:00:00Z",
+      "evidence_refs": [
+        ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md"
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "Protected gate runtime + required-check lane",
+      "gpp_slots": ["GPP-2", "GPP-2D"],
+      "status": "done",
+      "closed_at": "2026-05-24T20:00:00Z",
+      "evidence_refs": [
+        ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Repo-intelligence read-only building block + E2E preflight preparation",
+      "gpp_slots": ["GPP-5", "GPP-6a"],
+      "status": "done",
+      "closed_at": "2026-04-28T00:00:00Z",
+      "evidence_refs": [
+        ".claude/plans/GPP-5d-REPO-INTELLIGENCE-CLOSEOUT.md",
+        ".claude/plans/GPP-6a-READ-ONLY-E2E-PREFLIGHT.md"
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Real-adapter cost/usage evidence",
+      "gpp_slots": ["GPP-3"],
+      "status": "pending",
+      "closed_at": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "M4",
+      "title": "Read-only adapter production decision",
+      "gpp_slots": ["GPP-4"],
+      "status": "pending",
+      "closed_at": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "M5",
+      "title": "Read-only E2E execution",
+      "gpp_slots": ["GPP-6"],
+      "status": "pending",
+      "closed_at": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "M6",
+      "title": "Production matrix + final claim",
+      "gpp_slots": ["GPP-7", "GPP-8", "GPP-9"],
+      "status": "pending",
+      "closed_at": null,
+      "evidence_refs": []
+    }
+  ],
+  "progress_estimates": {
+    "milestones": {
+      "done_count": 3,
+      "total_count": 7,
+      "percent": 43,
+      "next_milestone_id": "M3"
+    },
+    "wp_weighted": {
+      "completed_wps_count": 37,
+      "closed_current_wp_count": 1,
+      "completed_or_closed_count": 38,
+      "estimated_total_wps": 50,
+      "percent": 76,
+      "estimated": true
+    }
+  },
+  "last_updated": "2026-05-25T00:00:00Z"
 }

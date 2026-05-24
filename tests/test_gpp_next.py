@@ -914,3 +914,147 @@ def test_allowed_scope_reflects_no_testai_model() -> None:
         and "bypass_actors empty" in item.lower()
         for item in allowed_scope
     )
+
+
+# ---------------------------------------------------------------------------
+# GOV-1: milestones + progress drift guards
+# ---------------------------------------------------------------------------
+
+
+# Aggregate-aware completion sources for milestone consistency. Each entry
+# names how a GPP slot is considered "completed" for milestone purposes:
+# - "current_wp": the slot lives in current_wp with the given status
+# - "evidence_refs": milestone's evidence_refs must include this path
+# - "completed_children": the listed children must all appear in completed_wps
+_AGGREGATE_COMPLETION_SOURCES = {
+    "GPP-2": {"current_wp": "closed"},
+    "GPP-2D": {"evidence_refs": [".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"]},
+    "GPP-5": {"completed_children": {"GPP-5a", "GPP-5b", "GPP-5c", "GPP-5d"}},
+}
+
+
+def _slot_is_satisfied(slot: str, payload: dict[str, object], milestone: dict[str, object]) -> bool:
+    """True if a GPP slot is satisfied for milestone completion."""
+    completed_ids = {item["id"] for item in payload.get("completed_wps", []) if isinstance(item, dict)}
+    current_wp = payload.get("current_wp", {}) or {}
+    aggregate = _AGGREGATE_COMPLETION_SOURCES.get(slot)
+    # Aggregate / lane IDs (GPP-2, GPP-2D, GPP-5) need explicit handling.
+    if aggregate is not None:
+        if "current_wp" in aggregate:
+            return current_wp.get("id") == slot and current_wp.get("status") == aggregate["current_wp"]
+        if "evidence_refs" in aggregate:
+            evidence_refs = milestone.get("evidence_refs", [])
+            return all(ref in evidence_refs for ref in aggregate["evidence_refs"])
+        if "completed_children" in aggregate:
+            return aggregate["completed_children"] <= completed_ids
+    # Default: slot must appear in completed_wps.
+    return slot in completed_ids
+
+
+def test_gpp_status_milestones_contract() -> None:
+    """milestones[] presence, structure, and seven-milestone invariant."""
+    payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    milestones = payload["milestones"]
+    assert isinstance(milestones, list) and len(milestones) == 7
+    ids = [m["id"] for m in milestones]
+    assert ids == ["M0", "M1", "M2", "M3", "M4", "M5", "M6"]
+    for m in milestones:
+        assert set(m.keys()) >= {"id", "title", "gpp_slots", "status", "closed_at", "evidence_refs"}
+        assert isinstance(m["gpp_slots"], list) and m["gpp_slots"]
+        assert m["status"] in ("done", "pending")
+        assert isinstance(m["evidence_refs"], list)
+        if m["status"] == "pending":
+            assert m["closed_at"] is None
+            assert m["evidence_refs"] == []
+
+
+def test_gpp_status_done_milestones_have_evidence_refs() -> None:
+    """Every done milestone has at least one evidence_refs path that exists."""
+    payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    done_milestones = [m for m in payload["milestones"] if m["status"] == "done"]
+    assert len(done_milestones) == 3
+    for m in done_milestones:
+        assert m["evidence_refs"], f"done milestone {m['id']} has empty evidence_refs"
+        for ref in m["evidence_refs"]:
+            assert (_repo_root() / ref).exists(), f"missing evidence_refs path {ref} for {m['id']}"
+        # closed_at must be ISO-parseable.
+        from datetime import datetime
+
+        datetime.fromisoformat(m["closed_at"].replace("Z", "+00:00"))
+
+
+def test_gpp_status_done_milestones_are_consistent_with_completion_sources() -> None:
+    """Aggregate-aware: each done milestone's slots are satisfied by
+    completed_wps, closed current_wp, or explicit aggregate completion mapping."""
+    payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    for m in payload["milestones"]:
+        if m["status"] != "done":
+            continue
+        for slot in m["gpp_slots"]:
+            assert _slot_is_satisfied(slot, payload, m), (
+                f"done milestone {m['id']} slot {slot} not satisfied by completed_wps, current_wp, or aggregate map"
+            )
+
+
+def test_gpp_status_progress_estimates_present() -> None:
+    """progress_estimates contains both milestone-based and wp-weighted blocks."""
+    payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    pe = payload["progress_estimates"]
+    assert set(pe.keys()) >= {"milestones", "wp_weighted"}
+    ms = pe["milestones"]
+    assert ms["done_count"] == 3
+    assert ms["total_count"] == 7
+    assert ms["percent"] == 43
+    assert ms["next_milestone_id"] == "M3"
+    wp = pe["wp_weighted"]
+    assert wp["completed_or_closed_count"] == 38
+    assert wp["estimated_total_wps"] == 50
+    assert wp["percent"] == 76
+    assert wp["estimated"] is True
+
+
+def test_gpp_next_progress_output_renders_milestones(capsys: Any) -> None:
+    """`--output progress` lists all seven milestones and the headline."""
+    mod = _module()
+    result = mod.main(["--status-path", str(_status_path()), "--output", "progress"])
+    captured = capsys.readouterr()
+    assert result == 0
+    out = captured.out
+    assert "Milestones: 3/7 done (43%; next M3 - Real-adapter cost/usage evidence)" in out
+    assert "WP-weighted estimate: 38/50 (76%; estimated)" in out
+    for mid in ("M0", "M1", "M2", "M3", "M4", "M5", "M6"):
+        assert f"- {mid} [" in out
+
+
+def test_gpp_next_text_output_renders_milestone_summary() -> None:
+    """Default text output carries the two-line milestone summary."""
+    mod = _module()
+    payload = mod.load_status(_status_path())
+    rendered = mod.render_text(payload, git_summary={"status": "## main", "divergence": "0\t0"})
+    assert "Milestones: 3/7 done (43%; next M3 - Real-adapter cost/usage evidence)" in rendered
+    assert "WP-weighted estimate: 38/50 (76%; estimated)" in rendered
+
+
+def test_status_md_milestones_section_is_timeline_free() -> None:
+    """STATUS.md §0 Milestones must exist and must not duplicate the global
+    `**Date:** YYYY-MM-DD` header inside the milestone section (Codex iter-1
+    hardening)."""
+    status_md = (_repo_root() / ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md").read_text(
+        encoding="utf-8"
+    )
+    assert "## 0. Milestones" in status_md
+    section_start = status_md.index("## 0. Milestones")
+    section_end = status_md.index("## 1. Purpose")
+    section = status_md[section_start:section_end]
+    # The section must reference the seven canonical milestone IDs.
+    for mid in ("M0", "M1", "M2", "M3", "M4", "M5", "M6"):
+        assert f"| {mid} |" in section, f"milestone row for {mid} missing in §0"
+    # And must NOT carry a `**Date:**` line of its own (date drift).
+    assert "**Date:**" not in section
+    # GPP-2 reference is required in the slot column for M1.
+    assert "GPP-2" in section
+    # Pre-closeout stale wording for GPP-2 must NOT appear in the active §0
+    # (case-insensitive sharp check; covers `blocked` / `Blocked`).
+    assert "gpp-2 blocked" not in section.lower()
+    assert "gpp-2 stays blocked" not in section.lower()
+    assert "gpp-2 remains blocked" not in section.lower()
