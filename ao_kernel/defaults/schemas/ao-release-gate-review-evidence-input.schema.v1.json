@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ao:ao-release-gate-review-evidence-input:v1",
   "title": "ao-release-gate Attested Review Evidence Input",
-  "description": "GPP-2B-3 design-only acceptance profile for the attested cross-AI review evidence that a future ao-release-gate check would consume to close the Category-C gap (see .claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md section 5.1). The accepted artifact is the existing no-secret local-gpp-gate-evidence.v1 gate output, consumed as-is; no new evidence artifact is introduced. This is an acceptance profile, not a standalone structural validator: it constrains only the acceptance-critical fields and permits the artifact's other fields. A future ao-release-gate check MUST first validate the artifact against local-gpp-gate-evidence.schema.v1.json, then validate the same artifact against this acceptance profile. No service wiring exists: ao_release_gate.py does not read this contract, no check-run is posted, branch protection is unchanged, and GPP-2 stays blocked.",
+  "description": "Acceptance profile for the attested cross-AI review evidence that the ao-release-gate check consumes to close the Category-C gap (see .claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md section 5.1). The accepted artifact is the no-secret local-gpp-gate-evidence.v1 gate output, consumed as-is; no new evidence artifact is introduced. This is an acceptance profile, not a standalone structural validator: it constrains only the acceptance-critical fields and permits the artifact's other fields. The ao-release-gate check MUST first validate the artifact against local-gpp-gate-evidence.schema.v1.json, then validate the same artifact against this acceptance profile. Under the GPP-2D-7 / AO-GATE-9 closeout (2026-05-24), the ao-release-gate workflow is a required status check enforced by the GitHub branch ruleset (integration_id 15368 source-pinned, bypass_actors empty); GPP-2 is closed. This profile remains operator-controlled local trust evidence and does not by itself widen support, claim production platform readiness, or authorize live adapter execution.",
   "type": "object",
   "required": [
     "schema_version",
@@ -53,8 +53,8 @@
       "description": "The acceptance profile constrains only the two Category-C checks. The full checks object (all eight local-gate checks) is validated separately against local-gpp-gate-evidence.schema.v1.json; additional check keys are permitted here by design."
     },
     "gpp_2_status": {
-      "const": "blocked",
-      "description": "The attested artifact must confirm GPP-2 is still blocked."
+      "const": "closed",
+      "description": "The attested artifact must confirm GPP-2 is recorded as closed under the AO-GATE-9 closeout decision."
     },
     "support_widening": {
       "const": false,

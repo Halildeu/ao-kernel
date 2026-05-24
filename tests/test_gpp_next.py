@@ -29,12 +29,27 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["status"] == "closed"
     assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening"
+        == "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution"
     )
+    # Closeout consistency: exit_decision is terminal and matches the closeout_decision.
+    assert payload["current_wp"]["exit_decision"] == payload["current_wp"]["closeout_decision"]
+    assert "pending" not in payload["current_wp"]["exit_decision"]
+    # Closeout record file exists and closeout_at is ISO-parseable.
+    from datetime import datetime
+
+    assert (_repo_root() / payload["current_wp"]["closeout_record"]).exists()
+    datetime.fromisoformat(payload["current_wp"]["closeout_at"].replace("Z", "+00:00"))
+    # The three new evidence types are present in evidence_collected.
+    evidence_types = {item["type"] for item in payload["current_wp"]["evidence_collected"]}
+    assert {
+        "enforce_mode_required_check_evidence",
+        "branch_protection_ruleset_cutover",
+        "post_cutover_verification_acceptance",
+    } <= evidence_types
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -276,11 +291,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # cutover. GPP-2 stays blocked.
     assert payload["pending_external_actions"] == [
         "defer production-suitable deployment-protection callback topology, including any testai.acik.com/ao-gate or smee.io path, to an optional future GPP-2C infrastructure initiative",
-        "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B near-term path",
-        "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term GPP-2B blocker",
-        "before branch-protection cutover, switch ao-release-gate to enforce mode and demonstrate one positive success path plus one negative failure path on real pull requests",
-        "cut branch protection/ruleset over to require ao-release-gate only after enforce-mode evidence is captured; admin bypass YASAK",
-        "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as GPP-2 closure, support widening, live adapter execution approval, or production platform readiness",
+        "defer deployment-protection callback review evidence and the protected-workflow callback rerun; no protected workflow dispatch or callback evidence is required for the no-testai GPP-2B path under the GPP-2 closeout decision",
+        "defer policy App slug reconciliation ('ao-kernel-live-adapter-gate-policy' vs 'ao-kernel-live-adapter-gate') with the deferred deployment-protection callback initiative; it is not a near-term active blocker under the GPP-2 closeout decision",
+        "preserve local_gpp_gate as operator-controlled local/process evidence only; do not treat it as support widening, live adapter execution approval, production platform readiness, or release authority",
         "keep end-user repo-intelligence onboarding independent from GPP-2 gate hosting by requiring at most GitHub App installation, repository selection, and explicit opt-in configuration",
     ]
     # GPP-2 stays blocked. The blocker narrative is synced to the
@@ -289,35 +302,36 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # infrastructure; GPP-2 remains blocked pending ao-release-gate
     # enforce-mode evidence, the required-check cutover, and the
     # AO-GATE-9 closeout. Guard flags stay false.
-    assert payload["blocked_wps"] == [
-        {
-            "id": "GPP-2",
-            "reason": "the no-testai near-term release-governance model is selected and recorded: cross-provider AI review, non-author GitHub approval, local_gpp_gate operator evidence, and the ao-release-gate required-check mapping plus conclusion-mode matrix are the active GPP-2B path; repo-owned policy and ao-release-gate decision cores, container packages, GHCR publish paths, internal operator host bundle, hosted health evidence, webhook delivery chain evidence, and ao-release-gate shadow dry-run check-run evidence are collected; GPP-2 remains blocked pending ao-release-gate enforce-mode success and failure evidence on real pull requests, branch-protection/ruleset cutover that makes ao-release-gate a required status check with admin bypass disallowed, and the final AO-GATE-9/GPP status closeout; deployment-protection callback topology and callback review evidence, including any testai.acik.com/ao-gate or smee.io path, are deferred optional future infrastructure and are not active GPP-2B blockers",
-        }
-    ]
+    assert payload["blocked_wps"] == []
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action
-        == "use the no-testai local/operator release-governance model as the active GPP-2 path: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check mapping"
+        == "continue operating the no-testai local/operator release-governance model with ao-release-gate enforced via GitHub ruleset as the recorded GPP-2 closeout outcome: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check enforcement"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active GPP-2B blockers"
+        == "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active blockers under the GPP-2 closeout decision"
+        for action in payload["next_allowed_actions"]
+    )
+    # Closeout-anchored required-check operational rules (3 new):
+    assert any(
+        action
+        == "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "collect ao-release-gate enforce-mode success and failure evidence on real pull requests before any branch-protection cutover"
+        == "keep the ao-release-gate ruleset bypass_actors list empty; do not add bypass actors without explicit GPP supersession"
         for action in payload["next_allowed_actions"]
     )
     assert any(
         action
-        == "cut branch protection/ruleset over to require the ao-release-gate status check only after enforce-mode evidence is captured; admin bypass remains disallowed"
+        == "preserve the legacy main branch protection enforce_admins surface separately from the ao-release-gate ruleset; tightening that surface is an optional later hardening slice"
         for action in payload["next_allowed_actions"]
     )
     assert any(
-        action == "do not repoint GitHub App webhooks to testai.acik.com/ao-gate in the no-testai GPP-2B path"
+        action == "do not repoint GitHub App webhooks to testai.acik.com/ao-gate under the GPP-2 closeout decision"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -347,7 +361,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(action == "treat Codex or Claude output as release authority" for action in payload["forbidden_actions"])
     assert any(
         action
-        == "use the local AI review evidence gate as operator-controlled trust evidence only; it does not close GPP-2, change branch protection, execute live adapters, widen support, or claim production readiness"
+        == "use the local AI review evidence gate as operator-controlled trust evidence only; it does not execute live adapters, widen support, claim production readiness, or replace the ao-release-gate required check"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -357,7 +371,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-2 protected gate and GPP-4 read-only adapter decision are ready and support_widening_allowed=false and production_platform_claim_allowed=false"
+        == "use GPP-6a read-only E2E preflight evidence for preparation only, while GPP-6 execution remains blocked until GPP-4 read-only adapter decision is ready and support_widening_allowed=false and production_platform_claim_allowed=false"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -421,6 +435,114 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         action == "use Claude MCP consultation only as advisory review, not release authority"
         for action in payload["next_allowed_actions"]
     )
+    # GPP-2D-7 / AO-GATE-9 closeout forbidden_actions: seven new supersession lines
+    # that protect the terminal release-governance state.
+    assert any(
+        action
+        == "treat GPP-2 closeout as support widening, production platform claim, or live adapter execution approval"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action
+        == "reopen testai.acik.com/ao-gate, smee.io delivery, or deployment-protection callback topology without explicit GPP supersession of the deferred GPP-2C decision"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action == "regress ao-release-gate to shadow conclusion-mode without explicit GPP supersession"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action == "remove ao-release-gate from the GitHub ruleset required-check list without explicit GPP supersession"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action == "add bypass_actors to the ao-release-gate ruleset without explicit GPP supersession"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action
+        == "treat GPP-2 closeout as completion of low-risk auto-merge smoke or CODEOWNERS narrowing without an explicit later GPP-2D-6/hardening record"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action
+        == "treat any same-name external ao-release-gate check-run as satisfying the required-check source pin without explicit ruleset/API verification"
+        for action in payload["forbidden_actions"]
+    )
+    # Closeout negative guards: stale "blocked" wording must not return.
+    joined = " ".join(
+        payload["pending_external_actions"] + payload["next_allowed_actions"] + payload["current_wp"]["allowed_scope"]
+    ).lower()
+    assert "gpp-2 stays blocked" not in joined
+    assert "cutover pending" not in joined
+    assert "collect ao-release-gate enforce-mode success and failure evidence" not in joined
+    assert "before branch-protection cutover" not in joined
+
+
+def test_active_doc_surfaces_do_not_carry_stale_blocked_wording() -> None:
+    """GPP-2D-7 / AO-GATE-9 closeout drift guard.
+
+    After GPP-2 is closed, active human-readable and schema/source surfaces
+    must not advertise the pre-closeout 'still blocked / cutover pending /
+    future check / no service wiring' model. Historical change-log /
+    tracking-log sections are excluded because they record the timeline of
+    past slices.
+    """
+
+    repo = _repo_root()
+
+    def _active_surface(path: str, *, timeline_header: str | None = None) -> str:
+        text = (repo / path).read_text(encoding="utf-8")
+        if timeline_header is not None and timeline_header in text:
+            text = text.split(timeline_header, 1)[0]
+        return text
+
+    # Active surfaces — STATUS.md and AO-GATE roadmap are split on the
+    # timeline / change-log header so historical entries do not trip the
+    # guard. The schemas and the script module docstring are scanned in
+    # full.
+    surfaces = {
+        # Active narrative: header + §1 Purpose + §1a 2026-05-22 Scope Correction
+        # + §1b 2026-05-24 Autonomous Orchestration Alignment. §2 Current
+        # Baseline onward records historical baseline + past-slice narratives.
+        ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md": _active_surface(
+            ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+            timeline_header="## 2. Current Baseline",
+        ),
+        # Active surface: header + How To Use + Guardrails + Roadmap Board up
+        # to the per-slice historical AO-GATE-N narrative sections (which
+        # describe each slice's at-merge state).
+        ".claude/plans/AO-GATE-ROADMAP-TODO.md": _active_surface(
+            ".claude/plans/AO-GATE-ROADMAP-TODO.md",
+            timeline_header="## AO-GATE-1:",
+        ),
+        "ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json": _active_surface(
+            "ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json",
+        ),
+        "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json": _active_surface(
+            "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+        ),
+        "scripts/local_gpp_gate.py": _active_surface("scripts/local_gpp_gate.py"),
+        "AGENTS.md": _active_surface("AGENTS.md"),
+    }
+
+    stale_strings = (
+        "GPP-2 stays blocked",
+        "GPP-2 remains blocked",
+        "GPP-2 remains fail-closed until",
+        "GPP-2 stays `blocked`",
+        "branch protection is unchanged",
+        "No service wiring exists",
+        "GPP-2 - Protected Live-Adapter Gate Runtime Binding (blocked)",
+    )
+
+    failures: list[str] = []
+    for surface_path, body in surfaces.items():
+        for stale in stale_strings:
+            if stale in body:
+                failures.append(f"{surface_path}: still carries stale '{stale}'")
+
+    assert failures == [], "stale pre-closeout wording on active surfaces:\n" + "\n".join(failures)
 
 
 def test_gpp2e_equivalent_gate_decision_defaults_to_not_approved() -> None:
@@ -690,13 +812,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
     payload = mod.load_status(_status_path())
 
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["status"] == "closed"
     assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
-    assert payload["blocked_wps"][0]["id"] == "GPP-2"
+    assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "no_testai_near_term_release_governance_selected_enforce_mode_and_required_check_cutover_pending_callback_deferred_no_support_widening"
+        == "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution"
     )
+    assert payload["current_wp"]["exit_decision"] == payload["current_wp"]["closeout_decision"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -722,15 +845,17 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
     assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
-    assert "Current status: blocked" in rendered
+    assert "Current status: closed" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
-    assert "the no-testai near-term release-governance model is selected and recorded" in rendered
-    assert "internal operator host bundle" in rendered
-    assert "GPP-2 remains blocked pending ao-release-gate enforce-mode" in rendered
-    assert "deferred optional future infrastructure" in rendered
-    assert "are not active GPP-2B blockers" in rendered
+    assert "Blocked work packages:\n- none" in rendered
+    # GPP-2 closeout: terminal-state render output must not say "remains blocked pending".
+    assert "remains blocked pending" not in rendered.lower()
+    # Deferred GPP-2C wording must still be visible because the callback path stays
+    # deferred. render_text() prints next_allowed_actions; the "deferred GPP-2C
+    # infrastructure" line is the rendered anchor.
+    assert "deferred GPP-2C infrastructure" in rendered
     assert "divergence: 0\t0" in rendered
 
 
@@ -743,13 +868,14 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     payload = json.loads(captured.out)
     assert result == 0
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
-    assert payload["blocked_wps"][0]["id"] == "GPP-2"
+    assert payload["current_wp"]["status"] == "closed"
+    assert payload["blocked_wps"] == []
 
 
 def test_allowed_scope_reflects_no_testai_model() -> None:
-    """current_wp.allowed_scope describes the no-testai active GPP-2B model and
-    does not re-introduce pre-no-testai active hosting / callback scope."""
+    """current_wp.allowed_scope describes the closed GPP-2 release-governance
+    lifecycle terminal state and does not re-introduce pre-no-testai active
+    hosting / callback scope or stale `GPP-2 stays blocked` wording."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     allowed_scope = payload["current_wp"]["allowed_scope"]
     assert isinstance(allowed_scope, list) and allowed_scope
@@ -769,13 +895,22 @@ def test_allowed_scope_reflects_no_testai_model() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # The no-testai active GPP-2B path must be present.
+    # The no-testai release-governance model and its closeout anchors must
+    # remain visible.
     assert any("cross-provider ai review" in item.lower() for item in allowed_scope)
     assert any("non-author github" in item.lower() for item in allowed_scope)
     assert any("local_gpp_gate" in item.lower() for item in allowed_scope)
-    assert any(
-        "ao-release-gate enforce-mode" in item.lower() and "real pull request" in item.lower() for item in allowed_scope
-    )
     assert any("deferred optional gpp-2c" in item.lower() and "testai" in item.lower() for item in allowed_scope)
-    # allowed_scope must not present GPP-2 as closed or promoted.
-    assert any("gpp-2 stays blocked" in item.lower() for item in allowed_scope)
+    # GPP-2 is now closed; allowed_scope must anchor the closeout outcome
+    # and must NOT carry the stale `gpp-2 stays blocked` wording.
+    assert "gpp-2 stays blocked" not in joined
+    assert any(
+        "record gpp-2 closeout" in item.lower() and "release-governance lifecycle closure only" in item.lower()
+        for item in allowed_scope
+    )
+    assert any(
+        "source-pinned ao-release-gate github ruleset" in item.lower()
+        and "integration_id 15368" in item.lower()
+        and "bypass_actors empty" in item.lower()
+        for item in allowed_scope
+    )

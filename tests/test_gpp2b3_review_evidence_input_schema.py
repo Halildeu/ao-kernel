@@ -50,7 +50,7 @@ def _accepting_artifact() -> dict:
         },
         "findings": [],
         "reviewer_findings_count": 0,
-        "gpp_2_status": "blocked",
+        "gpp_2_status": "closed",
         "support_widening": False,
         "production_platform_claim": False,
         "live_adapter_execution": False,

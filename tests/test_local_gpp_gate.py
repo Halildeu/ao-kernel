@@ -121,7 +121,7 @@ def test_missing_reviewer_evidence_fails_closed(tmp_path: Path, capsys: Any) -> 
     assert code == 1
     artifact = json.loads(output.read_text(encoding="utf-8"))
     assert artifact["decision"] == "fail_closed"
-    assert artifact["gpp_2_status"] == "blocked"
+    assert artifact["gpp_2_status"] == "closed"
 
 
 def test_reviewer_revise_fails_closed(tmp_path: Path) -> None:
@@ -187,7 +187,7 @@ def test_reviewer_agree_with_passing_checks_succeeds(tmp_path: Path) -> None:
     assert code == 0
     assert artifact["decision"] == "operator_may_merge"
     assert all(artifact["checks"].values())
-    assert artifact["gpp_2_status"] == "blocked"
+    assert artifact["gpp_2_status"] == "closed"
     assert artifact["support_widening"] is False
     assert artifact["production_platform_claim"] is False
     assert artifact["live_adapter_execution"] is False
@@ -399,12 +399,14 @@ def test_gpp_next_still_reports_blocked(tmp_path: Path) -> None:
 
     payload = gpp_next.load_status(_status_path())
     assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "blocked"
+    assert payload["current_wp"]["status"] == "closed"
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
-    # The gate artifact also pins GPP-2 blocked.
-    assert artifact["gpp_2_status"] == "blocked"
+    # The gate artifact pins GPP-2 closed (terminal release-governance lifecycle
+    # closure) but does not by itself close GPP-2; it remains local operator
+    # evidence only.
+    assert artifact["gpp_2_status"] == "closed"
 
 
 def test_gate_output_validates_against_gate_evidence_schema(tmp_path: Path) -> None:
@@ -1311,7 +1313,7 @@ def _make_dual_ref_dogfood_repo(tmp_path: Path, head_only_files: list[str]) -> t
     (plans_dir / "gpp_status.v1.json").write_text(
         json.dumps(
             {
-                "current_wp": {"id": "GPP-2", "status": "blocked"},
+                "current_wp": {"id": "GPP-2", "status": "closed"},
                 "support_widening_allowed": False,
                 "production_platform_claim_allowed": False,
                 "live_adapter_execution_allowed": False,

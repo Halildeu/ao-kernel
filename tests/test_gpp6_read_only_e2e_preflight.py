@@ -65,8 +65,10 @@ def test_gpp6_preflight_is_schema_valid_and_execution_blocked() -> None:
     assert report["overall_status"] == "ready"
     assert report["decision"] == "read_only_e2e_preflight_ready_execution_blocked_no_support_widening"
     assert report["execution_status"] == "blocked_by_upstream_gates"
+    # After GPP-2D-7 / AO-GATE-9 closeout, gpp2_protected_gate_blocked is no
+    # longer an upstream blocker; only the GPP-4 read-only adapter decision
+    # remains.
     assert report["upstream_blockers"] == [
-        "gpp2_protected_gate_blocked",
         "gpp4_real_adapter_read_only_decision_missing",
     ]
     assert report["support_widening"] is False
@@ -108,9 +110,7 @@ def test_gpp6_preflight_schema_rejects_support_or_runtime_claims() -> None:
 def test_gpp6_preflight_blocks_missing_gpp5d_closeout(tmp_path: Path) -> None:
     module = _module()
     status_payload = _status_payload()
-    status_payload["completed_wps"] = [
-        item for item in status_payload["completed_wps"] if item.get("id") != "GPP-5d"
-    ]
+    status_payload["completed_wps"] = [item for item in status_payload["completed_wps"] if item.get("id") != "GPP-5d"]
     repo_root = _write_minimal_preflight_repo(tmp_path, status_payload)
 
     report = module.build_gpp6_read_only_e2e_preflight(repo_root=repo_root)

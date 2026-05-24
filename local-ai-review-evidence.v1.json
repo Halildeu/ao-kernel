@@ -13,77 +13,60 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d-5-outcomes-iter2-followup",
+    "head_ref": "refs/heads/codex/gpp2d-7-ao-gate-9-closeout",
     "changed_files": [
-      ".claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/AO-GATE-ROADMAP-TODO.md",
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+      ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md",
+      ".claude/plans/gpp_status.v1.json",
+      "AGENTS.md",
+      "ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json",
+      "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/local_gpp_gate.py",
+      "tests/test_ao_ma1_design_invariants.py",
+      "tests/test_ao_release_gate.py",
+      "tests/test_ao_release_gate_runtime.py",
+      "tests/test_ao_release_gate_service.py",
+      "tests/test_gpp2b3_review_evidence_input_schema.py",
+      "tests/test_gpp5_repo_intelligence_closeout.py",
+      "tests/test_gpp6_read_only_e2e_preflight.py",
+      "tests/test_gpp_next.py",
+      "tests/test_local_gpp_gate.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "verification_outcomes_doc_only",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_contract_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation_by_agent",
-      "status": "pass"
-    },
-    {
-      "name": "ruleset_acceptance_signals_recorded",
-      "status": "pass"
-    },
-    {
-      "name": "negative_path_pr_607_blocked_recorded",
-      "status": "pass"
-    },
-    {
-      "name": "positive_path_pr_608_allow_recorded",
-      "status": "pass"
-    },
-    {
-      "name": "probe_prs_closed_without_merge",
-      "status": "pass"
-    },
-    {
-      "name": "no_continue_on_error",
-      "status": "pass"
-    },
-    {
-      "name": "no_long_lived_secret",
-      "status": "pass"
-    },
-    {
-      "name": "replay_references_complete",
-      "status": "pass"
-    },
-    {
-      "name": "controlled_deviation_documented",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
+    {"name": "closeout_decision_terminalized", "status": "pass"},
+    {"name": "ready_after_chain_evidence_complete", "status": "pass"},
+    {"name": "guard_flags_unchanged", "status": "pass"},
+    {"name": "gpp2c_deferral_preserved", "status": "pass"},
+    {"name": "gpp2d6_supersession_explicit", "status": "pass"},
+    {"name": "drift_guard_negative_assertions_present", "status": "pass"},
+    {"name": "evidence_collected_three_new_types_added", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"},
+    {"name": "blocked_wps_empty", "status": "pass"}
   ],
   "findings": [
-    "GPP-2D-5 verification outcomes record: the operator (Halildeu, repo owner) saved the 'Protect main' ruleset (id 16803733) on 2026-05-24 with ao-release-gate as a required status check pinned to GitHub Actions integration_id 15368, strict (require up-to-date) true, block force pushes true, and bypass_actors empty. Source-pinned acceptance is verified at the API level, not just by string match.",
-    "Pre-cutover source-pin probe (runbook §1 row 6) confirmed only the GitHub Actions check-run carried the ao-release-gate name (app_slug: github-actions, app_id: 15368). No external App collision.",
-    "Negative-path verification PR #607 (no reviewer evidence committed) produced decision: deny_missing_evidence with conclusion_mode: enforce, ao-release-gate check FAILURE, mergeStateStatus BLOCKED, and gh pr merge --squash rejected by the GitHub API with 'the base branch policy prohibits the merge'. CLI suggested --admin bypass; HARD RULE forbids it and the ruleset bypass_actors empty would reject it regardless. PR closed without merging.",
-    "Positive-path verification PR #608 (schema-valid AGREE reviewer evidence, cross-provider) produced decision: allow_autonomous_merge with conclusion_mode: enforce, ao-release-gate check SUCCESS, github_check_run: ao-release-gate success, runtime head_sha bound to 69a909e1476c9bddad9997cd2cbefeddbb665b83 (the dual-ref iter-4 contract from GPP-2D-3c proved end-to-end against a live required check), full 4-file audit artifact set uploaded. mergeStateStatus remained BLOCKED due to legacy code-owner review (broad CODEOWNERS preserved this slice). PR closed without merging.",
-    "Legacy branch-protection enforce_admins.enabled is false (pre-existing surface, not modified by this cutover). It does not affect ao-release-gate enforcement because the gate is the ruleset's responsibility and the ruleset has bypass_actors empty. Tightening the legacy enforce_admins flag is an explicit out-of-scope later hardening.",
-    "PR scope is two files: the outcomes doc at .claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md and this reviewer evidence file. No workflow / script / test / runtime / branch-protection / ruleset mutation in this PR; the cutover save was an operator UI action recorded in §1.",
-    "Out-of-scope boundaries (§7) are explicit: GPP-2D-6 auto-merge smoke depends on CODEOWNERS narrowing first; GPP-2D-7 / AO-GATE-9 closeout is separate; legacy enforce_admins hardening is separate; probe PRs #607 and #608 are closed without merging; support_widening / production_platform_claim_allowed / live_adapter_execution_allowed stay false; no --admin merge.",
-    "Iter-1 absorb (Codex thread 019e5b49): the outcomes doc was enriched with the replay references runbook §3.5 demanded — §1.1 operator audit comment URL, §1.2 raw ruleset state JSON snapshot from gh api rulesets/16803733, §1.3 legacy branch-protection raw state, §4.1 PR #607 replay references (PR URL, Actions run URL, CLI rejection output text, audit artifact set), §5.1 controlled deviation from runbook §3.4 merge bullet (positive-path PR's blocked merge state is the broad-CODEOWNERS-preserved contract, not a deviation from the gate; merge-smoke remains GPP-2D-6), and §5.2 PR #608 replay references (PR URL, run URL, job URL, 4-file artifact set, closure URL). Each acceptance signal in §6 now traces to a replay-able link/snapshot.",
-    "Iter-2 absorb (Codex thread 019e5b4f): §1.1 placeholder replaced with the actual operator audit comment URL https://github.com/Halildeu/ao-kernel/pull/605#issuecomment-4529677096 (every §2.6 required field present as a table). §1.2 and §1.3 raw API outputs expanded to full JSON bodies, not normalized summaries (ruleset rules array + bypass_actors + current_user_can_bypass, plus the legacy required_status_checks.checks[].app_id pinning and the broad required_pull_request_reviews settings). §4.1.1 documents the §3.3 Step 2 UI screenshot replay path: probe PR was closed promptly as planned cleanup, and the API + Actions run URL + CLI rejection text trace preserves the same acceptance signals with higher fidelity than a screenshot would (screenshot is a rendered view of those JSON fields). Reopening probe PRs purely for screenshots was deliberately not done.",
-    "GPP-2 stays blocked. With this outcomes file landed, the remaining work to close GPP-2 is GPP-2D-6 (auto-merge smoke + the CODEOWNERS narrowing it depends on) and GPP-2D-7 (AO-GATE-9 closeout)."
+    "tests: pytest 3380 passed, 2 skipped in the full local test suite (~78s) before commit.",
+    "secret_scan: no credential material, PEM, token, or webhook secret value appears in any changed file.",
+    "no_public_sdk_signature_change: ao_kernel package public SDK signatures unchanged; the gpp_2_status const in two schemas (local-gpp-gate-evidence and ao-release-gate-review-evidence-input acceptance profile) advances from blocked to closed as a closeout state contract change; local_gpp_gate.py _evaluate_gpp_status accepts only closed under AO-GATE-9.",
+    "no_branch_protection_mutation_by_agent: the agent does not call gh api on rulesets, branches/main/protection, or any settings endpoint in this PR; ruleset id 16803733 was operator-set on 2026-05-24.",
+    "closeout_decision_terminalized: current_wp.exit_decision and current_wp.closeout_decision are byte-equal and contain no pending substring.",
+    "ready_after_chain_evidence_complete: all four ready_after conditions have concrete artifacts: GPP-2C plan + STATUS.md section 1a for #1; GPP-2D-4 PR #603 + PR #599/#602 for #2; ruleset id 16803733 + integration_id 15368 + bypass_actors empty + operator audit comment PR #605 issuecomment-4529677096 for #3; this PR for #4.",
+    "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved.",
+    "gpp2c_deferral_preserved: testai.acik.com/ao-gate, smee.io, deployment-protection callback, and policy App slug reconciliation remain in pending_external_actions deferred entries and next_allowed_actions deferred line; reopening requires explicit GPP supersession.",
+    "gpp2d6_supersession_explicit: GPP-2D-6 low-risk auto-merge smoke and CODEOWNERS narrowing are explicitly recorded as optional later autonomous-lane hardening, not GPP-2 closeout prerequisites, in both the closeout record section 3.1 and a new forbidden_actions supersession item.",
+    "drift_guard_negative_assertions_present: test_gpp_status_contract_keeps_support_widening_closed asserts gpp-2 stays blocked, cutover pending, collect ao-release-gate enforce-mode success and failure evidence, and before branch-protection cutover are NOT in the joined pending+next+allowed_scope text.",
+    "evidence_collected_three_new_types_added: current_wp.evidence_collected gains enforce_mode_required_check_evidence (GPP-2D-4 PR #603), branch_protection_ruleset_cutover (ruleset id 16803733, integration_id 15368, bypass_actors empty), and post_cutover_verification_acceptance (PR #609 + iter-2 follow-up PR #610).",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); the cross-AI peer review HARD RULE is satisfied.",
+    "blocked_wps_empty: blocked_wps == [] after closeout; gpp_next.py render output shows Blocked work packages followed by - none.",
+    "closeout_supersession_state: seven new forbidden_actions protect the terminal release-governance state: no closeout-as-widening, no testai/smee/callback reopening without GPP supersession, no shadow conclusion-mode regress, no removal of ao-release-gate from the GitHub ruleset required-check list, no bypass_actors additions, no closeout-as-automerge-smoke completion, no same-name external check-run pin claim.",
+    "schema_tightening_state: gpp_2_status const advances blocked to closed in two schemas; local_gpp_gate.py _evaluate_gpp_status accepts only closed; historical blocked-state artifacts remain repo audit trace but are no longer accepting evidence for the current gate.",
+    "active_surface_drift_guard_state: new test_active_doc_surfaces_do_not_carry_stale_blocked_wording scans STATUS.md sections 1 1a 1b, AO-GATE-ROADMAP-TODO.md header + How To Use + Guardrails + Roadmap Board, the two schemas, the local gate script docstring, and AGENTS.md for stale pre-closeout phrases including GPP-2 stays blocked, GPP-2 remains blocked, branch protection is unchanged, No service wiring exists, and Runtime Binding (blocked)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -86,9 +86,11 @@ def test_closeout_report_is_schema_valid_and_keeps_gpp6_blocked() -> None:
         "live_adapter_execution_allowed": False,
         "findings": [],
     }
+    # After GPP-2D-7 / AO-GATE-9 closeout, gpp2_protected_gate_blocked is no
+    # longer a GPP-6 readiness blocker; only the GPP-4 read-only adapter
+    # decision remains upstream.
     assert report["gpp6_readiness"]["status"] == "blocked_by_upstream_gates"
     assert report["gpp6_readiness"]["blockers"] == [
-        "gpp2_protected_gate_blocked",
         "gpp4_real_adapter_read_only_decision_missing",
     ]
 
@@ -112,9 +114,7 @@ def test_closeout_schema_rejects_support_or_runtime_widening() -> None:
 def test_closeout_blocks_missing_required_work_package(tmp_path: Path) -> None:
     module = _module()
     status_payload = _status_payload()
-    status_payload["completed_wps"] = [
-        item for item in status_payload["completed_wps"] if item.get("id") != "GPP-5c"
-    ]
+    status_payload["completed_wps"] = [item for item in status_payload["completed_wps"] if item.get("id") != "GPP-5c"]
     repo_root = _write_minimal_closeout_repo(tmp_path, status_payload)
 
     report = module.build_gpp5_repo_intelligence_closeout(repo_root=repo_root)

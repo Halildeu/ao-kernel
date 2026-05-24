@@ -12,9 +12,13 @@ against a JSON Schema, runs a fixed set of fail-closed checks, and emits
 a durable no-secret JSON artifact recording whether the operator may
 merge.
 
-The gate is local operator evidence only. It does not close GPP-2, change
-branch protection, execute live adapters, widen support, or claim
-production readiness. GPP-2 stays blocked.
+The gate is local operator evidence only. It does not by itself execute
+live adapters, widen support, claim production platform readiness, or
+replace the source-pinned ao-release-gate required check enforced by the
+GitHub branch ruleset. Under the GPP-2D-7 / AO-GATE-9 closeout decision
+(2026-05-24), GPP-2 is closed; this gate continues operating as
+operator-controlled local trust evidence within that closed-state
+release-governance lifecycle.
 """
 
 from __future__ import annotations
@@ -335,7 +339,11 @@ def _evaluate_startup_preflight(repo_root: Path, status_path: Path, findings: li
 
 
 def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
-    """Confirm GPP-2 is blocked and the promotion guards are all false."""
+    """Confirm GPP-2 is in the terminal closed release-governance state and
+    the promotion guards are all false. Under the GPP-2D-7 / AO-GATE-9
+    closeout decision (2026-05-24), the canonical GPP-2 status is ``closed``;
+    historical ``blocked``-state artifacts are retained as audit trace only
+    and are not accepting evidence for the current gate."""
 
     if not status_path.exists():
         findings.append(f"gpp status: file not found {status_path}")
@@ -358,9 +366,10 @@ def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
             f"gpp status: current_wp.id is {current_wp.get('id')!r}, expected 'GPP-2'"
         )
         return False
-    if current_wp.get("status") != "blocked":
+    if current_wp.get("status") != "closed":
         findings.append(
-            f"gpp status: current work package status is {current_wp.get('status')!r}, expected 'blocked'"
+            f"gpp status: current work package status is {current_wp.get('status')!r}, "
+            f"expected 'closed' (AO-GATE-9 closeout state)"
         )
         return False
 
@@ -733,7 +742,7 @@ def build_gate_evidence(
         "checks": {name: bool(checks[name]) for name in GATE_CHECK_NAMES},
         "findings": findings,
         "reviewer_findings_count": _reviewer_findings_count(review),
-        "gpp_2_status": "blocked",
+        "gpp_2_status": "closed",
         "support_widening": False,
         "production_platform_claim": False,
         "live_adapter_execution": False,
