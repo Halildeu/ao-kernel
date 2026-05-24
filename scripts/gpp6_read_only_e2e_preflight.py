@@ -189,12 +189,35 @@ def _gpp5d_entry(gpp5d: JsonDict) -> JsonDict:
 
 def _gpp2_entry(status_payload: JsonDict) -> JsonDict:
     current_wp = status_payload.get("current_wp", {})
-    ready = isinstance(current_wp, dict) and current_wp.get("id") == "GPP-2" and current_wp.get("status") != "blocked"
+    # GPP-2 closeout-ready when either current_wp has GPP-2 status=closed,
+    # OR completed_wps preserves the GPP-2 closeout (post-GPP-3a migration).
+    current_wp_closed = (
+        isinstance(current_wp, dict)
+        and current_wp.get("id") == "GPP-2"
+        and current_wp.get("status") == "closed"
+    )
+    completed_gpp2 = next(
+        (
+            item
+            for item in status_payload.get("completed_wps", [])
+            if isinstance(item, dict)
+            and item.get("id") == "GPP-2"
+            and ("closed_at" in item or item.get("status") == "closed")
+        ),
+        None,
+    )
+    ready = current_wp_closed or completed_gpp2 is not None
+    if current_wp_closed:
+        evidence_ref = _string(current_wp.get("issue"))
+    elif completed_gpp2 is not None:
+        evidence_ref = _string(completed_gpp2.get("issue", ""))
+    else:
+        evidence_ref = ""
     return {
         "id": "gpp2_protected_gate",
         "status": "ready" if ready else "blocked",
         "required_for_execution": True,
-        "evidence": _string(current_wp.get("issue")) if isinstance(current_wp, dict) else "",
+        "evidence": evidence_ref,
         "findings": [] if ready else ["gpp2_protected_gate_blocked"],
     }
 

@@ -398,11 +398,17 @@ def test_gpp_next_still_reports_blocked(tmp_path: Path) -> None:
     spec.loader.exec_module(gpp_next)
 
     payload = gpp_next.load_status(_status_path())
-    assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "closed"
+    # GPP-3a is the active slice (Faz 1 of GPP-3); GPP-2 closeout has migrated
+    # into completed_wps. The local gate still pins gpp_2_status="closed"
+    # because the GPP-2 closeout is preserved in completed_wps.
+    assert payload["current_wp"]["id"] == "GPP-3a"
+    assert payload["current_wp"]["status"] == "active"
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False
+    gpp2_entries = [c for c in payload["completed_wps"] if c["id"] == "GPP-2"]
+    assert len(gpp2_entries) == 1
+    assert "closed_at" in gpp2_entries[0]
     # The gate artifact pins GPP-2 closed (terminal release-governance lifecycle
     # closure) but does not by itself close GPP-2; it remains local operator
     # evidence only.
@@ -730,13 +736,18 @@ def test_duplicate_secret_scan_with_one_fail_fails_closed(tmp_path: Path) -> Non
     assert artifact["checks"]["secret_scan_passed"] is False
 
 
-def test_wrong_gpp_id_fails_closed(tmp_path: Path) -> None:
-    # FIX 4: gpp_status_checked requires current_wp.id == "GPP-2". A status
-    # file pinned to a different work package fails the check closed.
+def test_missing_gpp2_closeout_fails_closed(tmp_path: Path) -> None:
+    # GPP-3a fix: gpp_status_checked requires GPP-2 closeout to exist
+    # anywhere in the status — either in current_wp with status=closed
+    # or in completed_wps with closed_at. A status file that drops both
+    # references fails the check closed.
     mod = _load_module()
     status_payload = json.loads(_status_path().read_text(encoding="utf-8"))
+    # Strip GPP-2 from current_wp (set a different id) AND from completed_wps.
     status_payload["current_wp"]["id"] = "GPP-9"
-    bad_status = tmp_path / "gpp_status_wrong_id.json"
+    status_payload["current_wp"]["status"] = "active"
+    status_payload["completed_wps"] = [item for item in status_payload["completed_wps"] if item.get("id") != "GPP-2"]
+    bad_status = tmp_path / "gpp_status_no_gpp2_closeout.json"
     bad_status.write_text(json.dumps(status_payload), encoding="utf-8")
 
     review = mod.load_review_evidence(_fixture("reviewer_agree.v1.json"))
@@ -751,8 +762,8 @@ def test_wrong_gpp_id_fails_closed(tmp_path: Path) -> None:
         work_package="GPP-2ag",
     )
     assert checks["gpp_status_checked"] is False
-    wrong_id = [f for f in gate_findings if "expected 'GPP-2'" in f]
-    assert wrong_id
+    missing = [f for f in gate_findings if "GPP-2 closeout is missing" in f]
+    assert missing, f"expected GPP-2 closeout missing finding, got {gate_findings!r}"
 
 
 def test_startup_preflight_runs_gpp_next(tmp_path: Path) -> None:

@@ -338,12 +338,34 @@ def _evaluate_startup_preflight(repo_root: Path, status_path: Path, findings: li
     return ok
 
 
+def _gpp2_closeout_present(payload: dict[str, Any]) -> bool:
+    """True when GPP-2 is closed somewhere in the GPP status.
+
+    Under the GPP-2D-7 / AO-GATE-9 closeout decision (2026-05-24), GPP-2
+    is recorded as ``closed`` either in ``current_wp`` (when GPP-2 was
+    most recently active) or in ``completed_wps`` (after a post-GPP-2
+    slice such as GPP-3a moves into ``current_wp`` and GPP-2 migrates
+    to the completed list). The local gate accepts both layouts so it
+    can keep running across the program lifecycle without re-pinning
+    the slice identity.
+    """
+
+    current_wp = payload.get("current_wp")
+    if isinstance(current_wp, dict):
+        if current_wp.get("id") == "GPP-2" and current_wp.get("status") == "closed":
+            return True
+    for item in payload.get("completed_wps", []):
+        if isinstance(item, dict) and item.get("id") == "GPP-2":
+            if "closed_at" in item or item.get("status") == "closed":
+                return True
+    return False
+
+
 def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
-    """Confirm GPP-2 is in the terminal closed release-governance state and
-    the promotion guards are all false. Under the GPP-2D-7 / AO-GATE-9
-    closeout decision (2026-05-24), the canonical GPP-2 status is ``closed``;
-    historical ``blocked``-state artifacts are retained as audit trace only
-    and are not accepting evidence for the current gate."""
+    """Confirm GPP-2 is closed (anywhere in the status) and the promotion
+    guards are all false. GPP-2 may live in current_wp (status=closed) or
+    in completed_wps with a closed_at timestamp once a post-GPP-2 slice
+    has moved into current_wp."""
 
     if not status_path.exists():
         findings.append(f"gpp status: file not found {status_path}")
@@ -361,15 +383,10 @@ def _evaluate_gpp_status(status_path: Path, findings: list[str]) -> bool:
     if not isinstance(current_wp, dict):
         findings.append("gpp status: current_wp is missing or malformed")
         return False
-    if current_wp.get("id") != "GPP-2":
+    if not _gpp2_closeout_present(payload):
         findings.append(
-            f"gpp status: current_wp.id is {current_wp.get('id')!r}, expected 'GPP-2'"
-        )
-        return False
-    if current_wp.get("status") != "closed":
-        findings.append(
-            f"gpp status: current work package status is {current_wp.get('status')!r}, "
-            f"expected 'closed' (AO-GATE-9 closeout state)"
+            "gpp status: GPP-2 closeout is missing from both current_wp and "
+            "completed_wps; expected the AO-GATE-9 closeout state"
         )
         return False
 

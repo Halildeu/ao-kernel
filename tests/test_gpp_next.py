@@ -28,28 +28,35 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
 
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
-    assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "closed"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
+    # GPP-3a (Faz 1) is the active slice; GPP-2 closeout is preserved in
+    # completed_wps as historical audit trace.
+    assert payload["current_wp"]["id"] == "GPP-3a"
+    assert payload["current_wp"]["status"] == "active"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/615"
     assert (
         payload["current_wp"]["exit_decision"]
-        == "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution"
+        == "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening"
     )
-    # Closeout consistency: exit_decision is terminal and matches the closeout_decision.
-    assert payload["current_wp"]["exit_decision"] == payload["current_wp"]["closeout_decision"]
-    assert "pending" not in payload["current_wp"]["exit_decision"]
-    # Closeout record file exists and closeout_at is ISO-parseable.
+    # GPP-3a active slice carries the new evidence schema record reference.
+    assert payload["current_wp"]["record"] == ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md"
+    assert (_repo_root() / payload["current_wp"]["record"]).exists()
+    # GPP-3a evidence_collected starts empty; the schema/script/simulated path
+    # is its own deliverable, not a list of pre-existing evidence.
+    assert payload["current_wp"]["evidence_collected"] == []
+    # GPP-2 closeout is preserved in completed_wps with the full closeout
+    # decision string + closeout record + closed_at timestamp.
     from datetime import datetime
 
-    assert (_repo_root() / payload["current_wp"]["closeout_record"]).exists()
-    datetime.fromisoformat(payload["current_wp"]["closeout_at"].replace("Z", "+00:00"))
-    # The three new evidence types are present in evidence_collected.
-    evidence_types = {item["type"] for item in payload["current_wp"]["evidence_collected"]}
-    assert {
-        "enforce_mode_required_check_evidence",
-        "branch_protection_ruleset_cutover",
-        "post_cutover_verification_acceptance",
-    } <= evidence_types
+    gpp2_entries = [item for item in payload["completed_wps"] if item["id"] == "GPP-2"]
+    assert len(gpp2_entries) == 1, "exactly one GPP-2 entry in completed_wps"
+    gpp2 = gpp2_entries[0]
+    assert (
+        gpp2["decision"]
+        == "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution"
+    )
+    assert gpp2["record"] == ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"
+    assert (_repo_root() / gpp2["record"]).exists()
+    datetime.fromisoformat(gpp2["closed_at"].replace("Z", "+00:00"))
     assert any(item["id"] == "GPP-1b" for item in payload["completed_wps"])
     assert any(
         item["id"] == "GPP-2a" and item["decision"] == "still_blocked_protected_prerequisites_missing"
@@ -811,15 +818,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "closed"
-    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/567"
+    assert payload["current_wp"]["id"] == "GPP-3a"
+    assert payload["current_wp"]["status"] == "active"
+    assert payload["current_wp"]["issue"] == "https://github.com/Halildeu/ao-kernel/issues/615"
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution"
+        == "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening"
     )
-    assert payload["current_wp"]["exit_decision"] == payload["current_wp"]["closeout_decision"]
     assert payload["support_widening_allowed"] is False
 
 
@@ -844,13 +850,14 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    assert "Current WP: GPP-2 - Protected Live-Adapter Gate Runtime Binding" in rendered
-    assert "Current status: closed" in rendered
+    assert "Active WP: GPP-3a - Real-Adapter Usage/Cost Evidence Schema" in rendered
+    assert "Active status: active" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
     assert "Blocked work packages:\n- none" in rendered
-    # GPP-2 closeout: terminal-state render output must not say "remains blocked pending".
+    # GPP-2 closeout already landed; the active slice (GPP-3a) is also not
+    # "remains blocked pending" anything.
     assert "remains blocked pending" not in rendered.lower()
     # Deferred GPP-2C wording must still be visible because the callback path stays
     # deferred. render_text() prints next_allowed_actions; the "deferred GPP-2C
@@ -867,23 +874,22 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-2"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-3a"
+    assert payload["current_wp"]["status"] == "active"
     assert payload["blocked_wps"] == []
 
 
-def test_allowed_scope_reflects_no_testai_model() -> None:
-    """current_wp.allowed_scope describes the closed GPP-2 release-governance
-    lifecycle terminal state and does not re-introduce pre-no-testai active
-    hosting / callback scope or stale `GPP-2 stays blocked` wording."""
+def test_allowed_scope_reflects_gpp3a_schema_active() -> None:
+    """current_wp.allowed_scope describes the GPP-3a active slice scope
+    (real-adapter usage/cost evidence schema + simulated path + spend-ledger
+    cross-references) and must not regress to GPP-2-era stale wording or
+    re-introduce pre-no-testai active hosting/callback scope."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     allowed_scope = payload["current_wp"]["allowed_scope"]
     assert isinstance(allowed_scope, list) and allowed_scope
     joined = " ".join(allowed_scope).lower()
 
     # Pre-no-testai active hosting / testai-callback scope must not return.
-    # Covers every removed pre-no-testai allowed_scope item that carried
-    # active hosting / policy-service / health-probe / callback behavior.
     for stale in (
         "deploy or configure the ao-kernel-live-adapter-gate github app policy service",
         "deploy or configure the ao-release-gate github app check-run service",
@@ -895,25 +901,14 @@ def test_allowed_scope_reflects_no_testai_model() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # The no-testai release-governance model and its closeout anchors must
-    # remain visible.
-    assert any("cross-provider ai review" in item.lower() for item in allowed_scope)
-    assert any("non-author github" in item.lower() for item in allowed_scope)
-    assert any("local_gpp_gate" in item.lower() for item in allowed_scope)
-    assert any("deferred optional gpp-2c" in item.lower() and "testai" in item.lower() for item in allowed_scope)
-    # GPP-2 is now closed; allowed_scope must anchor the closeout outcome
-    # and must NOT carry the stale `gpp-2 stays blocked` wording.
+    # GPP-3a active anchors must be present.
+    assert any("real-adapter-usage-cost-evidence.v1" in item.lower() for item in allowed_scope)
+    assert any("spend-ledger.v1" in item.lower() for item in allowed_scope)
+    assert any("evidence_class" in item.lower() and "simulated" in item.lower() for item in allowed_scope)
+    assert any("bc-10" in item.lower() and "gpp-3b" in item.lower() for item in allowed_scope)
+    # GPP-2 closure stale wording must NOT appear in the active slice.
     assert "gpp-2 stays blocked" not in joined
-    assert any(
-        "record gpp-2 closeout" in item.lower() and "release-governance lifecycle closure only" in item.lower()
-        for item in allowed_scope
-    )
-    assert any(
-        "source-pinned ao-release-gate github ruleset" in item.lower()
-        and "integration_id 15368" in item.lower()
-        and "bypass_actors empty" in item.lower()
-        for item in allowed_scope
-    )
+    assert "remains blocked pending" not in joined
 
 
 # ---------------------------------------------------------------------------
@@ -927,7 +922,9 @@ def test_allowed_scope_reflects_no_testai_model() -> None:
 # - "evidence_refs": milestone's evidence_refs must include this path
 # - "completed_children": the listed children must all appear in completed_wps
 _AGGREGATE_COMPLETION_SOURCES = {
-    "GPP-2": {"current_wp": "closed"},
+    # GPP-2 closeout moved into completed_wps as part of GPP-3a; the default
+    # branch in _slot_is_satisfied (slot in completed_ids) handles it from
+    # there. GPP-2D and GPP-5 remain aggregate (lane / parent-with-children).
     "GPP-2D": {"evidence_refs": [".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"]},
     "GPP-5": {"completed_children": {"GPP-5a", "GPP-5b", "GPP-5c", "GPP-5d"}},
 }
