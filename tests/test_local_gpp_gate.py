@@ -1048,35 +1048,45 @@ def test_gate_run_invalid_head_ref_fails_closed_without_context_binding(tmp_path
 
 
 # ---------------------------------------------------------------------------
-# GPP-2D-3c dual-ref contract (Codex iter-1 absorb, thread 019e5a21)
+# GPP-2D-3c dual-ref API (head-side, Codex iter-1+2 absorb,
+#                         threads 019e5a21 / 019e5a32)
 # ---------------------------------------------------------------------------
 #
-# The ao-release-gate enforce job inside .github/workflows/test.yml passes
-# four refs to scripts/local_gpp_gate.py:
+# scripts/local_gpp_gate.py exposes a dual-ref CLI surface so a future
+# caller can split reviewer-visible ref labels from diff-resolving
+# refs:
 #
-#   --review-base-ref "$BASE_REF"     # PR base BRANCH NAME (e.g. "main")
-#   --review-head-ref "$HEAD_REF"     # PR head BRANCH NAME (e.g. "feature")
-#   --diff-base-ref   "$BASE_SHA"     # runtime base SHA (drives git diff +
-#   --diff-head-ref   "$HEAD_SHA"     # the gate evidence context_binding)
+#   --review-base-ref / --review-head-ref  # scope-check labels (string
+#                                          # equality against the
+#                                          # committed reviewer evidence)
+#   --diff-base-ref   / --diff-head-ref    # git diff + context_binding refs
+#   --base-ref        / --head-ref         # backward-compatible legacy
+#                                          # single-ref alias (defaults
+#                                          # when --review-* / --diff-*
+#                                          # are absent)
 #
-# The reviewer-visible refs are matched (string equality) against the
-# committed reviewer evidence file's scope_reviewed.base_ref / head_ref;
-# the diff-resolving refs drive the runtime git diff and the
-# context_binding.head_sha resolution. Mixing them re-creates either the
-# head_sha self-reference fixed point (if the reviewer evidence had to
-# carry the head SHA) or a scope-check mismatch (if the runtime passed
-# SHAs into the scope-check slot, as PR #599 iter-1 did).
+# This head-side API is READY in this PR (the script change landed in
+# commit a445780). The active CI workflow in this slice does NOT use it
+# yet — it uses the legacy alias path because the workflow checks the
+# script out from the PR base SHA (trusted-base discipline), and the
+# base copy on main predates the dual-ref flags. Once the dual-ref
+# CLI reaches main, a follow-up slice can upgrade the workflow.
 #
-# The tests below pin three invariants of that contract:
-#   1. --review-base-ref / --review-head-ref drive the scope check, even
-#      when --diff-* and the legacy --base-ref / --head-ref values
-#      differ.
+# The first three tests below pin three invariants of the dual-ref API:
+#   1. --review-* drive the scope check, even when --diff-* and the
+#      legacy --base-ref / --head-ref values differ.
 #   2. --review-* mismatches against the committed reviewer evidence
-#      fail scope check closed, even when --diff-* / legacy --base-ref
-#      / --head-ref match.
-#   3. When --review-* are absent, --base-ref / --head-ref serve as the
-#      legacy single-ref alias and drive scope check, so older callers
-#      and tests keep working unchanged.
+#      fail scope check closed, even when --diff-* / legacy refs match.
+#   3. When --review-* are absent, --base-ref / --head-ref serve as
+#      the legacy single-ref alias and drive scope check, so older
+#      callers and tests keep working unchanged.
+#
+# The fourth test below builds a deterministic tmp git repo and runs
+# main() end-to-end through the dual-ref invocation pattern, pinning
+# the accepting-artifact happy path. The fifth test simulates the
+# actual GitHub Actions shape of the active workflow (detached base
+# checkout + SHA fetch + branch ref binding + legacy alias path) and
+# pins the same accepting-artifact outcome there.
 # ---------------------------------------------------------------------------
 
 
@@ -1437,6 +1447,175 @@ def test_dual_ref_workflow_pattern_produces_accepting_runtime_artifact(tmp_path:
     digest_hex = diff_digest.split(":", 1)[1]
     assert len(digest_hex) == 64 and all(c in "0123456789abcdef" for c in digest_hex), (
         f"context_binding.diff_digest must be sha256:<64-hex>; got {diff_digest!r}"
+    )
+
+    mod.validate_gate_evidence(artifact)
+
+
+def test_actions_shape_legacy_alias_with_ref_binding_produces_accepting_artifact(tmp_path: Path) -> None:
+    """End-to-end GPP-2D-3c Actions-shape dogfood (Codex iter-3 absorb,
+    thread 019e5a41): simulate the actual GitHub Actions trusted-base
+    checkout shape (``actions/checkout@v4`` with
+    ``ref: github.event.pull_request.base.sha`` + ``fetch-depth: 1``)
+    where branch names like ``main`` and ``codex/...`` are NOT
+    guaranteed to exist as local refs. The workflow's ref-binding step
+    (``git check-ref-format`` + ``git update-ref``) is what makes the
+    legacy alias path (``--base-ref <branch>`` /
+    ``--head-ref <branch>``) resolvable in that detached clone.
+
+    This test exercises the full chain:
+
+      1. Build a real two-commit repo (main + feature-x).
+      2. Detach HEAD at the base SHA and delete both branch refs to
+         match the workflow's detached / fetch-depth=1 shape.
+      3. Run the workflow's ref-binding step (validate refs, then
+         ``git update-ref`` from $BASE_REF -> $BASE_SHA and
+         $HEAD_REF -> $HEAD_SHA).
+      4. Run ``main()`` with --base-ref / --head-ref BRANCH NAMES
+         (the legacy alias path the workflow uses) and pin:
+           - code == 0
+           - artifact["decision"] == "operator_may_merge"
+           - checks.scope_allowed True
+           - context_binding.head_sha == API-reported head SHA
+           - context_binding.changed_files_count matches diff
+           - artifact passes validate_gate_evidence
+
+    Without step 3, ``git diff main...feature-x`` and
+    ``git rev-parse feature-x`` would fail because those names have
+    no local refs. With step 3, the legacy alias path emits the same
+    accepting artifact the workflow expects.
+    """
+
+    import subprocess
+
+    head_only_files = ["src/feature_actions.py"]
+    repo, base_sha, head_sha = _make_dual_ref_dogfood_repo(tmp_path, head_only_files)
+
+    def git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    # Step 2: detach HEAD at base SHA + delete both branch refs. This
+    # mirrors actions/checkout@v4 with ref: <SHA> and fetch-depth: 1:
+    # the worktree is detached at the base SHA and the branch names
+    # do not exist as local refs.
+    git("checkout", "--detach", base_sha)
+    git("branch", "-D", "main")
+    git("branch", "-D", "feature-x")
+
+    # Verify the detached shape: neither branch label should resolve.
+    list_result = subprocess.run(
+        ["git", "-C", str(repo), "branch", "-a"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "main" not in list_result.stdout and "feature-x" not in list_result.stdout, (
+        f"branches must be absent after detached checkout simulation; got: {list_result.stdout!r}"
+    )
+    # Confirm the resolver actually fails without ref-binding (i.e.
+    # the bug Codex iter-3 flagged would actually bite).
+    rev_parse_before = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "main"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert rev_parse_before.returncode != 0, (
+        "pre-binding: branch label 'main' must NOT resolve in the detached "
+        "clone, otherwise this test would not catch the ref-binding gap"
+    )
+
+    # Step 3: workflow ref-binding (validate + update-ref).
+    git("check-ref-format", "refs/heads/main")
+    git("check-ref-format", "refs/heads/feature-x")
+    git("update-ref", "refs/heads/main", base_sha)
+    git("update-ref", "refs/heads/feature-x", head_sha)
+
+    # Confirm post-binding resolution.
+    rev_parse_after = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "main"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert rev_parse_after.returncode == 0 and rev_parse_after.stdout.strip() == base_sha, (
+        "post-binding: branch label 'main' must resolve to BASE_SHA"
+    )
+
+    # Step 4: legacy alias path, mirroring the workflow's
+    # local_gpp_gate.py invocation.
+    reviewer_evidence = {
+        "schema_version": "local-ai-review-evidence.v1",
+        "repo": "Halildeu/ao-kernel",
+        "work_package": "GPP-2",
+        "implementer": {"agent": "claude", "provider": "anthropic"},
+        "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
+        "scope_reviewed": {
+            "base_ref": "main",
+            "head_ref": "feature-x",
+            "changed_files": head_only_files,
+        },
+        "checks_considered": [
+            {"name": "tests", "status": "pass"},
+            {"name": "secret_scan", "status": "pass"},
+        ],
+        "findings": ["actions-shape legacy-alias dogfood"],
+        "secrets_recorded": False,
+        "live_adapter_execution": False,
+        "support_widening": False,
+        "production_platform_claim": False,
+    }
+    src = tmp_path / "reviewer.json"
+    src.write_text(json.dumps(reviewer_evidence), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    mod = _load_module()
+    code = mod.main(
+        [
+            "--review-evidence",
+            str(src),
+            "--output",
+            str(output),
+            # Legacy alias path mirroring the workflow:
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "feature-x",
+            "--repo",
+            "Halildeu/ao-kernel",
+            "--work-package",
+            "GPP-2",
+            "--repo-root",
+            str(repo),
+            "--status-path",
+            str(repo / ".claude" / "plans" / "gpp_status.v1.json"),
+        ]
+    )
+
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+
+    assert code == 0, f"expected exit 0, got {code}; artifact: {artifact}"
+    assert artifact["decision"] == "operator_may_merge", (
+        "actions-shape legacy-alias dogfood expected operator_may_merge, "
+        f"got {artifact['decision']}; findings: {artifact.get('findings')}"
+    )
+
+    checks = artifact.get("checks", {})
+    assert checks.get("scope_allowed") is True, f"checks.scope_allowed must be True after ref-binding; got {checks}"
+
+    context_binding = artifact.get("context_binding")
+    assert context_binding is not None, "context_binding must be present when decision == operator_may_merge"
+    assert context_binding["head_sha"] == head_sha, (
+        "context_binding.head_sha must equal the API-reported head SHA "
+        f"after ref-binding. Expected {head_sha}, got {context_binding['head_sha']}"
+    )
+    assert context_binding.get("changed_files_count") == len(head_only_files), (
+        f"changed_files_count drift: expected {len(head_only_files)}, got {context_binding.get('changed_files_count')}"
     )
 
     mod.validate_gate_evidence(artifact)

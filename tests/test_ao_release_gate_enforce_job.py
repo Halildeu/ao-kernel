@@ -212,6 +212,47 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
     assert "if: ${{ steps.reviewer.outputs.path != '' }}" in block
 
 
+def test_enforce_job_binds_branch_labels_to_runtime_shas_before_invocation() -> None:
+    """GPP-2D-3c trusted-base ref-binding (Codex iter-3 absorb):
+    the base checkout is a detached HEAD at the PR base SHA with
+    fetch-depth=1; branch names like 'main' and 'codex/...' are NOT
+    guaranteed to exist as local refs. The legacy --base-ref /
+    --head-ref alias path the base copy of local_gpp_gate.py uses
+    resolves those names through `git diff <base_ref>...<head_ref>`
+    and `git rev-parse <head_ref>`, so the names MUST be valid refs.
+
+    The workflow must therefore (a) validate the API-reported branch
+    labels with `git check-ref-format` to reject anything that isn't
+    a safe Git ref, and (b) bind those labels to the API-reported
+    runtime SHAs via `git update-ref` BEFORE invoking
+    local_gpp_gate.py. Otherwise scope check and context_binding fall
+    back to whatever refs happen to exist in the detached clone,
+    which is an unstable contract.
+    """
+    block = _gate_job_block()
+    # The "Generate local-gpp-gate evidence at runtime" step must
+    # include both the validation and the binding before invoking
+    # local_gpp_gate.py.
+    assert 'git check-ref-format "refs/heads/$BASE_REF"' in block, (
+        "trusted-base ref-binding must validate $BASE_REF with git check-ref-format"
+    )
+    assert 'git check-ref-format "refs/heads/$HEAD_REF"' in block, (
+        "trusted-base ref-binding must validate $HEAD_REF with git check-ref-format"
+    )
+    assert 'git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"' in block, (
+        "trusted-base ref-binding must map $BASE_REF -> $BASE_SHA via git update-ref"
+    )
+    assert 'git update-ref "refs/heads/$HEAD_REF" "$HEAD_SHA"' in block, (
+        "trusted-base ref-binding must map $HEAD_REF -> $HEAD_SHA via git update-ref"
+    )
+    # The bindings must come BEFORE the local_gpp_gate.py invocation.
+    invocation_index = block.find("python scripts/local_gpp_gate.py")
+    update_ref_index = block.find('git update-ref "refs/heads/$BASE_REF" "$BASE_SHA"')
+    assert update_ref_index >= 0 and update_ref_index < invocation_index, (
+        "ref-binding must execute BEFORE the local_gpp_gate.py invocation"
+    )
+
+
 def test_enforce_job_passes_branch_name_refs_to_local_gpp_gate() -> None:
     """GPP-2D-3c bootstrap-safe ref contract (Codex iter-1+2 absorb):
     the workflow runs the base-ref copy of scripts/local_gpp_gate.py,
