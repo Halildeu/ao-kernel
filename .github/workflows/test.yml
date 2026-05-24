@@ -503,23 +503,35 @@ jobs:
           # --fail-on-deny there. The audit artifact still records the
           # local-gpp-gate body for debugging.
           #
-          # GPP-2D-3c dual-ref contract: --review-base-ref / --review-head-ref
-          # match the reviewer-visible ref labels the committed reviewer
-          # evidence wrote into scope_reviewed.base_ref / head_ref (PR
-          # base + head branch names). --diff-base-ref / --diff-head-ref
-          # are the runtime SHAs that drive the actual git diff and the
-          # resulting context_binding.head_sha. This split keeps the
-          # committed reviewer evidence free of any head_sha self-reference
-          # while still binding the runtime gate evidence to the live head.
+          # GPP-2D-3c bootstrap-safe contract: this workflow checks out
+          # the script from the PR base SHA (trusted-base discipline).
+          # That base copy of local_gpp_gate.py predates the dual-ref
+          # --review-base-ref / --review-head-ref / --diff-base-ref /
+          # --diff-head-ref split, so passing those flags here would
+          # produce an "unrecognized arguments" parse error on the base
+          # copy and fail the gate open. Instead we pass the PR base /
+          # head BRANCH NAMES through the legacy --base-ref / --head-ref
+          # aliases. The base copy accepts those names directly:
+          #   * scope check string-equality matches the committed reviewer
+          #     evidence's scope_reviewed.base_ref / head_ref (both branch
+          #     names, never SHAs);
+          #   * `git diff base...head` resolves the names through git's
+          #     own ref lookup, so the actual diff is still computed
+          #     between the two real commits;
+          #   * context_binding.head_sha is produced by git rev-parse on
+          #     the head ref, so it binds to the runtime head SHA without
+          #     the reviewer evidence ever recording one.
+          # Once dual-ref support lands on main, a follow-up slice can
+          # upgrade this invocation to --review-* / --diff-*; the
+          # head-side scripts/local_gpp_gate.py already exposes the
+          # split, and tests/test_local_gpp_gate.py pins it end-to-end.
           python scripts/local_gpp_gate.py \
             --review-evidence "../${{ steps.reviewer.outputs.path }}" \
             --output local-gpp-gate-evidence.v1.json \
             --repo "$REPO_FULL" \
             --work-package "GPP-2" \
-            --review-base-ref "$BASE_REF" \
-            --review-head-ref "$HEAD_REF" \
-            --diff-base-ref "$BASE_SHA" \
-            --diff-head-ref "$HEAD_SHA" \
+            --base-ref "$BASE_REF" \
+            --head-ref "$HEAD_REF" \
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 
