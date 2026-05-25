@@ -6,7 +6,9 @@
 > **Decision:** `gpp6_keep_rehearsal_only_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim`.
 > **Effective:** effective on merge; the GPP-6c slice records the
 > formal closeout timestamp via `completed_wps[].closed_at` and
-> `milestones[M4].closed_at` once the infazı lands.
+> `milestones[M5].closed_at` once the infazı lands. M4 milestone
+> closure stays under the GPP-4c record (`closed_at=2026-05-25T13:00:00Z`)
+> and is not modified by the GPP-6 chain.
 
 ## Purpose
 
@@ -44,7 +46,9 @@ This slice **does NOT**:
   or `production_platform_claim_allowed` (all stay `false`)
 - execute a live `claude-code-cli` adapter
 - mutate `scripts/gp5_platform_claim_decision.py` BC-1 status or
-  `_promotion_blockers()` (reserved for GPP-6c if needed)
+  `_promotion_blockers()`; GPP-6c may only sync docs/SSOT closure
+  wording under keep_rehearsal_only authority unless a separate
+  supersession decision explicitly authorizes script changes
 - update `docs/SUPPORT-BOUNDARY.md`, `docs/KNOWN-BUGS.md`, or
   `docs/PUBLIC-BETA.md` semantics for the read-only E2E lane
   (reserved for GPP-6c)
@@ -329,7 +333,7 @@ the guard flags remain `false`.
 | Field | Value |
 |---|---|
 | Implementer AI | Claude (Anthropic) |
-| Reviewer AI | Codex (OpenAI) — thread `019e6020` plan-time iter-1 PARTIAL absorbed (progress muhasebesi wording + Option X naming `authorize_protected_live_e2e` + GPP-6c scope minimal + 5 forbidden guards added + preflight execution_status not reclassified); plan-time iter-2 AGREE; post-impl iter review continues after PR creation |
+| Reviewer AI | Codex (OpenAI) — thread `019e6020` plan-time iter-1 PARTIAL absorbed (progress muhasebesi wording + Option X naming `authorize_protected_live_e2e` + GPP-6c scope minimal + 5 forbidden guards added + preflight execution_status not reclassified); plan-time iter-2 AGREE; post-impl iter-1 PARTIAL absorbed (M5 closeout timestamp reference corrected from M4 to M5; GPP-6c BC-1/_promotion_blockers() scope tightened — docs/SSOT closure only unless explicit supersession authorizes script changes) |
 | Worktree | `codex/gpp-6b-read-only-e2e-decision` |
 | Base SHA at branch open | `4fe2157` |
 | Cross-provider AI review HARD RULE | satisfied (CC-2) |
