@@ -153,7 +153,7 @@ The string asserts:
    - `current_wp` migrate GPP-6c closed → GPP-7 closed (consolidated
      decision+infazı slice)
    - `completed_wps[]` append GPP-6c entry (issue #629, pr #630,
-     closed_at=2026-05-25T~~~~Z)
+     closed_at=2026-05-25T23:22:54Z)
    - GPP-7 **not** in completed_wps this slice (current-closed
      convention; the next M6 opener slice — GPP-8 — migrates GPP-7)
    - `progress_estimates.wp_weighted`: `completed_wps_count` 45 → 46
@@ -310,7 +310,7 @@ rehearsal-only.
 | Field | Value |
 |---|---|
 | Implementer AI | Claude (Anthropic) |
-| Reviewer AI | Codex (OpenAI) — thread `019e617b` plan-time iter-1 AGREE for GPP-7 (single PR consolidated decision+infazı; Option Y authoritative; M6 pending; no aggregate entry yet; 5 forbidden actions appended); post-impl iter review continues after PR creation |
+| Reviewer AI | Codex (OpenAI) — thread `019e617b` plan-time iter-1 AGREE for GPP-7 (single PR consolidated decision+infazı; Option Y authoritative; M6 pending; no aggregate entry yet; 8 forbidden actions appended); post-impl iter-1 REVISE on commit c533fae absorbed in iter-2 commit (STATUS.md GPP-7 row "Not started" → "Closed / no support widening" with Option Y/X wording; GPP-7 record timestamp placeholder `~~~~Z` → `23:22:54Z`; PUBLIC-BETA GP-5.7a + GP-5.7b rows additive sync added; reviewer evidence verdict reflects post-impl state); post-impl iter-2 AGREE expected |
 | Worktree | `codex/gpp-7-write-candidate-decision` |
 | Base SHA at branch open | `28ad107` |
 | Cross-provider AI review HARD RULE | satisfied (CC-2) |

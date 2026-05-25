@@ -468,7 +468,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-5` | Completed as read-only building block / no support widening | Repo-intelligence explicit workflow integration | onboarding, workflow-context resolver, output contract, and closeout preflight ready; runtime ingestion remains disabled |
 | `GPP-6a` | Completed / preparation only / no support widening | Read-only E2E preflight contract | preflight ready; execution blocked by GPP-4 read-only adapter decision |
 | `GPP-6` | Preparation only / execution blocked | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
-| `GPP-7` | Not started | Controlled write-side production candidate | `write_candidate_ready` / `keep_rehearsal_only` |
+| `GPP-7` | Closed / no support widening | Controlled write-side production candidate | `keep_rehearsal_only` authoritative (Option Y); Option X `write_candidate_ready` deferred operator-bound |
 | `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
 | `GPP-9` | Not started | Full production matrix + claim decision | `promote_general_purpose_production` / `promote_general_purpose_beta` / `keep_narrow_stable_runtime` |
 
