@@ -402,7 +402,7 @@ def test_gpp_next_still_reports_blocked(tmp_path: Path) -> None:
     # GPP-3a closure are both preserved in completed_wps. The local gate
     # still pins gpp_2_status="closed" because the GPP-2 closeout entry
     # remains under completed_wps.
-    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["id"] == "GPP-4b"
     assert payload["current_wp"]["status"] == "active"
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False

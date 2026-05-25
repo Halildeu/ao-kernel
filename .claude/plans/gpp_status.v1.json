@@ -6,19 +6,20 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-4a",
-    "title": "claude-code-cli Failure-Mode Matrix Schema",
+    "id": "GPP-4b",
+    "title": "claude-code-cli Read-Only Production Decision",
     "status": "active",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/621",
-    "exit_decision": "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening",
-    "record": ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
-    "ready_after": "the claude-code-cli failure-mode matrix schema is bundled at ao_kernel/defaults/schemas/claude-code-cli-failure-mode.schema.v1.json, the emit-simulated + validate CLI script is published at scripts/claude_code_cli_failure_mode_evidence.py, the simulated path produces an artifact with all seven canonical failure modes (auth_missing, binary_missing, timeout, prompt_denied, malformed_output, policy_denied, redaction), and 24 drift guards exercise the schema invariants; the GPP-4 decision (promote_read_only / keep_operator_beta / defer) is reserved for GPP-4b, and the infaz\u0131 for GPP-4c; live runs are reserved for an operator-bound supersession slice",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/623",
+    "exit_decision": "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
+    "ready_after": "the GPP-4 closure path decision is recorded as keep_operator_beta (Option Y authoritative) with the GPP-4a failure-mode matrix schema + simulated coverage as supporting readiness; Option X promote_read_only is deferred and operator-bound; Option Z defer is rejected; GPP-4c executes scripts/gp5_platform_claim_decision.py BC-1 summary update, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md wording sync, current_wp migration to closed, and M4 milestone done; no live adapter execution, no support widening, no production platform claim happens in GPP-4b",
     "allowed_scope": [
-      "record claude-code-cli failure-mode matrix evidence under the bundled claude-code-cli-failure-mode.v1 schema with evidence_class=simulated",
-      "carry the schema's root oneOf bind: evidence_class=simulated implies live_adapter_execution=false and protected_run.observed=false",
-      "preserve the GP-5.9 BC-1 / claude_code_cli_auth_operator_managed / kb001 / protected_live_adapter_gate_unattested promotion blockers under the keep_operator_beta authority that GPP-4b will record (GPP-4a does not remove them)",
-      "treat the failure-mode matrix as supporting readiness evidence for the GPP-4b decision; GPP-4b records the decision and GPP-4c executes it",
-      "reserve gp5_platform_claim_decision.py and docs/SUPPORT-BOUNDARY.md / docs/KNOWN-BUGS.md mutations for GPP-4c"
+      "record the GPP-4 closure path decision as keep_operator_beta (Option Y authoritative)",
+      "treat the GPP-4a claude-code-cli-failure-mode.v1 schema + simulated coverage + helper/workflow smoke surfaces as supporting readiness evidence (not authority) for the keep_operator_beta decision",
+      "defer Option X (live claude-code-cli adapter execution) as operator-bound; any future live run requires a separate operator-only PR flipping live_adapter_execution_allowed=true and back to false",
+      "reject Option Z (defer) because GP-3.5 already closed this question with keep_operator_beta and the current PUBLIC-BETA / SUPPORT-BOUNDARY wording already pins the lane as Beta (operator-managed)",
+      "reserve gp5_platform_claim_decision.py BC-1 summary update and docs/SUPPORT-BOUNDARY.md + docs/KNOWN-BUGS.md wording sync for GPP-4c",
+      "reserve current_wp migration to GPP-4c closed and milestone M4 transition to done for GPP-4c"
     ],
     "evidence_collected": []
   },
@@ -278,6 +279,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/619",
       "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
       "closed_at": "2026-05-25T09:30:00Z"
+    },
+    {
+      "id": "GPP-4a",
+      "decision": "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/621",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/622",
+      "record": ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
+      "closed_at": "2026-05-25T11:00:00Z"
     }
   ],
   "blocked_wps": [],
@@ -356,7 +365,9 @@
     "treat BC-10 exception as authorization to widen support, claim production platform readiness, or run live adapters",
     "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run, evidence_class=live artifact, and explicit GPP supersession record",
     "treat the GPP-4a simulated failure-mode matrix as live adapter evidence or as authority for claude-code-cli production-certified read-only promotion",
-    "remove claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, or protected_live_adapter_gate_unattested from the GP-5.9 promotion_blockers list under any GPP-4 slice without operator-bound live evidence and explicit GPP supersession"
+    "remove claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, or protected_live_adapter_gate_unattested from the GP-5.9 promotion_blockers list under any GPP-4 slice without operator-bound live evidence and explicit GPP supersession",
+    "treat the GPP-4b keep_operator_beta decision as authority to widen support, claim production platform readiness, or run a live claude-code-cli adapter",
+    "promote the claude-code-cli lane from Beta (operator-managed) to production-certified read-only without a separate operator-bound live run, evidence_class=live failure-mode matrix artifact, and explicit GPP supersession record"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -384,9 +395,9 @@
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness",
-    "record claude-code-cli failure-mode matrix evidence under the bundled claude-code-cli-failure-mode.v1 schema with evidence_class=simulated; GPP-4a does not promote claude-code-cli",
-    "preserve the GP-5.9 keep-narrow-stable-runtime promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) until a future operator-bound supersession slice runs a live claude-code-cli adapter",
-    "reserve scripts/gp5_platform_claim_decision.py BC-1 / claude-code-cli reference updates for GPP-4c, after GPP-4b records the keep_operator_beta authority"
+    "record the GPP-4b keep_operator_beta authoritative decision; GPP-4b does not by itself execute the reclassification",
+    "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) under the GPP-4b keep_operator_beta authority that GPP-4c records",
+    "reserve scripts/gp5_platform_claim_decision.py BC-1 summary update, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md wording sync, and M4 milestone closure for GPP-4c"
   ],
   "milestones": [
     {
@@ -485,13 +496,13 @@
       "next_milestone_id": "M4"
     },
     "wp_weighted": {
-      "completed_wps_count": 41,
+      "completed_wps_count": 42,
       "closed_current_wp_count": 0,
-      "completed_or_closed_count": 41,
+      "completed_or_closed_count": 42,
       "estimated_total_wps": 50,
-      "percent": 82,
+      "percent": 84,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T10:30:00Z"
+  "last_updated": "2026-05-25T11:10:00Z"
 }

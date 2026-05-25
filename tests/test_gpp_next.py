@@ -28,9 +28,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
 
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
-    # GPP-3b (Faz 2) is the active slice; GPP-2 closeout + GPP-3a closure
-    # are preserved in completed_wps as historical audit trace.
-    assert payload["current_wp"]["id"] == "GPP-4a"
+    # GPP-4b (Faz 2 of GPP-4) is the active slice; GPP-2 closeout + the
+    # GPP-3 chain (3a/3b/3c) + GPP-4a closure are preserved in completed_wps
+    # as historical audit trace.
+    assert payload["current_wp"]["id"] == "GPP-4b"
     assert payload["current_wp"]["status"] == "active"
     # CC-13 issue anchor is opened during commit; allow null in this slice
     # (the GPP-3b PR opens the issue just-in-time before merge).
@@ -40,9 +41,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     ) or payload["current_wp"]["issue"].startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert (
         payload["current_wp"]["exit_decision"]
-        == "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening"
+        == "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
-    assert payload["current_wp"]["record"] == ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md"
+    assert payload["current_wp"]["record"] == ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md"
     assert (_repo_root() / payload["current_wp"]["record"]).exists()
     assert payload["current_wp"]["evidence_collected"] == []
     # GPP-3a closure is preserved in completed_wps with the schema-ready
@@ -826,14 +827,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["id"] == "GPP-4b"
     assert payload["current_wp"]["status"] == "active"
     issue = payload["current_wp"].get("issue")
     assert issue in (None, "") or issue.startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening"
+        == "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -859,13 +860,13 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    assert "Active WP: GPP-4a - claude-code-cli Failure-Mode Matrix Schema" in rendered
+    assert "Active WP: GPP-4b - claude-code-cli Read-Only Production Decision" in rendered
     assert "Active status: active" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
     assert "Blocked work packages:\n- none" in rendered
-    # GPP-2 closeout already landed; the active slice (GPP-3a) is also not
+    # GPP-2 closeout already landed; the active slice (GPP-4b) is also not
     # "remains blocked pending" anything.
     assert "remains blocked pending" not in rendered.lower()
     # Deferred GPP-2C wording must still be visible because the callback path stays
@@ -883,16 +884,16 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["id"] == "GPP-4b"
     assert payload["current_wp"]["status"] == "active"
     assert payload["blocked_wps"] == []
 
 
-def test_allowed_scope_reflects_gpp4a_failure_matrix_active() -> None:
-    """current_wp.allowed_scope describes the GPP-3b active slice scope
-    (BC-10 closure path decision: Option Y policy exception authoritative,
-    Option Z supporting evidence, Option X deferred) and must not regress
-    to GPP-2-era or GPP-3a-era stale wording."""
+def test_allowed_scope_reflects_gpp4b_keep_operator_beta_active() -> None:
+    """current_wp.allowed_scope describes the GPP-4b active slice scope
+    (claude-code-cli read-only adapter production decision: Option Y
+    keep_operator_beta authoritative, Option X promote_read_only deferred,
+    Option Z defer rejected) and must not regress to earlier-slice wording."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     allowed_scope = payload["current_wp"]["allowed_scope"]
     assert isinstance(allowed_scope, list) and allowed_scope
@@ -910,11 +911,11 @@ def test_allowed_scope_reflects_gpp4a_failure_matrix_active() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # GPP-4a anchors must be present.
-    assert any("claude-code-cli-failure-mode.v1" in item.lower() for item in allowed_scope)
-    assert any("evidence_class=simulated" in item.lower() for item in allowed_scope)
-    assert any("keep_operator_beta" in item.lower() for item in allowed_scope)
-    assert any("gpp-4b" in item.lower() for item in allowed_scope)
+    # GPP-4b anchors must be present.
+    assert any("keep_operator_beta" in item.lower() and "authoritative" in item.lower() for item in allowed_scope)
+    assert any("option y" in item.lower() for item in allowed_scope)
+    assert any("option x" in item.lower() and "operator-bound" in item.lower() for item in allowed_scope)
+    assert any("option z" in item.lower() and "reject" in item.lower() for item in allowed_scope)
     assert any("gpp-4c" in item.lower() for item in allowed_scope)
     # Stale wording must NOT appear in the active slice.
     assert "gpp-2 stays blocked" not in joined
@@ -1022,9 +1023,9 @@ def test_gpp_status_progress_estimates_present() -> None:
     assert ms["next_milestone_id"] == "M4"
     wp = pe["wp_weighted"]
     # GPP-3a + GPP-3b in completed_wps (40), GPP-3c closed current_wp (1); total 41.
-    assert wp["completed_or_closed_count"] == 41
+    assert wp["completed_or_closed_count"] == 42
     assert wp["estimated_total_wps"] == 50
-    assert wp["percent"] == 82
+    assert wp["percent"] == 84
     assert wp["estimated"] is True
 
 
@@ -1036,7 +1037,7 @@ def test_gpp_next_progress_output_renders_milestones(capsys: Any) -> None:
     assert result == 0
     out = captured.out
     assert "Milestones: 4/7 done (57%; next M4 - Read-only adapter production decision)" in out
-    assert "WP-weighted estimate: 41/50 (82%; estimated)" in out
+    assert "WP-weighted estimate: 42/50 (84%; estimated)" in out
     for mid in ("M0", "M1", "M2", "M3", "M4", "M5", "M6"):
         assert f"- {mid} [" in out
 
@@ -1047,7 +1048,7 @@ def test_gpp_next_text_output_renders_milestone_summary() -> None:
     payload = mod.load_status(_status_path())
     rendered = mod.render_text(payload, git_summary={"status": "## main", "divergence": "0\t0"})
     assert "Milestones: 4/7 done (57%; next M4 - Read-only adapter production decision)" in rendered
-    assert "WP-weighted estimate: 41/50 (82%; estimated)" in rendered
+    assert "WP-weighted estimate: 42/50 (84%; estimated)" in rendered
 
 
 def test_status_md_milestones_section_is_timeline_free() -> None:
