@@ -321,6 +321,29 @@ requires a separate operator-bound Option X supersession slice with
 one protected fail-closed live run, and an `evidence_class=live`
 failure-mode matrix artifact.
 
+GPP-6 closes the read-only E2E execution question under the
+`keep_rehearsal_only` authority. GPP-6a (Faz 1) shipped the preflight
+contract + schema with `execution_status=blocked_by_upstream_gates`;
+GPP-6b (Faz 2) recorded the `keep_rehearsal_only` authoritative
+decision; GPP-6c (Faz 3) executes the closure by syncing this support
+boundary, `docs/PUBLIC-BETA.md`, and `docs/KNOWN-BUGS.md` while
+preserving the GPP-6a preflight authority over upstream blockers. This
+does not widen support, grant a production platform claim, authorize
+live adapter execution, promote the claude-code-cli lane from Beta
+(operator-managed) to production-certified read-only, dispatch a
+protected workflow, or replace future operator-bound live evidence.
+The read-only E2E lane stays as preparation/rehearsal evidence
+preserved; any future protected live read-only E2E rehearsal requires
+a separate operator-bound Option X supersession slice
+(`authorize_protected_live_e2e`) with
+`live_adapter_execution_allowed=true`, protected workflow dispatch
+under the `ao-kernel-live-adapter-gate` environment +
+`AO_CLAUDE_CODE_CLI_AUTH` secret, three protected clean read-only E2E
+runs + one protected fail-closed run with `evidence_class=live`
+artifacts. The GPP-6 Option X supersession slot is independent from
+the GPP-4 Option X supersession slot (the latter governs
+production-certified read-only tier promotion).
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

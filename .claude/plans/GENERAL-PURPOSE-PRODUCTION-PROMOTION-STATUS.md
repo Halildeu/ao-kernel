@@ -24,10 +24,10 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#627](https://github.com/Halildeu/ao-kernel/issues/627)
-for GPP-6b read-only E2E execution decision (active; Faz 2 of M5; M5 closure path selected as keep_rehearsal_only)
-**Current slice record:** `.claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md`
-**M5 chain records (in progress):** `.claude/plans/GPP-6a-READ-ONLY-E2E-PREFLIGHT.md`, `.claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md`; M5 closeout reserved for GPP-6c
+**Current slice issue:** [#629](https://github.com/Halildeu/ao-kernel/issues/629)
+for GPP-6c read-only E2E keep_rehearsal_only infazı (closed; Faz 3 of M5; M5 milestone done)
+**Current slice record:** `.claude/plans/GPP-6c-KEEP-REHEARSAL-ONLY-INFAZ.md`
+**M5 closeout (current):** `.claude/plans/GPP-6a-READ-ONLY-E2E-PREFLIGHT.md`, `.claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md`, `.claude/plans/GPP-6c-KEEP-REHEARSAL-ONLY-INFAZ.md`
 **M4 closeout (historical):** `.claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md` (issue [#625](https://github.com/Halildeu/ao-kernel/issues/625))
 **M3 closeout (historical):** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md` (issue [#618](https://github.com/Halildeu/ao-kernel/issues/618))
 **GPP-2 closeout (historical):** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (issue [#567](https://github.com/Halildeu/ao-kernel/issues/567))
@@ -55,14 +55,14 @@ exit decisions are recorded with evidence.
 | M2 | Repo-intelligence read-only building block + E2E preflight preparation | GPP-5, GPP-6a | Done | `2026-04-28` |
 | M3 | Real-adapter cost/usage evidence | GPP-3 | Done | `2026-05-25` |
 | M4 | Read-only adapter production decision | GPP-4 | Done | `2026-05-25` |
-| M5 | Read-only E2E execution | GPP-6 | Pending | — |
+| M5 | Read-only E2E execution | GPP-6 | Done | `2026-05-25` |
 | M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
 
-Current progress: **5/7 milestones done (71%); M5 — Read-only E2E
-execution in progress** (closure path selected as keep_rehearsal_only
-via GPP-6b active; M5 closeout reserved for GPP-6c). WP-weighted
-estimate: **44/50 (88%; estimated)** — treat this as a coarse
-indicator only; the canonical view is the milestone-based count.
+Current progress: **6/7 milestones done (86%); next M6 — Production
+matrix + final claim** (M5 closed under keep_rehearsal_only authority:
+GPP-6a + GPP-6b + GPP-6c). WP-weighted estimate: **46/50 (92%;
+estimated)** — treat this as a coarse indicator only; the canonical
+view is the milestone-based count.
 
 Run `python3 scripts/gpp_next.py --output progress` for the live machine
 view.
