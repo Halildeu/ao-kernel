@@ -398,12 +398,12 @@ def test_gpp_next_still_reports_blocked(tmp_path: Path) -> None:
     spec.loader.exec_module(gpp_next)
 
     payload = gpp_next.load_status(_status_path())
-    # GPP-6c is the current slice in closed state (Faz 3 of GPP-6; M5
-    # milestone done). M4 milestone is also done; GPP-2 closeout + GPP-3
-    # chain + GPP-4 chain (4a/4b/4c) + GPP-6b closures are all preserved
-    # in completed_wps. The local gate still pins gpp_2_status="closed"
-    # because the GPP-2 closeout entry remains under completed_wps.
-    assert payload["current_wp"]["id"] == "GPP-6c"
+    # GPP-7 is the current slice in closed state (M6 Faz 1). M5 milestone
+    # is done; M4 milestone done; GPP-2 + GPP-3 + GPP-4 + GPP-6 chains
+    # closures all preserved in completed_wps. The local gate still pins
+    # gpp_2_status="closed" because the GPP-2 closeout entry remains
+    # under completed_wps. M6 milestone closure reserved for GPP-9.
+    assert payload["current_wp"]["id"] == "GPP-7"
     assert payload["current_wp"]["status"] == "closed"
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
