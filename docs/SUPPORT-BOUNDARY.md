@@ -293,6 +293,14 @@ The gate records `support_widening=false` and
 `production_platform_claim=false`; no adapter, write-side, remote PR, or
 repo-intelligence tier is promoted by this decision.
 
+GPP-3c reclassifies BC-10 from `blocked` to `exception` under the GPP-3b
+policy exception decision. This removes
+`real_adapter_usage_and_cost_evidence_missing` from the GP-5.9
+promotion_blockers list for the keep-narrow closeout, but it does not widen
+support, grant a production platform claim, authorize live adapter
+execution, or replace future operator-bound live evidence. The stable
+runtime boundary remains `narrow_production_runtime`.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

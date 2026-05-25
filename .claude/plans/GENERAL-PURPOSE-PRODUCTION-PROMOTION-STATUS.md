@@ -24,10 +24,12 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#567](https://github.com/Halildeu/ao-kernel/issues/567)
-for GPP-2 protected live-adapter gate runtime binding (closed)
-**Current slice record:** `.claude/plans/GPP-2D-AUTONOMOUS-REQUIRED-CHECK-LANE.md`
-**Closeout record:** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md`
+**Current slice issue:** [#618](https://github.com/Halildeu/ao-kernel/issues/618)
+for GPP-3c BC-10 exception infazı (closed)
+**Current slice record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**Closeout record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**M3 chain records:** `.claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md`, `.claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md`, `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**GPP-2 closeout (historical):** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (issue [#567](https://github.com/Halildeu/ao-kernel/issues/567))
 **Related orchestration record:** `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -50,13 +52,13 @@ exit decisions are recorded with evidence.
 | M0 | Foundation | GPP-0, GPP-1, GPP-1b | Done | `2026-04-25` |
 | M1 | Protected gate runtime + required-check lane | GPP-2, GPP-2D | Done | `2026-05-24` |
 | M2 | Repo-intelligence read-only building block + E2E preflight preparation | GPP-5, GPP-6a | Done | `2026-04-28` |
-| M3 | Real-adapter cost/usage evidence | GPP-3 | Pending | — |
+| M3 | Real-adapter cost/usage evidence | GPP-3 | Done | `2026-05-25` |
 | M4 | Read-only adapter production decision | GPP-4 | Pending | — |
 | M5 | Read-only E2E execution | GPP-6 | Pending | — |
 | M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
 
-Current progress: **3/7 milestones done (43%); next M3 — Real-adapter
-cost/usage evidence**. WP-weighted estimate: **38/50 (76%; estimated)** —
+Current progress: **4/7 milestones done (57%); next M4 — Read-only adapter
+production decision**. WP-weighted estimate: **41/50 (82%; estimated)** —
 treat this as a coarse indicator only; the canonical view is the
 milestone-based count.
 
@@ -1105,7 +1107,7 @@ admin bypass for PR merge automation, and must keep
 |---|---|---|
 | Protected environment never appears | Real-adapter production support stays blocked | Keep `claude-code-cli` Beta/operator-managed; do not widen support |
 | Local auth mistaken for project-owned evidence | False production claim | Require protected gate artifacts for GPP-4 |
-| Usage/cost remains unavailable | BC-10 stays blocked | Add explicit unavailable policy or defer promotion |
+| Usage/cost remains unavailable | BC-10 stays exception until operator-bound live evidence exists | Preserve policy exception; require explicit GPP supersession before pass/promotion |
 | Repo-intelligence hidden injection | Context trust boundary breaks | Explicit opt-in + metadata fail-closed tests |
 | Remote PR writes leak to arbitrary repos | Production side effect risk | Disposable guard + explicit allow flag + rollback evidence |
 | Full matrix becomes stale | Fake green promotion | Require fresh artifacts from current `origin/main` |

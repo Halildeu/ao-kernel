@@ -30,8 +30,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     # GPP-3b (Faz 2) is the active slice; GPP-2 closeout + GPP-3a closure
     # are preserved in completed_wps as historical audit trace.
-    assert payload["current_wp"]["id"] == "GPP-3b"
-    assert payload["current_wp"]["status"] == "active"
+    assert payload["current_wp"]["id"] == "GPP-3c"
+    assert payload["current_wp"]["status"] == "closed"
     # CC-13 issue anchor is opened during commit; allow null in this slice
     # (the GPP-3b PR opens the issue just-in-time before merge).
     assert payload["current_wp"].get("issue") in (
@@ -40,11 +40,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     ) or payload["current_wp"]["issue"].startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert (
         payload["current_wp"]["exit_decision"]
-        == "bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
-    assert payload["current_wp"]["record"] == ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md"
+    assert payload["current_wp"]["record"] == ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md"
     assert (_repo_root() / payload["current_wp"]["record"]).exists()
-    assert payload["current_wp"]["evidence_collected"] == []
+    assert any(item["type"] == "bc10_reclassification_executed" for item in payload["current_wp"]["evidence_collected"])
     # GPP-3a closure is preserved in completed_wps with the schema-ready
     # decision string.
     gpp3a_entries = [item for item in payload["completed_wps"] if item["id"] == "GPP-3a"]
@@ -826,14 +826,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-3b"
-    assert payload["current_wp"]["status"] == "active"
+    assert payload["current_wp"]["id"] == "GPP-3c"
+    assert payload["current_wp"]["status"] == "closed"
     issue = payload["current_wp"].get("issue")
     assert issue in (None, "") or issue.startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -859,8 +859,8 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    assert "Active WP: GPP-3b - BC-10 Closure Path Decision" in rendered
-    assert "Active status: active" in rendered
+    assert "Current WP: GPP-3c - BC-10 Exception Infazı" in rendered
+    assert "Current status: closed" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
@@ -883,12 +883,12 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-3b"
-    assert payload["current_wp"]["status"] == "active"
+    assert payload["current_wp"]["id"] == "GPP-3c"
+    assert payload["current_wp"]["status"] == "closed"
     assert payload["blocked_wps"] == []
 
 
-def test_allowed_scope_reflects_gpp3b_bc10_decision_active() -> None:
+def test_allowed_scope_reflects_gpp3c_bc10_exception_executed() -> None:
     """current_wp.allowed_scope describes the GPP-3b active slice scope
     (BC-10 closure path decision: Option Y policy exception authoritative,
     Option Z supporting evidence, Option X deferred) and must not regress
@@ -910,12 +910,12 @@ def test_allowed_scope_reflects_gpp3b_bc10_decision_active() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # GPP-3b decision anchors must be present.
-    assert any("policy exception" in item.lower() for item in allowed_scope)
-    assert any("option y" in item.lower() for item in allowed_scope)
-    assert any("option z" in item.lower() for item in allowed_scope)
-    assert any("option x" in item.lower() and "operator-bound" in item.lower() for item in allowed_scope)
-    assert any("gpp-3c" in item.lower() for item in allowed_scope)
+    # GPP-3c infaz anchors must be present.
+    assert any("bc-10" in item.lower() and "exception" in item.lower() for item in allowed_scope)
+    assert any("additive non-breaking" in item.lower() for item in allowed_scope)
+    assert any("gp5_platform_claim_decision" in item.lower() for item in allowed_scope)
+    assert any("real_adapter_usage_and_cost_evidence_missing" in item.lower() for item in allowed_scope)
+    assert any("milestone m3" in item.lower() and "done" in item.lower() for item in allowed_scope)
     # Stale wording must NOT appear in the active slice.
     assert "gpp-2 stays blocked" not in joined
     assert "remains blocked pending" not in joined
@@ -934,8 +934,15 @@ def test_allowed_scope_reflects_gpp3b_bc10_decision_active() -> None:
 _AGGREGATE_COMPLETION_SOURCES = {
     # GPP-2 closeout moved into completed_wps as part of GPP-3a; the default
     # branch in _slot_is_satisfied (slot in completed_ids) handles it from
-    # there. GPP-2D and GPP-5 remain aggregate (lane / parent-with-children).
+    # there. GPP-2D, GPP-3 and GPP-5 remain aggregate (lane / parent-with-children).
     "GPP-2D": {"evidence_refs": [".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"]},
+    "GPP-3": {
+        "evidence_refs": [
+            ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
+            ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
+            ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+        ]
+    },
     "GPP-5": {"completed_children": {"GPP-5a", "GPP-5b", "GPP-5c", "GPP-5d"}},
 }
 
@@ -979,7 +986,7 @@ def test_gpp_status_done_milestones_have_evidence_refs() -> None:
     """Every done milestone has at least one evidence_refs path that exists."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     done_milestones = [m for m in payload["milestones"] if m["status"] == "done"]
-    assert len(done_milestones) == 3
+    assert len(done_milestones) == 4
     for m in done_milestones:
         assert m["evidence_refs"], f"done milestone {m['id']} has empty evidence_refs"
         for ref in m["evidence_refs"]:
@@ -1009,15 +1016,15 @@ def test_gpp_status_progress_estimates_present() -> None:
     pe = payload["progress_estimates"]
     assert set(pe.keys()) >= {"milestones", "wp_weighted"}
     ms = pe["milestones"]
-    assert ms["done_count"] == 3
+    assert ms["done_count"] == 4
     assert ms["total_count"] == 7
-    assert ms["percent"] == 43
-    assert ms["next_milestone_id"] == "M3"
+    assert ms["percent"] == 57
+    assert ms["next_milestone_id"] == "M4"
     wp = pe["wp_weighted"]
-    # GPP-3a moved from current_wp into completed_wps; +1 to count.
-    assert wp["completed_or_closed_count"] == 39
+    # GPP-3a + GPP-3b in completed_wps (40), GPP-3c closed current_wp (1); total 41.
+    assert wp["completed_or_closed_count"] == 41
     assert wp["estimated_total_wps"] == 50
-    assert wp["percent"] == 78
+    assert wp["percent"] == 82
     assert wp["estimated"] is True
 
 
@@ -1028,8 +1035,8 @@ def test_gpp_next_progress_output_renders_milestones(capsys: Any) -> None:
     captured = capsys.readouterr()
     assert result == 0
     out = captured.out
-    assert "Milestones: 3/7 done (43%; next M3 - Real-adapter cost/usage evidence)" in out
-    assert "WP-weighted estimate: 39/50 (78%; estimated)" in out
+    assert "Milestones: 4/7 done (57%; next M4 - Read-only adapter production decision)" in out
+    assert "WP-weighted estimate: 41/50 (82%; estimated)" in out
     for mid in ("M0", "M1", "M2", "M3", "M4", "M5", "M6"):
         assert f"- {mid} [" in out
 
@@ -1039,8 +1046,8 @@ def test_gpp_next_text_output_renders_milestone_summary() -> None:
     mod = _module()
     payload = mod.load_status(_status_path())
     rendered = mod.render_text(payload, git_summary={"status": "## main", "divergence": "0\t0"})
-    assert "Milestones: 3/7 done (43%; next M3 - Real-adapter cost/usage evidence)" in rendered
-    assert "WP-weighted estimate: 39/50 (78%; estimated)" in rendered
+    assert "Milestones: 4/7 done (57%; next M4 - Read-only adapter production decision)" in rendered
+    assert "WP-weighted estimate: 41/50 (82%; estimated)" in rendered
 
 
 def test_status_md_milestones_section_is_timeline_free() -> None:

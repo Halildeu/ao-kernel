@@ -6,21 +6,48 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-3b",
-    "title": "BC-10 Closure Path Decision",
-    "status": "active",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/616",
-    "exit_decision": "bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "record": ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
-    "ready_after": "the GP-5.9 BC-10 closure path decision is recorded as policy exception (Option Y authoritative) with the GPP-3a schema + simulated evidence as supporting readiness (Option Z); Option X live run is deferred and operator-bound; the GPP-3c slice executes the gp5_platform_claim_decision.py reclassification, the additive non-breaking schema enum widening, and the docs sync; no live adapter execution, no support widening, no production platform claim happens in GPP-3b",
+    "id": "GPP-3c",
+    "title": "BC-10 Exception Infaz\u0131",
+    "status": "closed",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/618",
+    "exit_decision": "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "closeout_decision": "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "closeout_at": "2026-05-25T09:30:00Z",
+    "closeout_record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+    "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+    "ready_after": "the GP-5.9 BC-10 promotion blocker is reclassified from status='blocked' to status='exception' via additive non-breaking gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widening, the gp5_platform_claim_decision.py BC-10 criterion records the GPP-3b closure path summary with empty blockers, the docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md BC-10 wording are aligned with the exception status, and the M3 milestone is recorded done; live adapter execution stays operator-bound and outside the autonomous path",
     "allowed_scope": [
-      "record the BC-10 closure path decision as policy exception (Option Y authoritative)",
-      "treat the GPP-3a real-adapter-usage-cost-evidence.v1 schema + simulated path + cost subsystem (ao_kernel/cost) + ao_llm_usage_missing_total counter as supporting readiness evidence (Option Z), NOT as authority for BC-10 closure",
-      "defer Option X (live adapter execution) as operator-bound; any future live run requires a separate operator-only PR flipping live_adapter_execution_allowed=true and back to false with an audit comment",
-      "reserve gp5_platform_claim_decision.py BC-10 reclassification and the additive gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widening for GPP-3c",
-      "reserve docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md, docs/PUBLIC-BETA.md BC-10 wording sync for GPP-3c"
+      "reclassify BC-10 in scripts/gp5_platform_claim_decision.py from status='blocked' to status='exception' with empty blockers and a summary that cites the GPP-3b closure path decision",
+      "widen the gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum to add 'exception' as an additive non-breaking change (CC-8); schema_version stays at v1",
+      "update tests/test_gp5_platform_claim_decision.py to assert real_adapter_usage_and_cost_evidence_missing is no longer a promotion blocker and BC-10 carries status='exception' with empty blockers",
+      "align docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md BC-10 wording with the policy exception status while preserving the narrow stable runtime boundary",
+      "mark milestone M3 done with closed_at and evidence_refs pointing at the three GPP-3 record paths (3a, 3b, 3c)",
+      "preserve scripts/real_adapter_usage_evidence.py and ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json untouched (those are GPP-3a deliverables and stay frozen)"
     ],
-    "evidence_collected": []
+    "evidence_collected": [
+      {
+        "type": "bc10_reclassification_executed",
+        "collected_at": "2026-05-25T09:30:00Z",
+        "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+        "schema_path": "ao_kernel/defaults/schemas/gp5-production-platform-claim-decision.schema.v1.json",
+        "script_path": "scripts/gp5_platform_claim_decision.py",
+        "previous_bc10_status": "blocked",
+        "new_bc10_status": "exception",
+        "previous_promotion_blockers_contained": [
+          "real_adapter_usage_and_cost_evidence_missing"
+        ],
+        "new_promotion_blockers_excludes": [
+          "real_adapter_usage_and_cost_evidence_missing"
+        ],
+        "live_adapter_execution": false,
+        "support_widening": false,
+        "production_platform_claim": false,
+        "supporting_evidence_refs": [
+          ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
+          ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md"
+        ]
+      }
+    ]
   },
   "completed_wps": [
     {
@@ -262,6 +289,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/614",
       "record": ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
       "closed_at": "2026-05-24T22:57:35Z"
+    },
+    {
+      "id": "GPP-3b",
+      "decision": "bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/616",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/617",
+      "record": ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
+      "closed_at": "2026-05-25T09:21:00Z"
     }
   ],
   "blocked_wps": [],
@@ -336,7 +371,9 @@
     "treat simulated usage/cost evidence as live adapter production evidence",
     "reclassify BC-10 as pass without protected live evidence",
     "run live adapters under the autonomous GPP-3b/GPP-3c path",
-    "treat the GPP-3b policy exception decision as final without an operator-bound supersession slice when live evidence is later required"
+    "treat the GPP-3b policy exception decision as final without an operator-bound supersession slice when live evidence is later required",
+    "treat BC-10 exception as authorization to widen support, claim production platform readiness, or run live adapters",
+    "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run, evidence_class=live artifact, and explicit GPP supersession record"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -364,9 +401,9 @@
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness",
-    "record GPP-3b BC-10 closure path decision: Option Y (policy exception) authoritative, Option Z (extended simulated evidence) supporting, Option X (live run) deferred and operator-bound",
-    "treat the GPP-3a real-adapter usage/cost evidence schema and simulated emitter as supporting readiness, not as authority for BC-10 closure",
-    "reserve gp5_platform_claim_decision.py BC-10 reclassification (status: blocked -> exception) and the additive gp5-production-platform-claim-decision schema enum widening for GPP-3c"
+    "preserve the GPP-3c BC-10 exception classification: scripts/gp5_platform_claim_decision.py BC-10 status='exception' with empty blockers, gp5-production-platform-claim-decision schema enum includes 'exception', and milestone M3 stays done",
+    "do not regress the gp5_platform_claim_decision.py BC-10 status from 'exception' back to 'blocked' without a separate supersession slice with operator-bound live evidence",
+    "prepare M4 (Read-only adapter production decision, GPP-4) as the next milestone; do not start GPP-4 inside this slice"
   ],
   "milestones": [
     {
@@ -416,9 +453,13 @@
       "gpp_slots": [
         "GPP-3"
       ],
-      "status": "pending",
-      "closed_at": null,
-      "evidence_refs": []
+      "status": "done",
+      "closed_at": "2026-05-25T09:30:00Z",
+      "evidence_refs": [
+        ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
+        ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
+        ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md"
+      ]
     },
     {
       "id": "M4",
@@ -455,19 +496,19 @@
   ],
   "progress_estimates": {
     "milestones": {
-      "done_count": 3,
+      "done_count": 4,
       "total_count": 7,
-      "percent": 43,
-      "next_milestone_id": "M3"
+      "percent": 57,
+      "next_milestone_id": "M4"
     },
     "wp_weighted": {
-      "completed_wps_count": 39,
-      "closed_current_wp_count": 0,
-      "completed_or_closed_count": 39,
+      "completed_wps_count": 40,
+      "closed_current_wp_count": 1,
+      "completed_or_closed_count": 41,
       "estimated_total_wps": 50,
-      "percent": 78,
+      "percent": 82,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T01:30:00Z"
+  "last_updated": "2026-05-25T09:50:00Z"
 }

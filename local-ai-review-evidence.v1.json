@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-3b",
+  "work_package": "GPP-3c",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,52 +13,115 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp-3b-bc10-closure-path-decision",
+    "head_ref": "refs/heads/codex/gpp-3c-bc10-exception-infaz",
     "changed_files": [
-      ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+      ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
       ".claude/plans/gpp_status.v1.json",
+      "ao_kernel/defaults/schemas/gp5-production-platform-claim-decision.schema.v1.json",
+      "docs/KNOWN-BUGS.md",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
       "local-ai-review-evidence.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
+      "tests/test_gp5_platform_claim_decision.py",
       "tests/test_gpp_next.py",
       "tests/test_local_gpp_gate.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
-    {"name": "guard_flags_unchanged", "status": "pass"},
-    {"name": "bc10_closure_path_decision_authoritative_option_y", "status": "pass"},
-    {"name": "bc10_supporting_evidence_option_z", "status": "pass"},
-    {"name": "bc10_live_run_option_x_deferred", "status": "pass"},
-    {"name": "ssot_current_wp_migrated_to_gpp3b_active", "status": "pass"},
-    {"name": "ssot_gpp3a_closure_preserved_in_completed_wps", "status": "pass"},
-    {"name": "ssot_progress_wp_weighted_advanced_39_of_50", "status": "pass"},
-    {"name": "gp5_platform_claim_decision_py_unchanged", "status": "pass"},
-    {"name": "gp5_schema_unchanged", "status": "pass"},
-    {"name": "docs_support_boundary_unchanged", "status": "pass"},
-    {"name": "docs_known_bugs_unchanged", "status": "pass"},
-    {"name": "cc13_issue_anchor_present", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation_by_agent",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "bc10_status_reclassified_blocked_to_exception",
+      "status": "pass"
+    },
+    {
+      "name": "bc10_blockers_list_emptied",
+      "status": "pass"
+    },
+    {
+      "name": "real_adapter_usage_and_cost_evidence_missing_removed_from_promotion_blockers",
+      "status": "pass"
+    },
+    {
+      "name": "gp5_schema_enum_widened_additive_non_breaking",
+      "status": "pass"
+    },
+    {
+      "name": "m3_milestone_done_with_three_evidence_refs",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_current_wp_gpp3c_closed",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_gpp3b_closure_preserved_in_completed_wps",
+      "status": "pass"
+    },
+    {
+      "name": "progress_wp_weighted_advanced_41_of_50",
+      "status": "pass"
+    },
+    {
+      "name": "progress_milestones_advanced_4_of_7",
+      "status": "pass"
+    },
+    {
+      "name": "real_adapter_usage_cost_evidence_schema_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "real_adapter_usage_evidence_script_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "tests: pytest 3419 passed, 2 skipped in the full local test suite (~68s).",
+    "tests: pytest 3419 passed, 2 skipped in the full local test suite (~77s) including updated GP-5 platform claim decision drift guard.",
     "secret_scan: no credential material in any changed file.",
-    "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged; only governance decision record + SSOT migration.",
+    "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged.",
     "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
     "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved (CC-6).",
-    "bc10_closure_path_decision_authoritative_option_y: GPP-3b records Option Y (policy exception) as authoritative for BC-10 closure under the autonomous path; decision string=bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim.",
-    "bc10_supporting_evidence_option_z: GPP-3a real-adapter-usage-cost-evidence.v1 schema + simulated emitter + cost subsystem + 30 drift guards together constitute Option Z supporting readiness evidence (not authoritative).",
-    "bc10_live_run_option_x_deferred: Option X (live adapter execution) deferred and operator-bound; explicitly outside the autonomous GPP-3 chain. Future live evidence requires separate operator-bound supersession slice.",
-    "ssot_current_wp_migrated_to_gpp3b_active: current_wp.id=GPP-3b, status=active, exit_decision=bc10_policy_exception_authoritative_...; record path .claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md.",
-    "ssot_gpp3a_closure_preserved_in_completed_wps: GPP-3a entry present in completed_wps with decision=real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening, issue=#615, pr=#614, record path, closed_at=2026-05-24T22:57:35Z.",
-    "ssot_progress_wp_weighted_advanced_39_of_50: completed_wps_count=39 (38+GPP-3a), closed_current_wp_count=0 (GPP-3b active), completed_or_closed_count=39, percent=78%. Milestones unchanged 3/7 (43%; next M3).",
-    "gp5_platform_claim_decision_py_unchanged: scripts/gp5_platform_claim_decision.py intentionally NOT modified in GPP-3b; BC-10 stays status=blocked. Reclassification reserved for GPP-3c.",
-    "gp5_schema_unchanged: gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum unchanged in GPP-3b; additive non-breaking widening (add 'exception') reserved for GPP-3c.",
-    "docs_support_boundary_unchanged: docs/SUPPORT-BOUNDARY.md not modified in GPP-3b; wording sync for BC-10 policy exception reserved for GPP-3c.",
-    "docs_known_bugs_unchanged: docs/KNOWN-BUGS.md not modified in GPP-3b; BC-10 wording sync reserved for GPP-3c.",
-    "cc13_issue_anchor_present: GitHub issue #616 opened and recorded in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13 enforcement.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex plan-time iter-1 AGREE on thread 019e5c36."
+    "bc10_status_reclassified_blocked_to_exception: scripts/gp5_platform_claim_decision.py BC-10 criterion transitions from status='blocked' to status='exception' with summary citing the GPP-3b closure path (Option Y authoritative, Option Z supporting, Option X deferred operator-bound).",
+    "bc10_blockers_list_emptied: BC-10 criterion blockers list is now []; previously contained 'real_adapter_usage_and_cost_evidence_missing'.",
+    "real_adapter_usage_and_cost_evidence_missing_removed_from_promotion_blockers: aggregate promotion_blockers list no longer contains the BC-10-specific blocker; remaining blockers (protected_live_adapter_gate_unattested, claude_code_cli_auth_operator_managed, etc.) are unaffected.",
+    "gp5_schema_enum_widened_additive_non_breaking: gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widened from ['pass', 'partial', 'blocked'] to ['pass', 'partial', 'blocked', 'exception']. Schema_version stays v1 per CC-8 (additive non-breaking).",
+    "m3_milestone_done_with_three_evidence_refs: milestones[M3] status transitions to 'done' with closed_at=2026-05-25T09:30:00Z and evidence_refs pointing at GPP-3a, GPP-3b, and GPP-3c records.",
+    "ssot_current_wp_gpp3c_closed: current_wp.id=GPP-3c, status=closed, exit_decision=bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim, closeout_decision matches exit_decision (terminal), closeout_record exists.",
+    "ssot_gpp3b_closure_preserved_in_completed_wps: GPP-3b entry present in completed_wps with decision=bc10_policy_exception_authoritative_..., issue=#616, pr=#617, record path, closed_at=2026-05-25T09:21:00Z.",
+    "progress_wp_weighted_advanced_41_of_50: completed_wps_count=40 (38 + GPP-3a + GPP-3b), closed_current_wp_count=1 (GPP-3c closed), completed_or_closed_count=41, percent=82%.",
+    "progress_milestones_advanced_4_of_7: milestone done_count=4 (M0+M1+M2+M3), total_count=7, percent=57%, next_milestone_id=M4 (Read-only adapter production decision, GPP-4).",
+    "real_adapter_usage_cost_evidence_schema_untouched: ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json is unchanged (GPP-3a deliverable, frozen).",
+    "real_adapter_usage_evidence_script_untouched: scripts/real_adapter_usage_evidence.py is unchanged (GPP-3a deliverable, frozen).",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5c36 plan-time iter-1 AGREE (continued from GPP-3b).",
+    "iter1_revise_absorb_status_md_progress_synced: STATUS.md \u00a70 milestone table updated to M3 Done (closed_at 2026-05-25), progress 4/7 done (57%, next M4), WP-weighted 41/50 (82%); human-readable SSOT now matches the machine-readable gpp_status.v1.json.",
+    "iter1_revise_absorb_docs_support_boundary_known_bugs_synced: docs/SUPPORT-BOUNDARY.md gains a GPP-3c paragraph aligning BC-10 'blocked' to 'exception' under the GPP-3b decision while preserving the narrow_production_runtime boundary; docs/KNOWN-BUGS.md GP-5.9 list item 2 rewritten as BC-10 'exception' classification (not a shipped-baseline bug, no production certification authorization).",
+    "iter1_revise_absorb_aggregate_completion_sources_typo_fixed: tests/test_gpp_next.py _AGGREGATE_COMPLETION_SOURCES['GPP-3'].evidence_refs corrected from [GPP-3a, GPP-3c, GPP-3c] (duplicate GPP-3c, missing GPP-3b) to [GPP-3a, GPP-3b, GPP-3c].",
+    "iter1_revise_absorb_next_allowed_actions_post_closeout: gpp_status.v1.json next_allowed_actions stale GPP-3b/GPP-3c reserve entries removed; three new post-closeout preservation entries added (preserve GPP-3c BC-10 exception, do not regress to blocked, prepare M4).",
+    "iter1_revise_absorb_forbidden_action_tightened: gpp_status.v1.json second new forbidden_action entry now requires 'evidence_class=live artifact, and explicit GPP supersession record' beyond just operator-bound live run."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
