@@ -301,10 +301,14 @@ def _success_criteria(gp58: JsonDict) -> list[JsonDict]:
         ),
         _criterion(
             "BC-10",
-            "blocked",
-            "Real-adapter cost/token evidence is unavailable because protected evidence is absent.",
-            ["No protected real-adapter production evidence artifact exists."],
-            ["real_adapter_usage_and_cost_evidence_missing"],
+            "exception",
+            "Real-adapter cost/token evidence is deferred as a deliberate policy exception under the GPP-3b BC-10 closure path: Option Y (policy exception authoritative), Option Z (GPP-3a real-adapter-usage-cost-evidence.v1 schema + simulated path + cost subsystem as supporting readiness), Option X (live adapter execution deferred and operator-bound).",
+            [
+                "GPP-3a schema + simulated emitter + cost subsystem (ao_kernel/cost) + ao_llm_usage_missing_total counter recorded as supporting readiness; see .claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md.",
+                "GPP-3b closure path decision recorded: bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim; see .claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md.",
+                "GPP-3c infazı: status='exception' assigned via additive non-breaking gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widening; see .claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md.",
+            ],
+            [],
         ),
     ]
 

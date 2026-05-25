@@ -43,7 +43,16 @@ def test_gp59_platform_claim_decision_keeps_narrow_runtime() -> None:
     assert report["gp58_operations_package"]["status"] == "ready"
     assert report["support_boundary"]["general_purpose_claim_granted"] is False
     assert "protected_live_adapter_gate_unattested" in report["promotion_blockers"]
-    assert "real_adapter_usage_and_cost_evidence_missing" in report["promotion_blockers"]
+    # GPP-3c (Faz 3) reclassifies BC-10 from `blocked` to `exception` under
+    # the GPP-3b policy exception decision. The blocker
+    # `real_adapter_usage_and_cost_evidence_missing` is no longer in the
+    # promotion_blockers list; BC-10 itself carries status="exception"
+    # with an empty blockers array.
+    assert "real_adapter_usage_and_cost_evidence_missing" not in report["promotion_blockers"]
+    bc10_entries = [c for c in report["success_criteria"] if c["id"] == "BC-10"]
+    assert len(bc10_entries) == 1
+    assert bc10_entries[0]["status"] == "exception"
+    assert bc10_entries[0]["blockers"] == []
     assert {item["id"] for item in report["success_criteria"]} == {
         "BC-1",
         "BC-2",
@@ -116,15 +125,13 @@ def test_gp59_cli_writes_closed_report(tmp_path: Path) -> None:
 
 def test_gp59_docs_record_non_promotion_boundary() -> None:
     repo_root = _repo_root()
-    program = (
-        repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md"
-    ).read_text(encoding="utf-8")
-    status = (
-        repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md"
-    ).read_text(encoding="utf-8")
-    plan = (
-        repo_root / ".claude" / "plans" / "GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md"
-    ).read_text(encoding="utf-8")
+    program = (repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md").read_text(
+        encoding="utf-8"
+    )
+    status = (repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(encoding="utf-8")
+    plan = (repo_root / ".claude" / "plans" / "GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md").read_text(
+        encoding="utf-8"
+    )
     public_beta = (repo_root / "docs" / "PUBLIC-BETA.md").read_text(encoding="utf-8")
     support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(encoding="utf-8")
     known_bugs = (repo_root / "docs" / "KNOWN-BUGS.md").read_text(encoding="utf-8")

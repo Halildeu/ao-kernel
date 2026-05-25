@@ -190,7 +190,7 @@
             "BC-10"
           ]
         },
-        "status": { "enum": ["pass", "partial", "blocked"] },
+        "status": { "enum": ["pass", "partial", "blocked", "exception"] },
         "summary": { "type": "string", "minLength": 1 },
         "evidence": {
           "type": "array",
