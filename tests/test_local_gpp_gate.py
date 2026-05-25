@@ -398,12 +398,13 @@ def test_gpp_next_still_reports_blocked(tmp_path: Path) -> None:
     spec.loader.exec_module(gpp_next)
 
     payload = gpp_next.load_status(_status_path())
-    # GPP-3b is the active slice (Faz 2 of GPP-3); GPP-2 closeout +
-    # GPP-3a closure are both preserved in completed_wps. The local gate
-    # still pins gpp_2_status="closed" because the GPP-2 closeout entry
-    # remains under completed_wps.
-    assert payload["current_wp"]["id"] == "GPP-4b"
-    assert payload["current_wp"]["status"] == "active"
+    # GPP-4c is the current slice in closed state (Faz 3 of GPP-4; M4
+    # milestone done); GPP-2 closeout + GPP-3 chain + GPP-4a + GPP-4b
+    # closures are all preserved in completed_wps. The local gate still
+    # pins gpp_2_status="closed" because the GPP-2 closeout entry remains
+    # under completed_wps.
+    assert payload["current_wp"]["id"] == "GPP-4c"
+    assert payload["current_wp"]["status"] == "closed"
     assert payload["support_widening_allowed"] is False
     assert payload["production_platform_claim_allowed"] is False
     assert payload["live_adapter_execution_allowed"] is False

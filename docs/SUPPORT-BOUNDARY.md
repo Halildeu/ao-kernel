@@ -301,6 +301,26 @@ support, grant a production platform claim, authorize live adapter
 execution, or replace future operator-bound live evidence. The stable
 runtime boundary remains `narrow_production_runtime`.
 
+GPP-4 closes the claude-code-cli read-only adapter production question
+under the keep_operator_beta authority. GPP-4a (Faz 1) ships the
+failure-mode matrix schema + simulated coverage; GPP-4b (Faz 2) records
+the keep_operator_beta authoritative decision; GPP-4c (Faz 3) executes
+the closure by updating BC-1 summary text in
+`scripts/gp5_platform_claim_decision.py` to cite this path while retaining
+`status="blocked"` and the existing promotion blockers
+(`claude_code_cli_auth_operator_managed`,
+`kb001_claude_code_cli_operator_managed_auth`,
+`protected_live_adapter_gate_unattested`). This does not widen support,
+grant a production platform claim, authorize live adapter execution,
+promote the claude-code-cli lane from Beta (operator-managed) to
+production-certified read-only, or replace future operator-bound live
+evidence. The claude-code-cli lane support tier remains Beta
+(operator-managed). Any future production-certified read-only promotion
+requires a separate operator-bound Option X supersession slice with
+`live_adapter_execution_allowed=true`, three protected clean live runs,
+one protected fail-closed live run, and an `evidence_class=live`
+failure-mode matrix artifact.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

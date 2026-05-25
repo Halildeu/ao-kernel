@@ -65,6 +65,26 @@ Future promotion must close these with behavior and protected-gate evidence. A
 documentation-only change cannot convert the GP-5.9 non-promotion decision into
 a production platform claim.
 
+## GPP-4 closeout interpretation
+
+GPP-4 closes the claude-code-cli read-only adapter production decision as
+`keep_operator_beta` (Option Y authoritative). This does not promote
+`KB-001` or `KB-002` to shipped-baseline bugs; they remain operator-managed
+beta lane known bugs. Both remain promotion-relevant for any future
+production-certified read-only claim:
+
+1. `KB-001` (`claude auth status` vs real `claude -p` divergence) — retained
+   as `kb001_claude_code_cli_operator_managed_auth` promotion blocker under
+   the keep_operator_beta authority;
+2. `KB-002` (`claude setup-token` long-lived token failures) — remains an
+   operator-managed beta lane known bug; GPP-4c does not remove or rename
+   any existing promotion blocker.
+
+Clearing these requires operator-bound live evidence under a separate
+Option X supersession slice (three protected clean live runs, one
+protected fail-closed live run, `evidence_class=live` failure-mode matrix
+artifact), not documentation wording alone.
+
 ## Release readiness rule
 
 Before a stable release candidate, this file must answer two questions:

@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-4b",
+  "work_package": "GPP-4c",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,12 +13,16 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp-4b-keep-operator-beta-decision",
+    "head_ref": "refs/heads/codex/gpp-4c-keep-operator-beta-infaz",
     "changed_files": [
       ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
+      ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md",
       ".claude/plans/gpp_status.v1.json",
+      "docs/KNOWN-BUGS.md",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
       "local-ai-review-evidence.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
       "tests/test_gpp_next.py",
       "tests/test_local_gpp_gate.py"
     ]
@@ -45,39 +49,55 @@
       "status": "pass"
     },
     {
-      "name": "gpp4_decision_recorded_option_y_authoritative",
+      "name": "gpp4_decision_executed_option_y_authoritative",
       "status": "pass"
     },
     {
-      "name": "gpp4_option_x_promote_read_only_deferred_operator_bound",
+      "name": "bc1_status_blocked_retained",
       "status": "pass"
     },
     {
-      "name": "gpp4_option_z_defer_rejected",
+      "name": "bc1_promotion_blockers_retained",
       "status": "pass"
     },
     {
-      "name": "ssot_current_wp_gpp4b_active",
+      "name": "schema_version_v1_unchanged",
       "status": "pass"
     },
     {
-      "name": "ssot_gpp4a_closure_preserved_in_completed_wps",
+      "name": "ssot_current_wp_gpp4c_closed",
       "status": "pass"
     },
     {
-      "name": "gp5_platform_claim_decision_py_untouched",
+      "name": "ssot_gpp4b_closure_preserved_in_completed_wps",
       "status": "pass"
     },
     {
-      "name": "docs_support_boundary_untouched",
+      "name": "ssot_gpp4c_not_in_completed_wps_this_slice",
       "status": "pass"
     },
     {
-      "name": "docs_known_bugs_untouched",
+      "name": "ssot_wp_weighted_triple_pinned",
       "status": "pass"
     },
     {
-      "name": "cc13_issue_anchor_present",
+      "name": "m4_milestone_done_three_evidence_refs",
+      "status": "pass"
+    },
+    {
+      "name": "docs_support_boundary_gpp4_synced",
+      "status": "pass"
+    },
+    {
+      "name": "docs_known_bugs_gpp4_synced",
+      "status": "pass"
+    },
+    {
+      "name": "docs_public_beta_gpp4_synced",
+      "status": "pass"
+    },
+    {
+      "name": "gpp4c_issue_anchor_present",
       "status": "pass"
     },
     {
@@ -86,25 +106,25 @@
     }
   ],
   "findings": [
-    "tests: pytest 3445 passed, 2 skipped in the full local test suite (~75s).",
+    "tests: pytest tests/test_gpp_next.py + tests/test_local_gpp_gate.py 83 passed (~4.3s); full suite green.",
     "secret_scan: no credential material in any changed file.",
     "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged.",
     "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
     "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved (CC-6).",
-    "gpp4_decision_recorded_option_y_authoritative: GPP-4b records Option Y (keep_operator_beta) as authoritative for the claude-code-cli read-only adapter production decision; decision string=gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim.",
-    "gpp4_option_x_promote_read_only_deferred_operator_bound: Option X (promote_read_only with three protected clean live runs + one fail-closed live run) is deferred to a future operator-bound supersession slice; outside the autonomous GPP-4 chain.",
-    "gpp4_option_z_defer_rejected: Option Z (defer) is rejected because GP-3.5 already closed this question with keep_operator_beta and the current PUBLIC-BETA / SUPPORT-BOUNDARY wording already pins the lane as Beta (operator-managed); promoting defer over Option Y would re-open a closed question without new evidence.",
-    "ssot_current_wp_gpp4b_active: current_wp.id=GPP-4b, status=active, issue=#623, exit_decision matches the keep_operator_beta authoritative decision string, record points to GPP-4b-KEEP-OPERATOR-BETA-DECISION.md.",
-    "ssot_gpp4a_closure_preserved_in_completed_wps: GPP-4a entry present in completed_wps with decision=failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening, issue=#621, pr=#622, record path, closed_at=2026-05-25T11:00:00Z. progress_estimates wp_weighted: completed_wps_count=42, closed_current_wp_count=0, completed_or_closed_count=42, percent=84%.",
-    "gp5_platform_claim_decision_py_untouched: scripts/gp5_platform_claim_decision.py is unchanged in GPP-4b; BC-1 stays status='blocked' with claude_code_cli_auth_operator_managed and KB-001 in the promotion_blockers list (Codex iter-1 recommendation: retained under keep_operator_beta authority via GPP-4c summary update, not cleared).",
-    "docs_support_boundary_untouched: docs/SUPPORT-BOUNDARY.md is unchanged in GPP-4b; claude-code-cli lane wording sync reserved for GPP-4c.",
-    "docs_known_bugs_untouched: docs/KNOWN-BUGS.md is unchanged in GPP-4b; KB-001 / KB-002 wording sync reserved for GPP-4c.",
-    "cc13_issue_anchor_present: GitHub issue #623 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5eab plan-time iter-1 AGREE (continued from GPP-4a).",
-    "iter2_revise_absorb_status_md_header_synced: STATUS.md header updated from stale GPP-3c/#618 to current GPP-4b/#623; current slice record points to GPP-4b-KEEP-OPERATOR-BETA-DECISION.md; M4 chain records line added (GPP-4a + GPP-4b, closeout reserved for GPP-4c); GPP-3c demoted to historical line; M3/GPP-2 closeouts preserved as historical references.",
-    "iter2_revise_absorb_status_md_progress_synced: STATUS.md \u00a70 WP-weighted progress updated from stale 41/50 (82%) to current 42/50 (84%); M4 in-progress phrasing added (GPP-4a closed + GPP-4b active; GPP-4c reserved for M4 closeout).",
-    "iter2_revise_absorb_decision_record_closeout_at_dewikified: GPP-4b record header now describes effective-on-merge with GPP-4c-recorded closeout timestamps instead of referencing a non-existent current_wp.closeout_at field.",
-    "iter2_revise_absorb_test_comment_hygiene: stale GPP-3b/GPP-3a/GPP-3c/GPP-2 comments in tests/test_gpp_next.py and tests/test_local_gpp_gate.py cleaned up to match GPP-4b active state."
+    "gpp4_decision_executed_option_y_authoritative: GPP-4c executes the GPP-4b keep_operator_beta authoritative decision; new current_wp.exit_decision=gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim; record path .claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md.",
+    "bc1_status_blocked_retained: scripts/gp5_platform_claim_decision.py BC-1 status='blocked' retained; only summary text and evidence list extended to cite the GPP-4 closure path (GPP-4a + GPP-4b + GPP-4c records).",
+    "bc1_promotion_blockers_retained: BC-1.blockers=['protected_live_adapter_gate_unattested'] retained; _promotion_blockers() global aggregator retains claude_code_cli_auth_operator_managed + kb001_claude_code_cli_operator_managed_auth + gh_cli_pr_live_write_not_production_promoted + repo_intelligence_context_handoff_not_runtime_auto_fed + kb002_gh_cli_pr_sandbox_only_live_write; no blocker removal under the keep_operator_beta authority.",
+    "schema_version_v1_unchanged: gp5-production-platform-claim-decision.schema.v1.json contract is untouched (no enum widening, no required-field change); BC-1.status='blocked' was already in the schema enum from the original GP-5.9 closeout. CC-8 enum-widening pattern does not apply here.",
+    "ssot_current_wp_gpp4c_closed: current_wp.id=GPP-4c, status=closed, issue=#625, exit_decision matches the executed string, record points to GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md.",
+    "ssot_gpp4b_closure_preserved_in_completed_wps: GPP-4b entry present in completed_wps with decision=gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim, issue=#623, pr=#624, record path, closed_at=2026-05-25T12:44:16Z.",
+    "ssot_gpp4c_not_in_completed_wps_this_slice: GPP-4c is intentionally absent from completed_wps in this slice; current-closed accounting (closed_current_wp_count=1) per program convention; the next M5 opener slice migrates GPP-4c. Drift guard test_gpp_status_contract_keeps_support_widening_closed pins this invariant.",
+    "ssot_wp_weighted_triple_pinned: progress_estimates.wp_weighted shows completed_wps_count=43 (42 prior + GPP-4b moved into completed_wps), closed_current_wp_count=1 (GPP-4c current closed), completed_or_closed_count=44 = 43 + 1, estimated_total_wps=50, percent=88. Drift guard test_gpp_status_progress_estimates_present pins the triple.",
+    "m4_milestone_done_three_evidence_refs: milestones[M4].status=done with closed_at=2026-05-25T13:00:00Z and exactly three evidence_refs (GPP-4a + GPP-4b + GPP-4c record paths); progress_estimates.milestones done_count=5, percent=71, next_milestone_id=M5. Drift guard test_gpp_status_m4_done_three_evidence_refs pins the cardinality + path set.",
+    "docs_support_boundary_gpp4_synced: docs/SUPPORT-BOUNDARY.md GPP-3c paragrafının sonrasına GPP-4 closeout paragrafı eklendi; claude-code-cli lane Beta (operator-managed) tier korunur; Option X supersession requirement açıkça not edilmiş.",
+    "docs_known_bugs_gpp4_synced: docs/KNOWN-BUGS.md GP-5.9 closeout interpretation section'ından sonra yeni 'GPP-4 closeout interpretation' subsection eklendi; KB-001 kb001_claude_code_cli_operator_managed_auth blocker'ı retained, KB-002 operator-managed beta lane known bug olarak rename/remove yapılmadan korundu (Codex iter-1 wording correction absorb edildi).",
+    "docs_public_beta_gpp4_synced: docs/PUBLIC-BETA.md üç lokasyon update: claude-code-cli Beta row GP-3.6 + GP-4.5 + GPP-4 keep_operator_beta authoritative referansları aynı satırda; GPP-4a row trailing sentence GPP-4b decision record + GPP-4c infaz record path'lerine bağlandı; yeni GPP-4 closeout decision row Option X supersession requirement ile birlikte eklendi.",
+    "gpp4c_issue_anchor_present: GitHub issue #625 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5f2f plan-time iter-1 PARTIAL (current_wp.status=closed vs completed_wps[].id=GPP-4c mutual exclusion + closed_current_wp_count=1 + BC-1 summary tightening + KB-002 wording clarification + Option X supersession guard) absorbed; plan-time iter-2 AGREE; post-impl iter review TBD before merge."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

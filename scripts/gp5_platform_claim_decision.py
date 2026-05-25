@@ -239,8 +239,13 @@ def _success_criteria(gp58: JsonDict) -> list[JsonDict]:
         _criterion(
             "BC-1",
             "blocked",
-            "No real adapter is production-certified by protected gate evidence.",
-            ["GP-5.1a protected prerequisite audit remains blocked/unattested."],
+            "No real adapter is production-certified by protected gate evidence. The claude-code-cli read-only adapter production question is closed under the GPP-4 closure path as Option Y (keep_operator_beta); claude-code-cli stays Beta (operator-managed). Production-certified read-only promotion remains deferred to a future operator-bound Option X supersession slice.",
+            [
+                "GP-5.1a protected prerequisite audit remains blocked/unattested.",
+                "GPP-4a (Faz 1) ships the claude-code-cli failure-mode matrix schema + simulated coverage as supporting readiness; see .claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md.",
+                "GPP-4b (Faz 2) records the closure path decision: gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim; Option X promote_read_only deferred operator-bound; Option Z defer rejected; see .claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md.",
+                "GPP-4c (Faz 3) executes the closure by updating this BC-1 summary text and the docs (SUPPORT-BOUNDARY.md, KNOWN-BUGS.md, PUBLIC-BETA.md) while retaining status='blocked' and the promotion_blockers list under the keep_operator_beta authority; see .claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md.",
+            ],
             ["protected_live_adapter_gate_unattested"],
         ),
         _criterion(
