@@ -4,7 +4,9 @@
 > **Slice:** `GPP-4b` (Faz 2 of GPP-4).
 > **Issue:** pinned on commit per CC-13.
 > **Decision:** `gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim`.
-> **Effective:** see `gpp_status.v1.json::current_wp.closeout_at` after merge.
+> **Effective:** effective on merge; the GPP-4c slice records the
+> formal closeout timestamp via `completed_wps[].closed_at` and
+> `milestones[M4].closed_at` once the infazı lands.
 
 ## Purpose
 

@@ -23,21 +23,66 @@
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
-    {"name": "guard_flags_unchanged", "status": "pass"},
-    {"name": "gpp4_decision_recorded_option_y_authoritative", "status": "pass"},
-    {"name": "gpp4_option_x_promote_read_only_deferred_operator_bound", "status": "pass"},
-    {"name": "gpp4_option_z_defer_rejected", "status": "pass"},
-    {"name": "ssot_current_wp_gpp4b_active", "status": "pass"},
-    {"name": "ssot_gpp4a_closure_preserved_in_completed_wps", "status": "pass"},
-    {"name": "gp5_platform_claim_decision_py_untouched", "status": "pass"},
-    {"name": "docs_support_boundary_untouched", "status": "pass"},
-    {"name": "docs_known_bugs_untouched", "status": "pass"},
-    {"name": "cc13_issue_anchor_present", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation_by_agent",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "gpp4_decision_recorded_option_y_authoritative",
+      "status": "pass"
+    },
+    {
+      "name": "gpp4_option_x_promote_read_only_deferred_operator_bound",
+      "status": "pass"
+    },
+    {
+      "name": "gpp4_option_z_defer_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_current_wp_gpp4b_active",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_gpp4a_closure_preserved_in_completed_wps",
+      "status": "pass"
+    },
+    {
+      "name": "gp5_platform_claim_decision_py_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "docs_support_boundary_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "docs_known_bugs_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "cc13_issue_anchor_present",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    }
   ],
   "findings": [
     "tests: pytest 3445 passed, 2 skipped in the full local test suite (~75s).",
@@ -54,7 +99,11 @@
     "docs_support_boundary_untouched: docs/SUPPORT-BOUNDARY.md is unchanged in GPP-4b; claude-code-cli lane wording sync reserved for GPP-4c.",
     "docs_known_bugs_untouched: docs/KNOWN-BUGS.md is unchanged in GPP-4b; KB-001 / KB-002 wording sync reserved for GPP-4c.",
     "cc13_issue_anchor_present: GitHub issue #623 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5eab plan-time iter-1 AGREE (continued from GPP-4a)."
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5eab plan-time iter-1 AGREE (continued from GPP-4a).",
+    "iter2_revise_absorb_status_md_header_synced: STATUS.md header updated from stale GPP-3c/#618 to current GPP-4b/#623; current slice record points to GPP-4b-KEEP-OPERATOR-BETA-DECISION.md; M4 chain records line added (GPP-4a + GPP-4b, closeout reserved for GPP-4c); GPP-3c demoted to historical line; M3/GPP-2 closeouts preserved as historical references.",
+    "iter2_revise_absorb_status_md_progress_synced: STATUS.md \u00a70 WP-weighted progress updated from stale 41/50 (82%) to current 42/50 (84%); M4 in-progress phrasing added (GPP-4a closed + GPP-4b active; GPP-4c reserved for M4 closeout).",
+    "iter2_revise_absorb_decision_record_closeout_at_dewikified: GPP-4b record header now describes effective-on-merge with GPP-4c-recorded closeout timestamps instead of referencing a non-existent current_wp.closeout_at field.",
+    "iter2_revise_absorb_test_comment_hygiene: stale GPP-3b/GPP-3a/GPP-3c/GPP-2 comments in tests/test_gpp_next.py and tests/test_local_gpp_gate.py cleaned up to match GPP-4b active state."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

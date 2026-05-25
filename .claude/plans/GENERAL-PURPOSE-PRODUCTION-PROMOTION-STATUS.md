@@ -24,11 +24,11 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#618](https://github.com/Halildeu/ao-kernel/issues/618)
-for GPP-3c BC-10 exception infazı (closed)
-**Current slice record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
-**Closeout record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
-**M3 chain records:** `.claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md`, `.claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md`, `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**Current slice issue:** [#623](https://github.com/Halildeu/ao-kernel/issues/623)
+for GPP-4b claude-code-cli keep_operator_beta decision (active; Faz 2 of M4)
+**Current slice record:** `.claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md`
+**M4 chain records (in progress):** `.claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md`, `.claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md`; M4 closeout reserved for GPP-4c
+**M3 closeout (historical):** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md` (issue [#618](https://github.com/Halildeu/ao-kernel/issues/618))
 **GPP-2 closeout (historical):** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (issue [#567](https://github.com/Halildeu/ao-kernel/issues/567))
 **Related orchestration record:** `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
@@ -58,7 +58,8 @@ exit decisions are recorded with evidence.
 | M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
 
 Current progress: **4/7 milestones done (57%); next M4 — Read-only adapter
-production decision**. WP-weighted estimate: **41/50 (82%; estimated)** —
+production decision** (M4 in progress via GPP-4a closed + GPP-4b active;
+GPP-4c reserved for M4 closeout). WP-weighted estimate: **42/50 (84%; estimated)** —
 treat this as a coarse indicator only; the canonical view is the
 milestone-based count.
 

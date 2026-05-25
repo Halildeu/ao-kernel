@@ -28,8 +28,9 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
 
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
-    # GPP-3b (Faz 2) is the active slice; GPP-2 closeout + GPP-3a closure
-    # are preserved in completed_wps as historical audit trace.
+    # GPP-4b (Faz 2 of GPP-4) is the active slice; GPP-2 closeout + the
+    # GPP-3 chain (3a/3b/3c) + GPP-4a closure are preserved in completed_wps
+    # as historical audit trace.
     assert payload["current_wp"]["id"] == "GPP-4b"
     assert payload["current_wp"]["status"] == "active"
     # CC-13 issue anchor is opened during commit; allow null in this slice
@@ -865,7 +866,7 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
     assert "Blocked work packages:\n- none" in rendered
-    # GPP-2 closeout already landed; the active slice (GPP-3a) is also not
+    # GPP-2 closeout already landed; the active slice (GPP-4b) is also not
     # "remains blocked pending" anything.
     assert "remains blocked pending" not in rendered.lower()
     # Deferred GPP-2C wording must still be visible because the callback path stays
@@ -889,10 +890,10 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
 
 
 def test_allowed_scope_reflects_gpp4b_keep_operator_beta_active() -> None:
-    """current_wp.allowed_scope describes the GPP-3b active slice scope
-    (BC-10 closure path decision: Option Y policy exception authoritative,
-    Option Z supporting evidence, Option X deferred) and must not regress
-    to GPP-2-era or GPP-3a-era stale wording."""
+    """current_wp.allowed_scope describes the GPP-4b active slice scope
+    (claude-code-cli read-only adapter production decision: Option Y
+    keep_operator_beta authoritative, Option X promote_read_only deferred,
+    Option Z defer rejected) and must not regress to earlier-slice wording."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     allowed_scope = payload["current_wp"]["allowed_scope"]
     assert isinstance(allowed_scope, list) and allowed_scope
