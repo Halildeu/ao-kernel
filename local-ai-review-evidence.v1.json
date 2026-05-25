@@ -1,65 +1,131 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-2D-6B",
+  "work_package": "GPP-6b",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp2d6b-ai-path-gate",
+    "head_ref": "refs/heads/codex/gpp-6b-read-only-e2e-decision",
     "changed_files": [
-      ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
-      ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
-      ".github/workflows/test.yml",
-      "ao_kernel/ao_release_gate.py",
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+      ".claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md",
+      ".claude/plans/gpp_status.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_build_payload.py",
-      "tests/test_ao_release_gate_enforce_job.py",
-      "tests/test_ao_release_gate_runtime.py",
-      "tests/test_ao_release_gate_service.py",
-      "tests/test_gpp2d6_automerge_contract.py"
+      "tests/test_gpp_next.py",
+      "tests/test_local_gpp_gate.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "ruff", "status": "pass"},
-    {"name": "mypy", "status": "pass"},
-    {"name": "no_pull_request_target", "status": "pass"},
-    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
-    {"name": "guard_flags_unchanged", "status": "pass"},
-    {"name": "low_risk_no_human_review_required", "status": "pass"},
-    {"name": "high_risk_current_head_non_author_approval_required", "status": "pass"},
-    {"name": "workflow_reruns_on_pull_request_review", "status": "pass"},
-    {"name": "trusted_base_payload_builder_bootstrap_compatible", "status": "pass"},
-    {"name": "gpp2b_mapping_updated_to_21_checks", "status": "pass"},
-    {"name": "gpp2d6_runbook_updated_for_path_sensitive_gate", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation_by_agent",
+      "status": "pass"
+    },
+    {
+      "name": "guard_flags_unchanged",
+      "status": "pass"
+    },
+    {
+      "name": "gpp6_decision_recorded_option_y_authoritative",
+      "status": "pass"
+    },
+    {
+      "name": "gpp6_option_x_authorize_protected_live_e2e_deferred_operator_bound",
+      "status": "pass"
+    },
+    {
+      "name": "gpp6_option_z_defer_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_current_wp_gpp6b_active",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_gpp4c_closure_preserved_in_completed_wps",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_gpp6b_not_in_completed_wps_this_slice",
+      "status": "pass"
+    },
+    {
+      "name": "ssot_wp_weighted_subcounts_reconciled",
+      "status": "pass"
+    },
+    {
+      "name": "m5_status_pending_retained",
+      "status": "pass"
+    },
+    {
+      "name": "gp5_platform_claim_decision_py_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "docs_support_boundary_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "docs_known_bugs_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "docs_public_beta_untouched",
+      "status": "pass"
+    },
+    {
+      "name": "gpp6_preflight_execution_status_not_reclassified",
+      "status": "pass"
+    },
+    {
+      "name": "gpp6b_issue_anchor_present",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "tests: pytest 174 passed, 2 existing warnings on unrelated real-adapter usage/cost advisory tests.",
-    "secret_scan: no credential material recorded in the diff or in this evidence file.",
-    "ruff: ao_release_gate, payload builder tests, workflow contract tests, and GPP-2D-6 contract tests pass lint.",
-    "mypy: ao_kernel/ao_release_gate.py and scripts/ao_release_gate_build_payload.py pass static type checking.",
-    "no_pull_request_target: workflow adds pull_request_review but does not use pull_request_target or protected secrets.",
-    "no_branch_protection_mutation_by_agent: this slice changes repo-owned gate behavior only; it does not mutate GitHub branch protection or rulesets.",
-    "guard_flags_unchanged: live_adapter_execution=false, support_widening=false, and production_platform_claim=false remain the intended boundary.",
-    "low_risk_no_human_review_required: ao-release-gate passes path_sensitive_human_review when high_risk_changed_paths is empty.",
-    "high_risk_current_head_non_author_approval_required: high-risk paths fail closed with ao_release_gate_high_risk_human_review_missing until an APPROVED review from a non-author at the current head SHA exists.",
-    "workflow_reruns_on_pull_request_review: pull_request_review submitted/edited/dismissed events trigger the release gate so approval or dismissal is re-evaluated.",
-    "trusted_base_payload_builder_bootstrap_compatible: workflow does not pass new CLI flags to the protected base-ref payload builder; it augments payload.json with review metadata after the base builder step so the bootstrap PR can be evaluated by current main and future main can enforce the path-sensitive gate.",
-    "gpp2b_mapping_updated_to_21_checks: the required-check mapping table records path_sensitive_human_review as an ao-release-gate-only check.",
-    "gpp2d6_runbook_updated_for_path_sensitive_gate: the auto-merge runbook now requires this path-sensitive gate before low-risk auto-merge smoke.",
-    "cross_provider_verified: implementer codex (openai) differs from reviewer claude (anthropic); Claude returned VERDICT: AGREE with only non-blocking residual risks, and the username case comparison hardening was absorbed."
+    "tests: pytest tests/test_gpp_next.py + tests/test_local_gpp_gate.py 83 passed (~4.5s); local validation green.",
+    "secret_scan: no credential material in any changed file.",
+    "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged; no ao_kernel/ source file touched.",
+    "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
+    "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved (CC-6).",
+    "gpp6_decision_recorded_option_y_authoritative: GPP-6b records Option Y (keep_rehearsal_only) as authoritative for the read-only E2E execution decision; decision string=gpp6_keep_rehearsal_only_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim.",
+    "gpp6_option_x_authorize_protected_live_e2e_deferred_operator_bound: Option X (authorize_protected_live_e2e with operator-only PR flipping live_adapter_execution_allowed=true, protected workflow dispatch using ao-kernel-live-adapter-gate environment + AO_CLAUDE_CODE_CLI_AUTH secret, three protected clean read-only E2E runs + one protected fail-closed run with evidence_class=live) is deferred to a future operator-bound supersession slice; GPP-6 Option X is a separate supersession slot from GPP-4 Option X (production-certified read-only promotion).",
+    "gpp6_option_z_defer_rejected: Option Z (defer) is rejected because GPP-6a preflight + GP-5.4a/5.7a/5.7b/5.8/5.9 rehearsal evidence stack constitutes authoritative preparation evidence; promoting defer over Option Y would re-open a closed sub-question without new evidence and propagate M5 drift to M6.",
+    "ssot_current_wp_gpp6b_active: current_wp.id=GPP-6b, status=active, issue=#627, exit_decision matches the keep_rehearsal_only authoritative decision string, record points to GPP-6b-READ-ONLY-E2E-DECISION.md.",
+    "ssot_gpp4c_closure_preserved_in_completed_wps: GPP-4c entry present in completed_wps with decision=gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim, issue=#625, pr=#626, record path, closed_at=2026-05-25T16:33:15Z (PR #626 merge UTC).",
+    "ssot_gpp6b_not_in_completed_wps_this_slice: GPP-6b is intentionally absent from completed_wps in this slice; active-not-completed accounting per program convention; the next M5 closeout slice (GPP-6c) migrates GPP-6b. Drift guard test_gpp_status_contract_keeps_support_widening_closed pins this invariant.",
+    "ssot_wp_weighted_subcounts_reconciled: progress_estimates.wp_weighted shows completed_wps_count=44 (43 prior + GPP-4c migrated into completed_wps), closed_current_wp_count=0 (GPP-6b active, not closed), completed_or_closed_count=44 = 44 + 0 (headline progress unchanged from M4 done state); estimated_total_wps=50, percent=88. Drift guard test_gpp_status_progress_estimates_present pins the triple.",
+    "m5_status_pending_retained: milestones[M5].status=pending retained; closed_at=null; evidence_refs=[]. M5 closure (status=done with three evidence_refs GPP-6a + GPP-6b + GPP-6c) reserved for GPP-6c slice. Drift guard test_gpp_status_done_milestones_have_evidence_refs pins done milestone count at 5 (M0..M4 done, M5 pending).",
+    "gp5_platform_claim_decision_py_untouched: scripts/gp5_platform_claim_decision.py is unchanged in GPP-6b; BC-1 stays status='blocked' with the GPP-4 keep_operator_beta authority recorded summary; promotion_blockers list intact under the keep_operator_beta authority (claude_code_cli_auth_operator_managed + kb001_claude_code_cli_operator_managed_auth + protected_live_adapter_gate_unattested + gh_cli_pr_live_write_not_production_promoted + repo_intelligence_context_handoff_not_runtime_auto_fed + kb002_gh_cli_pr_sandbox_only_live_write).",
+    "docs_support_boundary_untouched: docs/SUPPORT-BOUNDARY.md is unchanged in GPP-6b; GPP-6 closure path wording sync reserved for GPP-6c.",
+    "docs_known_bugs_untouched: docs/KNOWN-BUGS.md is unchanged in GPP-6b; GPP-6 closure interpretation subsection reserved for GPP-6c.",
+    "docs_public_beta_untouched: docs/PUBLIC-BETA.md is unchanged in GPP-6b; GPP-6 closeout decision row + GP-5.7a/5.7b rehearsal wording sync reserved for GPP-6c.",
+    "gpp6_preflight_execution_status_not_reclassified: GPP-6a preflight remains preparation evidence with execution_status=blocked_by_upstream_gates; GPP-6b Option Y does not reclassify the preflight as ready_for_protected_rehearsal (preflight authority defines blockers; the closure path defines closure authority, not blocker resolution). Explicit forbidden_actions guard pins this invariant.",
+    "gpp6b_issue_anchor_present: GitHub issue #627 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e6020 plan-time iter-1 PARTIAL (progress muhasebesi wording correction + Option X naming authorize_protected_live_e2e + GPP-6c scope minimal default + 5 forbidden guards added + preflight execution_status not reclassified) absorbed; plan-time iter-2 AGREE; post-impl iter review continues after PR creation."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

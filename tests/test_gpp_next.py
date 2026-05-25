@@ -28,14 +28,14 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
 
     assert payload["schema_version"] == "1"
     assert payload["program_id"] == "general-purpose-production-promotion"
-    # GPP-4c (Faz 3 of GPP-4) is the current slice in closed state and M4
-    # milestone is done; GPP-2 closeout + the GPP-3 chain (3a/3b/3c) +
-    # GPP-4a + GPP-4b closures are preserved in completed_wps as historical
-    # audit trace. GPP-4c itself is intentionally NOT in completed_wps this
-    # slice (current-closed accounting per program convention); the next M5
-    # opener slice migrates GPP-4c.
-    assert payload["current_wp"]["id"] == "GPP-4c"
-    assert payload["current_wp"]["status"] == "closed"
+    # GPP-6b (Faz 2 of GPP-6, M5 Faz 2) is the active slice; M4 milestone is
+    # done (GPP-4a + GPP-4b + GPP-4c all in completed_wps). GPP-2 closeout +
+    # the GPP-3 chain (3a/3b/3c) + GPP-4 chain (4a/4b/4c) are all preserved
+    # in completed_wps as historical audit trace. GPP-6b is the M5 opener
+    # slice (M5 closure path selected as keep_rehearsal_only via Option Y);
+    # M5 stays pending until GPP-6c executes the closure.
+    assert payload["current_wp"]["id"] == "GPP-6b"
+    assert payload["current_wp"]["status"] == "active"
     # CC-13 issue anchor is opened during commit; allow null in this slice.
     assert payload["current_wp"].get("issue") in (
         None,
@@ -43,22 +43,28 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     ) or payload["current_wp"]["issue"].startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert (
         payload["current_wp"]["exit_decision"]
-        == "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "gpp6_keep_rehearsal_only_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
-    assert payload["current_wp"]["record"] == ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md"
+    assert payload["current_wp"]["record"] == ".claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md"
     assert (_repo_root() / payload["current_wp"]["record"]).exists()
     assert payload["current_wp"]["evidence_collected"] == []
-    # GPP-4c absence from completed_wps is invariant for this slice; the next
-    # M5 opener slice migrates it. GPP-4b is the most recent completed_wps
-    # entry from this chain.
-    assert not any(item["id"] == "GPP-4c" for item in payload["completed_wps"])
+    # GPP-6b absence from completed_wps is invariant for this slice; the next
+    # M5 closeout slice (GPP-6c) migrates it. GPP-4c was migrated as part of
+    # this M5 opener; GPP-4c is the most recent completed_wps entry from the
+    # GPP-4 chain.
+    assert not any(item["id"] == "GPP-6b" for item in payload["completed_wps"])
+    gpp4c_entries = [item for item in payload["completed_wps"] if item["id"] == "GPP-4c"]
+    assert len(gpp4c_entries) == 1
+    assert (
+        gpp4c_entries[0]["decision"]
+        == "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim"
+    )
+    assert gpp4c_entries[0]["record"] == ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md"
+    assert gpp4c_entries[0]["pr"] == "https://github.com/Halildeu/ao-kernel/pull/626"
+    assert gpp4c_entries[0]["closed_at"] == "2026-05-25T16:33:15Z"
+    # GPP-4b is still preserved in completed_wps from the prior slice migration.
     gpp4b_entries = [item for item in payload["completed_wps"] if item["id"] == "GPP-4b"]
     assert len(gpp4b_entries) == 1
-    assert (
-        gpp4b_entries[0]["decision"]
-        == "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
-    )
-    assert gpp4b_entries[0]["record"] == ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md"
     assert gpp4b_entries[0]["pr"] == "https://github.com/Halildeu/ao-kernel/pull/624"
     # GPP-3a closure is preserved in completed_wps with the schema-ready
     # decision string.
@@ -841,14 +847,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-4c"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-6b"
+    assert payload["current_wp"]["status"] == "active"
     issue = payload["current_wp"].get("issue")
     assert issue in (None, "") or issue.startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "gpp6_keep_rehearsal_only_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -874,15 +880,16 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    # Renderer switches "Active" → "Current" prefix when current_wp.status is closed.
-    assert "Current WP: GPP-4c - claude-code-cli keep_operator_beta Infazı (M4 closeout)" in rendered
-    assert "Current status: closed" in rendered
+    # Renderer uses "Active WP" prefix when current_wp.status is active.
+    assert "Active WP: GPP-6b - Read-only E2E Execution Decision Path (M5 Faz 2)" in rendered
+    assert "Active status: active" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
     assert "Blocked work packages:\n- none" in rendered
-    # GPP-2 closeout already landed; GPP-4c is closed-current (M4 done), so no
-    # "remains blocked pending" wording should leak.
+    # GPP-2 closeout already landed; GPP-6b is M5 active decision (M5 closure
+    # path selected, GPP-6c reserved for execution); no "remains blocked
+    # pending" wording should leak.
     assert "remains blocked pending" not in rendered.lower()
     # Deferred GPP-2C wording must still be visible because the callback path stays
     # deferred. render_text() prints next_allowed_actions; the "deferred GPP-2C
@@ -899,15 +906,16 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-4c"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-6b"
+    assert payload["current_wp"]["status"] == "active"
     assert payload["blocked_wps"] == []
 
 
-def test_allowed_scope_reflects_gpp4c_keep_operator_beta_executed() -> None:
-    """current_wp.allowed_scope describes the GPP-4c closed slice scope
-    (claude-code-cli keep_operator_beta infazı: BC-1 summary update,
-    docs sync, SSOT migration, M4 milestone closure) and must not regress
+def test_allowed_scope_reflects_gpp6b_keep_rehearsal_only_active() -> None:
+    """current_wp.allowed_scope describes the GPP-6b active slice scope
+    (read-only E2E execution closure path decision: Option Y
+    keep_rehearsal_only authoritative, Option X authorize_protected_live_e2e
+    deferred operator-bound, Option Z defer rejected) and must not regress
     to earlier-slice wording."""
     payload = json.loads(_status_path().read_text(encoding="utf-8"))
     allowed_scope = payload["current_wp"]["allowed_scope"]
@@ -926,19 +934,22 @@ def test_allowed_scope_reflects_gpp4c_keep_operator_beta_executed() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # GPP-4c infaz anchors must be present.
-    assert any("bc-1 summary" in item.lower() for item in allowed_scope)
-    assert any("docs/support-boundary.md" in item.lower() for item in allowed_scope)
-    assert any("docs/known-bugs.md" in item.lower() for item in allowed_scope)
-    assert any("docs/public-beta.md" in item.lower() for item in allowed_scope)
-    assert any("migrate current_wp from gpp-4b active to gpp-4c closed" in item.lower() for item in allowed_scope)
-    assert any("m4" in item.lower() and "pending to done" in item.lower() for item in allowed_scope)
-    assert any("keep_operator_beta" in item.lower() for item in allowed_scope)
-    # Stale wording must NOT appear in the closed slice.
+    # GPP-6b decision anchors must be present.
+    assert any("keep_rehearsal_only" in item.lower() and "authoritative" in item.lower() for item in allowed_scope)
+    assert any("option y" in item.lower() for item in allowed_scope)
+    assert any("authorize_protected_live_e2e" in item.lower() for item in allowed_scope)
+    assert any("option x" in item.lower() and "operator-bound" in item.lower() for item in allowed_scope)
+    assert any("option z" in item.lower() and "reject" in item.lower() for item in allowed_scope)
+    assert any("gpp-6c" in item.lower() for item in allowed_scope)
+    # GPP-6b is decision authority only; live execution must be explicitly
+    # forbidden in allowed_scope wording.
+    assert any("no live claude-code-cli adapter execution" in item.lower() for item in allowed_scope)
+    # Stale wording from prior slices must NOT appear in the active slice.
     assert "gpp-2 stays blocked" not in joined
     assert "remains blocked pending" not in joined
-    # GPP-4c is execution; no active-decision wording from GPP-4b should leak.
-    assert "reject option z" not in joined
+    # GPP-6b is decision; GPP-4c execution wording must not leak.
+    assert "bc-1 summary" not in joined
+    assert "m4" not in joined or "pending to done" not in joined
 
 
 # ---------------------------------------------------------------------------
@@ -1063,12 +1074,14 @@ def test_gpp_status_progress_estimates_present() -> None:
     assert ms["percent"] == 71
     assert ms["next_milestone_id"] == "M5"
     wp = pe["wp_weighted"]
-    # GPP-4 chain accounting (current-closed convention):
-    #   completed_wps_count=43 (42 prior + GPP-4b moved into completed_wps),
-    #   closed_current_wp_count=1 (GPP-4c current closed; not yet migrated),
-    #   completed_or_closed_count=44 = 43 + 1.
-    assert wp["completed_wps_count"] == 43
-    assert wp["closed_current_wp_count"] == 1
+    # GPP-6b M5 opener accounting (active slice convention):
+    #   completed_wps_count=44 (43 prior + GPP-4c migrated into completed_wps
+    #     as part of opening GPP-6b),
+    #   closed_current_wp_count=0 (GPP-6b active, not closed; M5 stays pending),
+    #   completed_or_closed_count=44 = 44 + 0 (headline progress unchanged
+    #     from M4 done state).
+    assert wp["completed_wps_count"] == 44
+    assert wp["closed_current_wp_count"] == 0
     assert wp["completed_or_closed_count"] == 44
     assert wp["estimated_total_wps"] == 50
     assert wp["percent"] == 88
