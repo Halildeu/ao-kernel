@@ -6,23 +6,21 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-4c",
-    "title": "claude-code-cli keep_operator_beta Infazı (M4 closeout)",
-    "status": "closed",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/625",
-    "exit_decision": "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "record": ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md",
-    "ready_after": "GPP-4 closure path is executed under the GPP-4b keep_operator_beta authority; scripts/gp5_platform_claim_decision.py BC-1 summary updated (status='blocked' retained, promotion blockers retained); docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md GPP-4 wording synced; docs/PUBLIC-BETA.md GPP-4 closeout entry recorded; milestones[M4] transitioned pending to done with closed_at and three evidence_refs (GPP-4a + GPP-4b + GPP-4c records); current_wp migrated GPP-4b active to GPP-4c closed; GPP-4b moved to completed_wps; no live adapter execution, no support widening, no production platform claim happened in GPP-4c",
+    "id": "GPP-6b",
+    "title": "Read-only E2E Execution Decision Path (M5 Faz 2)",
+    "status": "active",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/627",
+    "exit_decision": "gpp6_keep_rehearsal_only_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-6b-READ-ONLY-E2E-DECISION.md",
+    "ready_after": "the GPP-6 closure path decision is recorded as keep_rehearsal_only (Option Y authoritative) with the GPP-6a preflight + GP-5.4a/5.7a/5.7b/5.8/5.9 rehearsal evidence stack + GPP-4 closure (keep_operator_beta) as supporting readiness; Option X authorize_protected_live_e2e is deferred and operator-bound (separate supersession slot from GPP-4 Option X); Option Z defer is rejected; GPP-6c executes docs/SUPPORT-BOUNDARY.md + docs/PUBLIC-BETA.md + docs/KNOWN-BUGS.md GPP-6 wording sync, current_wp migration to GPP-6c closed, and M5 milestone done; no live adapter execution, no protected workflow dispatch, no support widening, no production platform claim happens in GPP-6b",
     "allowed_scope": [
-      "update scripts/gp5_platform_claim_decision.py BC-1 summary text and evidence list to cite the GPP-4b keep_operator_beta closure path while retaining status='blocked' and the existing promotion_blockers list",
-      "update docs/SUPPORT-BOUNDARY.md with a GPP-4 closeout paragraph after the GPP-3c paragraph",
-      "update docs/KNOWN-BUGS.md GP-5.9 closeout interpretation section with a GPP-4 closeout interpretation subsection",
-      "update docs/PUBLIC-BETA.md three locations: GPP-4a row trailing sentence, new GPP-4 closeout row, claude-code-cli Beta row GPP-4 reference",
-      "migrate current_wp from GPP-4b active to GPP-4c closed; move GPP-4b to completed_wps with closed_at and PR #624 reference",
-      "transition milestones[M4] status from pending to done with closed_at and three evidence_refs (GPP-4a + GPP-4b + GPP-4c records)",
-      "update progress_estimates: wp_weighted completed_wps_count 42 to 43, closed_current_wp_count 0 to 1, completed_or_closed_count 42 to 44, percent 84 to 88; milestones done_count 4 to 5, percent 57 to 71, next_milestone_id M4 to M5",
-      "update next_allowed_actions to reference GPP-4 closure as executed and reserve future Option X supersession",
-      "treat the GPP-4c infazı as policy/documentation/SSOT sync only; no live claude-code-cli adapter execution, no protected gate run, no secrets accessed"
+      "record the GPP-6 closure path decision as keep_rehearsal_only (Option Y authoritative)",
+      "treat the GPP-6a preflight + GP-5.4a read-only rehearsal + GP-5.7a/5.7b full rehearsal aggregation + GP-5.8 operations package + GP-5.9 keep_narrow_stable_runtime + GPP-4 keep_operator_beta closure as supporting readiness evidence (not authority) for the keep_rehearsal_only decision",
+      "defer Option X (authorize_protected_live_e2e) as operator-bound; any future protected live read-only E2E run requires a separate operator-only PR flipping live_adapter_execution_allowed=true and back to false, plus protected environment ao-kernel-live-adapter-gate dispatch with AO_CLAUDE_CODE_CLI_AUTH",
+      "reject Option Z (defer) because GPP-6a preflight + the existing rehearsal evidence stack is authoritative preparation evidence and promoting defer over keep_rehearsal_only would re-open a closed sub-question without new evidence",
+      "reserve docs/SUPPORT-BOUNDARY.md + docs/PUBLIC-BETA.md + docs/KNOWN-BUGS.md GPP-6 wording sync for GPP-6c",
+      "reserve current_wp migration to GPP-6c closed, GPP-6b completed_wps entry, and milestones[M5] transition to done with three evidence_refs (GPP-6a + GPP-6b + GPP-6c records) for GPP-6c",
+      "treat the GPP-6b record as decision authority only; no live claude-code-cli adapter execution, no protected workflow dispatch, no secret reference under the autonomous GPP-6 chain"
     ],
     "evidence_collected": []
   },
@@ -298,6 +296,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/624",
       "record": ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
       "closed_at": "2026-05-25T12:44:16Z"
+    },
+    {
+      "id": "GPP-4c",
+      "decision": "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/625",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/626",
+      "record": ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md",
+      "closed_at": "2026-05-25T16:33:15Z"
     }
   ],
   "blocked_wps": [],
@@ -381,7 +387,15 @@
     "promote the claude-code-cli lane from Beta (operator-managed) to production-certified read-only without a separate operator-bound live run, evidence_class=live failure-mode matrix artifact, and explicit GPP supersession record",
     "treat the GPP-4c BC-1 summary update as removal of promotion_blockers; status='blocked' and the promotion_blockers list remain intact",
     "treat the GPP-4 closure path keep_operator_beta as authorization to widen support, claim production platform readiness, run a live claude-code-cli adapter, or remove protected_live_adapter_gate_unattested",
-    "treat the GPP-4c M4 milestone closure as live execution authorization for M5/GPP-6 or any future Option X supersession; Option X requires a separate issue, branch, PR, live_adapter_execution_allowed=true flip, protected live runs, and evidence_class=live failure-mode matrix artifact"
+    "treat the GPP-4c M4 milestone closure as live execution authorization for M5/GPP-6 or any future Option X supersession; Option X requires a separate issue, branch, PR, live_adapter_execution_allowed=true flip, protected live runs, and evidence_class=live failure-mode matrix artifact",
+    "treat the GPP-6b keep_rehearsal_only decision as Option X (authorize_protected_live_e2e) authorization",
+    "treat the GPP-6a preflight + simulated rehearsal evidence (GP-5.4a, GP-5.7a, GP-5.7b) as live adapter execution evidence under the GPP-6 closure path",
+    "treat the GPP-6b record as M5 milestone closure; M5 closes only after GPP-6c executes",
+    "treat the GPP-4 keep_operator_beta / M4 closeout as production-certified read-only adapter approval or explicit protected beta permission for GPP-6 live execution",
+    "treat GP-5.4a, GP-5.7a, or GP-5.7b rehearsal evidence as protected GPP-6 live E2E execution evidence",
+    "treat GPP-6b as authorization to dispatch protected workflows, reference AO_CLAUDE_CODE_CLI_AUTH, or flip live_adapter_execution_allowed=true",
+    "treat keep_rehearsal_only as removing GP-5.9 BC-1 / protected_live_adapter_gate_unattested blockers",
+    "mark GPP-6a preflight execution_status as ready_for_protected_rehearsal under the autonomous keep_rehearsal_only path; preflight authority defines blockers, not the keep_rehearsal_only closure path"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -411,7 +425,9 @@
     "do not widen support or claim production platform readiness",
     "the GPP-4 closure path is executed under the keep_operator_beta authority; M4 milestone is closed; any production-certified read-only promotion requires a separate operator-bound Option X supersession slice",
     "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) under the GPP-4b keep_operator_beta authority that GPP-4c executed",
-    "open the next milestone M5 / GPP-6 read-only E2E execution slice when ready; that slice migrates GPP-4c into completed_wps and opens a fresh current_wp"
+    "the GPP-6 closure path is recorded as keep_rehearsal_only (Option Y authoritative); GPP-6c executes docs/SUPPORT-BOUNDARY.md + docs/PUBLIC-BETA.md + docs/KNOWN-BUGS.md GPP-6 wording sync and M5 milestone closure",
+    "reserve M5 closure (current_wp migration GPP-6b active to GPP-6c closed, GPP-6b moved to completed_wps, milestones[M5] pending to done with three evidence_refs GPP-6a + GPP-6b + GPP-6c) for GPP-6c",
+    "reserve Option X (authorize_protected_live_e2e) protected live read-only E2E execution for a future operator-bound supersession slice; GPP-6 Option X is a separate supersession slot from GPP-4 Option X"
   ],
   "milestones": [
     {
@@ -514,13 +530,13 @@
       "next_milestone_id": "M5"
     },
     "wp_weighted": {
-      "completed_wps_count": 43,
-      "closed_current_wp_count": 1,
+      "completed_wps_count": 44,
+      "closed_current_wp_count": 0,
       "completed_or_closed_count": 44,
       "estimated_total_wps": 50,
       "percent": 88,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T13:00:00Z"
+  "last_updated": "2026-05-25T17:00:00Z"
 }
