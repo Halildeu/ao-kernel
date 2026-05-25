@@ -64,8 +64,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "blocked",
         "outcome": "fail_closed",
         "evidence_refs": [
-            "tests/test_claude_code_cli_helper.py",
-            "scripts/claude_code_cli_helper.py",
+            "tests/test_claude_code_cli_smoke.py",
+            "ao_kernel/real_adapter_smoke.py",
         ],
     },
     {
@@ -75,8 +75,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "blocked",
         "outcome": "fail_closed",
         "evidence_refs": [
-            "tests/test_claude_code_cli_helper.py",
-            "scripts/claude_code_cli_helper.py",
+            "tests/test_claude_code_cli_smoke.py",
+            "ao_kernel/real_adapter_smoke.py",
         ],
     },
     {
@@ -86,8 +86,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "fail_closed",
         "outcome": "fail_closed",
         "evidence_refs": [
-            "tests/test_claude_code_cli_smoke.py",
-            "ao_kernel/_internal/prj_kernel_api/llm.py",
+            "tests/test_claude_code_cli_workflow_smoke.py",
+            "ao_kernel/real_adapter_workflow_smoke.py",
         ],
     },
     {
@@ -97,8 +97,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "rejected",
         "outcome": "rejected",
         "evidence_refs": [
-            "tests/test_claude_code_cli_helper.py",
-            "ao_kernel/governance.py",
+            "tests/test_claude_code_cli_smoke.py",
+            "ao_kernel/real_adapter_smoke.py",
         ],
     },
     {
@@ -108,8 +108,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "fail_closed",
         "outcome": "fail_closed",
         "evidence_refs": [
-            "tests/test_claude_code_cli_smoke.py",
-            "ao_kernel/executor/evidence_emitter.py",
+            "tests/test_claude_code_cli_workflow_smoke.py",
+            "ao_kernel/real_adapter_workflow_smoke.py",
         ],
     },
     {
@@ -119,8 +119,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "rejected",
         "outcome": "rejected",
         "evidence_refs": [
-            "tests/test_claude_code_cli_smoke.py",
-            "ao_kernel/governance.py",
+            "tests/test_claude_code_cli_workflow_smoke.py",
+            "ao_kernel/real_adapter_workflow_smoke.py",
         ],
     },
     {
@@ -130,8 +130,8 @@ _DEFAULT_COVERAGE: tuple[dict[str, Any], ...] = (
         "expected_overall_status": "fail_closed",
         "outcome": "fail_closed",
         "evidence_refs": [
-            "tests/test_claude_code_cli_smoke.py",
-            "ao_kernel/secrets/redaction.py",
+            "tests/test_claude_code_cli_workflow_smoke.py",
+            "ao_kernel/real_adapter_workflow_smoke.py",
         ],
     },
 )

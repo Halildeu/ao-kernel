@@ -246,6 +246,29 @@ def test_cli_validate_smoke(tmp_path: Path) -> None:
     assert completed.stdout.strip() == "OK"
 
 
+def test_validate_rejects_simulated_missing_protected_run_null_slots() -> None:
+    """Codex iter-1 strict pin: simulated branch must explicitly include
+    run_url/check_run_id/source_pin_verified as null; omitting them is a
+    contract violation."""
+    mod = _module()
+    artifact = mod.emit_simulated()
+    artifact["protected_run"] = {"observed": False}
+    with pytest.raises(mod.FailureMatrixError):
+        mod.validate_artifact(artifact)
+
+
+def test_emit_simulated_evidence_refs_exist_in_repo() -> None:
+    """Codex iter-1 repo-grounding pin: every evidence_refs path in the
+    default simulated coverage MUST exist in the repo. Prevents stale
+    fictional paths from re-entering the artifact."""
+    mod = _module()
+    artifact = mod.emit_simulated()
+    repo = _repo_root()
+    for item in artifact["coverage"]:
+        for ref in item["evidence_refs"]:
+            assert (repo / ref).exists(), f"evidence_refs path missing: {ref} (failure_mode={item['failure_mode']})"
+
+
 def test_cli_validate_rejects_corrupt_artifact(tmp_path: Path) -> None:
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps({"schema_version": "wrong"}), encoding="utf-8")

@@ -176,6 +176,7 @@
         "live_adapter_execution": { "const": false },
         "overall_status": { "enum": ["coverage_ready", "coverage_ready_live_evidence_pending"] },
         "protected_run": {
+          "required": ["observed", "run_url", "check_run_id", "source_pin_verified"],
           "properties": {
             "observed": { "const": false },
             "run_url": { "type": "null" },
