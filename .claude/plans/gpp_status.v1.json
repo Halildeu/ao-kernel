@@ -6,20 +6,19 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-3a",
-    "title": "Real-Adapter Usage/Cost Evidence Schema",
+    "id": "GPP-3b",
+    "title": "BC-10 Closure Path Decision",
     "status": "active",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/615",
-    "exit_decision": "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening",
-    "record": ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
-    "ready_after": "the real-adapter usage/cost evidence schema is bundled at ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json, the simulated emitter + ledger converter + validator script is published at scripts/real_adapter_usage_evidence.py with three CLI modes (emit-simulated, from-ledger-event, validate), the schema's root oneOf cross-field constraint is enforced (complete branch vs unavailable branch), the evidence_class vs live_adapter_execution allOf bind is enforced, the simulated path is exercised by tests/test_real_adapter_usage_cost_evidence.py, and the GP-5.9 BC-10 closure path decision is reserved for GPP-3b",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/616",
+    "exit_decision": "bc10_policy_exception_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
+    "ready_after": "the GP-5.9 BC-10 closure path decision is recorded as policy exception (Option Y authoritative) with the GPP-3a schema + simulated evidence as supporting readiness (Option Z); Option X live run is deferred and operator-bound; the GPP-3c slice executes the gp5_platform_claim_decision.py reclassification, the additive non-breaking schema enum widening, and the docs sync; no live adapter execution, no support widening, no production platform claim happens in GPP-3b",
     "allowed_scope": [
-      "record real-adapter usage/cost evidence under the bundled real-adapter-usage-cost-evidence.v1 schema with evidence_class=simulated",
-      "convert spend-ledger.v1 events into evidence artifacts via scripts/real_adapter_usage_evidence.py from-ledger-event mode (read-only against the ledger; no spend ledger schema mutation)",
-      "carry the three GP-5/GPP-9 promotion guards (support_widening, production_platform_claim, live_adapter_execution) as const-false in the simulated branch and const-bound in the live branch",
-      "reference the spend-ledger.v1 event for each evidence artifact via linked_spend_ledger_events with run_id + step_id + billing_digest",
-      "treat the real-adapter usage/cost evidence schema as supporting readiness evidence for GP-5.9 BC-10; BC-10 closure path decision is reserved for GPP-3b and execution for GPP-3c",
-      "preserve gp5_platform_claim_decision.py BC-10 status='blocked' until GPP-3c reclassifies it"
+      "record the BC-10 closure path decision as policy exception (Option Y authoritative)",
+      "treat the GPP-3a real-adapter-usage-cost-evidence.v1 schema + simulated path + cost subsystem (ao_kernel/cost) + ao_llm_usage_missing_total counter as supporting readiness evidence (Option Z), NOT as authority for BC-10 closure",
+      "defer Option X (live adapter execution) as operator-bound; any future live run requires a separate operator-only PR flipping live_adapter_execution_allowed=true and back to false with an audit comment",
+      "reserve gp5_platform_claim_decision.py BC-10 reclassification and the additive gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widening for GPP-3c",
+      "reserve docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md, docs/PUBLIC-BETA.md BC-10 wording sync for GPP-3c"
     ],
     "evidence_collected": []
   },
@@ -255,6 +254,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/611",
       "record": ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md",
       "closed_at": "2026-05-24T20:00:00Z"
+    },
+    {
+      "id": "GPP-3a",
+      "decision": "real_adapter_usage_cost_schema_ready_live_run_pending_no_support_widening",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/615",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/614",
+      "record": ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
+      "closed_at": "2026-05-24T22:57:35Z"
     }
   ],
   "blocked_wps": [],
@@ -325,7 +332,11 @@
     "remove ao-release-gate from the GitHub ruleset required-check list without explicit GPP supersession",
     "add bypass_actors to the ao-release-gate ruleset without explicit GPP supersession",
     "treat GPP-2 closeout as completion of low-risk auto-merge smoke or CODEOWNERS narrowing without an explicit later GPP-2D-6/hardening record",
-    "treat any same-name external ao-release-gate check-run as satisfying the required-check source pin without explicit ruleset/API verification"
+    "treat any same-name external ao-release-gate check-run as satisfying the required-check source pin without explicit ruleset/API verification",
+    "treat simulated usage/cost evidence as live adapter production evidence",
+    "reclassify BC-10 as pass without protected live evidence",
+    "run live adapters under the autonomous GPP-3b/GPP-3c path",
+    "treat the GPP-3b policy exception decision as final without an operator-bound supersession slice when live evidence is later required"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -352,7 +363,10 @@
     "keep fork and pull_request contexts away from protected credentials",
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
-    "do not widen support or claim production platform readiness"
+    "do not widen support or claim production platform readiness",
+    "record GPP-3b BC-10 closure path decision: Option Y (policy exception) authoritative, Option Z (extended simulated evidence) supporting, Option X (live run) deferred and operator-bound",
+    "treat the GPP-3a real-adapter usage/cost evidence schema and simulated emitter as supporting readiness, not as authority for BC-10 closure",
+    "reserve gp5_platform_claim_decision.py BC-10 reclassification (status: blocked -> exception) and the additive gp5-production-platform-claim-decision schema enum widening for GPP-3c"
   ],
   "milestones": [
     {
@@ -447,13 +461,13 @@
       "next_milestone_id": "M3"
     },
     "wp_weighted": {
-      "completed_wps_count": 38,
+      "completed_wps_count": 39,
       "closed_current_wp_count": 0,
-      "completed_or_closed_count": 38,
+      "completed_or_closed_count": 39,
       "estimated_total_wps": 50,
-      "percent": 76,
+      "percent": 78,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T01:00:00Z"
+  "last_updated": "2026-05-25T01:30:00Z"
 }
