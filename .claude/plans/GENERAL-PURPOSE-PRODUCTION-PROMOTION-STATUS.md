@@ -24,10 +24,12 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#567](https://github.com/Halildeu/ao-kernel/issues/567)
-for GPP-2 protected live-adapter gate runtime binding (closed)
-**Current slice record:** `.claude/plans/GPP-2D-AUTONOMOUS-REQUIRED-CHECK-LANE.md`
-**Closeout record:** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md`
+**Current slice issue:** [#618](https://github.com/Halildeu/ao-kernel/issues/618)
+for GPP-3c BC-10 exception infazı (closed)
+**Current slice record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**Closeout record:** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**M3 chain records:** `.claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md`, `.claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md`, `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md`
+**GPP-2 closeout (historical):** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (issue [#567](https://github.com/Halildeu/ao-kernel/issues/567))
 **Related orchestration record:** `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md`
 **Machine-readable status:** `.claude/plans/gpp_status.v1.json`
 **Branch:** none active
@@ -1105,7 +1107,7 @@ admin bypass for PR merge automation, and must keep
 |---|---|---|
 | Protected environment never appears | Real-adapter production support stays blocked | Keep `claude-code-cli` Beta/operator-managed; do not widen support |
 | Local auth mistaken for project-owned evidence | False production claim | Require protected gate artifacts for GPP-4 |
-| Usage/cost remains unavailable | BC-10 stays blocked | Add explicit unavailable policy or defer promotion |
+| Usage/cost remains unavailable | BC-10 stays exception until operator-bound live evidence exists | Preserve policy exception; require explicit GPP supersession before pass/promotion |
 | Repo-intelligence hidden injection | Context trust boundary breaks | Explicit opt-in + metadata fail-closed tests |
 | Remote PR writes leak to arbitrary repos | Production side effect risk | Disposable guard + explicit allow flag + rollback evidence |
 | Full matrix becomes stale | Fake green promotion | Require fresh artifacts from current `origin/main` |
