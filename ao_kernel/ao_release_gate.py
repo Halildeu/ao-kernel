@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from fnmatch import fnmatch
 from importlib import resources
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
@@ -27,6 +28,19 @@ EXPECTED_BASE_REF = "main"
 
 LOCAL_GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
 REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME = "ao-release-gate-review-evidence-input.schema.v1.json"
+
+HIGH_RISK_PATH_PATTERNS = (
+    ".github/**",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".claude/**",
+    "ao_kernel/ao_release_gate*.py",
+    "scripts/ao_release_gate*.py",
+    "scripts/local_gpp_gate*.py",
+    "ao_kernel/defaults/schemas/*gate*.json",
+    "ao_kernel/defaults/policies/**",
+    "deploy/**",
+)
 
 
 def diff_digest(changed_paths: list[str]) -> str:
@@ -86,6 +100,14 @@ class AoReleaseGateInputCheck(TypedDict):
     conclusion: str | None
 
 
+class AoReleaseGateHumanReview(TypedDict):
+    """Normalized GitHub PR review metadata used by path-sensitive gating."""
+
+    author: str | None
+    state: str | None
+    commit_oid: str | None
+
+
 class AoReleaseGateCheck(TypedDict):
     """Single deterministic release-gate input check."""
 
@@ -104,12 +126,16 @@ class AoReleaseGateContext(TypedDict):
     base_ref: str | None
     head_ref: str | None
     head_sha: str | None
+    pr_author: str | None
     branch_up_to_date: bool | None
     from_fork: bool | None
     event_name: str | None
     changed_paths: list[str]
+    high_risk_changed_paths: list[str]
     allowed_path_prefixes: list[str]
     required_checks: list[AoReleaseGateInputCheck]
+    human_reviews: list[AoReleaseGateHumanReview]
+    path_sensitive_human_review_enabled: bool | None
     forbidden_secret_context_detected: bool | None
     admin_bypass_requested: bool | None
     pat_backed_bot_actor: bool | None
@@ -282,6 +308,24 @@ def _normalized_checks(payload: object) -> list[AoReleaseGateInputCheck]:
     return checks
 
 
+def _normalized_human_reviews(payload: object) -> list[AoReleaseGateHumanReview]:
+    """Normalize GitHub PR review objects from trusted API-derived payloads."""
+
+    reviews: list[AoReleaseGateHumanReview] = []
+    for item in _as_list(payload):
+        raw = _as_dict(item)
+        author = _as_dict(raw.get("author"))
+        commit = _as_dict(raw.get("commit"))
+        reviews.append(
+            {
+                "author": _first_string(author.get("login"), raw.get("author")),
+                "state": _first_string(raw.get("state")),
+                "commit_oid": _first_string(commit.get("oid"), raw.get("commit_oid")),
+            }
+        )
+    return reviews
+
+
 def _path_allowed(path: str, prefixes: list[str]) -> bool:
     """Return whether ``path`` is inside one explicit allowed path prefix."""
 
@@ -295,6 +339,63 @@ def _path_allowed(path: str, prefixes: list[str]) -> bool:
         elif path == prefix or path.startswith(f"{prefix}/"):
             return True
     return False
+
+
+def _path_matches_pattern(path: str, pattern: str) -> bool:
+    """Return whether ``path`` matches one CODEOWNERS-like high-risk pattern."""
+
+    normalized = pattern.strip().lstrip("/")
+    if not normalized:
+        return False
+    if normalized.endswith("/**"):
+        return path.startswith(normalized.removesuffix("**"))
+    if normalized.endswith("/"):
+        return path.startswith(normalized)
+    if any(char in normalized for char in "*?["):
+        return fnmatch(path, normalized)
+    return path == normalized or path.startswith(f"{normalized}/")
+
+
+def _high_risk_paths(changed_paths: list[str]) -> list[str]:
+    """Return changed paths that require a non-author human approval."""
+
+    return [
+        path
+        for path in changed_paths
+        if any(_path_matches_pattern(path, pattern) for pattern in HIGH_RISK_PATH_PATTERNS)
+    ]
+
+
+def _has_current_non_author_approval(context: AoReleaseGateContext) -> bool:
+    """Return whether a high-risk PR has a current-head non-author approval."""
+
+    author = context["pr_author"]
+    head_sha = context["head_sha"]
+    if author is None or head_sha is None:
+        return False
+    normalized_author = author.lower()
+    for review in context["human_reviews"]:
+        reviewer = review["author"]
+        state = (review["state"] or "").upper()
+        commit_oid = review["commit_oid"]
+        if reviewer is None or reviewer.lower() == normalized_author:
+            continue
+        if state != "APPROVED":
+            continue
+        if commit_oid != head_sha:
+            continue
+        return True
+    return False
+
+
+def _path_sensitive_human_review_satisfied(context: AoReleaseGateContext) -> bool:
+    """Return whether high-risk paths have required human approval."""
+
+    if context["path_sensitive_human_review_enabled"] is not True:
+        return True
+    if not context["high_risk_changed_paths"]:
+        return True
+    return _has_current_non_author_approval(context)
 
 
 def _required_checks_are_green(checks: list[AoReleaseGateInputCheck]) -> bool:
@@ -347,10 +448,16 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
     base = _as_dict(pull_request.get("base"))
     head = _as_dict(pull_request.get("head"))
     head_repo = _as_dict(head.get("repo"))
+    pr_author = _first_string(
+        root.get("pr_author"),
+        service.get("pr_author"),
+        _as_dict(pull_request.get("author")).get("login"),
+    )
     changed_paths = _strings(root.get("changed_paths")) or _strings(service.get("changed_paths"))
     allowed_path_prefixes = _strings(root.get("allowed_path_prefixes")) or _strings(
         service.get("allowed_path_prefixes")
     )
+    human_reviews = _normalized_human_reviews(root.get("human_reviews") or root.get("reviews"))
     return {
         "repository": _first_string(
             repository.get("full_name"),
@@ -362,12 +469,19 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
         "base_ref": _normalize_ref(_first_string(base.get("ref"), root.get("base_ref"), service.get("base_ref"))),
         "head_ref": _normalize_ref(_first_string(head.get("ref"), root.get("head_ref"), service.get("head_ref"))),
         "head_sha": _first_string(head.get("sha"), root.get("head_sha"), service.get("head_sha")),
+        "pr_author": pr_author,
         "branch_up_to_date": _first_bool(root.get("branch_up_to_date"), service.get("branch_up_to_date")),
         "from_fork": _first_bool(root.get("from_fork"), service.get("from_fork"), head_repo.get("fork")),
         "event_name": _first_string(root.get("event_name"), service.get("event_name")),
         "changed_paths": changed_paths,
+        "high_risk_changed_paths": _high_risk_paths(changed_paths),
         "allowed_path_prefixes": allowed_path_prefixes,
         "required_checks": _normalized_checks(root.get("required_checks") or root.get("checks")),
+        "human_reviews": human_reviews,
+        "path_sensitive_human_review_enabled": _first_bool(
+            root.get("path_sensitive_human_review_enabled"),
+            service.get("path_sensitive_human_review_enabled"),
+        ),
         "forbidden_secret_context_detected": _first_bool(
             root.get("forbidden_secret_context_detected"),
             service.get("forbidden_secret_context_detected"),
@@ -731,6 +845,18 @@ def build_ao_release_gate_decision(
             ),
             pass_detail="Changed paths are inside the explicit work-package allowlist.",
             blocked_detail="Changed paths or allowlist are missing, or a changed path is out of scope.",
+        ),
+        _check(
+            "path_sensitive_human_review",
+            _path_sensitive_human_review_satisfied(context),
+            finding_code="ao_release_gate_high_risk_human_review_missing",
+            pass_detail=(
+                "The path-sensitive human-review gate is inactive, no high-risk paths changed, "
+                "or a current-head non-author human approval exists for the high-risk surface."
+            ),
+            blocked_detail=(
+                "High-risk paths changed without a current-head non-author human approval."
+            ),
         ),
         _check(
             "secret_boundary",

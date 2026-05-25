@@ -53,8 +53,9 @@ stays `blocked`.
   `ao_kernel/ao_release_gate_service.py` + `ao_release_gate_runtime.py`.
 - A repo-owned GitHub App release gate. Consumes a PR-shaped GitHub payload
   plus the GPP status JSON. Emits an `ao-release-gate` GitHub check-run.
-- Twenty checks (GPP-2D-2b added `review_evidence` and
-  `review_evidence_context_bound` to the original eighteen);
+- Twenty-one checks (GPP-2D-2b added `review_evidence` and
+  `review_evidence_context_bound` to the original eighteen; GPP-2D-6b added
+  `path_sensitive_human_review`);
   `decision = allow_autonomous_merge` only when all pass, otherwise one of
   `deny_policy_violation`, `deny_missing_evidence`, `deny_stale_branch`,
   `deny_untrusted_context`, `error_fail_closed`.
@@ -68,7 +69,7 @@ stays `blocked`.
 
 ### 3.1 Check correspondence
 
-| Local gate check (8) | ao-release-gate check(s) (20) | Category |
+| Local gate check (8) | ao-release-gate check(s) (21) | Category |
 |---|---|---|
 | `startup_preflight_passed` | `payload_shape`, `repository` | A — evaluation context is structurally valid |
 | `gpp_status_checked` | `gpp_status`, `gpp_closed_boundaries` | A — GPP-2 blocked + support/production/live-adapter guards false |
@@ -77,7 +78,7 @@ stays `blocked`.
 | `secret_scan_passed` | `secret_boundary` | A — no secret material |
 | `forbidden_actions_absent` | `admin_bypass_boundary`, `bot_boundary`, `agent_authority_boundary`, `live_adapter_boundary` | A — no forbidden action / authority |
 | `reviewer_agree`, `cross_provider_verified` | `review_evidence` | A — cross-AI reviewer AGREE + cross-provider verdict consumed by ao-release-gate via the local-gpp-gate-evidence acceptance profile (GPP-2D-2b) |
-| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency`, `review_evidence_context_bound` | B — GitHub PR-context checks, ao-release-gate-only |
+| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency`, `review_evidence_context_bound`, `path_sensitive_human_review` | B — GitHub PR-context checks, ao-release-gate-only |
 
 - **Category A** — both gates verify the same governance condition from
   different vantage points (local repo state vs. GitHub PR payload). These are
@@ -90,7 +91,9 @@ stays `blocked`.
   issue URL against the current GPP work package, and
   `review_evidence_context_bound`, which binds the local-gate evidence to the
   PR head SHA, repository, reviewed slice, diff digest, and changed-files
-  count). The local gate has no PR payload and cannot perform these; they are
+  count, plus `path_sensitive_human_review`, which uses GitHub review metadata
+  to require current-head non-author approval only when high-risk paths
+  changed). The local gate has no PR payload and cannot perform these; they are
   inherently ao-release-gate-only and require no reconciliation.
 - **Category C** — historical: the cross-AI peer review verdict was previously
   unmappable (local-only) and tracked in §4 as the substantive gap. GPP-2D-2b
@@ -234,7 +237,7 @@ webhook/App configuration, no live adapter.
 | Slice | Scope | Gate |
 |---|---|---|
 | **GPP-2B-1** | This mapping record (this PR). | docs only |
-| **GPP-2B-2** | A machine-checkable mapping test pinning the §3.1 table to both gates' live check sets: every local-gate check (8, from `local-gpp-gate-evidence.schema.v1.json`) and every `ao-release-gate` check (20, from `build_ao_release_gate_decision` after GPP-2D-2b — originally 18 at GPP-2B-2 landing) must appear in the table with a documented counterpart or an explicit `local-only` marker, so the mapping cannot silently drift on either side. Implemented as `tests/test_gpp2b_mapping_drift_guard.py`. | docs + test |
+| **GPP-2B-2** | A machine-checkable mapping test pinning the §3.1 table to both gates' live check sets: every local-gate check (8, from `local-gpp-gate-evidence.schema.v1.json`) and every `ao-release-gate` check (21, from `build_ao_release_gate_decision` after GPP-2D-6b — originally 18 at GPP-2B-2 landing, then 20 after GPP-2D-2b) must appear in the table with a documented counterpart or an explicit `local-only` marker, so the mapping cannot silently drift on either side. Implemented as `tests/test_gpp2b_mapping_drift_guard.py`. | docs + test |
 | **GPP-2B-3** | Resolve the Category-C gap (§5) via Codex consultation; if Option 1 is selected, design the attested-review-evidence schema/contract. Historical scope was design only — no service wiring; subsequently wired in GPP-2D-2b. Resolved as Option 1 in §5.1; acceptance-profile schema `ao_kernel/defaults/schemas/ao-release-gate-review-evidence-input.schema.v1.json` + contract test `tests/test_gpp2b3_review_evidence_input_schema.py`. | docs + schema + test |
 | **GPP-2B-4** | Unit/schema-level conclusion-mapping test against the side-effect-free decision core: assert `build_ao_release_gate_decision(..., conclusion_mode=...)` maps decisions to GitHub conclusions correctly — `allow_autonomous_merge` → `success`; `deny_*` / `error_fail_closed` → `neutral` under `shadow` and `failure` under `enforce`. Pure in-process unit test; the hosted runtime mode is not changed, no check-run is posted to any PR, branch protection is untouched. Implemented as `tests/test_ao_release_gate.py::test_check_run_conclusion_mapping` (6 decisions x shadow/enforce). | docs + test |
 

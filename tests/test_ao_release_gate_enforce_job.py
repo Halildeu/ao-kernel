@@ -92,12 +92,16 @@ def test_enforce_job_is_present_under_reserved_required_check_name() -> None:
     assert "name: ao-release-gate-shadow" not in _test_workflow_text()
 
 
-def test_enforce_job_triggers_only_on_pull_request_never_pull_request_target() -> None:
+def test_enforce_job_triggers_on_pr_and_review_never_pull_request_target() -> None:
     block = _gate_job_block()
+    workflow = _test_workflow_text()
     stripped = _strip_yaml_comments(block)
     assert "github.event_name == 'pull_request'" in block
+    assert "github.event_name == 'pull_request_review'" in block
+    assert "pull_request_review:" in workflow
+    assert "pull_request_review:$EVENT_ACTION" in workflow
     assert "pull_request_target" not in stripped, "pull_request_target must not appear as a real trigger"
-    assert "ao-release-gate only evaluates pull_request events" in block
+    assert "ao-release-gate only evaluates pull_request or pull_request_review events" in block
 
 
 def test_enforce_job_permissions_are_read_only() -> None:
@@ -143,7 +147,9 @@ def test_enforce_job_runs_with_fail_closed_needs_short_circuit() -> None:
     and exits 1 with a fail-closed audit artifact when any one is not
     `success`."""
     block = _gate_job_block()
-    assert "always() && github.event_name == 'pull_request'" in block
+    assert "always() && (" in block
+    assert "github.event_name == 'pull_request'" in block
+    assert "github.event_name == 'pull_request_review'" in block
     assert "needs.event-gate.outputs.should_run == 'true'" in block
     assert "needs.event-gate.result != 'success'" in block
     assert "Fail closed if any required CI job did not succeed" in block
@@ -179,6 +185,16 @@ def test_enforce_job_builds_payload_from_api_not_pr_committed_json() -> None:
     assert "--check-runs-json check-runs.json" in block
     assert "--gpp-status .claude/plans/gpp_status.v1.json" in block
     assert "head/payload.json" not in block
+
+
+def test_enforce_job_augments_payload_with_review_metadata_after_base_builder() -> None:
+    block = _gate_job_block()
+    assert "gh pr view \"$PR_NUMBER\" --repo \"$REPO_FULL\" --json reviews,author > pr-reviews.json" in block
+    assert "Augment release-gate payload with PR review metadata" in block
+    assert "review_payload = json.loads(Path(\"pr-reviews.json\").read_text" in block
+    assert "payload[\"pr_author\"] = pr_author" in block
+    assert "payload[\"human_reviews\"] = reviews" in block
+    assert "payload[\"path_sensitive_human_review_enabled\"] = True" in block
 
 
 def test_enforce_job_reads_only_raw_reviewer_evidence_from_pr_head() -> None:

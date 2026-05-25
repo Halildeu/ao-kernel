@@ -81,6 +81,7 @@ def _allow_payload() -> dict[str, object]:
         "repository": {"full_name": "Halildeu/ao-kernel"},
         "pull_request": {
             "number": 541,
+            "author": {"login": "Halildeu"},
             "base": {"ref": "main"},
             "head": {
                 "ref": "codex/gpp-2w-release-gate-service",
@@ -92,6 +93,15 @@ def _allow_payload() -> dict[str, object]:
         "branch_up_to_date": True,
         "event_name": "pull_request",
         "reviewed_slice": _ALLOW_REVIEWED_SLICE,
+        "pr_author": "Halildeu",
+        "human_reviews": [
+            {
+                "author": "gladyatore-lab",
+                "state": "APPROVED",
+                "commit_oid": _ALLOW_HEAD_SHA,
+            }
+        ],
+        "path_sensitive_human_review_enabled": True,
         "changed_paths": list(_ALLOW_CHANGED_PATHS),
         "allowed_path_prefixes": [
             "ao_kernel/",

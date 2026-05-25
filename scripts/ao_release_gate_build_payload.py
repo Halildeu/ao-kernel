@@ -17,6 +17,10 @@ CLI args plus two JSON blobs the workflow has already fetched via ``gh``:
   filtered to exclude the ao-release-gate / ao-release-gate-shadow names
   (otherwise the gate would see its own shadow job as a pending required
   check).
+- ``--pr-reviews-json`` — output of ``gh pr view <N> --json reviews,author``.
+  The builder carries only reviewer login, state, and reviewed commit SHA so
+  the decision core can preserve human review for high-risk paths without
+  treating reviewer text as release authority.
 
 The output is a single payload JSON consumable by
 ``scripts/ao_release_gate_decision.py``. The builder is side-effect free
@@ -83,6 +87,39 @@ def _changed_paths(pr_files_json_path: Path) -> list[str]:
             if isinstance(path, str) and path.strip():
                 paths.append(path.strip())
     return sorted(paths)
+
+
+def _review_context(pr_reviews_json_path: Path | None) -> tuple[str | None, list[dict[str, Any]]]:
+    """Extract PR author and normalized reviews from ``gh pr view`` output."""
+
+    def normalized_string(value: object) -> str | None:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        return None
+
+    if pr_reviews_json_path is None:
+        return None, []
+    data = json.loads(pr_reviews_json_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return None, []
+    raw_author = data.get("author")
+    author = normalized_string(raw_author.get("login")) if isinstance(raw_author, dict) else None
+    reviews: list[dict[str, Any]] = []
+    for item in data.get("reviews", []):
+        if not isinstance(item, dict):
+            continue
+        raw_reviewer = item.get("author")
+        reviewer = normalized_string(raw_reviewer.get("login")) if isinstance(raw_reviewer, dict) else None
+        raw_commit = item.get("commit")
+        commit_oid = normalized_string(raw_commit.get("oid")) if isinstance(raw_commit, dict) else None
+        reviews.append(
+            {
+                "author": reviewer,
+                "state": normalized_string(item.get("state")),
+                "commit_oid": commit_oid,
+            }
+        )
+    return author if isinstance(author, str) else None, reviews
 
 
 def _check_run_sort_key(entry: dict[str, Any]) -> tuple[str, str, int]:
@@ -214,10 +251,12 @@ def _work_package_issue_url(gpp_status_path: Path) -> str:
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     """Build the release-gate payload dictionary from trusted inputs."""
 
+    pr_author, human_reviews = _review_context(args.pr_reviews_json)
     return {
         "repository": {"full_name": args.repository},
         "pull_request": {
             "number": args.pr_number,
+            "author": {"login": pr_author} if pr_author is not None else {},
             "base": {"ref": args.base_ref},
             "head": {
                 "ref": args.head_ref,
@@ -234,6 +273,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "reviewed_slice": _reviewed_slice(args.gpp_status),
         "changed_paths": _changed_paths(args.pr_files_json),
         "allowed_path_prefixes": list(DEFAULT_ALLOWED_PATH_PREFIXES),
+        "pr_author": pr_author,
+        "human_reviews": human_reviews,
+        "path_sensitive_human_review_enabled": args.pr_reviews_json is not None,
         "required_checks": _normalized_checks(
             args.check_runs_json,
             required_checks_allowlist=list(args.required_check) if args.required_check else None,
@@ -268,6 +310,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--pr-files-json", type=Path, required=True)
     parser.add_argument("--check-runs-json", type=Path, required=True)
+    parser.add_argument(
+        "--pr-reviews-json",
+        type=Path,
+        default=None,
+        help=(
+            "Optional output of `gh pr view <N> --json reviews,author`. "
+            "When supplied, the payload carries only normalized review metadata "
+            "for the path-sensitive high-risk human gate."
+        ),
+    )
     parser.add_argument(
         "--required-check",
         action="append",
