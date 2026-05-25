@@ -981,7 +981,7 @@ def _slot_is_satisfied(slot: str, payload: dict[str, object], milestone: dict[st
     completed_ids = {item["id"] for item in payload.get("completed_wps", []) if isinstance(item, dict)}
     current_wp = payload.get("current_wp", {}) or {}
     aggregate = _AGGREGATE_COMPLETION_SOURCES.get(slot)
-    # Aggregate / lane IDs (GPP-2, GPP-2D, GPP-5) need explicit handling.
+    # Aggregate / lane IDs (GPP-2, GPP-2D, GPP-3, GPP-4, GPP-5) need explicit handling.
     if aggregate is not None:
         if "current_wp" in aggregate:
             return current_wp.get("id") == slot and current_wp.get("status") == aggregate["current_wp"]

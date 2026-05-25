@@ -209,7 +209,7 @@ the guard flags remain `false`.
 | Field | Value |
 |---|---|
 | Implementer AI | Claude (Anthropic) |
-| Reviewer AI | Codex (OpenAI) — thread `019e5f2f` plan-time iter-1 PARTIAL absorbed (`current_wp.status=closed` vs `completed_wps[].id=GPP-4c` mutual exclusion + `closed_current_wp_count=1` + BC-1 summary tightened + KB-002 wording clarified + Option X supersession guard added); plan-time iter-2 AGREE; post-impl iter review TBD |
+| Reviewer AI | Codex (OpenAI) — thread `019e5f2f` plan-time iter-1 PARTIAL absorbed (`current_wp.status=closed` vs `completed_wps[].id=GPP-4c` mutual exclusion + `closed_current_wp_count=1` + BC-1 summary tightened + KB-002 wording clarified + Option X supersession guard added); plan-time iter-2 AGREE; post-impl iter-1 AGREE (no merge-blocker; 2 hygiene notes absorbed in iter-2 commit: aggregate handling comment + audit trail "post-impl iter-1 AGREE" wording) |
 | Worktree | `codex/gpp-4c-keep-operator-beta-infaz` |
 | Base SHA at branch open | `58376df` |
 | Cross-provider AI review HARD RULE | satisfied (CC-2) |
