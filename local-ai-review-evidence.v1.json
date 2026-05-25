@@ -72,7 +72,7 @@
     "docs_known_bugs_gpp6_synced: docs/KNOWN-BUGS.md GPP-4 closeout interpretation section'ından sonra yeni 'GPP-6 closeout interpretation' subsection eklendi; KB-001 + KB-002 + tüm GP-5.9 promotion blockers GPP-4 keep_operator_beta authority altında korundu (GPP-6 closure them touch etmiyor); Option X (authorize_protected_live_e2e veya GPP-4 Option X) blocker clearance için tek path olarak belirtildi.",
     "docs_public_beta_gpp6_synced: docs/PUBLIC-BETA.md üç lokasyon update: GP-5.4a / GP-5.7a / GP-5.7b mevcut rehearsal rows minimal additive sync (one-sentence each: GPP-6c preserves under keep_rehearsal_only authority); yeni GPP-6 closeout decision row Option X supersession requirement ile birlikte eklendi.",
     "gpp6c_issue_anchor_present: GitHub issue #629 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e6020 plan-time iter-1 AGREE for GPP-6c (no PARTIAL); plan was scope-tight per GPP-6b iter-2 forbidden guard (docs/SSOT only); post-impl iter review continues after PR creation."
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e6020 plan-time iter-1 AGREE for GPP-6c (no PARTIAL); plan was scope-tight per GPP-6b iter-2 forbidden guard (docs/SSOT only); post-impl iter-1 AGREE on PR #630 commit 6153fef (no merge-blocker; 1 non-blocking hygiene note absorbed in iter-2 commit)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

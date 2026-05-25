@@ -281,7 +281,7 @@ Until that supersession lands, M5 stays closed under
 | Field | Value |
 |---|---|
 | Implementer AI | Claude (Anthropic) |
-| Reviewer AI | Codex (OpenAI) — thread `019e6020` plan-time iter-1 AGREE for GPP-6c scope (Option X naming preserved, GPP-6c scope minimal docs/SSOT only, M5 evidence_refs cardinality 3, aggregate map GPP-6 entry added in this slice); post-impl iter review continues after PR creation |
+| Reviewer AI | Codex (OpenAI) — thread `019e6020` plan-time iter-1 AGREE for GPP-6c scope (Option X naming preserved, GPP-6c scope minimal docs/SSOT only, M5 evidence_refs cardinality 3, aggregate map GPP-6 entry added in this slice); post-impl iter-1 AGREE on PR #630 commit 6153fef (no merge-blocker; 1 non-blocking hygiene note absorbed in iter-2 commit: audit trail "post-impl iter review continues" wording self-contained) |
 | Worktree | `codex/gpp-6c-keep-rehearsal-only-infaz` |
 | Base SHA at branch open | `da2f697` |
 | Cross-provider AI review HARD RULE | satisfied (CC-2) |
