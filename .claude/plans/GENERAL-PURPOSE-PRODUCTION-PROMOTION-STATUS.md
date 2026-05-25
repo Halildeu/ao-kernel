@@ -50,13 +50,13 @@ exit decisions are recorded with evidence.
 | M0 | Foundation | GPP-0, GPP-1, GPP-1b | Done | `2026-04-25` |
 | M1 | Protected gate runtime + required-check lane | GPP-2, GPP-2D | Done | `2026-05-24` |
 | M2 | Repo-intelligence read-only building block + E2E preflight preparation | GPP-5, GPP-6a | Done | `2026-04-28` |
-| M3 | Real-adapter cost/usage evidence | GPP-3 | Pending | — |
+| M3 | Real-adapter cost/usage evidence | GPP-3 | Done | `2026-05-25` |
 | M4 | Read-only adapter production decision | GPP-4 | Pending | — |
 | M5 | Read-only E2E execution | GPP-6 | Pending | — |
 | M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
 
-Current progress: **3/7 milestones done (43%); next M3 — Real-adapter
-cost/usage evidence**. WP-weighted estimate: **38/50 (76%; estimated)** —
+Current progress: **4/7 milestones done (57%); next M4 — Read-only adapter
+production decision**. WP-weighted estimate: **41/50 (82%; estimated)** —
 treat this as a coarse indicator only; the canonical view is the
 milestone-based count.
 

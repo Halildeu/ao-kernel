@@ -53,7 +53,10 @@ The following promotion blockers remain non-bug prerequisites rather than
 shipped-baseline defects:
 
 1. protected live adapter gate remains unattested;
-2. real-adapter usage/cost evidence is missing for production certification;
+2. BC-10 real-adapter usage/cost evidence is recorded as `exception` under the
+   GPP-3b/GPP-3c policy decision; it is not a shipped-baseline bug and not
+   authorization for production certification. Any future promotion still
+   requires operator-bound live evidence and explicit GPP supersession;
 3. `claude-code-cli` authentication remains operator-managed;
 4. `gh-cli-pr` live-write remains sandbox/disposable only;
 5. repo-intelligence context handoff remains explicit and not runtime auto-fed.

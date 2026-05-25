@@ -939,7 +939,7 @@ _AGGREGATE_COMPLETION_SOURCES = {
     "GPP-3": {
         "evidence_refs": [
             ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
-            ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+            ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
             ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
         ]
     },

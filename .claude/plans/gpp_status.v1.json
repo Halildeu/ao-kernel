@@ -373,7 +373,7 @@
     "run live adapters under the autonomous GPP-3b/GPP-3c path",
     "treat the GPP-3b policy exception decision as final without an operator-bound supersession slice when live evidence is later required",
     "treat BC-10 exception as authorization to widen support, claim production platform readiness, or run live adapters",
-    "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run"
+    "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run, evidence_class=live artifact, and explicit GPP supersession record"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -401,9 +401,9 @@
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness",
-    "record GPP-3b BC-10 closure path decision: Option Y (policy exception) authoritative, Option Z (extended simulated evidence) supporting, Option X (live run) deferred and operator-bound",
-    "treat the GPP-3a real-adapter usage/cost evidence schema and simulated emitter as supporting readiness, not as authority for BC-10 closure",
-    "reserve gp5_platform_claim_decision.py BC-10 reclassification (status: blocked -> exception) and the additive gp5-production-platform-claim-decision schema enum widening for GPP-3c"
+    "preserve the GPP-3c BC-10 exception classification: scripts/gp5_platform_claim_decision.py BC-10 status='exception' with empty blockers, gp5-production-platform-claim-decision schema enum includes 'exception', and milestone M3 stays done",
+    "do not regress the gp5_platform_claim_decision.py BC-10 status from 'exception' back to 'blocked' without a separate supersession slice with operator-bound live evidence",
+    "prepare M4 (Read-only adapter production decision, GPP-4) as the next milestone; do not start GPP-4 inside this slice"
   ],
   "milestones": [
     {
@@ -510,5 +510,5 @@
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T09:30:00Z"
+  "last_updated": "2026-05-25T09:50:00Z"
 }
