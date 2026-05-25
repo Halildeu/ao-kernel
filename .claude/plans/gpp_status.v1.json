@@ -6,20 +6,23 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-4b",
-    "title": "claude-code-cli Read-Only Production Decision",
-    "status": "active",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/623",
-    "exit_decision": "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "record": ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
-    "ready_after": "the GPP-4 closure path decision is recorded as keep_operator_beta (Option Y authoritative) with the GPP-4a failure-mode matrix schema + simulated coverage as supporting readiness; Option X promote_read_only is deferred and operator-bound; Option Z defer is rejected; GPP-4c executes scripts/gp5_platform_claim_decision.py BC-1 summary update, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md wording sync, current_wp migration to closed, and M4 milestone done; no live adapter execution, no support widening, no production platform claim happens in GPP-4b",
+    "id": "GPP-4c",
+    "title": "claude-code-cli keep_operator_beta Infazı (M4 closeout)",
+    "status": "closed",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/625",
+    "exit_decision": "gpp4_keep_operator_beta_executed_m4_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md",
+    "ready_after": "GPP-4 closure path is executed under the GPP-4b keep_operator_beta authority; scripts/gp5_platform_claim_decision.py BC-1 summary updated (status='blocked' retained, promotion blockers retained); docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md GPP-4 wording synced; docs/PUBLIC-BETA.md GPP-4 closeout entry recorded; milestones[M4] transitioned pending to done with closed_at and three evidence_refs (GPP-4a + GPP-4b + GPP-4c records); current_wp migrated GPP-4b active to GPP-4c closed; GPP-4b moved to completed_wps; no live adapter execution, no support widening, no production platform claim happened in GPP-4c",
     "allowed_scope": [
-      "record the GPP-4 closure path decision as keep_operator_beta (Option Y authoritative)",
-      "treat the GPP-4a claude-code-cli-failure-mode.v1 schema + simulated coverage + helper/workflow smoke surfaces as supporting readiness evidence (not authority) for the keep_operator_beta decision",
-      "defer Option X (live claude-code-cli adapter execution) as operator-bound; any future live run requires a separate operator-only PR flipping live_adapter_execution_allowed=true and back to false",
-      "reject Option Z (defer) because GP-3.5 already closed this question with keep_operator_beta and the current PUBLIC-BETA / SUPPORT-BOUNDARY wording already pins the lane as Beta (operator-managed)",
-      "reserve gp5_platform_claim_decision.py BC-1 summary update and docs/SUPPORT-BOUNDARY.md + docs/KNOWN-BUGS.md wording sync for GPP-4c",
-      "reserve current_wp migration to GPP-4c closed and milestone M4 transition to done for GPP-4c"
+      "update scripts/gp5_platform_claim_decision.py BC-1 summary text and evidence list to cite the GPP-4b keep_operator_beta closure path while retaining status='blocked' and the existing promotion_blockers list",
+      "update docs/SUPPORT-BOUNDARY.md with a GPP-4 closeout paragraph after the GPP-3c paragraph",
+      "update docs/KNOWN-BUGS.md GP-5.9 closeout interpretation section with a GPP-4 closeout interpretation subsection",
+      "update docs/PUBLIC-BETA.md three locations: GPP-4a row trailing sentence, new GPP-4 closeout row, claude-code-cli Beta row GPP-4 reference",
+      "migrate current_wp from GPP-4b active to GPP-4c closed; move GPP-4b to completed_wps with closed_at and PR #624 reference",
+      "transition milestones[M4] status from pending to done with closed_at and three evidence_refs (GPP-4a + GPP-4b + GPP-4c records)",
+      "update progress_estimates: wp_weighted completed_wps_count 42 to 43, closed_current_wp_count 0 to 1, completed_or_closed_count 42 to 44, percent 84 to 88; milestones done_count 4 to 5, percent 57 to 71, next_milestone_id M4 to M5",
+      "update next_allowed_actions to reference GPP-4 closure as executed and reserve future Option X supersession",
+      "treat the GPP-4c infazı as policy/documentation/SSOT sync only; no live claude-code-cli adapter execution, no protected gate run, no secrets accessed"
     ],
     "evidence_collected": []
   },
@@ -287,6 +290,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/622",
       "record": ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
       "closed_at": "2026-05-25T11:00:00Z"
+    },
+    {
+      "id": "GPP-4b",
+      "decision": "gpp4_keep_operator_beta_authoritative_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/623",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/624",
+      "record": ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
+      "closed_at": "2026-05-25T12:44:16Z"
     }
   ],
   "blocked_wps": [],
@@ -367,7 +378,10 @@
     "treat the GPP-4a simulated failure-mode matrix as live adapter evidence or as authority for claude-code-cli production-certified read-only promotion",
     "remove claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, or protected_live_adapter_gate_unattested from the GP-5.9 promotion_blockers list under any GPP-4 slice without operator-bound live evidence and explicit GPP supersession",
     "treat the GPP-4b keep_operator_beta decision as authority to widen support, claim production platform readiness, or run a live claude-code-cli adapter",
-    "promote the claude-code-cli lane from Beta (operator-managed) to production-certified read-only without a separate operator-bound live run, evidence_class=live failure-mode matrix artifact, and explicit GPP supersession record"
+    "promote the claude-code-cli lane from Beta (operator-managed) to production-certified read-only without a separate operator-bound live run, evidence_class=live failure-mode matrix artifact, and explicit GPP supersession record",
+    "treat the GPP-4c BC-1 summary update as removal of promotion_blockers; status='blocked' and the promotion_blockers list remain intact",
+    "treat the GPP-4 closure path keep_operator_beta as authorization to widen support, claim production platform readiness, run a live claude-code-cli adapter, or remove protected_live_adapter_gate_unattested",
+    "treat the GPP-4c M4 milestone closure as live execution authorization for M5/GPP-6 or any future Option X supersession; Option X requires a separate issue, branch, PR, live_adapter_execution_allowed=true flip, protected live runs, and evidence_class=live failure-mode matrix artifact"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -395,9 +409,9 @@
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness",
-    "record the GPP-4b keep_operator_beta authoritative decision; GPP-4b does not by itself execute the reclassification",
-    "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) under the GPP-4b keep_operator_beta authority that GPP-4c records",
-    "reserve scripts/gp5_platform_claim_decision.py BC-1 summary update, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md wording sync, and M4 milestone closure for GPP-4c"
+    "the GPP-4 closure path is executed under the keep_operator_beta authority; M4 milestone is closed; any production-certified read-only promotion requires a separate operator-bound Option X supersession slice",
+    "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) under the GPP-4b keep_operator_beta authority that GPP-4c executed",
+    "open the next milestone M5 / GPP-6 read-only E2E execution slice when ready; that slice migrates GPP-4c into completed_wps and opens a fresh current_wp"
   ],
   "milestones": [
     {
@@ -461,9 +475,13 @@
       "gpp_slots": [
         "GPP-4"
       ],
-      "status": "pending",
-      "closed_at": null,
-      "evidence_refs": []
+      "status": "done",
+      "closed_at": "2026-05-25T13:00:00Z",
+      "evidence_refs": [
+        ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
+        ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
+        ".claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md"
+      ]
     },
     {
       "id": "M5",
@@ -490,19 +508,19 @@
   ],
   "progress_estimates": {
     "milestones": {
-      "done_count": 4,
+      "done_count": 5,
       "total_count": 7,
-      "percent": 57,
-      "next_milestone_id": "M4"
+      "percent": 71,
+      "next_milestone_id": "M5"
     },
     "wp_weighted": {
-      "completed_wps_count": 42,
-      "closed_current_wp_count": 0,
-      "completed_or_closed_count": 42,
+      "completed_wps_count": 43,
+      "closed_current_wp_count": 1,
+      "completed_or_closed_count": 44,
       "estimated_total_wps": 50,
-      "percent": 84,
+      "percent": 88,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T11:10:00Z"
+  "last_updated": "2026-05-25T13:00:00Z"
 }

@@ -24,10 +24,10 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#623](https://github.com/Halildeu/ao-kernel/issues/623)
-for GPP-4b claude-code-cli keep_operator_beta decision (active; Faz 2 of M4)
-**Current slice record:** `.claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md`
-**M4 chain records (in progress):** `.claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md`, `.claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md`; M4 closeout reserved for GPP-4c
+**Current slice issue:** [#625](https://github.com/Halildeu/ao-kernel/issues/625)
+for GPP-4c claude-code-cli keep_operator_beta infazı (closed; Faz 3 of M4; M4 milestone done)
+**Current slice record:** `.claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md`
+**M4 closeout (current):** `.claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md`, `.claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md`, `.claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md`
 **M3 closeout (historical):** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md` (issue [#618](https://github.com/Halildeu/ao-kernel/issues/618))
 **GPP-2 closeout (historical):** `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` (issue [#567](https://github.com/Halildeu/ao-kernel/issues/567))
 **Related orchestration record:** `.claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md`
@@ -53,13 +53,13 @@ exit decisions are recorded with evidence.
 | M1 | Protected gate runtime + required-check lane | GPP-2, GPP-2D | Done | `2026-05-24` |
 | M2 | Repo-intelligence read-only building block + E2E preflight preparation | GPP-5, GPP-6a | Done | `2026-04-28` |
 | M3 | Real-adapter cost/usage evidence | GPP-3 | Done | `2026-05-25` |
-| M4 | Read-only adapter production decision | GPP-4 | Pending | — |
+| M4 | Read-only adapter production decision | GPP-4 | Done | `2026-05-25` |
 | M5 | Read-only E2E execution | GPP-6 | Pending | — |
 | M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
 
-Current progress: **4/7 milestones done (57%); next M4 — Read-only adapter
-production decision** (M4 in progress via GPP-4a closed + GPP-4b active;
-GPP-4c reserved for M4 closeout). WP-weighted estimate: **42/50 (84%; estimated)** —
+Current progress: **5/7 milestones done (71%); next M5 — Read-only E2E
+execution** (M4 closed under keep_operator_beta authority: GPP-4a +
+GPP-4b + GPP-4c). WP-weighted estimate: **44/50 (88%; estimated)** —
 treat this as a coarse indicator only; the canonical view is the
 milestone-based count.
 
