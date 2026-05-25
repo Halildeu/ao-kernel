@@ -15,6 +15,7 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/gpp-4b-keep-operator-beta-decision",
     "changed_files": [
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
       ".claude/plans/GPP-4b-KEEP-OPERATOR-BETA-DECISION.md",
       ".claude/plans/gpp_status.v1.json",
       "local-ai-review-evidence.v1.json",
