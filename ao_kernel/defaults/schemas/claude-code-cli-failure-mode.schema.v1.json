@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:claude-code-cli-failure-mode:v1",
+  "title": "claude-code-cli Failure-Mode Matrix Evidence",
+  "description": "Aggregate matrix artifact for the claude-code-cli adapter's failure-mode coverage. Per GP-5.9 BC-1 and GPP-4 acceptance criteria, the matrix MUST contain all seven canonical failure modes (auth_missing, binary_missing, timeout, prompt_denied, malformed_output, policy_denied, redaction). GPP-4a (Faz 1) produces evidence_class=simulated only; the evidence_class=live path is reserved for an operator-bound supersession slice. This artifact does not by itself promote claude-code-cli to production-certified read-only; promotion authority is recorded separately in the GPP-4b decision slice. support_widening, production_platform_claim, and live_adapter_execution stay false in the simulated branch.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "adapter_id",
+    "evidence_class",
+    "overall_status",
+    "live_adapter_execution",
+    "support_widening",
+    "production_platform_claim",
+    "protected_run",
+    "coverage",
+    "observed_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "claude-code-cli-failure-mode.v1" },
+    "artifact_kind": { "const": "claude_code_cli_failure_mode_matrix" },
+    "program_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GPP slice that produced the artifact, e.g. 'GPP-4a' for simulated coverage."
+    },
+    "adapter_id": { "const": "claude-code-cli" },
+    "evidence_class": { "enum": ["simulated", "live"] },
+    "overall_status": {
+      "enum": [
+        "coverage_ready",
+        "coverage_ready_live_evidence_pending",
+        "live_runs_observed",
+        "live_runs_observed_fail_closed_witnessed"
+      ],
+      "description": "coverage_ready = simulated matrix complete; live values are reserved for the future operator-bound slice."
+    },
+    "live_adapter_execution": { "type": "boolean" },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "protected_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed"],
+      "properties": {
+        "observed": { "type": "boolean" },
+        "run_url": { "type": ["string", "null"], "format": "uri" },
+        "check_run_id": { "type": ["string", "null"] },
+        "source_pin_verified": { "type": ["boolean", "null"] }
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "failure_mode",
+          "surface",
+          "stable_finding_codes",
+          "expected_overall_status",
+          "outcome",
+          "evidence_refs"
+        ],
+        "properties": {
+          "failure_mode": {
+            "enum": [
+              "auth_missing",
+              "binary_missing",
+              "timeout",
+              "prompt_denied",
+              "malformed_output",
+              "policy_denied",
+              "redaction"
+            ]
+          },
+          "surface": {
+            "enum": [
+              "helper_preflight",
+              "workflow_smoke",
+              "evidence_emitter",
+              "adapter_runtime",
+              "policy_layer",
+              "redaction_layer"
+            ]
+          },
+          "stable_finding_codes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "expected_overall_status": {
+            "enum": ["blocked", "fail_closed", "rejected"]
+          },
+          "outcome": {
+            "enum": ["fail_closed", "blocked", "rejected"]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "auth_missing" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "binary_missing" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "timeout" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "prompt_denied" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "malformed_output" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "policy_denied" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "failure_mode": { "const": "redaction" } },
+            "required": ["failure_mode"]
+          },
+          "minContains": 1
+        }
+      ]
+    },
+    "observed_at": { "type": "string", "format": "date-time" }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "evidence_class": { "const": "simulated" },
+        "live_adapter_execution": { "const": false },
+        "overall_status": { "enum": ["coverage_ready", "coverage_ready_live_evidence_pending"] },
+        "protected_run": {
+          "properties": {
+            "observed": { "const": false },
+            "run_url": { "type": "null" },
+            "check_run_id": { "type": "null" },
+            "source_pin_verified": { "type": "null" }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "evidence_class": { "const": "live" },
+        "live_adapter_execution": { "const": true },
+        "overall_status": { "enum": ["live_runs_observed", "live_runs_observed_fail_closed_witnessed"] },
+        "protected_run": {
+          "required": ["observed", "run_url", "check_run_id", "source_pin_verified"],
+          "properties": {
+            "observed": { "const": true },
+            "run_url": { "type": "string", "format": "uri" },
+            "check_run_id": { "type": "string", "minLength": 1 },
+            "source_pin_verified": { "const": true }
+          }
+        }
+      }
+    }
+  ]
+}
