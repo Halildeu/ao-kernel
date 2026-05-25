@@ -24,6 +24,8 @@ def test_gpp2d6_records_codeowners_narrowing_and_remaining_review_blockers() -> 
     assert "legacy_branch_protection.enforce_admins = true" in doc
     assert "required_approving_review_count=1" in doc
     assert "necessary but still insufficient" in doc
+    assert "GPP-2D-6b gate slice moves the high-risk human-review requirement" in doc
+    assert "ao-release-gate requires a current-head non-author APPROVED GitHub review" in doc
 
 
 def test_gpp2d6_requires_cutover_and_operator_review_model_before_smoke() -> None:
@@ -34,19 +36,25 @@ def test_gpp2d6_requires_cutover_and_operator_review_model_before_smoke() -> Non
     assert "admin bypass disallowed" in doc
     assert "GPP-2D-7 / AO-GATE-9 closeout records GPP-2 as closed. Done" in doc
     assert "CODEOWNERS narrowing lands and legacy `enforce_admins=true` is verified." in doc
+    assert "`ao-release-gate` path-sensitive human-review enforcement lands" in doc
     assert "Operator enables GitHub-native auto-merge" in doc
     assert "Operator selects and applies the low-risk review model" in doc
-    assert "Steps 1-5 are complete or in this hardening PR. Steps 6-8 remain" in doc
+    assert "Steps 1-6 are complete or in this hardening PR. Steps 7-9 remain" in doc
 
 
 def test_gpp2d6_pins_low_risk_and_high_risk_smoke_acceptance() -> None:
     doc = DOC.read_text(encoding="utf-8")
 
     assert "Low-risk auto-merge smoke" in doc
+    assert "For low-risk paths, `ao-release-gate` must not require a human review" in doc
+    assert "`ao-release-gate` records no high-risk changed paths." in doc
     assert "No non-author human review is required for the low-risk path." in doc
     assert "GitHub performs the merge after required checks pass." in doc
     assert "High-risk human-gate smoke" in doc
-    assert "GitHub still reports a code-owner / required-review block." in doc
+    assert "`ao-release-gate` fails with" in doc
+    assert "ao_release_gate_high_risk_human_review_missing" in doc
+    assert "current-head non-author `APPROVED` GitHub review" in doc
+    assert "GitHub still reports a code-owner / required-review block" in doc
     assert "must not auto-merge the PR" in doc
 
 

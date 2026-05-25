@@ -13,6 +13,11 @@ on:
       - synchronize
       - ready_for_review
       - edited
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
   workflow_dispatch:
     inputs:
       reason:
@@ -60,6 +65,10 @@ jobs:
                   fi
                   ;;
               esac
+              ;;
+            pull_request_review)
+              should_run=true
+              trigger_reason="pull_request_review:$EVENT_ACTION"
               ;;
           esac
 
@@ -348,7 +357,10 @@ jobs:
     # The fail-closed needs short-circuit below produces a `failure`
     # conclusion instead.
     if: |
-      always() && github.event_name == 'pull_request' && (
+      always() && (
+        github.event_name == 'pull_request' ||
+        github.event_name == 'pull_request_review'
+      ) && (
         needs.event-gate.outputs.should_run == 'true' ||
         needs.event-gate.result != 'success'
       )
@@ -376,8 +388,8 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "$EVENT_NAME" != "pull_request" ]; then
-            echo "::error::ao-release-gate only evaluates pull_request events"
+          if [ "$EVENT_NAME" != "pull_request" ] && [ "$EVENT_NAME" != "pull_request_review" ]; then
+            echo "::error::ao-release-gate only evaluates pull_request or pull_request_review events"
             exit 1
           fi
 
@@ -428,6 +440,7 @@ jobs:
         working-directory: base
         run: |
           gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json files > pr-files.json
+          gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json reviews,author > pr-reviews.json
           gh api "repos/$REPO_FULL/commits/$HEAD_SHA/check-runs?per_page=100" > check-runs.json
 
       - name: Compute branch_up_to_date from base
@@ -465,6 +478,50 @@ jobs:
             --required-check policy-container-smoke \
             --required-check release-gate-container-smoke \
             --output payload.json
+
+      - name: Augment release-gate payload with PR review metadata
+        working-directory: base
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload_path = Path("payload.json")
+          payload = json.loads(payload_path.read_text(encoding="utf-8"))
+          review_payload = json.loads(Path("pr-reviews.json").read_text(encoding="utf-8"))
+
+          def normalized_string(value):
+              return value.strip() if isinstance(value, str) and value.strip() else None
+
+          author_payload = review_payload.get("author")
+          pr_author = None
+          if isinstance(author_payload, dict):
+              pr_author = normalized_string(author_payload.get("login"))
+
+          reviews = []
+          raw_reviews = review_payload.get("reviews")
+          if isinstance(raw_reviews, list):
+              for item in raw_reviews:
+                  if not isinstance(item, dict):
+                      continue
+                  reviewer = item.get("author")
+                  commit = item.get("commit")
+                  review = {
+                      "author": normalized_string(reviewer.get("login")) if isinstance(reviewer, dict) else None,
+                      "state": normalized_string(item.get("state")),
+                      "commit_oid": normalized_string(commit.get("oid")) if isinstance(commit, dict) else None,
+                  }
+                  if any(value is not None for value in review.values()):
+                      reviews.append(review)
+
+          pull_request = payload.setdefault("pull_request", {})
+          if isinstance(pull_request, dict) and pr_author is not None:
+              pull_request["author"] = {"login": pr_author}
+          payload["pr_author"] = pr_author
+          payload["human_reviews"] = reviews
+          payload["path_sensitive_human_review_enabled"] = True
+          payload_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
 
       - name: Locate optional raw reviewer evidence on PR head
         id: reviewer

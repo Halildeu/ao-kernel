@@ -34,6 +34,31 @@ def _write_check_runs(path: Path, runs: list[dict[str, str]]) -> None:
     path.write_text(json.dumps({"check_runs": runs}), encoding="utf-8")
 
 
+def _write_pr_reviews(path: Path) -> None:
+    """Write a stub ``gh pr view --json reviews,author`` response."""
+
+    path.write_text(
+        json.dumps(
+            {
+                "author": {"login": "Halildeu"},
+                "reviews": [
+                    {
+                        "author": {"login": "gladyatore-lab"},
+                        "state": "APPROVED",
+                        "commit": {"oid": "abc1230000000000000000000000000000000000"},
+                    },
+                    {
+                        "author": {"login": "gladyatore-lab"},
+                        "state": "DISMISSED",
+                        "commit": {"oid": "f" * 40},
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def _write_gpp_status(
     path: Path,
     *,
@@ -58,6 +83,7 @@ def _build_argv(tmp_path: Path, *, output: Path) -> list[str]:
 
     pr_files = tmp_path / "pr-files.json"
     check_runs = tmp_path / "check-runs.json"
+    pr_reviews = tmp_path / "pr-reviews.json"
     gpp_status = tmp_path / "gpp_status.json"
     _write_pr_files(pr_files, ["ao_kernel/foo.py", "tests/test_foo.py"])
     _write_check_runs(
@@ -70,6 +96,7 @@ def _build_argv(tmp_path: Path, *, output: Path) -> list[str]:
             {"name": "ao-release-gate", "status": "queued", "conclusion": None},
         ],
     )
+    _write_pr_reviews(pr_reviews)
     _write_gpp_status(gpp_status)
     return [
         "--repository",
@@ -92,6 +119,8 @@ def _build_argv(tmp_path: Path, *, output: Path) -> list[str]:
         str(pr_files),
         "--check-runs-json",
         str(check_runs),
+        "--pr-reviews-json",
+        str(pr_reviews),
         "--output",
         str(output),
     ]
@@ -106,6 +135,7 @@ def test_build_payload_emits_expected_shape(tmp_path: Path) -> None:
 
     assert payload["repository"] == {"full_name": "Halildeu/ao-kernel"}
     assert payload["pull_request"]["number"] == 999
+    assert payload["pull_request"]["author"]["login"] == "Halildeu"
     assert payload["pull_request"]["base"]["ref"] == "main"
     assert payload["pull_request"]["head"]["sha"] == "abc1230000000000000000000000000000000000"
     assert payload["pull_request"]["head"]["repo"]["fork"] is False
@@ -115,6 +145,20 @@ def test_build_payload_emits_expected_shape(tmp_path: Path) -> None:
     assert payload["branch_up_to_date"] is True
     assert payload["event_name"] == "pull_request"
     assert payload["reviewed_slice"] == "GPP-2"
+    assert payload["pr_author"] == "Halildeu"
+    assert payload["human_reviews"] == [
+        {
+            "author": "gladyatore-lab",
+            "state": "APPROVED",
+            "commit_oid": "abc1230000000000000000000000000000000000",
+        },
+        {
+            "author": "gladyatore-lab",
+            "state": "DISMISSED",
+            "commit_oid": "f" * 40,
+        },
+    ]
+    assert payload["path_sensitive_human_review_enabled"] is True
 
 
 def test_build_payload_sorts_and_carries_changed_paths(tmp_path: Path) -> None:

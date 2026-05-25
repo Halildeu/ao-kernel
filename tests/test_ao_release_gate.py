@@ -108,6 +108,7 @@ def _allow_payload() -> dict[str, object]:
         "repository": {"full_name": "Halildeu/ao-kernel"},
         "pull_request": {
             "number": 539,
+            "author": {"login": "Halildeu"},
             "base": {"ref": "main"},
             "head": {
                 "ref": "codex/gpp-2v-release-gate-dry-run",
@@ -120,6 +121,15 @@ def _allow_payload() -> dict[str, object]:
         "event_name": "pull_request",
         "reviewed_slice": _ALLOW_REVIEWED_SLICE,
         "changed_paths": list(_ALLOW_CHANGED_PATHS),
+        "pr_author": "Halildeu",
+        "human_reviews": [
+            {
+                "author": "gladyatore-lab",
+                "state": "APPROVED",
+                "commit_oid": _ALLOW_HEAD_SHA,
+            }
+        ],
+        "path_sensitive_human_review_enabled": True,
         "allowed_path_prefixes": [
             "ao_kernel/",
             "scripts/",
@@ -176,6 +186,21 @@ def _missing_evidence_payload() -> dict[str, object]:
 def _policy_violation_payload() -> dict[str, object]:
     payload = _allow_payload()
     payload["admin_bypass_requested"] = True
+    return payload
+
+
+def _low_risk_payload() -> dict[str, object]:
+    payload = _allow_payload()
+    paths = ["docs/smoke/gpp2d6-low-risk-automerge-smoke.md"]
+    payload["changed_paths"] = paths
+    payload["human_reviews"] = []
+    payload["allowed_path_prefixes"] = ["docs/"]
+    return payload
+
+
+def _high_risk_without_review_payload() -> dict[str, object]:
+    payload = _allow_payload()
+    payload["human_reviews"] = []
     return payload
 
 
@@ -241,6 +266,75 @@ def test_release_gate_denies_policy_violations() -> None:
 
     assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
     assert "ao_release_gate_admin_bypass_requested" in decision["findings"]
+
+
+def test_release_gate_allows_low_risk_paths_without_human_review() -> None:
+    decision = build_ao_release_gate_decision(
+        _low_risk_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(changed_paths=["docs/smoke/gpp2d6-low-risk-automerge-smoke.md"]),
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+    assert decision["context"]["high_risk_changed_paths"] == []
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "pass"
+
+
+def test_release_gate_denies_high_risk_paths_without_current_non_author_review() -> None:
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "blocked"
+    assert decision["context"]["high_risk_changed_paths"] == [
+        "ao_kernel/ao_release_gate.py",
+        "scripts/ao_release_gate_decision.py",
+        ".claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md",
+    ]
+
+
+def test_release_gate_allows_legacy_payload_when_path_sensitive_gate_is_inactive() -> None:
+    payload = _high_risk_without_review_payload()
+    payload.pop("path_sensitive_human_review_enabled")
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "pass"
+
+
+def test_release_gate_denies_high_risk_paths_when_review_is_stale_or_author_owned() -> None:
+    payload = _allow_payload()
+    payload["human_reviews"] = [
+        {
+            "author": "gladyatore-lab",
+            "state": "APPROVED",
+            "commit_oid": "f" * 40,
+        },
+        {
+            "author": "halildeu",
+            "state": "APPROVED",
+            "commit_oid": _ALLOW_HEAD_SHA,
+        },
+    ]
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
 
 
 def test_release_gate_denies_gpp_issue_mismatch_as_missing_evidence() -> None:
