@@ -30,8 +30,8 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert payload["program_id"] == "general-purpose-production-promotion"
     # GPP-3b (Faz 2) is the active slice; GPP-2 closeout + GPP-3a closure
     # are preserved in completed_wps as historical audit trace.
-    assert payload["current_wp"]["id"] == "GPP-3c"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["status"] == "active"
     # CC-13 issue anchor is opened during commit; allow null in this slice
     # (the GPP-3b PR opens the issue just-in-time before merge).
     assert payload["current_wp"].get("issue") in (
@@ -40,11 +40,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     ) or payload["current_wp"]["issue"].startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert (
         payload["current_wp"]["exit_decision"]
-        == "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening"
     )
-    assert payload["current_wp"]["record"] == ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md"
+    assert payload["current_wp"]["record"] == ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md"
     assert (_repo_root() / payload["current_wp"]["record"]).exists()
-    assert any(item["type"] == "bc10_reclassification_executed" for item in payload["current_wp"]["evidence_collected"])
+    assert payload["current_wp"]["evidence_collected"] == []
     # GPP-3a closure is preserved in completed_wps with the schema-ready
     # decision string.
     gpp3a_entries = [item for item in payload["completed_wps"] if item["id"] == "GPP-3a"]
@@ -826,14 +826,14 @@ def test_gpp_next_load_status_validates_required_guards() -> None:
 
     payload = mod.load_status(_status_path())
 
-    assert payload["current_wp"]["id"] == "GPP-3c"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["status"] == "active"
     issue = payload["current_wp"].get("issue")
     assert issue in (None, "") or issue.startswith("https://github.com/Halildeu/ao-kernel/issues/")
     assert payload["blocked_wps"] == []
     assert (
         payload["current_wp"]["exit_decision"]
-        == "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        == "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening"
     )
     assert payload["support_widening_allowed"] is False
 
@@ -859,8 +859,8 @@ def test_gpp_next_text_output_names_current_and_blocked_work() -> None:
 
     rendered = mod.render_text(payload, git_summary={"status": "## main...origin/main", "divergence": "0\t0"})
 
-    assert "Current WP: GPP-3c - BC-10 Exception Infazı" in rendered
-    assert "Current status: closed" in rendered
+    assert "Active WP: GPP-4a - claude-code-cli Failure-Mode Matrix Schema" in rendered
+    assert "Active status: active" in rendered
     assert "Support widening allowed: false" in rendered
     assert "Production platform claim allowed: false" in rendered
     assert "Live adapter execution allowed: false" in rendered
@@ -883,12 +883,12 @@ def test_gpp_next_cli_json_output(capsys: Any) -> None:
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert result == 0
-    assert payload["current_wp"]["id"] == "GPP-3c"
-    assert payload["current_wp"]["status"] == "closed"
+    assert payload["current_wp"]["id"] == "GPP-4a"
+    assert payload["current_wp"]["status"] == "active"
     assert payload["blocked_wps"] == []
 
 
-def test_allowed_scope_reflects_gpp3c_bc10_exception_executed() -> None:
+def test_allowed_scope_reflects_gpp4a_failure_matrix_active() -> None:
     """current_wp.allowed_scope describes the GPP-3b active slice scope
     (BC-10 closure path decision: Option Y policy exception authoritative,
     Option Z supporting evidence, Option X deferred) and must not regress
@@ -910,12 +910,12 @@ def test_allowed_scope_reflects_gpp3c_bc10_exception_executed() -> None:
     ):
         assert stale not in joined, f"stale active hosting scope re-entered allowed_scope: {stale}"
 
-    # GPP-3c infaz anchors must be present.
-    assert any("bc-10" in item.lower() and "exception" in item.lower() for item in allowed_scope)
-    assert any("additive non-breaking" in item.lower() for item in allowed_scope)
-    assert any("gp5_platform_claim_decision" in item.lower() for item in allowed_scope)
-    assert any("real_adapter_usage_and_cost_evidence_missing" in item.lower() for item in allowed_scope)
-    assert any("milestone m3" in item.lower() and "done" in item.lower() for item in allowed_scope)
+    # GPP-4a anchors must be present.
+    assert any("claude-code-cli-failure-mode.v1" in item.lower() for item in allowed_scope)
+    assert any("evidence_class=simulated" in item.lower() for item in allowed_scope)
+    assert any("keep_operator_beta" in item.lower() for item in allowed_scope)
+    assert any("gpp-4b" in item.lower() for item in allowed_scope)
+    assert any("gpp-4c" in item.lower() for item in allowed_scope)
     # Stale wording must NOT appear in the active slice.
     assert "gpp-2 stays blocked" not in joined
     assert "remains blocked pending" not in joined

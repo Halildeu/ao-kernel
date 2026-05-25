@@ -6,48 +6,21 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-3c",
-    "title": "BC-10 Exception Infaz\u0131",
-    "status": "closed",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/618",
-    "exit_decision": "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "closeout_decision": "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "closeout_at": "2026-05-25T09:30:00Z",
-    "closeout_record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
-    "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
-    "ready_after": "the GP-5.9 BC-10 promotion blocker is reclassified from status='blocked' to status='exception' via additive non-breaking gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widening, the gp5_platform_claim_decision.py BC-10 criterion records the GPP-3b closure path summary with empty blockers, the docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md BC-10 wording are aligned with the exception status, and the M3 milestone is recorded done; live adapter execution stays operator-bound and outside the autonomous path",
+    "id": "GPP-4a",
+    "title": "claude-code-cli Failure-Mode Matrix Schema",
+    "status": "active",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/621",
+    "exit_decision": "failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening",
+    "record": ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
+    "ready_after": "the claude-code-cli failure-mode matrix schema is bundled at ao_kernel/defaults/schemas/claude-code-cli-failure-mode.schema.v1.json, the emit-simulated + validate CLI script is published at scripts/claude_code_cli_failure_mode_evidence.py, the simulated path produces an artifact with all seven canonical failure modes (auth_missing, binary_missing, timeout, prompt_denied, malformed_output, policy_denied, redaction), and 24 drift guards exercise the schema invariants; the GPP-4 decision (promote_read_only / keep_operator_beta / defer) is reserved for GPP-4b, and the infaz\u0131 for GPP-4c; live runs are reserved for an operator-bound supersession slice",
     "allowed_scope": [
-      "reclassify BC-10 in scripts/gp5_platform_claim_decision.py from status='blocked' to status='exception' with empty blockers and a summary that cites the GPP-3b closure path decision",
-      "widen the gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum to add 'exception' as an additive non-breaking change (CC-8); schema_version stays at v1",
-      "update tests/test_gp5_platform_claim_decision.py to assert real_adapter_usage_and_cost_evidence_missing is no longer a promotion blocker and BC-10 carries status='exception' with empty blockers",
-      "align docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md and docs/KNOWN-BUGS.md BC-10 wording with the policy exception status while preserving the narrow stable runtime boundary",
-      "mark milestone M3 done with closed_at and evidence_refs pointing at the three GPP-3 record paths (3a, 3b, 3c)",
-      "preserve scripts/real_adapter_usage_evidence.py and ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json untouched (those are GPP-3a deliverables and stay frozen)"
+      "record claude-code-cli failure-mode matrix evidence under the bundled claude-code-cli-failure-mode.v1 schema with evidence_class=simulated",
+      "carry the schema's root oneOf bind: evidence_class=simulated implies live_adapter_execution=false and protected_run.observed=false",
+      "preserve the GP-5.9 BC-1 / claude_code_cli_auth_operator_managed / kb001 / protected_live_adapter_gate_unattested promotion blockers under the keep_operator_beta authority that GPP-4b will record (GPP-4a does not remove them)",
+      "treat the failure-mode matrix as supporting readiness evidence for the GPP-4b decision; GPP-4b records the decision and GPP-4c executes it",
+      "reserve gp5_platform_claim_decision.py and docs/SUPPORT-BOUNDARY.md / docs/KNOWN-BUGS.md mutations for GPP-4c"
     ],
-    "evidence_collected": [
-      {
-        "type": "bc10_reclassification_executed",
-        "collected_at": "2026-05-25T09:30:00Z",
-        "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
-        "schema_path": "ao_kernel/defaults/schemas/gp5-production-platform-claim-decision.schema.v1.json",
-        "script_path": "scripts/gp5_platform_claim_decision.py",
-        "previous_bc10_status": "blocked",
-        "new_bc10_status": "exception",
-        "previous_promotion_blockers_contained": [
-          "real_adapter_usage_and_cost_evidence_missing"
-        ],
-        "new_promotion_blockers_excludes": [
-          "real_adapter_usage_and_cost_evidence_missing"
-        ],
-        "live_adapter_execution": false,
-        "support_widening": false,
-        "production_platform_claim": false,
-        "supporting_evidence_refs": [
-          ".claude/plans/GPP-3a-USAGE-COST-EVIDENCE-SCHEMA.md",
-          ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md"
-        ]
-      }
-    ]
+    "evidence_collected": []
   },
   "completed_wps": [
     {
@@ -297,6 +270,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/617",
       "record": ".claude/plans/GPP-3b-BC10-CLOSURE-PATH-DECISION.md",
       "closed_at": "2026-05-25T09:21:00Z"
+    },
+    {
+      "id": "GPP-3c",
+      "decision": "bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/618",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/619",
+      "record": ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+      "closed_at": "2026-05-25T09:30:00Z"
     }
   ],
   "blocked_wps": [],
@@ -373,7 +354,9 @@
     "run live adapters under the autonomous GPP-3b/GPP-3c path",
     "treat the GPP-3b policy exception decision as final without an operator-bound supersession slice when live evidence is later required",
     "treat BC-10 exception as authorization to widen support, claim production platform readiness, or run live adapters",
-    "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run, evidence_class=live artifact, and explicit GPP supersession record"
+    "treat BC-10 exception as a substitute for live adapter evidence in any future supersession slice without a separate operator-bound live run, evidence_class=live artifact, and explicit GPP supersession record",
+    "treat the GPP-4a simulated failure-mode matrix as live adapter evidence or as authority for claude-code-cli production-certified read-only promotion",
+    "remove claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, or protected_live_adapter_gate_unattested from the GP-5.9 promotion_blockers list under any GPP-4 slice without operator-bound live evidence and explicit GPP supersession"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -401,9 +384,9 @@
     "preserve live_execution_allowed=false until protected runtime evidence permits a later live run",
     "treat inactive, denied, timed out, cancelled, or failing deployment protection as fail-closed evidence, not approval",
     "do not widen support or claim production platform readiness",
-    "preserve the GPP-3c BC-10 exception classification: scripts/gp5_platform_claim_decision.py BC-10 status='exception' with empty blockers, gp5-production-platform-claim-decision schema enum includes 'exception', and milestone M3 stays done",
-    "do not regress the gp5_platform_claim_decision.py BC-10 status from 'exception' back to 'blocked' without a separate supersession slice with operator-bound live evidence",
-    "prepare M4 (Read-only adapter production decision, GPP-4) as the next milestone; do not start GPP-4 inside this slice"
+    "record claude-code-cli failure-mode matrix evidence under the bundled claude-code-cli-failure-mode.v1 schema with evidence_class=simulated; GPP-4a does not promote claude-code-cli",
+    "preserve the GP-5.9 keep-narrow-stable-runtime promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested) until a future operator-bound supersession slice runs a live claude-code-cli adapter",
+    "reserve scripts/gp5_platform_claim_decision.py BC-1 / claude-code-cli reference updates for GPP-4c, after GPP-4b records the keep_operator_beta authority"
   ],
   "milestones": [
     {
@@ -502,13 +485,13 @@
       "next_milestone_id": "M4"
     },
     "wp_weighted": {
-      "completed_wps_count": 40,
-      "closed_current_wp_count": 1,
+      "completed_wps_count": 41,
+      "closed_current_wp_count": 0,
       "completed_or_closed_count": 41,
       "estimated_total_wps": 50,
       "percent": 82,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T09:50:00Z"
+  "last_updated": "2026-05-25T10:30:00Z"
 }

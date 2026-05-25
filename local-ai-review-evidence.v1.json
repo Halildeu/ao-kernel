@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-3c",
+  "work_package": "GPP-4a",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,115 +13,64 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp-3c-bc10-exception-infaz",
+    "head_ref": "refs/heads/codex/gpp-4a-claude-code-cli-failure-matrix",
     "changed_files": [
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md",
+      ".claude/plans/GPP-4a-FAILURE-MATRIX-SCHEMA.md",
       ".claude/plans/gpp_status.v1.json",
-      "ao_kernel/defaults/schemas/gp5-production-platform-claim-decision.schema.v1.json",
-      "docs/KNOWN-BUGS.md",
+      "ao_kernel/defaults/schemas/claude-code-cli-failure-mode.schema.v1.json",
       "docs/PUBLIC-BETA.md",
-      "docs/SUPPORT-BOUNDARY.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/gp5_platform_claim_decision.py",
-      "tests/test_gp5_platform_claim_decision.py",
+      "scripts/claude_code_cli_failure_mode_evidence.py",
+      "tests/test_claude_code_cli_failure_mode_evidence.py",
       "tests/test_gpp_next.py",
       "tests/test_local_gpp_gate.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "no_public_sdk_signature_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_mutation_by_agent",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_unchanged",
-      "status": "pass"
-    },
-    {
-      "name": "bc10_status_reclassified_blocked_to_exception",
-      "status": "pass"
-    },
-    {
-      "name": "bc10_blockers_list_emptied",
-      "status": "pass"
-    },
-    {
-      "name": "real_adapter_usage_and_cost_evidence_missing_removed_from_promotion_blockers",
-      "status": "pass"
-    },
-    {
-      "name": "gp5_schema_enum_widened_additive_non_breaking",
-      "status": "pass"
-    },
-    {
-      "name": "m3_milestone_done_with_three_evidence_refs",
-      "status": "pass"
-    },
-    {
-      "name": "ssot_current_wp_gpp3c_closed",
-      "status": "pass"
-    },
-    {
-      "name": "ssot_gpp3b_closure_preserved_in_completed_wps",
-      "status": "pass"
-    },
-    {
-      "name": "progress_wp_weighted_advanced_41_of_50",
-      "status": "pass"
-    },
-    {
-      "name": "progress_milestones_advanced_4_of_7",
-      "status": "pass"
-    },
-    {
-      "name": "real_adapter_usage_cost_evidence_schema_untouched",
-      "status": "pass"
-    },
-    {
-      "name": "real_adapter_usage_evidence_script_untouched",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_verified",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
+    {"name": "guard_flags_unchanged", "status": "pass"},
+    {"name": "schema_self_validates_draft_2020_12", "status": "pass"},
+    {"name": "schema_contains_seven_canonical_failure_modes", "status": "pass"},
+    {"name": "schema_oneOf_simulated_live_bind_enforced", "status": "pass"},
+    {"name": "schema_support_widening_const_false", "status": "pass"},
+    {"name": "schema_production_platform_claim_const_false", "status": "pass"},
+    {"name": "schema_adapter_id_const_claude_code_cli", "status": "pass"},
+    {"name": "emit_simulated_produces_all_seven_modes", "status": "pass"},
+    {"name": "validate_rejects_missing_or_duplicate_mode", "status": "pass"},
+    {"name": "validate_rejects_simulated_with_live_execution", "status": "pass"},
+    {"name": "ssot_current_wp_gpp4a_active", "status": "pass"},
+    {"name": "ssot_gpp3c_closure_preserved_in_completed_wps", "status": "pass"},
+    {"name": "gp5_platform_claim_decision_py_untouched", "status": "pass"},
+    {"name": "docs_support_boundary_untouched", "status": "pass"},
+    {"name": "docs_known_bugs_untouched", "status": "pass"},
+    {"name": "cc13_issue_anchor_present", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "tests: pytest 3419 passed, 2 skipped in the full local test suite (~77s) including updated GP-5 platform claim decision drift guard.",
+    "tests: pytest 3443 passed, 2 skipped in the full local test suite (~78s) including 24 new GPP-4a drift guards.",
     "secret_scan: no credential material in any changed file.",
     "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged.",
     "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
     "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved (CC-6).",
-    "bc10_status_reclassified_blocked_to_exception: scripts/gp5_platform_claim_decision.py BC-10 criterion transitions from status='blocked' to status='exception' with summary citing the GPP-3b closure path (Option Y authoritative, Option Z supporting, Option X deferred operator-bound).",
-    "bc10_blockers_list_emptied: BC-10 criterion blockers list is now []; previously contained 'real_adapter_usage_and_cost_evidence_missing'.",
-    "real_adapter_usage_and_cost_evidence_missing_removed_from_promotion_blockers: aggregate promotion_blockers list no longer contains the BC-10-specific blocker; remaining blockers (protected_live_adapter_gate_unattested, claude_code_cli_auth_operator_managed, etc.) are unaffected.",
-    "gp5_schema_enum_widened_additive_non_breaking: gp5-production-platform-claim-decision.schema.v1.json success_criterion.status enum widened from ['pass', 'partial', 'blocked'] to ['pass', 'partial', 'blocked', 'exception']. Schema_version stays v1 per CC-8 (additive non-breaking).",
-    "m3_milestone_done_with_three_evidence_refs: milestones[M3] status transitions to 'done' with closed_at=2026-05-25T09:30:00Z and evidence_refs pointing at GPP-3a, GPP-3b, and GPP-3c records.",
-    "ssot_current_wp_gpp3c_closed: current_wp.id=GPP-3c, status=closed, exit_decision=bc10_exception_executed_no_live_adapter_execution_no_support_widening_no_production_claim, closeout_decision matches exit_decision (terminal), closeout_record exists.",
-    "ssot_gpp3b_closure_preserved_in_completed_wps: GPP-3b entry present in completed_wps with decision=bc10_policy_exception_authoritative_..., issue=#616, pr=#617, record path, closed_at=2026-05-25T09:21:00Z.",
-    "progress_wp_weighted_advanced_41_of_50: completed_wps_count=40 (38 + GPP-3a + GPP-3b), closed_current_wp_count=1 (GPP-3c closed), completed_or_closed_count=41, percent=82%.",
-    "progress_milestones_advanced_4_of_7: milestone done_count=4 (M0+M1+M2+M3), total_count=7, percent=57%, next_milestone_id=M4 (Read-only adapter production decision, GPP-4).",
-    "real_adapter_usage_cost_evidence_schema_untouched: ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json is unchanged (GPP-3a deliverable, frozen).",
-    "real_adapter_usage_evidence_script_untouched: scripts/real_adapter_usage_evidence.py is unchanged (GPP-3a deliverable, frozen).",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5c36 plan-time iter-1 AGREE (continued from GPP-3b).",
-    "iter1_revise_absorb_status_md_progress_synced: STATUS.md \u00a70 milestone table updated to M3 Done (closed_at 2026-05-25), progress 4/7 done (57%, next M4), WP-weighted 41/50 (82%); human-readable SSOT now matches the machine-readable gpp_status.v1.json.",
-    "iter1_revise_absorb_docs_support_boundary_known_bugs_synced: docs/SUPPORT-BOUNDARY.md gains a GPP-3c paragraph aligning BC-10 'blocked' to 'exception' under the GPP-3b decision while preserving the narrow_production_runtime boundary; docs/KNOWN-BUGS.md GP-5.9 list item 2 rewritten as BC-10 'exception' classification (not a shipped-baseline bug, no production certification authorization).",
-    "iter1_revise_absorb_aggregate_completion_sources_typo_fixed: tests/test_gpp_next.py _AGGREGATE_COMPLETION_SOURCES['GPP-3'].evidence_refs corrected from [GPP-3a, GPP-3c, GPP-3c] (duplicate GPP-3c, missing GPP-3b) to [GPP-3a, GPP-3b, GPP-3c].",
-    "iter1_revise_absorb_next_allowed_actions_post_closeout: gpp_status.v1.json next_allowed_actions stale GPP-3b/GPP-3c reserve entries removed; three new post-closeout preservation entries added (preserve GPP-3c BC-10 exception, do not regress to blocked, prepare M4).",
-    "iter1_revise_absorb_forbidden_action_tightened: gpp_status.v1.json second new forbidden_action entry now requires 'evidence_class=live artifact, and explicit GPP supersession record' beyond just operator-bound live run."
+    "schema_self_validates_draft_2020_12: Draft202012Validator.check_schema passes on claude-code-cli-failure-mode.schema.v1.json.",
+    "schema_contains_seven_canonical_failure_modes: schema-level allOf carries seven contains + minContains=1 invariants requiring auth_missing, binary_missing, timeout, prompt_denied, malformed_output, policy_denied, redaction (Codex iter-1 recommendation).",
+    "schema_oneOf_simulated_live_bind_enforced: root oneOf enforces evidence_class=simulated requires live_adapter_execution=false plus protected_run.observed=false plus run_url/check_run_id/source_pin_verified all null plus overall_status restricted to coverage_ready or coverage_ready_live_evidence_pending; the live branch requires all live identifiers.",
+    "schema_support_widening_const_false: top-level const false guard preserved.",
+    "schema_production_platform_claim_const_false: top-level const false guard preserved.",
+    "schema_adapter_id_const_claude_code_cli: adapter_id locked to the literal claude-code-cli.",
+    "emit_simulated_produces_all_seven_modes: scripts/claude_code_cli_failure_mode_evidence.py emit-simulated emits an artifact whose coverage carries every canonical mode with repo-stable finding codes (claude_not_logged_in, claude_binary_missing, adapter_timeout, prompt_access_denied, output_parse_failed, policy_denied, adapter_log_missing_or_unredacted).",
+    "validate_rejects_missing_or_duplicate_mode: drift guards confirm that dropping a mode or duplicating one raises FailureMatrixError.",
+    "validate_rejects_simulated_with_live_execution: drift guards confirm that flipping live_adapter_execution or protected_run.observed or overall_status to a live value while keeping evidence_class=simulated raises FailureMatrixError.",
+    "ssot_current_wp_gpp4a_active: current_wp.id=GPP-4a, status=active, issue=#621, exit_decision=failure_matrix_schema_ready_simulated_coverage_ready_live_runs_pending_no_support_widening, record path GPP-4a-FAILURE-MATRIX-SCHEMA.md.",
+    "ssot_gpp3c_closure_preserved_in_completed_wps: GPP-3c entry present in completed_wps with the M3 closeout decision string and issue/pr/record/closed_at fields preserved.",
+    "gp5_platform_claim_decision_py_untouched: scripts/gp5_platform_claim_decision.py is unchanged in GPP-4a; BC-10 stays exception from GPP-3c, claude_code_cli_auth_operator_managed and kb001 stay as promotion blockers (reserved for GPP-4c keep_operator_beta authority recording, not blocker removal).",
+    "docs_support_boundary_untouched: docs/SUPPORT-BOUNDARY.md is unchanged in GPP-4a.",
+    "docs_known_bugs_untouched: docs/KNOWN-BUGS.md is unchanged in GPP-4a.",
+    "cc13_issue_anchor_present: GitHub issue #621 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
+    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e5eab plan-time iter-1 AGREE."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
