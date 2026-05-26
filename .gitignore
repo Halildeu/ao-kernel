@@ -237,3 +237,8 @@ tmp[a-z0-9]*/
 # Stale src/ dir (removed in v2.0.0; gets re-created by some editor cache)
 /src/
 benchmark_scorecard.v1.json
+
+# AO-MA orchestrator emits artifacts under .ao/orchestration/<task_graph_id>/.
+# AO-MA-4 worker_runner spawns nested git worktrees under .ao/orchestration/<id>/workers/<task_id>/.
+# These are runtime artifacts, never checked in.
+.ao/orchestration/

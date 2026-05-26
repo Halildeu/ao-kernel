@@ -19,6 +19,74 @@ from ao_kernel.orchestration.orchestrator import (
     SSOTPaths,
 )
 from ao_kernel.orchestration.task_graph_builder import TaskSpec
+from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
+
+
+def cmd_orchestration_spawn(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration spawn``."""
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    worktree_base = Path(args.worktree_base).resolve() if args.worktree_base else None
+    runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base, dry_run=args.dry_run)
+    try:
+        report = runner.spawn(manifest_path=manifest_path)
+    except WorkerRunnerError as exc:
+        print(f"orchestration spawn failed: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(f"task_graph_id: {report['task_graph_id']}")
+        print(f"base_sync_check: {report['base_sync_check']}")
+        print(f"conflict_check: {report['conflict_check']}")
+        print(f"workers ({len(report['workers'])}):")
+        for w in report["workers"]:
+            print(f"  - {w['task_id']} [{w['status']}] {w['reason']}")
+    # exit non-zero if any worker failed
+    fail_statuses = {
+        "failed_base_mismatch",
+        "failed_branch_exists_mismatch",
+        "failed_worktree_exists_mismatch",
+        "failed_empty_write_set",
+        "failed_assignment_sha_mismatch",
+    }
+    if any(w["status"] in fail_statuses for w in report["workers"]):
+        return 1
+    return 0
+
+
+def cmd_orchestration_cleanup(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration cleanup``."""
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    worktree_base = Path(args.worktree_base).resolve() if args.worktree_base else None
+    runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base)
+    try:
+        result = runner.cleanup(manifest_path=manifest_path, delete_branches=args.delete_branches)
+    except WorkerRunnerError as exc:
+        print(f"orchestration cleanup failed: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(result, indent=2, sort_keys=True))
+    else:
+        print(f"removed_worktrees ({len(result['removed_worktrees'])}):")
+        for w in result["removed_worktrees"]:
+            print(f"  - {w}")
+        if result["kept_dirty"]:
+            print(f"kept_dirty ({len(result['kept_dirty'])}): {result['kept_dirty']}")
+        if result["deleted_branches"]:
+            print(f"deleted_branches ({len(result['deleted_branches'])}): {result['deleted_branches']}")
+    if result["kept_dirty"]:
+        return 1
+    return 0
 
 
 def cmd_orchestration_plan(args: argparse.Namespace) -> int:
@@ -151,6 +219,70 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         help="owner/repo (default: inferred from origin remote URL)",
     )
     plan_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
+    # AO-MA-4: spawn parallel worktrees from a manifest
+    spawn_p = orchestration_sub.add_parser(
+        "spawn",
+        help="Prepare parallel git worktrees from an AO-MA-3 manifest (no agent execution)",
+    )
+    spawn_p.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to AO-MA-3 manifest.v1.json",
+    )
+    spawn_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    spawn_p.add_argument(
+        "--worktree-base",
+        default=None,
+        help="Override base directory for worktrees (default: planned path under repo root)",
+    )
+    spawn_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Plan worktrees without creating them on disk",
+    )
+    spawn_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
+    # AO-MA-4: cleanup prepared worktrees
+    cleanup_p = orchestration_sub.add_parser(
+        "cleanup",
+        help="Remove prepared worktrees (clean only) and optionally branches",
+    )
+    cleanup_p.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to AO-MA-3 manifest.v1.json",
+    )
+    cleanup_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    cleanup_p.add_argument(
+        "--worktree-base",
+        default=None,
+        help="Override base directory for worktrees (default: planned path under repo root)",
+    )
+    cleanup_p.add_argument(
+        "--delete-branches",
+        action="store_true",
+        help="Delete branches that are clean and already merged into origin/main",
+    )
+    cleanup_p.add_argument(
         "--format",
         choices=["text", "json"],
         default="text",

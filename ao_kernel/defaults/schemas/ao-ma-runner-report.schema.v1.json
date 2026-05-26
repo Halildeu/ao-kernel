@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-runner-report:v1",
+  "title": "AO-MA Runner Report",
+  "description": "No-secret report artifact produced by the AO-MA parallel worktree runner (AO-MA-4). It records which assignments were prepared, idempotent skips, branch/worktree conflict outcomes, and the manifest + base-sync verification status. The runner does NOT spawn agents, execute workers, or write worker_result.v1 artifacts; that responsibility belongs to AO-MA-5+ worker execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_graph_id",
+    "manifest_sha256",
+    "base_sha",
+    "generated_at",
+    "conflict_check",
+    "base_sync_check",
+    "workers",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-runner-report.v1"
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "manifest_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "conflict_check": {
+      "type": "string",
+      "enum": ["pass", "failed_overlap", "failed_manifest_stale", "failed_cross_ref_mismatch"]
+    },
+    "base_sync_check": {
+      "type": "string",
+      "enum": ["pass", "failed_base_mismatch"]
+    },
+    "workers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/worker_entry" }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "worker_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assignment_ref",
+        "assignment_sha256",
+        "task_id",
+        "branch",
+        "planned_worktree",
+        "actual_worktree",
+        "status",
+        "reason",
+        "expected_worker_result_path"
+      ],
+      "properties": {
+        "assignment_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the agent_assignment-*.v1.json file (relative to manifest base_dir)."
+        },
+        "assignment_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "task_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+        },
+        "branch": {
+          "type": "string",
+          "pattern": "^(codex|agent)/[a-z0-9][a-z0-9._/-]{1,120}$"
+        },
+        "planned_worktree": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Logical worktree path declared by the assignment artifact (untouched)."
+        },
+        "actual_worktree": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Actual worktree path used by the runner (may differ when --worktree-base override is in effect)."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "prepared",
+            "skipped_existing_idempotent",
+            "skipped_dry_run",
+            "failed_branch_exists_mismatch",
+            "failed_worktree_exists_mismatch",
+            "failed_empty_write_set",
+            "failed_base_mismatch",
+            "failed_assignment_sha_mismatch"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_worker_result_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Where AO-MA-5+ worker is expected to write worker_result.v1.json. The runner does NOT create this file."
+        }
+      }
+    }
+  }
+}

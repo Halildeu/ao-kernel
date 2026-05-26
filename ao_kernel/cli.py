@@ -2137,12 +2137,20 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if cmd == "orchestration":
-        from ao_kernel.orchestration.cli_handlers import cmd_orchestration_plan
+        from ao_kernel.orchestration.cli_handlers import (
+            cmd_orchestration_cleanup,
+            cmd_orchestration_plan,
+            cmd_orchestration_spawn,
+        )
 
         orchestration_cmd = getattr(args, "orchestration_command", None)
         if orchestration_cmd == "plan":
             return cmd_orchestration_plan(args)
-        print("Usage: ao-kernel orchestration {plan}", file=sys.stderr)
+        if orchestration_cmd == "spawn":
+            return cmd_orchestration_spawn(args)
+        if orchestration_cmd == "cleanup":
+            return cmd_orchestration_cleanup(args)
+        print("Usage: ao-kernel orchestration {plan|spawn|cleanup}", file=sys.stderr)
         return 1
 
     handler = dispatch.get(cmd)
