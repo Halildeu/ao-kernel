@@ -150,6 +150,35 @@ production-targeted remote PR live-write evidence chain requires
 an operator-bound Option X supersession slice
 (`remote_pr_candidate_ready`), not documentation wording alone.
 
+## GPP-9 closeout interpretation (program closure)
+
+GPP-9 closes the autonomous GPP chain as
+`keep_narrow_stable_runtime` (program closure; third and final M6
+slice). The decision does not introduce new shipped-baseline bugs
+or modify existing known bugs. `KB-001` + `KB-002` + all GP-5.9
+promotion blockers remain under the GPP-4 `keep_operator_beta`
+authority (recorded in the GPP-4 closeout interpretation
+subsection above). The existing GP-5.9
+`keep_narrow_stable_runtime` decision is preserved as the formal
+program closure authority; the BC-1..BC-10 baseline is preserved
+without enum reclassification.
+
+**Program closeout note**: the autonomous GPP chain reaches **7/7
+milestones (100%)** under preparation/rehearsal evidence preserved
+authority. WP-weighted estimate: **49/50 (98%)**. The narrow
+stable runtime is the recorded supported surface. No tier is
+promoted beyond the existing GP-5.9 boundary. No support is
+widened. No production platform claim is granted.
+
+Any future production or beta tier promotion
+(`promote_general_purpose_production` or
+`promote_general_purpose_beta`), live adapter execution
+authorization, support widening, or production platform claim
+requires a separate **operator-bound supersession** PR with
+explicit production-platform-claim authorization, full or partial
+production matrix evidence, and operator-verified semantics — not
+a new autonomous GPP slice, and not documentation wording alone.
+
 ## Release readiness rule
 
 Before a stable release candidate, this file must answer two questions:

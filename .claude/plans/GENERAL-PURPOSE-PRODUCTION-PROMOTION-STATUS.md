@@ -24,10 +24,10 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#633](https://github.com/Halildeu/ao-kernel/issues/633)
-for GPP-8 remote PR sandbox-only decision (closed; M6 Faz 2; M6 in progress — GPP-9 reserved)
-**Current slice record:** `.claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md`
-**M6 chain records (in progress):** `.claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md`, `.claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md`; M6 closeout reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9)
+**Current slice issue:** [#635](https://github.com/Halildeu/ao-kernel/issues/635)
+for GPP-9 final claim decision + M6 closeout (closed; **program closed with 7/7 milestones (100%)**)
+**Current slice record:** `.claude/plans/GPP-9-FINAL-CLAIM-DECISION.md`
+**M6 closeout (current):** `.claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md`, `.claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md`, `.claude/plans/GPP-9-FINAL-CLAIM-DECISION.md` — **autonomous GPP program closed under keep_narrow_stable_runtime authority**
 **M5 closeout (historical):** `.claude/plans/GPP-6c-KEEP-REHEARSAL-ONLY-INFAZ.md` (issue [#629](https://github.com/Halildeu/ao-kernel/issues/629))
 **M4 closeout (historical):** `.claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md` (issue [#625](https://github.com/Halildeu/ao-kernel/issues/625))
 **M3 closeout (historical):** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md` (issue [#618](https://github.com/Halildeu/ao-kernel/issues/618))
@@ -57,15 +57,18 @@ exit decisions are recorded with evidence.
 | M3 | Real-adapter cost/usage evidence | GPP-3 | Done | `2026-05-25` |
 | M4 | Read-only adapter production decision | GPP-4 | Done | `2026-05-25` |
 | M5 | Read-only E2E execution | GPP-6 | Done | `2026-05-25` |
-| M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Pending | — |
+| M6 | Production matrix + final claim | GPP-7, GPP-8, GPP-9 | Done | `2026-05-26` |
 
-Current progress: **6/7 milestones done (86%); M6 — Production
-matrix + final claim in progress** (GPP-7 closed under keep_rehearsal_only
-authority; GPP-8 closed under keep_sandbox_only authority; M6
-closeout reserved for GPP-9 with three evidence_refs GPP-7 + GPP-8
-+ GPP-9). WP-weighted estimate: **48/50 (96%;
-estimated)** — treat this as a coarse indicator only; the canonical
-view is the milestone-based count.
+Current progress: **7/7 milestones done (100%); autonomous GPP
+program closed** under `keep_narrow_stable_runtime` authority
+(M6 chain: GPP-7 keep_rehearsal_only + GPP-8 keep_sandbox_only +
+GPP-9 keep_narrow_stable_runtime). WP-weighted estimate: **49/50
+(98%; estimated)** — treat this as a coarse indicator only; the
+canonical view is the milestone-based count, which reads
+**7/7 (100%)**. Any future production or beta tier promotion, live
+adapter execution authorization, support widening, or production
+platform claim requires a separate **operator-bound supersession**
+PR — not a new autonomous GPP slice.
 
 Run `python3 scripts/gpp_next.py --output progress` for the live machine
 view.
@@ -471,7 +474,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-6` | Preparation only / execution blocked | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Closed / no support widening | Controlled write-side production candidate | `keep_rehearsal_only` authoritative (Option Y); Option X `write_candidate_ready` deferred operator-bound |
 | `GPP-8` | Closed / no support widening | Remote PR live-write promotion candidate | `keep_sandbox_only` authoritative (Option Y); Option X `remote_pr_candidate_ready` deferred operator-bound |
-| `GPP-9` | Not started | Full production matrix + claim decision | `promote_general_purpose_production` / `promote_general_purpose_beta` / `keep_narrow_stable_runtime` |
+| `GPP-9` | Closed / no support widening | Full production matrix + final claim decision | `keep_narrow_stable_runtime` authoritative; `promote_general_purpose_production` and `promote_general_purpose_beta` remain operator-bound supersession paths; defer rejected; **program closed** with no live adapter execution, no support widening, no production claim |
 
 ## 6. GPP-0 - Tracker and SSOT
 
