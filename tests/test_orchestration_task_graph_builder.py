@@ -210,6 +210,21 @@ def test_path_validation_rejects_empty_string() -> None:
         build_task_graph("empty", _SHA40, repo=_REPO, declared_specs=specs)
 
 
+def test_path_validation_rejects_double_slash() -> None:
+    # Codex iter-3: ``foo//bar.py`` normalizes to ``foo/bar.py`` under
+    # most path layers, silently bypassing the overlap fail-closed guard.
+    specs = [TaskSpec("task-001", "x", ["ao_kernel//foo.py"])]
+    with pytest.raises(TaskGraphBuilderError, match="empty segment"):
+        build_task_graph("double-slash", _SHA40, repo=_REPO, declared_specs=specs)
+
+
+def test_path_validation_rejects_trailing_slash() -> None:
+    # Codex iter-3: ``foo/`` would canonicalize to ``foo`` under git tooling.
+    specs = [TaskSpec("task-001", "x", ["ao_kernel/foo/"])]
+    with pytest.raises(TaskGraphBuilderError, match="empty segment"):
+        build_task_graph("trailing-slash", _SHA40, repo=_REPO, declared_specs=specs)
+
+
 def test_branch_pattern_matches_schema() -> None:
     schema = _load_schema("ao-ma-agent-assignment.schema.v1.json")
     pattern = schema["properties"]["branch"]["pattern"]
