@@ -26,6 +26,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError
+
 from ao_kernel.orchestration.runner_report_writer import (
     RunnerReportWriter,
     RunnerReportWriterError,
@@ -35,6 +38,40 @@ from ao_kernel.orchestration.runner_report_writer import (
 
 class WorkerRunnerError(RuntimeError):
     """Raised when the runner cannot prepare worktrees fail-closed."""
+
+
+_SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "defaults" / "schemas"
+
+_TASK_GRAPH_SCHEMA_NAME = "ao-ma-task-graph.schema.v1.json"
+_ASSIGNMENT_SCHEMA_NAME = "ao-ma-agent-assignment.schema.v1.json"
+
+
+def _load_ao_ma_schema(name: str) -> dict[str, Any]:
+    try:
+        return cast(dict[str, Any], json.loads((_SCHEMAS_DIR / name).read_text(encoding="utf-8")))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise WorkerRunnerError(f"failed to load bundled schema {name!r}: {exc}") from exc
+
+
+def _validate_ao_ma_artifact(payload: dict[str, Any], schema_name: str, source: Path) -> None:
+    """Codex iter-3 absorb: runtime schema validation against bundled AO-MA-2 schemas.
+
+    A SHA256 match alone proves the bytes on disk equal what the orchestrator
+    declared in the manifest. It does NOT prove the manifest itself was
+    schema-conformant. Without runtime validation a stale or malformed
+    artifact could pass through the runner and only surface mid-spawn as a
+    cryptic KeyError. Fail-closed at the load boundary keeps the runner the
+    trust gate AO-MA-2 designed it to be.
+    """
+
+    schema = _load_ao_ma_schema(schema_name)
+    validator = Draft202012Validator(schema)
+    try:
+        validator.validate(payload)
+    except ValidationError as exc:
+        raise WorkerRunnerError(
+            f"{source.name} failed schema {schema_name!r}: {exc.message} (at {list(exc.absolute_path)})"
+        ) from exc
 
 
 def _path_is_under(child: Path, parent: Path) -> bool:
@@ -79,6 +116,7 @@ class WorkerRunner:
         task_graph_path = manifest_path.parent / "task_graph.v1.json"
         self._verify_sha256(task_graph_path, task_graph_artifact["sha256"])
         task_graph = self._load_json(task_graph_path)
+        _validate_ao_ma_artifact(task_graph, _TASK_GRAPH_SCHEMA_NAME, task_graph_path)
 
         runtime_origin_main = self._resolve_origin_main_sha()
         manifest_base_sha = task_graph["base_sha"]
@@ -91,6 +129,7 @@ class WorkerRunner:
             assignment_path = manifest_path.parent / entry_path
             self._verify_sha256(assignment_path, entry["sha256"])
             assignment = self._load_json(assignment_path)
+            _validate_ao_ma_artifact(assignment, _ASSIGNMENT_SCHEMA_NAME, assignment_path)
             self._verify_cross_ref(assignment, task_graph_id, manifest_base_sha)
             assignments.append((assignment_path, entry, assignment))
 
@@ -165,7 +204,14 @@ class WorkerRunner:
         return {"ok": not extras, "actual": actual, "extras": extras}
 
     def _git_lines(self, worktree: Path, args: list[str]) -> list[str]:
-        """Run ``git -C worktree <args>`` and return non-empty stdout lines."""
+        """Run ``git -C worktree <args>`` and return non-empty stdout lines.
+
+        Codex iter-3 absorb: non-zero exit codes are NOT silently swallowed.
+        A bad base_sha, missing ref, or broken git invocation would otherwise
+        cause verify_diff to return ``ok=True`` with empty extras, hiding
+        committed out-of-scope work. The runner is the trust boundary; git
+        failures are fail-closed surface errors.
+        """
 
         try:
             completed = subprocess.run(
@@ -178,7 +224,10 @@ class WorkerRunner:
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise WorkerRunnerError(f"git {args!r} failed in {worktree!s}: {exc}") from exc
         if completed.returncode != 0:
-            return []
+            raise WorkerRunnerError(
+                f"git {args!r} in {worktree!s} exited {completed.returncode}: "
+                f"{completed.stderr.strip() or completed.stdout.strip()}"
+            )
         return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
 
     def cleanup(
@@ -447,13 +496,20 @@ class WorkerRunner:
         return bool(completed.stdout.strip())
 
     def _remove_worktree(self, worktree: Path) -> None:
-        subprocess.run(
+        """Codex iter-3 absorb: fail-closed when git worktree remove fails."""
+
+        completed = subprocess.run(
             ["git", "-C", str(self.repo_root), "worktree", "remove", str(worktree)],
             check=False,
             capture_output=True,
             text=True,
             timeout=30,
         )
+        if completed.returncode != 0:
+            raise WorkerRunnerError(
+                f"git worktree remove {worktree!s} exited {completed.returncode}: "
+                f"{completed.stderr.strip() or completed.stdout.strip()}"
+            )
 
     def _branch_is_clean_and_merged(self, branch: str) -> bool:
         completed = subprocess.run(

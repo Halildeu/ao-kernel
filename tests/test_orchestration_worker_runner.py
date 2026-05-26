@@ -274,6 +274,47 @@ def test_verify_diff_extras_fail(fixture_repo: tuple[Path, str]) -> None:
     assert "untracked_outside_scope.py" in result["extras"]
 
 
+def test_verify_diff_committed_since_base_catches_extras(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-3 absorb: the base_sha..HEAD diff branch must catch
+    committed out-of-scope work, not just unstaged/untracked changes.
+
+    Reproduction: spawn a worktree at base_sha, commit a file that is
+    NOT in declared_write_set, then call verify_diff(base_sha=base_sha).
+    Without the base_sha..HEAD branch the runner would see a clean
+    `git status` and return ok=True, hiding committed extras. With it,
+    the committed file shows up in extras + ok=False.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-cmt8888",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    runner.spawn(manifest_path=manifest_path)
+    worktree = repo / ".ao/orchestration/ao-ma-20260527-cmt8888/workers/task-001"
+
+    # Commit a file that is NOT in declared_write_set
+    stray = worktree / "OUTSIDE_SCOPE.md"
+    stray.write_text("# committed but out of scope\n", encoding="utf-8")
+    _run(["git", "-C", str(worktree), "add", "OUTSIDE_SCOPE.md"])
+    _run(["git", "-C", str(worktree), "commit", "-m", "stray commit"])
+
+    # status is clean, but base_sha..HEAD must still expose the extra
+    result = runner.verify_diff(
+        worktree=worktree,
+        declared_write_set=["src/x.py"],
+        base_sha=base_sha,
+    )
+    assert result["ok"] is False, result
+    assert "OUTSIDE_SCOPE.md" in result["extras"], result
+
+
 def test_resolve_worktree_path_rejects_traversal(tmp_path: Path) -> None:
     runner = WorkerRunner(repo_root=tmp_path)
     with pytest.raises(WorkerRunnerError, match="escapes"):
