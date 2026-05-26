@@ -42,12 +42,10 @@ def _make_project(tmp_path: Path) -> Path:
     (project / "pkg").mkdir()
     (project / "pkg" / "__init__.py").write_text("from .main import run\n", encoding="utf-8")
     (project / "pkg" / "main.py").write_text(
-        "VALUE = 1\n\n"
-        "def run():\n"
-        "    return VALUE\n",
+        "VALUE = 1\n\ndef run():\n    return VALUE\n",
         encoding="utf-8",
     )
-    (project / "pyproject.toml").write_text("[project]\nname = \"vector-index-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "vector-index-project"\n', encoding="utf-8")
     return project
 
 
@@ -276,3 +274,55 @@ def test_write_repo_vectors_fails_closed_on_key_outside_namespace(tmp_path: Path
             embedding_config=_embedding_config(),
             embed_text_fn=_embed_text,
         )
+
+
+def test_write_repo_vectors_rejects_delete_key_outside_namespace_without_mutation(
+    tmp_path: Path,
+) -> None:
+    """RI-7.2 guardrail: planned_deletes must enforce the same namespace key
+    guard as planned_upserts; an outside-namespace delete key fails closed
+    before any vector_store.delete or store call mutates the backend.
+    """
+    project = _make_project(tmp_path)
+    # Seed an existing stale key that would otherwise be deleted on a real
+    # previous-manifest re-index. We do not depend on the plan recording it
+    # because we add an explicit out-of-namespace delete entry below.
+    outside_namespace_delete_key = f"repo_chunk::{'1' * 64}::{'2' * 64}::repo-chunk-v1:{'3' * 64}"
+    store = FakeVectorStore(existing_keys={outside_namespace_delete_key})
+    plan = _build_plan(_build_chunks(project))
+    # Inject a planned delete whose key lives outside this project's repo
+    # vector namespace. The implementation must reject this before any
+    # backend mutation, matching the upsert-side namespace contract.
+    plan.setdefault("planned_deletes", []).append(
+        {
+            "operation": "delete",
+            "key": outside_namespace_delete_key,
+        }
+    )
+
+    # RI-7.2 guardrail: namespace pre-validation must reject the delete key
+    # BEFORE any embedding provider call. A test-side embed_text counter
+    # asserts zero embedding calls (no API cost) on the fail-closed path.
+    embed_calls: list[tuple[Any, ...]] = []
+
+    def _counting_embed(*args: Any, **kwargs: Any) -> list[float]:
+        embed_calls.append((args, kwargs))
+        return [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="outside the repo vector namespace"):
+        write_repo_vectors(
+            project_root=project,
+            vector_write_plan=plan,
+            vector_store=store,
+            embedding_config=_embedding_config(),
+            embed_text_fn=_counting_embed,
+        )
+
+    # No vector_store mutation and no embedding cost must have occurred:
+    # the outside-namespace key is still present in the backend, no
+    # store/delete operations were recorded, and embed_text_fn was never
+    # invoked (fail-closed before any provider call).
+    assert outside_namespace_delete_key in store.existing_keys
+    assert store.operations == []
+    assert store.stored == {}
+    assert embed_calls == []

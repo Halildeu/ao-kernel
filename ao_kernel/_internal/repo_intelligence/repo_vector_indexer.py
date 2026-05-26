@@ -58,6 +58,16 @@ def write_repo_vectors(
     if not namespace_prefix:
         raise ValueError("vector write-plan is missing namespace identity")
 
+    # RI-7.2 guardrail: validate ALL planned_upserts and planned_deletes
+    # namespace keys before any embedding provider call or backend mutation.
+    # This makes the fail-closed contract stricter: an out-of-namespace key
+    # anywhere in the plan must not consume embedding cost or touch the
+    # vector store.
+    for item in _planned_upserts(vector_write_plan):
+        _require_namespace_key(str(item["key"]), namespace_prefix)
+    for item in _planned_deletes(vector_write_plan):
+        _require_namespace_key(str(item["key"]), namespace_prefix)
+
     embed = embed_text_fn or _default_embed_text
     prepared_vectors: list[tuple[str, Mapping[str, Any], dict[str, Any], list[float]]] = []
     embedding_calls = 0
@@ -261,11 +271,7 @@ def _stable_document_sha256(document: Mapping[str, Any]) -> str:
 
 def _without_generated_at(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return {
-            str(key): _without_generated_at(item)
-            for key, item in value.items()
-            if str(key) != "generated_at"
-        }
+        return {str(key): _without_generated_at(item) for key, item in value.items() if str(key) != "generated_at"}
     if isinstance(value, list):
         return [_without_generated_at(item) for item in value]
     return value

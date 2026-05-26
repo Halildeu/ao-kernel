@@ -21,14 +21,32 @@ def build_python_ast_indexes(project_root: str | Path, repo_map: Mapping[str, An
     diagnostics: list[JsonDict] = []
     module_symbol_counts: dict[str, int] = {str(record["module"]): 0 for record in module_records}
 
+    indexed_records: list[Mapping[str, Any]] = []
     for record in module_records:
         module = str(record["module"])
         rel_path = str(record["path"])
-        source_path = root / rel_path
+        source_path = _resolve_under_root(root, rel_path)
+        if source_path is None:
+            # RI-7.2 guardrail: a repo_map path that resolves outside the
+            # project root is never read or indexed. The escape attempt is
+            # recorded as a deterministic diagnostic so the guard is auditable.
+            # We do not pop module_symbol_counts here: the modules list is
+            # rebuilt from indexed_records below, so an escaped candidate
+            # cannot leak its (zero) count into the artifact even if a valid
+            # record later reuses the same module name.
+            diagnostics.append(
+                _diagnostic(
+                    rel_path,
+                    "python_path_escape_skipped",
+                    "repo_map path resolves outside project root",
+                )
+            )
+            continue
         try:
             source = source_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
             diagnostics.append(_diagnostic(rel_path, "python_source_unreadable", str(exc)))
+            indexed_records.append(record)
             continue
 
         try:
@@ -43,12 +61,14 @@ def build_python_ast_indexes(project_root: str | Path, repo_map: Mapping[str, An
                     offset=exc.offset,
                 )
             )
+            indexed_records.append(record)
             continue
 
         import_edges.extend(_import_edges_for_module(module=module, path=rel_path, tree=tree))
         module_symbols = _symbols_for_module(module=module, path=rel_path, tree=tree)
         module_symbol_counts[module] = len(module_symbols)
         symbols.extend(module_symbols)
+        indexed_records.append(record)
 
     import_edges.sort(key=_edge_sort_key)
     symbols.sort(key=_symbol_sort_key)
@@ -58,9 +78,9 @@ def build_python_ast_indexes(project_root: str | Path, repo_map: Mapping[str, An
             "kind": str(record["kind"]),
             "module": str(record["module"]),
             "path": str(record["path"]),
-            "symbols": module_symbol_counts[str(record["module"])],
+            "symbols": module_symbol_counts.get(str(record["module"]), 0),
         }
-        for record in module_records
+        for record in indexed_records
     ]
 
     project = dict(repo_map["project"]) if isinstance(repo_map.get("project"), Mapping) else {}
@@ -101,6 +121,20 @@ def _generator() -> JsonDict:
         "version": ao_kernel.__version__,
         "generated_at": now_iso8601(),
     }
+
+
+def _resolve_under_root(root: Path, rel_path: str) -> Path | None:
+    """Resolve ``rel_path`` under ``root`` or return ``None`` if it escapes.
+
+    Mirrors the chunker's path-escape guard so the AST indexer cannot read or
+    index a module whose repo_map path resolves outside the project root.
+    """
+    candidate = (root / rel_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    return candidate
 
 
 def _module_records(repo_map: Mapping[str, Any]) -> list[JsonDict]:
