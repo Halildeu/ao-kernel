@@ -449,10 +449,7 @@ def _cmd_repo_query(args: argparse.Namespace) -> int:
         print(f"matches: {query_result['summary']['matches']}")
         print(f"estimated_tokens: {query_result['summary']['estimated_tokens']}")
         for item in query_result["results"]:
-            print(
-                f"- {item['source_path']}:{item['start_line']} "
-                f"similarity={item['similarity']}"
-            )
+            print(f"- {item['source_path']}:{item['start_line']} similarity={item['similarity']}")
     return 0
 
 
@@ -1320,7 +1317,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     index_mode = index_p.add_mutually_exclusive_group()
     index_mode.add_argument("--dry-run", action="store_true", help="Write a deterministic vector write-plan only")
-    index_mode.add_argument("--write-vectors", action="store_true", help="Write repo chunk vectors to configured backend")
+    index_mode.add_argument(
+        "--write-vectors", action="store_true", help="Write repo chunk vectors to configured backend"
+    )
     index_p.add_argument(
         "--confirm-vector-index",
         default="",
@@ -1558,6 +1557,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="File path for atomic write; omit for stdout",
     )
+
+    # AO-MA-3 orchestration subcommand (no agent spawn, artifact emit only)
+    from ao_kernel.orchestration.cli_handlers import add_orchestration_subparser
+
+    add_orchestration_subparser(sub)
 
     # Policy-sim subcommand (PR-B4)
     policy_sim_p = sub.add_parser(
@@ -2130,6 +2134,15 @@ def main(argv: list[str] | None = None) -> int:
         if coordination_cmd == "takeover":
             return cmd_coordination_takeover(args)
         print("Usage: ao-kernel coordination {status|takeover}", file=sys.stderr)
+        return 1
+
+    if cmd == "orchestration":
+        from ao_kernel.orchestration.cli_handlers import cmd_orchestration_plan
+
+        orchestration_cmd = getattr(args, "orchestration_command", None)
+        if orchestration_cmd == "plan":
+            return cmd_orchestration_plan(args)
+        print("Usage: ao-kernel orchestration {plan}", file=sys.stderr)
         return 1
 
     handler = dispatch.get(cmd)
