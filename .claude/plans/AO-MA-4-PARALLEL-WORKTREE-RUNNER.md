@@ -41,6 +41,24 @@ Thread `019e666f-94c8-75a3-9a55-164f54d3bddf` iter-1 REVISE absorbed:
 - ✅ CLI: `ao-kernel orchestration spawn --manifest <path>` + ayrı `ao-kernel orchestration cleanup --manifest <path>`
 - ✅ Cleanup: dirty worktree → fail; branch silme default değil, `--delete-branches` ile + clean/merged/base-only doğrulama
 
+Thread `019e666f` iter-2 REVISE + iter-3 REVISE + thread `019e66a6` iter-4 REVISE absorbed:
+
+- ✅ Containment fail-closed (`resolve() + relative_to()`), `verify_diff` UNION (committed+staged+unstaged+untracked), E2E tests with real git fixture (iter-2)
+- ✅ `_git_lines()` non-zero exit raises `WorkerRunnerError` (was silently returning empty list, hiding committed extras) (iter-3 HIGH)
+- ✅ `_remove_worktree()` non-zero exit raises `WorkerRunnerError` (was silently swallowing failures) (iter-3 MEDIUM)
+- ✅ Runtime AO-MA-2 schema validation at load boundary for task_graph + agent_assignment via `Draft202012Validator` (iter-3 MEDIUM)
+- ✅ CLI integration tests through `ao_kernel.cli.main`: 6 spawn/cleanup tests (success, empty-write-set, missing manifest, round-trip, dirty, before-spawn) (iter-3 MEDIUM)
+- ✅ `verify_diff` committed-since-base test (committed OUTSIDE_SCOPE.md file caught by base_sha..HEAD branch) (iter-3 ask)
+- ✅ Manifest envelope validator (`_validate_manifest_envelope`): schema_version + task_graph_id pattern + artifact entry shape (path/sha256/size_bytes) + path containment (no `..`/absolute) + duplicate-path detection + exactly-one task_graph.v1.json entry (iter-4 HIGH-1)
+- ✅ Manifest `task_graph_id` ↔ inner task_graph.v1.json `task_graph_id` cross-ref (catches split-brain artifact sets) (iter-4 HIGH-1)
+- ✅ `_worktree_branch_matches()` now verifies branch identity via `git symbolic-ref --short HEAD` AND `rev-parse HEAD` (was only checking HEAD; wrong-branch same-SHA worktrees would silently `skipped_existing_idempotent`) (iter-4 HIGH-2)
+- ✅ Post-add TOCTOU verify: after `git worktree add` succeeds, re-run strict branch+HEAD check; mismatch → `failed_post_add_verify` (iter-4 MEDIUM)
+- ✅ `failed_overlap` worker status enum + correct label (was returning `failed_base_mismatch` for overlap; wrong signal for operators) (iter-4 LOW)
+- ✅ `_delete_branch()` returns bool; cleanup honors the result so refused deletes (unmerged branches) move to `kept_branches` instead of being misreported as `deleted_branches` (iter-4 LOW)
+- ✅ Cleanup-side runner_report.v1.json schema validation (trust boundary; on-disk file can be mutated between spawn and cleanup) (iter-4 nice-to-have)
+- ✅ `AO_MA_WORKTREE_BASE` env fallback implemented in CLI handlers + tests; plan/impl drift closed (iter-4 nice-to-have)
+- ✅ 9 negative tests for envelope/inner-schema validation + 4 new fail-closed scenarios on the runner side (iter-4 nice-to-have)
+
 ## Module layout
 
 ```

@@ -387,3 +387,318 @@ def test_cleanup_clean_worktree_removed(fixture_repo: tuple[Path, str], tmp_path
     worktree = repo / ".ao/orchestration/ao-ma-20260527-aaa7777/workers/task-001"
     assert not worktree.exists()
     assert any(str(worktree.resolve()) == w for w in result["removed_worktrees"])
+
+
+# ---------------------------------------------------------------------------
+# Codex iter-4 absorb tests
+# ---------------------------------------------------------------------------
+
+
+def test_spawn_manifest_task_graph_id_split_brain_fails(
+    fixture_repo: tuple[Path, str],
+    tmp_path: Path,
+) -> None:
+    """Codex iter-4 HIGH-1: manifest task_graph_id != task_graph.v1.json task_graph_id
+
+    Both artifacts pass their own SHA256 + schema validation; without
+    the iter-4 envelope + cross-ref check the runner would silently
+    fork the worktree namespace.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-split11",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    # Mutate ONLY the inner task_graph.v1.json task_graph_id and refresh
+    # its sha256 in the manifest so the SHA256 verifier doesn't reject
+    # this earlier — we want to land specifically on the cross-ref check.
+    task_graph_path = base_dir / "ao-ma-20260527-split11" / "task_graph.v1.json"
+    tg = json.loads(task_graph_path.read_text(encoding="utf-8"))
+    tg["task_graph_id"] = "ao-ma-20260527-other22"
+    task_graph_path.write_text(json.dumps(tg, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for entry in manifest["artifacts"]:
+        if entry["path"] == "task_graph.v1.json":
+            entry["sha256"] = _sha256(task_graph_path)
+            entry["size_bytes"] = task_graph_path.stat().st_size
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="task_graph_id"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_manifest_envelope_rejects_bad_schema_version(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Manifest with wrong schema_version is fail-closed at envelope check."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-env1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = "ao-ma-orchestration-manifest.v999"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="schema_version"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_manifest_envelope_rejects_traversal_in_artifact_path(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Manifest with `..` in artifact path is fail-closed at envelope check."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-trav111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # Inject a bogus entry whose path contains traversal
+    manifest["artifacts"].append({"path": "../escape.v1.json", "sha256": "sha256:" + "0" * 64, "size_bytes": 10})
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="traversal/absolute"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_manifest_envelope_rejects_duplicate_artifact_path(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Duplicate artifact path entries are fail-closed."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-dup1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # Duplicate the task_graph entry
+    manifest["artifacts"].append(dict(manifest["artifacts"][0]))
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="duplicate artifact path"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_manifest_envelope_rejects_malformed_sha256(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Artifact entry with non-sha256-format sha is fail-closed."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-sha1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["artifacts"][0]["sha256"] = "not-a-sha"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="sha256:"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_inner_schema_rejects_assignment_with_invalid_enum(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Inner-schema validation (Codex iter-3) catches assignment status enum violation."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-enum111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    # Tamper the assignment file to use an out-of-enum status, then
+    # refresh its sha256 in the manifest so we land on the schema check
+    # rather than SHA256.
+    assignment_path = base_dir / "ao-ma-20260527-enum111" / "agent_assignment-task-001.v1.json"
+    payload = json.loads(assignment_path.read_text(encoding="utf-8"))
+    payload["status"] = "totally_invalid_status"
+    assignment_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for entry in manifest["artifacts"]:
+        if entry["path"] == "agent_assignment-task-001.v1.json":
+            entry["sha256"] = _sha256(assignment_path)
+            entry["size_bytes"] = assignment_path.stat().st_size
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="failed schema"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_idempotent_skip_only_when_branch_AND_head_match(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-4 HIGH-2: same-SHA wrong-branch is NOT idempotent.
+
+    Pre iter-4 absorb the helper only checked HEAD; same SHA on a
+    different branch would silently pass as ``skipped_existing_idempotent``.
+    Now the runner inspects both ``git symbolic-ref --short HEAD`` AND
+    ``rev-parse HEAD``; a wrong-branch existing worktree is reported as
+    ``failed_worktree_exists_mismatch``.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-idem111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    report = runner.spawn(manifest_path=manifest_path)
+    assert report["workers"][0]["status"] == "prepared"
+
+    # Move the worktree to a different branch at the same HEAD
+    worktree = repo / ".ao/orchestration/ao-ma-20260527-idem111/workers/task-001"
+    _run(["git", "-C", str(worktree), "checkout", "-b", "rogue-branch"])
+
+    # Re-spawn: must NOT idempotent-skip because branch identity differs
+    report2 = runner.spawn(manifest_path=manifest_path)
+    assert report2["workers"][0]["status"] == "failed_worktree_exists_mismatch", report2
+
+
+def test_spawn_idempotent_skip_when_branch_AND_head_both_match(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Re-spawning the same manifest on unchanged state idempotent-skips."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-idem222",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    report1 = runner.spawn(manifest_path=manifest_path)
+    assert report1["workers"][0]["status"] == "prepared"
+    report2 = runner.spawn(manifest_path=manifest_path)
+    assert report2["workers"][0]["status"] == "skipped_existing_idempotent"
+
+
+def test_spawn_conflict_check_overlap_labels_worker_failed_overlap(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-4 LOW-1: conflict_check=failed_overlap => worker status failed_overlap.
+
+    Previously the worker label was failed_base_mismatch (wrong signal);
+    operators triaging the report would chase the wrong cause.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-ovl1111",
+        base_sha=base_sha,
+        workers=[
+            {"task_id": "task-001", "declared_write_set": ["src/shared.py"]},
+            {"task_id": "task-002", "declared_write_set": ["src/shared.py"]},
+        ],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    report = runner.spawn(manifest_path=manifest_path)
+    assert report["conflict_check"] == "failed_overlap"
+    assert all(w["status"] == "failed_overlap" for w in report["workers"]), report["workers"]
+
+
+def test_cleanup_validates_runner_report_against_schema(
+    fixture_repo: tuple[Path, str],
+    tmp_path: Path,
+) -> None:
+    """Codex iter-4 nice-to-have: cleanup fail-closes on tampered runner_report.
+
+    The on-disk runner_report.v1.json is a trust boundary; cleanup must
+    re-validate against the bundled schema, not just trust whatever
+    JSON is on disk.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-tamp111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    runner.spawn(manifest_path=manifest_path)
+
+    # Tamper the runner_report on disk with a schema-invalid mutation
+    report_path = base_dir / "ao-ma-20260527-tamp111" / "runner_report.v1.json"
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    payload["conflict_check"] = "totally_invalid_value"
+    report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(WorkerRunnerError, match="failed schema"):
+        runner.cleanup(manifest_path=manifest_path)
+
+
+def test_delete_branch_returns_false_when_git_refuses(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-4 LOW-2: _delete_branch must return False when git refuses.
+
+    Branch deletion via `git branch -d` is refused for unmerged branches.
+    If the helper swallows that signal, cleanup() would falsely report
+    the branch as deleted when it is in fact still on disk.
+    """
+
+    repo, base_sha = fixture_repo
+    runner = WorkerRunner(repo_root=repo)
+
+    # Create a branch with a commit NOT on main so `git branch -d` refuses
+    _run(["git", "-C", str(repo), "checkout", "-b", "feature/unmerged"])
+    (repo / "extra.txt").write_text("unmerged\n", encoding="utf-8")
+    _run(["git", "-C", str(repo), "add", "extra.txt"])
+    _run(["git", "-C", str(repo), "commit", "-m", "unmerged commit"])
+    _run(["git", "-C", str(repo), "checkout", "main"])
+
+    result = runner._delete_branch("feature/unmerged")
+    assert result is False, "git refuses unmerged branch deletion"
+
+    # Branch still exists on disk
+    head = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--verify", "refs/heads/feature/unmerged"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert head.returncode == 0, "branch must still exist when delete refused"
+
+
+def test_delete_branch_returns_true_when_git_succeeds(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """_delete_branch returns True for the happy path."""
+
+    repo, _base_sha = fixture_repo
+    runner = WorkerRunner(repo_root=repo)
+    _run(["git", "-C", str(repo), "branch", "easy-delete"])
+    assert runner._delete_branch("easy-delete") is True

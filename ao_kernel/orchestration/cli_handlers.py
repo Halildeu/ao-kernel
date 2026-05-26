@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -22,6 +23,23 @@ from ao_kernel.orchestration.task_graph_builder import TaskSpec
 from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
 
+def _resolve_worktree_base(cli_arg: str | None) -> Path | None:
+    """Resolve worktree base path: CLI flag wins, then ``AO_MA_WORKTREE_BASE`` env, else None.
+
+    Codex iter-4 absorb (doc drift fix): the AO-MA-4 plan doc has
+    declared an env fallback since iter-1 but the runtime never honored
+    it. Either the env had to be implemented or the plan had to drop
+    the claim; implementing keeps the operator runbook honest.
+    """
+
+    if cli_arg:
+        return Path(cli_arg).resolve()
+    env_value = os.environ.get("AO_MA_WORKTREE_BASE")
+    if env_value:
+        return Path(env_value).resolve()
+    return None
+
+
 def cmd_orchestration_spawn(args: argparse.Namespace) -> int:
     """Handle ``ao-kernel orchestration spawn``."""
 
@@ -30,7 +48,7 @@ def cmd_orchestration_spawn(args: argparse.Namespace) -> int:
         print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
         return 2
     repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
-    worktree_base = Path(args.worktree_base).resolve() if args.worktree_base else None
+    worktree_base = _resolve_worktree_base(args.worktree_base)
     runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base, dry_run=args.dry_run)
     try:
         report = runner.spawn(manifest_path=manifest_path)
@@ -46,13 +64,16 @@ def cmd_orchestration_spawn(args: argparse.Namespace) -> int:
         print(f"workers ({len(report['workers'])}):")
         for w in report["workers"]:
             print(f"  - {w['task_id']} [{w['status']}] {w['reason']}")
-    # exit non-zero if any worker failed
+    # exit non-zero if any worker failed (Codex iter-4 absorb adds
+    # failed_overlap + failed_post_add_verify to the fail surface)
     fail_statuses = {
         "failed_base_mismatch",
         "failed_branch_exists_mismatch",
         "failed_worktree_exists_mismatch",
         "failed_empty_write_set",
         "failed_assignment_sha_mismatch",
+        "failed_overlap",
+        "failed_post_add_verify",
     }
     if any(w["status"] in fail_statuses for w in report["workers"]):
         return 1
@@ -67,7 +88,7 @@ def cmd_orchestration_cleanup(args: argparse.Namespace) -> int:
         print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
         return 2
     repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
-    worktree_base = Path(args.worktree_base).resolve() if args.worktree_base else None
+    worktree_base = _resolve_worktree_base(args.worktree_base)
     runner = WorkerRunner(repo_root=repo_root, worktree_base=worktree_base)
     try:
         result = runner.cleanup(manifest_path=manifest_path, delete_branches=args.delete_branches)
@@ -243,7 +264,10 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
     spawn_p.add_argument(
         "--worktree-base",
         default=None,
-        help="Override base directory for worktrees (default: planned path under repo root)",
+        help=(
+            "Override base directory for worktrees. Precedence: this flag > "
+            "AO_MA_WORKTREE_BASE env > planned path under repo root."
+        ),
     )
     spawn_p.add_argument(
         "--dry-run",
@@ -275,7 +299,10 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
     cleanup_p.add_argument(
         "--worktree-base",
         default=None,
-        help="Override base directory for worktrees (default: planned path under repo root)",
+        help=(
+            "Override base directory for worktrees. Precedence: this flag > "
+            "AO_MA_WORKTREE_BASE env > planned path under repo root."
+        ),
     )
     cleanup_p.add_argument(
         "--delete-branches",

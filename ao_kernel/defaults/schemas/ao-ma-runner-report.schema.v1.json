@@ -113,7 +113,9 @@
             "failed_worktree_exists_mismatch",
             "failed_empty_write_set",
             "failed_base_mismatch",
-            "failed_assignment_sha_mismatch"
+            "failed_assignment_sha_mismatch",
+            "failed_overlap",
+            "failed_post_add_verify"
           ]
         },
         "reason": {

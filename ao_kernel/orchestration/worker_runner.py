@@ -21,6 +21,7 @@ Codex thread 019e666f iter-1 absorb invariants:
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,6 +45,7 @@ _SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "defaults" / "schemas"
 
 _TASK_GRAPH_SCHEMA_NAME = "ao-ma-task-graph.schema.v1.json"
 _ASSIGNMENT_SCHEMA_NAME = "ao-ma-agent-assignment.schema.v1.json"
+_RUNNER_REPORT_SCHEMA_NAME = "ao-ma-runner-report.schema.v1.json"
 
 
 def _load_ao_ma_schema(name: str) -> dict[str, Any]:
@@ -72,6 +74,93 @@ def _validate_ao_ma_artifact(payload: dict[str, Any], schema_name: str, source: 
         raise WorkerRunnerError(
             f"{source.name} failed schema {schema_name!r}: {exc.message} (at {list(exc.absolute_path)})"
         ) from exc
+
+
+_TASK_GRAPH_ID_PATTERN = re.compile(r"^ao-ma-[0-9]{8}-[a-z0-9]{7}$")
+_SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+_ARTIFACT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.v1\.json$")
+_EXPECTED_MANIFEST_SCHEMA_VERSION = "ao-ma-orchestration-manifest.v1"
+
+
+def _validate_manifest_envelope(manifest: dict[str, Any], source: Path) -> None:
+    """Codex iter-4 absorb: fail-closed manifest envelope validation.
+
+    AO-MA-2 ships schemas for the inner artifacts (task_graph,
+    agent_assignment, ...) but the orchestration manifest envelope
+    itself is the runner's input contract. Without an envelope check
+    a split-brain artifact set — e.g. manifest declares task_graph_id
+    ``X`` while the on-disk task_graph.v1.json declares ``Y`` — passes
+    SHA256 + inner-schema validation but still corrupts every
+    downstream decision (worktree path, branch name, runner_report
+    grouping). Fail-closed here keeps the runner the trust gate.
+
+    Checks (all fail-closed):
+
+    - ``schema_version == "ao-ma-orchestration-manifest.v1"``
+    - ``task_graph_id`` is a string matching AO-MA-2 task-graph id pattern
+    - ``artifacts`` is a non-empty array
+    - exactly one artifact entry has path ``task_graph.v1.json``
+    - every entry has ``path`` (no ``..``, no absolute, only ``*.v1.json``),
+      ``sha256`` (sha256:[0-9a-f]{64}), ``size_bytes`` (positive int)
+    - no duplicate ``path`` values across the artifact entries
+    """
+
+    if not isinstance(manifest, dict):
+        raise WorkerRunnerError(f"{source.name} manifest must be a JSON object")
+
+    schema_version = manifest.get("schema_version")
+    if schema_version != _EXPECTED_MANIFEST_SCHEMA_VERSION:
+        raise WorkerRunnerError(
+            f"{source.name} schema_version mismatch: expected "
+            f"{_EXPECTED_MANIFEST_SCHEMA_VERSION!r}, got {schema_version!r}"
+        )
+
+    task_graph_id = manifest.get("task_graph_id")
+    if not isinstance(task_graph_id, str) or not _TASK_GRAPH_ID_PATTERN.match(task_graph_id):
+        raise WorkerRunnerError(f"{source.name} task_graph_id {task_graph_id!r} does not match AO-MA-2 pattern")
+
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise WorkerRunnerError(f"{source.name} artifacts must be a non-empty array")
+
+    seen_paths: set[str] = set()
+    task_graph_entries = 0
+    for index, entry in enumerate(artifacts):
+        if not isinstance(entry, dict):
+            raise WorkerRunnerError(f"{source.name} artifacts[{index}] must be a JSON object")
+        path = entry.get("path")
+        if not isinstance(path, str) or not path:
+            raise WorkerRunnerError(f"{source.name} artifacts[{index}].path must be a non-empty string")
+        # Reject traversal, absolute paths, or non-AO-MA artifact suffixes.
+        if path.startswith("/") or ".." in Path(path).parts or "\\" in path:
+            raise WorkerRunnerError(
+                f"{source.name} artifacts[{index}].path {path!r} contains traversal/absolute components"
+            )
+        if not _ARTIFACT_PATH_PATTERN.match(path):
+            raise WorkerRunnerError(
+                f"{source.name} artifacts[{index}].path {path!r} does not match AO-MA artifact suffix '*.v1.json'"
+            )
+        if path in seen_paths:
+            raise WorkerRunnerError(f"{source.name} duplicate artifact path: {path!r}")
+        seen_paths.add(path)
+        if path == "task_graph.v1.json":
+            task_graph_entries += 1
+
+        sha = entry.get("sha256")
+        if not isinstance(sha, str) or not _SHA256_PATTERN.match(sha):
+            raise WorkerRunnerError(
+                f"{source.name} artifacts[{index}].sha256 {sha!r} must match 'sha256:[0-9a-f]{{64}}'"
+            )
+        size_bytes = entry.get("size_bytes")
+        if not isinstance(size_bytes, int) or isinstance(size_bytes, bool) or size_bytes <= 0:
+            raise WorkerRunnerError(
+                f"{source.name} artifacts[{index}].size_bytes {size_bytes!r} must be a positive integer"
+            )
+
+    if task_graph_entries != 1:
+        raise WorkerRunnerError(
+            f"{source.name} must declare exactly one task_graph.v1.json artifact entry (got {task_graph_entries})"
+        )
 
 
 def _path_is_under(child: Path, parent: Path) -> bool:
@@ -104,6 +193,10 @@ class WorkerRunner:
 
         manifest_path = manifest_path.resolve()
         manifest = self._load_json(manifest_path)
+        # Codex iter-4 absorb: envelope validation BEFORE we trust any
+        # downstream field. Catches split-brain artifact sets, traversal
+        # in entry paths, malformed sha256/size_bytes, duplicate entries.
+        _validate_manifest_envelope(manifest, manifest_path)
         manifest_sha256 = sha256_of(manifest_path)
         base_dir = manifest_path.parent.parent
 
@@ -117,6 +210,17 @@ class WorkerRunner:
         self._verify_sha256(task_graph_path, task_graph_artifact["sha256"])
         task_graph = self._load_json(task_graph_path)
         _validate_ao_ma_artifact(task_graph, _TASK_GRAPH_SCHEMA_NAME, task_graph_path)
+
+        # Codex iter-4 absorb: manifest task_graph_id MUST equal the
+        # task_graph.v1.json task_graph_id. SHA256 + inner-schema
+        # validation pass even when the two declare different ids,
+        # which would silently corrupt the runner_report output dir
+        # and worktree path namespace.
+        inner_task_graph_id = task_graph.get("task_graph_id")
+        if inner_task_graph_id != task_graph_id:
+            raise WorkerRunnerError(
+                f"manifest task_graph_id {task_graph_id!r} != task_graph.v1.json task_graph_id {inner_task_graph_id!r}"
+            )
 
         runtime_origin_main = self._resolve_origin_main_sha()
         manifest_base_sha = task_graph["base_sha"]
@@ -249,6 +353,13 @@ class WorkerRunner:
                 f"runner_report.v1.json missing under {base_dir / task_graph_id}; spawn before cleanup"
             )
         report = self._load_json(report_path)
+        # Codex iter-4 absorb nice-to-have: cleanup also re-validates the
+        # report against the bundled schema. The writer already validates
+        # on emit, but the on-disk file is a trust boundary: an operator
+        # or rogue process could mutate it between spawn and cleanup. A
+        # schema-invalid report would mean we operate on undefined worker
+        # entries; fail-closed here keeps the runner the trust gate.
+        _validate_ao_ma_artifact(report, _RUNNER_REPORT_SCHEMA_NAME, report_path)
 
         removed: list[str] = []
         kept_dirty: list[str] = []
@@ -264,8 +375,12 @@ class WorkerRunner:
             self._remove_worktree(worktree)
             removed.append(str(worktree))
             if delete_branches and self._branch_is_clean_and_merged(worker["branch"]):
-                self._delete_branch(worker["branch"])
-                deleted_branches.append(worker["branch"])
+                # Codex iter-4 absorb: honor _delete_branch return; record
+                # in kept_branches when git refused the delete.
+                if self._delete_branch(worker["branch"]):
+                    deleted_branches.append(worker["branch"])
+                else:
+                    kept_branches.append(worker["branch"])
             else:
                 kept_branches.append(worker["branch"])
         return {
@@ -375,10 +490,13 @@ class WorkerRunner:
         if base_sync_check != "pass":
             return {**base_entry, "status": "failed_base_mismatch", "reason": "base_sha mismatch"}
         if conflict_check != "pass":
+            # Codex iter-4 absorb: report failed_overlap (honest signal),
+            # not failed_base_mismatch — top-level conflict_check is
+            # failed_overlap so the worker label must agree.
             return {
                 **base_entry,
-                "status": "failed_base_mismatch",
-                "reason": "manifest conflict_check failed; refuse spawn",
+                "status": "failed_overlap",
+                "reason": "manifest conflict_check failed_overlap; refuse spawn",
             }
         if not declared:
             return {
@@ -446,6 +564,19 @@ class WorkerRunner:
                 "reason": f"git worktree add failed: {exc}",
             }
 
+        # Codex iter-4 absorb: post-add TOCTOU verify. After git reports
+        # success the runner must still confirm the new worktree is on
+        # the EXPECTED branch at the EXPECTED commit. Concurrent spawn,
+        # ref tampering, or symlink swap between the pre-check and the
+        # post-add can land us on something else; fail-closed here so
+        # AO-MA-5/6/7 never operate on a mismatched worktree.
+        if not self._worktree_branch_matches(actual_worktree, branch, base_sha):
+            return {
+                **base_entry,
+                "status": "failed_post_add_verify",
+                "reason": "worktree post-add branch+HEAD verify failed; possible TOCTOU or ref tampering",
+            }
+
         return {**base_entry, "status": "prepared", "reason": "worktree + branch created"}
 
     def _branch_exists(self, branch: str) -> bool:
@@ -474,14 +605,35 @@ class WorkerRunner:
         branch: str,
         base_sha: str,
     ) -> bool:
-        completed = subprocess.run(
+        """Codex iter-4 absorb: idempotent skip MUST verify branch identity AND HEAD.
+
+        Previously only `HEAD == base_sha` was checked, so an existing
+        worktree attached to the WRONG branch but at the SAME commit
+        would silently pass as ``skipped_existing_idempotent``. The
+        runner is the trust gate; a wrong-branch worktree must be
+        reported as ``failed_worktree_exists_mismatch``, not skipped.
+        """
+
+        head_completed = subprocess.run(
             ["git", "-C", str(worktree), "rev-parse", "HEAD"],
             check=False,
             capture_output=True,
             text=True,
             timeout=10,
         )
-        return completed.returncode == 0 and completed.stdout.strip() == base_sha
+        if head_completed.returncode != 0 or head_completed.stdout.strip() != base_sha:
+            return False
+        branch_completed = subprocess.run(
+            ["git", "-C", str(worktree), "symbolic-ref", "--short", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if branch_completed.returncode != 0:
+            # Detached HEAD: not on a branch at all, never idempotent.
+            return False
+        return branch_completed.stdout.strip() == branch
 
     def _worktree_is_dirty(self, worktree: Path) -> bool:
         completed = subprocess.run(
@@ -529,11 +681,20 @@ class WorkerRunner:
         )
         return completed.returncode == 0
 
-    def _delete_branch(self, branch: str) -> None:
-        subprocess.run(
+    def _delete_branch(self, branch: str) -> bool:
+        """Codex iter-4 absorb: return True only if `git branch -d` succeeded.
+
+        Previously the exit code was ignored and the caller would always
+        record the branch in ``deleted_branches`` even when git refused
+        the delete (e.g., unmerged commits, branch in use). Now the
+        caller can put the branch in ``kept_branches`` on soft failure.
+        """
+
+        completed = subprocess.run(
             ["git", "-C", str(self.repo_root), "branch", "-d", branch],
             check=False,
             capture_output=True,
             text=True,
             timeout=10,
         )
+        return completed.returncode == 0

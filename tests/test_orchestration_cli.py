@@ -514,3 +514,84 @@ def test_cli_cleanup_before_spawn_exits_one(
     assert rc == 1
     err = capsys.readouterr().err
     assert "runner_report.v1.json missing" in err
+
+
+def test_resolve_worktree_base_cli_flag_wins(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Codex iter-4 doc-drift absorb: CLI flag wins over env var."""
+
+    from ao_kernel.orchestration.cli_handlers import _resolve_worktree_base
+
+    cli_dir = tmp_path / "cli-base"
+    env_dir = tmp_path / "env-base"
+    cli_dir.mkdir()
+    env_dir.mkdir()
+    monkeypatch.setenv("AO_MA_WORKTREE_BASE", str(env_dir))
+    assert _resolve_worktree_base(str(cli_dir)) == cli_dir.resolve()
+
+
+def test_resolve_worktree_base_env_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """When no CLI flag, AO_MA_WORKTREE_BASE env is honored."""
+
+    from ao_kernel.orchestration.cli_handlers import _resolve_worktree_base
+
+    env_dir = tmp_path / "env-base"
+    env_dir.mkdir()
+    monkeypatch.setenv("AO_MA_WORKTREE_BASE", str(env_dir))
+    assert _resolve_worktree_base(None) == env_dir.resolve()
+
+
+def test_resolve_worktree_base_returns_none_when_neither_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Neither CLI flag nor env set => None (runner uses planned path)."""
+
+    from ao_kernel.orchestration.cli_handlers import _resolve_worktree_base
+
+    monkeypatch.delenv("AO_MA_WORKTREE_BASE", raising=False)
+    assert _resolve_worktree_base(None) is None
+
+
+def test_cli_spawn_uses_AO_MA_WORKTREE_BASE_env_var(
+    cli_repo: tuple[Path, str],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """End-to-end: AO_MA_WORKTREE_BASE env makes the worktree land under it."""
+
+    repo, base_sha = cli_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _ao4_write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-envb111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    override_base = tmp_path / "override-worktrees"
+    override_base.mkdir()
+    monkeypatch.setenv("AO_MA_WORKTREE_BASE", str(override_base))
+
+    rc = cli_main(
+        [
+            "orchestration",
+            "spawn",
+            "--manifest",
+            str(manifest_path),
+            "--repo-root",
+            str(repo),
+            "--format",
+            "json",
+        ]
+    )
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    actual_worktree = Path(report["workers"][0]["actual_worktree"])
+    assert actual_worktree.is_relative_to(override_base.resolve()), (
+        f"worktree {actual_worktree} not under env override {override_base.resolve()}"
+    )
