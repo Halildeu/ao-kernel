@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-integration-report:v1",
+  "title": "AO-MA Integration Report",
+  "description": "No-secret integrator artifact recording accepted and rejected worker outputs, final PR scope, conflicts, review/verification evidence refs, and closed guard flags. The integrator assembles evidence but does not become release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_graph_id",
+    "integrator",
+    "base_ref",
+    "base_sha",
+    "head_ref",
+    "head_sha",
+    "accepted_worker_results",
+    "rejected_worker_results",
+    "final_changed_files",
+    "conflicts",
+    "review_verdict_refs",
+    "verification_report_refs",
+    "release_authority",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-integration-report.v1"
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "integrator": {
+      "$ref": "#/$defs/integrator_identity"
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_sha": {
+      "$ref": "#/$defs/git_sha"
+    },
+    "head_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "head_sha": {
+      "$ref": "#/$defs/git_sha"
+    },
+    "accepted_worker_results": {
+      "$ref": "#/$defs/path_list"
+    },
+    "rejected_worker_results": {
+      "$ref": "#/$defs/path_list"
+    },
+    "final_changed_files": {
+      "$ref": "#/$defs/path_list"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/conflict"
+      }
+    },
+    "review_verdict_refs": {
+      "$ref": "#/$defs/path_list"
+    },
+    "verification_report_refs": {
+      "$ref": "#/$defs/path_list"
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "guard_flags": {
+      "$ref": "#/$defs/closed_guards"
+    }
+  },
+  "$defs": {
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(^/|\\.\\.)"
+      }
+    },
+    "path_list": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path"
+      },
+      "uniqueItems": true
+    },
+    "integrator_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "agent_type", "provider", "session_id"],
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+        },
+        "agent_type": {
+          "type": "string",
+          "const": "integrator"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "minimax", "google", "local", "tool"]
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "resolution"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "resolution": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "closed_guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}

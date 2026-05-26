@@ -1,53 +1,58 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.0",
+  "work_package": "AO-MA-2",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/repo-intelligence-tier-promotion-supersession",
+    "head_ref": "refs/heads/codex/ao-ma-2-artifact-schemas-v2",
     "changed_files": [
-      ".claude/plans/RI-7-EVIDENCE-MANIFEST.example.json",
-      ".claude/plans/RI-7-REPO-INTELLIGENCE-TIER-PROMOTION-READINESS.md",
-      "ao_kernel/defaults/schemas/repo-intelligence-tier-promotion-readiness.schema.v1.json",
-      "docs/PUBLIC-BETA.md",
-      "docs/SUPPORT-BOUNDARY.md",
+      ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
+      "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-integration-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-review-verdict.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-verification-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-worker-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/repo_intelligence_tier_promotion_readiness.py",
-      "tests/test_repo_intelligence_tier_promotion_readiness.py"
+      "tests/fixtures/ao_ma_2/agent_assignment.valid.json",
+      "tests/fixtures/ao_ma_2/integration_report.valid.json",
+      "tests/fixtures/ao_ma_2/review_verdict.valid.json",
+      "tests/fixtures/ao_ma_2/task_graph.valid.json",
+      "tests/fixtures/ao_ma_2/verification_report.valid.json",
+      "tests/fixtures/ao_ma_2/worker_result.valid.json",
+      "tests/test_ao_ma2_artifact_schemas.py"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "schema_lint",
-      "status": "pass"
-    },
-    {
-      "name": "support_boundary_guard",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "schema_validation_2020_12", "status": "pass"},
+    {"name": "additional_properties_false", "status": "pass"},
+    {"name": "no_secret_material", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
+    {"name": "guard_flags_closed_consistently", "status": "pass"},
+    {"name": "scripts_untouched", "status": "pass"},
+    {"name": "workflows_untouched", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "Claude consult agreed conditionally with the no-widening readiness-gate shape.",
-    "MiniMax/Mavis consult agreed the RI-7 path must remain contributor evidence, not claim authority.",
-    "The reviewed slice keeps support_widening, production_platform_claim, and live_adapter_execution false.",
-    "The reviewed slice does not edit gpp_status, GP-5.9 decision logic, workflows, public SDK signatures, MCP exposure, or context auto-feed wiring."
+    "Six AO-MA schema files pass Draft202012Validator.check_schema; all root and nested object shapes enforce additionalProperties=false.",
+    "Six valid fixtures parse against their schema with iter_errors zero errors; tests/test_ao_ma2_artifact_schemas.py is a real validation test, not fake.",
+    "Targeted pytest read-only invocation: PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_ao_ma2_artifact_schemas.py -x -p no:cacheprovider --capture=no -> 42 passed.",
+    "Guard flags are closed consistently: support_widening, production_platform_claim, live_adapter_execution all false; gpp_status.v1.json, .github/workflows/, scripts/ all untouched in this branch staged diff.",
+    "No public SDK signature change: staged ao_kernel/ changes are confined to ao_kernel/defaults/schemas/ao-ma-*.schema.v1.json (bundled JSON resources, not module surface).",
+    "AO-MA-1 plan file diff is a single-line wording adjustment (planned -> recorded) reflecting that AO-MA-2 schemas have landed.",
+    "Cross-provider verified: implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE satisfied via Codex MCP thread 019e659e-6cf8-7c01-8ebd-a00ed3878ef5."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

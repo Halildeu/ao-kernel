@@ -1,0 +1,36 @@
+{
+  "schema_version": "ao-ma-integration-report.v1",
+  "task_graph_id": "ao-ma-schema-contract",
+  "integrator": {
+    "agent_id": "codex-integrator",
+    "agent_type": "integrator",
+    "provider": "openai",
+    "session_id": "codex-session-002"
+  },
+  "base_ref": "origin/main",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_ref": "codex/ao-ma-2-artifact-schemas",
+  "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "accepted_worker_results": [
+    ".ao/evidence/ao-ma/worker-result-schema-worker.json"
+  ],
+  "rejected_worker_results": [],
+  "final_changed_files": [
+    "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json",
+    "tests/test_ao_ma2_artifact_schemas.py"
+  ],
+  "conflicts": [],
+  "review_verdict_refs": [
+    ".ao/evidence/ao-ma/review-verdict-schema-worker.json"
+  ],
+  "verification_report_refs": [
+    ".ao/evidence/ao-ma/verification-report.json"
+  ],
+  "release_authority": "ao-release-gate+github-ruleset",
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}
