@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-vector-backend-e2e-evidence:v1",
+  "title": "RI-7.3 Vector Backend E2E Evidence",
+  "description": "Evidence artifact recording configured local vector backend end-to-end behavior for the repo-intelligence index/query surface. This artifact is operator/process evidence only; it does not grant a production platform claim, widen support, or authorize live adapter execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "backend",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-vector-backend-e2e-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_vector_backend_e2e_evidence"},
+    "decision": {"type": "string", "const": "ri7_vector_backend_e2e_ready"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "class_name", "external_api_calls"],
+      "properties": {
+        "type": {"type": "string", "enum": ["inmemory"]},
+        "class_name": {"type": "string", "minLength": 1},
+        "external_api_calls": {"type": "boolean", "const": false}
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence_ref"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "write_happy_path",
+              "stale_cleanup",
+              "namespace_isolation",
+              "query_hash_line_validation",
+              "missing_backend_fail_closed_write",
+              "missing_backend_fail_closed_query",
+              "missing_api_key_fail_closed_write",
+              "missing_api_key_fail_closed_query"
+            ]
+          },
+          "status": {"type": "string", "enum": ["pass"]},
+          "evidence_ref": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "write_happy_path"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "stale_cleanup"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "namespace_isolation"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "query_hash_line_validation"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_backend_fail_closed_write"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_backend_fail_closed_query"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_api_key_fail_closed_write"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_api_key_fail_closed_query"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "generated_at"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "generated_at": {"type": "string", "minLength": 1}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

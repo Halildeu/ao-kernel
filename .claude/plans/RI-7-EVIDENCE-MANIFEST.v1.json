@@ -4,7 +4,7 @@
   "explicit_operator_authorization": false,
   "general_purpose_platform_claim_authorization": false,
   "guardrail_hardening_matrix": false,
-  "vector_backend_e2e_evidence": false,
+  "vector_backend_e2e_evidence": true,
   "scan_index_query_packaging_smoke": true,
   "operator_verified_runtime_semantics": false,
   "cross_lane_production_matrix_evidence": false,

@@ -23,12 +23,10 @@ def _make_project(tmp_path: Path) -> Path:
     (project / "pkg").mkdir()
     (project / "pkg" / "__init__.py").write_text("from .main import run\n", encoding="utf-8")
     (project / "pkg" / "main.py").write_text(
-        "VALUE = 1\n\n"
-        "def run():\n"
-        "    return VALUE\n",
+        "VALUE = 1\n\ndef run():\n    return VALUE\n",
         encoding="utf-8",
     )
-    (project / "pyproject.toml").write_text("[project]\nname = \"vector-query-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "vector-query-project"\n', encoding="utf-8")
     return project
 
 
@@ -192,7 +190,10 @@ def test_query_repo_vectors_filters_non_repo_namespace_candidates(tmp_path: Path
 
     validate_repo_vector_query_result(result)
     assert result["summary"]["filtered_candidates"] >= 1
-    assert all(item["key"].startswith("repo_chunk::" + manifest["project"]["root_identity_sha256"]) for item in result["results"])
+    assert all(
+        item["key"].startswith("repo_chunk::" + manifest["project"]["root_identity_sha256"])
+        for item in result["results"]
+    )
 
 
 def test_query_repo_vectors_filters_same_prefix_metadata_mismatch(tmp_path: Path) -> None:
@@ -266,7 +267,10 @@ def test_query_repo_vectors_excludes_stale_source_chunks(tmp_path: Path) -> None
     validate_repo_vector_query_result(result)
     assert result["summary"]["stale_candidates"] >= 1
     assert all(item["source_path"] != "pkg/main.py" for item in result["results"])
-    assert any(item["code"] in {"repo_vector_query_content_hash_stale", "repo_vector_query_line_range_stale"} for item in result["diagnostics"])
+    assert any(
+        item["code"] in {"repo_vector_query_content_hash_stale", "repo_vector_query_line_range_stale"}
+        for item in result["diagnostics"]
+    )
 
 
 def test_query_repo_vectors_applies_path_filter_and_token_budget(tmp_path: Path) -> None:
@@ -290,3 +294,30 @@ def test_query_repo_vectors_applies_path_filter_and_token_budget(tmp_path: Path)
     assert result["summary"]["matches"] >= 1
     assert all(item["source_path"] == "pkg/main.py" for item in result["results"])
     assert result["summary"]["estimated_tokens"] <= 500
+
+
+def test_query_repo_vectors_fails_closed_when_vector_store_is_none(tmp_path: Path) -> None:
+    """RI-7.3: direct query surface fails closed when no backend is
+    configured. The CLI surface enforces this via the resolver; this
+    regression pins the same contract at the core function level so callers
+    that bypass the CLI cannot accidentally query without a configured backend.
+    """
+    project = _make_project(tmp_path)
+    _store, manifest = _indexed_store(project)
+    embed_calls: list[Any] = []
+
+    def _counting_embed(*args: Any, **kwargs: Any) -> list[float]:
+        embed_calls.append((args, kwargs))
+        return [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="vector_store"):
+        query_repo_vectors(
+            project_root=project,
+            vector_index_manifest=manifest,
+            vector_store=None,
+            embedding_config=_embedding_config(),
+            query="run",
+            embed_text_fn=_counting_embed,
+        )
+    # Fail-closed must happen before any embedding call.
+    assert embed_calls == []

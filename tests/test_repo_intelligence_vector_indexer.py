@@ -326,3 +326,63 @@ def test_write_repo_vectors_rejects_delete_key_outside_namespace_without_mutatio
     assert store.operations == []
     assert store.stored == {}
     assert embed_calls == []
+
+
+def test_write_repo_vectors_fails_closed_when_vector_store_is_none(tmp_path: Path) -> None:
+    """RI-7.3: direct write surface fails closed when no backend is configured.
+
+    The CLI surface enforces this via the resolver; this regression pins the
+    same contract at the core function level so callers that bypass the CLI
+    cannot accidentally write vectors without a configured backend.
+    """
+    project = _make_project(tmp_path)
+    plan = _build_plan(_build_chunks(project))
+    embed_calls: list[Any] = []
+
+    def _counting_embed(*args: Any, **kwargs: Any) -> list[float]:
+        embed_calls.append((args, kwargs))
+        return [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="vector_store"):
+        write_repo_vectors(
+            project_root=project,
+            vector_write_plan=plan,
+            vector_store=None,
+            embedding_config=_embedding_config(),
+            embed_text_fn=_counting_embed,
+        )
+    # Fail-closed must happen before any embedding call.
+    assert embed_calls == []
+
+
+def test_write_repo_vectors_treats_none_api_key_as_missing(tmp_path: Path) -> None:
+    """RI-7.3: an embedding config whose ``resolve_api_key()`` returns None
+    is treated as a missing API key at the write surface (parity with the
+    existing query-side regression).
+    """
+    project = _make_project(tmp_path)
+    plan = _build_plan(_build_chunks(project))
+
+    class _NoneKeyConfig:
+        provider = "openai"
+        model = "text-embedding-3-small"
+        base_url = "https://api.openai.com/v1"
+
+        def resolve_api_key(self) -> None:
+            return None
+
+    embed_calls: list[Any] = []
+
+    def _counting_embed(*args: Any, **kwargs: Any) -> list[float]:
+        embed_calls.append((args, kwargs))
+        return [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="API key|api key|api_key"):
+        write_repo_vectors(
+            project_root=project,
+            vector_write_plan=plan,
+            vector_store=FakeVectorStore(),
+            embedding_config=_NoneKeyConfig(),
+            embed_text_fn=_counting_embed,
+        )
+    assert embed_calls == []
