@@ -361,6 +361,26 @@ a separate operator-bound Option X supersession slice
 authorization flag, production-targeted write run evidence, and
 reclassification of the controlled patch/test evidence accordingly.
 
+GPP-8 closes the remote PR live-write promotion candidate question
+under the `keep_sandbox_only` authority. This is the second of three
+M6 slices (GPP-7 + GPP-8 + GPP-9). The existing GP-5.6a disposable
+sandbox PR write rehearsal + GP-5.7a / GP-5.7b full rehearsal
+evidence stack is preserved as preparation evidence. This does not
+widen support, grant a production platform claim, promote the remote
+PR live-write lane from sandbox/disposable-only to
+production-certified, authorize non-sandbox repo remote PR
+live-write, remove the sandbox-guard keyword requirement, modify any
+rehearsal script or report schema, mutate branch protection /
+required-check ruleset, or close the M6 milestone (M6 closure is
+reserved for GPP-9 with three evidence_refs covering GPP-7 + GPP-8
++ GPP-9). Any future production-targeted remote PR live-write
+evidence chain requires a separate operator-bound Option X
+supersession slice (`remote_pr_candidate_ready`) with an explicit
+production-candidate authorization flag, production-targeted remote
+PR runs on non-sandbox repositories with operator-verified write
+semantics, and reclassification of the remote PR evidence
+accordingly.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

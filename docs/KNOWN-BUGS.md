@@ -129,6 +129,27 @@ production-targeted controlled write evidence chain requires an
 operator-bound Option X supersession slice (`write_candidate_ready`),
 not documentation wording alone.
 
+## GPP-8 closeout interpretation
+
+GPP-8 closes the remote PR live-write promotion candidate decision
+as `keep_sandbox_only` (Option Y authoritative). This is the second
+of three M6 slices (GPP-7 + GPP-8 + GPP-9). The decision does not
+introduce new shipped-baseline bugs or modify existing known bugs.
+`KB-001` + `KB-002` + all GP-5.9 promotion blockers remain under
+the GPP-4 `keep_operator_beta` authority (recorded in the GPP-4
+closeout interpretation subsection above). The remote PR live-write
+lane stays sandbox/disposable-only; the existing GP-5.6a + GP-5.7a
+/ GP-5.7b evidence stack is preparation evidence, not remote PR
+production candidate evidence. The sandbox-guard keyword
+requirement on the disposable PR write rehearsal script is
+preserved.
+
+The M6 milestone closure is reserved for GPP-9 with three
+`evidence_refs` covering GPP-7 + GPP-8 + GPP-9. Any future
+production-targeted remote PR live-write evidence chain requires
+an operator-bound Option X supersession slice
+(`remote_pr_candidate_ready`), not documentation wording alone.
+
 ## Release readiness rule
 
 Before a stable release candidate, this file must answer two questions:
