@@ -36,8 +36,8 @@
       "description": "GPP work package identifier the review applies to, for example 'GPP-2ag'."
     },
     "implementer": {
-      "$ref": "#/$defs/identity",
-      "description": "The AI agent that changed the repository."
+      "$ref": "#/$defs/implementer",
+      "description": "The implementer that changed the repository. May be an AI agent (with cross-provider review required against the reviewer) or a human contributor (cross-provider satisfied automatically by the reviewer being an AI from any provider)."
     },
     "reviewer": {
       "$ref": "#/$defs/reviewer",
@@ -94,6 +94,50 @@
           "description": "AI provider. Cross-provider review is required: the implementer provider and reviewer provider must differ."
         }
       }
+    },
+    "implementer": {
+      "description": "Implementer discriminator. Two shapes are valid: (1) AI implementer with agent+provider (legacy/default); cross-provider review is required against the reviewer's provider. (2) Human implementer with kind='human' and agent only; the reviewer must still be an independent AI of any provider, and cross-provider is satisfied automatically by definition (a human is not an AI provider).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agent", "provider"],
+          "properties": {
+            "agent": {
+              "type": "string",
+              "minLength": 1,
+              "description": "AI agent label, for example 'codex' or 'claude'. No secret material."
+            },
+            "provider": {
+              "type": "string",
+              "enum": ["anthropic", "openai", "google", "xai"],
+              "description": "AI provider. Must differ from the reviewer provider (cross-provider review HARD RULE)."
+            },
+            "kind": {
+              "type": "string",
+              "const": "ai",
+              "description": "Optional discriminator. Defaults to AI when omitted to preserve backward compatibility with all pre-extension evidence files."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agent", "kind"],
+          "properties": {
+            "agent": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Human contributor label, for example a GitHub login or short identifier. No secret material."
+            },
+            "kind": {
+              "type": "string",
+              "const": "human",
+              "description": "Discriminator literal. Must be 'human' for this shape. Implies provider is not declared and cross-provider is satisfied by the reviewer alone."
+            }
+          }
+        }
+      ]
     },
     "reviewer": {
       "type": "object",

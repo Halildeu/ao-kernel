@@ -598,19 +598,28 @@ def _evaluate_reviewer_agree(review: dict[str, Any], findings: list[str]) -> boo
     return True
 
 
-def _evaluate_cross_provider(review: dict[str, Any], findings: list[str]) -> bool:
-    """Confirm the implementer and reviewer providers differ.
+_VALID_AI_PROVIDERS = ("anthropic", "openai", "google", "xai")
 
-    This check enforces the HARD RULE Cross-AI Peer Review at the
-    *provider* level: the implementer's provider must differ from the
-    reviewer's provider. It deliberately does NOT hardcode a specific
-    provider pair (such as Anthropic+OpenAI), so the gate stays reusable
-    across work packages: a future PR may be Codex-implemented and
-    Claude-reviewed, or involve other providers entirely, and a generic
-    ``!=`` covers every such combination. The specific implementer and
-    reviewer identities for any given review are recorded in the reviewer
-    evidence and confirmed by the operator; the gate's job is only to
-    assert the two providers are not the same.
+
+def _evaluate_cross_provider(review: dict[str, Any], findings: list[str]) -> bool:
+    """Confirm cross-AI peer review HARD RULE is satisfied.
+
+    Two implementer shapes are supported (matching the
+    ``local-ai-review-evidence.v1`` schema discriminator):
+
+    1. AI implementer (legacy / default): implementer carries
+       ``provider`` (and optionally ``kind='ai'``). The reviewer must be
+       an AI from a *different* provider. Generic ``!=`` so the gate is
+       reusable across any AI provider pair.
+
+    2. Human implementer: implementer carries ``kind='human'`` and no
+       ``provider``. Cross-provider is satisfied automatically because
+       a human is not an AI provider; the gate only verifies the reviewer
+       is a valid AI from a registered provider. This codifies that an
+       independent AI review of a human-authored change is still an
+       acceptable cross-actor sanity check at the AI-vs-not-AI level.
+
+    A missing or malformed implementer / reviewer block fails closed.
     """
 
     implementer = review.get("implementer")
@@ -618,10 +627,19 @@ def _evaluate_cross_provider(review: dict[str, Any], findings: list[str]) -> boo
     if not isinstance(implementer, dict) or not isinstance(reviewer, dict):
         findings.append("cross-provider: implementer or reviewer block is missing or malformed")
         return False
-    implementer_provider = implementer.get("provider")
     reviewer_provider = reviewer.get("provider")
-    # Generic provider-difference rule: any same-provider pair fails. No
-    # specific provider pair is hardcoded so this gate is reusable.
+    implementer_kind = implementer.get("kind", "ai")
+    if implementer_kind == "human":
+        if reviewer_provider not in _VALID_AI_PROVIDERS:
+            findings.append(
+                "cross-provider: human implementer requires the reviewer to be an AI "
+                f"from a registered provider; reviewer provider {reviewer_provider!r} "
+                "is not in the AI provider set"
+            )
+            return False
+        return True
+    # AI implementer (legacy): same-provider check.
+    implementer_provider = implementer.get("provider")
     if implementer_provider == reviewer_provider:
         findings.append(
             "cross-provider: implementer and reviewer share provider "
