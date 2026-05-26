@@ -6,28 +6,29 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-8",
-    "title": "Remote PR Sandbox-Only Decision (M6 Faz 2)",
+    "id": "GPP-9",
+    "title": "Final Claim Decision + M6 Closeout (Program Closure)",
     "status": "closed",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/633",
-    "exit_decision": "gpp8_keep_sandbox_only_authoritative_no_remote_pr_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "record": ".claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md",
-    "ready_after": "the GPP-8 closure path is recorded as keep_sandbox_only (Option Y authoritative) as the second of three M6 slices (GPP-7 + GPP-8 + GPP-9) under the autonomous chain authority; existing GP-5.6a disposable sandbox PR write rehearsal + GP-5.7a full rehearsal contract + GP-5.7b full rehearsal execution gate evidence stack is preserved as preparation evidence (not authority) for the keep_sandbox_only decision; Option X (remote_pr_candidate_ready) production-targeted remote PR live-write evidence chain is deferred to a future operator-bound supersession slice; Option Z defer is rejected; M6 milestone closure is reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9); no live adapter execution, no support widening, no production platform claim, no script mutation, no schema change, no workflow change, no remote PR lane reclassification happens in GPP-8",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/635",
+    "exit_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md",
+    "ready_after": "the GPP-9 final claim decision is recorded as keep_narrow_stable_runtime (autonomous Option authoritative) as the third and final M6 slice (GPP-7 + GPP-8 + GPP-9) under the autonomous chain authority; existing GP-5.9 keep_narrow_stable_runtime decision is preserved as the formal program closure authority; promote_general_purpose_production and promote_general_purpose_beta options remain deferred operator-bound supersession paths; defer is rejected; M6 milestone transitions pending to done with closed_at and three evidence_refs (GPP-7 + GPP-8 + GPP-9 records); program reaches 7/7 milestones (100%); next_milestone_id becomes null; program_closure top-level metadata recorded; no live adapter execution, no support widening, no production platform claim, no script mutation, no schema change, no workflow change happens in GPP-9",
     "allowed_scope": [
-      "record the GPP-8 closure path decision as keep_sandbox_only (Option Y authoritative) for the remote PR live-write promotion candidate question",
-      "treat the existing GP-5.6a disposable sandbox PR write rehearsal + GP-5.7a full rehearsal contract + GP-5.7b full rehearsal execution gate evidence stack as supporting preparation evidence (not authority) for the keep_sandbox_only decision; the remote PR live-write lane stays sandbox/disposable-only",
-      "defer Option X (remote_pr_candidate_ready) as operator-bound; any future production-targeted remote PR live-write evidence chain requires a separate operator-only PR adding an explicit production-candidate authorization flag and reclassifying the remote PR evidence accordingly",
-      "reject Option Z (defer) because the existing preparation/rehearsal evidence stack is authoritative preparation evidence under the autonomous chain and promoting defer over keep_sandbox_only would re-open a closed sub-question without new evidence",
-      "update docs/SUPPORT-BOUNDARY.md with a GPP-8 closure paragraph after the GPP-7 closure paragraph",
-      "update docs/PUBLIC-BETA.md with a new GPP-8 closure decision row and minimal additive sync on GP-5.6a + GP-5.7a + GP-5.7b rows for preparation/rehearsal evidence preserved under GPP-8 keep_sandbox_only wording (GP-5.5a/5.5b controlled patch/test rows are GPP-7 scope, not GPP-8)",
-      "update docs/KNOWN-BUGS.md with a GPP-8 closeout interpretation subsection after the GPP-7 closeout subsection (no blocker rename or removal)",
-      "migrate current_wp from GPP-7 closed to GPP-8 closed; move GPP-7 to completed_wps with closed_at and PR #632 reference",
-      "update progress_estimates: wp_weighted completed_wps_count 46 to 47, closed_current_wp_count stays 1 (GPP-8 current closed), completed_or_closed_count 47 to 48, percent 94 to 96; milestones unchanged (done_count=6, next_milestone_id=M6, M6 stays pending)",
-      "preserve M6.status=pending and M6.evidence_refs=[] (M6 closes only after GPP-9 executes)",
-      "do not extend _AGGREGATE_COMPLETION_SOURCES with a GPP-8 entry yet (M6 pending; aggregate map entries are added at the milestone closure slice which is GPP-9)",
-      "update STATUS.md §5 Work Package Board row for GPP-8 from 'Not started' to 'Closed / no support widening | Remote PR live-write promotion candidate | keep_sandbox_only authoritative (Option Y); Option X remote_pr_candidate_ready deferred operator-bound'",
-      "treat the GPP-8 closure as M6 Faz 2 only; M6 milestone closure is reserved for GPP-9; GPP-8 closure is not an entry-criteria pass for GPP-9 (it records its own decision explicitly)",
-      "treat the GPP-8 record as docs/SSOT/test closure under the keep_sandbox_only authority only; no scripts/ mutation, no schema change, no workflow change, no live claude-code-cli adapter execution, no protected workflow dispatch, no remote PR lane reclassification, no non-sandbox repo live-write authorization, no GP-5.9 BC-1 / promotion_blockers list mutation, no branch protection / required-check mutation"
+      "record the GPP-9 final claim decision as keep_narrow_stable_runtime (autonomous authoritative) for the production matrix + final claim question",
+      "treat the existing GP-5.9 keep_narrow_stable_runtime decision as the formal program closure authority; the existing BC-1..BC-10 baseline is preserved with no enum reclassification",
+      "defer promote_general_purpose_production and promote_general_purpose_beta as operator-bound supersession paths; any future production or beta tier promotion requires a separate operator-only PR with explicit production-platform-claim authorization, full production matrix evidence, and operator-verified semantics",
+      "reject defer because the existing GP-5.9 keep_narrow_stable_runtime decision plus the GPP-7 + GPP-8 M6 chain evidence is authoritative final claim evidence under the autonomous chain",
+      "update docs/SUPPORT-BOUNDARY.md with a GPP-9 closure paragraph after the GPP-8 closure paragraph plus a program closeout note",
+      "update docs/PUBLIC-BETA.md with a new GPP-9 closure decision row plus a program closeout note",
+      "update docs/KNOWN-BUGS.md with a GPP-9 closeout interpretation subsection after the GPP-8 closeout subsection plus a program closeout note (no blocker rename or removal)",
+      "migrate current_wp from GPP-8 closed to GPP-9 closed; move GPP-8 to completed_wps with closed_at and PR #634 reference",
+      "transition milestones[M6] status from pending to done with closed_at and three evidence_refs (GPP-7 + GPP-8 + GPP-9 records)",
+      "update progress_estimates.milestones: done_count 6 to 7, percent 86 to 100, next_milestone_id M6 to null (program closed)",
+      "update progress_estimates.wp_weighted: completed_wps_count 47 to 48 (GPP-8 migrated to completed_wps), closed_current_wp_count stays 1 (GPP-9 current closed), completed_or_closed_count 48 to 49, percent 96 to 98",
+      "extend _AGGREGATE_COMPLETION_SOURCES with GPP-9 entry: {\"current_wp\": \"closed\"} (per Codex iter-1 hybrid Option D: GPP-9 stays current_wp closed; aggregate map satisfies milestone consistency via current_wp lookup; GPP-7 + GPP-8 satisfied via completed_wps default fallback)",
+      "update STATUS.md §5 Work Package Board row for GPP-9 from 'Not started' to 'Closed / no support widening | Full production matrix + final claim decision | keep_narrow_stable_runtime authoritative; promote_general_purpose_production and promote_general_purpose_beta remain operator-bound supersession paths; defer rejected; program closed'",
+      "add program_closure top-level metadata to gpp_status.v1.json with status=closed, final_milestone_id=M6, closed_at timestamp, decision string, and GPP-9 record path reference",
+      "treat the GPP-9 record as docs/SSOT/test closure under the keep_narrow_stable_runtime authority only; no scripts/ mutation, no schema change, no workflow change, no live adapter execution, no support widening, no production platform claim; the existing GP-5.9 BC-1..BC-10 baseline + promotion_blockers list are preserved without enum reclassification"
     ],
     "evidence_collected": []
   },
@@ -335,6 +336,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/632",
       "record": ".claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md",
       "closed_at": "2026-05-26T00:22:00Z"
+    },
+    {
+      "id": "GPP-8",
+      "decision": "gpp8_keep_sandbox_only_authoritative_no_remote_pr_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/633",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/634",
+      "record": ".claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md",
+      "closed_at": "2026-05-26T06:58:33Z"
     }
   ],
   "blocked_wps": [],
@@ -451,7 +460,13 @@
     "reclassify GP-5.6a / GP-5.7b sandbox rehearsal reports as production remote PR candidate evidence under the GPP-8 closure path",
     "authorize non-sandbox repo remote PR live-write or remove the sandbox guard keyword requirement under the GPP-8 closure path; any non-sandbox repo live-write requires a separate operator-bound Option X supersession slice",
     "add a _AGGREGATE_COMPLETION_SOURCES GPP-8 entry to tests/test_gpp_next.py under the GPP-8 closure path; aggregate map entries are added at the milestone closure slice (GPP-9 will add the GPP-7+8+9 aggregate entry as part of M6 done)",
-    "mutate branch protection / required-check ruleset, scripts/gp5_disposable_pr_write_rehearsal.py, scripts/gp5_full_production_rehearsal.py, ao_kernel/defaults/schemas/, or .github/workflows/ under the GPP-8 closure path; any such mutation is reserved for a supersession slice"
+    "mutate branch protection / required-check ruleset, scripts/gp5_disposable_pr_write_rehearsal.py, scripts/gp5_full_production_rehearsal.py, ao_kernel/defaults/schemas/, or .github/workflows/ under the GPP-8 closure path; any such mutation is reserved for a supersession slice",
+    "treat the GPP-9 keep_narrow_stable_runtime decision as production_general_purpose_production or promote_general_purpose_beta authorization; both remain operator-bound supersession paths requiring explicit production-platform-claim authorization and full production matrix evidence",
+    "promote any tier (claude-code-cli, gh-cli-pr, repo-intelligence, controlled patch/test, disposable PR write, or any other beta lane) beyond the existing GP-5.9 boundary under the GPP-9 closure path; the existing BC-1..BC-10 baseline + promotion_blockers list are preserved without enum reclassification",
+    "treat the M6 milestone done state or program_closure metadata as authorization to widen support, claim production platform readiness, or run live adapters; M6 closure records the autonomous-chain decision string, not a tier promotion event",
+    "mutate scripts/gp5_platform_claim_decision.py, ao_kernel/defaults/schemas/, .github/workflows/, branch protection / required-check ruleset, or ao_kernel/ public SDK signatures under the GPP-9 closure path; any such mutation is reserved for an operator-bound supersession slice",
+    "reopen any closed GPP slot (GPP-0 through GPP-8) under the GPP-9 closure path; supersession requires a new operator-bound issue/branch/PR with explicit decision string",
+    "treat the program_closure metadata as a public production platform claim; it is an internal SSOT marker that the autonomous GPP chain reached 7/7 milestones with no support widening and no production claim"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -485,10 +500,11 @@
     "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested, kb002_gh_cli_pr_sandbox_only_live_write, gh_cli_pr_live_write_not_production_promoted, repo_intelligence_context_handoff_not_runtime_auto_fed) under the GPP-4 keep_operator_beta authority; GPP-6 closure does not touch them",
     "the GPP-7 closure path is recorded as keep_rehearsal_only (Option Y authoritative) for the controlled write-side production candidate question; M6 Faz 1 closed; controlled patch/test lane support tier stays rehearsal-only",
     "the GPP-8 closure path is recorded as keep_sandbox_only (Option Y authoritative) for the remote PR live-write promotion candidate question; M6 Faz 2 closed; remote PR live-write lane stays sandbox/disposable-only",
-    "reserve M6 milestone closure (status pending to done with three evidence_refs GPP-7 + GPP-8 + GPP-9) for GPP-9; GPP-7 + GPP-8 alone do not close M6",
+    "the GPP-9 final claim decision is recorded as keep_narrow_stable_runtime (autonomous authoritative); M6 milestone closed with three evidence_refs (GPP-7 + GPP-8 + GPP-9); program reaches 7/7 milestones (100%); program_closure metadata recorded",
+    "reserve promote_general_purpose_production and promote_general_purpose_beta options for a future operator-bound supersession slice; any tier promotion beyond the existing GP-5.9 boundary requires a separate operator-only PR with explicit production-platform-claim authorization, full production matrix evidence, and operator-verified semantics",
     "reserve Option X (write_candidate_ready) production-targeted controlled write evidence chain for a future operator-bound supersession slice",
     "reserve Option X (remote_pr_candidate_ready) production-targeted remote PR live-write evidence chain for a future operator-bound supersession slice",
-    "open the next M6 slice GPP-9 (final claim keep_narrow_stable_runtime) when ready; GPP-9 records its own Option X / Option Y / Option Z decision explicitly and closes M6 milestone with three evidence_refs"
+    "the autonomous GPP chain is closed; any future production or beta tier promotion, live adapter execution authorization, support widening, or production platform claim requires a separate operator-bound supersession PR — not a new autonomous GPP slice"
   ],
   "milestones": [
     {
@@ -582,26 +598,37 @@
         "GPP-8",
         "GPP-9"
       ],
-      "status": "pending",
-      "closed_at": null,
-      "evidence_refs": []
+      "status": "done",
+      "closed_at": "2026-05-26T07:00:00Z",
+      "evidence_refs": [
+        ".claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md",
+        ".claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md",
+        ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md"
+      ]
     }
   ],
   "progress_estimates": {
     "milestones": {
-      "done_count": 6,
+      "done_count": 7,
       "total_count": 7,
-      "percent": 86,
-      "next_milestone_id": "M6"
+      "percent": 100,
+      "next_milestone_id": null
     },
     "wp_weighted": {
-      "completed_wps_count": 47,
+      "completed_wps_count": 48,
       "closed_current_wp_count": 1,
-      "completed_or_closed_count": 48,
+      "completed_or_closed_count": 49,
       "estimated_total_wps": 50,
-      "percent": 96,
+      "percent": 98,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-26T00:30:00Z"
+  "program_closure": {
+    "status": "closed",
+    "final_milestone_id": "M6",
+    "closed_at": "2026-05-26T07:00:00Z",
+    "decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md"
+  },
+  "last_updated": "2026-05-26T07:00:00Z"
 }

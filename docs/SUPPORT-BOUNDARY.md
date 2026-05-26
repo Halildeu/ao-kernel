@@ -381,6 +381,25 @@ PR runs on non-sandbox repositories with operator-verified write
 semantics, and reclassification of the remote PR evidence
 accordingly.
 
+GPP-9 closes the autonomous GPP chain as
+`keep_narrow_stable_runtime` (program closure). This is the third
+and final M6 slice (GPP-7 + GPP-8 + GPP-9). The existing GP-5.9
+`keep_narrow_stable_runtime` decision is preserved as the formal
+program closure authority; the BC-1..BC-10 baseline and
+promotion_blockers list are preserved without enum reclassification.
+The narrow stable runtime is the recorded supported surface. No
+tier is promoted beyond the existing GP-5.9 boundary. **Program
+closeout note**: the autonomous GPP chain reaches 7/7 milestones
+(100%) under preparation/rehearsal evidence preserved authority.
+Any future production or beta tier promotion
+(`promote_general_purpose_production` or
+`promote_general_purpose_beta`), live adapter execution
+authorization, support widening, or production platform claim
+requires a separate **operator-bound supersession** PR with
+explicit production-platform-claim authorization, full or partial
+production matrix evidence, and operator-verified semantics — not
+a new autonomous GPP slice.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor
