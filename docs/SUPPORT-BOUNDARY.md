@@ -400,6 +400,25 @@ explicit production-platform-claim authorization, full or partial
 production matrix evidence, and operator-verified semantics — not
 a new autonomous GPP slice.
 
+### RI-7 repo-intelligence tier promotion readiness
+
+The RI-7 readiness gate starts a separate supersession path for using the
+explicit repo-intelligence scan/index/query surface as part of a future
+general-purpose production platform claim, but does not promote the tier or
+grant that claim. The gate is read-only and must report
+`support_widening=false`, `production_platform_claim=false`, and
+`live_adapter_execution=false`.
+
+Promotion remains blocked until operator authorization, guardrail hardening
+evidence, configured vector backend E2E evidence, wheel-installed
+scan/index/query smoke, operator-verified runtime semantics, cross-lane
+production matrix evidence, a GP-5.9 BC-1..BC-10 reclassification plan, and
+prepared support-boundary transition text are all present. Repo-intelligence
+evidence alone is not enough to satisfy the general-purpose production platform
+claim. The current `repo scan`, `repo index --dry-run`, `repo index
+--write-vectors`, and `repo query` rows remain Beta/experimental until a later
+operator decision PR consumes passing readiness evidence.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor

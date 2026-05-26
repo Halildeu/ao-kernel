@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "artifact_kind": "ri7_evidence_manifest_template",
+  "note": "Tracking template only. Do not use as passing evidence.",
+  "explicit_operator_authorization": false,
+  "general_purpose_platform_claim_authorization": false,
+  "guardrail_hardening_matrix": false,
+  "vector_backend_e2e_evidence": false,
+  "scan_index_query_packaging_smoke": false,
+  "operator_verified_runtime_semantics": false,
+  "cross_lane_production_matrix_evidence": false,
+  "gp59_reclassification_plan": false,
+  "support_boundary_transition_plan": false
+}
