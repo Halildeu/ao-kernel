@@ -42,12 +42,14 @@ def _sandbox_with_pythonpath(root: Path):  # noqa: ANN201 - returns SandboxedEnv
 
 class TestRunPytest:
     def test_passing_suite_returns_pass(self, tmp_path: Path) -> None:
+        import sys
         root = _micro_repo(tmp_path, pytest_pass=True)
         result = run_pytest(root, _sandbox_with_pythonpath(root), timeout=60.0)
         assert isinstance(result, CIResult)
         assert result.status == "pass"
         assert result.exit_code == 0
-        assert result.command[0:3] == ("python3", "-m", "pytest")
+        # Uses sys.executable (not hardcoded "python3") for multi-version safety
+        assert result.command[:3] == (sys.executable, "-m", "pytest")
 
     def test_failing_suite_returns_fail(self, tmp_path: Path) -> None:
         root = _micro_repo(tmp_path, pytest_pass=False)
@@ -104,9 +106,11 @@ class TestRunRuff:
         assert result.check_name == "ruff"
 
     def test_command_starts_with_python3_m_ruff(self, tmp_path: Path) -> None:
+        import sys
         root = _micro_repo(tmp_path)
         result = run_ruff(root, build_test_sandbox(root), timeout=30.0)
-        assert result.command[:4] == ("python3", "-m", "ruff", "check")
+        # Uses sys.executable (not hardcoded "python3") for multi-version safety
+        assert result.command[:4] == (sys.executable, "-m", "ruff", "check")
 
 
 class TestRunAll:

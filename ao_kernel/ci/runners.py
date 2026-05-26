@@ -51,12 +51,17 @@ def run_pytest(
     timeout: float = 300.0,
     raise_on_timeout: bool = False,
 ) -> CIResult:
-    """Invoke ``python3 -m pytest`` inside the hermetic sandbox.
+    """Invoke pytest inside the hermetic sandbox.
 
+    Uses ``sys.executable`` to invoke the correct Python interpreter
+    (the one that has pytest available), rather than hardcoding
+    ``"python3"`` which may resolve to a different version. This
+    ensures CI runners work correctly in multi-version environments.
     Command resolution goes through PR-A3 ``validate_command`` preflight
     (B1 absorb) before any subprocess is spawned.
     """
-    cmd = ("python3", "-m", "pytest", *extra_args)
+    import sys
+    cmd = (sys.executable, "-m", "pytest", *extra_args)
     return _run_check(
         check_name="pytest",
         command=cmd,
@@ -75,13 +80,16 @@ def run_ruff(
     timeout: float = 60.0,
     raise_on_timeout: bool = False,
 ) -> CIResult:
-    """Invoke ``python3 -m ruff check`` inside the hermetic sandbox.
+    """Invoke ruff check inside the hermetic sandbox.
 
+    Uses ``sys.executable`` for the same reason as ``run_pytest``:
+    ensures the interpreter that has ruff available is used.
     Command resolution goes through PR-A3 ``validate_command`` preflight
     (B1 absorb) before any subprocess is spawned.
     """
+    import sys
     args = extra_args or (".",)
-    cmd = ("python3", "-m", "ruff", "check", *args)
+    cmd = (sys.executable, "-m", "ruff", "check", *args)
     return _run_check(
         check_name="ruff",
         command=cmd,
