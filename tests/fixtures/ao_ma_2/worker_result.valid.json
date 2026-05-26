@@ -1,0 +1,40 @@
+{
+  "schema_version": "ao-ma-worker-result.v1",
+  "task_graph_id": "ao-ma-schema-contract",
+  "task_id": "schema-worker",
+  "assignment_id": "assignment-schema-worker",
+  "worker": {
+    "agent_id": "codex-worker",
+    "agent_type": "implementer",
+    "provider": "openai",
+    "session_id": "codex-session-001"
+  },
+  "base_ref": "origin/main",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_ref": "codex/ao-ma-2-artifact-schemas",
+  "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "declared_write_set": [
+    "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json"
+  ],
+  "actual_changed_files": [
+    "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json"
+  ],
+  "summary": "Added AO-MA schema contracts for task graph and assignment artifacts.",
+  "tests_run": [
+    {
+      "command": "pytest -q tests/test_ao_ma2_artifact_schemas.py",
+      "outcome": "pass"
+    }
+  ],
+  "known_gaps": [],
+  "no_secret_attestation": {
+    "secrets_recorded": false
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

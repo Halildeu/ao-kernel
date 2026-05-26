@@ -1,0 +1,40 @@
+{
+  "schema_version": "ao-ma-review-verdict.v1",
+  "task_graph_id": "ao-ma-schema-contract",
+  "reviewed_task_id": "schema-worker",
+  "reviewer": {
+    "agent_id": "claude-reviewer",
+    "agent_type": "reviewer",
+    "provider": "anthropic",
+    "session_id": "claude-session-001"
+  },
+  "implementer": {
+    "agent_id": "codex-worker",
+    "agent_type": "implementer",
+    "provider": "openai",
+    "session_id": "codex-session-001"
+  },
+  "independent_review": true,
+  "cross_provider_verified": true,
+  "allowed_sources": [
+    "pr_diff",
+    "issue_acceptance",
+    "repo_ssot",
+    "ci_results",
+    "artifact_chain"
+  ],
+  "prohibited_sources_absent": true,
+  "verdict": "AGREE",
+  "findings": [],
+  "reviewed_artifacts": [
+    ".ao/evidence/ao-ma/worker-result-schema-worker.json"
+  ],
+  "no_secret_attestation": {
+    "secrets_recorded": false
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

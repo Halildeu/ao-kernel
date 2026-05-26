@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-agent-assignment:v1",
+  "title": "AO-MA Agent Assignment",
+  "description": "No-secret assignment artifact binding one agent lane to one task graph task, branch, worktree, declared write set, and expected output artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "assignment_id",
+    "task_graph_id",
+    "task_id",
+    "agent",
+    "base_ref",
+    "base_sha",
+    "branch",
+    "worktree",
+    "declared_write_set",
+    "expected_output_artifact",
+    "status",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-agent-assignment.v1"
+    },
+    "assignment_id": {
+      "$ref": "#/$defs/id"
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "task_id": {
+      "$ref": "#/$defs/id"
+    },
+    "agent": {
+      "$ref": "#/$defs/agent_identity"
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_sha": {
+      "$ref": "#/$defs/git_sha"
+    },
+    "branch": {
+      "type": "string",
+      "pattern": "^(codex|agent)/[a-z0-9][a-z0-9._/-]{1,120}$"
+    },
+    "worktree": {
+      "$ref": "#/$defs/path"
+    },
+    "declared_write_set": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path"
+      },
+      "uniqueItems": true
+    },
+    "expected_output_artifact": {
+      "$ref": "#/$defs/path"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "superseded"]
+    },
+    "guard_flags": {
+      "$ref": "#/$defs/closed_guards"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(^/|\\.\\.)"
+      }
+    },
+    "agent_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "agent_type", "provider", "session_id"],
+      "properties": {
+        "agent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "agent_type": {
+          "type": "string",
+          "enum": ["planner", "explorer", "implementer", "reviewer", "verifier", "integrator", "auditor"]
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "minimax", "google", "local", "human", "tool"]
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "closed_guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}

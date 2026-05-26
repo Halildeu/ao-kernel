@@ -1,0 +1,61 @@
+{
+  "schema_version": "ao-ma-task-graph.v1",
+  "task_graph_id": "ao-ma-schema-contract",
+  "repo": "Halildeu/ao-kernel",
+  "goal": "Define AO-MA artifact contracts without runtime execution.",
+  "base_ref": "origin/main",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "risk_class": "low",
+  "max_parallel_workers": 3,
+  "tasks": [
+    {
+      "task_id": "schema-worker",
+      "title": "Add AO-MA artifact schemas",
+      "agent_type": "implementer",
+      "declared_write_set": [
+        "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json"
+      ],
+      "dependency_ids": [],
+      "acceptance_criteria": [
+        "Schemas validate with Draft 2020-12"
+      ],
+      "high_risk": false
+    },
+    {
+      "task_id": "test-worker",
+      "title": "Add schema fixtures and validation tests",
+      "agent_type": "implementer",
+      "declared_write_set": [
+        "tests/test_ao_ma2_artifact_schemas.py",
+        "tests/fixtures/ao_ma_2/task_graph.valid.json"
+      ],
+      "dependency_ids": [
+        "schema-worker"
+      ],
+      "acceptance_criteria": [
+        "Valid fixtures pass and invalid mutations fail"
+      ],
+      "high_risk": false
+    }
+  ],
+  "fan_in_policy": {
+    "mode": "all_required",
+    "required_task_ids": [
+      "schema-worker",
+      "test-worker"
+    ],
+    "conflict_owner": "integrator"
+  },
+  "review_policy": {
+    "required_reviewers": 2,
+    "cross_provider_required": true,
+    "consensus_required_for_high_risk": true,
+    "max_revise_rounds": 3
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

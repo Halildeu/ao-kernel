@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-verification-report:v1",
+  "title": "AO-MA Verification Report",
+  "description": "No-secret verifier artifact recording tests, schema checks, guard checks, scope checks, secret scans, artifact hashes, and closed guard flags. Passing verification is evidence, not release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_graph_id",
+    "verified_task_ids",
+    "verifier",
+    "commands",
+    "artifact_hashes",
+    "failed_checks",
+    "scope_check",
+    "secret_scan",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-verification-report.v1"
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "verified_task_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "verifier": {
+      "$ref": "#/$defs/verifier_identity"
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/command_result"
+      }
+    },
+    "artifact_hashes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact_hash"
+      },
+      "uniqueItems": true
+    },
+    "failed_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "scope_check": {
+      "$ref": "#/$defs/check"
+    },
+    "secret_scan": {
+      "$ref": "#/$defs/check"
+    },
+    "guard_flags": {
+      "$ref": "#/$defs/closed_guards"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(^/|\\.\\.)"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "verifier_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "agent_type", "provider", "session_id"],
+      "properties": {
+        "agent_id": {
+          "$ref": "#/$defs/id"
+        },
+        "agent_type": {
+          "type": "string",
+          "const": "verifier"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "minimax", "google", "local", "tool"]
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "command_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "outcome"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["pass", "fail", "skipped"]
+        }
+      }
+    },
+    "artifact_hash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed"],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "closed_guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}
