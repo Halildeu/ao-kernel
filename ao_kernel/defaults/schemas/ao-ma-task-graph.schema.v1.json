@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-task-graph:v1",
+  "title": "AO-MA Task Graph",
+  "description": "No-secret task graph artifact produced by the AO-MA orchestrator. It records slices, dependencies, ownership, risk class, fan-in policy, and closed guard flags. It is coordination evidence only and does not spawn agents, widen support, claim production readiness, or execute live adapters.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_graph_id",
+    "repo",
+    "goal",
+    "base_ref",
+    "base_sha",
+    "risk_class",
+    "max_parallel_workers",
+    "tasks",
+    "fan_in_policy",
+    "review_policy",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-task-graph.v1"
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_sha": {
+      "$ref": "#/$defs/git_sha"
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": ["low", "normal", "high", "critical"]
+    },
+    "max_parallel_workers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/task"
+      }
+    },
+    "fan_in_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "required_task_ids", "conflict_owner"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["all_required", "selected_tasks"]
+        },
+        "required_task_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "conflict_owner": {
+          "type": "string",
+          "const": "integrator"
+        }
+      }
+    },
+    "review_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_reviewers",
+        "cross_provider_required",
+        "consensus_required_for_high_risk",
+        "max_revise_rounds"
+      ],
+      "description": "Machine-readable review policy for AO-MA lanes. It records that high-risk work requires consensus rather than majority or same-agent approval.",
+      "properties": {
+        "required_reviewers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "cross_provider_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "consensus_required_for_high_risk": {
+          "type": "boolean",
+          "const": true
+        },
+        "max_revise_rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      }
+    },
+    "guard_flags": {
+      "$ref": "#/$defs/closed_guards"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "(^/|\\.\\.)"
+      }
+    },
+    "closed_guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "title",
+        "agent_type",
+        "declared_write_set",
+        "dependency_ids",
+        "acceptance_criteria",
+        "high_risk"
+      ],
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agent_type": {
+          "type": "string",
+          "enum": ["planner", "explorer", "implementer", "reviewer", "verifier", "integrator", "auditor"]
+        },
+        "declared_write_set": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/path"
+          },
+          "uniqueItems": true
+        },
+        "dependency_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "high_risk": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

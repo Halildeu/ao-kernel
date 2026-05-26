@@ -1,0 +1,27 @@
+{
+  "schema_version": "ao-ma-agent-assignment.v1",
+  "assignment_id": "assignment-schema-worker",
+  "task_graph_id": "ao-ma-schema-contract",
+  "task_id": "schema-worker",
+  "agent": {
+    "agent_id": "codex-worker",
+    "agent_type": "implementer",
+    "provider": "openai",
+    "session_id": "codex-session-001"
+  },
+  "base_ref": "origin/main",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "branch": "codex/ao-ma-2-artifact-schemas",
+  "worktree": "ao-kernel-ao-ma-2-artifact-schemas",
+  "declared_write_set": [
+    "ao_kernel/defaults/schemas/ao-ma-task-graph.schema.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-agent-assignment.schema.v1.json"
+  ],
+  "expected_output_artifact": ".ao/evidence/ao-ma/worker-result-schema-worker.json",
+  "status": "completed",
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

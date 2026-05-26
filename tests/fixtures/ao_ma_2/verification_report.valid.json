@@ -1,0 +1,40 @@
+{
+  "schema_version": "ao-ma-verification-report.v1",
+  "task_graph_id": "ao-ma-schema-contract",
+  "verified_task_ids": [
+    "schema-worker",
+    "test-worker"
+  ],
+  "verifier": {
+    "agent_id": "minimax-verifier",
+    "agent_type": "verifier",
+    "provider": "minimax",
+    "session_id": "mvs-session-001"
+  },
+  "commands": [
+    {
+      "command": "pytest -q tests/test_ao_ma2_artifact_schemas.py",
+      "outcome": "pass"
+    }
+  ],
+  "artifact_hashes": [
+    {
+      "path": ".ao/evidence/ao-ma/worker-result-schema-worker.json",
+      "sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  ],
+  "failed_checks": [],
+  "scope_check": {
+    "passed": true,
+    "detail": "Actual files stayed within declared write set."
+  },
+  "secret_scan": {
+    "passed": true,
+    "detail": "No secret material detected in artifacts."
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}

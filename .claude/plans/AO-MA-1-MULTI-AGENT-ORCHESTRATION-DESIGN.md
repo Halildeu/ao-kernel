@@ -1,6 +1,6 @@
 # AO-MA-1 - Multi-Agent Orchestration Design
 
-**Status:** planned / design slice - documentation and invariant test only
+**Status:** recorded / design slice - documentation and invariant test only
 **Date:** 2026-05-24
 **Parent:** `GPP-2D - Autonomous Required-Check Lane`
 **Support impact:** none
