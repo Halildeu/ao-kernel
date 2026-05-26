@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.local/schemas/repo-intelligence-tier-promotion-readiness.schema.v1.json",
+  "title": "Repo-intelligence tier promotion readiness",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "program_id",
+    "overall_status",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "requested_promotion",
+    "current_authority",
+    "gates",
+    "promotion_blockers",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "artifact_kind": { "const": "repo_intelligence_tier_promotion_readiness" },
+    "program_id": { "const": "repo-intelligence-tier-promotion-supersession" },
+    "overall_status": {
+      "type": "string",
+      "enum": ["blocked", "ready_for_operator_decision"]
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "blocked_operator_bound_evidence_required",
+        "ready_for_operator_promotion_decision"
+      ]
+    },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "requested_promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "current_tier", "target_tier", "target_claim", "scope"],
+      "properties": {
+        "surface": { "const": "repo_intelligence_scan_index_query" },
+        "current_tier": { "type": "string", "minLength": 1 },
+        "target_tier": { "type": "string", "minLength": 1 },
+        "target_claim": { "const": "general_purpose_production_platform_claim" },
+        "scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "current_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "program_id",
+        "current_wp",
+        "current_status",
+        "exit_decision",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed",
+        "program_closure_decision"
+      ],
+      "properties": {
+        "program_id": { "type": "string", "minLength": 1 },
+        "current_wp": { "type": "string", "minLength": 1 },
+        "current_status": { "type": "string", "minLength": 1 },
+        "exit_decision": { "type": "string", "minLength": 1 },
+        "support_widening_allowed": { "type": "boolean" },
+        "production_platform_claim_allowed": { "type": "boolean" },
+        "live_adapter_execution_allowed": { "type": "boolean" },
+        "program_closure_decision": { "type": ["string", "null"] }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/gate" }
+    },
+    "promotion_blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "next_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "overall_status": { "const": "blocked" } },
+        "required": ["overall_status"]
+      },
+      "then": {
+        "properties": {
+          "decision": { "const": "blocked_operator_bound_evidence_required" },
+          "promotion_blockers": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "overall_status": { "const": "ready_for_operator_decision" } },
+        "required": ["overall_status"]
+      },
+      "then": {
+        "properties": {
+          "decision": { "const": "ready_for_operator_promotion_decision" },
+          "promotion_blockers": { "maxItems": 0 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "blocking", "summary", "evidence", "findings"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["pass", "blocked"] },
+        "blocking": { "type": "boolean" },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
