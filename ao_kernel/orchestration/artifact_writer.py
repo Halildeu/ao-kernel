@@ -41,7 +41,7 @@ def _load_schema(name: str) -> dict[str, Any]:
 
     path = _SCHEMAS_DIR / name
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
     except (OSError, json.JSONDecodeError) as exc:
         raise ArtifactWriterError(f"bundled schema {name!r} could not be loaded: {exc}") from exc
 
