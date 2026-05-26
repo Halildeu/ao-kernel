@@ -87,9 +87,124 @@ ReleaseGateDecisionValue = Literal[
     "error_fail_closed",
 ]
 ReleaseGateCheckStatus = Literal["pass", "blocked"]
-GithubCheckConclusion = Literal["success", "failure", "neutral"]
+GithubCheckConclusion = Literal["success", "failure", "neutral", "action_required", "stale"]
 ConclusionMode = Literal["shadow", "enforce"]
 DEFAULT_CONCLUSION_MODE: ConclusionMode = "shadow"
+
+# RG-CONCLUSION-SEMANTICS (Codex thread 019e65c3 absorb):
+# Finding codes are categorized by the *operator action shape* they imply.
+# The legacy single check-run `ao-release-gate` collapses everything to
+# success/failure, which mis-signals "operator approve missing" as a CI
+# failure. The new dual check-run model (`ao-release-gate-technical` +
+# `ao-release-gate-review`) separates real violations (failure) from
+# pending operator action (action_required) and stale branches (stale).
+# A C-prime wrapper preserves the legacy job's required check name while
+# shifting review-missing semantics off the failure axis (see
+# wrapper_exit_code below).
+FindingConclusionKind = Literal["failure", "review_action", "stale"]
+
+# Findings that map to GitHub Checks API `action_required` conclusion.
+# This conclusion does NOT satisfy a required status check, so merge is
+# still blocked — but the UI signal is "needs attention", not "failing".
+_REVIEW_ACTION_FINDINGS: frozenset[str] = frozenset(
+    {
+        "ao_release_gate_high_risk_human_review_missing",
+    }
+)
+
+# Findings that map to GitHub Checks API `stale` conclusion. The branch
+# needs rebase/update; not a code defect. Required check is unsatisfied,
+# so merge is blocked.
+_STALE_FINDINGS: frozenset[str] = frozenset(
+    {
+        "ao_release_gate_branch_not_up_to_date",
+    }
+)
+
+# Public Checks API check-run names for the dual-publish migration (RG-1).
+# The legacy ``ao-release-gate`` job is kept as a compatibility wrapper
+# (see ``wrapper_exit_code``); these new names are published in parallel
+# and will become the required check set after Phase 2 ruleset cutover.
+RELEASE_GATE_TECHNICAL_CHECK_NAME = "ao-release-gate-technical"
+RELEASE_GATE_REVIEW_CHECK_NAME = "ao-release-gate-review"
+
+
+def finding_conclusion_kind(finding_code: str | None) -> FindingConclusionKind:
+    """Classify a release-gate finding code by its operator action shape.
+
+    Three kinds:
+
+    - ``review_action`` — the operator needs to submit a CODEOWNER review
+      on the current PR head. The blocker is procedural, not a code or
+      governance defect.
+    - ``stale`` — the PR branch needs rebase/update. Not a code defect.
+    - ``failure`` — everything else: real governance violation, structural
+      input error, secret boundary, scope mismatch, fork/trust violation,
+      and so on.
+
+    A finding code of ``None`` returns ``failure`` defensively so unknown
+    blockers never silently map to success.
+    """
+
+    if finding_code is None:
+        return "failure"
+    if finding_code in _REVIEW_ACTION_FINDINGS:
+        return "review_action"
+    if finding_code in _STALE_FINDINGS:
+        return "stale"
+    return "failure"
+
+
+def conclusion_for_findings(findings: list[str]) -> GithubCheckConclusion:
+    """Return the Checks API conclusion for a finding-code list.
+
+    Empty list → ``success``. Any ``failure`` finding wins (real
+    violation outranks pending action). All findings ``review_action`` →
+    ``action_required``. All findings ``stale`` → ``stale``. Mixed pending
+    kinds (review + stale, no failure) → ``action_required`` because
+    operator review is the more specific action signal.
+    """
+
+    if not findings:
+        return "success"
+    kinds = {finding_conclusion_kind(code) for code in findings}
+    if "failure" in kinds:
+        return "failure"
+    if "review_action" in kinds:
+        return "action_required"
+    if "stale" in kinds:
+        return "stale"
+    return "failure"
+
+
+def wrapper_exit_code(decision: ReleaseGateDecisionValue, findings: list[str]) -> int:
+    """C-prime compatibility wrapper for the legacy ao-release-gate job.
+
+    Returns 0 (success) when the gate would allow merge OR when the only
+    blocker is a pending CODEOWNER review on the current PR head. Returns
+    1 (failure) for any real violation, stale branch, or mixed blocker
+    set.
+
+    This function preserves the legacy ``ao-release-gate`` job's required
+    status check name while shifting review-missing semantics off the
+    failure axis. The downstream Checks API publishes the richer signal
+    (``action_required`` / ``stale``) on the new dual check-runs. CODEOWNER
+    review enforcement after this migration is supplied by GitHub's
+    ``require_code_owner_reviews`` branch protection rule, not by this
+    wrapper.
+
+    Critical: the wrapper relaxes ONLY the lone-review-action case. A
+    review_action blocker mixed with any other blocker still returns 1.
+    Real governance violations are never softened.
+    """
+
+    if decision == ALLOW_AUTONOMOUS_MERGE_DECISION:
+        return 0
+    if not findings:
+        return 1
+    if all(finding_conclusion_kind(code) == "review_action" for code in findings):
+        return 0
+    return 1
 
 
 class AoReleaseGateInputCheck(TypedDict):
@@ -680,7 +795,7 @@ def _check_run(
     *,
     conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateCheckRun:
-    """Build the future GitHub check-run output shape.
+    """Build the legacy GitHub check-run output shape (compatibility wrapper).
 
     The check-run conclusion is mode-aware:
 
@@ -688,18 +803,31 @@ def _check_run(
     - In ``shadow`` mode (default), every deny/error decision maps to
       ``neutral`` so advisory evidence does not surface as red CI before
       the AO-GATE-8 enforcement cutover.
-    - In ``enforce`` mode, every deny/error decision maps to ``failure``
-      (the original fail-closed behavior required once the check is wired
-      as a required status check).
+    - In ``enforce`` mode, RG-CONCLUSION-SEMANTICS (C-prime) wrapper logic
+      applies: a finding set whose only blockers are ``review_action``
+      kind maps to ``success`` (preserves the legacy required check name
+      while shifting CODEOWNER-review-missing semantics off the failure
+      axis). Any real violation, stale branch, or mixed blocker still
+      maps to ``failure``.
+
+    CODEOWNER review enforcement after this migration is supplied by
+    GitHub's ``require_code_owner_reviews`` branch protection rule and the
+    new ``ao-release-gate-review`` check-run, NOT this legacy wrapper.
     """
 
     allow = decision == ALLOW_AUTONOMOUS_MERGE_DECISION
     summary = _reason(decision)
     text = "Findings: " + ", ".join(findings) if findings else "All release-gate checks passed."
+    conclusion: GithubCheckConclusion
     if allow:
-        conclusion: GithubCheckConclusion = "success"
+        conclusion = "success"
     elif conclusion_mode == "enforce":
-        conclusion = "failure"
+        # C-prime wrapper: review-action-only blocker maps to success so
+        # the legacy required check name does not block on operator review.
+        if findings and all(finding_conclusion_kind(code) == "review_action" for code in findings):
+            conclusion = "success"
+        else:
+            conclusion = "failure"
     else:
         conclusion = "neutral"
     return {
@@ -707,6 +835,108 @@ def _check_run(
         "status": "completed",
         "conclusion": conclusion,
         "title": f"{RELEASE_GATE_CHECK_NAME}: {decision}",
+        "summary": summary,
+        "text": text,
+    }
+
+
+def _findings_for_kind(findings: list[str], kind: FindingConclusionKind) -> list[str]:
+    """Return the subset of finding codes that classify as ``kind``."""
+
+    return [code for code in findings if finding_conclusion_kind(code) == kind]
+
+
+def build_technical_check_run(
+    decision: ReleaseGateDecisionValue,
+    findings: list[str],
+    *,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
+) -> AoReleaseGateCheckRun:
+    """Build the ``ao-release-gate-technical`` check-run shape.
+
+    Technical check covers real governance / structural violations and
+    stale-branch findings. It deliberately ignores ``review_action`` kind
+    findings; CODEOWNER review pending is published on the companion
+    ``ao-release-gate-review`` check, not here.
+
+    Conclusion:
+
+    - ``shadow`` mode: ``success`` if the gate decision allows merge;
+      ``neutral`` otherwise (advisory pre-cutover).
+    - ``enforce`` mode: ``success`` when no failure/stale finding exists;
+      ``failure`` when any ``failure``-kind finding exists; ``stale`` when
+      only stale findings (no failures) exist.
+    """
+
+    technical_findings = [code for code in findings if finding_conclusion_kind(code) != "review_action"]
+    allow = decision == ALLOW_AUTONOMOUS_MERGE_DECISION
+    summary = _reason(decision)
+    text = (
+        "Technical findings: " + ", ".join(technical_findings)
+        if technical_findings
+        else "All technical release-gate checks passed."
+    )
+    conclusion: GithubCheckConclusion
+    if allow or not technical_findings:
+        conclusion = "success"
+    elif conclusion_mode == "enforce":
+        conclusion = conclusion_for_findings(technical_findings)
+    else:
+        conclusion = "neutral"
+    return {
+        "name": RELEASE_GATE_TECHNICAL_CHECK_NAME,
+        "status": "completed",
+        "conclusion": conclusion,
+        "title": f"{RELEASE_GATE_TECHNICAL_CHECK_NAME}: {decision}",
+        "summary": summary,
+        "text": text,
+    }
+
+
+def build_review_check_run(
+    decision: ReleaseGateDecisionValue,
+    findings: list[str],
+    *,
+    conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
+) -> AoReleaseGateCheckRun:
+    """Build the ``ao-release-gate-review`` check-run shape.
+
+    Review check covers only CODEOWNER review pending on the current PR
+    head. It deliberately ignores failure / stale findings; those are
+    published on the companion ``ao-release-gate-technical`` check.
+
+    Conclusion:
+
+    - ``shadow`` mode: ``success`` when no review-action finding;
+      ``neutral`` when review pending.
+    - ``enforce`` mode: ``success`` when no review-action finding;
+      ``action_required`` when CODEOWNER review missing (this conclusion
+      does NOT satisfy required status check; merge stays blocked).
+
+    Operator UI signal: ``action_required`` surfaces as "needs attention"
+    rather than "failing", honoring the operator HARD RULE that approve
+    requires green CI.
+    """
+
+    review_findings = _findings_for_kind(findings, "review_action")
+    summary = (
+        "CODEOWNER review pending on current head." if review_findings else "CODEOWNER review present or not required."
+    )
+    text = (
+        "Review findings: " + ", ".join(review_findings) if review_findings else "No review-pending findings recorded."
+    )
+    conclusion: GithubCheckConclusion
+    if not review_findings:
+        conclusion = "success"
+    elif conclusion_mode == "enforce":
+        conclusion = "action_required"
+    else:
+        conclusion = "neutral"
+    return {
+        "name": RELEASE_GATE_REVIEW_CHECK_NAME,
+        "status": "completed",
+        "conclusion": conclusion,
+        "title": f"{RELEASE_GATE_REVIEW_CHECK_NAME}: {decision}",
         "summary": summary,
         "text": text,
     }
@@ -854,9 +1084,7 @@ def build_ao_release_gate_decision(
                 "The path-sensitive human-review gate is inactive, no high-risk paths changed, "
                 "or a current-head non-author human approval exists for the high-risk surface."
             ),
-            blocked_detail=(
-                "High-risk paths changed without a current-head non-author human approval."
-            ),
+            blocked_detail=("High-risk paths changed without a current-head non-author human approval."),
         ),
         _check(
             "secret_boundary",
