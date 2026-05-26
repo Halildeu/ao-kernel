@@ -174,6 +174,97 @@ def test_same_provider_review_fails_closed(tmp_path: Path) -> None:
     assert artifact["checks"]["cross_provider_verified"] is False
 
 
+def test_human_implementer_with_ai_reviewer_passes_cross_provider(tmp_path: Path) -> None:
+    """Human implementer + valid AI reviewer satisfies cross-provider HARD RULE.
+
+    The implementer is a human contributor (kind='human', no provider). The
+    reviewer is an AI from a registered provider (anthropic). Cross-provider
+    is satisfied automatically because a human is not an AI provider; the
+    reviewer being a valid registered AI is sufficient.
+    """
+    artifact, code = _evaluate_fixture(
+        "reviewer_agree_human_implementer.v1.json",
+        actual_files=_declared_changed_files("reviewer_agree_human_implementer.v1.json"),
+        tmp_path=tmp_path,
+    )
+
+    assert code == 0
+    assert artifact["decision"] == "operator_may_merge"
+    assert artifact["checks"]["cross_provider_verified"] is True
+    assert all(artifact["checks"].values())
+
+
+def test_human_implementer_with_invalid_reviewer_provider_schema_rejects(tmp_path: Path) -> None:
+    """Schema rejects a reviewer block whose provider is outside the AI enum.
+
+    Even when the implementer is human, the reviewer schema still requires a
+    registered AI provider (anthropic|openai|google|xai). An unknown reviewer
+    provider is rejected by schema validation, so the gate treats the file
+    as schema-invalid and fails closed; the check value defaults to False.
+    """
+    payload = json.loads(_fixture("reviewer_agree_human_implementer.v1.json").read_text(encoding="utf-8"))
+    payload["reviewer"]["provider"] = "unknown"
+    bad = tmp_path / "human_bogus_reviewer.json"
+    bad.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    code = _run_gate(["--review-evidence", str(bad), "--output", str(output)])
+
+    assert code == 1
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    assert artifact["decision"] == "fail_closed"
+    assert artifact["checks"]["cross_provider_verified"] is False
+
+
+def test_ai_implementer_explicit_kind_ai_remains_backward_compatible(tmp_path: Path) -> None:
+    """Adding kind='ai' to an existing AI implementer block stays valid.
+
+    The schema discriminator MUST preserve every prior reviewer evidence file,
+    including ones that did not declare ``kind``. This test confirms the
+    discriminator does not break operators that explicitly opt into the new
+    label.
+    """
+    payload = json.loads(_fixture("reviewer_agree.v1.json").read_text(encoding="utf-8"))
+    payload["implementer"]["kind"] = "ai"
+    explicit = tmp_path / "explicit_ai.json"
+    explicit.write_text(json.dumps(payload), encoding="utf-8")
+
+    mod = _load_module()
+    review = mod.load_review_evidence(explicit)
+    assert review is not None  # schema-valid
+    checks, _ = mod.evaluate_gate(
+        review,
+        repo_root=_repo_root(),
+        status_path=_status_path(),
+        actual_files=_declared_changed_files("reviewer_agree.v1.json"),
+        base_ref="origin/main",
+        head_ref="codex/local-gate-1-impl",
+        repo="Halildeu/ao-kernel",
+        work_package="GPP-2ag",
+    )
+    assert checks["cross_provider_verified"] is True
+
+
+def test_human_implementer_with_provider_field_schema_rejects(tmp_path: Path) -> None:
+    """Schema rejects a human implementer that also declares a provider.
+
+    The discriminator's human branch enforces ``additionalProperties: false``
+    with ``required: [agent, kind]``; adding ``provider`` is a structural
+    violation. The gate treats schema-invalid evidence as fail-closed.
+    """
+    payload = json.loads(_fixture("reviewer_agree_human_implementer.v1.json").read_text(encoding="utf-8"))
+    payload["implementer"]["provider"] = "anthropic"
+    bad = tmp_path / "human_with_provider.json"
+    bad.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "gate-evidence.json"
+
+    code = _run_gate(["--review-evidence", str(bad), "--output", str(output)])
+
+    assert code == 1
+    artifact = json.loads(output.read_text(encoding="utf-8"))
+    assert artifact["decision"] == "fail_closed"
+
+
 def test_reviewer_agree_with_passing_checks_succeeds(tmp_path: Path) -> None:
     # FIX 2: scope is verified against the actual git diff. The AGREE happy
     # path is exercised by injecting actual_files that exactly match the
