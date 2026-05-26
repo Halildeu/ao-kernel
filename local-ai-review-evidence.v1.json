@@ -1,75 +1,53 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GPP-9",
-  "implementer": {"agent": "claude", "provider": "anthropic"},
-  "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
+  "work_package": "RI-7.0",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "claude",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/gpp-9-final-claim-decision",
+    "head_ref": "refs/heads/codex/repo-intelligence-tier-promotion-supersession",
     "changed_files": [
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md",
-      ".claude/plans/gpp_status.v1.json",
-      "docs/KNOWN-BUGS.md",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.example.json",
+      ".claude/plans/RI-7-REPO-INTELLIGENCE-TIER-PROMOTION-READINESS.md",
+      "ao_kernel/defaults/schemas/repo-intelligence-tier-promotion-readiness.schema.v1.json",
       "docs/PUBLIC-BETA.md",
       "docs/SUPPORT-BOUNDARY.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_gpp_next.py",
-      "tests/test_local_gpp_gate.py"
+      "scripts/repo_intelligence_tier_promotion_readiness.py",
+      "tests/test_repo_intelligence_tier_promotion_readiness.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
-    {"name": "guard_flags_unchanged", "status": "pass"},
-    {"name": "gpp9_decision_keep_narrow_stable_runtime_authoritative", "status": "pass"},
-    {"name": "scripts_untouched", "status": "pass"},
-    {"name": "schemas_untouched", "status": "pass"},
-    {"name": "workflows_untouched", "status": "pass"},
-    {"name": "ssot_current_wp_gpp9_closed", "status": "pass"},
-    {"name": "ssot_gpp8_closure_preserved_in_completed_wps", "status": "pass"},
-    {"name": "ssot_gpp9_not_in_completed_wps_program_closure_convention", "status": "pass"},
-    {"name": "ssot_wp_weighted_triple_pinned", "status": "pass"},
-    {"name": "m6_status_done_three_evidence_refs", "status": "pass"},
-    {"name": "aggregate_completion_sources_gpp9_current_wp_closed_entry_added", "status": "pass"},
-    {"name": "program_closure_metadata_recorded", "status": "pass"},
-    {"name": "milestones_done_count_7_of_7_100_percent", "status": "pass"},
-    {"name": "next_milestone_id_null", "status": "pass"},
-    {"name": "status_md_gpp9_row_updated", "status": "pass"},
-    {"name": "docs_support_boundary_gpp9_synced", "status": "pass"},
-    {"name": "docs_known_bugs_gpp9_synced", "status": "pass"},
-    {"name": "docs_public_beta_gpp9_synced", "status": "pass"},
-    {"name": "gpp9_issue_anchor_present", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "schema_lint",
+      "status": "pass"
+    },
+    {
+      "name": "support_boundary_guard",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "tests: pytest tests/test_gpp_next.py + tests/test_local_gpp_gate.py 86 passed; new test_gpp_status_m6_done_three_evidence_refs + test_gpp_status_program_closure_metadata added; test_allowed_scope_reflects_gpp9_keep_narrow_stable_runtime_decision renamed.",
-    "secret_scan: no credential material in any changed file.",
-    "no_public_sdk_signature_change: ao_kernel public SDK signatures unchanged.",
-    "no_branch_protection_mutation_by_agent: no gh api on rulesets / branches/main/protection.",
-    "guard_flags_unchanged: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false all preserved (CC-6).",
-    "gpp9_decision_keep_narrow_stable_runtime_authoritative: GPP-9 records keep_narrow_stable_runtime as authoritative for the final claim decision; decision string=gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim. Existing GP-5.9 keep_narrow_stable_runtime decision preserved as formal program closure authority.",
-    "scripts_untouched: no scripts/ file touched. scripts/gp5_platform_claim_decision.py BC-1..BC-10 baseline preserved without enum reclassification.",
-    "schemas_untouched: no ao_kernel/defaults/schemas/ file touched; gp5-production-platform-claim-decision.schema.v1.json schema_version v1 unchanged.",
-    "workflows_untouched: no .github/workflows/ file touched.",
-    "ssot_current_wp_gpp9_closed: current_wp.id=GPP-9, status=closed, issue=#635, exit_decision matches the authoritative decision string, record points to GPP-9-FINAL-CLAIM-DECISION.md.",
-    "ssot_gpp8_closure_preserved_in_completed_wps: GPP-8 entry present in completed_wps with decision=gpp8_keep_sandbox_only_authoritative_no_remote_pr_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim, issue=#633, pr=#634, record path, closed_at=2026-05-26T06:58:33Z.",
-    "ssot_gpp9_not_in_completed_wps_program_closure_convention: GPP-9 is intentionally absent from completed_wps per Codex iter-1 hybrid Option D (program closure convention); GPP-9 stays current_wp closed; aggregate map satisfies M6 milestone consistency via current_wp lookup. No next slice opener exists; program is closed.",
-    "ssot_wp_weighted_triple_pinned: progress_estimates.wp_weighted shows completed_wps_count=48 (47 prior + GPP-8 migrated), closed_current_wp_count=1 (GPP-9 current closed), completed_or_closed_count=49=48+1, estimated_total_wps=50, percent=98.",
-    "m6_status_done_three_evidence_refs: milestones[M6].status=done with closed_at=2026-05-26T07:00:00Z and exactly three evidence_refs (GPP-7 + GPP-8 + GPP-9 record paths); new test_gpp_status_m6_done_three_evidence_refs pins the cardinality + path set.",
-    "aggregate_completion_sources_gpp9_current_wp_closed_entry_added: _AGGREGATE_COMPLETION_SOURCES extended with GPP-9: {current_wp: closed} entry per Codex iter-1 hybrid Option D; GPP-7 + GPP-8 satisfied via completed_wps default fallback; comment refreshed.",
-    "program_closure_metadata_recorded: NEW top-level program_closure metadata recorded with status=closed, final_milestone_id=M6, closed_at=2026-05-26T07:00:00Z, decision string, record path; new test_gpp_status_program_closure_metadata pins the structure.",
-    "milestones_done_count_7_of_7_100_percent: progress_estimates.milestones done_count=7, total_count=7, percent=100, next_milestone_id=null. Canonical milestone-based progress: 7/7 milestones (100%); WP-weighted: 49/50 (98%; estimated).",
-    "next_milestone_id_null: next_milestone_id transitioned from M6 to null per Codex iter-1 guidance; program closed; no next milestone.",
-    "status_md_gpp9_row_updated: STATUS.md §5 Work Package Board row for GPP-9 updated from 'Not started' to 'Closed / no support widening | Full production matrix + final claim decision | keep_narrow_stable_runtime authoritative; promote_general_purpose_production and promote_general_purpose_beta remain operator-bound supersession paths; defer rejected; program closed' (literal decision path names per Codex iter-1 guidance).",
-    "docs_support_boundary_gpp9_synced: docs/SUPPORT-BOUNDARY.md GPP-8 closure paragrafının sonrasına GPP-9 closure paragrafı eklendi + program closeout note; BC-1..BC-10 baseline preserved; narrow stable runtime is the recorded supported surface.",
-    "docs_known_bugs_gpp9_synced: docs/KNOWN-BUGS.md GPP-8 closeout interpretation section'ından sonra yeni 'GPP-9 closeout interpretation (program closure)' subsection eklendi + program closeout note; KB-001 + KB-002 + tüm GP-5.9 promotion blockers retained.",
-    "docs_public_beta_gpp9_synced: docs/PUBLIC-BETA.md yeni 'GPP-9 final claim + M6 closeout (autonomous program closure)' decision row eklendi; 7/7 milestones (100%) achievement noted.",
-    "gpp9_issue_anchor_present: GitHub issue #635 opened and pinned in current_wp.issue per PROGRAM-CHANGE-CONTROL.md CC-13.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE CC-2 satisfied. Codex thread 019e6316 plan-time iter-1 PARTIAL (Q1 decision string preserved; Q2/Q3/Q6 current_wp closed convention with next_milestone_id=null; Q4 hybrid Option D GPP-9 current_wp closed aggregate; Q5 literal decision path names in STATUS row; Q8 program_closure top-level metadata) absorbed; post-impl iter review continues after PR creation."
+    "Claude consult agreed conditionally with the no-widening readiness-gate shape.",
+    "MiniMax/Mavis consult agreed the RI-7 path must remain contributor evidence, not claim authority.",
+    "The reviewed slice keeps support_widening, production_platform_claim, and live_adapter_execution false.",
+    "The reviewed slice does not edit gpp_status, GP-5.9 decision logic, workflows, public SDK signatures, MCP exposure, or context auto-feed wiring."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
