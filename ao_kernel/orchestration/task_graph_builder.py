@@ -105,15 +105,37 @@ def _guard_flags() -> dict[str, bool]:
 
 
 def _normalize_paths(paths: list[str]) -> list[str]:
-    """Sort + dedupe paths preserving original strings (no path-rewrite)."""
+    """Sort + dedupe + validate paths (Codex iter-2 absorb).
+
+    Rejects:
+
+    - empty strings or non-strings
+    - absolute paths (``/foo`` or ``C:\\foo``)
+    - parent-traversal segments (``..``)
+    - leading ``./`` or trailing ``/.`` aliases that could mask overlap
+    - backslash separators (cross-platform alias risk)
+
+    Does NOT rewrite paths; preserves the original repo-relative POSIX form
+    so the artifact's ``declared_write_set`` matches the AO-MA-2 schema's
+    ``path`` reference exactly.
+    """
 
     seen: set[str] = set()
     out: list[str] = []
-    for p in paths:
-        if p in seen:
+    for raw in paths:
+        if not isinstance(raw, str) or not raw:
+            raise TaskGraphBuilderError(f"path entry must be a non-empty string; got {raw!r}")
+        if raw.startswith("/") or (len(raw) >= 3 and raw[1] == ":" and raw[2] in ("\\", "/")):
+            raise TaskGraphBuilderError(f"path {raw!r} is absolute; only repo-relative POSIX paths allowed")
+        if "\\" in raw:
+            raise TaskGraphBuilderError(f"path {raw!r} contains backslash; use forward slashes for POSIX paths")
+        segments = raw.split("/")
+        if any(seg in ("..", ".") for seg in segments):
+            raise TaskGraphBuilderError(f"path {raw!r} contains '..' or '.' segment; canonical paths required")
+        if raw in seen:
             continue
-        seen.add(p)
-        out.append(p)
+        seen.add(raw)
+        out.append(raw)
     return sorted(out)
 
 

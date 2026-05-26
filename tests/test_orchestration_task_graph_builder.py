@@ -180,6 +180,36 @@ def test_review_policy_low_risk_is_single_cross_provider_reviewer() -> None:
     assert policy["cross_provider_required"] is True
 
 
+def test_path_validation_rejects_absolute() -> None:
+    specs = [TaskSpec("task-001", "x", ["/etc/passwd"])]
+    with pytest.raises(TaskGraphBuilderError, match="absolute"):
+        build_task_graph("abs", _SHA40, repo=_REPO, declared_specs=specs)
+
+
+def test_path_validation_rejects_parent_traversal() -> None:
+    specs = [TaskSpec("task-001", "x", ["ao_kernel/../etc/passwd"])]
+    with pytest.raises(TaskGraphBuilderError, match="'\\.\\.'"):
+        build_task_graph("parent", _SHA40, repo=_REPO, declared_specs=specs)
+
+
+def test_path_validation_rejects_dot_alias() -> None:
+    specs = [TaskSpec("task-001", "x", ["./ao_kernel/foo.py"])]
+    with pytest.raises(TaskGraphBuilderError, match="'\\.\\.'"):
+        build_task_graph("dot", _SHA40, repo=_REPO, declared_specs=specs)
+
+
+def test_path_validation_rejects_backslash() -> None:
+    specs = [TaskSpec("task-001", "x", ["ao_kernel\\foo.py"])]
+    with pytest.raises(TaskGraphBuilderError, match="backslash"):
+        build_task_graph("bs", _SHA40, repo=_REPO, declared_specs=specs)
+
+
+def test_path_validation_rejects_empty_string() -> None:
+    specs = [TaskSpec("task-001", "x", [""])]
+    with pytest.raises(TaskGraphBuilderError, match="non-empty string"):
+        build_task_graph("empty", _SHA40, repo=_REPO, declared_specs=specs)
+
+
 def test_branch_pattern_matches_schema() -> None:
     schema = _load_schema("ao-ma-agent-assignment.schema.v1.json")
     pattern = schema["properties"]["branch"]["pattern"]
