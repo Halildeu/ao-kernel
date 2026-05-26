@@ -110,6 +110,25 @@ read-only E2E lane (GPP-6 Option X slot), or the GPP-4 Option X slot
 for the production-certified read-only tier promotion. Documentation
 wording alone does not constitute live evidence.
 
+## GPP-7 closeout interpretation
+
+GPP-7 closes the controlled write-side production candidate decision
+as `keep_rehearsal_only` (Option Y authoritative). This is the first
+of three M6 slices (GPP-7 + GPP-8 + GPP-9). The decision does not
+introduce new shipped-baseline bugs or modify existing known bugs.
+`KB-001` + `KB-002` + all GP-5.9 promotion blockers remain under the
+GPP-4 `keep_operator_beta` authority (recorded in the GPP-4 closeout
+interpretation subsection above). The controlled patch/test lane
+stays rehearsal-only; the existing GP-5.5a / GP-5.5b / GP-5.6a /
+GP-5.7a / GP-5.7b evidence stack is preparation evidence, not
+production write-side candidate evidence.
+
+The M6 milestone closure is reserved for GPP-9 with three
+`evidence_refs` covering GPP-7 + GPP-8 + GPP-9. Any future
+production-targeted controlled write evidence chain requires an
+operator-bound Option X supersession slice (`write_candidate_ready`),
+not documentation wording alone.
+
 ## Release readiness rule
 
 Before a stable release candidate, this file must answer two questions:

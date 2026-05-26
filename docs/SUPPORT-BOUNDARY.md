@@ -344,6 +344,23 @@ artifacts. The GPP-6 Option X supersession slot is independent from
 the GPP-4 Option X supersession slot (the latter governs
 production-certified read-only tier promotion).
 
+GPP-7 closes the controlled write-side production candidate question
+under the `keep_rehearsal_only` authority. This is the first of three
+M6 slices (GPP-7 + GPP-8 + GPP-9). The existing GP-5.5a controlled
+patch/test contract + GP-5.5b controlled patch/test rehearsal +
+GP-5.6a disposable PR write rehearsal + GP-5.7a / GP-5.7b full
+rehearsal evidence stack is preserved as preparation evidence. This
+does not widen support, grant a production platform claim, promote
+the controlled patch/test lane from rehearsal-only to
+production-certified write-side tier, modify any rehearsal script or
+report schema, or close the M6 milestone (M6 closure is reserved for
+GPP-9 with three evidence_refs covering GPP-7 + GPP-8 + GPP-9). Any
+future production-targeted controlled write evidence chain requires
+a separate operator-bound Option X supersession slice
+(`write_candidate_ready`) with an explicit production-candidate
+authorization flag, production-targeted write run evidence, and
+reclassification of the controlled patch/test evidence accordingly.
+
 The bundled
 `repo-intelligence-workflow-context-opt-in.schema.v1.json` is a contract-only
 future opt-in shape. It is not wired into workflow definitions, executor
