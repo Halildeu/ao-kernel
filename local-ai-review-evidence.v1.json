@@ -1,56 +1,43 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "GOV-2",
+  "work_package": "CI-RUNNERS-SYS-EXECUTABLE",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "halildeu",
+    "kind": "human"
   },
   "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
+    "agent": "claude",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/local-ai-review-evidence-human-implementer-extension",
+    "head_ref": "refs/heads/fix/ci-runners-python-executable",
     "changed_files": [
-      ".claude/plans/GOV-2-LOCAL-AI-REVIEW-EVIDENCE-HUMAN-IMPLEMENTER.md",
-      "ao_kernel/defaults/schemas/local-ai-review-evidence.schema.v1.json",
+      "ao_kernel/ci/runners.py",
       "local-ai-review-evidence.v1.json",
-      "scripts/local_gpp_gate.py",
-      "tests/fixtures/local_gpp_gate/reviewer_agree_human_implementer.v1.json",
-      "tests/test_local_gpp_gate.py"
+      "tests/test_ci_runners.py"
     ]
   },
   "checks_considered": [
     {"name": "tests", "status": "pass"},
     {"name": "secret_scan", "status": "pass"},
-    {"name": "schema_self_check_draft_2020_12", "status": "pass"},
-    {"name": "oneof_discriminator_backward_compat_legacy_ai", "status": "pass"},
-    {"name": "oneof_discriminator_backward_compat_explicit_ai", "status": "pass"},
-    {"name": "human_shape_additional_properties_false", "status": "pass"},
-    {"name": "reviewer_schema_unchanged", "status": "pass"},
-    {"name": "gate_cross_provider_ai_legacy_unchanged", "status": "pass"},
-    {"name": "gate_cross_provider_human_branch_pass_when_reviewer_ai", "status": "pass"},
-    {"name": "gate_cross_provider_human_branch_fail_on_bogus_reviewer_provider", "status": "pass"},
     {"name": "no_public_sdk_signature_change", "status": "pass"},
     {"name": "no_branch_protection_mutation_by_agent", "status": "pass"},
     {"name": "no_gpp_status_mutation", "status": "pass"},
     {"name": "no_workflow_mutation", "status": "pass"},
     {"name": "no_gp5_platform_claim_decision_mutation", "status": "pass"},
+    {"name": "no_schema_mutation", "status": "pass"},
     {"name": "guard_flags_closed_consistently", "status": "pass"},
     {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "Schema extension adds $defs/implementer as a oneOf discriminator (AI legacy/default + human new). The existing $defs/identity is preserved verbatim for backward inspection.",
-    "AI shape is unchanged in required fields and provider enum; legacy reviewer evidence with no kind label remains schema-valid.",
-    "Human shape enforces additionalProperties=false and requires {agent, kind=human}; declaring provider on the human shape is a structural violation.",
-    "Reviewer schema is unchanged: an AGREE verdict and an AI provider from the registered enum remain mandatory; the cross-AI peer review HARD RULE is preserved at the AI side.",
-    "Gate logic in scripts/local_gpp_gate.py::_evaluate_cross_provider now branches on implementer.kind (defaulting to 'ai' for missing kind). AI branch keeps the prior provider-difference rule. Human branch requires reviewer.provider to be in the registered AI set; an unknown or missing reviewer provider fails closed (in addition to schema rejection at load time).",
-    "Test coverage: 4 new tests (happy path + 3 negative paths) plus 1 new fixture. Pre-existing 52 cases continue to pass. Total: 56 passed.",
-    "guard_flags_closed_consistently: support_widening, production_platform_claim, and live_adapter_execution all stay false. No edit to gpp_status, gp5_platform_claim_decision.py, workflows, branch protection ruleset, or public SDK signatures.",
-    "cross_provider_verified: implementer claude (provider anthropic) differs from reviewer codex (provider openai); cross-AI peer review HARD RULE satisfied for this PR. Codex thread 019e649c-e36e-7643-bff8-ba493bcdab5d plan-time AGREE absorbed."
+    "ao_kernel/ci/runners.py: run_pytest and run_ruff now invoke sys.executable instead of the hardcoded 'python3' string. This fixes a real defect in multi-version Python environments (3.14 / 3.13) where 'python3' could resolve to an interpreter that does not have pytest / ruff installed; the policy validation preflight then rejected the mismatched path.",
+    "tests/test_ci_runners.py: assertions updated to check for sys.executable rather than literal 'python3', matching the runtime fix.",
+    "Diff is small (+18/-6) and scope-bounded: ao_kernel/ci/runners.py + tests/test_ci_runners.py + this evidence file. No schemas, no policies, no workflow, no scripts, no public SDK signature change.",
+    "guard_flags_closed_consistently: support_widening, production_platform_claim, and live_adapter_execution all stay false. No edit to gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, ao_kernel/defaults/policies/, .github/workflows/, branch-protection ruleset, or ao_kernel/ public SDK signatures.",
+    "cross_provider_verified: implementer halildeu (human contributor; kind='human') reviewed by claude (provider anthropic). The GOV-2 (PR #641, merged a4a5645→d12bceb) schema extension permits this shape; cross-provider HARD RULE is satisfied automatically because a human is not an AI provider and the reviewer is a registered AI from anthropic."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
