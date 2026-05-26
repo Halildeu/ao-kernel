@@ -15,7 +15,10 @@ if str(_REPO_ROOT) not in sys.path:
 from ao_kernel.ao_release_gate import (  # noqa: E402
     RELEASE_GATE_ARTIFACT,
     build_ao_release_gate_decision,
+    build_review_check_run,
+    build_technical_check_run,
     render_ao_release_gate_decision_text,
+    wrapper_exit_code,
     write_ao_release_gate_decision,
 )
 
@@ -70,6 +73,33 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Return exit code 1 when the release-gate decision is not allow_autonomous_merge.",
     )
+    parser.add_argument(
+        "--wrapper-exit-code",
+        action="store_true",
+        help=(
+            "RG-CONCLUSION-SEMANTICS C-prime wrapper exit logic. Returns 0 when the gate "
+            "would allow merge OR when the only blocker is a pending CODEOWNER review on "
+            "the current PR head; returns 1 for any real violation, stale branch, or mixed "
+            "blocker set. Preserves the legacy ao-release-gate required check name while "
+            "shifting CODEOWNER-review-missing semantics off the failure axis. Mutually "
+            "exclusive with --fail-on-deny in practice; if both are passed, "
+            "--wrapper-exit-code is the effective signal (review-action-only blocker no "
+            "longer maps to non-zero exit)."
+        ),
+    )
+    parser.add_argument(
+        "--emit-multi-check-runs",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help=(
+            "RG-CONCLUSION-SEMANTICS C-prime dual-publish. When given, write two additional "
+            "no-secret check-run artifacts under DIR: 'ao-release-gate-technical.check-run.json' "
+            "and 'ao-release-gate-review.check-run.json'. These are consumed by the workflow's "
+            "Checks API publish step so the new dual check-runs surface on every PR alongside "
+            "the legacy compatibility wrapper."
+        ),
+    )
     return parser
 
 
@@ -96,6 +126,29 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(render_ao_release_gate_decision_text(decision))
 
+    if args.emit_multi_check_runs is not None:
+        args.emit_multi_check_runs.mkdir(parents=True, exist_ok=True)
+        technical = build_technical_check_run(
+            decision["decision"],
+            list(decision["findings"]),
+            conclusion_mode=args.conclusion_mode,
+        )
+        review = build_review_check_run(
+            decision["decision"],
+            list(decision["findings"]),
+            conclusion_mode=args.conclusion_mode,
+        )
+        (args.emit_multi_check_runs / "ao-release-gate-technical.check-run.json").write_text(
+            json.dumps(technical, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        (args.emit_multi_check_runs / "ao-release-gate-review.check-run.json").write_text(
+            json.dumps(review, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    if args.wrapper_exit_code:
+        return wrapper_exit_code(decision["decision"], list(decision["findings"]))
     if args.fail_on_deny and not decision["allow"]:
         return 1
     return 0

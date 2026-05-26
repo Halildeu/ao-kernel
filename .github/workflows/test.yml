@@ -367,7 +367,12 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      checks: read
+      # RG-CONCLUSION-SEMANTICS C-prime requires posting the dual
+      # check-runs (ao-release-gate-technical + ao-release-gate-review)
+      # via the GitHub Checks API. `checks: write` is the minimum scope
+      # for POST /repos/{owner}/{repo}/check-runs; reads of upstream
+      # check-runs are still satisfied by this elevated scope.
+      checks: write
       pull-requests: read
     concurrency:
       group: ao-release-gate-${{ github.event.pull_request.number }}
@@ -691,12 +696,20 @@ jobs:
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 
-      - name: Evaluate ao-release-gate decision (enforce)
-        # Enforce contract: --fail-on-deny exits the script with code 1
-        # on deny / error; --conclusion-mode enforce maps deny/error to
-        # github_check_run.conclusion=failure in the audit artifact.
+      - name: Evaluate ao-release-gate decision (enforce, C-prime wrapper)
+        # RG-CONCLUSION-SEMANTICS C-prime contract (Codex thread 019e65c3):
+        # --wrapper-exit-code preserves the legacy required-check name by
+        # mapping a lone CODEOWNER-review-pending blocker to exit 0; real
+        # violations, stale branches, and mixed blockers still exit 1.
+        # --emit-multi-check-runs writes the two new check-run artifacts
+        # consumed by the next step (Checks API publish). CODEOWNER
+        # review enforcement after this migration is provided by GitHub's
+        # require_code_owner_reviews branch protection rule and the new
+        # ao-release-gate-review check-run with action_required
+        # conclusion, NOT this legacy compatibility wrapper.
         working-directory: base
         run: |
+          mkdir -p check-runs
           if [ -f local-gpp-gate-evidence.v1.json ]; then
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
@@ -705,7 +718,8 @@ jobs:
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
-              --fail-on-deny
+              --emit-multi-check-runs check-runs \
+              --wrapper-exit-code
           else
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
@@ -713,8 +727,27 @@ jobs:
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
-              --fail-on-deny
+              --emit-multi-check-runs check-runs \
+              --wrapper-exit-code
           fi
+
+      - name: Publish dual check-runs via Checks API (RG-CONCLUSION-SEMANTICS)
+        # Always run so the technical / review check-runs surface even
+        # when the decision step exits non-zero on a real violation.
+        # The publish script tolerates missing artifacts (logs a warning,
+        # does not fail) so a partial decision-step crash does not
+        # double-fail the gate job.
+        if: always()
+        working-directory: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python scripts/ao_release_gate_publish_check_runs.py \
+            --dir check-runs \
+            --repo "$REPO_FULL" \
+            --head-sha "$HEAD_SHA"
 
       - name: Synthesize error_fail_closed audit artifact if pre-decision step crashed
         if: always()

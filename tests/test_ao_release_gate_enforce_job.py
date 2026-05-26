@@ -104,14 +104,23 @@ def test_enforce_job_triggers_on_pr_and_review_never_pull_request_target() -> No
     assert "ao-release-gate only evaluates pull_request or pull_request_review events" in block
 
 
-def test_enforce_job_permissions_are_read_only() -> None:
+def test_enforce_job_permissions_are_minimal_with_checks_write() -> None:
+    """The enforce job needs ``checks: write`` for the RG-CONCLUSION-
+    SEMANTICS dual check-run publish (POST /repos/{owner}/{repo}/check-runs).
+    Every other scope stays read-only. No long-lived secrets, no
+    repository write, no PR write, no issue write, no actions write.
+    """
+
     block = _gate_job_block()
     assert "contents: read" in block
-    assert "checks: read" in block
+    # RG-CONCLUSION-SEMANTICS C-prime: checks API publish needs `write`.
+    # `checks: write` also subsumes `checks: read` for the upstream
+    # check-runs lookup, so the prior read-only assertion is intentionally
+    # superseded here.
+    assert "checks: write" in block, "RG-CONCLUSION-SEMANTICS requires checks: write for dual publish"
     assert "pull-requests: read" in block
     for write_scope in (
         "contents: write",
-        "checks: write",
         "pull-requests: write",
         "issues: write",
         "actions: write",
@@ -189,12 +198,12 @@ def test_enforce_job_builds_payload_from_api_not_pr_committed_json() -> None:
 
 def test_enforce_job_augments_payload_with_review_metadata_after_base_builder() -> None:
     block = _gate_job_block()
-    assert "gh pr view \"$PR_NUMBER\" --repo \"$REPO_FULL\" --json reviews,author > pr-reviews.json" in block
+    assert 'gh pr view "$PR_NUMBER" --repo "$REPO_FULL" --json reviews,author > pr-reviews.json' in block
     assert "Augment release-gate payload with PR review metadata" in block
-    assert "review_payload = json.loads(Path(\"pr-reviews.json\").read_text" in block
-    assert "payload[\"pr_author\"] = pr_author" in block
-    assert "payload[\"human_reviews\"] = reviews" in block
-    assert "payload[\"path_sensitive_human_review_enabled\"] = True" in block
+    assert 'review_payload = json.loads(Path("pr-reviews.json").read_text' in block
+    assert 'payload["pr_author"] = pr_author' in block
+    assert 'payload["human_reviews"] = reviews' in block
+    assert 'payload["path_sensitive_human_review_enabled"] = True' in block
 
 
 def test_enforce_job_reads_only_raw_reviewer_evidence_from_pr_head() -> None:
@@ -415,7 +424,18 @@ def test_enforce_job_passes_runtime_generated_evidence_to_decision_script() -> N
         assert "--conclusion-mode enforce" in invocation, (
             f"decision invocation missing --conclusion-mode enforce: {invocation}"
         )
-        assert "--fail-on-deny" in invocation, f"decision invocation missing --fail-on-deny: {invocation}"
+        # RG-CONCLUSION-SEMANTICS C-prime: --wrapper-exit-code replaces
+        # --fail-on-deny so a lone CODEOWNER-review-pending blocker maps
+        # to exit 0 on the legacy compatibility wrapper. Real violations
+        # still exit 1. The companion --emit-multi-check-runs writes the
+        # ao-release-gate-technical + ao-release-gate-review artifacts
+        # consumed by the next workflow step (Checks API publish).
+        assert "--wrapper-exit-code" in invocation, (
+            f"decision invocation missing --wrapper-exit-code (RG-CONCLUSION-SEMANTICS C-prime): {invocation}"
+        )
+        assert "--emit-multi-check-runs" in invocation, (
+            f"decision invocation missing --emit-multi-check-runs (RG-CONCLUSION-SEMANTICS dual publish): {invocation}"
+        )
     has_runtime_evidence_invocation = any(
         "--review-evidence local-gpp-gate-evidence.v1.json" in line for line in invocations
     )
@@ -423,6 +443,11 @@ def test_enforce_job_passes_runtime_generated_evidence_to_decision_script() -> N
         "decision script must consume the runtime-generated gate evidence "
         "(--review-evidence local-gpp-gate-evidence.v1.json), not a head-committed file"
     )
+    # The dual check-run publisher runs after the decision step.
+    assert "scripts/ao_release_gate_publish_check_runs.py" in block, (
+        "RG-CONCLUSION-SEMANTICS C-prime requires the dual check-run publish step"
+    )
+    assert "--dir check-runs" in collapsed, "publisher must read artifacts from check-runs/"
 
 
 def test_enforce_job_uses_synthesizer_only_for_pre_decision_crash_path() -> None:
