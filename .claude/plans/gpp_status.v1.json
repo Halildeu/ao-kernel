@@ -6,27 +6,28 @@
   "status_file": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
   "post_beta_status_file": ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md",
   "current_wp": {
-    "id": "GPP-7",
-    "title": "Controlled Write-Side keep_rehearsal_only Decision (M6 Faz 1)",
+    "id": "GPP-8",
+    "title": "Remote PR Sandbox-Only Decision (M6 Faz 2)",
     "status": "closed",
-    "issue": "https://github.com/Halildeu/ao-kernel/issues/631",
-    "exit_decision": "gpp7_keep_rehearsal_only_authoritative_no_write_side_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim",
-    "record": ".claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md",
-    "ready_after": "the GPP-7 closure path is recorded as keep_rehearsal_only (Option Y authoritative) as the first of three M6 slices (GPP-7 + GPP-8 + GPP-9) under the autonomous chain authority; existing GP-5.5a controlled patch/test contract + GP-5.5b controlled patch/test rehearsal + GP-5.6a disposable PR write rehearsal + GP-5.7a full rehearsal contract + GP-5.7b full rehearsal execution gate evidence stack is preserved as preparation evidence (not authority) for the keep_rehearsal_only decision; Option X (write_candidate_ready) production-targeted controlled write evidence chain is deferred to a future operator-bound supersession slice; Option Z defer is rejected; M6 milestone closure is reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9); no live adapter execution, no support widening, no production platform claim, no script mutation, no schema change, no workflow change, no controlled patch/test lane reclassification happens in GPP-7",
+    "issue": "https://github.com/Halildeu/ao-kernel/issues/633",
+    "exit_decision": "gpp8_keep_sandbox_only_authoritative_no_remote_pr_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "record": ".claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md",
+    "ready_after": "the GPP-8 closure path is recorded as keep_sandbox_only (Option Y authoritative) as the second of three M6 slices (GPP-7 + GPP-8 + GPP-9) under the autonomous chain authority; existing GP-5.6a disposable sandbox PR write rehearsal + GP-5.7a full rehearsal contract + GP-5.7b full rehearsal execution gate evidence stack is preserved as preparation evidence (not authority) for the keep_sandbox_only decision; Option X (remote_pr_candidate_ready) production-targeted remote PR live-write evidence chain is deferred to a future operator-bound supersession slice; Option Z defer is rejected; M6 milestone closure is reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9); no live adapter execution, no support widening, no production platform claim, no script mutation, no schema change, no workflow change, no remote PR lane reclassification happens in GPP-8",
     "allowed_scope": [
-      "record the GPP-7 closure path decision as keep_rehearsal_only (Option Y authoritative) for the controlled write-side production candidate question",
-      "treat the existing GP-5.5a/5.5b/5.6a/5.7a/5.7b rehearsal evidence stack as supporting preparation evidence (not authority) for the keep_rehearsal_only decision; the controlled patch/test lane support tier stays rehearsal-only",
-      "defer Option X (write_candidate_ready) as operator-bound; any future production-targeted controlled write evidence chain requires a separate operator-only PR adding an explicit production-candidate authorization flag and reclassifying the controlled patch/test evidence accordingly",
-      "reject Option Z (defer) because the existing preparation/rehearsal evidence stack is authoritative preparation evidence under the autonomous chain and promoting defer over keep_rehearsal_only would re-open a closed sub-question without new evidence",
-      "update docs/SUPPORT-BOUNDARY.md with a GPP-7 closure paragraph after the GPP-6 closeout paragraph",
-      "update docs/PUBLIC-BETA.md with a new GPP-7 closure decision row and minimal additive sync on GP-5.5a / GP-5.5b / GP-5.6a / GP-5.7a / GP-5.7b rows for preparation/rehearsal evidence preserved under GPP-7 keep_rehearsal_only wording",
-      "update docs/KNOWN-BUGS.md with a GPP-7 closeout interpretation subsection after the GPP-6 closeout subsection (no blocker rename or removal)",
-      "migrate current_wp from GPP-6c closed to GPP-7 closed; move GPP-6c to completed_wps with closed_at and PR #630 reference",
-      "update progress_estimates: wp_weighted completed_wps_count 45 to 46, closed_current_wp_count stays 1 (GPP-7 current closed), completed_or_closed_count 46 to 47, percent 92 to 94; milestones unchanged (done_count=6, next_milestone_id=M6, M6 stays pending)",
+      "record the GPP-8 closure path decision as keep_sandbox_only (Option Y authoritative) for the remote PR live-write promotion candidate question",
+      "treat the existing GP-5.6a disposable sandbox PR write rehearsal + GP-5.7a full rehearsal contract + GP-5.7b full rehearsal execution gate evidence stack as supporting preparation evidence (not authority) for the keep_sandbox_only decision; the remote PR live-write lane stays sandbox/disposable-only",
+      "defer Option X (remote_pr_candidate_ready) as operator-bound; any future production-targeted remote PR live-write evidence chain requires a separate operator-only PR adding an explicit production-candidate authorization flag and reclassifying the remote PR evidence accordingly",
+      "reject Option Z (defer) because the existing preparation/rehearsal evidence stack is authoritative preparation evidence under the autonomous chain and promoting defer over keep_sandbox_only would re-open a closed sub-question without new evidence",
+      "update docs/SUPPORT-BOUNDARY.md with a GPP-8 closure paragraph after the GPP-7 closure paragraph",
+      "update docs/PUBLIC-BETA.md with a new GPP-8 closure decision row and minimal additive sync on GP-5.6a + GP-5.7a + GP-5.7b rows for preparation/rehearsal evidence preserved under GPP-8 keep_sandbox_only wording (GP-5.5a/5.5b controlled patch/test rows are GPP-7 scope, not GPP-8)",
+      "update docs/KNOWN-BUGS.md with a GPP-8 closeout interpretation subsection after the GPP-7 closeout subsection (no blocker rename or removal)",
+      "migrate current_wp from GPP-7 closed to GPP-8 closed; move GPP-7 to completed_wps with closed_at and PR #632 reference",
+      "update progress_estimates: wp_weighted completed_wps_count 46 to 47, closed_current_wp_count stays 1 (GPP-8 current closed), completed_or_closed_count 47 to 48, percent 94 to 96; milestones unchanged (done_count=6, next_milestone_id=M6, M6 stays pending)",
       "preserve M6.status=pending and M6.evidence_refs=[] (M6 closes only after GPP-9 executes)",
-      "do not extend _AGGREGATE_COMPLETION_SOURCES with a GPP-7 entry yet (M6 pending; aggregate map entries are added at the milestone closure slice which is GPP-9)",
-      "treat the GPP-7 closure as M6 Faz 1 only; M6 milestone closure is reserved for GPP-9; GPP-7 closure is not an entry-criteria pass for GPP-8 or GPP-9 (each records its own decision explicitly)",
-      "treat the GPP-7 record as docs/SSOT/test closure under the keep_rehearsal_only authority only; no scripts/ mutation, no schema change, no workflow change, no live claude-code-cli adapter execution, no protected workflow dispatch, no controlled patch/test lane reclassification, no GP-5.9 BC-1 / promotion_blockers list mutation"
+      "do not extend _AGGREGATE_COMPLETION_SOURCES with a GPP-8 entry yet (M6 pending; aggregate map entries are added at the milestone closure slice which is GPP-9)",
+      "update STATUS.md §5 Work Package Board row for GPP-8 from 'Not started' to 'Closed / no support widening | Remote PR live-write promotion candidate | keep_sandbox_only authoritative (Option Y); Option X remote_pr_candidate_ready deferred operator-bound'",
+      "treat the GPP-8 closure as M6 Faz 2 only; M6 milestone closure is reserved for GPP-9; GPP-8 closure is not an entry-criteria pass for GPP-9 (it records its own decision explicitly)",
+      "treat the GPP-8 record as docs/SSOT/test closure under the keep_sandbox_only authority only; no scripts/ mutation, no schema change, no workflow change, no live claude-code-cli adapter execution, no protected workflow dispatch, no remote PR lane reclassification, no non-sandbox repo live-write authorization, no GP-5.9 BC-1 / promotion_blockers list mutation, no branch protection / required-check mutation"
     ],
     "evidence_collected": []
   },
@@ -326,6 +327,14 @@
       "pr": "https://github.com/Halildeu/ao-kernel/pull/630",
       "record": ".claude/plans/GPP-6c-KEEP-REHEARSAL-ONLY-INFAZ.md",
       "closed_at": "2026-05-25T23:22:54Z"
+    },
+    {
+      "id": "GPP-7",
+      "decision": "gpp7_keep_rehearsal_only_authoritative_no_write_side_production_candidate_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "issue": "https://github.com/Halildeu/ao-kernel/issues/631",
+      "pr": "https://github.com/Halildeu/ao-kernel/pull/632",
+      "record": ".claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md",
+      "closed_at": "2026-05-26T00:22:00Z"
     }
   ],
   "blocked_wps": [],
@@ -431,7 +440,18 @@
     "set milestones[M6].status=done or update milestones[M6].evidence_refs under the GPP-7 closure path; M6 closure is reserved for GPP-9",
     "reclassify GP-5.5b / GP-5.6a / GP-5.7b rehearsal reports as production evidence under the GPP-7 closure path",
     "mutate GP-5.9 promotion_blockers list, BC-1 status, or BC-10 status under the GPP-7 closure path; any such mutation is reserved for a supersession slice",
-    "add a _AGGREGATE_COMPLETION_SOURCES GPP-7 entry to tests/test_gpp_next.py under the GPP-7 closure path; aggregate map entries are added at the milestone closure slice (GPP-9 will add the GPP-7+8+9 aggregate entry as part of M6 done)"
+    "add a _AGGREGATE_COMPLETION_SOURCES GPP-7 entry to tests/test_gpp_next.py under the GPP-7 closure path; aggregate map entries are added at the milestone closure slice (GPP-9 will add the GPP-7+8+9 aggregate entry as part of M6 done)",
+    "treat the GPP-8 keep_sandbox_only decision as a production remote PR candidate claim or as Option X (remote_pr_candidate_ready) authorization",
+    "treat the GP-5.6a disposable sandbox PR write rehearsal report or GP-5.7b full rehearsal aggregation as production remote PR candidate evidence under the GPP-8 keep_sandbox_only path",
+    "treat the GPP-8 closure as M6 milestone closure; M6 closes only after GPP-9 executes with three evidence_refs (GPP-7 + GPP-8 + GPP-9)",
+    "modify scripts/gp5_disposable_pr_write_rehearsal.py or scripts/gp5_full_production_rehearsal.py to produce production-targeted remote PR evidence under the GPP-8 keep_sandbox_only path",
+    "treat the GPP-8 decision as an entry-criteria pass for GPP-9 (final claim); GPP-9 records its own decision explicitly",
+    "set support_widening_allowed=true, production_platform_claim_allowed=true, or live_adapter_execution_allowed=true under the GPP-8 closure path",
+    "set milestones[M6].status=done or update milestones[M6].evidence_refs under the GPP-8 closure path; M6 closure is reserved for GPP-9",
+    "reclassify GP-5.6a / GP-5.7b sandbox rehearsal reports as production remote PR candidate evidence under the GPP-8 closure path",
+    "authorize non-sandbox repo remote PR live-write or remove the sandbox guard keyword requirement under the GPP-8 closure path; any non-sandbox repo live-write requires a separate operator-bound Option X supersession slice",
+    "add a _AGGREGATE_COMPLETION_SOURCES GPP-8 entry to tests/test_gpp_next.py under the GPP-8 closure path; aggregate map entries are added at the milestone closure slice (GPP-9 will add the GPP-7+8+9 aggregate entry as part of M6 done)",
+    "mutate branch protection / required-check ruleset, scripts/gp5_disposable_pr_write_rehearsal.py, scripts/gp5_full_production_rehearsal.py, ao_kernel/defaults/schemas/, or .github/workflows/ under the GPP-8 closure path; any such mutation is reserved for a supersession slice"
   ],
   "next_allowed_actions": [
     "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession",
@@ -464,9 +484,11 @@
     "the GPP-6 closure path is executed under the keep_rehearsal_only authority; M5 milestone is closed; any protected live read-only E2E rehearsal requires a separate operator-bound Option X supersession slice (authorize_protected_live_e2e); GPP-6 Option X slot is independent from GPP-4 Option X slot",
     "preserve the GP-5.9 promotion blockers (claude_code_cli_auth_operator_managed, kb001_claude_code_cli_operator_managed_auth, protected_live_adapter_gate_unattested, kb002_gh_cli_pr_sandbox_only_live_write, gh_cli_pr_live_write_not_production_promoted, repo_intelligence_context_handoff_not_runtime_auto_fed) under the GPP-4 keep_operator_beta authority; GPP-6 closure does not touch them",
     "the GPP-7 closure path is recorded as keep_rehearsal_only (Option Y authoritative) for the controlled write-side production candidate question; M6 Faz 1 closed; controlled patch/test lane support tier stays rehearsal-only",
-    "reserve M6 milestone closure (status pending to done with three evidence_refs GPP-7 + GPP-8 + GPP-9) for GPP-9; GPP-7 alone does not close M6",
+    "the GPP-8 closure path is recorded as keep_sandbox_only (Option Y authoritative) for the remote PR live-write promotion candidate question; M6 Faz 2 closed; remote PR live-write lane stays sandbox/disposable-only",
+    "reserve M6 milestone closure (status pending to done with three evidence_refs GPP-7 + GPP-8 + GPP-9) for GPP-9; GPP-7 + GPP-8 alone do not close M6",
     "reserve Option X (write_candidate_ready) production-targeted controlled write evidence chain for a future operator-bound supersession slice",
-    "open the next M6 slice GPP-8 (remote PR keep_sandbox_only) when ready; GPP-8 records its own Option X / Option Y / Option Z decision explicitly"
+    "reserve Option X (remote_pr_candidate_ready) production-targeted remote PR live-write evidence chain for a future operator-bound supersession slice",
+    "open the next M6 slice GPP-9 (final claim keep_narrow_stable_runtime) when ready; GPP-9 records its own Option X / Option Y / Option Z decision explicitly and closes M6 milestone with three evidence_refs"
   ],
   "milestones": [
     {
@@ -573,13 +595,13 @@
       "next_milestone_id": "M6"
     },
     "wp_weighted": {
-      "completed_wps_count": 46,
+      "completed_wps_count": 47,
       "closed_current_wp_count": 1,
-      "completed_or_closed_count": 47,
+      "completed_or_closed_count": 48,
       "estimated_total_wps": 50,
-      "percent": 94,
+      "percent": 96,
       "estimated": true
     }
   },
-  "last_updated": "2026-05-25T23:45:00Z"
+  "last_updated": "2026-05-26T00:30:00Z"
 }

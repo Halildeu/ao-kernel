@@ -24,10 +24,10 @@ authority.
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
 **Tracker issue:** [#470](https://github.com/Halildeu/ao-kernel/issues/470)
-**Current slice issue:** [#631](https://github.com/Halildeu/ao-kernel/issues/631)
-for GPP-7 controlled write-side keep_rehearsal_only decision (closed; M6 Faz 1; M6 in progress — GPP-8 + GPP-9 reserved)
-**Current slice record:** `.claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md`
-**M6 chain records (in progress):** `.claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md`; M6 closeout reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9)
+**Current slice issue:** [#633](https://github.com/Halildeu/ao-kernel/issues/633)
+for GPP-8 remote PR sandbox-only decision (closed; M6 Faz 2; M6 in progress — GPP-9 reserved)
+**Current slice record:** `.claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md`
+**M6 chain records (in progress):** `.claude/plans/GPP-7-WRITE-CANDIDATE-DECISION.md`, `.claude/plans/GPP-8-REMOTE-PR-SANDBOX-DECISION.md`; M6 closeout reserved for GPP-9 with three evidence_refs (GPP-7 + GPP-8 + GPP-9)
 **M5 closeout (historical):** `.claude/plans/GPP-6c-KEEP-REHEARSAL-ONLY-INFAZ.md` (issue [#629](https://github.com/Halildeu/ao-kernel/issues/629))
 **M4 closeout (historical):** `.claude/plans/GPP-4c-KEEP-OPERATOR-BETA-INFAZ.md` (issue [#625](https://github.com/Halildeu/ao-kernel/issues/625))
 **M3 closeout (historical):** `.claude/plans/GPP-3c-BC10-EXCEPTION-INFAZ.md` (issue [#618](https://github.com/Halildeu/ao-kernel/issues/618))
@@ -61,8 +61,9 @@ exit decisions are recorded with evidence.
 
 Current progress: **6/7 milestones done (86%); M6 — Production
 matrix + final claim in progress** (GPP-7 closed under keep_rehearsal_only
-authority; M6 closeout reserved for GPP-9 with three evidence_refs
-GPP-7 + GPP-8 + GPP-9). WP-weighted estimate: **47/50 (94%;
+authority; GPP-8 closed under keep_sandbox_only authority; M6
+closeout reserved for GPP-9 with three evidence_refs GPP-7 + GPP-8
++ GPP-9). WP-weighted estimate: **48/50 (96%;
 estimated)** — treat this as a coarse indicator only; the canonical
 view is the milestone-based count.
 
@@ -469,7 +470,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-6a` | Completed / preparation only / no support widening | Read-only E2E preflight contract | preflight ready; execution blocked by GPP-4 read-only adapter decision |
 | `GPP-6` | Preparation only / execution blocked | Read-only production E2E over real adapter + repo intelligence | `read_only_e2e_ready` / `blocked_e2e` |
 | `GPP-7` | Closed / no support widening | Controlled write-side production candidate | `keep_rehearsal_only` authoritative (Option Y); Option X `write_candidate_ready` deferred operator-bound |
-| `GPP-8` | Not started | Remote PR live-write promotion candidate | `remote_pr_candidate_ready` / `keep_sandbox_only` |
+| `GPP-8` | Closed / no support widening | Remote PR live-write promotion candidate | `keep_sandbox_only` authoritative (Option Y); Option X `remote_pr_candidate_ready` deferred operator-bound |
 | `GPP-9` | Not started | Full production matrix + claim decision | `promote_general_purpose_production` / `promote_general_purpose_beta` / `keep_narrow_stable_runtime` |
 
 ## 6. GPP-0 - Tracker and SSOT
