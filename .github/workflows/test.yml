@@ -696,21 +696,31 @@ jobs:
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 
-      - name: Evaluate ao-release-gate decision (enforce, C-prime wrapper)
-        # RG-CONCLUSION-SEMANTICS C-prime contract (Codex thread 019e65c3):
-        # --wrapper-exit-code preserves the legacy required-check name by
-        # mapping a lone CODEOWNER-review-pending blocker to exit 0; real
-        # violations, stale branches, and mixed blockers still exit 1.
-        # --emit-multi-check-runs writes the two new check-run artifacts
-        # consumed by the next step (Checks API publish). CODEOWNER
-        # review enforcement after this migration is provided by GitHub's
-        # require_code_owner_reviews branch protection rule and the new
-        # ao-release-gate-review check-run with action_required
-        # conclusion, NOT this legacy compatibility wrapper.
+      - name: Evaluate ao-release-gate decision (enforce, bootstrap-safe C-prime wrapper)
+        # RG-CONCLUSION-SEMANTICS C-prime contract (Codex thread 019e65c3
+        # iter-2 + iter-3 absorb). The decision-core code is checked out
+        # from the PR base SHA (`base/scripts/`), so a freshly opened
+        # RG-1 migration PR runs against a base that has not yet
+        # received the new ``--wrapper-exit-code`` /
+        # ``--emit-multi-check-runs`` flags. To keep this PR self-runnable
+        # without rewriting branch protection, the step is bootstrap-safe:
+        # it probes ``--help`` for the new flags and falls back to the
+        # legacy ``--fail-on-deny`` invocation when the base script does
+        # not yet support them. After RG-1 merges, every subsequent PR
+        # base will have the new flags and the C-prime branch is taken.
         working-directory: base
         run: |
           mkdir -p check-runs
+          if python scripts/ao_release_gate_decision.py --help 2>/dev/null | grep -q -- '--wrapper-exit-code'; then
+            EXIT_MODE="--wrapper-exit-code"
+            EMIT_FLAGS="--emit-multi-check-runs check-runs"
+          else
+            echo "::warning::base script predates RG-CONCLUSION-SEMANTICS C-prime; falling back to --fail-on-deny"
+            EXIT_MODE="--fail-on-deny"
+            EMIT_FLAGS=""
+          fi
           if [ -f local-gpp-gate-evidence.v1.json ]; then
+            # shellcheck disable=SC2086
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
               --gpp-status .claude/plans/gpp_status.v1.json \
@@ -718,25 +728,28 @@ jobs:
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
-              --emit-multi-check-runs check-runs \
-              --wrapper-exit-code
+              $EMIT_FLAGS \
+              $EXIT_MODE
           else
+            # shellcheck disable=SC2086
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
               --gpp-status .claude/plans/gpp_status.v1.json \
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
-              --emit-multi-check-runs check-runs \
-              --wrapper-exit-code
+              $EMIT_FLAGS \
+              $EXIT_MODE
           fi
 
-      - name: Publish dual check-runs via Checks API (RG-CONCLUSION-SEMANTICS)
-        # Always run so the technical / review check-runs surface even
-        # when the decision step exits non-zero on a real violation.
-        # The publish script tolerates missing artifacts (logs a warning,
-        # does not fail) so a partial decision-step crash does not
-        # double-fail the gate job.
+      - name: Publish dual check-runs via Checks API (bootstrap-safe)
+        # RG-CONCLUSION-SEMANTICS C-prime dual publish. The publish
+        # script lives in ``base/scripts/`` (trusted-base contract). On
+        # an RG-1 bootstrap PR whose base predates the script, this step
+        # logs a warning and skips so the workflow does not double-fail
+        # alongside the legacy decision step.
+        # ``always()`` so the check-runs surface even when the decision
+        # step exited non-zero on a real violation.
         if: always()
         working-directory: base
         env:
@@ -744,6 +757,10 @@ jobs:
           REPO_FULL: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          if [ ! -f scripts/ao_release_gate_publish_check_runs.py ]; then
+            echo "::warning::base lacks scripts/ao_release_gate_publish_check_runs.py; dual check-run publish skipped (RG-1 bootstrap path)"
+            exit 0
+          fi
           python scripts/ao_release_gate_publish_check_runs.py \
             --dir check-runs \
             --repo "$REPO_FULL" \

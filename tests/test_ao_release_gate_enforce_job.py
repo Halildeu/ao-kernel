@@ -420,34 +420,47 @@ def test_enforce_job_passes_runtime_generated_evidence_to_decision_script() -> N
     collapsed = re.sub(r"\\\n\s+", " ", block)
     invocations = [line for line in collapsed.splitlines() if "scripts/ao_release_gate_decision.py" in line]
     assert invocations, "no decision-script invocations found"
-    for invocation in invocations:
+    runtime_invocations = [line for line in invocations if "--help" not in line]
+    assert runtime_invocations, "decision-script runtime invocations missing (only --help probe found)"
+    for invocation in runtime_invocations:
         assert "--conclusion-mode enforce" in invocation, (
             f"decision invocation missing --conclusion-mode enforce: {invocation}"
         )
-        # RG-CONCLUSION-SEMANTICS C-prime: --wrapper-exit-code replaces
-        # --fail-on-deny so a lone CODEOWNER-review-pending blocker maps
-        # to exit 0 on the legacy compatibility wrapper. Real violations
-        # still exit 1. The companion --emit-multi-check-runs writes the
-        # ao-release-gate-technical + ao-release-gate-review artifacts
-        # consumed by the next workflow step (Checks API publish).
-        assert "--wrapper-exit-code" in invocation, (
-            f"decision invocation missing --wrapper-exit-code (RG-CONCLUSION-SEMANTICS C-prime): {invocation}"
-        )
-        assert "--emit-multi-check-runs" in invocation, (
-            f"decision invocation missing --emit-multi-check-runs (RG-CONCLUSION-SEMANTICS dual publish): {invocation}"
-        )
+    # RG-CONCLUSION-SEMANTICS C-prime: --wrapper-exit-code replaces
+    # --fail-on-deny so a lone CODEOWNER-review-pending blocker maps to
+    # exit 0 on the legacy compatibility wrapper. Real violations still
+    # exit 1. The companion --emit-multi-check-runs writes the
+    # ao-release-gate-{technical,review} artifacts consumed by the
+    # publish step. Workflow is bootstrap-safe (RG-1 bootstrap PR runs
+    # against a base that predates the new flags), so the new flag names
+    # live in shell variable assignments and a legacy --fail-on-deny
+    # fallback exists when the base script lacks --wrapper-exit-code.
+    assert "--wrapper-exit-code" in block, (
+        "RG-CONCLUSION-SEMANTICS C-prime requires --wrapper-exit-code in the enforce job"
+    )
+    assert "--emit-multi-check-runs check-runs" in block, (
+        "RG-CONCLUSION-SEMANTICS dual publish requires --emit-multi-check-runs check-runs"
+    )
+    assert "--fail-on-deny" in block, "bootstrap-safe fallback for RG-1 base must keep --fail-on-deny available"
+    assert "--help" in block and "grep" in block, (
+        "bootstrap fallback must probe --help for --wrapper-exit-code support before invoking it"
+    )
     has_runtime_evidence_invocation = any(
-        "--review-evidence local-gpp-gate-evidence.v1.json" in line for line in invocations
+        "--review-evidence local-gpp-gate-evidence.v1.json" in line for line in runtime_invocations
     )
     assert has_runtime_evidence_invocation, (
         "decision script must consume the runtime-generated gate evidence "
         "(--review-evidence local-gpp-gate-evidence.v1.json), not a head-committed file"
     )
-    # The dual check-run publisher runs after the decision step.
+    # The dual check-run publisher runs after the decision step,
+    # guarded by a missing-script tolerance for the RG-1 bootstrap path.
     assert "scripts/ao_release_gate_publish_check_runs.py" in block, (
         "RG-CONCLUSION-SEMANTICS C-prime requires the dual check-run publish step"
     )
     assert "--dir check-runs" in collapsed, "publisher must read artifacts from check-runs/"
+    assert "ao_release_gate_publish_check_runs.py" in block and "exit 0" in block and "warning" in block.lower(), (
+        "publish step must tolerate missing script on RG-1 bootstrap base (warning + exit 0)"
+    )
 
 
 def test_enforce_job_uses_synthesizer_only_for_pre_decision_crash_path() -> None:
