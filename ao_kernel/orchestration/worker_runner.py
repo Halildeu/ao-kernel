@@ -37,6 +37,16 @@ class WorkerRunnerError(RuntimeError):
     """Raised when the runner cannot prepare worktrees fail-closed."""
 
 
+def _path_is_under(child: Path, parent: Path) -> bool:
+    """Return True when ``child`` is the same as or under ``parent``."""
+
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
 @dataclass
 class WorkerRunner:
     """Prepare git worktrees from an AO-MA-3 manifest."""
@@ -126,23 +136,50 @@ class WorkerRunner:
         *,
         worktree: Path,
         declared_write_set: list[str],
+        base_sha: str | None = None,
     ) -> dict[str, Any]:
-        """Verify actual changed files subset of declared_write_set."""
+        """Verify actual changed files ⊆ declared_write_set (subset).
+
+        Codex iter-2 absorb: the actual changed set is the UNION of:
+
+        - committed changes since ``base_sha`` (``git diff --name-only base_sha..HEAD``)
+        - staged changes (``git diff --name-only --staged``)
+        - unstaged changes (``git diff --name-only``)
+        - untracked files (``git ls-files --others --exclude-standard``)
+
+        ``HEAD``-only diff missed (a) untracked files and (b) committed
+        worker changes relative to the orchestrator-supplied base. The union
+        captures every place a worker might write while still preserving the
+        subset (rather than equality) semantic.
+        """
+
+        actual_set: set[str] = set()
+        actual_set.update(self._git_lines(worktree, ["diff", "--name-only"]))
+        actual_set.update(self._git_lines(worktree, ["diff", "--name-only", "--staged"]))
+        actual_set.update(self._git_lines(worktree, ["ls-files", "--others", "--exclude-standard"]))
+        if base_sha:
+            actual_set.update(self._git_lines(worktree, ["diff", "--name-only", f"{base_sha}..HEAD"]))
+        actual = sorted(actual_set)
+        declared = set(declared_write_set)
+        extras = [f for f in actual if f not in declared]
+        return {"ok": not extras, "actual": actual, "extras": extras}
+
+    def _git_lines(self, worktree: Path, args: list[str]) -> list[str]:
+        """Run ``git -C worktree <args>`` and return non-empty stdout lines."""
 
         try:
             completed = subprocess.run(
-                ["git", "-C", str(worktree), "diff", "--name-only", "HEAD"],
-                check=True,
+                ["git", "-C", str(worktree), *args],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=10,
             )
-        except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired) as exc:
-            raise WorkerRunnerError(f"git diff failed in {worktree!s}: {exc}") from exc
-        actual = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
-        declared = set(declared_write_set)
-        extras = [f for f in actual if f not in declared]
-        return {"ok": not extras, "actual": actual, "extras": extras}
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise WorkerRunnerError(f"git {args!r} failed in {worktree!s}: {exc}") from exc
+        if completed.returncode != 0:
+            return []
+        return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
 
     def cleanup(
         self,
@@ -232,11 +269,33 @@ class WorkerRunner:
         return completed.stdout.strip()
 
     def _resolve_worktree_path(self, assignment: dict[str, Any]) -> tuple[Path, Path]:
+        """Resolve planned + actual worktree paths with containment fail-closed.
+
+        Codex iter-2 absorb: ``actual`` must stay under either ``worktree_base``
+        (when override is in effect) or under ``repo_root`` (default). Path
+        traversal or symlink escape via ``..`` / absolute paths is rejected
+        so the runner cannot accidentally provision outside its allowed root.
+        """
+
+        import re as _re
+
         planned = Path(assignment["worktree"])
+        task_id = assignment["task_id"]
+        if not _re.match(r"^[a-z0-9][a-z0-9._-]{1,80}$", task_id):
+            raise WorkerRunnerError(f"task_id {task_id!r} does not match AO-MA-2 id pattern; refuse path build")
         if self.worktree_base is not None:
-            actual = (self.worktree_base / assignment["task_id"]).resolve()
+            resolved_base = self.worktree_base.resolve()
+            actual = (resolved_base / task_id).resolve()
+            if not _path_is_under(actual, resolved_base):
+                raise WorkerRunnerError(f"task_id {task_id!r} escapes worktree_base {resolved_base!s}")
         else:
-            actual = (self.repo_root / planned).resolve() if not planned.is_absolute() else planned.resolve()
+            resolved_repo = self.repo_root.resolve()
+            if planned.is_absolute():
+                actual = planned.resolve()
+            else:
+                actual = (resolved_repo / planned).resolve()
+            if not _path_is_under(actual, resolved_repo):
+                raise WorkerRunnerError(f"planned worktree {planned!s} escapes repo_root {resolved_repo!s}")
         return planned, actual
 
     def _spawn_one(
