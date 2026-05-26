@@ -17,7 +17,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
