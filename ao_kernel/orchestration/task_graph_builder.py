@@ -130,8 +130,11 @@ def _normalize_paths(paths: list[str]) -> list[str]:
         if "\\" in raw:
             raise TaskGraphBuilderError(f"path {raw!r} contains backslash; use forward slashes for POSIX paths")
         segments = raw.split("/")
-        if any(seg in ("..", ".") for seg in segments):
-            raise TaskGraphBuilderError(f"path {raw!r} contains '..' or '.' segment; canonical paths required")
+        # Codex iter-3 absorb: reject empty segments too — ``foo//bar`` and
+        # ``foo/`` would otherwise collapse to the same Path during git/tool
+        # normalization and silently bypass the overlap fail-closed guard.
+        if any(seg in ("", ".", "..") for seg in segments):
+            raise TaskGraphBuilderError(f"path {raw!r} contains '..', '.', or empty segment; canonical paths required")
         if raw in seen:
             continue
         seen.add(raw)
