@@ -167,11 +167,34 @@
     "stale_replay_guard": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["base_ref", "head_ref", "pr_number_hint", "timestamp"],
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number",
+        "base_sha",
+        "readiness_manifest_sha256",
+        "ri78_submanifest_sha256",
+        "timestamp"
+      ],
       "properties": {
         "base_ref": {"type": "string", "const": "refs/heads/main"},
         "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization"},
-        "pr_number_hint": {"type": "string"},
+        "pr_number": {"type": "integer", "const": 673},
+        "base_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "git SHA of origin/main at the time the operator pre-authorization was recorded. Future RI-7.8b slices verify they inherit from this exact base."
+        },
+        "readiness_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json at this PR. Pins the 9/9 readiness state the pre-authorization is anchored to."
+        },
+        "ri78_submanifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json at this PR. Pins the RI-7.8 chain submanifest state."
+        },
         "timestamp": {
           "type": "string",
           "format": "date-time",

@@ -336,6 +336,30 @@ def _resolve_diff_base() -> tuple[str | None, str]:
     return None, "none"
 
 
+def test_ri78a_stale_replay_guard_digests_match_files() -> None:
+    """Codex iter-2 absorb: the stale_replay_guard's
+    ``readiness_manifest_sha256`` and ``ri78_submanifest_sha256`` MUST
+    match the actual file contents on disk. This binds the
+    pre-authorization to the exact readiness/submanifest state and
+    rejects any drift. RI-7.8b slices will consume these digests as
+    `pre_authorization_ref` and verify their own inheritance chain.
+    """
+    import hashlib
+
+    evidence = json.loads(_read(_EVIDENCE_PATH))
+    guard = evidence["stale_replay_guard"]
+    actual_readiness = hashlib.sha256(_READINESS_MANIFEST_PATH.read_bytes()).hexdigest()
+    actual_submanifest = hashlib.sha256(_SUBMANIFEST_PATH.read_bytes()).hexdigest()
+    assert guard["readiness_manifest_sha256"] == actual_readiness, (
+        f"readiness manifest digest drift: pinned={guard['readiness_manifest_sha256']!r} actual={actual_readiness!r}"
+    )
+    assert guard["ri78_submanifest_sha256"] == actual_submanifest, (
+        f"submanifest digest drift: pinned={guard['ri78_submanifest_sha256']!r} actual={actual_submanifest!r}"
+    )
+    assert guard["pr_number"] == 673
+    assert re.fullmatch(r"[0-9a-f]{40}", guard["base_sha"])
+
+
 def test_ri78a_forbidden_surfaces_actually_unchanged_in_diff() -> None:
     """CI fail-closed in PR context: forbidden surfaces MUST not appear
     in `git diff --name-only base..HEAD`. Machine enforcement, not

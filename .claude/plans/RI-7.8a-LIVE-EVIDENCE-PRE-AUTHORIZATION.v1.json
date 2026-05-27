@@ -65,7 +65,10 @@
   "stale_replay_guard": {
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization",
-    "pr_number_hint": "tbd-after-open",
+    "pr_number": 673,
+    "base_sha": "0de10c4fbc50e0607d204ecf54121d51eeee62df",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
     "timestamp": "2026-05-28T00:00:00Z"
   },
   "support_widening": false,
@@ -75,7 +78,7 @@
     "repo": "Halildeu/ao-kernel",
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization",
-    "pr_number_hint": "tbd-after-open"
+    "pr_number_hint": "673"
   },
   "submanifest_transition": {
     "before": {
