@@ -1,0 +1,46 @@
+{
+  "schema_version": "ao-ma-9-gpp-integration-evidence.v1",
+  "artifact_kind": "ao_ma_9_gpp_integration_evidence",
+  "decision": "ao_ma_9_evidence_chain_wired",
+  "wire_mode": "evidence_manifest_only",
+  "release_authority_claim": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "ao_ma_chain_refs": {
+    "schemas_pr": "#637",
+    "orchestrator_pr": "#645",
+    "runner_pr": "#648",
+    "integrator_pr": "#654",
+    "reviewer_pr": "#655",
+    "verifier_pr": "#657",
+    "e2e_smoke_pr": "#660"
+  },
+  "gpp_2d_artifact_refs": {
+    "enforce_evidence": ".claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE.md",
+    "cutover_runbook": ".claude/plans/GPP-2D-5-CUTOVER-RUNBOOK.md",
+    "cutover_verification": ".claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES.md",
+    "smee_retirement": ".claude/plans/GPP-2D-5A-SMEE-RETIREMENT-EVIDENCE.md",
+    "automerge_smoke": ".claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK.md",
+    "ao_gate_9_closeout": ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"
+  },
+  "ao_ma_8_chain_proof_refs": {
+    "smoke_plan": ".claude/plans/AO-MA-8-E2E-SMOKE.md",
+    "smoke_receipt": ".claude/plans/AO-MA-8-E2E-SMOKE-EVIDENCE.v1.json",
+    "smoke_schema": "ao_kernel/defaults/schemas/ao-ma-8-e2e-smoke-evidence.schema.v1.json",
+    "smoke_test": "tests/test_ao_ma_8_e2e_smoke.py"
+  },
+  "gpp_status_invariants_at_closure": {
+    "current_wp_id": "GPP-9",
+    "current_wp_status": "closed",
+    "milestones_done_total": "7/7",
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}
