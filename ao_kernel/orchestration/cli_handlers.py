@@ -24,6 +24,11 @@ from ao_kernel.orchestration.orchestrator import (
     Orchestrator,
     SSOTPaths,
 )
+from ao_kernel.orchestration.reviewer import (
+    ReviewInputs,
+    Reviewer,
+    ReviewerError,
+)
 from ao_kernel.orchestration.task_graph_builder import TaskSpec
 from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
@@ -369,6 +374,77 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         help="Stdout summary format (default: text)",
     )
 
+    # AO-MA-6: review (artifact intake; NO LLM call; NO PR/GitHub fetch)
+    review_p = orchestration_sub.add_parser(
+        "review",
+        help=(
+            "Reviewer artifact intake v1: validate inputs, enforce cross-provider + bounded "
+            "REVISE, emit schema-valid review_verdict.v1.json. NO LLM call, NO PR/GitHub fetch — "
+            "operator (or external reviewer) supplies the verdict + findings + evidence paths."
+        ),
+    )
+    review_p.add_argument("--manifest", required=True, help="Path to AO-MA-3 manifest.v1.json")
+    review_p.add_argument("--task-id", required=True, help="Task ID being reviewed (must match runner_report worker)")
+    review_p.add_argument(
+        "--worker-result",
+        action="append",
+        required=True,
+        help=(
+            "Per-task worker_result.v1.json mapping '<task_id>=<path>'. Reviewer reads the "
+            "implementer identity from worker_result.worker.provider (cross-provider HARD RULE)."
+        ),
+    )
+    review_p.add_argument("--reviewer-agent-id", required=True, help="Reviewer agent ID (free string)")
+    review_p.add_argument(
+        "--reviewer-provider",
+        required=True,
+        choices=["openai", "anthropic", "minimax", "google", "local", "tool"],
+        help="Reviewer LLM provider; must differ from worker_result.worker.provider",
+    )
+    review_p.add_argument("--reviewer-session-id", required=True, help="Reviewer session ID (audit trail)")
+    review_p.add_argument(
+        "--verdict",
+        required=True,
+        choices=["AGREE", "REVISE", "BLOCK"],
+        help="Reviewer's verdict; REVISE may be force-blocked when bounded REVISE budget exhausted",
+    )
+    review_p.add_argument(
+        "--findings-json",
+        required=True,
+        help=(
+            "Path to JSON file containing a top-level array of finding objects matching "
+            "ao-ma-review-verdict.schema.v1.json::$defs.finding (severity + title + body required; "
+            "additionalProperties=false)."
+        ),
+    )
+    review_p.add_argument("--diff-path", default=None, help="Optional: PR/git diff snapshot consulted")
+    review_p.add_argument(
+        "--acceptance-criteria-path", default=None, help="Optional: task.acceptance_criteria evidence"
+    )
+    review_p.add_argument("--repo-ssot", default=None, help="Optional: repo SSOT excerpt consulted")
+    review_p.add_argument("--ci-results", default=None, help="Optional: CI output consulted")
+    review_p.add_argument("--artifact-chain", default=None, help="Optional: related AO-MA artifacts consulted")
+    review_p.add_argument(
+        "--prior-review-verdict",
+        action="append",
+        default=None,
+        help=(
+            "Repeatable: path to prior review_verdict.v1.json file (same task). Used for "
+            "bounded REVISE budget count. Verdicts for other graphs/tasks ignored defensively."
+        ),
+    )
+    review_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    review_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
 
 def _parse_per_task_paths(raw: list[str] | None, kind: str) -> dict[str, Path]:
     """Parse repeated '--worker-result <task_id>=<path>' CLI args into a dict.
@@ -461,4 +537,94 @@ def cmd_orchestration_integrate(args: argparse.Namespace) -> int:
     # failure, since iter-4 required "at least one worker decision" for emit.)
     if decision.has_pending or decision.has_rejections or decision.has_conflicts:
         return 1
+    return 0
+
+
+def cmd_orchestration_review(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration review`` (AO-MA-6 v1).
+
+    Exit codes (Codex iter-1/2 absorb):
+
+    - 0 — review_verdict.v1.json emitted (AGREE/REVISE/BLOCK or budget-forced BLOCK)
+    - 2 — missing required input / schema validation fail / cross-provider violation / trust-boundary fail
+    - 3 — write failure (FS / schema mismatch at emit time)
+    """
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    worker_result_paths = _parse_per_task_paths(args.worker_result, "worker-result")
+
+    def _opt_path(value: str | None) -> Path | None:
+        return Path(value).resolve() if value else None
+
+    findings_path = Path(args.findings_json).resolve()
+    if not findings_path.exists():
+        print(f"error: --findings-json file not found: {findings_path!s}", file=sys.stderr)
+        return 2
+
+    prior_paths = [Path(p).resolve() for p in (args.prior_review_verdict or [])]
+    for p in prior_paths:
+        if not p.exists():
+            print(f"error: --prior-review-verdict file not found: {p!s}", file=sys.stderr)
+            return 2
+
+    inputs = ReviewInputs(
+        manifest_path=manifest_path,
+        task_id=args.task_id,
+        worker_result_paths=worker_result_paths,
+        reviewer_agent_id=args.reviewer_agent_id,
+        reviewer_provider=args.reviewer_provider,
+        reviewer_session_id=args.reviewer_session_id,
+        verdict=args.verdict,
+        findings_path=findings_path,
+        diff_path=_opt_path(args.diff_path),
+        acceptance_criteria_path=_opt_path(args.acceptance_criteria_path),
+        repo_ssot_path=_opt_path(args.repo_ssot),
+        ci_results_path=_opt_path(args.ci_results),
+        artifact_chain_path=_opt_path(args.artifact_chain),
+        prior_review_verdict_paths=prior_paths,
+    )
+
+    reviewer = Reviewer(repo_root=repo_root)
+    try:
+        decision = reviewer.review(inputs)
+    except ReviewerError as exc:
+        msg = str(exc)
+        if "review_verdict write failed" in msg:
+            print(f"orchestration review emit failure: {msg}", file=sys.stderr)
+            return 3
+        print(f"orchestration review failed: {msg}", file=sys.stderr)
+        return 2
+
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "requested_verdict": decision.requested_verdict,
+                    "emitted_verdict": decision.emitted_verdict,
+                    "prior_revise_count": decision.prior_revise_count,
+                    "max_revise_rounds": decision.max_revise_rounds,
+                    "budget_forced_block": decision.budget_forced_block,
+                    "diagnostics": decision.diagnostics,
+                    "report": decision.report,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        print(f"requested_verdict: {decision.requested_verdict}")
+        print(f"emitted_verdict:   {decision.emitted_verdict}")
+        print(f"prior_revise_count: {decision.prior_revise_count}")
+        print(f"max_revise_rounds:  {decision.max_revise_rounds}")
+        print(f"budget_forced_block: {decision.budget_forced_block}")
+        if decision.diagnostics:
+            print("diagnostics:")
+            for diag in decision.diagnostics:
+                print(f"  - {diag}")
+        print(f"emitted to: {manifest_path.parent / 'workers' / args.task_id / 'review_verdict.v1.json'}")
+
     return 0
