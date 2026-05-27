@@ -101,7 +101,7 @@ explicitly marked as independent.
 | ID | Status | Purpose | Required artifact | Exit decision |
 |---|---|---|---|---|
 | `RI-7.0` | ready for PR | Land the no-widening readiness gate and this tracking plan | `scripts/repo_intelligence_tier_promotion_readiness.py`, schema, tests, this plan | `ri7_readiness_gate_landed_blocked_no_support_widening` |
-| `RI-7.1` | pending | Record explicit operator authorization for the RI supersession and the general-purpose platform claim target | operator authorization record under `.claude/plans/` plus evidence manifest update | `ri7_operator_authorization_recorded_no_flag_flip` |
+| `RI-7.1` | pending | Record explicit operator authorization for the RI supersession and the general-purpose platform claim target | operator authorization record under `.claude/plans/` plus evidence manifest update | `ri7_operator_authorization_recorded_no_guard_flag_flip` |
 | `RI-7.2` | pending | Close repo-intelligence guardrail hardening matrix | matrix report covering AST/chunk edge cases, namespace isolation, stale vector cleanup, no-root-write, no-auto-feed, no-MCP exposure | `ri7_guardrail_hardening_matrix_ready` |
 | `RI-7.3` | pending | Prove configured vector backend E2E behavior | vector E2E evidence report for write, stale cleanup, namespace isolation, query hash/line validation, fail-closed missing backend/key | `ri7_vector_backend_e2e_ready` |
 | `RI-7.4` | pending | Prove wheel-installed scan/index/query behavior outside the source checkout | packaging smoke report from fresh venv / installed wheel | `ri7_scan_index_query_packaging_smoke_ready` |

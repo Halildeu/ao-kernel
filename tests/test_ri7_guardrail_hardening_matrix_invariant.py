@@ -174,8 +174,11 @@ def test_ri72_manifest_records_guardrail_hardening_matrix_true() -> None:
     # State-at-landing pin only — see docstring. Operator-bound landings
     # will revise this.
     for key in (
-        "explicit_operator_authorization",
-        "general_purpose_platform_claim_authorization",
+        # Codex iter-1 absorb (RI-7.1): explicit_operator_authorization and
+        # general_purpose_platform_claim_authorization are owned by the
+        # operator-bound RI-7.1 slice (PR #661); they may flip true once
+        # that slice lands. Only operator_verified_runtime_semantics
+        # (RI-7.5 owner) remains False at this PR's landing moment.
         "operator_verified_runtime_semantics",
     ):
         assert manifest[key] is False, key

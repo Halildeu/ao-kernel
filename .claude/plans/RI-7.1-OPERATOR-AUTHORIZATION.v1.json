@@ -1,0 +1,60 @@
+{
+  "schema_version": "ri7-operator-authorization-evidence.v1",
+  "artifact_kind": "ri7_operator_authorization_evidence",
+  "decision": "ri7_operator_authorization_recorded_no_guard_flag_flip",
+  "operator": {
+    "github_login": "Halildeu",
+    "authorization_timestamp": "2026-05-27T16:11:43Z",
+    "no_secret_assertion": true
+  },
+  "authorization_scope": [
+    "ri_supersession",
+    "general_purpose_platform_claim_target"
+  ],
+  "ri_supersession_authorized": true,
+  "general_purpose_platform_claim_target_authorized": true,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-1-operator-authorization",
+    "pr_number_hint": "tbd-after-open"
+  },
+  "manifest_transition": {
+    "before": {
+      "explicit_operator_authorization": false,
+      "general_purpose_platform_claim_authorization": false
+    },
+    "after": {
+      "explicit_operator_authorization": true,
+      "general_purpose_platform_claim_authorization": true
+    }
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/gpp_status.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
+      ".github/workflows/",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e6a37-a9d1-7e73-8e90-4088353eb899",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.1 operator authorization slice \u2014 flips two manifest keys (explicit_operator_authorization + general_purpose_platform_claim_authorization) without flipping any guard flag. This authorization is the prerequisite that lets RI-7.5 (operator runtime semantics) and RI-7.8 (final promotion decision) begin collecting evidence; it is NOT the production claim itself.",
+    "Operator authority is established by FOUR concurrent signals (none alone is sufficient): commit identity Halildeu, commit trailers Operator-Authorized-By/Scope/At + No-Guard-Flag-Flip, GitHub PR review approval via ao-release-gate-review required check, cross-AI peer review final AGREE.",
+    "B-path slice 2 of 8 (Codex thread 019e691b iter-3 plan). Next slice: RI-7.5 operator runtime semantics (operator-bound observation + script-generated evidence)."
+  ]
+}
