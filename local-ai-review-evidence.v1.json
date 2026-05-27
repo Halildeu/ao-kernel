@@ -24,6 +24,7 @@
       "tests/test_ri7_cross_lane_production_matrix_invariant.py",
       "tests/test_ri7_gp59_transition_plan_invariant.py",
       "tests/test_ri7_guardrail_hardening_matrix_invariant.py",
+      "tests/test_ri7_operator_authorization_invariant.py",
       "tests/test_ri7_operator_verified_runtime_semantics_invariant.py",
       "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py"
     ]
