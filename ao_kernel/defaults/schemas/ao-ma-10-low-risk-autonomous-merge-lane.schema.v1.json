@@ -189,7 +189,7 @@
           },
           "status": {
             "type": "string",
-            "const": "not_started"
+            "enum": ["not_started", "done"]
           }
         }
       }

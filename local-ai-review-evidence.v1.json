@@ -1,109 +1,105 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.8b-bc1-6a",
-  "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6a-execution-window-authorization",
-    "changed_files": [
-      ".claude/plans/RI-7.8b-bc1-6a-EXECUTION-WINDOW-AUTHORIZATION.md",
-      ".claude/plans/RI-7.8b-bc1-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc1-6a-execution-window-authorization-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py"
-    ]
-  },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "ruff", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "schema_draft_2020_12_valid", "status": "pass"},
-    {"name": "schema_decision_const_authorization_no_execution", "status": "pass"},
-    {"name": "schema_authorization_effect_const_no_execution_no_flip", "status": "pass"},
-    {"name": "schema_does_not_authorize_7_const_enum", "status": "pass"},
-    {"name": "schema_ri78a_predecessor_ref_digest_pinned", "status": "pass"},
-    {"name": "schema_operator_authorization_record_six_signal", "status": "pass"},
-    {"name": "schema_authorization_window_contract_pending_activation", "status": "pass"},
-    {"name": "schema_protected_environment_binding_observed_false_const", "status": "pass"},
-    {"name": "schema_future_workflow_contract_expected_absent", "status": "pass"},
-    {"name": "schema_closure_expiry_revocation_clause_five_const", "status": "pass"},
-    {"name": "schema_activation_requirements_four_const_true", "status": "pass"},
-    {"name": "schema_current_readiness_snapshot_9_9_true", "status": "pass"},
-    {"name": "schema_current_gpp_guard_snapshot_all_false", "status": "pass"},
-    {"name": "schema_ri78_submanifest_snapshot_predecessor_state", "status": "pass"},
-    {"name": "schema_guard_flags_const_false", "status": "pass"},
-    {"name": "schema_submanifest_transition_before_after_equal_false", "status": "pass"},
-    {"name": "schema_forbidden_change_audit_exact_16_set_contains_minmax", "status": "pass"},
-    {"name": "schema_cross_ai_review_provider_split_const", "status": "pass"},
-    {"name": "negative_schema_authorization_effect_other_rejected", "status": "pass"},
-    {"name": "negative_schema_decision_other_rejected", "status": "pass"},
-    {"name": "negative_schema_window_status_other_rejected", "status": "pass"},
-    {"name": "negative_schema_actual_start_at_non_null_rejected", "status": "pass"},
-    {"name": "negative_schema_actual_end_at_non_null_rejected", "status": "pass"},
-    {"name": "negative_schema_observed_true_rejected", "status": "pass"},
-    {"name": "negative_schema_guard_flag_true_rejected", "status": "pass"},
-    {"name": "negative_schema_submanifest_after_bc1_true_rejected", "status": "pass"},
-    {"name": "negative_schema_operator_github_login_other_rejected", "status": "pass"},
-    {"name": "negative_schema_protected_env_production_name_rejected", "status": "pass"},
-    {"name": "negative_schema_future_workflow_sha_non_null_rejected", "status": "pass"},
-    {"name": "negative_schema_forbidden_audit_all_unchanged_false_rejected", "status": "pass"},
-    {"name": "negative_schema_does_not_authorize_missing_action_rejected", "status": "pass"},
-    {"name": "evidence_validates_against_schema", "status": "pass"},
-    {"name": "operator_signature_halildeu_iso_8601_no_secret_six_signal", "status": "pass"},
-    {"name": "ri78a_predecessor_digests_match_predecessor_state", "status": "pass"},
-    {"name": "ri78_submanifest_unchanged_in_6a", "status": "pass"},
-    {"name": "nine_key_readiness_manifest_unchanged_all_true", "status": "pass"},
-    {"name": "gpp_status_untouched_guard_flags_false", "status": "pass"},
-    {"name": "forbidden_change_audit_16_surfaces_machine_enforced", "status": "pass"},
-    {"name": "future_workflow_file_absent_in_repo", "status": "pass"},
-    {"name": "dispatch_allowlist_forbidden_disjoint", "status": "pass"},
-    {"name": "plan_doc_records_decision_no_execution_no_flag_flip", "status": "pass"},
-    {"name": "authorization_recorded_at_not_in_future", "status": "pass"},
-    {"name": "validity_window_bounded_by_max_activation_delay", "status": "pass"},
-    {"name": "pr_number_hint_bound_to_real_pr_675", "status": "pass"},
-    {"name": "authorization_source_is_auditable_reference", "status": "pass"},
-    {"name": "no_support_widening", "status": "pass"},
-    {"name": "no_production_platform_claim", "status": "pass"},
-    {"name": "no_live_adapter_execution", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation", "status": "pass"},
-    {"name": "no_workflow_change", "status": "pass"},
-    {"name": "no_mcp_repo_intelligence_exposure", "status": "pass"},
-    {"name": "no_release_gate_runtime_change", "status": "pass"},
-    {"name": "no_local_gpp_gate_change", "status": "pass"},
-    {"name": "no_readiness_script_change", "status": "pass"},
-    {"name": "no_readiness_manifest_change", "status": "pass"},
-    {"name": "no_gpp_status_change", "status": "pass"},
-    {"name": "no_public_boundary_doc_change", "status": "pass"},
-    {"name": "no_ri78a_predecessor_evidence_change", "status": "pass"},
-    {"name": "no_ri78_submanifest_change", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"},
-    {"name": "codex_plan_time_partial_iter1_absorbed_iter2_agree", "status": "pass"},
-    {"name": "codex_post_impl_iter3_revise_absorbed_timestamp_pr_binding_auditable_source", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "mypy_new_test",
+      "status": "pass"
+    },
+    {
+      "name": "git_diff_check",
+      "status": "pass"
+    },
+    {
+      "name": "json_validation",
+      "status": "pass"
+    },
+    {
+      "name": "ao_ma10d_negative_fail_closed_tests",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_targeted_tests",
+      "status": "pass"
+    },
+    {
+      "name": "ao_ma10_evidence_schema_tests",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_next_guard_check",
+      "status": "pass"
+    },
+    {
+      "name": "claude_cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_ruleset_codeowners_merge_agent_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "no_production_platform_claim",
+      "status": "pass"
+    },
+    {
+      "name": "no_live_adapter_execution",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "RI-7.8b-bc1-6a v1 operator execution-window AUTHORIZATION CONTRACT ONLY evidence. B-path slice 6a of 8 (after RI-7.8a MERGED in PR #673). Codex plan-time thread 019e6ba0-ee03-7e90-b069-057267be13ed iter-1 PARTIAL absorbed (4 critical corrections: 6-signal contract, expected_* pattern, future_workflow_contract separation from forbidden_change_audit, exact-set forbidden audit with contains+minContains+maxContains), iter-2 AGREE.",
-    "Negative authority: this artifact does NOT permit workflow_dispatch_now, adapter_execution_now, credential_reference, cost_incurring_calls_now, support_widening, production_platform_claim, or gpp_status_guard_flip. Activation belongs to RI-7.8b-bc1-6b (which MUST require fresh operator confirmation + workflow SHA binding + protected environment observation + guard flag policy resolution). Evidence record + window closure belongs to RI-7.8b-bc1-6c.",
-    "Schema strictness (Draft 2020-12, additionalProperties=false at every level): decision const ri78b_bc1_6a_execution_window_authorization_recorded_no_execution_no_guard_flag_flip, authorization_effect const execution_window_authorization_recorded_no_execution_no_guard_flag_flip, does_not_authorize minItems=maxItems=7 enum, ri78a_predecessor_ref structured digest pins (pr=673, base_sha=a6cd89c..., 3 sha256), operator_authorization_record 6-signal first-class field (github_login=Halildeu const + ISO 8601 UTC + auditable source + no_secret + scope const + no_immediate_execution const), authorization_window_contract (window_status const, actual_start_at/end_at const null, activation_owner_slice=RI-7.8b-bc1-6b const, contract_status const), protected_environment_binding (env_name const ao-kernel-bc1-live-adapter-attestation NOT production_*, observed=false const, observed_at/source/sha256 null const, observation_owner_slice=RI-7.8b-bc1-6b const), future_workflow_contract (workflow_path const, expected_absent_or_not_touched_in_6a const true, workflow_sha null const, expected_dispatch_inputs_allowlist + expected_forbidden_inputs, contract_status const), closure_expiry_and_revocation_clause (5 const actions including dual closure: authorization_expiry + window_end), activation_requirements (4 const true), current_readiness_snapshot 9/9 true const, current_gpp_guard_snapshot all false const, ri78_submanifest_snapshot mirrors predecessor state, submanifest_transition before false after false const (UNCHANGED), forbidden_change_audit.all_unchanged const true + minItems=maxItems=16 surfaces with contains+minContains+maxContains per surface, cross_ai_review_ref provider split const.",
-    "Negative schema tests (14): authorization_effect != const rejected; decision != const rejected; window_status != authorized_pending_6b_activation rejected; actual_start_at/end_at non-null rejected; observed=true rejected; support_widening/production_platform_claim/live_adapter_execution=true each rejected; submanifest after.bc1=true rejected; operator github_login != Halildeu rejected; protected env_name=production-* rejected; future workflow_sha non-null rejected; forbidden_audit all_unchanged=false rejected; does_not_authorize missing action rejected.",
-    "Submanifest: NEW slice does NOT mutate .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json. All four keys remain at predecessor values (live=true, bc1=false, bc10=false, final=false). 6c flips BC-1 after evidence record + closure.",
-    "Operator authority (4 concurrent signals): commit identity Halildeu, commit trailers (Operator-Window-Authorized-By + At + Authorization-Scope=bc1_6a_execution_window_contract_only + No-Execution-Permission=true + No-Guard-Flag-Flip + Activation-Requires-Fresh-Operator-Confirmation=true), GitHub PR approval via ao-release-gate-review, cross-AI peer review AGREE in BOTH artifacts.",
-    "Forbidden-change audit clean (machine-enforced via git diff + schema contains+minContains+maxContains): 16 surfaces - RI-7.8a 14 + RI-7.8a predecessor evidence + RI-7.8 submanifest unchanged.",
-    "Diff scope (5 files): plan doc (NEW) + evidence artifact (NEW) + schema (NEW) + invariant test (NEW); local-ai-review-evidence (MODIFIED). Submanifest UNCHANGED (6c will flip BC-1).",
-    "Local validation: invariant tests pass; schema validates evidence (Draft 2020-12, zero errors); local-ai-review-evidence validates; ruff clean.",
-    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending post-impl review; cross-artifact verdict equality enforced (RI-7.8b-bc1-6a evidence cross_ai_review_ref.final_verdict == this file reviewer.verdict)."
+    "AO-MA-10d records the negative fail-closed suite before AO-MA-10c merge-agent dry-run or AO-MA-10e positive smoke.",
+    "Claude/Anthropic identified a real fail-open gap: duplicate provider_id verdicts could previously satisfy AO-MA-10 consensus.",
+    "ao-release-gate now rejects duplicate provider IDs or missing required provider verdicts with ao_release_gate_ao_ma10_same_provider_self_review and deny_policy_violation.",
+    "The new AO-MA-10d suite covers same-provider review, stale or missing evidence, high-risk or prohibited paths, missing or non-accepting verifier evidence, authority-boundary flips, context drift, malformed request flags, and a positive control.",
+    "AO-MA-10 receipt marks only the four negative activation-prerequisite smokes done; merge-agent identity, positive smoke, admin bypass absence, and cutover remain not_started.",
+    "RI-7.8b cross-artifact verdict equality now skips when the global local-ai-review-evidence.v1.json belongs to another active PR work package.",
+    "Claude/Anthropic reviewed the current diff with read-only tools and returned VERDICT: AGREE.",
+    "Local verification passed: targeted AO-MA-10d/release-gate/schema tests, ruff, mypy for the new test file, JSON validation, git diff --check, and gpp_next guard review.",
+    "Scope excludes .github workflows, CODEOWNERS, rulesets, branch protection, merge-agent activation, support widening, production platform claim, live adapter execution, testai, smee, Vault, GitHub App, and Cloud Run work."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
+      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
+      "tests/test_ao_ma10_negative_fail_closed.py",
+      "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py"
+    ],
+    "head_ref": "refs/heads/codex/ao-ma-10d-negative-fail-closed-suite"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-10d"
 }

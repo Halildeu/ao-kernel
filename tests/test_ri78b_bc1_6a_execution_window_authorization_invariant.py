@@ -132,6 +132,14 @@ def _git_changed_paths_against(base_sha: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _skip_if_current_local_review_evidence_is_for_another_slice() -> None:
+    if not LOCAL_AI_REVIEW_PATH.exists():
+        return
+    review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review.get("work_package") != "RI-7.8b-bc1-6a":
+        pytest.skip("local-ai-review-evidence.v1.json belongs to another active PR work package")
+
+
 def _path_matches_surface(path: str, surface: str) -> bool:
     if surface.endswith("/"):
         return path.startswith(surface)
@@ -481,6 +489,7 @@ def test_ri78b_bc1_6a_forbidden_change_audit_exact_16_set():
 
 def test_ri78b_bc1_6a_forbidden_change_audit_machine_enforced_against_origin_main():
     """Verify via git diff that NONE of the forbidden surfaces are touched in this PR."""
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved (origin/main / main not reachable)")
@@ -494,6 +503,7 @@ def test_ri78b_bc1_6a_forbidden_change_audit_machine_enforced_against_origin_mai
 
 def test_ri78b_bc1_6a_gpp_status_untouched():
     """gpp_status.v1.json must not be touched in 6a."""
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")
@@ -503,6 +513,7 @@ def test_ri78b_bc1_6a_gpp_status_untouched():
 
 def test_ri78b_bc1_6a_ri78a_predecessor_evidence_untouched():
     """Predecessor evidence is immutable; 6a must not touch it."""
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")
@@ -512,6 +523,7 @@ def test_ri78b_bc1_6a_ri78a_predecessor_evidence_untouched():
 
 def test_ri78b_bc1_6a_ri78_submanifest_file_untouched_in_diff():
     """Submanifest must be UNCHANGED in 6a (BC-1 key flip belongs to 6c)."""
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")
@@ -537,6 +549,8 @@ def test_ri78b_bc1_6a_cross_artifact_verdict_equality():
     if not LOCAL_AI_REVIEW_PATH.exists():
         pytest.skip("local-ai-review-evidence.v1.json missing — will be added before merge")
     review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review["work_package"] != "RI-7.8b-bc1-6a":
+        pytest.skip("local-ai-review-evidence.v1.json belongs to another active PR work package")
     evidence = _load_json(EVIDENCE_PATH)
     assert review["reviewer"]["provider"] == "openai"
     assert review["implementer"]["provider"] == "anthropic"

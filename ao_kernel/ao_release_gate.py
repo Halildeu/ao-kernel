@@ -981,6 +981,29 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
     )
 
     provider_verdicts = _as_list(ao_ma10_evidence_bundle.get("provider_verdicts"))
+    provider_ids = [item.get("provider_id") for item in provider_verdicts if isinstance(item, dict)]
+    required_provider_ids = _as_list(ao_ma10_evidence_bundle.get("required_reviewer_providers"))
+    required_provider_ids = [item for item in required_provider_ids if isinstance(item, str)]
+    provider_ids_are_distinct = len(set(provider_ids)) == len(provider_ids)
+    required_providers_are_present = all(provider in provider_ids for provider in required_provider_ids)
+    if not provider_ids_are_distinct or not required_providers_are_present:
+        return [
+            request_check,
+            bundle_present,
+            schema_valid,
+            _blocked(
+                "ao_ma10_consensus",
+                finding_code="ao_release_gate_ao_ma10_same_provider_self_review",
+                detail="AO-MA-10 evidence bundle contains duplicate providers or omits a required provider verdict.",
+            ),
+            _blocked(
+                "ao_ma10_context_bound",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
+                detail="AO-MA-10 evidence context binding cannot be trusted; provider identity is not distinct.",
+            ),
+            authority_check,
+        ]
+
     all_provider_verdicts_agree = all(
         isinstance(item, dict) and item.get("verdict") == "AGREE" for item in provider_verdicts
     )
@@ -1072,6 +1095,8 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
         for finding in findings
     ):
         return cast(ReleaseGateDecisionValue, DENY_UNTRUSTED_CONTEXT_DECISION)
+    if "ao_release_gate_ao_ma10_same_provider_self_review" in findings:
+        return cast(ReleaseGateDecisionValue, DENY_POLICY_VIOLATION_DECISION)
     if any(
         finding
         in {

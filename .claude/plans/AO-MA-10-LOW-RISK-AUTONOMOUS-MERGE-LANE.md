@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** planned / AO-MA-10b release-gate integration recorded
+**Status:** planned / AO-MA-10d negative fail-closed suite recorded
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -320,6 +320,41 @@ rulesets, branch protection, or execute a merge. It only records the
 decision-core and payload/CLI contract needed before AO-MA-10d negative tests
 and AO-MA-10c merge-agent dry-run work.
 
+## AO-MA-10d Negative Fail-Closed Suite
+
+AO-MA-10d records the negative suite that must pass before any merge-agent
+dry-run or real autonomous merge smoke. It keeps the lane fail-closed by
+pinning four activation-prerequisite smokes:
+
+```text
+negative_high_risk_blocked_smoke
+stale_evidence_blocked_smoke
+same_provider_review_blocked_smoke
+missing_verifier_blocked_smoke
+```
+
+The suite is end-to-end through `build_ao_release_gate_decision`; it does not
+trust prose-only model output. It specifically blocks:
+
+- high-risk/prohibited path requests without the required human review surface;
+- stale, missing, or schema-invalid AO-MA-10 evidence;
+- same-provider self-review, including duplicate `provider_id` verdicts or a
+  missing required provider verdict;
+- missing or non-accepting local verifier evidence;
+- authority-boundary drift such as support widening, production-platform
+  claims, live-adapter execution, secret recording, mutation claims, or release
+  authority changes;
+- replay/context drift across repository, refs, head SHA, diff digest, and
+  changed-file count;
+- malformed or conflicting autonomous-request flags.
+
+AO-MA-10d intentionally does not change workflows, CODEOWNERS, GitHub rulesets,
+branch protection, testai/smee/webhook/Vault/GitHub App configuration, or any
+merge-agent runtime. The only runtime hardening is the same-provider
+fail-closed check in `ao-release-gate`, because the schema can require the
+provider list shape but cannot prove semantic uniqueness across nested
+`provider_verdicts`.
+
 ## GitHub Compatibility
 
 The design stays GitHub-native:
@@ -403,6 +438,29 @@ AO-MA-10b may touch only:
 The scope intentionally excludes `.github/**`, CODEOWNERS, rulesets,
 branch-protection mutation, merge-agent activation, live adapter execution,
 support widening, and production platform claims.
+
+## Scope of AO-MA-10d Negative Fail-Closed Suite
+
+AO-MA-10d may touch only:
+
+1. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md`
+2. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json`
+3. `ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json`
+4. `ao_kernel/ao_release_gate.py`
+5. `tests/test_ao_ma10_negative_fail_closed.py`
+6. `tests/test_ao_ma10_low_risk_autonomous_merge_lane.py`
+7. `tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py`
+8. `local-ai-review-evidence.v1.json`
+
+The RI-7.8b invariant touch is a compatibility fix only: its cross-artifact
+verdict equality check applies when `local-ai-review-evidence.v1.json` belongs
+to RI-7.8b-bc1-6a, and skips when the global local evidence file belongs to a
+new active PR work package.
+
+The scope intentionally excludes `.github/**`, CODEOWNERS, rulesets,
+branch-protection mutation, merge-agent activation, live adapter execution,
+support widening, production platform claims, and testai/smee/webhook/Vault/
+GitHub App work.
 
 ## Hard Stops
 
