@@ -235,6 +235,17 @@ def _basic_findings(severity: str = "info") -> list[dict]:
     return [{"severity": severity, "title": "test finding", "body": "explanation"}]
 
 
+def _make_stub_diff(out_dir: Path, task_id: str) -> Path:
+    """Codex iter-4 absorb: tests must supply at least one evidence path
+    (allowed_sources fail-closed). Provide a tiny pr_diff stub by default.
+    """
+
+    p = out_dir / "workers" / task_id / "pr_diff.patch"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("--- a/src/a.py\n+++ b/src/a.py\n@@ -0,0 +1 @@\n+stub\n", encoding="utf-8")
+    return p
+
+
 def _make_inputs(
     *,
     repo: Path,
@@ -248,6 +259,10 @@ def _make_inputs(
     prior_paths: list[Path] | None = None,
     diff_path: Path | None = None,
 ) -> ReviewInputs:
+    # Default to a stub pr_diff so tests don't fail on the "no evidence"
+    # ReviewerError (Codex iter-4 absorb). Tests that specifically test
+    # the no-evidence path override with diff_path=None AND no priors.
+    effective_diff = diff_path if diff_path is not None else _make_stub_diff(out_dir, task_id)
     return ReviewInputs(
         manifest_path=manifest_path,
         task_id=task_id,
@@ -257,7 +272,7 @@ def _make_inputs(
         reviewer_session_id="rev-session",
         verdict=verdict,  # type: ignore[arg-type]
         findings_path=findings_path,
-        diff_path=diff_path,
+        diff_path=effective_diff,
         prior_review_verdict_paths=prior_paths or [],
     )
 
@@ -907,6 +922,7 @@ def test_cli_review_happy_path_exits_zero(repo, tmp_path: Path, capsys: pytest.C
         out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-cli0001", base_sha=base_sha
     )
     findings_path = _write_findings_json(tmp_path, _basic_findings())
+    diff_path = _make_stub_diff(out_dir, "task-001")
     rc = cli_main(
         [
             "orchestration",
@@ -927,6 +943,8 @@ def test_cli_review_happy_path_exits_zero(repo, tmp_path: Path, capsys: pytest.C
             "AGREE",
             "--findings-json",
             str(findings_path),
+            "--diff-path",
+            str(diff_path),
             "--repo-root",
             str(r),
             "--format",
@@ -1063,6 +1081,7 @@ def test_cli_review_emit_failure_exits_three(
         out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-cli0004", base_sha=base_sha
     )
     findings_path = _write_findings_json(tmp_path, _basic_findings())
+    diff_path = _make_stub_diff(out_dir, "task-001")
 
     def _boom(self, payload):  # noqa: ANN001
         raise writer_mod.ReviewVerdictWriterError("simulated emit failure")
@@ -1088,6 +1107,8 @@ def test_cli_review_emit_failure_exits_three(
             "AGREE",
             "--findings-json",
             str(findings_path),
+            "--diff-path",
+            str(diff_path),
             "--repo-root",
             str(r),
         ]
@@ -1120,3 +1141,108 @@ def test_review_emits_to_default_path_under_workers_subdir(repo, tmp_path: Path)
     Reviewer(repo_root=r).review(inputs)
     expected = out_dir / "workers" / "task-001" / "review_verdict.v1.json"
     assert expected.exists()
+
+
+# ---------------------------------------------------------------------------
+# Codex iter-4 must_fix absorb: allowed_sources fail-closed (no fabrication)
+# ---------------------------------------------------------------------------
+
+
+def test_review_no_context_evidence_exits_two(repo, tmp_path: Path) -> None:
+    """Codex iter-4 must_fix: no evidence supplied → ReviewerError (CLI exit 2).
+
+    Previous v1 fell back to ``allowed_sources=["pr_diff"]`` even when
+    no path was supplied; that fabricated a source claim for an artifact
+    the reviewer never read. Now fail-closed.
+    """
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-nev1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-nev1111", base_sha=base_sha
+    )
+    findings_path = _write_findings_json(tmp_path, _basic_findings())
+    # Explicit ReviewInputs with NO evidence paths and NO priors
+    inputs = ReviewInputs(
+        manifest_path=manifest_path,
+        task_id="task-001",
+        worker_result_paths={"task-001": wr_path},
+        reviewer_agent_id="codex-reviewer",
+        reviewer_provider="openai",  # type: ignore[arg-type]
+        reviewer_session_id="rev-session",
+        verdict="AGREE",  # type: ignore[arg-type]
+        findings_path=findings_path,
+        # No evidence paths at all
+    )
+    with pytest.raises(ReviewerError, match="no review evidence supplied"):
+        Reviewer(repo_root=r).review(inputs)
+
+
+def test_review_missing_optional_evidence_path_exits_two(repo, tmp_path: Path) -> None:
+    """Codex iter-4 must_fix: optional evidence path supplied but file missing → fail-closed.
+
+    Operator typo'd a path; reviewer must NOT silently claim the source
+    in allowed_sources when the actual artifact wasn't read.
+    """
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-mev1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-mev1111", base_sha=base_sha
+    )
+    findings_path = _write_findings_json(tmp_path, _basic_findings())
+    bogus = tmp_path / "does_not_exist.patch"
+    inputs = ReviewInputs(
+        manifest_path=manifest_path,
+        task_id="task-001",
+        worker_result_paths={"task-001": wr_path},
+        reviewer_agent_id="codex-reviewer",
+        reviewer_provider="openai",  # type: ignore[arg-type]
+        reviewer_session_id="rev-session",
+        verdict="AGREE",  # type: ignore[arg-type]
+        findings_path=findings_path,
+        diff_path=bogus,  # non-existent
+    )
+    with pytest.raises(ReviewerError, match="does not exist"):
+        Reviewer(repo_root=r).review(inputs)
+
+
+def test_review_does_not_default_allowed_sources_to_pr_diff(repo, tmp_path: Path) -> None:
+    """Codex iter-4 must_fix: ``["pr_diff"]`` default fallback removed.
+
+    When operator supplies a single non-pr_diff evidence (e.g. ci_results
+    only), the emitted ``allowed_sources`` must reflect ONLY that source,
+    NOT include a fabricated ``pr_diff`` entry.
+    """
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-nps1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-nps1111", base_sha=base_sha
+    )
+    findings_path = _write_findings_json(tmp_path, _basic_findings())
+    # Place ci_results under the repo so _relativize() succeeds
+    ci_results_path = r / "ci_results.txt"
+    ci_results_path.write_text("ok", encoding="utf-8")
+    # Supply ONLY ci_results — no diff_path
+    inputs = ReviewInputs(
+        manifest_path=manifest_path,
+        task_id="task-001",
+        worker_result_paths={"task-001": wr_path},
+        reviewer_agent_id="codex-reviewer",
+        reviewer_provider="openai",  # type: ignore[arg-type]
+        reviewer_session_id="rev-session",
+        verdict="AGREE",  # type: ignore[arg-type]
+        findings_path=findings_path,
+        ci_results_path=ci_results_path,
+    )
+    decision = Reviewer(repo_root=r).review(inputs)
+    emitted = decision.report["allowed_sources"]
+    assert emitted == ["ci_results"], f"expected only ['ci_results'], got {emitted!r}"
+    assert "pr_diff" not in emitted, "must NOT default-fabricate pr_diff entry"

@@ -85,7 +85,7 @@ ao-kernel orchestration review \
   [--ci-results <path>]                                   # CI output consulted
   [--artifact-chain <path>]                               # related AO-MA artifacts consulted
   [--prior-review-verdict <path> ...]                     # repeatable; for REVISE budget count
-  [--output <path>]                                       # default: <manifest_dir>/workers/<task_id>/review_verdict.v1.json
+  # (output path is the convention <manifest_dir>/workers/<task_id>/review_verdict.v1.json; no --output flag in v1)
   [--format text|json]                                    # default: text
 ```
 
@@ -168,7 +168,7 @@ Minimum 22 tests.
 ## Acceptance for AO-MA-6 v1
 
 - ✅ Reviewer class implements input → policy → emit pipeline (no LLM call)
-- ✅ ReviewDecision dataclass (overall_status + report + diagnostics + has_budget_exceeded)
+- ✅ ReviewDecision dataclass (requested_verdict + emitted_verdict + report + diagnostics + prior_revise_count + max_revise_rounds + budget_forced_block) — Codex iter-3 stable 5-field contract
 - ✅ CLI subcommand `review` lands
 - ✅ 22+ tests pass (incl. HARD RULE pin tests, cross-provider, source boundary, REVISE budget)
 - ✅ Codex cross-AI review iter-N AGREE

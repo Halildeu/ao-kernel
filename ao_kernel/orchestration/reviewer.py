@@ -264,25 +264,40 @@ class Reviewer:
             budget_forced_block = True
 
         # 7. allowed_sources derived from provided optional paths
+        # Codex iter-4 must_fix absorb: NO default fallback to ``["pr_diff"]``;
+        # an empty allowed_sources set means the reviewer has no evidence
+        # at all — that is operator misuse, fail-closed exit 2 (no fabrication
+        # of source claims that don't correspond to actual reviewed artifacts).
+        # Each optional path's existence is also checked here (defense in
+        # depth) so a typo'd CLI arg cannot survive into a schema-valid
+        # artifact that claims evidence the reviewer never read.
         allowed_sources_set: set[str] = set()
-        if inputs.diff_path is not None:
-            allowed_sources_set.add("pr_diff")
-        if inputs.acceptance_criteria_path is not None:
-            allowed_sources_set.add("issue_acceptance")
-        if inputs.repo_ssot_path is not None:
-            allowed_sources_set.add("repo_ssot")
-        if inputs.ci_results_path is not None:
-            allowed_sources_set.add("ci_results")
-        if inputs.artifact_chain_path is not None:
-            allowed_sources_set.add("artifact_chain")
+        for path_attr, source_label in (
+            ("diff_path", "pr_diff"),
+            ("acceptance_criteria_path", "issue_acceptance"),
+            ("repo_ssot_path", "repo_ssot"),
+            ("ci_results_path", "ci_results"),
+            ("artifact_chain_path", "artifact_chain"),
+        ):
+            evidence_path = getattr(inputs, path_attr)
+            if evidence_path is None:
+                continue
+            if not evidence_path.exists():
+                raise ReviewerError(
+                    f"--{path_attr.replace('_', '-')} {evidence_path!s} does not exist; "
+                    f"refusing to claim {source_label!r} in allowed_sources for an unread artifact"
+                )
+            allowed_sources_set.add(source_label)
         if inputs.prior_review_verdict_paths:
             allowed_sources_set.add("finding_context")
-        # Schema requires at least one element in allowed_sources (minItems? check
-        # at validate-time). Default to "pr_diff" if operator provided nothing,
-        # but log a diagnostic — reviewer with NO evidence is suspicious.
+        if not allowed_sources_set:
+            raise ReviewerError(
+                "no review evidence supplied (--diff-path / --acceptance-criteria-path / "
+                "--repo-ssot / --ci-results / --artifact-chain / --prior-review-verdict); "
+                "reviewer cannot produce a meaningful verdict without at least one source. "
+                "Operator: supply the actual artifacts the external reviewer consulted."
+            )
         allowed_sources = sorted(allowed_sources_set)
-        if not allowed_sources:
-            allowed_sources = ["pr_diff"]  # schema-permissive default; diagnostic flagged
 
         # reviewed_artifacts derived from --worker-result + evidence paths +
         # --prior-review-verdict
@@ -341,11 +356,9 @@ class Reviewer:
                 f"REVISE budget exhausted (prior={prior_revise_count}, max={max_revise_rounds}); "
                 f"verdict forced from REVISE to BLOCK"
             )
-        if not allowed_sources_set:
-            diagnostics.append(
-                "no evidence paths provided (--diff-path / --acceptance-criteria-path / ...); "
-                "reviewer judgement is unsupported"
-            )
+        # (Codex iter-4 absorb: empty allowed_sources is now a fail-closed
+        # ReviewerError above, not a diagnostic — execution can't reach here
+        # without at least one evidence source.)
 
         if emit:
             output_dir = inputs.manifest_path.parent / "workers" / inputs.task_id
