@@ -1,0 +1,166 @@
+{
+  "schema_version": "ri7-8b-bc1-6a-execution-window-authorization-evidence.v1",
+  "artifact_kind": "ri7_8b_bc1_6a_execution_window_authorization_evidence",
+  "decision": "ri78b_bc1_6a_execution_window_authorization_recorded_no_execution_no_guard_flag_flip",
+  "authorization_effect": "execution_window_authorization_recorded_no_execution_no_guard_flag_flip",
+  "does_not_authorize": [
+    "workflow_dispatch_now",
+    "adapter_execution_now",
+    "credential_reference",
+    "cost_incurring_calls_now",
+    "support_widening",
+    "production_platform_claim",
+    "gpp_status_guard_flip"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84"
+  },
+  "operator_authorization_record": {
+    "github_login": "Halildeu",
+    "authorization_recorded_at": "2026-05-27T23:28:11Z",
+    "authorization_source": "github.com/Halildeu/ao-kernel/pull/675",
+    "no_secret_assertion": true,
+    "authorization_scope": "bc1_6a_execution_window_contract_only",
+    "does_not_authorize_immediate_execution": true,
+    "observation_notes": "Operator records the authorization contract for a future bounded BC-1 protected live-adapter attestation execution window. No execution permission is granted here. RI-7.8b-bc1-6b must perform fresh operator confirmation, workflow SHA binding, protected environment observation, and guard flag policy resolution before any live adapter call. RI-7.8b-bc1-6c records the resulting evidence and verifies post-window closure with live_adapter_execution=false."
+  },
+  "authorization_window_contract": {
+    "window_status": "authorized_pending_6b_activation",
+    "authorization_valid_until": "2026-06-03T23:28:11Z",
+    "max_activation_delay_hours": 168,
+    "max_execution_window_duration_hours": 24,
+    "max_run_count": 5,
+    "max_usd": 5.00,
+    "actual_start_at": null,
+    "actual_end_at": null,
+    "activation_owner_slice": "RI-7.8b-bc1-6b",
+    "contract_status": "expected_unresolved_until_6b"
+  },
+  "protected_environment_binding": {
+    "env_name": "ao-kernel-bc1-live-adapter-attestation",
+    "required_reviewers_expected": true,
+    "prevent_self_review_expected": true,
+    "allowed_refs_expected": ["refs/heads/main"],
+    "admin_bypass_allowed_expected": false,
+    "observed": false,
+    "observed_at": null,
+    "observation_source": null,
+    "observed_environment_sha256": null,
+    "observation_owner_slice": "RI-7.8b-bc1-6b"
+  },
+  "future_workflow_contract": {
+    "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+    "expected_absent_or_not_touched_in_6a": true,
+    "creation_owner_slice": "RI-7.8b-bc1-6b",
+    "workflow_sha": null,
+    "allowed_ref": "refs/heads/main",
+    "expected_dispatch_inputs_allowlist": [
+      "scenario"
+    ],
+    "expected_forbidden_inputs": [
+      "api_key",
+      "token",
+      "secret",
+      "credential",
+      "password",
+      "auth_header"
+    ],
+    "contract_status": "expected_unresolved_until_6b"
+  },
+  "closure_expiry_and_revocation_clause": {
+    "authorization_expiry_action": "authorization_auto_invalidates_if_not_activated_by_6b_within_validity_window",
+    "window_end_action": "live_adapter_execution_must_remain_false_outside_window",
+    "post_window_verifier_owner": "RI-7.8b-bc1-6c",
+    "revocation_action": "operator_may_revoke_before_6b_activation_via_new_pr_or_supersession_entry",
+    "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry"
+  },
+  "activation_requirements": {
+    "activation_requires_new_operator_confirmation": true,
+    "activation_requires_workflow_sha_binding": true,
+    "activation_requires_protected_environment_observation": true,
+    "activation_requires_guard_flag_policy_resolution": true
+  },
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision",
+    "operator_verified_runtime_semantics": true,
+    "explicit_operator_authorization": true,
+    "general_purpose_platform_claim_authorization": true
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": false,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo",
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6a-execution-window-authorization",
+    "pr_number_hint": "675",
+    "base_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "timestamp": "2026-05-27T23:28:11Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6a-execution-window-authorization",
+    "pr_number_hint": "675"
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    },
+    "after": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    }
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/gpp_status.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
+      ".github/workflows/",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md",
+      "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "scripts/local_gpp_gate.py",
+      "scripts/repo_intelligence_tier_promotion_readiness.py",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e6ba0-ee03-7e90-b069-057267be13ed",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8b-bc1-6a is an authorization-contract-only artifact. No execution permission, no guard flag flip, no workflow dispatch, no live adapter call.",
+    "Activation belongs to RI-7.8b-bc1-6b which MUST require a fresh operator confirmation, exact workflow SHA binding, protected environment observation, and guard flag policy resolution before any live adapter call.",
+    "Evidence record + post-window closure belongs to RI-7.8b-bc1-6c. live_adapter_execution must remain false outside the bounded 6b execution window.",
+    "Codex plan-time thread 019e6ba0-ee03-7e90-b069-057267be13ed returned PARTIAL on iter-1; iter-2 absorbed 8 corrections (6-signal contract, expected_* pattern, ao-kernel-bc1-live-adapter-attestation env name, future_workflow_contract pattern, exact-set forbidden audit, activation_requires_* policy resolution, dual closure consts, fresh 6b operator signal); iter-2 returned AGREE."
+  ]
+}
