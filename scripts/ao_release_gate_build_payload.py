@@ -55,11 +55,13 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # allowlist. The base-ref `.gitignore` belongs to the same trust
     # tier as docs/README/CLAUDE.md: a PR-author edit cannot reach
     # the runtime adapter surface, claim production readiness, or
-    # widen support. Adding it here is operator-bound (the path-
-    # sensitive human-review gate still applies for the actual diff)
-    # but no longer mis-blocks AO-MA / docs / scripts PRs that need
-    # to register a new ignore rule (e.g., `.ao/orchestration/`
-    # runtime artifacts the AO-MA-4 worker_runner writes).
+    # widen support. The other gate checks (path_sensitive_human_review,
+    # secret_boundary, admin_bypass_boundary, gpp_closed_boundaries)
+    # still run independently; high-risk paths in the same diff still
+    # require operator review. Adding `.gitignore` to this allowlist
+    # only fixes the diff-scope filter false-block so AO-MA / docs /
+    # scripts PRs can register a new ignore rule (e.g.,
+    # `.ao/orchestration/` AO-MA-4 worker_runner runtime artifacts).
     ".gitignore",
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads `local-ai-review-evidence.v1.json` from the PR head
