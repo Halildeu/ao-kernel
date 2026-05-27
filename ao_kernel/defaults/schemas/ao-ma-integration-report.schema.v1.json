@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ao:ao-ma-integration-report:v1",
   "title": "AO-MA Integration Report",
-  "description": "No-secret integrator artifact recording accepted and rejected worker outputs, final PR scope, conflicts, review/verification evidence refs, and closed guard flags. The integrator assembles evidence but does not become release authority.",
+  "description": "No-secret integrator artifact recording accepted and rejected worker outputs, final PR scope, conflicts, review/verification evidence refs, and closed guard flags. The integrator assembles evidence but does not become release authority. v1 extension (AO-MA-5 prep): adds optional pending_worker_results (workers awaiting review/verification evidence), worker_decisions (per-worker accept/reject/not_integratable + reason_code audit), and assembly_plan (operator-runnable argv-form command plan). All three are optional for backward compatibility.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -75,6 +75,20 @@
     },
     "guard_flags": {
       "$ref": "#/$defs/closed_guards"
+    },
+    "pending_worker_results": {
+      "$ref": "#/$defs/path_list",
+      "description": "Optional (AO-MA-5 extension): worker_result.v1 paths that loaded valid but lack review_verdict.v1 or verification_report.v1 — integrator marks them not_integratable instead of accepting on partial evidence. AO-MA-6/7 land sonrası operator re-runs integrate."
+    },
+    "worker_decisions": {
+      "type": "array",
+      "description": "Optional (AO-MA-5 extension): per-worker accept/reject/not_integratable decision with audit reason_code. Producer (AO-MA-5 v1+) always writes this when emit boundary valid; consumer (audit) reads.",
+      "items": { "$ref": "#/$defs/worker_decision" }
+    },
+    "assembly_plan": {
+      "type": "array",
+      "description": "Optional (AO-MA-5 extension): operator-runnable command plan in argv form (no shell strings). AO-MA-5 v1 producer always writes when emit boundary valid; commands run by OPERATOR not by integrator (no agent execution of git push / gh pr create).",
+      "items": { "$ref": "#/$defs/assembly_step" }
     }
   },
   "$defs": {
@@ -149,6 +163,84 @@
         "live_adapter_execution": {
           "type": "boolean",
           "const": false
+        }
+      }
+    },
+    "worker_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "worker_result_ref", "decision", "reason_code"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+        },
+        "worker_result_ref": {
+          "description": "Path to worker_result.v1.json or null when missing (distinguishes from a real file literally named 'missing').",
+          "oneOf": [
+            { "$ref": "#/$defs/path" },
+            { "type": "null" }
+          ]
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["accept", "reject", "not_integratable"]
+        },
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "accepted_full_evidence",
+            "missing_worker_result",
+            "missing_review_verdict",
+            "missing_verification_report",
+            "review_revise",
+            "review_block",
+            "verification_failed",
+            "actual_write_set_overlap",
+            "guard_flag_violation",
+            "schema_invalid"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional audit: paths to review_verdict.v1 + verification_report.v1 + worker_result.v1 consulted."
+        }
+      }
+    },
+    "assembly_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["argv", "operator_only", "side_effect"],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "argv-form command (no shell interpolation). Branch/path strings must come from already-validated AO-MA-2 artifacts."
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "operator_only": {
+          "type": "boolean",
+          "const": true,
+          "description": "Pinned True: integrator NEVER executes assembly_step; operator runs them by hand."
+        },
+        "side_effect": {
+          "type": "string",
+          "enum": [
+            "local_git_merge",
+            "remote_pr_create",
+            "local_branch_create",
+            "local_worktree_remove"
+          ]
+        },
+        "requires_clean_worktree": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
         }
       }
     }
