@@ -446,6 +446,31 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     # either file at the repo root must find it pinned here.
     assert "local-ai-review-evidence.v1.json" in prefixes
     assert "local-gpp-gate-evidence.v1.json" in prefixes
+    # Repo hygiene file (.gitignore) is the same trust tier as
+    # docs/README/CLAUDE.md: PR-author edits cannot reach the
+    # runtime adapter surface, claim production readiness, or widen
+    # support. Keeping it in the allowlist lets AO-MA / docs PRs
+    # register new ignore rules (e.g. `.ao/orchestration/` AO-MA-4
+    # worker_runner runtime artifacts) without `ao_release_gate_
+    # diff_out_of_scope` mis-blocking. The path-sensitive human-
+    # review gate still applies to the diff itself.
+    assert ".gitignore" in prefixes
+
+
+def test_build_payload_allowed_path_prefixes_includes_gitignore(tmp_path: Path) -> None:
+    """`.gitignore` is pinned to the base-ref allowlist so repo hygiene
+    edits (e.g. registering AO-MA-4 worktree runtime artifact ignores)
+    do not trigger ao_release_gate_diff_out_of_scope.
+
+    Regression for PR #648 (AO-MA-4 parallel worktree runner) which
+    failed ao-release-gate-technical with ao_release_gate_diff_out_of_scope
+    until this path was added.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    mod.main(_build_argv(tmp_path, output=output))
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert ".gitignore" in payload["allowed_path_prefixes"]
 
 
 def test_build_payload_from_fork_is_carried(tmp_path: Path) -> None:

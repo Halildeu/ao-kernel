@@ -51,6 +51,16 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     "AGENTS.md",
     "CLAUDE.md",
     "README.md",
+    # Repo hygiene file kept inside the explicit autonomous-release
+    # allowlist. The base-ref `.gitignore` belongs to the same trust
+    # tier as docs/README/CLAUDE.md: a PR-author edit cannot reach
+    # the runtime adapter surface, claim production readiness, or
+    # widen support. Adding it here is operator-bound (the path-
+    # sensitive human-review gate still applies for the actual diff)
+    # but no longer mis-blocks AO-MA / docs / scripts PRs that need
+    # to register a new ignore rule (e.g., `.ao/orchestration/`
+    # runtime artifacts the AO-MA-4 worker_runner writes).
+    ".gitignore",
     # GPP-2D-3c bootstrap prerequisite: the ao-release-gate enforce
     # job reads `local-ai-review-evidence.v1.json` from the PR head
     # at the repo root and generates the head-bound
