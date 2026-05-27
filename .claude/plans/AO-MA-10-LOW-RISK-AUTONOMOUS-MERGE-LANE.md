@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** planned / AO-MA-10a2 evidence schemas recorded
+**Status:** planned / AO-MA-10b release-gate integration recorded
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -287,6 +287,39 @@ AO-MA-10a2 is still read-only. It does not mutate GitHub settings, activate a
 merge agent, integrate `ao-release-gate`, or execute an autonomous merge. It
 creates the evidence shape that AO-MA-10b can later consume.
 
+## AO-MA-10b Release-Gate Payload + Decision Integration
+
+AO-MA-10b wires the AO-MA-10a2 evidence bundle into the existing
+`ao-release-gate` decision core without activating the merge agent.
+
+The integration adds six decision checks:
+
+```text
+ao_ma10_autonomous_request
+ao_ma10_evidence_bundle
+ao_ma10_evidence_bundle_schema
+ao_ma10_consensus
+ao_ma10_context_bound
+ao_ma10_authority_boundary
+```
+
+The checks are backward-compatible:
+
+- existing `ao-release-gate` decisions do not require an AO-MA-10 bundle unless
+  `payload.low_risk_autonomous_merge_requested=true`;
+- if a caller explicitly supplies an AO-MA-10 bundle, it is validated
+  fail-closed even when the autonomous lane flag is false;
+- malformed autonomous request flags, missing, schema-invalid, non-AGREE,
+  authority-boundary-open, or context-mismatched AO-MA-10 bundle evidence
+  blocks the future autonomous lane;
+- the bundle is evidence only; release authority remains
+  `ao-release-gate+github-ruleset`.
+
+AO-MA-10b still does not mutate GitHub settings, workflows, CODEOWNERS,
+rulesets, branch protection, or execute a merge. It only records the
+decision-core and payload/CLI contract needed before AO-MA-10d negative tests
+and AO-MA-10c merge-agent dry-run work.
+
 ## GitHub Compatibility
 
 The design stays GitHub-native:
@@ -352,6 +385,24 @@ AO-MA-10a2 may touch only:
 8. `tests/test_ao_ma10_evidence_schemas.py`
 9. `tests/fixtures/ao_ma_10a2/`
 10. `local-ai-review-evidence.v1.json`
+
+## Scope of AO-MA-10b Release-Gate Integration Slice
+
+AO-MA-10b may touch only:
+
+1. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md`
+2. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json`
+3. `.claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md`
+4. `ao_kernel/ao_release_gate.py`
+5. `scripts/ao_release_gate_decision.py`
+6. `scripts/ao_release_gate_build_payload.py`
+7. `tests/test_ao_release_gate.py`
+8. `tests/test_ao_release_gate_build_payload.py`
+9. `tests/test_gpp2b_mapping_drift_guard.py`
+
+The scope intentionally excludes `.github/**`, CODEOWNERS, rulesets,
+branch-protection mutation, merge-agent activation, live adapter execution,
+support widening, and production platform claims.
 
 ## Hard Stops
 

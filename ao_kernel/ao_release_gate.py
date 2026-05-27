@@ -28,6 +28,7 @@ EXPECTED_BASE_REF = "main"
 
 LOCAL_GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
 REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME = "ao-release-gate-review-evidence-input.schema.v1.json"
+AO_MA10_EVIDENCE_BUNDLE_SCHEMA_NAME = "ao-ma-10-evidence-bundle.schema.v1.json"
 
 HIGH_RISK_PATH_PATTERNS = (
     ".github/**",
@@ -68,6 +69,13 @@ def _load_review_evidence_acceptance_schema() -> dict[str, Any]:
     """Load the bundled ao-release-gate review-evidence acceptance profile."""
 
     schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
+def _load_ao_ma10_evidence_bundle_schema() -> dict[str, Any]:
+    """Load the bundled AO-MA-10 evidence-bundle schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(AO_MA10_EVIDENCE_BUNDLE_SCHEMA_NAME)
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
@@ -256,6 +264,8 @@ class AoReleaseGateContext(TypedDict):
     pat_backed_bot_actor: bool | None
     codex_or_claude_release_authority: bool | None
     live_adapter_execution_requested: bool | None
+    low_risk_autonomous_merge_requested: bool | None
+    low_risk_autonomous_merge_request_valid: bool | None
     reviewed_slice: str | None
     gpp_current_wp_id: str | None
     gpp_current_wp_issue: str | None
@@ -386,6 +396,47 @@ def _normalize_ref(value: str | None) -> str | None:
     if value.startswith("refs/heads/"):
         return value.removeprefix("refs/heads/")
     return value
+
+
+def _normalize_binding_ref(value: object) -> str | None:
+    """Normalize common local/GitHub ref spellings for context binding."""
+
+    candidate = _string(value)
+    if candidate is None:
+        return None
+    normalized = _normalize_ref(candidate)
+    if normalized is not None and normalized.startswith("origin/"):
+        return normalized.removeprefix("origin/")
+    return normalized
+
+
+def _autonomous_merge_request_context(
+    root: dict[str, Any],
+    service: dict[str, Any],
+) -> tuple[bool | None, bool]:
+    """Return the trusted low-risk autonomous merge request flag.
+
+    The flag is supplied by base-ref workflow code, not by a PR-authored
+    artifact. Both the explicit AO-MA-10 key and the generic lane key are
+    accepted during the transition, but every provided value must be a
+    boolean and duplicate keys must agree.
+    """
+
+    candidates: list[object] = []
+    for source in (root, service):
+        for key in ("low_risk_autonomous_merge_requested", "ao_ma10_autonomous_merge_requested"):
+            if key in source:
+                candidates.append(source.get(key))
+    if not candidates:
+        return None, True
+    values: list[bool] = []
+    for candidate in candidates:
+        if not isinstance(candidate, bool):
+            return None, False
+        values.append(candidate)
+    if len(set(values)) > 1:
+        return None, False
+    return values[0], True
 
 
 def _service_context(payload: dict[str, Any]) -> dict[str, Any]:
@@ -573,6 +624,7 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
         service.get("allowed_path_prefixes")
     )
     human_reviews = _normalized_human_reviews(root.get("human_reviews") or root.get("reviews"))
+    autonomous_requested, autonomous_request_valid = _autonomous_merge_request_context(root, service)
     return {
         "repository": _first_string(
             repository.get("full_name"),
@@ -613,6 +665,8 @@ def extract_ao_release_gate_context(payload: object, gpp_status: object) -> AoRe
             root.get("live_adapter_execution_requested"),
             service.get("live_adapter_execution_requested"),
         ),
+        "low_risk_autonomous_merge_requested": autonomous_requested,
+        "low_risk_autonomous_merge_request_valid": autonomous_request_valid,
         "reviewed_slice": _first_string(root.get("reviewed_slice"), service.get("reviewed_slice")),
         "gpp_current_wp_id": _first_string(current_wp.get("id")),
         "gpp_current_wp_issue": _first_string(current_wp.get("issue")),
@@ -731,6 +785,274 @@ def _evaluate_review_evidence_checks(
     return [accepted, bound]
 
 
+def _evaluate_ao_ma10_evidence_bundle_checks(
+    ao_ma10_evidence_bundle: object,
+    context: AoReleaseGateContext,
+) -> list[AoReleaseGateCheck]:
+    """Evaluate AO-MA-10 context-bound provider consensus evidence.
+
+    The AO-MA-10 bundle is required only for the future low-risk
+    autonomous merge lane. Existing release-gate decisions stay
+    backward-compatible while the low-risk autonomous lane is not
+    requested and no bundle is explicitly supplied. If a bundle is supplied,
+    however, it is validated fail-closed so a miswired future workflow
+    cannot silently ignore malformed AI-consensus evidence.
+
+    Provider free text is never echoed; details are gate-authored only.
+    """
+
+    request_valid = context["low_risk_autonomous_merge_request_valid"] is True
+    requested = context["low_risk_autonomous_merge_requested"] is True
+    supplied = ao_ma10_evidence_bundle is not None
+
+    request_check = (
+        _pass(
+            "ao_ma10_autonomous_request",
+            detail="Low-risk autonomous merge request flag is absent or an explicit boolean.",
+        )
+        if request_valid
+        else _blocked(
+            "ao_ma10_autonomous_request",
+            finding_code="ao_release_gate_ao_ma10_autonomous_request_invalid",
+            detail="Low-risk autonomous merge request flag is malformed or conflicting.",
+        )
+    )
+
+    def _not_required_checks() -> list[AoReleaseGateCheck]:
+        return [
+            request_check,
+            _pass(
+                "ao_ma10_evidence_bundle",
+                detail="AO-MA-10 autonomous merge evidence is not requested for this release-gate decision.",
+            ),
+            _pass(
+                "ao_ma10_evidence_bundle_schema",
+                detail="AO-MA-10 evidence bundle schema validation is not required for this release-gate decision.",
+            ),
+            _pass(
+                "ao_ma10_consensus",
+                detail="AO-MA-10 provider consensus is not required for this release-gate decision.",
+            ),
+            _pass(
+                "ao_ma10_context_bound",
+                detail="AO-MA-10 evidence context binding is not required for this release-gate decision.",
+            ),
+            _pass(
+                "ao_ma10_authority_boundary",
+                detail="AO-MA-10 authority boundary validation is not required for this release-gate decision.",
+            ),
+        ]
+
+    if not requested and not supplied:
+        return _not_required_checks()
+
+    if not isinstance(ao_ma10_evidence_bundle, dict):
+        return [
+            request_check,
+            _blocked(
+                "ao_ma10_evidence_bundle",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_missing",
+                detail="AO-MA-10 evidence bundle is missing or is not a JSON object.",
+            ),
+            _pass(
+                "ao_ma10_evidence_bundle_schema",
+                detail="AO-MA-10 evidence bundle schema cannot be evaluated until a JSON object is present.",
+            ),
+            _pass(
+                "ao_ma10_consensus",
+                detail="AO-MA-10 provider consensus cannot be evaluated until a JSON object is present.",
+            ),
+            _blocked(
+                "ao_ma10_context_bound",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
+                detail="AO-MA-10 evidence context binding cannot be evaluated; bundle is missing.",
+            ),
+            _pass(
+                "ao_ma10_authority_boundary",
+                detail="AO-MA-10 authority boundary cannot be evaluated until a JSON object is present.",
+            ),
+        ]
+
+    bundle_present = _pass(
+        "ao_ma10_evidence_bundle",
+        detail="AO-MA-10 evidence bundle is present as a JSON object.",
+    )
+    raw_guard_flags = _as_dict(ao_ma10_evidence_bundle.get("guard_flags"))
+    authority_boundary_explicitly_open = (
+        (
+            "release_authority" in ao_ma10_evidence_bundle
+            and ao_ma10_evidence_bundle.get("release_authority") != "ao-release-gate+github-ruleset"
+        )
+        or (
+            "ai_output_release_authority" in ao_ma10_evidence_bundle
+            and ao_ma10_evidence_bundle.get("ai_output_release_authority") is not False
+        )
+        or (
+            "mutations_performed" in ao_ma10_evidence_bundle
+            and ao_ma10_evidence_bundle.get("mutations_performed") is not False
+        )
+        or (
+            "secrets_recorded" in ao_ma10_evidence_bundle
+            and ao_ma10_evidence_bundle.get("secrets_recorded") is not False
+        )
+        or ("support_widening" in raw_guard_flags and raw_guard_flags.get("support_widening") is not False)
+        or (
+            "production_platform_claim" in raw_guard_flags
+            and raw_guard_flags.get("production_platform_claim") is not False
+        )
+        or (
+            "live_adapter_execution" in raw_guard_flags
+            and raw_guard_flags.get("live_adapter_execution") is not False
+        )
+    )
+    if authority_boundary_explicitly_open:
+        return [
+            request_check,
+            bundle_present,
+            _pass(
+                "ao_ma10_evidence_bundle_schema",
+                detail="AO-MA-10 evidence bundle schema validation is deferred; authority boundary is explicitly open.",
+            ),
+            _pass(
+                "ao_ma10_consensus",
+                detail="AO-MA-10 provider consensus is not evaluated because authority boundary is explicitly open.",
+            ),
+            _pass(
+                "ao_ma10_context_bound",
+                detail="AO-MA-10 evidence context binding is not evaluated because authority boundary is explicitly open.",
+            ),
+            _blocked(
+                "ao_ma10_authority_boundary",
+                finding_code="ao_release_gate_ao_ma10_authority_boundary_open",
+                detail="AO-MA-10 bundle opens release authority, mutation, secret, or guard-flag boundaries.",
+            ),
+        ]
+
+    validator = Draft202012Validator(_load_ao_ma10_evidence_bundle_schema())
+    if list(validator.iter_errors(ao_ma10_evidence_bundle)):
+        return [
+            request_check,
+            bundle_present,
+            _blocked(
+                "ao_ma10_evidence_bundle_schema",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_schema_invalid",
+                detail="AO-MA-10 evidence bundle does not validate against ao-ma-10-evidence-bundle.schema.v1.json.",
+            ),
+            _pass(
+                "ao_ma10_consensus",
+                detail="AO-MA-10 provider consensus cannot be evaluated until schema validation passes.",
+            ),
+            _blocked(
+                "ao_ma10_context_bound",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
+                detail="AO-MA-10 evidence context binding cannot be evaluated; bundle failed schema validation.",
+            ),
+            _pass(
+                "ao_ma10_authority_boundary",
+                detail="AO-MA-10 authority boundary cannot be evaluated until schema validation passes.",
+            ),
+        ]
+
+    schema_valid = _pass(
+        "ao_ma10_evidence_bundle_schema",
+        detail="AO-MA-10 evidence bundle validates against ao-ma-10-evidence-bundle.schema.v1.json.",
+    )
+
+    authority_ok = (
+        ao_ma10_evidence_bundle.get("release_authority") == "ao-release-gate+github-ruleset"
+        and ao_ma10_evidence_bundle.get("ai_output_release_authority") is False
+        and ao_ma10_evidence_bundle.get("mutations_performed") is False
+        and ao_ma10_evidence_bundle.get("secrets_recorded") is False
+        and _as_dict(ao_ma10_evidence_bundle.get("guard_flags")).get("support_widening") is False
+        and _as_dict(ao_ma10_evidence_bundle.get("guard_flags")).get("production_platform_claim") is False
+        and _as_dict(ao_ma10_evidence_bundle.get("guard_flags")).get("live_adapter_execution") is False
+    )
+    authority_check = (
+        _pass(
+            "ao_ma10_authority_boundary",
+            detail="AO-MA-10 bundle keeps release authority, mutation, secret, and guard-flag boundaries closed.",
+        )
+        if authority_ok
+        else _blocked(
+            "ao_ma10_authority_boundary",
+            finding_code="ao_release_gate_ao_ma10_authority_boundary_open",
+            detail="AO-MA-10 bundle opens release authority, mutation, secret, or guard-flag boundaries.",
+        )
+    )
+
+    provider_verdicts = _as_list(ao_ma10_evidence_bundle.get("provider_verdicts"))
+    all_provider_verdicts_agree = all(
+        isinstance(item, dict) and item.get("verdict") == "AGREE" for item in provider_verdicts
+    )
+    if ao_ma10_evidence_bundle.get("consensus_status") != "AGREE" or not all_provider_verdicts_agree:
+        return [
+            request_check,
+            bundle_present,
+            schema_valid,
+            _blocked(
+                "ao_ma10_consensus",
+                finding_code="ao_release_gate_ao_ma10_consensus_not_agree",
+                detail="AO-MA-10 evidence bundle does not record unanimous AGREE consensus from required providers.",
+            ),
+            _blocked(
+                "ao_ma10_context_bound",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
+                detail="AO-MA-10 evidence context binding cannot be trusted; bundle consensus is not accepting.",
+            ),
+            authority_check,
+        ]
+
+    consensus_check = _pass(
+        "ao_ma10_consensus",
+        detail="AO-MA-10 evidence bundle is schema-valid and records unanimous AGREE provider consensus.",
+    )
+
+    raw_binding = ao_ma10_evidence_bundle.get("context_binding")
+    binding = raw_binding if isinstance(raw_binding, dict) else None
+    if binding is None:
+        return [
+            request_check,
+            bundle_present,
+            schema_valid,
+            consensus_check,
+            _blocked(
+                "ao_ma10_context_bound",
+                finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unbound",
+                detail="AO-MA-10 evidence bundle has no context_binding block.",
+            ),
+            authority_check,
+        ]
+
+    repo_match = (
+        context["repository"] is not None and binding.get("repository_full_name") == context["repository"]
+    )
+    base_match = (
+        context["base_ref"] is not None
+        and _normalize_binding_ref(binding.get("base_ref")) == _normalize_binding_ref(context["base_ref"])
+    )
+    head_ref_match = (
+        context["head_ref"] is not None
+        and _normalize_binding_ref(binding.get("head_ref")) == _normalize_binding_ref(context["head_ref"])
+    )
+    head_match = context["head_sha"] is not None and binding.get("head_sha") == context["head_sha"]
+    digest_match = binding.get("diff_digest") == diff_digest(context["changed_paths"])
+    count_match = binding.get("changed_files_count") == len(context["changed_paths"])
+
+    if repo_match and base_match and head_ref_match and head_match and digest_match and count_match:
+        bound = _pass(
+            "ao_ma10_context_bound",
+            detail="AO-MA-10 evidence bundle context binding matches repository, refs, head SHA, diff digest, and changed-files count.",
+        )
+    else:
+        bound = _blocked(
+            "ao_ma10_context_bound",
+            finding_code="ao_release_gate_ao_ma10_evidence_bundle_context_unbound",
+            detail="AO-MA-10 evidence bundle context binding does not match the pull request repository, refs, head SHA, diff digest, or changed-files count.",
+        )
+
+    return [request_check, bundle_present, schema_valid, consensus_check, bound, authority_check]
+
+
 def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
     """Return the terminal release-gate decision for ordered findings."""
 
@@ -745,6 +1067,7 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_untrusted_fork",
             "ao_release_gate_pull_request_target_context",
             "ao_release_gate_review_evidence_context_unbound",
+            "ao_release_gate_ao_ma10_evidence_bundle_context_unbound",
         }
         for finding in findings
     ):
@@ -764,6 +1087,10 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_review_evidence_schema_invalid",
             "ao_release_gate_review_evidence_not_accepting",
             "ao_release_gate_review_evidence_context_unverifiable",
+            "ao_release_gate_ao_ma10_evidence_bundle_missing",
+            "ao_release_gate_ao_ma10_evidence_bundle_schema_invalid",
+            "ao_release_gate_ao_ma10_consensus_not_agree",
+            "ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
         }
         for finding in findings
     ):
@@ -947,6 +1274,7 @@ def build_ao_release_gate_decision(
     gpp_status: object,
     *,
     review_evidence: object = None,
+    ao_ma10_evidence_bundle: object = None,
     generated_at: str | None = None,
     conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateDecision:
@@ -965,6 +1293,14 @@ def build_ao_release_gate_decision(
     future ao-release-gate required check will pass this in from the PR
     head's committed evidence file; the dry-run callers may pass ``None``
     and accept a ``deny_missing_evidence`` decision.
+
+    ``ao_ma10_evidence_bundle`` is the untrusted
+    ``ao-ma-10-evidence-bundle.v1`` provider-consensus bundle introduced
+    for the future low-risk autonomous merge lane. It is required only
+    when the payload's low-risk autonomous merge request flag is true or
+    when a caller explicitly supplies a bundle. Missing, malformed,
+    non-AGREE, authority-boundary-open, or context-mismatched bundle
+    evidence fails closed without making AI output release authority.
     """
 
     context = extract_ao_release_gate_context(payload, gpp_status)
@@ -1123,6 +1459,7 @@ def build_ao_release_gate_decision(
         ),
     ]
     checks.extend(_evaluate_review_evidence_checks(review_evidence, context))
+    checks.extend(_evaluate_ao_ma10_evidence_bundle_checks(ao_ma10_evidence_bundle, context))
     findings = [check["finding_code"] for check in checks if check["finding_code"] is not None]
     decision = _decision_from_findings(findings)
     allow = decision == ALLOW_AUTONOMOUS_MERGE_DECISION

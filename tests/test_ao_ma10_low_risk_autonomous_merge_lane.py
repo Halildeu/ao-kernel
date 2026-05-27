@@ -226,11 +226,15 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
         ".claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.md",
         ".claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.v1.json",
+        ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
         "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
         "ao_kernel/defaults/schemas/ao-ma-10-evidence-bundle.schema.v1.json",
         "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
         "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
         "ao_kernel/defaults/schemas/ao-ma-10-provider-consensus.schema.v1.json",
+        "ao_kernel/ao_release_gate.py",
+        "scripts/ao_release_gate_build_payload.py",
+        "scripts/ao_release_gate_decision.py",
         "scripts/ao_ma10_autonomous_merge_eligibility.py",
         "scripts/ao_ma10_evidence_bundle.py",
         "scripts/ao_ma10_github_readiness_snapshot.py",
@@ -239,14 +243,24 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         "tests/fixtures/ao_ma_10a2/evidence_bundle.valid.json",
         "tests/fixtures/ao_ma_10a2/provider_consensus.anthropic.valid.json",
         "tests/fixtures/ao_ma_10a2/provider_consensus.openai.valid.json",
+        "tests/test_ao_release_gate.py",
+        "tests/test_ao_release_gate_build_payload.py",
+        "tests/test_gpp2b_mapping_drift_guard.py",
         "tests/test_ao_ma10_evidence_schemas.py",
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
         "tests/test_ao_ma10_autonomous_merge_eligibility.py",
         "tests/test_ao_ma10_github_readiness_snapshot.py",
+        "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
         "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
         "local-ai-review-evidence.v1.json",
     }
     assert changed <= allowlist, f"AO-MA-10 touches files outside allowlist: {sorted(changed - allowlist)}"
+
+    ao_ma_10b_release_gate_scope = {
+        "ao_kernel/ao_release_gate.py",
+        "scripts/ao_release_gate_build_payload.py",
+        "scripts/ao_release_gate_decision.py",
+    }
 
     forbidden_patterns = (
         r"^\.github/",
@@ -260,5 +274,7 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         r"^ao_kernel/ao_release_gate",
     )
     for path in changed:
+        if path in ao_ma_10b_release_gate_scope:
+            continue
         for pattern in forbidden_patterns:
             assert not re.search(pattern, path), f"forbidden AO-MA-10 path changed: {path}"

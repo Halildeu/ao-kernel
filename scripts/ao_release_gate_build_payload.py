@@ -297,6 +297,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "pat_backed_bot_actor": False,
         "codex_or_claude_release_authority": False,
         "live_adapter_execution_requested": False,
+        "low_risk_autonomous_merge_requested": args.ao_ma10_autonomous_merge_requested,
     }
 
 
@@ -343,6 +344,16 @@ def build_parser() -> argparse.ArgumentParser:
             "omitted the builder falls back to the legacy permissive behavior (every check-run "
             "other than ao-release-gate / ao-release-gate-shadow). The GPP-2D-3 enforce job in "
             "test.yml passes one --required-check per dependency in its `needs:` graph."
+        ),
+    )
+    parser.add_argument(
+        "--ao-ma10-autonomous-merge-requested",
+        type=_bool_arg,
+        default=False,
+        help=(
+            "Trusted workflow-side switch for the future AO-MA-10 low-risk autonomous merge lane. "
+            "Defaults false so current release-gate enforcement is not tightened until AO-MA-10 "
+            "explicitly wires the bundle-producing workflow."
         ),
     )
     parser.add_argument("--output", type=Path, required=True, help="Where to write the payload JSON.")
