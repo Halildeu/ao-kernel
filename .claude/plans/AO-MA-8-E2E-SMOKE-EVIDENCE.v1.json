@@ -1,0 +1,49 @@
+{
+  "schema_version": "ao-ma-8-e2e-smoke-evidence.v1",
+  "artifact_kind": "ao_ma_8_e2e_smoke_evidence",
+  "decision": "ao_ma_8_e2e_smoke_ready",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "pipeline_order": [
+    "orchestrator_plan",
+    "worker_runner_spawn",
+    "mock_implementer_aoma45_surrogate",
+    "reviewer_review",
+    "verifier_verify",
+    "integrator_integrate"
+  ],
+  "shadow_mode_pins": {
+    "tmp_repo_only": true,
+    "synthetic_origin_main": true,
+    "github_write": false,
+    "git_push": false,
+    "gh_pr_create": false,
+    "auto_merge": false,
+    "branch_protection_change": false,
+    "gpp_status_mutation": false,
+    "assembly_plan_executed": false,
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "expected_invariants": {
+    "decision_overall_status": "all_accepted",
+    "report_conflicts_length": 0,
+    "report_accepted_worker_results_length": 1,
+    "report_rejected_worker_results_length": 0,
+    "report_assembly_plan_length_min": 1,
+    "guard_flags_closed": true
+  },
+  "cross_provider_chain": {
+    "implementer": "anthropic",
+    "reviewer": "openai",
+    "verifier": "tool"
+  },
+  "authority_artifact": "integration_report.v1.json",
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  }
+}
