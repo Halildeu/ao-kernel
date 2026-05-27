@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-9-gpp-integration-evidence:v1",
+  "title": "AO-MA-9 GPP-2D Integration Evidence (Receipt)",
+  "description": "Gated closeout receipt for AO-MA-1 §8 phased plan AO-MA-9: AO-MA artifact chain wired into the GPP-2D required-check lane in evidence-only form. This receipt is NOT release authority; the authoritative merge gate remains ao-release-gate via GitHub branch ruleset. wire_mode is const-pinned 'evidence_manifest_only' so future readers cannot mis-interpret this slice as a release-gate payload-field extension or runtime hook (those would be a separate AO-MA-10 / GPP supersession slice).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "wire_mode",
+    "release_authority_claim",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "ao_ma_chain_refs",
+    "gpp_2d_artifact_refs",
+    "ao_ma_8_chain_proof_refs",
+    "gpp_status_invariants_at_closure",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ao-ma-9-gpp-integration-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ao_ma_9_gpp_integration_evidence"},
+    "decision": {"type": "string", "const": "ao_ma_9_evidence_chain_wired"},
+    "wire_mode": {
+      "type": "string",
+      "const": "evidence_manifest_only",
+      "description": "Codex iter-1 must_close #2: const-pinned. AO-MA-9 records the AO-MA artifact chain as evidence consumable by the existing GPP-2D required-check lane. NOT a release-gate payload field. NOT a runtime hook. Payload-field/runtime extension belongs in a separate AO-MA-10 / GPP supersession slice."
+    },
+    "release_authority_claim": {
+      "type": "boolean",
+      "const": false,
+      "description": "Codex iter-1 hard stop: AO-MA artifacts are evidence layer, NOT release authority. The authoritative merge gate is ao-release-gate via GitHub branch ruleset (GPP-2D-5 cutover). AO-MA-9 cannot claim release authority."
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "ao_ma_chain_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemas_pr",
+        "orchestrator_pr",
+        "runner_pr",
+        "integrator_pr",
+        "reviewer_pr",
+        "verifier_pr",
+        "e2e_smoke_pr"
+      ],
+      "description": "AO-MA chain PR numbers (informational; not release authority). Codex iter-2 nice-to-have #1: PR-number string is sufficient — release-manifest-grade commit SHA pin is too heavy for this evidence-only receipt.",
+      "properties": {
+        "schemas_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "orchestrator_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "runner_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "integrator_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "reviewer_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "verifier_pr": {"type": "string", "pattern": "^#[0-9]+$"},
+        "e2e_smoke_pr": {"type": "string", "pattern": "^#[0-9]+$"}
+      }
+    },
+    "gpp_2d_artifact_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enforce_evidence",
+        "cutover_runbook",
+        "cutover_verification",
+        "smee_retirement",
+        "automerge_smoke",
+        "ao_gate_9_closeout"
+      ],
+      "description": "GPP-2D artifact paths (repo-relative). 5 of 6 are required closeout artifacts; automerge_smoke is optional hardening (Codex iter-2 nice-to-have #3 — kept for evidence-chain completeness, not gate-decision authority).",
+      "properties": {
+        "enforce_evidence": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-4-ENFORCE-MODE-EVIDENCE\\.md$"},
+        "cutover_runbook": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-5-CUTOVER-RUNBOOK\\.md$"},
+        "cutover_verification": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-5-VERIFICATION-OUTCOMES\\.md$"},
+        "smee_retirement": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-5A-SMEE-RETIREMENT-EVIDENCE\\.md$"},
+        "automerge_smoke": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-6-AUTOMERGE-SMOKE-RUNBOOK\\.md$"},
+        "ao_gate_9_closeout": {"type": "string", "pattern": "^\\.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT\\.md$"}
+      }
+    },
+    "ao_ma_8_chain_proof_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["smoke_plan", "smoke_receipt", "smoke_schema", "smoke_test"],
+      "description": "AO-MA-8 end-to-end smoke artifacts proving the AO-MA-3..7 chain emits a schema-valid integration_report.v1.json (the receipt-vs-runtime parity invariant). These are the proof that AO-MA-9's claimed chain actually works.",
+      "properties": {
+        "smoke_plan": {"type": "string", "pattern": "^\\.claude/plans/AO-MA-8-E2E-SMOKE\\.md$"},
+        "smoke_receipt": {"type": "string", "pattern": "^\\.claude/plans/AO-MA-8-E2E-SMOKE-EVIDENCE\\.v1\\.json$"},
+        "smoke_schema": {"type": "string", "pattern": "^ao_kernel/defaults/schemas/ao-ma-8-e2e-smoke-evidence\\.schema\\.v1\\.json$"},
+        "smoke_test": {"type": "string", "pattern": "^tests/test_ao_ma_8_e2e_smoke\\.py$"}
+      }
+    },
+    "gpp_status_invariants_at_closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_wp_id",
+        "current_wp_status",
+        "milestones_done_total",
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "description": "Snapshot of gpp_status.v1.json invariants at AO-MA-9 closure. Invariant test compares these to live gpp_status.v1.json read-only — drift → test fail → receipt must be updated (supersession discipline, not auto-absorb).",
+      "properties": {
+        "current_wp_id": {"type": "string", "const": "GPP-9"},
+        "current_wp_status": {"type": "string", "const": "closed"},
+        "milestones_done_total": {"type": "string", "const": "7/7"},
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {"type": "boolean", "const": false},
+        "production_platform_claim": {"type": "boolean", "const": false},
+        "live_adapter_execution": {"type": "boolean", "const": false}
+      }
+    }
+  }
+}
