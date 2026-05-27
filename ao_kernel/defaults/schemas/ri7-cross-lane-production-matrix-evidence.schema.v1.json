@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-cross-lane-production-matrix-evidence:v1",
+  "title": "RI-7.6 Cross-Lane Production Matrix Evidence",
+  "description": "Evidence artifact recording the cross-lane production matrix inventory consumed by a future general-purpose production platform claim. Operator/process evidence only; not release authority. The real_adapter_live_execution lane remains operator-bound deferred.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "lanes"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-cross-lane-production-matrix-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_cross_lane_production_matrix_evidence"},
+    "decision": {"type": "string", "const": "ri7_cross_lane_production_matrix_ready"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "lanes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence_refs", "authority_ref"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "read_only_e2e",
+              "controlled_write_side",
+              "remote_pr_write",
+              "rollback_operations",
+              "cost_telemetry",
+              "release_governance",
+              "real_adapter_live_execution"
+            ]
+          },
+          "status": {"type": "string", "enum": ["covered", "operator_bound_deferred"]},
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "authority_ref": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "read_only_e2e"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "controlled_write_side"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "remote_pr_write"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "rollback_operations"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "cost_telemetry"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "release_governance"}, "status": {"const": "covered"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "real_adapter_live_execution"}, "status": {"const": "operator_bound_deferred"}}, "required": ["id", "status"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
