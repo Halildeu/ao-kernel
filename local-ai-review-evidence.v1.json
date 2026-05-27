@@ -1,11 +1,31 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization",
+    "changed_files": [
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.md",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8a-live-evidence-pre-authorization-evidence.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ri78a_live_evidence_pre_authorization_invariant.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
       "status": "pass"
     },
     {
@@ -13,31 +33,95 @@
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "git_diff_check",
+      "name": "schema_draft_2020_12_valid",
       "status": "pass"
     },
     {
-      "name": "schema_valid_draft_2020_12",
+      "name": "schema_decision_const_pre_authorization_no_execution",
       "status": "pass"
     },
     {
-      "name": "ao_ma10a2_evidence_schema_tests",
+      "name": "schema_authorization_effect_const_pre_authorization_only",
       "status": "pass"
     },
     {
-      "name": "ao_ma10_plan_invariant_tests",
+      "name": "schema_does_not_authorize_7_const_enum",
       "status": "pass"
     },
     {
-      "name": "claude_cross_provider_review",
+      "name": "schema_successor_slices_minmax_2",
       "status": "pass"
     },
     {
-      "name": "no_workflow_ruleset_codeowners_runtime_mutation",
+      "name": "schema_bc_scope_structured_per_bc",
+      "status": "pass"
+    },
+    {
+      "name": "schema_execution_budget_bounded_caps",
+      "status": "pass"
+    },
+    {
+      "name": "schema_current_readiness_snapshot_9_9_true",
+      "status": "pass"
+    },
+    {
+      "name": "schema_current_gpp_guard_snapshot_all_false",
+      "status": "pass"
+    },
+    {
+      "name": "schema_guard_flags_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "schema_submanifest_transition_before_false_after_true",
+      "status": "pass"
+    },
+    {
+      "name": "schema_forbidden_change_audit_all_unchanged_const_true_min_14_surfaces",
+      "status": "pass"
+    },
+    {
+      "name": "schema_cross_ai_review_provider_split_const",
+      "status": "pass"
+    },
+    {
+      "name": "negative_schema_test_guard_flag_true_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "negative_schema_test_authorization_effect_other_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_validates_against_schema",
+      "status": "pass"
+    },
+    {
+      "name": "operator_signature_halildeu_iso_8601_no_secret",
+      "status": "pass"
+    },
+    {
+      "name": "submanifest_only_pre_authorization_key_flipped",
+      "status": "pass"
+    },
+    {
+      "name": "nine_key_readiness_manifest_unchanged_all_true",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status_untouched_guard_flags_false",
+      "status": "pass"
+    },
+    {
+      "name": "forbidden_change_audit_14_surfaces_machine_enforced",
+      "status": "pass"
+    },
+    {
+      "name": "plan_doc_records_decision_pre_authorization_no_execution",
       "status": "pass"
     },
     {
@@ -51,49 +135,70 @@
     {
       "name": "no_live_adapter_execution",
       "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_mcp_repo_intelligence_exposure",
+      "status": "pass"
+    },
+    {
+      "name": "no_release_gate_runtime_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_local_gpp_gate_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_readiness_script_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_readiness_manifest_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gpp_status_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_boundary_doc_change",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    },
+    {
+      "name": "codex_plan_time_revise_absorbed_required_changes",
+      "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10a2 records strict context-bound evidence bundle and registered-provider consensus schemas before any release-gate integration or GitHub settings mutation.",
-    "The read-only builder validates provider consensus artifacts, rejects duplicate or missing required providers, binds evidence to repository/base/head/head_sha/diff_digest/changed_files_count, and returns non-zero for non-AGREE consensus.",
-    "Claude/Anthropic first found a real stale-branch blocker; the branch was fast-forwarded to origin/main, the diff was reapplied, tests were rerun, and Claude then returned AGREE.",
-    "Local verification passed: pytest tests/test_ao_ma10_evidence_schemas.py tests/test_ao_ma10_low_risk_autonomous_merge_lane.py; ruff; mypy; git diff --check; JSON schema/fixture validation.",
-    "Scope remains AO-MA-10 docs, schemas, read-only builder, fixtures, tests, and this evidence file only; no .github, CODEOWNERS, branch-protection, ruleset, gpp_status, local_gpp_gate, or ao_release_gate runtime mutation.",
-    "No support widening, no production platform claim, no live adapter execution, and AI output remains evidence only; release authority remains ao-release-gate plus GitHub ruleset."
+    "RI-7.8a v1 operator live-evidence PRE-AUTHORIZATION ONLY evidence. B-path slice 5 of 8 (after RI-7.5 MERGED in PR #670 + slice 4 checkpoint). Codex plan-time thread 019e6b74-d8a6-7e92-9f2a-6064d3d80918 returned REVISE with required changes absorbed before implementation; AGREE pending post-impl review.",
+    "Negative authority: this artifact does NOT permit workflow dispatch, adapter execution, credential reference, cost-incurring calls, support widening, production platform claim, or gpp_status guard flip. Each live evidence collection slice (RI-7.8b-bc1, RI-7.8b-bc10) carries its own explicit operator execution-window authorization. RI-7.8c owns final promotion decision.",
+    "Schema strictness (Draft 2020-12, additionalProperties=false at every level): decision const pre_authorization_no_execution string, authorization_effect const pre_authorization_only_no_execution_permission, does_not_authorize enum 7 forbidden actions, successor_slices minmax 2, bc_scope structured per-BC with owner_slice + protected_env + expected_paths + schema_owner per BC, execution_budget bounded caps (max_calls<=50, max_usd<=5 per BC and <=10 aggregate, validity_window<=168h), current_readiness_snapshot 9/9 true const, current_gpp_guard_snapshot all three false const, submanifest_transition before false after true const, forbidden_change_audit.all_unchanged const true + minItems=14 surfaces, cross_ai_review_ref provider split const.",
+    "Negative schema tests: authorization_effect != pre_authorization_only_no_execution_permission rejected; support_widening=true / production_platform_claim=true / live_adapter_execution=true each individually rejected.",
+    "Submanifest: NEW .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json tracks RI-7.8 chain sequencing without mutating the 9-key RI-7 readiness manifest. Only live_evidence_pre_authorization_recorded flips false -> true. Other three keys (bc1, bc10, final_promotion) remain false, owned by later slices.",
+    "Operator authority (4 concurrent signals): commit identity Halildeu, commit trailers (Operator-Pre-Authorized-By, Operator-Pre-Authorization-At, Pre-Authorization-Scope=BC-1+BC-10, No-Execution-Permission=true, No-Guard-Flag-Flip), GitHub PR approval via ao-release-gate-review, cross-AI peer review AGREE in BOTH artifacts.",
+    "Forbidden-change audit clean (machine-enforced via git diff): 14 surfaces \u2014 RI-7.5 nine + gate contract files (local-gpp-gate-evidence schema, ao_release_gate.py, local_gpp_gate.py) + readiness script + readiness manifest itself.",
+    "Diff scope (6 files): plan doc + evidence artifact + submanifest + schema + invariant test (NEW); local-ai-review-evidence (MODIFIED).",
+    "Local validation: invariant tests pass; schema validates evidence (Draft 2020-12, zero errors); local-ai-review-evidence validates; ruff clean.",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending post-impl review; cross-artifact verdict equality enforced (RI-7.8a evidence cross_ai_review_ref.final_verdict == this file reviewer.verdict)."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.md",
-      ".claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-evidence-bundle.schema.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-provider-consensus.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_evidence_bundle.py",
-      "tests/fixtures/ao_ma_10a2/evidence_bundle.valid.json",
-      "tests/fixtures/ao_ma_10a2/provider_consensus.anthropic.valid.json",
-      "tests/fixtures/ao_ma_10a2/provider_consensus.openai.valid.json",
-      "tests/test_ao_ma10_evidence_schemas.py",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma-10a2-evidence-schemas"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10a2"
+  "production_platform_claim": false
 }
