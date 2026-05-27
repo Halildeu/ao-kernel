@@ -1,33 +1,27 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.3",
+  "work_package": "RI-7.6",
   "implementer": {"agent": "claude", "provider": "anthropic"},
   "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-3-vector-backend-e2e",
+    "head_ref": "refs/heads/codex/ri-7-6-cross-lane-matrix",
     "changed_files": [
       ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
-      ".claude/plans/RI-7.3-VECTOR-BACKEND-E2E-EVIDENCE.md",
-      ".claude/plans/RI-7.3-VECTOR-BACKEND-E2E-EVIDENCE.v1.json",
-      "ao_kernel/defaults/schemas/ri7-vector-backend-e2e-evidence.schema.v1.json",
+      ".claude/plans/RI-7.6-CROSS-LANE-PRODUCTION-MATRIX-EVIDENCE.md",
+      ".claude/plans/RI-7.6-CROSS-LANE-PRODUCTION-MATRIX-EVIDENCE.v1.json",
+      "ao_kernel/defaults/schemas/ri7-cross-lane-production-matrix-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_repo_intelligence_vector_indexer.py",
-      "tests/test_repo_intelligence_vector_retriever.py",
-      "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py",
-      "tests/test_ri7_vector_backend_e2e.py",
-      "tests/test_ri7_vector_backend_e2e_evidence_invariant.py"
+      "tests/test_ri7_cross_lane_production_matrix_invariant.py"
     ]
   },
   "checks_considered": [
     {"name": "tests", "status": "pass"},
     {"name": "secret_scan", "status": "pass"},
-    {"name": "gate_consumable_evidence_manifest_recognized", "status": "pass"},
-    {"name": "vector_backend_e2e_evidence_blocker_drops_with_manifest", "status": "pass"},
-    {"name": "resolver_path_pinned_by_test", "status": "pass"},
     {"name": "schema_validation_2020_12", "status": "pass"},
-    {"name": "schema_pins_each_scenario_id_exactly_once", "status": "pass"},
+    {"name": "schema_pins_six_covered_plus_one_operator_bound_deferred", "status": "pass"},
+    {"name": "evidence_refs_point_at_real_paths", "status": "pass"},
     {"name": "no_support_widening", "status": "pass"},
     {"name": "no_production_platform_claim", "status": "pass"},
     {"name": "no_live_adapter_execution", "status": "pass"},
@@ -37,16 +31,18 @@
     {"name": "no_mcp_repo_intelligence_exposure", "status": "pass"},
     {"name": "no_context_compiler_auto_feed", "status": "pass"},
     {"name": "no_root_authority_write_change", "status": "pass"},
+    {"name": "no_gp59_reclassification", "status": "pass"},
+    {"name": "no_bc1_to_bc10_baseline_mutation", "status": "pass"},
     {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "RI-7.3 lands configured vector backend E2E evidence for the repo-intelligence index/query surface. The configured backend is the repo-owned InMemoryVectorStore, selected both by direct construction and by the production resolver path (AO_KERNEL_VECTOR_BACKEND=inmemory via ao_kernel.context.vector_store_resolver.resolve_vector_store).",
-    "Eight scenarios are encoded across tests/test_ri7_vector_backend_e2e.py and the focused indexer/retriever tests: write_happy_path, stale_cleanup, namespace_isolation, query_hash_line_validation, missing_backend_fail_closed_write, missing_backend_fail_closed_query, missing_api_key_fail_closed_write, missing_api_key_fail_closed_query. Each fail-closed regression asserts zero embedding cost.",
-    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json has vector_backend_e2e_evidence=true with every other RI-7.x key still false. scripts/repo_intelligence_tier_promotion_readiness.py --evidence-manifest ... drops vector_backend_e2e_evidence_missing while RI-7.1, 7.2, 7.4, 7.5, 7.6, 7.7 remain pending. Three guard flags remain false.",
-    "Schema ri7-vector-backend-e2e-evidence.schema.v1.json strictness improved per Codex iter-2 suggestion: minItems=maxItems=8, uniqueItems=true, plus eight allOf/contains/minContains/maxContains pins so each scenario id appears exactly once. Evidence artifact validates with zero errors against Draft202012Validator.",
-    "Local test run on focused suite: 44 passed (test_ri7_vector_backend_e2e 6, test_ri7_vector_backend_e2e_evidence_invariant 5, indexer 12, retriever 13, plan 4, tier_promotion_readiness 4).",
-    "Forbidden-change audit clean: gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/defaults/policies/, public SDK signatures, branch protection / ruleset all untouched. docs/PUBLIC-BETA, SUPPORT-BOUNDARY, KNOWN-BUGS unchanged (RI-7.7 owner).",
-    "Cross-provider verified: implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE CC-2 satisfied via Codex MCP thread 019e6662-fb6e-7210-b3a6-d59f4b1e0c05 (plan-time REVISE iter-1 absorbed, post-impl REVISE iter-2 with three blockers absorbed, AGREE iter-3 with findings=[] and blockers=[])."
+    "RI-7.6 records the cross-lane production matrix evidence inventory in a single matrix doc + schema-validated JSON artifact, covering 7 lanes: read_only_e2e (GPP-6), controlled_write_side (GPP-7), remote_pr_write (GPP-8), rollback_operations (GP-5.8 + docs/ROLLBACK-RUNBOOK.md), cost_telemetry (GP-5.7a/b + GPP-9), release_governance (ao-release-gate + ruleset 16803733), real_adapter_live_execution (operator_bound_deferred).",
+    "Schema strictness improved per Codex iter-1 suggestion: minItems=maxItems=7, uniqueItems=true, plus per-lane allOf/contains/minContains/maxContains. Non-real lanes pinned with status const=covered; real_adapter_live_execution lane pinned with status const=operator_bound_deferred. The schema rejects any mutation that flips a covered lane to deferred or vice versa.",
+    "Doc invariant suite tests/test_ri7_cross_lane_production_matrix_invariant.py (5 tests) pins lane list, exit decision, no-promotion-dilution language, evidence artifact closed-boundary shape, evidence_refs paths exist, and manifest shape (cross_lane_production_matrix_evidence=true; all other RI-7.x evidence keys false).",
+    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json drops cross_lane_production_matrix_evidence_missing when consumed; remaining RI-7.x blockers (RI-7.1, 7.2, 7.3, 7.4, 7.5, 7.7) stay pending and three guard flags remain false.",
+    "Local test run: 9 passed (5 doc invariant + 4 tier_promotion_readiness).",
+    "Forbidden-change audit clean: gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, gp5_* rehearsal scripts, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/cli.py, ao_kernel/defaults/policies/, public SDK signatures, branch protection / ruleset, BC-1..BC-10 baseline, docs/PUBLIC-BETA, SUPPORT-BOUNDARY, KNOWN-BUGS all untouched. RI-7.7 owns the GP-5.9 reclassification + support-boundary transition plan; RI-7.6 only records the cross-lane evidence inventory.",
+    "Cross-provider verified: implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE CC-2 satisfied via Codex MCP thread 019e6832-208d-79f0-bbb7-c0f6f3f5dedf (post-impl REVISE iter-1 absorbed via CC-2 evidence rewrite + schema status pin tightening + commit; AGREE iter-2 expected)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

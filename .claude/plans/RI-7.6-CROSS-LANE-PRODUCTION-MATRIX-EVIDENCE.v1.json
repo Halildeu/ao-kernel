@@ -1,0 +1,87 @@
+{
+  "schema_version": "ri7-cross-lane-production-matrix-evidence.v1",
+  "artifact_kind": "ri7_cross_lane_production_matrix_evidence",
+  "decision": "ri7_cross_lane_production_matrix_ready",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "lanes": [
+    {
+      "id": "read_only_e2e",
+      "status": "covered",
+      "evidence_refs": [
+        "scripts/gp5_read_only_rehearsal.py",
+        ".claude/plans/GP-5.4a-GOVERNED-READ-ONLY-WORKFLOW-REHEARSAL.md"
+      ],
+      "authority_ref": "GPP-6 closed (gpp6_keep_rehearsal_only)"
+    },
+    {
+      "id": "controlled_write_side",
+      "status": "covered",
+      "evidence_refs": [
+        "scripts/gp5_controlled_patch_test_rehearsal.py",
+        ".claude/plans/GP-5.5a-CONTROLLED-PATCH-TEST-DESIGN.md",
+        ".claude/plans/GP-5.5b-CONTROLLED-LOCAL-PATCH-TEST-REHEARSAL.md"
+      ],
+      "authority_ref": "GPP-7 closed (gpp7_keep_rehearsal_only)"
+    },
+    {
+      "id": "remote_pr_write",
+      "status": "covered",
+      "evidence_refs": [
+        "scripts/gp5_disposable_pr_write_rehearsal.py",
+        ".claude/plans/GP-5.6a-DISPOSABLE-PR-WRITE-REHEARSAL.md"
+      ],
+      "authority_ref": "GPP-8 closed (gpp8_keep_sandbox_only)"
+    },
+    {
+      "id": "rollback_operations",
+      "status": "covered",
+      "evidence_refs": [
+        "scripts/gp5_operations_support_package.py",
+        ".claude/plans/GP-5.8-OPERATIONS-SUPPORT-PACKAGE.md",
+        "docs/ROLLBACK-RUNBOOK.md"
+      ],
+      "authority_ref": "Operator-managed runbook"
+    },
+    {
+      "id": "cost_telemetry",
+      "status": "covered",
+      "evidence_refs": [
+        "scripts/gp5_full_production_rehearsal.py",
+        ".claude/plans/GP-5.7a-FULL-PRODUCTION-REHEARSAL-CONTRACT.md",
+        ".claude/plans/GP-5.7b-FULL-PRODUCTION-REHEARSAL-GATE.md"
+      ],
+      "authority_ref": "GPP-9 closed (gpp9_keep_narrow_stable_runtime_authoritative_program_closed)"
+    },
+    {
+      "id": "release_governance",
+      "status": "covered",
+      "evidence_refs": [
+        "ao_kernel/ao_release_gate.py",
+        "ao_kernel/ao_release_gate_runtime.py",
+        "scripts/ao_release_gate_decision.py",
+        ".claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md"
+      ],
+      "authority_ref": "Repo-owned ao-release-gate required check + GitHub branch protection ruleset 16803733"
+    },
+    {
+      "id": "real_adapter_live_execution",
+      "status": "operator_bound_deferred",
+      "evidence_refs": [
+        ".claude/plans/GP-5.1a-PROTECTED-GATE-PREREQUISITE-AUDIT.md",
+        ".github/workflows/live-adapter-gate.yml",
+        "scripts/live_adapter_gate_contract.py"
+      ],
+      "authority_ref": "live_adapter_execution_allowed=false; reserved for operator-bound supersession PR with explicit live-adapter authorization"
+    }
+  ],
+  "notes": [
+    "RI-7.6 is docs-only: every lane reference points at an already-landed artifact in the repo or at the documented operator-bound deferral. No GP-5.x rehearsal is re-run by this slice and no script or test surface is added.",
+    "Lanes one through six carry status 'covered' meaning the readiness gate can consume the cited rehearsal/runbook evidence as part of the cross-lane production matrix; the real_adapter_live_execution lane carries status 'operator_bound_deferred' because the live-adapter gate contract still reports overall_status=blocked and any change to that gate is operator-bound.",
+    "The lane statuses recorded here do not change the GP-5.9 BC-1..BC-10 baseline or the GPP exit decisions. RI-7.7 (GP-5.9 reclassification + support-boundary transition plan) is the slice that prepares any later operator-bound BC reclassification.",
+    "Cross-AI peer review (HARD RULE CC-2): implementer claude/anthropic; reviewer codex/openai; the verdict is recorded in local-ai-review-evidence.v1.json next to this artifact.",
+    "Gate-consumable evidence manifest: .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json with cross_lane_production_matrix_evidence=true and every other RI-7.x key still false; running scripts/repo_intelligence_tier_promotion_readiness.py --evidence-manifest ... drops cross_lane_production_matrix_evidence_missing while remaining RI-7 blockers stay.",
+    "No support widening. No production platform claim. No live adapter execution. No public SDK signature change. No MCP exposure. No context-compiler auto-feed. No branch protection or workflow mutation."
+  ]
+}
