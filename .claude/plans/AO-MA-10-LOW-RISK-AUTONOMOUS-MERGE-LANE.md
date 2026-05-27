@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** planned / AO-MA-10a0 readiness snapshot recorded
+**Status:** planned / AO-MA-10a1 eligibility checker recorded
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -94,7 +94,10 @@ Low-risk candidates must satisfy all of the following:
 1. Changed paths are inside the allowed low-risk path prefixes.
 2. Changed paths do not match any prohibited path pattern.
 3. `ao-release-gate` required check succeeds from the source-pinned GitHub
-   Actions integration.
+   Actions integration. Under the dual-check migration, the future dry-run
+   eligibility checker treats source-pinned `ao-release-gate-technical` plus
+   source-pinned `ao-release-gate-review` as the safe required-check set; the
+   legacy `ao-release-gate` compatibility wrapper is not sufficient by itself.
 4. All required CI checks pass.
 5. A cross-provider reviewer artifact is present and context-bound to the PR
    `head_sha`, `base_ref`, `diff_digest`, and changed file set.
@@ -212,11 +215,60 @@ broader status document that still describes `ao-release-gate` as source-pinned
 in ruleset `16803733` must be reconciled in a separate follow-up before
 AO-MA-10a1 can treat the repository as ready.
 
+## AO-MA-10a1 Autonomous Merge Eligibility Checker
+
+AO-MA-10a1 adds a deterministic read-only checker:
+
+```text
+scripts/ao_ma10_autonomous_merge_eligibility.py
+```
+
+and records the current fail-closed evidence artifact:
+
+```text
+.claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json
+```
+
+The checker consumes the AO-MA-10a0 GitHub readiness snapshot and a candidate
+changed-file set. It does not call GitHub write APIs, mutate branch protection,
+change CODEOWNERS, alter workflows, or merge PRs.
+
+AO-MA-10a1 requires all of the following before returning
+`ready_for_low_risk_dry_run`:
+
+1. The AO-MA-10a0 snapshot has no blockers and reports
+   `readiness.decision=ready_for_dry_run`.
+2. `ao-release-gate-technical` is present as a source-pinned GitHub Actions
+   required check in the default-branch ruleset.
+3. `ao-release-gate-review` is present as a source-pinned GitHub Actions
+   required check in the default-branch ruleset.
+4. Ruleset bypass actors are empty.
+5. Legacy global PR review and code-owner review requirements are disabled for
+   the low-risk lane; high-risk human review must instead be enforced through
+   `ao-release-gate-review`.
+6. The merge actor is a dedicated non-admin actor with no admin-write
+   capability observed.
+7. Candidate changed files are non-empty, repo-relative, allowed by the
+   AO-MA-10 low-risk prefixes, do not match prohibited patterns, and do not
+   match repo-owned `HIGH_RISK_PATH_PATTERNS` from `ao_kernel.ao_release_gate`.
+8. Release authority and guard flags remain unchanged:
+   `ao-release-gate+github-ruleset`, AI output is not release authority, and
+   support widening / production platform claim / live adapter execution stay
+   false.
+
+The current committed A1 artifact is intentionally `blocked` because live
+GitHub enforcement still lacks the dual required-check set, legacy review still
+blocks low-risk autonomy, the current actor is admin, and the broader SSOT/live
+required-check drift remains unresolved. That is the correct fail-closed state.
+
 ## GitHub Compatibility
 
 The design stays GitHub-native:
 
-- Required check stays `ao-release-gate`.
+- The future safe required-check set for autonomous low-risk dry-run is
+  `ao-release-gate-technical` plus `ao-release-gate-review`, both
+  source-pinned to GitHub Actions. The legacy `ao-release-gate` wrapper remains
+  compatibility evidence but is not enough to remove human review globally.
 - Source-pinned integration remains GitHub Actions.
 - Branch protection / ruleset enforcement remains the release authority layer.
 - If repository-native auto-merge is disabled, a merge agent may later perform
@@ -246,6 +298,19 @@ AO-MA-10a0 may touch only:
 6. `tests/test_ao_ma10_low_risk_autonomous_merge_lane.py`
 7. `tests/test_ao_ma10_github_readiness_snapshot.py`
 8. `tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json`
+
+## Scope of AO-MA-10a1 Eligibility Slice
+
+AO-MA-10a1 may touch only:
+
+1. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md`
+2. `.claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json`
+3. `ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json`
+4. `scripts/ao_ma10_autonomous_merge_eligibility.py`
+5. `tests/test_ao_ma10_autonomous_merge_eligibility.py`
+6. `tests/fixtures/ao_ma_10/autonomous_merge_eligibility.blocked.valid.json`
+7. `tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json`
+8. `local-ai-review-evidence.v1.json`
 
 ## Hard Stops
 

@@ -1,0 +1,69 @@
+{
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10_autonomous_merge_eligibility",
+  "candidate_changed_files": {
+    "files": [
+      "tests/test_ao_ma10_autonomous_merge_eligibility.py"
+    ],
+    "files_count": 1,
+    "invalid_paths": [],
+    "low_risk": true,
+    "not_allowed": [],
+    "prohibited_matches": [],
+    "release_gate_high_risk_matches": []
+  },
+  "decision": {
+    "blockers": [
+      "ao_release_gate_required_check_missing",
+      "ao_release_gate_review_required_check_missing",
+      "ao_release_gate_technical_required_check_missing",
+      "dedicated_merge_actor_not_confirmed",
+      "legacy_code_owner_review_blocks_low_risk_autonomy",
+      "legacy_required_review_blocks_low_risk_autonomy",
+      "merge_actor_admin_permission_observed",
+      "readiness_snapshot_not_ready",
+      "ssot_live_required_check_drift_detected"
+    ],
+    "next_required_slice": "resolve_live_github_enforcement_blockers_before_AO-MA-10a2",
+    "result": "blocked",
+    "warnings": [
+      "repository_auto_merge_disabled_merge_agent_direct_mode_required",
+      "some_nominal_low_risk_prefixes_still_codeowned"
+    ]
+  },
+  "generated_at": "2026-05-27T20:52:39Z",
+  "github_gate_requirements": {
+    "ao_release_gate_review_required_check_present": false,
+    "ao_release_gate_review_source_pinned_to_actions": false,
+    "ao_release_gate_technical_required_check_present": false,
+    "ao_release_gate_technical_source_pinned_to_actions": false,
+    "dedicated_merge_actor_non_admin": false,
+    "dedicated_merge_actor_without_admin_write": false,
+    "legacy_code_owner_review_disabled_for_low_risk": false,
+    "legacy_required_review_disabled_for_low_risk": false,
+    "ruleset_bypass_actors_empty": true
+  },
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "production_platform_claim": false,
+    "support_widening": false
+  },
+  "mutations_performed": false,
+  "read_only": true,
+  "readiness_source": {
+    "artifact_kind": "ao_ma_10_github_readiness_snapshot",
+    "blockers": [
+      "ao_release_gate_required_check_missing",
+      "legacy_required_review_blocks_low_risk_autonomy",
+      "merge_actor_admin_permission_observed",
+      "ssot_live_required_check_drift_detected"
+    ],
+    "branch": "main",
+    "decision": "blocked",
+    "generated_at": "2026-05-27T19:33:16Z",
+    "repository": "Halildeu/ao-kernel",
+    "schema_version": "ao-ma-10-github-readiness-snapshot.v1"
+  },
+  "release_authority": "ao-release-gate+github-ruleset",
+  "schema_version": "ao-ma-10-autonomous-merge-eligibility.v1"
+}

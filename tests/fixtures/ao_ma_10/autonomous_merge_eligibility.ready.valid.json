@@ -1,0 +1,55 @@
+{
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10_autonomous_merge_eligibility",
+  "candidate_changed_files": {
+    "files": [
+      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
+      "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json",
+      "tests/test_ao_ma10_autonomous_merge_eligibility.py"
+    ],
+    "files_count": 3,
+    "invalid_paths": [],
+    "low_risk": true,
+    "not_allowed": [],
+    "prohibited_matches": [],
+    "release_gate_high_risk_matches": []
+  },
+  "decision": {
+    "blockers": [],
+    "next_required_slice": "AO-MA-10a2 context-bound evidence bundle + registered-provider consensus schemas",
+    "result": "ready_for_low_risk_dry_run",
+    "warnings": [
+      "repository_auto_merge_disabled_merge_agent_direct_mode_required"
+    ]
+  },
+  "generated_at": "2026-05-27T20:00:00Z",
+  "github_gate_requirements": {
+    "ao_release_gate_review_required_check_present": true,
+    "ao_release_gate_review_source_pinned_to_actions": true,
+    "ao_release_gate_technical_required_check_present": true,
+    "ao_release_gate_technical_source_pinned_to_actions": true,
+    "dedicated_merge_actor_non_admin": true,
+    "dedicated_merge_actor_without_admin_write": true,
+    "legacy_code_owner_review_disabled_for_low_risk": true,
+    "legacy_required_review_disabled_for_low_risk": true,
+    "ruleset_bypass_actors_empty": true
+  },
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "production_platform_claim": false,
+    "support_widening": false
+  },
+  "mutations_performed": false,
+  "read_only": true,
+  "readiness_source": {
+    "artifact_kind": "ao_ma_10_github_readiness_snapshot",
+    "blockers": [],
+    "branch": "main",
+    "decision": "ready_for_dry_run",
+    "generated_at": "2026-05-27T20:00:00Z",
+    "repository": "Halildeu/ao-kernel",
+    "schema_version": "ao-ma-10-github-readiness-snapshot.v1"
+  },
+  "release_authority": "ao-release-gate+github-ruleset",
+  "schema_version": "ao-ma-10-autonomous-merge-eligibility.v1"
+}
