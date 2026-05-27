@@ -94,7 +94,8 @@
       "scripts/ao_ma10_autonomous_merge_eligibility.py",
       "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.blocked.valid.json",
       "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json",
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py"
+      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
+      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
     ],
     "head_ref": "refs/heads/codex/ao-ma-10a1-autonomous-eligibility"
   },
