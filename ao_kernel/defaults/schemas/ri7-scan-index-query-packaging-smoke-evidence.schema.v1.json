@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-scan-index-query-packaging-smoke-evidence:v1",
+  "title": "RI-7.4 Scan/Index/Query Packaging Smoke Evidence",
+  "description": "Evidence artifact recording packaged-CLI scan/index/query smoke for repo-intelligence. Operator/process evidence only; not release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "entrypoint",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-scan-index-query-packaging-smoke-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_scan_index_query_packaging_smoke_evidence"},
+    "decision": {"type": "string", "const": "ri7_scan_index_query_packaging_smoke_ready"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "entrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module", "invocation"],
+      "properties": {
+        "module": {"type": "string", "const": "ao_kernel"},
+        "invocation": {"type": "string", "minLength": 1}
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence_ref"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "entrypoint_help_exits_zero",
+              "repo_scan_writes_schema_valid_repo_map",
+              "repo_index_write_vectors_fails_closed_without_backend",
+              "repo_query_fails_closed_without_manifest_or_backend",
+              "repo_index_write_vectors_fails_closed_without_api_key",
+              "repo_query_fails_closed_without_api_key"
+            ]
+          },
+          "status": {"type": "string", "enum": ["pass"]},
+          "evidence_ref": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "entrypoint_help_exits_zero"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_scan_writes_schema_valid_repo_map"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_index_write_vectors_fails_closed_without_backend"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_query_fails_closed_without_manifest_or_backend"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_index_write_vectors_fails_closed_without_api_key"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_query_fails_closed_without_api_key"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "build_install_layer_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the pre-existing build+install smoke script that proves the wheel installs cleanly outside the source checkout."
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
