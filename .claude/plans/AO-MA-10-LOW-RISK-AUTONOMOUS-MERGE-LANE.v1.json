@@ -1,0 +1,126 @@
+{
+  "schema_version": "ao-ma-10-low-risk-autonomous-merge-lane.v1",
+  "artifact_kind": "ao_ma_10_low_risk_autonomous_merge_lane",
+  "decision": "plan_low_risk_autonomous_merge_lane_cutover",
+  "planning_only": true,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "low_risk_criteria": {
+    "allowed_path_prefixes": [
+      ".claude/plans/AO-MA-",
+      "ao_kernel/defaults/schemas/ao-ma-",
+      "tests/test_ao_ma",
+      "tests/fixtures/ao_ma_",
+      "docs/evidence/",
+      "local-ai-review-evidence.v1.json"
+    ],
+    "prohibited_path_patterns": [
+      "^\\.github/",
+      "^\\.github/CODEOWNERS$",
+      "^AGENTS\\.md$",
+      "^CLAUDE\\.md$",
+      "^\\.claude/plans/gpp_status\\.v1\\.json$",
+      "^ao_kernel/orchestration/",
+      "^ao_kernel/ao_release_gate",
+      "^scripts/ao_release_gate",
+      "^scripts/local_gpp_gate",
+      "^ao_kernel/defaults/schemas/local-ai-review-evidence\\.schema\\.v1\\.json$",
+      "^ao_kernel/defaults/schemas/local-gpp-gate-evidence\\.schema\\.v1\\.json$",
+      "^ao_kernel/defaults/schemas/ao-release-gate",
+      "^deploy/",
+      "^pyproject\\.toml$",
+      "^ao_kernel/__init__\\.py$",
+      "^docs/SUPPORT-BOUNDARY\\.md$",
+      "^docs/PUBLIC-BETA\\.md$",
+      "^docs/KNOWN-BUGS\\.md$"
+    ],
+    "required_signals": [
+      "required_ci_pass",
+      "ao_release_gate_success",
+      "branch_up_to_date",
+      "context_bound_cross_provider_review_agree",
+      "verifier_pass",
+      "local_gpp_gate_accepts",
+      "secret_scan_pass",
+      "no_admin_bypass",
+      "no_bypass_actors",
+      "no_support_widening",
+      "no_production_platform_claim",
+      "no_live_adapter_execution"
+    ]
+  },
+  "high_risk_consensus": {
+    "required_providers": [
+      "openai",
+      "anthropic",
+      "minimax"
+    ],
+    "consensus_required": true,
+    "same_provider_review_allowed": false,
+    "max_autonomous_rounds": 3,
+    "escalate_to_human_after_max_rounds": true
+  },
+  "merge_agent_activation_prerequisites": [
+    {
+      "id": "low_risk_classifier_implemented",
+      "status": "not_started"
+    },
+    {
+      "id": "codeowners_or_ruleset_low_risk_model_implemented",
+      "status": "not_started"
+    },
+    {
+      "id": "merge_agent_identity_and_permissions_recorded",
+      "status": "not_started"
+    },
+    {
+      "id": "positive_low_risk_autonomous_merge_smoke",
+      "status": "not_started"
+    },
+    {
+      "id": "negative_high_risk_blocked_smoke",
+      "status": "not_started"
+    },
+    {
+      "id": "stale_evidence_blocked_smoke",
+      "status": "not_started"
+    },
+    {
+      "id": "same_provider_review_blocked_smoke",
+      "status": "not_started"
+    },
+    {
+      "id": "missing_verifier_blocked_smoke",
+      "status": "not_started"
+    },
+    {
+      "id": "admin_bypass_absence_verified",
+      "status": "not_started"
+    },
+    {
+      "id": "cutover_record_no_support_widening_no_production_claim_no_live_adapter",
+      "status": "not_started"
+    }
+  ],
+  "future_slices": [
+    "AO-MA-10a low-risk classifier implementation",
+    "AO-MA-10b CODEOWNERS/ruleset compatibility design",
+    "AO-MA-10c merge-agent loop implementation",
+    "AO-MA-10d positive and negative autonomous merge smoke",
+    "AO-MA-10e cutover closeout"
+  ],
+  "forbidden_in_this_slice": [
+    "workflow_mutation",
+    "ruleset_mutation",
+    "codeowners_mutation",
+    "release_gate_runtime_mutation",
+    "local_gate_runtime_mutation",
+    "gpp_status_mutation",
+    "merge_agent_activation",
+    "auto_merge_execution",
+    "testai_or_smee_or_webhook_callback_work"
+  ]
+}
