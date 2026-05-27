@@ -1,40 +1,210 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-8-SCOPE-INTRODUCER-DETECTION-FASTFOLLOW",
-  "implementer": {"agent": "claude", "provider": "anthropic"},
-  "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
+  "work_package": "RI-7.1-OPERATOR-AUTHORIZATION",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-8-scope-introducer-detection-fastfollow",
+    "head_ref": "refs/heads/codex/ri-7-1-operator-authorization",
     "changed_files": [
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7-REPO-INTELLIGENCE-TIER-PROMOTION-READINESS.md",
+      ".claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.md",
+      ".claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.v1.json",
+      "ao_kernel/defaults/schemas/ri7-operator-authorization-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma_8_e2e_smoke.py"
+      "tests/test_ri7_operator_authorization_invariant.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "ao_ma_8_introducer_detection_added", "status": "pass"},
-    {"name": "test_skips_when_not_ao_ma_8_introducer", "status": "pass"},
-    {"name": "test_enforces_full_scope_on_ao_ma_8_introducer_pr", "status": "pass"},
-    {"name": "no_support_widening", "status": "pass"},
-    {"name": "no_production_platform_claim", "status": "pass"},
-    {"name": "no_live_adapter_execution", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation", "status": "pass"},
-    {"name": "no_workflow_change", "status": "pass"},
-    {"name": "no_schema_change", "status": "pass"},
-    {"name": "no_forbidden_surface_touched", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "schema_draft_2020_12_valid",
+      "status": "pass"
+    },
+    {
+      "name": "schema_operator_github_login_const_halildeu",
+      "status": "pass"
+    },
+    {
+      "name": "schema_authorization_scope_exactly_two_unique_items",
+      "status": "pass"
+    },
+    {
+      "name": "schema_decision_const_no_guard_flag_flip",
+      "status": "pass"
+    },
+    {
+      "name": "schema_guard_flags_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "schema_context_binding_repo_base_head_ref_const",
+      "status": "pass"
+    },
+    {
+      "name": "schema_manifest_transition_before_after_pinned",
+      "status": "pass"
+    },
+    {
+      "name": "schema_cross_ai_review_provider_split_const",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_validates_against_schema",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_operator_iso8601_timestamp",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_no_secret_assertion_true",
+      "status": "pass"
+    },
+    {
+      "name": "manifest_explicit_operator_authorization_true",
+      "status": "pass"
+    },
+    {
+      "name": "manifest_general_purpose_platform_claim_authorization_true",
+      "status": "pass"
+    },
+    {
+      "name": "manifest_operator_verified_runtime_semantics_false_owned_by_ri75",
+      "status": "pass"
+    },
+    {
+      "name": "manifest_no_guard_flag_flip",
+      "status": "pass"
+    },
+    {
+      "name": "plan_doc_records_decision_authority_boundary_no_guard_flag_flip",
+      "status": "pass"
+    },
+    {
+      "name": "ri7_readiness_gate_drops_two_operator_blockers",
+      "status": "pass"
+    },
+    {
+      "name": "ri7_readiness_gate_remaining_blocker_only_operator_verified_runtime_semantics",
+      "status": "pass"
+    },
+    {
+      "name": "forbidden_change_audit_machine_enforced_git_diff",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "no_production_platform_claim",
+      "status": "pass"
+    },
+    {
+      "name": "no_live_adapter_execution",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_mcp_repo_intelligence_exposure",
+      "status": "pass"
+    },
+    {
+      "name": "no_context_compiler_auto_feed",
+      "status": "pass"
+    },
+    {
+      "name": "no_root_authority_write_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gp5_platform_claim_decision_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gpp_status_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_boundary_doc_change",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    },
+    {
+      "name": "schema_no_secret_assertion_required_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "schema_timestamp_strict_utc_pattern_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "schema_cross_ai_verdict_enum_revise_agree_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_cross_ai_verdict_matches_review_evidence_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "parent_plan_row_decision_string_synced_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "plan_doc_dod_items_tagged_pre_merge_ci_external_post_merge_iter1_absorb",
+      "status": "pass"
+    },
+    {
+      "name": "negative_test_no_secret_assertion_omit_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "negative_test_invalid_timestamp_rejected",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "AO-MA-8 sistemik bug fast-follow per HARD RULE Governance / Sistemik Bug: the test_ao_ma_8_pr_scope_only_touches_allowlisted_files assertion introduced by PR #660 ran on every PR after AO-MA-8 landed and rejected any PR whose diff did not match AO-MA-8's specific scope — a category error. Fix detects the AO-MA-8 INTRODUCER PR by intersecting git diff with the four AO-MA-8-owned artifact paths (excluding the shared local-ai-review-evidence.v1.json); on non-introducer PRs the assertion skips, preserving the introducer's full-scope guarantee while unblocking every other PR.",
-    "Sistemik bug impact: blocks RI-7.1 (PR #661) and every future PR with this AO-MA-8 invariant. Sistemik fix prevents the cascading PR breakage that would otherwise require workarounds in every downstream slice.",
-    "Per HARD RULE Uzun Vadeli Kalıcı Çözüm + Governance / Sistemik Bug: separate fast-follow PR (not RI-7.1 inline patch) to avoid governance bypass; sistemik fix lands first, RI-7.1 rebases on it.",
-    "Diff scope: 2 files — tests/test_ao_ma_8_e2e_smoke.py (assertion + skip guard) + local-ai-review-evidence.v1.json (this artifact). No schema change. No public SDK signature change. No workflow / branch-protection mutation. Forbidden surfaces (gpp_status, gp5_platform_claim_decision, mcp_server, __init__, defaults/policies, PUBLIC-BETA, SUPPORT-BOUNDARY, KNOWN-BUGS) untouched.",
-    "Local verification: ruff check passes; pytest test_ao_ma_8_pr_scope_only_touches_allowlisted_files returns `1 skipped` when diff carries no AO-MA-8-specific path (correct behavior for non-introducer PR). Introducer-PR full-scope assertion still fires when synthetic diff includes AO-MA-8 paths.",
-    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Sistemik bug fix is mechanically simple (one introducer-detection guard added before existing assertion); review verdict AGREE recorded directly without iter cycle. No interim REVISE needed for this scope."
+    "Iter-4 absorb COMPLETE; reviewer verdict received AGREE from Codex (thread 019e6a37). Final commit lands with reviewer.verdict=AGREE in this file AND cross_ai_review_ref.final_verdict=AGREE in RI-7.1-OPERATOR-AUTHORIZATION.v1.json; the invariant test_ri71_cross_ai_verdicts_match_review_evidence preserves cross-artifact equality. iter cycle: iter-1 REVISE (2 BLOCKER + 2 MEDIUM) \u2192 iter-2 REVISE (1 BLOCKER + 1 MEDIUM) \u2192 iter-3 REVISE (2 MEDIUM prose) \u2192 iter-4 AGREE merge-ready.",
+    "B-path slice 2 of 8: RI-7.1 operator authorization record. Codex thread 019e6a37-a9d1-7e73-8e90-4088353eb899 (slice-1 thread 019e691b expired post slice-1 merge). Reviewer verdict tracked iter-1 REVISE (4 findings) \u2192 iter-2 REVISE (2 findings) \u2192 iter-3 REVISE (2 MEDIUM prose drift) \u2192 iter-3 absorb in flight; final AGREE pending.",
+    "Schema strictness summary post-iter-1+iter-2 absorb: additionalProperties=false at every object level; schema_version + artifact_kind + decision const ri7_operator_authorization_recorded_no_guard_flag_flip; operator.github_login const Halildeu; operator.no_secret_assertion REQUIRED + const true (iter-1 BLOCKER absorb); operator.authorization_timestamp format=date-time + strict UTC pattern ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z\\$ (iter-1 MEDIUM absorb); authorization_scope minItems=maxItems=2 + uniqueItems + enum [ri_supersession, general_purpose_platform_claim_target]; ri_supersession_authorized + general_purpose_platform_claim_target_authorized const true; guard flags const false; context_binding repo/base_ref/head_ref const; manifest_transition before/after const-pinned; forbidden_change_audit.all_unchanged const true + minItems=8 surfaces; cross_ai_review_ref implementer/reviewer provider const + final_verdict enum [REVISE, AGREE] (iter-1 BLOCKER absorb).",
+    "Authority signal model: 4 concurrent signals required (none alone sufficient): (1) commit identity Halildeu, (2) commit trailers Operator-Authorized-By/Scope/At + No-Guard-Flag-Flip, (3) GitHub PR approval via ao-release-gate-review required check, (4) cross-AI peer review final AGREE recorded in cross_ai_review_ref with cross-artifact equality enforced.",
+    "Invariant test suite (13 tests, post-iter-1 absorb +4): schema valid Draft 2020-12, evidence validates against schema, evidence records decision + Halildeu + ISO 8601 timestamp + no_secret_assertion + scope + 3-guard-false, manifest_transition before/after pinned, manifest flips both operator keys + operator_verified_runtime_semantics remains false, forbidden_change_audit 9 surfaces pinned, cross-AI provider split + verdict enum + thread_id, cross-artifact verdict equality (iter-1 absorb), parent plan row decision string matches (iter-1 absorb), no_secret_assertion required positive+negative (iter-1 absorb), invalid_timestamp rejected by schema pattern positive+negative (iter-1 absorb), plan doc decision/3-guards/Halildeu/Operator-Authorized-By, forbidden-diff invariant CI fail-closed in PR context.",
+    "Diff scope (7 files, iter-2 absorb): .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json (manifest 2-key flip), .claude/plans/RI-7-REPO-INTELLIGENCE-TIER-PROMOTION-READINESS.md (parent row decision string sync, iter-1 absorb), .claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.md (NEW plan doc, DoD tagged [pre-merge]/[ci]/[external]/[post-merge]), .claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.v1.json (NEW evidence), ao_kernel/defaults/schemas/ri7-operator-authorization-evidence.schema.v1.json (NEW schema), local-ai-review-evidence.v1.json (cross-AI evidence), tests/test_ri7_operator_authorization_invariant.py (NEW invariant tests).",
+    "Readiness gate output: 2 operator-bound blockers dropped (explicit_operator_authorization_missing + general_purpose_platform_claim_authorization_missing). Remaining 1 blocker: operator_verified_runtime_semantics_missing (RI-7.5 owner). Guard flags unchanged (all false).",
+    "Forbidden-change audit clean: gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/defaults/policies/, docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md \u2014 all untouched.",
+    "Local test run: 13 passed. ruff clean. Schema validates evidence with zero errors (Draft 2020-12). Review evidence validates against its schema with zero errors. Declared-vs-actual diff scope: 7=7 exact match (iter-2 absorb).",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending; this file is committed with reviewer.verdict=REVISE during iter cycle; AGREE flip lands on final commit only after Codex returns AGREE. RI-7.1 evidence cross_ai_review_ref.final_verdict tracks the SAME value (cross-artifact equality enforced by test_ri71_cross_ai_verdicts_match_review_evidence)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

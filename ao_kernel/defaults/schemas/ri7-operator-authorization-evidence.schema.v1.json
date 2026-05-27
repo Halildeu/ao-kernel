@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-operator-authorization-evidence:v1",
+  "title": "RI-7.1 Operator Authorization Record Evidence",
+  "description": "Evidence artifact recording the explicit operator authorization for (a) the repo-intelligence supersession to a general-purpose production platform claim contributor surface, and (b) the GP-platform-claim target authorization that downstream RI-7.5 / RI-7.8 slices depend on. Operator-bound slice: the artifact is authoritative only when the named operator account signs the carrying PR via GitHub review approval AND the commit trailer set, AND a cross-AI peer review (HARD RULE CC-2) records the implementer/reviewer split. This artifact does NOT flip any guard flag (support_widening, production_platform_claim, live_adapter_execution) — it only authorizes the manifest keys explicit_operator_authorization=true + general_purpose_platform_claim_authorization=true so downstream slices can begin collecting evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "operator",
+    "authorization_scope",
+    "ri_supersession_authorized",
+    "general_purpose_platform_claim_target_authorized",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "manifest_transition",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-operator-authorization-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_operator_authorization_evidence"},
+    "decision": {"type": "string", "const": "ri7_operator_authorization_recorded_no_guard_flag_flip"},
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_login", "authorization_timestamp", "no_secret_assertion"],
+      "properties": {
+        "github_login": {
+          "type": "string",
+          "const": "Halildeu",
+          "description": "The single GitHub login authorized to sign this RI-7.1 operator authorization. Pinned to the repo owner; widening this requires an intentional schema migration PR with cross-AI review."
+        },
+        "authorization_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+          "description": "ISO 8601 UTC timestamp of the operator's authorization. Pattern asserts the value at schema level even without a FormatChecker (Codex iter-1 absorb: format-only assertions are not enforced by jsonschema by default; the explicit regex closes that loophole). Must match the commit timestamp or fall within the same UTC day window the PR review was given on."
+        },
+        "no_secret_assertion": {
+          "type": "boolean",
+          "const": true,
+          "description": "The operator asserts no secret material has been added to this PR's diff (API keys, tokens, credentials). Reviewed by the local-ai-review-evidence secret_scan check. Codex iter-1 absorb: this field is required (was previously optional)."
+        }
+      }
+    },
+    "authorization_scope": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "enum": [
+          "ri_supersession",
+          "general_purpose_platform_claim_target"
+        ]
+      },
+      "description": "The two manifest keys this authorization flips. Must be exactly these two; widening the scope requires an intentional schema migration PR."
+    },
+    "ri_supersession_authorized": {
+      "type": "boolean",
+      "const": true,
+      "description": "Operator authorizes the repo-intelligence subsystem (ao-kernel repo scan/index/query) to be evaluated as a contributor to a general-purpose production platform claim under the RI-7.x program. This is NOT a production claim itself; it is the authorization that lets RI-7.5..RI-7.8 collect evidence."
+    },
+    "general_purpose_platform_claim_target_authorized": {
+      "type": "boolean",
+      "const": true,
+      "description": "Operator authorizes the general-purpose platform claim as the TARGET that RI-7.8 may evaluate (promote or non-promote). This is NOT the claim itself; the claim is granted only by RI-7.8c if and when its evidence chain passes."
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "const": "Halildeu/ao-kernel"
+        },
+        "base_ref": {
+          "type": "string",
+          "const": "refs/heads/main"
+        },
+        "head_ref": {
+          "type": "string",
+          "const": "refs/heads/codex/ri-7-1-operator-authorization"
+        },
+        "pr_number_hint": {
+          "type": "string",
+          "description": "PR number once known (the artifact may be authored before the PR is opened; final commit re-runs the cross-AI review evidence after the PR number lands)."
+        }
+      }
+    },
+    "manifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["explicit_operator_authorization", "general_purpose_platform_claim_authorization"],
+          "properties": {
+            "explicit_operator_authorization": {"type": "boolean", "const": false},
+            "general_purpose_platform_claim_authorization": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["explicit_operator_authorization", "general_purpose_platform_claim_authorization"],
+          "properties": {
+            "explicit_operator_authorization": {"type": "boolean", "const": true},
+            "general_purpose_platform_claim_authorization": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1, "description": "Codex MCP thread id for the cross-AI peer review chain."},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {
+          "type": "string",
+          "enum": ["REVISE", "AGREE"],
+          "description": "Cross-AI peer review verdict. Codex iter-1 absorb: enum (not const) so the artifact can be committed with REVISE during the iter loop and re-committed with AGREE only after the actual AGREE is received. Invariant test `test_ri71_cross_ai_verdicts_match_review_evidence` asserts this field equals `local-ai-review-evidence.v1.json::reviewer.verdict` (no drift between the two artifacts). Final commit MUST land with AGREE; the local gate fail-closes on REVISE."
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
