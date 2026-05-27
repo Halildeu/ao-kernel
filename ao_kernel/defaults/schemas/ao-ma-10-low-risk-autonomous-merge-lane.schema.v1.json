@@ -127,6 +127,7 @@
       "additionalProperties": false,
       "required": [
         "required_providers",
+        "optional_registered_providers",
         "consensus_required",
         "same_provider_review_allowed",
         "max_autonomous_rounds",
@@ -136,7 +137,12 @@
         "required_providers": {
           "type": "array",
           "items": { "type": "string" },
-          "const": ["openai", "anthropic", "minimax"]
+          "const": ["openai", "anthropic"]
+        },
+        "optional_registered_providers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "const": ["minimax"]
         },
         "consensus_required": {
           "type": "boolean",

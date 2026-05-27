@@ -1,0 +1,130 @@
+{
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10_github_readiness_snapshot",
+  "branch": "main",
+  "branch_protection": {
+    "ao_release_gate_required_check_present": false,
+    "ao_release_gate_source_pinned_to_actions": false,
+    "dismiss_stale_reviews": true,
+    "enforce_admins": true,
+    "present": true,
+    "require_code_owner_reviews": true,
+    "required_approving_review_count": 1,
+    "required_check_source_pins": [
+      {
+        "app_id": 15368,
+        "context": "lint"
+      },
+      {
+        "app_id": 15368,
+        "context": "test (3.11)"
+      },
+      {
+        "app_id": 15368,
+        "context": "test (3.12)"
+      },
+      {
+        "app_id": 15368,
+        "context": "test (3.13)"
+      },
+      {
+        "app_id": 15368,
+        "context": "coverage"
+      },
+      {
+        "app_id": 15368,
+        "context": "typecheck"
+      },
+      {
+        "app_id": 15368,
+        "context": "packaging-smoke"
+      }
+    ],
+    "required_checks": [
+      "coverage",
+      "lint",
+      "packaging-smoke",
+      "test (3.11)",
+      "test (3.12)",
+      "test (3.13)",
+      "typecheck"
+    ],
+    "strict_status_checks": true
+  },
+  "codeowners": {
+    "broad_default_owner_absent": true,
+    "broad_default_owner_present": false,
+    "governance_paths_owned": true,
+    "low_risk_prefixes_still_codeowned": [
+      "/.claude/",
+      "/ao_kernel/defaults/schemas/*gate*.json"
+    ],
+    "present": true
+  },
+  "collection_errors": [],
+  "generated_at": "2026-05-27T19:33:16Z",
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "production_platform_claim": false,
+    "support_widening": false
+  },
+  "merge_actor": {
+    "administration_write_absent_for_dedicated_actor": false,
+    "login": "Halildeu",
+    "permission": "admin",
+    "viewer_can_administer": true
+  },
+  "mutations_performed": false,
+  "read_only": true,
+  "readiness": {
+    "blockers": [
+      "ao_release_gate_required_check_missing",
+      "legacy_required_review_blocks_low_risk_autonomy",
+      "merge_actor_admin_permission_observed",
+      "ssot_live_required_check_drift_detected"
+    ],
+    "decision": "blocked",
+    "next_required_slice": "AO-MA-10a1 autonomous_merge_eligibility after blockers are resolved",
+    "warnings": [
+      "repository_auto_merge_disabled_merge_agent_direct_mode_required",
+      "some_nominal_low_risk_prefixes_still_codeowned"
+    ]
+  },
+  "release_authority": "ao-release-gate+github-ruleset",
+  "repository": "Halildeu/ao-kernel",
+  "repository_settings": {
+    "auto_merge_allowed": false,
+    "delete_branch_on_merge": false,
+    "merge_commit_allowed": true,
+    "rebase_merge_allowed": true,
+    "squash_merge_allowed": true
+  },
+  "rulesets": {
+    "ao_release_gate_required_check_present": false,
+    "ao_release_gate_source_pinned_to_actions": false,
+    "bypass_actors_count": 0,
+    "bypass_actors_empty": true,
+    "default_branch_rulesets": [
+      {
+        "bypass_actors_count": 0,
+        "enforcement": "active",
+        "id": 16803733,
+        "name": "Protect main",
+        "rule_types": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "source_type": "Repository",
+        "target": "branch"
+      }
+    ],
+    "effective_required_checks": []
+  },
+  "schema_version": "ao-ma-10-github-readiness-snapshot.v1",
+  "snapshot_source": "github_api_read_only",
+  "ssot_cross_check": {
+    "live_snapshot_conflicts_with_prior_claim": true,
+    "prior_claim_source": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+    "prior_required_check_claim_observed": true
+  }
+}

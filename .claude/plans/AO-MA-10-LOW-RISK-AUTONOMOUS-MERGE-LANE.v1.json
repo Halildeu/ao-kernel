@@ -55,7 +55,9 @@
   "high_risk_consensus": {
     "required_providers": [
       "openai",
-      "anthropic",
+      "anthropic"
+    ],
+    "optional_registered_providers": [
       "minimax"
     ],
     "consensus_required": true,
@@ -106,11 +108,14 @@
     }
   ],
   "future_slices": [
-    "AO-MA-10a low-risk classifier implementation",
-    "AO-MA-10b CODEOWNERS/ruleset compatibility design",
-    "AO-MA-10c merge-agent loop implementation",
-    "AO-MA-10d positive and negative autonomous merge smoke",
-    "AO-MA-10e cutover closeout"
+    "AO-MA-10a0 GitHub readiness snapshot",
+    "AO-MA-10a1 autonomous_merge_eligibility checker",
+    "AO-MA-10a2 context-bound evidence bundle and registered-provider consensus schemas",
+    "AO-MA-10b ao-release-gate payload and decision integration",
+    "AO-MA-10d negative fail-closed suite before real merge",
+    "AO-MA-10c merge-agent identity and dry-run executor",
+    "AO-MA-10e positive disposable low-risk autonomous merge smoke",
+    "AO-MA-10f activation/cutover"
   ],
   "forbidden_in_this_slice": [
     "workflow_mutation",
