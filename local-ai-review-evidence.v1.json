@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10-FAST-FOLLOW-INTRODUCER-DETECTION",
+  "work_package": "RI-7.1-FAST-FOLLOW-CROSS-AI-INTRODUCER-DETECTION",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -9,51 +9,136 @@
   "reviewer": {
     "agent": "codex",
     "provider": "openai",
-    "verdict": "AGREE"
+    "verdict": "REVISE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10-scope-test-introducer-detection-fastfollow",
+    "head_ref": "refs/heads/codex/ri-7-1-cross-ai-test-introducer-detection-fastfollow",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
+      "tests/test_ri7_operator_authorization_invariant.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "ruff", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "introducer_signature_set_intersection", "status": "pass"},
-    {"name": "non_introducer_pr_skip_path_unblocks_merges", "status": "pass"},
-    {"name": "introducer_pr_full_allowlist_and_forbidden_patterns_preserved", "status": "pass"},
-    {"name": "fail_closed_when_diff_base_unresolved_in_ci", "status": "pass"},
-    {"name": "fail_closed_when_git_diff_fails_in_ci", "status": "pass"},
-    {"name": "no_support_widening", "status": "pass"},
-    {"name": "no_production_platform_claim", "status": "pass"},
-    {"name": "no_live_adapter_execution", "status": "pass"},
-    {"name": "no_branch_protection_mutation", "status": "pass"},
-    {"name": "no_workflow_change", "status": "pass"},
-    {"name": "no_codeowners_change", "status": "pass"},
-    {"name": "no_runtime_orchestration_module_change", "status": "pass"},
-    {"name": "no_release_gate_runtime_change", "status": "pass"},
-    {"name": "no_local_gpp_gate_change", "status": "pass"},
-    {"name": "no_ao_release_gate_module_change", "status": "pass"},
-    {"name": "no_agents_md_or_claude_md_change", "status": "pass"},
-    {"name": "no_gpp_status_change", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"},
-    {"name": "pattern_matches_pr_662_and_pr_666_fast_follows", "status": "pass"},
-    {"name": "hard_rule_kalici_cozum_root_cause_fix", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "introducer_signature_set_intersection",
+      "status": "pass"
+    },
+    {
+      "name": "fail_closed_when_diff_base_unresolved",
+      "status": "pass"
+    },
+    {
+      "name": "fail_closed_when_git_diff_fails",
+      "status": "pass"
+    },
+    {
+      "name": "introducer_pr_full_assertion_path_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "non_introducer_pr_skip_path_unblocks_merges",
+      "status": "pass"
+    },
+    {
+      "name": "cross_ai_verdicts_equality_guarded_by_introducer",
+      "status": "pass"
+    },
+    {
+      "name": "parent_plan_decision_string_guarded_by_introducer",
+      "status": "pass"
+    },
+    {
+      "name": "manifest_state_at_landing_pin_guarded_by_introducer",
+      "status": "pass"
+    },
+    {
+      "name": "permanent_invariants_kept_outside_guard",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "no_production_platform_claim",
+      "status": "pass"
+    },
+    {
+      "name": "no_live_adapter_execution",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_mcp_repo_intelligence_exposure",
+      "status": "pass"
+    },
+    {
+      "name": "no_schema_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_evidence_artifact_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_manifest_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gpp_status_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_boundary_doc_change",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    },
+    {
+      "name": "pattern_matches_ao_ma_8_fast_follow_pr_662",
+      "status": "pass"
+    },
+    {
+      "name": "hard_rule_kalici_cozum_root_cause_fix",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "AO-MA-10 fast-follow sistemik bug fix. `test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners` introduced by PR #665 was running on every PR after AO-MA-10 landed, rejecting any PR whose diff did not match AO-MA-10's specific scope. Third instance of the same sistemik bug pattern: PR #660 (AO-MA-8 introducer) → fixed by PR #662; PR #661 (RI-7.1 introducer) → being fixed by PR #666; PR #665 (AO-MA-10 introducer) → fixed by THIS PR.",
-    "Root-cause kalici fix (HARD RULE Uzun Vadeli Kalici Cozum): introducer-PR detection. The scope-allowlist + forbidden_patterns assertion now first checks whether the current PR diff touches at least one of the four AO-MA-10-owned artifact paths in `ao_ma_10_introducer_signature` (plan doc + receipt evidence + schema + test file). If touched, the full-scope assertion runs (allowlist + forbidden_patterns). If not touched, the invariant skips with a precise reason.",
-    "Fail-closed semantics preserved: the existing `_resolve_pr_diff_base()` + `_git_capture` blocks already fail closed in CI PR context. The introducer-detection only adds a skip on the success path when the diff carries no AO-MA-10-specific signature.",
-    "Pattern parity: mirrors PR #662 (AO-MA-8 fast-follow) and PR #666 (RI-7.1 fast-follow). Same shape — introducer-signature set intersection with the PR diff, skip on non-introducer, fail-closed on diff resolution error.",
-    "Diff scope (2 files): tests/test_ao_ma10_low_risk_autonomous_merge_lane.py (introducer-PR detection guard added to the scope test), local-ai-review-evidence.v1.json (this file, cross-AI evidence).",
+    "RI-7.1 fast-follow: sistemik bug fix. `test_ri71_cross_ai_verdicts_match_review_evidence`, `test_ri71_parent_plan_row_uses_same_decision_string`, and the `operator_verified_runtime_semantics is False` pin in `test_ri71_manifest_flips_both_operator_keys_true` were running on every PR after RI-7.1 landed. On any non-RI-7.1-introducer PR (RI-7.5+, future B-path slices) the comparison is a category error: stale-from-main RI-7.1 evidence (AGREE) vs current-PR local-ai-review-evidence (REVISE during iter cycle). This blocked legitimate merges and forced repeated rebase cycles.",
+    "Root-cause kalici fix (HARD RULE Uzun Vadeli Kalici Cozum): introducer-PR detection. The three RI-7.1-introducer-only invariants now check whether the current PR diff touches at least one of three RI-7.1-owned artifact paths in `_RI71_INTRODUCER_SIGNATURE` (plan doc + evidence + schema). If touched, the invariant fires full-scope. If not touched, the invariant skips with a precise reason string. The full-scope RI-7.1 introducer-PR guarantee is preserved.",
+    "Fail-closed semantics preserved: if the diff base cannot be resolved (CI race / shallow clone / detached head / git diff error), the helper returns `is_introducer=True` so the invariant runs. This protects the RI-7.1 introducer PR from silent test disablement.",
+    "Pattern parity: mirrors PR #662 (AO-MA-8 fast-follow, merged 2026-05-27). Same shape — introducer-signature set intersection with the PR diff, skip on non-introducer, fail-closed on diff resolution error.",
+    "Diff scope (2 files): tests/test_ri7_operator_authorization_invariant.py (introducer-PR detection helper + 3 test guards), local-ai-review-evidence.v1.json (this file, cross-AI evidence).",
     "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending; this file is committed with reviewer.verdict=REVISE during iter cycle; AGREE flip lands on final commit only after Codex returns AGREE.",
-    "Local validation: 9 passed + 1 skipped on AO-MA-10 invariant suite. ruff clean.",
-    "No guard flag flip: support_widening=false, production_platform_claim=false, live_adapter_execution=false. No forbidden-surface change.",
-    "Unblocks: every PR currently blocked by the AO-MA-10 scope test category error — PR #666 (RI-7.1 fast-follow) and every subsequent B-path PR."
+    "Local validation: 11 passed + 2 skipped on RI-7.1 invariant suite (cross-AI + parent-plan tests correctly skipped because this fast-follow PR does not touch RI-7.1 introducer artifacts). ruff clean.",
+    "No guard flag flip: support_widening=false, production_platform_claim=false, live_adapter_execution=false. Forbidden surfaces unchanged: gpp_status.v1.json, gp5_platform_claim_decision.py, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/defaults/policies/, docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md.",
+    "Unblocks: RI-7.5 PR (and every subsequent B-path slice PR) can now merge without rebase-loop pressure from the RI-7.1 cross-artifact equality category error."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
