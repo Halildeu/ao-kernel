@@ -157,6 +157,28 @@ def test_ao_ma10_gpp_status_guards_remain_closed() -> None:
 
 
 def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> None:
+    """AO-MA-10 PR scope assertion.
+
+    Fast-follow sistemik bug fix (AO-MA-10 introducer-PR detection):
+    the scope allowlist + forbidden_patterns assertion was firing on
+    every PR after AO-MA-10 landed, rejecting any PR whose diff did
+    not match AO-MA-10's specific scope (six AO-MA-10-owned artifact
+    files). On unrelated PRs (RI-7.x slices, AO-MA-N fast-follows,
+    future B-path slices, etc.) the assertion is a category error
+    and blocks legitimate merges.
+
+    Pattern parity with PR #662 (AO-MA-8) and PR #666 (RI-7.1): detect
+    the AO-MA-10 introducer PR by checking whether the diff touches at
+    least one of the four AO-MA-10-owned artifact paths in
+    `ao_ma_10_introducer_signature` below (excluding the shared
+    `local-ai-review-evidence.v1.json` which every PR touches). On
+    non-introducer PRs the invariant skips; the full-scope assertion
+    for the AO-MA-10 introducer is preserved.
+
+    Fail-closed: if the diff base cannot be resolved or git diff
+    fails, the test fails closed in CI PR context (existing behavior
+    below preserved).
+    """
     base, source = _resolve_pr_diff_base()
     in_ci_pr = os.environ.get("CI") == "true" and os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
     if base is None:
@@ -173,6 +195,21 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         pytest.skip(message)
 
     changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
+    # AO-MA-10 introducer-PR detection (fast-follow sistemik bug fix).
+    # On non-introducer PRs the scope assertion is a category error;
+    # skip with a precise reason.
+    ao_ma_10_introducer_signature = {
+        ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
+        ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+        "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
+    }
+    if not (changed & ao_ma_10_introducer_signature):
+        pytest.skip(
+            "PR is not the AO-MA-10 introducer PR (no AO-MA-10-specific path in diff); "
+            "AO-MA-10 scope allowlist invariant does not apply"
+        )
+
     allowlist = {
         ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
         ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
