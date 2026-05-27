@@ -6,7 +6,7 @@
   "guardrail_hardening_matrix": true,
   "vector_backend_e2e_evidence": true,
   "scan_index_query_packaging_smoke": true,
-  "operator_verified_runtime_semantics": false,
+  "operator_verified_runtime_semantics": true,
   "cross_lane_production_matrix_evidence": true,
   "gp59_reclassification_plan": true,
   "support_boundary_transition_plan": true

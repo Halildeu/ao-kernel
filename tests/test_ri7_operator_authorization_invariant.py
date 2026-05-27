@@ -357,15 +357,28 @@ def _is_ri71_introducer_pr() -> tuple[bool, str]:
     """Return (is_introducer, reason).
 
     Detects whether the current PR is the RI-7.1 introducer PR by
-    checking the diff against base. Falls back to True (apply
-    invariant) when the diff base cannot be resolved — fail-closed.
+    checking the diff against base for any RI-7.1 owned artifact.
+
+    Codex iter-3 absorb (RI-7.5 PR #670): falls back to **False**
+    (skip pin) when diff base cannot be resolved. This is the kalıcı
+    semantic for state-at-landing pins: once the underlying state has
+    moved past landing (e.g. RI-7.5 flips
+    operator_verified_runtime_semantics to True on main), the pin
+    becomes invalid for EVERY future PR. Fail-closed-apply on
+    diff-resolution-failure would produce false positives across the
+    fleet, blocking every B-path slice that hits a CI configuration
+    where the base SHA can't be resolved. Per HARD RULE Kalıcı Çözüm
+    (false positive > false negative for state-at-landing): skip the
+    pin on diff resolution failure; permanent invariants in the same
+    test (RI-7.1 keys true after RI-7.1 lands) remain enforced
+    outside the guard.
     """
     base, source = _resolve_diff_base()
     if base is None:
-        return True, "no diff base resolved (fail-closed apply)"
+        return False, "no diff base resolved (skip state-at-landing pin)"
     diff_proc = _git(["diff", "--name-only", f"{base}..HEAD"])
     if diff_proc.returncode != 0:
-        return True, f"git diff against base ({source}) failed (fail-closed apply)"
+        return False, f"git diff against base ({source}) failed (skip state-at-landing pin)"
     changed = {line.strip() for line in diff_proc.stdout.splitlines() if line.strip()}
     if changed & _RI71_INTRODUCER_SIGNATURE:
         return True, f"RI-7.1 introducer PR detected (diff base={source})"

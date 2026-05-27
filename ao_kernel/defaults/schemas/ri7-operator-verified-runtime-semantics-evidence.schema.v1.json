@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-operator-verified-runtime-semantics-evidence:v1",
+  "title": "RI-7.5 Operator-Verified Runtime Semantics Evidence",
+  "description": "Evidence artifact recording the operator's verification of the repo-intelligence subsystem runtime semantics. Operator-bound slice: each runtime invariant is exercised by a script that emits a structured per-invariant result (status, log_path, sha256), the operator observes the script output and signs the aggregate artifact. Terminal recording alone is not sufficient evidence per Codex iter-1 absorb; the script's deterministic output IS the evidence. This artifact does NOT flip any guard flag — only the manifest key operator_verified_runtime_semantics flips false→true.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "operator",
+    "runtime_invariants",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "manifest_transition",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-operator-verified-runtime-semantics-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_operator_verified_runtime_semantics_evidence"},
+    "decision": {"type": "string", "const": "ri7_operator_verified_runtime_semantics_recorded"},
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_login", "verification_timestamp", "no_secret_assertion", "observation_notes"],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "verification_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "observation_notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Free-text operator observation note. Required (not empty) but does not gate the schema; the binding evidence is the per-invariant script result + sha256."
+        }
+      }
+    },
+    "runtime_invariants": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence_class", "script_ref", "result_summary", "sha256"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "no_hidden_prompt_injection",
+              "no_context_compiler_auto_feed",
+              "no_root_authority_file_write",
+              "no_mcp_repo_intelligence_tool_exposed",
+              "write_vectors_confirmation_token_required",
+              "missing_backend_or_api_key_fail_closed",
+              "repo_scan_query_read_only_boundary",
+              "negative_prompt_injection_fixture"
+            ]
+          },
+          "status": {"type": "string", "const": "verified"},
+          "evidence_class": {"type": "string", "const": "operator_script_verified"},
+          "script_ref": {
+            "type": "string",
+            "pattern": "^scripts(/[A-Za-z0-9_-]+)*/[A-Za-z0-9_.-]+\\.py(::[A-Za-z0-9_]+)?$",
+            "description": "Repo-relative path to the script (or script function) that emits this invariant's evidence."
+          },
+          "result_summary": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Single-line summary of what the script asserted (e.g. \"protected gate denied write without confirm token\", \"MCP tool list contains zero repo_intelligence entries\")."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the script's full output (including log lines and intermediate assertions). Pinning the digest lets a re-run prove the same evidence was observed."
+          }
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_hidden_prompt_injection"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_hidden_prompt_injection"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_context_compiler_auto_feed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_context_compiler_auto_feed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_root_authority_file_write"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_root_authority_file_write"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_mcp_repo_intelligence_tool_exposed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_mcp_repo_intelligence_tool_exposed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "write_vectors_confirmation_token_required"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_write_vectors_confirmation_token_required"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_backend_or_api_key_fail_closed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_missing_backend_or_api_key_fail_closed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_scan_query_read_only_boundary"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_repo_scan_query_read_only_boundary"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "negative_prompt_injection_fixture"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_negative_prompt_injection_fixture"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-5-operator-runtime-semantics"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "manifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operator_verified_runtime_semantics"],
+          "properties": {
+            "operator_verified_runtime_semantics": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operator_verified_runtime_semantics"],
+          "properties": {
+            "operator_verified_runtime_semantics": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
