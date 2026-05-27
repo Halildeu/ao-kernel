@@ -58,6 +58,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--ao-ma10-evidence-bundle",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to an ao-ma-10-evidence-bundle.v1 provider-consensus bundle. "
+            "When the payload requests AO-MA-10 low-risk autonomous merge, missing or "
+            "non-accepting bundle evidence fails closed. Supplying a malformed bundle also "
+            "fails closed, even when the autonomous lane is not requested."
+        ),
+    )
+    parser.add_argument(
         "--conclusion-mode",
         choices=("shadow", "enforce"),
         default="shadow",
@@ -113,10 +124,14 @@ def main(argv: list[str] | None = None) -> int:
     review_evidence: object | None = None
     if args.review_evidence is not None:
         review_evidence = json.loads(args.review_evidence.read_text(encoding="utf-8"))
+    ao_ma10_evidence_bundle: object | None = None
+    if args.ao_ma10_evidence_bundle is not None:
+        ao_ma10_evidence_bundle = json.loads(args.ao_ma10_evidence_bundle.read_text(encoding="utf-8"))
     decision = build_ao_release_gate_decision(
         payload,
         gpp_status,
         review_evidence=review_evidence,
+        ao_ma10_evidence_bundle=ao_ma10_evidence_bundle,
         conclusion_mode=args.conclusion_mode,
     )
     write_ao_release_gate_decision(args.decision_path, decision)

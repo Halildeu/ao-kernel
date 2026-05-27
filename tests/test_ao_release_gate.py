@@ -86,6 +86,80 @@ def _review_evidence(
     return artifact
 
 
+def _ao_ma10_evidence_bundle(
+    *,
+    head_sha: str | None = None,
+    head_ref: str = "refs/heads/codex/gpp-2v-release-gate-dry-run",
+    base_ref: str = "origin/main",
+    changed_paths: list[str] | None = None,
+    consensus_status: str = "AGREE",
+    provider_verdict: str = "AGREE",
+) -> dict[str, object]:
+    """Build a valid accepting AO-MA-10 evidence bundle for _allow_payload().
+
+    Defaults intentionally use local-style refs (`origin/main`,
+    `refs/heads/...`) while `_allow_payload()` uses GitHub payload refs
+    (`main`, `codex/...`) so the positive path pins ref normalization.
+    """
+
+    paths = list(changed_paths) if changed_paths is not None else list(_ALLOW_CHANGED_PATHS)
+    context = {
+        "repository_full_name": "Halildeu/ao-kernel",
+        "base_ref": base_ref,
+        "head_ref": head_ref,
+        "head_sha": head_sha if head_sha is not None else _ALLOW_HEAD_SHA,
+        "diff_digest": diff_digest(paths),
+        "changed_files_count": len(paths),
+    }
+    provider_verdicts = []
+    for provider, agent in (("openai", "codex-reviewer"), ("anthropic", "claude-reviewer")):
+        provider_verdicts.append(
+            {
+                "schema_version": "ao-ma-10-provider-consensus.v1",
+                "artifact_kind": "ao_ma_10_provider_consensus",
+                "provider_id": provider,
+                "agent_id": agent,
+                "role": "reviewer",
+                "verdict": provider_verdict,
+                "round_index": 1,
+                "context_binding": dict(context),
+                "findings_count": 0 if provider_verdict == "AGREE" else 1,
+                "secrets_recorded": False,
+                "support_widening": False,
+                "production_platform_claim": False,
+                "live_adapter_execution": False,
+                "release_authority": "ao-release-gate+github-ruleset",
+                "ai_output_release_authority": False,
+            }
+        )
+    return {
+        "schema_version": "ao-ma-10-evidence-bundle.v1",
+        "artifact_kind": "ao_ma_10_evidence_bundle",
+        "generated_at": "2026-05-28T00:00:00Z",
+        "repo": "Halildeu/ao-kernel",
+        "work_package": "AO-MA-10a2",
+        "read_only": True,
+        "mutations_performed": False,
+        "release_authority": "ao-release-gate+github-ruleset",
+        "ai_output_release_authority": False,
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+        "context_binding": context,
+        "reviewer_providers": ["anthropic", "openai"],
+        "required_reviewer_providers": ["openai", "anthropic"],
+        "provider_verdicts": provider_verdicts,
+        "consensus_status": consensus_status,
+        "freshness": {
+            "status": "fresh",
+            "max_age_seconds": 3600,
+        },
+        "secrets_recorded": False,
+    }
+
+
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -195,6 +269,12 @@ def _low_risk_payload() -> dict[str, object]:
     payload["changed_paths"] = paths
     payload["human_reviews"] = []
     payload["allowed_path_prefixes"] = ["docs/"]
+    return payload
+
+
+def _ao_ma10_requested_payload() -> dict[str, object]:
+    payload = _allow_payload()
+    payload["low_risk_autonomous_merge_requested"] = True
     return payload
 
 
@@ -451,6 +531,48 @@ def test_release_gate_cli_writes_dry_run_artifact(tmp_path: Path) -> None:
     assert artifact["merge_authority_enabled"] is False
 
 
+def test_release_gate_cli_accepts_ao_ma10_evidence_bundle(tmp_path: Path) -> None:
+    payload = _ao_ma10_requested_payload()
+    payload_path = tmp_path / "payload.json"
+    status_path = tmp_path / "gpp_status.json"
+    evidence_path = tmp_path / "review-evidence.json"
+    bundle_path = tmp_path / "ao-ma10-bundle.json"
+    decision_path = tmp_path / "decision.json"
+    payload_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    status_path.write_text(json.dumps(_gpp_status(), sort_keys=True), encoding="utf-8")
+    evidence_path.write_text(json.dumps(_review_evidence(), sort_keys=True), encoding="utf-8")
+    bundle_path.write_text(json.dumps(_ao_ma10_evidence_bundle(), sort_keys=True), encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/ao_release_gate_decision.py",
+            "--payload",
+            str(payload_path),
+            "--gpp-status",
+            str(status_path),
+            "--review-evidence",
+            str(evidence_path),
+            "--ao-ma10-evidence-bundle",
+            str(bundle_path),
+            "--decision-path",
+            str(decision_path),
+            "--output",
+            "text",
+            "--fail-on-deny",
+        ],
+        cwd=_repo_root(),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    artifact = json.loads(decision_path.read_text(encoding="utf-8"))
+    assert "decision: allow_autonomous_merge" in completed.stdout
+    assert artifact["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert _find_check(artifact, "ao_ma10_context_bound")["status"] == "pass"
+
+
 # --- GPP-2D-2b: review-evidence decision-core wiring ---
 
 
@@ -544,6 +666,133 @@ def test_release_gate_allows_reviewed_slice_distinct_from_current_wp_when_contex
     )
     assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
     assert decision["allow"] is True
+
+
+# --- AO-MA-10b: evidence-bundle decision-core wiring ---
+
+
+def test_release_gate_preserves_existing_path_when_ao_ma10_not_requested() -> None:
+    decision = build_ao_release_gate_decision(
+        _allow_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert _find_check(decision, "ao_ma10_autonomous_request")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_evidence_bundle")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_evidence_bundle_schema")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_consensus")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_context_bound")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_authority_boundary")["status"] == "pass"
+
+
+def test_release_gate_allows_ao_ma10_requested_when_bundle_is_context_bound() -> None:
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle=_ao_ma10_evidence_bundle(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+    assert _find_check(decision, "ao_ma10_evidence_bundle")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_context_bound")["status"] == "pass"
+
+
+def test_release_gate_denies_ao_ma10_requested_when_bundle_missing() -> None:
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_ao_ma10_evidence_bundle_missing" in decision["findings"]
+    assert "ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable" in decision["findings"]
+
+
+def test_release_gate_denies_malformed_ao_ma10_request_flag_as_policy_violation() -> None:
+    payload = _allow_payload()
+    payload["low_risk_autonomous_merge_requested"] = "true"
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_ao_ma10_autonomous_request_invalid" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_bundle_schema_invalid() -> None:
+    bundle = _ao_ma10_evidence_bundle()
+    bundle.pop("schema_version")
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle=bundle,
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_ao_ma10_evidence_bundle_schema_invalid" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_authority_boundary_open_as_policy_violation() -> None:
+    bundle = _ao_ma10_evidence_bundle()
+    bundle["ai_output_release_authority"] = True
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle=bundle,
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_ao_ma10_authority_boundary_open" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_bundle_non_agree_consensus() -> None:
+    bundle = _ao_ma10_evidence_bundle(consensus_status="REVISE", provider_verdict="REVISE")
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle=bundle,
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_ao_ma10_consensus_not_agree" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_bundle_context_mismatch_as_untrusted() -> None:
+    bundle = _ao_ma10_evidence_bundle(head_sha="f" * 40)
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_requested_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle=bundle,
+    )
+
+    assert decision["decision"] == DENY_UNTRUSTED_CONTEXT_DECISION
+    assert "ao_release_gate_ao_ma10_evidence_bundle_context_unbound" in decision["findings"]
+
+
+def test_release_gate_denies_malformed_explicit_ao_ma10_bundle_even_when_not_requested() -> None:
+    decision = build_ao_release_gate_decision(
+        _allow_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        ao_ma10_evidence_bundle="not-a-bundle",
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_ao_ma10_evidence_bundle_missing" in decision["findings"]
 
 
 def test_diff_digest_is_order_independent_prefixed_and_handles_empty() -> None:

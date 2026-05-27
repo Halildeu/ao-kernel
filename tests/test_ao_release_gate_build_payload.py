@@ -159,6 +159,20 @@ def test_build_payload_emits_expected_shape(tmp_path: Path) -> None:
         },
     ]
     assert payload["path_sensitive_human_review_enabled"] is True
+    assert payload["low_risk_autonomous_merge_requested"] is False
+
+
+def test_build_payload_can_request_ao_ma10_autonomous_merge_from_trusted_cli(tmp_path: Path) -> None:
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    argv = _build_argv(tmp_path, output=output)
+    argv.extend(["--ao-ma10-autonomous-merge-requested", "true"])
+
+    rc = mod.main(argv)
+
+    assert rc == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["low_risk_autonomous_merge_requested"] is True
 
 
 def test_build_payload_sorts_and_carries_changed_paths(tmp_path: Path) -> None:

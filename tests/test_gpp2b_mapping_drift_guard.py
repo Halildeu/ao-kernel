@@ -7,8 +7,9 @@ pin that table to both gates' *actual* check sets so the mapping cannot
 silently drift:
 
 - the 8 local-gate checks declared in ``local-gpp-gate-evidence.schema.v1.json``
-- the 20 ao-release-gate checks produced by ``build_ao_release_gate_decision``
-  (GPP-2D-2b added ``review_evidence`` and ``review_evidence_context_bound``)
+- the 27 ao-release-gate checks produced by ``build_ao_release_gate_decision``
+  (GPP-2D-2b added ``review_evidence`` and ``review_evidence_context_bound``;
+  AO-MA-10b added six ``ao_ma10_*`` checks)
 
 If either gate gains, loses, or renames a check without the table being
 updated, these tests fail. This is a documentation-integrity test only: it

@@ -111,7 +111,7 @@
     "AO-MA-10a0 GitHub readiness snapshot (recorded)",
     "AO-MA-10a1 autonomous_merge_eligibility checker (recorded; current evidence blocked until live GitHub enforcement blockers resolve)",
     "AO-MA-10a2 context-bound evidence bundle and registered-provider consensus schemas (recorded)",
-    "AO-MA-10b ao-release-gate payload and decision integration",
+    "AO-MA-10b ao-release-gate payload and decision integration (recorded)",
     "AO-MA-10d negative fail-closed suite before real merge",
     "AO-MA-10c merge-agent identity and dry-run executor",
     "AO-MA-10e positive disposable low-risk autonomous merge smoke",

@@ -53,9 +53,10 @@ stays `blocked`.
   `ao_kernel/ao_release_gate_service.py` + `ao_release_gate_runtime.py`.
 - A repo-owned GitHub App release gate. Consumes a PR-shaped GitHub payload
   plus the GPP status JSON. Emits an `ao-release-gate` GitHub check-run.
-- Twenty-one checks (GPP-2D-2b added `review_evidence` and
+- Twenty-seven checks (GPP-2D-2b added `review_evidence` and
   `review_evidence_context_bound` to the original eighteen; GPP-2D-6b added
-  `path_sensitive_human_review`);
+  `path_sensitive_human_review`; AO-MA-10b added six
+  `ao_ma10_*` checks for future low-risk autonomous merge evidence);
   `decision = allow_autonomous_merge` only when all pass, otherwise one of
   `deny_policy_violation`, `deny_missing_evidence`, `deny_stale_branch`,
   `deny_untrusted_context`, `error_fail_closed`.
@@ -69,7 +70,7 @@ stays `blocked`.
 
 ### 3.1 Check correspondence
 
-| Local gate check (8) | ao-release-gate check(s) (21) | Category |
+| Local gate check (8) | ao-release-gate check(s) (27) | Category |
 |---|---|---|
 | `startup_preflight_passed` | `payload_shape`, `repository` | A — evaluation context is structurally valid |
 | `gpp_status_checked` | `gpp_status`, `gpp_closed_boundaries` | A — GPP-2 blocked + support/production/live-adapter guards false |
@@ -78,7 +79,7 @@ stays `blocked`.
 | `secret_scan_passed` | `secret_boundary` | A — no secret material |
 | `forbidden_actions_absent` | `admin_bypass_boundary`, `bot_boundary`, `agent_authority_boundary`, `live_adapter_boundary` | A — no forbidden action / authority |
 | `reviewer_agree`, `cross_provider_verified` | `review_evidence` | A — cross-AI reviewer AGREE + cross-provider verdict consumed by ao-release-gate via the local-gpp-gate-evidence acceptance profile (GPP-2D-2b) |
-| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency`, `review_evidence_context_bound`, `path_sensitive_human_review` | B — GitHub PR-context checks, ao-release-gate-only |
+| *(none)* | `pull_request`, `issue_link`, `base_ref`, `branch_freshness`, `fork_boundary`, `event_boundary`, `gpp_issue_consistency`, `review_evidence_context_bound`, `path_sensitive_human_review`, `ao_ma10_autonomous_request`, `ao_ma10_evidence_bundle`, `ao_ma10_evidence_bundle_schema`, `ao_ma10_consensus`, `ao_ma10_context_bound`, `ao_ma10_authority_boundary` | B — GitHub PR-context and AO-MA-10 autonomous-lane checks, ao-release-gate-only |
 
 - **Category A** — both gates verify the same governance condition from
   different vantage points (local repo state vs. GitHub PR payload). These are
@@ -93,8 +94,10 @@ stays `blocked`.
   PR head SHA, repository, reviewed slice, diff digest, and changed-files
   count, plus `path_sensitive_human_review`, which uses GitHub review metadata
   to require current-head non-author approval only when high-risk paths
-  changed). The local gate has no PR payload and cannot perform these; they are
-  inherently ao-release-gate-only and require no reconciliation.
+  changed, plus AO-MA-10 evidence-bundle checks that bind future low-risk
+  autonomous merge consensus to the PR context). The local gate has no PR
+  payload and cannot perform these; they are inherently ao-release-gate-only
+  and require no reconciliation.
 - **Category C** — historical: the cross-AI peer review verdict was previously
   unmappable (local-only) and tracked in §4 as the substantive gap. GPP-2D-2b
   closes that gap by wiring the ao-release-gate decision core to consume the
