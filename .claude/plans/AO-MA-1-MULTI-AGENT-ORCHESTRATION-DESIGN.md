@@ -179,6 +179,7 @@ AO-MA is an execution accelerator for GPP-2D, not a replacement for it.
 | **AO-MA-7** | Verifier lane: GPP guard checks, secret scan, diff scope, and artifact hash reporting. | code + tests |
 | **AO-MA-8** | End-to-end autonomous low-risk smoke in shadow mode, with no branch-protection change. | evidence |
 | **AO-MA-9** | Wire AO-MA artifacts into the GPP-2D required-check lane after enforce evidence and cutover. | gated closeout |
+| **AO-MA-10** | Low-risk autonomous merge lane cutover plan: schema-pinned low-risk criteria, bounded high-risk consensus, and merge-agent activation prerequisites. AO-MA-10 is planning-only; it does not activate auto-merge or mutate CODEOWNERS, workflows, rulesets, release-gate runtime, or local-gate runtime. | docs + schema + tests |
 
 AO-MA-1 does not alter `gpp_status.v1.json`. Later AO-MA slices must continue
 to keep `support_widening_allowed=false`,
