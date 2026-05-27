@@ -187,6 +187,11 @@ def pipeline_run(tmp_path_factory: pytest.TempPathFactory) -> Iterator[dict[str,
     base_sha = _git_init_repo(repo)
     _write_synthetic_ssot(repo)
 
+    # Codex post-impl iter-1 must_fix #1 absorb: capture gpp_status BEFORE
+    # the pipeline runs (not after). Comparing post-vs-post would be
+    # tautological; we need pre-vs-post byte identity to prove no mutation.
+    gpp_status_pre = (repo / ".claude" / "plans" / "gpp_status.v1.json").read_bytes()
+
     # 2. AO-MA-3: Orchestrator.plan() → task_graph + manifest emit
     task_id = "task-001"
     declared = ["src/a.py"]
@@ -282,9 +287,6 @@ def pipeline_run(tmp_path_factory: pytest.TempPathFactory) -> Iterator[dict[str,
         verification_report_paths={task_id: real_out_dir / "workers" / task_id / "verification_report.v1.json"},
     )
 
-    # Snapshot pre-pipeline state for "no gpp_status mutation" assertion
-    gpp_status_post = gpp_status_path.read_bytes()
-
     yield {
         "tmp_path": tmp_path,
         "repo": repo,
@@ -303,7 +305,7 @@ def pipeline_run(tmp_path_factory: pytest.TempPathFactory) -> Iterator[dict[str,
         "verification_result": verification_result,
         "integration_decision": integration_decision,
         "gpp_status_path": gpp_status_path,
-        "gpp_status_post": gpp_status_post,
+        "gpp_status_pre": gpp_status_pre,
     }
 
 
@@ -352,17 +354,36 @@ def test_ao_ma_8_e2e_smoke_worker_result_uses_real_local_head_sha(
 def test_ao_ma_8_e2e_smoke_actual_changed_files_matches_git_diff_exactly(
     pipeline_run: dict[str, Any],
 ) -> None:
-    """Codex iter-2 must_close #2 absorb: real file commit + git diff exact
-    set-equality with worker_result.actual_changed_files.
+    """Codex iter-2 must_close #2 absorb + post-impl iter-1 must_fix #2 absorb:
+    test independently recomputes ``git diff --name-only base_sha..HEAD`` in
+    the worker's worktree and asserts exact set-equality with
+    ``worker_result.actual_changed_files``. Does NOT reuse the helper-captured
+    value (which would be tautological — comparing helper output to itself).
     """
 
     wr = json.loads(pipeline_run["wr_path"].read_text(encoding="utf-8"))
-    expected = set(pipeline_run["actual_changed"])
+    # Independent re-measure: run git diff fresh against the worktree state
+    independent_diff = _run(
+        [
+            "git",
+            "-C",
+            str(pipeline_run["worktree_dir"]),
+            "diff",
+            "--name-only",
+            f"{pipeline_run['base_sha']}..HEAD",
+        ]
+    )
+    independent_changed = {line.strip() for line in independent_diff.splitlines() if line.strip()}
     actual = set(wr["actual_changed_files"])
-    assert actual == expected, f"declared mismatch: actual={actual}, expected={expected}"
+    assert actual == independent_changed, (
+        f"worker_result.actual_changed_files mismatch with independent git diff: "
+        f"worker_result={actual}, fresh_git_diff={independent_changed}"
+    )
     # Subset of declared (scope discipline)
     declared = set(wr["declared_write_set"])
     assert actual.issubset(declared)
+    # Sanity: independent measurement is non-empty (proves a real commit happened)
+    assert independent_changed, "no files changed between base_sha..HEAD — surrogate did not commit"
 
 
 def test_ao_ma_8_e2e_smoke_cross_provider_chain_intact(pipeline_run: dict[str, Any]) -> None:
@@ -490,7 +511,9 @@ def test_ao_ma_8_e2e_smoke_no_gpp_status_mutation(pipeline_run: dict[str, Any]) 
 
     gpp_path = pipeline_run["gpp_status_path"]
     current = gpp_path.read_bytes()
-    assert current == pipeline_run["gpp_status_post"], "gpp_status.v1.json mutated during pipeline"
+    assert current == pipeline_run["gpp_status_pre"], (
+        "gpp_status.v1.json mutated during pipeline (pre-vs-post byte mismatch)"
+    )
 
 
 def test_ao_ma_8_e2e_smoke_no_branch_protection_or_workflow_mutation(
@@ -559,12 +582,16 @@ def test_ao_ma_8_pr_scope_only_touches_allowlisted_files() -> None:
     discoverable origin/main); the gate's job in CI.
     """
 
-    if os.environ.get("CI") != "true":
+    in_ci = os.environ.get("CI") == "true"
+    if not in_ci:
         pytest.skip("PR scope allowlist enforced in CI; local skip OK")
+    # Codex post-impl iter-1 nice-to-have #3 absorb: in CI, git diff failure
+    # must fail-closed (not skip) — silently skipping in CI would leave the
+    # PR-scope invariant unenforced and let allowlist violations through.
     try:
         diff_out = _run(["git", "diff", "--name-only", "origin/main..HEAD"], cwd=_REPO_ROOT)
-    except subprocess.CalledProcessError:
-        pytest.skip("git diff against origin/main failed; not a PR context")
+    except subprocess.CalledProcessError as exc:
+        pytest.fail(f"CI cannot resolve git diff origin/main..HEAD; PR-scope invariant unenforceable: {exc}")
     changed = {line.strip() for line in diff_out.splitlines() if line.strip()}
     allowlist = {
         ".claude/plans/AO-MA-8-E2E-SMOKE.md",

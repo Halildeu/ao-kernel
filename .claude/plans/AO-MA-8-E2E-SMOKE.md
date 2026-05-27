@@ -1,6 +1,6 @@
 # AO-MA-8 — End-to-end autonomous low-risk smoke (shadow mode; evidence class)
 
-**Status:** plan-time iter-1 REVISE + iter-2 REVISE + iter-3 REVISE + iter-4 REVISE absorb (Codex thread `019e6a30-1f93-7482-bf5d-bc089d974f26`). Iter-5 AGREE pending (double-docstring + tracking hygiene closed).
+**Status:** plan-time iter-1..iter-5 absorb (Codex thread `019e6a30-1f93-7482-bf5d-bc089d974f26`; iter-5 AGREE ready_for_impl: true). Post-impl iter-1 REVISE absorbed (Codex thread `019e6a52-51b2-73e1-b57f-0364eae9f42d`; 3 must_fix: gpp_status pre-snapshot, independent git diff re-measure, plan/evidence drift). Post-impl iter-2 AGREE pending.
 **Branch:** `codex/ao-ma-8-end-to-end-smoke`
 **Decision artifact:** `ao_ma_8_e2e_smoke_evidence`
 **Parent:** AO-MA-1 §8 phased plan slice AO-MA-8
