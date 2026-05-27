@@ -14,6 +14,11 @@ import os
 import sys
 from pathlib import Path
 
+from ao_kernel.orchestration.integrator import (
+    Integrator,
+    IntegratorError,
+    render_assembly_plan_text,
+)
 from ao_kernel.orchestration.orchestrator import (
     OrchestrationError,
     Orchestrator,
@@ -315,3 +320,144 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         default="text",
         help="Stdout summary format (default: text)",
     )
+
+    # AO-MA-5: integrate worker outputs (read-only policy; NO remote write)
+    integrate_p = orchestration_sub.add_parser(
+        "integrate",
+        help=(
+            "Integrator policy v1: accept/reject/not_integratable worker outputs + conflict "
+            "report + operator-runnable assembly plan. No git push, no gh pr create — integrator "
+            "produces data; operator executes assembly_plan by hand."
+        ),
+    )
+    integrate_p.add_argument("--manifest", required=True, help="Path to AO-MA-3 manifest.v1.json")
+    integrate_p.add_argument(
+        "--runner-report",
+        default=None,
+        help="Path to AO-MA-4 runner_report.v1.json (default: <manifest_dir>/runner_report.v1.json)",
+    )
+    integrate_p.add_argument(
+        "--worker-result",
+        action="append",
+        default=None,
+        help=(
+            "Per-task worker_result.v1.json mapping in the form '<task_id>=<path>'. Repeat per task. "
+            "Default: use runner_report worker entry's expected_worker_result_path."
+        ),
+    )
+    integrate_p.add_argument(
+        "--review-verdict",
+        action="append",
+        default=None,
+        help="Per-task review_verdict.v1.json mapping '<task_id>=<path>'. Repeat per task.",
+    )
+    integrate_p.add_argument(
+        "--verification-report",
+        action="append",
+        default=None,
+        help="Per-task verification_report.v1.json mapping '<task_id>=<path>'. Repeat per task.",
+    )
+    integrate_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    integrate_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
+
+def _parse_per_task_paths(raw: list[str] | None, kind: str) -> dict[str, Path]:
+    """Parse repeated '--worker-result <task_id>=<path>' CLI args into a dict.
+
+    Format: '<task_id>=<path>'. Raises SystemExit on malformed input
+    (operator error — bad CLI invocation, not a runner failure).
+    """
+
+    if not raw:
+        return {}
+    out: dict[str, Path] = {}
+    for entry in raw:
+        if "=" not in entry:
+            raise SystemExit(f"--{kind} {entry!r} must be '<task_id>=<path>'")
+        task_id, _, path = entry.partition("=")
+        task_id = task_id.strip()
+        path = path.strip()
+        if not task_id or not path:
+            raise SystemExit(f"--{kind} {entry!r} must be '<task_id>=<path>' with both sides non-empty")
+        out[task_id] = Path(path)
+    return out
+
+
+def cmd_orchestration_integrate(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration integrate`` (AO-MA-5 v1).
+
+    Exit codes (Codex iter-2 absorb):
+
+    - 0 — all accepted, no conflict, no pending
+    - 1 — any not_integratable / rejected / conflict (operator action)
+    - 2 — manifest envelope invalid / runner_report missing / artifact load fail (operator error)
+    - 3 — integration emit failure (FS/schema)
+    """
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    runner_report_path = Path(args.runner_report).resolve() if args.runner_report else None
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    worker_result_paths = _parse_per_task_paths(args.worker_result, "worker-result")
+    review_verdict_paths = _parse_per_task_paths(args.review_verdict, "review-verdict")
+    verification_report_paths = _parse_per_task_paths(args.verification_report, "verification-report")
+
+    integrator = Integrator(repo_root=repo_root)
+    try:
+        decision = integrator.integrate(
+            manifest_path=manifest_path,
+            runner_report_path=runner_report_path,
+            worker_result_paths=worker_result_paths,
+            review_verdict_paths=review_verdict_paths,
+            verification_report_paths=verification_report_paths,
+        )
+    except IntegratorError as exc:
+        msg = str(exc)
+        # Distinguish trust-boundary failures (exit 2) from emit failures (exit 3)
+        if "integration report write failed" in msg:
+            print(f"orchestration integrate emit failure: {msg}", file=sys.stderr)
+            return 3
+        print(f"orchestration integrate failed: {msg}", file=sys.stderr)
+        return 2
+
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "overall_status": decision.overall_status,
+                    "report": decision.report,
+                    "assembly_plan": decision.assembly_plan,
+                    "diagnostics": decision.diagnostics,
+                    "has_conflicts": decision.has_conflicts,
+                    "has_rejections": decision.has_rejections,
+                    "has_pending": decision.has_pending,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        print(f"overall_status: {decision.overall_status}")
+        if decision.diagnostics:
+            print("diagnostics:")
+            for diag in decision.diagnostics:
+                print(f"  - {diag}")
+        print(render_assembly_plan_text(decision.assembly_plan))
+
+    # Exit code matrix
+    if decision.has_pending or decision.has_rejections or decision.has_conflicts:
+        return 1
+    if decision.overall_status == "no_workers":
+        return 1
+    return 0

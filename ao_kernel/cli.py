@@ -2139,6 +2139,7 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "orchestration":
         from ao_kernel.orchestration.cli_handlers import (
             cmd_orchestration_cleanup,
+            cmd_orchestration_integrate,
             cmd_orchestration_plan,
             cmd_orchestration_spawn,
         )
@@ -2150,7 +2151,9 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_spawn(args)
         if orchestration_cmd == "cleanup":
             return cmd_orchestration_cleanup(args)
-        print("Usage: ao-kernel orchestration {plan|spawn|cleanup}", file=sys.stderr)
+        if orchestration_cmd == "integrate":
+            return cmd_orchestration_integrate(args)
+        print("Usage: ao-kernel orchestration {plan|spawn|cleanup|integrate}", file=sys.stderr)
         return 1
 
     handler = dispatch.get(cmd)
