@@ -681,6 +681,23 @@ def test_ao_ma_8_pr_scope_only_touches_allowlisted_files() -> None:
             pytest.fail(f"PR-scope invariant cannot run in CI PR: {msg}")
         pytest.skip(msg)
     changed = {line.strip() for line in diff_out.splitlines() if line.strip()}
+    # Codex AO-MA-8 PR-scope sistemik bug fix (2026-05-27): self-gate.
+    # AO-MA-8 PR-scope allowlist enforcement should ONLY apply when the
+    # current PR actually claims to be an AO-MA-8 PR. The trigger marker
+    # is the AO-MA-8 plan doc: if THIS PR's diff does not touch
+    # ``.claude/plans/AO-MA-8-E2E-SMOKE.md``, the PR is NOT an AO-MA-8 PR
+    # and the AO-MA-8 allowlist is not the right scope to enforce.
+    #
+    # Without this self-gate, every future AO-MA-N PR (and every unrelated
+    # PR) would fail this test — the allowlist would always reject "extra"
+    # files outside the AO-MA-8 scope. That recurrence is the same kind
+    # of false-positive RI-7.2 forbidden_surfaces fix solved (PR #658).
+    ao_ma_8_trigger = ".claude/plans/AO-MA-8-E2E-SMOKE.md"
+    if ao_ma_8_trigger not in changed:
+        pytest.skip(
+            f"PR diff does not touch {ao_ma_8_trigger}; not an AO-MA-8 PR — "
+            f"AO-MA-8 allowlist scope does not apply (self-gate)."
+        )
     allowlist = {
         ".claude/plans/AO-MA-8-E2E-SMOKE.md",
         ".claude/plans/AO-MA-8-E2E-SMOKE-EVIDENCE.v1.json",
