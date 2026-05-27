@@ -1,26 +1,22 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10",
+  "work_package": "AO-MA-10-INTRODUCER-DETECTION-FASTFOLLOW",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
-    "verdict": "AGREE"
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "REVISE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10-low-risk-autonomous-merge",
+    "head_ref": "refs/heads/codex/ao-ma-10-introducer-detection-fastfollow",
     "changed_files": [
-      ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
-      "local-ai-review-evidence.v1.json"
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
     ]
   },
   "checks_considered": [
@@ -29,39 +25,39 @@
       "status": "pass"
     },
     {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
       "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "secret_scan",
       "status": "pass"
     },
     {
-      "name": "git_diff_check",
+      "name": "introducer_signature_set_intersection",
       "status": "pass"
     },
     {
-      "name": "schema_valid_draft_2020_12",
+      "name": "fail_closed_when_diff_base_unresolved",
       "status": "pass"
     },
     {
-      "name": "low_risk_criteria_schema_pinned",
+      "name": "fail_closed_when_git_diff_fails",
       "status": "pass"
     },
     {
-      "name": "activation_prerequisites_unique_and_not_started",
+      "name": "introducer_pr_full_assertion_path_preserved",
       "status": "pass"
     },
     {
-      "name": "high_risk_consensus_bounded",
+      "name": "non_introducer_pr_skip_path_unblocks_merges",
       "status": "pass"
     },
     {
-      "name": "no_workflow_ruleset_codeowners_runtime_mutation",
+      "name": "ao_ma_10_pr_scope_test_guarded_by_introducer",
+      "status": "pass"
+    },
+    {
+      "name": "permanent_invariants_kept_outside_guard",
       "status": "pass"
     },
     {
@@ -77,18 +73,68 @@
       "status": "pass"
     },
     {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_mcp_repo_intelligence_exposure",
+      "status": "pass"
+    },
+    {
+      "name": "no_schema_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_evidence_artifact_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_manifest_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gpp_status_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_boundary_doc_change",
+      "status": "pass"
+    },
+    {
       "name": "cross_provider_verified",
+      "status": "pass"
+    },
+    {
+      "name": "pattern_matches_ao_ma_8_fast_follow_pr_662",
+      "status": "pass"
+    },
+    {
+      "name": "pattern_matches_ri_7_1_fast_follow_pr_666",
+      "status": "pass"
+    },
+    {
+      "name": "hard_rule_kalici_cozum_root_cause_fix",
       "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10 is a planning-only low-risk autonomous merge lane cutover record. It adds docs, schema-backed receipt, and invariant tests only.",
-    "Claude pre-implementation review returned REVISE with 4 must-fix items: schema-pinned low-risk criteria, machine-enforced no-mutation assertions, merge-agent activation prerequisites locked as not_started, and bounded high-risk ping-pong with human escalation.",
-    "Implementation absorbed all 4 must-fix items. Low-risk criteria are const-pinned in schema; the PR-scope invariant checks real git diff against an allowlist and forbidden path patterns; activation prerequisites are all status not_started; high-risk consensus is bounded to 3 autonomous rounds with escalation.",
-    "Claude post-implementation review returned REVISE with 2 blockers: missing ^ao_kernel/orchestration/ in schema-pinned prohibited paths and missing uniqueItems on merge_agent_activation_prerequisites. Both were fixed.",
-    "Claude final re-review returned AGREE. No blocking findings remain. Scope remains docs/schema/evidence/test only; no runtime, workflow, ruleset, CODEOWNERS, release-gate, local-gate, or gpp_status mutation.",
-    "CI iter-2 exposed the trusted-base ao-release-gate workflow contract: committed reviewer evidence must declare fully-qualified refs/heads/* scope refs because the base workflow binds those refs to API-reported SHAs before invoking the legacy local_gpp_gate aliases. Evidence scope refs were updated to refs/heads/main and refs/heads/codex/ao-ma-10-low-risk-autonomous-merge.",
-    "Local validation passed: pytest tests/test_ao_ma10_low_risk_autonomous_merge_lane.py, pytest tests/test_ao_ma1_design_invariants.py, ruff, mypy, local_gpp_gate with workflow-compatible review refs, and git diff --check."
+    "AO-MA-10 fast-follow: sistemik bug fix. The PR-scope test `test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners` was AO-MA-10-introducer-PR-scoped (PR #665 ships the AO-MA-10 plan + schema + receipt + test) but ran on every PR after PR #665 merged. Non-introducer PRs like RI-7.1 fast-follow PR #666 trip the allowlist with their legitimate, unrelated diffs (e.g. `tests/test_ri7_operator_authorization_invariant.py`) and the PR is blocked at CI with `AssertionError: AO-MA-10 touches files outside allowlist`. This is a category error and would block every B-path slice PR until fixed.",
+    "Root-cause kalici fix (HARD RULE Uzun Vadeli Kalici Cozum 2026-05-27): introducer-PR detection. The PR-scope test now checks whether the current PR diff touches at least one of three AO-MA-10-owned artifact paths in `_AO_MA_10_INTRODUCER_SIGNATURE` (plan doc + receipt JSON + schema). If touched, the test fires the full-scope allowlist + forbidden-pattern assertion. If not touched, the test skips with a precise reason string. The full-scope AO-MA-10 introducer-PR guarantee is preserved for any future supersession PR that touches the signature paths.",
+    "Fail-closed semantics preserved: if the diff base cannot be resolved (CI race / shallow clone / detached head / git diff error), `_is_ao_ma_10_introducer_pr` returns `(True, ...)` so the invariant runs. This protects the AO-MA-10 introducer PR from silent test disablement.",
+    "Pattern parity: mirrors PR #662 (AO-MA-8 fast-follow, merged 2026-05-27) and PR #666 (RI-7.1 fast-follow, in flight 2026-05-27). Same shape - introducer-signature set intersection with the PR diff, skip on non-introducer, fail-closed on diff resolution error. This is the third application of the same kalici pattern; the receipt-vs-runtime drift class is now governance-fixed across three slices.",
+    "Diff scope (2 files): tests/test_ao_ma10_low_risk_autonomous_merge_lane.py (introducer-PR detection helper + 1 test guard), local-ai-review-evidence.v1.json (this file, cross-AI evidence).",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending; this file is committed with reviewer.verdict=REVISE during iter cycle; AGREE flip lands on final commit only after Codex returns AGREE.",
+    "Local validation: 9 passed + 1 skipped on AO-MA-10 invariant suite (PR-scope test correctly skipped because this fast-follow PR does not touch AO-MA-10 introducer artifacts). ruff clean.",
+    "No guard flag flip: support_widening=false, production_platform_claim=false, live_adapter_execution=false. Forbidden surfaces unchanged: gpp_status.v1.json, gp5_platform_claim_decision.py, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/defaults/policies/, docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md.",
+    "Unblocks: PR #666 RI-7.1 fast-follow (currently blocked by AO-MA-10 PR-scope test allowlist trip) and every subsequent B-path slice PR can merge once this governance fix lands."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

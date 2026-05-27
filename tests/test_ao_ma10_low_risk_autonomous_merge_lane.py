@@ -156,7 +156,56 @@ def test_ao_ma10_gpp_status_guards_remain_closed() -> None:
     assert status["live_adapter_execution_allowed"] is False
 
 
+# AO-MA-10-introducer-PR-only signature: any PR whose diff touches at least one
+# of these paths is treated as the AO-MA-10 introducer PR and must pass the
+# full PR-scope allowlist / forbidden-pattern assertion below. PR #665 (AO-MA-10
+# v1) is the only PR that has shipped these paths so far; any future
+# supersession PR would also touch at least one of them.
+#
+# Pattern parity with PR #662 (AO-MA-8 fast-follow) and PR #666 (RI-7.1
+# fast-follow): the PR-scope assertion is structurally PR-bound and must be
+# scoped to the introducer PR; running it on every PR is a category error
+# that turns every cross-cutting fast-follow into a false-positive trip.
+# HARD RULE 2026-05-05 (Governance / Sistemik Bug) + 2026-05-27 (Uzun Vadeli
+# Kalici Cozum): kalici fix = introducer detection, not allowlist widening.
+_AO_MA_10_INTRODUCER_SIGNATURE = frozenset(
+    {
+        ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
+        ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+    }
+)
+
+
+def _is_ao_ma_10_introducer_pr() -> tuple[bool, str]:
+    """Return (is_introducer, reason).
+
+    Fail-closed: if the diff base cannot be resolved or git diff fails,
+    return ``(True, ...)`` so the invariant still runs on the AO-MA-10
+    introducer PR itself (where the base resolver lives) rather than
+    silently skipping.
+
+    The shared ``local-ai-review-evidence.v1.json`` is deliberately NOT
+    in the signature (it is touched by every PR).
+    """
+
+    base, source = _resolve_pr_diff_base()
+    if base is None:
+        return True, "fail-closed: no PR diff base resolved"
+    proc = _git_capture(["diff", "--name-only", f"{base}..HEAD"])
+    if proc.returncode != 0:
+        return True, f"fail-closed: git diff against {source} failed: {proc.stderr}"
+    changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
+    if changed & _AO_MA_10_INTRODUCER_SIGNATURE:
+        return True, "AO-MA-10 introducer PR (signature touched)"
+    return False, "non-AO-MA-10-introducer PR (signature untouched)"
+
+
 def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> None:
+    is_introducer, reason = _is_ao_ma_10_introducer_pr()
+    if not is_introducer:
+        pytest.skip(reason)
+
     base, source = _resolve_pr_diff_base()
     in_ci_pr = os.environ.get("CI") == "true" and os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
     if base is None:
