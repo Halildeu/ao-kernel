@@ -67,6 +67,11 @@ _SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _ARTIFACT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.v1\.json$")
 _EXPECTED_MANIFEST_SCHEMA_VERSION = "ao-ma-orchestration-manifest.v1"
 
+# Codex iter-7 nice-to-have absorb: hoisted to module level for
+# readability (previously a function-local). AO-MA-4 worker statuses
+# that mean "worktree on disk + branch ready, AO-MA-5 can integrate":
+_INTEGRATE_ELIGIBLE_RUNNER_STATUSES: frozenset[str] = frozenset({"prepared", "skipped_existing_idempotent"})
+
 ReasonCode = Literal[
     "accepted_full_evidence",
     "missing_worker_result",
@@ -343,13 +348,13 @@ class Integrator:
             )
 
         # Codex iter-6 must_fix absorb: runner worker status allowlist.
-        # AO-MA-4 reports per-worker status; only ``prepared`` and
-        # ``skipped_existing_idempotent`` are integrate-eligible (worktree
-        # is on disk + branch ready). Other statuses (failed_*, skipped_dry_run)
-        # mean AO-MA-4 did NOT successfully prepare the worker; running the
-        # accept gate against external evidence in those cases would bypass
-        # the preparation truth that runner_report carries.
-        _INTEGRATE_ELIGIBLE_RUNNER_STATUSES = {"prepared", "skipped_existing_idempotent"}
+        # AO-MA-4 reports per-worker status; only the module-level
+        # ``_INTEGRATE_ELIGIBLE_RUNNER_STATUSES`` values are integrate-
+        # eligible (worktree on disk + branch ready). Other statuses
+        # (failed_*, skipped_dry_run) mean AO-MA-4 did NOT successfully
+        # prepare the worker; running the accept gate against external
+        # evidence in those cases would bypass the preparation truth
+        # that runner_report carries.
         for entry in runner_workers:
             entry_status = entry.get("status")
             if entry_status not in _INTEGRATE_ELIGIBLE_RUNNER_STATUSES:
@@ -357,7 +362,7 @@ class Integrator:
                     f"runner_report.v1.json worker {entry.get('task_id')!r} has status "
                     f"{entry_status!r}; only {sorted(_INTEGRATE_ELIGIBLE_RUNNER_STATUSES)} are "
                     f"integrate-eligible. AO-MA-4 preparation truth: failed_* / skipped_dry_run "
-                    f"workers were never produced. Re-run spawn or remove the worker from the manifest."
+                    f"workers were never produced. Repair AO-MA-4 preparation state and re-run spawn."
                 )
 
         worker_result_paths = worker_result_paths or {}
