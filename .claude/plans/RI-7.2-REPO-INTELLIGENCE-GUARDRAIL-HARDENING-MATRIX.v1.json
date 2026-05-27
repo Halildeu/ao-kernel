@@ -1,0 +1,128 @@
+{
+  "schema_version": "ri7-guardrail-hardening-matrix-evidence.v1",
+  "artifact_kind": "ri7_guardrail_hardening_matrix_evidence",
+  "decision": "ri7_guardrail_hardening_matrix_ready",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "rows": [
+    {
+      "id": "ast_chunk_edge_cases",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/_internal/repo_intelligence/python_ast_indexer.py",
+        "ao_kernel/_internal/repo_intelligence/repo_chunker.py"
+      ],
+      "regression_refs": [
+        "tests/test_repo_intelligence_python_ast_indexer.py::test_build_python_ast_indexes_are_schema_valid_and_deterministic",
+        "tests/test_repo_intelligence_python_ast_indexer.py::test_build_python_ast_indexes_record_syntax_errors_without_failing_scan",
+        "tests/test_repo_intelligence_python_ast_indexer.py::test_build_python_ast_indexes_skips_repo_map_path_escape_without_reading_outside_root",
+        "tests/test_repo_intelligence_chunker.py"
+      ],
+      "residual_gap": "None blocking RI-7.2. Behavioral guard for AST indexer path escape was introduced in this slice (private impl change with no public SDK signature change).",
+      "next_slice_owner": "RI-7.3"
+    },
+    {
+      "id": "namespace_isolation",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/_internal/repo_intelligence/repo_vector_plan.py",
+        "ao_kernel/_internal/repo_intelligence/repo_vector_indexer.py",
+        "ao_kernel/_internal/repo_intelligence/repo_vector_retriever.py"
+      ],
+      "regression_refs": [
+        "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_fails_closed_on_key_outside_namespace",
+        "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_rejects_delete_key_outside_namespace_without_mutation",
+        "tests/test_repo_intelligence_vector_retriever.py",
+        "tests/test_repo_intelligence_workflow_opt_in_contract.py"
+      ],
+      "residual_gap": "E2E backend behavior for namespace isolation is a vector-backend lane concern owned by RI-7.3.",
+      "next_slice_owner": "RI-7.3"
+    },
+    {
+      "id": "stale_vector_cleanup",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/_internal/repo_intelligence/repo_vector_plan.py",
+        "ao_kernel/_internal/repo_intelligence/repo_vector_indexer.py",
+        "ao_kernel/_internal/repo_intelligence/repo_vector_retriever.py"
+      ],
+      "regression_refs": [
+        "tests/test_repo_intelligence_vector_plan.py",
+        "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_deletes_stale_keys_before_upserts",
+        "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_does_not_mutate_store_when_preflight_fails",
+        "tests/test_repo_intelligence_vector_retriever.py"
+      ],
+      "residual_gap": "E2E backend write+delete sequencing is owned by RI-7.3.",
+      "next_slice_owner": "RI-7.3"
+    },
+    {
+      "id": "no_implicit_root_authority_write",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/_internal/repo_intelligence/root_exporter.py",
+        "ao_kernel/_internal/repo_intelligence/workflow_context.py",
+        "ao_kernel/_internal/repo_intelligence/workflow_opt_in.py"
+      ],
+      "regression_refs": [
+        "tests/test_repo_intelligence_root_exporter.py",
+        "tests/test_cli_repo_export.py",
+        "tests/test_repo_intelligence_workflow_opt_in_contract.py",
+        "tests/test_repo_intelligence_workflow_context.py"
+      ],
+      "residual_gap": "None blocking RI-7.2. Operator-verified runtime semantics in production environment owned by RI-7.5 (operator sign-off).",
+      "next_slice_owner": "RI-7.5"
+    },
+    {
+      "id": "no_auto_feed",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/_internal/repo_intelligence/workflow_opt_in.py",
+        "ao_kernel/_internal/repo_intelligence/workflow_context.py",
+        "scripts/gpp5_repo_intelligence_closeout.py"
+      ],
+      "regression_refs": [
+        "tests/test_context_compiler.py",
+        "tests/test_repo_intelligence_workflow_context.py",
+        "tests/test_repo_intelligence_workflow_opt_in_contract.py"
+      ],
+      "residual_gap": "None. The matrix invariant test re-pins this contract; any future auto-feed regression would also fail the existing test_context_compiler.py and test_repo_intelligence_workflow_context.py shapes.",
+      "next_slice_owner": "RI-7.5"
+    },
+    {
+      "id": "no_mcp_exposure",
+      "status": "hardened",
+      "implementation_refs": [
+        "ao_kernel/mcp_server.py",
+        "scripts/gpp5_repo_intelligence_closeout.py"
+      ],
+      "regression_refs": [
+        "tests/test_repo_intelligence_no_mcp_root_export_guard.py::test_repo_intelligence_is_not_exposed_as_mcp_tool",
+        "tests/test_repo_intelligence_no_mcp_root_export_guard.py::test_repo_intelligence_is_not_registered_in_mcp_tool_gateway",
+        "tests/test_repo_intelligence_no_mcp_root_export_guard.py::test_repo_cli_has_no_root_export_or_mcp_subcommand",
+        "tests/test_repo_intelligence_no_mcp_root_export_guard.py::test_repo_cli_help_does_not_advertise_root_export_or_mcp_flags"
+      ],
+      "residual_gap": "None. Any future MCP tool registration touching repo-intelligence names would fail this guard.",
+      "next_slice_owner": "RI-7.5"
+    }
+  ],
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/gpp_status.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
+      ".github/workflows/",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md"
+    ],
+    "all_unchanged": true
+  },
+  "notes": [
+    "RI-7.2 evidence artifact fast-follow: the original RI-7.2 PR (#646) landed plan doc + tests but predates the schema-backed JSON evidence pattern introduced from RI-7.3 onward. This artifact closes that hygiene gap; no behavior change.",
+    "Manifest flip in the same PR: guardrail_hardening_matrix=false->true. All other manifest keys carry the same value they already hold on origin/main."
+  ]
+}
