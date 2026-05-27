@@ -238,6 +238,16 @@ def _resolve_diff_base() -> tuple[str | None, str]:
     returned, is always a validated 40-hex string.
     """
     # Strategy 1: GitHub Actions PR event payload
+    # Codex iter-6 absorb (kalıcı çözüm rule): the payload-supplied SHA
+    # is only useful if Git actually has the object. Under
+    # ``actions/checkout@v6`` default ``fetch-depth: 1``, the base SHA
+    # exists on the remote but not yet in the runner's local db — so
+    # ``git diff <sha>...HEAD`` fails with "Invalid symmetric difference
+    # expression". We first try to materialize the base SHA via
+    # ``git fetch origin <sha> --depth=1``; if Git refuses the
+    # ``--depth=1`` partial fetch (some server configs disallow it), we
+    # fall back to a shallow fetch of the base ref. Only when the SHA
+    # is reachable in the local db do we accept this strategy.
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if event_path:
         try:
@@ -245,8 +255,19 @@ def _resolve_diff_base() -> tuple[str | None, str]:
             pr = event.get("pull_request") or {}
             base = pr.get("base") or {}
             sha = base.get("sha")
+            base_ref_in_event = base.get("ref")
             if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha):
-                return sha, "github_event_payload"
+                # Check if the SHA is already in the local db.
+                has = _git(["cat-file", "-e", sha])
+                if has.returncode != 0:
+                    # Fetch the SHA shallowly so ``git diff <sha>...HEAD``
+                    # has the commit object.
+                    _git(["fetch", "origin", sha, "--depth=1"])
+                    if base_ref_in_event and re.fullmatch(r"[A-Za-z0-9._/-]+", base_ref_in_event):
+                        _git(["fetch", "origin", base_ref_in_event, "--depth=1"])
+                    has = _git(["cat-file", "-e", sha])
+                if has.returncode == 0:
+                    return sha, "github_event_payload"
         except (OSError, json.JSONDecodeError, KeyError):
             pass
 
