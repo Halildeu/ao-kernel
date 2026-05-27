@@ -1,105 +1,89 @@
 {
-  "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "git_diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "schema_valid_draft_2020_12",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10a1_eligibility_tests",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10_plan_invariant_tests",
-      "status": "pass"
-    },
-    {
-      "name": "ao_release_gate_related_regression_tests",
-      "status": "pass"
-    },
-    {
-      "name": "claude_cross_provider_review",
-      "status": "pass"
-    },
-    {
-      "name": "codex_sidecar_reviews",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_ruleset_codeowners_runtime_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_production_platform_claim",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_adapter_execution",
-      "status": "pass"
-    }
-  ],
-  "findings": [
-    "AO-MA-10a1 adds a deterministic read-only autonomous merge eligibility checker. It does not activate autonomous merge, mutate branch protection, mutate rulesets, mutate CODEOWNERS, alter workflows, or merge PRs.",
-    "The checker consumes the AO-MA-10a0 GitHub readiness snapshot plus a candidate changed-file set and emits only ready_for_low_risk_dry_run or blocked.",
-    "Current committed evidence is intentionally blocked because live GitHub enforcement lacks the source-pinned dual required-check set, legacy review still blocks low-risk autonomy, current actor is admin, and SSOT/live required-check drift remains unresolved.",
-    "Claude/Anthropic review returned AGREE after checking read-only behavior, release-authority pinning, current snapshot blocking, source-pinned dual-check requirements, release-gate HIGH_RISK_PATH_PATTERNS veto, and fail-closed tests.",
-    "Codex/OpenAI sidecar reviewers independently identified two material guardrails that were absorbed: legacy ao-release-gate alone is insufficient and high-risk release-gate path patterns must veto nominal low-risk prefixes.",
-    "Local verification passed: pytest tests/test_ao_ma10_autonomous_merge_eligibility.py tests/test_ao_ma10_github_readiness_snapshot.py tests/test_ao_ma10_low_risk_autonomous_merge_lane.py tests/test_ao_release_gate.py tests/test_ao_release_gate_publish_check_runs.py; ruff; mypy; JSON validation; git diff --check.",
-    "Scope remains docs/schema/read-only checker/tests/fixtures/evidence only; no support widening, no production platform claim, no live adapter execution, and no admin bypass."
-  ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
   "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "REVISE"
+  },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-5-operator-runtime-semantics",
     "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.md",
+      ".claude/plans/RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json",
+      "ao_kernel/defaults/schemas/ri7-operator-verified-runtime-semantics-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_autonomous_merge_eligibility.py",
-      "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.blocked.valid.json",
-      "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json",
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma-10a1-autonomous-eligibility"
+      "scripts/ri7_operator_verified_runtime_semantics.py",
+      "tests/test_ri7_cross_lane_production_matrix_invariant.py",
+      "tests/test_ri7_gp59_transition_plan_invariant.py",
+      "tests/test_ri7_guardrail_hardening_matrix_invariant.py",
+      "tests/test_ri7_operator_verified_runtime_semantics_invariant.py",
+      "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py"
+    ]
   },
+  "checks_considered": [
+    {"name": "tests", "status": "pass"},
+    {"name": "ruff", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "schema_draft_2020_12_valid", "status": "pass"},
+    {"name": "schema_eight_runtime_invariants_pinned_with_contains_minmax", "status": "pass"},
+    {"name": "schema_sha256_pattern_strict_64_hex_chars", "status": "pass"},
+    {"name": "schema_script_ref_pattern_scripts_dir", "status": "pass"},
+    {"name": "schema_operator_github_login_const_halildeu", "status": "pass"},
+    {"name": "schema_operator_verification_timestamp_iso_8601_utc_pattern", "status": "pass"},
+    {"name": "schema_operator_no_secret_assertion_const_true", "status": "pass"},
+    {"name": "schema_guard_flags_const_false", "status": "pass"},
+    {"name": "schema_manifest_transition_before_false_after_true_const", "status": "pass"},
+    {"name": "schema_forbidden_change_audit_all_unchanged_const_true_min_8_surfaces", "status": "pass"},
+    {"name": "schema_cross_ai_review_provider_split_const", "status": "pass"},
+    {"name": "evidence_validates_against_schema", "status": "pass"},
+    {"name": "evidence_eight_invariants_with_sha256_per_entry", "status": "pass"},
+    {"name": "evidence_operator_signature_halildeu_iso_8601_no_secret", "status": "pass"},
+    {"name": "manifest_operator_verified_runtime_semantics_true", "status": "pass"},
+    {"name": "manifest_all_nine_ri7_keys_now_true", "status": "pass"},
+    {"name": "ri7_readiness_gate_ready_for_operator_promotion_decision", "status": "pass"},
+    {"name": "ri7_readiness_gate_zero_blockers_remaining", "status": "pass"},
+    {"name": "legacy_slice_invariants_loosened_per_kalici_pattern", "status": "pass"},
+    {"name": "no_support_widening", "status": "pass"},
+    {"name": "no_production_platform_claim", "status": "pass"},
+    {"name": "no_live_adapter_execution", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_branch_protection_mutation", "status": "pass"},
+    {"name": "no_workflow_change", "status": "pass"},
+    {"name": "no_mcp_repo_intelligence_exposure", "status": "pass"},
+    {"name": "no_context_compiler_auto_feed", "status": "pass"},
+    {"name": "no_root_authority_write_change", "status": "pass"},
+    {"name": "no_gp5_platform_claim_decision_change", "status": "pass"},
+    {"name": "no_gpp_status_change", "status": "pass"},
+    {"name": "no_public_boundary_doc_change", "status": "pass"},
+    {"name": "forbidden_change_audit_machine_enforced_git_diff", "status": "pass"},
+    {"name": "negative_prompt_injection_fixture_treated_as_opaque_data", "status": "pass"},
+    {"name": "script_emits_8_8_runtime_invariants_verified", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"}
+  ],
+  "findings": [
+    "RI-7.5 v1 operator-verified runtime semantics evidence. B-path slice 3 of 8 (after RI-7.1 slice-2 MERGED in PR #661 + slice-1 BC vocab fix MERGED in PR #659). Records the operator's verification of 8 runtime invariants via script-generated deterministic output + sha256 digest. Per Codex iter-1 absorb pattern from RI-7.1: the script's deterministic output IS the binding evidence (not terminal recording).",
+    "Manifest transition: operator_verified_runtime_semantics flips false -> true. This is the LAST of the 9 RI-7.x manifest keys; after this slice all 9 are true. Readiness gate then exits with decision=ready_for_operator_promotion_decision (zero blockers). Guard flags (support_widening, production_platform_claim, live_adapter_execution) remain const false; production claim still requires the RI-7.8 chain.",
+    "Eight runtime invariants verified by scripts/ri7_operator_verified_runtime_semantics.py: no_hidden_prompt_injection, no_context_compiler_auto_feed, no_root_authority_file_write, no_mcp_repo_intelligence_tool_exposed, write_vectors_confirmation_token_required, missing_backend_or_api_key_fail_closed, repo_scan_query_read_only_boundary, negative_prompt_injection_fixture. Each entry pinned with status=verified, evidence_class=operator_script_verified, script_ref pattern-restricted, sha256 64-hex pattern.",
+    "Schema strictness (Draft 2020-12, strict, additionalProperties=false at every level): runtime_invariants minItems=maxItems=8, uniqueItems, allOf+contains pinning each of the 8 invariant IDs exactly once; operator.github_login const Halildeu; operator.verification_timestamp ISO 8601 UTC pattern + format; operator.no_secret_assertion const true; guard flags const false; manifest_transition before/after const-pinned; forbidden_change_audit.all_unchanged const true + minItems=8 surfaces; cross_ai_review_ref implementer/reviewer provider const + final_verdict enum [REVISE, AGREE].",
+    "Operator authority (4 concurrent signals required): (1) commit identity Halildeu, (2) commit trailers Operator-Verified-By/Verification-At/Runtime-Invariants-Verified/No-Guard-Flag-Flip, (3) GitHub PR approval via ao-release-gate-review required check, (4) cross-AI peer review final AGREE recorded in both local-ai-review-evidence.v1.json::reviewer.verdict AND RI-7.5-OPERATOR-VERIFIED-RUNTIME-SEMANTICS.v1.json::cross_ai_review_ref.final_verdict, enforced by test_ri75_cross_ai_verdicts_match_review_evidence.",
+    "Invariant test suite (12 tests + forbidden-diff CI fail-closed): schema valid Draft 2020-12, evidence validates against schema with zero errors, 8 invariant IDs pinned with sha256 format strict, operator signature fields (Halildeu + ISO 8601 + no_secret_assertion + observation_notes), manifest_transition pinned, manifest flips operator_verified_runtime_semantics to true, guard flags const false, cross-AI verdict equality enforced, script exists and script_ref values resolve to it, forbidden_change_audit machine-enforced via git diff, plan doc records 8 invariants + decision + Halildeu + Operator-Verified-By.",
+    "Forbidden-change audit clean (machine-enforced by test_ri75_forbidden_surfaces_actually_unchanged_in_diff using multi-strategy diff base detection): gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/defaults/policies/, docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md - all untouched.",
+    "Legacy slice invariant tests loosened (4 files): RI-7.2 (test_ri7_guardrail_hardening_matrix_invariant), RI-7.6 (test_ri7_cross_lane_production_matrix_invariant), RI-7.4 (test_ri7_scan_index_query_packaging_smoke_invariant), RI-7.7 (test_ri7_gp59_transition_plan_invariant). Removed operator_verified_runtime_semantics from the must-be-False loop per state-at-landing pattern; this key is now RI-7.5-owned and flipped True.",
+    "Diff scope (11 files): plan doc + evidence + schema + script + invariant test (NEW); manifest + 4 legacy invariant test files + local-ai-review-evidence (MODIFIED).",
+    "Local validation: 12 passed on RI-7.5 invariant suite. Script emits 8/8 runtime invariants verified. ruff clean. Schema validates evidence with zero errors (Draft 2020-12). Declared-vs-actual diff scope: 11=11 exact match.",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending; this file is committed with reviewer.verdict=REVISE during iter cycle; AGREE flip lands on final commit only after Codex returns AGREE. RI-7.5 evidence cross_ai_review_ref.final_verdict tracks the SAME value (cross-artifact equality enforced).",
+    "Sistemik bug fix pattern parity: this PR benefits from PR #666 (RI-7.1 fast-follow introducer-detection) and PR #667 (AO-MA-10 fast-follow introducer-detection) - both merged 2026-05-27 before this PR. Without those fixes, this PR would be blocked by RI-7.1's cross-artifact equality test (REVISE during iter cycle) and AO-MA-10's scope test."
+  ],
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10a1"
+  "production_platform_claim": false
 }
