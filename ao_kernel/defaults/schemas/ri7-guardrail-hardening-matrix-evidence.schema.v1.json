@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-guardrail-hardening-matrix-evidence:v1",
+  "title": "RI-7.2 Repo-Intelligence Guardrail Hardening Matrix Evidence",
+  "description": "Evidence artifact recording the RI-7.2 guardrail hardening matrix: six guardrail rows (AST/chunk edge cases, namespace isolation, stale vector cleanup, no implicit root authority write, no auto-feed, no MCP exposure) plus the forbidden-change audit. Operator/process evidence only; not release authority. Codex iter-1 absorb: schema-backed strictness + evidence_ref format + machine-enforced forbidden-change audit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "rows",
+    "forbidden_change_audit"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-guardrail-hardening-matrix-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_guardrail_hardening_matrix_evidence"},
+    "decision": {"type": "string", "const": "ri7_guardrail_hardening_matrix_ready"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "rows": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "implementation_refs", "regression_refs", "residual_gap", "next_slice_owner"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "ast_chunk_edge_cases",
+              "namespace_isolation",
+              "stale_vector_cleanup",
+              "no_implicit_root_authority_write",
+              "no_auto_feed",
+              "no_mcp_exposure"
+            ]
+          },
+          "status": {"type": "string", "const": "hardened"},
+          "implementation_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(ao_kernel|scripts)(/[A-Za-z0-9_-]+)*/[A-Za-z0-9_.-]+\\.py$",
+              "minLength": 1
+            }
+          },
+          "regression_refs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^tests(/[A-Za-z0-9_-]+)*/[A-Za-z0-9_.-]+\\.py(::[A-Za-z0-9_]+)?$",
+              "minLength": 1
+            }
+          },
+          "residual_gap": {"type": "string", "minLength": 1},
+          "next_slice_owner": {
+            "type": "string",
+            "pattern": "^RI-7\\.[1-8]$"
+          }
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "ast_chunk_edge_cases"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "namespace_isolation"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "stale_vector_cleanup"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_implicit_root_authority_write"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_auto_feed"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_mcp_exposure"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
