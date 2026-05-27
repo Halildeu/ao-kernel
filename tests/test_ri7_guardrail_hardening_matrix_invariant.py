@@ -189,45 +189,106 @@ def _in_ci() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI") == "true"
 
 
+def _resolve_diff_base() -> tuple[str | None, str]:
+    """Codex iter-4 absorb (kalıcı çözüm rule): a single source for the
+    PR diff base is fragile. ``actions/checkout@v6`` defaults to
+    ``fetch-depth: 1`` so ``origin/main`` may not exist locally inside
+    the CI runner — the test would have to either fail-close on a CI
+    misconfig (which traps every PR until the workflow is patched) or
+    silently skip (which destroys the invariant). Both are wrong. The
+    durable fix is to try multiple base-detection strategies, in this
+    order:
+
+    1. ``GITHUB_EVENT_PATH``'s ``pull_request.base.sha`` — the most
+       authoritative source in a GitHub Actions PR workflow, requires
+       no extra fetch, and is set by GitHub itself.
+    2. ``GITHUB_BASE_REF`` + ``git fetch origin <ref> --depth=1`` — when
+       the event payload is missing, ask Git to bring the base in.
+    3. Local ``origin/main`` — works for local human runs that already
+       fetched main.
+    4. Local ``main`` branch ref — works for clones without remotes.
+
+    Returns ``(base_sha_or_None, source_label)``. The base SHA, when
+    returned, is always a validated 40-hex string.
+    """
+    # Strategy 1: GitHub Actions PR event payload
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if event_path:
+        try:
+            event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+            pr = event.get("pull_request") or {}
+            base = pr.get("base") or {}
+            sha = base.get("sha")
+            if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha):
+                return sha, "github_event_payload"
+        except (OSError, json.JSONDecodeError, KeyError):
+            pass
+
+    # Strategy 2: GITHUB_BASE_REF + shallow fetch
+    base_ref = os.environ.get("GITHUB_BASE_REF")
+    if base_ref and re.fullmatch(r"[A-Za-z0-9._/-]+", base_ref):
+        fetch_proc = _git(["fetch", "origin", base_ref, "--depth=1"])
+        if fetch_proc.returncode == 0:
+            mb = _git(["merge-base", "HEAD", "FETCH_HEAD"])
+            if mb.returncode == 0:
+                sha = mb.stdout.strip()
+                if re.fullmatch(r"[0-9a-f]{40}", sha):
+                    return sha, f"fetch:{base_ref}"
+
+    # Strategy 3: local origin/main
+    mb = _git(["merge-base", "HEAD", "origin/main"])
+    if mb.returncode == 0:
+        sha = mb.stdout.strip()
+        if re.fullmatch(r"[0-9a-f]{40}", sha):
+            return sha, "origin/main"
+
+    # Strategy 4: local main branch
+    mb = _git(["merge-base", "HEAD", "main"])
+    if mb.returncode == 0:
+        sha = mb.stdout.strip()
+        if re.fullmatch(r"[0-9a-f]{40}", sha):
+            return sha, "local_main"
+
+    return None, "none"
+
+
 def test_ri72_forbidden_surfaces_actually_unchanged_in_diff() -> None:
-    """Codex iter-2+3 absorb: ``forbidden_change_audit.all_unchanged=true``
+    """Codex iter-2+3+4 absorb: ``forbidden_change_audit.all_unchanged=true``
     in the artifact is self-attestation and not sufficient on its own. A
     PR could touch ``.github/workflows/`` and still write
     ``all_unchanged: true``. This test runs ``git diff --name-only`` of
-    the current branch against the base ref the CI workflow uses
-    (``origin/main`` or, when run outside CI, the local merge base) and
-    asserts that no listed forbidden surface is present in the diff.
+    the current branch against the PR base (detected via multiple
+    strategies — see ``_resolve_diff_base``) and asserts that no listed
+    forbidden surface is present in the diff.
 
-    Codex iter-3 absorb (fail-closed in CI): when run inside GitHub
-    Actions or ``CI=true``, missing git / missing ``origin/main`` / git
-    failure all cause ``pytest.fail`` instead of ``pytest.skip``.
-    Outside CI (source-tarball test runs, sandboxed evaluators), skip is
-    acceptable because forbidden-diff enforcement is then the CI side's
-    job. The base SHA is validated against a strict 40-hex regex so that
-    Git warnings on stderr (which used to mix into stdout when
-    ``stderr=STDOUT``) cannot smuggle a non-SHA token into the diff
-    range and silently invalidate the check.
+    Codex iter-3 absorb (fail-closed in CI) + iter-4 absorb (durable
+    multi-strategy base detection per kalıcı-çözüm rule): when run
+    inside GitHub Actions or ``CI=true``, the test fail-closes only
+    when EVERY strategy fails to find a base — that is a genuine
+    misconfiguration, not just ``origin/main`` missing in a shallow
+    checkout. Outside CI (source-tarball test runs, sandboxed
+    evaluators), skip is acceptable because forbidden-diff enforcement
+    is then the CI side's job. The base SHA is validated against a
+    strict 40-hex regex so that Git warnings on stderr cannot smuggle a
+    non-SHA token into the diff range and silently invalidate the
+    check.
     """
     evidence = json.loads(_read(_EVIDENCE_PATH))
     surfaces = evidence["forbidden_change_audit"]["forbidden_surfaces"]
 
-    base_proc = _git(["merge-base", "HEAD", "origin/main"])
-    if base_proc.returncode != 0:
-        msg = f"origin/main unavailable: {base_proc.stderr.strip() or 'unknown error'}"
+    base, source = _resolve_diff_base()
+    if base is None:
+        msg = (
+            "no PR diff base could be resolved (tried github_event_payload, "
+            "GITHUB_BASE_REF fetch, origin/main, local main)"
+        )
         if _in_ci():
             pytest.fail(f"forbidden-diff invariant cannot run in CI: {msg}")
         pytest.skip(msg)
 
-    base = base_proc.stdout.strip()
-    if not re.fullmatch(r"[0-9a-f]{40}", base):
-        msg = f"unexpected git merge-base output: {base!r} (stderr: {base_proc.stderr.strip()!r})"
-        if _in_ci():
-            pytest.fail(msg)
-        pytest.skip(msg)
-
     diff_proc = _git(["diff", "--name-only", f"{base}...HEAD"])
     if diff_proc.returncode != 0:
-        msg = f"git diff against base failed: {diff_proc.stderr.strip() or 'unknown error'}"
+        msg = f"git diff against base ({source}={base!r}) failed: {diff_proc.stderr.strip() or 'unknown error'}"
         if _in_ci():
             pytest.fail(f"forbidden-diff invariant cannot run in CI: {msg}")
         pytest.skip(msg)
@@ -242,8 +303,8 @@ def test_ri72_forbidden_surfaces_actually_unchanged_in_diff() -> None:
             offenders.extend(f for f in changed_files if f == surface)
 
     assert not offenders, (
-        f"forbidden surfaces touched by this PR's diff: {sorted(offenders)}; "
-        f"forbidden_change_audit.all_unchanged=true is therefore false"
+        f"forbidden surfaces touched by this PR's diff (base source={source}): "
+        f"{sorted(offenders)}; forbidden_change_audit.all_unchanged=true is therefore false"
     )
 
 
