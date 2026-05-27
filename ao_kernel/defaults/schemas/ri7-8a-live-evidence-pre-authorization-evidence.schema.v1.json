@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8a-live-evidence-pre-authorization-evidence:v1",
+  "title": "RI-7.8a Operator Live-Evidence Pre-Authorization Evidence",
+  "description": "Evidence artifact recording the operator's PRE-AUTHORIZATION for the upcoming RI-7.8b live evidence collection chain. This is a scope-only artifact: it does NOT permit workflow dispatch, protected credential reference, adapter execution, cost-incurring calls, or any guard flag flip. Each live evidence collection slice (RI-7.8b-bc1, RI-7.8b-bc10) carries its own explicit operator execution-window authorization. The actual production_platform_claim flip belongs to RI-7.8c.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "operator",
+    "authorization_effect",
+    "does_not_authorize",
+    "successor_slices",
+    "bc_scope",
+    "execution_budget",
+    "required_future_guard_transition",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "secret_boundary",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "submanifest_transition",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8a-live-evidence-pre-authorization-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8a_live_evidence_pre_authorization_evidence"},
+    "decision": {"type": "string", "const": "ri78a_live_evidence_pre_authorization_recorded_no_guard_flag_flip_no_execution"},
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_login", "pre_authorization_timestamp", "no_secret_assertion", "observation_notes"],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "pre_authorization_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "authorization_effect": {
+      "type": "string",
+      "const": "pre_authorization_only_no_execution_permission",
+      "description": "HARD pin: this artifact only records a scope envelope, NOT execution permission. Live execution requires a separate operator-bound execution-window artifact in RI-7.8b slices."
+    },
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "protected_workflow_dispatch",
+          "adapter_execution",
+          "credential_reference",
+          "cost_incurring_calls",
+          "support_widening",
+          "production_platform_claim",
+          "gpp_status_guard_flip"
+        ]
+      },
+      "description": "Negative authority statement. All 7 forbidden actions enumerated explicitly so a reviewer can verify by name what this artifact CANNOT permit."
+    },
+    "successor_slices": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["RI-7.8b-bc1", "RI-7.8b-bc10"]
+      }
+    },
+    "bc_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bc_1_protected_gate_attestation", "bc_10_real_adapter_usage_cost"],
+      "properties": {
+        "bc_1_protected_gate_attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner_slice", "max_run_count", "protected_environment_required", "expected_paths", "artifact_schema_owner"],
+          "properties": {
+            "owner_slice": {"type": "string", "const": "RI-7.8b-bc1"},
+            "max_run_count": {"type": "integer", "minimum": 1, "maximum": 5},
+            "protected_environment_required": {"type": "boolean", "const": true},
+            "expected_paths": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {"type": "string", "enum": ["clean_attestation", "fail_closed_attestation"]}
+            },
+            "artifact_schema_owner": {"type": "string", "const": "RI-7.8b-bc1"}
+          }
+        },
+        "bc_10_real_adapter_usage_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner_slice", "pricing_source", "spend_ledger_binding_required", "artifact_schema_owner"],
+          "properties": {
+            "owner_slice": {"type": "string", "const": "RI-7.8b-bc10"},
+            "pricing_source": {"type": "string", "const": "provider_canonical_pricing_at_evaluation_timestamp"},
+            "spend_ledger_binding_required": {"type": "boolean", "const": true},
+            "artifact_schema_owner": {"type": "string", "const": "RI-7.8b-bc10"}
+          }
+        }
+      }
+    },
+    "execution_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_calls_per_bc", "max_usd_per_bc", "max_usd_aggregate", "model_allowlist", "validity_window_hours", "expiry_action"],
+      "properties": {
+        "max_calls_per_bc": {"type": "integer", "minimum": 1, "maximum": 50},
+        "max_usd_per_bc": {"type": "number", "exclusiveMinimum": 0, "maximum": 5.00},
+        "max_usd_aggregate": {"type": "number", "exclusiveMinimum": 0, "maximum": 10.00},
+        "model_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "validity_window_hours": {"type": "integer", "minimum": 1, "maximum": 168},
+        "expiry_action": {"type": "string", "const": "pre_authorization_auto_invalidates_if_bc_slices_not_opened_within_validity_window"}
+      }
+    },
+    "required_future_guard_transition": {
+      "type": "string",
+      "const": "actual_live_collection_requires_later_operator_bound_execution_window_artifact_per_bc_slice"
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nine_key_manifest_all_true", "readiness_gate_decision", "operator_verified_runtime_semantics", "explicit_operator_authorization", "general_purpose_platform_claim_authorization"],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"},
+        "operator_verified_runtime_semantics": {"type": "boolean", "const": true},
+        "explicit_operator_authorization": {"type": "boolean", "const": true},
+        "general_purpose_platform_claim_authorization": {"type": "boolean", "const": true}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {
+      "type": "string",
+      "const": "no_secret_material_no_credential_names_no_token_in_repo"
+    },
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_ref", "head_ref", "pr_number_hint", "timestamp"],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization"},
+        "pr_number_hint": {"type": "string"},
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8a-live-evidence-pre-authorization"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["live_evidence_pre_authorization_recorded"],
+          "properties": {
+            "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["live_evidence_pre_authorization_recorded"],
+          "properties": {
+            "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 14,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
