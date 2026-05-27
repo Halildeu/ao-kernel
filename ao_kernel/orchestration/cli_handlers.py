@@ -456,8 +456,9 @@ def cmd_orchestration_integrate(args: argparse.Namespace) -> int:
         print(render_assembly_plan_text(decision.assembly_plan))
 
     # Exit code matrix
+    # (no_workers is no longer reachable here — Codex iter-5 absorb moved
+    # empty runner_report.workers to IntegratorError → exit 2 trust-boundary
+    # failure, since iter-4 required "at least one worker decision" for emit.)
     if decision.has_pending or decision.has_rejections or decision.has_conflicts:
-        return 1
-    if decision.overall_status == "no_workers":
         return 1
     return 0

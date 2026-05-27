@@ -1160,3 +1160,347 @@ def test_cli_integrate_malformed_per_task_path_arg_exits_systemexit(
                 "BAD_NO_EQUALS_SIGN",
             ]
         )
+
+
+# ---------------------------------------------------------------------------
+# Codex iter-5 absorb tests (cross-ref binding + _relativize fail-closed +
+# no_workers fail-closed + CLI exit 3 contract)
+# ---------------------------------------------------------------------------
+
+
+def test_integrate_rejects_split_brain_task_graph_id(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: task_graph.task_graph_id != manifest.task_graph_id → IntegratorError exit 2."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-spl1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    # Tamper task_graph.task_graph_id (manifest still says ao-ma-20260527-spl1111)
+    tg_path = out_dir / "task_graph.v1.json"
+    tg = json.loads(tg_path.read_text(encoding="utf-8"))
+    tg["task_graph_id"] = "ao-ma-20260527-other11"
+    tg_path.write_text(json.dumps(tg, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="split-brain artifact set"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+
+
+def test_integrate_rejects_split_brain_runner_report_task_graph_id(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: runner_report.task_graph_id != manifest.task_graph_id."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-rsb1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["task_graph_id"] = "ao-ma-20260527-other22"
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="task_graph_id"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+
+
+def test_integrate_rejects_runner_report_manifest_sha256_mismatch(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: runner_report.manifest_sha256 != sha256_of(manifest_path)."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-msm1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["manifest_sha256"] = "sha256:" + "0" * 64
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="manifest_sha256"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+
+
+def test_integrate_rejects_runner_report_base_sha_mismatch(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: runner_report.base_sha != task_graph.base_sha."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-bsm1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["base_sha"] = "f" * 40
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="base_sha"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+
+
+def test_integrate_rejects_worker_result_with_wrong_task_id(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: worker_result.task_id != runner_report worker.task_id."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-wti1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    # Write worker_result with WRONG task_id
+    _write_worker_result(
+        out_dir=out_dir,
+        task_id="task-001",
+        task_graph_id="ao-ma-20260527-wti1111",
+        base_sha=base_sha,
+        declared_write_set=["src/a.py"],
+        actual_changed_files=["src/a.py"],
+    )
+    wr_path = out_dir / "workers/task-001/worker_result.v1.json"
+    payload = json.loads(wr_path.read_text(encoding="utf-8"))
+    payload["task_id"] = "task-999"  # mismatch
+    wr_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    decision = Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+    assert decision.has_rejections
+    assert decision.report["worker_decisions"][0]["reason_code"] == "schema_invalid"
+
+
+def test_integrate_rejects_review_verdict_with_wrong_reviewed_task_id(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: review.reviewed_task_id != runner_report worker.task_id."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-rti1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    _write_worker_result(
+        out_dir=out_dir,
+        task_id="task-001",
+        task_graph_id="ao-ma-20260527-rti1111",
+        base_sha=base_sha,
+        declared_write_set=["src/a.py"],
+        actual_changed_files=["src/a.py"],
+    )
+    rv_path = _write_review_verdict(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-rti1111", verdict="AGREE"
+    )
+    # Tamper reviewed_task_id
+    rv = json.loads(rv_path.read_text(encoding="utf-8"))
+    rv["reviewed_task_id"] = "task-999"
+    rv_path.write_text(json.dumps(rv, indent=2), encoding="utf-8")
+    decision = Integrator(repo_root=r).integrate(
+        manifest_path=manifest_path,
+        review_verdict_paths={"task-001": rv_path},
+    )
+    assert decision.has_rejections
+    assert decision.report["worker_decisions"][0]["reason_code"] == "schema_invalid"
+
+
+def test_integrate_rejects_verification_missing_task_in_verified_task_ids(repo: tuple[Path, str]) -> None:
+    """Codex iter-5 HIGH-1: task_id not in verification_report.verified_task_ids."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-vti1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    _write_worker_result(
+        out_dir=out_dir,
+        task_id="task-001",
+        task_graph_id="ao-ma-20260527-vti1111",
+        base_sha=base_sha,
+        declared_write_set=["src/a.py"],
+        actual_changed_files=["src/a.py"],
+    )
+    rv_path = _write_review_verdict(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-vti1111", verdict="AGREE"
+    )
+    vr_path = _write_verification_report(out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-vti1111")
+    # Tamper verified_task_ids
+    vr = json.loads(vr_path.read_text(encoding="utf-8"))
+    vr["verified_task_ids"] = ["task-999"]
+    vr_path.write_text(json.dumps(vr, indent=2), encoding="utf-8")
+    decision = Integrator(repo_root=r).integrate(
+        manifest_path=manifest_path,
+        review_verdict_paths={"task-001": rv_path},
+        verification_report_paths={"task-001": vr_path},
+    )
+    assert decision.has_rejections
+    assert decision.report["worker_decisions"][0]["reason_code"] == "schema_invalid"
+
+
+def test_integrate_empty_runner_report_workers_raises(repo: tuple[Path, str], tmp_path: Path) -> None:
+    """Codex iter-5 MEDIUM: empty runner_report.workers → IntegratorError → exit 2 (no emit)."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    # Manually craft manifest + empty runner_report (the fixture requires ≥1 worker)
+    out_dir = base_dir / "ao-ma-20260527-emp1111"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    task_graph = {
+        "schema_version": "ao-ma-task-graph.v1",
+        "task_graph_id": "ao-ma-20260527-emp1111",
+        "repo": "Halildeu/ao-kernel",
+        "goal": "empty workers fixture",
+        "base_ref": "refs/heads/main",
+        "base_sha": base_sha,
+        "risk_class": "low",
+        "max_parallel_workers": 1,
+        "tasks": [
+            {
+                "task_id": "stub",
+                "title": "stub",
+                "agent_type": "implementer",
+                "declared_write_set": ["src/a.py"],
+                "dependency_ids": [],
+                "acceptance_criteria": ["tests_pass_locally"],
+                "high_risk": False,
+            }
+        ],
+        "fan_in_policy": {"mode": "all_required", "required_task_ids": ["stub"], "conflict_owner": "integrator"},
+        "review_policy": {
+            "required_reviewers": 1,
+            "cross_provider_required": True,
+            "consensus_required_for_high_risk": True,
+            "max_revise_rounds": 3,
+        },
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+    tg_path = out_dir / "task_graph.v1.json"
+    tg_path.write_text(json.dumps(task_graph, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = {
+        "schema_version": "ao-ma-orchestration-manifest.v1",
+        "task_graph_id": "ao-ma-20260527-emp1111",
+        "generated_at": "2026-05-27T00:00:00Z",
+        "base_dir": str(out_dir),
+        "artifacts": [
+            {
+                "path": "task_graph.v1.json",
+                "sha256": _sha256(tg_path),
+                "size_bytes": tg_path.stat().st_size,
+            }
+        ],
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+    manifest_path = out_dir / "manifest.v1.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner_report = {
+        "schema_version": "ao-ma-runner-report.v1",
+        "task_graph_id": "ao-ma-20260527-emp1111",
+        "manifest_sha256": _sha256(manifest_path),
+        "base_sha": base_sha,
+        "generated_at": "2026-05-27T00:00:00Z",
+        "conflict_check": "pass",
+        "base_sync_check": "pass",
+        "workers": [],  # EMPTY
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+    rr_path = out_dir / "runner_report.v1.json"
+    rr_path.write_text(json.dumps(runner_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(IntegratorError, match="no worker entries"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+    # Confirm NO integration_report was written
+    assert not (out_dir / "integration_report.v1.json").exists()
+
+
+def test_relativize_path_outside_base_dir_raises_integrator_error(repo: tuple[Path, str], tmp_path: Path) -> None:
+    """Codex iter-5 HIGH-2: _relativize fail-closed when path outside base_dir."""
+
+    from ao_kernel.orchestration.integrator import _relativize
+
+    base_dir = tmp_path / "base"
+    base_dir.mkdir()
+    # An absolute path OUTSIDE base_dir → should raise IntegratorError
+    outside = tmp_path / "elsewhere" / "worker_result.v1.json"
+    with pytest.raises(IntegratorError, match="outside base_dir"):
+        _relativize(str(outside), base_dir)
+
+
+def test_relativize_preserves_none_sentinel(tmp_path: Path) -> None:
+    """_relativize(None, ...) returns None (worker_result_ref null sentinel preserved)."""
+
+    from ao_kernel.orchestration.integrator import _relativize
+
+    assert _relativize(None, tmp_path) is None
+
+
+def test_cli_integrate_emit_failure_exits_three(
+    repo: tuple[Path, str], capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Codex iter-5 nice-to-have: CLI exit 3 contract for integration emit failure."""
+
+    from ao_kernel.cli import main as cli_main
+    from ao_kernel.orchestration import integration_report_writer as writer_mod
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=r / ".ao" / "orchestration",
+        task_graph_id="ao-ma-20260527-emt1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    _write_worker_result(
+        out_dir=out_dir,
+        task_id="task-001",
+        task_graph_id="ao-ma-20260527-emt1111",
+        base_sha=base_sha,
+        declared_write_set=["src/a.py"],
+        actual_changed_files=["src/a.py"],
+    )
+    rv = _write_review_verdict(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-emt1111", verdict="AGREE"
+    )
+    vr = _write_verification_report(out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-emt1111")
+
+    # Force the writer to fail by monkey-patching emit to raise
+    def _boom(self, **kwargs):  # noqa: ANN001
+        raise writer_mod.IntegrationReportWriterError("simulated emit failure")
+
+    monkeypatch.setattr(writer_mod.IntegrationReportWriter, "emit", _boom)
+    rc = cli_main(
+        [
+            "orchestration",
+            "integrate",
+            "--manifest",
+            str(manifest_path),
+            "--repo-root",
+            str(r),
+            "--review-verdict",
+            f"task-001={rv}",
+            "--verification-report",
+            f"task-001={vr}",
+            "--format",
+            "json",
+        ]
+    )
+    assert rc == 3, "emit failure must exit 3 per Codex iter-2 §5 matrix"
+    err = capsys.readouterr().err
+    assert "emit failure" in err

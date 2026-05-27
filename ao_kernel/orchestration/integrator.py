@@ -96,7 +96,7 @@ class IntegrationDecision:
     ``.claude/plans/AO-MA-5-INTEGRATOR-POLICY.md``.
     """
 
-    overall_status: Literal["all_accepted", "partial", "all_blocked", "no_workers"]
+    overall_status: Literal["all_accepted", "partial", "all_blocked"]
     report: dict[str, Any]
     assembly_plan: list[dict[str, Any]] = field(default_factory=list)
     diagnostics: list[str] = field(default_factory=list)
@@ -183,8 +183,13 @@ def _relativize(path_str: str | None, base_dir: Path) -> str | None:
     """Convert an absolute filesystem path to base_dir-relative for the
     integration_report.v1 schema (path $def rejects absolute paths).
 
-    Falls back to the bare filename when the path is outside base_dir;
-    schema-valid in both cases. Preserves None (worker_result_ref null sentinel).
+    Codex iter-5 HIGH-2 absorb: paths OUTSIDE ``base_dir`` are NOT
+    silently basenamed (audit trail leak: ``/tmp/a/worker_result.v1.json``
+    and ``/other/b/worker_result.v1.json`` would both become
+    ``worker_result.v1.json``). Fail-closed via ``IntegratorError`` —
+    the integrator does not invent provenance.
+
+    Preserves None (worker_result_ref null sentinel).
     """
 
     if path_str is None:
@@ -194,8 +199,12 @@ def _relativize(path_str: str | None, base_dir: Path) -> str | None:
         return str(p)
     try:
         return str(p.resolve().relative_to(base_dir.resolve()))
-    except ValueError:
-        return p.name
+    except ValueError as exc:
+        raise IntegratorError(
+            f"evidence path {p!s} is outside base_dir {base_dir!s}; "
+            f"refusing to bare-name it (audit provenance lost). "
+            f"Pass --repo-root or move evidence under <manifest_dir>/.."
+        ) from exc
 
 
 def verification_passed(report: dict[str, Any]) -> bool:
@@ -271,24 +280,51 @@ class Integrator:
         _validate_manifest_envelope(manifest, manifest_path)
         task_graph_id = manifest["task_graph_id"]
         base_dir = manifest_path.parent.parent
+        manifest_sha = sha256_of(manifest_path)
+
+        # Codex iter-5 HIGH-1 absorb: load task_graph EARLY for cross-ref
+        # checks (was loaded later for base_ref/base_sha only).
+        task_graph_path = manifest_path.parent / "task_graph.v1.json"
+        task_graph = self._load_json(task_graph_path)
+        _validate_schema(task_graph, _TASK_GRAPH_SCHEMA_NAME, task_graph_path)
+
+        # Cross-ref: task_graph.task_graph_id must match manifest.task_graph_id
+        if task_graph.get("task_graph_id") != task_graph_id:
+            raise IntegratorError(
+                f"task_graph.v1.json task_graph_id {task_graph.get('task_graph_id')!r} != "
+                f"manifest task_graph_id {task_graph_id!r}; split-brain artifact set"
+            )
 
         if runner_report_path is None:
             runner_report_path = manifest_path.parent / "runner_report.v1.json"
         runner_report = self._load_json(runner_report_path)
         _validate_schema(runner_report, _RUNNER_REPORT_SCHEMA_NAME, runner_report_path)
 
-        # Build per-task assignment lookup for review/verify ref convention
+        # Cross-ref: runner_report binds to same manifest + task_graph
+        if runner_report.get("task_graph_id") != task_graph_id:
+            raise IntegratorError(
+                f"runner_report.v1.json task_graph_id {runner_report.get('task_graph_id')!r} != "
+                f"manifest task_graph_id {task_graph_id!r}; split-brain artifact set"
+            )
+        if runner_report.get("manifest_sha256") != manifest_sha:
+            raise IntegratorError(
+                f"runner_report.v1.json manifest_sha256 {runner_report.get('manifest_sha256')!r} != "
+                f"sha256_of(manifest_path) {manifest_sha!r}; manifest was modified after spawn"
+            )
+        if runner_report.get("base_sha") != task_graph.get("base_sha"):
+            raise IntegratorError(
+                f"runner_report.v1.json base_sha {runner_report.get('base_sha')!r} != "
+                f"task_graph base_sha {task_graph.get('base_sha')!r}; base mismatch"
+            )
+
+        # Codex iter-5 MEDIUM absorb: empty workers → trust-boundary failure
+        # (was emitting empty integration_report which contradicts the
+        # "at least one worker decision" emit invariant from iter-4).
         task_ids = [w["task_id"] for w in runner_report.get("workers", [])]
         if not task_ids:
-            return IntegrationDecision(
-                overall_status="no_workers",
-                report=self._emit_empty(
-                    task_graph_id=task_graph_id,
-                    manifest=manifest,
-                    base_dir=base_dir,
-                    emit=emit,
-                ),
-                diagnostics=["runner_report has no worker entries"],
+            raise IntegratorError(
+                "runner_report.v1.json has no worker entries; trust boundary requires "
+                "at least one worker decision to emit a meaningful integration_report"
             )
 
         worker_result_paths = worker_result_paths or {}
@@ -308,6 +344,7 @@ class Integrator:
             task_id = worker["task_id"]
             decision_record = self._decide_worker(
                 task_id=task_id,
+                task_graph_id=task_graph_id,
                 worker_entry=worker,
                 base_dir=base_dir,
                 worker_result_paths=worker_result_paths,
@@ -374,9 +411,8 @@ class Integrator:
             "provider": self.integrator_provider,
             "session_id": self.integrator_session_id,
         }
-        task_graph_path = manifest_path.parent / "task_graph.v1.json"
-        task_graph = self._load_json(task_graph_path)
-        _validate_schema(task_graph, _TASK_GRAPH_SCHEMA_NAME, task_graph_path)
+        # task_graph already loaded + schema-validated + cross-ref'd earlier
+        # (Codex iter-5 HIGH-1); no need to reload here.
         base_ref = task_graph.get("base_ref", "refs/heads/main")
         base_sha = task_graph["base_sha"]
 
@@ -431,7 +467,7 @@ class Integrator:
         has_rejections = any(k == "reject" for k in decision_kinds)
         has_conflicts = bool(conflicts)
         if accepted_refs and not (has_pending or has_rejections or has_conflicts):
-            overall_status: Literal["all_accepted", "partial", "all_blocked", "no_workers"] = "all_accepted"
+            overall_status: Literal["all_accepted", "partial", "all_blocked"] = "all_accepted"
         elif accepted_refs:
             overall_status = "partial"
         else:
@@ -471,6 +507,7 @@ class Integrator:
         self,
         *,
         task_id: str,
+        task_graph_id: str,
         worker_entry: dict[str, Any],
         base_dir: Path,
         worker_result_paths: dict[str, Path],
@@ -478,6 +515,14 @@ class Integrator:
         verification_report_paths: dict[str, Path],
     ) -> dict[str, Any]:
         """Decide accept / reject / not_integratable for one worker.
+
+        Codex iter-5 HIGH-1 absorb: cross-ref each worker artifact's
+        task_graph_id + task_id (or reviewed_task_id / verified_task_ids)
+        against the manifest's task_graph_id + the runner_report worker
+        entry's task_id. Schema-valid bytes from a DIFFERENT graph/task
+        must not satisfy THIS task's accept gate. Mismatches surface as
+        ``schema_invalid`` (closest existing reason_code; ``cross_ref_mismatch``
+        enum extension is nice-to-have for AO-MA-5 v1.1+).
 
         Returns dict with decision_record (matches worker_decision schema)
         + worker_result_ref / review_verdict_ref / verification_report_ref
@@ -513,6 +558,21 @@ class Integrator:
             wr_payload = self._load_json(wr_path)
             _validate_schema(wr_payload, _WORKER_RESULT_SCHEMA_NAME, wr_path)
         except IntegratorError:
+            return {
+                "decision_record": {
+                    "task_id": task_id,
+                    "worker_result_ref": str(wr_path),
+                    "decision": "reject",
+                    "reason_code": "schema_invalid",
+                },
+                "worker_result_ref": str(wr_path),
+                "review_verdict_ref": None,
+                "verification_report_ref": None,
+                "actual_changed_files": [],
+            }
+
+        # Codex iter-5 HIGH-1 absorb: worker_result task_graph_id + task_id cross-ref
+        if wr_payload.get("task_graph_id") != task_graph_id or wr_payload.get("task_id") != task_id:
             return {
                 "decision_record": {
                     "task_id": task_id,
@@ -609,6 +669,21 @@ class Integrator:
                 "actual_changed_files": actual,
             }
 
+        # Codex iter-5 HIGH-1 absorb: review_verdict cross-ref
+        if rv_payload.get("task_graph_id") != task_graph_id or rv_payload.get("reviewed_task_id") != task_id:
+            return {
+                "decision_record": {
+                    "task_id": task_id,
+                    "worker_result_ref": str(wr_path),
+                    "decision": "reject",
+                    "reason_code": "schema_invalid",
+                },
+                "worker_result_ref": str(wr_path),
+                "review_verdict_ref": str(rv_path),
+                "verification_report_ref": None,
+                "actual_changed_files": actual,
+            }
+
         verdict = rv_payload.get("verdict")
         if verdict == "REVISE":
             return {
@@ -658,6 +733,22 @@ class Integrator:
         try:
             _validate_schema(vr_payload, _VERIFICATION_REPORT_SCHEMA_NAME, vr_path)
         except IntegratorError:
+            return {
+                "decision_record": {
+                    "task_id": task_id,
+                    "worker_result_ref": str(wr_path),
+                    "decision": "reject",
+                    "reason_code": "schema_invalid",
+                },
+                "worker_result_ref": str(wr_path),
+                "review_verdict_ref": str(rv_path),
+                "verification_report_ref": str(vr_path),
+                "actual_changed_files": actual,
+            }
+
+        # Codex iter-5 HIGH-1 absorb: verification_report cross-ref
+        # (task_graph_id + task_id MUST be in verified_task_ids)
+        if vr_payload.get("task_graph_id") != task_graph_id or task_id not in vr_payload.get("verified_task_ids", []):
             return {
                 "decision_record": {
                     "task_id": task_id,
@@ -785,51 +876,6 @@ class Integrator:
             }
         )
         return steps
-
-    def _emit_empty(
-        self,
-        *,
-        task_graph_id: str,
-        manifest: dict[str, Any],
-        base_dir: Path,
-        emit: bool,
-    ) -> dict[str, Any]:
-        """Emit an integration report with no workers (edge case)."""
-
-        if not emit:
-            return {}
-        # Load task_graph for base_ref/base_sha
-        task_graph_path = base_dir / task_graph_id / "task_graph.v1.json"
-        task_graph = self._load_json(task_graph_path)
-        _validate_schema(task_graph, _TASK_GRAPH_SCHEMA_NAME, task_graph_path)
-        base_ref = task_graph.get("base_ref", "refs/heads/main")
-        base_sha = task_graph["base_sha"]
-        writer = IntegrationReportWriter(base_dir=base_dir)
-        try:
-            return writer.emit(
-                task_graph_id=task_graph_id,
-                integrator={
-                    "agent_id": self.integrator_agent_id,
-                    "agent_type": "integrator",
-                    "provider": self.integrator_provider,
-                    "session_id": self.integrator_session_id,
-                },
-                base_ref=base_ref,
-                base_sha=base_sha,
-                head_ref=base_ref,
-                head_sha=base_sha,
-                accepted_worker_results=[],
-                rejected_worker_results=[],
-                final_changed_files=[],
-                conflicts=[],
-                review_verdict_refs=[],
-                verification_report_refs=[],
-                pending_worker_results=[],
-                worker_decisions=[],
-                assembly_plan=[],
-            )
-        except IntegrationReportWriterError as exc:
-            raise IntegratorError(f"integration report write failed: {exc}") from exc
 
 
 def render_assembly_plan_text(assembly_plan: Iterable[dict[str, Any]]) -> str:
