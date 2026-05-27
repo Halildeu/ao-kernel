@@ -688,6 +688,28 @@ def test_ao_ma_8_pr_scope_only_touches_allowlisted_files() -> None:
         "tests/test_ao_ma_8_e2e_smoke.py",
         "local-ai-review-evidence.v1.json",
     }
+    # AO-MA-8 introducer-PR detection (fast-follow sistemik bug fix).
+    # The original assertion ran on every PR after AO-MA-8 landed and
+    # rejected any PR whose diff did not match AO-MA-8's specific
+    # scope — a category error, not a misconfiguration. The scope
+    # invariant only applies to the AO-MA-8 INTRODUCER PR (the PR
+    # that creates the AO-MA-8 plan + schema + test). That PR is
+    # identifiable by its diff touching at least one of the four
+    # AO-MA-8-owned artifact paths in `ao_ma_8_introducer_signature`
+    # below (excluding `local-ai-review-evidence.v1.json` which every
+    # PR touches). On any other PR the invariant is skipped; the
+    # full-scope assertion for the AO-MA-8 introducer is preserved.
+    ao_ma_8_introducer_signature = {
+        ".claude/plans/AO-MA-8-E2E-SMOKE.md",
+        ".claude/plans/AO-MA-8-E2E-SMOKE-EVIDENCE.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-8-e2e-smoke-evidence.schema.v1.json",
+        "tests/test_ao_ma_8_e2e_smoke.py",
+    }
+    if not (changed & ao_ma_8_introducer_signature):
+        pytest.skip(
+            "PR is not the AO-MA-8 introducer PR (no AO-MA-8-specific path in diff); "
+            "AO-MA-8 scope allowlist invariant does not apply"
+        )
     extra = changed - allowlist
     assert not extra, f"AO-MA-8 PR touches files outside allowlist: {sorted(extra)}"
 
