@@ -21,7 +21,11 @@
       ".claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.v1.json",
       "ao_kernel/defaults/schemas/ri7-operator-authorization-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri7_operator_authorization_invariant.py"
+      "tests/test_ri7_cross_lane_production_matrix_invariant.py",
+      "tests/test_ri7_gp59_transition_plan_invariant.py",
+      "tests/test_ri7_guardrail_hardening_matrix_invariant.py",
+      "tests/test_ri7_operator_authorization_invariant.py",
+      "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py"
     ]
   },
   "checks_considered": [
@@ -195,6 +199,7 @@
     }
   ],
   "findings": [
+    "Iter-5 absorb (post-impl gate CI signal): added 4 legacy invariant test files to changed_files after the operator-bound landing required loosening their state-at-landing pins (RI-7.2/7.4/7.6/7.7). Total scope now 11 files matching git diff exactly. The legacy loosening is documented per-test as the explicit RI-7.1 operator-bound landing absorb (each docstring previously pointed at this PR).",
     "Iter-4 absorb COMPLETE; reviewer verdict received AGREE from Codex (thread 019e6a37). Final commit lands with reviewer.verdict=AGREE in this file AND cross_ai_review_ref.final_verdict=AGREE in RI-7.1-OPERATOR-AUTHORIZATION.v1.json; the invariant test_ri71_cross_ai_verdicts_match_review_evidence preserves cross-artifact equality. iter cycle: iter-1 REVISE (2 BLOCKER + 2 MEDIUM) \u2192 iter-2 REVISE (1 BLOCKER + 1 MEDIUM) \u2192 iter-3 REVISE (2 MEDIUM prose) \u2192 iter-4 AGREE merge-ready.",
     "B-path slice 2 of 8: RI-7.1 operator authorization record. Codex thread 019e6a37-a9d1-7e73-8e90-4088353eb899 (slice-1 thread 019e691b expired post slice-1 merge). Reviewer verdict tracked iter-1 REVISE (4 findings) \u2192 iter-2 REVISE (2 findings) \u2192 iter-3 REVISE (2 MEDIUM prose drift) \u2192 iter-3 absorb in flight; final AGREE pending.",
     "Schema strictness summary post-iter-1+iter-2 absorb: additionalProperties=false at every object level; schema_version + artifact_kind + decision const ri7_operator_authorization_recorded_no_guard_flag_flip; operator.github_login const Halildeu; operator.no_secret_assertion REQUIRED + const true (iter-1 BLOCKER absorb); operator.authorization_timestamp format=date-time + strict UTC pattern ^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z\\$ (iter-1 MEDIUM absorb); authorization_scope minItems=maxItems=2 + uniqueItems + enum [ri_supersession, general_purpose_platform_claim_target]; ri_supersession_authorized + general_purpose_platform_claim_target_authorized const true; guard flags const false; context_binding repo/base_ref/head_ref const; manifest_transition before/after const-pinned; forbidden_change_audit.all_unchanged const true + minItems=8 surfaces; cross_ai_review_ref implementer/reviewer provider const + final_verdict enum [REVISE, AGREE] (iter-1 BLOCKER absorb).",
