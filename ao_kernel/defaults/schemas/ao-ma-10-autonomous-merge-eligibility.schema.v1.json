@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-10-autonomous-merge-eligibility:v1",
+  "title": "AO-MA-10 Autonomous Merge Eligibility",
+  "description": "Read-only fail-closed eligibility evidence for a future low-risk autonomous merge dry-run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "read_only",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "readiness_source",
+    "candidate_changed_files",
+    "github_gate_requirements",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-10-autonomous-merge-eligibility.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_10_autonomous_merge_eligibility"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "read_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "mutations_performed": {
+      "type": "boolean",
+      "const": false
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "readiness_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "artifact_kind",
+        "repository",
+        "branch",
+        "generated_at",
+        "decision",
+        "blockers"
+      ],
+      "properties": {
+        "schema_version": { "type": ["string", "null"] },
+        "artifact_kind": { "type": ["string", "null"] },
+        "repository": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "generated_at": { "type": ["string", "null"] },
+        "decision": { "type": ["string", "null"] },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "candidate_changed_files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "files_count",
+        "low_risk",
+        "invalid_paths",
+        "not_allowed",
+        "prohibited_matches",
+        "release_gate_high_risk_matches"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "files_count": { "type": "integer", "minimum": 0 },
+        "low_risk": { "type": "boolean" },
+        "invalid_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "not_allowed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "prohibited_matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "patterns"],
+            "properties": {
+              "path": { "type": "string" },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        "release_gate_high_risk_matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "patterns"],
+            "properties": {
+              "path": { "type": "string" },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "github_gate_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ao_release_gate_technical_required_check_present",
+        "ao_release_gate_technical_source_pinned_to_actions",
+        "ao_release_gate_review_required_check_present",
+        "ao_release_gate_review_source_pinned_to_actions",
+        "ruleset_bypass_actors_empty",
+        "legacy_required_review_disabled_for_low_risk",
+        "legacy_code_owner_review_disabled_for_low_risk",
+        "dedicated_merge_actor_non_admin",
+        "dedicated_merge_actor_without_admin_write"
+      ],
+      "properties": {
+        "ao_release_gate_technical_required_check_present": { "type": "boolean" },
+        "ao_release_gate_technical_source_pinned_to_actions": { "type": "boolean" },
+        "ao_release_gate_review_required_check_present": { "type": "boolean" },
+        "ao_release_gate_review_source_pinned_to_actions": { "type": "boolean" },
+        "ruleset_bypass_actors_empty": { "type": "boolean" },
+        "legacy_required_review_disabled_for_low_risk": { "type": "boolean" },
+        "legacy_code_owner_review_disabled_for_low_risk": { "type": "boolean" },
+        "dedicated_merge_actor_non_admin": { "type": "boolean" },
+        "dedicated_merge_actor_without_admin_write": { "type": "boolean" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "blockers", "warnings", "next_required_slice"],
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["ready_for_low_risk_dry_run", "blocked"]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ai_output_release_authority_observed",
+              "ao_release_gate_required_check_missing",
+              "ao_release_gate_review_required_check_missing",
+              "ao_release_gate_review_required_check_not_source_pinned",
+              "ao_release_gate_technical_required_check_missing",
+              "ao_release_gate_technical_required_check_not_source_pinned",
+              "changed_file_path_invalid",
+              "changed_files_missing",
+              "changed_files_match_release_gate_high_risk",
+              "changed_files_not_low_risk",
+              "codeowners_broad_default_owner_present",
+              "codeowners_governance_paths_not_fully_owned",
+              "dedicated_merge_actor_not_confirmed",
+              "github_api_read_failed",
+              "guard_flags_not_false",
+              "legacy_code_owner_review_blocks_low_risk_autonomy",
+              "legacy_required_review_blocks_low_risk_autonomy",
+              "merge_actor_admin_permission_observed",
+              "readiness_snapshot_not_ready",
+              "release_authority_mismatch",
+              "ruleset_bypass_actors_present",
+              "snapshot_mutated",
+              "snapshot_not_read_only",
+              "ssot_live_required_check_drift_detected"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "repository_auto_merge_disabled_merge_agent_direct_mode_required",
+              "some_nominal_low_risk_prefixes_still_codeowned"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "next_required_slice": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

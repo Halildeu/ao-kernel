@@ -13,6 +13,10 @@
       "status": "pass"
     },
     {
+      "name": "mypy",
+      "status": "pass"
+    },
+    {
       "name": "git_diff_check",
       "status": "pass"
     },
@@ -21,7 +25,7 @@
       "status": "pass"
     },
     {
-      "name": "github_readiness_snapshot_tests",
+      "name": "ao_ma10a1_eligibility_tests",
       "status": "pass"
     },
     {
@@ -37,7 +41,7 @@
       "status": "pass"
     },
     {
-      "name": "codex_independent_review",
+      "name": "codex_sidecar_reviews",
       "status": "pass"
     },
     {
@@ -58,13 +62,13 @@
     }
   ],
   "findings": [
-    "AO-MA-10a0 is a read-only GitHub readiness snapshot for the low-risk autonomous merge lane. It does not activate autonomous merge, mutate branch protection, mutate rulesets, mutate CODEOWNERS, or change release authority.",
-    "The snapshot intentionally records blocked readiness because live GitHub state does not yet satisfy the no-human low-risk merge prerequisites.",
-    "Claude/Anthropic review returned AGREE after verifying fail-closed GitHub API collection errors, source-pinned ruleset drift detection, tilde-ALL ruleset handling, and legacy branch protection not being treated as release authority.",
-    "Codex/OpenAI independent review returned AGREE after adversarial checks for repo/viewer read failures, tilde-ALL bypass actor handling, source-pin drift, and legacy branch-protection-only false positives.",
-    "MiniMax was requested as a third reviewer, but this environment exposes no callable MiniMax CLI or MCP tool. MiniMax is therefore not recorded as release authority or as a blocking dependency for this PR.",
-    "Local verification passed: pytest tests/test_ao_ma10_low_risk_autonomous_merge_lane.py tests/test_ao_ma10_github_readiness_snapshot.py; pytest tests/test_gpp2d6_automerge_contract.py tests/test_ao_release_gate_enforce_job.py tests/test_ao_release_gate_build_payload.py; ruff; JSON validation; git diff --check.",
-    "Scope remains docs/schema/read-only collector/tests/evidence only; no support widening, no production platform claim, no live adapter execution, and no admin bypass."
+    "AO-MA-10a1 adds a deterministic read-only autonomous merge eligibility checker. It does not activate autonomous merge, mutate branch protection, mutate rulesets, mutate CODEOWNERS, alter workflows, or merge PRs.",
+    "The checker consumes the AO-MA-10a0 GitHub readiness snapshot plus a candidate changed-file set and emits only ready_for_low_risk_dry_run or blocked.",
+    "Current committed evidence is intentionally blocked because live GitHub enforcement lacks the source-pinned dual required-check set, legacy review still blocks low-risk autonomy, current actor is admin, and SSOT/live required-check drift remains unresolved.",
+    "Claude/Anthropic review returned AGREE after checking read-only behavior, release-authority pinning, current snapshot blocking, source-pinned dual-check requirements, release-gate HIGH_RISK_PATH_PATTERNS veto, and fail-closed tests.",
+    "Codex/OpenAI sidecar reviewers independently identified two material guardrails that were absorbed: legacy ao-release-gate alone is insufficient and high-risk release-gate path patterns must veto nominal low-risk prefixes.",
+    "Local verification passed: pytest tests/test_ao_ma10_autonomous_merge_eligibility.py tests/test_ao_ma10_github_readiness_snapshot.py tests/test_ao_ma10_low_risk_autonomous_merge_lane.py tests/test_ao_release_gate.py tests/test_ao_release_gate_publish_check_runs.py; ruff; mypy; JSON validation; git diff --check.",
+    "Scope remains docs/schema/read-only checker/tests/fixtures/evidence only; no support widening, no production platform claim, no live adapter execution, and no admin bypass."
   ],
   "implementer": {
     "agent": "codex",
@@ -84,18 +88,18 @@
     "changed_files": [
       ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
       ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_github_readiness_snapshot.py",
-      "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
-      "tests/test_ao_ma10_github_readiness_snapshot.py",
+      "scripts/ao_ma10_autonomous_merge_eligibility.py",
+      "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.blocked.valid.json",
+      "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json",
+      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
       "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma-10a0-readiness-snapshot"
+    "head_ref": "refs/heads/codex/ao-ma-10a1-autonomous-eligibility"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10a0"
+  "work_package": "AO-MA-10a1"
 }
