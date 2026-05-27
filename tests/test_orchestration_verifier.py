@@ -1284,3 +1284,259 @@ def test_verify_artifact_hashes_paths_are_relative_to_manifest_dir(repo, tmp_pat
     for entry in result.report["artifact_hashes"]:
         assert not entry["path"].startswith("/"), f"path must be relative: {entry['path']}"
         assert ".." not in entry["path"].split("/"), f"path must not contain ..: {entry['path']}"
+
+
+# ---------------------------------------------------------------------------
+# Codex iter-2 must_fix absorbs
+# ---------------------------------------------------------------------------
+
+
+def test_verify_review_verdict_reviewed_task_id_mismatch_raises(repo, tmp_path: Path) -> None:
+    """Codex iter-2 must_fix #1: review_verdict.reviewed_task_id must equal --task-id."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-rtm1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-rtm1111", base_sha=base_sha
+    )
+    diff_path = _write_stub_diff(out_dir, "task-001")
+    rv_path = _write_review_verdict(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-rtm1111", diff_path=diff_path
+    )
+    # Tamper review_verdict to claim a different reviewed_task_id (same graph)
+    rv = json.loads(rv_path.read_text(encoding="utf-8"))
+    rv["reviewed_task_id"] = "task-999"
+    rv_path.write_text(json.dumps(rv, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    inputs = _make_inputs(
+        manifest_path=manifest_path,
+        task_id="task-001",
+        wr_path=wr_path,
+        review_verdict_path=rv_path,
+    )
+    with pytest.raises(VerifierError, match="reviewed_task_id"):
+        Verifier(repo_root=r).verify(inputs)
+
+
+def test_verify_default_gpp_status_appears_in_artifact_hashes(repo) -> None:
+    """Codex iter-2 must_fix #2: hash base is repo_root, so .claude/plans/gpp_status
+    under repo_root IS recordable and appears in artifact_hashes (not silently dropped).
+    """
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-gph1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-gph1111", base_sha=base_sha
+    )
+    gpp_path = _write_gpp_status(repo=r)  # all flags False — pass
+    inputs = _make_inputs(
+        manifest_path=manifest_path,
+        task_id="task-001",
+        wr_path=wr_path,
+        gpp_status_path=gpp_path,
+    )
+    result = Verifier(repo_root=r).verify(inputs)
+    assert result.overall_pass
+    paths = [e["path"] for e in result.report["artifact_hashes"]]
+    assert any(".claude/plans/gpp_status.v1.json" in p for p in paths), (
+        f"expected default gpp_status to appear in artifact_hashes; got {paths}"
+    )
+
+
+def test_verify_artifact_hashing_fails_when_consulted_outside_repo_root(repo, tmp_path: Path) -> None:
+    """Codex iter-2 must_fix #2: silent skip + pass is misleading.
+
+    A consulted artifact that lives OUTSIDE repo_root cannot be recorded
+    in artifact_hashes (path constraint). When that happens, the
+    artifact_hashing check must fail (not silently pass).
+    """
+
+    r, base_sha = repo
+    # Place the manifest OUTSIDE repo_root (in tmp_path directly)
+    out_dir = tmp_path / "external" / "orchestration"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    task_graph = {
+        "schema_version": "ao-ma-task-graph.v1",
+        "task_graph_id": "ao-ma-20260527-out1111",
+        "repo": "Halildeu/ao-kernel",
+        "goal": "outside repo_root",
+        "base_ref": "refs/heads/main",
+        "base_sha": base_sha,
+        "risk_class": "low",
+        "max_parallel_workers": 1,
+        "tasks": [
+            {
+                "task_id": "task-001",
+                "title": "out",
+                "agent_type": "implementer",
+                "declared_write_set": ["src/a.py"],
+                "dependency_ids": [],
+                "acceptance_criteria": ["tests_pass_locally"],
+                "high_risk": False,
+            }
+        ],
+        "fan_in_policy": {"mode": "all_required", "required_task_ids": ["task-001"], "conflict_owner": "integrator"},
+        "review_policy": {
+            "required_reviewers": 1,
+            "cross_provider_required": True,
+            "consensus_required_for_high_risk": True,
+            "max_revise_rounds": 3,
+        },
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+    tg_path = out_dir / "task_graph.v1.json"
+    tg_path.write_text(json.dumps(task_graph, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = {
+        "schema_version": "ao-ma-orchestration-manifest.v1",
+        "task_graph_id": "ao-ma-20260527-out1111",
+        "generated_at": "2026-05-27T00:00:00Z",
+        "base_dir": str(out_dir),
+        "artifacts": [{"path": "task_graph.v1.json", "sha256": _sha256(tg_path), "size_bytes": tg_path.stat().st_size}],
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+    }
+    manifest_path = out_dir / "manifest.v1.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-out1111", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    result = Verifier(repo_root=r).verify(inputs)
+    # All consulted paths live under tmp_path/external/, NOT under r (repo_root)
+    assert not result.overall_pass
+    assert any("artifact_hashing.consulted_paths_outside_repo_root_or_missing" in fc for fc in result.failed_checks)
+    # Commands list must reflect the fail
+    commands = {c["command"]: c["outcome"] for c in result.report["commands"]}
+    assert commands["artifact_hashing"] == "fail"
+
+
+def test_verify_manifest_envelope_invalid_schema_version_raises(repo) -> None:
+    """Codex iter-2 must_fix #3: manifest envelope validation before field reads."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-env1111", base_sha=base_sha
+    )
+    # Tamper schema_version
+    mf = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mf["schema_version"] = "wrong-schema.v0"
+    manifest_path.write_text(json.dumps(mf, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-env1111", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    with pytest.raises(VerifierError, match="schema_version mismatch"):
+        Verifier(repo_root=r).verify(inputs)
+
+
+def test_verify_manifest_envelope_artifact_traversal_path_raises(repo) -> None:
+    """Codex iter-2 must_fix #3: artifact path traversal rejected."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-trv1111", base_sha=base_sha
+    )
+    mf = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # Insert a traversal artifact path
+    mf["artifacts"].append({"path": "../escape.v1.json", "sha256": "sha256:" + "a" * 64, "size_bytes": 1})
+    manifest_path.write_text(json.dumps(mf, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-trv1111", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    with pytest.raises(VerifierError, match="traversal/absolute"):
+        Verifier(repo_root=r).verify(inputs)
+
+
+def test_verify_manifest_envelope_missing_artifacts_raises(repo) -> None:
+    """Codex iter-2 must_fix #3: empty artifacts array rejected."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-mis1111", base_sha=base_sha
+    )
+    mf = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mf["artifacts"] = []
+    manifest_path.write_text(json.dumps(mf, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-mis1111", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    with pytest.raises(VerifierError, match="artifacts must be a non-empty array"):
+        Verifier(repo_root=r).verify(inputs)
+
+
+def test_verify_manifest_envelope_guard_flag_non_false_raises(repo) -> None:
+    """Codex iter-2 must_fix #3: manifest guard_flags must be literal False."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-gfl1111", base_sha=base_sha
+    )
+    mf = json.loads(manifest_path.read_text(encoding="utf-8"))
+    mf["guard_flags"]["support_widening"] = True
+    manifest_path.write_text(json.dumps(mf, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-gfl1111", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    with pytest.raises(VerifierError, match="guard_flags.support_widening must be the literal boolean False"):
+        Verifier(repo_root=r).verify(inputs)
+
+
+def test_verify_secret_scan_detail_mentions_gpp_status(repo) -> None:
+    """Codex iter-2 plan-drift fix: secret_scan.detail says gpp_status also scanned."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-gpd2222", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-gpd2222", base_sha=base_sha
+    )
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path)
+    result = Verifier(repo_root=r).verify(inputs)
+    detail = result.report["secret_scan"]["detail"]
+    assert "gpp_status" in detail, f"secret_scan.detail must mention gpp_status: {detail!r}"
+
+
+def test_verify_secret_scan_includes_gpp_status_in_scan_payload(repo) -> None:
+    """Codex iter-2 plan-drift fix: secret pattern in gpp_status JSON flags the scan."""
+
+    r, base_sha = repo
+    manifest_path, out_dir = _write_manifest_and_task_graph(
+        repo=r, task_graph_id="ao-ma-20260527-gps1111", base_sha=base_sha
+    )
+    wr_path = _write_worker_result(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-gps1111", base_sha=base_sha
+    )
+    # gpp_status with a planted secret value
+    plans_dir = r / ".claude" / "plans"
+    plans_dir.mkdir(parents=True, exist_ok=True)
+    leaked_token = "AKIA" + "ABCDEFGHIJKLMNOP"
+    payload = {
+        "schema_version": "gpp_status.v1",
+        "current_wp": {
+            "id": "AO-MA-7",
+            "support_widening_allowed": False,
+            "production_platform_claim_allowed": False,
+            "live_adapter_execution_allowed": False,
+            "notes": f"audit trail: {leaked_token}",
+        },
+    }
+    gpp_path = plans_dir / "gpp_status.v1.json"
+    gpp_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    inputs = _make_inputs(manifest_path=manifest_path, task_id="task-001", wr_path=wr_path, gpp_status_path=gpp_path)
+    result = Verifier(repo_root=r).verify(inputs)
+    assert not result.overall_pass
+    assert any("secret_scan.gpp_status.aws_access_key_id_match" in fc for fc in result.failed_checks)

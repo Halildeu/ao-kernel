@@ -1,6 +1,6 @@
 # AO-MA-7 — Verifier lane (deterministic; no LLM call; metadata-only secret scan)
 
-**Status:** plan-time iter-1 AGREE absorbed (Codex thread `019e6996-4064-74a1-8a74-27ef14548a42`; `ready_for_impl: true` with must_close pins). Implementation in progress.
+**Status:** plan-time iter-1 AGREE + post-impl iter-2 PARTIAL absorbed (Codex thread `019e6996-4064-74a1-8a74-27ef14548a42`). 3 iter-2 must_fix items absorbed (review_verdict.reviewed_task_id binding + artifact_hashing semantic pass + manifest envelope validator). Post-impl iter-3 AGREE pending.
 **Branch:** `codex/ao-ma-7-verifier-lane`
 **Decision artifact:** `ao_ma_7_verifier_deterministic_metadata_secret_scan_v1`
 **Parent:** AO-MA-1 §8 phased plan slice AO-MA-7
@@ -82,9 +82,9 @@ AIza[0-9A-Za-z_-]{35}
 -----BEGIN PGP PRIVATE KEY BLOCK-----
 ```
 
-Patterns scan **only AO-MA artifact JSON content** (worker_result, review_verdict, task_graph, manifest, gpp_status). NOT changed source files.
+Patterns scan **only AO-MA artifact JSON content** (worker_result, review_verdict, task_graph, manifest, optional gpp_status). NOT changed source files.
 
-False-positive defense: AO-MA artifacts contain `sha256:[0-9a-f]{64}` hashes and `git_sha` 40-char hex. Regex set explicitly excludes those (more specific patterns; no Shannon entropy).
+False-positive defense: AO-MA artifacts contain `sha256:[0-9a-f]{64}` hashes (64-char hex after `sha256:` prefix per schema $defs.sha256) and 40-char hex git SHA. Regex set explicitly excludes those via `_strip_false_positives` pre-pass before secret regex matching (no Shannon entropy).
 
 ## GPP guard check
 
@@ -118,8 +118,10 @@ def _check_diff_scope(worker_result, task_graph, task_id):
 For each input artifact actually consulted (manifest, task_graph, worker_result, optional review_verdict, optional gpp_status):
 
 ```python
-{"path": str(<repo-relative>), "sha256": "<hex>"}  # 40 char hex per schema $defs.sha256
+{"path": "<repo-relative POSIX path>", "sha256": "sha256:<64-char-hex>"}  # schema $defs.sha256
 ```
+
+Hash base is **`repo_root`** so artifacts under both `<manifest_dir>` and `.claude/plans/gpp_status.v1.json` are reachable (Codex iter-2 must_fix #2). If any consulted artifact cannot be recorded (file missing / path escapes `repo_root`), `artifact_hashing` outcome is **fail** with an explicit `failed_checks` entry — no silent pass.
 
 Verifier hashes inputs; does NOT hash its own output (verification_report.v1.json) — that would be a circular reference.
 

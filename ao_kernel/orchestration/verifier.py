@@ -52,6 +52,14 @@ _TASK_GRAPH_SCHEMA_NAME = "ao-ma-task-graph.schema.v1.json"
 _WORKER_RESULT_SCHEMA_NAME = "ao-ma-worker-result.schema.v1.json"
 _REVIEW_VERDICT_SCHEMA_NAME = "ao-ma-review-verdict.schema.v1.json"
 
+# Manifest envelope validation patterns (mirrors AO-MA-4/5 modules so
+# verifier applies the same trust-boundary check the rest of the stack
+# applies — Codex iter-2 must_fix #3).
+_EXPECTED_MANIFEST_SCHEMA_VERSION = "ao-ma-orchestration-manifest.v1"
+_TASK_GRAPH_ID_PATTERN = re.compile(r"^ao-ma-[a-z0-9][a-z0-9-]{2,80}$")
+_SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+_ARTIFACT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.v1\.json$")
+
 # Codex iter-1 must_close #5: deterministic check names recorded under
 # ``commands[]`` so integrator's ``commands[].outcome == "fail"``
 # predicate sees a meaningful name.
@@ -133,6 +141,65 @@ def _validate_schema(payload: dict[str, Any], schema_name: str, source: Path) ->
         ) from exc
 
 
+def _validate_manifest_envelope(manifest: dict[str, Any], source: Path) -> None:
+    """Mirror AO-MA-4/5 manifest envelope check (Codex iter-2 must_fix #3 absorb).
+
+    Verifier independently applies the envelope check so its evidence
+    claim (``manifest_envelope_validation_before_field_read``) is
+    backed by code. Same shape as integrator/worker_runner so multi-
+    module behaviour stays consistent.
+    """
+
+    if not isinstance(manifest, dict):
+        raise VerifierError(f"{source.name} manifest must be a JSON object")
+    schema_version = manifest.get("schema_version")
+    if schema_version != _EXPECTED_MANIFEST_SCHEMA_VERSION:
+        raise VerifierError(
+            f"{source.name} schema_version mismatch: expected "
+            f"{_EXPECTED_MANIFEST_SCHEMA_VERSION!r}, got {schema_version!r}"
+        )
+    task_graph_id = manifest.get("task_graph_id")
+    if not isinstance(task_graph_id, str) or not _TASK_GRAPH_ID_PATTERN.match(task_graph_id):
+        raise VerifierError(f"{source.name} task_graph_id {task_graph_id!r} does not match AO-MA-2 pattern")
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise VerifierError(f"{source.name} artifacts must be a non-empty array")
+    seen: set[str] = set()
+    for index, entry in enumerate(artifacts):
+        if not isinstance(entry, dict):
+            raise VerifierError(f"{source.name} artifacts[{index}] must be a JSON object")
+        path = entry.get("path")
+        if not isinstance(path, str) or not path:
+            raise VerifierError(f"{source.name} artifacts[{index}].path must be a non-empty string")
+        if path.startswith("/") or ".." in Path(path).parts or "\\" in path:
+            raise VerifierError(
+                f"{source.name} artifacts[{index}].path {path!r} contains traversal/absolute components"
+            )
+        if not _ARTIFACT_PATH_PATTERN.match(path):
+            raise VerifierError(
+                f"{source.name} artifacts[{index}].path {path!r} does not match AO-MA artifact suffix '*.v1.json'"
+            )
+        if path in seen:
+            raise VerifierError(f"{source.name} duplicate artifact path: {path!r}")
+        seen.add(path)
+        sha = entry.get("sha256")
+        if not isinstance(sha, str) or not _SHA256_PATTERN.match(sha):
+            raise VerifierError(f"{source.name} artifacts[{index}].sha256 {sha!r} must match 'sha256:[0-9a-f]{{64}}'")
+        size_bytes = entry.get("size_bytes")
+        if not isinstance(size_bytes, int) or isinstance(size_bytes, bool) or size_bytes <= 0:
+            raise VerifierError(
+                f"{source.name} artifacts[{index}].size_bytes {size_bytes!r} must be a positive integer"
+            )
+    guard_flags = manifest.get("guard_flags")
+    if not isinstance(guard_flags, dict):
+        raise VerifierError(f"{source.name} guard_flags must be an object")
+    for required in ("support_widening", "production_platform_claim", "live_adapter_execution"):
+        if guard_flags.get(required) is not False:
+            raise VerifierError(
+                f"{source.name} guard_flags.{required} must be the literal boolean False; AO-MA no-widening contract"
+            )
+
+
 def _sha256_of(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -207,7 +274,8 @@ def _check_secret_scan(
 
     detail = (
         "AO-MA JSON artifacts / metadata scanned (manifest + task_graph + worker_result"
-        " + optional review_verdict); changed source file contents were NOT scanned in v1"
+        " + optional review_verdict + optional gpp_status); changed source file contents"
+        " were NOT scanned in v1"
     )
     violations: list[str] = []
     # 1. no_secret_attestation cross-check (worker_result + review_verdict)
@@ -255,33 +323,47 @@ def _check_diff_scope(
     return outcome2, violations
 
 
-def _compute_artifact_hashes(consulted_paths: dict[str, Path], *, base_dir: Path) -> list[dict[str, str]]:
-    """Codex iter-1 must_close #4: H1 format {path, sha256} only. No role.
+def _compute_artifact_hashes(
+    consulted_paths: dict[str, Path], *, base_dir: Path
+) -> tuple[list[dict[str, str]], list[str]]:
+    """Codex iter-1 must_close #4 + iter-2 must_fix #2: H1 format only +
+    semantic failure when a consulted path cannot be recorded.
 
-    Paths are recorded relative to ``base_dir`` so the schema's path
-    constraint (``not pattern (^/|\\.\\.)``) is satisfied. Paths that
-    would escape ``base_dir`` are dropped fail-closed (no leak of
-    outside-tree paths into the verification report).
+    Paths are recorded relative to ``base_dir`` (typically ``repo_root``
+    so artifacts under both ``manifest_dir`` and ``.claude/plans/``
+    are reachable). The schema's path constraint
+    (``not pattern (^/|\\.\\.)``) is satisfied by always emitting
+    ``rel_str`` from ``Path.relative_to``.
+
+    Returns ``(hashes, skipped_labels)``. A non-empty ``skipped_labels``
+    means at least one consulted artifact was loaded by the verifier
+    but could NOT be recorded in ``artifact_hashes`` — caller must
+    treat this as ``artifact_hashing`` outcome ``fail`` and surface a
+    ``failed_checks`` entry (Codex iter-2 must_fix #2: silent skip +
+    pass is misleading).
     """
 
     hashes: list[dict[str, str]] = []
+    skipped: list[str] = []
     resolved_base = base_dir.resolve()
-    for _label, path in consulted_paths.items():
+    for label, path in consulted_paths.items():
         if not path.exists():
+            skipped.append(label)
             continue
         resolved = path.resolve()
         try:
             rel = resolved.relative_to(resolved_base)
         except ValueError:
-            # Path escapes base_dir; fail-closed (skip this entry).
+            skipped.append(label)
             continue
         rel_str = rel.as_posix()
         if not rel_str or rel_str.startswith("/") or ".." in rel_str.split("/"):
+            skipped.append(label)
             continue
         hashes.append({"path": rel_str, "sha256": _sha256_of(resolved)})
     # Stable order by path
     hashes.sort(key=lambda d: d["path"])
-    return hashes
+    return hashes, skipped
 
 
 @dataclass
@@ -298,11 +380,11 @@ class Verifier:
     def verify(self, inputs: VerificationInputs, *, emit: bool = True) -> VerificationResult:
         """Read artifacts → 4 modular checks → emit report → return result."""
 
-        # 1. Load + validate manifest
+        # 1. Load + validate manifest (envelope check before field reads —
+        #    Codex iter-2 must_fix #3 absorb).
         manifest = self._load_json(inputs.manifest_path)
-        task_graph_id = manifest.get("task_graph_id")
-        if not isinstance(task_graph_id, str):
-            raise VerifierError(f"{inputs.manifest_path.name}: task_graph_id missing or non-string")
+        _validate_manifest_envelope(manifest, inputs.manifest_path)
+        task_graph_id = cast(str, manifest["task_graph_id"])
 
         # 2. Load + validate task_graph
         task_graph_path = inputs.manifest_path.parent / "task_graph.v1.json"
@@ -331,13 +413,20 @@ class Verifier:
                 f"(or set --verifier-provider tool for no-LLM verifier)"
             )
 
-        # 4. Optional review_verdict
+        # 4. Optional review_verdict (Codex iter-2 must_fix #1 — bind to task_id)
         review_verdict: dict[str, Any] | None = None
         if inputs.review_verdict_path is not None:
             review_verdict = self._load_json(inputs.review_verdict_path)
             _validate_schema(review_verdict, _REVIEW_VERDICT_SCHEMA_NAME, inputs.review_verdict_path)
             if review_verdict.get("task_graph_id") != task_graph_id:
                 raise VerifierError("review_verdict task_graph_id mismatch")
+            # Bind the review_verdict to THIS task so a sibling task's
+            # verdict cannot be slipped into the verifier inputs.
+            if review_verdict.get("reviewed_task_id") != inputs.task_id:
+                raise VerifierError(
+                    f"review_verdict.reviewed_task_id "
+                    f"{review_verdict.get('reviewed_task_id')!r} does not match --task-id {inputs.task_id!r}"
+                )
 
         # 5. Optional gpp_status
         gpp_status: dict[str, Any] | None = None
@@ -367,7 +456,8 @@ class Verifier:
         commands.append({"command": _CHECK_GPP_GUARD, "outcome": gpp_outcome})
         failed_checks.extend(gpp_violations)
 
-        # metadata_secret_scan
+        # metadata_secret_scan — gpp_status also scanned (Codex iter-2
+        # plan-drift fix: secret scan covers gpp_status per plan doc §S1).
         artifact_payloads: dict[str, dict[str, Any]] = {
             "manifest": manifest,
             "task_graph": task_graph,
@@ -375,6 +465,8 @@ class Verifier:
         }
         if review_verdict is not None:
             artifact_payloads["review_verdict"] = review_verdict
+        if gpp_status is not None:
+            artifact_payloads["gpp_status"] = gpp_status
         secret_outcome, secret_violations, secret_detail = _check_secret_scan(
             worker_result=worker_result,
             review_verdict=review_verdict,
@@ -402,8 +494,16 @@ class Verifier:
             consulted["review_verdict"] = inputs.review_verdict_path
         if gpp_status_path is not None:
             consulted["gpp_status"] = gpp_status_path
-        artifact_hashes = _compute_artifact_hashes(consulted, base_dir=inputs.manifest_path.parent)
-        commands.append({"command": _CHECK_ARTIFACT_HASH, "outcome": "pass"})
+        # Codex iter-2 must_fix #2: base = repo_root so artifacts under
+        # both manifest_dir AND .claude/plans/ are reachable; silent
+        # skip + pass replaced with explicit fail entry.
+        artifact_hashes, hash_skipped = _compute_artifact_hashes(consulted, base_dir=self.repo_root)
+        hash_outcome: CheckOutcome = "fail" if hash_skipped else "pass"
+        if hash_skipped:
+            failed_checks.append(
+                f"artifact_hashing.consulted_paths_outside_repo_root_or_missing: {sorted(hash_skipped)}"
+            )
+        commands.append({"command": _CHECK_ARTIFACT_HASH, "outcome": hash_outcome})
 
         # 7. Build report payload
         scope_check_passed = scope_outcome == "pass"
