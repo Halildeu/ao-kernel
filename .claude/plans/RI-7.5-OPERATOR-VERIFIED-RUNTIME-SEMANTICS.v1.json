@@ -54,8 +54,8 @@
       "status": "verified",
       "evidence_class": "operator_script_verified",
       "script_ref": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_missing_backend_or_api_key_fail_closed",
-      "result_summary": "write_repo_vectors raises before any embed or store call when vector_store=None or embedding api_key is empty",
-      "sha256": "4ae6ebce0313ddfea19d3682fe708c36f6b5834943ac5ea5c8a9fa18fd7251a8"
+      "result_summary": "write_repo_vectors raises ValueError before any embed_text_fn or vector_store.store call when vector_store=None (msg mentions 'vector_store') or embedding api_key is empty (msg mentions 'API key'); real signature exercised",
+      "sha256": "5e91b6b0378964ef84fd7d6a6dd5ab86bf1ce765f41ad087ef5efdd4b5442c73"
     },
     {
       "id": "repo_scan_query_read_only_boundary",
@@ -106,7 +106,7 @@
     "all_unchanged": true
   },
   "cross_ai_review_ref": {
-    "thread_id": "tbd-codex-thread-id",
+    "thread_id": "019e6b3f-aadd-7b81-96c9-87842ac951a3",
     "implementer_provider": "anthropic",
     "reviewer_provider": "openai",
     "final_verdict": "REVISE"

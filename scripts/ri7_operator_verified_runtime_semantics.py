@@ -360,83 +360,138 @@ def _verify_write_vectors_confirmation_token_required() -> str:
 
 
 def _verify_missing_backend_or_api_key_fail_closed() -> str:
-    """In-process behavioral check: call ``write_repo_vectors`` with
-    ``vector_store=None``; assert ``ValueError`` is raised BEFORE any
-    embedding call happens.
+    """In-process behavioral check (Codex iter-2 absorb): use the REAL
+    write_repo_vectors signature (``vector_write_plan=``, ``embed_text_fn=``)
+    so we exercise the actual guards, not a TypeError.
 
-    Then call with a recording fake vector_store + an embedding_config
-    whose ``resolve_api_key()`` returns an empty string; assert
-    ``ValueError`` raised and the embed counter never incremented.
+    Case A: ``vector_store=None`` — ``ValueError`` raised BEFORE plan
+    validation and BEFORE any embed call.
+
+    Case B: valid plan + recording fake vector_store + empty api_key
+    — ``ValueError`` raised AFTER plan validation but BEFORE embed +
+    store calls. Exception message MUST mention "API key".
     """
+    from ao_kernel._internal.repo_intelligence.python_ast_indexer import build_python_ast_indexes
+    from ao_kernel._internal.repo_intelligence.repo_chunker import build_repo_chunks
     from ao_kernel._internal.repo_intelligence.repo_vector_indexer import write_repo_vectors
+    from ao_kernel._internal.repo_intelligence.repo_vector_plan import build_repo_vector_write_plan
+    from ao_kernel._internal.repo_intelligence.scanner import scan_repo
 
     embed_call_count = {"n": 0}
 
-    def _fake_embed(*_args: Any, **_kwargs: Any) -> list[float]:
+    def _fake_embed_text_fn(*_args: Any, **_kwargs: Any) -> list[float]:
         embed_call_count["n"] += 1
-        return [0.0, 0.0, 0.0]
+        return [0.0] * 1536
 
-    minimal_plan: dict[str, Any] = {
-        "schema_version": "repo_vector_index_plan.v1",
-        "namespace_prefix": "test/",
-        "upserts": [],
-        "deletes": [],
-        "diagnostics": [],
-    }
-
-    # Case A: vector_store=None
-    try:
-        write_repo_vectors(
-            project_root=_REPO_ROOT,
-            plan=minimal_plan,
-            vector_store=None,
-            embedding_config=_FakeEmbeddingConfig(api_key="anything"),
-            embed_text=_fake_embed,
+    # Build a valid plan once (used by both cases).
+    with tempfile.TemporaryDirectory() as tmp:
+        project_root = Path(tmp)
+        (project_root / "pkg").mkdir()
+        (project_root / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+        (project_root / "pkg" / "main.py").write_text(
+            "VALUE = 1\n\ndef run():\n    return VALUE\n", encoding="utf-8"
         )
-    except (TypeError, ValueError) as exc:
-        print(f"case_A_vector_store_none raised: {type(exc).__name__}: {exc}")
-    else:
-        raise AssertionError("write_repo_vectors accepted vector_store=None")
-
-    print(f"case_A embed_call_count: {embed_call_count['n']}")
-    if embed_call_count["n"] != 0:
-        raise AssertionError(
-            f"embed_text called {embed_call_count['n']}x even though vector_store=None — fail-closed broken"
+        (project_root / "pyproject.toml").write_text(
+            '[project]\nname = "ri75-fixture"\n', encoding="utf-8"
+        )
+        repo_map = scan_repo(project_root)
+        import_graph, symbol_index = build_python_ast_indexes(project_root, repo_map)
+        repo_chunks = build_repo_chunks(
+            project_root,
+            repo_map=repo_map,
+            import_graph=import_graph,
+            symbol_index=symbol_index,
+        )
+        valid_plan = build_repo_vector_write_plan(
+            repo_chunks=repo_chunks,
+            embedding_provider="openai",
+            embedding_model="text-embedding-3-small",
+            embedding_dimension=1536,
         )
 
-    # Case B: empty api_key
-    fake_store = _FakeVectorStore()
-    try:
-        write_repo_vectors(
-            project_root=_REPO_ROOT,
-            plan=minimal_plan,
-            vector_store=fake_store,
-            embedding_config=_FakeEmbeddingConfig(api_key=""),
-            embed_text=_fake_embed,
-        )
-    except (TypeError, ValueError) as exc:
-        print(f"case_B_empty_api_key raised: {type(exc).__name__}: {exc}")
-    else:
-        raise AssertionError("write_repo_vectors accepted empty api_key")
+        # Case A: vector_store=None — must raise ValueError mentioning vector_store
+        try:
+            write_repo_vectors(
+                project_root=project_root,
+                vector_write_plan=valid_plan,
+                vector_store=None,
+                embedding_config=_FakeEmbeddingConfig(
+                    api_key="anything",
+                    provider="openai",
+                    model="text-embedding-3-small",
+                ),
+                embed_text_fn=_fake_embed_text_fn,
+            )
+        except ValueError as exc:
+            print(f"case_A_vector_store_none raised ValueError: {exc}")
+            if "vector_store" not in str(exc):
+                raise AssertionError(
+                    f"case_A ValueError did not mention 'vector_store': {exc!r}"
+                ) from exc
+        else:
+            raise AssertionError("write_repo_vectors accepted vector_store=None")
 
-    print(f"case_B embed_call_count: {embed_call_count['n']}")
-    print(f"case_B fake_store.store_calls: {fake_store.store_calls}")
-    if embed_call_count["n"] != 0 or fake_store.store_calls != 0:
-        raise AssertionError(
-            "embed_text or vector_store.store called even though api_key was empty — fail-closed broken"
-        )
+        print(f"case_A embed_call_count: {embed_call_count['n']}")
+        if embed_call_count["n"] != 0:
+            raise AssertionError(
+                f"embed_text_fn called {embed_call_count['n']}x even though "
+                "vector_store=None — fail-closed broken"
+            )
+
+        # Case B: valid plan + fake store + empty api_key — must raise ValueError mentioning api_key
+        fake_store = _FakeVectorStore()
+        try:
+            write_repo_vectors(
+                project_root=project_root,
+                vector_write_plan=valid_plan,
+                vector_store=fake_store,
+                embedding_config=_FakeEmbeddingConfig(
+                    api_key="",
+                    provider="openai",
+                    model="text-embedding-3-small",
+                ),
+                embed_text_fn=_fake_embed_text_fn,
+            )
+        except ValueError as exc:
+            print(f"case_B_empty_api_key raised ValueError: {exc}")
+            if "API key" not in str(exc) and "api_key" not in str(exc).lower():
+                raise AssertionError(
+                    f"case_B ValueError did not mention 'API key': {exc!r}"
+                ) from exc
+        else:
+            raise AssertionError("write_repo_vectors accepted empty api_key")
+
+        print(f"case_B embed_call_count: {embed_call_count['n']}")
+        print(f"case_B fake_store.store_calls: {fake_store.store_calls}")
+        if embed_call_count["n"] != 0 or fake_store.store_calls != 0:
+            raise AssertionError(
+                "embed_text_fn or vector_store.store called even though "
+                "api_key was empty — fail-closed broken"
+            )
 
     return (
-        "write_repo_vectors raises before any embed or store call when vector_store=None or "
-        "embedding api_key is empty"
+        "write_repo_vectors raises ValueError before any embed_text_fn or vector_store.store "
+        "call when vector_store=None (msg mentions 'vector_store') or embedding api_key is empty "
+        "(msg mentions 'API key'); real signature exercised"
     )
 
 
 class _FakeEmbeddingConfig:
-    """Minimal fake exposing resolve_api_key() to feed write_repo_vectors."""
+    """Minimal fake matching the embedding_config protocol used by
+    ``write_repo_vectors``. Exposes ``resolve_api_key()`` plus
+    ``provider`` / ``model`` attributes the indexer cross-checks
+    against the write-plan's embedding_space.
+    """
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        provider: str = "openai",
+        model: str = "text-embedding-3-small",
+    ) -> None:
         self._api_key = api_key
+        self.provider = provider
+        self.model = model
 
     def resolve_api_key(self) -> str:
         return self._api_key
