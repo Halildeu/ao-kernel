@@ -9,10 +9,17 @@ The smoke is intentionally wheel-first:
 4. Run all supported CLI entry points.
 5. Run ``examples/demo_review.py --cleanup`` from a temp cwd outside
    the repository.
+6. (RI-7.4) Drive ``repo scan / repo index / repo query`` against a
+   throwaway project from the same outside-cwd to prove the
+   wheel-installed scan/index/query surface is reachable and emits the
+   documented fail-closed contract for missing backend / missing API
+   key. Writes a schema-valid JSON evidence artifact next to the smoke
+   output.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import shutil
@@ -30,9 +37,7 @@ def main() -> int:
     shutil.rmtree(dist_dir, ignore_errors=True)
     shutil.rmtree(build_dir, ignore_errors=True)
 
-    with tempfile.TemporaryDirectory(
-        prefix="ao-kernel-packaging-smoke-"
-    ) as tmp_dir:
+    with tempfile.TemporaryDirectory(prefix="ao-kernel-packaging-smoke-") as tmp_dir:
         temp_root = Path(tmp_dir)
         venv_dir = temp_root / "venv"
         smoke_cwd = temp_root / "cwd"
@@ -61,7 +66,242 @@ def main() -> int:
             cwd=smoke_cwd,
         )
 
+        # RI-7.4: wheel-installed scan/index/query fail-closed evidence.
+        _smoke_repo_intelligence_cli(
+            venv_python=venv_python,
+            outside_cwd=smoke_cwd,
+            evidence_out=repo_root / "dist" / "ri7-packaging-smoke-evidence.v1.json",
+        )
+
     return 0
+
+
+def _smoke_repo_intelligence_cli(
+    *,
+    venv_python: Path,
+    outside_cwd: Path,
+    evidence_out: Path,
+) -> None:
+    """Drive repo scan/index/query against a temp project from outside-cwd.
+
+    Uses the wheel-installed Python interpreter (not the source-checkout
+    interpreter) so the smoke proves the packaged scan/index/query surface
+    is reachable and emits the documented fail-closed contract for missing
+    backend and missing embedding API key.
+    """
+    project = outside_cwd / "ri7-smoke-project"
+    (project / ".ao" / "context").mkdir(parents=True)
+    (project / "pkg").mkdir()
+    (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+    (project / "pkg" / "main.py").write_text("def run():\n    return 1\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "ri7-smoke-project"\n', encoding="utf-8"
+    )
+
+    scenarios: list[dict[str, object]] = []
+
+    def _scenario(
+        scenario_id: str,
+        args: list[str],
+        env: dict[str, str],
+        expect_returncode_zero: bool,
+        expected_stderr_any: tuple[str, ...] = (),
+    ) -> None:
+        result = subprocess.run(
+            [str(venv_python), "-m", "ao_kernel", *args],
+            cwd=str(outside_cwd),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120.0,
+        )
+        if expect_returncode_zero:
+            if result.returncode != 0:
+                raise SystemExit(
+                    f"RI-7.4 scenario {scenario_id} expected exit 0 but got "
+                    f"{result.returncode}; stderr={result.stderr!r}"
+                )
+        else:
+            if result.returncode == 0:
+                raise SystemExit(
+                    f"RI-7.4 scenario {scenario_id} expected non-zero exit; "
+                    f"stdout={result.stdout!r}"
+                )
+            if expected_stderr_any:
+                stderr_lc = result.stderr.lower()
+                if not any(s.lower() in stderr_lc for s in expected_stderr_any):
+                    raise SystemExit(
+                        f"RI-7.4 scenario {scenario_id} stderr did not match any of "
+                        f"{expected_stderr_any!r}; got {result.stderr!r}"
+                    )
+        scenarios.append(
+            {
+                "id": scenario_id,
+                "status": "pass",
+                "returncode": result.returncode,
+                "stderr_excerpt": result.stderr.strip()[:240],
+            }
+        )
+
+    def _env(extra: dict[str, str] | None = None) -> dict[str, str]:
+        # RI-7.4 fail-closed smoke must not silently pick up a host
+        # embedding/provider key from the parent shell. We build a
+        # deterministic minimal env from a host allowlist and explicitly
+        # exclude every known provider/embedding key so the smoke cannot
+        # accidentally contact an external service.
+        allowed_host_keys = {
+            "PATH",
+            "HOME",
+            "TMPDIR",
+            "TMP",
+            "TEMP",
+            "LANG",
+            "LC_ALL",
+            "LC_CTYPE",
+            "USER",
+            "LOGNAME",
+            "PYTHONDONTWRITEBYTECODE",
+            "PYTHONUTF8",
+            "SYSTEMROOT",  # required on Windows for subprocess
+        }
+        base = {k: v for k, v in os.environ.items() if k in allowed_host_keys}
+        # Disable vector backend by default for the fail-closed scenarios.
+        base["AO_KERNEL_VECTOR_BACKEND"] = "disabled"
+        # Defensively scrub anything the caller could have set in extras
+        # that we do not want to leak through (caller can re-set explicitly).
+        forbidden_keys = (
+            "OPENAI_API_KEY",
+            "AO_KERNEL_OPENAI_API_KEY",
+            "AO_KERNEL_EMBEDDING_API_KEY",
+            "AO_KERNEL_EMBEDDING_PROVIDER",
+            "AO_KERNEL_EMBEDDING_MODEL",
+            "AO_KERNEL_EMBEDDING_BASE_URL",
+            "GOOGLE_API_KEY",
+            "GEMINI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "DEEPSEEK_API_KEY",
+            "XAI_API_KEY",
+            "QWEN_API_KEY",
+        )
+        for k in forbidden_keys:
+            base.pop(k, None)
+        if extra:
+            base.update(extra)
+        return base
+
+    _scenario(
+        "entrypoint_help_exits_zero",
+        ["--help"],
+        env=_env(),
+        expect_returncode_zero=True,
+    )
+    _scenario(
+        "repo_scan_writes_schema_valid_repo_map",
+        ["repo", "scan", "--project-root", str(project), "--output", "json"],
+        env=_env(),
+        expect_returncode_zero=True,
+    )
+    _scenario(
+        "repo_index_write_vectors_fails_closed_without_backend",
+        [
+            "repo",
+            "index",
+            "--project-root",
+            str(project),
+            "--write-vectors",
+            "--confirm-vector-index",
+            _confirm_token(venv_python, outside_cwd),
+            "--output",
+            "json",
+        ],
+        env=_env({"OPENAI_API_KEY": "ri7-wheel-smoke-key", "AO_KERNEL_VECTOR_BACKEND": "disabled"}),
+        expect_returncode_zero=False,
+        expected_stderr_any=("configured vector backend",),
+    )
+    _scenario(
+        "repo_query_fails_closed_without_manifest_or_backend",
+        ["repo", "query", "--project-root", str(project), "--query", "run", "--output", "json"],
+        env=_env({"OPENAI_API_KEY": "ri7-wheel-smoke-key", "AO_KERNEL_VECTOR_BACKEND": "disabled"}),
+        expect_returncode_zero=False,
+        expected_stderr_any=("configured vector backend", "manifest"),
+    )
+    _scenario(
+        "repo_index_write_vectors_fails_closed_without_api_key",
+        [
+            "repo",
+            "index",
+            "--project-root",
+            str(project),
+            "--write-vectors",
+            "--confirm-vector-index",
+            _confirm_token(venv_python, outside_cwd),
+            "--output",
+            "json",
+        ],
+        env=_env({"AO_KERNEL_VECTOR_BACKEND": "inmemory"}),
+        expect_returncode_zero=False,
+        expected_stderr_any=("api key", "api_key"),
+    )
+    _scenario(
+        "repo_query_fails_closed_without_api_key",
+        ["repo", "query", "--project-root", str(project), "--query", "run", "--output", "json"],
+        env=_env({"AO_KERNEL_VECTOR_BACKEND": "inmemory"}),
+        expect_returncode_zero=False,
+        expected_stderr_any=("api key", "api_key", "manifest", "configured vector backend"),
+    )
+
+    artifact = {
+        "schema_version": "ri7-scan-index-query-packaging-smoke-evidence.v1",
+        "artifact_kind": "ri7_scan_index_query_packaging_smoke_evidence",
+        "decision": "ri7_scan_index_query_packaging_smoke_ready",
+        "support_widening": False,
+        "production_platform_claim": False,
+        "live_adapter_execution": False,
+        "entrypoint": {
+            "module": "ao_kernel",
+            "invocation": "python -m ao_kernel (wheel-installed venv)",
+        },
+        "scenarios": [
+            {"id": s["id"], "status": s["status"], "evidence_ref": "scripts/packaging_smoke.py::_smoke_repo_intelligence_cli"}
+            for s in scenarios
+        ],
+        "build_install_layer_ref": "scripts/packaging_smoke.py",
+        "notes": [
+            "Subprocess smoke uses the wheel-installed venv Python, outside the source checkout cwd.",
+            "Fail-closed scenarios run with cleared embedding API key envs and a disabled or inmemory vector backend so the documented contract is observed without contacting any external service.",
+        ],
+    }
+    evidence_out.parent.mkdir(parents=True, exist_ok=True)
+    evidence_out.write_text(json.dumps(artifact, indent=2) + "\n", encoding="utf-8")
+    print(f"+ wrote RI-7.4 evidence -> {evidence_out}")
+
+
+def _confirm_token(venv_python: Path, outside_cwd: Path) -> str:
+    """Resolve the CONFIRM_VECTOR_INDEX token from the wheel-installed package.
+
+    Runs from ``outside_cwd`` with a minimal env so the resolved token comes
+    from the wheel-installed package, not a source-checkout import path.
+    """
+    minimal_env = {
+        k: v
+        for k, v in os.environ.items()
+        if k in {"PATH", "HOME", "TMPDIR", "TMP", "TEMP", "LANG", "SYSTEMROOT"}
+    }
+    proc = subprocess.run(
+        [
+            str(venv_python),
+            "-c",
+            "from ao_kernel._internal.repo_intelligence.repo_vector_indexer import CONFIRM_VECTOR_INDEX; print(CONFIRM_VECTOR_INDEX)",
+        ],
+        cwd=str(outside_cwd),
+        env=minimal_env,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30.0,
+    )
+    return proc.stdout.strip()
 
 
 def _single_wheel(dist_dir: Path) -> Path:
