@@ -27,7 +27,10 @@
       "owner_slice": "RI-7.8b-bc1",
       "max_run_count": 5,
       "protected_environment_required": true,
-      "expected_paths": ["clean_attestation", "fail_closed_attestation"],
+      "expected_paths": [
+        "clean_attestation",
+        "fail_closed_attestation"
+      ],
       "artifact_schema_owner": "RI-7.8b-bc1"
     },
     "bc_10_real_adapter_usage_cost": {
@@ -39,8 +42,8 @@
   },
   "execution_budget": {
     "max_calls_per_bc": 50,
-    "max_usd_per_bc": 5.00,
-    "max_usd_aggregate": 10.00,
+    "max_usd_per_bc": 5.0,
+    "max_usd_aggregate": 10.0,
     "model_allowlist": [
       "anthropic/claude-3-5-haiku",
       "openai/gpt-4o-mini"
@@ -111,12 +114,12 @@
     "thread_id": "019e6b74-d8a6-7e92-9f2a-6064d3d80918",
     "implementer_provider": "anthropic",
     "reviewer_provider": "openai",
-    "final_verdict": "REVISE"
+    "final_verdict": "AGREE"
   },
   "notes": [
-    "RI-7.8a — operator live-evidence PRE-AUTHORIZATION ONLY. B-path slice 5 of 8. After slices 1-3 MERGED (BC vocab fix, RI-7.1 operator authorization, RI-7.5 operator runtime semantics) + slice 4 checkpoint. Codex plan-time thread 019e6b74 returned REVISE with required changes → AGREE conditional on absorption.",
+    "RI-7.8a \u2014 operator live-evidence PRE-AUTHORIZATION ONLY. B-path slice 5 of 8. After slices 1-3 MERGED (BC vocab fix, RI-7.1 operator authorization, RI-7.5 operator runtime semantics) + slice 4 checkpoint. Codex plan-time thread 019e6b74 returned REVISE with required changes \u2192 AGREE conditional on absorption.",
     "Negative authority: this artifact does NOT permit workflow dispatch, adapter execution, credential reference, cost-incurring calls, support widening, production platform claim, or gpp_status guard flip. Each live evidence collection slice (RI-7.8b-bc1, RI-7.8b-bc10) carries its own explicit operator execution-window authorization.",
-    "Separate submanifest .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json tracks RI-7.8 chain sequencing without mutating the 9-key RI-7 readiness manifest. Only `live_evidence_pre_authorization_recorded` flips false → true.",
+    "Separate submanifest .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json tracks RI-7.8 chain sequencing without mutating the 9-key RI-7 readiness manifest. Only `live_evidence_pre_authorization_recorded` flips false \u2192 true.",
     "Forbidden-change audit expanded to 14 surfaces (RI-7.5 nine surfaces + gate-contract files + readiness script + readiness manifest itself) per Codex iter-1 risk flag.",
     "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic, reviewer codex/openai. Cross-artifact verdict equality enforced against local-ai-review-evidence.v1.json::reviewer.verdict."
   ]

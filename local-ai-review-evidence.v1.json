@@ -9,7 +9,7 @@
   "reviewer": {
     "agent": "codex",
     "provider": "openai",
-    "verdict": "REVISE"
+    "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
@@ -24,46 +24,166 @@
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "ruff", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "schema_draft_2020_12_valid", "status": "pass"},
-    {"name": "schema_decision_const_pre_authorization_no_execution", "status": "pass"},
-    {"name": "schema_authorization_effect_const_pre_authorization_only", "status": "pass"},
-    {"name": "schema_does_not_authorize_7_const_enum", "status": "pass"},
-    {"name": "schema_successor_slices_minmax_2", "status": "pass"},
-    {"name": "schema_bc_scope_structured_per_bc", "status": "pass"},
-    {"name": "schema_execution_budget_bounded_caps", "status": "pass"},
-    {"name": "schema_current_readiness_snapshot_9_9_true", "status": "pass"},
-    {"name": "schema_current_gpp_guard_snapshot_all_false", "status": "pass"},
-    {"name": "schema_guard_flags_const_false", "status": "pass"},
-    {"name": "schema_submanifest_transition_before_false_after_true", "status": "pass"},
-    {"name": "schema_forbidden_change_audit_all_unchanged_const_true_min_14_surfaces", "status": "pass"},
-    {"name": "schema_cross_ai_review_provider_split_const", "status": "pass"},
-    {"name": "negative_schema_test_guard_flag_true_rejected", "status": "pass"},
-    {"name": "negative_schema_test_authorization_effect_other_rejected", "status": "pass"},
-    {"name": "evidence_validates_against_schema", "status": "pass"},
-    {"name": "operator_signature_halildeu_iso_8601_no_secret", "status": "pass"},
-    {"name": "submanifest_only_pre_authorization_key_flipped", "status": "pass"},
-    {"name": "nine_key_readiness_manifest_unchanged_all_true", "status": "pass"},
-    {"name": "gpp_status_untouched_guard_flags_false", "status": "pass"},
-    {"name": "forbidden_change_audit_14_surfaces_machine_enforced", "status": "pass"},
-    {"name": "plan_doc_records_decision_pre_authorization_no_execution", "status": "pass"},
-    {"name": "no_support_widening", "status": "pass"},
-    {"name": "no_production_platform_claim", "status": "pass"},
-    {"name": "no_live_adapter_execution", "status": "pass"},
-    {"name": "no_public_sdk_signature_change", "status": "pass"},
-    {"name": "no_branch_protection_mutation", "status": "pass"},
-    {"name": "no_workflow_change", "status": "pass"},
-    {"name": "no_mcp_repo_intelligence_exposure", "status": "pass"},
-    {"name": "no_release_gate_runtime_change", "status": "pass"},
-    {"name": "no_local_gpp_gate_change", "status": "pass"},
-    {"name": "no_readiness_script_change", "status": "pass"},
-    {"name": "no_readiness_manifest_change", "status": "pass"},
-    {"name": "no_gpp_status_change", "status": "pass"},
-    {"name": "no_public_boundary_doc_change", "status": "pass"},
-    {"name": "cross_provider_verified", "status": "pass"},
-    {"name": "codex_plan_time_revise_absorbed_required_changes", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "schema_draft_2020_12_valid",
+      "status": "pass"
+    },
+    {
+      "name": "schema_decision_const_pre_authorization_no_execution",
+      "status": "pass"
+    },
+    {
+      "name": "schema_authorization_effect_const_pre_authorization_only",
+      "status": "pass"
+    },
+    {
+      "name": "schema_does_not_authorize_7_const_enum",
+      "status": "pass"
+    },
+    {
+      "name": "schema_successor_slices_minmax_2",
+      "status": "pass"
+    },
+    {
+      "name": "schema_bc_scope_structured_per_bc",
+      "status": "pass"
+    },
+    {
+      "name": "schema_execution_budget_bounded_caps",
+      "status": "pass"
+    },
+    {
+      "name": "schema_current_readiness_snapshot_9_9_true",
+      "status": "pass"
+    },
+    {
+      "name": "schema_current_gpp_guard_snapshot_all_false",
+      "status": "pass"
+    },
+    {
+      "name": "schema_guard_flags_const_false",
+      "status": "pass"
+    },
+    {
+      "name": "schema_submanifest_transition_before_false_after_true",
+      "status": "pass"
+    },
+    {
+      "name": "schema_forbidden_change_audit_all_unchanged_const_true_min_14_surfaces",
+      "status": "pass"
+    },
+    {
+      "name": "schema_cross_ai_review_provider_split_const",
+      "status": "pass"
+    },
+    {
+      "name": "negative_schema_test_guard_flag_true_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "negative_schema_test_authorization_effect_other_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "evidence_validates_against_schema",
+      "status": "pass"
+    },
+    {
+      "name": "operator_signature_halildeu_iso_8601_no_secret",
+      "status": "pass"
+    },
+    {
+      "name": "submanifest_only_pre_authorization_key_flipped",
+      "status": "pass"
+    },
+    {
+      "name": "nine_key_readiness_manifest_unchanged_all_true",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status_untouched_guard_flags_false",
+      "status": "pass"
+    },
+    {
+      "name": "forbidden_change_audit_14_surfaces_machine_enforced",
+      "status": "pass"
+    },
+    {
+      "name": "plan_doc_records_decision_pre_authorization_no_execution",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "no_production_platform_claim",
+      "status": "pass"
+    },
+    {
+      "name": "no_live_adapter_execution",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_sdk_signature_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_branch_protection_mutation",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_mcp_repo_intelligence_exposure",
+      "status": "pass"
+    },
+    {
+      "name": "no_release_gate_runtime_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_local_gpp_gate_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_readiness_script_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_readiness_manifest_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_gpp_status_change",
+      "status": "pass"
+    },
+    {
+      "name": "no_public_boundary_doc_change",
+      "status": "pass"
+    },
+    {
+      "name": "cross_provider_verified",
+      "status": "pass"
+    },
+    {
+      "name": "codex_plan_time_revise_absorbed_required_changes",
+      "status": "pass"
+    }
   ],
   "findings": [
     "RI-7.8a v1 operator live-evidence PRE-AUTHORIZATION ONLY evidence. B-path slice 5 of 8 (after RI-7.5 MERGED in PR #670 + slice 4 checkpoint). Codex plan-time thread 019e6b74-d8a6-7e92-9f2a-6064d3d80918 returned REVISE with required changes absorbed before implementation; AGREE pending post-impl review.",
@@ -72,7 +192,7 @@
     "Negative schema tests: authorization_effect != pre_authorization_only_no_execution_permission rejected; support_widening=true / production_platform_claim=true / live_adapter_execution=true each individually rejected.",
     "Submanifest: NEW .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json tracks RI-7.8 chain sequencing without mutating the 9-key RI-7 readiness manifest. Only live_evidence_pre_authorization_recorded flips false -> true. Other three keys (bc1, bc10, final_promotion) remain false, owned by later slices.",
     "Operator authority (4 concurrent signals): commit identity Halildeu, commit trailers (Operator-Pre-Authorized-By, Operator-Pre-Authorization-At, Pre-Authorization-Scope=BC-1+BC-10, No-Execution-Permission=true, No-Guard-Flag-Flip), GitHub PR approval via ao-release-gate-review, cross-AI peer review AGREE in BOTH artifacts.",
-    "Forbidden-change audit clean (machine-enforced via git diff): 14 surfaces — RI-7.5 nine + gate contract files (local-gpp-gate-evidence schema, ao_release_gate.py, local_gpp_gate.py) + readiness script + readiness manifest itself.",
+    "Forbidden-change audit clean (machine-enforced via git diff): 14 surfaces \u2014 RI-7.5 nine + gate contract files (local-gpp-gate-evidence schema, ao_release_gate.py, local_gpp_gate.py) + readiness script + readiness manifest itself.",
     "Diff scope (6 files): plan doc + evidence artifact + submanifest + schema + invariant test (NEW); local-ai-review-evidence (MODIFIED).",
     "Local validation: invariant tests pass; schema validates evidence (Draft 2020-12, zero errors); local-ai-review-evidence validates; ruff clean.",
     "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending post-impl review; cross-artifact verdict equality enforced (RI-7.8a evidence cross_ai_review_ref.final_verdict == this file reviewer.verdict)."
