@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ao:ri7-gp59-transition-plan-evidence:v1",
   "title": "RI-7.7 GP-5.9 Reclassification + Support-Boundary Transition Plan Evidence",
-  "description": "Evidence artifact recording the RI-7.7 docs-only transition plan: BC-1..BC-10 reclassification decisions (all 'retain') and the public boundary surfaces' edit contract (all 'unchanged_record_contract_only'). Operator/process evidence only; not release authority.",
+  "description": "Evidence artifact recording the RI-7.7 docs-only transition plan: BC-1..BC-10 reclassification decisions and the public boundary surfaces' edit contract. B-path post-impl absorb (Codex thread 019e691b iter-2+iter-3): vocabulary drift fix — the previous single field `current_status` confused two independent semantics, namely (a) the GP-5.9 framework's classification of each criterion in `scripts/gp5_platform_claim_decision.py` (where the source-truth status enum is `pass|blocked|exception`) and (b) whether each criterion still blocks a general-purpose production platform claim. These are now split into `current_gp59_status` (using the script's own enum exactly) and `promotion_readiness_status`, with `ri77_reclassification_decision` carrying RI-7.7's own decision per criterion. Operator/process evidence only; not release authority.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -30,31 +30,102 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "current_status", "ri77_reclassification_decision", "authority_required"],
+        "required": [
+          "id",
+          "current_gp59_status",
+          "ri77_reclassification_decision",
+          "promotion_readiness_status",
+          "authority_required"
+        ],
         "properties": {
           "id": {
             "type": "string",
             "enum": ["BC-1", "BC-2", "BC-3", "BC-4", "BC-5", "BC-6", "BC-7", "BC-8", "BC-9", "BC-10"]
           },
-          "current_status": {"type": "string", "enum": ["covered", "blocked"]},
+          "current_gp59_status": {
+            "type": "string",
+            "description": "Source-truth classification of this criterion in the GP-5.9 framework, mirroring the `success_criteria[].status` enum used by `scripts/gp5_platform_claim_decision.py` exactly. 'exception' is the deliberate-policy-exception state introduced by GPP-3c for BC-10. 'pass' (not 'covered') matches the script's own vocabulary — see `tests/test_ri7_gp59_transition_plan_invariant.py::test_ri77_evidence_bc_status_matches_gp5_decision_script`.",
+            "enum": ["pass", "blocked", "exception"]
+          },
           "ri77_reclassification_decision": {
             "type": "string",
-            "enum": ["retain_as_covered", "retain_as_blocker"]
+            "description": "RI-7.7's own decision about whether this criterion's classification changes at this slice. 'retain_as_pass' keeps a passing criterion passing; 'retain_as_blocker' keeps a GP-5.9-blocked criterion blocked; 'retain_as_promotion_blocker' captures a criterion whose GP-5.9 status is acceptable (e.g. 'exception') but which still blocks general-purpose production promotion until a documented evidence class is supplied.",
+            "enum": ["retain_as_pass", "retain_as_blocker", "retain_as_promotion_blocker"]
+          },
+          "promotion_readiness_status": {
+            "type": "string",
+            "description": "Whether this criterion is currently passing as a contributor to a general-purpose production platform claim, independent of its GP-5.9 status. 'pass' means no production-claim blocker; the other values name a concrete missing evidence class.",
+            "enum": [
+              "pass",
+              "blocked_until_protected_live_adapter_gate_attestation",
+              "blocked_until_live_usage_cost_evidence"
+            ]
+          },
+          "current_gp59_blockers": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true,
+            "description": "Open issue identifiers (or token strings) that `scripts/gp5_platform_claim_decision.py` currently treats as still blocking this criterion. Empty array means no open GP-5.9 blocker (typical for 'pass' or 'exception')."
+          },
+          "required_evidence_class": {
+            "type": "string",
+            "description": "Evidence class required to flip this criterion's promotion_readiness_status to 'pass'. 'none' for already-passing criteria; 'simulated' for criteria satisfiable by simulated/diagnostic-only evidence; 'live' for criteria that require real-adapter execution.",
+            "enum": ["none", "simulated", "live"]
+          },
+          "required_evidence_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "ref_status", "owner_slice", "must_exist_before_reclassification"],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Repo-relative path to the schema or artifact that must exist for reclassification."
+                },
+                "ref_status": {
+                  "type": "string",
+                  "enum": ["existing", "planned"],
+                  "description": "'existing' means the referenced file is already on main and the RI-7.7 invariant test asserts it exists; 'planned' means the referenced file is owned by a downstream slice listed in `owner_slice` and is not required to exist on main yet."
+                },
+                "owner_slice": {
+                  "type": "string",
+                  "enum": ["main", "RI-7.8a", "RI-7.8b-bc1", "RI-7.8b-bc10", "RI-7.8c"],
+                  "description": "The B-path slice (or `main`) that owns producing this artifact. RI-7.7 itself never produces these; the field documents which downstream PR must land them. Codex iter-4 absorb: enum (not pattern) to guarantee audit-grade restriction — extending the set requires an intentional schema migration PR with cross-AI review, not just a free-form string typo."
+                },
+                "must_exist_before_reclassification": {
+                  "type": "boolean",
+                  "description": "When true, RI-7.8c final promote PR MUST refuse to reclassify this BC if the referenced artifact has not landed. Always true for 'existing' refs; configurable for 'planned' refs."
+                }
+              }
+            },
+            "description": "Structured list of schema/artifact refs that a future supersession slice must supply (or, when ref_status='existing', that already exist). Used by RI-7.8c promote PR to gate BC reclassification."
+          },
+          "target_promotion_readiness_status_after_successful_supersession": {
+            "type": "string",
+            "description": "The `promotion_readiness_status` value this criterion is allowed to reach once supersession evidence lands AND that evidence passes its acceptance schema. If the live-evidence supersession itself fails, the criterion remains at its current `promotion_readiness_status` value; this field does not promise success.",
+            "enum": [
+              "pass",
+              "blocked_until_protected_live_adapter_gate_attestation",
+              "blocked_until_live_usage_cost_evidence"
+            ]
           },
           "authority_required": {"type": "string", "minLength": 1}
         }
       },
       "allOf": [
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-1"}, "current_status": {"const": "blocked"}, "ri77_reclassification_decision": {"const": "retain_as_blocker"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-2"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-3"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-4"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-5"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-6"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-7"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-8"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-9"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "BC-10"}, "current_status": {"const": "blocked"}, "ri77_reclassification_decision": {"const": "retain_as_blocker"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1}
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-1"}, "current_gp59_status": {"const": "blocked"}, "ri77_reclassification_decision": {"const": "retain_as_blocker"}, "promotion_readiness_status": {"const": "blocked_until_protected_live_adapter_gate_attestation"}, "required_evidence_class": {"const": "live"}, "required_evidence_refs": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "allOf": [{"contains": {"type": "object", "properties": {"path": {"const": "ao_kernel/defaults/schemas/claude-code-cli-failure-mode.schema.v1.json"}, "ref_status": {"const": "existing"}, "owner_slice": {"const": "main"}, "must_exist_before_reclassification": {"const": true}}, "required": ["path", "ref_status", "owner_slice", "must_exist_before_reclassification"]}, "minContains": 1, "maxContains": 1}, {"contains": {"type": "object", "properties": {"path": {"const": "ao_kernel/defaults/schemas/ri7-bc1-protected-live-adapter-attestation.schema.v1.json"}, "ref_status": {"const": "planned"}, "owner_slice": {"const": "RI-7.8b-bc1"}, "must_exist_before_reclassification": {"const": true}}, "required": ["path", "ref_status", "owner_slice", "must_exist_before_reclassification"]}, "minContains": 1, "maxContains": 1}]}, "target_promotion_readiness_status_after_successful_supersession": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status", "required_evidence_class", "required_evidence_refs", "target_promotion_readiness_status_after_successful_supersession"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-2"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-3"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-4"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-5"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-6"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-7"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-8"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-9"}, "current_gp59_status": {"const": "pass"}, "ri77_reclassification_decision": {"const": "retain_as_pass"}, "promotion_readiness_status": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-10"}, "current_gp59_status": {"const": "exception"}, "ri77_reclassification_decision": {"const": "retain_as_promotion_blocker"}, "promotion_readiness_status": {"const": "blocked_until_live_usage_cost_evidence"}, "required_evidence_class": {"const": "live"}, "required_evidence_refs": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "allOf": [{"contains": {"type": "object", "properties": {"path": {"const": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json"}, "ref_status": {"const": "existing"}, "owner_slice": {"const": "main"}, "must_exist_before_reclassification": {"const": true}}, "required": ["path", "ref_status", "owner_slice", "must_exist_before_reclassification"]}, "minContains": 1, "maxContains": 1}, {"contains": {"type": "object", "properties": {"path": {"const": "ao_kernel/defaults/schemas/ri7-bc10-real-adapter-usage-cost-aggregate.schema.v1.json"}, "ref_status": {"const": "planned"}, "owner_slice": {"const": "RI-7.8b-bc10"}, "must_exist_before_reclassification": {"const": true}}, "required": ["path", "ref_status", "owner_slice", "must_exist_before_reclassification"]}, "minContains": 1, "maxContains": 1}]}, "target_promotion_readiness_status_after_successful_supersession": {"const": "pass"}}, "required": ["id", "current_gp59_status", "ri77_reclassification_decision", "promotion_readiness_status", "required_evidence_class", "required_evidence_refs", "target_promotion_readiness_status_after_successful_supersession"]}, "minContains": 1, "maxContains": 1}
       ]
     },
     "boundary_surfaces": {
