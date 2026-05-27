@@ -15,6 +15,7 @@
       "local-ai-review-evidence.v1.json",
       "tests/test_repo_intelligence_vector_indexer.py",
       "tests/test_repo_intelligence_vector_retriever.py",
+      "tests/test_ri7_scan_index_query_packaging_smoke_invariant.py",
       "tests/test_ri7_vector_backend_e2e.py",
       "tests/test_ri7_vector_backend_e2e_evidence_invariant.py"
     ]
