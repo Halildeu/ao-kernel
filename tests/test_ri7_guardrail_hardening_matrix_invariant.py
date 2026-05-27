@@ -189,6 +189,32 @@ def _in_ci() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI") == "true"
 
 
+def _in_pr_context() -> bool:
+    """Codex iter-5 absorb (kalıcı çözüm): the forbidden-diff invariant
+    is only meaningful in a pull-request context. A bare ``push`` event
+    (or any non-PR CI run) has no concept of "base ref to diff against"
+    — so the test should skip there, even in CI, instead of fail-closing
+    on a missing base.
+
+    Detection priority:
+      * GitHub Actions ``GITHUB_EVENT_NAME == "pull_request"`` is the
+        canonical PR signal.
+      * Falling back to "event payload carries a ``pull_request`` block"
+        catches custom CI setups that emulate the same shape.
+    """
+    if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        return True
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if event_path:
+        try:
+            event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+            if isinstance(event.get("pull_request"), dict):
+                return True
+        except (OSError, json.JSONDecodeError, KeyError):
+            return False
+    return False
+
+
 def _resolve_diff_base() -> tuple[str | None, str]:
     """Codex iter-4 absorb (kalıcı çözüm rule): a single source for the
     PR diff base is fragile. ``actions/checkout@v6`` defaults to
@@ -282,15 +308,20 @@ def test_ri72_forbidden_surfaces_actually_unchanged_in_diff() -> None:
             "no PR diff base could be resolved (tried github_event_payload, "
             "GITHUB_BASE_REF fetch, origin/main, local main)"
         )
-        if _in_ci():
-            pytest.fail(f"forbidden-diff invariant cannot run in CI: {msg}")
+        # Codex iter-5 absorb: fail-closed only fires in CI AND in a
+        # PR context. A bare push/scheduled CI run has no "base" to
+        # diff against, so requiring a base there is a category error,
+        # not a misconfiguration. The forbidden-diff guarantee for
+        # such runs is supplied by the corresponding PR run.
+        if _in_ci() and _in_pr_context():
+            pytest.fail(f"forbidden-diff invariant cannot run in CI PR: {msg}")
         pytest.skip(msg)
 
     diff_proc = _git(["diff", "--name-only", f"{base}...HEAD"])
     if diff_proc.returncode != 0:
         msg = f"git diff against base ({source}={base!r}) failed: {diff_proc.stderr.strip() or 'unknown error'}"
-        if _in_ci():
-            pytest.fail(f"forbidden-diff invariant cannot run in CI: {msg}")
+        if _in_ci() and _in_pr_context():
+            pytest.fail(f"forbidden-diff invariant cannot run in CI PR: {msg}")
         pytest.skip(msg)
 
     changed_files = {line.strip() for line in diff_proc.stdout.splitlines() if line.strip()}
