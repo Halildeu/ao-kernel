@@ -69,24 +69,25 @@ def test_ri74_evidence_artifact_records_closed_boundary_and_six_scenarios() -> N
     assert evidence["build_install_layer_ref"] == "scripts/packaging_smoke.py"
 
 
-def test_ri74_manifest_records_only_packaging_smoke_true() -> None:
+def test_ri74_manifest_records_packaging_smoke_true_and_operator_bound_false() -> None:
     """The RI-7 evidence manifest committed with this slice flips
-    `scan_index_query_packaging_smoke` to true and keeps every other
-    RI-7.x evidence key false — this slice does not retroactively close
-    other rows.
+    `scan_index_query_packaging_smoke` to true. Other RI-7.x evidence
+    keys are owned by their own slices and may flip true independently;
+    this test only pins the operator-bound flags as false because no
+    docs-only slice can legitimately flip those.
     """
     manifest = json.loads(_read(_MANIFEST_PATH))
     assert manifest["artifact_kind"] == "ri7_evidence_manifest"
     assert manifest["scan_index_query_packaging_smoke"] is True
+    # Only the operator-bound flags are pinned False here — the
+    # remaining RI-7.x evidence keys are owned by their own slices
+    # (e.g. RI-7.3 vector_backend_e2e_evidence, RI-7.6 cross_lane,
+    # RI-7.7 gp59/support_boundary) and may legitimately be True once
+    # those slices have also landed.
     for key in (
         "explicit_operator_authorization",
         "general_purpose_platform_claim_authorization",
-        "guardrail_hardening_matrix",
-        "vector_backend_e2e_evidence",
         "operator_verified_runtime_semantics",
-        "cross_lane_production_matrix_evidence",
-        "gp59_reclassification_plan",
-        "support_boundary_transition_plan",
     ):
         assert manifest[key] is False, key
 

@@ -1,0 +1,62 @@
+{
+  "schema_version": "ri7-vector-backend-e2e-evidence.v1",
+  "artifact_kind": "ri7_vector_backend_e2e_evidence",
+  "decision": "ri7_vector_backend_e2e_ready",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "backend": {
+    "type": "inmemory",
+    "class_name": "InMemoryVectorStore",
+    "external_api_calls": false
+  },
+  "scenarios": [
+    {
+      "id": "write_happy_path",
+      "status": "pass",
+      "evidence_ref": "tests/test_ri7_vector_backend_e2e.py::test_write_happy_path_indexes_chunks_into_inmemory_backend"
+    },
+    {
+      "id": "stale_cleanup",
+      "status": "pass",
+      "evidence_ref": "tests/test_ri7_vector_backend_e2e.py::test_stale_cleanup_deletes_previous_manifest_keys_before_upserts"
+    },
+    {
+      "id": "namespace_isolation",
+      "status": "pass",
+      "evidence_ref": "tests/test_ri7_vector_backend_e2e.py::test_namespace_isolation_excludes_non_repo_and_bad_metadata_candidates"
+    },
+    {
+      "id": "query_hash_line_validation",
+      "status": "pass",
+      "evidence_ref": "tests/test_ri7_vector_backend_e2e.py::test_query_hash_line_validation_marks_mutated_sources_stale_without_leaking_content"
+    },
+    {
+      "id": "missing_backend_fail_closed_write",
+      "status": "pass",
+      "evidence_ref": "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_fails_closed_when_vector_store_is_none"
+    },
+    {
+      "id": "missing_backend_fail_closed_query",
+      "status": "pass",
+      "evidence_ref": "tests/test_repo_intelligence_vector_retriever.py::test_query_repo_vectors_fails_closed_when_vector_store_is_none"
+    },
+    {
+      "id": "missing_api_key_fail_closed_write",
+      "status": "pass",
+      "evidence_ref": "tests/test_repo_intelligence_vector_indexer.py::test_write_repo_vectors_treats_none_api_key_as_missing"
+    },
+    {
+      "id": "missing_api_key_fail_closed_query",
+      "status": "pass",
+      "evidence_ref": "tests/test_repo_intelligence_vector_retriever.py::test_query_repo_vectors_treats_none_api_key_as_missing"
+    }
+  ],
+  "notes": [
+    "Backend is the repo-owned InMemoryVectorStore. The production resolver path is pinned by tests/test_ri7_vector_backend_e2e.py::test_resolve_vector_store_with_env_inmemory_returns_inmemory_backend and ::test_resolver_inmemory_backend_supports_e2e_write_query_flow which together prove AO_KERNEL_VECTOR_BACKEND=inmemory yields an InMemoryVectorStore that supports the same E2E write/query flow as a direct construction.",
+    "Embedding callable is a deterministic fake injected at the call site; no provider HTTP call occurs.",
+    "Gate-consumable evidence manifest: .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json with vector_backend_e2e_evidence=true and every other RI-7.x key still false; running scripts/repo_intelligence_tier_promotion_readiness.py with this manifest drops the vector_backend_e2e_evidence_missing blocker while remaining RI-7 blockers stay.",
+    "Readiness gate without a manifest still reports decision=blocked_operator_bound_evidence_required with support_widening=false, production_platform_claim=false, live_adapter_execution=false.",
+    "No support widening, no production platform claim, no live adapter execution, no public SDK signature change, no MCP exposure, no context-compiler auto-feed, no branch protection or workflow mutation."
+  ]
+}
