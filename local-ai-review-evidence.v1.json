@@ -45,7 +45,7 @@
     "Test coverage: local pytest tests/test_ao_ma_8_e2e_smoke.py yields 16 passed, 1 skipped (the PR-scope test correctly skips because this governance PR doesn't touch the AO-MA-8 plan doc). Full suite no regression. ruff + mypy clean.",
     "Forbidden actions korundu: no workflow file change, no branch protection ruleset mutation, no gpp_status.v1.json mutation, no scripts/gp5_platform_claim_decision change, no public SDK surface change, no runtime orchestration module change, no release-gate change. NO admin bypass. NO --no-verify.",
     "guard_flags closed: support_widening, production_platform_claim, live_adapter_execution all stay literal false. No support widening claim, no production platform claim, no live adapter execution.",
-    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex MCP review pending (will be requested after this PR is open); this evidence file records the pre-review state; verdict will flip from REVISE (initial) to AGREE once Codex AGREEs on the self-gate pattern."
+    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e6a84-99cc-77c3-9f6e-e042b49ad4d4 iter-1 AGREE (ready_for_merge_decision: true; no must_fix). 4 nice-to-have absorbed: (a) CI/operator approval still required as separate gate, (b) this verdict trace update, (c) AO-MA-9 PR-scope test self-gate to be added in PR #663 follow-up commit (not in this PR's scope), (d) optional future shared helper refactor."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
