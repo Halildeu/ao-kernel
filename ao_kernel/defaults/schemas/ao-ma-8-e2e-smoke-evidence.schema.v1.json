@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-8-e2e-smoke-evidence:v1",
+  "title": "AO-MA-8 End-to-End Smoke Evidence (Receipt)",
+  "description": "Committed descriptive receipt for the AO-MA-8 end-to-end smoke pipeline. NOT release authority — the authority artifact for AO-MA-8 evidence is the runtime integration_report.v1.json that the test produces. The receipt pins expected invariants so the test can fail-closed on receipt-vs-runtime drift.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "pipeline_order",
+    "shadow_mode_pins",
+    "expected_invariants",
+    "cross_provider_chain",
+    "authority_artifact",
+    "guard_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-8-e2e-smoke-evidence.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_8_e2e_smoke_evidence"
+    },
+    "decision": {
+      "type": "string",
+      "const": "ao_ma_8_e2e_smoke_ready"
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "pipeline_order": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "orchestrator_plan",
+          "worker_runner_spawn",
+          "mock_implementer_aoma45_surrogate",
+          "reviewer_review",
+          "verifier_verify",
+          "integrator_integrate"
+        ]
+      }
+    },
+    "shadow_mode_pins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tmp_repo_only",
+        "synthetic_origin_main",
+        "github_write",
+        "git_push",
+        "gh_pr_create",
+        "auto_merge",
+        "branch_protection_change",
+        "gpp_status_mutation",
+        "assembly_plan_executed",
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution"
+      ],
+      "properties": {
+        "tmp_repo_only": {"type": "boolean", "const": true},
+        "synthetic_origin_main": {"type": "boolean", "const": true},
+        "github_write": {"type": "boolean", "const": false},
+        "git_push": {"type": "boolean", "const": false},
+        "gh_pr_create": {"type": "boolean", "const": false},
+        "auto_merge": {"type": "boolean", "const": false},
+        "branch_protection_change": {"type": "boolean", "const": false},
+        "gpp_status_mutation": {"type": "boolean", "const": false},
+        "assembly_plan_executed": {"type": "boolean", "const": false},
+        "support_widening": {"type": "boolean", "const": false},
+        "production_platform_claim": {"type": "boolean", "const": false},
+        "live_adapter_execution": {"type": "boolean", "const": false}
+      }
+    },
+    "expected_invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_overall_status",
+        "report_conflicts_length",
+        "report_accepted_worker_results_length",
+        "report_rejected_worker_results_length",
+        "report_assembly_plan_length_min",
+        "guard_flags_closed"
+      ],
+      "properties": {
+        "decision_overall_status": {
+          "type": "string",
+          "const": "all_accepted"
+        },
+        "report_conflicts_length": {"type": "integer", "const": 0},
+        "report_accepted_worker_results_length": {"type": "integer", "const": 1},
+        "report_rejected_worker_results_length": {"type": "integer", "const": 0},
+        "report_assembly_plan_length_min": {"type": "integer", "minimum": 1},
+        "guard_flags_closed": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_provider_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementer", "reviewer", "verifier"],
+      "properties": {
+        "implementer": {"type": "string", "const": "anthropic"},
+        "reviewer": {"type": "string", "const": "openai"},
+        "verifier": {"type": "string", "const": "tool"}
+      }
+    },
+    "authority_artifact": {
+      "type": "string",
+      "const": "integration_report.v1.json"
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {"type": "boolean", "const": false},
+        "production_platform_claim": {"type": "boolean", "const": false},
+        "live_adapter_execution": {"type": "boolean", "const": false}
+      }
+    }
+  }
+}
