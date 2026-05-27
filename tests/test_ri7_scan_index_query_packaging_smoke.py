@@ -20,6 +20,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest  # noqa: F401  # imported for type hints / future fixtures
+
+# The repo intelligence subsystem requires this exact confirmation token to
+# allow a write-vector run. Top-level import keeps lint clean (E402).
+from ao_kernel._internal.repo_intelligence.repo_vector_indexer import CONFIRM_VECTOR_INDEX
+
 
 # RI-7.4 supplementary subprocess CLI surface: uses the same deterministic
 # env shape as the wheel-installed smoke in scripts/packaging_smoke.py so
@@ -57,11 +63,6 @@ _FORBIDDEN_PROVIDER_ENV_KEYS = (
     "QWEN_API_KEY",
 )
 _VECTOR_BACKEND_ENV = "AO_KERNEL_VECTOR_BACKEND"
-
-# The repo intelligence subsystem requires this exact confirmation token to
-# allow a write-vector run. We use the value imported from the package so
-# the smoke stays in sync with the runtime contract.
-from ao_kernel._internal.repo_intelligence.repo_vector_indexer import CONFIRM_VECTOR_INDEX
 
 
 def _cli_env(extra: dict[str, str] | None = None) -> dict[str, str]:
