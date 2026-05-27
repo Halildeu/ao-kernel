@@ -1,0 +1,32 @@
+{
+  "schema_version": "ri7-gp59-transition-plan-evidence.v1",
+  "artifact_kind": "ri7_gp59_reclassification_support_boundary_transition_plan_evidence",
+  "decision": "ri7_gp59_transition_plan_ready",
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "bc_baseline": [
+    {"id": "BC-1", "current_status": "blocked", "ri77_reclassification_decision": "retain_as_blocker", "authority_required": "Operator authorization PR + protected live-adapter gate attestation artifact"},
+    {"id": "BC-2", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-3", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-4", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-5", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-6", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-7", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-8", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-9", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
+    {"id": "BC-10", "current_status": "blocked", "ri77_reclassification_decision": "retain_as_blocker", "authority_required": "Operator authorization PR + real-adapter usage/cost evidence artifact"}
+  ],
+  "boundary_surfaces": [
+    {"path": "docs/PUBLIC-BETA.md", "ri77_edit_decision": "unchanged_record_contract_only"},
+    {"path": "docs/SUPPORT-BOUNDARY.md", "ri77_edit_decision": "unchanged_record_contract_only"},
+    {"path": "docs/KNOWN-BUGS.md", "ri77_edit_decision": "unchanged_record_contract_only"}
+  ],
+  "notes": [
+    "RI-7.7 is docs-only: the BC-1..BC-10 baseline is left untouched (no reclassification happens in this slice), and docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md are read-only references. The plan records exactly what a future RI-7.8 operator promotion decision PR would need to do.",
+    "Net effect on BC baseline: zero. Eight covered rows (BC-2..BC-9) stay covered; two blockers (BC-1, BC-10) stay blocked. Any change requires the operator-bound authorization path documented in the plan doc.",
+    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json flips both gp59_reclassification_plan and support_boundary_transition_plan to true. Running scripts/repo_intelligence_tier_promotion_readiness.py with this manifest drops both blockers while remaining RI-7.1, 7.5, 7.8 blockers stay.",
+    "Cross-AI peer review (HARD RULE CC-2): implementer claude/anthropic; reviewer codex/openai; verdict recorded in local-ai-review-evidence.v1.json next to this artifact.",
+    "No support widening. No production platform claim. No live adapter execution. No public SDK signature change. No MCP exposure. No context-compiler auto-feed. No workflow or branch protection mutation. No gpp_status.v1.json or scripts/gp5_platform_claim_decision.py edit. No public boundary surface edit (docs/PUBLIC-BETA.md / SUPPORT-BOUNDARY.md / KNOWN-BUGS.md untouched)."
+  ]
+}
