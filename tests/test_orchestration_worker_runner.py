@@ -702,3 +702,109 @@ def test_delete_branch_returns_true_when_git_succeeds(
     runner = WorkerRunner(repo_root=repo)
     _run(["git", "-C", str(repo), "branch", "easy-delete"])
     assert runner._delete_branch("easy-delete") is True
+
+
+# ---------------------------------------------------------------------------
+# Codex iter-5 absorb tests
+# ---------------------------------------------------------------------------
+
+
+def test_spawn_manifest_envelope_rejects_guard_flag_widening(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-5 LOW: manifest guard_flags must be all literal False."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-gf11111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["guard_flags"]["support_widening"] = True
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="support_widening"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_spawn_manifest_envelope_rejects_missing_guard_flags(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Manifest without guard_flags is fail-closed."""
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-gf22222",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["guard_flags"]
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runner = WorkerRunner(repo_root=repo)
+    with pytest.raises(WorkerRunnerError, match="guard_flags"):
+        runner.spawn(manifest_path=manifest_path)
+
+
+def test_cleanup_applies_manifest_envelope_validation(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-5 MEDIUM: cleanup validates envelope BEFORE reading task_graph_id.
+
+    The runner_report.v1.json file must already exist for cleanup to
+    even reach its own report-load step; so we use a malformed
+    manifest plus a pre-existing report path: cleanup must fail at
+    envelope validation, not later with a KeyError.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-mfn1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    runner.spawn(manifest_path=manifest_path)
+    # Tamper the manifest envelope after spawn but before cleanup
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schema_version"] = "totally-wrong"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with pytest.raises(WorkerRunnerError, match="schema_version"):
+        runner.cleanup(manifest_path=manifest_path)
+
+
+def test_cleanup_manifest_sha256_mismatch_with_runner_report_fails(
+    fixture_repo: tuple[Path, str],
+) -> None:
+    """Codex iter-5 MEDIUM cross-check: cleanup refuses when manifest_sha256
+    in the report does not match the on-disk manifest hash.
+
+    This protects against the operator running ``spawn`` on manifest A,
+    then quietly swapping the manifest to manifest B, then running
+    ``cleanup`` — cleanup would otherwise apply manifest A's worktree
+    layout to manifest B's intent.
+    """
+
+    repo, base_sha = fixture_repo
+    base_dir = repo / ".ao" / "orchestration"
+    manifest_path = _write_manifest(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-mfx1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/x.py"]}],
+    )
+    runner = WorkerRunner(repo_root=repo)
+    runner.spawn(manifest_path=manifest_path)
+    # Mutate the manifest in a way that the envelope validator still
+    # accepts (whitespace) so we reach the manifest_sha256 cross-check.
+    text = manifest_path.read_text(encoding="utf-8")
+    manifest_path.write_text(text + "\n", encoding="utf-8")
+    with pytest.raises(WorkerRunnerError, match="manifest_sha256 mismatch"):
+        runner.cleanup(manifest_path=manifest_path)

@@ -162,6 +162,22 @@ def _validate_manifest_envelope(manifest: dict[str, Any], source: Path) -> None:
             f"{source.name} must declare exactly one task_graph.v1.json artifact entry (got {task_graph_entries})"
         )
 
+    # Codex iter-5 absorb: manifest guard_flags must agree with the
+    # no-support-widening / no-production-platform-claim / no-live-adapter
+    # contract enforced everywhere else in the AO-MA chain. The other
+    # AO-MA artifacts have these checked by their bundled JSON Schema;
+    # the manifest envelope is the missing link.
+    guard_flags = manifest.get("guard_flags")
+    if not isinstance(guard_flags, dict):
+        raise WorkerRunnerError(f"{source.name} guard_flags must be an object")
+    for required in ("support_widening", "production_platform_claim", "live_adapter_execution"):
+        value = guard_flags.get(required)
+        if value is not False:
+            raise WorkerRunnerError(
+                f"{source.name} guard_flags.{required} must be the literal boolean False "
+                f"(got {value!r}); AO-MA no-widening contract"
+            )
+
 
 def _path_is_under(child: Path, parent: Path) -> bool:
     """Return True when ``child`` is the same as or under ``parent``."""
@@ -344,6 +360,12 @@ class WorkerRunner:
 
         manifest_path = manifest_path.resolve()
         manifest = self._load_json(manifest_path)
+        # Codex iter-5 absorb: cleanup must apply the SAME envelope
+        # validation as spawn BEFORE reading any manifest field. The
+        # on-disk manifest is a trust boundary just like at spawn time;
+        # a malformed or tampered manifest could otherwise cause a
+        # KeyError or — worse — a wrong/traversal report path lookup.
+        _validate_manifest_envelope(manifest, manifest_path)
         task_graph_id = manifest["task_graph_id"]
         base_dir = manifest_path.parent.parent
 
@@ -360,6 +382,20 @@ class WorkerRunner:
         # schema-invalid report would mean we operate on undefined worker
         # entries; fail-closed here keeps the runner the trust gate.
         _validate_ao_ma_artifact(report, _RUNNER_REPORT_SCHEMA_NAME, report_path)
+        # Codex iter-5 absorb: ensure we're cleaning up the worktrees the
+        # CURRENT manifest produced. If someone replaces the manifest
+        # between spawn and cleanup (without re-running spawn) the
+        # runner_report's manifest_sha256 will diverge from the on-disk
+        # manifest hash; cleanup would then operate on the wrong batch
+        # of worktrees.
+        report_manifest_sha256 = report.get("manifest_sha256")
+        on_disk_manifest_sha256 = sha256_of(manifest_path)
+        if report_manifest_sha256 != on_disk_manifest_sha256:
+            raise WorkerRunnerError(
+                f"manifest_sha256 mismatch between runner_report and manifest "
+                f"({report_manifest_sha256!r} vs {on_disk_manifest_sha256!r}); "
+                f"re-run spawn to refresh the runner report"
+            )
 
         removed: list[str] = []
         kept_dirty: list[str] = []
