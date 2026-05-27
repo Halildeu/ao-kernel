@@ -201,9 +201,10 @@ def _relativize(path_str: str | None, base_dir: Path) -> str | None:
         return str(p.resolve().relative_to(base_dir.resolve()))
     except ValueError as exc:
         raise IntegratorError(
-            f"evidence path {p!s} is outside base_dir {base_dir!s}; "
-            f"refusing to bare-name it (audit provenance lost). "
-            f"Pass --repo-root or move evidence under <manifest_dir>/.."
+            f"Evidence path is outside the integration artifact base {base_dir!s}: "
+            f"{p!s}. Refusing to bare-name it (audit provenance lost). "
+            f"Re-run spawn/invocation with artifacts under that base, or pass "
+            f"evidence paths located under the manifest artifact tree."
         ) from exc
 
 
@@ -263,16 +264,29 @@ class Integrator:
     ) -> IntegrationDecision:
         """Read artifacts → policy decide → emit + return IntegrationDecision.
 
-        Trust boundary (Codex iter-2/3 absorb):
+        Trust boundary (Codex iter-2/3/5/6 absorb — cumulative):
         1. manifest envelope validation BEFORE reading task_graph_id
-        2. runner_report schema validation on disk-read
-        3. manifest_sha256 cross-check NOT REQUIRED here (AO-MA-4 owns spawn-time
-           binding; AO-MA-5 may run independently of spawn freshness)
-        4. emit only when trust boundary valid; emit=False supports dry-run for tests
+        2. task_graph schema + cross-ref (task_graph_id matches manifest)
+        3. runner_report schema + cross-ref:
+           - runner_report.task_graph_id == manifest.task_graph_id
+           - runner_report.manifest_sha256 == sha256_of(manifest_path)
+           - runner_report.base_sha == task_graph.base_sha
+        4. runner_report.workers[*].status allowlist (only prepared +
+           skipped_existing_idempotent are integrate-eligible)
+        5. Per-worker artifact cross-refs (worker_result.task_id ==
+           runner worker.task_id, review.reviewed_task_id == task_id,
+           verification verified_task_ids includes task_id; all
+           task_graph_id fields equal manifest.task_graph_id)
+        6. emit only when trust boundary valid; the ``emit`` parameter
+           below is a TEST-ONLY scaffolding flag for unit tests that
+           want to assert decision shape without writing to disk —
+           the AO-MA-5 v1 producer always writes when invoked through
+           the CLI (no "wet/dry" runtime mode; Codex iter-2 #1 absorb).
 
         Does NOT raise for not_integratable / rejected / conflict outcomes —
         returns IntegrationDecision with the corresponding decision states.
-        Raises IntegratorError only for true I/O / schema-load failures.
+        Raises IntegratorError only for true I/O / schema-load failures
+        and trust-boundary violations.
         """
 
         manifest_path = manifest_path.resolve()
@@ -320,12 +334,31 @@ class Integrator:
         # Codex iter-5 MEDIUM absorb: empty workers → trust-boundary failure
         # (was emitting empty integration_report which contradicts the
         # "at least one worker decision" emit invariant from iter-4).
-        task_ids = [w["task_id"] for w in runner_report.get("workers", [])]
+        runner_workers = runner_report.get("workers", [])
+        task_ids = [w["task_id"] for w in runner_workers]
         if not task_ids:
             raise IntegratorError(
                 "runner_report.v1.json has no worker entries; trust boundary requires "
                 "at least one worker decision to emit a meaningful integration_report"
             )
+
+        # Codex iter-6 must_fix absorb: runner worker status allowlist.
+        # AO-MA-4 reports per-worker status; only ``prepared`` and
+        # ``skipped_existing_idempotent`` are integrate-eligible (worktree
+        # is on disk + branch ready). Other statuses (failed_*, skipped_dry_run)
+        # mean AO-MA-4 did NOT successfully prepare the worker; running the
+        # accept gate against external evidence in those cases would bypass
+        # the preparation truth that runner_report carries.
+        _INTEGRATE_ELIGIBLE_RUNNER_STATUSES = {"prepared", "skipped_existing_idempotent"}
+        for entry in runner_workers:
+            entry_status = entry.get("status")
+            if entry_status not in _INTEGRATE_ELIGIBLE_RUNNER_STATUSES:
+                raise IntegratorError(
+                    f"runner_report.v1.json worker {entry.get('task_id')!r} has status "
+                    f"{entry_status!r}; only {sorted(_INTEGRATE_ELIGIBLE_RUNNER_STATUSES)} are "
+                    f"integrate-eligible. AO-MA-4 preparation truth: failed_* / skipped_dry_run "
+                    f"workers were never produced. Re-run spawn or remove the worker from the manifest."
+                )
 
         worker_result_paths = worker_result_paths or {}
         review_verdict_paths = review_verdict_paths or {}

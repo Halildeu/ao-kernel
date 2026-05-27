@@ -1440,7 +1440,7 @@ def test_relativize_path_outside_base_dir_raises_integrator_error(repo: tuple[Pa
     base_dir.mkdir()
     # An absolute path OUTSIDE base_dir → should raise IntegratorError
     outside = tmp_path / "elsewhere" / "worker_result.v1.json"
-    with pytest.raises(IntegratorError, match="outside base_dir"):
+    with pytest.raises(IntegratorError, match="outside the integration artifact base"):
         _relativize(str(outside), base_dir)
 
 
@@ -1450,6 +1450,89 @@ def test_relativize_preserves_none_sentinel(tmp_path: Path) -> None:
     from ao_kernel.orchestration.integrator import _relativize
 
     assert _relativize(None, tmp_path) is None
+
+
+def test_integrate_rejects_runner_status_failed_branch_exists_mismatch(repo: tuple[Path, str]) -> None:
+    """Codex iter-6 must_fix: runner worker status outside allowlist → IntegratorError exit 2.
+
+    AO-MA-4 preparation truth: failed_* statuses mean the worker was NOT
+    successfully prepared. The accept gate must not bypass that.
+    """
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-rsf1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["workers"][0]["status"] = "failed_branch_exists_mismatch"
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="integrate-eligible"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+    # NO integration_report emitted
+    assert not (out_dir / "integration_report.v1.json").exists()
+
+
+def test_integrate_rejects_runner_status_skipped_dry_run(repo: tuple[Path, str]) -> None:
+    """Codex iter-6 must_fix: skipped_dry_run runner workers must NOT integrate-eligible."""
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-sdr1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["workers"][0]["status"] = "skipped_dry_run"
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    with pytest.raises(IntegratorError, match="integrate-eligible"):
+        Integrator(repo_root=r).integrate(manifest_path=manifest_path)
+
+
+def test_integrate_accepts_runner_status_skipped_existing_idempotent(repo: tuple[Path, str]) -> None:
+    """Codex iter-6 must_fix: skipped_existing_idempotent IS integrate-eligible.
+
+    AO-MA-4 semantic: worker already prepared on disk at the correct branch+HEAD;
+    AO-MA-5 can integrate as if it were freshly prepared.
+    """
+
+    r, base_sha = repo
+    base_dir = r / ".ao" / "orchestration"
+    manifest_path, out_dir = _write_artifact_set(
+        base_dir=base_dir,
+        task_graph_id="ao-ma-20260527-sei1111",
+        base_sha=base_sha,
+        workers=[{"task_id": "task-001", "declared_write_set": ["src/a.py"]}],
+    )
+    rr_path = out_dir / "runner_report.v1.json"
+    rr = json.loads(rr_path.read_text(encoding="utf-8"))
+    rr["workers"][0]["status"] = "skipped_existing_idempotent"
+    rr_path.write_text(json.dumps(rr, indent=2), encoding="utf-8")
+    _write_worker_result(
+        out_dir=out_dir,
+        task_id="task-001",
+        task_graph_id="ao-ma-20260527-sei1111",
+        base_sha=base_sha,
+        declared_write_set=["src/a.py"],
+        actual_changed_files=["src/a.py"],
+    )
+    rv = _write_review_verdict(
+        out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-sei1111", verdict="AGREE"
+    )
+    vr = _write_verification_report(out_dir=out_dir, task_id="task-001", task_graph_id="ao-ma-20260527-sei1111")
+    decision = Integrator(repo_root=r).integrate(
+        manifest_path=manifest_path,
+        review_verdict_paths={"task-001": rv},
+        verification_report_paths={"task-001": vr},
+    )
+    assert decision.overall_status == "all_accepted", decision.diagnostics
 
 
 def test_cli_integrate_emit_failure_exits_three(
