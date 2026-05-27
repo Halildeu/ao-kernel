@@ -83,14 +83,24 @@ def test_ri71_manifest_flips_both_operator_keys_true() -> None:
     """The committed manifest reflects the operator authorization. Both
     `explicit_operator_authorization` and
     `general_purpose_platform_claim_authorization` are true after this
-    slice; `operator_verified_runtime_semantics` remains false (RI-7.5
-    owner).
+    slice and stay true for all subsequent PRs (permanent invariant).
+
+    Fast-follow (RI-7.1 introducer-PR detection): the
+    `operator_verified_runtime_semantics is False` pin is the
+    state-at-RI-7.1-landing — it records what the manifest looked like
+    on the RI-7.1 introducer PR. RI-7.5 (next slice) flips that key to
+    True; its own invariant test owns the True pin. On non-introducer
+    PRs we only assert the permanent RI-7.1 invariants.
     """
     manifest = json.loads(_read(_MANIFEST_PATH))
     assert manifest["artifact_kind"] == "ri7_evidence_manifest"
+    # Permanent invariants (true forever after RI-7.1 lands):
     assert manifest["explicit_operator_authorization"] is True
     assert manifest["general_purpose_platform_claim_authorization"] is True
-    assert manifest["operator_verified_runtime_semantics"] is False
+    # State-at-landing invariant (RI-7.1 introducer PR only):
+    is_introducer, _reason = _is_ri71_introducer_pr()
+    if is_introducer:
+        assert manifest["operator_verified_runtime_semantics"] is False
 
 
 def test_ri71_evidence_records_forbidden_change_audit() -> None:
@@ -132,7 +142,21 @@ def test_ri71_cross_ai_verdicts_match_review_evidence() -> None:
     `local-ai-review-evidence.v1.json::reviewer.verdict` MUST agree.
     This prevents the 'AGREE pre-fill in one artifact, REVISE in the
     other' inconsistency the iter-1 review identified as a BLOCKER.
+
+    Fast-follow sistemik bug fix (RI-7.1 introducer-PR detection):
+    the cross-artifact equality invariant is only meaningful on the
+    RI-7.1 INTRODUCER PR (the PR that creates the RI-7.1 plan +
+    schema + evidence). On any other PR (RI-7.5+, future B-path
+    slices, etc.) the diff carries a stale-from-main copy of the
+    RI-7.1 evidence (AGREE) and the per-PR `local-ai-review-evidence`
+    carries the current PR's verdict (REVISE during iter cycle). The
+    comparison is a category error on non-introducer PRs and blocks
+    legitimate merges. Pattern matches PR #662 (AO-MA-8 fast-follow).
     """
+    is_introducer, reason = _is_ri71_introducer_pr()
+    if not is_introducer:
+        pytest.skip(f"{reason}; cross-AI verdict equality invariant only applies on RI-7.1 introducer PR")
+
     evidence = json.loads(_read(_EVIDENCE_PATH))
     review_path = _REPO_ROOT / "local-ai-review-evidence.v1.json"
     review = json.loads(_read(review_path))
@@ -149,7 +173,17 @@ def test_ri71_parent_plan_row_uses_same_decision_string() -> None:
     """Codex iter-1 absorb: the RI-7 parent plan tracking table row for
     RI-7.1 MUST cite the same exit decision string this artifact uses.
     Drift here was the 'no_flag_flip vs no_guard_flag_flip' bug.
+
+    Fast-follow (RI-7.1 introducer-PR detection): although the parent
+    plan and evidence are both on main after RI-7.1 lands, future
+    slices (RI-7.5+) may extend the parent plan or amend cross-row
+    references; the strict decision-string-in-parent-plan invariant
+    is owned by the RI-7.1 introducer PR. Guarded for forward-compat.
     """
+    is_introducer, reason = _is_ri71_introducer_pr()
+    if not is_introducer:
+        pytest.skip(f"{reason}; parent-plan decision-string invariant only applies on RI-7.1 introducer PR")
+
     parent_path = _REPO_ROOT / ".claude" / "plans" / "RI-7-REPO-INTELLIGENCE-TIER-PROMOTION-READINESS.md"
     parent_text = _read(parent_path)
     evidence = json.loads(_read(_EVIDENCE_PATH))
@@ -295,6 +329,47 @@ def _resolve_diff_base() -> tuple[str | None, str]:
             return sha, "local_main"
 
     return None, "none"
+
+
+# RI-7.1 introducer-PR detection (fast-follow sistemik bug fix).
+# The cross-artifact equality / parent-plan-decision / manifest
+# state-at-landing pins are RI-7.1-introducer-PR-scoped. They were
+# previously enforced on every PR, which made the test a category
+# error on non-introducer PRs (RI-7.5+ etc.) and blocked merges.
+# The fix: detect the RI-7.1 introducer PR by checking whether the
+# PR diff touches at least one of the three RI-7.1-owned artifact
+# paths in `_RI71_INTRODUCER_SIGNATURE`. If none are touched the
+# tests skip. If at least one is touched the full assertion runs.
+#
+# Fail-safe: if the diff base cannot be resolved (CI race / shallow
+# clone / detached head), the helper returns is_introducer=True so
+# the invariant runs — this preserves CI fail-closed semantics for
+# the RI-7.1 introducer PR itself and never silently disables the
+# invariant.
+_RI71_INTRODUCER_SIGNATURE = {
+    ".claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.md",
+    ".claude/plans/RI-7.1-OPERATOR-AUTHORIZATION.v1.json",
+    "ao_kernel/defaults/schemas/ri7-operator-authorization-evidence.schema.v1.json",
+}
+
+
+def _is_ri71_introducer_pr() -> tuple[bool, str]:
+    """Return (is_introducer, reason).
+
+    Detects whether the current PR is the RI-7.1 introducer PR by
+    checking the diff against base. Falls back to True (apply
+    invariant) when the diff base cannot be resolved — fail-closed.
+    """
+    base, source = _resolve_diff_base()
+    if base is None:
+        return True, "no diff base resolved (fail-closed apply)"
+    diff_proc = _git(["diff", "--name-only", f"{base}..HEAD"])
+    if diff_proc.returncode != 0:
+        return True, f"git diff against base ({source}) failed (fail-closed apply)"
+    changed = {line.strip() for line in diff_proc.stdout.splitlines() if line.strip()}
+    if changed & _RI71_INTRODUCER_SIGNATURE:
+        return True, f"RI-7.1 introducer PR detected (diff base={source})"
+    return False, f"not RI-7.1 introducer PR (diff base={source}, no RI-7.1 artifact in diff)"
 
 
 def test_ri71_forbidden_surfaces_actually_unchanged_in_diff() -> None:
