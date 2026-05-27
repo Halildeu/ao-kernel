@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-10-evidence-bundle:v1",
+  "title": "AO-MA-10 Evidence Bundle",
+  "description": "A no-secret, context-bound evidence bundle for the AO-MA-10 autonomous merge lane. The bundle aggregates registered provider verdicts but does not grant release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repo",
+    "work_package",
+    "read_only",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "context_binding",
+    "reviewer_providers",
+    "required_reviewer_providers",
+    "provider_verdicts",
+    "consensus_status",
+    "freshness",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-10-evidence-bundle.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_10_evidence_bundle"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "work_package": {
+      "type": "string",
+      "const": "AO-MA-10a2"
+    },
+    "read_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "mutations_performed": {
+      "type": "boolean",
+      "const": false
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    },
+    "context_binding": {
+      "$ref": "#/$defs/context_binding"
+    },
+    "reviewer_providers": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "contains": {
+        "const": "openai"
+      },
+      "items": {
+        "$ref": "#/$defs/provider_id"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "anthropic"
+          }
+        }
+      ]
+    },
+    "required_reviewer_providers": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "openai"
+        },
+        {
+          "const": "anthropic"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "provider_verdicts": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/provider_verdict"
+      }
+    },
+    "consensus_status": {
+      "type": "string",
+      "enum": ["AGREE", "REVISE", "PARTIAL", "RED"]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "max_age_seconds"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "fresh"
+        },
+        "max_age_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        }
+      }
+    },
+    "secrets_recorded": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "$defs": {
+    "provider_id": {
+      "type": "string",
+      "enum": ["openai", "anthropic", "minimax", "google", "xai"]
+    },
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_full_name",
+        "base_ref",
+        "head_ref",
+        "head_sha",
+        "diff_digest",
+        "changed_files_count"
+      ],
+      "properties": {
+        "repository_full_name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "base_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "head_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "diff_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "changed_files_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "provider_verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "artifact_kind",
+        "provider_id",
+        "agent_id",
+        "role",
+        "verdict",
+        "round_index",
+        "context_binding",
+        "findings_count",
+        "secrets_recorded",
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution",
+        "release_authority",
+        "ai_output_release_authority"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "ao-ma-10-provider-consensus.v1"
+        },
+        "artifact_kind": {
+          "type": "string",
+          "const": "ao_ma_10_provider_consensus"
+        },
+        "provider_id": {
+          "$ref": "#/$defs/provider_id"
+        },
+        "agent_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "enum": ["reviewer", "verifier", "planner"]
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["AGREE", "REVISE", "PARTIAL", "RED"]
+        },
+        "round_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "context_binding": {
+          "$ref": "#/$defs/context_binding"
+        },
+        "findings_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "secrets_recorded": {
+          "type": "boolean",
+          "const": false
+        },
+        "support_widening": {
+          "type": "boolean",
+          "const": false
+        },
+        "production_platform_claim": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_adapter_execution": {
+          "type": "boolean",
+          "const": false
+        },
+        "release_authority": {
+          "type": "string",
+          "const": "ao-release-gate+github-ruleset"
+        },
+        "ai_output_release_authority": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}
