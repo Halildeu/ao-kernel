@@ -26,6 +26,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+import pytest
 
 from ao_kernel._internal.repo_intelligence.artifacts import (
     validate_repo_vector_index_manifest,
