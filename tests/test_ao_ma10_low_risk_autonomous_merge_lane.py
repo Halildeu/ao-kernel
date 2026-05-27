@@ -124,7 +124,8 @@ def test_ao_ma10_merge_agent_activation_locked_not_started() -> None:
 def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
     receipt = _load_json(RECEIPT)
     consensus = receipt["high_risk_consensus"]
-    assert consensus["required_providers"] == ["openai", "anthropic", "minimax"]
+    assert consensus["required_providers"] == ["openai", "anthropic"]
+    assert consensus["optional_registered_providers"] == ["minimax"]
     assert consensus["consensus_required"] is True
     assert consensus["same_provider_review_allowed"] is False
     assert consensus["max_autonomous_rounds"] == 3
@@ -134,6 +135,8 @@ def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
 def test_ao_ma10_docs_state_planning_only_no_runtime_cutover() -> None:
     text = DOC.read_text(encoding="utf-8")
     assert "planning-only" in text
+    assert "AO-MA-10a0  GitHub readiness snapshot" in text
+    assert "MiniMax remains a provider-integration prerequisite" in text
     assert "The merge agent is **not active**" in text
     assert "No workflow mutation." in text
     assert "No ruleset or branch-protection mutation." in text
@@ -214,8 +217,13 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
         ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
         ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
+        ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
+        "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
         "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+        "scripts/ao_ma10_github_readiness_snapshot.py",
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
+        "tests/test_ao_ma10_github_readiness_snapshot.py",
+        "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
         "local-ai-review-evidence.v1.json",
     }
     assert changed <= allowlist, f"AO-MA-10 touches files outside allowlist: {sorted(changed - allowlist)}"

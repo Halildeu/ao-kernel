@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-10-github-readiness-snapshot:v1",
+  "title": "AO-MA-10 GitHub Readiness Snapshot",
+  "description": "Read-only GitHub readiness evidence for the low-risk autonomous merge lane. This artifact records blockers; it never authorizes release by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "repository",
+    "branch",
+    "generated_at",
+    "snapshot_source",
+    "read_only",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "repository_settings",
+    "merge_actor",
+    "branch_protection",
+    "rulesets",
+    "codeowners",
+    "collection_errors",
+    "ssot_cross_check",
+    "readiness"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-10-github-readiness-snapshot.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_10_github_readiness_snapshot"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "branch": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "snapshot_source": {
+      "type": "string",
+      "const": "github_api_read_only"
+    },
+    "read_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "mutations_performed": {
+      "type": "boolean",
+      "const": false
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "repository_settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "auto_merge_allowed",
+        "merge_commit_allowed",
+        "squash_merge_allowed",
+        "rebase_merge_allowed",
+        "delete_branch_on_merge"
+      ],
+      "properties": {
+        "auto_merge_allowed": { "type": "boolean" },
+        "merge_commit_allowed": { "type": "boolean" },
+        "squash_merge_allowed": { "type": "boolean" },
+        "rebase_merge_allowed": { "type": "boolean" },
+        "delete_branch_on_merge": { "type": "boolean" }
+      }
+    },
+    "merge_actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "login",
+        "permission",
+        "viewer_can_administer",
+        "administration_write_absent_for_dedicated_actor"
+      ],
+      "properties": {
+        "login": { "type": ["string", "null"] },
+        "permission": { "type": ["string", "null"] },
+        "viewer_can_administer": { "type": "boolean" },
+        "administration_write_absent_for_dedicated_actor": { "type": "boolean" }
+      }
+    },
+    "branch_protection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present",
+        "enforce_admins",
+        "required_approving_review_count",
+        "require_code_owner_reviews",
+        "dismiss_stale_reviews",
+        "strict_status_checks",
+        "required_checks",
+        "required_check_source_pins",
+        "ao_release_gate_required_check_present",
+        "ao_release_gate_source_pinned_to_actions"
+      ],
+      "properties": {
+        "present": { "type": "boolean" },
+        "enforce_admins": { "type": "boolean" },
+        "required_approving_review_count": { "type": "integer", "minimum": 0 },
+        "require_code_owner_reviews": { "type": "boolean" },
+        "dismiss_stale_reviews": { "type": "boolean" },
+        "strict_status_checks": { "type": "boolean" },
+        "required_checks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "required_check_source_pins": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/status_check_pin" }
+        },
+        "ao_release_gate_required_check_present": { "type": "boolean" },
+        "ao_release_gate_source_pinned_to_actions": { "type": "boolean" }
+      }
+    },
+    "rulesets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_branch_rulesets",
+        "bypass_actors_count",
+        "bypass_actors_empty",
+        "effective_required_checks",
+        "ao_release_gate_required_check_present",
+        "ao_release_gate_source_pinned_to_actions"
+      ],
+      "properties": {
+        "default_branch_rulesets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "target",
+              "source_type",
+              "enforcement",
+              "bypass_actors_count",
+              "rule_types"
+            ],
+            "properties": {
+              "id": { "type": ["integer", "null"] },
+              "name": { "type": ["string", "null"] },
+              "target": { "type": ["string", "null"] },
+              "source_type": { "type": ["string", "null"] },
+              "enforcement": { "type": ["string", "null"] },
+              "bypass_actors_count": { "type": "integer", "minimum": 0 },
+              "rule_types": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        "bypass_actors_count": { "type": "integer", "minimum": 0 },
+        "bypass_actors_empty": { "type": "boolean" },
+        "effective_required_checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ruleset_status_check_pin" }
+        },
+        "ao_release_gate_required_check_present": { "type": "boolean" },
+        "ao_release_gate_source_pinned_to_actions": { "type": "boolean" }
+      }
+    },
+    "codeowners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present",
+        "broad_default_owner_present",
+        "broad_default_owner_absent",
+        "governance_paths_owned",
+        "low_risk_prefixes_still_codeowned"
+      ],
+      "properties": {
+        "present": { "type": "boolean" },
+        "broad_default_owner_present": { "type": "boolean" },
+        "broad_default_owner_absent": { "type": "boolean" },
+        "governance_paths_owned": { "type": "boolean" },
+        "low_risk_prefixes_still_codeowned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "blockers", "warnings", "next_required_slice"],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["ready_for_dry_run", "blocked"]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ao_release_gate_required_check_missing",
+              "ao_release_gate_required_check_not_source_pinned",
+              "github_api_read_failed",
+              "ruleset_bypass_actors_present",
+              "legacy_required_review_blocks_low_risk_autonomy",
+              "merge_actor_admin_permission_observed",
+              "codeowners_broad_default_owner_present",
+              "codeowners_governance_paths_not_fully_owned",
+              "ssot_live_required_check_drift_detected"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "repository_auto_merge_disabled_merge_agent_direct_mode_required",
+              "some_nominal_low_risk_prefixes_still_codeowned"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "next_required_slice": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "collection_errors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "ssot_cross_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prior_required_check_claim_observed",
+        "live_snapshot_conflicts_with_prior_claim",
+        "prior_claim_source"
+      ],
+      "properties": {
+        "prior_required_check_claim_observed": { "type": "boolean" },
+        "live_snapshot_conflicts_with_prior_claim": { "type": "boolean" },
+        "prior_claim_source": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "$defs": {
+    "status_check_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context", "app_id"],
+      "properties": {
+        "context": { "type": ["string", "null"] },
+        "app_id": { "type": ["integer", "null"] }
+      }
+    },
+    "ruleset_status_check_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context", "integration_id"],
+      "properties": {
+        "context": { "type": ["string", "null"] },
+        "integration_id": { "type": ["integer", "null"] }
+      }
+    }
+  }
+}
