@@ -9,7 +9,7 @@
   "reviewer": {
     "agent": "codex",
     "provider": "openai",
-    "verdict": "AGREE"
+    "verdict": "REVISE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
@@ -23,178 +23,61 @@
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "full_suite_no_regression",
-      "status": "pass"
-    },
-    {
-      "name": "option_a_locked_evidence_only",
-      "status": "pass"
-    },
-    {
-      "name": "option_b_runtime_hook_blocked_from_aoma9",
-      "status": "pass"
-    },
-    {
-      "name": "wire_mode_const_pinned_evidence_manifest_only",
-      "status": "pass"
-    },
-    {
-      "name": "release_authority_claim_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "no_release_gate_payload_field_extension",
-      "status": "pass"
-    },
-    {
-      "name": "exact_field_name_check_not_raw_text_grep",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma_chain_refs_record_seven_pr_numbers",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_2d_artifact_refs_paths_exist",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma_8_chain_proof_refs_paths_exist",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_status_invariants_at_closure_match_runtime",
-      "status": "pass"
-    },
-    {
-      "name": "schema_additional_properties_false_at_every_level",
-      "status": "pass"
-    },
-    {
-      "name": "schema_const_pins_for_decision_artifact_kind_wire_mode",
-      "status": "pass"
-    },
-    {
-      "name": "schema_pattern_pins_for_pr_number_and_paths",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_closed_at_top_level_object_and_gpp_status_snapshot",
-      "status": "pass"
-    },
-    {
-      "name": "pr_scope_only_touches_allowlisted_files",
-      "status": "pass"
-    },
-    {
-      "name": "multi_strategy_diff_base_resolver_per_ao_ma_8_pattern",
-      "status": "pass"
-    },
-    {
-      "name": "ci_fail_closed_in_pr_context_local_skip_otherwise",
-      "status": "pass"
-    },
-    {
-      "name": "no_subprocess_in_assertion_path_only_in_pr_scope_resolver",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_orchestration_module_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_cli_handler_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_release_gate_runtime_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_branch_protection_ruleset_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_codeowners_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_local_gpp_gate_schema_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_gpp_status_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_gp5_platform_claim_decision_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_ao_ma_1_design_doc_row_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_public_sdk_signature_change",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_production_platform_claim",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_adapter_execution",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_always_closed",
-      "status": "pass"
-    },
-    {
-      "name": "cross_provider_verified",
-      "status": "pass"
-    }
+    {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "ruff", "status": "pass"},
+    {"name": "mypy", "status": "pass"},
+    {"name": "full_suite_no_regression", "status": "pass"},
+    {"name": "option_a_locked_evidence_only", "status": "pass"},
+    {"name": "option_b_runtime_hook_blocked_from_aoma9", "status": "pass"},
+    {"name": "wire_mode_const_pinned_evidence_manifest_only", "status": "pass"},
+    {"name": "release_authority_claim_const_false", "status": "pass"},
+    {"name": "no_release_gate_payload_field_extension", "status": "pass"},
+    {"name": "exact_field_name_check_not_raw_text_grep", "status": "pass"},
+    {"name": "ao_ma_chain_refs_record_seven_pr_numbers", "status": "pass"},
+    {"name": "gpp_2d_artifact_refs_paths_exist", "status": "pass"},
+    {"name": "ao_ma_8_chain_proof_refs_paths_exist", "status": "pass"},
+    {"name": "gpp_status_invariants_at_closure_match_runtime", "status": "pass"},
+    {"name": "schema_additional_properties_false_at_every_level", "status": "pass"},
+    {"name": "schema_const_pins_for_decision_artifact_kind_wire_mode", "status": "pass"},
+    {"name": "schema_pattern_pins_for_pr_number_and_paths", "status": "pass"},
+    {"name": "guard_flags_closed_at_top_level_object_and_gpp_status_snapshot", "status": "pass"},
+    {"name": "pr_scope_only_touches_allowlisted_files", "status": "pass"},
+    {"name": "multi_strategy_diff_base_resolver_per_ao_ma_8_pattern", "status": "pass"},
+    {"name": "ci_fail_closed_in_pr_context_local_skip_otherwise", "status": "pass"},
+    {"name": "no_subprocess_in_assertion_path_only_in_pr_scope_resolver", "status": "pass"},
+    {"name": "no_runtime_orchestration_module_change", "status": "pass"},
+    {"name": "no_cli_handler_change", "status": "pass"},
+    {"name": "no_release_gate_runtime_change", "status": "pass"},
+    {"name": "no_branch_protection_ruleset_mutation", "status": "pass"},
+    {"name": "no_workflow_mutation", "status": "pass"},
+    {"name": "no_codeowners_mutation", "status": "pass"},
+    {"name": "no_local_gpp_gate_schema_mutation", "status": "pass"},
+    {"name": "no_gpp_status_mutation", "status": "pass"},
+    {"name": "no_gp5_platform_claim_decision_mutation", "status": "pass"},
+    {"name": "no_ao_ma_1_design_doc_row_mutation", "status": "pass"},
+    {"name": "no_public_sdk_signature_change", "status": "pass"},
+    {"name": "no_support_widening", "status": "pass"},
+    {"name": "no_production_platform_claim", "status": "pass"},
+    {"name": "no_live_adapter_execution", "status": "pass"},
+    {"name": "guard_flags_always_closed", "status": "pass"},
+    {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "AO-MA-9 v1 gated closeout (AO-MA-1 \u00a78 phased plan SON dilim, class: evidence-only). AO-MA artifact chain wired into the GPP-2D required-check lane in evidence-only form. wire_mode const-pinned 'evidence_manifest_only'. release_authority_claim const false. ao-release-gate payload unchanged. NO new runtime surface. Authority remains GitHub branch ruleset + ao-release-gate (GPP-2D-5 cutover already complete).",
+    "AO-MA-9 v1 gated closeout (AO-MA-1 §8 phased plan SON dilim, class: evidence-only). AO-MA artifact chain wired into the GPP-2D required-check lane in evidence-only form. wire_mode const-pinned 'evidence_manifest_only'. release_authority_claim const false. ao-release-gate payload unchanged. NO new runtime surface. Authority remains GitHub branch ruleset + ao-release-gate (GPP-2D-5 cutover already complete).",
     "Codex thread 019e6a6f-a3f7-7b92-9416-d6464668eafd plan-time iter cycle: iter-1 REVISE (4 must_close: Option A LOCKED + Option B BLOCKED for AO-MA-9 + wire_mode pin + invariant test scope correction + fresh worktree) -> iter-2 AGREE (ready_for_impl: true, 3 nice-to-have: PR URL optional, exact-field-name test pattern, GPP-2D-6 automerge_smoke optional note). All 3 nice-to-have absorbed in implementation.",
     "Pipeline narrative (wire-chain, NOT payload extension): AO-MA schemas (#637) -> AO-MA-3 Orchestrator (#645) -> AO-MA-4 WorkerRunner (#648) -> AO-MA-4.5 surrogate/worker -> AO-MA-6 Reviewer (#655) -> AO-MA-7 Verifier (#657) -> AO-MA-5 Integrator (#654) -> AO-MA-8 end-to-end smoke (#660) integration_report receipt parity proof -> GPP-2D-4 enforce evidence (main) -> GPP-2D-5 source-pinned required-check cutover (main) -> GPP-2D-7 AO-GATE-9 GPP closeout (main). AO-MA artifacts consumable by gate's signal chain AS EVIDENCE, not authority.",
     "Module layout (no runtime surface added): .claude/plans/AO-MA-9-GPP-INTEGRATION.md (plan doc) + .claude/plans/AO-MA-9-GPP-INTEGRATION-EVIDENCE.v1.json (receipt) + ao_kernel/defaults/schemas/ao-ma-9-gpp-integration-evidence.schema.v1.json (Draft 2020-12 receipt schema, additionalProperties=false, const-pinned) + tests/test_ao_ma_9_gpp_integration_invariant.py (11 invariant tests + multi-strategy PR-scope resolver) + local-ai-review-evidence.v1.json (cross-AI trace).",
     "Schema strictness: additionalProperties=false at every object level + const-pinned schema_version + artifact_kind + decision + wire_mode + release_authority_claim + 3 guard_flags + 3 gpp_status_invariants_at_closure top-level flags + nested gpp_status snapshot fields. Pattern pins for ao_ma_chain_refs PR numbers (^#[0-9]+$) and gpp_2d_artifact_refs / ao_ma_8_chain_proof_refs paths (specific repo-relative patterns).",
-    "Test coverage: 11 focused invariant assertions over the receipt + live state cross-checks. (a) schema valid Draft 2020-12, (b) receipt validates, (c) wire_mode == evidence_manifest_only (Codex iter-1 must_close #2), (d) release_authority_claim is False, (e) all guard_flags closed across 3 surfaces, (f) ao_ma_chain_refs 7 PR fields with pattern, (g) gpp_2d_artifact_refs 6 paths exist on disk, (h) ao_ma_8_chain_proof_refs 4 paths exist, (i) gpp_status_invariants_at_closure match live gpp_status.v1.json (drift defense; no auto-absorb), (j) no Option-B payload field extension in release-gate build_payload module via AST exact identifier match (Codex iter-2 nice-to-have #2 absorb \u2014 NOT raw text grep), (k) PR scope allowlist enforced via multi-strategy diff base resolver (mirrors AO-MA-8 / RI-7.2 pattern). Full suite 11 passed locally. ruff + mypy clean.",
-    "Exact-field-name AST check (Codex iter-2 nice-to-have #2 absorb): test_ao_ma_9_no_payload_field_extension_in_release_gate parses scripts/ao_release_gate_build_payload.py AST and asserts forbidden field-name identifiers (ao_ma_integration_report_ref, ao_ma_integration_overall_status, ao_ma_chain_artifact_refs, ao_ma_chain_refs, ao_ma_required_status) are NOT used as string constants OR Name nodes. The module's existing 'AO-MA' references in comments do NOT trip this test \u2014 only Option-B payload-field keys would.",
-    "GPP-2D-6 automerge_smoke note (Codex iter-2 nice-to-have #3 absorb): receipt schema description for gpp_2d_artifact_refs explicitly says 'automerge_smoke is optional hardening \u2014 kept for evidence-chain completeness, not gate-decision authority'. All 6 GPP-2D artifacts required in evidence but their relative weights documented.",
+    "Test coverage: 11 focused invariant assertions over the receipt + live state cross-checks. (a) schema valid Draft 2020-12, (b) receipt validates, (c) wire_mode == evidence_manifest_only (Codex iter-1 must_close #2), (d) release_authority_claim is False, (e) all guard_flags closed across 3 surfaces, (f) ao_ma_chain_refs 7 PR fields with pattern, (g) gpp_2d_artifact_refs 6 paths exist on disk, (h) ao_ma_8_chain_proof_refs 4 paths exist, (i) gpp_status_invariants_at_closure match live gpp_status.v1.json (drift defense; no auto-absorb), (j) no Option-B payload field extension in release-gate build_payload module via AST exact identifier match (Codex iter-2 nice-to-have #2 absorb — NOT raw text grep), (k) PR scope allowlist enforced via multi-strategy diff base resolver (mirrors AO-MA-8 / RI-7.2 pattern). Full suite 11 passed locally. ruff + mypy clean.",
+    "Exact-field-name AST check (Codex iter-2 nice-to-have #2 absorb): test_ao_ma_9_no_payload_field_extension_in_release_gate parses scripts/ao_release_gate_build_payload.py AST and asserts forbidden field-name identifiers (ao_ma_integration_report_ref, ao_ma_integration_overall_status, ao_ma_chain_artifact_refs, ao_ma_chain_refs, ao_ma_required_status) are NOT used as string constants OR Name nodes. The module's existing 'AO-MA' references in comments do NOT trip this test — only Option-B payload-field keys would.",
+    "GPP-2D-6 automerge_smoke note (Codex iter-2 nice-to-have #3 absorb): receipt schema description for gpp_2d_artifact_refs explicitly says 'automerge_smoke is optional hardening — kept for evidence-chain completeness, not gate-decision authority'. All 6 GPP-2D artifacts required in evidence but their relative weights documented.",
     "PR scope (5 files allowlist) statically pinned by test_ao_ma_9_pr_scope_only_touches_allowlisted_files. Multi-strategy diff base resolver mirrors AO-MA-8 implementation (Codex post-impl iter-1 must_close #4 absorb in #660): GitHub PR event payload -> GITHUB_BASE_REF + shallow fetch -> local origin/main -> local main. CI fail-closed in PR context; local skip outside CI.",
-    "Receipt-vs-runtime drift defense (Codex iter-2 question #3 absorb): test_ao_ma_9_gpp_status_invariants_match_runtime_authority reads receipt's gpp_status_invariants_at_closure static snapshot AND live .claude/plans/gpp_status.v1.json + asserts equality. If supersession changes live state, this test fails and the receipt MUST be updated \u2014 auto-absorb would destroy the decision-record discipline.",
+    "Receipt-vs-runtime drift defense (Codex iter-2 question #3 absorb): test_ao_ma_9_gpp_status_invariants_match_runtime_authority reads receipt's gpp_status_invariants_at_closure static snapshot AND live .claude/plans/gpp_status.v1.json + asserts equality. If supersession changes live state, this test fails and the receipt MUST be updated — auto-absorb would destroy the decision-record discipline.",
     "Hard stops enforced (Codex iter-1 absorb expanded; AO-MA-7/8 pattern continuity): NO mutation of scripts/ao_release_gate_*.py / ao_kernel/ao_release_gate*.py / .github/** / CODEOWNERS / branch-protection / ruleset / required-check allowlist / local_gpp_gate / ao_kernel/orchestration/** / CLI handler / GPP-status docs / gpp_status.v1.json / AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md (row closure follow-up). NO GPP-2C / testai / smee / callback topology change. NO low-risk auto-merge smoke triggered. NO LLM call in test. NO subprocess in assertion paths (only in PR-scope resolver, mirrored from AO-MA-8). NO gh pr / git push / GitHub write.",
     "guard_flags closed: support_widening, production_platform_claim, live_adapter_execution all literal false across top-level (receipt schema + receipt) + guard_flags object + gpp_status_invariants_at_closure._allowed snapshot. Schemas enforce const:false. release_authority_claim const:false separately (Codex iter-1 hard stop: AO-MA artifacts are evidence layer, NOT release authority).",
-    "Authority model preserved: ao-release-gate via GitHub branch ruleset remains the merge authority (GPP-2D-5 cutover, GPP-2D-7 AO-GATE-9 closeout already on main). AO-MA-9 records the AO-MA execution-layer artifact chain as evidence consumable by the gate's signal chain \u2014 it does NOT alter, extend, hook into, or claim authority over the gate.",
-    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e6a6f-a3f7-7b92-9416-d6464668eafd cycle: plan-time iter-1 REVISE -> iter-2 AGREE (ready_for_impl: true). Post-impl iter-1 REVISE 1 must_fix (milestones_done_total live-compare gap) + AO-MA-9 PR-scope self-gate absorbed in commit 8850a81 (rebased after PR #662 AO-MA-8 self-gate merge to main). Post-impl iter-2 REVISE with 3 BLOCKING: branch stale vs origin/main (RI-7.1 #661 merged), local-ai-review-evidence.v1.json rebase conflict, reviewer.verdict still REVISE. All 3 absorbed in commit set: rebased on RI-7.1 main, conflict resolved (theirs = AO-MA-9 evidence), verdict flipped to AGREE via this mechanical trace update. Post-impl iter-3 AGREE pending (only repo-state hygiene remained; code-level must_fix already closed in iter-1 absorb)."
+    "Authority model preserved: ao-release-gate via GitHub branch ruleset remains the merge authority (GPP-2D-5 cutover, GPP-2D-7 AO-GATE-9 closeout already on main). AO-MA-9 records the AO-MA execution-layer artifact chain as evidence consumable by the gate's signal chain — it does NOT alter, extend, hook into, or claim authority over the gate.",
+    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e6a6f-a3f7-7b92-9416-d6464668eafd cycle: plan-time iter-1 REVISE (4 must_close: Option A lock + wire_mode pin + invariant scope correction + fresh worktree) -> plan-time iter-2 AGREE (ready_for_impl: true, 3 nice-to-have absorbed). Post-impl review iter-1 REVISE with 1 must_fix: milestones_done_total live-compare gap (previous test only asserted N/M regex pattern; would pass through real milestone progression like 8/8). Fix: read live gpp_status.v1.json progress_estimates.milestones.done_count/total_count, compute live N/M, assert exact equality with receipt snapshot. Receipt-vs-runtime drift defense now actually defends against drift. reviewer.verdict reset to REVISE pending iter-2; will flip back to AGREE only after Codex iter-2 returns AGREE on the fixed test."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

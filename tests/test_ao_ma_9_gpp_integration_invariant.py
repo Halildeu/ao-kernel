@@ -189,7 +189,18 @@ def test_ao_ma_9_gpp_status_invariants_match_runtime_authority() -> None:
     assert snap["support_widening_allowed"] == gpp.get("support_widening_allowed", False)
     assert snap["production_platform_claim_allowed"] == gpp.get("production_platform_claim_allowed", False)
     assert snap["live_adapter_execution_allowed"] == gpp.get("live_adapter_execution_allowed", False)
-    # milestones_done_total is "N/M" string form; assert pattern.
+    # Codex post-impl iter-1 must_fix: previously only asserted "N/M" regex pattern,
+    # which would pass through real progression (e.g. 8/8 after milestone added).
+    # Now compute live progress_estimates.milestones value and assert exact equality
+    # against the receipt snapshot — drift becomes a hard fail.
+    progress = gpp.get("progress_estimates") or {}
+    milestones = progress.get("milestones") or {}
+    live_total = f"{milestones.get('done_count')}/{milestones.get('total_count')}"
+    assert snap["milestones_done_total"] == live_total, (
+        f"milestones_done_total drift: receipt snapshot={snap['milestones_done_total']!r}, "
+        f"live progress_estimates.milestones={live_total!r}"
+    )
+    # Sanity: snapshot is still in "N/M" form (catch malformed manual edits).
     assert re.fullmatch(r"\d+/\d+", snap["milestones_done_total"])
 
 
@@ -351,6 +362,20 @@ def test_ao_ma_9_pr_scope_only_touches_allowlisted_files() -> None:
         pytest.skip(msg)
 
     changed = {line.strip() for line in diff_proc.stdout.splitlines() if line.strip()}
+    # Self-gate (same systemic-fix pattern as AO-MA-8 PR #664). PR-scope
+    # tests should only enforce within their own PR type. Trigger marker
+    # is the AO-MA-9 plan doc: if THIS PR's diff does not touch
+    # ``.claude/plans/AO-MA-9-GPP-INTEGRATION.md``, the PR is NOT an
+    # AO-MA-9 PR and the AO-MA-9 allowlist is not the right scope to
+    # enforce. Without this, every future AO-MA-N PR would fail this
+    # test — the recurrence-defense rule the AO-MA-8 PR-scope fix
+    # already codified.
+    ao_ma_9_trigger = ".claude/plans/AO-MA-9-GPP-INTEGRATION.md"
+    if ao_ma_9_trigger not in changed:
+        pytest.skip(
+            f"PR diff does not touch {ao_ma_9_trigger}; not an AO-MA-9 PR — "
+            f"AO-MA-9 allowlist scope does not apply (self-gate)."
+        )
     allowlist = {
         ".claude/plans/AO-MA-9-GPP-INTEGRATION.md",
         ".claude/plans/AO-MA-9-GPP-INTEGRATION-EVIDENCE.v1.json",
