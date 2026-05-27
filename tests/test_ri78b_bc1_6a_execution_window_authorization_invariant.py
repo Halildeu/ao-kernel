@@ -26,10 +26,13 @@ import copy
 import hashlib
 import json
 import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jsonschema
 import pytest
+
+PR_NUMBER_HINT = "675"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -252,6 +255,87 @@ def test_ri78b_bc1_6a_window_status_const_authorized_pending_6b_activation():
     assert 0 < win["max_usd"] <= 5.0
     assert 1 <= win["max_activation_delay_hours"] <= 168
     assert 1 <= win["max_execution_window_duration_hours"] <= 24
+
+
+# ---------------------------------------------------------------------------
+# Time-window audit binding (Codex iter-3 post-impl review absorb)
+# ---------------------------------------------------------------------------
+
+
+def _parse_iso_z(s: str) -> datetime:
+    """Parse '...Z' ISO 8601 UTC into aware datetime."""
+    if s.endswith("Z"):
+        return datetime.fromisoformat(s[:-1] + "+00:00")
+    return datetime.fromisoformat(s)
+
+
+def test_ri78b_bc1_6a_authorization_recorded_at_not_in_future():
+    """authorization_recorded_at MUST be <= now (UTC) + small tolerance.
+
+    Future-dated authorization timestamps cannot be operator-bound at the time
+    of recording — they retroactively claim provenance that did not exist.
+    """
+    evidence = _load_json(EVIDENCE_PATH)
+    op = evidence["operator_authorization_record"]
+    recorded_at = _parse_iso_z(op["authorization_recorded_at"])
+    now = datetime.now(timezone.utc)
+    tolerance = timedelta(minutes=15)
+    assert recorded_at <= now + tolerance, (
+        f"authorization_recorded_at={recorded_at.isoformat()} is in the future "
+        f"relative to now={now.isoformat()} (tolerance=15min). Future-dated "
+        f"operator-bound timestamps are audit-invalid."
+    )
+
+
+def test_ri78b_bc1_6a_validity_window_bounded_by_max_activation_delay():
+    """authorization_valid_until > authorization_recorded_at AND
+    (valid_until - recorded_at) <= max_activation_delay_hours."""
+    evidence = _load_json(EVIDENCE_PATH)
+    op = evidence["operator_authorization_record"]
+    win = evidence["authorization_window_contract"]
+    recorded_at = _parse_iso_z(op["authorization_recorded_at"])
+    valid_until = _parse_iso_z(win["authorization_valid_until"])
+    assert valid_until > recorded_at, (
+        f"authorization_valid_until={valid_until.isoformat()} must be strictly "
+        f"after authorization_recorded_at={recorded_at.isoformat()}"
+    )
+    delta = valid_until - recorded_at
+    max_hours = win["max_activation_delay_hours"]
+    max_delta = timedelta(hours=max_hours)
+    assert delta <= max_delta, (
+        f"(valid_until - recorded_at)={delta} exceeds max_activation_delay_hours={max_hours} ({max_delta})"
+    )
+
+
+def test_ri78b_bc1_6a_pr_number_hint_bound_to_real_pr():
+    """Both stale_replay_guard.pr_number_hint and context_binding.pr_number_hint
+    MUST equal the real PR number once it is open. 'TBD' is rejected."""
+    evidence = _load_json(EVIDENCE_PATH)
+    assert evidence["stale_replay_guard"]["pr_number_hint"] == PR_NUMBER_HINT
+    assert evidence["context_binding"]["pr_number_hint"] == PR_NUMBER_HINT
+    assert evidence["stale_replay_guard"]["pr_number_hint"] != "TBD"
+
+
+def test_ri78b_bc1_6a_authorization_source_is_auditable_reference():
+    """authorization_source MUST reference an auditable artifact: PR/issue URL,
+    review id, commit SHA + trailer ref, or runbook ref. A bare plan doc path
+    alone is too weak for cross-AI audit."""
+    evidence = _load_json(EVIDENCE_PATH)
+    source = evidence["operator_authorization_record"]["authorization_source"]
+    auditable_markers = (
+        "pull/",
+        "pulls/",
+        "issues/",
+        "issue/",
+        "commit/",
+        "pr/",
+        "/pull/",
+        "github.com",
+        "PR #",
+    )
+    assert any(marker.lower() in source.lower() for marker in auditable_markers), (
+        f"authorization_source={source!r} must include an auditable reference marker (one of: {auditable_markers})"
+    )
 
 
 def test_ri78b_bc1_6a_protected_env_name_not_production():

@@ -21,8 +21,8 @@
   },
   "operator_authorization_record": {
     "github_login": "Halildeu",
-    "authorization_recorded_at": "2026-05-28T12:00:00Z",
-    "authorization_source": ".claude/plans/RI-7.8b-bc1-6a-EXECUTION-WINDOW-AUTHORIZATION.md@codex/ri-7-8b-bc1-6a-execution-window-authorization",
+    "authorization_recorded_at": "2026-05-27T23:28:11Z",
+    "authorization_source": "github.com/Halildeu/ao-kernel/pull/675",
     "no_secret_assertion": true,
     "authorization_scope": "bc1_6a_execution_window_contract_only",
     "does_not_authorize_immediate_execution": true,
@@ -30,7 +30,7 @@
   },
   "authorization_window_contract": {
     "window_status": "authorized_pending_6b_activation",
-    "authorization_valid_until": "2026-06-04T12:00:00Z",
+    "authorization_valid_until": "2026-06-03T23:28:11Z",
     "max_activation_delay_hours": 168,
     "max_execution_window_duration_hours": 24,
     "max_run_count": 5,
@@ -106,12 +106,12 @@
   "stale_replay_guard": {
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8b-bc1-6a-execution-window-authorization",
-    "pr_number_hint": "TBD",
+    "pr_number_hint": "675",
     "base_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
     "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
     "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
     "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
-    "timestamp": "2026-05-28T12:00:00Z"
+    "timestamp": "2026-05-27T23:28:11Z"
   },
   "support_widening": false,
   "production_platform_claim": false,
@@ -120,7 +120,7 @@
     "repo": "Halildeu/ao-kernel",
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8b-bc1-6a-execution-window-authorization",
-    "pr_number_hint": "TBD"
+    "pr_number_hint": "675"
   },
   "submanifest_transition": {
     "before": {

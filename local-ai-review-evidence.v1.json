@@ -67,6 +67,10 @@
     {"name": "future_workflow_file_absent_in_repo", "status": "pass"},
     {"name": "dispatch_allowlist_forbidden_disjoint", "status": "pass"},
     {"name": "plan_doc_records_decision_no_execution_no_flag_flip", "status": "pass"},
+    {"name": "authorization_recorded_at_not_in_future", "status": "pass"},
+    {"name": "validity_window_bounded_by_max_activation_delay", "status": "pass"},
+    {"name": "pr_number_hint_bound_to_real_pr_675", "status": "pass"},
+    {"name": "authorization_source_is_auditable_reference", "status": "pass"},
     {"name": "no_support_widening", "status": "pass"},
     {"name": "no_production_platform_claim", "status": "pass"},
     {"name": "no_live_adapter_execution", "status": "pass"},
@@ -83,7 +87,8 @@
     {"name": "no_ri78a_predecessor_evidence_change", "status": "pass"},
     {"name": "no_ri78_submanifest_change", "status": "pass"},
     {"name": "cross_provider_verified", "status": "pass"},
-    {"name": "codex_plan_time_partial_iter1_absorbed_iter2_agree", "status": "pass"}
+    {"name": "codex_plan_time_partial_iter1_absorbed_iter2_agree", "status": "pass"},
+    {"name": "codex_post_impl_iter3_revise_absorbed_timestamp_pr_binding_auditable_source", "status": "pass"}
   ],
   "findings": [
     "RI-7.8b-bc1-6a v1 operator execution-window AUTHORIZATION CONTRACT ONLY evidence. B-path slice 6a of 8 (after RI-7.8a MERGED in PR #673). Codex plan-time thread 019e6ba0-ee03-7e90-b069-057267be13ed iter-1 PARTIAL absorbed (4 critical corrections: 6-signal contract, expected_* pattern, future_workflow_contract separation from forbidden_change_audit, exact-set forbidden audit with contains+minContains+maxContains), iter-2 AGREE.",
