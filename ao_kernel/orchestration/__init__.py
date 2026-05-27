@@ -35,13 +35,24 @@ from ao_kernel.orchestration.orchestrator import (
     SSOTPaths,
 )
 from ao_kernel.orchestration.risk_classifier import RiskClassifier
+from ao_kernel.orchestration.runner_report_writer import (
+    RunnerReportWriter,
+    RunnerReportWriterError,
+    sha256_of,
+)
 from ao_kernel.orchestration.task_graph_builder import build_task_graph
+from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
 __all__ = [
     "ArtifactWriter",
     "OrchestrationError",
     "Orchestrator",
     "RiskClassifier",
+    "RunnerReportWriter",
+    "RunnerReportWriterError",
     "SSOTPaths",
+    "WorkerRunner",
+    "WorkerRunnerError",
     "build_task_graph",
+    "sha256_of",
 ]
