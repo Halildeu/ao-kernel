@@ -85,14 +85,14 @@
         }
       },
       "allOf": [
-        {"contains": {"type": "object", "properties": {"id": {"const": "no_hidden_prompt_injection"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "no_context_compiler_auto_feed"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "no_root_authority_file_write"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "no_mcp_repo_intelligence_tool_exposed"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "write_vectors_confirmation_token_required"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "missing_backend_or_api_key_fail_closed"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "repo_scan_query_read_only_boundary"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1},
-        {"contains": {"type": "object", "properties": {"id": {"const": "negative_prompt_injection_fixture"}}, "required": ["id"]}, "minContains": 1, "maxContains": 1}
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_hidden_prompt_injection"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_hidden_prompt_injection"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_context_compiler_auto_feed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_context_compiler_auto_feed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_root_authority_file_write"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_root_authority_file_write"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "no_mcp_repo_intelligence_tool_exposed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_mcp_repo_intelligence_tool_exposed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "write_vectors_confirmation_token_required"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_write_vectors_confirmation_token_required"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "missing_backend_or_api_key_fail_closed"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_missing_backend_or_api_key_fail_closed"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "repo_scan_query_read_only_boundary"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_repo_scan_query_read_only_boundary"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "negative_prompt_injection_fixture"}, "script_ref": {"const": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_negative_prompt_injection_fixture"}}, "required": ["id", "script_ref"]}, "minContains": 1, "maxContains": 1}
       ]
     },
     "support_widening": {"type": "boolean", "const": false},

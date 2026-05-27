@@ -11,6 +11,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import jsonschema
@@ -129,6 +130,74 @@ def test_ri75_script_exists_and_emits_eight_results() -> None:
     for inv in evidence["runtime_invariants"]:
         head, _sep, _func = inv["script_ref"].partition("::")
         assert (_REPO_ROOT / head).resolve() == _SCRIPT_PATH.resolve(), inv["script_ref"]
+
+
+def test_ri75_schema_pins_id_to_script_ref_mapping() -> None:
+    """Codex iter-2 absorb (BLOCKER #6): the schema MUST pin each
+    invariant ID to its expected `_verify_*` function via the
+    `allOf/contains` clause carrying `script_ref` const. This makes
+    the id <-> script_ref mapping schema-enforced — a wrong-function
+    binding cannot pass validation.
+    """
+    schema = json.loads(_read(_SCHEMA_PATH))
+    all_of = schema["properties"]["runtime_invariants"]["allOf"]
+    expected = {
+        "no_hidden_prompt_injection": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_hidden_prompt_injection",
+        "no_context_compiler_auto_feed": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_context_compiler_auto_feed",
+        "no_root_authority_file_write": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_root_authority_file_write",
+        "no_mcp_repo_intelligence_tool_exposed": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_no_mcp_repo_intelligence_tool_exposed",
+        "write_vectors_confirmation_token_required": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_write_vectors_confirmation_token_required",
+        "missing_backend_or_api_key_fail_closed": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_missing_backend_or_api_key_fail_closed",
+        "repo_scan_query_read_only_boundary": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_repo_scan_query_read_only_boundary",
+        "negative_prompt_injection_fixture": "scripts/ri7_operator_verified_runtime_semantics.py::_verify_negative_prompt_injection_fixture",
+    }
+    pinned: dict[str, str] = {}
+    for clause in all_of:
+        contains = clause.get("contains", {})
+        props = contains.get("properties", {})
+        id_const = props.get("id", {}).get("const")
+        script_ref_const = props.get("script_ref", {}).get("const")
+        assert id_const, f"allOf clause missing id const: {clause}"
+        assert script_ref_const, f"allOf clause for {id_const} missing script_ref const"
+        pinned[id_const] = script_ref_const
+    assert pinned == expected, f"schema id->script_ref mapping drift: {pinned} != {expected}"
+
+
+def test_ri75_script_rerun_matches_committed_evidence() -> None:
+    """Codex iter-2 absorb (iter request #2): re-run the script with
+    `--emit json` and assert the output matches the committed
+    `runtime_invariants` array exactly (id, status, evidence_class,
+    script_ref, result_summary, sha256 per entry). This binds the
+    committed sha256 digests to a re-runnable behavioral check; sha256
+    drift = drift between script and committed evidence and fails CI.
+    """
+    proc = subprocess.run(
+        [sys.executable, str(_SCRIPT_PATH), "--emit", "json"],
+        cwd=str(_REPO_ROOT),
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert proc.returncode == 0, f"script exit {proc.returncode}; stderr={proc.stderr.strip()[:500]!r}"
+    rerun_results = json.loads(proc.stdout)
+    assert isinstance(rerun_results, list), type(rerun_results).__name__
+    assert len(rerun_results) == 8, len(rerun_results)
+
+    evidence = json.loads(_read(_EVIDENCE_PATH))
+    committed = evidence["runtime_invariants"]
+    rerun_by_id = {entry["id"]: entry for entry in rerun_results}
+    committed_by_id = {entry["id"]: entry for entry in committed}
+    assert set(rerun_by_id.keys()) == set(committed_by_id.keys()), (
+        f"id set drift: rerun={set(rerun_by_id.keys())} committed={set(committed_by_id.keys())}"
+    )
+    for inv_id, rerun_entry in rerun_by_id.items():
+        committed_entry = committed_by_id[inv_id]
+        for field in ("status", "evidence_class", "script_ref", "result_summary", "sha256"):
+            assert rerun_entry[field] == committed_entry[field], (
+                f"drift on {inv_id}.{field}: rerun={rerun_entry[field]!r} committed={committed_entry[field]!r}"
+            )
 
 
 def test_ri75_forbidden_change_audit() -> None:
