@@ -1,0 +1,24 @@
+{
+  "agent_id": "codex-reviewer",
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10_provider_consensus",
+  "context_binding": {
+    "base_ref": "origin/main",
+    "changed_files_count": 2,
+    "diff_digest": "sha256:d78df81de03697a33fa54e048c262dea3808b2e7bfdb77b5eb8ed37e6c0e01da",
+    "head_ref": "refs/heads/codex/ao-ma-10a2-evidence-schemas",
+    "head_sha": "0123456789abcdef0123456789abcdef01234567",
+    "repository_full_name": "Halildeu/ao-kernel"
+  },
+  "findings_count": 0,
+  "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "provider_id": "openai",
+  "release_authority": "ao-release-gate+github-ruleset",
+  "role": "reviewer",
+  "round_index": 1,
+  "schema_version": "ao-ma-10-provider-consensus.v1",
+  "secrets_recorded": false,
+  "support_widening": false,
+  "verdict": "AGREE"
+}

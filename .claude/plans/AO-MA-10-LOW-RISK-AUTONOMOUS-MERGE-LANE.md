@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** planned / AO-MA-10a1 eligibility checker recorded
+**Status:** planned / AO-MA-10a2 evidence schemas recorded
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -46,7 +46,7 @@ The revised sequence is therefore fail-closed:
 ```text
 AO-MA-10a0  GitHub readiness snapshot (read-only, this slice)
 AO-MA-10a1  autonomous_merge_eligibility checker (separate from RiskClassifier)
-AO-MA-10a2  context-bound evidence bundle + registered-provider consensus schemas
+AO-MA-10a2  context-bound evidence bundle + registered-provider consensus schemas (recorded)
 AO-MA-10b   ao-release-gate payload + decision integration
 AO-MA-10d   negative fail-closed suite before any real merge
 AO-MA-10c   merge-agent identity + dry-run executor
@@ -261,6 +261,32 @@ GitHub enforcement still lacks the dual required-check set, legacy review still
 blocks low-risk autonomy, the current actor is admin, and the broader SSOT/live
 required-check drift remains unresolved. That is the correct fail-closed state.
 
+## AO-MA-10a2 Evidence Bundle + Provider Consensus Schemas
+
+AO-MA-10a2 records the context-bound evidence contract for later release-gate
+integration. It adds:
+
+```text
+ao_kernel/defaults/schemas/ao-ma-10-provider-consensus.schema.v1.json
+ao_kernel/defaults/schemas/ao-ma-10-evidence-bundle.schema.v1.json
+scripts/ao_ma10_evidence_bundle.py
+```
+
+The provider consensus artifact records one registered provider's verdict and
+the exact context binding. The evidence bundle aggregates registered provider
+verdicts and requires the current hard baseline providers:
+
+```text
+openai + anthropic
+```
+
+MiniMax remains registered but optional until its callable transport is verified
+and schema-pinned in a later provider-integration slice.
+
+AO-MA-10a2 is still read-only. It does not mutate GitHub settings, activate a
+merge agent, integrate `ao-release-gate`, or execute an autonomous merge. It
+creates the evidence shape that AO-MA-10b can later consume.
+
 ## GitHub Compatibility
 
 The design stays GitHub-native:
@@ -311,6 +337,21 @@ AO-MA-10a1 may touch only:
 6. `tests/fixtures/ao_ma_10/autonomous_merge_eligibility.blocked.valid.json`
 7. `tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json`
 8. `local-ai-review-evidence.v1.json`
+
+## Scope of AO-MA-10a2 Evidence Schema Slice
+
+AO-MA-10a2 may touch only:
+
+1. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md`
+2. `.claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json`
+3. `.claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.md`
+4. `.claude/plans/AO-MA-10A2-EVIDENCE-SCHEMAS.v1.json`
+5. `ao_kernel/defaults/schemas/ao-ma-10-provider-consensus.schema.v1.json`
+6. `ao_kernel/defaults/schemas/ao-ma-10-evidence-bundle.schema.v1.json`
+7. `scripts/ao_ma10_evidence_bundle.py`
+8. `tests/test_ao_ma10_evidence_schemas.py`
+9. `tests/fixtures/ao_ma_10a2/`
+10. `local-ai-review-evidence.v1.json`
 
 ## Hard Stops
 

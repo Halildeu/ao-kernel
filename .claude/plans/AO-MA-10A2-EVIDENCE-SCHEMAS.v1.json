@@ -1,0 +1,56 @@
+{
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10a2_evidence_schemas",
+  "claude_consultation": {
+    "decision": "implement_ao_ma_10a2_before_live_mutation",
+    "result": "AGREE",
+    "summary": "Claude recommended recording context-bound evidence bundle and registered-provider consensus schemas before release-gate integration, negative tests, merge-agent dry-run, or any live GitHub settings mutation."
+  },
+  "decision": "record_context_bound_evidence_bundle_and_registered_provider_consensus_schemas",
+  "forbidden_actions": [
+    "workflow_mutation",
+    "ruleset_mutation",
+    "branch_protection_mutation",
+    "codeowners_mutation",
+    "release_gate_runtime_mutation",
+    "local_gate_runtime_mutation",
+    "gpp_status_mutation",
+    "merge_agent_activation",
+    "auto_merge_execution",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "production_platform_claim": false,
+    "support_widening": false
+  },
+  "next_slices": [
+    "AO-MA-10b ao-release-gate payload and decision integration",
+    "AO-MA-10d negative fail-closed suite before real merge",
+    "AO-MA-10c merge-agent identity and dry-run executor",
+    "AO-MA-10e positive disposable low-risk autonomous merge smoke",
+    "AO-MA-10f activation/cutover"
+  ],
+  "read_only": true,
+  "registered_providers": {
+    "optional": [
+      "minimax",
+      "google",
+      "xai"
+    ],
+    "required_for_current_consensus": [
+      "openai",
+      "anthropic"
+    ]
+  },
+  "release_authority": "ao-release-gate+github-ruleset",
+  "schema_refs": [
+    "ao_kernel/defaults/schemas/ao-ma-10-provider-consensus.schema.v1.json",
+    "ao_kernel/defaults/schemas/ao-ma-10-evidence-bundle.schema.v1.json"
+  ],
+  "schema_version": "ao-ma-10a2-evidence-schemas.v1",
+  "status": "recorded",
+  "work_package": "AO-MA-10a2"
+}
