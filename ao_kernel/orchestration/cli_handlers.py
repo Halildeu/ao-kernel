@@ -30,6 +30,11 @@ from ao_kernel.orchestration.reviewer import (
     ReviewerError,
 )
 from ao_kernel.orchestration.task_graph_builder import TaskSpec
+from ao_kernel.orchestration.verifier import (
+    VerificationInputs,
+    Verifier,
+    VerifierError,
+)
 from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
 
@@ -445,6 +450,71 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         help="Stdout summary format (default: text)",
     )
 
+    # AO-MA-7: verify (deterministic checks; NO LLM call)
+    verify_p = orchestration_sub.add_parser(
+        "verify",
+        help=(
+            "Verifier lane v1: deterministic GPP guard + metadata secret scan + diff scope + "
+            "artifact hash checks. Emits schema-valid verification_report.v1.json. NO LLM call, "
+            "NO subprocess, NO PR/GitHub fetch — pure-data verification."
+        ),
+    )
+    verify_p.add_argument("--manifest", required=True, help="Path to AO-MA-3 manifest.v1.json")
+    verify_p.add_argument(
+        "--task-id",
+        required=True,
+        help="Task ID being verified (must match worker_result.task_id and task_graph entry)",
+    )
+    verify_p.add_argument(
+        "--worker-result",
+        action="append",
+        required=True,
+        help=(
+            "Per-task worker_result.v1.json mapping '<task_id>=<path>'. Verifier reads the "
+            "implementer identity from worker_result.worker.provider (cross-provider HARD RULE; "
+            "set --verifier-provider tool for no-LLM verifier)."
+        ),
+    )
+    verify_p.add_argument("--verifier-agent-id", required=True, help="Verifier agent ID (free string)")
+    verify_p.add_argument(
+        "--verifier-provider",
+        default="tool",
+        choices=["openai", "anthropic", "minimax", "google", "local", "tool"],
+        help=(
+            "Verifier provider identity (default: tool — no-LLM deterministic verifier). "
+            "Must differ from worker_result.worker.provider."
+        ),
+    )
+    verify_p.add_argument("--verifier-session-id", required=True, help="Verifier session ID (audit trail)")
+    verify_p.add_argument(
+        "--review-verdict",
+        default=None,
+        help=(
+            "Optional: path to review_verdict.v1.json (AO-MA-6 output). Verifier reads "
+            "guard_flags + no_secret_attestation + computes its hash into artifact_hashes."
+        ),
+    )
+    verify_p.add_argument(
+        "--gpp-status",
+        default=None,
+        help=(
+            "Optional: path to gpp_status.v1.json (defaults to <repo_root>/.claude/plans/"
+            "gpp_status.v1.json when present). Verifier reads support_widening_allowed + "
+            "production_platform_claim_allowed + live_adapter_execution_allowed allowlist flags."
+        ),
+    )
+    verify_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    verify_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
 
 def _parse_per_task_paths(raw: list[str] | None, kind: str) -> dict[str, Path]:
     """Parse repeated '--worker-result <task_id>=<path>' CLI args into a dict.
@@ -628,3 +698,88 @@ def cmd_orchestration_review(args: argparse.Namespace) -> int:
         print(f"emitted to: {manifest_path.parent / 'workers' / args.task_id / 'review_verdict.v1.json'}")
 
     return 0
+
+
+def cmd_orchestration_verify(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration verify`` (AO-MA-7 v1).
+
+    Exit codes (Codex iter-1 must_close #6 absorb):
+
+    - 0 — verification_report.v1.json emitted, all checks pass
+    - 1 — verification_report.v1.json emitted, failed_checks non-empty
+    - 2 — missing required input / schema validation fail / cross-provider violation / trust-boundary fail
+    - 3 — write failure (FS / schema mismatch at emit time)
+    """
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    worker_result_paths = _parse_per_task_paths(args.worker_result, "worker-result")
+
+    review_verdict_path: Path | None = None
+    if args.review_verdict:
+        review_verdict_path = Path(args.review_verdict).resolve()
+        if not review_verdict_path.exists():
+            print(f"error: --review-verdict file not found: {review_verdict_path!s}", file=sys.stderr)
+            return 2
+
+    gpp_status_path: Path | None = None
+    if args.gpp_status:
+        gpp_status_path = Path(args.gpp_status).resolve()
+        if not gpp_status_path.exists():
+            print(f"error: --gpp-status file not found: {gpp_status_path!s}", file=sys.stderr)
+            return 2
+
+    inputs = VerificationInputs(
+        manifest_path=manifest_path,
+        task_id=args.task_id,
+        worker_result_paths=worker_result_paths,
+        verifier_agent_id=args.verifier_agent_id,
+        verifier_provider=args.verifier_provider,
+        verifier_session_id=args.verifier_session_id,
+        review_verdict_path=review_verdict_path,
+        gpp_status_path=gpp_status_path,
+    )
+
+    verifier = Verifier(repo_root=repo_root)
+    try:
+        result = verifier.verify(inputs)
+    except VerifierError as exc:
+        msg = str(exc)
+        if "verification_report write failed" in msg:
+            print(f"orchestration verify emit failure: {msg}", file=sys.stderr)
+            return 3
+        print(f"orchestration verify failed: {msg}", file=sys.stderr)
+        return 2
+
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "overall_pass": result.overall_pass,
+                    "failed_checks": result.failed_checks,
+                    "diagnostics": result.diagnostics,
+                    "report": result.report,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        print(f"overall_pass: {result.overall_pass}")
+        commands = result.report.get("commands", [])
+        for cmd_entry in commands:
+            print(f"  - {cmd_entry['command']}: {cmd_entry['outcome']}")
+        if result.failed_checks:
+            print("failed_checks:")
+            for fc in result.failed_checks:
+                print(f"  - {fc}")
+        if result.diagnostics:
+            print("diagnostics:")
+            for diag in result.diagnostics:
+                print(f"  - {diag}")
+        print(f"emitted to: {manifest_path.parent / 'workers' / args.task_id / 'verification_report.v1.json'}")
+
+    return 1 if result.failed_checks else 0

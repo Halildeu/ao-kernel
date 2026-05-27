@@ -2143,6 +2143,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_orchestration_plan,
             cmd_orchestration_review,
             cmd_orchestration_spawn,
+            cmd_orchestration_verify,
         )
 
         orchestration_cmd = getattr(args, "orchestration_command", None)
@@ -2156,7 +2157,12 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_integrate(args)
         if orchestration_cmd == "review":
             return cmd_orchestration_review(args)
-        print("Usage: ao-kernel orchestration {plan|spawn|cleanup|integrate|review}", file=sys.stderr)
+        if orchestration_cmd == "verify":
+            return cmd_orchestration_verify(args)
+        print(
+            "Usage: ao-kernel orchestration {plan|spawn|cleanup|integrate|review|verify}",
+            file=sys.stderr,
+        )
         return 1
 
     handler = dispatch.get(cmd)
