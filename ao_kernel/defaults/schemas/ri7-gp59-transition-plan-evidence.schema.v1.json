@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-gp59-transition-plan-evidence:v1",
+  "title": "RI-7.7 GP-5.9 Reclassification + Support-Boundary Transition Plan Evidence",
+  "description": "Evidence artifact recording the RI-7.7 docs-only transition plan: BC-1..BC-10 reclassification decisions (all 'retain') and the public boundary surfaces' edit contract (all 'unchanged_record_contract_only'). Operator/process evidence only; not release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "bc_baseline",
+    "boundary_surfaces"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-gp59-transition-plan-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_gp59_reclassification_support_boundary_transition_plan_evidence"},
+    "decision": {"type": "string", "const": "ri7_gp59_transition_plan_ready"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "bc_baseline": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "current_status", "ri77_reclassification_decision", "authority_required"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["BC-1", "BC-2", "BC-3", "BC-4", "BC-5", "BC-6", "BC-7", "BC-8", "BC-9", "BC-10"]
+          },
+          "current_status": {"type": "string", "enum": ["covered", "blocked"]},
+          "ri77_reclassification_decision": {
+            "type": "string",
+            "enum": ["retain_as_covered", "retain_as_blocker"]
+          },
+          "authority_required": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-1"}, "current_status": {"const": "blocked"}, "ri77_reclassification_decision": {"const": "retain_as_blocker"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-2"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-3"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-4"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-5"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-6"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-7"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-8"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-9"}, "current_status": {"const": "covered"}, "ri77_reclassification_decision": {"const": "retain_as_covered"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"id": {"const": "BC-10"}, "current_status": {"const": "blocked"}, "ri77_reclassification_decision": {"const": "retain_as_blocker"}}, "required": ["id", "current_status", "ri77_reclassification_decision"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "boundary_surfaces": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "ri77_edit_decision"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "enum": ["docs/PUBLIC-BETA.md", "docs/SUPPORT-BOUNDARY.md", "docs/KNOWN-BUGS.md"]
+          },
+          "ri77_edit_decision": {"type": "string", "const": "unchanged_record_contract_only"}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"path": {"const": "docs/PUBLIC-BETA.md"}}, "required": ["path"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"path": {"const": "docs/SUPPORT-BOUNDARY.md"}}, "required": ["path"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"path": {"const": "docs/KNOWN-BUGS.md"}}, "required": ["path"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

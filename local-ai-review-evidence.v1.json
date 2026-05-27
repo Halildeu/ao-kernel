@@ -1,27 +1,31 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.6",
+  "work_package": "RI-7.7",
   "implementer": {"agent": "claude", "provider": "anthropic"},
   "reviewer": {"agent": "codex", "provider": "openai", "verdict": "AGREE"},
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-6-cross-lane-matrix",
+    "head_ref": "refs/heads/codex/ri-7-7-gp59-transition",
     "changed_files": [
       ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
-      ".claude/plans/RI-7.6-CROSS-LANE-PRODUCTION-MATRIX-EVIDENCE.md",
-      ".claude/plans/RI-7.6-CROSS-LANE-PRODUCTION-MATRIX-EVIDENCE.v1.json",
-      "ao_kernel/defaults/schemas/ri7-cross-lane-production-matrix-evidence.schema.v1.json",
+      ".claude/plans/RI-7.7-GP59-RECLASSIFICATION-SUPPORT-BOUNDARY-TRANSITION-PLAN.md",
+      ".claude/plans/RI-7.7-GP59-RECLASSIFICATION-SUPPORT-BOUNDARY-TRANSITION-PLAN.v1.json",
+      "ao_kernel/defaults/schemas/ri7-gp59-transition-plan-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri7_cross_lane_production_matrix_invariant.py"
+      "tests/test_ri7_gp59_transition_plan_invariant.py"
     ]
   },
   "checks_considered": [
     {"name": "tests", "status": "pass"},
     {"name": "secret_scan", "status": "pass"},
     {"name": "schema_validation_2020_12", "status": "pass"},
-    {"name": "schema_pins_six_covered_plus_one_operator_bound_deferred", "status": "pass"},
-    {"name": "evidence_refs_point_at_real_paths", "status": "pass"},
+    {"name": "schema_pins_bc1_bc10_blocked_retain_blocker", "status": "pass"},
+    {"name": "schema_pins_bc2_bc9_covered_retain_covered", "status": "pass"},
+    {"name": "schema_pins_three_boundary_surfaces_unchanged", "status": "pass"},
+    {"name": "bc_baseline_actually_unchanged", "status": "pass"},
+    {"name": "public_boundary_surfaces_actually_unchanged", "status": "pass"},
+    {"name": "no_gp59_decision_script_edit", "status": "pass"},
     {"name": "no_support_widening", "status": "pass"},
     {"name": "no_production_platform_claim", "status": "pass"},
     {"name": "no_live_adapter_execution", "status": "pass"},
@@ -31,18 +35,17 @@
     {"name": "no_mcp_repo_intelligence_exposure", "status": "pass"},
     {"name": "no_context_compiler_auto_feed", "status": "pass"},
     {"name": "no_root_authority_write_change", "status": "pass"},
-    {"name": "no_gp59_reclassification", "status": "pass"},
-    {"name": "no_bc1_to_bc10_baseline_mutation", "status": "pass"},
     {"name": "cross_provider_verified", "status": "pass"}
   ],
   "findings": [
-    "RI-7.6 records the cross-lane production matrix evidence inventory in a single matrix doc + schema-validated JSON artifact, covering 7 lanes: read_only_e2e (GPP-6), controlled_write_side (GPP-7), remote_pr_write (GPP-8), rollback_operations (GP-5.8 + docs/ROLLBACK-RUNBOOK.md), cost_telemetry (GP-5.7a/b + GPP-9), release_governance (ao-release-gate + ruleset 16803733), real_adapter_live_execution (operator_bound_deferred).",
-    "Schema strictness improved per Codex iter-1 suggestion: minItems=maxItems=7, uniqueItems=true, plus per-lane allOf/contains/minContains/maxContains. Non-real lanes pinned with status const=covered; real_adapter_live_execution lane pinned with status const=operator_bound_deferred. The schema rejects any mutation that flips a covered lane to deferred or vice versa.",
-    "Doc invariant suite tests/test_ri7_cross_lane_production_matrix_invariant.py (5 tests) pins lane list, exit decision, no-promotion-dilution language, evidence artifact closed-boundary shape, evidence_refs paths exist, and manifest shape (cross_lane_production_matrix_evidence=true; all other RI-7.x evidence keys false).",
-    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json drops cross_lane_production_matrix_evidence_missing when consumed; remaining RI-7.x blockers (RI-7.1, 7.2, 7.3, 7.4, 7.5, 7.7) stay pending and three guard flags remain false.",
-    "Local test run: 9 passed (5 doc invariant + 4 tier_promotion_readiness).",
-    "Forbidden-change audit clean: gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, gp5_* rehearsal scripts, .github/workflows/, ao_kernel/mcp_server.py, ao_kernel/__init__.py, ao_kernel/cli.py, ao_kernel/defaults/policies/, public SDK signatures, branch protection / ruleset, BC-1..BC-10 baseline, docs/PUBLIC-BETA, SUPPORT-BOUNDARY, KNOWN-BUGS all untouched. RI-7.7 owns the GP-5.9 reclassification + support-boundary transition plan; RI-7.6 only records the cross-lane evidence inventory.",
-    "Cross-provider verified: implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE CC-2 satisfied via Codex MCP thread 019e6832-208d-79f0-bbb7-c0f6f3f5dedf (post-impl REVISE iter-1 absorbed via CC-2 evidence rewrite + schema status pin tightening + commit; AGREE iter-2 expected)."
+    "RI-7.7 records the GP-5.9 BC-1..BC-10 reclassification plan and the public support-boundary (PUBLIC-BETA/SUPPORT-BOUNDARY/KNOWN-BUGS) transition plan in a single docs-only slice. The BC baseline is untouched, the public boundary surfaces are untouched, and scripts/gp5_platform_claim_decision.py is untouched.",
+    "Schema strictness improved per Codex iter-1 suggestion: BC-2..BC-9 pinned with current_status const=covered + ri77_reclassification_decision const=retain_as_covered; BC-1 + BC-10 pinned with current_status const=blocked + ri77_reclassification_decision const=retain_as_blocker. Boundary surfaces array pinned with ri77_edit_decision const=unchanged_record_contract_only for each of the three public surfaces.",
+    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json flips both gp59_reclassification_plan=true and support_boundary_transition_plan=true; every other RI-7.x evidence key remains false. Running scripts/repo_intelligence_tier_promotion_readiness.py with this manifest drops both blockers while remaining RI-7.1 (×2: operator authorization + platform claim authorization), RI-7.2, RI-7.3, RI-7.4, RI-7.5, RI-7.6 blockers stay.",
+    "Doc invariant suite tests/test_ri7_gp59_transition_plan_invariant.py (5 tests) pins the BC baseline list, boundary surface list, exit decision, no-promotion-dilution language, frozen baseline decisions (BC-1+10 retain_as_blocker; BC-2..BC-9 retain_as_covered), manifest dual-flip, and that the three public boundary surfaces actually exist in the repo today.",
+    "Local test run: 9 passed (5 RI-7.7 invariant + 4 tier_promotion_readiness).",
+    "Authorization path documented in plan §5: any actual BC reclassification or boundary text change requires RI-7.1 operator authorization + RI-7.5 operator runtime semantics + RI-7.8 final operator promotion + real protected live-adapter gate attestation (BC-1) or real-adapter usage/cost evidence (BC-10). RI-7.7 itself does none of these; it only records the plan.",
+    "Forbidden-change audit clean: gpp_status.v1.json, scripts/gp5_platform_claim_decision.py, .claude/plans/GP-5.9-PRODUCTION-PLATFORM-CLAIM-DECISION.md, docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md, .github/workflows/, ao_kernel/__init__.py, ao_kernel/cli.py, ao_kernel/mcp_server.py, ao_kernel/defaults/policies/, public SDK signatures, branch protection / ruleset, BC-1..BC-10 baseline values all untouched.",
+    "Cross-provider verified: implementer claude/anthropic differs from reviewer codex/openai; cross-AI peer review HARD RULE CC-2 satisfied via Codex MCP thread 019e683e-7175-7332-b766-f394b786575e (post-impl REVISE iter-1 absorbed via CC-2 evidence rewrite for RI-7.7 scope + schema status const tightening + commit; AGREE iter-2 expected)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
