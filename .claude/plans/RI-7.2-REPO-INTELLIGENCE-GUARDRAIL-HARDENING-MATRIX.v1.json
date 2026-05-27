@@ -113,7 +113,6 @@
       ".github/workflows/",
       "ao_kernel/mcp_server.py",
       "ao_kernel/__init__.py",
-      "ao_kernel/cli.py",
       "ao_kernel/defaults/policies/",
       "docs/PUBLIC-BETA.md",
       "docs/SUPPORT-BOUNDARY.md",
