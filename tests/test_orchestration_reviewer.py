@@ -1207,7 +1207,7 @@ def test_review_missing_optional_evidence_path_exits_two(repo, tmp_path: Path) -
         findings_path=findings_path,
         diff_path=bogus,  # non-existent
     )
-    with pytest.raises(ReviewerError, match="does not exist"):
+    with pytest.raises(ReviewerError, match="is not a regular file"):
         Reviewer(repo_root=r).review(inputs)
 
 

@@ -91,7 +91,7 @@
     "Test coverage: 31 new tests in tests/test_orchestration_reviewer.py. Full suite 3800 passed, 2 skipped, 0 regression (was 3731 post-AO-MA-5 merge). ruff + mypy clean (12 orchestration source files).",
     "Forbidden actions korundu: no LLM call (static AST + text scan tests), no subprocess import, no shell-out (no subprocess.run / os.system / os.popen), no GitHub write, no PR fetch, no branch protection ruleset mutation, no gpp_status mutation, no scripts/gp5_platform_claim_decision change, no public SDK signature change, no admin bypass, no --no-verify.",
     "guard_flags closed: support_widening, production_platform_claim, live_adapter_execution all stay literal false (review_verdict $defs.closed_guards + reviewer emit explicitly). release_authority field NOT in review_verdict.v1 schema (reviewer is not release authority; only integration_report.v1 has release_authority const).",
-    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e6923-7a82-7dd0-b2e0-fd99a8b3b03f plan-time iter-1→iter-3 AGREE absorbed. Post-impl review will continue in same thread or new thread per cycle pattern."
+    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e6923-7a82-7dd0-b2e0-fd99a8b3b03f 5-iter cycle complete: plan-time iter-1 PARTIAL → iter-2 PARTIAL → iter-3 AGREE (plan ready_for_impl), post-impl iter-4 REVISE (allowed_sources fail-closed + evidence path existence absorbed) → iter-5 AGREE (ready_for_merge_decision: true, no must_fix). 1 LOW nice-to-have (is_file() instead of exists()) absorbed in same iter. 34 tests pass."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

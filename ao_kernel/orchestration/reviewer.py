@@ -282,10 +282,14 @@ class Reviewer:
             evidence_path = getattr(inputs, path_attr)
             if evidence_path is None:
                 continue
-            if not evidence_path.exists():
+            # Codex iter-5 nice-to-have absorb: ``.is_file()`` is stricter
+            # than ``.exists()``; an operator who accidentally passes a
+            # directory path cannot survive into a fabricated source claim.
+            if not evidence_path.is_file():
                 raise ReviewerError(
-                    f"--{path_attr.replace('_', '-')} {evidence_path!s} does not exist; "
-                    f"refusing to claim {source_label!r} in allowed_sources for an unread artifact"
+                    f"--{path_attr.replace('_', '-')} {evidence_path!s} is not a regular file "
+                    f"(does not exist or is a directory); refusing to claim {source_label!r} "
+                    f"in allowed_sources for an unread artifact"
                 )
             allowed_sources_set.add(source_label)
         if inputs.prior_review_verdict_paths:
