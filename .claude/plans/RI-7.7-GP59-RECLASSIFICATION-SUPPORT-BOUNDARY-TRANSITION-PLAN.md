@@ -148,11 +148,33 @@ Required fields:
 - `artifact_kind`: `ri7_gp59_reclassification_support_boundary_transition_plan_evidence`
 - `decision`: `ri7_gp59_transition_plan_ready`
 - `support_widening` / `production_platform_claim` / `live_adapter_execution`: `false`
-- `bc_baseline`: array of 10 entries (one per BC-1..BC-10) with `id`,
-  `current_status`, `ri77_reclassification_decision`, `authority_required`.
-  Each entry's `ri77_reclassification_decision` MUST be either
-  `retain_as_covered` or `retain_as_blocker`. No reclassification is allowed
-  by this slice.
+- `bc_baseline`: array of 10 entries (one per BC-1..BC-10). Each entry
+  carries `id`, `current_gp59_status`, `ri77_reclassification_decision`,
+  `promotion_readiness_status`, and `authority_required` as required
+  fields, plus the optional `current_gp59_blockers`,
+  `required_evidence_class`, `required_evidence_refs`, and
+  `target_promotion_readiness_status_after_successful_supersession`
+  fields (these last four are optional in the general case, but the
+  schema's `allOf` pins them as **required** specifically for BC-1
+  and BC-10 — both must carry `required_evidence_class=live`, exactly
+  two `required_evidence_refs` with const `path`/`ref_status`/
+  `owner_slice`/`must_exist_before_reclassification`, and
+  `target_promotion_readiness_status_after_successful_supersession=pass`). `current_gp59_status` mirrors the source-truth enum used by
+  `scripts/gp5_platform_claim_decision.py` exactly
+  (`pass|blocked|exception`). `ri77_reclassification_decision` is one
+  of `retain_as_pass` (covered criterion), `retain_as_blocker` (GP-5.9
+  still blocks AND promotion still blocks — BC-1), or
+  `retain_as_promotion_blocker` (GP-5.9 accepts via exception but
+  promotion is still blocked until live evidence — BC-10).
+  `promotion_readiness_status` is independent of GP-5.9 and names the
+  concrete production-claim blocker if any. No reclassification is
+  allowed by this slice — the BC baseline is read-only here; a future
+  RI-7.8c promote PR is the only authorized writer.
+- B-path vocabulary fix (Codex thread 019e691b iter-2+iter-3): the
+  previous single field `current_status` (enum `covered|blocked`)
+  collapsed GP-5.9 framework status and production-promotion readiness
+  into one ambiguous value. The split above is the canonical schema
+  used by RI-7.8c as input.
 - `boundary_surfaces`: array of 3 entries (`PUBLIC-BETA.md`,
   `SUPPORT-BOUNDARY.md`, `KNOWN-BUGS.md`) with `path` and
   `ri77_edit_decision` = `unchanged_record_contract_only`.

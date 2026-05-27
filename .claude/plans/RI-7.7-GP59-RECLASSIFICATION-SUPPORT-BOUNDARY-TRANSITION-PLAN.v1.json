@@ -6,16 +6,144 @@
   "production_platform_claim": false,
   "live_adapter_execution": false,
   "bc_baseline": [
-    {"id": "BC-1", "current_status": "blocked", "ri77_reclassification_decision": "retain_as_blocker", "authority_required": "Operator authorization PR + protected live-adapter gate attestation artifact"},
-    {"id": "BC-2", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-3", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-4", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-5", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-6", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-7", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-8", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-9", "current_status": "covered", "ri77_reclassification_decision": "retain_as_covered", "authority_required": "n/a (already covered)"},
-    {"id": "BC-10", "current_status": "blocked", "ri77_reclassification_decision": "retain_as_blocker", "authority_required": "Operator authorization PR + real-adapter usage/cost evidence artifact"}
+    {
+      "id": "BC-1",
+      "current_gp59_status": "blocked",
+      "ri77_reclassification_decision": "retain_as_blocker",
+      "promotion_readiness_status": "blocked_until_protected_live_adapter_gate_attestation",
+      "current_gp59_blockers": [
+        "protected_live_adapter_gate_unattested"
+      ],
+      "required_evidence_class": "live",
+      "required_evidence_refs": [
+        {
+          "path": "ao_kernel/defaults/schemas/claude-code-cli-failure-mode.schema.v1.json",
+          "ref_status": "existing",
+          "owner_slice": "main",
+          "must_exist_before_reclassification": true
+        },
+        {
+          "path": "ao_kernel/defaults/schemas/ri7-bc1-protected-live-adapter-attestation.schema.v1.json",
+          "ref_status": "planned",
+          "owner_slice": "RI-7.8b-bc1",
+          "must_exist_before_reclassification": true
+        }
+      ],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "Operator authorization PR + protected live-adapter gate attestation artifact (three protected clean live runs + one protected fail-closed live run)"
+    },
+    {
+      "id": "BC-2",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-3",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-4",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-5",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-6",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-7",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-8",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-9",
+      "current_gp59_status": "pass",
+      "ri77_reclassification_decision": "retain_as_pass",
+      "promotion_readiness_status": "pass",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "none",
+      "required_evidence_refs": [],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "n/a (already passing both axes)"
+    },
+    {
+      "id": "BC-10",
+      "current_gp59_status": "exception",
+      "ri77_reclassification_decision": "retain_as_promotion_blocker",
+      "promotion_readiness_status": "blocked_until_live_usage_cost_evidence",
+      "current_gp59_blockers": [],
+      "required_evidence_class": "live",
+      "required_evidence_refs": [
+        {
+          "path": "ao_kernel/defaults/schemas/real-adapter-usage-cost-evidence.schema.v1.json",
+          "ref_status": "existing",
+          "owner_slice": "main",
+          "must_exist_before_reclassification": true
+        },
+        {
+          "path": "ao_kernel/defaults/schemas/ri7-bc10-real-adapter-usage-cost-aggregate.schema.v1.json",
+          "ref_status": "planned",
+          "owner_slice": "RI-7.8b-bc10",
+          "must_exist_before_reclassification": true
+        }
+      ],
+      "target_promotion_readiness_status_after_successful_supersession": "pass",
+      "authority_required": "Operator authorization PR + real-adapter usage/cost evidence aggregate (≥3 successful live calls + ≥1 fail-closed no-cost path, capped per RI-7.8a authorization budget)"
+    }
   ],
   "boundary_surfaces": [
     {"path": "docs/PUBLIC-BETA.md", "ri77_edit_decision": "unchanged_record_contract_only"},
@@ -23,9 +151,13 @@
     {"path": "docs/KNOWN-BUGS.md", "ri77_edit_decision": "unchanged_record_contract_only"}
   ],
   "notes": [
-    "RI-7.7 is docs-only: the BC-1..BC-10 baseline is left untouched (no reclassification happens in this slice), and docs/PUBLIC-BETA.md, docs/SUPPORT-BOUNDARY.md, docs/KNOWN-BUGS.md are read-only references. The plan records exactly what a future RI-7.8 operator promotion decision PR would need to do.",
-    "Net effect on BC baseline: zero. Eight covered rows (BC-2..BC-9) stay covered; two blockers (BC-1, BC-10) stay blocked. Any change requires the operator-bound authorization path documented in the plan doc.",
-    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json flips both gp59_reclassification_plan and support_boundary_transition_plan to true. Running scripts/repo_intelligence_tier_promotion_readiness.py with this manifest drops both blockers while remaining RI-7.1, 7.5, 7.8 blockers stay.",
+    "RI-7.7 fast-follow (B-path vocabulary fix per Codex thread 019e691b iter-2+iter-3): the previous single field `current_status` confused two independent semantics — (a) the GP-5.9 framework's classification of each criterion (per scripts/gp5_platform_claim_decision.py, whose `success_criteria[].status` enum is `pass|blocked|exception`) and (b) whether each criterion still blocks a general-purpose production platform claim. These are now split into `current_gp59_status` (using the script's own enum exactly: `pass|blocked|exception`) and `promotion_readiness_status`, with `ri77_reclassification_decision` carrying RI-7.7's own decision per criterion.",
+    "BC-1 (current_gp59_status=blocked, decision=retain_as_blocker, readiness=blocked_until_protected_live_adapter_gate_attestation): The claude-code-cli protected live-adapter gate is currently unattested. GPP-4c keep_operator_beta authoritative decision preserves BC-1 status `blocked` with the `protected_live_adapter_gate_unattested` promotion blocker; production-certified promotion requires a separate operator-bound supersession slice (RI-7.8b-bc1) with three protected clean live runs + one protected fail-closed live run + `evidence_class=live` attestation artifact.",
+    "BC-10 (current_gp59_status=exception, decision=retain_as_promotion_blocker, readiness=blocked_until_live_usage_cost_evidence): GPP-3c (Faz 3) recorded BC-10 as a deliberate-policy exception in the GP-5.9 framework — the `real_adapter_usage_and_cost_evidence_missing` marker was removed from gp5_platform_claim_decision.py promotion_blockers — but production claim promotion still requires real-adapter usage/cost evidence (per-call schema + aggregate spend-ledger digest). The semantic split lets RI-7.7 record both truths simultaneously: GP-5.9 framework accepts the exception; RI-7.7 retains the promotion blocker.",
+    "BC-2..BC-9 (current_gp59_status=pass, decision=retain_as_pass, readiness=pass): no change. These criteria are already passing on both axes. The `pass` value mirrors `scripts/gp5_platform_claim_decision.py` source truth (the previous `covered` value was an RI-7.7-internal alias that diverged from script vocabulary).",
+    "Required-evidence references are now structured ({path, ref_status, owner_slice, must_exist_before_reclassification}) instead of bare strings, so the RI-7.8c final promote PR can machine-check both that 'existing' refs are actually on main and that 'planned' refs landed via their named owner slice.",
+    "Net effect on BC baseline: zero classification change in the GP-5.9 framework; the existing `gp5-production-platform-claim-decision.v1.json` decision and `keep_narrow_stable_runtime` authority remain authoritative. RI-7.7 only encodes the per-criterion semantic split.",
+    "Gate-consumable evidence manifest .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json continues to flip both gp59_reclassification_plan and support_boundary_transition_plan to true (already merged in PR #652). This fast-follow does not flip any manifest key.",
     "Cross-AI peer review (HARD RULE CC-2): implementer claude/anthropic; reviewer codex/openai; verdict recorded in local-ai-review-evidence.v1.json next to this artifact.",
     "No support widening. No production platform claim. No live adapter execution. No public SDK signature change. No MCP exposure. No context-compiler auto-feed. No workflow or branch protection mutation. No gpp_status.v1.json or scripts/gp5_platform_claim_decision.py edit. No public boundary surface edit (docs/PUBLIC-BETA.md / SUPPORT-BOUNDARY.md / KNOWN-BUGS.md untouched)."
   ]
