@@ -338,7 +338,19 @@ def test_ri72_forbidden_surfaces_actually_unchanged_in_diff() -> None:
             pytest.fail(f"forbidden-diff invariant cannot run in CI PR: {msg}")
         pytest.skip(msg)
 
-    diff_proc = _git(["diff", "--name-only", f"{base}...HEAD"])
+    # Codex iter-7 absorb (kalıcı çözüm rule): use two-dot diff
+    # ``<base>..HEAD`` instead of the three-dot symmetric difference
+    # ``<base>...HEAD``. The three-dot form requires a discoverable
+    # merge-base between the two commits, which a shallow ``fetch-depth: 1``
+    # checkout cannot supply (both endpoints are present but their
+    # shared ancestor history is not). Two-dot diff shows files changed
+    # from <base> to HEAD without needing merge-base, which is exactly
+    # the "what does this PR touch relative to its base" question the
+    # forbidden-diff invariant is asking. For a normally-rebased PR
+    # branch (strict descendant of base), two-dot and three-dot are
+    # semantically identical here; for shallow clones, only two-dot
+    # works.
+    diff_proc = _git(["diff", "--name-only", f"{base}..HEAD"])
     if diff_proc.returncode != 0:
         msg = f"git diff against base ({source}={base!r}) failed: {diff_proc.stderr.strip() or 'unknown error'}"
         if _in_ci() and _in_pr_context():
