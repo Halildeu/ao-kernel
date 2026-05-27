@@ -48,7 +48,7 @@
     "Test coverage: existing test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied extended to assert .gitignore is in prefixes; new test_build_payload_allowed_path_prefixes_includes_gitignore as a dedicated regression for PR #648. Both pass. Full ao_release_gate_build_payload + ao_release_gate test suites green (73 tests). No other repo coverage affected.",
     "Forbidden actions korundu: no workflow file change (.github/workflows/* untouched), no branch protection ruleset mutation, no gpp_status.v1.json mutation, no scripts/gp5_platform_claim_decision change, no public SDK surface change. No admin bypass. No --no-verify.",
     "guard_flags closed: support_widening, production_platform_claim, live_adapter_execution all stay false. No support widening claim, no production platform claim, no live adapter execution.",
-    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread documented in PR description after iter-1 cycle completes."
+    "Cross-AI peer review HARD RULE: implementer claude/anthropic differs from reviewer codex/openai. Codex thread 019e66d3-6d42-7793-8556-970315ce95d5 iter-1 AGREE absorbed (verdict: AGREE, ready_for_merge_decision: true, no must-fix). Comment reword absorbed in commit b318d9e per Codex nice-to-have. Decision-core regression test + end-to-end diff_scope decision test parked as LOW backlog (separate test-infrastructure PR scope)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
