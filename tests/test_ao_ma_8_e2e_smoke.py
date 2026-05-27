@@ -565,6 +565,81 @@ def test_ao_ma_8_runtime_modules_have_no_new_subprocess_imports() -> None:
                 assert node.module != "subprocess", f"{rel_path} must not from-import subprocess"
 
 
+def _resolve_pr_diff_base() -> tuple[str | None, str]:
+    """Codex post-impl iter-2 must_fix absorb: AO-MA-8 PR-scope invariant
+    runs in CI under ``actions/checkout@v6`` (default ``fetch-depth: 1``),
+    where ``origin/main`` is NOT in the local db. Single-source resolution
+    fails-closed even though the invariant SHOULD be enforceable.
+    Multi-strategy resolver mirrors the RI-7.2 invariant test:
+
+    1. ``GITHUB_EVENT_PATH`` ``pull_request.base.sha`` (most authoritative
+       in a PR event; materialize via shallow fetch if not in local db)
+    2. ``GITHUB_BASE_REF`` + shallow fetch (fallback)
+    3. Local ``origin/main`` (local human runs)
+    4. Local ``main`` (clones without remotes)
+
+    Returns ``(base_sha_or_None, source_label)``; SHA is validated 40-hex.
+    """
+
+    import re as _re
+
+    def _git_capture(args: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", "-C", str(_REPO_ROOT), *args],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+
+    # Strategy 1: GitHub Actions PR event payload
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if event_path:
+        try:
+            event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+            base = (event.get("pull_request") or {}).get("base") or {}
+            sha = base.get("sha")
+            base_ref_in_event = base.get("ref")
+            if isinstance(sha, str) and _re.fullmatch(r"[0-9a-f]{40}", sha):
+                has = _git_capture(["cat-file", "-e", sha])
+                if has.returncode != 0:
+                    # Materialize the base SHA into the shallow clone's db
+                    _git_capture(["fetch", "origin", sha, "--depth=1"])
+                    if base_ref_in_event and _re.fullmatch(r"[A-Za-z0-9._/-]+", base_ref_in_event):
+                        _git_capture(["fetch", "origin", base_ref_in_event, "--depth=1"])
+                    has = _git_capture(["cat-file", "-e", sha])
+                if has.returncode == 0:
+                    return sha, "github_event_payload"
+        except (OSError, json.JSONDecodeError, KeyError):
+            pass
+
+    # Strategy 2: GITHUB_BASE_REF + shallow fetch
+    base_ref = os.environ.get("GITHUB_BASE_REF")
+    if base_ref and _re.fullmatch(r"[A-Za-z0-9._/-]+", base_ref):
+        fetch_proc = _git_capture(["fetch", "origin", base_ref, "--depth=1"])
+        if fetch_proc.returncode == 0:
+            mb = _git_capture(["merge-base", "HEAD", "FETCH_HEAD"])
+            if mb.returncode == 0:
+                sha = mb.stdout.strip()
+                if _re.fullmatch(r"[0-9a-f]{40}", sha):
+                    return sha, f"fetch:{base_ref}"
+
+    # Strategy 3: local origin/main
+    mb = _git_capture(["merge-base", "HEAD", "origin/main"])
+    if mb.returncode == 0:
+        sha = mb.stdout.strip()
+        if _re.fullmatch(r"[0-9a-f]{40}", sha):
+            return sha, "origin/main"
+
+    # Strategy 4: local main
+    mb = _git_capture(["merge-base", "HEAD", "main"])
+    if mb.returncode == 0:
+        sha = mb.stdout.strip()
+        if _re.fullmatch(r"[0-9a-f]{40}", sha):
+            return sha, "local_main"
+
+    return None, "none"
+
+
 def test_ao_ma_8_pr_scope_only_touches_allowlisted_files() -> None:
     """Codex iter-2 nice-to-have #4 absorb: PR scope allowlist enforced.
 
@@ -583,15 +658,28 @@ def test_ao_ma_8_pr_scope_only_touches_allowlisted_files() -> None:
     """
 
     in_ci = os.environ.get("CI") == "true"
-    if not in_ci:
-        pytest.skip("PR scope allowlist enforced in CI; local skip OK")
-    # Codex post-impl iter-1 nice-to-have #3 absorb: in CI, git diff failure
-    # must fail-closed (not skip) — silently skipping in CI would leave the
-    # PR-scope invariant unenforced and let allowlist violations through.
+    in_pr_context = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+    # Codex post-impl iter-2 must_fix absorb: single-source ``origin/main..HEAD``
+    # diff fails under ``actions/checkout@v6`` shallow clone (default
+    # ``fetch-depth: 1``). Multi-strategy resolver mirrors RI-7.2 invariant.
+    base, source = _resolve_pr_diff_base()
+    if base is None:
+        msg = (
+            "no PR diff base could be resolved (tried github_event_payload, "
+            "GITHUB_BASE_REF fetch, origin/main, local main)"
+        )
+        if in_ci and in_pr_context:
+            pytest.fail(f"PR-scope invariant cannot run in CI PR: {msg}")
+        pytest.skip(msg)
+    # Two-dot diff ``<base>..HEAD``: shallow-clone safe (does NOT require a
+    # discoverable merge-base; both endpoints suffice).
     try:
-        diff_out = _run(["git", "diff", "--name-only", "origin/main..HEAD"], cwd=_REPO_ROOT)
+        diff_out = _run(["git", "diff", "--name-only", f"{base}..HEAD"], cwd=_REPO_ROOT)
     except subprocess.CalledProcessError as exc:
-        pytest.fail(f"CI cannot resolve git diff origin/main..HEAD; PR-scope invariant unenforceable: {exc}")
+        msg = f"git diff against base ({source}={base!r}) failed: {exc}"
+        if in_ci and in_pr_context:
+            pytest.fail(f"PR-scope invariant cannot run in CI PR: {msg}")
+        pytest.skip(msg)
     changed = {line.strip() for line in diff_out.splitlines() if line.strip()}
     allowlist = {
         ".claude/plans/AO-MA-8-E2E-SMOKE.md",
