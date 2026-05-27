@@ -9,7 +9,7 @@
   "reviewer": {
     "agent": "codex",
     "provider": "openai",
-    "verdict": "REVISE"
+    "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
