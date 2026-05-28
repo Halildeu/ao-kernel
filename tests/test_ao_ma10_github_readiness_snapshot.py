@@ -53,7 +53,7 @@ def _valid_ready_inputs() -> dict[str, Any]:
             "viewerCanAdminister": False,
             "viewerPermission": "WRITE",
         },
-        "viewer_login": "ao-merge-agent",
+        "viewer_login": "gladyatore-lab",
         "viewer_permission": "write",
         "branch_protection": {
             "required_pull_request_reviews": {
@@ -138,9 +138,10 @@ def test_ao_ma10a0_live_snapshot_records_current_blockers_without_mutation() -> 
     }
     assert snapshot["collection_errors"] == []
     blockers = set(snapshot["readiness"]["blockers"])
-    assert "ao_release_gate_required_check_missing" in blockers
-    assert "legacy_required_review_blocks_low_risk_autonomy" in blockers
     assert "merge_actor_admin_permission_observed" in blockers
+    assert "unexpected_merge_actor" in blockers
+    assert "ao_release_gate_required_check_missing" not in blockers
+    assert "legacy_required_review_blocks_low_risk_autonomy" not in blockers
     # Historical changelog/runbook wording does not count as a current SSOT
     # claim. AO-MA-10A0 should only report drift when the current status
     # section claims a live required-check shape that GitHub API contradicts.
@@ -162,9 +163,23 @@ def test_ao_ma10a0_ready_case_requires_source_pinned_release_gate_and_non_admin_
     assert snapshot["rulesets"]["ao_release_gate_required_check_present"] is True
     assert snapshot["rulesets"]["ao_release_gate_source_pinned_to_actions"] is True
     assert snapshot["merge_actor"]["viewer_can_administer"] is False
+    assert snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] is True
     assert snapshot["readiness"]["decision"] == "ready_for_dry_run"
     assert snapshot["readiness"]["blockers"] == []
     assert "repository_auto_merge_disabled_merge_agent_direct_mode_required" in snapshot["readiness"]["warnings"]
+
+
+def test_ao_ma10a0_blocks_wrong_non_admin_merge_actor() -> None:
+    mod = _load_script_module()
+    inputs = _valid_ready_inputs()
+    inputs["viewer_login"] = "some-other-writer"
+    inputs["viewer_permission"] = "write"
+    inputs["repo_info"]["viewerCanAdminister"] = False
+    snapshot = mod.build_snapshot(**inputs)
+    assert snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] is False
+    assert "unexpected_merge_actor" in snapshot["readiness"]["blockers"]
+    assert "merge_actor_admin_permission_observed" not in snapshot["readiness"]["blockers"]
+    assert snapshot["readiness"]["decision"] == "blocked"
 
 
 def test_ao_ma10a0_blocks_wrong_source_pin_even_when_check_name_matches() -> None:
@@ -271,6 +286,7 @@ def test_ao_ma10a0_blocks_admin_merge_actor() -> None:
     inputs["viewer_permission"] = "admin"
     snapshot = mod.build_snapshot(**inputs)
     assert "merge_actor_admin_permission_observed" in snapshot["readiness"]["blockers"]
+    assert snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] is False
     assert snapshot["readiness"]["decision"] == "blocked"
 
 

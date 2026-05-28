@@ -21,20 +21,24 @@
       "status": "pass"
     },
     {
-      "name": "ao_ma10c_current_actor_fail_closed",
+      "name": "ao_ma10a0_dedicated_actor_confirmed_when_gladyatore_write_non_admin",
       "status": "pass"
     },
     {
-      "name": "merge_command_no_admin_or_auto",
+      "name": "ao_ma10a0_unexpected_non_admin_actor_fail_closed",
+      "status": "pass"
+    },
+    {
+      "name": "ao_ma10a1_unexpected_merge_actor_propagates",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI review: AO-MA-10c correctly adds a fail-closed merge-agent executor without granting AI output release authority.",
-    "The executor is blocked under the current Halildeu/admin actor and requires the dedicated non-admin actor gladyatore-lab for execution.",
-    "The merge command builder is constrained to normal squash merge and tests assert no admin bypass or native auto-merge flag.",
-    "Schema and fixtures record dry-run, blocked-admin, command-attempt, mutation, required-check, and actor fields for later audit.",
-    "No support widening, production platform claim, live adapter execution, ruleset mutation, CODEOWNERS mutation, or bypass actor is introduced."
+    "OpenAI review: dedicated actor readiness was previously impossible because administration_write_absent_for_dedicated_actor was hardcoded false.",
+    "The patch computes that field from live GitHub actor evidence and keeps Halildeu/admin blocked.",
+    "unexpected_merge_actor is schema-pinned and propagated into AO-MA-10a1 eligibility blockers.",
+    "The refreshed A0/A1 artifacts correctly narrow live blockers to merge actor identity rather than stale required-check/review blockers.",
+    "The change is read-only and introduces no bypass, admin merge, support widening, production claim, or live adapter execution."
   ],
   "implementer": {
     "agent": "codex",
@@ -52,21 +56,20 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md",
-      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json",
+      ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
+      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10c-merge-agent-result.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10c_merge_agent.py",
-      "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json",
-      "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json",
-      "tests/test_ao_ma10c_merge_agent.py",
-      "tests/test_ri78b_bc1_6c_fast_follow_invariant.py"
+      "scripts/ao_ma10_github_readiness_snapshot.py",
+      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
+      "tests/test_ao_ma10_github_readiness_snapshot.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma-10c-merge-agent-executor"
+    "head_ref": "refs/heads/codex/ao-ma-10q-dedicated-actor-readiness"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10c"
+  "work_package": "AO-MA-10q"
 }
