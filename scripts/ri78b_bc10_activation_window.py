@@ -129,6 +129,47 @@ def github_environment_observation(repo: str, env_name: str, gh_token: str) -> d
         return {}  # unreachable
 
 
+def github_environment_branch_policies(repo: str, env_name: str, gh_token: str) -> list[dict]:
+    """Fetch the deployment branch policies for a protected environment.
+
+    Returns the list of policy dicts. Each policy has fields like
+    `id`, `name`, `type` ("branch"|"tag"). For bc10 we expect exactly
+    one policy with name in {"main", "refs/heads/main"}.
+    """
+    cmd = [
+        "gh",
+        "api",
+        f"/repos/{repo}/environments/{env_name}/deployment-branch-policies",
+        "--header",
+        "Accept: application/vnd.github+json",
+        "--jq",
+        ".branch_policies",
+    ]
+    env = {**os.environ, "GH_TOKEN": gh_token}
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        fail(f"gh api deployment-branch-policies subprocess error: {e}")
+        return []
+    if result.returncode != 0:
+        fail(
+            f"gh api deployment-branch-policies returned non-zero "
+            f"(rc={result.returncode}): {result.stderr.strip()[:200]}"
+        )
+    try:
+        policies = json.loads(result.stdout) if result.stdout.strip() else []
+        return policies if isinstance(policies, list) else []
+    except json.JSONDecodeError as e:
+        fail(f"gh api deployment-branch-policies returned non-JSON: {e}")
+        return []
+
+
 def distinct_workflow_run_count(repo: str, workflow_file: str, since_iso: str, gh_token: str) -> int:
     """Count distinct workflow_dispatch runs of the given workflow on main since
     the given ISO 8601 UTC timestamp. Fail-closes on non-zero gh api."""
@@ -300,9 +341,8 @@ def main() -> None:
             f"{max_billable_calls} * {max_projected_call_cost} = {worst_case} > {max_usd}"
         )
 
-    # Guard 9: environment observation via gh api
+    # Guard 9a: environment observation via gh api — required_reviewers + prevent_self_review
     env_observation = github_environment_observation(args.repo, args.env_name, gh_token)
-    # Required reviewers
     protection_rules = env_observation.get("protection_rules", [])
     required_reviewers_count = 0
     prevent_self_review = False
@@ -317,21 +357,71 @@ def main() -> None:
             f"GitHub Environment {args.env_name} prevent_self_review=false; "
             f"bc10 requires distinct reviewer (prevent_self_review=true)"
         )
-    # admin_bypass
-    deployment_branch_policy = env_observation.get("deployment_branch_policy") or {}
-    if deployment_branch_policy.get("protected_branches") is not True:
-        # Branch policy may be relaxed if allowed_refs include main; verify
-        # via deployment_branch_policy or via custom policy. For pre-prod
-        # simplicity, require protected_branches=True.
-        pass  # acceptable if custom branch policies map to main only
-    # allowed_refs include main — check via custom deployment branch policies
-    # if present, OR via "protected_branches" mapping. For this guard we
-    # accept the environment-level check via env_observation truth.
 
-    # Guard 10: dispatch actor may not approve environment
-    # (encoded in supersession entry contract; runtime cannot directly verify
-    # the GitHub-side prevent_self_review enforcement during deployment-pending
-    # state — but the schema/contract pin enforces operator awareness.)
+    # Guard 9b: admin bypass enforcement
+    # GitHub API returns can_admins_bypass for environments (introduced 2024+).
+    # If the field is missing OR true, fail-closed (refuse to grant admin override).
+    can_admins_bypass = env_observation.get("can_admins_bypass")
+    if can_admins_bypass is None:
+        fail(
+            f"GitHub Environment {args.env_name} can_admins_bypass field not present; "
+            f"bc10 requires explicit can_admins_bypass=false (admin override forbidden)"
+        )
+    if can_admins_bypass is True:
+        fail(
+            f"GitHub Environment {args.env_name} can_admins_bypass=true; "
+            f"bc10 requires admin override disabled (can_admins_bypass=false)"
+        )
+
+    # Guard 9c: branch policy main-only enforcement
+    # Two acceptable shapes:
+    #   1. deployment_branch_policy.protected_branches=true (GitHub branch-protection
+    #      indirection). Acceptable ONLY if branch protection rules limit deploys
+    #      to main. We can't verify branch-protection from this endpoint, so we
+    #      additionally require custom_branch_policies to be the canonical path.
+    #   2. custom_branch_policies=true PLUS GET .../environments/{env}/deployment-branch-policies
+    #      returns exactly one policy with name="main" (or exact pattern matching main).
+    deployment_branch_policy = env_observation.get("deployment_branch_policy") or {}
+    custom_branch_policies = deployment_branch_policy.get("custom_branch_policies")
+    protected_branches = deployment_branch_policy.get("protected_branches")
+
+    if custom_branch_policies is True:
+        # Verify that exactly one custom policy exists and it matches main
+        policies = github_environment_branch_policies(args.repo, args.env_name, gh_token)
+        if not policies:
+            fail(
+                f"GitHub Environment {args.env_name} has custom_branch_policies=true "
+                f"but no policies returned; bc10 requires exactly one policy for main"
+            )
+        if len(policies) != 1:
+            fail(
+                f"GitHub Environment {args.env_name} has {len(policies)} custom branch policies; "
+                f"bc10 requires exactly 1 (main-only)"
+            )
+        policy_name = policies[0].get("name", "")
+        if policy_name not in ("main", "refs/heads/main"):
+            fail(
+                f"GitHub Environment {args.env_name} custom branch policy {policy_name!r} != main; "
+                f"bc10 requires main-only deploys"
+            )
+    elif protected_branches is True:
+        # protected_branches=true means "use repository branch protection rules to
+        # constrain deploys". For bc10 strict semantics, require operator to use
+        # custom_branch_policies=true with main-only policy instead, OR accept
+        # protected_branches=true only when no other configuration is permissive.
+        # We accept this path as a fallback but emit a warning marker.
+        print(
+            f"[{SCRIPT_NAME}] note: GitHub Environment {args.env_name} uses "
+            f"protected_branches=true (branch-protection indirection). bc10 prefers "
+            f"custom_branch_policies=true with main-only policy for tighter binding.",
+            file=sys.stderr,
+        )
+    else:
+        fail(
+            f"GitHub Environment {args.env_name} deployment_branch_policy is neither "
+            f"custom_branch_policies=true nor protected_branches=true; bc10 requires "
+            f"main-only deploys to be explicitly enforced"
+        )
 
     # All guards passed
     summary = {

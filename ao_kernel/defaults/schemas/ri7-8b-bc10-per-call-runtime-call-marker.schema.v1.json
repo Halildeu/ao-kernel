@@ -150,6 +150,32 @@
           "provider_call_performed": {"const": true},
           "billable_call_count_delta": {"const": 1},
           "usage_source": {"const": "provider_api_response"},
+          "cost_source": {"const": "provider_usage_plus_pinned_pricing_source"},
+          "input_tokens": {"minimum": 1},
+          "output_tokens": {"minimum": 1},
+          "total_tokens": {"minimum": 2},
+          "actual_cost_usd": {
+            "not": {"const": "0.00000000"},
+            "description": "success_billable MUST have non-zero actual cost (otherwise marker defeats bc10 cost evidence purpose)"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider_call_performed": {"const": true}
+        },
+        "required": ["provider_call_performed"]
+      },
+      "then": {
+        "properties": {
+          "input_tokens": {"minimum": 1},
+          "output_tokens": {"minimum": 1},
+          "actual_cost_usd": {
+            "not": {"const": "0.00000000"}
+          },
+          "usage_source": {"const": "provider_api_response"},
           "cost_source": {"const": "provider_usage_plus_pinned_pricing_source"}
         }
       }

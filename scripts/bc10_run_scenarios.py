@@ -252,19 +252,42 @@ def run_provider_call(
     except Exception as e:
         fail(f"provider call failed: {type(e).__name__}: {e}")
 
-    # Normalize usage from result
-    usage = getattr(result, "usage", None) or {}
+    # Normalize usage from result.
+    # AoKernelClient.llm_call returns a dict with 'usage' as a dict;
+    # see ao_kernel/client.py:llm_call return shape. We prefer dict access
+    # but keep an object-style fallback for forward-compat.
+    if isinstance(result, dict):
+        usage = result.get("usage") or {}
+    else:
+        usage = getattr(result, "usage", None) or {}
+
     if isinstance(usage, dict):
         input_tokens = int(usage.get("prompt_tokens", usage.get("input_tokens", 0)))
         output_tokens = int(usage.get("completion_tokens", usage.get("output_tokens", 0)))
     else:
-        # Object-style usage
+        # Object-style usage fallback
         input_tokens = int(getattr(usage, "prompt_tokens", getattr(usage, "input_tokens", 0)))
         output_tokens = int(
             getattr(usage, "completion_tokens", getattr(usage, "output_tokens", 0))
         )
 
+    # Fail-closed: success path MUST have non-zero usage and non-zero cost
+    # (success_billable evidence with 0 tokens defeats bc10's purpose).
+    if input_tokens <= 0 and output_tokens <= 0:
+        fail(
+            f"provider response usage missing or zero for scenario {scenario!r}: "
+            f"input_tokens={input_tokens}, output_tokens={output_tokens}. "
+            "success_billable marker with zero usage is invalid."
+        )
+
     actual_cost = pricing.project_cost(input_tokens, output_tokens)
+    if actual_cost <= Decimal("0.00000000"):
+        fail(
+            f"computed actual_cost_usd <= 0 for scenario {scenario!r}: "
+            f"input_tokens={input_tokens}, output_tokens={output_tokens}, actual_cost={actual_cost}. "
+            "success_billable marker requires positive cost."
+        )
+
     return input_tokens, output_tokens, actual_cost
 
 

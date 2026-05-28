@@ -828,6 +828,90 @@ def test_ri78b_bc10_6b_negative_forbidden_audit_all_unchanged_false_rejected():
     _assert_rejected(bad, "all_unchanged must be true const")
 
 
+def test_ri78b_bc10_6b_marker_schema_rejects_zero_usage_success():
+    """iter-5 strengthening: success_billable marker with zero tokens / zero cost
+    must be rejected by schema (defeats bc10 cost evidence purpose otherwise)."""
+    marker_schema = _load_json(MARKER_SCHEMA_PATH)
+    bad_marker = {
+        "schema_version": "ri7-8b-bc10-per-call-runtime-call-marker.v1",
+        "artifact_kind": "ri7_8b_bc10_per_call_runtime_call_marker",
+        "scenario": "small_completion_a",
+        "scenario_outcome": "success_billable",
+        "requested_model": "openai/gpt-4o-mini",
+        "resolved_model": "openai/gpt-4o-mini",
+        "model_allowlist_enforced": True,
+        "model_allowlist": ["openai/gpt-4o-mini"],
+        "max_output_tokens_cap": 64,
+        "provider_call_performed": True,
+        "billable_call_count_delta": 1,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "projected_cost_usd": "0.00010000",
+        "actual_cost_usd": "0.00000000",
+        "cumulative_cost_usd_before": "0.00000000",
+        "cumulative_cost_usd_after": "0.00000000",
+        "pricing_source_digest": "sha256:" + "a" * 64,
+        "usage_source": "provider_api_response",
+        "cost_source": "provider_usage_plus_pinned_pricing_source",
+        "run_id": "12345",
+        "run_attempt": "1",
+        "head_sha": "a" * 40,
+        "workflow_ref": "foo@refs/heads/main",
+        "workflow_content_sha256": "a" * 64,
+        "secret_boundary": "no_secret_material_emitted_no_token_no_credential",
+        "raw_response_recorded": False,
+        "secret_material_recorded": False,
+        "secret_scope_after_all_pre_provider_guards": True,
+        "budget_cap_precheck_denied_completes_without_provider_client_init": True,
+        "budget_cap_precheck_denied_completes_without_api_key_read": True,
+        "retry_behavior": "wrapper_no_retry_loop_transport_default_skipped",
+    }
+    errors = list(jsonschema.Draft202012Validator(marker_schema).iter_errors(bad_marker))
+    assert errors, "marker schema must reject zero-usage success_billable"
+
+
+def test_ri78b_bc10_6b_marker_schema_accepts_non_zero_usage_success():
+    marker_schema = _load_json(MARKER_SCHEMA_PATH)
+    good_marker = {
+        "schema_version": "ri7-8b-bc10-per-call-runtime-call-marker.v1",
+        "artifact_kind": "ri7_8b_bc10_per_call_runtime_call_marker",
+        "scenario": "small_completion_a",
+        "scenario_outcome": "success_billable",
+        "requested_model": "openai/gpt-4o-mini",
+        "resolved_model": "openai/gpt-4o-mini",
+        "model_allowlist_enforced": True,
+        "model_allowlist": ["openai/gpt-4o-mini"],
+        "max_output_tokens_cap": 64,
+        "provider_call_performed": True,
+        "billable_call_count_delta": 1,
+        "input_tokens": 10,
+        "output_tokens": 25,
+        "total_tokens": 35,
+        "projected_cost_usd": "0.00010000",
+        "actual_cost_usd": "0.00001650",
+        "cumulative_cost_usd_before": "0.00000000",
+        "cumulative_cost_usd_after": "0.00001650",
+        "pricing_source_digest": "sha256:" + "a" * 64,
+        "usage_source": "provider_api_response",
+        "cost_source": "provider_usage_plus_pinned_pricing_source",
+        "run_id": "12345",
+        "run_attempt": "1",
+        "head_sha": "a" * 40,
+        "workflow_ref": "foo@refs/heads/main",
+        "workflow_content_sha256": "a" * 64,
+        "secret_boundary": "no_secret_material_emitted_no_token_no_credential",
+        "raw_response_recorded": False,
+        "secret_material_recorded": False,
+        "secret_scope_after_all_pre_provider_guards": True,
+        "budget_cap_precheck_denied_completes_without_provider_client_init": True,
+        "budget_cap_precheck_denied_completes_without_api_key_read": True,
+        "retry_behavior": "wrapper_no_retry_loop_transport_default_skipped",
+    }
+    errors = list(jsonschema.Draft202012Validator(marker_schema).iter_errors(good_marker))
+    assert not errors, f"marker schema must accept non-zero usage success_billable; got {errors[:3]}"
+
+
 def test_ri78b_bc10_6b_negative_scoped_support_widening_true_rejected():
     evidence = _load_json(EVIDENCE_PATH)
     bad = _mutate(

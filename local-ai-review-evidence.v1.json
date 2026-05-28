@@ -9,7 +9,11 @@
   "reviewer": {
     "agent": "codex-cli-reviewer",
     "provider": "openai",
-    "verdict": "AGREE"
+    "verdict": "AGREE",
+    "verdict_history": [
+      {"iter": 4, "verdict": "AGREE", "scope": "plan-time"},
+      {"iter": 5, "verdict": "REVISE", "scope": "post-impl"}
+    ]
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
