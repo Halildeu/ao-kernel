@@ -1,26 +1,24 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10-ACTOR-READINESS-TRUTH",
+  "work_package": "RI-7.8b-bc10-6a",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
+    "agent": "codex-cli-reviewer",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10-actor-readiness-truth",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization",
     "changed_files": [
-      ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
-      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/gpp_status.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_gpp_next.py"
+      "tests/test_ri78b_bc10_6a_execution_window_authorization_invariant.py"
     ]
   },
   "checks_considered": [
@@ -37,20 +35,25 @@
       "status": "pass"
     },
     {
+      "name": "sha256_digest_match",
+      "status": "pass"
+    },
+    {
       "name": "gpp_guard_flags_const_false",
       "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10A0 timestamp refresh only (19:36:30Z → 22:45:36Z), no structural field change, guard_flags block preserved",
-    "AO-MA-10A1 candidate_changed_files updated from test file to local-ai-review-evidence.v1.json — consistent with a truth-sync slice landing review evidence rather than test-only",
-    "GPP-2D status prose correctly narrowed: blocker moved from 'ruleset shape missing + legacy review + admin actor' to 'dedicated non-admin actor unproven' — matches stated live GitHub truth",
-    "gpp_status.v1.json next_allowed_actions[0] updated to reflect current live evidence while preserving blocked-until-dedicated-actor gate — no premature unblock",
-    "test_gpp_next.py assertion string updated to match gpp_status.v1.json verbatim — contract parity maintained",
-    "All three guard flags (support_widening, production_platform_claim, live_adapter_execution) remain const false in both A0 and gpp_status — no widening",
-    "No runtime code changes (ao_kernel/ untouched), no secret material, no GitHub setting mutation",
-    "GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md prose update is internally consistent: required-check presence acknowledged, blocker correctly scoped to gladyatore-lab actor + AO-MA-10q merged evidence",
-    "Date field '2026-05-24' in status MD unchanged — acceptable since it refers to the original GPP-2 closeout date, not this sync slice"
+    "Evidence validates against Draft 2020-12 schema with zero errors; schema enforces additionalProperties:false on all 13 nested objects and const-pinned guard flags (support_widening, production_platform_claim, live_adapter_execution).",
+    "SHA256 digests in ri78a_predecessor_ref + ri78b_bc1_6c_predecessor_ref + stale_replay_guard match the committed predecessor files at PR #673 (ri78a evidence) and PR #691 (bc1-6c-closure evidence + RI-7.8 submanifest post-flip).",
+    "GPP guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain const FALSE in current_gpp_guard_snapshot and top-level evidence fields. bc10-6a is authorization-only; no guard flag flip permitted.",
+    "Submanifest snapshot reflects post-#691 BC-1 landing state (bc1=true) and BC-10 not-yet-flipped state (bc10=false). submanifest_transition before==after enforces bc10-6a non-mutation contract.",
+    "planned_6b_authority_mode is pinned to manual_protected_environment with autonomous_trigger_allowed=false. bc10 6b activation MUST go through GitHub Environment required reviewers (unlike BC-1 6c-fast-follow autonomous pre-prod pattern) because bc10 involves REAL billable provider calls.",
+    "mutations_performed 7-key all-false invariant: runtime_modified, workflow_created, submanifest_mutated, gpp_status_mutated, provider_call_performed, secret_referenced, guard_flag_flipped all const false in schema and runtime evidence.",
+    "model_allowlist pinned to single-element [\"openai/gpt-4o-mini\"] with maxItems=1 + enum constraint. Per-call max_output_tokens cap ≤256; retries disabled; pre-call + post-call cost checks required.",
+    "Introducer-PR detection pattern (state-at-landing pin) applied to 11 git-diff-dependent tests; non-introducer branches skip with pytest.skip while structural invariants (schema valid, evidence validates, const pins) continue to enforce 6a state-at-landing on origin/main.",
+    "Secret boundary correct: secret_boundary=no_secret_material_no_credential_names_no_token_in_repo. No credential names, env var names, or token values present in any artifact. mutations_performed.secret_referenced=false enforces this at runtime.",
+    "Cross-AI peer review provider split: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 iter-1 REVISE (bc10 must be 3-PR chain) + iter-2 REVISE (detailed absorb items: planned_6b_authority_mode, null workflow_content_sha256, schema path ri7-8b-bc10-6a-..., mutations_performed object) absorbed in this artifact."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
