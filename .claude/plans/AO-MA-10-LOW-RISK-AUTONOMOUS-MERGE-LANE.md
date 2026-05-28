@@ -49,6 +49,7 @@ AO-MA-10a1  autonomous_merge_eligibility checker (separate from RiskClassifier)
 AO-MA-10a2  context-bound evidence bundle + registered-provider consensus schemas (recorded)
 AO-MA-10b   ao-release-gate payload + decision integration
 AO-MA-10d   negative fail-closed suite before any real merge
+AO-MA-10h   high-risk cross-provider supersession contract
 AO-MA-10c   merge-agent identity + dry-run executor
 AO-MA-10e   positive disposable low-risk autonomous merge smoke
 AO-MA-10f   activation/cutover
@@ -142,6 +143,30 @@ not unbounded:
 - A single model `AGREE` is never enough for high-risk merge.
 - Same-provider self-review is rejected.
 - Missing reviewer or verifier evidence blocks merge.
+
+## AO-MA-10h High-Risk Supersession Contract
+
+AO-MA-10h records the future contract for replacing mandatory human/codeowner
+review on high-risk PRs with deterministic validation of cross-provider AI
+consensus evidence.
+
+This contract does not activate the path. It records the narrow acceptance
+boundary for a later runtime slice:
+
+```text
+path_sensitive_human_review satisfied when:
+  current non-author/codeowner approval exists
+  OR valid high-risk cross-provider supersession evidence exists
+```
+
+The future supersession evidence must be context-bound to the current PR, must
+include distinct `openai` and `anthropic` provider verdicts, must be unanimous
+`AGREE`, and must keep `support_widening`, `production_platform_claim`,
+`live_adapter_execution`, and `ai_output_release_authority` false.
+
+AO-MA-10h intentionally does not mutate `.github/**`, CODEOWNERS, rulesets,
+branch protection, `ao_release_gate.py`, `gpp_status.v1.json`, live adapters,
+testai, smee, Vault, or GitHub App configuration.
 
 ## Merge Agent Activation Lock
 
