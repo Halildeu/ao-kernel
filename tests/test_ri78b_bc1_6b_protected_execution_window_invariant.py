@@ -76,6 +76,7 @@ EXPECTED_FORBIDDEN_SURFACES = [
 ]
 
 ALLOWED_NEW_SURFACES = [
+    # Core 6b infrastructure (8 files)
     ".claude/plans/RI-7.8b-bc1-6b-PROTECTED-EXECUTION-WINDOW.md",
     ".claude/plans/RI-7.8b-bc1-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
     "ao_kernel/defaults/schemas/ri7-8b-bc1-6b-protected-execution-window-evidence.schema.v1.json",
@@ -84,6 +85,12 @@ ALLOWED_NEW_SURFACES = [
     "scripts/ri78b_bc1_activation_window.py",
     ".claude/plans/gpp_status.v1.json",
     "local-ai-review-evidence.v1.json",
+    # Systemic predecessor invariant fix (introducer-PR detection pattern)
+    # — RI-7.8a + RI-7.8b-bc1-6a diff-dependent state-at-landing tests were
+    # failing on 6b successor PR. Fix lives inline because 6b is the first
+    # slice that triggers the systemic bug.
+    "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
+    "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
 ]
 
 

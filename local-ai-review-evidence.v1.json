@@ -22,6 +22,8 @@
       "ao_kernel/defaults/schemas/ri7-8b-bc1-6b-protected-execution-window-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ri78b_bc1_activation_window.py",
+      "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
+      "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
       "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py"
     ]
   },
@@ -100,7 +102,7 @@
     "Submanifest: NEW slice does NOT mutate .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json. All four keys remain at predecessor values (live=true, bc1=false, bc10=false, final=false). 6c flips BC-1 after evidence record + closure.",
     "Operator authority (4 concurrent signals): commit identity Halildeu, commit trailers (Operator-Activation-Confirmed-By + At + Activation-Scope=bc1_protected_live_adapter_attestation_only + No-Live-Execution-In-PR=true + Scoped-Supersession-Entry-Id + Top-Level-Guard-Flags-Const-False=true), GitHub PR approval via ao-release-gate-review, cross-AI peer review AGREE in BOTH artifacts.",
     "Forbidden-change audit clean (machine-enforced via git diff + schema contains+minContains+maxContains): 13 surfaces. .github/workflows/ and .claude/plans/gpp_status.v1.json are intentionally NOT forbidden in 6b (new workflow + scoped entry addition; top-level guard flags untouched).",
-    "Diff scope (8 files): plan doc + evidence (NEW) + schema (NEW) + invariant test (NEW) + workflow file (NEW) + activation_window.py (NEW) + gpp_status.v1.json (MODIFIED additive); local-ai-review-evidence (MODIFIED). Submanifest UNCHANGED, 9-key readiness UNCHANGED.",
+    "Diff scope (10 files): 8 core 6b infrastructure (plan doc NEW + evidence NEW + schema NEW + 6b invariant test NEW + workflow file NEW + activation_window.py NEW + gpp_status.v1.json MODIFIED additive + local-ai-review-evidence MODIFIED) + 2 systemic predecessor invariant fix (tests/test_ri78a_*.py MODIFIED introducer-PR detection + tests/test_ri78b_bc1_6a_*.py MODIFIED introducer-PR detection). Submanifest UNCHANGED, 9-key readiness UNCHANGED, RI-7.8a evidence UNCHANGED, RI-7.8b-bc1-6a evidence UNCHANGED.",
     "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending post-impl review; cross-artifact verdict equality enforced."
   ],
   "secrets_recorded": false,
