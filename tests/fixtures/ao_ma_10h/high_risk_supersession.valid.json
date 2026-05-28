@@ -1,0 +1,101 @@
+{
+  "schema_version": "ao-ma-10-high-risk-supersession-evidence.v1",
+  "artifact_kind": "ao_ma_10_high_risk_supersession_evidence",
+  "generated_at": "2026-05-28T00:00:00Z",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-10h",
+  "planning_only": true,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "context_binding": {
+    "repository_full_name": "Halildeu/ao-kernel",
+    "base_ref": "main",
+    "head_ref": "codex/example-high-risk",
+    "head_sha": "0123456789abcdef0123456789abcdef01234567",
+    "diff_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "changed_files_count": 1,
+    "high_risk_changed_paths": [
+      "ao_kernel/ao_release_gate.py"
+    ]
+  },
+  "reviewer_providers": [
+    "openai",
+    "anthropic"
+  ],
+  "required_reviewer_providers": [
+    "openai",
+    "anthropic"
+  ],
+  "provider_verdicts": [
+    {
+      "schema_version": "ao-ma-10-provider-consensus.v1",
+      "artifact_kind": "ao_ma_10_provider_consensus",
+      "provider_id": "openai",
+      "agent_id": "codex-reviewer",
+      "role": "reviewer",
+      "risk_classification": "high",
+      "verdict": "AGREE",
+      "round_index": 2,
+      "context_binding": {
+        "repository_full_name": "Halildeu/ao-kernel",
+        "base_ref": "main",
+        "head_ref": "codex/example-high-risk",
+        "head_sha": "0123456789abcdef0123456789abcdef01234567",
+        "diff_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "changed_files_count": 1,
+        "high_risk_changed_paths": [
+          "ao_kernel/ao_release_gate.py"
+        ]
+      },
+      "findings_count": 0,
+      "secrets_recorded": false,
+      "support_widening": false,
+      "production_platform_claim": false,
+      "live_adapter_execution": false,
+      "release_authority": "ao-release-gate+github-ruleset",
+      "ai_output_release_authority": false
+    },
+    {
+      "schema_version": "ao-ma-10-provider-consensus.v1",
+      "artifact_kind": "ao_ma_10_provider_consensus",
+      "provider_id": "anthropic",
+      "agent_id": "claude-reviewer",
+      "role": "reviewer",
+      "risk_classification": "high",
+      "verdict": "AGREE",
+      "round_index": 2,
+      "context_binding": {
+        "repository_full_name": "Halildeu/ao-kernel",
+        "base_ref": "main",
+        "head_ref": "codex/example-high-risk",
+        "head_sha": "0123456789abcdef0123456789abcdef01234567",
+        "diff_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "changed_files_count": 1,
+        "high_risk_changed_paths": [
+          "ao_kernel/ao_release_gate.py"
+        ]
+      },
+      "findings_count": 0,
+      "secrets_recorded": false,
+      "support_widening": false,
+      "production_platform_claim": false,
+      "live_adapter_execution": false,
+      "release_authority": "ao-release-gate+github-ruleset",
+      "ai_output_release_authority": false
+    }
+  ],
+  "consensus_status": "AGREE",
+  "max_revise_rounds": 3,
+  "escalation_action": "operator_human_review_fallback",
+  "freshness": {
+    "status": "fresh",
+    "max_age_seconds": 3600
+  },
+  "secrets_recorded": false,
+  "mutations_performed": false
+}

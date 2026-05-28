@@ -1,0 +1,67 @@
+{
+  "schema_version": "ao-ma-10h-high-risk-supersession-contract.v1",
+  "artifact_kind": "ao_ma_10h_high_risk_supersession_contract",
+  "decision": "record_high_risk_cross_provider_supersession_contract",
+  "planning_only": true,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "trigger_evidence": {
+    "pull_request": 676,
+    "blocked_check": "ao-release-gate-review",
+    "finding_code": "ao_release_gate_high_risk_human_review_missing",
+    "meaning": "current high-risk path correctly blocks without non-author/codeowner review"
+  },
+  "supersession_model": {
+    "required_providers": [
+      "openai",
+      "anthropic"
+    ],
+    "optional_registered_providers": [
+      "minimax"
+    ],
+    "same_provider_review_allowed": false,
+    "consensus_required": true,
+    "required_verdict": "AGREE",
+    "max_revise_rounds": 3,
+    "escalation_action": "operator_human_review_fallback",
+    "context_binding_required_fields": [
+      "repository_full_name",
+      "base_ref",
+      "head_ref",
+      "head_sha",
+      "diff_digest",
+      "changed_files_count",
+      "high_risk_changed_paths"
+    ]
+  },
+  "future_runtime_acceptance": {
+    "human_review_path_preserved": true,
+    "supersession_path_planned": true,
+    "supersession_satisfies_path_sensitive_human_review_only_after_runtime_validation": true,
+    "json_schema_cross_provider_context_equality_limit_recorded": true
+  },
+  "current_slice_forbidden_actions": [
+    "workflow_mutation",
+    "codeowners_mutation",
+    "ruleset_mutation",
+    "branch_protection_mutation",
+    "release_gate_runtime_mutation",
+    "local_gate_runtime_mutation",
+    "gpp_status_mutation",
+    "merge_agent_activation",
+    "auto_merge_execution",
+    "testai_or_smee_or_webhook_callback_work",
+    "vault_or_github_app_secret_work",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "future_slices": [
+    "AO-MA-10i decision-core extension for high-risk supersession evidence",
+    "AO-MA-10j GitHub enforcement model update after runtime validator tests",
+    "AO-MA-10k high-risk autonomous success and fail-closed smoke"
+  ]
+}
