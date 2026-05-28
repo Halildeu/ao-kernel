@@ -24,7 +24,7 @@
   "operator_activation_confirmation": {
     "github_login": "Halildeu",
     "activation_confirmed_at": "2026-05-28T07:08:16Z",
-    "activation_source": "github.com/Halildeu/ao-kernel/pull/675#ri78b-bc1-6b-successor",
+    "activation_source": "github.com/Halildeu/ao-kernel/pull/678",
     "no_secret_assertion": true,
     "activation_scope": "bc1_protected_live_adapter_attestation_only",
     "observation_notes": "Operator records the activation of the protected execution window infrastructure for RI-7.8b-bc1 live-adapter attestation. This artifact creates the workflow file + runtime activation guard + scoped operator_bound_supersessions entry in gpp_status.v1.json. Top-level guard flags remain const false (baseline closure preserved). Effective live_adapter_execution_allowed is granted only within the bounded window via the scoped supersession entry, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime. No live adapter call occurs in this PR; operator workflow_dispatch post-merge triggers the actual run within the window. Per-run evidence + spend ledger + window closure + submanifest BC-1 flip belong to RI-7.8b-bc1-6c."
@@ -103,7 +103,7 @@
   "stale_replay_guard": {
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window",
-    "pr_number_hint": "TBD",
+    "pr_number_hint": "678",
     "base_sha": "2d49f42716004111976a5efc0ea4e5c91308a5ed",
     "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
     "ri78b_6a_evidence_sha256": "7356e3c22f04b43f7e093ef4e5b8aea98810c362b6cb8b8cbc8c3a8d86eb2865",
@@ -119,7 +119,7 @@
     "repo": "Halildeu/ao-kernel",
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window",
-    "pr_number_hint": "TBD"
+    "pr_number_hint": "678"
   },
   "submanifest_transition": {
     "before": {
