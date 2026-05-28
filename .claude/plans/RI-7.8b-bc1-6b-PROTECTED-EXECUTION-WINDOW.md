@@ -269,6 +269,19 @@ Post-impl review will refresh on the actual artifact + tests + workflow file + a
 12. No `scripts/repo_intelligence_tier_promotion_readiness.py` mutation
 13. No `ao_kernel/ao_release_gate.py` mutation
 
-## 15. Exit Decision
+## 15. Inline Systemic Predecessor Invariant Fix (Codex iter-5 absorb)
+
+After initial 6b implementation triggered CI failures on RI-7.8a + RI-7.8b-bc1-6a diff-dependent invariants (forbidden-surfaces-actually-unchanged + future-workflow-absent + gpp-status-untouched + ri78a-predecessor-evidence-untouched + ri78-submanifest-file-untouched-in-diff), an **inline systemic fix** was absorbed:
+
+- `_is_ri78a_introducer_pr()` and `_is_ri78b_6a_introducer_pr()` helpers added
+- 6 diff-dependent state-at-landing tests across 2 predecessor test files now skip on non-introducer PRs
+- Const digest pins (readiness sha256, submanifest sha256, base_sha, artifact_kind, decision const) continue to enforce state-at-landing on every successor PR
+- Pattern mirrors RI-7.5's `_is_ri71_introducer_pr` (PR #666) + AO-MA-10 introducer detection (PR #667)
+
+**Diff scope updated**: 8 core 6b surfaces → 10 total (8 + 2 systemic predecessor invariant fix files). `tests/test_ri78b_bc1_6b_*.py::ALLOWED_NEW_SURFACES` and `local-ai-review-evidence.v1.json::scope_reviewed.changed_files` reflect this expanded scope.
+
+**Why inline (not separate fast-follow)**: 6b is the first slice that triggers the systemic bug; CI cannot pass on 6b without the fix. Successor B-path slices (6c, BC-10, 7.8c) will inherit the introducer-PR detection pattern without needing a separate fast-follow.
+
+## 16. Exit Decision
 
 `ri78b_bc1_6b_protected_execution_window_infrastructure_recorded_dispatch_pending_no_run_evidence_no_submanifest_flip`
