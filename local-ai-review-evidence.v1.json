@@ -17,15 +17,20 @@
       "status": "pass"
     },
     {
-      "name": "live_dry_run_fail_closed",
+      "name": "json_schema",
+      "status": "pass"
+    },
+    {
+      "name": "missing_token_fail_closed",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude/Anthropic review returned AGREE for AO-MA-10p dedicated gh runtime propagation.",
-    "Security boundary is preserved: gh_bin changes only the selected GitHub CLI runtime and does not change release authority.",
-    "Fail-closed behavior is preserved: execute still requires AO-MA-10L-EXECUTE and A0/A1 blockers return before GitHub writes.",
-    "Propagation is complete across A0 readiness collection, direct GitHub API/PR/check calls, and AO-MA-10c merge-agent delegation.",
+    "Claude/Anthropic review returned AGREE for AO-MA-10q dedicated actor runner.",
+    "The runner accepts only a token environment variable name, never a token value on CLI.",
+    "Token values and temporary wrapper paths are not recorded in the result artifact.",
+    "Missing token env fails closed before invoking AO-MA-10l and performs no mutation.",
+    "Release authority remains ao-release-gate plus GitHub ruleset; AI output remains evidence only.",
     "No admin merge, ruleset mutation, branch-protection mutation, CODEOWNERS mutation, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "implementer": {
@@ -44,15 +49,16 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
-      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10q-dedicated-actor-runner-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10l_autonomous_smoke.py",
-      "tests/test_ao_ma10l_autonomous_smoke.py"
+      "scripts/ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10q_dedicated_actor_runner.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10p-gh-bin-propagation"
+    "head_ref": "refs/heads/codex/ao-ma10q-dedicated-runner"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10p"
+  "work_package": "AO-MA-10q"
 }
