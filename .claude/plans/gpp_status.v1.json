@@ -671,7 +671,7 @@
       },
       "future_workflow_contract": {
         "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
-        "workflow_content_sha256": "b37d79c6d6bfbdfddf18f72aeffb39756ddc9dcc639c5cee4e195a9a8f27c1b6",
+        "workflow_content_sha256": "adaf84392545bfca267d66e410b6fd7e5bd9102ad02c0938e077a14d2b04a003",
         "allowed_ref": "refs/heads/main",
         "expected_dispatch_inputs_allowlist": [
           "scenario"

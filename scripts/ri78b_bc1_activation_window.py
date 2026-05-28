@@ -184,53 +184,115 @@ def _check_scenario(scenario: str) -> None:
         _fail(f"scenario={scenario!r} not in {sorted(ALLOWED_SCENARIOS)}")
 
 
+def _accepted_events_for_authority_mode(authority_mode: str) -> tuple[str, ...]:
+    """Per Codex thread 019e702f iter-2 absorb: event-aware run cap.
+
+    ``manual_protected_environment`` legacy 6b path counts only
+    ``workflow_dispatch`` runs. ``operator_delegated_autonomous_preprod``
+    6c-fast-follow/6c-trigger path counts BOTH ``push`` (auto-dispatch
+    via trigger commit) AND ``workflow_dispatch`` (manual fallback) so
+    that the bounded-window cap is honest about the activation surface
+    actually in use.
+    """
+    if authority_mode == "manual_protected_environment":
+        return ("workflow_dispatch",)
+    if authority_mode == "operator_delegated_autonomous_preprod":
+        return ("push", "workflow_dispatch")
+    return ("workflow_dispatch",)
+
+
 def _check_distinct_run_count(entry: dict) -> None:
-    """Use GitHub Actions API to count total distinct workflow_dispatch runs
-    for this workflow on main (workflow lifetime cap). Must be <=
-    MAX_DISTINCT_RUNS including the current run. Window-relative filtering
-    (since entry.actual_start_at) is owned by RI-7.8b-bc1-6c; in 6b
-    actual_start_at is null prior to the first dispatch so we enforce the
-    lifetime cap to keep contract == implementation."""
+    """Use GitHub Actions API to count total distinct workflow runs for
+    this workflow on main (workflow lifetime cap). Must be <=
+    MAX_DISTINCT_RUNS including the current run. Window-relative
+    filtering (since ``entry.actual_start_at``) is owned by
+    RI-7.8b-bc1-6c-closure; while ``actual_start_at`` is null
+    (status=awaiting_auto_dispatch_trigger_commit OR
+    awaiting_operator_dispatch) we enforce the lifetime cap to keep
+    contract == implementation.
+
+    Event-aware: ``manual_protected_environment`` mode counts
+    ``workflow_dispatch`` runs only. ``operator_delegated_autonomous_preprod``
+    counts both ``push`` (auto-dispatch via trigger commit) and
+    ``workflow_dispatch`` (manual fallback). Matrix scenarios share
+    one ``workflow_run_id`` so distinct run ids — not matrix jobs — are
+    counted. Window-relative time filter (``created_at >=
+    actual_start_at``) is applied when the entry has transitioned to
+    ``active``; otherwise lifetime cap applies.
+    """
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not repo:
         _fail("GITHUB_REPOSITORY not set")
 
-    try:
-        result = subprocess.run(
-            [
-                "gh",
-                "api",
-                f"repos/{repo}/actions/workflows/bc1-protected-live-adapter-attestation.yml/runs",
-                "-q",
-                ".workflow_runs[].id",
-                "-X",
-                "GET",
-                "-f",
-                "branch=main",
-                "-f",
-                "event=workflow_dispatch",
-                "-f",
-                "per_page=100",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except (subprocess.SubprocessError, OSError) as exc:
-        _fail(f"gh api call failed: {exc}")
+    authority_mode = entry.get("authority_mode") or "manual_protected_environment"
+    accepted_events = _accepted_events_for_authority_mode(authority_mode)
+    actual_start_at_raw = entry.get("actual_start_at")
+    actual_start_dt: datetime | None = None
+    if isinstance(actual_start_at_raw, str) and actual_start_at_raw:
+        try:
+            actual_start_dt = _parse_iso_z(actual_start_at_raw)
+        except ValueError:
+            actual_start_dt = None
 
-    if result.returncode != 0:
-        _fail(f"gh api non-zero exit: {result.stderr.strip()}")
+    distinct_run_ids: set[str] = set()
+    for event in accepted_events:
+        try:
+            result = subprocess.run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{repo}/actions/workflows/bc1-protected-live-adapter-attestation.yml/runs",
+                    "-q",
+                    ".workflow_runs[] | (.id | tostring) + \"\\t\" + .created_at",
+                    "-X",
+                    "GET",
+                    "-f",
+                    "branch=main",
+                    "-f",
+                    f"event={event}",
+                    "-f",
+                    "per_page=100",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except (subprocess.SubprocessError, OSError) as exc:
+            _fail(f"gh api call failed: {exc}")
 
-    run_ids = sorted(set(line.strip() for line in result.stdout.splitlines() if line.strip()))
+        if result.returncode != 0:
+            _fail(f"gh api non-zero exit: {result.stderr.strip()}")
+
+        for line in result.stdout.splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("\t", 1)
+            run_id = parts[0].strip()
+            created_at = parts[1].strip() if len(parts) > 1 else ""
+            if not run_id:
+                continue
+            if actual_start_dt is not None and created_at:
+                try:
+                    created_dt = _parse_iso_z(created_at)
+                except ValueError:
+                    distinct_run_ids.add(run_id)
+                    continue
+                if created_dt >= actual_start_dt:
+                    distinct_run_ids.add(run_id)
+            else:
+                # Lifetime cap (status=awaiting_*; actual_start_at null)
+                distinct_run_ids.add(run_id)
+
     current_run = os.environ.get("GITHUB_RUN_ID")
-    if current_run and current_run not in run_ids:
-        run_ids.append(current_run)
+    if current_run:
+        distinct_run_ids.add(current_run)
 
-    if len(run_ids) > MAX_DISTINCT_RUNS:
+    if len(distinct_run_ids) > MAX_DISTINCT_RUNS:
         _fail(
-            f"distinct workflow_dispatch run count {len(run_ids)} exceeds max"
-            f" {MAX_DISTINCT_RUNS} (run_ids={run_ids})"
+            f"distinct workflow run count {len(distinct_run_ids)} exceeds max"
+            f" {MAX_DISTINCT_RUNS} (authority_mode={authority_mode} "
+            f"accepted_events={list(accepted_events)} "
+            f"run_ids={sorted(distinct_run_ids)})"
         )
 
 
