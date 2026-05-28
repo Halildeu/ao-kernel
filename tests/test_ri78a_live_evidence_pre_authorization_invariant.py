@@ -286,6 +286,30 @@ def _in_ci() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI") == "true"
 
 
+def _is_ri78a_introducer_pr() -> bool:
+    """Returns True if THIS PR is the slice that introduces the RI-7.8a evidence
+    artifact (the artifact is newly ADDED in the diff against origin/main).
+
+    The forbidden-diff dynamic check is a state-at-landing pin: it only runs on
+    the introducer PR. On successor slices (RI-7.8b-bc1-6b adds new workflows
+    + gpp_status.v1.json supersession entries; RI-7.8b-bc1-6c flips the
+    submanifest BC-1 key), the diff legitimately touches surfaces the 6a
+    forbidden_surfaces list rejected. The artifact's digest pins (stale_replay
+    guard + readiness/submanifest sha256 + const fields) continue to enforce
+    the RI-7.8a state at PR #673 landing on every successor PR.
+
+    Pattern mirrors RI-7.5's introducer detection and PR #666 fast-follow.
+    """
+    base, _src = _resolve_diff_base()
+    if base is None:
+        return False
+    diff_proc = _git(["diff", "--diff-filter=A", "--name-only", f"{base}..HEAD"])
+    if diff_proc.returncode != 0:
+        return False
+    added = {line.strip() for line in diff_proc.stdout.splitlines() if line.strip()}
+    return str(_EVIDENCE_PATH.relative_to(_REPO_ROOT)) in added
+
+
 def _in_pr_context() -> bool:
     if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
         return True
@@ -361,10 +385,19 @@ def test_ri78a_stale_replay_guard_digests_match_files() -> None:
 
 
 def test_ri78a_forbidden_surfaces_actually_unchanged_in_diff() -> None:
-    """CI fail-closed in PR context: forbidden surfaces MUST not appear
-    in `git diff --name-only base..HEAD`. Machine enforcement, not
-    self-attestation.
+    """CI fail-closed in PR context (introducer PR only): forbidden surfaces
+    MUST not appear in `git diff --name-only base..HEAD`.
+
+    State-at-landing pin: this dynamic check only runs on the RI-7.8a
+    introducer PR (PR #673). Successor B-path slices (RI-7.8b-bc1-6b adds
+    new workflows + gpp_status entries; RI-7.8b-bc1-6c flips the submanifest)
+    legitimately touch surfaces the 6a forbidden_surfaces list rejected.
+    The const digest pins (readiness sha256, submanifest sha256, base_sha,
+    artifact_kind, decision) keep enforcing the RI-7.8a state-at-landing
+    on every successor PR via the structural invariants above.
     """
+    if not _is_ri78a_introducer_pr():
+        pytest.skip("RI-7.8a state-at-landing pin: forbidden-diff dynamic check only runs on the introducer PR")
     evidence = json.loads(_read(_EVIDENCE_PATH))
     surfaces = evidence["forbidden_change_audit"]["forbidden_surfaces"]
 
@@ -389,9 +422,9 @@ def test_ri78a_forbidden_surfaces_actually_unchanged_in_diff() -> None:
         ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
     } <= changed:
-        ao_ma10_text = (
-            _REPO_ROOT / ".claude" / "plans" / "AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md"
-        ).read_text(encoding="utf-8")
+        ao_ma10_text = (_REPO_ROOT / ".claude" / "plans" / "AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md").read_text(
+            encoding="utf-8"
+        )
         if (
             "## AO-MA-10b Release-Gate Payload + Decision Integration" in ao_ma10_text
             and "AO-MA-10b may touch only:" in ao_ma10_text
