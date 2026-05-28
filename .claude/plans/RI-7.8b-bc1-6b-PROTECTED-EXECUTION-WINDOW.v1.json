@@ -27,7 +27,7 @@
     "activation_source": "github.com/Halildeu/ao-kernel/pull/678",
     "no_secret_assertion": true,
     "activation_scope": "bc1_protected_live_adapter_attestation_only",
-    "observation_notes": "Operator records the activation of the protected execution window infrastructure for RI-7.8b-bc1 live-adapter attestation. This artifact creates the workflow file + runtime activation guard + scoped operator_bound_supersessions entry in gpp_status.v1.json. Top-level guard flags remain const false (baseline closure preserved). Effective live_adapter_execution_allowed is granted only within the bounded window via the scoped supersession entry, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime. No live adapter call occurs in this PR; operator workflow_dispatch post-merge triggers the actual run within the window. Per-run evidence + spend ledger + window closure + submanifest BC-1 flip belong to RI-7.8b-bc1-6c."
+    "observation_notes": "Operator records the activation of the protected execution window infrastructure for RI-7.8b-bc1 live-adapter attestation. This artifact creates the workflow file + runtime activation guard + scoped operator_bound_supersessions entry in gpp_status.v1.json. Top-level guard flags remain const false (baseline closure preserved). Effective live_adapter_execution_allowed is granted only within the bounded window via the scoped supersession entry, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime. No live adapter call occurs in this PR; operator workflow_dispatch post-merge triggers the actual run within the window. Per-run evidence + spend ledger + window closure + submanifest BC-1 flip belong to RI-7.8b-bc1-6c. SINGLE-OPERATOR DISPATCH/REVIEW MODEL: in pre-production context Halildeu acts both as workflow_dispatch actor AND required reviewer. prevent_self_review is set to false (required) to avoid GitHub-side deadlock; this is justified by the bounded window + run cap + workflow_content_sha256 binding + window expiry + post-window guarded baseline restoration in 6c, all of which constrain the effective surface to the same single-operator authority chain."
   },
   "workflow_binding": {
     "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
@@ -46,7 +46,7 @@
   "protected_environment_observation": {
     "env_name": "ao-kernel-bc1-live-adapter-attestation",
     "required_reviewers_required": true,
-    "prevent_self_review_required": true,
+    "prevent_self_review_required": false,
     "allowed_refs_required": ["refs/heads/main"],
     "admin_bypass_allowed_required": false,
     "operator_manual_setup_required": true,

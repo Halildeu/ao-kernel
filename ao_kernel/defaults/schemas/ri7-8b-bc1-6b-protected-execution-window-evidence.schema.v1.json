@@ -161,7 +161,7 @@
       "properties": {
         "env_name": {"type": "string", "const": "ao-kernel-bc1-live-adapter-attestation"},
         "required_reviewers_required": {"type": "boolean", "const": true},
-        "prevent_self_review_required": {"type": "boolean", "const": true},
+        "prevent_self_review_required": {"type": "boolean", "const": false, "description": "MUST be false in single-operator pre-production context. Halildeu is both dispatch actor AND required reviewer; setting prevent_self_review=true would deadlock the workflow_dispatch. Justified by operator_activation_confirmation.observation_notes."},
         "allowed_refs_required": {
           "type": "array",
           "minItems": 1,

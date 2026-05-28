@@ -207,14 +207,19 @@ Schema pins:
 
 1. **GitHub Settings → Environments → New environment** name: `ao-kernel-bc1-live-adapter-attestation`
 2. **Required reviewers:** add `Halildeu`
-3. **Prevent self-review:** ENABLE
+3. **Prevent self-review:** **DISABLE** (single-operator dispatch+review model — `Halildeu` is both `workflow_dispatch` actor AND required reviewer; enabling self-review prevention would deadlock the run). Justified by the bounded window + run cap + content-sha256 binding + window expiry + 6c post-window restoration of baseline.
 4. **Deployment branches and tags:** Selected branches → `main` only
 5. **Admin bypass:** DISABLE
 6. **Provider secrets** (if used by live adapter step in 6c):
    - Stored under environment secret scope (NOT repo-level)
    - Names redacted from workflow file (loaded via secrets context only)
 
-RI-7.8b-bc1-6c verifies this manual setup via `gh api .../environments/...` at runtime and pins observation evidence.
+RI-7.8b-bc1-6c verifies this manual setup via `gh api .../environments/...` at runtime and pins observation evidence including:
+- `can_admins_bypass=false` (API field)
+- branch policy returns `main` only
+- reviewer login set includes `Halildeu`
+- dispatch actor login (run trigger)
+- `prevent_self_review=false` (consistent with single-operator model)
 
 ## 12. Cross-AI Peer Review (HARD RULE CC-2)
 

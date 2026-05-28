@@ -659,11 +659,12 @@
       "protected_environment_binding": {
         "env_name": "ao-kernel-bc1-live-adapter-attestation",
         "required_reviewers_required": true,
-        "prevent_self_review_required": true,
+        "prevent_self_review_required": false,
         "allowed_refs": [
           "refs/heads/main"
         ],
-        "admin_bypass_allowed": false
+        "admin_bypass_allowed": false,
+        "single_operator_dispatch_review_model_justified": true
       },
       "future_workflow_contract": {
         "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",

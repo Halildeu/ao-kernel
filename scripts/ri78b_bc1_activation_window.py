@@ -24,8 +24,12 @@ Guard chain (each failure → exit 1):
 7. ``now_utc < entry.valid_until`` (activation has not expired)
 8. ``entry.allowed_refs`` contains ``refs/heads/main``
 9. Scenario input is one of the allowed scenarios
-10. GitHub Actions API: distinct ``workflow_dispatch`` runs for this workflow on
-    ``main`` since ``entry.actual_start_at`` (or now if null) <= 5
+10. GitHub Actions API: total distinct ``workflow_dispatch`` runs for this
+    workflow on ``main`` (workflow lifetime cap) <= MAX_DISTINCT_RUNS.
+    Window-relative filtering (since ``entry.actual_start_at``) is owned by
+    RI-7.8b-bc1-6c which records the per-run evidence + closure proof; 6b
+    enforces the lifetime cap because ``actual_start_at`` is null prior to
+    the first dispatch.
 
 The script does NOT mutate gpp_status.v1.json. State transitions
 (``awaiting_operator_dispatch`` → ``active``, ``active`` → ``closed``) are
@@ -168,9 +172,12 @@ def _check_scenario(scenario: str) -> None:
 
 
 def _check_distinct_run_count(entry: dict) -> None:
-    """Use GitHub Actions API to count distinct workflow_dispatch runs since
-    actual_start_at on main. Must be <= MAX_DISTINCT_RUNS including the
-    current run."""
+    """Use GitHub Actions API to count total distinct workflow_dispatch runs
+    for this workflow on main (workflow lifetime cap). Must be <=
+    MAX_DISTINCT_RUNS including the current run. Window-relative filtering
+    (since entry.actual_start_at) is owned by RI-7.8b-bc1-6c; in 6b
+    actual_start_at is null prior to the first dispatch so we enforce the
+    lifetime cap to keep contract == implementation."""
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not repo:
         _fail("GITHUB_REPOSITORY not set")
