@@ -1,27 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10N-live-enforcement-cutover",
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "claude-cli",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma-10n-live-enforcement-cutover",
-    "changed_files": [
-      ".claude/plans/AO-MA-10N-LIVE-ENFORCEMENT-CUTOVER.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10n_live_enforcement_cutover.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
@@ -30,18 +7,61 @@
     {
       "name": "secret_scan",
       "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "git_diff_check",
+      "status": "pass"
+    },
+    {
+      "name": "dry_run_plan",
+      "status": "pass"
+    },
+    {
+      "name": "release_gate_payload_repro",
+      "status": "pass"
     }
   ],
   "findings": [
-    "The runbook preserves guard flags and repeats no support widening, no production claim, and no live adapter execution.",
-    "The CC-9 gap is exposed honestly with operator-bootstrap and full no-human bootstrap modes.",
-    "The PR does not mutate GitHub settings and only records pre-cutover steps plus invariant tests.",
-    "The legacy ao-release-gate wrapper is correctly distinguished from the dual required-check authority set.",
-    "Classic CI requirements are preserved, and bypass_actors=[] remains explicit.",
-    "The tests pin the critical runbook contract and provide sufficient doc-invariant coverage."
+    "Anthropic reviewer verdict is AGREE after the final test-only confirmation hardening.",
+    "The supersession is hard-bound to one repo, branch, ruleset id, and release-check pair, and CC-9 remains the default rule outside AO-MA-10O.",
+    "The script fails closed on dirty or diverged main, unmerged dependency PRs, GPP guard flag drift, accepted dry-run mismatch, non-main ruleset targeting, missing snapshots, and missing CLI or env confirmation.",
+    "The mutation surface is limited to adding source-pinned ao-release-gate required checks and deleting native required_pull_request_reviews while preserving classic CI, enforce_admins=true, and bypass_actors=[].",
+    "Anthropic reviewer re-checked the release-gate payload builder follow-up and agreed that non-skipped failure/cancelled/timed_out check-runs are not masked while skipped-only required checks remain fail-closed.",
+    "The change does not authorize support widening, production platform claim, live adapter execution, testai/smee reactivation, admin merge, bypass actors, or AI output as release authority."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude-cli",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md",
+      ".claude/plans/PROGRAM-CHANGE-CONTROL.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_release_gate_build_payload.py",
+      "scripts/ao_ma10o_no_human_bootstrap.py",
+      "tests/test_ao_release_gate_build_payload.py",
+      "tests/test_ao_ma10o_cc9_no_human_bootstrap_supersession.py"
+    ],
+    "head_ref": "refs/heads/codex/ao-ma-10o-cc9-no-human-bootstrap"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-10O-cc9-no-human-bootstrap"
 }

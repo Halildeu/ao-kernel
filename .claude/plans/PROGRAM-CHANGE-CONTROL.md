@@ -64,6 +64,32 @@ program evolves and what is forbidden.
 - **Why:** Avoid silent schema drift; preserve replay-ability of historical artifacts.
 - **Evidence:** Drift-guard test pins `schema_version == "1"` and the required-keys list.
 
+#### AO-MA-10O narrow supersession for CC-9
+
+CC-9 remains the default rule. It is superseded only for the AO-MA-10O
+no-human bootstrap path recorded in
+`.claude/plans/AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md`.
+
+After PR #682, PR #684, and the AO-MA-10O supersession PR are merged, a
+constrained agent may call GitHub write APIs only through
+`scripts/ao_ma10o_no_human_bootstrap.py --apply`, and only to:
+
+1. update ruleset `16803733` for `Halildeu/ao-kernel` so
+   `ao-release-gate-technical` and `ao-release-gate-review` are required and
+   source-pinned to GitHub Actions integration id `15368`;
+2. keep ruleset `bypass_actors=[]`;
+3. preserve `deletion` and `non_fast_forward` rules;
+4. remove only the native `required_pull_request_reviews` branch-protection
+   gate from `main`;
+5. preserve the classic CI required checks (`lint`, `test (3.11)`,
+   `test (3.12)`, `test (3.13)`, `coverage`, `typecheck`,
+   `packaging-smoke`) and `enforce_admins=true`.
+
+The supersession does not authorize `--admin` merge, bypass actors, removal of
+classic CI, support widening, production platform claims, live adapter
+execution, testai/smee/deployment-protection reactivation, or treating AI
+output as release authority.
+
 ### CC-9 — Branch ruleset mutation is operator-only
 
 - **Rule:** GitHub branch rulesets (ID `16803733` "Protect main" and any future ruleset) are changed only by the repo owner / admin through the GitHub UI. Agents are forbidden from calling `gh api` against `repos/<repo>/rulesets/*` or `repos/<repo>/branches/main/protection`.
