@@ -470,7 +470,7 @@
     "treat the program_closure metadata as a public production platform claim; it is an internal SSOT marker that the autonomous GPP chain reached 7/7 milestones with no support widening and no production claim"
   ],
   "next_allowed_actions": [
-    "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; if GitHub ruleset/branch-protection state lacks the required source-pinned ao-release-gate checks or still requires global human review, keep the autonomous merge lane blocked before smoke or merge-agent activation",
+    "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; current live evidence has the source-pinned ao-release-gate checks, empty bypass actors, and no legacy low-risk review requirement, but keep the autonomous merge lane blocked before smoke or merge-agent activation until the dedicated non-admin merge actor is authenticated and A0/A1 reports ready_for_dry_run",
     "keep the ao-release-gate ruleset bypass_actors list empty; do not add bypass actors without explicit GPP supersession",
     "preserve the legacy main branch protection enforce_admins surface separately from the ao-release-gate ruleset; tightening that surface is an optional later hardening slice",
     "continue the no-testai local/operator release-governance model as the recorded design outcome, but do not treat it as live autonomous merge readiness until AO-MA-10A0/A1 reports ready_for_dry_run and GitHub API evidence shows required checks, review model, bypass actors, and merge actor aligned",

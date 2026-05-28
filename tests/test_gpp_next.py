@@ -356,7 +356,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # AO-MA-10 live-readiness truth is stronger than historical closeout prose.
     assert any(
         action
-        == "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; if GitHub ruleset/branch-protection state lacks the required source-pinned ao-release-gate checks or still requires global human review, keep the autonomous merge lane blocked before smoke or merge-agent activation"
+        == "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; current live evidence has the source-pinned ao-release-gate checks, empty bypass actors, and no legacy low-risk review requirement, but keep the autonomous merge lane blocked before smoke or merge-agent activation until the dedicated non-admin merge actor is authenticated and A0/A1 reports ready_for_dry_run"
         for action in payload["next_allowed_actions"]
     )
     assert any(

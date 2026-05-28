@@ -3,7 +3,7 @@
   "artifact_kind": "ao_ma_10_autonomous_merge_eligibility",
   "candidate_changed_files": {
     "files": [
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py"
+      "local-ai-review-evidence.v1.json"
     ],
     "files_count": 1,
     "invalid_paths": [],
@@ -25,7 +25,7 @@
       "some_nominal_low_risk_prefixes_still_codeowned"
     ]
   },
-  "generated_at": "2026-05-28T19:36:30Z",
+  "generated_at": "2026-05-28T22:45:36Z",
   "github_gate_requirements": {
     "ao_release_gate_review_required_check_present": true,
     "ao_release_gate_review_source_pinned_to_actions": true,
@@ -52,7 +52,7 @@
     ],
     "branch": "main",
     "decision": "blocked",
-    "generated_at": "2026-05-28T19:36:30Z",
+    "generated_at": "2026-05-28T22:45:36Z",
     "repository": "Halildeu/ao-kernel",
     "schema_version": "ao-ma-10-github-readiness-snapshot.v1"
   },
