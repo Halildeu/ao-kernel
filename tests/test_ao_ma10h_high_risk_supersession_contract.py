@@ -191,6 +191,34 @@ def test_ao_ma10h_current_slice_diff_excludes_runtime_and_github_mutation() -> N
     if ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md" in changed:
         pytest.skip("AO-MA-10j wiring slice supersedes the AO-MA-10h no-workflow-mutation introducer invariant")
 
+    # Introducer-PR detection (pattern parity with RI-7.1, RI-7.2, RI-7.5,
+    # RI-7.8a, RI-7.8b-bc1-6a/6b/6c-fast-follow and AO-MA-10 runtime).
+    # This invariant pins the *introducer* PR's scope to contract-only.
+    # Subsequent slices that legitimately extend the H contract semantics
+    # (e.g., adding ``binding_mode`` 3-state classification) MODIFY the
+    # file rather than ADD it. The introducer fact is fixed at landing
+    # time; later evolutions land via their own scoped review.
+    introducer_proc = _git_capture(
+        [
+            "diff",
+            "--name-only",
+            "--diff-filter=A",
+            f"{base}..HEAD",
+            "--",
+            ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
+        ]
+    )
+    if introducer_proc.returncode != 0:
+        if in_ci_pr:
+            pytest.fail(f"AO-MA-10h introducer probe failed: {introducer_proc.stderr}")
+        pytest.skip(f"AO-MA-10h introducer probe failed: {introducer_proc.stderr}")
+    is_introducer = bool(introducer_proc.stdout.strip())
+    if not is_introducer:
+        pytest.skip(
+            "AO-MA-10h contract MODIFIED (not ADDED) in this diff; state-at-landing "
+            "pin applies, introducer-only scope check skipped"
+        )
+
     forbidden_prefixes = (
         ".github/",
         "deploy/",
