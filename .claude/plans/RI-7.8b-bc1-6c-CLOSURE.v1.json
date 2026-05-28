@@ -1,0 +1,130 @@
+{
+  "schema_version": "ri7-8b-bc1-6c-closure-evidence.v1",
+  "artifact_kind": "ri7_8b_bc1_6c_closure_evidence",
+  "generated_at": "2026-05-28T21:00:00Z",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.8b-bc1-6c-closure",
+  "supersession_entry_id": "RI-7.8b-bc1-6b",
+  "scenario_run_refs": [
+    {
+      "scenario": "clean_attestation",
+      "run_evidence_path": ".claude/plans/RI-7.8b-bc1-6c-RUN-EVIDENCE-clean_attestation.v1.json",
+      "run_evidence_sha256": "46ec01d95f4541db360eb3f68038c58adaa0ebf1e8af9d21c7fda57e677e0c04"
+    },
+    {
+      "scenario": "fail_closed_attestation",
+      "run_evidence_path": ".claude/plans/RI-7.8b-bc1-6c-RUN-EVIDENCE-fail_closed_attestation.v1.json",
+      "run_evidence_sha256": "952ba499178e0b0a54bcb429748e53744b443d2843fbcce4b0bc6c9f338fa965"
+    }
+  ],
+  "actual_start_at": "2026-05-28T20:56:40Z",
+  "closed_at": "2026-05-28T21:00:00Z",
+  "closure_proof": {
+    "workflow_run_id": "26601793341",
+    "head_sha": "732192a37a0336669583566eb6b4827472f1d32a",
+    "scenario_outcomes": [
+      "clean_attestation_pass",
+      "fail_closed_as_expected"
+    ],
+    "no_unexpected_failure": true
+  },
+  "spend_ledger": {
+    "max_usd": 5.0,
+    "cumulative_usd": 0.0,
+    "billable_calls_count": 0,
+    "cost_source": "no_billable_provider_call",
+    "line_items": []
+  },
+  "bounded_window_envelope": {
+    "max_distinct_runs": 5,
+    "actual_distinct_runs": 1,
+    "max_run_attempt": 1,
+    "actual_max_run_attempt": 1,
+    "max_duration_hours": 24,
+    "actual_duration_hours_under_max": true
+  },
+  "operator_activation_identity": {
+    "trigger_commit_sha": "732192a37a0336669583566eb6b4827472f1d32a",
+    "trigger_commit_committed_at": "2026-05-28T20:56:38Z",
+    "pr_number": 690,
+    "merged_by_login": "Halildeu",
+    "author_login": "Halildeu",
+    "committer_login": "web-flow",
+    "identity_policy": "operator_login_must_match_merged_by_and_author",
+    "identity_match": true
+  },
+  "commit_verification": {
+    "source": "github_commit_api",
+    "verified": true,
+    "reason": "valid",
+    "verified_at": "2026-05-28T20:56:39Z"
+  },
+  "required_checks_passed": {
+    "head_sha": "732192a37a0336669583566eb6b4827472f1d32a",
+    "ruleset_or_branch_protection_observed": true,
+    "checks": [
+      {
+        "name": "protected-live-adapter-attestation (clean_attestation)",
+        "conclusion": "success"
+      },
+      {
+        "name": "protected-live-adapter-attestation (fail_closed_attestation)",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "ao_ma_10_high_risk_prerequisite": {
+    "pr_number": 687,
+    "merge_commit_sha": "0ad07277699e92849922d8066c586f1b76cf9483",
+    "raw_evidence_rebind_or_delete_resolved": true,
+    "introducer_runtime_detection_present": true,
+    "cross_ai_consensus_status": "AGREE",
+    "operator_review_recorded": true,
+    "verified_at": "2026-05-28T21:00:00Z"
+  },
+  "bc1_flip_attestation": {
+    "submanifest_path": ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
+    "submanifest_key": "bc1_protected_live_adapter_attestation_recorded",
+    "before": false,
+    "after": true,
+    "conditions_met": {
+      "cross_ai_consensus_agree": true,
+      "bounded_window_under_caps": true,
+      "both_scenarios_outcomes_pinned": true,
+      "no_unexpected_failure": true,
+      "operator_identity_match": true,
+      "commit_verification_valid": true,
+      "required_checks_passed": true,
+      "ao_ma_10_high_risk_prerequisite_resolved": true
+    },
+    "top_level_flags_unchanged": {
+      "support_widening_allowed": false,
+      "production_platform_claim_allowed": false,
+      "live_adapter_execution_allowed": false
+    }
+  },
+  "status_transition_history": [
+    {
+      "from_status": "null_initial",
+      "to_status": "awaiting_auto_dispatch_trigger_commit",
+      "at": "2026-05-28T19:30:00Z"
+    },
+    {
+      "from_status": "awaiting_auto_dispatch_trigger_commit",
+      "to_status": "active",
+      "at": "2026-05-28T20:56:40Z"
+    },
+    {
+      "from_status": "active",
+      "to_status": "closed",
+      "at": "2026-05-28T21:00:00Z"
+    }
+  ],
+  "guard_flags": {
+    "support_widening": false,
+    "production_platform_claim": false,
+    "live_adapter_execution": false
+  },
+  "secrets_recorded": false,
+  "mutations_performed": false
+}
