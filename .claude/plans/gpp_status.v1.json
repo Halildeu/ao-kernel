@@ -640,7 +640,8 @@
       "operator_authority": {
         "operator_github_login": "Halildeu",
         "activation_recorded_at": "2026-05-28T07:08:16Z",
-        "activation_source": "github.com/Halildeu/ao-kernel/pull/675"
+        "activation_source": "github.com/Halildeu/ao-kernel/pull/678",
+        "predecessor_authorization_source": "github.com/Halildeu/ao-kernel/pull/675"
       },
       "guard_flag_policy_resolution": {
         "support_widening_allowed": false,
