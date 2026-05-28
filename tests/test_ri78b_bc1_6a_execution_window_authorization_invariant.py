@@ -537,6 +537,8 @@ def test_ri78b_bc1_6a_cross_artifact_verdict_equality():
     if not LOCAL_AI_REVIEW_PATH.exists():
         pytest.skip("local-ai-review-evidence.v1.json missing — will be added before merge")
     review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review["work_package"] != "RI-7.8b-bc1-6a":
+        pytest.skip("local-ai-review-evidence.v1.json belongs to a later work package")
     evidence = _load_json(EVIDENCE_PATH)
     assert review["reviewer"]["provider"] == "openai"
     assert review["implementer"]["provider"] == "anthropic"
