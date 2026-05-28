@@ -345,7 +345,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action
-        == "continue operating the no-testai local/operator release-governance model with ao-release-gate enforced via GitHub ruleset as the recorded GPP-2 closeout outcome: cross-provider AI review, non-author GitHub approval, local_gpp_gate evidence, and ao-release-gate required-check enforcement"
+        == "continue the no-testai local/operator release-governance model as the recorded design outcome, but do not treat it as live autonomous merge readiness until AO-MA-10A0/A1 reports ready_for_dry_run and GitHub API evidence shows required checks, review model, bypass actors, and merge actor aligned"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -353,10 +353,10 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
         == "treat testai.acik.com/ao-gate, smee.io delivery, deployment-protection callback evidence, and policy App slug reconciliation as deferred GPP-2C infrastructure, not active blockers under the GPP-2 closeout decision"
         for action in payload["next_allowed_actions"]
     )
-    # Closeout-anchored required-check operational rules (3 new):
+    # AO-MA-10 live-readiness truth is stronger than historical closeout prose.
     assert any(
         action
-        == "operate ao-release-gate as the active required check enforced by the GitHub branch ruleset; do not regress to shadow conclusion-mode without explicit GPP supersession"
+        == "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; if GitHub ruleset/branch-protection state lacks the required source-pinned ao-release-gate checks or still requires global human review, keep the autonomous merge lane blocked before smoke or merge-agent activation"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -506,6 +506,11 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any(
         action
         == "treat any same-name external ao-release-gate check-run as satisfying the required-check source pin without explicit ruleset/API verification"
+        for action in payload["forbidden_actions"]
+    )
+    assert any(
+        action
+        == "treat GPP-2D/GPP-9 closeout wording as live GitHub required-check evidence when AO-MA-10A0/A1 reports live enforcement blockers or SSOT/live drift"
         for action in payload["forbidden_actions"]
     )
     # Closeout negative guards: stale "blocked" wording must not return.

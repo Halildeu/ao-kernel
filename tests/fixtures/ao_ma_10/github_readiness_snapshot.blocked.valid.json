@@ -62,7 +62,7 @@
     "present": true
   },
   "collection_errors": [],
-  "generated_at": "2026-05-27T19:33:16Z",
+  "generated_at": "2026-05-28T10:03:15Z",
   "guard_flags": {
     "live_adapter_execution": false,
     "production_platform_claim": false,
@@ -80,8 +80,7 @@
     "blockers": [
       "ao_release_gate_required_check_missing",
       "legacy_required_review_blocks_low_risk_autonomy",
-      "merge_actor_admin_permission_observed",
-      "ssot_live_required_check_drift_detected"
+      "merge_actor_admin_permission_observed"
     ],
     "decision": "blocked",
     "next_required_slice": "AO-MA-10a1 autonomous_merge_eligibility after blockers are resolved",
@@ -123,8 +122,8 @@
   "schema_version": "ao-ma-10-github-readiness-snapshot.v1",
   "snapshot_source": "github_api_read_only",
   "ssot_cross_check": {
-    "live_snapshot_conflicts_with_prior_claim": true,
+    "live_snapshot_conflicts_with_prior_claim": false,
     "prior_claim_source": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-    "prior_required_check_claim_observed": true
+    "prior_required_check_claim_observed": false
   }
 }

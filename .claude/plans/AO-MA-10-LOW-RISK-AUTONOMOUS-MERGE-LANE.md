@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** planned / AO-MA-10d negative fail-closed suite recorded
+**Status:** active hardening / live GitHub readiness blocked
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -50,9 +50,12 @@ AO-MA-10a2  context-bound evidence bundle + registered-provider consensus schema
 AO-MA-10b   ao-release-gate payload + decision integration
 AO-MA-10d   negative fail-closed suite before any real merge
 AO-MA-10h   high-risk cross-provider supersession contract
+AO-MA-10i   high-risk supersession decision-core validator
+AO-MA-10j   required-check runtime high-risk supersession wiring
+AO-MA-10k   disposable real-PR high-risk smoke
 AO-MA-10c   merge-agent identity + dry-run executor
-AO-MA-10e   positive disposable low-risk autonomous merge smoke
-AO-MA-10f   activation/cutover
+AO-MA-10l   positive disposable low-risk autonomous merge smoke
+AO-MA-10m   activation/cutover
 ```
 
 AO-MA-10a0 is deliberately first because GitHub branch protection, rulesets,
@@ -221,12 +224,13 @@ The script uses GitHub API reads only. It records:
   while the live GitHub API snapshot does not show that rule.
 
 Current AO-MA-10a0 live result is `blocked`, which is the correct fail-closed
-state. Recorded blockers:
+state. The live GitHub API snapshot is the authority for whether the lane can
+run today, even if older GPP closeout prose described an intended ruleset state.
+Recorded blockers:
 
 1. `ao_release_gate_required_check_missing`
 2. `legacy_required_review_blocks_low_risk_autonomy`
 3. `merge_actor_admin_permission_observed`
-4. `ssot_live_required_check_drift_detected`
 
 Recorded warnings:
 
@@ -235,10 +239,9 @@ Recorded warnings:
 
 This does not mean the autonomous lane is abandoned. It means the next slices
 must resolve authority and enforcement mechanics before the merge agent can run.
-The live GitHub snapshot is the AO-MA-10a0 source of truth for readiness; any
-broader status document that still describes `ao-release-gate` as source-pinned
-in ruleset `16803733` must be reconciled in a separate follow-up before
-AO-MA-10a1 can treat the repository as ready.
+The live GitHub snapshot is the AO-MA-10a0 source of truth for readiness.
+Historical GPP records remain useful audit evidence, but they are not live
+GitHub enforcement evidence.
 
 ## AO-MA-10a1 Autonomous Merge Eligibility Checker
 
@@ -283,8 +286,8 @@ AO-MA-10a1 requires all of the following before returning
 
 The current committed A1 artifact is intentionally `blocked` because live
 GitHub enforcement still lacks the dual required-check set, legacy review still
-blocks low-risk autonomy, the current actor is admin, and the broader SSOT/live
-required-check drift remains unresolved. That is the correct fail-closed state.
+blocks low-risk autonomy, and the current actor is admin. That is the correct
+fail-closed state.
 
 ## AO-MA-10a2 Evidence Bundle + Provider Consensus Schemas
 

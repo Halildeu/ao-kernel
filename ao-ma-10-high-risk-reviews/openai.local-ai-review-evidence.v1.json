@@ -26,13 +26,12 @@
     }
   ],
   "findings": [
-    "GPP-2/GPP-9 closeout remains closed with support_widening=false, production_platform_claim=false, and live_adapter_execution=false.",
-    "AO-MA-10A0/A1 is now explicitly the live GitHub autonomy-readiness authority, so historical closeout wording is not treated as live required-check evidence.",
-    "The current live GitHub blockers remain fail-closed: required ao-release-gate checks are missing, legacy review/CODEOWNERS remains active, and the observed actor is admin.",
-    "The readiness snapshot predicate now ignores historical changelog/runbook prose and detects only current-status required-check claims.",
-    "The readiness snapshot now requires the dual ruleset check set ao-release-gate-technical plus ao-release-gate-review, both source-pinned to GitHub Actions.",
-    "The AGENTS invariant test now pins AO-MA-10A0/A1 live-readiness authority instead of the stale GPP-2D-5 cutover claim.",
-    "Claude and OpenAI independent reviews both returned AGREE with no blocking findings."
+    "No blocking finding: the diff separates GPP program closure from live autonomous merge readiness and keeps AO-MA-10A0/A1 as the live authority.",
+    "AGENTS, gpp_status, STATUS.md, AO-MA-10A0, and AO-MA-10A1 all keep the lane blocked until required checks, review model, bypass actors, and merge actor align.",
+    "The AO-MA-10 readiness snapshot correctly requires the dual source-pinned ruleset check set ao-release-gate-technical plus ao-release-gate-review rather than trusting the legacy ao-release-gate wrapper alone.",
+    "Guard flags remain false and AI output remains evidence rather than release authority.",
+    "The AGENTS invariant test update correctly pins AO-MA-10A0/A1 as the live-readiness authority instead of a stale GPP-2D-5 cutover claim.",
+    "Targeted tests, JSON validation, and diff checks were considered by the OpenAI reviewer."
   ],
   "implementer": {
     "agent": "codex-implementer",
@@ -42,8 +41,8 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-cli",
-    "provider": "anthropic",
+    "agent": "codex-reviewer-nash",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",

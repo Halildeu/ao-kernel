@@ -21,7 +21,7 @@ from typing import Any
 SCHEMA_VERSION = "ao-ma-10-github-readiness-snapshot.v1"
 ARTIFACT_KIND = "ao_ma_10_github_readiness_snapshot"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
-AO_RELEASE_GATE_CHECK = "ao-release-gate"
+AO_RELEASE_GATE_REQUIRED_CHECKS = ("ao-release-gate-technical", "ao-release-gate-review")
 GITHUB_ACTIONS_APP_ID = 15368
 
 
@@ -131,11 +131,14 @@ def _ssot_required_check_claim_observed(path: Path) -> bool:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return False
+    # Ignore historical changelog/runbook prose. This predicate is only meant
+    # to detect current-status claims that conflict with live GitHub API truth.
+    current_text = text.split("## 2. Current Baseline", 1)[0]
     return (
-        "ao-release-gate" in text
-        and "required check" in text
-        and "ruleset id `16803733`" in text
-        and "integration_id 15368" in text
+        "ao-release-gate" in current_text
+        and "required check" in current_text
+        and "ruleset id `16803733`" in current_text
+        and "integration_id 15368" in current_text
     )
 
 
@@ -232,11 +235,18 @@ def _normalize_rulesets(rulesets: list[Any], branch_rules: list[Any]) -> dict[st
     }
 
 
-def _check_present(checks: list[dict[str, Any]], *, id_key: str) -> tuple[bool, bool]:
-    matching = [check for check in checks if check.get("context") == AO_RELEASE_GATE_CHECK]
-    if not matching:
+def _required_checks_present(checks: list[dict[str, Any]], *, id_key: str) -> tuple[bool, bool]:
+    matching_by_context = {
+        str(check.get("context")): check
+        for check in checks
+        if check.get("context") in AO_RELEASE_GATE_REQUIRED_CHECKS
+    }
+    if set(matching_by_context) != set(AO_RELEASE_GATE_REQUIRED_CHECKS):
         return False, False
-    source_pinned = any(check.get(id_key) == GITHUB_ACTIONS_APP_ID for check in matching)
+    source_pinned = all(
+        matching_by_context[context].get(id_key) == GITHUB_ACTIONS_APP_ID
+        for context in AO_RELEASE_GATE_REQUIRED_CHECKS
+    )
     return True, source_pinned
 
 
@@ -288,11 +298,11 @@ def build_snapshot(
     normalized_rulesets = _normalize_rulesets(rulesets, branch_rules)
     codeowners = _codeowners_summary(codeowners_text)
 
-    bp_gate_present, bp_gate_pinned = _check_present(
+    bp_gate_present, bp_gate_pinned = _required_checks_present(
         normalized_bp["required_check_source_pins"],
         id_key="app_id",
     )
-    ruleset_gate_present, ruleset_gate_pinned = _check_present(
+    ruleset_gate_present, ruleset_gate_pinned = _required_checks_present(
         normalized_rulesets["effective_required_checks"],
         id_key="integration_id",
     )

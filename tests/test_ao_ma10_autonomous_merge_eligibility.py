@@ -107,7 +107,7 @@ def test_ao_ma10a1_current_snapshot_stays_blocked_with_live_blockers() -> None:
     assert "readiness_snapshot_not_ready" in blockers
     assert "legacy_required_review_blocks_low_risk_autonomy" in blockers
     assert "merge_actor_admin_permission_observed" in blockers
-    assert "ssot_live_required_check_drift_detected" in blockers
+    assert "ssot_live_required_check_drift_detected" not in blockers
 
 
 def test_ao_ma10a1_committed_evidence_records_current_fail_closed_state() -> None:
