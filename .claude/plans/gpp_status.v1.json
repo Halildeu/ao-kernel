@@ -630,5 +630,61 @@
     "decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
     "record": ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md"
   },
-  "last_updated": "2026-05-26T07:00:00Z"
+  "last_updated": "2026-05-28T07:08:16Z",
+  "operator_bound_supersessions": [
+    {
+      "id": "RI-7.8b-bc1-6b",
+      "status": "awaiting_operator_dispatch",
+      "scope": "bc1_protected_live_adapter_attestation_only",
+      "supersedes_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "operator_authority": {
+        "operator_github_login": "Halildeu",
+        "activation_recorded_at": "2026-05-28T07:08:16Z",
+        "activation_source": "github.com/Halildeu/ao-kernel/pull/678",
+        "predecessor_authorization_source": "github.com/Halildeu/ao-kernel/pull/675"
+      },
+      "guard_flag_policy_resolution": {
+        "support_widening_allowed": false,
+        "production_platform_claim_allowed": false,
+        "live_adapter_execution_allowed": true,
+        "effective_only_for": "RI-7.8b-bc1",
+        "expires_at_iso": "2026-06-04T07:08:16Z"
+      },
+      "actual_start_at": null,
+      "valid_until": "2026-06-04T07:08:16Z",
+      "actual_end_at": null,
+      "max_run_count": 5,
+      "max_run_attempt": 1,
+      "max_usd": 5.0,
+      "max_execution_window_duration_hours": 24,
+      "protected_environment_binding": {
+        "env_name": "ao-kernel-bc1-live-adapter-attestation",
+        "required_reviewers_required": true,
+        "prevent_self_review_required": false,
+        "allowed_refs": [
+          "refs/heads/main"
+        ],
+        "admin_bypass_allowed": false,
+        "single_operator_dispatch_review_model_justified": true
+      },
+      "future_workflow_contract": {
+        "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+        "workflow_content_sha256": "b37d79c6d6bfbdfddf18f72aeffb39756ddc9dcc639c5cee4e195a9a8f27c1b6",
+        "allowed_ref": "refs/heads/main",
+        "expected_dispatch_inputs_allowlist": [
+          "scenario"
+        ],
+        "expected_forbidden_inputs": [
+          "api_key",
+          "token",
+          "secret",
+          "credential",
+          "password",
+          "auth_header"
+        ]
+      },
+      "closure_owner_slice": "RI-7.8b-bc1-6c",
+      "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry"
+    }
+  ]
 }

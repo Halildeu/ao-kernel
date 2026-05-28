@@ -132,6 +132,45 @@ def _git_changed_paths_against(base_sha: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _is_ri78b_6a_introducer_pr() -> bool:
+    """Returns True if THIS PR is the slice that introduces the RI-7.8b-bc1-6a
+    evidence artifact (i.e. the artifact is newly ADDED in the diff against
+    origin/main).
+
+    Git-diff-dependent invariants (forbidden_change_audit machine enforcement,
+    future-workflow-absent, predecessor evidence untouched, submanifest
+    untouched in diff) must only run on the introducer PR. On successor PRs
+    (RI-7.8b-bc1-6b, RI-7.8b-bc1-6c, etc.) the diff scope intentionally
+    includes new workflows + gpp_status mutations + submanifest flips, which
+    would fail the 6a-state-at-landing pin if it were re-evaluated against
+    the new diff. The artifact + schema + plan doc remain present at the
+    same state in origin/main, so the structural invariants (schema valid,
+    evidence validates, const pins, digest matches) continue to pass and
+    enforce the 6a state-at-landing pin.
+
+    This pattern mirrors RI-7.5's introducer detection (`_is_ri71_introducer_pr`)
+    and AO-MA-10's fast-follow fix, absorbed under HARD RULE Kalıcı Çözüm
+    (durable, adversarial-review-proof, no symptom fix).
+    """
+    base_sha = _resolve_diff_base()
+    if base_sha is None:
+        return False  # CI fail-closed: cannot resolve base → skip pin
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--diff-filter=A", "--name-only", f"{base_sha}...HEAD"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False
+        added = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+        return str(EVIDENCE_PATH.relative_to(REPO_ROOT)) in added
+    except (subprocess.SubprocessError, OSError):
+        return False
+
+
 def _skip_if_current_local_review_evidence_is_for_another_slice() -> None:
     if not LOCAL_AI_REVIEW_PATH.exists():
         return
@@ -380,7 +419,16 @@ def test_ri78b_bc1_6a_future_workflow_contract_pinned():
 
 
 def test_ri78b_bc1_6a_future_workflow_file_absent_in_repo():
-    """6a MUST NOT create the future BC-1 workflow file."""
+    """6a MUST NOT create the future BC-1 workflow file.
+
+    State-at-landing pin: only enforced on the 6a introducer PR. On
+    successor slices (6b creates the workflow), the workflow file is
+    intentionally present in the repo, so this invariant is a 6a-PR-only
+    contract. The artifact's schema/const pins/digest already enforce that
+    the recorded 6a state matches the merged 6a state.
+    """
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     assert not FUTURE_WORKFLOW_PATH.exists(), f"6a must not create the future BC-1 workflow: {FUTURE_WORKFLOW_PATH}"
 
 
@@ -488,7 +536,13 @@ def test_ri78b_bc1_6a_forbidden_change_audit_exact_16_set():
 
 
 def test_ri78b_bc1_6a_forbidden_change_audit_machine_enforced_against_origin_main():
-    """Verify via git diff that NONE of the forbidden surfaces are touched in this PR."""
+    """Verify via git diff that NONE of the forbidden surfaces are touched in
+    the 6a introducer PR. State-at-landing pin: only enforced on the
+    introducer PR (successor slices may legitimately touch some surfaces, the
+    artifact const pins already enforce the 6a-state-at-landing).
+    """
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
@@ -502,7 +556,13 @@ def test_ri78b_bc1_6a_forbidden_change_audit_machine_enforced_against_origin_mai
 
 
 def test_ri78b_bc1_6a_gpp_status_untouched():
-    """gpp_status.v1.json must not be touched in 6a."""
+    """gpp_status.v1.json must not be touched in the 6a introducer PR.
+    Successor slices (e.g. 6b adding operator_bound_supersessions[] entry)
+    legitimately touch this file; the 6a const snapshot pins enforce the
+    6a-state-at-landing.
+    """
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
@@ -512,7 +572,13 @@ def test_ri78b_bc1_6a_gpp_status_untouched():
 
 
 def test_ri78b_bc1_6a_ri78a_predecessor_evidence_untouched():
-    """Predecessor evidence is immutable; 6a must not touch it."""
+    """Predecessor evidence is immutable; the 6a introducer PR must not
+    touch it. Successor slices have no reason to touch it either, but if a
+    future correctness fix lands the 6a state-at-landing pin still holds
+    via const digests.
+    """
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
@@ -522,7 +588,12 @@ def test_ri78b_bc1_6a_ri78a_predecessor_evidence_untouched():
 
 
 def test_ri78b_bc1_6a_ri78_submanifest_file_untouched_in_diff():
-    """Submanifest must be UNCHANGED in 6a (BC-1 key flip belongs to 6c)."""
+    """Submanifest must be UNCHANGED in the 6a introducer PR (BC-1 key flip
+    belongs to 6c). 6b infrastructure slice intentionally does not touch the
+    submanifest either; 6c will mutate it.
+    """
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:

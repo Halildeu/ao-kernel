@@ -1,0 +1,169 @@
+# RI-7.8b-bc1 Protected Live-Adapter Attestation
+#
+# Operator-bound execution-window dispatched workflow. Runs ONLY via
+# `workflow_dispatch` on `refs/heads/main`, gated by the
+# `ao-kernel-bc1-live-adapter-attestation` GitHub protected environment with
+# required reviewer + admin-bypass disabled.
+#
+# Authority chain:
+# - RI-7.8a operator pre-authorization (PR #673 merged)
+# - RI-7.8b-bc1-6a execution-window authorization contract (PR #675 merged)
+# - This file (RI-7.8b-bc1-6b protected execution window infrastructure)
+# - RI-7.8b-bc1-6c evidence record + window closure
+#
+# Pre-step guards (fail-closed). Live adapter step does NOT run unless ALL pass:
+# 1. github.ref == refs/heads/main
+# 2. github.run_attempt == 1 (no reruns)
+# 3. github.event_name == workflow_dispatch
+# 4. workflow_content_sha256 matches gpp_status.v1.json operator_bound_supersessions
+#    entry binding
+# 5. Active supersession entry id=RI-7.8b-bc1-6b, status in
+#    {awaiting_operator_dispatch, active}
+# 6. Distinct workflow_dispatch run count within window <= 5 (GitHub Actions API)
+# 7. Window not expired (now < entry.valid_until)
+# 8. scenario input in {clean_attestation, fail_closed_attestation}
+#
+# Secret boundary: no API key, token, secret, credential, password, or
+# auth_header inputs. Provider credentials are loaded only via the protected
+# environment's secret store at runtime and are never echoed or written to
+# artifacts. Emitted artifacts are redacted JSON markers only (no provider
+# response bodies, no token material).
+
+name: RI-7.8b-bc1 Protected Live-Adapter Attestation
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Attestation scenario"
+        required: true
+        type: choice
+        options:
+          - clean_attestation
+          - fail_closed_attestation
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+concurrency:
+  group: ri78b-bc1-protected-live-adapter-attestation
+  cancel-in-progress: false
+
+jobs:
+  protected-live-adapter-attestation:
+    runs-on: ubuntu-latest
+    environment: ao-kernel-bc1-live-adapter-attestation
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RI78B_BC1_SCENARIO: ${{ inputs.scenario }}
+    steps:
+      - name: Validate dispatch context (pre-checkout, no secrets in scope yet)
+        run: |
+          set -eo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "fail-closed: ref ${GITHUB_REF} != refs/heads/main" >&2
+            exit 1
+          fi
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
+            echo "fail-closed: event_name ${GITHUB_EVENT_NAME} != workflow_dispatch" >&2
+            exit 1
+          fi
+          if [ "${GITHUB_RUN_ATTEMPT}" != "1" ]; then
+            echo "fail-closed: rerun attempts are forbidden (run_attempt=${GITHUB_RUN_ATTEMPT})" >&2
+            exit 1
+          fi
+          case "${RI78B_BC1_SCENARIO}" in
+            clean_attestation|fail_closed_attestation) ;;
+            *)
+              echo "fail-closed: scenario ${RI78B_BC1_SCENARIO} not in allowlist" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate activation window (supersession entry + workflow digest + run cap)
+        run: |
+          set -eo pipefail
+          python3 scripts/ri78b_bc1_activation_window.py \
+            --workflow-path .github/workflows/bc1-protected-live-adapter-attestation.yml \
+            --gpp-status .claude/plans/gpp_status.v1.json \
+            --scenario "${RI78B_BC1_SCENARIO}"
+
+      - name: Run protected attestation (scenario-dispatched, redacted output)
+        run: |
+          set -eo pipefail
+          echo "RI-7.8b-bc1 protected live-adapter attestation"
+          echo "scenario: ${RI78B_BC1_SCENARIO}"
+          echo "run_id: ${GITHUB_RUN_ID}"
+          echo "run_attempt: ${GITHUB_RUN_ATTEMPT}"
+          echo "head_sha: ${GITHUB_SHA}"
+          echo "ref: ${GITHUB_REF}"
+          # The actual live adapter call lives in RI-7.8b-bc1-6c evidence; this
+          # workflow file (6b infrastructure) provides only the bounded execution
+          # surface. 6c records per-run evidence + spend ledger and flips the
+          # RI-7.8 submanifest BC-1 key after window closure.
+          case "${RI78B_BC1_SCENARIO}" in
+            clean_attestation)
+              echo "scenario: clean_attestation marker recorded"
+              ;;
+            fail_closed_attestation)
+              echo "scenario: fail_closed_attestation marker recorded (intentional fail)"
+              exit 78
+              ;;
+          esac
+
+      - name: Emit redacted attestation marker artifact
+        if: ${{ always() }}
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          set -eo pipefail
+          mkdir -p "${RUNNER_TEMP}/ri78b-bc1-attestation"
+          umask 077
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          wf_path = Path(".github/workflows/bc1-protected-live-adapter-attestation.yml")
+          wf_sha = hashlib.sha256(wf_path.read_bytes()).hexdigest()
+
+          marker = {
+              "schema_version": "ri7-8b-bc1-attestation-marker.v1",
+              "scenario": os.environ.get("RI78B_BC1_SCENARIO"),
+              "run_id": os.environ.get("RUN_ID"),
+              "run_attempt": os.environ.get("RUN_ATTEMPT"),
+              "head_sha": os.environ.get("HEAD_SHA"),
+              "workflow_ref": os.environ.get("WORKFLOW_REF"),
+              "workflow_content_sha256": wf_sha,
+              "secret_boundary": "no_secret_material_emitted_no_token_no_credential",
+          }
+          out = Path(os.environ["RUNNER_TEMP"]) / "ri78b-bc1-attestation" / f"marker-{marker['run_id']}-attempt-{marker['run_attempt']}.json"
+          out.write_text(json.dumps(marker, indent=2, sort_keys=True))
+          print(f"emitted: {out}")
+          PY
+
+      - name: Upload redacted artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ri78b-bc1-attestation-marker-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ri78b-bc1-attestation/
+          retention-days: 30
+          if-no-files-found: warn

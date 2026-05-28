@@ -1,0 +1,380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc1-6b-protected-execution-window-evidence:v1",
+  "title": "RI-7.8b-bc1-6b Protected Execution Window Evidence",
+  "description": "Evidence artifact recording the operator-bound activation of the RI-7.8b-bc1 protected live-adapter attestation execution window infrastructure. This slice creates the protected workflow file, scoped operator_bound_supersession entry, and runtime activation guard. It does NOT execute live adapter calls (those are performed by operator workflow_dispatch post-merge) and does NOT flip the RI-7.8 submanifest BC-1 key (RI-7.8b-bc1-6c owns evidence record + window closure + flip). The top-level gpp_status guard flags remain const false; the scoped supersession entry grants effective live_adapter_execution_allowed only within the bounded window, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "authorization_effect",
+    "does_not_authorize",
+    "ri78a_predecessor_ref",
+    "ri78b_6a_predecessor_ref",
+    "operator_activation_confirmation",
+    "workflow_binding",
+    "protected_environment_observation",
+    "run_budget",
+    "guard_flag_policy_resolution_evidence",
+    "runtime_fail_closed_controls",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "ri78_submanifest_snapshot",
+    "secret_boundary",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "submanifest_transition",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc1-6b-protected-execution-window-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc1_6b_protected_execution_window_evidence"},
+    "decision": {"type": "string", "const": "ri78b_bc1_6b_protected_execution_window_infrastructure_recorded_dispatch_pending_no_run_evidence_no_submanifest_flip"},
+    "authorization_effect": {
+      "type": "string",
+      "const": "protected_execution_window_infrastructure_recorded_pending_operator_dispatch_no_run_evidence_no_submanifest_flip"
+    },
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "submanifest_bc1_flip_now",
+          "automatic_workflow_dispatch_without_operator_action",
+          "credential_reference_in_repo",
+          "cost_incurring_calls_outside_dispatched_window",
+          "support_widening",
+          "production_platform_claim"
+        ]
+      }
+    },
+    "ri78a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 673},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_6a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 675},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "operator_activation_confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_login",
+        "activation_confirmed_at",
+        "activation_source",
+        "no_secret_assertion",
+        "activation_scope",
+        "observation_notes"
+      ],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "activation_confirmed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "activation_source": {"type": "string", "minLength": 1},
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "activation_scope": {"type": "string", "const": "bc1_protected_live_adapter_attestation_only"},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "workflow_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_path",
+        "workflow_content_sha256",
+        "allowed_ref",
+        "dispatch_inputs_allowlist",
+        "forbidden_inputs",
+        "permissions_minimal",
+        "concurrency_group",
+        "run_attempt_one_only"
+      ],
+      "properties": {
+        "workflow_path": {"type": "string", "const": ".github/workflows/bc1-protected-live-adapter-attestation.yml"},
+        "workflow_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "allowed_ref": {"type": "string", "const": "refs/heads/main"},
+        "dispatch_inputs_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["scenario"]}
+        },
+        "forbidden_inputs": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["api_key", "token", "secret", "credential", "password", "auth_header"]}
+        },
+        "permissions_minimal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contents", "actions", "deployments"],
+          "properties": {
+            "contents": {"type": "string", "const": "read"},
+            "actions": {"type": "string", "const": "read"},
+            "deployments": {"type": "string", "const": "read"}
+          }
+        },
+        "concurrency_group": {"type": "string", "const": "ri78b-bc1-protected-live-adapter-attestation"},
+        "run_attempt_one_only": {"type": "boolean", "const": true}
+      }
+    },
+    "protected_environment_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env_name",
+        "required_reviewers_required",
+        "prevent_self_review_required",
+        "allowed_refs_required",
+        "admin_bypass_allowed_required",
+        "operator_manual_setup_required",
+        "observed_at_runtime_by_6c"
+      ],
+      "properties": {
+        "env_name": {"type": "string", "const": "ao-kernel-bc1-live-adapter-attestation"},
+        "required_reviewers_required": {"type": "boolean", "const": true},
+        "prevent_self_review_required": {"type": "boolean", "const": false, "description": "MUST be false in single-operator pre-production context. Halildeu is both dispatch actor AND required reviewer; setting prevent_self_review=true would deadlock the workflow_dispatch. Justified by operator_activation_confirmation.observation_notes."},
+        "allowed_refs_required": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["refs/heads/main"]}
+        },
+        "admin_bypass_allowed_required": {"type": "boolean", "const": false},
+        "operator_manual_setup_required": {"type": "boolean", "const": true},
+        "observed_at_runtime_by_6c": {"type": "boolean", "const": true}
+      }
+    },
+    "run_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_distinct_runs", "max_run_attempt", "max_usd", "validity_window_until"],
+      "properties": {
+        "max_distinct_runs": {"type": "integer", "minimum": 1, "maximum": 5},
+        "max_run_attempt": {"type": "integer", "const": 1},
+        "max_usd": {"type": "number", "exclusiveMinimum": 0, "maximum": 5.00},
+        "validity_window_until": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "guard_flag_policy_resolution_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "top_level_baseline_preserved",
+        "scoped_supersession_entry_id",
+        "scoped_supersession_entry_scope",
+        "scoped_live_adapter_execution_allowed",
+        "scoped_support_widening_allowed",
+        "scoped_production_platform_claim_allowed",
+        "effective_permission_evaluator"
+      ],
+      "properties": {
+        "top_level_baseline_preserved": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+          "properties": {
+            "support_widening_allowed": {"type": "boolean", "const": false},
+            "production_platform_claim_allowed": {"type": "boolean", "const": false},
+            "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+          }
+        },
+        "scoped_supersession_entry_id": {"type": "string", "const": "RI-7.8b-bc1-6b"},
+        "scoped_supersession_entry_scope": {"type": "string", "const": "bc1_protected_live_adapter_attestation_only"},
+        "scoped_live_adapter_execution_allowed": {"type": "boolean", "const": true},
+        "scoped_support_widening_allowed": {"type": "boolean", "const": false},
+        "scoped_production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "effective_permission_evaluator": {"type": "string", "const": "scripts/ri78b_bc1_activation_window.py"}
+      }
+    },
+    "runtime_fail_closed_controls": {
+      "type": "array",
+      "minItems": 9,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nine_key_manifest_all_true", "readiness_gate_decision"],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "ri78_submanifest_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_evidence_pre_authorization_recorded",
+        "bc1_protected_live_adapter_attestation_recorded",
+        "bc10_real_adapter_usage_cost_aggregate_recorded",
+        "final_operator_promotion_decision_recorded"
+      ],
+      "properties": {
+        "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true},
+        "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": false},
+        "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+        "final_operator_promotion_decision_recorded": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_repo"},
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number_hint",
+        "base_sha",
+        "ri78a_evidence_sha256",
+        "ri78b_6a_evidence_sha256",
+        "ri78_submanifest_sha256",
+        "readiness_manifest_sha256",
+        "workflow_content_sha256",
+        "timestamp"
+      ],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window"},
+        "pr_number_hint": {"type": "string"},
+        "base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ri78a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_6a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "readiness_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "workflow_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bc1_protected_live_adapter_attestation_recorded"],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bc1_protected_live_adapter_attestation_recorded"],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": false}
+          }
+        }
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 13,
+          "maxItems": 13,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": "scripts/gp5_platform_claim_decision.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/mcp_server.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/__init__.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/policies/"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/PUBLIC-BETA.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/SUPPORT-BOUNDARY.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/KNOWN-BUGS.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/ao_release_gate.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/local_gpp_gate.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/repo_intelligence_tier_promotion_readiness.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1}
+          ]
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

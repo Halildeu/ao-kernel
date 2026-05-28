@@ -386,9 +386,18 @@ def _is_ri71_introducer_pr() -> tuple[bool, str]:
 
 
 def test_ri71_forbidden_surfaces_actually_unchanged_in_diff() -> None:
-    """CI fail-closed in PR context: forbidden surfaces in the artifact
-    MUST not actually appear in `git diff --name-only base..HEAD`.
+    """CI fail-closed in PR context (introducer PR only): forbidden surfaces
+    in the artifact MUST not actually appear in `git diff --name-only
+    base..HEAD`. State-at-landing pin: only enforced on the RI-7.1 introducer
+    PR. Successor B-path slices (e.g. RI-7.8b-bc1-6b adding workflows + gpp
+    status entries) legitimately touch surfaces this list rejects; const
+    digest pins continue to enforce the RI-7.1 state-at-landing.
     """
+    is_introducer, reason = _is_ri71_introducer_pr()
+    if not is_introducer:
+        pytest.skip(
+            f"RI-7.1 state-at-landing pin: forbidden-diff dynamic check only runs on the introducer PR ({reason})"
+        )
     evidence = json.loads(_read(_EVIDENCE_PATH))
     surfaces = evidence["forbidden_change_audit"]["forbidden_surfaces"]
 

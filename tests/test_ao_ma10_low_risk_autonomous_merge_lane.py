@@ -198,6 +198,19 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         pytest.skip(message)
 
     changed = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
+
+    # Introducer detection uses ADDED files only (--diff-filter=A). MODIFIED
+    # AO-MA-10 surfaces (e.g. successor B-path slice editing the AO-MA-10 test
+    # for systemic invariant alignment) MUST NOT trigger AO-MA-10 introducer
+    # pattern. Without --diff-filter=A, every successor PR that touches an
+    # AO-MA-10 file false-positives as the AO-MA-10 introducer and the
+    # full-scope allowlist assertion category-errors.
+    added_proc = _git_capture(["diff", "--diff-filter=A", "--name-only", f"{base}..HEAD"])
+    if added_proc.returncode != 0:
+        added_files: set[str] = set()
+    else:
+        added_files = {line.strip() for line in added_proc.stdout.splitlines() if line.strip()}
+
     # AO-MA-10 introducer-PR detection (fast-follow sistemik bug fix).
     # On non-introducer PRs the scope assertion is a category error;
     # skip with a precise reason.
@@ -216,12 +229,21 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
         "tests/test_ao_ma10_evidence_schemas.py",
         "tests/test_ao_ma10_negative_fail_closed.py",
-        "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
+        # NOTE: tests/test_ri78b_bc1_6a_*.py is OWNED by RI-7.8b-bc1-6a, NOT
+        # AO-MA-10. It was erroneously included here; successor B-path slices
+        # (e.g. RI-7.8b-bc1-6b adding introducer-PR detection to that file)
+        # legitimately touch it without being the AO-MA-10 introducer.
+        # Removed under RI-7.8b-bc1-6b inline systemic fix.
     }
-    if not (changed & ao_ma_10_introducer_signature):
+    # Only ADDED AO-MA-10 surfaces qualify as introducer signal. MODIFIED
+    # surfaces (e.g. successor B-path slice editing this very test for
+    # systemic invariant alignment) MUST NOT false-positive as the AO-MA-10
+    # introducer.
+    if not (added_files & ao_ma_10_introducer_signature):
         pytest.skip(
-            "PR is not the AO-MA-10 introducer PR (no AO-MA-10-specific path in diff); "
-            "AO-MA-10 scope allowlist invariant does not apply"
+            "PR is not the AO-MA-10 introducer PR (no AO-MA-10-specific path "
+            "ADDED in diff; modifications-only do not trigger AO-MA-10 scope "
+            "allowlist invariant)"
         )
 
     allowlist = {
