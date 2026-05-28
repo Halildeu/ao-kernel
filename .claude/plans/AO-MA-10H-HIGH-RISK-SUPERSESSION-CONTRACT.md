@@ -68,17 +68,40 @@ The supersession path is valid only when all of the following hold:
 1. Required providers include `openai` and `anthropic`.
 2. Provider verdicts are from distinct providers.
 3. Every required provider verdict is `AGREE`.
-4. Every provider verdict is context-bound to the current PR `head_sha`,
-   `base_ref`, `diff_digest`, `changed_files_count`, and exact
-   `high_risk_changed_paths`.
-5. Evidence freshness is `fresh` and bounded by `max_age_seconds`.
-6. `max_revise_rounds` is `3`.
-7. If consensus is not reached after the round budget, the only allowed
+4. The generated supersession artifact's top-level `context_binding` is
+   fresh-bound to the current PR `head_sha`, `base_ref`, `diff_digest`,
+   `changed_files_count`, and exact `high_risk_changed_paths`. Per-provider
+   `context_binding` mirrors the top-level binding.
+5. Each per-provider verdict declares its `binding_mode` against the raw
+   reviewer evidence file's appearance in the current PR's diff:
+   - `added` — introducer PR (file ADDED in this PR's diff). Raw evidence
+     scope (`work_package`, `base_ref`, `head_ref`, `changed_files`) MUST
+     match current PR strictly.
+   - `modified` — file MODIFIED/TYPED/COPIED/RENAMED in this PR's diff.
+     Raw evidence scope MUST match current PR strictly (prevents
+     stale-rebind and PR-head tampering).
+   - `unchanged` — file NOT in this PR's diff (byte-identical at base
+     SHA). Raw evidence scope binding is the state-at-landing pin from
+     the introducer PR's validation. Immutable properties (verdict=AGREE,
+     reviewer agent independence, `secrets_recorded=false`, all guard
+     flags false, required reviewer providers set, tests + secret_scan
+     checks passing, no `FORBIDDEN:` finding) ARE still enforced
+     perpetually. Current PR review on this PR's diff is delivered
+     separately via the root `local-ai-review-evidence.v1.json` artifact
+     (single reviewer, strict-bound to current PR).
+6. Each raw reviewer evidence file's reviewer.provider matches the
+   path-bound expected provider: `openai.local-ai-review-evidence.v1.json`
+   declares provider=openai; `anthropic.local-ai-review-evidence.v1.json`
+   declares provider=anthropic. (Audit provenance: prevents provider
+   shuffling while the provider set remains overall correct.)
+7. Evidence freshness is `fresh` and bounded by `max_age_seconds`.
+8. `max_revise_rounds` is `3`.
+9. If consensus is not reached after the round budget, the only allowed
    escalation is `operator_human_review_fallback`.
-8. `support_widening`, `production_platform_claim`, and
-   `live_adapter_execution` are all `false`.
-9. `ai_output_release_authority` is `false`.
-10. Secrets are not recorded.
+10. `support_widening`, `production_platform_claim`, and
+    `live_adapter_execution` are all `false`.
+11. `ai_output_release_authority` is `false`.
+12. Secrets are not recorded.
 
 ## Fail-Closed Cases
 
@@ -92,6 +115,16 @@ require human/codeowner review when any of these occur:
 - any required provider verdict is not `AGREE`;
 - any provider context differs from top-level context;
 - top-level context differs from the live PR context;
+- raw reviewer evidence path is not in the allowlist
+  (`ao-ma-10-high-risk-reviews/{openai,anthropic}.local-ai-review-evidence.v1.json`);
+- raw reviewer evidence file `DELETED` in this PR's diff (governance break);
+- `binding_mode` is `added` or `modified` and current-PR scope strict
+  binding fails (work_package, base_ref, head_ref, changed_files);
+- `binding_mode` is `unchanged` but any immutable property fails (verdict,
+  agent independence, secrets, guard flags, required providers,
+  tests/secret_scan checks, FORBIDDEN finding);
+- per-provider verdict's `binding_mode` is missing or not in
+  `{added, modified, unchanged}`;
 - evidence is stale;
 - guard flag is true;
 - evidence claims AI output as release authority;

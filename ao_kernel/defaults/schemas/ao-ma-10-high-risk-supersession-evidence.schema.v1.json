@@ -233,6 +233,7 @@
         "verdict",
         "round_index",
         "context_binding",
+        "binding_mode",
         "findings_count",
         "secrets_recorded",
         "support_widening",
@@ -279,6 +280,15 @@
         },
         "context_binding": {
           "$ref": "#/$defs/context_binding"
+        },
+        "binding_mode": {
+          "type": "string",
+          "enum": [
+            "added",
+            "modified",
+            "unchanged"
+          ],
+          "description": "Classification of raw reviewer evidence file's appearance in this PR's diff. 'added' = introducer PR (first commit that lands the evidence file). 'modified' = touched in this PR (current-PR strict binding required to prevent stale-rebind / PR-head tampering). 'unchanged' = not in this PR's diff (state-at-landing pin; scope binding relaxed; immutable properties still enforced)."
         },
         "findings_count": {
           "type": "integer",

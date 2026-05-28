@@ -7,6 +7,37 @@ self-reference. This script runs from trusted base code, resolves the live PR
 diff, validates independent provider review records, and emits the
 head-bound ``ao-ma-10-high-risk-supersession-evidence.v1`` artifact consumed by
 ``ao-release-gate``.
+
+Binding mode (Codex thread 019e6ffc plan-time AGREE absorb)
+----------------------------------------------------------
+
+Each raw reviewer evidence file is classified by its appearance in the current
+PR's diff (``git diff --name-status --no-renames``):
+
+* ``added``     -- ADDED in this PR's diff (introducer PR; full strict scope
+                   binding enforced: ``work_package``, ``base_ref``,
+                   ``head_ref``, ``changed_files``).
+* ``modified``  -- MODIFIED/TYPED/COPIED/RENAMED in this PR's diff. Full
+                   strict scope binding still enforced to prevent
+                   stale-rebind or PR-head tampering: a reviewer file that
+                   moves in the current PR MUST match current PR's bindings.
+* ``unchanged`` -- NOT in this PR's diff (file landed in an earlier merge and
+                   remains byte-identical at base SHA). Scope binding
+                   relaxed: this is the state-at-landing pin. Immutable
+                   properties (verdict=AGREE, reviewer agent independence,
+                   secrets_recorded=false, guard flags=false, required
+                   providers, tests+secret_scan checks) ARE still enforced
+                   perpetually. Current PR consensus on this PR's diff is
+                   delivered separately via the root
+                   ``local-ai-review-evidence.v1.json`` (single reviewer,
+                   strict-bound).
+* ``deleted``   -- DELETED in this PR's diff (governance break; the workflow
+                   pair-presence check should have caught this earlier;
+                   fail-closed here as defence in depth).
+
+This classification fixes the systemic operational burden where every
+high-risk PR after the introducer had to rebind the raw evidence files to
+match its own work_package, which was both heavy and tampering-shaped.
 """
 
 from __future__ import annotations
@@ -27,6 +58,18 @@ RAW_REVIEW_SCHEMA = "local-ai-review-evidence.schema.v1.json"
 HIGH_RISK_SUPERSESSION_SCHEMA = "ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 REQUIRED_PROVIDER_IDS = ("openai", "anthropic")
+
+# Fixed repo-relative allowlist for raw reviewer evidence paths. The workflow
+# invokes this script from `base/` with raw paths passed as `../head/...`, so
+# we cannot rely on Path.relative_to(repo_root) for normalization. Match by
+# tail path parts instead (see _resolve_repo_relative_path). Each filename
+# stem also pins the expected reviewer provider (anti audit-provenance drift).
+HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS: dict[str, str] = {
+    "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json": "anthropic",
+    "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json": "openai",
+}
+
+VALID_BINDING_MODES = ("added", "modified", "unchanged")
 
 
 def _run_git(repo_root: Path, args: list[str]) -> str:
@@ -77,8 +120,71 @@ def _checks_pass(raw_review: dict[str, Any], check_name: str) -> bool:
     return bool(matching) and all(check.get("status") == "pass" for check in matching)
 
 
+def _resolve_repo_relative_path(raw_path: Path) -> str:
+    """Match raw_path's tail parts to allowed repo-relative paths.
+
+    The workflow invokes this script with raw paths like
+    ``../head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json``
+    (raw paths are passed as positional args, the script runs from ``base/``).
+    Path.relative_to(repo_root) would fail here. We instead match by suffix
+    on the path components (deterministic, no string false-positives).
+    """
+    raw_parts = raw_path.parts
+    for allowed in HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS:
+        allowed_parts = Path(allowed).parts
+        if len(raw_parts) < len(allowed_parts):
+            continue
+        if raw_parts[-len(allowed_parts):] == allowed_parts:
+            return allowed
+    raise ValueError(
+        f"raw review path {raw_path} not in allowlist "
+        f"{sorted(HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS.keys())}"
+    )
+
+
+def _classify_evidence_binding(
+    *,
+    repo_root: Path,
+    diff_base_ref: str,
+    diff_head_ref: str,
+    repo_relative_path: str,
+) -> str:
+    """Classify raw evidence path's appearance in this PR's diff.
+
+    Uses ``git diff --name-status --no-renames`` so rename detection config
+    cannot drift the classification: rename is reported as ``D + A`` instead
+    of ``R``. Returns one of VALID_BINDING_MODES or ``"deleted"`` for the
+    pair-presence governance break case.
+    """
+    output = _run_git(
+        repo_root,
+        [
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{diff_base_ref}...{diff_head_ref}",
+            "--",
+            repo_relative_path,
+        ],
+    )
+    if not output:
+        return "unchanged"
+    # Tolerate "R100", "C100" status prefixes by looking at the first char.
+    status_code = output.split()[0][0]
+    mapping = {
+        "A": "added",
+        "M": "modified",
+        "T": "modified",
+        "C": "modified",
+        "R": "modified",
+        "D": "deleted",
+    }
+    return mapping.get(status_code, "modified")
+
+
 def _provider_verdict_from_raw_review(
     raw_review: dict[str, Any],
+    raw_path: Path,
     *,
     repository: str,
     review_work_package: str,
@@ -87,21 +193,29 @@ def _provider_verdict_from_raw_review(
     changed_files: list[str],
     context_binding: dict[str, Any],
     round_index: int,
+    repo_root: Path,
+    diff_base_ref: str,
+    diff_head_ref: str,
 ) -> dict[str, Any]:
     _validate(RAW_REVIEW_SCHEMA, raw_review)
 
+    # --- A. Resolve repo-relative path + classify binding mode ---
+    repo_rel = _resolve_repo_relative_path(raw_path)
+    binding_mode = _classify_evidence_binding(
+        repo_root=repo_root,
+        diff_base_ref=diff_base_ref,
+        diff_head_ref=diff_head_ref,
+        repo_relative_path=repo_rel,
+    )
+    if binding_mode == "deleted":
+        raise ValueError(
+            f"raw review path {repo_rel} deleted in this PR — governance break "
+            "(workflow pair-presence check should have caught this earlier)"
+        )
+
+    # --- B. Always-enforced IMMUTABLE properties (state-at-landing safe) ---
     if raw_review.get("repo") != repository:
         raise ValueError("raw review repository mismatch")
-    if raw_review.get("work_package") != review_work_package:
-        raise ValueError("raw review work_package mismatch")
-    scope = raw_review.get("scope_reviewed")
-    if not isinstance(scope, dict):
-        raise ValueError("raw review scope missing")
-    if scope.get("base_ref") != review_base_ref or scope.get("head_ref") != review_head_ref:
-        raise ValueError("raw review scope refs mismatch")
-    declared_files = scope.get("changed_files")
-    if not isinstance(declared_files, list) or sorted(declared_files) != changed_files:
-        raise ValueError("raw review changed_files mismatch")
 
     reviewer = raw_review.get("reviewer")
     implementer = raw_review.get("implementer")
@@ -110,7 +224,9 @@ def _provider_verdict_from_raw_review(
     if reviewer.get("verdict") != "AGREE":
         raise ValueError("raw review verdict is not AGREE")
     if reviewer.get("agent") == implementer.get("agent"):
-        raise ValueError("raw review agent must be independent from implementer")
+        raise ValueError(
+            "raw review reviewer agent must be independent from implementer agent"
+        )
     if raw_review.get("secrets_recorded") is not False:
         raise ValueError("raw review records secret material")
     for flag in ("support_widening", "production_platform_claim", "live_adapter_execution"):
@@ -128,6 +244,50 @@ def _provider_verdict_from_raw_review(
     if provider_id not in REQUIRED_PROVIDER_IDS:
         raise ValueError("raw review provider is not required for high-risk supersession")
 
+    # Path-to-provider binding (audit provenance): the openai.* file must
+    # carry reviewer.provider=openai and the anthropic.* file must carry
+    # reviewer.provider=anthropic. This prevents provider sets from being
+    # correct overall while individual provenance is shuffled.
+    expected_provider = HIGH_RISK_REVIEW_REPO_RELATIVE_PATHS[repo_rel]
+    if provider_id != expected_provider:
+        raise ValueError(
+            f"raw review provider {provider_id!r} does not match path-bound "
+            f"expected provider {expected_provider!r} for {repo_rel}"
+        )
+
+    # --- C. Mode-dependent CURRENT-PR strict bindings ---
+    scope = raw_review.get("scope_reviewed")
+    if not isinstance(scope, dict):
+        raise ValueError("raw review scope missing")
+
+    if binding_mode in ("added", "modified"):
+        # Introducer (added) or PR-head touched (modified): full strict.
+        # Prevents stale-rebind and current-PR tampering: if the file moves
+        # in this PR, it must move to a current-PR-bound shape.
+        if raw_review.get("work_package") != review_work_package:
+            raise ValueError(
+                f"raw review work_package mismatch (binding_mode={binding_mode}); "
+                "current-PR binding required"
+            )
+        if scope.get("base_ref") != review_base_ref or scope.get("head_ref") != review_head_ref:
+            raise ValueError(
+                f"raw review scope refs mismatch (binding_mode={binding_mode}); "
+                "current-PR binding required"
+            )
+        declared_files = scope.get("changed_files")
+        if not isinstance(declared_files, list) or sorted(declared_files) != changed_files:
+            raise ValueError(
+                f"raw review changed_files mismatch (binding_mode={binding_mode}); "
+                "current-PR binding required"
+            )
+    else:
+        # binding_mode == "unchanged": state-at-landing pin.
+        # The introducer PR already validated scope binding; the immutable
+        # properties enforced above guarantee tampering-safe reuse. Current
+        # PR review on this PR's diff is delivered separately via the root
+        # ``local-ai-review-evidence.v1.json`` artifact.
+        pass
+
     return {
         "schema_version": "ao-ma-10-provider-consensus.v1",
         "artifact_kind": "ao_ma_10_provider_consensus",
@@ -138,6 +298,7 @@ def _provider_verdict_from_raw_review(
         "verdict": "AGREE",
         "round_index": round_index,
         "context_binding": dict(context_binding),
+        "binding_mode": binding_mode,
         "findings_count": len(findings),
         "secrets_recorded": False,
         "support_widening": False,
@@ -178,12 +339,13 @@ def build_high_risk_supersession_evidence(
         "high_risk_changed_paths": high_risk_changed_paths,
     }
 
-    raw_reviews = [_load_json(path) for path in raw_review_paths]
+    raw_reviews = [(path, _load_json(path)) for path in raw_review_paths]
     if len(raw_reviews) < 2:
         raise ValueError("at least two raw high-risk review evidence files are required")
     provider_verdicts = [
         _provider_verdict_from_raw_review(
             raw_review,
+            raw_path,
             repository=repository,
             review_work_package=review_work_package,
             review_base_ref=review_base_ref,
@@ -191,8 +353,11 @@ def build_high_risk_supersession_evidence(
             changed_files=changed_files,
             context_binding=context_binding,
             round_index=round_index,
+            repo_root=repo_root,
+            diff_base_ref=diff_base_ref,
+            diff_head_ref=diff_head_ref,
         )
-        for raw_review in raw_reviews
+        for raw_path, raw_review in raw_reviews
     ]
     provider_ids = [verdict["provider_id"] for verdict in provider_verdicts]
     if sorted(provider_ids) != sorted(REQUIRED_PROVIDER_IDS):
