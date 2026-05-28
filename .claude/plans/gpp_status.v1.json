@@ -631,11 +631,11 @@
     "decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
     "record": ".claude/plans/GPP-9-FINAL-CLAIM-DECISION.md"
   },
-  "last_updated": "2026-05-28T07:08:16Z",
+  "last_updated": "2026-05-28T08:30:00Z",
   "operator_bound_supersessions": [
     {
       "id": "RI-7.8b-bc1-6b",
-      "status": "awaiting_operator_dispatch",
+      "status": "awaiting_auto_dispatch_trigger_commit",
       "scope": "bc1_protected_live_adapter_attestation_only",
       "supersedes_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
       "operator_authority": {
@@ -659,14 +659,15 @@
       "max_usd": 5.0,
       "max_execution_window_duration_hours": 24,
       "protected_environment_binding": {
-        "env_name": "ao-kernel-bc1-live-adapter-attestation",
-        "required_reviewers_required": true,
-        "prevent_self_review_required": false,
+        "required": false,
+        "mode": "code_level_only_preprod",
+        "env_name": null,
         "allowed_refs": [
           "refs/heads/main"
         ],
         "admin_bypass_allowed": false,
-        "single_operator_dispatch_review_model_justified": true
+        "superseded_by_slice": "RI-7.8b-bc1-6c-fast-follow",
+        "superseded_reason": "operator_delegated_autonomous_preprod: code-level guard (scripts/ri78b_bc1_activation_window.py) enforces bounded window + workflow_content_sha256 + run cap; GitHub-level protected environment removed for pre-prod autonomous activation."
       },
       "future_workflow_contract": {
         "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
@@ -685,7 +686,19 @@
         ]
       },
       "closure_owner_slice": "RI-7.8b-bc1-6c",
-      "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry"
+      "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry",
+      "authority_mode": "operator_delegated_autonomous_preprod",
+      "manual_approval_required": false,
+      "autonomous_trigger_contract": {
+        "trigger_event": "push",
+        "trigger_branch": "refs/heads/main",
+        "trigger_file_path": ".claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json",
+        "trigger_file_schema_path": "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-dispatch-trigger.schema.v1.json",
+        "authority_source": "merge_commit_of_schema_pinned_trigger_file_authored_or_merged_by_operator",
+        "operator_github_login": "Halildeu",
+        "commit_verification_required": true,
+        "required_checks_must_pass": true
+      }
     }
   ]
 }

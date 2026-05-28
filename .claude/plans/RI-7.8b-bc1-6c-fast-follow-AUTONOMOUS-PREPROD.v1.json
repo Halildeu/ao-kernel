@@ -1,0 +1,159 @@
+{
+  "schema_version": "ri7-8b-bc1-6c-fast-follow-autonomous-preprod-evidence.v1",
+  "artifact_kind": "ri7_8b_bc1_6c_fast_follow_autonomous_preprod_evidence",
+  "decision": "ri78b_bc1_6c_fast_follow_autonomous_preprod_contract_revised_no_trigger_file_no_run_evidence",
+  "authorization_effect": "authority_mode_revised_to_operator_delegated_autonomous_preprod_no_trigger_file_no_live_execution_no_submanifest_flip",
+  "does_not_authorize": [
+    "trigger_file_creation_in_this_pr",
+    "live_adapter_call_from_this_ci",
+    "submanifest_bc1_flip_now",
+    "bounded_window_limit_relaxation",
+    "support_widening",
+    "production_platform_claim"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2"
+  },
+  "ri78b_6a_predecessor_ref": {
+    "pr_number": 675,
+    "commit_sha": "2d49f42716004111976a5efc0ea4e5c91308a5ed",
+    "evidence_sha256": "7356e3c22f04b43f7e093ef4e5b8aea98810c362b6cb8b8cbc8c3a8d86eb2865"
+  },
+  "ri78b_6b_predecessor_ref": {
+    "pr_number": 678,
+    "commit_sha": "84d625729f47a675b06b8cba3242978d7bed04f4",
+    "evidence_sha256": "1c9a27d966ebbc92408209d91cab63019dcc4f25b0a21c620fdb02b925310fb0"
+  },
+  "operator_activation_confirmation": {
+    "github_login": "Halildeu",
+    "activation_confirmed_at": "2026-05-28T08:30:00Z",
+    "activation_source": "github.com/Halildeu/ao-kernel/pull/678#6c-fast-follow-successor",
+    "no_secret_assertion": true,
+    "activation_scope": "bc1_6c_fast_follow_authority_mode_revision_only_no_trigger_file",
+    "observation_notes": "Operator (Halildeu) explicitly authorized the authority mode revision from manual_protected_environment to operator_delegated_autonomous_preprod via AskUserQuestion answer chain. The 6c-fast-follow PR scope is intentionally narrowed: the dispatch trigger file creation is deferred to RI-7.8b-bc1-6c-closure (alongside per-run evidence collection) because trigger file = delayed-effect execution surface requiring separate explicit operator confirmation. Bounded-window safety envelope preserved: max 5 distinct runs, max $5 USD, max 24h duration, run_attempt==1 only, workflow_content_sha256 binding, scenario allowlist, branch protection main-only."
+  },
+  "authority_mode_revision": {
+    "from_mode": "manual_protected_environment",
+    "to_mode": "operator_delegated_autonomous_preprod",
+    "manual_approval_required": false,
+    "code_level_guard_only": true
+  },
+  "workflow_changes": {
+    "environment_removed": true,
+    "push_trigger_added": true,
+    "matrix_strategy_added": true,
+    "workflow_dispatch_retained_as_fallback": true,
+    "workflow_content_sha256": "d4fcef24e639cef7c7ac2acbf90ab40bb864d67fa13598c520e9cb25557f2999"
+  },
+  "activation_guard_script_changes": {
+    "mode_aware_status_check": true,
+    "accepted_modes": [
+      "manual_protected_environment",
+      "operator_delegated_autonomous_preprod"
+    ]
+  },
+  "gpp_status_entry_changes": {
+    "authority_mode_field_added": true,
+    "manual_approval_required_field_added": true,
+    "status_transitioned": {
+      "from": "awaiting_operator_dispatch",
+      "to": "awaiting_auto_dispatch_trigger_commit"
+    },
+    "protected_environment_binding_mode_set": "code_level_only_preprod",
+    "autonomous_trigger_contract_added": true
+  },
+  "trigger_schema_pinned": {
+    "schema_path": "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-dispatch-trigger.schema.v1.json",
+    "schema_content_sha256": "d6870f548f46e17078802919616ba8b8ef87ad1846179dc8c417489d37615f8a"
+  },
+  "trigger_file_creation_deferred": {
+    "trigger_file_path": ".claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json",
+    "owner_slice": "RI-7.8b-bc1-6c-closure",
+    "rationale": "delayed_effect_execution_surface_requires_explicit_operator_confirmation_alongside_per_run_evidence_collection"
+  },
+  "bounded_window_limits_preserved": {
+    "max_distinct_runs": 5,
+    "max_run_attempt": 1,
+    "max_usd": 5.00,
+    "max_duration_hours": 24
+  },
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision"
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": false,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo",
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-fast-follow-autonomous-preprod",
+    "pr_number_hint": "TBD",
+    "base_sha": "84d625729f47a675b06b8cba3242978d7bed04f4",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_6a_evidence_sha256": "7356e3c22f04b43f7e093ef4e5b8aea98810c362b6cb8b8cbc8c3a8d86eb2865",
+    "ri78b_6b_evidence_sha256": "1c9a27d966ebbc92408209d91cab63019dcc4f25b0a21c620fdb02b925310fb0",
+    "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "workflow_content_sha256": "d4fcef24e639cef7c7ac2acbf90ab40bb864d67fa13598c520e9cb25557f2999",
+    "trigger_schema_sha256": "d6870f548f46e17078802919616ba8b8ef87ad1846179dc8c417489d37615f8a",
+    "timestamp": "2026-05-28T08:30:00Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-fast-follow-autonomous-preprod",
+    "pr_number_hint": "TBD"
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    },
+    "after": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    }
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      "scripts/gp5_platform_claim_decision.py",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md",
+      "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "scripts/local_gpp_gate.py",
+      "scripts/repo_intelligence_tier_promotion_readiness.py",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e6bd4-c650-7c12-83d6-2bd4c28602e7",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8b-bc1-6c-fast-follow is a CONTRACT REVISION slice. It removes the GitHub-level protected environment guard from the BC-1 attestation workflow (introduced in 6b) and replaces it with code-level guard + schema-pinned dispatch trigger contract.",
+    "Trigger file (.claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json) is INTENTIONALLY NOT created in this PR. Auto-mode classifier correctly flagged it as a delayed-effect execution surface; its creation belongs to RI-7.8b-bc1-6c-closure alongside explicit operator confirmation and per-run evidence collection.",
+    "Authority mode revision justified for pre-prod context: bounded-window machine-enforced (max 5 runs, max $5, max 24h, run_attempt==1), workflow_content_sha256 binding, scenario allowlist, branch protection main-only, cross-AI consensus required before merge, operator commit identity + commit verification + required-check rollup verifiable via GitHub API in 6c-closure.",
+    "Codex plan-time thread 019e6bd4 iter-1 REVISE absorbed: two-PR split (6c-fast-follow contract revision + 6c-closure trigger file + evidence + closure); authority_mode field added; manual_approval_required=false; protected_environment_binding.mode=code_level_only_preprod; merged_by_login + commit_verification + required_checks_passed pinned in closure slice."
+  ]
+}

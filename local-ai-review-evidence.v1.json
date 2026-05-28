@@ -1,77 +1,68 @@
 {
-  "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "git_diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "dry_run_plan",
-      "status": "pass"
-    },
-    {
-      "name": "openai_review",
-      "status": "pass"
-    },
-    {
-      "name": "anthropic_review",
-      "status": "pass"
-    },
-    {
-      "name": "release_gate_payload_repro",
-      "status": "pass"
-    }
-  ],
-  "findings": [
-    "AO-MA-10O is a narrow CC-9 supersession for one constrained no-human bootstrap path, not a general branch-protection mutation permission.",
-    "The script is hard-bound to Halildeu/ao-kernel main, ruleset 16803733, GitHub Actions integration id 15368, ao-release-gate-technical, and ao-release-gate-review.",
-    "Apply mode fails closed unless main is clean and synced, PR #682 and PR #684 are merged, GPP guard flags remain false, and the accepted dry-run plan matches the current plan.",
-    "The emitted ruleset patch preserves deletion and non_fast_forward, keeps bypass_actors empty, and adds only source-pinned ao-release-gate required checks.",
-    "The branch-protection mutation removes only native required_pull_request_reviews while preserving classic CI required checks and enforce_admins=true.",
-    "The release-gate payload builder now ignores later skipped duplicate check-runs only when a non-skipped run for the same required check exists; skipped-only required checks remain fail-closed.",
-    "No support widening, production platform claim, live adapter execution, testai/smee dependency, admin merge, bypass actor, or AI-output-as-release-authority is authorized.",
-    "OpenAI and Anthropic independent reviews returned AGREE after REVISE findings and the release-gate duplicate-check-run CI fix were absorbed; final local tests, ruff, git diff check, dry-run plan, and live check-runs payload reproduction all passed."
-  ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
+  "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.8b-bc1-6c-fast-follow",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
   "reviewer": {
-    "agent": "claude-cli",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
-  "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-fast-follow-autonomous-preprod",
     "changed_files": [
-      ".claude/plans/AO-MA-10O-CC9-NO-HUMAN-BOOTSTRAP-SUPERSESSION.md",
-      ".claude/plans/PROGRAM-CHANGE-CONTROL.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.md",
+      ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-dispatch-trigger.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-fast-follow-autonomous-preprod-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_release_gate_build_payload.py",
-      "scripts/ao_ma10o_no_human_bootstrap.py",
-      "tests/test_ao_release_gate_build_payload.py",
-      "tests/test_ao_ma10o_cc9_no_human_bootstrap_supersession.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma-10o-cc9-no-human-bootstrap"
+      "scripts/ri78b_bc1_activation_window.py",
+      "tests/test_ri78b_bc1_6c_fast_follow_invariant.py"
+    ]
   },
+  "checks_considered": [
+    {"name": "tests", "status": "pass"},
+    {"name": "schema_draft_2020_12_valid", "status": "pass"},
+    {"name": "evidence_validates_against_schema", "status": "pass"},
+    {"name": "trigger_file_absent_deferred_to_6c_closure", "status": "pass"},
+    {"name": "workflow_environment_removed", "status": "pass"},
+    {"name": "workflow_push_trigger_added", "status": "pass"},
+    {"name": "workflow_matrix_strategy_added", "status": "pass"},
+    {"name": "workflow_content_sha256_matches_file", "status": "pass"},
+    {"name": "trigger_schema_sha256_matches_file", "status": "pass"},
+    {"name": "activation_guard_script_mode_aware", "status": "pass"},
+    {"name": "gpp_status_authority_mode_operator_delegated_autonomous_preprod", "status": "pass"},
+    {"name": "gpp_status_top_level_guard_const_false", "status": "pass"},
+    {"name": "predecessor_digests_ri78a_ri78b6a_ri78b6b", "status": "pass"},
+    {"name": "submanifest_unchanged", "status": "pass"},
+    {"name": "nine_key_readiness_unchanged", "status": "pass"},
+    {"name": "bounded_window_limits_preserved", "status": "pass"},
+    {"name": "forbidden_change_audit_machine_enforced", "status": "pass"},
+    {"name": "cross_ai_review_provider_split_const", "status": "pass"},
+    {"name": "negative_to_mode_drift_rejected", "status": "pass"},
+    {"name": "negative_manual_approval_true_rejected", "status": "pass"},
+    {"name": "negative_bounded_limit_relaxation_rejected", "status": "pass"},
+    {"name": "negative_submanifest_after_bc1_true_rejected", "status": "pass"},
+    {"name": "codex_plan_time_revise_absorbed_two_pr_split", "status": "pass"}
+  ],
+  "findings": [
+    "RI-7.8b-bc1-6c-fast-follow contract revision slice. Revises 6b operator-bound (manual protected environment + manual workflow_dispatch + GitHub Halildeu reviewer required) to operator_delegated_autonomous_preprod authority mode. Trigger file (delayed-effect execution surface) INTENTIONALLY NOT created in this PR; deferred to RI-7.8b-bc1-6c-closure alongside per-run evidence collection per Codex plan-time iter-1 REVISE two-PR split and explicit auto-mode classifier security boundary.",
+    "Workflow changes: environment removed, push trigger added (branches=[main] paths=[.claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json]), matrix strategy added (scenario=[clean_attestation, fail_closed_attestation]), workflow_dispatch retained as manual fallback. workflow_content_sha256 pinned.",
+    "Activation guard script mode-aware: accepts both manual_protected_environment (legacy 6b) and operator_delegated_autonomous_preprod (new 6c-fast-follow) authority modes; bounded-window enforcement (workflow_content_sha256 binding, run cap, valid_until, allowed_refs, scenario allowlist) preserved.",
+    "gpp_status entry updates: authority_mode=operator_delegated_autonomous_preprod, manual_approval_required=false, status=awaiting_auto_dispatch_trigger_commit, protected_environment_binding.mode=code_level_only_preprod, autonomous_trigger_contract schema-pinned. Top-level guard flags REMAIN const FALSE (baseline closure preserved).",
+    "Bounded-window safety envelope PRESERVED: max 5 distinct runs, max $5 USD, max 24h duration, run_attempt==1 only.",
+    "Codex plan-time thread 019e6bd4 iter-1 REVISE absorbed: two-PR split + authority_mode field + manual_approval_required=false + protected_environment_binding.mode + autonomous_trigger_contract + mode-aware invariant tests.",
+    "Submanifest UNCHANGED in this PR. 6c-closure flips BC-1.",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. AGREE in BOTH artifacts (cross-artifact verdict equality test-enforced)."
+  ],
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10O-cc9-no-human-bootstrap"
+  "production_platform_claim": false
 }
