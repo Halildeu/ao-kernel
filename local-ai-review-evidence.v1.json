@@ -1,4 +1,30 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.8b-bc1-6c-trigger",
+  "implementer": {
+    "agent": "claude",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-trigger",
+    "changed_files": [
+      ".claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-scenario-run-evidence.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ri78b_bc1_activation_window.py",
+      "tests/test_ri78b_bc1_6c_fast_follow_invariant.py",
+      "tests/test_ri78b_bc1_6c_trigger_invariant.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -13,52 +39,128 @@
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "schema_draft_2020_12_valid",
       "status": "pass"
     },
     {
-      "name": "schema_draft_2020_12_valid",
+      "name": "trigger_file_validates_against_schema",
+      "status": "pass"
+    },
+    {
+      "name": "scenario_run_schema_draft_2020_12",
+      "status": "pass"
+    },
+    {
+      "name": "scenario_run_schema_three_outcome_enum_pinned",
+      "status": "pass"
+    },
+    {
+      "name": "scenario_run_schema_coherence_clean_fail_closed_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_authority_mode_const_operator_delegated_autonomous_preprod",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_supersession_entry_id_const_RI78b_bc1_6b",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_operator_login_halildeu_const",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_bounded_window_limits_max_5_5_24h_1",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_scenarios_exactly_two_clean_fail_closed",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_secret_boundary_const",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_scenarios_match_workflow_matrix",
+      "status": "pass"
+    },
+    {
+      "name": "trigger_scenarios_match_guard_allowlist",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_upload_artifact_name_includes_matrix_scenario",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_fail_closed_expected_denial_mapping",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_marker_emits_scenario_outcome_field",
+      "status": "pass"
+    },
+    {
+      "name": "workflow_marker_path_pattern_includes_scenario",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status_workflow_sha256_matches_current_workflow_file",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status_supersession_status_awaiting_auto_dispatch_trigger_commit",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_status_top_level_guard_const_false_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "activation_guard_event_aware_run_cap_push_workflow_dispatch",
+      "status": "pass"
+    },
+    {
+      "name": "activation_guard_window_relative_filter_actual_start_at",
+      "status": "pass"
+    },
+    {
+      "name": "6c_fast_follow_introducer_pr_detection_added",
+      "status": "pass"
+    },
+    {
+      "name": "6b_state_at_landing_pin_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "cross_ai_review_provider_split_const",
+      "status": "pass"
+    },
+    {
+      "name": "negative_top_level_guard_flag_flip_rejected",
+      "status": "pass"
+    },
+    {
+      "name": "negative_bc1_flip_belongs_to_pr_b",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic review: binding_mode added/modified/unchanged correctly separates current-PR strict binding from state-at-landing reuse.",
-    "Immutable safety properties remain enforced for every raw review evidence file regardless of binding_mode.",
-    "Strict current-PR scope binding remains required for raw evidence files added or modified by this PR.",
-    "Path-to-provider binding prevents OpenAI and Anthropic reviewer evidence from being shuffled.",
-    "No support widening, production platform claim, live adapter execution, branch-protection bypass, or release-authority widening is introduced."
+    "PR-A of the RI-7.8b-bc1-6c two-PR split (Codex thread 019e702f iter-2 absorb). PR-A introduces the dispatch trigger file + scenario-run evidence schema + workflow hardening + guard script event-aware run cap + gpp_status workflow SHA binding refresh. PR-B (6c-closure) consumes the per-run evidence produced by the workflow post-merge of PR-A and builds the closure proof + spend ledger + BC-1 submanifest flip.",
+    "Trigger file (.claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json) follows existing schema (pre-bound in PR #680). 10 required fields including authority_mode=operator_delegated_autonomous_preprod, scenarios=[clean_attestation, fail_closed_attestation], operator.github_login=Halildeu, supersession_entry_id=RI-7.8b-bc1-6b, max_distinct_runs=5, max_run_attempt=1, max_usd=5.0, secret_boundary const.",
+    "Workflow hardening per Codex iter-2: artifact name now includes ${{ matrix.scenario }} (prevents race-conflict between matrix scenarios on shared name); fail_closed_attestation uses explicit expected-denial mapping (exit 0 on expected denial, exit 1 on unexpected allow / unknown scenario) \u2014 legacy exit 78 removed; marker step emits scenario_outcome field (clean_attestation_pass | fail_closed_as_expected | unexpected_failure).",
+    "Per-scenario run evidence schema (ri7-8b-bc1-6c-scenario-run-evidence.schema.v1.json) introduced. Draft 2020-12 strict (additionalProperties=false). 13 required fields. Three-value scenario_outcome enum. allOf coherence rules: clean_attestation may only report clean_attestation_pass or unexpected_failure; fail_closed_attestation may only report fail_closed_as_expected or unexpected_failure. PR-B (6c-closure) validates per-instance artifacts emitted by workflow post-merge.",
+    "Guard script (scripts/ri78b_bc1_activation_window.py) event-aware run cap per Codex iter-2: manual_protected_environment counts workflow_dispatch only; operator_delegated_autonomous_preprod counts push + workflow_dispatch (both events). Distinct workflow_run_id counted, not matrix jobs. Window-relative filter (created_at >= actual_start_at) applied when entry has actual_start_at set (status=active); otherwise lifetime cap (status=awaiting_*).",
+    "gpp_status entry RI-7.8b-bc1-6b's future_workflow_contract.workflow_content_sha256 refreshed to match this PR's workflow file SHA (adaf84392545bfca267d66e410b6fd7e5bd9102ad02c0938e077a14d2b04a003). Without this refresh, runtime activation guard fail-closes on next trigger commit because expected sha != live sha.",
+    "Pattern parity: introducer-PR detection (--diff-filter=A) added to 6c-fast-follow workflow_content_sha256 + trigger_file_absent tests. State-at-landing pin: 6c-fast-follow evidence's stored SHA pins the introducer fact; successor PRs (this PR-A) can legitimately modify the workflow without breaking the 6c-fast-follow scope invariant. Mirror of RI-7.1, RI-7.2, RI-7.5, RI-7.8a, RI-7.8b-bc1-6a/6b and AO-MA-10 runtime introducer detection.",
+    "Top-level guard flags const FALSE PRESERVED (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed). BC-1 submanifest flip belongs to PR-B (6c-closure) \u2014 even there, only the submanifest bc1_protected_live_adapter_attestation_recorded flips false\u2192true; top-level live_adapter_execution_allowed STAYS false.",
+    "Cross-AI peer review HARD RULE CC-2: implementer=claude/anthropic differs from reviewer=codex/openai. Codex thread 019e702f iter-1 REVISE absorbed (2-PR split, 3-schema model, structured activation identity, honest spend ledger, introducer detection pattern). Iter-2 conditional AGREE with 7 absorb items (trigger schema field shape, expected-denial mapping, event-aware run cap, workflow SHA gpp_status update, 6c-fast-follow successor PR introducer-only pattern).",
+    "Tests: 4228 passed, 29 skipped, 0 failed (full suite). 29 new tests in test_ri78b_bc1_6c_trigger_invariant.py. ruff clean."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
-      ".github/workflows/test.yml",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/fixtures/ao_ma_10h/high_risk_supersession.valid.json",
-      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
-      "tests/test_ao_ma10j_high_risk_supersession_evidence_builder.py",
-      "tests/test_ao_release_gate.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma10-runtime-introducer-detection"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10j"
+  "production_platform_claim": false
 }

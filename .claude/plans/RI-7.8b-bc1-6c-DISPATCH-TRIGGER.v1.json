@@ -1,0 +1,19 @@
+{
+  "schema_version": "ri7-8b-bc1-6c-dispatch-trigger.v1",
+  "artifact_kind": "ri7_8b_bc1_6c_dispatch_trigger",
+  "authority_mode": "operator_delegated_autonomous_preprod",
+  "scenarios": [
+    "clean_attestation",
+    "fail_closed_attestation"
+  ],
+  "operator": {
+    "github_login": "Halildeu",
+    "trigger_recorded_at": "2026-05-28T20:20:00Z",
+    "no_secret_assertion": true
+  },
+  "supersession_entry_id": "RI-7.8b-bc1-6b",
+  "max_distinct_runs": 5,
+  "max_run_attempt": 1,
+  "max_usd": 5.0,
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_trigger_file"
+}

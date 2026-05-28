@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc1-6c-scenario-run-evidence:v1",
+  "title": "RI-7.8b-bc1-6c Per-Scenario Run Evidence",
+  "description": "Observational record of a single matrix scenario run of the bc1-protected-live-adapter-attestation workflow. Emitted by the workflow's marker step as redacted JSON; consumed by RI-7.8b-bc1-6c-closure to construct closure proof. binding mode: introduced_in_this_pr (PR-A 6c-trigger introduces the schema; per-run instances are not committed in PR-A and are produced post-merge by workflow). secret_boundary: no provider credentials, no token material, no API key, no response body. The closure schema in PR-B references these by path + sha256 + scenario + outcome.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "workflow_run_id",
+    "run_attempt",
+    "scenario",
+    "scenario_outcome",
+    "workflow_content_sha256",
+    "head_sha",
+    "head_ref",
+    "marker_path",
+    "marker_sha256",
+    "secret_boundary",
+    "recorded_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ri7-8b-bc1-6c-scenario-run-evidence.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ri7_8b_bc1_6c_scenario_run_evidence"
+    },
+    "workflow_run_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "run_attempt": {
+      "type": "integer",
+      "const": 1
+    },
+    "scenario": {
+      "type": "string",
+      "enum": [
+        "clean_attestation",
+        "fail_closed_attestation"
+      ]
+    },
+    "scenario_outcome": {
+      "type": "string",
+      "enum": [
+        "clean_attestation_pass",
+        "fail_closed_as_expected",
+        "unexpected_failure"
+      ]
+    },
+    "workflow_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "head_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "head_ref": {
+      "type": "string",
+      "pattern": "^refs/heads/main$"
+    },
+    "marker_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^marker-(clean_attestation|fail_closed_attestation)-[1-9][0-9]*-attempt-[1-9][0-9]*\\.json$"
+    },
+    "marker_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "secret_boundary": {
+      "type": "string",
+      "const": "no_secret_material_emitted_no_token_no_credential"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    }
+  },
+  "allOf": [
+    {
+      "description": "scenario ↔ scenario_outcome coherence: clean_attestation must report clean_attestation_pass or unexpected_failure; fail_closed_attestation must report fail_closed_as_expected or unexpected_failure.",
+      "if": {
+        "properties": {
+          "scenario": {
+            "const": "clean_attestation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scenario_outcome": {
+            "enum": [
+              "clean_attestation_pass",
+              "unexpected_failure"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scenario": {
+            "const": "fail_closed_attestation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scenario_outcome": {
+            "enum": [
+              "fail_closed_as_expected",
+              "unexpected_failure"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

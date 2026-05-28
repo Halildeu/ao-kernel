@@ -119,6 +119,37 @@ def _git_changed_paths_against(base_sha: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _is_ri78b_6c_fast_follow_introducer_pr() -> bool:
+    """Return True only for the PR that first adds the 6c-fast-follow
+    evidence artifact (the introducer PR).
+
+    Diff-dependent checks below (workflow SHA, trigger schema SHA,
+    trigger-file-absent) pin the 6c-fast-follow state at landing.
+    Successor PRs may legitimately edit the workflow and create the
+    trigger file (6c-trigger PR) while the 6c-fast-follow evidence and
+    digest pins remain unchanged at state-at-landing. Pattern parity
+    with RI-7.1, RI-7.2, RI-7.5, RI-7.8a, RI-7.8b-bc1-6a/6b and
+    AO-MA-10 runtime introducer-PR detection.
+    """
+    base_sha = _resolve_diff_base()
+    if base_sha is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--diff-filter=A", "--name-only", f"{base_sha}...HEAD"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False
+        added = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+        return str(EVIDENCE_PATH.relative_to(REPO_ROOT)) in added
+    except (subprocess.SubprocessError, OSError):
+        return False
+
+
 def _path_matches_surface(path: str, surface: str) -> bool:
     if surface.endswith("/"):
         return path.startswith(surface)
@@ -144,10 +175,19 @@ def test_6c_fast_follow_trigger_schema_exists():
 
 def test_6c_fast_follow_trigger_file_absent_in_this_pr():
     """Trigger file (delayed-effect execution surface) MUST be absent in this
-    PR. Its creation belongs to RI-7.8b-bc1-6c-closure alongside per-run
-    evidence collection."""
+    PR. Its creation belongs to RI-7.8b-bc1-6c-trigger (PR-A of the two-PR
+    split, per Codex thread 019e702f iter-2) alongside the workflow
+    hardening; per-run evidence + closure proof + BC-1 flip belong to
+    RI-7.8b-bc1-6c-closure (PR-B). Introducer-only skip: this scope
+    invariant applies to the 6c-fast-follow introducer PR; the 6c-trigger
+    successor PR legitimately creates the file."""
+    if not _is_ri78b_6c_fast_follow_introducer_pr():
+        pytest.skip(
+            "6c-fast-follow evidence MODIFIED (not ADDED) in this diff; "
+            "state-at-landing pin applies; introducer-only scope check skipped"
+        )
     assert not TRIGGER_FILE_PATH.exists(), (
-        f"Trigger file must NOT exist in 6c-fast-follow PR (deferred to 6c-closure): {TRIGGER_FILE_PATH}"
+        f"Trigger file must NOT exist in 6c-fast-follow PR (deferred to 6c-trigger): {TRIGGER_FILE_PATH}"
     )
 
 
@@ -211,6 +251,16 @@ def test_6c_fast_follow_authority_mode_revision():
 
 
 def test_6c_fast_follow_workflow_content_sha256_matches_file():
+    """Dynamic SHA compare runs only on the 6c-fast-follow introducer PR.
+    Successor PRs (e.g., 6c-trigger) legitimately update the workflow
+    while the 6c-fast-follow evidence file's stored SHA pins the
+    state-at-landing fact. Pattern parity with introducer-PR detection
+    landed in PR #687 (AO-MA-10 runtime)."""
+    if not _is_ri78b_6c_fast_follow_introducer_pr():
+        pytest.skip(
+            "6c-fast-follow evidence MODIFIED (not ADDED) in this diff; "
+            "state-at-landing pin applies; dynamic workflow SHA compare skipped"
+        )
     e = _load_json(EVIDENCE_PATH)
     actual = _sha256_file(WORKFLOW_PATH)
     assert e["workflow_changes"]["workflow_content_sha256"] == actual
