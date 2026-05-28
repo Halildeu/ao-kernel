@@ -1,4 +1,27 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-10N-live-enforcement-cutover",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "claude-cli",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-ma-10n-live-enforcement-cutover",
+    "changed_files": [
+      ".claude/plans/AO-MA-10N-LIVE-ENFORCEMENT-CUTOVER.md",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_ma10n_live_enforcement_cutover.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -7,71 +30,18 @@
     {
       "name": "secret_scan",
       "status": "pass"
-    },
-    {
-      "name": "git_diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "authority_boundary",
-      "status": "pass"
-    },
-    {
-      "name": "claude_review",
-      "status": "pass"
-    },
-    {
-      "name": "openai_review",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Authority boundary intact: support_widening, production_platform_claim, and live_adapter_execution remain false.",
-    "SSOT drift resolution is correct: current-status prose no longer claims a live required-check shape, while historical changelog wording remains audit-only.",
-    "The dual required-check constant correctly requires both ao-release-gate-technical and ao-release-gate-review to be present and source-pinned to GitHub Actions.",
-    "Fail-closed behavior is preserved: AO-MA-10A0/A1 still block on missing required checks, legacy required review/CODEOWNERS, and admin actor.",
-    "No secrets, workflow mutation, branch-protection mutation, CODEOWNERS mutation, testai/smee/webhook/Vault work, or live adapter execution appears in this diff.",
-    "The AGENTS invariant test update correctly checks AO-MA-10A0/A1 authority and the blocked live-readiness wording.",
-    "The heading-dependent current-status split is acceptable because a future heading drift would fail closed by reintroducing a blocker rather than missing one."
+    "The runbook preserves guard flags and repeats no support widening, no production claim, and no live adapter execution.",
+    "The CC-9 gap is exposed honestly with operator-bootstrap and full no-human bootstrap modes.",
+    "The PR does not mutate GitHub settings and only records pre-cutover steps plus invariant tests.",
+    "The legacy ao-release-gate wrapper is correctly distinguished from the dual required-check authority set.",
+    "Classic CI requirements are preserved, and bypass_actors=[] remains explicit.",
+    "The tests pin the critical runbook contract and provide sufficient doc-invariant coverage."
   ],
-  "implementer": {
-    "agent": "codex-implementer",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude-cli",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
-      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
-      ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md",
-      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
-      ".claude/plans/gpp_status.v1.json",
-      "AGENTS.md",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_autonomous_merge_eligibility.py",
-      "scripts/ao_ma10_github_readiness_snapshot.py",
-      "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
-      "tests/test_ao_ma10_github_readiness_snapshot.py",
-      "tests/test_ao_ma1_design_invariants.py",
-      "tests/test_gpp_next.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma-10-live-drift-sync"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10-live-drift-sync"
+  "production_platform_claim": false
 }
