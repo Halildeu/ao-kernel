@@ -97,6 +97,14 @@ ALLOWED_NEW_SURFACES = [
     # the 6a test file for introducer-PR detection). Removed the 6a entry
     # from AO-MA-10 signature here.
     "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
+    # RI-7.1 + RI-7.2 + RI-7.5 forbidden-diff invariants — introducer-PR
+    # detection pattern parity (state-at-landing pin per RI-7.5 PR #670 /
+    # RI-7.1 PR #666). 6b is the first slice that triggers the sistemic
+    # bug; const digest pins still enforce state-at-landing on every
+    # successor PR.
+    "tests/test_ri7_operator_authorization_invariant.py",
+    "tests/test_ri7_guardrail_hardening_matrix_invariant.py",
+    "tests/test_ri7_operator_verified_runtime_semantics_invariant.py",
 ]
 
 
