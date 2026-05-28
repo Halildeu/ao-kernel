@@ -22,6 +22,7 @@
       "ao_kernel/defaults/schemas/ri7-8b-bc1-6b-protected-execution-window-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ri78b_bc1_activation_window.py",
+      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
       "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
       "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
       "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py"

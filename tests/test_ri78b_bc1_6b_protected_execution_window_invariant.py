@@ -91,6 +91,12 @@ ALLOWED_NEW_SURFACES = [
     # slice that triggers the systemic bug.
     "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
     "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
+    # AO-MA-10 introducer_signature category-error fix: AO-MA-10 erroneously
+    # listed RI-7.8b-bc1-6a test file in its introducer signature, causing
+    # AO-MA-10 scope assertion to fire on 6b PR (which legitimately edits
+    # the 6a test file for introducer-PR detection). Removed the 6a entry
+    # from AO-MA-10 signature here.
+    "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
 ]
 
 

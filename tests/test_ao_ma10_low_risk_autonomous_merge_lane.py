@@ -216,7 +216,11 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
         "tests/test_ao_ma10_evidence_schemas.py",
         "tests/test_ao_ma10_negative_fail_closed.py",
-        "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
+        # NOTE: tests/test_ri78b_bc1_6a_*.py is OWNED by RI-7.8b-bc1-6a, NOT
+        # AO-MA-10. It was erroneously included here; successor B-path slices
+        # (e.g. RI-7.8b-bc1-6b adding introducer-PR detection to that file)
+        # legitimately touch it without being the AO-MA-10 introducer.
+        # Removed under RI-7.8b-bc1-6b inline systemic fix.
     }
     if not (changed & ao_ma_10_introducer_signature):
         pytest.skip(
