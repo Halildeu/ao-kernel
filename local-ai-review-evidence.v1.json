@@ -1,29 +1,39 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.8b-bc10-6a",
+  "work_package": "AO-MA-10R",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex-cli-reviewer",
-    "provider": "openai",
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization",
+    "head_ref": "refs/heads/codex/ao-ma10r-credential-doctor",
     "changed_files": [
-      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri78b_bc10_6a_execution_window_authorization_invariant.py"
+      "scripts/ao_ma10r_dedicated_actor_credential_doctor.py",
+      "tests/test_ao_ma10r_dedicated_actor_credential_doctor.py"
     ]
   },
   "checks_considered": [
     {
       "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "mypy",
       "status": "pass"
     },
     {
@@ -35,25 +45,17 @@
       "status": "pass"
     },
     {
-      "name": "sha256_digest_match",
-      "status": "pass"
-    },
-    {
       "name": "gpp_guard_flags_const_false",
       "status": "pass"
     }
   ],
   "findings": [
-    "Evidence validates against Draft 2020-12 schema with zero errors; schema enforces additionalProperties:false on all 13 nested objects and const-pinned guard flags (support_widening, production_platform_claim, live_adapter_execution).",
-    "SHA256 digests in ri78a_predecessor_ref + ri78b_bc1_6c_predecessor_ref + stale_replay_guard match the committed predecessor files at PR #673 (ri78a evidence) and PR #691 (bc1-6c-closure evidence + RI-7.8 submanifest post-flip).",
-    "GPP guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain const FALSE in current_gpp_guard_snapshot and top-level evidence fields. bc10-6a is authorization-only; no guard flag flip permitted.",
-    "Submanifest snapshot reflects post-#691 BC-1 landing state (bc1=true) and BC-10 not-yet-flipped state (bc10=false). submanifest_transition before==after enforces bc10-6a non-mutation contract.",
-    "planned_6b_authority_mode is pinned to manual_protected_environment with autonomous_trigger_allowed=false. bc10 6b activation MUST go through GitHub Environment required reviewers (unlike BC-1 6c-fast-follow autonomous pre-prod pattern) because bc10 involves REAL billable provider calls.",
-    "mutations_performed 7-key all-false invariant: runtime_modified, workflow_created, submanifest_mutated, gpp_status_mutated, provider_call_performed, secret_referenced, guard_flag_flipped all const false in schema and runtime evidence.",
-    "model_allowlist pinned to single-element [\"openai/gpt-4o-mini\"] with maxItems=1 + enum constraint. Per-call max_output_tokens cap ≤256; retries disabled; pre-call + post-call cost checks required.",
-    "Introducer-PR detection pattern (state-at-landing pin) applied to 11 git-diff-dependent tests; non-introducer branches skip with pytest.skip while structural invariants (schema valid, evidence validates, const pins) continue to enforce 6a state-at-landing on origin/main.",
-    "Secret boundary correct: secret_boundary=no_secret_material_no_credential_names_no_token_in_repo. No credential names, env var names, or token values present in any artifact. mutations_performed.secret_referenced=false enforces this at runtime.",
-    "Cross-AI peer review provider split: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 iter-1 REVISE (bc10 must be 3-PR chain) + iter-2 REVISE (detailed absorb items: planned_6b_authority_mode, null workflow_content_sha256, schema path ri7-8b-bc10-6a-..., mutations_performed object) absorbed in this artifact."
+    "AO-MA-10r is fail-closed and no-secret: token values are accepted only via a named environment variable, never through CLI args, and token_value_recorded is schema-pinned false",
+    "The doctor performs read-only GitHub API checks only: user identity, repository permissions, and pull-request read access; no POST, merge, comment, ruleset, or branch-protection mutation is present",
+    "Permission semantics align with the low-risk autonomous merge model: write or maintain is merge-capable, admin is explicitly blocked, and read-only actors fail closed",
+    "Artifact schema is strict with additionalProperties=false and const-pinned release_authority, ai_output_release_authority=false, guard flags=false, and mutations_performed=false",
+    "Tests cover missing token, invalid env name, happy path, maintain path, wrong actor, admin actor, read-only actor, user API failure, repository API failure, and pull-request API failure",
+    "AO-MA-10r is correctly positioned as a prerequisite for AO-MA-10q execute smoke; it does not claim release authority or production readiness"
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
