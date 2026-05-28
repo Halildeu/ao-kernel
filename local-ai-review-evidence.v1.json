@@ -29,6 +29,8 @@
   },
   "checks_considered": [
     {"name": "tests", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "ruff", "status": "pass"},
     {"name": "schema_draft_2020_12_valid", "status": "pass"},
     {"name": "evidence_validates_against_schema", "status": "pass"},
     {"name": "trigger_file_absent_deferred_to_6c_closure", "status": "pass"},
