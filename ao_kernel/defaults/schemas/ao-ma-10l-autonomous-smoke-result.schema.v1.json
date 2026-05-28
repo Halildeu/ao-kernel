@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-10l-autonomous-smoke-result:v1",
+  "title": "AO-MA-10l Autonomous Smoke Result",
+  "description": "Fail-closed result for the positive low-risk autonomous merge smoke orchestrator. AI output is evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repository",
+    "base_ref",
+    "expected_actor",
+    "run_id",
+    "branch",
+    "smoke_path",
+    "execute_requested",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "readiness_decision",
+    "eligibility_decision",
+    "created_pr",
+    "required_checks",
+    "merge_agent_result",
+    "commands",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "ao-ma-10l-autonomous-smoke-result.v1" },
+    "artifact_kind": { "type": "string", "const": "ao_ma_10l_autonomous_smoke_result" },
+    "generated_at": { "type": "string" },
+    "repository": { "type": "string", "minLength": 1 },
+    "base_ref": { "type": "string", "minLength": 1 },
+    "expected_actor": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string", "pattern": "^codex/ao-ma10l-smoke-" },
+    "smoke_path": { "type": "string", "pattern": "^docs/evidence/ao-ma-10l-autonomous-smoke/" },
+    "execute_requested": { "type": "boolean" },
+    "mutations_performed": { "type": "boolean" },
+    "release_authority": { "type": "string", "const": "ao-release-gate+github-ruleset" },
+    "ai_output_release_authority": { "type": "boolean", "const": false },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "readiness_decision": { "type": ["string", "null"] },
+    "eligibility_decision": { "type": ["string", "null"] },
+    "created_pr": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["number", "url", "branch"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 }
+      }
+    },
+    "required_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed", "all_passed", "failing"],
+      "properties": {
+        "observed": { "type": "boolean" },
+        "all_passed": { "type": "boolean" },
+        "failing": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "merge_agent_result": {
+      "type": ["object", "null"]
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "blockers", "warnings", "next_required_slice"],
+      "properties": {
+        "result": { "type": "string", "enum": ["blocked", "ready_for_smoke_dry_run", "merged"] },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "next_required_slice": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
