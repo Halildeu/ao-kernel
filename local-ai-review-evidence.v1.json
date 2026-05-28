@@ -30,6 +30,8 @@
     "AO-MA-10A0/A1 is now explicitly the live GitHub autonomy-readiness authority, so historical closeout wording is not treated as live required-check evidence.",
     "The current live GitHub blockers remain fail-closed: required ao-release-gate checks are missing, legacy review/CODEOWNERS remains active, and the observed actor is admin.",
     "The readiness snapshot predicate now ignores historical changelog/runbook prose and detects only current-status required-check claims.",
+    "The readiness snapshot now requires the dual ruleset check set ao-release-gate-technical plus ao-release-gate-review, both source-pinned to GitHub Actions.",
+    "The AGENTS invariant test now pins AO-MA-10A0/A1 live-readiness authority instead of the stale GPP-2D-5 cutover claim.",
     "Claude and OpenAI independent reviews both returned AGREE with no blocking findings."
   ],
   "implementer": {
@@ -64,6 +66,7 @@
       "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
       "tests/test_ao_ma10_autonomous_merge_eligibility.py",
       "tests/test_ao_ma10_github_readiness_snapshot.py",
+      "tests/test_ao_ma1_design_invariants.py",
       "tests/test_gpp_next.py"
     ],
     "head_ref": "refs/heads/codex/ao-ma-10-live-drift-sync"

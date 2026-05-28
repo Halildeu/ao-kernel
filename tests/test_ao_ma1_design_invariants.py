@@ -78,7 +78,9 @@ def test_agents_contract_names_active_gpp2d_and_ao_ma1_context() -> None:
     assert "GPP-2 - Protected Live-Adapter Gate Runtime Binding (closed)" in text
     assert "GPP-2D - Autonomous Required-Check Lane" in text
     assert "GPP-2D-3 enforce job" in text
-    assert "GPP-2D-5 branch-protection ruleset cutover" in text
+    assert "AO-MA-10A0/A1 are the current authority" in text
+    assert "the lane is blocked: ruleset 16803733 does not" in text
+    assert "Do not treat the GPP-2D/GPP-9 closeout wording" in text
     assert "GPP-2D-7 AO-GATE-9 GPP-2 closeout" in text
     assert "AO-MA-1 - Multi-Agent Orchestration Design" in text
     assert "GPP-2C - testai / smee / webhook callback integration" in text

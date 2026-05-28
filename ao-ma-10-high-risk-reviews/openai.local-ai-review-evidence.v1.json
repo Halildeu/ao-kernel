@@ -28,7 +28,9 @@
   "findings": [
     "No blocking finding: the diff separates GPP program closure from live autonomous merge readiness and keeps AO-MA-10A0/A1 as the live authority.",
     "AGENTS, gpp_status, STATUS.md, AO-MA-10A0, and AO-MA-10A1 all keep the lane blocked until required checks, review model, bypass actors, and merge actor align.",
+    "The AO-MA-10 readiness snapshot correctly requires the dual source-pinned ruleset check set ao-release-gate-technical plus ao-release-gate-review rather than trusting the legacy ao-release-gate wrapper alone.",
     "Guard flags remain false and AI output remains evidence rather than release authority.",
+    "The AGENTS invariant test update correctly pins AO-MA-10A0/A1 as the live-readiness authority instead of a stale GPP-2D-5 cutover claim.",
     "Targeted tests, JSON validation, and diff checks were considered by the OpenAI reviewer."
   ],
   "implementer": {
@@ -63,6 +65,7 @@
       "tests/fixtures/ao_ma_10/github_readiness_snapshot.blocked.valid.json",
       "tests/test_ao_ma10_autonomous_merge_eligibility.py",
       "tests/test_ao_ma10_github_readiness_snapshot.py",
+      "tests/test_ao_ma1_design_invariants.py",
       "tests/test_gpp_next.py"
     ],
     "head_ref": "refs/heads/codex/ao-ma-10-live-drift-sync"

@@ -64,10 +64,11 @@ def _valid_ready_inputs() -> dict[str, Any]:
             "enforce_admins": {"enabled": True},
             "required_status_checks": {
                 "strict": True,
-                "contexts": ["lint", "ao-release-gate"],
+                "contexts": ["lint", "ao-release-gate-technical", "ao-release-gate-review"],
                 "checks": [
                     {"context": "lint", "app_id": 15368},
-                    {"context": "ao-release-gate", "app_id": 15368},
+                    {"context": "ao-release-gate-technical", "app_id": 15368},
+                    {"context": "ao-release-gate-review", "app_id": 15368},
                 ],
             },
         },
@@ -88,7 +89,8 @@ def _valid_ready_inputs() -> dict[str, Any]:
                 "type": "required_status_checks",
                 "parameters": {
                     "required_status_checks": [
-                        {"context": "ao-release-gate", "integration_id": 15368},
+                        {"context": "ao-release-gate-technical", "integration_id": 15368},
+                        {"context": "ao-release-gate-review", "integration_id": 15368},
                     ]
                 },
             }
@@ -168,7 +170,7 @@ def test_ao_ma10a0_ready_case_requires_source_pinned_release_gate_and_non_admin_
 def test_ao_ma10a0_blocks_wrong_source_pin_even_when_check_name_matches() -> None:
     mod = _load_script_module()
     inputs = _valid_ready_inputs()
-    inputs["branch_rules"][0]["parameters"]["required_status_checks"][0]["integration_id"] = 99999
+    inputs["branch_rules"][0]["parameters"]["required_status_checks"][1]["integration_id"] = 99999
     snapshot = mod.build_snapshot(**inputs)
     assert snapshot["rulesets"]["ao_release_gate_required_check_present"] is True
     assert snapshot["rulesets"]["ao_release_gate_source_pinned_to_actions"] is False
@@ -206,7 +208,7 @@ def test_ao_ma10a0_blocks_ssot_live_required_check_drift() -> None:
 def test_ao_ma10a0_blocks_ssot_live_required_check_source_pin_drift() -> None:
     mod = _load_script_module()
     inputs = _valid_ready_inputs()
-    inputs["branch_rules"][0]["parameters"]["required_status_checks"][0]["integration_id"] = 99999
+    inputs["branch_rules"][0]["parameters"]["required_status_checks"][1]["integration_id"] = 99999
     inputs["ssot_required_check_claim_observed"] = True
     inputs["ssot_claim_source"] = ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md"
     snapshot = mod.build_snapshot(**inputs)
