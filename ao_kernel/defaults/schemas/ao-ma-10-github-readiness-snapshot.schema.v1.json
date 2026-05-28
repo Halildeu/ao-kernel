@@ -239,6 +239,7 @@
               "ruleset_bypass_actors_present",
               "legacy_required_review_blocks_low_risk_autonomy",
               "merge_actor_admin_permission_observed",
+              "unexpected_merge_actor",
               "codeowners_broad_default_owner_present",
               "codeowners_governance_paths_not_fully_owned",
               "ssot_live_required_check_drift_detected"

@@ -23,6 +23,7 @@ ARTIFACT_KIND = "ao_ma_10_github_readiness_snapshot"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 AO_RELEASE_GATE_REQUIRED_CHECKS = ("ao-release-gate-technical", "ao-release-gate-review")
 GITHUB_ACTIONS_APP_ID = 15368
+DEFAULT_DEDICATED_MERGE_ACTOR = "gladyatore-lab"
 
 
 def _run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:
@@ -290,6 +291,7 @@ def build_snapshot(
     rulesets: list[Any],
     branch_rules: list[Any],
     codeowners_text: str,
+    dedicated_merge_actor: str = DEFAULT_DEDICATED_MERGE_ACTOR,
     collection_errors: list[str] | None = None,
     ssot_required_check_claim_observed: bool = False,
     ssot_claim_source: str | None = None,
@@ -331,8 +333,17 @@ def build_snapshot(
         blockers.append("legacy_required_review_blocks_low_risk_autonomy")
 
     viewer_can_administer = bool(repo_info.get("viewerCanAdminister"))
+    actor_permission = viewer_permission or repo_info.get("viewerPermission")
+    actor_permission_normalized = str(actor_permission).lower() if actor_permission is not None else None
+    dedicated_actor_confirmed = (
+        viewer_login == dedicated_merge_actor
+        and actor_permission_normalized == "write"
+        and not viewer_can_administer
+    )
     if viewer_can_administer or viewer_permission == "admin":
         blockers.append("merge_actor_admin_permission_observed")
+    if viewer_login != dedicated_merge_actor:
+        blockers.append("unexpected_merge_actor")
 
     if not bool(repo_info.get("autoMergeAllowed")):
         warnings.append("repository_auto_merge_disabled_merge_agent_direct_mode_required")
@@ -377,9 +388,9 @@ def build_snapshot(
         },
         "merge_actor": {
             "login": viewer_login,
-            "permission": viewer_permission or repo_info.get("viewerPermission"),
+            "permission": actor_permission,
             "viewer_can_administer": viewer_can_administer,
-            "administration_write_absent_for_dedicated_actor": False,
+            "administration_write_absent_for_dedicated_actor": dedicated_actor_confirmed,
         },
         "branch_protection": {
             **normalized_bp,
@@ -407,7 +418,12 @@ def build_snapshot(
     }
 
 
-def collect_live_snapshot(repository: str, branch: str, gh_bin: str) -> dict[str, Any]:
+def collect_live_snapshot(
+    repository: str,
+    branch: str,
+    gh_bin: str,
+    dedicated_merge_actor: str = DEFAULT_DEDICATED_MERGE_ACTOR,
+) -> dict[str, Any]:
     collection_errors: list[str] = []
     repo_info, error = _repo_info_with_error(gh_bin, repository)
     if error:
@@ -462,6 +478,7 @@ def collect_live_snapshot(repository: str, branch: str, gh_bin: str) -> dict[str
         rulesets=detailed_rulesets,
         branch_rules=branch_rules if isinstance(branch_rules, list) else [],
         codeowners_text=codeowners,
+        dedicated_merge_actor=dedicated_merge_actor,
         collection_errors=collection_errors,
     )
 
@@ -471,6 +488,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repository", default="Halildeu/ao-kernel")
     parser.add_argument("--branch", default="main")
     parser.add_argument("--gh-bin", default="gh")
+    parser.add_argument("--dedicated-merge-actor", default=DEFAULT_DEDICATED_MERGE_ACTOR)
     parser.add_argument(
         "--ssot-status-path",
         default=".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
@@ -478,7 +496,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
 
-    snapshot = collect_live_snapshot(args.repository, args.branch, args.gh_bin)
+    snapshot = collect_live_snapshot(args.repository, args.branch, args.gh_bin, args.dedicated_merge_actor)
     ssot_path = Path(args.ssot_status_path)
     ssot_claim_observed = _ssot_required_check_claim_observed(ssot_path)
     ssot_conflict = ssot_claim_observed and not snapshot["rulesets"]["ao_release_gate_source_pinned_to_actions"]

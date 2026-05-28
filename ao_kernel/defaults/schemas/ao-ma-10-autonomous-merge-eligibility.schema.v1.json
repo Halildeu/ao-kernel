@@ -211,7 +211,8 @@
               "ruleset_bypass_actors_present",
               "snapshot_mutated",
               "snapshot_not_read_only",
-              "ssot_live_required_check_drift_detected"
+              "ssot_live_required_check_drift_detected",
+              "unexpected_merge_actor"
             ]
           },
           "uniqueItems": true

@@ -45,6 +45,7 @@ def _ready_snapshot() -> dict[str, Any]:
     snapshot["readiness"]["warnings"] = ["repository_auto_merge_disabled_merge_agent_direct_mode_required"]
     snapshot["branch_protection"]["required_approving_review_count"] = 0
     snapshot["branch_protection"]["require_code_owner_reviews"] = False
+    snapshot["merge_actor"]["login"] = "gladyatore-lab"
     snapshot["merge_actor"]["permission"] = "write"
     snapshot["merge_actor"]["viewer_can_administer"] = False
     snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] = True
@@ -101,12 +102,14 @@ def test_ao_ma10a1_current_snapshot_stays_blocked_with_live_blockers() -> None:
     Draft202012Validator(_schema()).validate(payload)
     blockers = set(payload["decision"]["blockers"])
     assert payload["decision"]["result"] == "blocked"
-    assert "ao_release_gate_required_check_missing" in blockers
-    assert "ao_release_gate_technical_required_check_missing" in blockers
-    assert "ao_release_gate_review_required_check_missing" in blockers
     assert "readiness_snapshot_not_ready" in blockers
-    assert "legacy_required_review_blocks_low_risk_autonomy" in blockers
     assert "merge_actor_admin_permission_observed" in blockers
+    assert "unexpected_merge_actor" in blockers
+    assert "dedicated_merge_actor_not_confirmed" in blockers
+    assert "ao_release_gate_required_check_missing" not in blockers
+    assert "ao_release_gate_technical_required_check_missing" not in blockers
+    assert "ao_release_gate_review_required_check_missing" not in blockers
+    assert "legacy_required_review_blocks_low_risk_autonomy" not in blockers
     assert "ssot_live_required_check_drift_detected" not in blockers
 
 
@@ -116,8 +119,11 @@ def test_ao_ma10a1_committed_evidence_records_current_fail_closed_state() -> Non
     assert payload["decision"]["result"] == "blocked"
     assert payload["read_only"] is True
     assert payload["mutations_performed"] is False
-    assert "ao_release_gate_technical_required_check_missing" in blockers
-    assert "ao_release_gate_review_required_check_missing" in blockers
+    assert "ao_release_gate_technical_required_check_missing" not in blockers
+    assert "ao_release_gate_review_required_check_missing" not in blockers
+    assert "merge_actor_admin_permission_observed" in blockers
+    assert "unexpected_merge_actor" in blockers
+    assert "dedicated_merge_actor_not_confirmed" in blockers
     assert "readiness_snapshot_not_ready" in blockers
 
 
@@ -219,6 +225,20 @@ def test_ao_ma10a1_blocks_admin_or_unconfirmed_merge_actor() -> None:
     snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] = False
     payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
     assert "merge_actor_admin_permission_observed" in payload["decision"]["blockers"]
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10a1_propagates_unexpected_merge_actor_from_readiness_snapshot() -> None:
+    snapshot = _ready_snapshot()
+    snapshot["readiness"]["decision"] = "blocked"
+    snapshot["readiness"]["blockers"] = ["unexpected_merge_actor"]
+    snapshot["merge_actor"]["login"] = "some-other-writer"
+    snapshot["merge_actor"]["permission"] = "write"
+    snapshot["merge_actor"]["viewer_can_administer"] = False
+    snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] = False
+    payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
+    assert "unexpected_merge_actor" in payload["decision"]["blockers"]
+    assert "readiness_snapshot_not_ready" in payload["decision"]["blockers"]
     assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
 
 
