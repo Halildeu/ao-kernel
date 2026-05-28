@@ -38,6 +38,17 @@ Execute mode requires:
 --execute --confirmation AO-MA-10L-EXECUTE
 ```
 
+The GitHub CLI runtime can be isolated with:
+
+```text
+--gh-bin <dedicated-gh-wrapper>
+```
+
+AO-MA-10l passes this value to every live GitHub read/write call, to the A0
+readiness snapshot collector, and to the AO-MA-10c merge-agent. This lets the
+smoke run under the dedicated non-admin merge actor without changing the
+operator's global `gh` login.
+
 Even in execute mode it stops before any GitHub write when A0/A1 is blocked.
 
 ## Live Blocker
@@ -51,8 +62,8 @@ merge_actor_admin_permission_observed
 dedicated_merge_actor_not_confirmed
 ```
 
-The smoke becomes runnable when the active `gh` runtime is authenticated as the
-dedicated non-admin merge actor:
+The smoke becomes runnable when the selected `gh` runtime is authenticated as
+the dedicated non-admin merge actor:
 
 ```text
 gladyatore-lab
@@ -73,10 +84,11 @@ When A0/A1 are ready and explicit confirmation is present, the orchestrator:
 5. refreshes A0/A1;
 6. delegates the actual merge to `scripts/ao_ma10c_merge_agent.py`.
 
-The only merge command still lives inside AO-MA-10c:
+The only merge command still lives inside AO-MA-10c and uses the same selected
+`--gh-bin` runtime:
 
 ```text
-gh pr merge <pr> --repo Halildeu/ao-kernel --squash --delete-branch
+<dedicated-gh-wrapper> pr merge <pr> --repo Halildeu/ao-kernel --squash --delete-branch
 ```
 
 AO-MA-10l never constructs an admin merge command and never mutates rulesets,

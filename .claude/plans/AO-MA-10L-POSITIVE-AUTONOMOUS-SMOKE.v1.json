@@ -11,6 +11,8 @@
   "live_adapter_execution": false,
   "default_mode": "read_only",
   "execute_confirmation": "AO-MA-10L-EXECUTE",
+  "supports_dedicated_gh_runtime": true,
+  "dedicated_gh_runtime_argument": "--gh-bin",
   "expected_actor": "gladyatore-lab",
   "blocks_before_github_write_when_a0_a1_blocked": true,
   "delegates_merge_to": "scripts/ao_ma10c_merge_agent.py",

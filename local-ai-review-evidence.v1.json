@@ -5,16 +5,28 @@
       "status": "pass"
     },
     {
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "mypy",
+      "status": "pass"
+    },
+    {
       "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "live_dry_run_fail_closed",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude/Anthropic review returned AGREE for AO-MA-10l autonomous smoke orchestrator.",
-    "Fail-closed behavior is preserved: A0/A1 blockers return before any GitHub branch, file, or PR write.",
-    "Execute mode requires AO-MA-10L-EXECUTE and delegates the actual merge to AO-MA-10c.",
-    "No admin merge, bypass actor, ruleset mutation, CODEOWNERS mutation, support widening, production platform claim, or live adapter execution is introduced.",
-    "Advisory only: merge_agent_result schema could be tightened later, and mid-flow GitHub API failure tests could be expanded."
+    "Claude/Anthropic review returned AGREE for AO-MA-10p dedicated gh runtime propagation.",
+    "Security boundary is preserved: gh_bin changes only the selected GitHub CLI runtime and does not change release authority.",
+    "Fail-closed behavior is preserved: execute still requires AO-MA-10L-EXECUTE and A0/A1 blockers return before GitHub writes.",
+    "Propagation is complete across A0 readiness collection, direct GitHub API/PR/check calls, and AO-MA-10c merge-agent delegation.",
+    "No admin merge, ruleset mutation, branch-protection mutation, CODEOWNERS mutation, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -34,14 +46,13 @@
     "changed_files": [
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ao_ma10l_autonomous_smoke.py",
       "tests/test_ao_ma10l_autonomous_smoke.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10l-autonomous-smoke"
+    "head_ref": "refs/heads/codex/ao-ma10p-gh-bin-propagation"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10l"
+  "work_package": "AO-MA-10p"
 }
