@@ -21,41 +21,17 @@
       "status": "pass"
     },
     {
-      "name": "explorer_review",
-      "status": "pass"
-    },
-    {
-      "name": "claude_advisory_review_limited",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_ruleset_codeowners_merge_agent_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_production_platform_claim",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_adapter_execution",
+      "name": "claude_review",
       "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10i wires AO-MA-10h high-risk supersession evidence into ao-release-gate decision-core as evidence only; release authority remains ao-release-gate plus GitHub ruleset.",
-    "Valid supersession evidence can satisfy the path-sensitive high-risk gate only when schema-valid, context-bound to repo/base/head/diff/high-risk paths, OpenAI plus Anthropic providers are distinct, unanimous AGREE is recorded, and authority boundaries remain closed.",
-    "Explorer review initially found a real stale-evidence bypass: generated_at and freshness.max_age_seconds were schema-only and not enforced at runtime.",
-    "The stale-evidence gap is fixed: decision time is computed once, evidence generated_at is parsed as timezone-aware, max_age_seconds is enforced, stale future or unparseable evidence fails closed with ao_release_gate_high_risk_supersession_stale.",
-    "Negative tests cover duplicate provider self-review, context mismatch, provider context mismatch, authority-boundary open, malformed supplied evidence, stale evidence, and unparseable timestamps.",
-    "Claude advisory returned AGREE on the described fixed design but reported tool access limitations; it is recorded as advisory evidence only, not release authority.",
-    "Local verification passed: targeted ao-release-gate plus AO-MA-10 negative and AO-MA-10h contract tests, ruff, mypy for source files, JSON validation, and git diff whitespace check.",
-    "CI surfaced the RI-7.8a forbidden-surface invariant for ao_kernel/ao_release_gate.py; the invariant now recognizes the pre-recorded AO-MA-10i successor boundary from AO-MA-10h while keeping the forbidden-surface default fail-closed.",
-    "Rebase onto RI-7.8b-bc1-6b surfaced 6b introducer-only invariant drift; 6b diff-dependent checks now use the same introducer-PR detection pattern already present in 6a, while artifact/schema digest pins keep 6b state-at-landing enforced.",
-    "Scope excludes .github workflows, CODEOWNERS, rulesets, branch protection, support widening, production platform claim, live adapter execution, testai, smee, Vault, GitHub App, and Cloud Run work."
+    "AO-MA-10j wires high-risk supersession evidence into the ao-release-gate required-check path without making AI output release authority.",
+    "The self-reference problem is avoided by committing only raw head_sha-free reviewer evidence and generating the head-bound supersession artifact at CI runtime from trusted base code.",
+    "Fail-closed behavior is preserved: partial raw reviewer pairs, provider mismatch, scope mismatch, malformed evidence, stale or unavailable git context, and authority boundary flips all deny rather than pass.",
+    "Workflow changes are additive and do not mutate CODEOWNERS, branch protection, rulesets, testai/smee/webhooks, Vault, GitHub App credentials, support scope, production claim, or live adapter execution.",
+    "Claude independent review returned AGREE and noted only non-blocking concerns; the root review dependency and fetch fail-closed behavior were documented in the workflow after review.",
+    "CI follow-up scopes the older AO-MA-10h no-workflow-mutation introducer invariant to its original contract-only slice, while AO-MA-10j explicitly owns required-check workflow wiring."
   ],
   "implementer": {
     "agent": "codex",
@@ -65,28 +41,28 @@
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "claude-advisory",
+    "agent": "claude-cli",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",
-    "scope_reviewed": {
+  "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
-      "ao_kernel/ao_release_gate.py",
+      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
+      ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md",
+      ".github/workflows/test.yml",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_autonomous_merge_eligibility.py",
-      "scripts/ao_release_gate_decision.py",
-      "scripts/ri7_operator_verified_runtime_semantics.py",
-      "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
-      "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py",
-      "tests/test_gpp2b_mapping_drift_guard.py",
-      "tests/test_ao_release_gate.py"
+      "scripts/ao_ma10_high_risk_supersession_evidence.py",
+      "scripts/ao_release_gate_build_payload.py",
+      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
+      "tests/test_ao_ma10j_high_risk_supersession_evidence_builder.py",
+      "tests/test_ao_release_gate_build_payload.py",
+      "tests/test_ao_release_gate_enforce_job.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma-10i-high-risk-supersession-runtime"
+    "head_ref": "refs/heads/codex/ao-ma-10j-required-check-evidence-wiring"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10i"
+  "work_package": "AO-MA-10j"
 }

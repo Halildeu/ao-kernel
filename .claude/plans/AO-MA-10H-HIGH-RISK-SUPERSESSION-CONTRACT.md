@@ -136,9 +136,10 @@ AO-MA-10h does not:
 
 1. **AO-MA-10h**: contract, evidence schema, fixture, and invariants only.
 2. **AO-MA-10i**: decision-core extension that accepts valid supersession
-   evidence as an alternative to human/codeowner review.
-3. **AO-MA-10j**: GitHub enforcement model update, only after the runtime
-   validator has negative and positive tests.
+   evidence as an alternative to human/codeowner review. **Done**.
+3. **AO-MA-10j**: GitHub enforcement model update. It must generate the
+   head-bound supersession artifact at CI runtime from raw, head_sha-free
+   reviewer evidence rather than reading a committed head-bound artifact.
 4. **AO-MA-10k**: high-risk autonomous smoke with a disposable PR: success path
    and fail-closed path.
 

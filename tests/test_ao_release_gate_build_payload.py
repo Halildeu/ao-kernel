@@ -460,6 +460,8 @@ def test_build_payload_allowed_path_prefixes_repo_owned_not_pr_supplied(tmp_path
     # either file at the repo root must find it pinned here.
     assert "local-ai-review-evidence.v1.json" in prefixes
     assert "local-gpp-gate-evidence.v1.json" in prefixes
+    assert "ao-ma-10-high-risk-reviews/" in prefixes
+    assert "ao-ma-10-high-risk-supersession-evidence.v1.json" not in prefixes
     # Repo hygiene file (.gitignore) is the same trust tier as
     # docs/README/CLAUDE.md: PR-author edits cannot reach the
     # runtime adapter surface, claim production readiness, or widen

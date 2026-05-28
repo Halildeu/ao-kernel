@@ -696,6 +696,54 @@ jobs:
             --repo-root . \
             > local-gpp-gate.stdout.log 2>&1 || true
 
+      - name: Locate optional high-risk raw reviewer evidence on PR head
+        id: high_risk_reviewers
+        run: |
+          OPENAI_PATH="head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json"
+          ANTHROPIC_PATH="head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json"
+          if [ -f "$OPENAI_PATH" ] && [ -f "$ANTHROPIC_PATH" ]; then
+            if [ ! -f head/local-ai-review-evidence.v1.json ]; then
+              echo "::error::high-risk supersession raw reviews require root local-ai-review-evidence.v1.json for reviewed work-package binding"
+              exit 1
+            fi
+            echo "openai_path=$OPENAI_PATH" >> "$GITHUB_OUTPUT"
+            echo "anthropic_path=$ANTHROPIC_PATH" >> "$GITHUB_OUTPUT"
+          elif [ -f "$OPENAI_PATH" ] || [ -f "$ANTHROPIC_PATH" ]; then
+            echo "::error::high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files"
+            exit 1
+          else
+            echo "openai_path=" >> "$GITHUB_OUTPUT"
+            echo "anthropic_path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate high-risk supersession evidence at runtime from raw reviewer evidence
+        # AO-MA-10j: raw PR-head review files carry no head_sha. The
+        # trusted-base workflow binds them to the live PR head/diff at
+        # runtime, then passes only the generated head-bound artifact to
+        # the decision core. This avoids committing a head_sha-bearing
+        # supersession artifact and re-opening the self-reference problem.
+        if: ${{ steps.high_risk_reviewers.outputs.openai_path != '' }}
+        working-directory: base
+        env:
+          REVIEW_WORK_PACKAGE: ${{ steps.reviewed_wp.outputs.work_package }}
+        run: |
+          # Fetch failures are not ignored semantically: the runtime
+          # builder below must resolve $BASE_SHA...$HEAD_SHA and will
+          # fail closed if either object is unavailable in this checkout.
+          git fetch --depth=50 origin "$HEAD_SHA" 2>/dev/null || true
+          git fetch --depth=50 origin "$BASE_SHA" 2>/dev/null || true
+          python scripts/ao_ma10_high_risk_supersession_evidence.py \
+            --repository "$REPO_FULL" \
+            --review-work-package "$REVIEW_WORK_PACKAGE" \
+            --review-base-ref "refs/heads/$BASE_REF" \
+            --review-head-ref "refs/heads/$HEAD_REF" \
+            --diff-base-ref "$BASE_SHA" \
+            --diff-head-ref "$HEAD_SHA" \
+            --repo-root . \
+            --review-evidence "../${{ steps.high_risk_reviewers.outputs.openai_path }}" \
+            --review-evidence "../${{ steps.high_risk_reviewers.outputs.anthropic_path }}" \
+            --output high-risk-supersession-evidence.v1.json
+
       - name: Evaluate ao-release-gate decision (enforce, bootstrap-safe C-prime wrapper)
         # RG-CONCLUSION-SEMANTICS C-prime contract (Codex thread 019e65c3
         # iter-2 + iter-3 absorb). The decision-core code is checked out
@@ -719,12 +767,17 @@ jobs:
             EXIT_MODE="--fail-on-deny"
             EMIT_FLAGS=""
           fi
+          HIGH_RISK_FLAGS=()
+          if [ -f high-risk-supersession-evidence.v1.json ]; then
+            HIGH_RISK_FLAGS=(--high-risk-supersession-evidence high-risk-supersession-evidence.v1.json)
+          fi
           if [ -f local-gpp-gate-evidence.v1.json ]; then
             # shellcheck disable=SC2086
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
               --gpp-status .claude/plans/gpp_status.v1.json \
               --review-evidence local-gpp-gate-evidence.v1.json \
+              "${HIGH_RISK_FLAGS[@]}" \
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
@@ -735,6 +788,7 @@ jobs:
             python scripts/ao_release_gate_decision.py \
               --payload payload.json \
               --gpp-status .claude/plans/gpp_status.v1.json \
+              "${HIGH_RISK_FLAGS[@]}" \
               --decision-path decision.json \
               --output text \
               --conclusion-mode enforce \
@@ -787,4 +841,5 @@ jobs:
             base/decision.json
             base/local-gpp-gate-evidence.v1.json
             base/local-gpp-gate.stdout.log
+            base/high-risk-supersession-evidence.v1.json
           if-no-files-found: warn

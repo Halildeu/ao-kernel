@@ -73,6 +73,13 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # and never widen support or claim production readiness.
     "local-ai-review-evidence.v1.json",
     "local-gpp-gate-evidence.v1.json",
+    # AO-MA-10j high-risk autonomous supersession bootstrap: PR heads may
+    # commit raw, head_sha-free reviewer evidence under this exact folder.
+    # The trusted-base workflow turns those raw files into the head-bound
+    # `ao-ma-10-high-risk-supersession-evidence.v1` artifact at CI runtime.
+    # Do NOT allow a committed root supersession artifact here; that artifact
+    # carries head_sha and must stay runtime-produced to avoid self-reference.
+    "ao-ma-10-high-risk-reviews/",
 )
 
 
