@@ -133,9 +133,10 @@ def _merge_agent_merged() -> dict[str, Any]:
 
 
 class FakeRunner:
-    def __init__(self, *, ready: bool = True, checks_pass: bool = True) -> None:
+    def __init__(self, *, ready: bool = True, checks_pass: bool = True, gh_bin: str = "gh") -> None:
         self.ready = ready
         self.checks_pass = checks_pass
+        self.gh_bin = gh_bin
         self.commands: list[list[str]] = []
 
     def __call__(self, command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -150,15 +151,15 @@ class FakeRunner:
             payload = _ready_eligibility(changed_file) if self.ready else _blocked_eligibility(changed_file)
             output.write_text(json.dumps(payload), encoding="utf-8")
             return subprocess.CompletedProcess(command, 0 if self.ready else 1, json.dumps(payload), "")
-        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/git/ref/heads/main"]:
+        if command[:3] == [self.gh_bin, "api", "repos/Halildeu/ao-kernel/git/ref/heads/main"]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"object": {"sha": "a" * 40}}), "")
-        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/git/refs"]:
+        if command[:3] == [self.gh_bin, "api", "repos/Halildeu/ao-kernel/git/refs"]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"ref": "refs/heads/example"}), "")
-        if len(command) >= 3 and command[:2] == ["gh", "api"] and "/contents/" in command[2]:
+        if len(command) >= 3 and command[:2] == [self.gh_bin, "api"] and "/contents/" in command[2]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"content": {"path": "docs/evidence/example.md"}}), "")
-        if command[:3] == ["gh", "pr", "create"]:
+        if command[:3] == [self.gh_bin, "pr", "create"]:
             return subprocess.CompletedProcess(command, 0, "https://github.com/Halildeu/ao-kernel/pull/999\n", "")
-        if command[:3] == ["gh", "pr", "checks"]:
+        if command[:3] == [self.gh_bin, "pr", "checks"]:
             checks = (
                 [
                     {"name": "ao-release-gate-technical", "bucket": "pass", "state": "SUCCESS"},
@@ -178,7 +179,14 @@ class FakeRunner:
         raise AssertionError(command)
 
 
-def _run_with_fake(tmp_path: Path, fake: FakeRunner, *, execute: bool = False, confirmation: str | None = None) -> dict[str, Any]:
+def _run_with_fake(
+    tmp_path: Path,
+    fake: FakeRunner,
+    *,
+    execute: bool = False,
+    confirmation: str | None = None,
+    gh_bin: str = "gh",
+) -> dict[str, Any]:
     mod = _load_script_module()
     output = tmp_path / "result.json"
     return cast(
@@ -187,6 +195,7 @@ def _run_with_fake(tmp_path: Path, fake: FakeRunner, *, execute: bool = False, c
             repo="Halildeu/ao-kernel",
             base_ref="main",
             expected_actor="gladyatore-lab",
+            gh_bin=gh_bin,
             smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
             output=output,
             execute=execute,
@@ -264,6 +273,36 @@ def test_ao_ma10l_execute_success_creates_pr_and_delegates_merge_agent(tmp_path:
     assert merge_agent_commands
     assert "--execute" in merge_agent_commands[0]
     assert "--admin" not in merge_agent_commands[0]
+
+
+def test_ao_ma10l_propagates_custom_gh_bin_to_all_live_github_calls(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=True, gh_bin="gh-dedicated")
+    result = _run_with_fake(
+        tmp_path,
+        fake,
+        execute=True,
+        confirmation="AO-MA-10L-EXECUTE",
+        gh_bin="gh-dedicated",
+    )
+    assert result["decision"]["result"] == "merged"
+
+    readiness_commands = [
+        command
+        for command in fake.commands
+        if len(command) > 1 and command[1].endswith("ao_ma10_github_readiness_snapshot.py")
+    ]
+    assert len(readiness_commands) == 2
+    assert all(command[command.index("--gh-bin") + 1] == "gh-dedicated" for command in readiness_commands)
+
+    live_gh_commands = [command for command in fake.commands if len(command) > 1 and command[1] in {"api", "pr"}]
+    assert live_gh_commands
+    assert all(command[0] == "gh-dedicated" for command in live_gh_commands)
+
+    merge_agent_commands = [
+        command for command in fake.commands if len(command) > 1 and command[1].endswith("ao_ma10c_merge_agent.py")
+    ]
+    assert merge_agent_commands
+    assert merge_agent_commands[0][merge_agent_commands[0].index("--gh-bin") + 1] == "gh-dedicated"
 
 
 def test_ao_ma10l_required_check_failure_blocks_before_merge_agent(tmp_path: Path) -> None:
