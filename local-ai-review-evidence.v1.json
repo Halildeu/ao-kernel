@@ -1,53 +1,19 @@
 {
-  "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "json_schema",
-      "status": "pass"
-    },
-    {
-      "name": "missing_token_fail_closed",
-      "status": "pass"
-    }
-  ],
-  "findings": [
-    "Claude/Anthropic review returned AGREE for AO-MA-10q dedicated actor runner.",
-    "The runner accepts only a token environment variable name, never a token value on CLI.",
-    "Token values and temporary wrapper paths are not recorded in the result artifact.",
-    "Missing token env fails closed before invoking AO-MA-10l and performs no mutation.",
-    "Release authority remains ao-release-gate plus GitHub ruleset; AI output remains evidence only.",
-    "No admin merge, ruleset mutation, branch-protection mutation, CODEOWNERS mutation, support widening, production platform claim, or live adapter execution is introduced."
-  ],
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "RI-7.8b-bc1-6c-closure",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
   },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
   "reviewer": {
     "agent": "claude-cli-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
-  "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-closure",
     "changed_files": [
       ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
       ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
@@ -62,10 +28,42 @@
       "tests/test_ri78b_bc1_6c_closure_invariant.py",
       "tests/test_ri78b_bc1_6c_fast_follow_invariant.py",
       "tests/test_ri78b_bc1_6c_trigger_invariant.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma10q-dedicated-runner"
+    ]
   },
+  "checks_considered": [
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "json_schema",
+      "status": "pass"
+    },
+    {
+      "name": "sha256_digest_match",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_guard_flags_const_false",
+      "status": "pass"
+    }
+  ],
+  "findings": [
+    "Closure evidence validates against Draft 2020-12 schema with zero errors; schema enforces additionalProperties:false and const-pinned guard flags.",
+    "SHA256 digests in closure_proof.scenario_run_refs match the committed run evidence files (clean_attestation: 46ec01d9..., fail_closed_attestation: 952ba499...).",
+    "GPP guard flags support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed remain const false in both gpp_status.v1.json and bc1_flip_attestation.top_level_flags_unchanged.",
+    "BC-1 submanifest flip (bc1_protected_live_adapter_attestation_recorded: falsetotrue) in RI-7.8-EVIDENCE-MANIFEST.v1.json is coherent with closure evidence bc1_flip_attestation declaration and gpp_status supersession entry closed state.",
+    "Introducer-PR detection pattern correctly applied to 7 tests across 4 predecessor test files (ri78a, 6a, 6b, 6c-fast-follow, 6c-trigger); each uses _is_*_introducer_pr() with pytest.skip for state-at-landing pins on non-introducer branches.",
+    "Secret boundary correct: secrets_recorded=false in closure evidence, secret_boundary=no_secret_material_emitted_no_token_no_credential in both run evidence files, no credential values present in any artifact.",
+    "No runtime code changes; diff is governance evidence + schema + tests only.",
+    "Committed local-ai-review-evidence.v1.json is refreshed by this PR to this RI-7.8b-bc1-6c-closure review scope before local_gpp_gate evaluation."
+  ],
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10q"
+  "production_platform_claim": false
 }
