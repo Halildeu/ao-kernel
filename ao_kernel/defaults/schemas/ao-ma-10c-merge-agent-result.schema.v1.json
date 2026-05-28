@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-10c-merge-agent-result:v1",
+  "title": "AO-MA-10c Merge Agent Result",
+  "description": "Fail-closed merge-agent dry-run/execution result. AI output is evidence, not release authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repository",
+    "pr_number",
+    "base_ref",
+    "expected_actor",
+    "actual_actor",
+    "actor_permission",
+    "dry_run",
+    "execute_requested",
+    "merge_command_attempted",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "snapshot_age_seconds",
+    "readiness_decision",
+    "eligibility_decision",
+    "pr_state",
+    "required_checks",
+    "merge_command_argv",
+    "merge_error",
+    "collection_errors",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "ao-ma-10c-merge-agent-result.v1" },
+    "artifact_kind": { "type": "string", "const": "ao_ma_10c_merge_agent_result" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "repository": { "type": "string" },
+    "pr_number": { "type": "integer", "minimum": 1 },
+    "base_ref": { "type": "string" },
+    "expected_actor": { "type": "string" },
+    "actual_actor": { "type": ["string", "null"] },
+    "actor_permission": { "type": ["string", "null"] },
+    "dry_run": { "type": "boolean" },
+    "execute_requested": { "type": "boolean" },
+    "merge_command_attempted": { "type": "boolean" },
+    "mutations_performed": { "type": "boolean" },
+    "release_authority": { "type": "string", "const": "ao-release-gate+github-ruleset" },
+    "ai_output_release_authority": { "type": "boolean", "const": false },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "snapshot_age_seconds": { "type": ["integer", "null"] },
+    "readiness_decision": { "type": ["string", "null"] },
+    "eligibility_decision": { "type": ["string", "null"] },
+    "pr_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "is_draft", "base_ref", "head_sha", "merge_state_status"],
+      "properties": {
+        "state": { "type": ["string", "null"] },
+        "is_draft": { "type": ["boolean", "null"] },
+        "base_ref": { "type": ["string", "null"] },
+        "head_sha": { "type": ["string", "null"] },
+        "merge_state_status": { "type": ["string", "null"] }
+      }
+    },
+    "required_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "all_passed", "failing"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "all_passed": { "type": "boolean" },
+        "failing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "merge_command_argv": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "merge_error": { "type": "string" },
+    "collection_errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "blockers", "warnings", "next_required_slice"],
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["ready_for_merge_dry_run", "merged", "blocked"]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "admin_merge_command_constructed",
+              "ai_output_release_authority_observed",
+              "dedicated_merge_actor_not_confirmed",
+              "eligibility_not_ready",
+              "execute_confirmation_missing",
+              "github_api_read_failed",
+              "guard_flags_not_false",
+              "merge_actor_admin_permission_observed",
+              "merge_actor_not_write",
+              "merge_command_failed",
+              "pr_base_not_main",
+              "pr_is_draft",
+              "pr_merge_state_not_clean",
+              "pr_not_open",
+              "readiness_snapshot_not_ready",
+              "readiness_snapshot_stale",
+              "release_authority_mismatch",
+              "required_checks_not_passed",
+              "snapshot_branch_mismatch",
+              "snapshot_repository_mismatch",
+              "unexpected_merge_actor"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "next_required_slice": { "type": "string" }
+      }
+    }
+  }
+}
