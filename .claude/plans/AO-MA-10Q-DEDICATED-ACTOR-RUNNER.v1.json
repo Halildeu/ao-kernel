@@ -1,0 +1,29 @@
+{
+  "schema_version": "ao-ma-10q-dedicated-actor-runner-receipt.v1",
+  "artifact_kind": "ao_ma_10q_dedicated_actor_runner_receipt",
+  "status": "implemented_fail_closed",
+  "script": "scripts/ao_ma10q_dedicated_actor_runner.py",
+  "result_schema": "ao_kernel/defaults/schemas/ao-ma-10q-dedicated-actor-runner-result.schema.v1.json",
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "default_token_env": "GLADYATORE_LAB_GH_TOKEN",
+  "token_value_recorded": false,
+  "wrapper_path_recorded": false,
+  "wrapper_mode": "0700",
+  "execute_confirmation": "AO-MA-10L-EXECUTE",
+  "delegates_to": "scripts/ao_ma10l_autonomous_smoke.py",
+  "expected_actor": "gladyatore-lab",
+  "forbidden_mutations": [
+    "admin_merge",
+    "ruleset_mutation",
+    "branch_protection_mutation",
+    "codeowners_mutation",
+    "gpp_status_mutation",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ]
+}

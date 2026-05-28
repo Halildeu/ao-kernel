@@ -1,0 +1,163 @@
+{
+  "$id": "urn:ao:ao-ma-10q-dedicated-actor-runner-result:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "ai_output_release_authority": {
+      "const": false
+    },
+    "artifact_kind": {
+      "const": "ao_ma_10q_dedicated_actor_runner_result"
+    },
+    "base_ref": {
+      "type": "string"
+    },
+    "decision": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "next_required_slice": {
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "blocked",
+            "ready_for_smoke_dry_run",
+            "merged"
+          ]
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "result",
+        "blockers",
+        "warnings",
+        "next_required_slice"
+      ],
+      "type": "object"
+    },
+    "execute_requested": {
+      "type": "boolean"
+    },
+    "expected_actor": {
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "guard_flags": {
+      "additionalProperties": false,
+      "properties": {
+        "live_adapter_execution": {
+          "const": false
+        },
+        "production_platform_claim": {
+          "const": false
+        },
+        "support_widening": {
+          "const": false
+        }
+      },
+      "required": [
+        "support_widening",
+        "production_platform_claim",
+        "live_adapter_execution"
+      ],
+      "type": "object"
+    },
+    "mutations_performed": {
+      "type": "boolean"
+    },
+    "release_authority": {
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "ao-ma-10q-dedicated-actor-runner-result.v1"
+    },
+    "smoke_command": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "smoke_result": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "token_env": {
+      "pattern": "^[A-Z_][A-Z0-9_]*$",
+      "type": "string"
+    },
+    "token_value_recorded": {
+      "const": false
+    },
+    "wrapper": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "type": "boolean"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "const": "0700"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path_recorded": {
+          "const": false
+        }
+      },
+      "required": [
+        "created",
+        "mode",
+        "path_recorded"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "generated_at",
+    "repository",
+    "base_ref",
+    "expected_actor",
+    "token_env",
+    "token_value_recorded",
+    "execute_requested",
+    "mutations_performed",
+    "release_authority",
+    "ai_output_release_authority",
+    "guard_flags",
+    "wrapper",
+    "smoke_result",
+    "smoke_command",
+    "decision"
+  ],
+  "title": "AO-MA-10q dedicated actor runner result",
+  "type": "object"
+}
