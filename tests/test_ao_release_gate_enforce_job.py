@@ -206,16 +206,18 @@ def test_enforce_job_augments_payload_with_review_metadata_after_base_builder() 
     assert 'payload["path_sensitive_human_review_enabled"] = True' in block
 
 
-def test_enforce_job_reads_only_raw_reviewer_evidence_from_pr_head() -> None:
-    """C-prime contract: the only PR-head input is the raw reviewer
-    evidence file `local-ai-review-evidence.v1.json`. The
-    head-bound gate evidence file (`local-gpp-gate-evidence.v1.json`)
-    is NEVER read from the PR head — it would create the head_sha
-    self-reference problem."""
+def test_enforce_job_reads_only_head_sha_free_raw_reviewer_evidence_from_pr_head() -> None:
+    """C-prime/AO-MA-10j contract: PR-head inputs are only raw reviewer
+    evidence files that carry no head_sha. Head-bound gate evidence and
+    high-risk supersession evidence are generated at runtime from trusted
+    base code, never read directly from PR head."""
     block = _gate_job_block()
     assert "head/local-ai-review-evidence.v1.json" in block
-    # The head-bound gate evidence file must NOT be read from PR head.
+    assert "head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
+    assert "head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
+    # Head-bound evidence files must NOT be read from PR head.
     assert "head/local-gpp-gate-evidence.v1.json" not in block
+    assert "head/ao-ma-10-high-risk-supersession-evidence.v1.json" not in block
 
 
 def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence() -> None:
@@ -242,6 +244,27 @@ def test_enforce_job_generates_gate_evidence_at_runtime_from_reviewer_evidence()
     assert 'payload["reviewed_slice"] = os.environ["REVIEW_WORK_PACKAGE"]' in block
     # The step uses `if:` to skip when no reviewer evidence is committed.
     assert "if: ${{ steps.reviewer.outputs.path != '' }}" in block
+
+
+def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> None:
+    """AO-MA-10j: high-risk autonomous supersession evidence is not a
+    committed head-bound artifact. The workflow locates two raw,
+    head_sha-free reviewer evidence files and lets trusted base code bind
+    them to the live PR SHA/diff before decision evaluation."""
+
+    block = _gate_job_block()
+    assert "Locate optional high-risk raw reviewer evidence on PR head" in block
+    assert "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
+    assert "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
+    assert "high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files" in block
+    assert "high-risk supersession raw reviews require root local-ai-review-evidence.v1.json" in block
+    assert "Generate high-risk supersession evidence at runtime from raw reviewer evidence" in block
+    assert "scripts/ao_ma10_high_risk_supersession_evidence.py" in block
+    assert '--review-base-ref "refs/heads/$BASE_REF"' in block
+    assert '--review-head-ref "refs/heads/$HEAD_REF"' in block
+    assert '--diff-base-ref "$BASE_SHA"' in block
+    assert '--diff-head-ref "$HEAD_SHA"' in block
+    assert '--output high-risk-supersession-evidence.v1.json' in block
 
 
 def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:
@@ -452,6 +475,8 @@ def test_enforce_job_passes_runtime_generated_evidence_to_decision_script() -> N
         "decision script must consume the runtime-generated gate evidence "
         "(--review-evidence local-gpp-gate-evidence.v1.json), not a head-committed file"
     )
+    assert "HIGH_RISK_FLAGS=(--high-risk-supersession-evidence high-risk-supersession-evidence.v1.json)" in block
+    assert '"${HIGH_RISK_FLAGS[@]}"' in block
     # The dual check-run publisher runs after the decision step,
     # guarded by a missing-script tolerance for the RG-1 bootstrap path.
     assert "scripts/ao_release_gate_publish_check_runs.py" in block, (
@@ -487,3 +512,4 @@ def test_enforce_job_uploads_decision_audit_artifact() -> None:
     assert "base/decision.json" in block
     assert "base/local-gpp-gate-evidence.v1.json" in block
     assert "base/local-gpp-gate.stdout.log" in block
+    assert "base/high-risk-supersession-evidence.v1.json" in block

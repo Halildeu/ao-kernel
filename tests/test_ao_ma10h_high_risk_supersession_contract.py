@@ -188,6 +188,8 @@ def test_ao_ma10h_current_slice_diff_excludes_runtime_and_github_mutation() -> N
 
     if "AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md" not in "\n".join(changed):
         pytest.skip("AO-MA-10h introducer files not present in this diff")
+    if ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md" in changed:
+        pytest.skip("AO-MA-10j wiring slice supersedes the AO-MA-10h no-workflow-mutation introducer invariant")
 
     forbidden_prefixes = (
         ".github/",
