@@ -1,0 +1,23 @@
+{
+  "schema_version": "ao-kernel-provider-pricing-source.v1",
+  "artifact_kind": "ao_kernel_provider_pricing_source",
+  "provider_id": "openai",
+  "model_id": "gpt-4o-mini",
+  "canonical_model_id": "openai/gpt-4o-mini",
+  "currency": "USD",
+  "precision_decimal_places": 8,
+  "rounding_mode": "ROUND_HALF_UP",
+  "input_cost_per_1k_tokens_usd": "0.00015000",
+  "output_cost_per_1k_tokens_usd": "0.00060000",
+  "effective_from": "2026-05-28T00:00:00Z",
+  "source_authority": "operator_pinned",
+  "source_reference": "https://openai.com/api/pricing/ (as observed by operator 2026-05-28)",
+  "notes": [
+    "Operator-pinned pricing source for RI-7.8b-bc10 real-adapter usage/cost aggregate evidence.",
+    "This file is bound by SHA-256 digest into RI-7.8b-bc10-6b supersession entry and 6b evidence.",
+    "Runtime activation guard (scripts/ri78b_bc10_activation_window.py) re-computes SHA-256 of this file and fail-closes on mismatch.",
+    "Per-call markers + 6c aggregate compute actual_cost_usd using input_tokens * input_cost_per_1k_tokens_usd / 1000 + output_tokens * output_cost_per_1k_tokens_usd / 1000.",
+    "currency=USD; cost values are decimal strings to preserve precision; precision_decimal_places=8 supports gpt-4o-mini's $0.00015/1k granular pricing without float rounding errors.",
+    "Provider-side pricing may change; this is a frozen operator-pinned snapshot for the bounded bc10 window."
+  ]
+}

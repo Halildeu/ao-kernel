@@ -1,0 +1,527 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6b-protected-execution-window-evidence:v1",
+  "title": "RI-7.8b-bc10-6b Protected Execution Window Infrastructure Evidence",
+  "description": "Evidence artifact recording the RI-7.8b-bc10 protected execution window INFRASTRUCTURE landing: workflow file + activation guard script + runner script + scoped supersession entry + pricing source pinning. This PR does NOT execute the workflow, does NOT make any billable provider call, does NOT flip the BC-10 submanifest. Workflow execution belongs to RI-7.8b-bc10-6c via operator manual_protected_environment workflow_dispatch + protected environment observation + per-call markers + aggregate + closure + flip. Authority mode is manual_protected_environment (NOT autonomous like BC-1 6c-fast-follow) because bc10 involves REAL billable provider calls under live cost; manual operator confirmation via GitHub Environment required reviewers is mandatory at activation time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "authorization_effect",
+    "does_not_authorize",
+    "ri78a_predecessor_ref",
+    "ri78b_bc1_6c_predecessor_ref",
+    "ri78b_bc10_6a_predecessor_ref",
+    "operator_activation_confirmation",
+    "authority_mode",
+    "autonomous_trigger_allowed",
+    "workflow_binding",
+    "protected_environment_observation",
+    "run_budget",
+    "pricing_source",
+    "guard_flag_policy_resolution_evidence",
+    "runtime_fail_closed_controls",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "ri78_submanifest_snapshot",
+    "secret_boundary",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "submanifest_transition",
+    "mutations_performed",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6b-protected-execution-window-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6b_protected_execution_window_evidence"},
+    "decision": {"type": "string", "const": "ri78b_bc10_6b_protected_execution_window_infrastructure_recorded_dispatch_pending_no_run_evidence_no_submanifest_flip"},
+    "authorization_effect": {"type": "string", "const": "protected_execution_window_infrastructure_recorded_pending_operator_dispatch_no_billable_call_no_submanifest_flip"},
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "credential_material_in_repo",
+          "credential_input_parameter",
+          "credential_material_in_artifact_or_log",
+          "credential_reference_outside_protected_environment",
+          "bc10_submanifest_flip_now",
+          "automatic_workflow_dispatch_without_operator_action",
+          "cost_overflow_outside_max_usd",
+          "support_widening_or_production_platform_claim"
+        ]
+      }
+    },
+    "ri78a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256", "readiness_manifest_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 673},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "readiness_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc1_6c_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "closure_evidence_sha256", "ri78_submanifest_sha256_after_bc1_flip"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 691},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256_after_bc1_flip": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc10_6a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 695},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "operator_activation_confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_login",
+        "activation_confirmed_at",
+        "activation_source",
+        "no_secret_assertion",
+        "activation_scope",
+        "observation_notes"
+      ],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "activation_confirmed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "activation_source": {"type": "string", "minLength": 1},
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "activation_scope": {"type": "string", "const": "bc10_real_adapter_usage_cost_only"},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "authority_mode": {
+      "type": "string",
+      "const": "manual_protected_environment",
+      "description": "bc10 6b MUST use manual_protected_environment. Autonomous pre-prod (BC-1 6c-fast-follow) is forbidden."
+    },
+    "autonomous_trigger_allowed": {"type": "boolean", "const": false},
+    "workflow_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_path",
+        "workflow_content_sha256",
+        "allowed_ref",
+        "dispatch_inputs_allowlist",
+        "forbidden_inputs",
+        "model_allowlist",
+        "max_output_tokens_cap",
+        "retries_disabled",
+        "retry_behavior",
+        "pre_call_cost_check",
+        "post_call_cost_check",
+        "permissions_minimal",
+        "concurrency_group",
+        "run_attempt_one_only",
+        "trigger_events_allowlist"
+      ],
+      "properties": {
+        "workflow_path": {"type": "string", "const": ".github/workflows/bc10-real-adapter-usage-cost.yml"},
+        "workflow_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "allowed_ref": {"type": "string", "const": "refs/heads/main"},
+        "dispatch_inputs_allowlist": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["scenario", "model"]}
+        },
+        "forbidden_inputs": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"type": "string"},
+          "allOf": [
+            {"contains": {"const": "api_key"}},
+            {"contains": {"const": "token"}},
+            {"contains": {"const": "secret"}},
+            {"contains": {"const": "credential"}},
+            {"contains": {"const": "password"}},
+            {"contains": {"const": "auth_header"}}
+          ]
+        },
+        "model_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["openai/gpt-4o-mini"]}
+        },
+        "max_output_tokens_cap": {"type": "integer", "minimum": 1, "maximum": 256},
+        "retries_disabled": {"type": "boolean", "const": true},
+        "retry_behavior": {"type": "string", "const": "wrapper_no_retry_loop_transport_default_skipped"},
+        "pre_call_cost_check": {"type": "boolean", "const": true},
+        "post_call_cost_check": {"type": "boolean", "const": true},
+        "permissions_minimal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contents", "actions", "deployments"],
+          "properties": {
+            "contents": {"type": "string", "const": "read"},
+            "actions": {"type": "string", "const": "read"},
+            "deployments": {"type": "string", "const": "read"}
+          }
+        },
+        "concurrency_group": {"type": "string", "const": "ri78b-bc10-real-adapter-usage-cost"},
+        "run_attempt_one_only": {"type": "boolean", "const": true},
+        "trigger_events_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["workflow_dispatch"]}
+        }
+      }
+    },
+    "protected_environment_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env_name",
+        "required_reviewers_required",
+        "prevent_self_review_required",
+        "admin_bypass_allowed_required",
+        "allowed_refs_required",
+        "environment_setup_status",
+        "dispatch_actor_may_approve_environment",
+        "provider_call_requires_environment_observation_pass",
+        "distinct_reviewer_required",
+        "observation_source",
+        "observation_owner_slice",
+        "fail_closed_paths_if_observation_fails"
+      ],
+      "properties": {
+        "env_name": {"type": "string", "const": "ao-kernel-bc10-real-adapter-usage-cost"},
+        "required_reviewers_required": {"type": "boolean", "const": true},
+        "prevent_self_review_required": {"type": "boolean", "const": true},
+        "admin_bypass_allowed_required": {"type": "boolean", "const": false},
+        "allowed_refs_required": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["refs/heads/main"]}
+        },
+        "environment_setup_status": {
+          "type": "string",
+          "const": "operator_pre_6c_manual_step_required"
+        },
+        "dispatch_actor_may_approve_environment": {"type": "boolean", "const": false},
+        "provider_call_requires_environment_observation_pass": {"type": "boolean", "const": true},
+        "distinct_reviewer_required": {"type": "boolean", "const": true},
+        "observation_source": {"type": "string", "const": "github_environment_api"},
+        "observation_owner_slice": {"type": "string", "const": "RI-7.8b-bc10-6c"},
+        "fail_closed_paths_if_observation_fails": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["small_completion_a", "small_completion_b", "small_completion_c", "budget_cap_precheck_denied"]
+          }
+        }
+      }
+    },
+    "run_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_distinct_runs",
+        "max_billable_calls_count",
+        "max_run_attempt",
+        "max_usd",
+        "max_projected_call_cost_usd",
+        "worst_case_invariant",
+        "validity_window_until"
+      ],
+      "properties": {
+        "max_distinct_runs": {"type": "integer", "const": 5},
+        "max_billable_calls_count": {"type": "integer", "const": 4},
+        "max_run_attempt": {"type": "integer", "const": 1},
+        "max_usd": {"type": "number", "const": 5.00},
+        "max_projected_call_cost_usd": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]{8}$",
+          "description": "Per-call worst-case projected cost ceiling. max_billable_calls_count * max_projected_call_cost_usd <= max_usd."
+        },
+        "worst_case_invariant": {
+          "type": "string",
+          "const": "max_billable_calls_count_times_max_projected_call_cost_le_max_usd"
+        },
+        "validity_window_until": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "pricing_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "source_ref",
+        "source_digest",
+        "cost_source",
+        "pricing_model"
+      ],
+      "properties": {
+        "source_type": {"type": "string", "const": "operator_pinned"},
+        "source_ref": {"type": "string", "const": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json"},
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "cost_source": {"type": "string", "const": "provider_usage_plus_pinned_pricing_source"},
+        "pricing_model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_cost_per_1k_tokens_usd", "output_cost_per_1k_tokens_usd", "currency", "precision_decimal_places"],
+          "properties": {
+            "input_cost_per_1k_tokens_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{6,12}$"},
+            "output_cost_per_1k_tokens_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{6,12}$"},
+            "currency": {"type": "string", "const": "USD"},
+            "precision_decimal_places": {"type": "integer", "minimum": 6, "maximum": 12}
+          }
+        }
+      }
+    },
+    "guard_flag_policy_resolution_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "top_level_baseline_preserved",
+        "scoped_supersession_entry_id",
+        "scoped_supersession_entry_scope",
+        "scoped_live_adapter_execution_allowed",
+        "scoped_support_widening_allowed",
+        "scoped_production_platform_claim_allowed",
+        "effective_permission_evaluator"
+      ],
+      "properties": {
+        "top_level_baseline_preserved": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+          "properties": {
+            "support_widening_allowed": {"type": "boolean", "const": false},
+            "production_platform_claim_allowed": {"type": "boolean", "const": false},
+            "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+          }
+        },
+        "scoped_supersession_entry_id": {"type": "string", "const": "RI-7.8b-bc10-6b"},
+        "scoped_supersession_entry_scope": {"type": "string", "const": "bc10_real_adapter_usage_cost_only"},
+        "scoped_live_adapter_execution_allowed": {"type": "boolean", "const": true},
+        "scoped_support_widening_allowed": {"type": "boolean", "const": false},
+        "scoped_production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "effective_permission_evaluator": {"type": "string", "const": "scripts/ri78b_bc10_activation_window.py"}
+      }
+    },
+    "runtime_fail_closed_controls": {
+      "type": "array",
+      "minItems": 12,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nine_key_manifest_all_true", "readiness_gate_decision"],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "ri78_submanifest_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_evidence_pre_authorization_recorded",
+        "bc1_protected_live_adapter_attestation_recorded",
+        "bc10_real_adapter_usage_cost_aggregate_recorded",
+        "final_operator_promotion_decision_recorded"
+      ],
+      "properties": {
+        "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true},
+        "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+        "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+        "final_operator_promotion_decision_recorded": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_repo"},
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number_hint",
+        "base_sha",
+        "ri78a_evidence_sha256",
+        "ri78b_bc1_6c_closure_evidence_sha256",
+        "ri78b_bc10_6a_evidence_sha256",
+        "ri78_submanifest_sha256",
+        "pricing_source_sha256",
+        "timestamp"
+      ],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6b-protected-execution-window"},
+        "pr_number_hint": {"type": "string"},
+        "base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ri78a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc1_6c_closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc10_6a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "pricing_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "timestamp": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"}
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6b-protected-execution-window"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bc1_protected_live_adapter_attestation_recorded", "bc10_real_adapter_usage_cost_aggregate_recorded"],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bc1_protected_live_adapter_attestation_recorded", "bc10_real_adapter_usage_cost_aggregate_recorded"],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false}
+          }
+        }
+      }
+    },
+    "mutations_performed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_created",
+        "activation_script_created",
+        "runner_script_created",
+        "pricing_source_created",
+        "supersession_entry_appended",
+        "submanifest_mutated",
+        "provider_call_performed",
+        "secret_referenced_in_repo",
+        "guard_flag_flipped"
+      ],
+      "properties": {
+        "workflow_created": {"type": "boolean", "const": true},
+        "activation_script_created": {"type": "boolean", "const": true},
+        "runner_script_created": {"type": "boolean", "const": true},
+        "pricing_source_created": {"type": "boolean", "const": true},
+        "supersession_entry_appended": {"type": "boolean", "const": true},
+        "submanifest_mutated": {"type": "boolean", "const": false},
+        "provider_call_performed": {"type": "boolean", "const": false},
+        "secret_referenced_in_repo": {"type": "boolean", "const": false},
+        "guard_flag_flipped": {"type": "boolean", "const": false}
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/__init__.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/policies/"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/ao_release_gate.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/PUBLIC-BETA.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/repo_intelligence_tier_promotion_readiness.py"}, "minContains": 1, "maxContains": 1}
+          ]
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

@@ -1,0 +1,167 @@
+# RI-7.8b-bc10 Real-Adapter Usage/Cost Aggregate
+#
+# Operator-bound execution window for the BC-10 real billable provider call
+# aggregate. Runs ONLY via `workflow_dispatch` on `refs/heads/main`, gated by
+# the `ao-kernel-bc10-real-adapter-usage-cost` GitHub protected environment
+# with required reviewer + admin-bypass disabled + distinct reviewer required.
+#
+# Authority chain:
+# - RI-7.8a operator pre-authorization (PR #673 merged)
+# - RI-7.8b-bc1-6c-closure BC-1 attestation landed (PR #691 merged)
+# - RI-7.8b-bc10-6a execution-window authorization contract (PR #695 merged)
+# - This file (RI-7.8b-bc10-6b protected execution window infrastructure)
+# - RI-7.8b-bc10-6c per-call evidence + aggregate + closure + BC-10 flip
+#
+# Authority mode: manual_protected_environment. Autonomous trigger pattern
+# (BC-1 6c-fast-follow push trigger) is FORBIDDEN for bc10 because bc10
+# involves REAL billable provider calls under live cost.
+#
+# Pre-step guards (fail-closed). Provider-call runner step does NOT run unless
+# ALL pre-secret guards pass FIRST:
+# 1. github.ref == refs/heads/main
+# 2. github.run_attempt == 1 (no reruns)
+# 3. github.event_name == workflow_dispatch
+# 4. scenario input == "all_bc10_usage_cost"
+# 5. model input == "openai/gpt-4o-mini"
+# 6. workflow_content_sha256 matches gpp_status supersession entry binding
+# 7. Active supersession entry id=RI-7.8b-bc10-6b, status in
+#    {awaiting_operator_dispatch, active}
+# 8. Distinct workflow_dispatch run count within window <= 5
+# 9. Window not expired (now < entry.valid_until)
+# 10. Pricing source SHA-256 matches gpp_status pricing_source.source_digest
+# 11. Environment observation via GitHub Environment API:
+#     required_reviewers present, admin_bypass=false, allowed_refs includes main
+# 12. Worst-case cost ceiling: max_billable_calls_count * max_projected_call_cost <= max_usd
+#
+# Secret boundary: OPENAI_API_KEY is injected only at the runner step level
+# AFTER all pre-secret guards pass. Wrapper script's budget_cap_precheck_denied
+# branch fail-closes BEFORE instantiating any provider client and BEFORE reading
+# OPENAI_API_KEY from environment. No API key, token, secret, credential,
+# password, or auth_header inputs. Emitted artifacts are redacted JSON markers
+# only (no provider response bodies, no token material).
+
+name: RI-7.8b-bc10 Real-Adapter Usage/Cost Aggregate
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "BC-10 usage/cost run scope (only 'all_bc10_usage_cost' permitted)"
+        required: true
+        type: choice
+        options:
+          - all_bc10_usage_cost
+        default: all_bc10_usage_cost
+      model:
+        description: "Model allowlist enforcement (only 'openai/gpt-4o-mini' permitted)"
+        required: true
+        type: choice
+        options:
+          - openai/gpt-4o-mini
+        default: openai/gpt-4o-mini
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+concurrency:
+  group: ri78b-bc10-real-adapter-usage-cost
+  cancel-in-progress: false
+
+jobs:
+  bc10-real-adapter-usage-cost:
+    runs-on: ubuntu-latest
+    environment: ao-kernel-bc10-real-adapter-usage-cost
+    timeout-minutes: 15
+    env:
+      RI78B_BC10_SCENARIO: ${{ inputs.scenario }}
+      RI78B_BC10_MODEL: ${{ inputs.model }}
+    steps:
+      - name: Validate dispatch context (pre-secret, no API key in scope)
+        run: |
+          set -eo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "fail-closed: ref ${GITHUB_REF} != refs/heads/main" >&2
+            exit 1
+          fi
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
+            echo "fail-closed: event_name ${GITHUB_EVENT_NAME} != workflow_dispatch" >&2
+            exit 1
+          fi
+          if [ "${GITHUB_RUN_ATTEMPT}" != "1" ]; then
+            echo "fail-closed: rerun attempts are forbidden (run_attempt=${GITHUB_RUN_ATTEMPT})" >&2
+            exit 1
+          fi
+          if [ "${RI78B_BC10_SCENARIO}" != "all_bc10_usage_cost" ]; then
+            echo "fail-closed: scenario ${RI78B_BC10_SCENARIO} != all_bc10_usage_cost" >&2
+            exit 1
+          fi
+          if [ "${RI78B_BC10_MODEL}" != "openai/gpt-4o-mini" ]; then
+            echo "fail-closed: model ${RI78B_BC10_MODEL} != openai/gpt-4o-mini" >&2
+            exit 1
+          fi
+
+      - name: Checkout (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ao-kernel package (read-only checkout install)
+        run: |
+          set -eo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -e ".[llm]"
+
+      - name: Validate activation window (pre-secret, no API key)
+        # Runs scripts/ri78b_bc10_activation_window.py to enforce:
+        # workflow_content_sha256 + supersession entry + window + run cap +
+        # pricing digest + GitHub Environment API observation.
+        # Fail-closes BEFORE OPENAI_API_KEY enters env scope.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eo pipefail
+          python3 scripts/ri78b_bc10_activation_window.py \
+            --workflow-path .github/workflows/bc10-real-adapter-usage-cost.yml \
+            --gpp-status .claude/plans/gpp_status.v1.json \
+            --pricing-source ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json \
+            --scenario "${RI78B_BC10_SCENARIO}" \
+            --model "${RI78B_BC10_MODEL}" \
+            --env-name "ao-kernel-bc10-real-adapter-usage-cost" \
+            --repo "${GITHUB_REPOSITORY}"
+
+      - name: Run BC-10 scenarios (sequential, secret-bearing runner)
+        # OPENAI_API_KEY is scoped ONLY to this step, AFTER all pre-secret
+        # guards have passed. Wrapper script's budget_cap_precheck_denied
+        # branch fail-closes BEFORE reading this env var or instantiating
+        # any AoKernelClient.
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -eo pipefail
+          mkdir -p "${RUNNER_TEMP}/ri78b-bc10-markers"
+          umask 077
+          python3 scripts/bc10_run_scenarios.py \
+            --output-dir "${RUNNER_TEMP}/ri78b-bc10-markers" \
+            --pricing-source ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json \
+            --marker-schema ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json \
+            --workflow-path .github/workflows/bc10-real-adapter-usage-cost.yml \
+            --run-id "${GITHUB_RUN_ID}" \
+            --run-attempt "${GITHUB_RUN_ATTEMPT}" \
+            --head-sha "${GITHUB_SHA}" \
+            --workflow-ref "${GITHUB_WORKFLOW_REF}"
+
+      - name: Upload redacted per-call markers artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ri78b-bc10-markers-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ri78b-bc10-markers/
+          retention-days: 30
+          if-no-files-found: warn

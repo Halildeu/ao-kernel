@@ -1,0 +1,232 @@
+{
+  "schema_version": "ri7-8b-bc10-6b-protected-execution-window-evidence.v1",
+  "artifact_kind": "ri7_8b_bc10_6b_protected_execution_window_evidence",
+  "decision": "ri78b_bc10_6b_protected_execution_window_infrastructure_recorded_dispatch_pending_no_run_evidence_no_submanifest_flip",
+  "authorization_effect": "protected_execution_window_infrastructure_recorded_pending_operator_dispatch_no_billable_call_no_submanifest_flip",
+  "does_not_authorize": [
+    "credential_material_in_repo",
+    "credential_input_parameter",
+    "credential_material_in_artifact_or_log",
+    "credential_reference_outside_protected_environment",
+    "bc10_submanifest_flip_now",
+    "automatic_workflow_dispatch_without_operator_action",
+    "cost_overflow_outside_max_usd",
+    "support_widening_or_production_platform_claim"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84"
+  },
+  "ri78b_bc1_6c_predecessor_ref": {
+    "pr_number": 691,
+    "commit_sha": "7cca702592e4b9c288ed5b64440deadf786b65ee",
+    "closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78_submanifest_sha256_after_bc1_flip": "665dfd8db86f46f3529489f7e94894ff8bd8eef7e79dc8b09bcaf1eb874d1b2a"
+  },
+  "ri78b_bc10_6a_predecessor_ref": {
+    "pr_number": 695,
+    "commit_sha": "1fc8c7d0f01e3b0e7d1459e63aef0664eb6932ab",
+    "evidence_sha256": "80e0a47b6dcaeee0deb6522fd9bf208fffcf835332447f2aa8ec88fba34ecbc4"
+  },
+  "operator_activation_confirmation": {
+    "github_login": "Halildeu",
+    "activation_confirmed_at": "2026-05-28T23:38:35Z",
+    "activation_source": "github.com/Halildeu/ao-kernel/pull/695 (bc10-6a authorization contract merged) + this 6b PR (infrastructure)",
+    "no_secret_assertion": true,
+    "activation_scope": "bc10_real_adapter_usage_cost_only",
+    "observation_notes": "RI-7.8b-bc10-6b records the protected execution window INFRASTRUCTURE (workflow + activation guard script + sequential scenario runner + scoped supersession entry + pricing source pinning) for the upcoming BC-10 real-adapter usage/cost aggregate execution. This PR does NOT execute the workflow, does NOT make any billable provider call, does NOT flip the BC-10 submanifest. Authority mode is manual_protected_environment (NOT autonomous like BC-1 6c-fast-follow) because bc10 involves REAL billable provider calls under live cost. Workflow execution requires: (a) operator workflow_dispatch on refs/heads/main with scenario='all_bc10_usage_cost' and model='openai/gpt-4o-mini', (b) GitHub Environment 'ao-kernel-bc10-real-adapter-usage-cost' setup with at least 1 distinct required reviewer (operator pre-6c manual step), (c) all pre-secret guards in scripts/ri78b_bc10_activation_window.py pass BEFORE OPENAI_API_KEY enters env scope. Per-call evidence + aggregate + closure + BC-10 submanifest flip belong to RI-7.8b-bc10-6c."
+  },
+  "authority_mode": "manual_protected_environment",
+  "autonomous_trigger_allowed": false,
+  "workflow_binding": {
+    "workflow_path": ".github/workflows/bc10-real-adapter-usage-cost.yml",
+    "workflow_content_sha256": "e000c4f9e62d0215b1b28dd624926129c5a98d6b1567d85821491986655ff43c",
+    "allowed_ref": "refs/heads/main",
+    "dispatch_inputs_allowlist": ["scenario", "model"],
+    "forbidden_inputs": [
+      "api_key",
+      "token",
+      "secret",
+      "credential",
+      "password",
+      "auth_header"
+    ],
+    "model_allowlist": ["openai/gpt-4o-mini"],
+    "max_output_tokens_cap": 64,
+    "retries_disabled": true,
+    "retry_behavior": "wrapper_no_retry_loop_transport_default_skipped",
+    "pre_call_cost_check": true,
+    "post_call_cost_check": true,
+    "permissions_minimal": {
+      "contents": "read",
+      "actions": "read",
+      "deployments": "read"
+    },
+    "concurrency_group": "ri78b-bc10-real-adapter-usage-cost",
+    "run_attempt_one_only": true,
+    "trigger_events_allowlist": ["workflow_dispatch"]
+  },
+  "protected_environment_observation": {
+    "env_name": "ao-kernel-bc10-real-adapter-usage-cost",
+    "required_reviewers_required": true,
+    "prevent_self_review_required": true,
+    "admin_bypass_allowed_required": false,
+    "allowed_refs_required": ["refs/heads/main"],
+    "environment_setup_status": "operator_pre_6c_manual_step_required",
+    "dispatch_actor_may_approve_environment": false,
+    "provider_call_requires_environment_observation_pass": true,
+    "distinct_reviewer_required": true,
+    "observation_source": "github_environment_api",
+    "observation_owner_slice": "RI-7.8b-bc10-6c",
+    "fail_closed_paths_if_observation_fails": [
+      "small_completion_a",
+      "small_completion_b",
+      "small_completion_c",
+      "budget_cap_precheck_denied"
+    ]
+  },
+  "run_budget": {
+    "max_distinct_runs": 5,
+    "max_billable_calls_count": 4,
+    "max_run_attempt": 1,
+    "max_usd": 5.00,
+    "max_projected_call_cost_usd": "0.10000000",
+    "worst_case_invariant": "max_billable_calls_count_times_max_projected_call_cost_le_max_usd",
+    "validity_window_until": "2026-06-04T23:38:35Z"
+  },
+  "pricing_source": {
+    "source_type": "operator_pinned",
+    "source_ref": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+    "source_digest": "sha256:b0c0baa62cf6f8c79b0ed2e4b751fcc00929eab1e128dbac4ab0d8705f4a4480",
+    "cost_source": "provider_usage_plus_pinned_pricing_source",
+    "pricing_model": {
+      "input_cost_per_1k_tokens_usd": "0.00015000",
+      "output_cost_per_1k_tokens_usd": "0.00060000",
+      "currency": "USD",
+      "precision_decimal_places": 8
+    }
+  },
+  "guard_flag_policy_resolution_evidence": {
+    "top_level_baseline_preserved": {
+      "support_widening_allowed": false,
+      "production_platform_claim_allowed": false,
+      "live_adapter_execution_allowed": false
+    },
+    "scoped_supersession_entry_id": "RI-7.8b-bc10-6b",
+    "scoped_supersession_entry_scope": "bc10_real_adapter_usage_cost_only",
+    "scoped_live_adapter_execution_allowed": true,
+    "scoped_support_widening_allowed": false,
+    "scoped_production_platform_claim_allowed": false,
+    "effective_permission_evaluator": "scripts/ri78b_bc10_activation_window.py"
+  },
+  "runtime_fail_closed_controls": [
+    "github.ref != refs/heads/main -> exit 1",
+    "github.event_name != workflow_dispatch -> exit 1",
+    "github.run_attempt != 1 -> exit 1 (rerun forbidden)",
+    "scenario input != all_bc10_usage_cost -> exit 1",
+    "model input != openai/gpt-4o-mini -> exit 1",
+    "workflow_content_sha256 mismatch with supersession entry binding -> exit 1",
+    "pricing source SHA-256 mismatch with supersession entry binding -> exit 1",
+    "no active supersession entry id=RI-7.8b-bc10-6b -> exit 1",
+    "supersession entry status not in {awaiting_operator_dispatch, active} -> exit 1",
+    "now_utc >= entry.valid_until (window expired) -> exit 1",
+    "distinct workflow_dispatch run count on main > max_distinct_runs -> exit 1",
+    "GitHub Environment observation: required_reviewers < 1 OR prevent_self_review=false OR admin_bypass=true -> exit 1",
+    "wrapper budget_cap_precheck_denied: cumulative+projected > max_usd -> emit zero-cost marker, no provider call, no API key read, no client instantiation",
+    "wrapper post-call: cumulative_after > max_usd -> exit 1 (overflow)",
+    "top-level guard flags drift from false (baseline closure violated) -> exit 1",
+    "scoped guard policy resolution drift (support_widening=true or production_platform_claim=true) -> exit 1"
+  ],
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision"
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": true,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo",
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6b-protected-execution-window",
+    "pr_number_hint": "TBD",
+    "base_sha": "9c8c914593d3d3f9dc40fc61d9b7c2f6cb2dbc5a",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_bc1_6c_closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78b_bc10_6a_evidence_sha256": "80e0a47b6dcaeee0deb6522fd9bf208fffcf835332447f2aa8ec88fba34ecbc4",
+    "ri78_submanifest_sha256": "665dfd8db86f46f3529489f7e94894ff8bd8eef7e79dc8b09bcaf1eb874d1b2a",
+    "pricing_source_sha256": "b0c0baa62cf6f8c79b0ed2e4b751fcc00929eab1e128dbac4ab0d8705f4a4480",
+    "timestamp": "2026-05-28T23:38:35Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6b-protected-execution-window",
+    "pr_number_hint": "TBD"
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc1_protected_live_adapter_attestation_recorded": true,
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false
+    },
+    "after": {
+      "bc1_protected_live_adapter_attestation_recorded": true,
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false
+    }
+  },
+  "mutations_performed": {
+    "workflow_created": true,
+    "activation_script_created": true,
+    "runner_script_created": true,
+    "pricing_source_created": true,
+    "supersession_entry_appended": true,
+    "submanifest_mutated": false,
+    "provider_call_performed": false,
+    "secret_referenced_in_repo": false,
+    "guard_flag_flipped": false
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "ao_kernel/ao_release_gate.py",
+      "docs/PUBLIC-BETA.md",
+      "scripts/repo_intelligence_tier_promotion_readiness.py"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e70be-f4e3-77c2-bd3e-27a2e55b6eb6",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8b-bc10-6b is the protected execution window INFRASTRUCTURE PR. Workflow file + activation guard script + sequential scenario runner + scoped supersession entry + pricing source pinning land here. Workflow execution + per-call evidence + aggregate + closure + BC-10 submanifest flip belong to RI-7.8b-bc10-6c.",
+    "Authority mode: manual_protected_environment. Autonomous trigger pattern (BC-1 6c-fast-follow push trigger) is FORBIDDEN for bc10 because bc10 involves REAL billable provider calls under live cost. workflow_dispatch only.",
+    "Workflow uses sequential single-job execution (NOT matrix). Wrapper script bc10_run_scenarios.py runs 4 scenarios in fixed order (small_completion_a, small_completion_b, small_completion_c, budget_cap_precheck_denied) with in-process Decimal ledger for cumulative cost. This eliminates inter-job race that matrix parallelism would introduce.",
+    "Secret boundary: OPENAI_API_KEY is scoped to the runner step ONLY (after all pre-secret guards in ri78b_bc10_activation_window.py pass). Wrapper's budget_cap_precheck_denied branch fail-closes BEFORE instantiating AoKernelClient and BEFORE reading OPENAI_API_KEY from env.",
+    "Pricing source: openai/gpt-4o-mini operator-pinned at SHA-256 b0c0baa6... Runtime activation guard re-computes SHA-256 of pricing file and fail-closes on mismatch. Per-call markers + 6c aggregate compute actual cost via input_tokens * input_cost_per_1k_tokens_usd / 1000 + output_tokens * output_cost_per_1k_tokens_usd / 1000.",
+    "Worst-case cost invariant: max_billable_calls_count(4) * max_projected_call_cost_usd(0.10) = 0.40 USD <= max_usd(5.00). Real call costs expected far lower (~$0.0001 each at max_output_tokens=64).",
+    "GitHub Environment ao-kernel-bc10-real-adapter-usage-cost setup is operator pre-6c manual step (CANNOT be done by this PR; requires GitHub UI). Environment MUST be configured with at least 1 distinct required reviewer (prevent_self_review=true), admin_bypass=false, allowed_refs=[refs/heads/main]. Runtime activation guard observes via GitHub Environment API and fail-closes ALL 4 scenario paths (including budget_cap_precheck_denied) on observation failure — no provider call attempted, no API key read.",
+    "Top-level guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain const FALSE PRESERVED. Scoped live_adapter_execution_allowed=true is ONLY effective within operator_bound_supersessions[RI-7.8b-bc10-6b].guard_flag_policy_resolution, evaluated at workflow runtime by ri78b_bc10_activation_window.py.",
+    "Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 plan-time iter chain: iter-1 REVISE (3-PR split needed) + iter-2 REVISE (6 detailed absorb items) + iter-3 REVISE (5 more items) + iter-4 AGREE (v3 plan absorbing all 14 items)."
+  ]
+}

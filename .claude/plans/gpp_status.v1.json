@@ -26,7 +26,7 @@
       "update progress_estimates.milestones: done_count 6 to 7, percent 86 to 100, next_milestone_id M6 to null (program closed)",
       "update progress_estimates.wp_weighted: completed_wps_count 47 to 48 (GPP-8 migrated to completed_wps), closed_current_wp_count stays 1 (GPP-9 current closed), completed_or_closed_count 48 to 49, percent 96 to 98",
       "extend _AGGREGATE_COMPLETION_SOURCES with GPP-9 entry: {\"current_wp\": \"closed\"} (per Codex iter-1 hybrid Option D: GPP-9 stays current_wp closed; aggregate map satisfies milestone consistency via current_wp lookup; GPP-7 + GPP-8 satisfied via completed_wps default fallback)",
-      "update STATUS.md §5 Work Package Board row for GPP-9 from 'Not started' to 'Closed / no support widening | Full production matrix + final claim decision | keep_narrow_stable_runtime authoritative; promote_general_purpose_production and promote_general_purpose_beta remain operator-bound supersession paths; defer rejected; program closed'",
+      "update STATUS.md \u00a75 Work Package Board row for GPP-9 from 'Not started' to 'Closed / no support widening | Full production matrix + final claim decision | keep_narrow_stable_runtime authoritative; promote_general_purpose_production and promote_general_purpose_beta remain operator-bound supersession paths; defer rejected; program closed'",
       "add program_closure top-level metadata to gpp_status.v1.json with status=closed, final_milestone_id=M6, closed_at timestamp, decision string, and GPP-9 record path reference",
       "treat the GPP-9 record as docs/SSOT/test closure under the keep_narrow_stable_runtime authority only; no scripts/ mutation, no schema change, no workflow change, no live adapter execution, no support widening, no production platform claim; the existing GP-5.9 BC-1..BC-10 baseline + promotion_blockers list are preserved without enum reclassification"
     ],
@@ -440,7 +440,7 @@
     "treat the GPP-6c docs sync as production platform claim or support widening",
     "treat the GPP-6c M5 milestone done as Option X (authorize_protected_live_e2e) authorization or as removing GP-5.9 BC-1 / protected_live_adapter_gate_unattested / claude_code_cli_auth_operator_managed blockers",
     "treat the GPP-6c _AGGREGATE_COMPLETION_SOURCES GPP-6 entry as live execution evidence; it is an aggregate satisfaction map for milestone consistency tests, not a closure or live evidence artifact",
-    "reclassify GPP-6a preflight execution_status under the GPP-6c keep_rehearsal_only infazı; GPP-6a preflight execution_status=blocked_by_upstream_gates is preserved across the GPP-6 closure path",
+    "reclassify GPP-6a preflight execution_status under the GPP-6c keep_rehearsal_only infaz\u0131; GPP-6a preflight execution_status=blocked_by_upstream_gates is preserved across the GPP-6 closure path",
     "treat the GPP-7 keep_rehearsal_only decision as a production write-side candidate claim or as Option X (write_candidate_ready) authorization",
     "treat the GP-5.5b controlled patch/test rehearsal report, GP-5.6a disposable PR write rehearsal report, or GP-5.7b full rehearsal aggregation as production write-side candidate evidence under the GPP-7 keep_rehearsal_only path",
     "treat the GPP-7 closure as M6 milestone closure; M6 closes only after GPP-9 executes with three evidence_refs (GPP-7 + GPP-8 + GPP-9)",
@@ -505,7 +505,7 @@
     "reserve promote_general_purpose_production and promote_general_purpose_beta options for a future operator-bound supersession slice; any tier promotion beyond the existing GP-5.9 boundary requires a separate operator-only PR with explicit production-platform-claim authorization, full production matrix evidence, and operator-verified semantics",
     "reserve Option X (write_candidate_ready) production-targeted controlled write evidence chain for a future operator-bound supersession slice",
     "reserve Option X (remote_pr_candidate_ready) production-targeted remote PR live-write evidence chain for a future operator-bound supersession slice",
-    "the autonomous GPP chain is closed; any future production or beta tier promotion, live adapter execution authorization, support widening, or production platform claim requires a separate operator-bound supersession PR — not a new autonomous GPP slice"
+    "the autonomous GPP chain is closed; any future production or beta tier promotion, live adapter execution authorization, support widening, or production platform claim requires a separate operator-bound supersession PR \u2014 not a new autonomous GPP slice"
   ],
   "milestones": [
     {
@@ -698,6 +698,92 @@
         "authority_source": "merge_commit_of_schema_pinned_trigger_file_authored_or_merged_by_operator",
         "operator_github_login": "Halildeu",
         "commit_verification_required": true,
+        "required_checks_must_pass": true
+      }
+    },
+    {
+      "id": "RI-7.8b-bc10-6b",
+      "status": "awaiting_operator_dispatch",
+      "scope": "bc10_real_adapter_usage_cost_only",
+      "supersedes_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+      "operator_authority": {
+        "operator_github_login": "Halildeu",
+        "activation_recorded_at": "2026-05-28T23:38:35Z",
+        "activation_source": "github.com/Halildeu/ao-kernel/pull/695 (bc10-6a authorization contract) + 6b infrastructure PR",
+        "predecessor_authorization_source": "github.com/Halildeu/ao-kernel/pull/695"
+      },
+      "authority_mode": "manual_protected_environment",
+      "manual_approval_required": true,
+      "autonomous_trigger_allowed": false,
+      "guard_flag_policy_resolution": {
+        "support_widening_allowed": false,
+        "production_platform_claim_allowed": false,
+        "live_adapter_execution_allowed": true,
+        "effective_only_for": "RI-7.8b-bc10",
+        "expires_at_iso": "2026-06-04T23:38:35Z"
+      },
+      "actual_start_at": null,
+      "actual_end_at": null,
+      "valid_until": "2026-06-04T23:38:35Z",
+      "closed_at": null,
+      "max_run_count": 5,
+      "max_billable_calls_count": 4,
+      "max_run_attempt": 1,
+      "max_usd": 5.0,
+      "max_projected_call_cost_usd": "0.10000000",
+      "max_execution_window_duration_hours": 24,
+      "protected_environment_binding": {
+        "required": true,
+        "mode": "manual_protected_environment",
+        "env_name": "ao-kernel-bc10-real-adapter-usage-cost",
+        "allowed_refs": [
+          "refs/heads/main"
+        ],
+        "admin_bypass_allowed": false,
+        "prevent_self_review_required": true,
+        "distinct_reviewer_required": true,
+        "setup_status": "operator_pre_6c_manual_step_required"
+      },
+      "future_workflow_contract": {
+        "workflow_path": ".github/workflows/bc10-real-adapter-usage-cost.yml",
+        "workflow_content_sha256": "e000c4f9e62d0215b1b28dd624926129c5a98d6b1567d85821491986655ff43c",
+        "allowed_ref": "refs/heads/main",
+        "expected_dispatch_inputs_allowlist": [
+          "scenario",
+          "model"
+        ],
+        "model_allowlist": [
+          "openai/gpt-4o-mini"
+        ],
+        "expected_forbidden_inputs": [
+          "api_key",
+          "token",
+          "secret",
+          "credential",
+          "password",
+          "auth_header"
+        ]
+      },
+      "pricing_source": {
+        "source_type": "operator_pinned",
+        "source_ref": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+        "source_digest": "sha256:b0c0baa62cf6f8c79b0ed2e4b751fcc00929eab1e128dbac4ab0d8705f4a4480",
+        "cost_source": "provider_usage_plus_pinned_pricing_source",
+        "pricing_model": {
+          "input_cost_per_1k_tokens_usd": "0.00015000",
+          "output_cost_per_1k_tokens_usd": "0.00060000",
+          "currency": "USD",
+          "precision_decimal_places": 8
+        }
+      },
+      "closure_owner_slice": "RI-7.8b-bc10-6c",
+      "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry",
+      "trigger_contract": {
+        "trigger_event": "workflow_dispatch",
+        "trigger_branch": "refs/heads/main",
+        "authority_source": "operator_workflow_dispatch_with_protected_environment_observation_pass",
+        "operator_github_login": "Halildeu",
+        "commit_verification_required": false,
         "required_checks_must_pass": true
       }
     }
