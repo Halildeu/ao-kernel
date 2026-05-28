@@ -1,0 +1,208 @@
+{
+  "schema_version": "ri7-8b-bc10-6a-execution-window-authorization-evidence.v1",
+  "artifact_kind": "ri7_8b_bc10_6a_execution_window_authorization_evidence",
+  "decision": "ri78b_bc10_6a_execution_window_authorization_contract_no_execution_no_flip",
+  "authorization_effect": "execution_window_authorization_recorded_no_execution_no_guard_flag_flip_no_billable_call_no_secret_reference",
+  "does_not_authorize": [
+    "workflow_dispatch_now",
+    "adapter_execution_now",
+    "credential_reference",
+    "billable_provider_call_now",
+    "cost_incurring_calls_now",
+    "support_widening",
+    "production_platform_claim",
+    "gpp_status_guard_flip",
+    "submanifest_bc10_flip"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84"
+  },
+  "ri78b_bc1_6c_predecessor_ref": {
+    "pr_number": 691,
+    "commit_sha": "7cca702592e4b9c288ed5b64440deadf786b65ee",
+    "closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78_submanifest_sha256_after_bc1_flip": "665dfd8db86f46f3529489f7e94894ff8bd8eef7e79dc8b09bcaf1eb874d1b2a"
+  },
+  "operator_authorization_record": {
+    "github_login": "Halildeu",
+    "authorization_recorded_at": "2026-05-28T23:03:06Z",
+    "authorization_source": "github.com/Halildeu/ao-kernel/pull/673 (operator pre-authorization envelope covering BC-1 + BC-10) augmented by github.com/Halildeu/ao-kernel/pull/691 (BC-1 closure landing)",
+    "no_secret_assertion": true,
+    "authorization_scope": "bc10_6a_execution_window_contract_only",
+    "does_not_authorize_immediate_execution": true,
+    "observation_notes": "Operator records the authorization contract for a future bounded BC-10 real-adapter usage/cost aggregate execution window. No execution permission is granted here. RI-7.8b-bc10-6b MUST use manual_protected_environment authority mode (GitHub Environment with required reviewers) — autonomous pre-prod activation pattern (BC-1 6c-fast-follow) is forbidden for bc10 because bc10 involves REAL billable provider calls under live cost. 6b must perform fresh operator confirmation, exact workflow content SHA-256 binding, protected environment observation, guard flag policy resolution, and model_allowlist enforcement before any billable call. RI-7.8b-bc10-6c records the per-call evidence, aggregate, and verifies post-window closure with live_adapter_execution=false plus operator-bound BC-10 submanifest flip."
+  },
+  "authorization_window_contract": {
+    "window_status": "authorized_pending_6b_activation",
+    "authorization_valid_until": "2026-06-04T23:03:06Z",
+    "max_activation_delay_hours": 168,
+    "max_execution_window_duration_hours": 24,
+    "max_run_count": 5,
+    "max_billable_calls_count": 4,
+    "max_usd": 5.00,
+    "actual_start_at": null,
+    "actual_end_at": null,
+    "activation_owner_slice": "RI-7.8b-bc10-6b",
+    "contract_status": "expected_unresolved_until_6b"
+  },
+  "planned_6b_authority_mode": {
+    "authority_mode": "manual_protected_environment",
+    "manual_approval_required": true,
+    "autonomous_trigger_allowed": false,
+    "rationale": "bc10 involves REAL billable provider calls under live cost (unlike BC-1 marker-only attestation). Manual operator confirmation via GitHub Environment required reviewers at activation time is required by ADR-style policy. Autonomous pre-prod trigger pattern (used in BC-1 6c-fast-follow) is forbidden for bc10. fail-closed: any 6b activation attempt without env-name binding + required reviewer event must be rejected."
+  },
+  "protected_environment_binding": {
+    "env_name": "ao-kernel-bc10-real-adapter-usage-cost",
+    "required_reviewers_expected": true,
+    "prevent_self_review_expected": true,
+    "allowed_refs_expected": ["refs/heads/main"],
+    "admin_bypass_allowed_expected": false,
+    "observed": false,
+    "observed_at": null,
+    "observation_source": null,
+    "observed_environment_sha256": null,
+    "observation_owner_slice": "RI-7.8b-bc10-6b"
+  },
+  "future_workflow_contract": {
+    "workflow_path": ".github/workflows/bc10-real-adapter-usage-cost.yml",
+    "expected_absent_or_not_touched_in_6a": true,
+    "creation_owner_slice": "RI-7.8b-bc10-6b",
+    "workflow_sha": null,
+    "workflow_content_sha256": null,
+    "allowed_ref": "refs/heads/main",
+    "expected_dispatch_inputs_allowlist": [
+      "scenario",
+      "model"
+    ],
+    "expected_forbidden_inputs": [
+      "api_key",
+      "token",
+      "secret",
+      "credential",
+      "password",
+      "auth_header"
+    ],
+    "model_allowlist": ["openai/gpt-4o-mini"],
+    "expected_max_output_tokens_cap": 64,
+    "expected_retries_disabled": true,
+    "expected_pre_call_cost_check": true,
+    "expected_post_call_cost_check": true,
+    "contract_status": "expected_unresolved_until_6b"
+  },
+  "closure_expiry_and_revocation_clause": {
+    "authorization_expiry_action": "authorization_auto_invalidates_if_not_activated_by_6b_within_validity_window",
+    "window_end_action": "live_adapter_execution_must_remain_false_outside_window_and_bc10_submanifest_must_remain_false_until_6c_flip",
+    "post_window_verifier_owner": "RI-7.8b-bc10-6c",
+    "revocation_action": "operator_may_revoke_before_6b_activation_via_new_pr_or_supersession_entry",
+    "rerun_policy": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry",
+    "cost_cap_breach_action": "fail_closed_window_terminates_no_silent_continuation"
+  },
+  "activation_requirements": {
+    "activation_requires_new_operator_confirmation": true,
+    "activation_requires_workflow_sha_binding": true,
+    "activation_requires_workflow_content_sha256_binding": true,
+    "activation_requires_protected_environment_observation": true,
+    "activation_requires_guard_flag_policy_resolution": true,
+    "activation_requires_manual_approval_review": true,
+    "activation_requires_model_allowlist_enforcement": true
+  },
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision",
+    "operator_verified_runtime_semantics": true,
+    "explicit_operator_authorization": true,
+    "general_purpose_platform_claim_authorization": true
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": true,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo",
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization",
+    "pr_number_hint": "TBD",
+    "base_sha": "7cca702592e4b9c288ed5b64440deadf786b65ee",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_bc1_6c_closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78_submanifest_sha256_after_bc1_flip": "665dfd8db86f46f3529489f7e94894ff8bd8eef7e79dc8b09bcaf1eb874d1b2a",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "timestamp": "2026-05-28T23:03:06Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization",
+    "pr_number_hint": "TBD"
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc1_protected_live_adapter_attestation_recorded": true,
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false
+    },
+    "after": {
+      "bc1_protected_live_adapter_attestation_recorded": true,
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false
+    }
+  },
+  "mutations_performed": {
+    "runtime_modified": false,
+    "workflow_created": false,
+    "submanifest_mutated": false,
+    "gpp_status_mutated": false,
+    "provider_call_performed": false,
+    "secret_referenced": false,
+    "guard_flag_flipped": false
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/gpp_status.v1.json",
+      "scripts/gp5_platform_claim_decision.py",
+      ".github/workflows/",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md",
+      "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "scripts/local_gpp_gate.py",
+      "scripts/repo_intelligence_tier_promotion_readiness.py",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e70be-f4e3-77c2-bd3e-27a2e55b6eb6",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8b-bc10-6a is an authorization-contract-only artifact. No execution permission, no guard flag flip, no workflow dispatch, no billable provider call, no secret reference, no submanifest mutation, no gpp_status mutation.",
+    "Activation belongs to RI-7.8b-bc10-6b under manual_protected_environment authority mode (NOT autonomous pre-prod). bc10 involves REAL billable provider calls so a human reviewer at activation time is required via GitHub Environment required reviewers. Autonomous trigger pattern (used in BC-1 6c-fast-follow) is forbidden for bc10.",
+    "Per-call evidence, aggregate, closure proof, and BC-10 submanifest flip belong to RI-7.8b-bc10-6c (forcing function test pattern from #691).",
+    "Codex plan-time thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 returned REVISE on iter-1 (bc10 chain must be split into 3 PRs: 6a authorization + 6b/trigger + 6c closure; NOT BC-1 extension) and iter-2 REVISE (detailed absorb items: planned_6b_authority_mode field, null workflow_content_sha256 in 6a, schema path convention ri7-8b-bc10-6a-..., mutations_performed as object). All iter-2 items absorbed in this artifact; iter-3 confirmation requested with this artifact attached.",
+    "live_adapter_execution_allowed top-level guard remains const false PRESERVED. bc10 flip is sub-key only (submanifest bc10_real_adapter_usage_cost_aggregate_recorded) and happens in 6c, not here.",
+    "model_allowlist pinned to openai/gpt-4o-mini matching RI-7.8a pre-authorization envelope. Per-call max_output_tokens cap 64 (low cost bound). Retries disabled, pre-call and post-call cumulative cost checks required.",
+    "max_billable_calls_count: 4 (3 successful small completions + 1 fail-closed budget_cap_precheck_denied no-cost scenario). max_usd: $5.00 ceiling unchanged from BC-1.",
+    "Authorization auto-invalidates if 6b is not activated within 168 hours (7 days). Operator may revoke via new PR or supersession entry."
+  ]
+}

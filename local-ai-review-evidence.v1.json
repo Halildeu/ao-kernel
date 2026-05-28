@@ -1,33 +1,24 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.8b-bc1-6c-closure",
+  "work_package": "RI-7.8b-bc10-6a",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
+    "agent": "codex-cli-reviewer",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-closure",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization",
     "changed_files": [
-      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
-      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
-      ".claude/plans/RI-7.8b-bc1-6c-RUN-EVIDENCE-clean_attestation.v1.json",
-      ".claude/plans/RI-7.8b-bc1-6c-RUN-EVIDENCE-fail_closed_attestation.v1.json",
-      ".claude/plans/gpp_status.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-closure-evidence.schema.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri78a_live_evidence_pre_authorization_invariant.py",
-      "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
-      "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py",
-      "tests/test_ri78b_bc1_6c_closure_invariant.py",
-      "tests/test_ri78b_bc1_6c_fast_follow_invariant.py",
-      "tests/test_ri78b_bc1_6c_trigger_invariant.py"
+      "tests/test_ri78b_bc10_6a_execution_window_authorization_invariant.py"
     ]
   },
   "checks_considered": [
@@ -53,14 +44,16 @@
     }
   ],
   "findings": [
-    "Closure evidence validates against Draft 2020-12 schema with zero errors; schema enforces additionalProperties:false and const-pinned guard flags.",
-    "SHA256 digests in closure_proof.scenario_run_refs match the committed run evidence files (clean_attestation: 46ec01d9..., fail_closed_attestation: 952ba499...).",
-    "GPP guard flags support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed remain const false in both gpp_status.v1.json and bc1_flip_attestation.top_level_flags_unchanged.",
-    "BC-1 submanifest flip (bc1_protected_live_adapter_attestation_recorded: falsetotrue) in RI-7.8-EVIDENCE-MANIFEST.v1.json is coherent with closure evidence bc1_flip_attestation declaration and gpp_status supersession entry closed state.",
-    "Introducer-PR detection pattern correctly applied to 7 tests across 4 predecessor test files (ri78a, 6a, 6b, 6c-fast-follow, 6c-trigger); each uses _is_*_introducer_pr() with pytest.skip for state-at-landing pins on non-introducer branches.",
-    "Secret boundary correct: secrets_recorded=false in closure evidence, secret_boundary=no_secret_material_emitted_no_token_no_credential in both run evidence files, no credential values present in any artifact.",
-    "No runtime code changes; diff is governance evidence + schema + tests only.",
-    "Committed local-ai-review-evidence.v1.json is refreshed by this PR to this RI-7.8b-bc1-6c-closure review scope before local_gpp_gate evaluation."
+    "Evidence validates against Draft 2020-12 schema with zero errors; schema enforces additionalProperties:false on all 13 nested objects and const-pinned guard flags (support_widening, production_platform_claim, live_adapter_execution).",
+    "SHA256 digests in ri78a_predecessor_ref + ri78b_bc1_6c_predecessor_ref + stale_replay_guard match the committed predecessor files at PR #673 (ri78a evidence) and PR #691 (bc1-6c-closure evidence + RI-7.8 submanifest post-flip).",
+    "GPP guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain const FALSE in current_gpp_guard_snapshot and top-level evidence fields. bc10-6a is authorization-only; no guard flag flip permitted.",
+    "Submanifest snapshot reflects post-#691 BC-1 landing state (bc1=true) and BC-10 not-yet-flipped state (bc10=false). submanifest_transition before==after enforces bc10-6a non-mutation contract.",
+    "planned_6b_authority_mode is pinned to manual_protected_environment with autonomous_trigger_allowed=false. bc10 6b activation MUST go through GitHub Environment required reviewers (unlike BC-1 6c-fast-follow autonomous pre-prod pattern) because bc10 involves REAL billable provider calls.",
+    "mutations_performed 7-key all-false invariant: runtime_modified, workflow_created, submanifest_mutated, gpp_status_mutated, provider_call_performed, secret_referenced, guard_flag_flipped all const false in schema and runtime evidence.",
+    "model_allowlist pinned to single-element [\"openai/gpt-4o-mini\"] with maxItems=1 + enum constraint. Per-call max_output_tokens cap ≤256; retries disabled; pre-call + post-call cost checks required.",
+    "Introducer-PR detection pattern (state-at-landing pin) applied to 11 git-diff-dependent tests; non-introducer branches skip with pytest.skip while structural invariants (schema valid, evidence validates, const pins) continue to enforce 6a state-at-landing on origin/main.",
+    "Secret boundary correct: secret_boundary=no_secret_material_no_credential_names_no_token_in_repo. No credential names, env var names, or token values present in any artifact. mutations_performed.secret_referenced=false enforces this at runtime.",
+    "Cross-AI peer review provider split: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 iter-1 REVISE (bc10 must be 3-PR chain) + iter-2 REVISE (detailed absorb items: planned_6b_authority_mode, null workflow_content_sha256, schema path ri7-8b-bc10-6a-..., mutations_performed object) absorbed in this artifact."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

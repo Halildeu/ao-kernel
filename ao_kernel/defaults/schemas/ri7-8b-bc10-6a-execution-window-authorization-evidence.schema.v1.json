@@ -1,0 +1,545 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6a-execution-window-authorization-evidence:v1",
+  "title": "RI-7.8b-bc10-6a Execution Window Authorization Evidence",
+  "description": "Evidence artifact recording the operator's AUTHORIZATION CONTRACT for an upcoming RI-7.8b-bc10 real-adapter usage/cost aggregate execution window. This is an authorization-contract-only artifact: it does NOT permit workflow dispatch, workflow creation, adapter execution, billable provider calls, secret reference, or any guard flag flip. The actual execution window activation belongs to RI-7.8b-bc10-6b (with fresh operator confirmation + protected environment observation under manual_protected_environment authority mode). Per-call evidence + aggregate + closure + BC-10 flip belong to RI-7.8b-bc10-6c. Unlike BC-1 (marker-only attestation), BC-10 involves REAL billable provider calls under low-cost model allowlist, so 6b authority MUST be manual_protected_environment with GitHub Environment required reviewers — autonomous pre-prod activation pattern (BC-1 6c-fast-follow) is forbidden for bc10.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "authorization_effect",
+    "does_not_authorize",
+    "ri78a_predecessor_ref",
+    "ri78b_bc1_6c_predecessor_ref",
+    "operator_authorization_record",
+    "authorization_window_contract",
+    "planned_6b_authority_mode",
+    "protected_environment_binding",
+    "future_workflow_contract",
+    "closure_expiry_and_revocation_clause",
+    "activation_requirements",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "ri78_submanifest_snapshot",
+    "secret_boundary",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "submanifest_transition",
+    "mutations_performed",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6a-execution-window-authorization-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6a_execution_window_authorization_evidence"},
+    "decision": {"type": "string", "const": "ri78b_bc10_6a_execution_window_authorization_contract_no_execution_no_flip"},
+    "authorization_effect": {
+      "type": "string",
+      "const": "execution_window_authorization_recorded_no_execution_no_guard_flag_flip_no_billable_call_no_secret_reference",
+      "description": "HARD pin: this artifact only records an authorization contract envelope, NOT execution permission. Activation requires a separate operator-bound 6b execution-window activation artifact under manual_protected_environment authority mode with fresh operator confirmation + workflow SHA binding + protected environment observation."
+    },
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "workflow_dispatch_now",
+          "adapter_execution_now",
+          "credential_reference",
+          "billable_provider_call_now",
+          "cost_incurring_calls_now",
+          "support_widening",
+          "production_platform_claim",
+          "gpp_status_guard_flip",
+          "submanifest_bc10_flip"
+        ]
+      },
+      "description": "Negative authority statement. All 9 forbidden actions enumerated explicitly so a reviewer can verify by name what this artifact CANNOT permit. Two more entries than BC-1 6a (added billable_provider_call_now + submanifest_bc10_flip for bc10 explicitness)."
+    },
+    "ri78a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "ri78a_evidence_sha256", "readiness_manifest_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 673},
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "git SHA of the RI-7.8a merge commit on origin/main. bc10-6b activation verifies this exact predecessor."
+        },
+        "ri78a_evidence_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json at predecessor PR. Pins the operator pre-authorization state this contract inherits from. Operator pre-authorized BOTH BC-1 and BC-10 envelope in #673."
+        },
+        "readiness_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json at predecessor PR. Pins the 9/9 readiness state this contract is anchored to."
+        }
+      }
+    },
+    "ri78b_bc1_6c_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "closure_evidence_sha256", "ri78_submanifest_sha256_after_bc1_flip"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 691},
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "git SHA of the RI-7.8b-bc1-6c-closure merge commit on origin/main (BC-1 attestation flip landing PR). bc10 chain inherits the post-BC-1 submanifest state."
+        },
+        "closure_evidence_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json at predecessor PR. Pins the BC-1 closure proof state."
+        },
+        "ri78_submanifest_sha256_after_bc1_flip": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json after BC-1 flip landed. bc10-6a snapshot MUST match this exact predecessor state (bc1=true, bc10=false, final=false)."
+        }
+      }
+    },
+    "operator_authorization_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_login",
+        "authorization_recorded_at",
+        "authorization_source",
+        "no_secret_assertion",
+        "authorization_scope",
+        "does_not_authorize_immediate_execution",
+        "observation_notes"
+      ],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "authorization_recorded_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "authorization_source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Auditable source reference: PR comment URL, review URL/id, issue comment URL, runbook ref, or plan doc path. Free text but must be retrievable for audit."
+        },
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "authorization_scope": {"type": "string", "const": "bc10_6a_execution_window_contract_only"},
+        "does_not_authorize_immediate_execution": {"type": "boolean", "const": true},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "authorization_window_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_status",
+        "authorization_valid_until",
+        "max_activation_delay_hours",
+        "max_execution_window_duration_hours",
+        "max_run_count",
+        "max_billable_calls_count",
+        "max_usd",
+        "actual_start_at",
+        "actual_end_at",
+        "activation_owner_slice",
+        "contract_status"
+      ],
+      "properties": {
+        "window_status": {"type": "string", "const": "authorized_pending_6b_activation"},
+        "authorization_valid_until": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+          "description": "ISO 8601 UTC. Operator-bound future timestamp by which 6b activation MUST occur, else this authorization auto-invalidates."
+        },
+        "max_activation_delay_hours": {"type": "integer", "minimum": 1, "maximum": 168},
+        "max_execution_window_duration_hours": {"type": "integer", "minimum": 1, "maximum": 24},
+        "max_run_count": {"type": "integer", "minimum": 1, "maximum": 5},
+        "max_billable_calls_count": {"type": "integer", "minimum": 1, "maximum": 4, "description": "Maximum billable provider calls inside the window. bc10 envelope allows up to 4 billable calls (3 success scenarios + 1 fail-closed denial without billing)."},
+        "max_usd": {"type": "number", "exclusiveMinimum": 0, "maximum": 5.00},
+        "actual_start_at": {"type": "null", "description": "MUST be null in 6a. 6b sets this when activation happens."},
+        "actual_end_at": {"type": "null", "description": "MUST be null in 6a. 6c sets this on closure."},
+        "activation_owner_slice": {"type": "string", "const": "RI-7.8b-bc10-6b"},
+        "contract_status": {"type": "string", "const": "expected_unresolved_until_6b"}
+      }
+    },
+    "planned_6b_authority_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_mode", "manual_approval_required", "autonomous_trigger_allowed", "rationale"],
+      "properties": {
+        "authority_mode": {
+          "type": "string",
+          "const": "manual_protected_environment",
+          "description": "bc10-6b MUST use manual_protected_environment authority mode (GitHub Environment with required reviewers). Autonomous pre-prod pattern (BC-1 6c-fast-follow) is FORBIDDEN for bc10 because bc10 involves REAL billable provider calls under live cost; manual operator confirmation is required at activation time."
+        },
+        "manual_approval_required": {"type": "boolean", "const": true},
+        "autonomous_trigger_allowed": {"type": "boolean", "const": false},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    },
+    "protected_environment_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env_name",
+        "required_reviewers_expected",
+        "prevent_self_review_expected",
+        "allowed_refs_expected",
+        "admin_bypass_allowed_expected",
+        "observed",
+        "observed_at",
+        "observation_source",
+        "observed_environment_sha256",
+        "observation_owner_slice"
+      ],
+      "properties": {
+        "env_name": {"type": "string", "const": "ao-kernel-bc10-real-adapter-usage-cost"},
+        "required_reviewers_expected": {"type": "boolean", "const": true},
+        "prevent_self_review_expected": {"type": "boolean", "const": true},
+        "allowed_refs_expected": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["refs/heads/main"]}
+        },
+        "admin_bypass_allowed_expected": {"type": "boolean", "const": false},
+        "observed": {"type": "boolean", "const": false, "description": "MUST be false in 6a — 6a does NOT query live GitHub env API. 6b performs the actual observation under manual_protected_environment authority mode."},
+        "observed_at": {"type": "null"},
+        "observation_source": {"type": "null"},
+        "observed_environment_sha256": {"type": "null"},
+        "observation_owner_slice": {"type": "string", "const": "RI-7.8b-bc10-6b"}
+      }
+    },
+    "future_workflow_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_path",
+        "expected_absent_or_not_touched_in_6a",
+        "creation_owner_slice",
+        "workflow_sha",
+        "workflow_content_sha256",
+        "allowed_ref",
+        "expected_dispatch_inputs_allowlist",
+        "expected_forbidden_inputs",
+        "model_allowlist",
+        "expected_max_output_tokens_cap",
+        "expected_retries_disabled",
+        "expected_pre_call_cost_check",
+        "expected_post_call_cost_check",
+        "contract_status"
+      ],
+      "properties": {
+        "workflow_path": {"type": "string", "const": ".github/workflows/bc10-real-adapter-usage-cost.yml"},
+        "expected_absent_or_not_touched_in_6a": {"type": "boolean", "const": true},
+        "creation_owner_slice": {"type": "string", "const": "RI-7.8b-bc10-6b"},
+        "workflow_sha": {"type": "null", "description": "MUST be null in 6a. 6b binds the resolved workflow SHA after workflow creation."},
+        "workflow_content_sha256": {"type": "null", "description": "MUST be null in 6a (workflow not yet created). 6b binds the raw-bytes SHA-256 of the workflow file content."},
+        "allowed_ref": {"type": "string", "const": "refs/heads/main"},
+        "expected_dispatch_inputs_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "description": "Allowlisted workflow_dispatch inputs (e.g., scenario, model). NO secret/credential inputs permitted."
+        },
+        "expected_forbidden_inputs": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": "api_key"}},
+            {"contains": {"const": "token"}},
+            {"contains": {"const": "secret"}},
+            {"contains": {"const": "credential"}},
+            {"contains": {"const": "password"}},
+            {"contains": {"const": "auth_header"}}
+          ]
+        },
+        "model_allowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["openai/gpt-4o-mini"]},
+          "description": "bc10 model allowlist: low-cost model only (openai/gpt-4o-mini matches RI-7.8a pre-authorization envelope). Any other provider/model is fail-closed."
+        },
+        "expected_max_output_tokens_cap": {"type": "integer", "minimum": 1, "maximum": 256, "description": "Per-call max_output_tokens cap MUST be low (≤256) to bound per-call cost."},
+        "expected_retries_disabled": {"type": "boolean", "const": true, "description": "Retries MUST be disabled to prevent silent cost amplification under transient errors."},
+        "expected_pre_call_cost_check": {"type": "boolean", "const": true, "description": "Pre-call cumulative projected-cost check MUST be enforced (fail-closed when projected > max_usd)."},
+        "expected_post_call_cost_check": {"type": "boolean", "const": true, "description": "Post-call cumulative cost check MUST be enforced (fail-closed when cumulative > max_usd)."},
+        "contract_status": {"type": "string", "const": "expected_unresolved_until_6b"}
+      }
+    },
+    "closure_expiry_and_revocation_clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorization_expiry_action",
+        "window_end_action",
+        "post_window_verifier_owner",
+        "revocation_action",
+        "rerun_policy",
+        "cost_cap_breach_action"
+      ],
+      "properties": {
+        "authorization_expiry_action": {
+          "type": "string",
+          "const": "authorization_auto_invalidates_if_not_activated_by_6b_within_validity_window"
+        },
+        "window_end_action": {
+          "type": "string",
+          "const": "live_adapter_execution_must_remain_false_outside_window_and_bc10_submanifest_must_remain_false_until_6c_flip"
+        },
+        "post_window_verifier_owner": {"type": "string", "const": "RI-7.8b-bc10-6c"},
+        "revocation_action": {
+          "type": "string",
+          "const": "operator_may_revoke_before_6b_activation_via_new_pr_or_supersession_entry"
+        },
+        "rerun_policy": {
+          "type": "string",
+          "const": "expired_or_exceeded_runs_are_fail_closed_no_silent_retry"
+        },
+        "cost_cap_breach_action": {
+          "type": "string",
+          "const": "fail_closed_window_terminates_no_silent_continuation"
+        }
+      }
+    },
+    "activation_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activation_requires_new_operator_confirmation",
+        "activation_requires_workflow_sha_binding",
+        "activation_requires_workflow_content_sha256_binding",
+        "activation_requires_protected_environment_observation",
+        "activation_requires_guard_flag_policy_resolution",
+        "activation_requires_manual_approval_review",
+        "activation_requires_model_allowlist_enforcement"
+      ],
+      "properties": {
+        "activation_requires_new_operator_confirmation": {"type": "boolean", "const": true},
+        "activation_requires_workflow_sha_binding": {"type": "boolean", "const": true},
+        "activation_requires_workflow_content_sha256_binding": {"type": "boolean", "const": true},
+        "activation_requires_protected_environment_observation": {"type": "boolean", "const": true},
+        "activation_requires_guard_flag_policy_resolution": {"type": "boolean", "const": true},
+        "activation_requires_manual_approval_review": {"type": "boolean", "const": true, "description": "bc10 6b activation requires a human reviewer through GitHub Environment required reviewers — autonomous trigger pattern is forbidden."},
+        "activation_requires_model_allowlist_enforcement": {"type": "boolean", "const": true}
+      }
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nine_key_manifest_all_true",
+        "readiness_gate_decision",
+        "operator_verified_runtime_semantics",
+        "explicit_operator_authorization",
+        "general_purpose_platform_claim_authorization"
+      ],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"},
+        "operator_verified_runtime_semantics": {"type": "boolean", "const": true},
+        "explicit_operator_authorization": {"type": "boolean", "const": true},
+        "general_purpose_platform_claim_authorization": {"type": "boolean", "const": true}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "ri78_submanifest_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_evidence_pre_authorization_recorded",
+        "bc1_protected_live_adapter_attestation_recorded",
+        "bc10_real_adapter_usage_cost_aggregate_recorded",
+        "final_operator_promotion_decision_recorded"
+      ],
+      "properties": {
+        "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true},
+        "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true, "description": "POST PR #691: BC-1 attestation landed. bc10-6a snapshot reflects this state."},
+        "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+        "final_operator_promotion_decision_recorded": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {
+      "type": "string",
+      "const": "no_secret_material_no_credential_names_no_token_in_repo"
+    },
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number_hint",
+        "base_sha",
+        "ri78a_evidence_sha256",
+        "ri78b_bc1_6c_closure_evidence_sha256",
+        "ri78_submanifest_sha256_after_bc1_flip",
+        "readiness_manifest_sha256",
+        "timestamp"
+      ],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization"},
+        "pr_number_hint": {"type": "string"},
+        "base_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "git SHA of origin/main at the time the operator authorization contract was recorded (post PR #691)."
+        },
+        "ri78a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc1_6c_closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256_after_bc1_flip": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "readiness_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6a-execution-window-authorization"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bc1_protected_live_adapter_attestation_recorded",
+            "bc10_real_adapter_usage_cost_aggregate_recorded"
+          ],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bc1_protected_live_adapter_attestation_recorded",
+            "bc10_real_adapter_usage_cost_aggregate_recorded"
+          ],
+          "properties": {
+            "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false}
+          }
+        }
+      }
+    },
+    "mutations_performed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_modified",
+        "workflow_created",
+        "submanifest_mutated",
+        "gpp_status_mutated",
+        "provider_call_performed",
+        "secret_referenced",
+        "guard_flag_flipped"
+      ],
+      "properties": {
+        "runtime_modified": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT modify any runtime script (scripts/*)."},
+        "workflow_created": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT create or modify any .github/workflows/* file."},
+        "submanifest_mutated": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT mutate .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json."},
+        "gpp_status_mutated": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT mutate .claude/plans/gpp_status.v1.json (no supersession entry append in 6a; that belongs to 6b)."},
+        "provider_call_performed": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT perform any billable provider call."},
+        "secret_referenced": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT reference any secret (env var, vault key, credential name)."},
+        "guard_flag_flipped": {"type": "boolean", "const": false, "description": "bc10-6a MUST NOT flip any top-level guard flag or submanifest sub-key."}
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 17,
+          "maxItems": 17,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": ".claude/plans/gpp_status.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/gp5_platform_claim_decision.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".github/workflows/"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".github/workflows/bc10-real-adapter-usage-cost.yml"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/mcp_server.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/__init__.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/policies/"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/PUBLIC-BETA.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/SUPPORT-BOUNDARY.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "docs/KNOWN-BUGS.md"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/ao_release_gate.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/local_gpp_gate.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/repo_intelligence_tier_promotion_readiness.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"}, "minContains": 1, "maxContains": 1}
+          ]
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
