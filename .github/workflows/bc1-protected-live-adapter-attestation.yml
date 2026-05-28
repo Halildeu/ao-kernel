@@ -32,11 +32,20 @@
 name: RI-7.8b-bc1 Protected Live-Adapter Attestation
 
 on:
+  # Autonomous pre-prod activation (6c-fast-follow):
+  # Push-trigger on main + path filter to the schema-pinned DISPATCH-TRIGGER
+  # file. Merge of that file by Halildeu (CODEOWNERS gate + cross-AI consensus
+  # + bounded window) IS the activation authority. workflow_dispatch retained
+  # as manual fallback only.
+  push:
+    branches: [main]
+    paths:
+      - '.claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json'
   workflow_dispatch:
     inputs:
       scenario:
-        description: "Attestation scenario"
-        required: true
+        description: "Attestation scenario (manual fallback only; autonomous path uses push trigger matrix)"
+        required: false
         type: choice
         options:
           - clean_attestation
@@ -54,11 +63,23 @@ concurrency:
 jobs:
   protected-live-adapter-attestation:
     runs-on: ubuntu-latest
-    environment: ao-kernel-bc1-live-adapter-attestation
+    # NO environment: pre-prod autonomous mode (operator_delegated_autonomous_preprod).
+    # Code-level guard (scripts/ri78b_bc1_activation_window.py) enforces:
+    # bounded window + workflow_content_sha256 + run cap + scenario allowlist +
+    # active supersession entry. Authority source = merge commit of schema-pinned
+    # DISPATCH-TRIGGER file by Halildeu.
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - clean_attestation
+          - fail_closed_attestation
     env:
       GH_TOKEN: ${{ github.token }}
-      RI78B_BC1_SCENARIO: ${{ inputs.scenario }}
+      # Matrix scenario for push-trigger auto-dispatch; falls back to manual
+      # workflow_dispatch input if event is workflow_dispatch.
+      RI78B_BC1_SCENARIO: ${{ matrix.scenario || inputs.scenario }}
     steps:
       - name: Validate dispatch context (pre-checkout, no secrets in scope yet)
         run: |
@@ -67,8 +88,8 @@ jobs:
             echo "fail-closed: ref ${GITHUB_REF} != refs/heads/main" >&2
             exit 1
           fi
-          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
-            echo "fail-closed: event_name ${GITHUB_EVENT_NAME} != workflow_dispatch" >&2
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ] && [ "${GITHUB_EVENT_NAME}" != "push" ]; then
+            echo "fail-closed: event_name ${GITHUB_EVENT_NAME} not in [workflow_dispatch, push]" >&2
             exit 1
           fi
           if [ "${GITHUB_RUN_ATTEMPT}" != "1" ]; then

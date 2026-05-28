@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc1-6c-dispatch-trigger:v1",
+  "title": "RI-7.8b-bc1-6c Dispatch Trigger",
+  "description": "Schema-pinned dispatch trigger file. Merge of this file to main is the autonomous pre-prod activation authority for the RI-7.8b-bc1 protected live-adapter attestation workflow (operator_delegated_autonomous_preprod mode). The push event on this exact path triggers .github/workflows/bc1-protected-live-adapter-attestation.yml which runs each scenario as a separate matrix job, gated by scripts/ri78b_bc1_activation_window.py runtime guards.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "authority_mode",
+    "scenarios",
+    "operator",
+    "supersession_entry_id",
+    "max_distinct_runs",
+    "max_run_attempt",
+    "max_usd",
+    "secret_boundary"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc1-6c-dispatch-trigger.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc1_6c_dispatch_trigger"},
+    "authority_mode": {"type": "string", "const": "operator_delegated_autonomous_preprod"},
+    "scenarios": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "enum": ["clean_attestation", "fail_closed_attestation"]}
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["github_login", "trigger_recorded_at", "no_secret_assertion"],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "trigger_recorded_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "no_secret_assertion": {"type": "boolean", "const": true}
+      }
+    },
+    "supersession_entry_id": {"type": "string", "const": "RI-7.8b-bc1-6b"},
+    "max_distinct_runs": {"type": "integer", "minimum": 1, "maximum": 5},
+    "max_run_attempt": {"type": "integer", "const": 1},
+    "max_usd": {"type": "number", "exclusiveMinimum": 0, "maximum": 5.00},
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_trigger_file"}
+  }
+}

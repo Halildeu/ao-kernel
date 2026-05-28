@@ -105,8 +105,21 @@ def _find_active_entry(status: dict, workflow_sha: str) -> dict:
         )
 
     entry = matches[0]
+    # Authority mode — accept either the legacy operator-bound (6b) state OR
+    # the autonomous pre-prod (6c-fast-follow) trigger-commit state.
+    authority_mode = entry.get("authority_mode") or "manual_protected_environment"
     status_str = entry.get("status")
-    if status_str not in {"awaiting_operator_dispatch", "active"}:
+    accepted_statuses_by_mode = {
+        "manual_protected_environment": {"awaiting_operator_dispatch", "active"},
+        "operator_delegated_autonomous_preprod": {
+            "awaiting_auto_dispatch_trigger_commit",
+            "active",
+        },
+    }
+    accepted = accepted_statuses_by_mode.get(authority_mode)
+    if accepted is None:
+        _fail(f"unknown authority_mode={authority_mode!r}")
+    if status_str not in accepted:
         _fail(
             f"supersession entry status={status_str!r} not in [awaiting_operator_dispatch, active]"
         )
