@@ -164,6 +164,7 @@ def _collect_readiness(
     *,
     repo: str,
     expected_actor: str,
+    gh_bin: str,
     output: Path,
     runner: Runner,
 ) -> tuple[dict[str, Any], list[str]]:
@@ -174,6 +175,8 @@ def _collect_readiness(
         repo,
         "--dedicated-merge-actor",
         expected_actor,
+        "--gh-bin",
+        gh_bin,
         "--output",
         str(output),
     ]
@@ -276,6 +279,7 @@ def _parse_pr_number(value: str) -> int | None:
 def _create_disposable_pr(
     *,
     repo: str,
+    gh_bin: str,
     base_ref: str,
     branch: str,
     smoke_path: str,
@@ -286,7 +290,7 @@ def _create_disposable_pr(
 ) -> tuple[int | None, set[str]]:
     blockers: set[str] = set()
 
-    get_ref = ["gh", "api", f"repos/{repo}/git/ref/heads/{base_ref}"]
+    get_ref = [gh_bin, "api", f"repos/{repo}/git/ref/heads/{base_ref}"]
     _add_command(result, get_ref)
     ref_payload, error = _run_json(get_ref, runner)
     if error is not None or not isinstance(ref_payload, dict):
@@ -296,7 +300,7 @@ def _create_disposable_pr(
         return None, {"github_base_ref_sha_missing"}
 
     create_ref = [
-        "gh",
+        gh_bin,
         "api",
         f"repos/{repo}/git/refs",
         "--method",
@@ -328,7 +332,7 @@ def _create_disposable_pr(
         encoding="utf-8",
     )
     put_file = [
-        "gh",
+        gh_bin,
         "api",
         f"repos/{repo}/contents/{smoke_path}",
         "--method",
@@ -348,7 +352,7 @@ def _create_disposable_pr(
         "readiness and required checks pass."
     )
     create_pr = [
-        "gh",
+        gh_bin,
         "pr",
         "create",
         "--repo",
@@ -401,6 +405,7 @@ def _required_checks_passed(raw_checks: list[Any]) -> tuple[bool, list[dict[str,
 def _wait_for_required_checks(
     *,
     repo: str,
+    gh_bin: str,
     pr_number: int,
     runner: Runner,
     result: dict[str, Any],
@@ -411,7 +416,7 @@ def _wait_for_required_checks(
     last_failing: list[dict[str, Any]] = []
     while True:
         command = [
-            "gh",
+            gh_bin,
             "pr",
             "checks",
             str(pr_number),
@@ -441,6 +446,7 @@ def _wait_for_required_checks(
 def _run_merge_agent(
     *,
     repo: str,
+    gh_bin: str,
     pr_number: int,
     snapshot: Path,
     eligibility: Path,
@@ -453,6 +459,8 @@ def _run_merge_agent(
         "scripts/ao_ma10c_merge_agent.py",
         "--repo",
         repo,
+        "--gh-bin",
+        gh_bin,
         "--pr",
         str(pr_number),
         "--snapshot",
@@ -487,6 +495,7 @@ def run_smoke(
     repo: str,
     base_ref: str,
     expected_actor: str,
+    gh_bin: str,
     smoke_root: str,
     output: Path,
     execute: bool,
@@ -523,6 +532,7 @@ def run_smoke(
         snapshot, errors = _collect_readiness(
             repo=repo,
             expected_actor=expected_actor,
+            gh_bin=gh_bin,
             output=initial_snapshot_path,
             runner=runner,
         )
@@ -555,6 +565,7 @@ def run_smoke(
 
         pr_number, create_blockers = _create_disposable_pr(
             repo=repo,
+            gh_bin=gh_bin,
             base_ref=base_ref,
             branch=branch,
             smoke_path=smoke_path,
@@ -568,6 +579,7 @@ def run_smoke(
             blockers.update(
                 _wait_for_required_checks(
                     repo=repo,
+                    gh_bin=gh_bin,
                     pr_number=pr_number,
                     runner=runner,
                     result=result,
@@ -582,6 +594,7 @@ def run_smoke(
             final_snapshot, errors = _collect_readiness(
                 repo=repo,
                 expected_actor=expected_actor,
+                gh_bin=gh_bin,
                 output=final_snapshot_path,
                 runner=runner,
             )
@@ -609,6 +622,7 @@ def run_smoke(
                 merge_output = temp_dir / "merge-agent-result.json"
                 merge_result, merge_blockers = _run_merge_agent(
                     repo=repo,
+                    gh_bin=gh_bin,
                     pr_number=pr_number,
                     snapshot=final_snapshot_path,
                     eligibility=final_eligibility_path,
@@ -631,6 +645,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo", default=DEFAULT_REPO)
     parser.add_argument("--base-ref", default=DEFAULT_BASE_REF)
     parser.add_argument("--expected-actor", default=DEFAULT_EXPECTED_ACTOR)
+    parser.add_argument(
+        "--gh-bin",
+        default="gh",
+        help="GitHub CLI binary or wrapper to use for every live GitHub call.",
+    )
     parser.add_argument("--smoke-root", default=DEFAULT_SMOKE_ROOT)
     parser.add_argument("--output", required=True)
     parser.add_argument("--execute", action="store_true")
@@ -644,6 +663,7 @@ def main(argv: list[str] | None = None) -> int:
         repo=args.repo,
         base_ref=args.base_ref,
         expected_actor=args.expected_actor,
+        gh_bin=args.gh_bin,
         smoke_root=args.smoke_root,
         output=Path(args.output),
         execute=args.execute,
