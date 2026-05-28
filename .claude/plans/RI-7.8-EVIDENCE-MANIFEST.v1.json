@@ -2,7 +2,7 @@
   "schema_version": "1",
   "artifact_kind": "ri78_evidence_submanifest",
   "live_evidence_pre_authorization_recorded": true,
-  "bc1_protected_live_adapter_attestation_recorded": false,
+  "bc1_protected_live_adapter_attestation_recorded": true,
   "bc10_real_adapter_usage_cost_aggregate_recorded": false,
   "final_operator_promotion_decision_recorded": false
 }
