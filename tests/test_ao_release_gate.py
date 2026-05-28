@@ -21,6 +21,7 @@ from ao_kernel.ao_release_gate import (
     render_ao_release_gate_decision_text,
     write_ao_release_gate_decision,
 )
+from ao_kernel.live_adapter_gate import utc_timestamp
 
 # 40-hex placeholder used by _allow_payload() and the matching
 # _review_evidence() factory so the context-binding check passes.
@@ -157,6 +158,95 @@ def _ao_ma10_evidence_bundle(
             "max_age_seconds": 3600,
         },
         "secrets_recorded": False,
+    }
+
+
+def _high_risk_supersession_evidence(
+    *,
+    generated_at: str | None = None,
+    head_sha: str | None = None,
+    head_ref: str = "refs/heads/codex/gpp-2v-release-gate-dry-run",
+    base_ref: str = "origin/main",
+    changed_paths: list[str] | None = None,
+    high_risk_changed_paths: list[str] | None = None,
+    provider_ids: tuple[str, str] = ("openai", "anthropic"),
+    consensus_status: str = "AGREE",
+    provider_verdict: str = "AGREE",
+) -> dict[str, object]:
+    """Build accepting AO-MA-10h high-risk supersession evidence.
+
+    Defaults bind to ``_allow_payload()`` with no human review. Refs use
+    local-style spellings to pin runtime ref normalization.
+    """
+
+    paths = list(changed_paths) if changed_paths is not None else list(_ALLOW_CHANGED_PATHS)
+    high_risk_paths = (
+        list(high_risk_changed_paths)
+        if high_risk_changed_paths is not None
+        else [
+            "ao_kernel/ao_release_gate.py",
+            "scripts/ao_release_gate_decision.py",
+            ".claude/plans/GPP-2v-AO-RELEASE-GATE-DRY-RUN-SCAFFOLD.md",
+        ]
+    )
+    context = {
+        "repository_full_name": "Halildeu/ao-kernel",
+        "base_ref": base_ref,
+        "head_ref": head_ref,
+        "head_sha": head_sha if head_sha is not None else _ALLOW_HEAD_SHA,
+        "diff_digest": diff_digest(paths),
+        "changed_files_count": len(paths),
+        "high_risk_changed_paths": high_risk_paths,
+    }
+    provider_verdicts = []
+    for provider, agent in zip(provider_ids, ("codex-reviewer", "claude-reviewer"), strict=False):
+        provider_verdicts.append(
+            {
+                "schema_version": "ao-ma-10-provider-consensus.v1",
+                "artifact_kind": "ao_ma_10_provider_consensus",
+                "provider_id": provider,
+                "agent_id": agent,
+                "role": "reviewer",
+                "risk_classification": "high",
+                "verdict": provider_verdict,
+                "round_index": 2,
+                "context_binding": dict(context),
+                "findings_count": 0 if provider_verdict == "AGREE" else 1,
+                "secrets_recorded": False,
+                "support_widening": False,
+                "production_platform_claim": False,
+                "live_adapter_execution": False,
+                "release_authority": "ao-release-gate+github-ruleset",
+                "ai_output_release_authority": False,
+            }
+        )
+    return {
+        "schema_version": "ao-ma-10-high-risk-supersession-evidence.v1",
+        "artifact_kind": "ao_ma_10_high_risk_supersession_evidence",
+        "generated_at": generated_at if generated_at is not None else utc_timestamp(),
+        "repo": "Halildeu/ao-kernel",
+        "work_package": "AO-MA-10h",
+        "planning_only": True,
+        "release_authority": "ao-release-gate+github-ruleset",
+        "ai_output_release_authority": False,
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+        "context_binding": context,
+        "reviewer_providers": ["openai", "anthropic"],
+        "required_reviewer_providers": ["openai", "anthropic"],
+        "provider_verdicts": provider_verdicts,
+        "consensus_status": consensus_status,
+        "max_revise_rounds": 3,
+        "escalation_action": "operator_human_review_fallback",
+        "freshness": {
+            "status": "fresh",
+            "max_age_seconds": 3600,
+        },
+        "secrets_recorded": False,
+        "mutations_performed": False,
     }
 
 
@@ -378,6 +468,126 @@ def test_release_gate_denies_high_risk_paths_without_current_non_author_review()
     ]
 
 
+def test_release_gate_allows_high_risk_paths_with_valid_supersession_evidence() -> None:
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=_high_risk_supersession_evidence(),
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+    assert _find_check(decision, "high_risk_supersession_context_bound")["status"] == "pass"
+    assert _find_check(decision, "path_sensitive_human_review")["status"] == "pass"
+    assert "ao_release_gate_high_risk_human_review_missing" not in decision["findings"]
+
+
+def test_release_gate_denies_high_risk_supersession_same_provider_self_review() -> None:
+    evidence = _high_risk_supersession_evidence(provider_ids=("openai", "openai"))
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_high_risk_supersession_same_provider_self_review" in decision["findings"]
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+
+
+def test_release_gate_denies_high_risk_supersession_context_mismatch_as_untrusted() -> None:
+    evidence = _high_risk_supersession_evidence(head_sha="f" * 40)
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == DENY_UNTRUSTED_CONTEXT_DECISION
+    assert "ao_release_gate_high_risk_supersession_context_unbound" in decision["findings"]
+
+
+def test_release_gate_denies_stale_high_risk_supersession_evidence() -> None:
+    evidence = _high_risk_supersession_evidence(generated_at="2020-01-01T00:00:00Z")
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_high_risk_supersession_stale" in decision["findings"]
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+
+
+def test_release_gate_denies_unparseable_high_risk_supersession_timestamp() -> None:
+    evidence = _high_risk_supersession_evidence()
+    evidence["generated_at"] = "not-a-date"
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_high_risk_supersession_stale" in decision["findings"]
+
+
+def test_release_gate_denies_high_risk_supersession_provider_context_mismatch() -> None:
+    evidence = _high_risk_supersession_evidence()
+    provider_verdicts = evidence["provider_verdicts"]
+    assert isinstance(provider_verdicts, list)
+    first_provider = provider_verdicts[0]
+    assert isinstance(first_provider, dict)
+    context_binding = first_provider["context_binding"]
+    assert isinstance(context_binding, dict)
+    context_binding["head_sha"] = "f" * 40
+
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == DENY_UNTRUSTED_CONTEXT_DECISION
+    assert "ao_release_gate_high_risk_supersession_context_unbound" in decision["findings"]
+
+
+def test_release_gate_denies_high_risk_supersession_authority_boundary_open() -> None:
+    evidence = _high_risk_supersession_evidence()
+    evidence["ai_output_release_authority"] = True
+
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence=evidence,
+    )
+
+    assert decision["decision"] == DENY_POLICY_VIOLATION_DECISION
+    assert "ao_release_gate_high_risk_supersession_authority_boundary_open" in decision["findings"]
+
+
+def test_release_gate_denies_malformed_explicit_high_risk_supersession_evidence() -> None:
+    decision = build_ao_release_gate_decision(
+        _high_risk_without_review_payload(),
+        _gpp_status(),
+        review_evidence=_review_evidence(),
+        high_risk_supersession_evidence="not-an-object",
+    )
+
+    assert decision["decision"] == DENY_MISSING_EVIDENCE_DECISION
+    assert "ao_release_gate_high_risk_supersession_evidence_missing" in decision["findings"]
+
+
 def test_release_gate_allows_legacy_payload_when_path_sensitive_gate_is_inactive() -> None:
     payload = _high_risk_without_review_payload()
     payload.pop("path_sensitive_human_review_enabled")
@@ -571,6 +781,51 @@ def test_release_gate_cli_accepts_ao_ma10_evidence_bundle(tmp_path: Path) -> Non
     assert "decision: allow_autonomous_merge" in completed.stdout
     assert artifact["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
     assert _find_check(artifact, "ao_ma10_context_bound")["status"] == "pass"
+
+
+def test_release_gate_cli_accepts_high_risk_supersession_evidence(tmp_path: Path) -> None:
+    payload = _high_risk_without_review_payload()
+    payload_path = tmp_path / "payload.json"
+    status_path = tmp_path / "gpp_status.json"
+    review_evidence_path = tmp_path / "review-evidence.json"
+    supersession_path = tmp_path / "high-risk-supersession.json"
+    decision_path = tmp_path / "decision.json"
+    payload_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    status_path.write_text(json.dumps(_gpp_status(), sort_keys=True), encoding="utf-8")
+    review_evidence_path.write_text(json.dumps(_review_evidence(), sort_keys=True), encoding="utf-8")
+    supersession_path.write_text(
+        json.dumps(_high_risk_supersession_evidence(), sort_keys=True),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/ao_release_gate_decision.py",
+            "--payload",
+            str(payload_path),
+            "--gpp-status",
+            str(status_path),
+            "--review-evidence",
+            str(review_evidence_path),
+            "--high-risk-supersession-evidence",
+            str(supersession_path),
+            "--decision-path",
+            str(decision_path),
+            "--output",
+            "text",
+            "--fail-on-deny",
+        ],
+        cwd=_repo_root(),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    artifact = json.loads(decision_path.read_text(encoding="utf-8"))
+    assert "decision: allow_autonomous_merge" in completed.stdout
+    assert artifact["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert _find_check(artifact, "high_risk_supersession_context_bound")["status"] == "pass"
 
 
 # --- GPP-2D-2b: review-evidence decision-core wiring ---

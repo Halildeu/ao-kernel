@@ -68,6 +68,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 _SCRIPT_REL = "scripts/ri7_operator_verified_runtime_semantics.py"
 
 # Repo-intelligence module set under inspection. Centralized so updates
@@ -79,7 +81,7 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _result(invariant_id: str, function_name: str, summary: str, output: str) -> dict:
+def _result(invariant_id: str, function_name: str, summary: str, output: str) -> dict[str, str]:
     return {
         "id": invariant_id,
         "status": "verified",
@@ -308,6 +310,7 @@ def _verify_write_vectors_confirmation_token_required() -> str:
     with tempfile.TemporaryDirectory() as tmp:
         env = os.environ.copy()
         env["PYTHONDONTWRITEBYTECODE"] = "1"
+        env["PYTHONPATH"] = str(_REPO_ROOT)
         # Case 1: no confirm token at all.
         proc1 = subprocess.run(
             [sys.executable, "-m", "ao_kernel", "repo", "index", "--write-vectors"],
@@ -635,7 +638,11 @@ def _verify_negative_prompt_injection_fixture() -> str:
 
         # The malicious content's source file IS referenced (via source_path),
         # but the text content itself never appears in the chunker output.
-        sources = {c.get("source_path") for c in chunks if isinstance(c, dict)}
+        sources = {
+            source_path
+            for c in chunks
+            if isinstance(c, dict) and isinstance((source_path := c.get("source_path")), str)
+        }
         if "malicious_module.py" not in sources:
             raise AssertionError(
                 f"chunker did not emit any chunk for malicious_module.py; "
@@ -676,7 +683,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    results: list[dict] = []
+    results: list[dict[str, str]] = []
     for invariant_id, fn in _INVARIANTS.items():
         try:
             summary, output = _capture(fn)

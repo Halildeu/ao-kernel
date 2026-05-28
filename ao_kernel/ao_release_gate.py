@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 from fnmatch import fnmatch
 from importlib import resources
 from pathlib import Path
@@ -29,6 +30,7 @@ EXPECTED_BASE_REF = "main"
 LOCAL_GATE_EVIDENCE_SCHEMA_NAME = "local-gpp-gate-evidence.schema.v1.json"
 REVIEW_EVIDENCE_ACCEPTANCE_SCHEMA_NAME = "ao-release-gate-review-evidence-input.schema.v1.json"
 AO_MA10_EVIDENCE_BUNDLE_SCHEMA_NAME = "ao-ma-10-evidence-bundle.schema.v1.json"
+AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME = "ao-ma-10-high-risk-supersession-evidence.schema.v1.json"
 
 HIGH_RISK_PATH_PATTERNS = (
     ".github/**",
@@ -76,6 +78,15 @@ def _load_ao_ma10_evidence_bundle_schema() -> dict[str, Any]:
     """Load the bundled AO-MA-10 evidence-bundle schema."""
 
     schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(AO_MA10_EVIDENCE_BUNDLE_SCHEMA_NAME)
+    return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+
+def _load_ao_ma10_high_risk_supersession_schema() -> dict[str, Any]:
+    """Load the bundled AO-MA-10 high-risk supersession evidence schema."""
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(
+        AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME
+    )
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
@@ -554,12 +565,16 @@ def _has_current_non_author_approval(context: AoReleaseGateContext) -> bool:
     return False
 
 
-def _path_sensitive_human_review_satisfied(context: AoReleaseGateContext) -> bool:
-    """Return whether high-risk paths have required human approval."""
+def _path_sensitive_human_review_satisfied(
+    context: AoReleaseGateContext, *, high_risk_supersession_valid: bool = False
+) -> bool:
+    """Return whether high-risk paths have required approval or supersession evidence."""
 
     if context["path_sensitive_human_review_enabled"] is not True:
         return True
     if not context["high_risk_changed_paths"]:
+        return True
+    if high_risk_supersession_valid:
         return True
     return _has_current_non_author_approval(context)
 
@@ -783,6 +798,407 @@ def _evaluate_review_evidence_checks(
         )
 
     return [accepted, bound]
+
+
+def _high_risk_supersession_binding_matches(binding: dict[str, Any], context: AoReleaseGateContext) -> bool:
+    """Return whether supersession context binding matches the PR context."""
+
+    high_risk_paths = _strings(binding.get("high_risk_changed_paths"))
+    return (
+        context["repository"] is not None
+        and binding.get("repository_full_name") == context["repository"]
+        and context["base_ref"] is not None
+        and _normalize_binding_ref(binding.get("base_ref")) == _normalize_binding_ref(context["base_ref"])
+        and context["head_ref"] is not None
+        and _normalize_binding_ref(binding.get("head_ref")) == _normalize_binding_ref(context["head_ref"])
+        and context["head_sha"] is not None
+        and binding.get("head_sha") == context["head_sha"]
+        and binding.get("diff_digest") == diff_digest(context["changed_paths"])
+        and binding.get("changed_files_count") == len(context["changed_paths"])
+        and sorted(high_risk_paths) == sorted(context["high_risk_changed_paths"])
+    )
+
+
+def _high_risk_supersession_bindings_equivalent(
+    left: dict[str, Any],
+    right: dict[str, Any],
+) -> bool:
+    """Return whether two supersession bindings describe the same PR context."""
+
+    return (
+        left.get("repository_full_name") == right.get("repository_full_name")
+        and _normalize_binding_ref(left.get("base_ref")) == _normalize_binding_ref(right.get("base_ref"))
+        and _normalize_binding_ref(left.get("head_ref")) == _normalize_binding_ref(right.get("head_ref"))
+        and left.get("head_sha") == right.get("head_sha")
+        and left.get("diff_digest") == right.get("diff_digest")
+        and left.get("changed_files_count") == right.get("changed_files_count")
+        and sorted(_strings(left.get("high_risk_changed_paths")))
+        == sorted(_strings(right.get("high_risk_changed_paths")))
+    )
+
+
+def _high_risk_supersession_authority_boundary_open(evidence: dict[str, Any]) -> bool:
+    """Return whether the untrusted supersession evidence opens a forbidden boundary."""
+
+    raw_guard_flags = _as_dict(evidence.get("guard_flags"))
+    top_level_open = (
+        ("release_authority" in evidence and evidence.get("release_authority") != "ao-release-gate+github-ruleset")
+        or ("ai_output_release_authority" in evidence and evidence.get("ai_output_release_authority") is not False)
+        or ("mutations_performed" in evidence and evidence.get("mutations_performed") is not False)
+        or ("secrets_recorded" in evidence and evidence.get("secrets_recorded") is not False)
+        or ("support_widening" in raw_guard_flags and raw_guard_flags.get("support_widening") is not False)
+        or (
+            "production_platform_claim" in raw_guard_flags
+            and raw_guard_flags.get("production_platform_claim") is not False
+        )
+        or ("live_adapter_execution" in raw_guard_flags and raw_guard_flags.get("live_adapter_execution") is not False)
+    )
+    if top_level_open:
+        return True
+    for verdict in _as_list(evidence.get("provider_verdicts")):
+        if not isinstance(verdict, dict):
+            continue
+        if (
+            (
+                "release_authority" in verdict
+                and verdict.get("release_authority") != "ao-release-gate+github-ruleset"
+            )
+            or (
+                "ai_output_release_authority" in verdict
+                and verdict.get("ai_output_release_authority") is not False
+            )
+            or ("secrets_recorded" in verdict and verdict.get("secrets_recorded") is not False)
+            or ("support_widening" in verdict and verdict.get("support_widening") is not False)
+            or ("production_platform_claim" in verdict and verdict.get("production_platform_claim") is not False)
+            or ("live_adapter_execution" in verdict and verdict.get("live_adapter_execution") is not False)
+        ):
+            return True
+    return False
+
+
+def _parse_datetime(value: object) -> datetime | None:
+    """Parse an RFC3339-ish timestamp into an aware datetime."""
+
+    candidate = _string(value)
+    if candidate is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(candidate.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed
+
+
+def _high_risk_supersession_is_fresh(evidence: dict[str, Any], *, decision_generated_at: str) -> bool:
+    """Return whether supersession evidence is within its declared freshness window."""
+
+    evidence_generated_at = _parse_datetime(evidence.get("generated_at"))
+    decision_time = _parse_datetime(decision_generated_at)
+    freshness = _as_dict(evidence.get("freshness"))
+    max_age_seconds = freshness.get("max_age_seconds")
+    if evidence_generated_at is None or decision_time is None:
+        return False
+    if not isinstance(max_age_seconds, int) or max_age_seconds <= 0:
+        return False
+    age_seconds = (decision_time - evidence_generated_at).total_seconds()
+    return 0 <= age_seconds <= max_age_seconds
+
+
+def _evaluate_high_risk_supersession_checks(
+    high_risk_supersession_evidence: object,
+    context: AoReleaseGateContext,
+    *,
+    decision_generated_at: str,
+) -> tuple[list[AoReleaseGateCheck], bool]:
+    """Evaluate optional high-risk AI supersession evidence.
+
+    This evidence can satisfy the path-sensitive high-risk gate only when
+    it is schema-valid, context-bound to the current PR, records unanimous
+    OpenAI + Anthropic AGREE verdicts, and keeps release-authority and
+    guard-flag boundaries closed. AI output remains evidence; the release
+    authority remains this deterministic gate plus GitHub enforcement.
+    """
+
+    if high_risk_supersession_evidence is None:
+        return (
+            [
+                _pass(
+                    "high_risk_supersession_evidence",
+                    detail="High-risk supersession evidence was not supplied; the human-review path remains authoritative.",
+                ),
+                _pass(
+                    "high_risk_supersession_schema",
+                    detail="High-risk supersession schema validation is not required when evidence is absent.",
+                ),
+                _pass(
+                    "high_risk_supersession_freshness",
+                    detail="High-risk supersession freshness validation is not required when evidence is absent.",
+                ),
+                _pass(
+                    "high_risk_supersession_consensus",
+                    detail="High-risk supersession provider consensus is not required when evidence is absent.",
+                ),
+                _pass(
+                    "high_risk_supersession_context_bound",
+                    detail="High-risk supersession context binding is not required when evidence is absent.",
+                ),
+                _pass(
+                    "high_risk_supersession_authority_boundary",
+                    detail="High-risk supersession authority boundary validation is not required when evidence is absent.",
+                ),
+            ],
+            False,
+        )
+
+    if not isinstance(high_risk_supersession_evidence, dict):
+        return (
+            [
+                _blocked(
+                    "high_risk_supersession_evidence",
+                    finding_code="ao_release_gate_high_risk_supersession_evidence_missing",
+                    detail="High-risk supersession evidence is supplied but is not a JSON object.",
+                ),
+                _pass(
+                    "high_risk_supersession_schema",
+                    detail="High-risk supersession schema cannot be evaluated until a JSON object is present.",
+                ),
+                _pass(
+                    "high_risk_supersession_freshness",
+                    detail="High-risk supersession freshness cannot be evaluated until a JSON object is present.",
+                ),
+                _pass(
+                    "high_risk_supersession_consensus",
+                    detail="High-risk supersession consensus cannot be evaluated until a JSON object is present.",
+                ),
+                _blocked(
+                    "high_risk_supersession_context_bound",
+                    finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
+                    detail="High-risk supersession context binding cannot be evaluated; evidence is missing.",
+                ),
+                _pass(
+                    "high_risk_supersession_authority_boundary",
+                    detail="High-risk supersession authority boundary cannot be evaluated until a JSON object is present.",
+                ),
+            ],
+            False,
+        )
+
+    evidence_present = _pass(
+        "high_risk_supersession_evidence",
+        detail="High-risk supersession evidence is present as a JSON object.",
+    )
+    if _high_risk_supersession_authority_boundary_open(high_risk_supersession_evidence):
+        return (
+            [
+                evidence_present,
+                _pass(
+                    "high_risk_supersession_schema",
+                    detail="High-risk supersession schema validation is deferred; authority boundary is explicitly open.",
+                ),
+                _pass(
+                    "high_risk_supersession_freshness",
+                    detail="High-risk supersession freshness is not evaluated because authority boundary is explicitly open.",
+                ),
+                _pass(
+                    "high_risk_supersession_consensus",
+                    detail="High-risk supersession consensus is not evaluated because authority boundary is explicitly open.",
+                ),
+                _pass(
+                    "high_risk_supersession_context_bound",
+                    detail="High-risk supersession context binding is not evaluated because authority boundary is explicitly open.",
+                ),
+                _blocked(
+                    "high_risk_supersession_authority_boundary",
+                    finding_code="ao_release_gate_high_risk_supersession_authority_boundary_open",
+                    detail="High-risk supersession evidence opens release authority, mutation, secret, or guard-flag boundaries.",
+                ),
+            ],
+            False,
+        )
+
+    explicit_non_agree = high_risk_supersession_evidence.get("consensus_status") not in {None, "AGREE"} or any(
+        isinstance(verdict, dict) and verdict.get("verdict") not in {None, "AGREE"}
+        for verdict in _as_list(high_risk_supersession_evidence.get("provider_verdicts"))
+    )
+    if explicit_non_agree:
+        return (
+            [
+                evidence_present,
+                _pass(
+                    "high_risk_supersession_schema",
+                    detail="High-risk supersession schema validation is deferred; evidence explicitly records non-AGREE consensus.",
+                ),
+                _pass(
+                    "high_risk_supersession_freshness",
+                    detail="High-risk supersession freshness is not evaluated because evidence explicitly records non-AGREE consensus.",
+                ),
+                _blocked(
+                    "high_risk_supersession_consensus",
+                    finding_code="ao_release_gate_high_risk_supersession_consensus_not_agree",
+                    detail="High-risk supersession evidence does not record unanimous AGREE consensus from required providers.",
+                ),
+                _blocked(
+                    "high_risk_supersession_context_bound",
+                    finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
+                    detail="High-risk supersession context binding cannot be trusted; consensus is not accepting.",
+                ),
+                _pass(
+                    "high_risk_supersession_authority_boundary",
+                    detail="High-risk supersession authority boundary remains closed.",
+                ),
+            ],
+            False,
+        )
+
+    validator = Draft202012Validator(_load_ao_ma10_high_risk_supersession_schema())
+    if list(validator.iter_errors(high_risk_supersession_evidence)):
+        return (
+            [
+                evidence_present,
+                _blocked(
+                    "high_risk_supersession_schema",
+                    finding_code="ao_release_gate_high_risk_supersession_schema_invalid",
+                    detail=(
+                        "High-risk supersession evidence does not validate against "
+                        "ao-ma-10-high-risk-supersession-evidence.schema.v1.json."
+                    ),
+                ),
+                _pass(
+                    "high_risk_supersession_consensus",
+                    detail="High-risk supersession consensus cannot be evaluated until schema validation passes.",
+                ),
+                _pass(
+                    "high_risk_supersession_freshness",
+                    detail="High-risk supersession freshness cannot be evaluated until schema validation passes.",
+                ),
+                _blocked(
+                    "high_risk_supersession_context_bound",
+                    finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
+                    detail="High-risk supersession context binding cannot be evaluated; evidence failed schema validation.",
+                ),
+                _pass(
+                    "high_risk_supersession_authority_boundary",
+                    detail="High-risk supersession authority boundary cannot be evaluated until schema validation passes.",
+                ),
+            ],
+            False,
+        )
+
+    schema_valid = _pass(
+        "high_risk_supersession_schema",
+        detail="High-risk supersession evidence validates against its JSON Schema.",
+    )
+    if not _high_risk_supersession_is_fresh(
+        high_risk_supersession_evidence,
+        decision_generated_at=decision_generated_at,
+    ):
+        return (
+            [
+                evidence_present,
+                schema_valid,
+                _blocked(
+                    "high_risk_supersession_freshness",
+                    finding_code="ao_release_gate_high_risk_supersession_stale",
+                    detail=(
+                        "High-risk supersession evidence is stale, generated in the future, "
+                        "or has an unparsable freshness window."
+                    ),
+                ),
+                _pass(
+                    "high_risk_supersession_consensus",
+                    detail="High-risk supersession consensus is not evaluated because freshness failed.",
+                ),
+                _blocked(
+                    "high_risk_supersession_context_bound",
+                    finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
+                    detail="High-risk supersession context binding cannot be trusted; freshness failed.",
+                ),
+                _pass(
+                    "high_risk_supersession_authority_boundary",
+                    detail="High-risk supersession authority boundary remains closed.",
+                ),
+            ],
+            False,
+        )
+    freshness_check = _pass(
+        "high_risk_supersession_freshness",
+        detail="High-risk supersession evidence is within its declared freshness window.",
+    )
+    authority_check = _pass(
+        "high_risk_supersession_authority_boundary",
+        detail="High-risk supersession evidence keeps release authority, mutation, secret, and guard-flag boundaries closed.",
+    )
+
+    provider_verdicts = _as_list(high_risk_supersession_evidence.get("provider_verdicts"))
+    provider_ids = [item.get("provider_id") for item in provider_verdicts if isinstance(item, dict)]
+    provider_ids_are_distinct = len(set(provider_ids)) == len(provider_ids)
+    required_provider_ids = {"openai", "anthropic"}
+    required_providers_are_present = required_provider_ids.issubset(set(provider_ids))
+    if not provider_ids_are_distinct or not required_providers_are_present:
+        return (
+            [
+                evidence_present,
+                schema_valid,
+                freshness_check,
+                _blocked(
+                    "high_risk_supersession_consensus",
+                    finding_code="ao_release_gate_high_risk_supersession_same_provider_self_review",
+                    detail="High-risk supersession evidence contains duplicate providers or omits OpenAI/Anthropic.",
+                ),
+                _blocked(
+                    "high_risk_supersession_context_bound",
+                    finding_code="ao_release_gate_high_risk_supersession_context_unverifiable",
+                    detail="High-risk supersession context binding cannot be trusted; provider identity is not distinct.",
+                ),
+                authority_check,
+            ],
+            False,
+        )
+
+    consensus_check = _pass(
+        "high_risk_supersession_consensus",
+        detail="High-risk supersession evidence records unanimous AGREE from OpenAI and Anthropic providers.",
+    )
+    raw_binding = high_risk_supersession_evidence.get("context_binding")
+    binding = raw_binding if isinstance(raw_binding, dict) else None
+    provider_bindings = [
+        _as_dict(verdict.get("context_binding")) for verdict in provider_verdicts if isinstance(verdict, dict)
+    ]
+    provider_bindings_match = bool(provider_bindings) and all(
+        _high_risk_supersession_binding_matches(provider_binding, context)
+        and binding is not None
+        and _high_risk_supersession_bindings_equivalent(provider_binding, binding)
+        for provider_binding in provider_bindings
+    )
+    context_bound = (
+        binding is not None
+        and _high_risk_supersession_binding_matches(binding, context)
+        and provider_bindings_match
+    )
+    context_check = (
+        _pass(
+            "high_risk_supersession_context_bound",
+            detail=(
+                "High-risk supersession evidence context binding matches repository, refs, head SHA, "
+                "diff digest, changed-files count, and high-risk changed paths."
+            ),
+        )
+        if context_bound
+        else _blocked(
+            "high_risk_supersession_context_bound",
+            finding_code="ao_release_gate_high_risk_supersession_context_unbound",
+            detail=(
+                "High-risk supersession evidence context binding does not match the pull request "
+                "or provider verdict bindings."
+            ),
+        )
+    )
+    return (
+        [evidence_present, schema_valid, freshness_check, consensus_check, context_check, authority_check],
+        context_bound,
+    )
 
 
 def _evaluate_ao_ma10_evidence_bundle_checks(
@@ -1091,11 +1507,20 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_pull_request_target_context",
             "ao_release_gate_review_evidence_context_unbound",
             "ao_release_gate_ao_ma10_evidence_bundle_context_unbound",
+            "ao_release_gate_high_risk_supersession_context_unbound",
         }
         for finding in findings
     ):
         return cast(ReleaseGateDecisionValue, DENY_UNTRUSTED_CONTEXT_DECISION)
-    if "ao_release_gate_ao_ma10_same_provider_self_review" in findings:
+    if any(
+        finding
+        in {
+            "ao_release_gate_ao_ma10_same_provider_self_review",
+            "ao_release_gate_high_risk_supersession_same_provider_self_review",
+            "ao_release_gate_high_risk_supersession_authority_boundary_open",
+        }
+        for finding in findings
+    ):
         return cast(ReleaseGateDecisionValue, DENY_POLICY_VIOLATION_DECISION)
     if any(
         finding
@@ -1116,6 +1541,11 @@ def _decision_from_findings(findings: list[str]) -> ReleaseGateDecisionValue:
             "ao_release_gate_ao_ma10_evidence_bundle_schema_invalid",
             "ao_release_gate_ao_ma10_consensus_not_agree",
             "ao_release_gate_ao_ma10_evidence_bundle_context_unverifiable",
+            "ao_release_gate_high_risk_supersession_evidence_missing",
+            "ao_release_gate_high_risk_supersession_schema_invalid",
+            "ao_release_gate_high_risk_supersession_stale",
+            "ao_release_gate_high_risk_supersession_consensus_not_agree",
+            "ao_release_gate_high_risk_supersession_context_unverifiable",
         }
         for finding in findings
     ):
@@ -1300,6 +1730,7 @@ def build_ao_release_gate_decision(
     *,
     review_evidence: object = None,
     ao_ma10_evidence_bundle: object = None,
+    high_risk_supersession_evidence: object = None,
     generated_at: str | None = None,
     conclusion_mode: ConclusionMode = DEFAULT_CONCLUSION_MODE,
 ) -> AoReleaseGateDecision:
@@ -1326,9 +1757,26 @@ def build_ao_release_gate_decision(
     when a caller explicitly supplies a bundle. Missing, malformed,
     non-AGREE, authority-boundary-open, or context-mismatched bundle
     evidence fails closed without making AI output release authority.
+
+    ``high_risk_supersession_evidence`` is the untrusted
+    ``ao-ma-10-high-risk-supersession-evidence.v1`` artifact introduced
+    by AO-MA-10h for the AO-MA-10i runtime slice. When schema-valid,
+    context-bound, unanimous across OpenAI + Anthropic providers, and
+    authority-boundary-closed, it can satisfy the path-sensitive
+    high-risk gate as an alternative to a current-head non-author human
+    approval. Missing evidence is backward-compatible: the existing
+    human-approval path remains authoritative.
     """
 
+    decision_generated_at = generated_at or utc_timestamp()
     context = extract_ao_release_gate_context(payload, gpp_status)
+    high_risk_supersession_checks, high_risk_supersession_valid = (
+        _evaluate_high_risk_supersession_checks(
+            high_risk_supersession_evidence,
+            context,
+            decision_generated_at=decision_generated_at,
+        )
+    )
     checks = [
         _check(
             "payload_shape",
@@ -1437,15 +1885,22 @@ def build_ao_release_gate_decision(
             pass_detail="Changed paths are inside the explicit work-package allowlist.",
             blocked_detail="Changed paths or allowlist are missing, or a changed path is out of scope.",
         ),
+        *high_risk_supersession_checks,
         _check(
             "path_sensitive_human_review",
-            _path_sensitive_human_review_satisfied(context),
+            _path_sensitive_human_review_satisfied(
+                context, high_risk_supersession_valid=high_risk_supersession_valid
+            ),
             finding_code="ao_release_gate_high_risk_human_review_missing",
             pass_detail=(
                 "The path-sensitive human-review gate is inactive, no high-risk paths changed, "
-                "or a current-head non-author human approval exists for the high-risk surface."
+                "a current-head non-author human approval exists for the high-risk surface, "
+                "or valid high-risk supersession evidence is bound to this PR."
             ),
-            blocked_detail=("High-risk paths changed without a current-head non-author human approval."),
+            blocked_detail=(
+                "High-risk paths changed without a current-head non-author human approval "
+                "or valid high-risk supersession evidence."
+            ),
         ),
         _check(
             "secret_boundary",
@@ -1492,7 +1947,7 @@ def build_ao_release_gate_decision(
         "schema_version": RELEASE_GATE_SCHEMA_VERSION,
         "artifact_kind": RELEASE_GATE_ARTIFACT_KIND,
         "program_id": RELEASE_GATE_PROGRAM_ID,
-        "generated_at": generated_at or utc_timestamp(),
+        "generated_at": decision_generated_at,
         "app_slug": RELEASE_GATE_CHECK_NAME,
         "dry_run": True,
         "merge_authority_enabled": False,
