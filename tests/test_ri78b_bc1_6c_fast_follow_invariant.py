@@ -173,6 +173,22 @@ def test_6c_fast_follow_evidence_validates_against_schema():
     )
 
 
+ALLOWED_NEW_SURFACES_PR = [
+    # Core 6c-fast-follow scope (9)
+    ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.md",
+    ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.v1.json",
+    ".claude/plans/gpp_status.v1.json",
+    ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+    "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-dispatch-trigger.schema.v1.json",
+    "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-fast-follow-autonomous-preprod-evidence.schema.v1.json",
+    "local-ai-review-evidence.v1.json",
+    "scripts/ri78b_bc1_activation_window.py",
+    "tests/test_ri78b_bc1_6c_fast_follow_invariant.py",
+    # Systemic 6b state-at-landing introducer-only pin fix
+    "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py",
+]
+
+
 def test_6c_fast_follow_decision_const():
     e = _load_json(EVIDENCE_PATH)
     assert (

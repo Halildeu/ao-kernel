@@ -278,6 +278,12 @@ def test_ri78b_bc1_6b_does_not_authorize_6_enum():
 
 
 def test_ri78b_bc1_6b_workflow_content_sha256_matches_file():
+    """State-at-landing pin: workflow sha256 in 6b evidence must match the file
+    at the introducer PR. Successor slices (6c-fast-follow removes env, adds
+    push trigger + matrix) legitimately mutate the file; the const digests
+    inside 6b evidence keep enforcing the 6b state at landing time."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     e = _load_json(EVIDENCE_PATH)
     expected = _sha256_file(WORKFLOW_PATH)
     assert e["workflow_binding"]["workflow_content_sha256"] == expected
@@ -285,6 +291,12 @@ def test_ri78b_bc1_6b_workflow_content_sha256_matches_file():
 
 
 def test_ri78b_bc1_6b_workflow_yaml_structure():
+    """State-at-landing pin: 6b's expected workflow YAML structure (environment
+    binding + workflow_dispatch only + minimal permissions). Successor slices
+    (6c-fast-follow removes env, adds push trigger + matrix) legitimately
+    revise this structure; this dynamic check only runs on the introducer PR."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     text = WORKFLOW_PATH.read_text()
     # workflow_dispatch only
     assert "workflow_dispatch:" in text
@@ -345,6 +357,14 @@ def test_ri78b_bc1_6b_gpp_status_top_level_guard_flags_const_false():
 
 
 def test_ri78b_bc1_6b_gpp_status_supersession_entry_present():
+    """State-at-landing pin: 6b's expected gpp_status entry shape (manual
+    protected environment authority mode). Successor slice 6c-fast-follow
+    revises this entry to operator_delegated_autonomous_preprod authority
+    mode (status awaiting_auto_dispatch_trigger_commit, env_name null,
+    autonomous_trigger_contract added). This check only runs on the 6b
+    introducer PR; mode-aware always-on invariants stay above."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     status = _load_json(GPP_STATUS_PATH)
     entries = status.get("operator_bound_supersessions", [])
     matches = [e for e in entries if e.get("id") == "RI-7.8b-bc1-6b"]
@@ -375,6 +395,13 @@ def test_ri78b_bc1_6b_gpp_status_entry_scoped_policy():
 
 
 def test_ri78b_bc1_6b_gpp_status_entry_workflow_content_sha256_matches_file():
+    """State-at-landing pin: 6b's workflow_content_sha256 in the gpp_status
+    entry must match the workflow file at 6b landing. Successor slice
+    6c-fast-follow updates the workflow file (env removal + push trigger +
+    matrix), so the digest will not match on later PRs; the 6b state at
+    landing is captured by the artifact const digests above."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     status = _load_json(GPP_STATUS_PATH)
     entries = status.get("operator_bound_supersessions", [])
     entry = next(e for e in entries if e.get("id") == "RI-7.8b-bc1-6b")
@@ -418,6 +445,13 @@ def test_ri78b_bc1_6b_predecessor_digests_match_files():
 
 
 def test_ri78b_bc1_6b_stale_replay_guard_digests_match_files():
+    """State-at-landing pin: 6b's stale_replay_guard digests (predecessors +
+    workflow content + submanifest + readiness manifest) must match the files
+    at 6b landing. Successor slices (6c-fast-follow updates workflow file)
+    intentionally drift this comparison; the 6b state at landing is captured
+    by the immutable digest pins inside the artifact itself."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     e = _load_json(EVIDENCE_PATH)
     g = e["stale_replay_guard"]
     assert g["ri78a_evidence_sha256"] == _sha256_file(RI78A_EVIDENCE_PATH)
