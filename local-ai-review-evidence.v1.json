@@ -1,105 +1,110 @@
 {
-  "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "mypy_new_test",
-      "status": "pass"
-    },
-    {
-      "name": "git_diff_check",
-      "status": "pass"
-    },
-    {
-      "name": "json_validation",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10d_negative_fail_closed_tests",
-      "status": "pass"
-    },
-    {
-      "name": "ao_release_gate_targeted_tests",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10_evidence_schema_tests",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_next_guard_check",
-      "status": "pass"
-    },
-    {
-      "name": "claude_cross_provider_review",
-      "status": "pass"
-    },
-    {
-      "name": "no_workflow_ruleset_codeowners_merge_agent_mutation",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_production_platform_claim",
-      "status": "pass"
-    },
-    {
-      "name": "no_live_adapter_execution",
-      "status": "pass"
-    }
-  ],
-  "findings": [
-    "AO-MA-10d records the negative fail-closed suite before AO-MA-10c merge-agent dry-run or AO-MA-10e positive smoke.",
-    "Claude/Anthropic identified a real fail-open gap: duplicate provider_id verdicts could previously satisfy AO-MA-10 consensus.",
-    "ao-release-gate now rejects duplicate provider IDs or missing required provider verdicts with ao_release_gate_ao_ma10_same_provider_self_review and deny_policy_violation.",
-    "The new AO-MA-10d suite covers same-provider review, stale or missing evidence, high-risk or prohibited paths, missing or non-accepting verifier evidence, authority-boundary flips, context drift, malformed request flags, and a positive control.",
-    "AO-MA-10 receipt marks only the four negative activation-prerequisite smokes done; merge-agent identity, positive smoke, admin bypass absence, and cutover remain not_started.",
-    "RI-7.8b cross-artifact verdict equality now skips when the global local-ai-review-evidence.v1.json belongs to another active PR work package.",
-    "Claude/Anthropic reviewed the current diff with read-only tools and returned VERDICT: AGREE.",
-    "Local verification passed: targeted AO-MA-10d/release-gate/schema tests, ruff, mypy for the new test file, JSON validation, git diff --check, and gpp_next guard review.",
-    "Scope excludes .github workflows, CODEOWNERS, rulesets, branch protection, merge-agent activation, support widening, production platform claim, live adapter execution, testai, smee, Vault, GitHub App, and Cloud Run work."
-  ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
+  "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "reviewer": {
+  "work_package": "RI-7.8b-bc1-6b",
+  "implementer": {
     "agent": "claude",
-    "provider": "anthropic",
+    "provider": "anthropic"
+  },
+  "reviewer": {
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
-  "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window",
     "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      "ao_kernel/ao_release_gate.py",
-      "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
+      ".claude/plans/RI-7.8b-bc1-6b-PROTECTED-EXECUTION-WINDOW.md",
+      ".claude/plans/RI-7.8b-bc1-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      "ao_kernel/defaults/schemas/ri7-8b-bc1-6b-protected-execution-window-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
-      "tests/test_ao_ma10_negative_fail_closed.py",
-      "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma-10d-negative-fail-closed-suite"
+      "scripts/ri78b_bc1_activation_window.py",
+      "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py"
+    ]
   },
+  "checks_considered": [
+    {"name": "tests", "status": "pass"},
+    {"name": "ruff", "status": "pass"},
+    {"name": "secret_scan", "status": "pass"},
+    {"name": "schema_draft_2020_12_valid", "status": "pass"},
+    {"name": "schema_decision_const_infrastructure_pending_dispatch", "status": "pass"},
+    {"name": "schema_authorization_effect_const_no_run_evidence_no_flip", "status": "pass"},
+    {"name": "schema_does_not_authorize_6_const_enum", "status": "pass"},
+    {"name": "schema_ri78a_predecessor_ref_digest_pinned", "status": "pass"},
+    {"name": "schema_ri78b_6a_predecessor_ref_digest_pinned", "status": "pass"},
+    {"name": "schema_operator_activation_confirmation_six_signal", "status": "pass"},
+    {"name": "schema_workflow_binding_canonical_path_sha256_minimal_perms", "status": "pass"},
+    {"name": "schema_protected_environment_observation_const", "status": "pass"},
+    {"name": "schema_run_budget_bounded_caps", "status": "pass"},
+    {"name": "schema_guard_flag_policy_resolution_top_baseline_const_scoped_grant", "status": "pass"},
+    {"name": "schema_runtime_fail_closed_controls_min_nine", "status": "pass"},
+    {"name": "schema_current_readiness_snapshot_9_9_true", "status": "pass"},
+    {"name": "schema_current_gpp_guard_snapshot_all_false", "status": "pass"},
+    {"name": "schema_ri78_submanifest_snapshot_predecessor_state", "status": "pass"},
+    {"name": "schema_guard_flags_const_false", "status": "pass"},
+    {"name": "schema_submanifest_transition_before_after_equal_false", "status": "pass"},
+    {"name": "schema_forbidden_change_audit_exact_13_set_contains_minmax", "status": "pass"},
+    {"name": "schema_stale_replay_guard_includes_workflow_content_sha256", "status": "pass"},
+    {"name": "schema_cross_ai_review_provider_split_const", "status": "pass"},
+    {"name": "evidence_validates_against_schema", "status": "pass"},
+    {"name": "workflow_file_exists_and_sha256_matches_evidence", "status": "pass"},
+    {"name": "workflow_yaml_workflow_dispatch_only_no_push_no_pr_no_schedule", "status": "pass"},
+    {"name": "workflow_yaml_environment_binding_canonical_name", "status": "pass"},
+    {"name": "workflow_yaml_minimal_permissions_no_write", "status": "pass"},
+    {"name": "workflow_yaml_concurrency_group_no_cancel_in_progress", "status": "pass"},
+    {"name": "workflow_yaml_no_forbidden_input_names_declared", "status": "pass"},
+    {"name": "activation_window_guard_script_exists", "status": "pass"},
+    {"name": "gpp_status_top_level_guard_flags_const_false", "status": "pass"},
+    {"name": "gpp_status_supersession_entry_present_id_scope_match", "status": "pass"},
+    {"name": "gpp_status_supersession_entry_scoped_policy_pinned", "status": "pass"},
+    {"name": "gpp_status_supersession_entry_workflow_sha256_matches_file", "status": "pass"},
+    {"name": "predecessor_digests_match_files_ri78a_ri78b6a", "status": "pass"},
+    {"name": "stale_replay_guard_digests_match_files_including_workflow", "status": "pass"},
+    {"name": "activation_confirmed_at_not_in_future", "status": "pass"},
+    {"name": "validity_window_bounded_by_max_activation_delay_168h", "status": "pass"},
+    {"name": "ri78_submanifest_unchanged_in_6b", "status": "pass"},
+    {"name": "nine_key_readiness_manifest_unchanged_all_true", "status": "pass"},
+    {"name": "forbidden_change_audit_13_surfaces_machine_enforced", "status": "pass"},
+    {"name": "diff_scope_only_allowed_surfaces", "status": "pass"},
+    {"name": "dispatch_allowlist_forbidden_disjoint", "status": "pass"},
+    {"name": "negative_top_level_baseline_live_true_rejected", "status": "pass"},
+    {"name": "negative_scoped_live_false_rejected", "status": "pass"},
+    {"name": "negative_submanifest_after_bc1_true_rejected", "status": "pass"},
+    {"name": "negative_top_level_guard_flag_true_rejected", "status": "pass"},
+    {"name": "negative_workflow_path_drift_rejected", "status": "pass"},
+    {"name": "negative_protected_env_production_name_rejected", "status": "pass"},
+    {"name": "negative_max_run_count_too_high_rejected", "status": "pass"},
+    {"name": "negative_max_run_attempt_non_one_rejected", "status": "pass"},
+    {"name": "cross_provider_verified_anthropic_implementer_openai_reviewer", "status": "pass"},
+    {"name": "codex_plan_time_partial_iter1_revise_iter2_agree", "status": "pass"},
+    {"name": "no_support_widening", "status": "pass"},
+    {"name": "no_production_platform_claim", "status": "pass"},
+    {"name": "no_live_adapter_execution_in_pr", "status": "pass"},
+    {"name": "no_release_gate_runtime_change", "status": "pass"},
+    {"name": "no_local_gpp_gate_change", "status": "pass"},
+    {"name": "no_readiness_script_change", "status": "pass"},
+    {"name": "no_readiness_manifest_change", "status": "pass"},
+    {"name": "no_ri78_submanifest_change", "status": "pass"}
+  ],
+  "findings": [
+    "RI-7.8b-bc1-6b v1 protected execution window INFRASTRUCTURE slice. B-path slice 6b of 8 (after RI-7.8b-bc1-6a MERGED in PR #675). This slice creates the protected workflow file, runtime activation guard, and scoped operator_bound_supersessions[RI-7.8b-bc1-6b] entry. NO live adapter execution occurs in this PR; operator workflow_dispatch post-merge triggers actual runs within the bounded window. Per-run evidence + spend ledger + window closure + submanifest BC-1 flip belong to RI-7.8b-bc1-6c.",
+    "Top-level gpp_status guard flags remain const FALSE (baseline closure preserved under gpp9_keep_narrow_stable_runtime_authoritative_program_closed). Effective live_adapter_execution_allowed is granted ONLY within the scoped operator_bound_supersessions[RI-7.8b-bc1-6b] entry, evaluated at workflow runtime by scripts/ri78b_bc1_activation_window.py. This preserves GPP-9 closure language while authorizing a single bounded execution window.",
+    "Codex plan-time thread 019e6bcb-6a95-7e11-8619-d1d57f2208c1: iter-1 PARTIAL absorbed (top-level live_adapter_execution_allowed=true YASAK, scoped supersession pattern, workflow_content_sha256 raw bytes, expected_* contract, run_attempt==1 only, GitHub Actions API run cap not run_number); iter-2 REVISE absorbed (additive operator_bound_supersessions[] field, permissions actions:read + deployments:read, gpp_next.py additive render deferred); iter-2 AGREE.",
+    "Schema strictness (Draft 2020-12, additionalProperties=false at every level): decision const, authorization_effect const, does_not_authorize minItems=maxItems=6 enum, ri78a + ri78b_6a predecessor digest pins, operator_activation_confirmation 6-signal (Halildeu const + ISO 8601 UTC + auditable source + no_secret + scope const + observation_notes), workflow_binding (canonical workflow_path const + content sha256 raw bytes pattern + allowed_ref=main const + dispatch_inputs_allowlist=[scenario] + forbidden_inputs 6 enum + permissions {contents,actions,deployments}:read const + concurrency_group const + run_attempt_one_only=true const), protected_environment_observation (env_name=ao-kernel-bc1-live-adapter-attestation NOT production_*, required_reviewers + prevent_self_review + admin_bypass_allowed_required=false + operator_manual_setup_required=true + observed_at_runtime_by_6c=true const), run_budget (max_distinct_runs<=5, max_run_attempt=const 1, max_usd<=$5), guard_flag_policy_resolution_evidence (top_level_baseline_preserved all 3 false const + scoped_supersession_entry_id/scope const + scoped_live=true const + scoped_support/production=false const + evaluator path const), runtime_fail_closed_controls minItems=9, current_readiness_snapshot 9/9 true const, current_gpp_guard_snapshot all false const, ri78_submanifest_snapshot predecessor state pinned, stale_replay_guard (5 sha256 digests + base_sha + workflow_content_sha256 + timestamp), guard flags const false, submanifest_transition before=after=false (UNCHANGED), forbidden_change_audit exact 13 surfaces (contains+minContains+maxContains per surface), cross_ai_review_ref provider split const.",
+    "Negative schema tests (8): top_level_baseline live_adapter_execution_allowed=true rejected; scoped_live_adapter_execution_allowed=false rejected; submanifest after.bc1=true rejected; top-level live_adapter_execution=true rejected; workflow_path drift rejected; env_name=production-* rejected; max_distinct_runs>5 rejected; max_run_attempt!=1 rejected.",
+    "Workflow file structural checks (5): workflow_dispatch only (no push/pr/schedule), environment binding canonical, minimal permissions (contents/actions/deployments: read; no write), concurrency group + cancel-in-progress=false, no forbidden input names declared.",
+    "gpp_status entry structural checks (4): top-level guard flags all false (baseline closure preserved); entry id=RI-7.8b-bc1-6b scope=bc1_protected_live_adapter_attestation_only present; entry scoped policy (support/production false, live true scoped); entry workflow_content_sha256 matches actual file.",
+    "Submanifest: NEW slice does NOT mutate .claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json. All four keys remain at predecessor values (live=true, bc1=false, bc10=false, final=false). 6c flips BC-1 after evidence record + closure.",
+    "Operator authority (4 concurrent signals): commit identity Halildeu, commit trailers (Operator-Activation-Confirmed-By + At + Activation-Scope=bc1_protected_live_adapter_attestation_only + No-Live-Execution-In-PR=true + Scoped-Supersession-Entry-Id + Top-Level-Guard-Flags-Const-False=true), GitHub PR approval via ao-release-gate-review, cross-AI peer review AGREE in BOTH artifacts.",
+    "Forbidden-change audit clean (machine-enforced via git diff + schema contains+minContains+maxContains): 13 surfaces. .github/workflows/ and .claude/plans/gpp_status.v1.json are intentionally NOT forbidden in 6b (new workflow + scoped entry addition; top-level guard flags untouched).",
+    "Diff scope (8 files): plan doc + evidence (NEW) + schema (NEW) + invariant test (NEW) + workflow file (NEW) + activation_window.py (NEW) + gpp_status.v1.json (MODIFIED additive); local-ai-review-evidence (MODIFIED). Submanifest UNCHANGED, 9-key readiness UNCHANGED.",
+    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. Final AGREE pending post-impl review; cross-artifact verdict equality enforced."
+  ],
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10d"
+  "production_platform_claim": false
 }

@@ -1,0 +1,163 @@
+{
+  "schema_version": "ri7-8b-bc1-6b-protected-execution-window-evidence.v1",
+  "artifact_kind": "ri7_8b_bc1_6b_protected_execution_window_evidence",
+  "decision": "ri78b_bc1_6b_protected_execution_window_infrastructure_recorded_dispatch_pending_no_run_evidence_no_submanifest_flip",
+  "authorization_effect": "protected_execution_window_infrastructure_recorded_pending_operator_dispatch_no_run_evidence_no_submanifest_flip",
+  "does_not_authorize": [
+    "submanifest_bc1_flip_now",
+    "automatic_workflow_dispatch_without_operator_action",
+    "credential_reference_in_repo",
+    "cost_incurring_calls_outside_dispatched_window",
+    "support_widening",
+    "production_platform_claim"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2"
+  },
+  "ri78b_6a_predecessor_ref": {
+    "pr_number": 675,
+    "commit_sha": "2d49f42716004111976a5efc0ea4e5c91308a5ed",
+    "evidence_sha256": "7356e3c22f04b43f7e093ef4e5b8aea98810c362b6cb8b8cbc8c3a8d86eb2865"
+  },
+  "operator_activation_confirmation": {
+    "github_login": "Halildeu",
+    "activation_confirmed_at": "2026-05-28T07:08:16Z",
+    "activation_source": "github.com/Halildeu/ao-kernel/pull/675#ri78b-bc1-6b-successor",
+    "no_secret_assertion": true,
+    "activation_scope": "bc1_protected_live_adapter_attestation_only",
+    "observation_notes": "Operator records the activation of the protected execution window infrastructure for RI-7.8b-bc1 live-adapter attestation. This artifact creates the workflow file + runtime activation guard + scoped operator_bound_supersessions entry in gpp_status.v1.json. Top-level guard flags remain const false (baseline closure preserved). Effective live_adapter_execution_allowed is granted only within the bounded window via the scoped supersession entry, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime. No live adapter call occurs in this PR; operator workflow_dispatch post-merge triggers the actual run within the window. Per-run evidence + spend ledger + window closure + submanifest BC-1 flip belong to RI-7.8b-bc1-6c."
+  },
+  "workflow_binding": {
+    "workflow_path": ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+    "workflow_content_sha256": "b37d79c6d6bfbdfddf18f72aeffb39756ddc9dcc639c5cee4e195a9a8f27c1b6",
+    "allowed_ref": "refs/heads/main",
+    "dispatch_inputs_allowlist": ["scenario"],
+    "forbidden_inputs": ["api_key", "token", "secret", "credential", "password", "auth_header"],
+    "permissions_minimal": {
+      "contents": "read",
+      "actions": "read",
+      "deployments": "read"
+    },
+    "concurrency_group": "ri78b-bc1-protected-live-adapter-attestation",
+    "run_attempt_one_only": true
+  },
+  "protected_environment_observation": {
+    "env_name": "ao-kernel-bc1-live-adapter-attestation",
+    "required_reviewers_required": true,
+    "prevent_self_review_required": true,
+    "allowed_refs_required": ["refs/heads/main"],
+    "admin_bypass_allowed_required": false,
+    "operator_manual_setup_required": true,
+    "observed_at_runtime_by_6c": true
+  },
+  "run_budget": {
+    "max_distinct_runs": 5,
+    "max_run_attempt": 1,
+    "max_usd": 5.00,
+    "validity_window_until": "2026-06-04T07:08:16Z"
+  },
+  "guard_flag_policy_resolution_evidence": {
+    "top_level_baseline_preserved": {
+      "support_widening_allowed": false,
+      "production_platform_claim_allowed": false,
+      "live_adapter_execution_allowed": false
+    },
+    "scoped_supersession_entry_id": "RI-7.8b-bc1-6b",
+    "scoped_supersession_entry_scope": "bc1_protected_live_adapter_attestation_only",
+    "scoped_live_adapter_execution_allowed": true,
+    "scoped_support_widening_allowed": false,
+    "scoped_production_platform_claim_allowed": false,
+    "effective_permission_evaluator": "scripts/ri78b_bc1_activation_window.py"
+  },
+  "runtime_fail_closed_controls": [
+    "github.ref != refs/heads/main -> exit 1",
+    "github.event_name != workflow_dispatch -> exit 1",
+    "github.run_attempt != 1 -> exit 1 (rerun forbidden)",
+    "scenario input not in {clean_attestation, fail_closed_attestation} -> exit 1",
+    "workflow_content_sha256 mismatch with active supersession entry binding -> exit 1",
+    "no active supersession entry id=RI-7.8b-bc1-6b scope=bc1_protected_live_adapter_attestation_only -> exit 1",
+    "supersession entry status not in {awaiting_operator_dispatch, active} -> exit 1",
+    "now_utc >= entry.valid_until (window expired) -> exit 1",
+    "distinct workflow_dispatch run count on main > 5 -> exit 1",
+    "top-level guard flags drift from false (baseline closure violated) -> exit 1",
+    "scoped guard policy resolution drift (support_widening=true or production_platform_claim=true) -> exit 1"
+  ],
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision"
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": false,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo",
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window",
+    "pr_number_hint": "TBD",
+    "base_sha": "2d49f42716004111976a5efc0ea4e5c91308a5ed",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_6a_evidence_sha256": "7356e3c22f04b43f7e093ef4e5b8aea98810c362b6cb8b8cbc8c3a8d86eb2865",
+    "ri78_submanifest_sha256": "ab1d839b4f885926321a053c17cffdabde6f8c07abae0f3feddeb60aafafd631",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "workflow_content_sha256": "b37d79c6d6bfbdfddf18f72aeffb39756ddc9dcc639c5cee4e195a9a8f27c1b6",
+    "timestamp": "2026-05-28T07:08:16Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6b-protected-execution-window",
+    "pr_number_hint": "TBD"
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    },
+    "after": {
+      "bc1_protected_live_adapter_attestation_recorded": false
+    }
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      "scripts/gp5_platform_claim_decision.py",
+      "ao_kernel/mcp_server.py",
+      "ao_kernel/__init__.py",
+      "ao_kernel/defaults/policies/",
+      "docs/PUBLIC-BETA.md",
+      "docs/SUPPORT-BOUNDARY.md",
+      "docs/KNOWN-BUGS.md",
+      "ao_kernel/defaults/schemas/local-gpp-gate-evidence.schema.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "scripts/local_gpp_gate.py",
+      "scripts/repo_intelligence_tier_promotion_readiness.py",
+      ".claude/plans/RI-7-EVIDENCE-MANIFEST.v1.json",
+      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e6bcb-6a95-7e11-8619-d1d57f2208c1",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8b-bc1-6b is the protected execution window INFRASTRUCTURE slice. No live adapter call occurs in this PR. Operator workflow_dispatch post-merge triggers actual runs within the bounded window.",
+    "Top-level gpp_status guard flags remain const false (baseline closure preserved). Effective live_adapter_execution_allowed is granted only within the scoped operator_bound_supersessions[RI-7.8b-bc1-6b] entry, evaluated by scripts/ri78b_bc1_activation_window.py at workflow runtime.",
+    "RI-7.8b-bc1-6c collects per-run evidence (clean_attestation + fail_closed_attestation), spend ledger per call, runtime fail-closed proof, closes the window (actual_end_at + entry status=closed), and flips RI-7.8 submanifest BC-1 false -> true.",
+    "Codex plan-time thread 019e6bcb-6a95-7e11-8619-d1d57f2208c1 iter-1 PARTIAL absorbed (top-level guard flags const false KALIR, scoped supersession entry pattern, workflow_content_sha256 raw bytes, expected_* contract); iter-2 REVISE absorbed (3 hassas alan: gpp_status additive field, run cap GitHub Actions API not run_number, permissions actions:read + deployments:read); iter-2 AGREE.",
+    "Operator manual setup required PRE-MERGE: GitHub protected environment ao-kernel-bc1-live-adapter-attestation with Halildeu reviewer + admin_bypass disabled + allowed_refs=[refs/heads/main]. RI-7.8b-bc1-6c verifies this via API at runtime."
+  ]
+}
