@@ -61,18 +61,27 @@ Current program head:
 GPP-2 - Protected Live-Adapter Gate Runtime Binding (closed)
 ```
 
-Active sublane:
+Recorded GPP sublane:
 
 ```text
-GPP-2D - Autonomous Required-Check Lane (fully landed)
+GPP-2D - Autonomous Required-Check Lane (GPP closeout recorded)
   GPP-2D-2c shadow workflow recorded
   GPP-2D-3 enforce job + GPP-2D-4 real-PR evidence collected
-  GPP-2D-5 branch-protection ruleset cutover landed
-    (ruleset id 16803733; required check ao-release-gate
-    via integration_id 15368 source-pin; bypass_actors=[])
   GPP-2D-7 AO-GATE-9 GPP-2 closeout recorded
-  GPP-2D-6 low-risk auto-merge smoke remains optional
-    later hardening, not a closeout prerequisite
+  GPP-2D-6 low-risk auto-merge smoke remains later hardening,
+    not a GPP closeout prerequisite
+```
+
+Live autonomy readiness:
+
+```text
+AO-MA-10A0/A1 are the current authority for whether the repository can
+actually run the fully autonomous merge lane today. As of the latest
+GitHub API snapshot, the lane is blocked: ruleset 16803733 does not
+carry the required ao-release-gate check set, legacy branch protection
+still requires review/CODEOWNERS, and the observed actor is admin.
+Do not treat the GPP-2D/GPP-9 closeout wording as live GitHub
+required-check evidence.
 ```
 
 Related orchestration:

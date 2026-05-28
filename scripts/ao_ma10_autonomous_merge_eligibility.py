@@ -247,7 +247,7 @@ def build_eligibility(
     next_required_slice = (
         "AO-MA-10a2 context-bound evidence bundle + registered-provider consensus schemas"
         if decision == "ready_for_low_risk_dry_run"
-        else "resolve_live_github_enforcement_blockers_before_AO-MA-10a2"
+        else "resolve_live_github_enforcement_blockers_before_AO-MA-10k_or_merge_agent_activation"
     )
 
     return {

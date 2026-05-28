@@ -131,11 +131,14 @@ def _ssot_required_check_claim_observed(path: Path) -> bool:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return False
+    # Ignore historical changelog/runbook prose. This predicate is only meant
+    # to detect current-status claims that conflict with live GitHub API truth.
+    current_text = text.split("## 2. Current Baseline", 1)[0]
     return (
-        "ao-release-gate" in text
-        and "required check" in text
-        and "ruleset id `16803733`" in text
-        and "integration_id 15368" in text
+        "ao-release-gate" in current_text
+        and "required check" in current_text
+        and "ruleset id `16803733`" in current_text
+        and "integration_id 15368" in current_text
     )
 
 

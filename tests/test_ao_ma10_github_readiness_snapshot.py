@@ -139,10 +139,13 @@ def test_ao_ma10a0_live_snapshot_records_current_blockers_without_mutation() -> 
     assert "ao_release_gate_required_check_missing" in blockers
     assert "legacy_required_review_blocks_low_risk_autonomy" in blockers
     assert "merge_actor_admin_permission_observed" in blockers
-    assert "ssot_live_required_check_drift_detected" in blockers
+    # Historical changelog/runbook wording does not count as a current SSOT
+    # claim. AO-MA-10A0 should only report drift when the current status
+    # section claims a live required-check shape that GitHub API contradicts.
+    assert "ssot_live_required_check_drift_detected" not in blockers
     assert snapshot["ssot_cross_check"] == {
-        "prior_required_check_claim_observed": True,
-        "live_snapshot_conflicts_with_prior_claim": True,
+        "prior_required_check_claim_observed": False,
+        "live_snapshot_conflicts_with_prior_claim": False,
         "prior_claim_source": ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
     }
     assert snapshot["readiness"]["decision"] == "blocked"

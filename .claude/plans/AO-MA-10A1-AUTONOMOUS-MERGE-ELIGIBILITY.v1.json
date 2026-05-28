@@ -21,17 +21,16 @@
       "legacy_code_owner_review_blocks_low_risk_autonomy",
       "legacy_required_review_blocks_low_risk_autonomy",
       "merge_actor_admin_permission_observed",
-      "readiness_snapshot_not_ready",
-      "ssot_live_required_check_drift_detected"
+      "readiness_snapshot_not_ready"
     ],
-    "next_required_slice": "resolve_live_github_enforcement_blockers_before_AO-MA-10a2",
+    "next_required_slice": "resolve_live_github_enforcement_blockers_before_AO-MA-10k_or_merge_agent_activation",
     "result": "blocked",
     "warnings": [
       "repository_auto_merge_disabled_merge_agent_direct_mode_required",
       "some_nominal_low_risk_prefixes_still_codeowned"
     ]
   },
-  "generated_at": "2026-05-27T20:52:39Z",
+  "generated_at": "2026-05-28T10:15:55Z",
   "github_gate_requirements": {
     "ao_release_gate_review_required_check_present": false,
     "ao_release_gate_review_source_pinned_to_actions": false,
@@ -55,12 +54,11 @@
     "blockers": [
       "ao_release_gate_required_check_missing",
       "legacy_required_review_blocks_low_risk_autonomy",
-      "merge_actor_admin_permission_observed",
-      "ssot_live_required_check_drift_detected"
+      "merge_actor_admin_permission_observed"
     ],
     "branch": "main",
     "decision": "blocked",
-    "generated_at": "2026-05-27T19:33:16Z",
+    "generated_at": "2026-05-28T10:03:15Z",
     "repository": "Halildeu/ao-kernel",
     "schema_version": "ao-ma-10-github-readiness-snapshot.v1"
   },
