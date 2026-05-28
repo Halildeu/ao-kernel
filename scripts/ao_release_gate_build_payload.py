@@ -164,6 +164,30 @@ def _check_run_sort_key(entry: dict[str, Any]) -> tuple[str, str, int]:
     return (completed, started, cid)
 
 
+def _is_skipped_check_run(entry: dict[str, Any]) -> bool:
+    """Return whether a check-run is a completed skipped run."""
+
+    status = entry.get("status")
+    conclusion = entry.get("conclusion")
+    return status == "completed" and conclusion == "skipped"
+
+
+def _latest_effective_check_run(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """Pick the effective check-run for a duplicated check name.
+
+    GitHub's commit check-runs endpoint is keyed only by commit SHA, not by
+    the current workflow run. A later event-gate-only attempt can therefore
+    contribute ``skipped`` copies of required jobs after a full run has
+    already produced success/failure for the same SHA. Prefer the latest
+    non-skipped entry when present; otherwise keep the latest skipped entry
+    so skipped-only required checks still fail closed.
+    """
+
+    non_skipped = [entry for entry in entries if not _is_skipped_check_run(entry)]
+    candidates = non_skipped or entries
+    return max(candidates, key=_check_run_sort_key)
+
+
 def _normalized_checks(
     check_runs_json_path: Path,
     required_checks_allowlist: list[str] | None = None,
@@ -186,9 +210,13 @@ def _normalized_checks(
     check-run other than the self-name exclusion is returned (legacy
     permissive behavior).
 
-    Entries are de-duplicated by name keeping the most recent run
-    (see ``_check_run_sort_key``) so a cancelled previous run does not
-    block a green current run.
+    Entries are de-duplicated by name keeping the most recent non-skipped
+    run when one exists (see ``_latest_effective_check_run``). GitHub can
+    attach a later event-gate-only workflow attempt to the same commit; that
+    attempt marks downstream jobs as ``skipped`` even though a full run for
+    the same SHA already completed successfully. A skipped-only required
+    check still fails closed, but a skipped duplicate must not shadow a real
+    success/failure for the same check name.
     """
 
     data = json.loads(check_runs_json_path.read_text(encoding="utf-8"))
@@ -196,7 +224,7 @@ def _normalized_checks(
     excluded = {"ao-release-gate", "ao-release-gate-shadow"}
     allow = list(required_checks_allowlist) if required_checks_allowlist else None
     allow_set = set(allow) if allow is not None else None
-    by_name: dict[str, dict[str, Any]] = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for entry in runs:
         if not isinstance(entry, dict):
             continue
@@ -205,9 +233,8 @@ def _normalized_checks(
             continue
         if allow_set is not None and name not in allow_set:
             continue
-        existing = by_name.get(name)
-        if existing is None or _check_run_sort_key(entry) > _check_run_sort_key(existing):
-            by_name[name] = entry
+        grouped.setdefault(name, []).append(entry)
+    by_name = {name: _latest_effective_check_run(entries) for name, entries in grouped.items()}
     out: list[dict[str, Any]] = []
     for name, entry in by_name.items():
         out.append(

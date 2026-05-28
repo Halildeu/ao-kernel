@@ -382,6 +382,154 @@ def test_build_payload_dedupes_check_runs_keeping_latest(tmp_path: Path) -> None
     assert by_name["lint"]["conclusion"] == "success"
 
 
+def test_build_payload_dedupes_later_event_gate_skipped_duplicate(tmp_path: Path) -> None:
+    """A later event-gate-only workflow attempt can mark downstream
+    required jobs as skipped on the same SHA. The builder must not let that
+    skipped duplicate shadow a real success from the full workflow run."""
+
+    mod = _load_module()
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    check_runs.write_text(
+        json.dumps(
+            {
+                "check_runs": [
+                    {
+                        "id": 100,
+                        "name": "lint",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-05-28T11:54:06Z",
+                        "completed_at": "2026-05-28T11:54:12Z",
+                    },
+                    {
+                        "id": 200,
+                        "name": "lint",
+                        "status": "completed",
+                        "conclusion": "skipped",
+                        "started_at": "2026-05-28T11:55:34Z",
+                        "completed_at": "2026-05-28T11:55:34Z",
+                    },
+                    {
+                        "id": 300,
+                        "name": "typecheck",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "started_at": "2026-05-28T11:54:06Z",
+                        "completed_at": "2026-05-28T11:54:34Z",
+                    },
+                    {
+                        "id": 400,
+                        "name": "typecheck",
+                        "status": "completed",
+                        "conclusion": "skipped",
+                        "started_at": "2026-05-28T11:55:34Z",
+                        "completed_at": "2026-05-28T11:55:34Z",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_gpp_status(gpp_status)
+    output = tmp_path / "payload.json"
+    mod.main(
+        [
+            "--repository",
+            "Halildeu/ao-kernel",
+            "--pr-number",
+            "1",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "x",
+            "--head-sha",
+            "f" * 40,
+            "--from-fork",
+            "false",
+            "--branch-up-to-date",
+            "true",
+            "--gpp-status",
+            str(gpp_status),
+            "--pr-files-json",
+            str(pr_files),
+            "--check-runs-json",
+            str(check_runs),
+            "--required-check",
+            "lint",
+            "--required-check",
+            "typecheck",
+            "--output",
+            str(output),
+        ]
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    by_name = {c["name"]: c for c in payload["required_checks"]}
+    assert by_name["lint"]["conclusion"] == "success"
+    assert by_name["typecheck"]["conclusion"] == "success"
+
+
+def test_build_payload_required_check_skipped_only_still_fails_closed(tmp_path: Path) -> None:
+    """Ignoring skipped duplicates must not convert a skipped-only
+    required check into a pass. If GitHub only returned skipped for a
+    required job, the decision core must still see the not-green status."""
+
+    mod = _load_module()
+    pr_files = tmp_path / "pr-files.json"
+    check_runs = tmp_path / "check-runs.json"
+    gpp_status = tmp_path / "gpp_status.json"
+    _write_pr_files(pr_files, ["a.py"])
+    _write_check_runs(
+        check_runs,
+        [
+            {
+                "id": 100,
+                "name": "lint",
+                "status": "completed",
+                "conclusion": "skipped",
+                "started_at": "2026-05-28T11:55:34Z",
+                "completed_at": "2026-05-28T11:55:34Z",
+            },
+        ],
+    )
+    _write_gpp_status(gpp_status)
+    output = tmp_path / "payload.json"
+    mod.main(
+        [
+            "--repository",
+            "Halildeu/ao-kernel",
+            "--pr-number",
+            "1",
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "x",
+            "--head-sha",
+            "f" * 40,
+            "--from-fork",
+            "false",
+            "--branch-up-to-date",
+            "true",
+            "--gpp-status",
+            str(gpp_status),
+            "--pr-files-json",
+            str(pr_files),
+            "--check-runs-json",
+            str(check_runs),
+            "--required-check",
+            "lint",
+            "--output",
+            str(output),
+        ]
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["required_checks"] == [
+        {"name": "lint", "status": "completed", "conclusion": "skipped"}
+    ]
+
+
 def test_build_payload_defaults_dangerous_flags_to_false(tmp_path: Path) -> None:
     """PR-author-supplied admin_bypass / forbidden_secret / bot / agent /
     live-adapter flags would let a PR self-approve; the builder never
