@@ -142,6 +142,8 @@ def test_ri78a_submanifest_flips_pre_authorization_recorded_only() -> None:
     `live_evidence_pre_authorization_recorded` to true. Other three keys
     (bc1, bc10, final_promotion) remain false — owned by later slices.
     """
+    if not _is_ri78a_introducer_pr():
+        pytest.skip("RI-7.8a state-at-landing pin: only enforced on the introducer PR")
     sub = json.loads(_read(_SUBMANIFEST_PATH))
     assert sub["artifact_kind"] == "ri78_evidence_submanifest"
     assert sub["live_evidence_pre_authorization_recorded"] is True
@@ -368,6 +370,8 @@ def test_ri78a_stale_replay_guard_digests_match_files() -> None:
     rejects any drift. RI-7.8b slices will consume these digests as
     `pre_authorization_ref` and verify their own inheritance chain.
     """
+    if not _is_ri78a_introducer_pr():
+        pytest.skip("RI-7.8a state-at-landing pin: only enforced on the introducer PR")
     import hashlib
 
     evidence = json.loads(_read(_EVIDENCE_PATH))

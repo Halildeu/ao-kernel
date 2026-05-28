@@ -1,0 +1,15 @@
+{
+  "artifact_kind": "ri7_8b_bc1_6c_scenario_run_evidence",
+  "head_ref": "refs/heads/main",
+  "head_sha": "732192a37a0336669583566eb6b4827472f1d32a",
+  "marker_path": "marker-clean_attestation-26601793341-attempt-1.json",
+  "marker_sha256": "2687e8820d8f4d09fb625f667474c79a03ea502d95fb8ab419a0dd7f40e06b9d",
+  "recorded_at": "2026-05-28T20:57:00Z",
+  "run_attempt": 1,
+  "scenario": "clean_attestation",
+  "scenario_outcome": "clean_attestation_pass",
+  "schema_version": "ri7-8b-bc1-6c-scenario-run-evidence.v1",
+  "secret_boundary": "no_secret_material_emitted_no_token_no_credential",
+  "workflow_content_sha256": "adaf84392545bfca267d66e410b6fd7e5bd9102ad02c0938e077a14d2b04a003",
+  "workflow_run_id": "26601793341"
+}

@@ -635,7 +635,7 @@
   "operator_bound_supersessions": [
     {
       "id": "RI-7.8b-bc1-6b",
-      "status": "awaiting_auto_dispatch_trigger_commit",
+      "status": "closed",
       "scope": "bc1_protected_live_adapter_attestation_only",
       "supersedes_decision": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
       "operator_authority": {
@@ -651,9 +651,10 @@
         "effective_only_for": "RI-7.8b-bc1",
         "expires_at_iso": "2026-06-04T07:08:16Z"
       },
-      "actual_start_at": null,
+      "actual_start_at": "2026-05-28T20:56:40Z",
       "valid_until": "2026-06-04T07:08:16Z",
-      "actual_end_at": null,
+      "actual_end_at": "2026-05-28T21:00:00Z",
+      "closed_at": "2026-05-28T21:00:00Z",
       "max_run_count": 5,
       "max_run_attempt": 1,
       "max_usd": 5.0,

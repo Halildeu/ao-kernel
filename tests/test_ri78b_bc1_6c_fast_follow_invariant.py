@@ -317,6 +317,8 @@ def test_6c_fast_follow_gpp_status_top_level_guard_const_false():
 
 
 def test_6c_fast_follow_gpp_status_supersession_entry_authority_mode():
+    if not _is_ri78b_6c_fast_follow_introducer_pr():
+        pytest.skip("6c-fast-follow state-at-landing pin: only enforced on the introducer PR")
     s = _load_json(GPP_STATUS_PATH)
     entries = s.get("operator_bound_supersessions", [])
     entry = next(e for e in entries if e.get("id") == "RI-7.8b-bc1-6b")
@@ -364,6 +366,8 @@ def test_6c_fast_follow_predecessor_digests_match_files():
 
 
 def test_6c_fast_follow_submanifest_unchanged():
+    if not _is_ri78b_6c_fast_follow_introducer_pr():
+        pytest.skip("6c-fast-follow state-at-landing pin: only enforced on the introducer PR")
     sub = _load_json(SUBMANIFEST_PATH)
     assert sub["live_evidence_pre_authorization_recorded"] is True
     assert sub["bc1_protected_live_adapter_attestation_recorded"] is False
@@ -415,6 +419,8 @@ def test_6c_fast_follow_forbidden_change_audit_exact_13_set():
 
 
 def test_6c_fast_follow_forbidden_change_audit_machine_enforced():
+    if not _is_ri78b_6c_fast_follow_introducer_pr():
+        pytest.skip("6c-fast-follow state-at-landing pin: only enforced on the introducer PR")
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")

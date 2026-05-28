@@ -265,6 +265,8 @@ def test_ri78b_bc1_6a_operator_signature_halildeu_iso_8601_no_secret():
 
 
 def test_ri78b_bc1_6a_ri78a_predecessor_digest_matches_predecessor_state():
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     evidence = _load_json(EVIDENCE_PATH)
     pred = evidence["ri78a_predecessor_ref"]
     assert pred["pr_number"] == 673
@@ -278,6 +280,8 @@ def test_ri78b_bc1_6a_ri78a_predecessor_digest_matches_predecessor_state():
 
 
 def test_ri78b_bc1_6a_stale_replay_guard_digests_match():
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     evidence = _load_json(EVIDENCE_PATH)
     guard = evidence["stale_replay_guard"]
     assert guard["base_ref"] == "refs/heads/main"
@@ -479,6 +483,8 @@ def test_ri78b_bc1_6a_gpp_guard_snapshot_all_false():
 
 def test_ri78b_bc1_6a_ri78_submanifest_unchanged_in_6a():
     """6a MUST NOT mutate the RI-7.8 submanifest; all four keys at predecessor values."""
+    if not _is_ri78b_6a_introducer_pr():
+        pytest.skip("6a state-at-landing pin: only enforced on the introducer PR")
     sub = _load_json(SUBMANIFEST_PATH)
     assert sub["live_evidence_pre_authorization_recorded"] is True
     assert sub["bc1_protected_live_adapter_attestation_recorded"] is False

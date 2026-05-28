@@ -27,6 +27,7 @@ import subprocess
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -232,6 +233,8 @@ def test_6c_trigger_gpp_status_supersession_status_awaiting_auto_dispatch() -> N
     entry must remain ``awaiting_auto_dispatch_trigger_commit``. PR-B
     (6c-closure) will transition to ``active`` and then ``closed`` based
     on workflow run evidence."""
+    if not _is_6c_trigger_introducer_pr():
+        pytest.skip("6c-trigger state-at-landing pin: only enforced on the introducer PR")
     status = _load_json(GPP_STATUS_PATH)
     entries = status.get("operator_bound_supersessions", [])
     entry = next(e for e in entries if e.get("id") == "RI-7.8b-bc1-6b")
@@ -355,6 +358,8 @@ def test_6c_trigger_negative_bc1_flip_belongs_to_pr_b() -> None:
     """BC-1 submanifest flip happens in PR-B (6c-closure) after workflow
     run evidence is collected and closure proof is sealed. PR-A MUST NOT
     flip it."""
+    if not _is_6c_trigger_introducer_pr():
+        pytest.skip("6c-trigger state-at-landing pin: only enforced on the introducer PR")
     submanifest_path = REPO_ROOT / ".claude" / "plans" / "RI-7.8-EVIDENCE-MANIFEST.v1.json"
     sub = _load_json(submanifest_path)
     assert sub["bc1_protected_live_adapter_attestation_recorded"] is False
