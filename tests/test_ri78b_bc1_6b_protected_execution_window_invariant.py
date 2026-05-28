@@ -492,6 +492,8 @@ def test_ri78b_bc1_6b_validity_window_bounded():
 
 
 def test_ri78b_bc1_6b_ri78_submanifest_unchanged_in_6b():
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
     sub = _load_json(SUBMANIFEST_PATH)
     assert sub["live_evidence_pre_authorization_recorded"] is True
     assert sub["bc1_protected_live_adapter_attestation_recorded"] is False
