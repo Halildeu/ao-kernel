@@ -111,14 +111,14 @@ def test_ao_ma10_merge_agent_activation_locked_not_started() -> None:
     receipt = _load_json(RECEIPT)
     prereqs = receipt["merge_agent_activation_prerequisites"]
     assert len(prereqs) == 10
-    assert {item["status"] for item in prereqs} == {"not_started"}
-    ids = {item["id"] for item in prereqs}
-    assert "positive_low_risk_autonomous_merge_smoke" in ids
-    assert "negative_high_risk_blocked_smoke" in ids
-    assert "stale_evidence_blocked_smoke" in ids
-    assert "same_provider_review_blocked_smoke" in ids
-    assert "missing_verifier_blocked_smoke" in ids
-    assert "admin_bypass_absence_verified" in ids
+    by_id = {item["id"]: item["status"] for item in prereqs}
+    assert by_id["negative_high_risk_blocked_smoke"] == "done"
+    assert by_id["stale_evidence_blocked_smoke"] == "done"
+    assert by_id["same_provider_review_blocked_smoke"] == "done"
+    assert by_id["missing_verifier_blocked_smoke"] == "done"
+    assert by_id["positive_low_risk_autonomous_merge_smoke"] == "not_started"
+    assert by_id["admin_bypass_absence_verified"] == "not_started"
+    assert by_id["merge_agent_identity_and_permissions_recorded"] == "not_started"
 
 
 def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
@@ -215,6 +215,8 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         "tests/test_ao_ma10h_high_risk_supersession_contract.py",
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
         "tests/test_ao_ma10_evidence_schemas.py",
+        "tests/test_ao_ma10_negative_fail_closed.py",
+        "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py",
     }
     if not (changed & ao_ma_10_introducer_signature):
         pytest.skip(
@@ -255,6 +257,7 @@ def test_ao_ma10_pr_scope_excludes_runtime_workflow_ruleset_and_codeowners() -> 
         "tests/test_ao_release_gate_build_payload.py",
         "tests/test_gpp2b_mapping_drift_guard.py",
         "tests/test_ao_ma10_evidence_schemas.py",
+        "tests/test_ao_ma10_negative_fail_closed.py",
         "tests/test_ao_ma10h_high_risk_supersession_contract.py",
         "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
         "tests/test_ao_ma10_autonomous_merge_eligibility.py",

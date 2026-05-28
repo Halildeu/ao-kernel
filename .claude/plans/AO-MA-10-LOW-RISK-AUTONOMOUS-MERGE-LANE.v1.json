@@ -84,19 +84,19 @@
     },
     {
       "id": "negative_high_risk_blocked_smoke",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "stale_evidence_blocked_smoke",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "same_provider_review_blocked_smoke",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "missing_verifier_blocked_smoke",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "admin_bypass_absence_verified",
@@ -112,7 +112,7 @@
     "AO-MA-10a1 autonomous_merge_eligibility checker (recorded; current evidence blocked until live GitHub enforcement blockers resolve)",
     "AO-MA-10a2 context-bound evidence bundle and registered-provider consensus schemas (recorded)",
     "AO-MA-10b ao-release-gate payload and decision integration (recorded)",
-    "AO-MA-10d negative fail-closed suite before real merge",
+    "AO-MA-10d negative fail-closed suite before real merge (recorded)",
     "AO-MA-10h high-risk cross-provider supersession contract (recorded)",
     "AO-MA-10c merge-agent identity and dry-run executor",
     "AO-MA-10e positive disposable low-risk autonomous merge smoke",

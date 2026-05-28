@@ -9,19 +9,43 @@
       "status": "pass"
     },
     {
-      "name": "json_schema_validation",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "claude_cross_provider_plan_review",
+      "name": "mypy_new_test",
       "status": "pass"
     },
     {
-      "name": "no_github_mutation",
+      "name": "git_diff_check",
       "status": "pass"
     },
     {
-      "name": "no_runtime_gate_mutation",
+      "name": "json_validation",
+      "status": "pass"
+    },
+    {
+      "name": "ao_ma10d_negative_fail_closed_tests",
+      "status": "pass"
+    },
+    {
+      "name": "ao_release_gate_targeted_tests",
+      "status": "pass"
+    },
+    {
+      "name": "ao_ma10_evidence_schema_tests",
+      "status": "pass"
+    },
+    {
+      "name": "gpp_next_guard_check",
+      "status": "pass"
+    },
+    {
+      "name": "claude_cross_provider_review",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_ruleset_codeowners_merge_agent_mutation",
       "status": "pass"
     },
     {
@@ -38,14 +62,15 @@
     }
   ],
   "findings": [
-    "PR #676 proved the current high-risk path remains fail-closed: ao-release-gate-review returns ACTION_REQUIRED for ao_release_gate_high_risk_human_review_missing.",
-    "AO-MA-10h records a contract for future deterministic supersession evidence, not an active bypass.",
-    "AI output remains evidence only; release authority remains ao-release-gate plus GitHub enforcement.",
-    "The contract requires distinct OpenAI and Anthropic provider verdicts, unanimous AGREE, context binding, freshness, false guard flags, and operator_human_review_fallback after three revise rounds.",
-    "This slice intentionally does not mutate .github, CODEOWNERS, rulesets, branch protection, ao_release_gate.py, local_gpp_gate, gpp_status, support scope, production claim, live adapters, testai, smee, Vault, or GitHub App configuration.",
-    "Claude/Anthropic plan-time review returned VERDICT: AGREE for the direction, with acceptance criteria absorbed into the AO-MA-10h contract.",
-    "AO-MA-10 scope invariant allowlist was extended to recognize the new AO-MA-10h contract/schema/test files while keeping runtime, workflow, ruleset, CODEOWNERS, and gpp_status paths forbidden.",
-    "CI-only drift was absorbed: AO-MA-10h diff-base resolution no longer assumes origin/main exists in checkout, and the historical RI-7.8b local review equality test now skips when the global local-ai-review-evidence file belongs to a later work package."
+    "AO-MA-10d records the negative fail-closed suite before AO-MA-10c merge-agent dry-run or AO-MA-10e positive smoke.",
+    "Claude/Anthropic identified a real fail-open gap: duplicate provider_id verdicts could previously satisfy AO-MA-10 consensus.",
+    "ao-release-gate now rejects duplicate provider IDs or missing required provider verdicts with ao_release_gate_ao_ma10_same_provider_self_review and deny_policy_violation.",
+    "The new AO-MA-10d suite covers same-provider review, stale or missing evidence, high-risk or prohibited paths, missing or non-accepting verifier evidence, authority-boundary flips, context drift, malformed request flags, and a positive control.",
+    "AO-MA-10 receipt marks only the four negative activation-prerequisite smokes done; merge-agent identity, positive smoke, admin bypass absence, and cutover remain not_started.",
+    "RI-7.8b cross-artifact verdict equality now skips when the global local-ai-review-evidence.v1.json belongs to another active PR work package.",
+    "Claude/Anthropic reviewed the current diff with read-only tools and returned VERDICT: AGREE.",
+    "Local verification passed: targeted AO-MA-10d/release-gate/schema tests, ruff, mypy for the new test file, JSON validation, git diff --check, and gpp_next guard review.",
+    "Scope excludes .github workflows, CODEOWNERS, rulesets, branch protection, merge-agent activation, support widening, production platform claim, live adapter execution, testai, smee, Vault, GitHub App, and Cloud Run work."
   ],
   "implementer": {
     "agent": "codex",
@@ -65,18 +90,16 @@
     "changed_files": [
       ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
       ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "ao_kernel/defaults/schemas/ao-ma-10-low-risk-autonomous-merge-lane.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/fixtures/ao_ma_10h/high_risk_supersession.valid.json",
       "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py",
-      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
+      "tests/test_ao_ma10_negative_fail_closed.py",
       "tests/test_ri78b_bc1_6a_execution_window_authorization_invariant.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma-10h-high-risk-supersession-contract"
+    "head_ref": "refs/heads/codex/ao-ma-10d-negative-fail-closed-suite"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10h"
+  "work_package": "AO-MA-10d"
 }
