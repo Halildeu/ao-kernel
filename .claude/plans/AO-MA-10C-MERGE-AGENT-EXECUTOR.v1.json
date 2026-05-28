@@ -1,0 +1,34 @@
+{
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10c_merge_agent_executor_receipt",
+  "authority_chain": [
+    "local/process evidence",
+    "ao-release-gate required checks",
+    "github ruleset",
+    "merge agent executor"
+  ],
+  "current_live_blockers": [
+    "merge_actor_admin_permission_observed"
+  ],
+  "execute_confirmation": "AO-MA-10C-EXECUTE",
+  "executor_script": "scripts/ao_ma10c_merge_agent.py",
+  "expected_actor": "gladyatore-lab",
+  "live_adapter_execution": false,
+  "merge_command_shape": [
+    "gh",
+    "pr",
+    "merge",
+    "<pr>",
+    "--repo",
+    "Halildeu/ao-kernel",
+    "--squash",
+    "--delete-branch"
+  ],
+  "mutates_github_rulesets": false,
+  "native_auto_merge_enablement": false,
+  "production_platform_claim": false,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "schema_version": "ao-ma-10c-merge-agent-executor-receipt.v1",
+  "status": "implemented_fail_closed",
+  "support_widening": false
+}

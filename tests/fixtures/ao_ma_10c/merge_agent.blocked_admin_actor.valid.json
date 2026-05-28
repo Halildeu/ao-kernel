@@ -1,0 +1,59 @@
+{
+  "actor_permission": "admin",
+  "actual_actor": "Halildeu",
+  "ai_output_release_authority": false,
+  "artifact_kind": "ao_ma_10c_merge_agent_result",
+  "base_ref": "main",
+  "collection_errors": [],
+  "decision": {
+    "blockers": [
+      "dedicated_merge_actor_not_confirmed",
+      "merge_actor_admin_permission_observed",
+      "unexpected_merge_actor"
+    ],
+    "next_required_slice": "authenticate gh as the dedicated non-admin merge actor and rerun AO-MA-10c",
+    "result": "blocked",
+    "warnings": []
+  },
+  "dry_run": true,
+  "eligibility_decision": "ready_for_low_risk_dry_run",
+  "execute_requested": false,
+  "expected_actor": "gladyatore-lab",
+  "generated_at": "2026-05-28T21:00:00Z",
+  "guard_flags": {
+    "live_adapter_execution": false,
+    "production_platform_claim": false,
+    "support_widening": false
+  },
+  "merge_command_argv": [
+    "gh",
+    "pr",
+    "merge",
+    "123",
+    "--repo",
+    "Halildeu/ao-kernel",
+    "--squash",
+    "--delete-branch"
+  ],
+  "merge_command_attempted": false,
+  "merge_error": "",
+  "mutations_performed": false,
+  "pr_number": 123,
+  "pr_state": {
+    "base_ref": "main",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "is_draft": false,
+    "merge_state_status": "CLEAN",
+    "state": "OPEN"
+  },
+  "readiness_decision": "ready_for_dry_run",
+  "release_authority": "ao-release-gate+github-ruleset",
+  "repository": "Halildeu/ao-kernel",
+  "required_checks": {
+    "all_passed": true,
+    "failing": [],
+    "total": 2
+  },
+  "schema_version": "ao-ma-10c-merge-agent-result.v1",
+  "snapshot_age_seconds": 60
+}

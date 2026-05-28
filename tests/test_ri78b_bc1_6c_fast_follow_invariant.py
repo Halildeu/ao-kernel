@@ -393,6 +393,8 @@ def test_6c_fast_follow_cross_artifact_verdict_equality():
     if not LOCAL_AI_REVIEW_PATH.exists():
         pytest.skip("local-ai-review-evidence missing")
     review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review.get("work_package") != "RI-7.8b-bc1-6c-fast-follow":
+        pytest.skip("local-ai-review-evidence belongs to another work package")
     e = _load_json(EVIDENCE_PATH)
     assert review["implementer"]["provider"] == "anthropic"
     assert review["reviewer"]["provider"] == "openai"

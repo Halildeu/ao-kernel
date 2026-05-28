@@ -13,136 +13,60 @@
       "status": "pass"
     },
     {
+      "name": "mypy",
+      "status": "pass"
+    },
+    {
       "name": "schema_draft_2020_12_valid",
       "status": "pass"
     },
     {
-      "name": "evidence_validates_against_schema",
+      "name": "ao_ma10c_current_actor_fail_closed",
       "status": "pass"
     },
     {
-      "name": "trigger_file_absent_deferred_to_6c_closure",
-      "status": "pass"
-    },
-    {
-      "name": "workflow_environment_removed",
-      "status": "pass"
-    },
-    {
-      "name": "workflow_push_trigger_added",
-      "status": "pass"
-    },
-    {
-      "name": "workflow_matrix_strategy_added",
-      "status": "pass"
-    },
-    {
-      "name": "workflow_content_sha256_matches_file",
-      "status": "pass"
-    },
-    {
-      "name": "trigger_schema_sha256_matches_file",
-      "status": "pass"
-    },
-    {
-      "name": "activation_guard_script_mode_aware",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_status_authority_mode_operator_delegated_autonomous_preprod",
-      "status": "pass"
-    },
-    {
-      "name": "gpp_status_top_level_guard_const_false",
-      "status": "pass"
-    },
-    {
-      "name": "predecessor_digests_ri78a_ri78b6a_ri78b6b",
-      "status": "pass"
-    },
-    {
-      "name": "submanifest_unchanged",
-      "status": "pass"
-    },
-    {
-      "name": "nine_key_readiness_unchanged",
-      "status": "pass"
-    },
-    {
-      "name": "bounded_window_limits_preserved",
-      "status": "pass"
-    },
-    {
-      "name": "forbidden_change_audit_machine_enforced",
-      "status": "pass"
-    },
-    {
-      "name": "cross_ai_review_provider_split_const",
-      "status": "pass"
-    },
-    {
-      "name": "negative_to_mode_drift_rejected",
-      "status": "pass"
-    },
-    {
-      "name": "negative_manual_approval_true_rejected",
-      "status": "pass"
-    },
-    {
-      "name": "negative_bounded_limit_relaxation_rejected",
-      "status": "pass"
-    },
-    {
-      "name": "negative_submanifest_after_bc1_true_rejected",
-      "status": "pass"
-    },
-    {
-      "name": "codex_plan_time_revise_absorbed_two_pr_split",
+      "name": "merge_command_no_admin_or_auto",
       "status": "pass"
     }
   ],
   "findings": [
-    "RI-7.8b-bc1-6c-fast-follow contract revision slice. Revises 6b operator-bound (manual protected environment + manual workflow_dispatch + GitHub Halildeu reviewer required) to operator_delegated_autonomous_preprod authority mode. Trigger file (delayed-effect execution surface) INTENTIONALLY NOT created in this PR; deferred to RI-7.8b-bc1-6c-closure alongside per-run evidence collection per Codex plan-time iter-1 REVISE two-PR split and explicit auto-mode classifier security boundary.",
-    "Workflow changes: environment removed, push trigger added (branches=[main] paths=[.claude/plans/RI-7.8b-bc1-6c-DISPATCH-TRIGGER.v1.json]), matrix strategy added (scenario=[clean_attestation, fail_closed_attestation]), workflow_dispatch retained as manual fallback. workflow_content_sha256 pinned.",
-    "Activation guard script mode-aware: accepts both manual_protected_environment (legacy 6b) and operator_delegated_autonomous_preprod (new 6c-fast-follow) authority modes; bounded-window enforcement (workflow_content_sha256 binding, run cap, valid_until, allowed_refs, scenario allowlist) preserved.",
-    "gpp_status entry updates: authority_mode=operator_delegated_autonomous_preprod, manual_approval_required=false, status=awaiting_auto_dispatch_trigger_commit, protected_environment_binding.mode=code_level_only_preprod, autonomous_trigger_contract schema-pinned. Top-level guard flags REMAIN const FALSE (baseline closure preserved).",
-    "Bounded-window safety envelope PRESERVED: max 5 distinct runs, max $5 USD, max 24h duration, run_attempt==1 only.",
-    "Codex plan-time thread 019e6bd4 iter-1 REVISE absorbed: two-PR split + authority_mode field + manual_approval_required=false + protected_environment_binding.mode + autonomous_trigger_contract + mode-aware invariant tests.",
-    "Submanifest UNCHANGED in this PR. 6c-closure flips BC-1.",
-    "Cross-AI peer review HARD RULE CC-2: implementer claude/anthropic differs from reviewer codex/openai. AGREE in BOTH artifacts (cross-artifact verdict equality test-enforced)."
+    "AO-MA-10c adds a merge-agent dry-run/executor. It is an executor only; release authority remains ao-release-gate plus GitHub ruleset.",
+    "Dry-run is the default. Execute mode requires --execute plus confirmation literal AO-MA-10C-EXECUTE and all live gates passing.",
+    "The executor rejects the current Halildeu/admin actor and records merge_actor_admin_permission_observed instead of attempting a merge.",
+    "The only permitted command shape is gh pr merge <pr> --repo Halildeu/ao-kernel --squash --delete-branch. No admin bypass and no native auto-merge enablement are constructed.",
+    "Guard flags remain false: no support widening, no production platform claim, no live adapter execution."
   ],
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "live_adapter_execution": false,
   "production_platform_claim": false,
   "repo": "Halildeu/ao-kernel",
   "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "schema_version": "local-ai-review-evidence.v1",
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.md",
-      ".claude/plans/RI-7.8b-bc1-6c-fast-follow-AUTONOMOUS-PREPROD.v1.json",
-      ".claude/plans/gpp_status.v1.json",
-      ".github/workflows/bc1-protected-live-adapter-attestation.yml",
+      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md",
+      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-dispatch-trigger.schema.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc1-6c-fast-follow-autonomous-preprod-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10c-merge-agent-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ri78b_bc1_activation_window.py",
-      "tests/test_ri78b_bc1_6b_protected_execution_window_invariant.py",
+      "scripts/ao_ma10c_merge_agent.py",
+      "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json",
+      "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json",
+      "tests/test_ao_ma10c_merge_agent.py",
       "tests/test_ri78b_bc1_6c_fast_follow_invariant.py"
     ],
-    "head_ref": "refs/heads/codex/ri-7-8b-bc1-6c-fast-follow-autonomous-preprod"
+    "head_ref": "refs/heads/codex/ao-ma-10c-merge-agent-executor"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "RI-7.8b-bc1-6c-fast-follow"
+  "work_package": "AO-MA-10c"
 }

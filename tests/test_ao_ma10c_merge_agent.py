@@ -1,0 +1,275 @@
+from __future__ import annotations
+
+import copy
+import importlib.util
+import json
+import subprocess
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any, cast
+
+from jsonschema import Draft202012Validator
+
+from ao_kernel.config import load_default
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "ao_ma10c_merge_agent.py"
+DOC = ROOT / ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md"
+RECEIPT = ROOT / ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json"
+READY_ELIGIBILITY = ROOT / "tests/fixtures/ao_ma_10/autonomous_merge_eligibility.ready.valid.json"
+DRY_RUN_FIXTURE = ROOT / "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json"
+BLOCKED_FIXTURE = ROOT / "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json"
+SCHEMA_NAME = "ao-ma-10c-merge-agent-result.schema.v1.json"
+
+
+def _schema() -> dict[str, Any]:
+    return load_default("schemas", SCHEMA_NAME)
+
+
+def _json(path: Path) -> dict[str, Any]:
+    return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
+
+
+def _load_script_module() -> Any:
+    spec = importlib.util.spec_from_file_location("ao_ma10c_merge_agent", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _ready_snapshot(now: datetime) -> dict[str, Any]:
+    return {
+        "schema_version": "ao-ma-10-github-readiness-snapshot.v1",
+        "artifact_kind": "ao_ma_10_github_readiness_snapshot",
+        "repository": "Halildeu/ao-kernel",
+        "branch": "main",
+        "generated_at": (now - timedelta(seconds=60)).isoformat().replace("+00:00", "Z"),
+        "read_only": True,
+        "mutations_performed": False,
+        "release_authority": "ao-release-gate+github-ruleset",
+        "ai_output_release_authority": False,
+        "guard_flags": {
+            "support_widening": False,
+            "production_platform_claim": False,
+            "live_adapter_execution": False,
+        },
+        "readiness": {"decision": "ready_for_dry_run", "blockers": [], "warnings": []},
+        "merge_actor": {
+            "login": "gladyatore-lab",
+            "permission": "write",
+            "viewer_can_administer": False,
+            "administration_write_absent_for_dedicated_actor": True,
+        },
+    }
+
+
+def _ready_live_state() -> dict[str, Any]:
+    return {
+        "viewer": {"login": "gladyatore-lab"},
+        "permission": {"permission": "write", "role_name": "write"},
+        "pr_view": {
+            "state": "OPEN",
+            "isDraft": False,
+            "baseRefName": "main",
+            "headRefOid": "a" * 40,
+            "mergeStateStatus": "CLEAN",
+        },
+        "required_checks": [
+            {"name": "ao-release-gate-technical", "bucket": "pass", "state": "SUCCESS"},
+            {"name": "ao-release-gate-review", "bucket": "pass", "state": "SUCCESS"},
+        ],
+        "collection_errors": [],
+    }
+
+
+def _result(
+    *,
+    snapshot: dict[str, Any] | None = None,
+    eligibility: dict[str, Any] | None = None,
+    live_state: dict[str, Any] | None = None,
+    execute: bool = False,
+    confirmation: str | None = None,
+    merge_exit_code: int | None = None,
+) -> dict[str, Any]:
+    mod = _load_script_module()
+    now = datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC)
+    return cast(
+        dict[str, Any],
+        mod.build_result(
+            repo="Halildeu/ao-kernel",
+            pr_number=123,
+            snapshot=snapshot or _ready_snapshot(now),
+            eligibility=eligibility or _json(READY_ELIGIBILITY),
+            live_state=live_state or _ready_live_state(),
+            now=now,
+            execute=execute,
+            confirmation=confirmation,
+            merge_exit_code=merge_exit_code,
+        ),
+    )
+
+
+def test_ao_ma10c_schema_is_valid_draft_2020_12() -> None:
+    schema = _schema()
+    Draft202012Validator.check_schema(schema)
+    assert schema["$id"] == "urn:ao:ao-ma-10c-merge-agent-result:v1"
+
+
+def test_ao_ma10c_receipt_and_doc_preserve_authority_boundary() -> None:
+    receipt = _json(RECEIPT)
+    text = DOC.read_text(encoding="utf-8")
+    assert receipt["status"] == "implemented_fail_closed"
+    assert receipt["release_authority"] == "ao-release-gate+github-ruleset"
+    assert receipt["ai_output_release_authority"] is False
+    assert receipt["support_widening"] is False
+    assert receipt["production_platform_claim"] is False
+    assert receipt["live_adapter_execution"] is False
+    assert receipt["expected_actor"] == "gladyatore-lab"
+    assert receipt["native_auto_merge_enablement"] is False
+    assert "AI output remains evidence only." in text
+    assert "Halildeu` with admin permission" in text
+
+
+def test_ao_ma10c_fixtures_validate_against_schema() -> None:
+    validator = Draft202012Validator(_schema())
+    for fixture in (DRY_RUN_FIXTURE, BLOCKED_FIXTURE):
+        payload = _json(fixture)
+        validator.validate(payload)
+        assert payload["schema_version"] == "ao-ma-10c-merge-agent-result.v1"
+
+
+def test_ao_ma10c_ready_dry_run_does_not_attempt_merge() -> None:
+    payload = _result()
+    Draft202012Validator(_schema()).validate(payload)
+    assert payload["decision"]["result"] == "ready_for_merge_dry_run"
+    assert payload["dry_run"] is True
+    assert payload["merge_command_attempted"] is False
+    assert payload["mutations_performed"] is False
+    assert payload["merge_command_argv"] == [
+        "gh",
+        "pr",
+        "merge",
+        "123",
+        "--repo",
+        "Halildeu/ao-kernel",
+        "--squash",
+        "--delete-branch",
+    ]
+    assert "--admin" not in payload["merge_command_argv"]
+    assert "--auto" not in payload["merge_command_argv"]
+
+
+def test_ao_ma10c_execute_requires_explicit_confirmation() -> None:
+    payload = _result(execute=True)
+    assert payload["decision"]["result"] == "blocked"
+    assert "execute_confirmation_missing" in payload["decision"]["blockers"]
+    assert payload["merge_command_attempted"] is False
+
+
+def test_ao_ma10c_execute_success_requires_all_gates() -> None:
+    payload = _result(execute=True, confirmation="AO-MA-10C-EXECUTE", merge_exit_code=0)
+    assert payload["decision"]["result"] == "merged"
+    assert payload["merge_command_attempted"] is True
+    assert payload["mutations_performed"] is True
+
+
+def test_ao_ma10c_merge_command_failure_is_fail_closed() -> None:
+    payload = _result(execute=True, confirmation="AO-MA-10C-EXECUTE", merge_exit_code=1)
+    assert payload["decision"]["result"] == "blocked"
+    assert "merge_command_failed" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_blocks_current_admin_actor() -> None:
+    snapshot = _ready_snapshot(datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC))
+    snapshot["merge_actor"]["login"] = "Halildeu"
+    snapshot["merge_actor"]["permission"] = "admin"
+    snapshot["merge_actor"]["viewer_can_administer"] = True
+    snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] = False
+    live = _ready_live_state()
+    live["viewer"]["login"] = "Halildeu"
+    live["permission"]["permission"] = "admin"
+    live["permission"]["role_name"] = "admin"
+    payload = _result(snapshot=snapshot, live_state=live)
+    Draft202012Validator(_schema()).validate(payload)
+    assert payload["decision"]["result"] == "blocked"
+    assert "unexpected_merge_actor" in payload["decision"]["blockers"]
+    assert "merge_actor_admin_permission_observed" in payload["decision"]["blockers"]
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_blocks_stale_snapshot() -> None:
+    snapshot = _ready_snapshot(datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC))
+    snapshot["generated_at"] = "2026-05-28T20:00:00Z"
+    payload = _result(snapshot=snapshot)
+    assert "readiness_snapshot_stale" in payload["decision"]["blockers"]
+    assert payload["decision"]["result"] == "blocked"
+
+
+def test_ao_ma10c_blocks_eligibility_not_ready() -> None:
+    eligibility = copy.deepcopy(_json(READY_ELIGIBILITY))
+    eligibility["decision"]["result"] = "blocked"
+    eligibility["decision"]["blockers"] = ["changed_files_not_low_risk"]
+    payload = _result(eligibility=eligibility)
+    assert "eligibility_not_ready" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_blocks_failed_required_check() -> None:
+    live = _ready_live_state()
+    live["required_checks"][1]["bucket"] = "fail"
+    payload = _result(live_state=live)
+    assert "required_checks_not_passed" in payload["decision"]["blockers"]
+    assert payload["required_checks"]["failing"][0]["name"] == "ao-release-gate-review"
+
+
+def test_ao_ma10c_blocks_pr_not_ready() -> None:
+    live = _ready_live_state()
+    live["pr_view"]["isDraft"] = True
+    live["pr_view"]["mergeStateStatus"] = "DIRTY"
+    payload = _result(live_state=live)
+    assert "pr_is_draft" in payload["decision"]["blockers"]
+    assert "pr_merge_state_not_clean" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_blocks_guard_and_authority_drift() -> None:
+    snapshot = _ready_snapshot(datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC))
+    snapshot["guard_flags"]["support_widening"] = True
+    eligibility = copy.deepcopy(_json(READY_ELIGIBILITY))
+    eligibility["ai_output_release_authority"] = True
+    payload = _result(snapshot=snapshot, eligibility=eligibility)
+    assert "guard_flags_not_false" in payload["decision"]["blockers"]
+    assert "ai_output_release_authority_observed" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_collect_live_state_reads_only() -> None:
+    mod = _load_script_module()
+    seen: list[list[str]] = []
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        seen.append(command)
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+        if "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+    assert state["collection_errors"] == []
+    flat = " ".join(" ".join(command) for command in seen)
+    assert " pr merge " not in flat
+    assert " --method PATCH " not in flat
+    assert " --method PUT " not in flat
+    assert " --method POST " not in flat
+    assert " --method DELETE " not in flat
+
+
+def test_ao_ma10c_source_does_not_construct_admin_or_auto_merge() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "--admin" not in source
+    assert "--auto" not in source
+    assert "enablePullRequestAutoMerge" not in source
