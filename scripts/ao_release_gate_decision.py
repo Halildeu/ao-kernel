@@ -69,6 +69,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--high-risk-supersession-evidence",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to an ao-ma-10-high-risk-supersession-evidence.v1 artifact. "
+            "When high-risk paths lack a current-head non-author review, a schema-valid, "
+            "context-bound OpenAI+Anthropic AGREE artifact can satisfy the path-sensitive "
+            "gate without making AI output release authority. Malformed supplied evidence "
+            "fails closed."
+        ),
+    )
+    parser.add_argument(
         "--conclusion-mode",
         choices=("shadow", "enforce"),
         default="shadow",
@@ -127,11 +139,17 @@ def main(argv: list[str] | None = None) -> int:
     ao_ma10_evidence_bundle: object | None = None
     if args.ao_ma10_evidence_bundle is not None:
         ao_ma10_evidence_bundle = json.loads(args.ao_ma10_evidence_bundle.read_text(encoding="utf-8"))
+    high_risk_supersession_evidence: object | None = None
+    if args.high_risk_supersession_evidence is not None:
+        high_risk_supersession_evidence = json.loads(
+            args.high_risk_supersession_evidence.read_text(encoding="utf-8")
+        )
     decision = build_ao_release_gate_decision(
         payload,
         gpp_status,
         review_evidence=review_evidence,
         ao_ma10_evidence_bundle=ao_ma10_evidence_bundle,
+        high_risk_supersession_evidence=high_risk_supersession_evidence,
         conclusion_mode=args.conclusion_mode,
     )
     write_ao_release_gate_decision(args.decision_path, decision)

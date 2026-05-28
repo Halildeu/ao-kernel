@@ -158,6 +158,41 @@ def _git_changed_paths_against(base_sha: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def _is_ri78b_6b_introducer_pr() -> bool:
+    """Return True only for the PR that first adds the 6b evidence artifact.
+
+    Diff-dependent checks in this file pin the 6b state at landing. Successor
+    slices may legitimately edit unrelated runtime/check files while the 6b
+    artifact and digest pins remain unchanged, so those checks must not be
+    re-evaluated against every later PR diff.
+    """
+    base_sha = _resolve_diff_base()
+    if base_sha is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--diff-filter=A", "--name-only", f"{base_sha}...HEAD"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return False
+        added = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+        return str(EVIDENCE_PATH.relative_to(REPO_ROOT)) in added
+    except (subprocess.SubprocessError, OSError):
+        return False
+
+
+def _skip_if_current_local_review_evidence_is_for_another_slice() -> None:
+    if not LOCAL_AI_REVIEW_PATH.exists():
+        return
+    review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review.get("work_package") != "RI-7.8b-bc1-6b":
+        pytest.skip("local-ai-review-evidence.v1.json belongs to another active PR work package")
+
+
 def _path_matches_surface(path: str, surface: str) -> bool:
     if surface.endswith("/"):
         return path.startswith(surface)
@@ -466,6 +501,9 @@ def test_ri78b_bc1_6b_forbidden_change_audit_exact_13_set():
 
 
 def test_ri78b_bc1_6b_forbidden_change_audit_machine_enforced():
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")
@@ -481,6 +519,9 @@ def test_ri78b_bc1_6b_diff_scope_only_allowed_surfaces():
     """6b PR may only touch the allowed new surfaces (workflow file,
     activation guard, schema, evidence, plan doc, invariant test,
     gpp_status.v1.json, local-ai-review-evidence)."""
+    if not _is_ri78b_6b_introducer_pr():
+        pytest.skip("6b state-at-landing pin: only enforced on the introducer PR")
+    _skip_if_current_local_review_evidence_is_for_another_slice()
     base_sha = _resolve_diff_base()
     if base_sha is None:
         pytest.skip("No git base resolved")
@@ -508,6 +549,8 @@ def test_ri78b_bc1_6b_cross_artifact_verdict_equality():
     if not LOCAL_AI_REVIEW_PATH.exists():
         pytest.skip("local-ai-review-evidence.v1.json missing")
     review = _load_json(LOCAL_AI_REVIEW_PATH)
+    if review["work_package"] != "RI-7.8b-bc1-6b":
+        pytest.skip("local-ai-review-evidence.v1.json belongs to another active PR work package")
     e = _load_json(EVIDENCE_PATH)
     assert review["implementer"]["provider"] == "anthropic"
     assert review["reviewer"]["provider"] == "openai"

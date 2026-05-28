@@ -13,12 +13,17 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from datetime import UTC, datetime
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
-from ao_kernel.ao_release_gate import (
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from ao_kernel.ao_release_gate import (  # noqa: E402
     HIGH_RISK_PATH_PATTERNS,
     RELEASE_GATE_REVIEW_CHECK_NAME,
     RELEASE_GATE_TECHNICAL_CHECK_NAME,
