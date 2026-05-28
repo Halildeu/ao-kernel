@@ -5,11 +5,11 @@
   "branch_protection": {
     "ao_release_gate_required_check_present": false,
     "ao_release_gate_source_pinned_to_actions": false,
-    "dismiss_stale_reviews": true,
+    "dismiss_stale_reviews": false,
     "enforce_admins": true,
     "present": true,
-    "require_code_owner_reviews": true,
-    "required_approving_review_count": 1,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 0,
     "required_check_source_pins": [
       {
         "app_id": 15368,
@@ -62,7 +62,7 @@
     "present": true
   },
   "collection_errors": [],
-  "generated_at": "2026-05-28T10:03:15Z",
+  "generated_at": "2026-05-28T19:36:30Z",
   "guard_flags": {
     "live_adapter_execution": false,
     "production_platform_claim": false,
@@ -78,29 +78,27 @@
   "read_only": true,
   "readiness": {
     "blockers": [
-      "ao_release_gate_required_check_missing",
-      "legacy_required_review_blocks_low_risk_autonomy",
-      "merge_actor_admin_permission_observed"
+      "merge_actor_admin_permission_observed",
+      "unexpected_merge_actor"
     ],
     "decision": "blocked",
     "next_required_slice": "AO-MA-10a1 autonomous_merge_eligibility after blockers are resolved",
     "warnings": [
-      "repository_auto_merge_disabled_merge_agent_direct_mode_required",
       "some_nominal_low_risk_prefixes_still_codeowned"
     ]
   },
   "release_authority": "ao-release-gate+github-ruleset",
   "repository": "Halildeu/ao-kernel",
   "repository_settings": {
-    "auto_merge_allowed": false,
-    "delete_branch_on_merge": false,
+    "auto_merge_allowed": true,
+    "delete_branch_on_merge": true,
     "merge_commit_allowed": true,
     "rebase_merge_allowed": true,
     "squash_merge_allowed": true
   },
   "rulesets": {
-    "ao_release_gate_required_check_present": false,
-    "ao_release_gate_source_pinned_to_actions": false,
+    "ao_release_gate_required_check_present": true,
+    "ao_release_gate_source_pinned_to_actions": true,
     "bypass_actors_count": 0,
     "bypass_actors_empty": true,
     "default_branch_rulesets": [
@@ -111,13 +109,23 @@
         "name": "Protect main",
         "rule_types": [
           "deletion",
-          "non_fast_forward"
+          "non_fast_forward",
+          "required_status_checks"
         ],
         "source_type": "Repository",
         "target": "branch"
       }
     ],
-    "effective_required_checks": []
+    "effective_required_checks": [
+      {
+        "context": "ao-release-gate-technical",
+        "integration_id": 15368
+      },
+      {
+        "context": "ao-release-gate-review",
+        "integration_id": 15368
+      }
+    ]
   },
   "schema_version": "ao-ma-10-github-readiness-snapshot.v1",
   "snapshot_source": "github_api_read_only",

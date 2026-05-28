@@ -14,32 +14,27 @@
   },
   "decision": {
     "blockers": [
-      "ao_release_gate_required_check_missing",
-      "ao_release_gate_review_required_check_missing",
-      "ao_release_gate_technical_required_check_missing",
       "dedicated_merge_actor_not_confirmed",
-      "legacy_code_owner_review_blocks_low_risk_autonomy",
-      "legacy_required_review_blocks_low_risk_autonomy",
       "merge_actor_admin_permission_observed",
-      "readiness_snapshot_not_ready"
+      "readiness_snapshot_not_ready",
+      "unexpected_merge_actor"
     ],
     "next_required_slice": "resolve_live_github_enforcement_blockers_before_AO-MA-10k_or_merge_agent_activation",
     "result": "blocked",
     "warnings": [
-      "repository_auto_merge_disabled_merge_agent_direct_mode_required",
       "some_nominal_low_risk_prefixes_still_codeowned"
     ]
   },
-  "generated_at": "2026-05-28T10:15:55Z",
+  "generated_at": "2026-05-28T19:36:30Z",
   "github_gate_requirements": {
-    "ao_release_gate_review_required_check_present": false,
-    "ao_release_gate_review_source_pinned_to_actions": false,
-    "ao_release_gate_technical_required_check_present": false,
-    "ao_release_gate_technical_source_pinned_to_actions": false,
+    "ao_release_gate_review_required_check_present": true,
+    "ao_release_gate_review_source_pinned_to_actions": true,
+    "ao_release_gate_technical_required_check_present": true,
+    "ao_release_gate_technical_source_pinned_to_actions": true,
     "dedicated_merge_actor_non_admin": false,
     "dedicated_merge_actor_without_admin_write": false,
-    "legacy_code_owner_review_disabled_for_low_risk": false,
-    "legacy_required_review_disabled_for_low_risk": false,
+    "legacy_code_owner_review_disabled_for_low_risk": true,
+    "legacy_required_review_disabled_for_low_risk": true,
     "ruleset_bypass_actors_empty": true
   },
   "guard_flags": {
@@ -52,13 +47,12 @@
   "readiness_source": {
     "artifact_kind": "ao_ma_10_github_readiness_snapshot",
     "blockers": [
-      "ao_release_gate_required_check_missing",
-      "legacy_required_review_blocks_low_risk_autonomy",
-      "merge_actor_admin_permission_observed"
+      "merge_actor_admin_permission_observed",
+      "unexpected_merge_actor"
     ],
     "branch": "main",
     "decision": "blocked",
-    "generated_at": "2026-05-28T10:03:15Z",
+    "generated_at": "2026-05-28T19:36:30Z",
     "repository": "Halildeu/ao-kernel",
     "schema_version": "ao-ma-10-github-readiness-snapshot.v1"
   },
