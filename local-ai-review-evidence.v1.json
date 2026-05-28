@@ -19,26 +19,14 @@
     {
       "name": "schema_draft_2020_12_valid",
       "status": "pass"
-    },
-    {
-      "name": "ao_ma10a0_dedicated_actor_confirmed_when_gladyatore_write_non_admin",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10a0_unexpected_non_admin_actor_fail_closed",
-      "status": "pass"
-    },
-    {
-      "name": "ao_ma10a1_unexpected_merge_actor_propagates",
-      "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10q fixes the readiness snapshot so the dedicated merge actor can be confirmed instead of hardcoded false.",
-    "The dedicated actor condition is conjunctive: login gladyatore-lab, write permission, and viewerCanAdminister=false.",
-    "Wrong non-admin actors now fail closed with unexpected_merge_actor before eligibility or merge-agent activation.",
-    "Current live A0/A1 artifacts are refreshed: GitHub ruleset/review gates are ready, while active Halildeu/admin auth remains blocked.",
-    "No GitHub mutation, ruleset change, CODEOWNERS change, workflow change, live adapter execution, support widening, or production platform claim is introduced."
+    "Anthropic review: binding_mode added/modified/unchanged correctly separates current-PR strict binding from state-at-landing reuse.",
+    "Immutable safety properties remain enforced for every raw review evidence file regardless of binding_mode.",
+    "Strict current-PR scope binding remains required for raw evidence files added or modified by this PR.",
+    "Path-to-provider binding prevents OpenAI and Anthropic reviewer evidence from being shuffled.",
+    "No support widening, production platform claim, live adapter execution, branch-protection bypass, or release-authority widening is introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -56,20 +44,21 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10A0-GITHUB-READINESS-SNAPSHOT.v1.json",
-      ".claude/plans/AO-MA-10A1-AUTONOMOUS-MERGE-ELIGIBILITY.v1.json",
+      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
+      ".github/workflows/test.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-github-readiness-snapshot.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_github_readiness_snapshot.py",
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py",
-      "tests/test_ao_ma10_github_readiness_snapshot.py"
+      "scripts/ao_ma10_high_risk_supersession_evidence.py",
+      "tests/fixtures/ao_ma_10h/high_risk_supersession.valid.json",
+      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
+      "tests/test_ao_ma10j_high_risk_supersession_evidence_builder.py",
+      "tests/test_ao_release_gate.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma-10q-dedicated-actor-readiness"
+    "head_ref": "refs/heads/codex/ao-ma10-runtime-introducer-detection"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10q"
+  "work_package": "AO-MA-10j"
 }

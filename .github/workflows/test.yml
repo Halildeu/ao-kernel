@@ -722,6 +722,18 @@ jobs:
         # runtime, then passes only the generated head-bound artifact to
         # the decision core. This avoids committing a head_sha-bearing
         # supersession artifact and re-opening the self-reference problem.
+        #
+        # AO-MA-10 introducer-PR runtime fix (Codex thread 019e6ffc plan-time
+        # AGREE absorb): the script classifies each raw reviewer evidence
+        # file's appearance in this PR's diff into binding_mode = {added,
+        # modified, unchanged}. Strict current-PR scope binding is enforced
+        # for `added` and `modified`; `unchanged` is the state-at-landing
+        # pin (introducer PR already validated; immutable properties are
+        # enforced perpetually). Raw paths are matched against a fixed
+        # allowlist by suffix-parts; provider field is path-bound to
+        # prevent audit-provenance shuffling. Fail-closed for `deleted`
+        # (governance break; the pair-presence check above should have
+        # caught this).
         if: ${{ steps.high_risk_reviewers.outputs.openai_path != '' }}
         working-directory: base
         env:

@@ -172,6 +172,7 @@ def _high_risk_supersession_evidence(
     provider_ids: tuple[str, str] = ("openai", "anthropic"),
     consensus_status: str = "AGREE",
     provider_verdict: str = "AGREE",
+    binding_mode: str = "added",
 ) -> dict[str, object]:
     """Build accepting AO-MA-10h high-risk supersession evidence.
 
@@ -211,6 +212,7 @@ def _high_risk_supersession_evidence(
                 "verdict": provider_verdict,
                 "round_index": 2,
                 "context_binding": dict(context),
+                "binding_mode": binding_mode,
                 "findings_count": 0 if provider_verdict == "AGREE" else 1,
                 "secrets_recorded": False,
                 "support_widening": False,
