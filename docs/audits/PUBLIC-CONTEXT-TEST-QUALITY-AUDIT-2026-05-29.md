@@ -61,13 +61,19 @@ actionable.
 
 ### semantic_retrieval.py (63.3% — priority 1: lowest + boundary)
 
+Line classification corrected per Codex post-impl review (line-accurate):
+
 | Lines | What | Tier | Suggested test |
 |---|---|---|---|
 | 50–73 | `embed_text`: build_embeddings_request + execute_http_request + non-OK status | 🌐 external | optional integration; offline: mock transport for status!=OK error path |
 | 99–115 | `embed_decision`: provider/model resolution + cache skip | 🔴 actionable | embedding cache hit/skip without re-embedding (no provider call) |
 | 123–125 | `decision["_embedding"]` cache write | 🔴 actionable | assert cache populated/reused |
-| 163–168 | `semantic_search` provider/model | 🌐 external | optional |
-| 192 | `return []` empty/non-list embedding skip | 🔴 actionable | empty query / non-list embedding → `[]` |
+| 162–168 | `semantic_search` embedding_config precedence (provider/model/base_url/api_key resolve) | 🔴 actionable | embedding_config precedence resolution (offline, no provider call) |
+| 171–175 | `semantic_search` → `embed_text` live provider call | 🌐 external | optional integration; offline via mocked `embed_text` |
+| 177–178 | no query embedding → `[]` (deterministic fallback) | 🔴 actionable | empty/falsy query_embedding → `[]` |
+| 191–192 | no in-memory decisions → `[]` | 🔴 actionable | empty decisions list → `[]` |
+| 196–198 | missing / non-list `_embedding` → skip | 🔴 actionable | decision without list embedding is skipped |
+| 205–206 | similarity sort + `top_k` slice | 🔴 actionable | ordering by `_similarity` desc, top_k truncation |
 
 ### context_compiler.py (84.2% — priority 1: 196 stmt, largest blast radius)
 
@@ -75,18 +81,20 @@ actionable.
 |---|---|---|---|
 | 155 | `item.included = False` budget exclusion | 🔴 actionable | budget overflow → item excluded from compiled context |
 | 258 | `except Exception` telemetry fallback | ⚪ defensive | low value |
-| 338, 346 | relevance score constants (0.3 / 0.8) | 🔴 actionable | rerank scoring branches |
+| 338, 346 | `_recency_score` edge branches (empty timestamp → 0.3; <24h → 0.8) | 🔴 actionable | recency scoring edges (missing timestamp, fresh item) |
 | 397 | `content` list branch | 🔴 actionable | message content as list normalization |
-| 425–439 | semantic rerank `sim_map` build + sort | 🔴 actionable | rerank ordering with similarity map |
+| 425–436 | semantic rerank `sim_map` build + per-item score + sort | 🔴 actionable | rerank ordering with injected/stubbed similarity map |
+| 438–439 | `except Exception: pass` rerank fail-open | ⚪ defensive | non-critical; semantic search fail-open by design |
 
-### checkpoint.py (79.2% — fail-closed integrity)
+### checkpoint.py (79.2% — fail-closed integrity + resilience)
 
 | Lines | What | Tier | Suggested test |
 |---|---|---|---|
-| 90, 102 | `raise CheckpointError(...)` | 🔴 actionable | corrupt/invalid checkpoint → CheckpointError |
-| 106 | `except (ValueError, TypeError)` | 🔴 actionable | malformed cursor parse |
-| 112 | `has_provider_cursor` resume metadata | 🔴 actionable | resume metadata flag set |
-| 147 | `except (json.JSONDecodeError, OSError)` | 🔴 actionable | corrupt checkpoint file fail-closed |
+| 90 | missing `hashes.session_context_sha256` → `CheckpointError` | 🔴 actionable (fail-closed) | checkpoint without integrity hash → `CHECKPOINT_NO_HASH` |
+| 102 | expired `expires_at` with `fail_on_expired=True` → `CheckpointError` | 🔴 actionable (fail-closed) | expired checkpoint → `CHECKPOINT_EXPIRED` |
+| 106–107 | malformed `expires_at` parse → `except: pass` (allow resume) | 🔴 actionable (resilience) | unparseable expiry → resume still allowed (not fail-closed) |
+| 112 | `has_provider_cursor` resume metadata | 🔴 actionable | resume metadata flag set when cursor present |
+| 147 | `list_checkpoints` skips corrupt/unreadable entries (`json.JSONDecodeError`/`OSError`) | 🔴 actionable (resilience) | corrupt checkpoint file skipped without aborting the listing |
 
 ### memory_tiers.py (80.0% — config / time edges)
 
@@ -132,9 +140,13 @@ critical fail-closed surface is currently uncovered.
 - **HYG-PUBLIC-CONTEXT-GAPS-01** — semantic_retrieval offline (cache skip,
   empty/non-list embedding) + context_compiler rerank/budget/selection
   branches (priority 1).
-- **HYG-PUBLIC-CONTEXT-GAPS-02** — checkpoint + session_lifecycle fail-closed:
-  CheckpointError raises, corrupt-file `OSError`/`JSONDecodeError`, resume
-  metadata. (session_lifecycle defensive logging excluded.)
+- **HYG-PUBLIC-CONTEXT-GAPS-02** — checkpoint fail-closed + resilience:
+  `CHECKPOINT_NO_HASH` (missing integrity hash) and `CHECKPOINT_EXPIRED`
+  (expired with `fail_on_expired=True`) fail-closed raises; plus resilience
+  paths — malformed-`expires_at` allow-resume, `has_provider_cursor` metadata,
+  and `list_checkpoints` skip-on-corrupt. (session_lifecycle is NOT in this
+  cluster: its misses are defensive logging fallbacks, intentionally
+  uncovered, not fail-closed.)
 - **HYG-PUBLIC-CONTEXT-GAPS-03** — memory_tiers confidence coercion + tier
   config/age edges + embedding_config env/policy precedence + secret repr
   boundary.
