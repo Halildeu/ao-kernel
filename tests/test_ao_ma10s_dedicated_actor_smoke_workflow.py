@@ -87,6 +87,16 @@ def test_ao_ma10s_workflow_runs_doctor_before_runner_and_uploads_artifacts() -> 
     assert "if-no-files-found: error" in text
 
 
+def test_ao_ma10s_workflow_skips_runner_when_doctor_fails() -> None:
+    text = _workflow_text()
+    guard = 'if [ "$doctor_status" -ne 0 ]; then'
+    runner = "scripts/ao_ma10q_dedicated_actor_runner.py"
+    assert guard in text
+    assert text.index(guard) < text.index(runner)
+    assert "runner_status=skipped" in text
+    assert "runner_skipped_reason=doctor_failed" in text
+
+
 def test_ao_ma10s_execute_mode_requires_confirmation() -> None:
     text = _workflow_text()
     assert "AO-MA-10L-EXECUTE" in text

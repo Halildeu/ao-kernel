@@ -93,10 +93,25 @@ jobs:
           mkdir -p "$EVIDENCE_DIR"
 
           set +e
-          python scripts/ao_ma10r_dedicated_actor_credential_doctor.py \
-            --output "$EVIDENCE_DIR/ao-ma10r-credential-doctor-result.json" \
+          doctor_args=(
+            --output "$EVIDENCE_DIR/ao-ma10r-credential-doctor-result.json"
             --format text
+          )
+          if [ "$MODE" = "execute" ]; then
+            doctor_args+=(--branch-write-probe)
+          fi
+          python scripts/ao_ma10r_dedicated_actor_credential_doctor.py "${doctor_args[@]}"
           doctor_status=$?
+          if [ "$doctor_status" -ne 0 ]; then
+            set -e
+            {
+              echo "mode=$MODE"
+              echo "doctor_status=$doctor_status"
+              echo "runner_status=skipped"
+              echo "runner_skipped_reason=doctor_failed"
+            } > "$EVIDENCE_DIR/status.txt"
+            exit 1
+          fi
 
           q_args=(
             --output "$EVIDENCE_DIR/ao-ma10q-dedicated-actor-runner-result.json"
