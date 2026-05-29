@@ -156,6 +156,87 @@ def test_required_check_failure_blocks() -> None:
     assert "required_checks_not_passed" in payload["decision"]["blockers"]
 
 
+def test_duplicate_required_checks_allow_pass_over_stale_pending_and_skipped() -> None:
+    live = _ready_live_state()
+    live["required_checks"] = [
+        {"name": "lint", "bucket": "skipping", "state": "SKIPPED", "link": "stale"},
+        {"name": "lint", "bucket": "pass", "state": "SUCCESS", "link": "current"},
+        {"name": "test (3.11)", "bucket": "pending", "state": "IN_PROGRESS", "link": "old-run"},
+        {"name": "test (3.11)", "bucket": "pass", "state": "SUCCESS", "link": "new-run"},
+        {"name": "ao-release-gate", "bucket": "skipping", "state": "SKIPPED", "link": "event-gate-only"},
+    ]
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "ready_to_merge"
+    assert payload["required_checks"]["all_passed"] is True
+    assert payload["required_checks"]["failing"] == []
+
+
+def test_pending_required_check_without_pass_still_blocks() -> None:
+    live = _ready_live_state()
+    live["required_checks"].append(
+        {"name": "test (3.13)", "bucket": "pending", "state": "IN_PROGRESS", "link": "current"}
+    )
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "blocked"
+    assert "required_checks_not_passed" in payload["decision"]["blockers"]
+    assert payload["required_checks"]["failing"][0]["name"] == "test (3.13)"
+
+
+def test_github_actions_integration_token_permission_gap_does_not_block() -> None:
+    live = _ready_live_state()
+    live["permission"] = {}
+    live["collection_warnings"] = ["github_user_endpoint_unavailable_for_integration_token"]
+    live["repo_owned_actions_token"] = {"verified": True, "failures": []}
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "ready_to_merge"
+    assert "merge_actor_not_write" not in payload["decision"]["blockers"]
+    assert "github_actions_integration_token_permission_unobservable" in payload["decision"]["warnings"]
+    assert payload["repo_owned_actions_token"]["verified"] is True
+
+
+def test_integration_token_permission_gap_without_repo_owned_proof_blocks() -> None:
+    live = _ready_live_state()
+    live["permission"] = {}
+    live["collection_warnings"] = ["github_user_endpoint_unavailable_for_integration_token"]
+    live["repo_owned_actions_token"] = {"verified": False, "failures": ["workflow_ref"]}
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "blocked"
+    assert "merge_actor_permission_unobservable" in payload["decision"]["blockers"]
+    assert "merge_actor_identity_unverified" in payload["decision"]["blockers"]
+    assert "merge_actor_not_write" not in payload["decision"]["blockers"]
+
+
+def test_integration_token_with_write_permission_still_requires_repo_owned_proof() -> None:
+    live = _ready_live_state()
+    live["permission"] = {"permission": "write", "role_name": "write"}
+    live["collection_warnings"] = ["github_user_endpoint_unavailable_for_integration_token"]
+    live["repo_owned_actions_token"] = {"verified": False, "failures": ["workflow_ref"]}
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "blocked"
+    assert "merge_actor_identity_unverified" in payload["decision"]["blockers"]
+    assert "merge_actor_not_write" not in payload["decision"]["blockers"]
+
+
+def test_required_check_failure_with_missing_state_blocks_without_type_error() -> None:
+    live = _ready_live_state()
+    live["required_checks"][0] = {"name": "lint", "bucket": "fail", "link": "failure-without-state"}
+
+    payload = _result(live)
+
+    assert payload["decision"]["result"] == "blocked"
+    assert "required_checks_not_passed" in payload["decision"]["blockers"]
+
+
 def test_stale_workflow_run_head_sha_blocks() -> None:
     payload = _result(event_head_sha="b" * 40)
 

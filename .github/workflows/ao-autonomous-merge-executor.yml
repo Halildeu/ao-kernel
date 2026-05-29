@@ -37,6 +37,7 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
+      AO_AUTONOMOUS_MERGE_TOKEN_SOURCE: github.token
       CONFIRMATION: AO-AUTONOMOUS-MERGE-EXECUTE
     steps:
       - name: Resolve target PR
