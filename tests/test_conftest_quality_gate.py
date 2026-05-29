@@ -309,19 +309,168 @@ def test_adv002_sole_is_not_none(tmp_path: Path) -> None:
 # ── Whole-suite dry-run audit ──────────────────────────────────────────
 
 
+# ── Codex post-impl iter-2 BLOCKING fixes regression suite ──────────────
+
+
+def test_blk004_nested_helper_does_not_leak_to_outer(tmp_path: Path) -> None:
+    """A nested helper FunctionDef inside a test_* function must not leak its
+    return_value/assert events into the outer test scan (Codex iter-2 #1)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_outer():\n"
+        "    def helper():\n"
+        "        m = Mock()\n"
+        "        m.method.return_value = 42\n"
+        "        assert m.method() == 42  # nested fn body, NOT a test_*\n"
+        "    helper()\n"
+        "    # outer has no return_value direct echo\n"
+        "    assert (1 + 1) == 2\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    # Helper does not start with test_, so it isn't itself scanned. The outer
+    # test_outer must not pick up BLK-004 from the nested body.
+    assert "BLK-004" not in rules
+    assert "ADV-003" not in rules
+
+
+def test_blk004_form_b_reassignment_clears_alias(tmp_path: Path) -> None:
+    """result = m.method() then result = X must clear the alias so a later
+    assert result == ... no longer counts as direct echo (Codex iter-2 #2)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    result = m.method()\n"
+        "    result = 99  # rebind to plain literal — alias cleared\n"
+        "    assert result == 99\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "BLK-004" not in rules
+
+
+def test_blk004_form_b_reassignment_then_stale_compare(tmp_path: Path) -> None:
+    """After result is rebound, asserting the OLD return_value must not BLK
+    (Codex iter-2 #2 stale-binding variant)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    result = m.method()\n"
+        "    result = compute()\n"  # noqa
+        "    assert result == 42\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "BLK-004" not in rules
+
+
+def test_blk004_multiple_return_values_latest_wins(tmp_path: Path) -> None:
+    """Source-order semantics: assert matches the CURRENT return_value
+    (Codex iter-2 #2 order-aware variant)."""
+    source_current = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    m.method.return_value = 99\n"
+        "    assert m.method() == 99  # matches CURRENT value → BLK\n"
+    )
+    rules_current = _rules(_scan_source(tmp_path, source_current, "snip1_test.py"))
+    assert "BLK-004" in rules_current
+
+
+def test_blk004_stale_return_value_no_match(tmp_path: Path) -> None:
+    """Source-order semantics: assert against the OLD return_value must NOT BLK
+    (Codex iter-2 #2 order-aware variant)."""
+    source_stale = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    m.method.return_value = 99\n"
+        "    assert m.method() == 42  # 42 stale → no BLK\n"
+    )
+    rules_stale = _rules(_scan_source(tmp_path, source_stale, "snip2_test.py"))
+    assert "BLK-004" not in rules_stale
+
+
+def test_blk004_bare_call_count_does_not_downgrade(tmp_path: Path) -> None:
+    """Bare reference to .call_count outside an Assert must NOT demote a
+    sibling direct echo (Codex iter-2 #3)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    _ = m.method.call_count  # bare access, NOT in an assertion\n"
+        "    assert m.method() == 42\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "BLK-004" in rules
+    assert "ADV-003" not in rules
+
+
+def test_blk004_unrelated_mock_behavioral_signal_does_not_downgrade(
+    tmp_path: Path,
+) -> None:
+    """A behavioral signal on a DIFFERENT (mock, method) key must not demote
+    a direct echo on this key (Codex iter-2 #3 per-key precision)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m1 = Mock()\n"
+        "    m2 = Mock()\n"
+        "    m1.method.return_value = 42\n"
+        "    m2.other.assert_called_once()  # unrelated key\n"
+        "    assert m1.method() == 42\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "BLK-004" in rules
+    assert "ADV-003" not in rules
+
+
+def test_blk004_behavioral_signal_inside_assert_does_downgrade(
+    tmp_path: Path,
+) -> None:
+    """A behavioral attr referenced INSIDE an Assert for the SAME key DOES
+    demote the direct echo (Codex iter-2 #3 positive precision)."""
+    source = (
+        "from unittest.mock import Mock\n"
+        "def test_thing():\n"
+        "    m = Mock()\n"
+        "    m.method.return_value = 42\n"
+        "    m.method()\n"
+        "    m.method()\n"
+        "    assert m.method.call_count == 2  # in-Assert behavioral check\n"
+        "    assert m.method() == 42  # direct echo → ADV-003 (not BLK)\n"
+    )
+    rules = _rules(_scan_source(tmp_path, source))
+    assert "ADV-003" in rules
+    assert "BLK-004" not in rules
+
+
+# ── Forcing function: 0 BLK-004 hits in current tests/ tree ─────────────
+
+
 def test_blk004_zero_hits_in_current_suite() -> None:
     """Lock-in: BLK-004 must have 0 hits in the current tests/ tree.
 
     This forcing function ensures the rule stays narrow. If a future PR
     introduces a direct-echo mock tautology, this test fails first; that PR
     must either fix the test or extend BLK-004 scope intentionally.
+
+    Self-skip uses ``Path.resolve()`` (NOT basename) so that a future
+    ``tests/subdir/test_conftest_quality_gate.py`` is not silently skipped
+    (Codex iter-2 nit absorbed).
     """
-    repo_root = Path(__file__).resolve().parent.parent
+    self_path = Path(__file__).resolve()
+    repo_root = self_path.parent.parent
     tests_dir = repo_root / "tests"
     blk004_hits: list[str] = []
     for p in sorted(tests_dir.rglob("test_*.py")):
-        if p.name == "test_conftest_quality_gate.py":
-            # Skip THIS file — we intentionally include BLK-004 fixtures.
+        if p.resolve() == self_path:
+            # Skip THIS exact file — we intentionally include BLK-004 fixtures.
             continue
         for v in _scan_test_file(p):
             if v.rule == "BLK-004":
