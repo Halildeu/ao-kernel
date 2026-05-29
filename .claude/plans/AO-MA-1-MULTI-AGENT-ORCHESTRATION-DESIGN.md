@@ -180,7 +180,7 @@ AO-MA is an execution accelerator for GPP-2D, not a replacement for it.
 | **AO-MA-2** | JSON Schemas for task graph, assignment, worker result, review verdict, verification report, and integration report. | schema + tests |
 | **AO-MA-3** | Local orchestrator CLI that reads SSOT and emits a task graph without spawning agents yet. | code + tests |
 | **AO-MA-4** | Parallel worktree runner with file ownership enforcement and conflict detection. | code + tests |
-| **AO-MA-4.5** | Worker invocation + result emit (LLM-driven; scope: write `worker_result.v1` per AO-MA-4 prepared worktree). Producer slice; not the integrator. | code + tests |
+| **AO-MA-4.5** | Worker invocation + result emit. **Implemented** as a deterministic local worker fixture (`ao-ma-worker-stub`) + `WorkerInvoker`: writes `worker_result.v1` per AO-MA-4 prepared worktree and bridges it into the base_dir consumption point. Live-LLM worker is deferred to an operator-bound GPP supersession (`live_adapter_execution=true`). Producer slice; not the integrator. See `.claude/plans/AO-MA-4.5-WORKER-INVOCATION.md`. | code + schema + tests |
 | **AO-MA-5** | Integrator policy: accept/reject/not_integratable worker outputs, conflict reports, operator-runnable assembly plan. NO remote write (no `git push`, no `gh pr create`). Depends on AO-MA-4.5 worker_result.v1 inputs + AO-MA-6 review_verdict.v1 + AO-MA-7 verification_report.v1; gracefully fails-closed (not_integratable) when those are missing. | code + tests |
 | **AO-MA-6** | Reviewer loop contract and bounded REVISE handling. | code + tests |
 | **AO-MA-7** | Verifier lane: GPP guard checks, secret scan, diff scope, and artifact hash reporting. | code + tests |
