@@ -1,25 +1,23 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10X",
+  "work_package": "AO-MA-10Y",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-code-reviewer",
+    "agent": "claude-cli-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10x-runner-timeout-alignment",
+    "head_ref": "refs/heads/codex/ao-ma10y-stale-evidence-guard",
     "changed_files": [
-      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
-      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json",
+      ".github/workflows/test.yml",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10q_dedicated_actor_runner.py",
-      "tests/test_ao_ma10q_dedicated_actor_runner.py"
+      "tests/test_ao_release_gate_enforce_job.py"
     ]
   },
   "checks_considered": [
@@ -32,11 +30,7 @@
       "status": "pass"
     },
     {
-      "name": "json_schema",
-      "status": "pass"
-    },
-    {
-      "name": "ruff",
+      "name": "yaml_parse",
       "status": "pass"
     },
     {
@@ -49,12 +43,12 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE. Blocking bulgu yok.",
-    "The change addresses the AO-MA-10S execute timeout observed after PR #705: AO-MA-10q gave the delegated AO-MA-10l subprocess only 180 seconds while AO-MA-10l was configured to poll for 900 seconds.",
-    "The delegated subprocess timeout now equals the AO-MA-10l polling timeout plus a bounded grace period, while disabled or short inner timeouts keep the previous 180 second floor.",
-    "subprocess.TimeoutExpired is caught and recorded as a fail-closed smoke_command_timeout blocker with an uploaded artifact instead of an uncaught traceback.",
-    "No branch-protection, ruleset, release authority, support tier, live adapter execution, or production platform claim change is introduced.",
-    "Relevant validations passed locally: focused AO-MA-10Q tests, compileall on the touched script, JSON validation, local GPP gate, and git diff check."
+    "Claude reviewer verdict AGREE after the missing pr-files.json guard was added.",
+    "The workflow now accepts root local-ai-review-evidence.v1.json only when the file is part of the current PR file list and also exists in the head checkout.",
+    "Inherited root evidence from the base branch now yields an empty reviewer path, preventing stale evidence from being evaluated as current-PR evidence.",
+    "Legitimate PR-head reviewer evidence remains supported because a PR that adds or modifies local-ai-review-evidence.v1.json appears in pr-files.json and keeps the downstream head/... output contract.",
+    "Missing pr-files.json degrades to REVIEW_CHANGED=false and malformed pr-files.json remains fail-closed.",
+    "No branch-protection, ruleset, release authority, support tier, live adapter execution, or production platform claim change is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
