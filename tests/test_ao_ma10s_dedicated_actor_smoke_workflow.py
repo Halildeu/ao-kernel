@@ -102,7 +102,7 @@ def test_ao_ma10s_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["allowed_ref"] == "refs/heads/main"
     assert receipt["secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
     assert receipt["governance_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
-    assert receipt["producer_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
+    assert receipt["producer_secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
     assert receipt["producer_release_authority"] is False
     assert receipt["token_value_recorded"] is False
     assert receipt["release_authority"] == "ao-release-gate+github-ruleset"

@@ -220,12 +220,12 @@ def run(
             "mode": "0700",
             "path_recorded": False,
         }
-        result["producer_token_env"] = governance_token_env if governance_wrapper_created else token_env
+        result["producer_token_env"] = token_env
         result["producer_wrapper"] = {
-            "created": governance_wrapper_created,
-            "mode": "0700" if governance_wrapper_created else None,
+            "created": False,
+            "mode": None,
             "path_recorded": False,
-            "same_as_merge_actor_wrapper": not governance_wrapper_created,
+            "same_as_merge_actor_wrapper": True,
         }
 
         command = [
@@ -250,7 +250,6 @@ def run(
         ]
         if governance_wrapper_created:
             command.extend(["--governance-gh-bin", str(governance_wrapper)])
-            command.extend(["--producer-gh-bin", str(governance_wrapper)])
         if execute:
             command.append("--execute")
             if confirmation is not None:
@@ -286,6 +285,14 @@ def run(
         if proc.returncode not in (0, 1):
             blockers.append("smoke_command_failed")
         if smoke_result:
+            raw_pr_producer = smoke_result.get("pr_producer")
+            pr_producer: dict[str, Any] = raw_pr_producer if isinstance(raw_pr_producer, dict) else {}
+            producer_role = pr_producer.get("role")
+            producer_same_as_merge_actor = pr_producer.get("same_as_merge_actor")
+            if producer_role != "merge_actor":
+                blockers.append(f"producer_not_merge_actor: {producer_role}")
+            if producer_same_as_merge_actor is not True:
+                blockers.append("producer_not_same_as_merge_actor")
             raw_smoke_decision = smoke_result.get("decision")
             smoke_decision: dict[str, Any] = raw_smoke_decision if isinstance(raw_smoke_decision, dict) else {}
             blockers.extend(item for item in smoke_decision.get("blockers", []) if isinstance(item, str))

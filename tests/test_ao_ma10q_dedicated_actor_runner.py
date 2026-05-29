@@ -36,15 +36,22 @@ def _load_script_module() -> Any:
     return module
 
 
-def _smoke_payload(*, result: str = "merged", blocker: str | None = None, mutated: bool = True) -> dict[str, Any]:
+def _smoke_payload(
+    *,
+    result: str = "merged",
+    blocker: str | None = None,
+    mutated: bool = True,
+    producer_role: str = "merge_actor",
+    producer_same_as_merge_actor: bool = True,
+) -> dict[str, Any]:
     blockers = [blocker] if blocker else []
     return {
         "schema_version": "ao-ma-10l-autonomous-smoke-result.v1",
         "artifact_kind": "ao_ma_10l_autonomous_smoke_result",
         "mutations_performed": mutated,
         "pr_producer": {
-            "role": "governance_producer",
-            "same_as_merge_actor": False,
+            "role": producer_role,
+            "same_as_merge_actor": producer_same_as_merge_actor,
             "release_authority": False,
             "allowed_operations": ["base_ref_read", "branch_create", "file_create", "pr_create"],
         },
@@ -265,26 +272,65 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
 
     Draft202012Validator(_schema()).validate(result)
     assert "--governance-gh-bin" in runner.commands[0]
-    assert "--producer-gh-bin" in runner.commands[0]
     assert runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1].startswith("/tmp/")
-    assert runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1].startswith("/tmp/")
-    assert (
-        runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1]
-        == runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1]
-    )
+    assert "--producer-gh-bin" not in runner.commands[0]
     artifact_text = output.read_text(encoding="utf-8")
     assert TOKEN_VALUE not in artifact_text
     assert GOVERNANCE_TOKEN_VALUE not in artifact_text
-    assert result["smoke_command"].count("<temporary-gh-wrapper>") == 3
-    assert result["producer_token_env"] == GOVERNANCE_TOKEN_ENV
+    assert result["smoke_command"].count("<temporary-gh-wrapper>") == 2
+    assert result["producer_token_env"] == TOKEN_ENV
     assert result["producer_wrapper"] == {
-        "created": True,
-        "mode": "0700",
+        "created": False,
+        "mode": None,
         "path_recorded": False,
-        "same_as_merge_actor_wrapper": False,
+        "same_as_merge_actor_wrapper": True,
     }
     assert result["decision"]["result"] == "merged"
     assert runner.timeouts == [180]
+
+
+def test_ao_ma10q_blocks_if_delegated_smoke_reports_governance_producer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    monkeypatch.setenv(GOVERNANCE_TOKEN_ENV, GOVERNANCE_TOKEN_VALUE)
+    mod = _load_script_module()
+    output = tmp_path / "ao-ma10q.json"
+    runner = FakeSmokeRunner(
+        _smoke_payload(
+            result="merged",
+            mutated=True,
+            producer_role="governance_producer",
+            producer_same_as_merge_actor=False,
+        )
+    )
+
+    result = cast(
+        dict[str, Any],
+        mod.run(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
+            base_gh_bin="gh",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=0,
+            poll_seconds=1,
+            runner=runner,
+        ),
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert "--producer-gh-bin" not in runner.commands[0]
+    assert result["decision"]["result"] == "blocked"
+    assert result["decision"]["blockers"] == [
+        "producer_not_merge_actor: governance_producer",
+        "producer_not_same_as_merge_actor",
+    ]
+    assert result["mutations_performed"] is True
 
 
 def test_ao_ma10q_default_subprocess_timeout_exceeds_inner_smoke_window() -> None:
