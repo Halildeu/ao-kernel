@@ -30,11 +30,11 @@
     }
   ],
   "findings": [
-    "Live AO-MA-10q execute smoke reached disposable PR #720 and all normal required checks passed, but ao-release-gate denied because the split producer PR author was Halildeu while the narrow smoke exception only accepted gladyatore-lab.",
-    "AO-MA-10AB keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only recognizes Halildeu as the operator-bound governance producer for direct one-file AO-MA-10l smoke PRs.",
-    "The exception remains gated by low_risk_autonomous_merge_requested=true, a valid boolean request flag, no high-risk paths, and every changed path being a direct docs/evidence/ao-ma-10l-autonomous-smoke/*.md file.",
-    "Unknown PR authors still fail closed and require local-gpp-gate review evidence; tests cover gladyatore-lab allow, Halildeu split-producer allow, and unknown-producer deny.",
-    "Claude CLI review returned AGREE and specifically found no fail-open risk, no support widening, no production claim, no live adapter execution, and no branch-protection mutation."
+    "Live AO-MA-10q execute smoke reached disposable PR #722 with credential_ready and all required checks passing, but AO-MA-10c blocked before merge because collaborator permission read returned the known fine-grained PAT 403 and GitHub mergeStateStatus was transiently UNSTABLE before later settling to CLEAN.",
+    "AO-MA-10AC keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only hardens merge-agent live-state collection and does not add admin bypass, native auto-merge, support widening, production claim, or live adapter execution.",
+    "Repo permission fallback is now allowed only for the exact known fine-grained PAT 403 signature; unexpected permission-read failures such as HTTP 500 do not fallback, preserve collection_errors, and fail closed with github_api_read_failed plus merge_actor_not_write.",
+    "Transient mergeStateStatus UNKNOWN/UNSTABLE is retried before merge; non-transient blocked states break immediately, and exhausted transient states still fail closed with pr_merge_state_not_clean.",
+    "OpenAI subagent review first returned REVISE on an overly broad fallback, that finding was absorbed with negative tests, and re-review returned AGREE. Claude CLI reviewer also returned AGREE on the revised patch."
   ],
   "implementer": {
     "agent": "codex",
@@ -52,15 +52,13 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
-      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
-      "ao_kernel/ao_release_gate.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate.py"
+      "scripts/ao_ma10c_merge_agent.py",
+      "tests/test_ao_ma10c_merge_agent.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10ab-split-producer-smoke-scope"
+    "head_ref": "refs/heads/codex/ao-ma10ac-merge-agent-live-state"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10AB"
+  "work_package": "AO-MA-10AC"
 }
