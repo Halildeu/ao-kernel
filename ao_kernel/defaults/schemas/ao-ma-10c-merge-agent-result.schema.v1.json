@@ -69,7 +69,9 @@
         "state": { "type": ["string", "null"] },
         "is_draft": { "type": ["boolean", "null"] },
         "base_ref": { "type": ["string", "null"] },
+        "head_ref": { "type": ["string", "null"] },
         "head_sha": { "type": ["string", "null"] },
+        "is_cross_repository": { "type": ["boolean", "null"] },
         "merge_state_status": { "type": ["string", "null"] }
       }
     },
@@ -94,6 +96,12 @@
       "items": { "type": "string" }
     },
     "merge_error": { "type": "string" },
+    "branch_delete_attempted": { "type": "boolean" },
+    "branch_delete_command_argv": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "branch_delete_error": { "type": "string" },
     "collection_errors": {
       "type": "array",
       "items": { "type": "string" }
@@ -123,6 +131,7 @@
               "merge_actor_not_write",
               "merge_command_failed",
               "pr_base_not_main",
+              "pr_head_sha_missing",
               "pr_is_draft",
               "pr_merge_state_not_clean",
               "pr_not_open",

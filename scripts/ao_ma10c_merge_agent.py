@@ -110,23 +110,80 @@ def _age_seconds(generated_at: Any, now: datetime) -> int | None:
 
 
 def merge_command(repo: str, pr_number: int, gh_bin: str = "gh") -> list[str]:
-    """Build the only permitted merge command.
+    """Build the only permitted merge command shape.
 
-    The command deliberately does not support admin bypass, bypass actors, or
-    native GitHub auto-merge enablement. It executes a normal squash merge after
-    required checks and rulesets are already green.
+    Fine-grained PATs can have repository write permission while GitHub's
+    GraphQL pull-request merge mutation remains unavailable to the GitHub CLI
+    PR merge path. The REST pull merge endpoint is the narrower operation this
+    actor needs after required checks and rulesets are already green.
     """
 
     return [
         gh_bin,
-        "pr",
-        "merge",
-        str(pr_number),
-        "--repo",
-        repo,
-        "--squash",
-        "--delete-branch",
+        "api",
+        f"repos/{repo}/pulls/{pr_number}/merge",
+        "--method",
+        "PUT",
+        "-f",
+        "merge_method=squash",
     ]
+
+
+def merge_command_with_sha(repo: str, pr_number: int, *, head_sha: str | None, gh_bin: str = "gh") -> list[str]:
+    command = merge_command(repo, pr_number, gh_bin=gh_bin)
+    if head_sha:
+        command.extend(["-f", f"sha={head_sha}"])
+    return command
+
+
+def branch_delete_command(repo: str, head_ref: str, gh_bin: str = "gh") -> list[str]:
+    return [
+        gh_bin,
+        "api",
+        f"repos/{repo}/git/refs/heads/{head_ref}",
+        "--method",
+        "DELETE",
+    ]
+
+
+def _safe_head_ref_for_delete(head_ref: Any, base_ref: str, *, is_cross_repository: bool) -> str | None:
+    if is_cross_repository:
+        return None
+    if not isinstance(head_ref, str) or not head_ref:
+        return None
+    if head_ref == base_ref or head_ref.startswith("refs/"):
+        return None
+    return head_ref
+
+
+def execute_merge(
+    *,
+    repo: str,
+    pr_number: int,
+    pr_view: dict[str, Any],
+    base_ref: str,
+    gh_bin: str,
+) -> tuple[int, str, int | None, str, list[str], list[str]]:
+    head_sha = pr_view.get("headRefOid") if isinstance(pr_view.get("headRefOid"), str) else None
+    merge_argv = merge_command_with_sha(repo, pr_number, head_sha=head_sha, gh_bin=gh_bin)
+    merge_proc = _run(merge_argv)
+    merge_error = merge_proc.stderr.strip() or merge_proc.stdout.strip()
+
+    delete_argv: list[str] = []
+    delete_exit_code: int | None = None
+    delete_error = ""
+    head_ref = _safe_head_ref_for_delete(
+        pr_view.get("headRefName"),
+        base_ref,
+        is_cross_repository=pr_view.get("isCrossRepository") is True,
+    )
+    if merge_proc.returncode == 0 and head_ref:
+        delete_argv = branch_delete_command(repo, head_ref, gh_bin=gh_bin)
+        delete_proc = _run(delete_argv)
+        delete_exit_code = delete_proc.returncode
+        delete_error = delete_proc.stderr.strip() or delete_proc.stdout.strip()
+
+    return merge_proc.returncode, merge_error, delete_exit_code, delete_error, merge_argv, delete_argv
 
 
 def collect_live_github_state(
@@ -181,7 +238,7 @@ def collect_live_github_state(
                 "--repo",
                 repo,
                 "--json",
-                "state,isDraft,baseRefName,headRefOid,mergeStateStatus",
+                "state,isDraft,baseRefName,headRefName,headRefOid,isCrossRepository,mergeStateStatus",
             ],
             runner,
         )
@@ -256,6 +313,9 @@ def build_result(
     confirmation: str | None = None,
     merge_exit_code: int | None = None,
     merge_stderr: str = "",
+    branch_delete_exit_code: int | None = None,
+    branch_delete_stderr: str = "",
+    branch_delete_command_argv: list[str] | None = None,
     gh_bin: str = "gh",
 ) -> dict[str, Any]:
     now = (now or datetime.now(UTC)).astimezone(UTC)
@@ -331,7 +391,19 @@ def build_result(
     if not checks_ok:
         blockers.add("required_checks_not_passed")
 
-    command = merge_command(repo, pr_number, gh_bin=gh_bin)
+    head_sha = pr_view.get("headRefOid") if isinstance(pr_view.get("headRefOid"), str) else None
+    if not head_sha:
+        blockers.add("pr_head_sha_missing")
+    command = merge_command_with_sha(repo, pr_number, head_sha=head_sha, gh_bin=gh_bin)
+    is_cross_repository = pr_view.get("isCrossRepository") is True
+    safe_head_ref = _safe_head_ref_for_delete(
+        pr_view.get("headRefName"),
+        base_ref,
+        is_cross_repository=is_cross_repository,
+    )
+    delete_command = branch_delete_command_argv
+    if delete_command is None:
+        delete_command = branch_delete_command(repo, safe_head_ref, gh_bin=gh_bin) if safe_head_ref else []
     if any(item == FORBIDDEN_ADMIN_FLAG for item in command):
         blockers.add("admin_merge_command_constructed")
 
@@ -341,6 +413,14 @@ def build_result(
     merge_attempted = bool(execute and not blockers)
     if merge_exit_code not in (None, 0):
         blockers.add("merge_command_failed")
+    if merge_exit_code == 0 and not delete_command:
+        warnings.add(
+            "branch_delete_skipped_cross_repository"
+            if is_cross_repository
+            else "branch_delete_skipped_no_safe_head_ref"
+        )
+    if merge_exit_code == 0 and branch_delete_exit_code not in (None, 0):
+        warnings.add("branch_delete_failed")
 
     if blockers:
         result = "blocked"
@@ -362,6 +442,7 @@ def build_result(
         "dry_run": not execute,
         "execute_requested": execute,
         "merge_command_attempted": merge_attempted,
+        "branch_delete_attempted": branch_delete_exit_code is not None,
         "mutations_performed": result == "merged",
         "release_authority": RELEASE_AUTHORITY,
         "ai_output_release_authority": False,
@@ -377,7 +458,9 @@ def build_result(
             "state": pr_view.get("state"),
             "is_draft": pr_view.get("isDraft"),
             "base_ref": pr_view.get("baseRefName"),
+            "head_ref": pr_view.get("headRefName"),
             "head_sha": pr_view.get("headRefOid"),
+            "is_cross_repository": pr_view.get("isCrossRepository"),
             "merge_state_status": pr_view.get("mergeStateStatus"),
         },
         "required_checks": {
@@ -387,6 +470,8 @@ def build_result(
         },
         "merge_command_argv": command,
         "merge_error": merge_stderr if merge_exit_code not in (None, 0) else "",
+        "branch_delete_command_argv": delete_command,
+        "branch_delete_error": branch_delete_stderr if branch_delete_exit_code not in (None, 0) else "",
         "collection_errors": collection_errors,
         "decision": {
             "result": result,
@@ -425,6 +510,9 @@ def main(argv: list[str] | None = None) -> int:
 
     merge_exit_code: int | None = None
     merge_stderr = ""
+    branch_delete_exit_code: int | None = None
+    branch_delete_stderr = ""
+    branch_delete_command_argv: list[str] = []
     preliminary = build_result(
         repo=args.repo,
         pr_number=args.pr,
@@ -440,9 +528,20 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.execute and preliminary["decision"]["result"] != "blocked":
-        proc = _run(merge_command(args.repo, args.pr, gh_bin=args.gh_bin))
-        merge_exit_code = proc.returncode
-        merge_stderr = proc.stderr.strip() or proc.stdout.strip()
+        (
+            merge_exit_code,
+            merge_stderr,
+            branch_delete_exit_code,
+            branch_delete_stderr,
+            _merge_command_argv,
+            branch_delete_command_argv,
+        ) = execute_merge(
+            repo=args.repo,
+            pr_number=args.pr,
+            pr_view=_object(live_state.get("pr_view")),
+            base_ref=args.base_ref,
+            gh_bin=args.gh_bin,
+        )
 
     result = build_result(
         repo=args.repo,
@@ -457,6 +556,9 @@ def main(argv: list[str] | None = None) -> int:
         confirmation=args.confirmation,
         merge_exit_code=merge_exit_code,
         merge_stderr=merge_stderr,
+        branch_delete_exit_code=branch_delete_exit_code,
+        branch_delete_stderr=branch_delete_stderr,
+        branch_delete_command_argv=branch_delete_command_argv,
         gh_bin=args.gh_bin,
     )
 

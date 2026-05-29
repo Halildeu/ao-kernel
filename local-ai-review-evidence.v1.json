@@ -30,11 +30,12 @@
     }
   ],
   "findings": [
-    "Live AO-MA-10q execute smoke reached disposable PR #722 with credential_ready and all required checks passing, but AO-MA-10c blocked before merge because collaborator permission read returned the known fine-grained PAT 403 and GitHub mergeStateStatus was transiently UNSTABLE before later settling to CLEAN.",
-    "AO-MA-10AC keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only hardens merge-agent live-state collection and does not add admin bypass, native auto-merge, support widening, production claim, or live adapter execution.",
-    "Repo permission fallback is now allowed only for the exact known fine-grained PAT 403 signature; unexpected permission-read failures such as HTTP 500 do not fallback, preserve collection_errors, and fail closed with github_api_read_failed plus merge_actor_not_write.",
-    "Transient mergeStateStatus UNKNOWN/UNSTABLE is retried before merge; non-transient blocked states break immediately, and exhausted transient states still fail closed with pr_merge_state_not_clean.",
-    "OpenAI subagent review first returned REVISE on an overly broad fallback, that finding was absorbed with negative tests, and re-review returned AGREE. Claude CLI reviewer also returned AGREE on the revised patch."
+    "Live AO-MA-10q execute smoke reached disposable PR #724 with credential_ready, actual_actor gladyatore-lab, actor_permission write, mergeStateStatus CLEAN, and 16 required checks passing, but AO-MA-10c blocked because GitHub CLI gh pr merge used GraphQL mergePullRequest and returned Resource not accessible by personal access token.",
+    "AO-MA-10AD keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only changes the final merge executor from gh pr merge GraphQL to REST PUT /pulls/{pr}/merge and does not add admin bypass, native auto-merge, support widening, production claim, or live adapter execution.",
+    "The REST merge command includes sha=headRefOid so a PR head change between readiness/check evidence and merge execution fails closed instead of merging an unobserved commit.",
+    "Branch cleanup is a separate REST git-ref DELETE attempted only for same-repository non-base head refs; branch delete failure is warning-only because a successful merge cannot be undone and artifact truth must remain merged.",
+    "OpenAI explorer independently recommended the same REST merge path and flagged head-sha and cross-repository delete guardrails; those guardrails were absorbed with tests.",
+    "Claude CLI reviewer returned VERDICT: AGREE on the REST merge patch; residual notes were non-blocking test/comment robustness observations only."
   ],
   "implementer": {
     "agent": "codex",
@@ -52,13 +53,19 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10c_merge_agent.py",
-      "tests/test_ao_ma10c_merge_agent.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma10ac-merge-agent-live-state"
+        ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md",
+        ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json",
+        ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
+        "ao_kernel/defaults/schemas/ao-ma-10c-merge-agent-result.schema.v1.json",
+        "local-ai-review-evidence.v1.json",
+        "scripts/ao_ma10c_merge_agent.py",
+        "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json",
+        "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json",
+        "tests/test_ao_ma10c_merge_agent.py"
+      ],
+      "head_ref": "refs/heads/codex/ao-ma10ad-rest-merge"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10AC"
+  "work_package": "AO-MA-10AD"
 }
