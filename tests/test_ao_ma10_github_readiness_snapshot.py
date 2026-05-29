@@ -353,6 +353,54 @@ def test_ao_ma10a0_collect_live_snapshot_records_repo_and_viewer_read_errors(mon
     assert snapshot["readiness"]["decision"] == "blocked"
 
 
+def test_ao_ma10a0_accepts_github_actions_integration_user_endpoint_shape(monkeypatch: Any) -> None:
+    mod = _load_script_module()
+    codeowners_text = _valid_ready_inputs()["codeowners_text"]
+    encoded_codeowners = base64.b64encode(codeowners_text.encode("utf-8")).decode("utf-8")
+
+    def fake_run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:
+        del command
+        if label == "repository":
+            return {"data": {"repository": _valid_ready_inputs()["repo_info"]}}, None
+        if label == "viewer_login":
+            return {}, "viewer_login: gh: Resource not accessible by integration (HTTP 403)"
+        if label == "viewer_permission":
+            return {}, "viewer_permission: gh: Not Found (HTTP 404)"
+        if label == "branch_protection":
+            return _valid_ready_inputs()["branch_protection"], None
+        if label == "rulesets":
+            return _valid_ready_inputs()["rulesets"], None
+        if label == "ruleset:16803733":
+            return _valid_ready_inputs()["rulesets"][0], None
+        if label == "branch_rules":
+            return _valid_ready_inputs()["branch_rules"], None
+        if label == "codeowners":
+            return {"content": encoded_codeowners}, None
+        raise AssertionError(f"unexpected label: {label}")
+
+    monkeypatch.setattr(mod, "_run_json_with_error", fake_run_json_with_error)
+    snapshot = mod.collect_live_snapshot(
+        "Halildeu/ao-kernel",
+        "main",
+        "gh-governance",
+        dedicated_merge_actor="github-actions[bot]",
+        actor_gh_bin="gh-dedicated",
+    )
+
+    Draft202012Validator(_schema()).validate(snapshot)
+    assert snapshot["collection_errors"] == []
+    assert snapshot["merge_actor"] == {
+        "login": "github-actions[bot]",
+        "permission": "write",
+        "viewer_can_administer": False,
+        "administration_write_absent_for_dedicated_actor": True,
+    }
+    assert "github_user_endpoint_unavailable_for_integration_token" in snapshot["readiness"]["warnings"]
+    assert "github_api_read_failed" not in snapshot["readiness"]["blockers"]
+    assert "unexpected_merge_actor" not in snapshot["readiness"]["blockers"]
+    assert snapshot["readiness"]["decision"] == "ready_for_dry_run"
+
+
 def test_ao_ma10a0_script_is_read_only_and_has_no_write_api_methods() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     forbidden_tokens = [
