@@ -161,11 +161,53 @@ class TestEmbedDecisionConfigPrecedence:
             api_key="positional",
             embedding_config=_Cfg(),
         )
-        # embedding_config fields win over positional args
+        # embedding_config fields win over positional args (provider, model,
+        # base_url, and resolved api_key all take precedence).
         assert captured["provider_id"] == "google"
         assert captured["model"] == "text-embedding-004"
+        assert captured["base_url"] == "https://generativelanguage.googleapis.com"
         assert captured["api_key"] == "resolved-key"
         assert result["_embedding"] == [0.1, 0.2, 0.3]
+
+    def test_semantic_search_embedding_config_precedence(self, monkeypatch):
+        # semantic_search embedding_config precedence (semantic_retrieval
+        # L162-168): with no query_embedding supplied, semantic_search calls
+        # embed_text using the embedding_config-resolved provider/model/
+        # base_url/api_key, not the positional defaults. No network.
+        captured = {}
+
+        def fake_embed_text(text, *, provider_id, model, base_url, api_key):
+            captured["provider_id"] = provider_id
+            captured["model"] = model
+            captured["base_url"] = base_url
+            captured["api_key"] = api_key
+            return [1.0, 0.0]
+
+        monkeypatch.setattr("ao_kernel.context.semantic_retrieval.embed_text", fake_embed_text)
+
+        class _Cfg:
+            provider = "google"
+            model = "text-embedding-004"
+            base_url = "https://generativelanguage.googleapis.com"
+
+            def resolve_api_key(self):
+                return "resolved-key"
+
+        decisions = [{"key": "a", "value": "x", "_embedding": [1.0, 0.0]}]
+        results = semantic_search(
+            "query text",
+            decisions,
+            query_embedding=None,
+            embedding_config=_Cfg(),
+            min_similarity=0.1,
+        )
+        # embed_text was driven by the config-resolved fields
+        assert captured["provider_id"] == "google"
+        assert captured["model"] == "text-embedding-004"
+        assert captured["base_url"] == "https://generativelanguage.googleapis.com"
+        assert captured["api_key"] == "resolved-key"
+        # and the generated query embedding still yields the in-memory match
+        assert results[0]["key"] == "a"
 
     def test_cache_skip_when_hash_and_model_match(self, monkeypatch):
         # Already-embedded decision with matching text hash + model → skip

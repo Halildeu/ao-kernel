@@ -89,13 +89,16 @@ class TestMemoryTiersEdges:
         tier = classify_tier({"confidence": "0.9", "created_at": "2026-04-13T12:00:00Z"}, now=NOW)
         assert tier == "hot"
 
-    def test_classify_tier_non_numeric_confidence_falls_back(self):
+    def test_classify_tier_non_numeric_confidence_falls_back_to_half(self):
         # A non-numeric confidence string falls back to 0.5 (L42-43) rather
-        # than raising; classification proceeds with the default.
+        # than raising. Discriminating assertion (per Codex 019e758d): with an
+        # OLD timestamp (age > 30d), a 0.5 fallback (>= 0.4) classifies WARM,
+        # whereas a 0.0 fallback would be COLD. Asserting "warm" proves the
+        # fallback is 0.5, not merely "no crash".
         from ao_kernel.context.memory_tiers import classify_tier
 
-        tier = classify_tier({"confidence": "not-a-number", "created_at": "2026-04-13T12:00:00Z"}, now=NOW)
-        assert tier in ("hot", "warm", "cold")
+        tier = classify_tier({"confidence": "not-a-number", "created_at": "2025-06-01T12:00:00Z"}, now=NOW)
+        assert tier == "warm"
 
     def test_load_tier_policy_returns_tiers(self):
         # load_tier_policy loads the bundled policy (or falls back to
