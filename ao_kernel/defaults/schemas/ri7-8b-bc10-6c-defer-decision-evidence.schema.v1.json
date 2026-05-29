@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6c-defer-decision-evidence:v1",
+  "title": "RI-7.8b-bc10-6c Defer Decision Evidence",
+  "description": "Operator-bound defer decision for BC-10 (real-adapter usage/cost aggregate). Records that the bc10 chain assets (PR #695 authorization + PR #697 infrastructure + PR #700 closure schemas) are dormant under current cli_subscription_only operator usage. No real billable provider call is performed. No live adapter execution. No support widening. No production platform claim. The supersession entry RI-7.8b-bc10-6b transitions to terminal/non-dispatchable status (deferred_cli_only_mode) and historical guard_flag_policy_resolution.live_adapter_execution_allowed=true is marked authority_consumed=false / effective_execution_state=deferred_non_dispatchable so it is not effective. Future API-mode reactivation requires a new operator-bound supersession PR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "decision_effect",
+    "does_not_authorize",
+    "ri78a_predecessor_ref",
+    "ri78b_bc1_6c_predecessor_ref",
+    "ri78b_bc10_6a_predecessor_ref",
+    "ri78b_bc10_6b_predecessor_ref",
+    "ri78b_bc10_6c_schemas_predecessor_ref",
+    "operator_decision_record",
+    "current_usage_pattern",
+    "asset_preservation_block",
+    "supersession_entry_transition",
+    "submanifest_transition",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "ri78_submanifest_snapshot_after_decision",
+    "secret_boundary",
+    "mutations_performed",
+    "no_fake_work_attestation",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6c-defer-decision-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6c_defer_decision_evidence"},
+    "decision": {"type": "string", "const": "ri78b_bc10_6c_defer_cli_only_mode_no_billable_api_call_required_assets_preserved_dormant"},
+    "decision_effect": {"type": "string", "const": "bc10_chain_dormant_supersession_entry_non_dispatchable_no_provider_call_no_secret_no_guard_flag_flip_assets_preserved_for_future_api_mode"},
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "billable_provider_call_now",
+          "billable_provider_call_ever_under_this_decision",
+          "openai_api_key_reference_anywhere",
+          "support_widening",
+          "production_platform_claim",
+          "live_adapter_execution",
+          "top_level_guard_flag_flip",
+          "asset_retire_or_delete",
+          "bc10_real_adapter_usage_cost_aggregate_flip_to_true"
+        ]
+      }
+    },
+    "ri78a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 673},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc1_6c_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "closure_evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 691},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc10_6a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 695},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc10_6b_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 697},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc10_6c_schemas_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "per_call_schema_sha256", "aggregate_schema_sha256", "closure_schema_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 700},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "per_call_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "aggregate_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "closure_schema_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "operator_decision_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_login",
+        "decision_recorded_at",
+        "decision_source",
+        "no_secret_assertion",
+        "decision_scope",
+        "observation_notes"
+      ],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "decision_recorded_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "decision_source": {"type": "string", "minLength": 1},
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "decision_scope": {"type": "string", "const": "bc10_real_adapter_usage_cost_chain_defer_under_cli_only_mode"},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "current_usage_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claude_code_cli_monthly_subscription",
+        "codex_cli_monthly_subscription",
+        "no_programmatic_api_usage",
+        "no_openai_api_key_available_or_planned",
+        "no_AoKernelClient_llm_call_invocations",
+        "cli_subscription_operator_managed_mode"
+      ],
+      "properties": {
+        "claude_code_cli_monthly_subscription": {"type": "boolean", "const": true},
+        "codex_cli_monthly_subscription": {"type": "boolean", "const": true},
+        "no_programmatic_api_usage": {"type": "boolean", "const": true},
+        "no_openai_api_key_available_or_planned": {"type": "boolean", "const": true},
+        "no_AoKernelClient_llm_call_invocations": {"type": "boolean", "const": true},
+        "cli_subscription_operator_managed_mode": {"type": "boolean", "const": true}
+      }
+    },
+    "asset_preservation_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_mode",
+        "current_dispatch_allowed",
+        "assets_preserved",
+        "future_reactivation_requires",
+        "asset_preserved_for_future_api_mode",
+        "retire_status",
+        "bc10_api_mode_assets_preserved_but_not_currently_applicable"
+      ],
+      "properties": {
+        "current_mode": {"type": "string", "const": "cli_subscription_only"},
+        "current_dispatch_allowed": {"type": "boolean", "const": false},
+        "assets_preserved": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pr", "kind"],
+            "properties": {
+              "pr": {"type": "integer", "enum": [695, 697, 700]},
+              "kind": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "future_reactivation_requires": {"type": "string", "const": "new_operator_bound_supersession_pr"},
+        "asset_preserved_for_future_api_mode": {"type": "boolean", "const": true},
+        "retire_status": {"type": "string", "const": "not_retired_dormant_assets_for_audit_continuity_and_future_api_mode"},
+        "bc10_api_mode_assets_preserved_but_not_currently_applicable": {"type": "boolean", "const": true}
+      }
+    },
+    "supersession_entry_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "before_status",
+        "after_status",
+        "authority_consumed",
+        "effective_execution_state",
+        "dispatch_allowed_after_decision",
+        "defer_reason",
+        "deferred_at",
+        "billable_provider_call_count",
+        "live_adapter_execution_consumed",
+        "historical_authority_preserved_but_non_effective"
+      ],
+      "properties": {
+        "entry_id": {"type": "string", "const": "RI-7.8b-bc10-6b"},
+        "before_status": {"type": "string", "const": "awaiting_operator_dispatch"},
+        "after_status": {"type": "string", "const": "deferred_cli_only_mode"},
+        "authority_consumed": {"type": "boolean", "const": false},
+        "effective_execution_state": {"type": "string", "const": "deferred_non_dispatchable"},
+        "dispatch_allowed_after_decision": {"type": "boolean", "const": false},
+        "defer_reason": {"type": "string", "const": "operator_cli_only_no_programmatic_api_no_openai_api_key"},
+        "deferred_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "billable_provider_call_count": {"type": "integer", "const": 0},
+        "live_adapter_execution_consumed": {"type": "boolean", "const": false},
+        "historical_authority_preserved_but_non_effective": {"type": "boolean", "const": true, "description": "guard_flag_policy_resolution.live_adapter_execution_allowed=true PRESERVED in the entry as historical record but authority_consumed=false + effective_execution_state=deferred_non_dispatchable makes it non-effective"}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bc10_real_adapter_usage_cost_aggregate_recorded",
+            "bc10_defer_decision_recorded"
+          ],
+          "properties": {
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+            "bc10_defer_decision_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bc10_real_adapter_usage_cost_aggregate_recorded",
+            "bc10_defer_decision_recorded"
+          ],
+          "properties": {
+            "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false, "description": "STAYS FALSE - no real aggregate exists; no enum migration"},
+            "bc10_defer_decision_recorded": {"type": "boolean", "const": true, "description": "NEW additive key; defer decision recorded"}
+          }
+        }
+      }
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nine_key_manifest_all_true", "readiness_gate_decision"],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "ri78_submanifest_snapshot_after_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_evidence_pre_authorization_recorded",
+        "bc1_protected_live_adapter_attestation_recorded",
+        "bc10_real_adapter_usage_cost_aggregate_recorded",
+        "bc10_defer_decision_recorded",
+        "final_operator_promotion_decision_recorded"
+      ],
+      "properties": {
+        "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true},
+        "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+        "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+        "bc10_defer_decision_recorded": {"type": "boolean", "const": true},
+        "final_operator_promotion_decision_recorded": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_repo_no_provider_api_key_reference"},
+    "mutations_performed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_created",
+        "evidence_created",
+        "supersession_entry_transitioned_to_terminal",
+        "submanifest_additive_key_added",
+        "workflow_modified",
+        "activation_script_modified",
+        "runner_script_modified",
+        "pricing_source_modified",
+        "per_call_schema_modified",
+        "aggregate_schema_modified",
+        "closure_schema_modified",
+        "bc10_workflow_dispatched",
+        "provider_call_performed",
+        "secret_referenced",
+        "guard_flag_flipped",
+        "asset_retired_or_deleted"
+      ],
+      "properties": {
+        "schema_created": {"type": "boolean", "const": true},
+        "evidence_created": {"type": "boolean", "const": true},
+        "supersession_entry_transitioned_to_terminal": {"type": "boolean", "const": true},
+        "submanifest_additive_key_added": {"type": "boolean", "const": true},
+        "workflow_modified": {"type": "boolean", "const": false},
+        "activation_script_modified": {"type": "boolean", "const": false},
+        "runner_script_modified": {"type": "boolean", "const": false},
+        "pricing_source_modified": {"type": "boolean", "const": false},
+        "per_call_schema_modified": {"type": "boolean", "const": false},
+        "aggregate_schema_modified": {"type": "boolean", "const": false},
+        "closure_schema_modified": {"type": "boolean", "const": false},
+        "bc10_workflow_dispatched": {"type": "boolean", "const": false},
+        "provider_call_performed": {"type": "boolean", "const": false},
+        "secret_referenced": {"type": "boolean", "const": false},
+        "guard_flag_flipped": {"type": "boolean", "const": false},
+        "asset_retired_or_deleted": {"type": "boolean", "const": false}
+      }
+    },
+    "no_fake_work_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_billable_call_under_cli_only_would_be_fake_work",
+        "evidence_for_cli_only_mode_is_real_acceptance",
+        "no_provider_response_recorded",
+        "no_token_usage_recorded",
+        "no_cost_aggregate_computed"
+      ],
+      "properties": {
+        "real_billable_call_under_cli_only_would_be_fake_work": {"type": "boolean", "const": true},
+        "evidence_for_cli_only_mode_is_real_acceptance": {"type": "boolean", "const": true},
+        "no_provider_response_recorded": {"type": "boolean", "const": true},
+        "no_token_usage_recorded": {"type": "boolean", "const": true},
+        "no_cost_aggregate_computed": {"type": "boolean", "const": true}
+      }
+    },
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number_hint",
+        "base_sha",
+        "ri78a_evidence_sha256",
+        "ri78b_bc1_6c_closure_evidence_sha256",
+        "ri78b_bc10_6a_evidence_sha256",
+        "ri78b_bc10_6b_evidence_sha256",
+        "ri78_submanifest_sha256_before_decision",
+        "gpp_status_sha256_before_decision",
+        "timestamp"
+      ],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision"},
+        "pr_number_hint": {"type": "string"},
+        "base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ri78a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc1_6c_closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc10_6a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc10_6b_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256_before_decision": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "gpp_status_sha256_before_decision": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": ".github/workflows/bc10-real-adapter-usage-cost.yml"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/ri78b_bc10_activation_window.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/bc10_run_scenarios.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6b-protected-execution-window-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json"}, "minContains": 1, "maxContains": 1}
+          ]
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
