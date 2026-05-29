@@ -19,6 +19,7 @@
       ".claude/plans/RI-7.8c-FINAL-PROMOTE-DECISION.v1.json",
       "ao_kernel/defaults/schemas/ri7-8c-final-promote-decision-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
+      "tests/test_ri78b_bc10_6c_defer_decision_invariant.py",
       "tests/test_ri78c_final_promote_decision_invariant.py"
     ]
   },

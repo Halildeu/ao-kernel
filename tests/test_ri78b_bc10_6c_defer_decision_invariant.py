@@ -261,6 +261,20 @@ def test_defer_submanifest_bc10_defer_decision_sha256_matches_evidence():
 
 
 def test_defer_submanifest_other_keys_preserved():
+    """Submanifest other keys preserved on bc10-6c-defer landing.
+
+    State-at-landing pin: only enforced on the bc10-6c-defer introducer PR.
+    After RI-7.8c-non-promotion-decision (PR #736+),
+    final_operator_promotion_decision_recorded transitions to true.
+    The defer evidence schema/const pins already enforce the
+    defer-state-at-landing for bc10 aggregate + defer decision keys.
+    """
+    if not _is_ri78b_bc10_6c_defer_introducer_pr():
+        pytest.skip(
+            "defer state-at-landing pin: only enforced on bc10-6c-defer "
+            "introducer PR. Successor PRs (RI-7.8c) flip final_operator_"
+            "promotion_decision_recorded to true."
+        )
     sub = _load_json(SUBMANIFEST_PATH)
     assert sub["live_evidence_pre_authorization_recorded"] is True
     assert sub["bc1_protected_live_adapter_attestation_recorded"] is True
