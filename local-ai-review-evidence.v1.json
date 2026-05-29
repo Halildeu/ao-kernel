@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10S",
+  "work_package": "AO-MA-10T",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,13 +13,13 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10s-dedicated-actor-smoke-workflow",
+    "head_ref": "refs/heads/codex/ao-ma10t-secret-bootstrap",
     "changed_files": [
-      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
+      ".claude/plans/AO-MA-10T-DEDICATED-ACTOR-SECRET-BOOTSTRAP.md",
+      ".claude/plans/AO-MA-10T-DEDICATED-ACTOR-SECRET-BOOTSTRAP.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
+      "scripts/ao_ma10t_configure_dedicated_actor_secret.py",
+      "tests/test_ao_ma10t_configure_dedicated_actor_secret.py"
     ]
   },
   "checks_considered": [
@@ -29,10 +29,6 @@
     },
     {
       "name": "ruff",
-      "status": "pass"
-    },
-    {
-      "name": "actionlint",
       "status": "pass"
     },
     {
@@ -46,17 +42,19 @@
     {
       "name": "gpp_guard_flags_const_false",
       "status": "pass"
+    },
+    {
+      "name": "claude_cross_provider_review",
+      "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10s adds a workflow_dispatch-only GitHub Actions surface; no push, pull_request, pull_request_target, or schedule trigger is introduced",
-    "The workflow refuses non-main dispatches and keeps GITHUB_TOKEN permissions to contents:read only",
-    "GLADYATORE_LAB_GH_TOKEN is bound exactly once as a job environment variable from repository secrets; the shell never dereferences, echoes, prints, or uploads the token value",
-    "Execute mode requires the literal AO-MA-10L-EXECUTE confirmation before AO-MA-10q receives --execute",
-    "AO-MA-10r credential doctor runs before AO-MA-10q dedicated actor runner, preserving the fail-closed prerequisite order",
-    "Evidence upload uses if:always with if-no-files-found:error so blocked secret/readiness states remain observable as artifacts",
-    "The receipt and tests pin release_authority=ao-release-gate+github-ruleset, ai_output_release_authority=false, support_widening=false, production_platform_claim=false, and live_adapter_execution=false",
-    "Claude cross-provider review returned AGREE with no blockers; non-blocking observations confirmed set +e exit capture, non-overlapping concurrency, and timeout sizing"
+    "AO-MA-10t narrows the remaining dedicated actor token handoff to a no-secret bootstrap script that reads one named environment variable and writes the GitHub repository secret via gh secret set stdin",
+    "The token value is never placed in argv, command logs, receipt JSON, or the result artifact; tests assert the fake token is absent from serialized output and absent from every command list",
+    "The script is fail-closed for missing source env, missing execute flag, and wrong confirmation, with no GitHub mutation before all pre-mutation gates pass",
+    "Successful execution records only metadata: secret name plus created_at/updated_at presence booleans; no token hash or token-derived value is recorded",
+    "The receipt and script pin release_authority=ao-release-gate+github-ruleset, ai_output_release_authority=false, support_widening=false, production_platform_claim=false, and live_adapter_execution=false",
+    "Claude cross-provider review initially requested import-path hardening; importlib.util file-based loading was absorbed and the re-review returned AGREE"
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
