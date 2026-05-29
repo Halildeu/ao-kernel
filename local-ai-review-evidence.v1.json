@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT",
+  "work_package": "HYG-PUBLIC-FACADE-GAPS",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,10 +13,12 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-mutmut-coverage-audit",
+    "head_ref": "refs/heads/codex/hyg-public-facade-gaps",
     "changed_files": [
-      "docs/audits/PUBLIC-FACADE-TEST-QUALITY-AUDIT-2026-05-29.md",
-      "local-ai-review-evidence.v1.json"
+      "local-ai-review-evidence.v1.json",
+      "tests/test_config.py",
+      "tests/test_llm_facade.py",
+      "tests/test_tool_gateway.py"
     ]
   },
   "checks_considered": [
@@ -29,15 +31,11 @@
       "status": "pass"
     },
     {
-      "name": "doc_only_scope",
+      "name": "test_only_scope",
       "status": "pass"
     },
     {
-      "name": "no_fake_work_disclosure",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_remain_false",
+      "name": "coverage_delta_recorded",
       "status": "pass"
     },
     {
@@ -45,18 +43,22 @@
       "status": "pass"
     },
     {
-      "name": "no_pyproject_or_workflow_mutation",
+      "name": "guard_flags_remain_false",
+      "status": "pass"
+    },
+    {
+      "name": "no_fake_work_already_covered_excluded",
       "status": "pass"
     }
   ],
   "findings": [
-    "Codex post-impl review returned AGREE for HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT after reviewing the doc-only diff and source-line consistency checks (Codex thread 019e74e6, CNS-20260529-002 Track 1, iter-3 AGREE + post-impl AGREE).",
-    "Diff surface is doc-only: adds the audit document and the consultation request artifact only; no tests, no pyproject or mutmut config change, no workflow, no guard flag, no gpp_status, no runtime module.",
-    "Mutmut failure disclosure is No-Fake-Work aligned: it records mutmut 3.5.0, local macOS and Python context, three observed failure classes, and avoids an upstream-defect claim without a minimal repro. No synthetic mutation result was fabricated.",
-    "The audit does not claim mutation coverage; it is framed as coverage-driven and states covered does not equal well asserted.",
-    "Critical-gap definition is narrow and applied consistently: fail-closed, input-validation, provider-guardrail, and policy branches are critical; defensive import and except fallbacks are recorded as intentionally_uncovered_or_unreachable.",
-    "Source-line spot checks match cited code: config.py non-object JSON errors, llm.py provider guardrail denial, tool_gateway.py strict policy type validation, governance.py provider and generic violation branches.",
-    "Coverage JSON and mutmut working directories were generated locally for extraction and were intentionally excluded from the committed diff.",
+    "Codex plan-time consultation (thread 019e7520) returned REVISE + ready_for_impl with add_missing_arcs_only scope: skip already-covered governance arcs, require coverage-delta, single combined PR.",
+    "Test-only diff: extends tests/test_config.py, tests/test_tool_gateway.py, tests/test_llm_facade.py. No ao_kernel runtime module, no pyproject, no workflow, no schema, no guard flag, no gpp_status change.",
+    "GAPS-01 config.py: adds non-object workspace.json (array + scalar), non-object override, and non-object bundled default (narrow importlib.resources monkeypatch, no real bundled file touched) fail-closed tests.",
+    "GAPS-02 tool_gateway.py: adds blocked_tools non-list / non-string entry, cycle_detection non-object, and max_identical_calls non-int / bool-rejected tests — closing the asymmetric gap where allowed_tools had validation tests but blocked_tools did not.",
+    "GAPS-03 llm.py: adds build_request provider-guardrails deny (PROVIDER_DISABLED + MODEL_NOT_ALLOWED) and allow paths using a tmp workspace override policy; no live provider call or network access.",
+    "Coverage delta recorded (full-suite before -> after, source 428b886): config.py 93.6%->97.9% (closed 115/145/164), tool_gateway.py 94.3%->97.8% (closed 119/122/143/151), llm.py 87.1%->91.6% (closed 104/105/110/111/114).",
+    "No-Fake-Work discipline applied: governance.py was deliberately excluded because its core violation codes are already covered and the remaining arcs are partial dispatch-branch completions; llm.py:115 except-pass import guard left intentionally uncovered.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
