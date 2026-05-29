@@ -254,7 +254,14 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
     monkeypatch.setenv(GOVERNANCE_TOKEN_ENV, GOVERNANCE_TOKEN_VALUE)
     mod = _load_script_module()
     output = tmp_path / "ao-ma10q.json"
-    runner = FakeSmokeRunner(_smoke_payload(result="merged", mutated=True))
+    runner = FakeSmokeRunner(
+        _smoke_payload(
+            result="merged",
+            mutated=True,
+            producer_role="governance_producer",
+            producer_same_as_merge_actor=False,
+        )
+    )
 
     result = cast(
         dict[str, Any],
@@ -296,6 +303,45 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
     }
     assert result["decision"]["result"] == "merged"
     assert runner.timeouts == [180]
+
+
+def test_ao_ma10q_blocks_split_context_if_smoke_reports_merge_actor_producer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    monkeypatch.setenv(GOVERNANCE_TOKEN_ENV, GOVERNANCE_TOKEN_VALUE)
+    mod = _load_script_module()
+    output = tmp_path / "ao-ma10q.json"
+    runner = FakeSmokeRunner(_smoke_payload(result="merged", mutated=True))
+
+    result = cast(
+        dict[str, Any],
+        mod.run(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
+            base_gh_bin="gh",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=0,
+            poll_seconds=1,
+            runner=runner,
+        ),
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["producer_token_env"] == GOVERNANCE_TOKEN_ENV
+    assert result["producer_wrapper"]["same_as_merge_actor_wrapper"] is False
+    assert result["smoke_result"]["pr_producer"]["role"] == "merge_actor"
+    assert result["decision"]["result"] == "blocked"
+    assert result["decision"]["blockers"] == [
+        "producer_role_execution_context_mismatch",
+        "producer_same_actor_execution_context_mismatch",
+    ]
+    assert result["mutations_performed"] is True
 
 
 def test_ao_ma10q_accepts_bounded_governance_producer_without_release_authority(
