@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10U",
+  "work_package": "B1-BLK004",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,12 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10-high-risk-review-producer",
+    "head_ref": "refs/heads/codex/b1-blk004-mock-tautology",
     "changed_files": [
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_raw_review_producer.py",
-      "tests/test_ao_ma10_high_risk_raw_review_producer.py"
+      "tests/conftest.py",
+      "tests/test_conftest_quality_gate.py"
     ]
   },
   "checks_considered": [
@@ -45,16 +44,20 @@
     {
       "name": "authority_boundary",
       "status": "pass"
+    },
+    {
+      "name": "cross_ai_review",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Claude review verdict AGREE for AO-MA-10U after reviewing the staged diff and focused validation output.",
-    "The raw high-risk review producer keeps AI output as evidence only; ao-release-gate plus the GitHub ruleset remain release authority.",
-    "The script calls configured OpenAI and Anthropic reviewer commands, normalizes their output into local-ai-review-evidence.v1 files, and requires both providers.",
-    "Fail-closed behavior covers missing provider commands, non-AGREE verdicts, missing tests or secret_scan checks, low-risk diffs, forbidden findings, provider command failures, and secret-like stdout, stderr, diff, prompt, or evidence content.",
-    "Guard flags remain false: no support widening, no production platform claim, and no live adapter execution.",
-    "Focused validation passed: ruff check, mypy, pytest for the raw producer, ao_release_gate, and gpp_next reported 129 passing tests; git diff --check was clean.",
-    "No workflow mutation, ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, or secret value is introduced."
+    "Claude reviewer returned AGREE for B1-BLK004 after reviewing the diff and focused validation output.",
+    "The change adds BLK-004 to block direct mock-return tautologies in tests, reducing false-green test evidence in autonomous agent workflows.",
+    "The implementation stays narrow: direct <mock>.<method>.return_value assignment followed by direct call equality or one-hop result equality in the same test function.",
+    "Codex added a hardening fix so unrelated mock behavioral assertions no longer downgrade BLK-004 to ADV-003; only behavioral signals tied to the same mock method can downgrade.",
+    "Focused validation passed: ruff check tests/conftest.py tests/test_conftest_quality_gate.py, mypy tests/conftest.py, and pytest -q tests/test_conftest_quality_gate.py with 22 passing tests.",
+    "The whole-suite dry-run forcing function asserts zero BLK-004 hits outside the quality-gate fixture file.",
+    "No workflow mutation, ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
