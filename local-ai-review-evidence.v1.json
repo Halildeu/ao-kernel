@@ -1,25 +1,23 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10K-EVIDENCE-SYNC",
+  "work_package": "HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-sonnet-4-6-reviewer",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10k-evidence-sync",
+    "head_ref": "refs/heads/codex/hyg-mutmut-coverage-audit",
     "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
+      ".ao/consultations/requests/CNS-20260529-002.request.v1.json",
+      "docs/audits/PUBLIC-FACADE-TEST-QUALITY-AUDIT-2026-05-29.md",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -32,15 +30,11 @@
       "status": "pass"
     },
     {
-      "name": "scope_paths_allowed_only",
+      "name": "doc_only_scope",
       "status": "pass"
     },
     {
-      "name": "prohibited_paths_absent",
-      "status": "pass"
-    },
-    {
-      "name": "pr747_facts_accurately_recorded",
+      "name": "no_fake_work_disclosure",
       "status": "pass"
     },
     {
@@ -48,36 +42,22 @@
       "status": "pass"
     },
     {
-      "name": "authority_model_preserved",
-      "status": "pass"
-    },
-    {
       "name": "no_runtime_code_changes",
       "status": "pass"
     },
     {
-      "name": "tests_match_documented_facts",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_admin_bypass",
-      "status": "pass"
-    },
-    {
-      "name": "no_ruleset_or_workflow_mutation",
+      "name": "no_pyproject_or_workflow_mutation",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewer returned AGREE for PR #748 after reviewing the AO-MA-10k evidence-sync diff and the planned local review evidence wrapper.",
-    "All changed files are within allowed plan/test/evidence paths; no prohibited runtime, workflow, ruleset, branch-protection, AGENTS, CLAUDE, or gpp_status path is touched.",
-    "PR #747 negative high-risk smoke facts are recorded: mergeStateStatus BLOCKED, ao-release-gate-technical success, ao-release-gate-review ACTION_REQUIRED, decision deny_policy_violation, allow false, and finding ao_release_gate_high_risk_human_review_missing.",
-    "The JSON receipt diff updates only the future_slices status text; support_widening, production_platform_claim, and live_adapter_execution guards remain false per implementer validation.",
-    "The new test assertions match the documented PR #747 facts and do not introduce runtime behavior.",
+    "Codex post-impl review returned AGREE for HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT after reviewing the doc-only diff and source-line consistency checks (Codex thread 019e74e6, CNS-20260529-002 Track 1, iter-3 AGREE + post-impl AGREE).",
+    "Diff surface is doc-only: adds the audit document and the consultation request artifact only; no tests, no pyproject or mutmut config change, no workflow, no guard flag, no gpp_status, no runtime module.",
+    "Mutmut failure disclosure is No-Fake-Work aligned: it records mutmut 3.5.0, local macOS and Python context, three observed failure classes, and avoids an upstream-defect claim without a minimal repro. No synthetic mutation result was fabricated.",
+    "The audit does not claim mutation coverage; it is framed as coverage-driven and states covered does not equal well asserted.",
+    "Critical-gap definition is narrow and applied consistently: fail-closed, input-validation, provider-guardrail, and policy branches are critical; defensive import and except fallbacks are recorded as intentionally_uncovered_or_unreachable.",
+    "Source-line spot checks match cited code: config.py non-object JSON errors, llm.py provider guardrail denial, tool_gateway.py strict policy type validation, governance.py provider and generic violation branches.",
+    "Coverage JSON and mutmut working directories were generated locally for extraction and were intentionally excluded from the committed diff.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
