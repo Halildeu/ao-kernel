@@ -11,8 +11,7 @@
 
 AO-MA-10r verifies the last credential prerequisite before AO-MA-10q executes
 the low-risk autonomous merge smoke. It proves that a named environment
-variable authenticates GitHub CLI as the expected dedicated non-admin merge
-actor.
+variable authenticates GitHub CLI as the expected merge executor.
 
 This is not release authority. Release authority remains the repo-owned
 `ao-release-gate` required checks plus GitHub ruleset enforcement.
@@ -23,10 +22,17 @@ This is not release authority. Release authority remains the repo-owned
 scripts/ao_ma10r_dedicated_actor_credential_doctor.py
 ```
 
-Default token environment variable:
+Default token environment variable for legacy/local runs:
 
 ```text
 GLADYATORE_LAB_GH_TOKEN
+```
+
+The GitHub Actions smoke workflow passes the repo-owned executor explicitly:
+
+```text
+--token-env AO_MERGE_GITHUB_TOKEN
+--expected-actor github-actions[bot]
 ```
 
 The doctor never accepts token values as CLI arguments and never records token
@@ -57,7 +63,7 @@ dedicated_actor_token_env_missing
 
 The doctor always performs read-only checks:
 
-- `gh api user` -> actor identity is `gladyatore-lab`;
+- `gh api user` -> actor identity matches the configured expected actor;
 - `gh api repos/Halildeu/ao-kernel` -> actor has write or maintain, but not
   admin;
 - `gh api repos/Halildeu/ao-kernel/pulls?state=open&per_page=1` -> actor can
@@ -72,17 +78,17 @@ With `--branch-write-probe`, the doctor additionally:
   `branch_write_probe_base_ref_read_failed`, or
   `branch_write_probe_cleanup_failed` if any step fails.
 
-By default the branch-write probe uses the same dedicated merge actor token.
-When AO-MA-10q is running with a split disposable PR producer, pass:
+By default the branch-write probe uses the same merge executor token. When
+AO-MA-10q is running with a split disposable PR producer, pass:
 
 ```text
 --branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN
 ```
 
 That proves the producer token can create/delete the disposable smoke branch
-without making that producer release authority. The merge actor identity,
-required-check polling, and merge-agent execution remain bound to
-`GLADYATORE_LAB_GH_TOKEN`.
+without making that producer release authority. The merge executor identity,
+required-check polling, and merge-agent execution remain bound to the configured
+merge executor token.
 
 ## Completion Criteria
 

@@ -44,14 +44,13 @@ def test_ao_ma10s_workflow_is_dispatch_only_and_main_bound() -> None:
 
 def test_ao_ma10s_workflow_permissions_are_minimal() -> None:
     text = _workflow_text()
-    assert "\npermissions:\n  contents: read\n" in text
+    assert "\npermissions:\n  actions: read\n  checks: read\n  contents: write\n  pull-requests: write\n  statuses: read\n" in text
     forbidden = [
-        "contents: write",
         "checks: write",
-        "pull-requests: write",
         "issues: write",
         "actions: write",
         "deployments: write",
+        "administration: write",
     ]
     for item in forbidden:
         assert item not in text
@@ -59,13 +58,15 @@ def test_ao_ma10s_workflow_permissions_are_minimal() -> None:
 
 def test_ao_ma10s_secret_is_only_bound_as_env_and_not_echoed() -> None:
     text = _workflow_text()
-    assert 'GLADYATORE_LAB_GH_TOKEN: ${{ secrets.GLADYATORE_LAB_GH_TOKEN }}' in text
+    assert 'AO_MERGE_GITHUB_TOKEN: ${{ github.token }}' in text
+    assert "AO_MERGE_ACTOR: github-actions[bot]" in text
     assert 'AO_GOVERNANCE_GH_TOKEN: ${{ secrets.AO_GOVERNANCE_GH_TOKEN }}' in text
-    assert text.count("${{ secrets.GLADYATORE_LAB_GH_TOKEN }}") == 1
+    assert "secrets.GLADYATORE_LAB_GH_TOKEN" not in text
+    assert text.count("${{ github.token }}") == 1
     assert text.count("${{ secrets.AO_GOVERNANCE_GH_TOKEN }}") == 1
     shell_blocks = "\n".join(_run_step_blocks(text))
-    assert "$GLADYATORE_LAB_GH_TOKEN" not in shell_blocks
-    assert "${GLADYATORE_LAB_GH_TOKEN" not in shell_blocks
+    assert "$AO_MERGE_GITHUB_TOKEN" not in shell_blocks
+    assert "${AO_MERGE_GITHUB_TOKEN" not in shell_blocks
     assert "$AO_GOVERNANCE_GH_TOKEN" not in shell_blocks
     assert "${AO_GOVERNANCE_GH_TOKEN" not in shell_blocks
     assert "set -x" not in shell_blocks
@@ -85,6 +86,8 @@ def test_ao_ma10s_workflow_runs_doctor_before_runner_and_uploads_artifacts() -> 
     assert "actions/upload-artifact@v7" in text
     assert "if: always()" in text
     assert "if-no-files-found: error" in text
+    assert "--expected-actor \"$AO_MERGE_ACTOR\"" in text
+    assert "--token-env AO_MERGE_GITHUB_TOKEN" in text
     assert "--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN" in text
 
 
@@ -111,7 +114,9 @@ def test_ao_ma10s_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["status"] == "implemented_fail_closed"
     assert receipt["trigger"] == "workflow_dispatch_only"
     assert receipt["allowed_ref"] == "refs/heads/main"
-    assert receipt["secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
+    assert receipt["merge_token_env"] == "AO_MERGE_GITHUB_TOKEN"
+    assert receipt["merge_token_source"] == "github.token"
+    assert receipt["merge_actor"] == "github-actions[bot]"
     assert receipt["governance_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
     assert receipt["producer_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
     assert receipt["producer_release_authority"] is False
@@ -121,4 +126,4 @@ def test_ao_ma10s_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["support_widening"] is False
     assert receipt["production_platform_claim"] is False
     assert receipt["live_adapter_execution"] is False
-    assert "merge actor is `gladyatore-lab`, not" in doc
+    assert "merge executor is `github-actions[bot]`" in doc

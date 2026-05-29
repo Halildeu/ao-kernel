@@ -12,7 +12,7 @@
   ],
   "execute_confirmation": "AO-MA-10C-EXECUTE",
   "executor_script": "scripts/ao_ma10c_merge_agent.py",
-  "expected_actor": "gladyatore-lab",
+  "expected_actor": "github-actions[bot]",
   "live_adapter_execution": false,
   "merge_command_shape": [
     "gh",

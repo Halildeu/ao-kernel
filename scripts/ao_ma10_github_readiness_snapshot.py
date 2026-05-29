@@ -23,7 +23,7 @@ ARTIFACT_KIND = "ao_ma_10_github_readiness_snapshot"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 AO_RELEASE_GATE_REQUIRED_CHECKS = ("ao-release-gate-technical", "ao-release-gate-review")
 GITHUB_ACTIONS_APP_ID = 15368
-DEFAULT_DEDICATED_MERGE_ACTOR = "gladyatore-lab"
+DEFAULT_DEDICATED_MERGE_ACTOR = "github-actions[bot]"
 
 
 def _run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:

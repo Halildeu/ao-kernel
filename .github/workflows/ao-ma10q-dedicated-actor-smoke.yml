@@ -27,7 +27,11 @@ on:
         type: string
 
 permissions:
-  contents: read
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+  statuses: read
 
 concurrency:
   group: ao-ma10q-dedicated-actor-smoke
@@ -39,8 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      GLADYATORE_LAB_GH_TOKEN: ${{ secrets.GLADYATORE_LAB_GH_TOKEN }}
+      AO_MERGE_GITHUB_TOKEN: ${{ github.token }}
       AO_GOVERNANCE_GH_TOKEN: ${{ secrets.AO_GOVERNANCE_GH_TOKEN }}
+      AO_MERGE_ACTOR: github-actions[bot]
       MODE: ${{ inputs.mode }}
       CONFIRMATION: ${{ inputs.confirmation }}
       TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
@@ -94,6 +99,8 @@ jobs:
 
           set +e
           doctor_args=(
+            --expected-actor "$AO_MERGE_ACTOR"
+            --token-env AO_MERGE_GITHUB_TOKEN
             --output "$EVIDENCE_DIR/ao-ma10r-credential-doctor-result.json"
             --format text
           )
@@ -115,6 +122,8 @@ jobs:
           fi
 
           q_args=(
+            --expected-actor "$AO_MERGE_ACTOR"
+            --token-env AO_MERGE_GITHUB_TOKEN
             --output "$EVIDENCE_DIR/ao-ma10q-dedicated-actor-runner-result.json"
             --timeout-seconds "$TIMEOUT_SECONDS"
             --poll-seconds "$POLL_SECONDS"
