@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-PUBLIC-FACADE-GAPS",
+  "work_package": "HYG-PUBLIC-CONTEXT-AUDIT",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,12 +13,10 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-public-facade-gaps",
+    "head_ref": "refs/heads/codex/hyg-public-context-audit",
     "changed_files": [
-      "local-ai-review-evidence.v1.json",
-      "tests/test_config.py",
-      "tests/test_llm_facade.py",
-      "tests/test_tool_gateway.py"
+      "docs/audits/PUBLIC-CONTEXT-TEST-QUALITY-AUDIT-2026-05-29.md",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -31,34 +29,24 @@
       "status": "pass"
     },
     {
-      "name": "test_only_scope",
+      "name": "doc_only_scope",
       "status": "pass"
     },
     {
-      "name": "coverage_delta_recorded",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_code_changes",
+      "name": "coverage_data_recorded",
       "status": "pass"
     },
     {
       "name": "guard_flags_remain_false",
       "status": "pass"
-    },
-    {
-      "name": "no_fake_work_already_covered_excluded",
-      "status": "pass"
     }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e7520) returned REVISE + ready_for_impl with add_missing_arcs_only scope: skip already-covered governance arcs, require coverage-delta, single combined PR.",
-    "Test-only diff: extends tests/test_config.py, tests/test_tool_gateway.py, tests/test_llm_facade.py. No ao_kernel runtime module, no pyproject, no workflow, no schema, no guard flag, no gpp_status change.",
-    "GAPS-01 config.py: adds non-object workspace.json (array + scalar), non-object override, and non-object bundled default (narrow importlib.resources monkeypatch, no real bundled file touched) fail-closed tests.",
-    "GAPS-02 tool_gateway.py: adds blocked_tools non-list / non-string entry, cycle_detection non-object, and max_identical_calls non-int / bool-rejected tests — closing the asymmetric gap where allowed_tools had validation tests but blocked_tools did not.",
-    "GAPS-03 llm.py: adds build_request provider-guardrails deny (PROVIDER_DISABLED + MODEL_NOT_ALLOWED) and allow paths using a tmp workspace override policy; no live provider call or network access.",
-    "Coverage delta recorded (full-suite before -> after, source 428b886): config.py 93.6%->97.9% (closed 115/145/164), tool_gateway.py 94.3%->97.8% (closed 119/122/143/151), llm.py 87.1%->91.6% (closed 104/105/110/111/114).",
-    "No-Fake-Work discipline applied: governance.py was deliberately excluded because its core violation codes are already covered and the remaining arcs are partial dispatch-branch completions; llm.py:115 except-pass import guard left intentionally uncovered.",
+    "Codex plan-time consultation (thread 019e7547) returned REVISE + ready_for_impl: audit-only, full 18-module table with actionable analysis on the 5 sub-85% modules, part-level external-vs-actionable classification, single doc-only PR.",
+    "Doc-only diff: adds docs/audits/PUBLIC-CONTEXT-TEST-QUALITY-AUDIT-2026-05-29.md. No ao_kernel/context runtime module, no tests, no pyproject, no workflow, no schema, no guard flag, no gpp_status change.",
+    "Coverage data recorded (full suite, head a124c3b, branch): 18 context/ modules, 1211 statements; 5 modules below 85% (semantic_retrieval 63.3%, checkpoint 79.2%, memory_tiers 80.0%, context_compiler 84.2%, session_lifecycle 84.6%).",
+    "Per Codex REVISE: low coverage on embedding/vector modules is classified part-level, not wholesale external. Provider HTTP (embed_text/semantic_search) and live pgvector are external_integration; cosine/cache/rerank/budget/config and fail-closed paths are actionable_offline; defensive logging fallbacks are intentionally_uncovered.",
+    "Audit is doc-only and proposes clustered follow-up test PRs (CONTEXT-GAPS-01/02/03 + optional pgvector integration lane); it does not add tests in this PR.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
