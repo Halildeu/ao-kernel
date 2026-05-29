@@ -13,7 +13,7 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10ai-readiness-integration-permission",
+    "head_ref": "refs/heads/codex/ao-ma10aj-readiness-permission-success-fallback",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
       "scripts/ao_ma10_github_readiness_snapshot.py",
@@ -47,10 +47,10 @@
     }
   ],
   "findings": [
-    "The readiness snapshot fallback is limited to github-actions[bot] integration-token warning cases where standard permission endpoints return 403 or 404.",
-    "The added probe uses a read-only pull-request list endpoint with per_page=1 and performs no mutation.",
-    "Successful pull-request read is treated only as integration-token fallback evidence for write permission; failed or malformed probe output remains fail-closed through collection_errors and github_api_read_failed.",
-    "Regression tests cover both inferred-write success and probe-failure blocked paths, with schema validation in both cases.",
+    "The integration-token fallback now covers both permission-endpoint error and permission-endpoint non-write success shapes.",
+    "The new branch is gated by the existing GitHub Actions integration-token warning and performs only the read-only pull-request list probe.",
+    "If the pull-request probe succeeds, permission is normalized to write for the dedicated github-actions[bot] actor; if it fails, the snapshot records collection_errors and remains blocked.",
+    "Regression tests cover non-write permission success with probe success and probe failure, with schema validation in both cases.",
     "Claude CLI independent review returned AGREE with no required fixes.",
     "No secrets or sensitive data are present in the diff."
   ],
