@@ -401,6 +401,96 @@ def test_ao_ma10a0_accepts_github_actions_integration_user_endpoint_shape(monkey
     assert snapshot["readiness"]["decision"] == "ready_for_dry_run"
 
 
+def test_ao_ma10a0_infers_actions_integration_write_from_pull_request_read(monkeypatch: Any) -> None:
+    mod = _load_script_module()
+    encoded_codeowners = base64.b64encode(_valid_ready_inputs()["codeowners_text"].encode("utf-8")).decode("ascii")
+    repo_info = copy.deepcopy(_valid_ready_inputs()["repo_info"])
+    repo_info.pop("viewerPermission")
+
+    def fake_run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:
+        del command
+        if label == "repository":
+            return {"data": {"repository": repo_info}}, None
+        if label == "viewer_login":
+            return {}, "viewer_login: gh: Resource not accessible by integration (HTTP 403)"
+        if label == "viewer_permission":
+            return {}, "viewer_permission: gh: Not Found (HTTP 404)"
+        if label == "pulls":
+            return [], None
+        if label == "branch_protection":
+            return _valid_ready_inputs()["branch_protection"], None
+        if label == "rulesets":
+            return _valid_ready_inputs()["rulesets"], None
+        if label == "ruleset:16803733":
+            return _valid_ready_inputs()["rulesets"][0], None
+        if label == "branch_rules":
+            return _valid_ready_inputs()["branch_rules"], None
+        if label == "codeowners":
+            return {"content": encoded_codeowners}, None
+        raise AssertionError(f"unexpected label: {label}")
+
+    monkeypatch.setattr(mod, "_run_json_with_error", fake_run_json_with_error)
+    snapshot = mod.collect_live_snapshot(
+        "Halildeu/ao-kernel",
+        "main",
+        "gh-governance",
+        dedicated_merge_actor="github-actions[bot]",
+        actor_gh_bin="gh-dedicated",
+    )
+
+    Draft202012Validator(_schema()).validate(snapshot)
+    assert snapshot["collection_errors"] == []
+    assert snapshot["merge_actor"]["login"] == "github-actions[bot]"
+    assert snapshot["merge_actor"]["permission"] == "write"
+    assert snapshot["merge_actor"]["viewer_can_administer"] is False
+    assert snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] is True
+    assert snapshot["readiness"]["decision"] == "ready_for_dry_run"
+
+
+def test_ao_ma10a0_blocks_actions_integration_when_pull_request_read_fails(monkeypatch: Any) -> None:
+    mod = _load_script_module()
+    encoded_codeowners = base64.b64encode(_valid_ready_inputs()["codeowners_text"].encode("utf-8")).decode("ascii")
+    repo_info = copy.deepcopy(_valid_ready_inputs()["repo_info"])
+    repo_info.pop("viewerPermission")
+
+    def fake_run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:
+        del command
+        if label == "repository":
+            return {"data": {"repository": repo_info}}, None
+        if label == "viewer_login":
+            return {}, "viewer_login: gh: Resource not accessible by integration (HTTP 403)"
+        if label == "viewer_permission":
+            return {}, "viewer_permission: gh: Not Found (HTTP 404)"
+        if label == "pulls":
+            return {}, "pulls: gh: Resource not accessible by integration (HTTP 403)"
+        if label == "branch_protection":
+            return _valid_ready_inputs()["branch_protection"], None
+        if label == "rulesets":
+            return _valid_ready_inputs()["rulesets"], None
+        if label == "ruleset:16803733":
+            return _valid_ready_inputs()["rulesets"][0], None
+        if label == "branch_rules":
+            return _valid_ready_inputs()["branch_rules"], None
+        if label == "codeowners":
+            return {"content": encoded_codeowners}, None
+        raise AssertionError(f"unexpected label: {label}")
+
+    monkeypatch.setattr(mod, "_run_json_with_error", fake_run_json_with_error)
+    snapshot = mod.collect_live_snapshot(
+        "Halildeu/ao-kernel",
+        "main",
+        "gh-governance",
+        dedicated_merge_actor="github-actions[bot]",
+        actor_gh_bin="gh-dedicated",
+    )
+
+    Draft202012Validator(_schema()).validate(snapshot)
+    assert "github_api_read_failed" in snapshot["readiness"]["blockers"]
+    assert snapshot["merge_actor"]["permission"] is None
+    assert snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] is False
+    assert snapshot["readiness"]["decision"] == "blocked"
+
+
 def test_ao_ma10a0_script_is_read_only_and_has_no_write_api_methods() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     forbidden_tokens = [
