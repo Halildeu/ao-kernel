@@ -15,7 +15,7 @@ autonomous merge lane. The orchestrator does not replace release authority. It
 only sequences the already recorded authority chain:
 
 ```text
-AO-MA-10a0 readiness -> AO-MA-10a1 eligibility -> disposable PR ->
+AO-MA-10a0 readiness -> AO-MA-10a1 eligibility -> disposable PR producer ->
 required checks -> AO-MA-10c merge-agent
 ```
 
@@ -49,6 +49,20 @@ readiness snapshot collector, and to the AO-MA-10c merge-agent. This lets the
 smoke run under the dedicated non-admin merge actor without changing the
 operator's global `gh` login.
 
+AO-MA-10v adds an optional producer runtime:
+
+```text
+--producer-gh-bin <governance-or-producer-gh-wrapper>
+```
+
+When present, AO-MA-10l uses this runtime only for the disposable PR production
+steps: base-ref read, smoke branch create, low-risk file create, and PR create.
+Required-check polling and the final AO-MA-10c merge-agent still use
+`--gh-bin`, which must authenticate as the dedicated non-admin merge actor. This
+keeps branch/PR creation unblocked when a fine-grained non-admin actor token
+cannot create refs, while preserving release authority at the required checks
+plus non-admin merge actor boundary.
+
 Even in execute mode it stops before any GitHub write when A0/A1 is blocked.
 
 ## Live Blocker
@@ -75,10 +89,11 @@ admin: false
 
 When A0/A1 are ready and explicit confirmation is present, the orchestrator:
 
-1. creates a unique `codex/ao-ma10l-smoke-*` branch from `main`;
+1. creates a unique `codex/ao-ma10l-smoke-*` branch from `main` through the
+   selected PR producer runtime;
 2. creates one low-risk file under
    `docs/evidence/ao-ma-10l-autonomous-smoke/`;
-3. opens a disposable PR;
+3. opens a disposable PR through the selected PR producer runtime;
 4. waits for required checks, including `ao-release-gate-technical` and
    `ao-release-gate-review`;
 5. refreshes A0/A1;
@@ -106,6 +121,7 @@ ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json
 The artifact records:
 
 - expected actor and branch;
+- PR producer role and allowed operations;
 - disposable smoke path;
 - A0/A1 decisions;
 - created PR metadata;
@@ -120,6 +136,7 @@ The low-risk autonomous lane is proven only when AO-MA-10l produces a `merged`
 artifact where:
 
 - actor is the dedicated non-admin merge actor;
+- any split PR producer is not treated as release authority;
 - A0 is `ready_for_dry_run`;
 - A1 is `ready_for_low_risk_dry_run`;
 - required checks pass;

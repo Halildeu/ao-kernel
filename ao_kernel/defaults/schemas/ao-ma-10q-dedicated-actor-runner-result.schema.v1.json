@@ -79,6 +79,41 @@
     "mutations_performed": {
       "type": "boolean"
     },
+    "producer_token_env": {
+      "pattern": "^[A-Z_][A-Z0-9_]*$",
+      "type": "string"
+    },
+    "producer_wrapper": {
+      "additionalProperties": false,
+      "properties": {
+        "created": {
+          "type": "boolean"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "const": "0700"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path_recorded": {
+          "const": false
+        },
+        "same_as_merge_actor_wrapper": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "created",
+        "mode",
+        "path_recorded",
+        "same_as_merge_actor_wrapper"
+      ],
+      "type": "object"
+    },
     "release_authority": {
       "const": "ao-release-gate+github-ruleset"
     },
@@ -147,6 +182,7 @@
     "base_ref",
     "expected_actor",
     "token_env",
+    "producer_token_env",
     "token_value_recorded",
     "execute_requested",
     "mutations_performed",
@@ -154,6 +190,7 @@
     "ai_output_release_authority",
     "guard_flags",
     "wrapper",
+    "producer_wrapper",
     "smoke_result",
     "smoke_command",
     "decision"

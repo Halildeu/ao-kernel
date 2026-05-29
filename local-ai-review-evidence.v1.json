@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10U",
+  "work_package": "AO-MA-10V",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,14 +13,17 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10u-governance-token-split",
+    "head_ref": "refs/heads/codex/ao-ma10v-producer-token-split",
     "changed_files": [
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
       ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json",
       ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
       ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
-      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-10q-dedicated-actor-runner-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_github_readiness_snapshot.py",
       "scripts/ao_ma10l_autonomous_smoke.py",
       "scripts/ao_ma10q_dedicated_actor_runner.py",
       "tests/test_ao_ma10l_autonomous_smoke.py",
@@ -48,17 +51,19 @@
     {
       "name": "git_diff_check",
       "status": "pass"
+    },
+    {
+      "name": "cross_ai_review",
+      "status": "pass"
     }
   ],
   "findings": [
-    "AO_GOVERNANCE_GH_TOKEN is split from GLADYATORE_LAB_GH_TOKEN. Governance token is used for readiness snapshot reads; actor token remains responsible for PR create, check polling, and merge operations.",
-    "No --admin flag is introduced in the changed workflow or runner path. The dedicated actor remains non-admin release authority evidence, and GitHub ruleset plus ao-release-gate remain the enforcement surface.",
-    "Receipt and runner outputs preserve support_widening=false, production_platform_claim=false, live_adapter_execution=false, ai_output_release_authority=false, and token_value_recorded=false.",
-    "Workflow secrets are bound as environment variables only. The changed workflow and tests guard against echoing GLADYATORE_LAB_GH_TOKEN or AO_GOVERNANCE_GH_TOKEN values.",
-    "Governance wrapper creation is optional and gated on AO_GOVERNANCE_GH_TOKEN being present, so the existing actor-only path remains backward compatible while split-token readiness reads are available when the secret is configured.",
-    "Smoke command sanitization handles both temporary GitHub CLI wrappers and never records wrapper paths or token values in the emitted artifact.",
-    "collect_live_snapshot keeps branch-protection and ruleset reads on the governance gh wrapper while resolving viewer login and actor repository permission through the actor wrapper, including viewerPermission fallback when collaborator permission API is inaccessible to the fine-grained actor token.",
-    "Relevant tests passed locally: test_ao_ma10_github_readiness_snapshot.py, test_ao_ma10l_autonomous_smoke.py, test_ao_ma10q_dedicated_actor_runner.py, and test_ao_ma10s_dedicated_actor_smoke_workflow.py."
+    "Claude reviewer verdict AGREE. Blocking bulgu yok.",
+    "Producer token only creates the disposable branch, file, and PR. Required-check polling and AO-MA-10c merge-agent remain bound to the dedicated non-admin merge actor runtime.",
+    "pr_producer.release_authority is false and producer_wrapper.path_recorded is false in the emitted artifacts and schemas.",
+    "No new GitHub workflow trigger or GITHUB_TOKEN write permission is introduced; workflow remains workflow_dispatch only with contents read.",
+    "Backward compatibility is preserved because --producer-gh-bin is optional and defaults to --gh-bin.",
+    "Relevant validations passed locally: 35 AO-MA-10r/l/q/s tests, focused 23 AO-MA-10l/q/s tests, ruff on touched tests, compileall on touched scripts, JSON validation, and git diff check."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

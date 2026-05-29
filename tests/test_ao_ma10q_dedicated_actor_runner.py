@@ -42,6 +42,12 @@ def _smoke_payload(*, result: str = "merged", blocker: str | None = None, mutate
         "schema_version": "ao-ma-10l-autonomous-smoke-result.v1",
         "artifact_kind": "ao_ma_10l_autonomous_smoke_result",
         "mutations_performed": mutated,
+        "pr_producer": {
+            "role": "governance_producer",
+            "same_as_merge_actor": False,
+            "release_authority": False,
+            "allowed_operations": ["base_ref_read", "branch_create", "file_create", "pr_create"],
+        },
         "decision": {
             "result": result,
             "blockers": blockers,
@@ -129,6 +135,13 @@ def test_ao_ma10q_missing_token_env_blocks_before_smoke_invocation(tmp_path: Pat
     assert result["mutations_performed"] is False
     assert result["token_value_recorded"] is False
     assert result["wrapper"] == {"created": False, "mode": None, "path_recorded": False}
+    assert result["producer_wrapper"] == {
+        "created": False,
+        "mode": None,
+        "path_recorded": False,
+        "same_as_merge_actor_wrapper": True,
+    }
+    assert result["producer_token_env"] == TOKEN_ENV
 
 
 def test_ao_ma10q_rejects_invalid_token_env_name(tmp_path: Path) -> None:
@@ -196,6 +209,13 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
     assert result["smoke_command"][result["smoke_command"].index("--gh-bin") + 1] == "<temporary-gh-wrapper>"
     assert result["smoke_command"][result["smoke_command"].index("--output") + 1] == "<temporary-smoke-output>"
     assert result["wrapper"] == {"created": True, "mode": "0700", "path_recorded": False}
+    assert result["producer_wrapper"] == {
+        "created": False,
+        "mode": None,
+        "path_recorded": False,
+        "same_as_merge_actor_wrapper": True,
+    }
+    assert result["producer_token_env"] == TOKEN_ENV
     assert result["token_value_recorded"] is False
     assert result["decision"]["result"] == "merged"
     assert result["mutations_performed"] is True
@@ -230,11 +250,24 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
 
     Draft202012Validator(_schema()).validate(result)
     assert "--governance-gh-bin" in runner.commands[0]
+    assert "--producer-gh-bin" in runner.commands[0]
     assert runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1].startswith("/tmp/")
+    assert runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1].startswith("/tmp/")
+    assert (
+        runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1]
+        == runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1]
+    )
     artifact_text = output.read_text(encoding="utf-8")
     assert TOKEN_VALUE not in artifact_text
     assert GOVERNANCE_TOKEN_VALUE not in artifact_text
-    assert result["smoke_command"].count("<temporary-gh-wrapper>") == 2
+    assert result["smoke_command"].count("<temporary-gh-wrapper>") == 3
+    assert result["producer_token_env"] == GOVERNANCE_TOKEN_ENV
+    assert result["producer_wrapper"] == {
+        "created": True,
+        "mode": "0700",
+        "path_recorded": False,
+        "same_as_merge_actor_wrapper": False,
+    }
     assert result["decision"]["result"] == "merged"
 
 

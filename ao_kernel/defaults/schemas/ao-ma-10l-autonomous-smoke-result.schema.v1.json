@@ -15,6 +15,7 @@
     "run_id",
     "branch",
     "smoke_path",
+    "pr_producer",
     "execute_requested",
     "mutations_performed",
     "release_authority",
@@ -38,6 +39,28 @@
     "run_id": { "type": "string", "minLength": 1 },
     "branch": { "type": "string", "pattern": "^codex/ao-ma10l-smoke-" },
     "smoke_path": { "type": "string", "pattern": "^docs/evidence/ao-ma-10l-autonomous-smoke/" },
+    "pr_producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "same_as_merge_actor", "release_authority", "allowed_operations"],
+      "properties": {
+        "role": { "type": "string", "enum": ["merge_actor", "governance_producer"] },
+        "same_as_merge_actor": { "type": "boolean" },
+        "release_authority": { "type": "boolean", "const": false },
+        "allowed_operations": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "string", "const": "base_ref_read" },
+            { "type": "string", "const": "branch_create" },
+            { "type": "string", "const": "file_create" },
+            { "type": "string", "const": "pr_create" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    },
     "execute_requested": { "type": "boolean" },
     "mutations_performed": { "type": "boolean" },
     "release_authority": { "type": "string", "const": "ao-release-gate+github-ruleset" },

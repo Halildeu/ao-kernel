@@ -133,10 +133,18 @@ def _merge_agent_merged() -> dict[str, Any]:
 
 
 class FakeRunner:
-    def __init__(self, *, ready: bool = True, checks_pass: bool = True, gh_bin: str = "gh") -> None:
+    def __init__(
+        self,
+        *,
+        ready: bool = True,
+        checks_pass: bool = True,
+        gh_bin: str = "gh",
+        producer_gh_bin: str | None = None,
+    ) -> None:
         self.ready = ready
         self.checks_pass = checks_pass
         self.gh_bin = gh_bin
+        self.producer_gh_bin = producer_gh_bin or gh_bin
         self.commands: list[list[str]] = []
 
     def __call__(self, command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -151,13 +159,13 @@ class FakeRunner:
             payload = _ready_eligibility(changed_file) if self.ready else _blocked_eligibility(changed_file)
             output.write_text(json.dumps(payload), encoding="utf-8")
             return subprocess.CompletedProcess(command, 0 if self.ready else 1, json.dumps(payload), "")
-        if command[:3] == [self.gh_bin, "api", "repos/Halildeu/ao-kernel/git/ref/heads/main"]:
+        if command[:3] == [self.producer_gh_bin, "api", "repos/Halildeu/ao-kernel/git/ref/heads/main"]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"object": {"sha": "a" * 40}}), "")
-        if command[:3] == [self.gh_bin, "api", "repos/Halildeu/ao-kernel/git/refs"]:
+        if command[:3] == [self.producer_gh_bin, "api", "repos/Halildeu/ao-kernel/git/refs"]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"ref": "refs/heads/example"}), "")
-        if len(command) >= 3 and command[:2] == [self.gh_bin, "api"] and "/contents/" in command[2]:
+        if len(command) >= 3 and command[:2] == [self.producer_gh_bin, "api"] and "/contents/" in command[2]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"content": {"path": "docs/evidence/example.md"}}), "")
-        if command[:3] == [self.gh_bin, "pr", "create"]:
+        if command[:3] == [self.producer_gh_bin, "pr", "create"]:
             return subprocess.CompletedProcess(command, 0, "https://github.com/Halildeu/ao-kernel/pull/999\n", "")
         if command[:3] == [self.gh_bin, "pr", "checks"]:
             checks = (
@@ -186,6 +194,8 @@ def _run_with_fake(
     execute: bool = False,
     confirmation: str | None = None,
     gh_bin: str = "gh",
+    governance_gh_bin: str | None = None,
+    producer_gh_bin: str | None = None,
 ) -> dict[str, Any]:
     mod = _load_script_module()
     output = tmp_path / "result.json"
@@ -196,7 +206,8 @@ def _run_with_fake(
             base_ref="main",
             expected_actor="gladyatore-lab",
             gh_bin=gh_bin,
-            governance_gh_bin=None,
+            governance_gh_bin=governance_gh_bin,
+            producer_gh_bin=producer_gh_bin,
             smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
             output=output,
             execute=execute,
@@ -258,6 +269,12 @@ def test_ao_ma10l_ready_dry_run_has_no_mutations(tmp_path: Path) -> None:
     assert result["execute_requested"] is False
     assert result["mutations_performed"] is False
     assert result["smoke_path"].startswith("docs/evidence/ao-ma-10l-autonomous-smoke/")
+    assert result["pr_producer"] == {
+        "role": "merge_actor",
+        "same_as_merge_actor": True,
+        "release_authority": False,
+        "allowed_operations": ["base_ref_read", "branch_create", "file_create", "pr_create"],
+    }
 
 
 def test_ao_ma10l_execute_success_creates_pr_and_delegates_merge_agent(tmp_path: Path) -> None:
@@ -318,6 +335,7 @@ def test_ao_ma10l_uses_governance_gh_bin_only_for_readiness_snapshots(tmp_path: 
             expected_actor="gladyatore-lab",
             gh_bin="gh-dedicated",
             governance_gh_bin="gh-governance",
+            producer_gh_bin=None,
             smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
             output=output,
             execute=True,
@@ -342,6 +360,46 @@ def test_ao_ma10l_uses_governance_gh_bin_only_for_readiness_snapshots(tmp_path: 
     live_gh_commands = [command for command in fake.commands if len(command) > 1 and command[1] in {"api", "pr"}]
     assert live_gh_commands
     assert all(command[0] == "gh-dedicated" for command in live_gh_commands)
+
+
+def test_ao_ma10l_can_split_disposable_pr_producer_from_merge_actor(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=True, gh_bin="gh-dedicated", producer_gh_bin="gh-producer")
+    result = _run_with_fake(
+        tmp_path,
+        fake,
+        execute=True,
+        confirmation="AO-MA-10L-EXECUTE",
+        gh_bin="gh-dedicated",
+        governance_gh_bin="gh-governance",
+        producer_gh_bin="gh-producer",
+    )
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "merged"
+    assert result["pr_producer"]["role"] == "governance_producer"
+    assert result["pr_producer"]["same_as_merge_actor"] is False
+    assert result["pr_producer"]["release_authority"] is False
+
+    producer_commands = [
+        command
+        for command in fake.commands
+        if len(command) > 1
+        and command[0] == "gh-producer"
+        and (command[1] == "api" or command[:3] == ["gh-producer", "pr", "create"])
+    ]
+    assert producer_commands
+    assert all(
+        command[0] == "gh-producer"
+        for command in producer_commands
+        if command[1] == "api" or command[:3] == ["gh-producer", "pr", "create"]
+    )
+
+    check_commands = [command for command in fake.commands if command[:3] == ["gh-dedicated", "pr", "checks"]]
+    assert check_commands
+    merge_agent_commands = [
+        command for command in fake.commands if len(command) > 1 and command[1].endswith("ao_ma10c_merge_agent.py")
+    ]
+    assert merge_agent_commands
+    assert merge_agent_commands[0][merge_agent_commands[0].index("--gh-bin") + 1] == "gh-dedicated"
 
 
 def test_ao_ma10l_required_check_failure_blocks_before_merge_agent(tmp_path: Path) -> None:

@@ -10,6 +10,14 @@
   "production_platform_claim": false,
   "live_adapter_execution": false,
   "default_token_env": "GLADYATORE_LAB_GH_TOKEN",
+  "default_producer_token_env": "AO_GOVERNANCE_GH_TOKEN",
+  "producer_release_authority": false,
+  "producer_allowed_operations": [
+    "base_ref_read",
+    "branch_create",
+    "file_create",
+    "pr_create"
+  ],
   "token_value_recorded": false,
   "wrapper_path_recorded": false,
   "wrapper_mode": "0700",

@@ -13,6 +13,15 @@
   "execute_confirmation": "AO-MA-10L-EXECUTE",
   "supports_dedicated_gh_runtime": true,
   "dedicated_gh_runtime_argument": "--gh-bin",
+  "supports_split_pr_producer_runtime": true,
+  "producer_gh_runtime_argument": "--producer-gh-bin",
+  "producer_release_authority": false,
+  "producer_allowed_operations": [
+    "base_ref_read",
+    "branch_create",
+    "file_create",
+    "pr_create"
+  ],
   "expected_actor": "gladyatore-lab",
   "blocks_before_github_write_when_a0_a1_blocked": true,
   "delegates_merge_to": "scripts/ao_ma10c_merge_agent.py",
