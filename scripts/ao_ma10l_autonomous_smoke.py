@@ -412,6 +412,12 @@ def _required_checks_passed(raw_checks: list[Any]) -> tuple[bool, list[dict[str,
     return not failing, failing
 
 
+def _checks_not_reported_yet(error: str | None) -> bool:
+    """Return true for GitHub's transient post-PR check-suite delay."""
+
+    return isinstance(error, str) and "no checks reported" in error.lower()
+
+
 def _wait_for_required_checks(
     *,
     repo: str,
@@ -439,6 +445,14 @@ def _wait_for_required_checks(
         _add_command(result, command)
         checks_payload, error = _run_json(command, runner)
         if error is not None or not isinstance(checks_payload, list):
+            if (
+                _checks_not_reported_yet(error)
+                and timeout_seconds > 0
+                and time.monotonic() < deadline
+            ):
+                result["required_checks"] = {"observed": False, "all_passed": False, "failing": []}
+                time.sleep(max(1, poll_seconds))
+                continue
             result["required_checks"] = {"observed": True, "all_passed": False, "failing": []}
             return {f"github_required_checks_read_failed: {error or 'invalid shape'}"}
         passed, failing = _required_checks_passed(checks_payload)
