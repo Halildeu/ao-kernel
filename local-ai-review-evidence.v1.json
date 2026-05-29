@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Y",
+  "work_package": "AO-MA-10Z",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,7 +13,7 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10y-stale-evidence-guard",
+    "head_ref": "refs/heads/codex/ao-ma10z-skip-unneeded-high-risk-supersession",
     "changed_files": [
       ".github/workflows/test.yml",
       "local-ai-review-evidence.v1.json",
@@ -43,11 +43,11 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE after the missing pr-files.json guard was added.",
-    "The workflow now accepts root local-ai-review-evidence.v1.json only when the file is part of the current PR file list and also exists in the head checkout.",
-    "Inherited root evidence from the base branch now yields an empty reviewer path, preventing stale evidence from being evaluated as current-PR evidence.",
-    "Legitimate PR-head reviewer evidence remains supported because a PR that adds or modifies local-ai-review-evidence.v1.json appears in pr-files.json and keeps the downstream head/... output contract.",
-    "Missing pr-files.json degrades to REVIEW_CHANGED=false and malformed pr-files.json remains fail-closed.",
+    "Claude reviewer verdict AGREE. Blocking bulgu yok.",
+    "The workflow now computes current PR high-risk path presence from base/payload.json before locating inherited high-risk raw review files.",
+    "When current changed_paths has no high-risk paths, the workflow sets high-risk reviewer outputs empty and skips supersession generation.",
+    "High-risk behavior is preserved because PRs with high-risk changed paths still require the OpenAI and Anthropic raw review pair before generating supersession evidence.",
+    "Path handling remains consistent with working-directory base: payload.json is read from base and head file existence checks use ../head while downstream output values preserve the head/... contract.",
     "No branch-protection, ruleset, release authority, support tier, live adapter execution, or production platform claim change is introduced."
   ],
   "secrets_recorded": false,
