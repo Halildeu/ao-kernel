@@ -881,12 +881,38 @@ def test_release_gate_allows_ao_ma10_low_risk_smoke_without_review_evidence() ->
     assert _find_check(decision, "ao_ma10_context_bound")["status"] == "pass"
 
 
-def test_release_gate_denies_ao_ma10_low_risk_smoke_without_dedicated_actor() -> None:
+def test_release_gate_allows_ao_ma10_low_risk_smoke_from_split_governance_producer() -> None:
+    """The split-token smoke producer may open the disposable PR.
+
+    Release authority still stays with ao-release-gate plus the GitHub ruleset;
+    this exception only avoids demanding local review evidence for the
+    one-file disposable AO-MA-10l smoke PR that the merge actor later merges.
+    """
+
     payload = _ao_ma10_low_risk_smoke_payload()
     pull_request = payload["pull_request"]
     assert isinstance(pull_request, dict)
     pull_request["author"] = {"login": "Halildeu"}
     payload["pr_author"] = "Halildeu"
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+    assert _find_check(decision, "review_evidence")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_evidence_bundle")["status"] == "pass"
+
+
+def test_release_gate_denies_ao_ma10_low_risk_smoke_without_dedicated_actor() -> None:
+    payload = _ao_ma10_low_risk_smoke_payload()
+    pull_request = payload["pull_request"]
+    assert isinstance(pull_request, dict)
+    pull_request["author"] = {"login": "unknown-producer"}
+    payload["pr_author"] = "unknown-producer"
 
     decision = build_ao_release_gate_decision(
         payload,

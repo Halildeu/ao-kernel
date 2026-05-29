@@ -63,20 +63,32 @@ keeps branch/PR creation unblocked when a fine-grained non-admin actor token
 cannot create refs, while preserving release authority at the required checks
 plus non-admin merge actor boundary.
 
+AO-MA-10ab records the corresponding release-gate scope rule: the one-file
+disposable smoke PR may be authored either by `gladyatore-lab` or by the
+operator-bound governance producer (`Halildeu`) when the split producer runtime
+is used. This exception is not a general review bypass: it applies only when
+`low_risk_autonomous_merge_requested=true`, every changed path is a direct
+markdown file under `docs/evidence/ao-ma-10l-autonomous-smoke/`, no high-risk
+path changed, and the final merge still goes through the dedicated non-admin
+merge actor.
+
 Even in execute mode it stops before any GitHub write when A0/A1 is blocked.
 
 ## Live Blocker
 
-Current live GitHub auth still observes `Halildeu` with admin permission. That
-means the smoke remains blocked by:
+The dedicated actor and split producer credentials are now separated. A
+remaining live blocker can still appear if the release-gate policy, required
+checks, or merge-agent actor evidence is misaligned. The expected successful
+shape is:
 
 ```text
-unexpected_merge_actor
-merge_actor_admin_permission_observed
-dedicated_merge_actor_not_confirmed
+producer: operator-bound governance producer, no release authority
+required checks: pass
+merge actor: gladyatore-lab
+merge actor admin: false
 ```
 
-The smoke becomes runnable when the selected `gh` runtime is authenticated as
+The smoke is valid only when the selected merge `gh` runtime is authenticated as
 the dedicated non-admin merge actor:
 
 ```text
