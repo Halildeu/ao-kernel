@@ -178,6 +178,182 @@ def test_worst_case_cost_invariant_holds():
     assert max_billable * max_projected <= max_usd, f"worst case {max_billable * max_projected} > max_usd {max_usd}"
 
 
+def _valid_env_observation_main_only():
+    """Returns a minimal valid env observation for testing."""
+    return {
+        "name": "ao-kernel-bc10-real-adapter-usage-cost",
+        "protection_rules": [
+            {
+                "type": "required_reviewers",
+                "reviewers": [{"type": "User", "id": 1, "login": "Halildeu"}],
+                "prevent_self_review": True,
+            }
+        ],
+        "can_admins_bypass": False,
+        "deployment_branch_policy": {
+            "protected_branches": False,
+            "custom_branch_policies": True,
+        },
+    }
+
+
+def _valid_branch_policies_main_only():
+    return [{"id": 1, "name": "main", "type": "branch"}]
+
+
+def test_validate_env_observation_main_only_passes():
+    mod = _load_module()
+    # Should not raise
+    mod.validate_environment_observation(
+        env_observation=_valid_env_observation_main_only(),
+        branch_policies_loader=lambda: _valid_branch_policies_main_only(),
+        env_name="ao-kernel-bc10-real-adapter-usage-cost",
+    )
+
+
+def test_validate_env_observation_no_required_reviewers_fails():
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    env_obs["protection_rules"] = []
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: _valid_branch_policies_main_only(),
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_prevent_self_review_false_fails():
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    env_obs["protection_rules"][0]["prevent_self_review"] = False
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: _valid_branch_policies_main_only(),
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_can_admins_bypass_missing_fails():
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    del env_obs["can_admins_bypass"]
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: _valid_branch_policies_main_only(),
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_can_admins_bypass_true_fails():
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    env_obs["can_admins_bypass"] = True
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: _valid_branch_policies_main_only(),
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_protected_branches_true_fallback_fails():
+    """iter-6 hardening: protected_branches=true fallback is REJECTED."""
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    env_obs["deployment_branch_policy"] = {
+        "protected_branches": True,
+        "custom_branch_policies": False,
+    }
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: [],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_custom_branch_policies_false_fails():
+    mod = _load_module()
+    env_obs = _valid_env_observation_main_only()
+    env_obs["deployment_branch_policy"] = {
+        "protected_branches": False,
+        "custom_branch_policies": False,
+    }
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=env_obs,
+            branch_policies_loader=lambda: [],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_no_branch_policies_fails():
+    mod = _load_module()
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=_valid_env_observation_main_only(),
+            branch_policies_loader=lambda: [],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_multiple_branch_policies_fails():
+    mod = _load_module()
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=_valid_env_observation_main_only(),
+            branch_policies_loader=lambda: [
+                {"id": 1, "name": "main", "type": "branch"},
+                {"id": 2, "name": "develop", "type": "branch"},
+            ],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_tag_policy_fails():
+    """A tag policy (type='tag') instead of branch is rejected."""
+    mod = _load_module()
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=_valid_env_observation_main_only(),
+            branch_policies_loader=lambda: [{"id": 1, "name": "main", "type": "tag"}],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_non_main_policy_fails():
+    mod = _load_module()
+    with pytest.raises(SystemExit) as exc_info:
+        mod.validate_environment_observation(
+            env_observation=_valid_env_observation_main_only(),
+            branch_policies_loader=lambda: [{"id": 1, "name": "develop", "type": "branch"}],
+            env_name="bc10-env",
+        )
+    assert exc_info.value.code != 0
+
+
+def test_validate_env_observation_refs_heads_main_policy_passes():
+    """Both 'main' and 'refs/heads/main' are accepted as policy names."""
+    mod = _load_module()
+    mod.validate_environment_observation(
+        env_observation=_valid_env_observation_main_only(),
+        branch_policies_loader=lambda: [{"id": 1, "name": "refs/heads/main", "type": "branch"}],
+        env_name="bc10-env",
+    )
+
+
 def test_supersession_initial_status_awaiting_operator_dispatch():
     mod = _load_module()
     gpp = json.loads(GPP_STATUS_PATH.read_text())

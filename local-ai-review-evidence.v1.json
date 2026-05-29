@@ -12,7 +12,8 @@
     "verdict": "AGREE",
     "verdict_history": [
       {"iter": 4, "verdict": "AGREE", "scope": "plan-time"},
-      {"iter": 5, "verdict": "REVISE", "scope": "post-impl"}
+      {"iter": 5, "verdict": "REVISE", "scope": "post-impl"},
+      {"iter": 6, "verdict": "REVISE", "scope": "post-impl-fix-1"}
     ]
   },
   "scope_reviewed": {
@@ -29,7 +30,9 @@
       "local-ai-review-evidence.v1.json",
       "scripts/bc10_run_scenarios.py",
       "scripts/ri78b_bc10_activation_window.py",
-      "tests/test_ri78b_bc10_6b_protected_execution_window_invariant.py"
+      "tests/test_bc10_run_scenarios.py",
+      "tests/test_ri78b_bc10_6b_protected_execution_window_invariant.py",
+      "tests/test_ri78b_bc10_activation_window.py"
     ]
   },
   "checks_considered": [
