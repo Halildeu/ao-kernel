@@ -46,6 +46,7 @@ class TestLoadWorkspaceJson:
     def test_valid_workspace(self, tmp_workspace: Path):
         data = load_workspace_json(tmp_workspace)
         import ao_kernel
+
         assert data["version"] == ao_kernel.__version__
         assert data["kind"] == "ao-workspace"
 
@@ -61,6 +62,22 @@ class TestLoadWorkspaceJson:
     def test_missing_required_field(self, tmp_path: Path):
         (tmp_path / "workspace.json").write_text('{"version": "2.0.0"}')
         with pytest.raises(WorkspaceCorruptedError, match="missing required field"):
+            load_workspace_json(tmp_path)
+
+    def test_non_object_top_level_raises(self, tmp_path: Path):
+        # HYG-PUBLIC-FACADE-GAPS-01: workspace.json is valid JSON but its
+        # top-level value is not an object (a JSON array here). The loader
+        # must fail closed before the required-field scan. Covers the
+        # `not isinstance(data, dict)` fail-closed branch in
+        # load_workspace_json (config.py).
+        (tmp_path / "workspace.json").write_text("[1, 2, 3]")
+        with pytest.raises(WorkspaceCorruptedError, match="must be a JSON object"):
+            load_workspace_json(tmp_path)
+
+    def test_non_object_scalar_top_level_raises(self, tmp_path: Path):
+        # Same fail-closed branch, scalar top-level (a bare JSON number).
+        (tmp_path / "workspace.json").write_text("42")
+        with pytest.raises(WorkspaceCorruptedError, match="must be a JSON object"):
             load_workspace_json(tmp_path)
 
 
@@ -134,6 +151,35 @@ class TestLoadDefault:
         with pytest.raises(DefaultsNotFoundError):
             load_default("policies", "nonexistent_file.json")
 
+    def test_non_object_bundled_default_raises(self, monkeypatch):
+        # HYG-PUBLIC-FACADE-GAPS-01: pin the public contract that a bundled
+        # default whose top-level JSON is not an object fails closed with
+        # DefaultsNotFoundError. Bundled JSON files are all valid objects, so
+        # this branch is only reachable by faking the resource read. We patch
+        # the importlib.resources traversable chain (files(...).joinpath(...))
+        # to return a stub whose read_text yields a JSON array — never
+        # touching a real bundled file. Covers the `not isinstance(parsed,
+        # dict)` branch in load_default (config.py).
+        import ao_kernel.config as cfg
+
+        class _StubResource:
+            def read_text(self, encoding="utf-8"):
+                return "[1, 2, 3]"
+
+        class _StubTraversable:
+            def joinpath(self, _segment):
+                return self
+
+            def read_text(self, encoding="utf-8"):
+                return "[1, 2, 3]"
+
+        def _fake_files(_pkg):
+            return _StubTraversable()
+
+        monkeypatch.setattr(cfg, "files", _fake_files)
+        with pytest.raises(DefaultsNotFoundError, match="must be a JSON object"):
+            load_default("policies", "anything.json")
+
 
 class TestLoadWithOverride:
     def test_workspace_override_takes_precedence(self, tmp_workspace: Path):
@@ -153,3 +199,16 @@ class TestLoadWithOverride:
     def test_no_workspace(self):
         result = load_with_override("policies", "policy_autonomy.v1.json", workspace=None)
         assert isinstance(result, dict)
+
+    def test_override_non_object_raises(self, tmp_workspace: Path):
+        # HYG-PUBLIC-FACADE-GAPS-01: a workspace override file that parses as
+        # valid JSON but is not an object must fail closed with
+        # DefaultsNotFoundError, rather than returning a non-dict. Covers the
+        # `not isinstance(parsed, dict)` branch in load_with_override
+        # (config.py).
+        policy_dir = tmp_workspace / "policies"
+        policy_dir.mkdir(exist_ok=True)
+        (policy_dir / "policy_autonomy.v1.json").write_text("[1, 2, 3]")
+
+        with pytest.raises(DefaultsNotFoundError, match="Override must be a JSON object"):
+            load_with_override("policies", "policy_autonomy.v1.json", workspace=tmp_workspace)
