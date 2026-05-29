@@ -1,64 +1,32 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-PUBLIC-FACADE-GAPS",
-  "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
-  },
-  "reviewer": {
-    "agent": "codex",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
+  "work_package": "HYG-MUTATION-AUDIT-V2",
+  "implementer": { "agent": "claude", "provider": "anthropic" },
+  "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-public-facade-gaps",
+    "head_ref": "refs/heads/codex/hyg-mutation-audit-v2",
     "changed_files": [
-      "local-ai-review-evidence.v1.json",
-      "tests/test_config.py",
-      "tests/test_llm_facade.py",
-      "tests/test_tool_gateway.py"
+      "docs/audits/MUTATION-AUDIT-V2-2026-05-29.md",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
-    {
-      "name": "tests",
-      "status": "pass"
-    },
-    {
-      "name": "secret_scan",
-      "status": "pass"
-    },
-    {
-      "name": "test_only_scope",
-      "status": "pass"
-    },
-    {
-      "name": "coverage_delta_recorded",
-      "status": "pass"
-    },
-    {
-      "name": "no_runtime_code_changes",
-      "status": "pass"
-    },
-    {
-      "name": "guard_flags_remain_false",
-      "status": "pass"
-    },
-    {
-      "name": "no_fake_work_already_covered_excluded",
-      "status": "pass"
-    }
+    { "name": "tests", "status": "pass" },
+    { "name": "secret_scan", "status": "pass" },
+    { "name": "doc_only_scope", "status": "pass" },
+    { "name": "no_fabricated_score", "status": "pass" },
+    { "name": "isolated_venv_global_env_untouched", "status": "pass" },
+    { "name": "guard_flags_remain_false", "status": "pass" }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e7520) returned REVISE + ready_for_impl with add_missing_arcs_only scope: skip already-covered governance arcs, require coverage-delta, single combined PR.",
-    "Test-only diff: extends tests/test_config.py, tests/test_tool_gateway.py, tests/test_llm_facade.py. No ao_kernel runtime module, no pyproject, no workflow, no schema, no guard flag, no gpp_status change.",
-    "GAPS-01 config.py: adds non-object workspace.json (array + scalar), non-object override, and non-object bundled default (narrow importlib.resources monkeypatch, no real bundled file touched) fail-closed tests.",
-    "GAPS-02 tool_gateway.py: adds blocked_tools non-list / non-string entry, cycle_detection non-object, and max_identical_calls non-int / bool-rejected tests — closing the asymmetric gap where allowed_tools had validation tests but blocked_tools did not.",
-    "GAPS-03 llm.py: adds build_request provider-guardrails deny (PROVIDER_DISABLED + MODEL_NOT_ALLOWED) and allow paths using a tmp workspace override policy; no live provider call or network access.",
-    "Coverage delta recorded (full-suite before -> after, source 428b886): config.py 93.6%->97.9% (closed 115/145/164), tool_gateway.py 94.3%->97.8% (closed 119/122/143/151), llm.py 87.1%->91.6% (closed 104/105/110/111/114).",
-    "No-Fake-Work discipline applied: governance.py was deliberately excluded because its core violation codes are already covered and the remaining arcs are partial dispatch-branch completions; llm.py:115 except-pass import guard left intentionally uncovered.",
+    "Codex plan-time consultation (thread 019e753e) returned REVISE + ready_for_impl: bounded audit-only mutation tool evaluation, mutmut 2.4.5 primary, isolated venv, 3 GAPS modules targeted, no fabricated score on tool failure.",
+    "Doc-only diff: adds docs/audits/MUTATION-AUDIT-V2-2026-05-29.md. No ao_kernel runtime, no tests, no pyproject mutmut-config change, no workflow, no guard flag, no gpp_status change.",
+    "mutmut 2.4.5 ran in an isolated /tmp venv; the repo's global mutmut 3.5.0 and the [dev] extra were left untouched. venv removed after run; .mutmut-cache not committed.",
+    "config.py is a trustworthy result: 78.3% (47/60 killed); the 13 survived mutants cluster on error-message string mutations that pytest.raises(match=substring) does not pin — a real, low-severity assertion-strength gap.",
+    "tool_gateway.py and llm.py reported 0 killed with high survived/suspicious counts; per No-Fake-Work this is documented as a mutmut-2.4.5 tool anomaly (lazy in-function imports in test_llm_facade prevent mutant injection; tool_gateway's large surface makes the selected-test runner produce 155 suspicious), NOT synthesized into a 0% mutation score.",
+    "Decision recorded: mutation testing is NOT adopted as a repo gate; it remains an opt-in diagnostic. Follow-ups proposed (HYG-MUTATION-CONFIG-HARDEN exact-message asserts; HYG-MUTATION-AUDIT-V3 reliable tooling via module-top imports / runner tuning / cosmic-ray).",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
