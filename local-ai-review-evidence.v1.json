@@ -12,8 +12,8 @@
     "verdict": "AGREE"
   },
   "scope_reviewed": {
-    "base_ref": "origin/main",
-    "head_ref": "codex/ao-ma10v-producer-token-split",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-ma10v-producer-token-split",
     "changed_files": [
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
