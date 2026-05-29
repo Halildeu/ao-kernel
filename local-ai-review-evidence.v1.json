@@ -1,30 +1,4 @@
 {
-  "schema_version": "local-ai-review-evidence.v1",
-  "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10AC",
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10ac-credential-branch-probe",
-    "changed_files": [
-      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md",
-      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json",
-      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
-      "ao_kernel/defaults/schemas/ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10r_dedicated_actor_credential_doctor.py",
-      "tests/test_ao_ma10r_dedicated_actor_credential_doctor.py",
-      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
-    ]
-  },
   "checks_considered": [
     {
       "name": "tests",
@@ -56,19 +30,49 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE on the AO-MA-10AC branch-write credential probe patch.",
-    "The patch catches the observed GitHub 403 branch-create failure earlier in the credential doctor by creating and deleting a temporary codex/ao-ma10r-token-probe-* branch only in execute mode.",
-    "The doctor remains read-only by default; workflow execute mode is the only path that passes --branch-write-probe.",
+    "Claude reviewer verdict AGREE on PR #716 producer-branch-probe split.",
+    "The branch-write probe now uses AO_GOVERNANCE_GH_TOKEN as a literal token-env name for disposable branch/PR production, while actor identity checks still use GLADYATORE_LAB_GH_TOKEN.",
+    "Merge authority remains the dedicated actor path and release authority remains ao-release-gate plus GitHub ruleset.",
+    "The runner now fails closed when delegated pr_producer evidence contradicts the execution context.",
+    "Governance producer mode is accepted only when release_authority is false and allowed_operations exactly equals base_ref_read, branch_create, file_create, and pr_create.",
     "Token values remain environment-only and are not accepted as CLI arguments or recorded in artifacts.",
-    "The branch-write probe fails closed for base-ref read failure, branch create failure, and cleanup failure.",
-    "The workflow now exits before invoking AO-MA-10q/AO-MA-10l when the credential doctor fails.",
-    "Claude advisory A1 for cleanup-failure coverage was absorbed with a dedicated test.",
-    "Claude follow-up advisory for base-ref read failure coverage was absorbed with a dedicated test.",
-    "Schema, docs, workflow wiring, and tests are aligned with the branch-write probe contract.",
+    "The workflow passes --branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN as a literal env-var name, not a token value.",
+    "Schema, docs, workflow wiring, and tests are aligned with the split producer contract.",
     "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
-  "secrets_recorded": false,
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
   "live_adapter_execution": false,
+  "production_platform_claim": false,
+  "repo": "Halildeu/ao-kernel",
+  "reviewer": {
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "schema_version": "local-ai-review-evidence.v1",
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "changed_files": [
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      "ao_kernel/defaults/schemas/ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_ma10q_dedicated_actor_runner.py",
+      "scripts/ao_ma10r_dedicated_actor_credential_doctor.py",
+      "tests/test_ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10r_dedicated_actor_credential_doctor.py",
+      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
+    ],
+    "head_ref": "refs/heads/codex/ao-ma10y-producer-probe"
+  },
+  "secrets_recorded": false,
   "support_widening": false,
-  "production_platform_claim": false
+  "work_package": "AO-MA-10Y"
 }
