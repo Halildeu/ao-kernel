@@ -27,6 +27,7 @@ DEFAULT_REPO = "Halildeu/ao-kernel"
 DEFAULT_BASE_REF = "main"
 DEFAULT_EXPECTED_ACTOR = "gladyatore-lab"
 DEFAULT_TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+DEFAULT_BRANCH_WRITE_PROBE_TOKEN_ENV = DEFAULT_TOKEN_ENV
 BRANCH_PROBE_PREFIX = "codex/ao-ma10r-token-probe"
 TOKEN_ENV_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
 WRITE_CAPABLE_LEVELS = {"write", "maintain"}
@@ -66,6 +67,8 @@ def _base_result(*, repo: str, expected_actor: str, token_env: str) -> dict[str,
         },
         "branch_write_probe": {
             "requested": False,
+            "token_env": None,
+            "token_role": None,
             "branch": None,
             "base_ref": None,
             "create_result": "not_requested",
@@ -175,6 +178,8 @@ def _run_branch_write_probe(
     base_ref: str,
     gh_bin: str,
     env: Mapping[str, str],
+    probe_token_env: str,
+    probe_token_role: str,
     runner: Runner,
     result: dict[str, Any],
     blockers: set[str],
@@ -182,6 +187,8 @@ def _run_branch_write_probe(
     branch = f"{BRANCH_PROBE_PREFIX}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')}"
     probe = {
         "requested": True,
+        "token_env": probe_token_env,
+        "token_role": probe_token_role,
         "branch": branch,
         "base_ref": base_ref,
         "create_result": "not_attempted",
@@ -262,12 +269,15 @@ def run(
     base_ref: str,
     expected_actor: str,
     token_env: str,
+    branch_write_probe_token_env: str | None,
     gh_bin: str,
     output: Path,
     branch_write_probe: bool,
     runner: Runner = _run,
 ) -> dict[str, Any]:
     _validate_token_env_name(token_env)
+    effective_probe_token_env = branch_write_probe_token_env or token_env
+    _validate_token_env_name(effective_probe_token_env)
     result = _base_result(repo=repo, expected_actor=expected_actor, token_env=token_env)
     blockers: set[str] = set()
     warnings: set[str] = set()
@@ -338,15 +348,33 @@ def run(
         "admin_permission_observed": admin_permission_observed,
     }
     if branch_write_probe and not blockers:
-        _run_branch_write_probe(
-            repo=repo,
-            base_ref=base_ref,
-            gh_bin=gh_bin,
-            env=env,
-            runner=runner,
-            result=result,
-            blockers=blockers,
-        )
+        probe_token = os.environ.get(effective_probe_token_env)
+        probe_token_role = "merge_actor" if effective_probe_token_env == token_env else "producer"
+        if not probe_token:
+            blockers.add("branch_write_probe_token_env_missing")
+            result["branch_write_probe"] = {
+                "requested": True,
+                "token_env": effective_probe_token_env,
+                "token_role": probe_token_role,
+                "branch": None,
+                "base_ref": base_ref,
+                "create_result": "blocked",
+                "delete_result": "not_attempted",
+            }
+        else:
+            probe_env = dict(os.environ)
+            probe_env[github_token_var] = probe_token
+            _run_branch_write_probe(
+                repo=repo,
+                base_ref=base_ref,
+                gh_bin=gh_bin,
+                env=probe_env,
+                probe_token_env=effective_probe_token_env,
+                probe_token_role=probe_token_role,
+                runner=runner,
+                result=result,
+                blockers=blockers,
+            )
     _set_decision(result, blockers, warnings)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -359,6 +387,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-ref", default=DEFAULT_BASE_REF)
     parser.add_argument("--expected-actor", default=DEFAULT_EXPECTED_ACTOR)
     parser.add_argument("--token-env", default=DEFAULT_TOKEN_ENV)
+    parser.add_argument(
+        "--branch-write-probe-token-env",
+        default=DEFAULT_BRANCH_WRITE_PROBE_TOKEN_ENV,
+        help=(
+            "Environment variable used only for the execute-mode branch-write probe. "
+            "Defaults to --token-env; set to AO_GOVERNANCE_GH_TOKEN when the "
+            "disposable PR producer is split from the dedicated merge actor."
+        ),
+    )
     parser.add_argument("--gh-bin", default="gh")
     parser.add_argument("--output", required=True)
     parser.add_argument(
@@ -374,6 +411,7 @@ def main(argv: list[str] | None = None) -> int:
         base_ref=args.base_ref,
         expected_actor=args.expected_actor,
         token_env=args.token_env,
+        branch_write_probe_token_env=args.branch_write_probe_token_env,
         gh_bin=args.gh_bin,
         output=Path(args.output),
         branch_write_probe=args.branch_write_probe,

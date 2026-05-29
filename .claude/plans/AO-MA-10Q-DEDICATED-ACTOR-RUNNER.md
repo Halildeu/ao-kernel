@@ -102,6 +102,12 @@ Required-check polling and merge execution continue to use the dedicated actor
 wrapper. The producer wrapper is not release authority and cannot satisfy the
 AO-MA-10c merge-agent actor assertion.
 
+AO-MA-10q accepts `pr_producer.role=governance_producer` only when the delegated
+AO-MA-10l artifact records `release_authority=false` and the bounded producer
+operation list is exactly `base_ref_read`, `branch_create`, `file_create`,
+`pr_create`. Any producer that claims release authority or expands operations
+fails closed.
+
 ## Result Artifact
 
 Schema:

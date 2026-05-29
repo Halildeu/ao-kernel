@@ -72,6 +72,18 @@ With `--branch-write-probe`, the doctor additionally:
   `branch_write_probe_base_ref_read_failed`, or
   `branch_write_probe_cleanup_failed` if any step fails.
 
+By default the branch-write probe uses the same dedicated merge actor token.
+When AO-MA-10q is running with a split disposable PR producer, pass:
+
+```text
+--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN
+```
+
+That proves the producer token can create/delete the disposable smoke branch
+without making that producer release authority. The merge actor identity,
+required-check polling, and merge-agent execution remain bound to
+`GLADYATORE_LAB_GH_TOKEN`.
+
 ## Completion Criteria
 
 AO-MA-10r is ready only when it emits `credential_ready` with:
@@ -86,6 +98,8 @@ AO-MA-10r is ready only when it emits `credential_ready` with:
 - `branch_write_probe.create_result=created` and
   `branch_write_probe.delete_result=deleted` when execute mode requests the
   branch-write probe;
+- `branch_write_probe.token_role` is `merge_actor` for same-token probes or
+  `producer` for split disposable PR producer probes;
 - all guard flags false.
 
 After AO-MA-10r passes, AO-MA-10q may be executed with the same token

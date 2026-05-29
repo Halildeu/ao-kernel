@@ -18,7 +18,9 @@ DOC = ROOT / ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md"
 RECEIPT = ROOT / ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json"
 SCHEMA_NAME = "ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json"
 TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+PRODUCER_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 TOKEN_VALUE = "VALUE_NOT_IN_ARTIFACT"
+PRODUCER_TOKEN_VALUE = "PRODUCER_VALUE_NOT_IN_ARTIFACT"
 
 
 def _schema() -> dict[str, Any]:
@@ -83,13 +85,19 @@ def _run_doctor(
     runner: FakeGitHubRunner,
     *,
     token_value: str | None = TOKEN_VALUE,
+    producer_token_value: str | None = None,
     expected_actor: str = "gladyatore-lab",
     branch_write_probe: bool = False,
+    branch_write_probe_token_env: str | None = None,
 ) -> dict[str, Any]:
     if token_value is None:
         monkeypatch.delenv(TOKEN_ENV, raising=False)
     else:
         monkeypatch.setenv(TOKEN_ENV, token_value)
+    if producer_token_value is None:
+        monkeypatch.delenv(PRODUCER_TOKEN_ENV, raising=False)
+    else:
+        monkeypatch.setenv(PRODUCER_TOKEN_ENV, producer_token_value)
     mod = _load_script_module()
     return cast(
         dict[str, Any],
@@ -98,6 +106,7 @@ def _run_doctor(
             base_ref="main",
             expected_actor=expected_actor,
             token_env=TOKEN_ENV,
+            branch_write_probe_token_env=branch_write_probe_token_env,
             gh_bin="gh",
             output=tmp_path / "ao-ma10r.json",
             branch_write_probe=branch_write_probe,
@@ -124,9 +133,12 @@ def test_ao_ma10r_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert receipt["token_value_recorded"] is False
     assert receipt["mutations_performed"] == "read_only_by_default_true_only_for_execute_mode_branch_write_probe"
     assert receipt["default_token_env"] == TOKEN_ENV
+    assert receipt["default_branch_write_probe_token_env"] == TOKEN_ENV
+    assert receipt["split_producer_branch_write_probe_token_env"] == PRODUCER_TOKEN_ENV
     assert "never accepts token values as CLI arguments" in text
     assert "Release authority remains the repo-owned" in text
     assert "--branch-write-probe" in text
+    assert "--branch-write-probe-token-env" in text
 
 
 def test_ao_ma10r_missing_token_env_blocks_before_github_calls(
@@ -151,6 +163,7 @@ def test_ao_ma10r_rejects_invalid_token_env_name(tmp_path: Path) -> None:
             base_ref="main",
             expected_actor="gladyatore-lab",
             token_env="bad-token-env",
+            branch_write_probe_token_env=None,
             gh_bin="gh",
             output=tmp_path / "ao-ma10r.json",
             branch_write_probe=False,
@@ -179,6 +192,8 @@ def test_ao_ma10r_happy_path_ready_without_recording_secret_or_mutating(
     assert result["mutations_performed"] is False
     assert result["branch_write_probe"] == {
         "requested": False,
+        "token_env": None,
+        "token_role": None,
         "branch": None,
         "base_ref": None,
         "create_result": "not_requested",
@@ -204,6 +219,8 @@ def test_ao_ma10r_branch_write_probe_creates_and_deletes_temp_branch(
     assert result["mutations_performed"] is True
     probe = result["branch_write_probe"]
     assert probe["requested"] is True
+    assert probe["token_env"] == TOKEN_ENV
+    assert probe["token_role"] == "merge_actor"
     assert probe["base_ref"] == "main"
     assert probe["branch"].startswith("codex/ao-ma10r-token-probe-")
     assert probe["create_result"] == "created"
@@ -214,6 +231,64 @@ def test_ao_ma10r_branch_write_probe_creates_and_deletes_temp_branch(
         and command[2].startswith("repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10r-token-probe-")
         for command in result["commands"]
     )
+    assert any(env.get("GH_TOKEN") == TOKEN_VALUE for env in runner.envs[-3:])
+
+
+def test_ao_ma10r_branch_write_probe_can_use_split_producer_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = FakeGitHubRunner()
+    result = _run_doctor(
+        tmp_path,
+        monkeypatch,
+        runner,
+        producer_token_value=PRODUCER_TOKEN_VALUE,
+        branch_write_probe=True,
+        branch_write_probe_token_env=PRODUCER_TOKEN_ENV,
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    artifact_text = (tmp_path / "ao-ma10r.json").read_text(encoding="utf-8")
+    assert TOKEN_VALUE not in artifact_text
+    assert PRODUCER_TOKEN_VALUE not in artifact_text
+    assert result["decision"]["result"] == "credential_ready"
+    assert result["mutations_performed"] is True
+    assert result["actor"]["login"] == "gladyatore-lab"
+    probe = result["branch_write_probe"]
+    assert probe["requested"] is True
+    assert probe["token_env"] == PRODUCER_TOKEN_ENV
+    assert probe["token_role"] == "producer"
+    assert probe["create_result"] == "created"
+    assert probe["delete_result"] == "deleted"
+    assert runner.envs[0].get("GH_TOKEN") == TOKEN_VALUE
+    assert any(env.get("GH_TOKEN") == PRODUCER_TOKEN_VALUE for env in runner.envs[-3:])
+
+
+def test_ao_ma10r_branch_write_probe_blocks_missing_split_producer_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = FakeGitHubRunner()
+    result = _run_doctor(
+        tmp_path,
+        monkeypatch,
+        runner,
+        branch_write_probe=True,
+        branch_write_probe_token_env=PRODUCER_TOKEN_ENV,
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "blocked"
+    assert result["decision"]["blockers"] == ["branch_write_probe_token_env_missing"]
+    assert result["mutations_performed"] is False
+    assert result["branch_write_probe"] == {
+        "requested": True,
+        "token_env": PRODUCER_TOKEN_ENV,
+        "token_role": "producer",
+        "branch": None,
+        "base_ref": "main",
+        "create_result": "blocked",
+        "delete_result": "not_attempted",
+    }
 
 
 def test_ao_ma10r_branch_write_probe_blocks_base_ref_read_failure(

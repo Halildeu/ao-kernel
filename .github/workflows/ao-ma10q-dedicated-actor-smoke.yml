@@ -99,6 +99,7 @@ jobs:
           )
           if [ "$MODE" = "execute" ]; then
             doctor_args+=(--branch-write-probe)
+            doctor_args+=(--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN)
           fi
           python scripts/ao_ma10r_dedicated_actor_credential_doctor.py "${doctor_args[@]}"
           doctor_status=$?
