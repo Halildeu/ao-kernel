@@ -13,14 +13,6 @@
       "status": "pass"
     },
     {
-      "name": "mypy",
-      "status": "pass"
-    },
-    {
-      "name": "json_parse",
-      "status": "pass"
-    },
-    {
       "name": "diff_check",
       "status": "pass"
     },
@@ -30,15 +22,11 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE on PR #716 producer-branch-probe split.",
-    "The branch-write probe now uses AO_GOVERNANCE_GH_TOKEN as a literal token-env name for disposable branch/PR production, while actor identity checks still use GLADYATORE_LAB_GH_TOKEN.",
-    "Merge authority remains the dedicated actor path and release authority remains ao-release-gate plus GitHub ruleset.",
-    "The runner now fails closed when delegated pr_producer evidence contradicts the execution context.",
-    "Governance producer mode is accepted only when release_authority is false and allowed_operations exactly equals base_ref_read, branch_create, file_create, and pr_create.",
-    "Token values remain environment-only and are not accepted as CLI arguments or recorded in artifacts.",
-    "The workflow passes --branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN as a literal env-var name, not a token value.",
-    "Schema, docs, workflow wiring, and tests are aligned with the split producer contract.",
-    "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
+    "Claude reviewer verdict AGREE on AO-MA-10Z Darwin tempdir portability fix.",
+    "The failing assertion assumed tempfile paths start with /tmp, which is false on macOS where temporary paths commonly resolve under /var/folders or /private/var/folders.",
+    "The test now asserts the generated wrapper basename is gh-governance and preserves the stronger invariant that --governance-gh-bin and --producer-gh-bin point to the same wrapper.",
+    "Path is already imported in the file, so the updated assertion introduces no missing import.",
+    "The patch changes only test assertions and does not change runtime behavior, workflow behavior, branch protection, release authority, support tier, production claim, live adapter execution, or secret handling."
   ],
   "implementer": {
     "agent": "codex",
@@ -56,23 +44,12 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
-      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
-      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md",
-      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
-      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
-      "ao_kernel/defaults/schemas/ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10q_dedicated_actor_runner.py",
-      "scripts/ao_ma10r_dedicated_actor_credential_doctor.py",
-      "tests/test_ao_ma10q_dedicated_actor_runner.py",
-      "tests/test_ao_ma10r_dedicated_actor_credential_doctor.py",
-      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
+      "tests/test_ao_ma10q_dedicated_actor_runner.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10y-producer-probe"
+    "head_ref": "refs/heads/codex/ao-ma10z-darwin-tempdir-test-fix"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10Y"
+  "work_package": "AO-MA-10Z"
 }
