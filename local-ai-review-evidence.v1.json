@@ -15,7 +15,6 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/hyg-bc10-api-mode-reactivation",
     "changed_files": [
-      ".ao/consultations/requests/CNS-20260529-002.request.v1.json",
       "docs/RB-BC10-API-MODE-REACTIVATION.md",
       "local-ai-review-evidence.v1.json"
     ]
