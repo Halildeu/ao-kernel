@@ -1,0 +1,59 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260529-001",
+  "status": "open",
+  "from_agent": "claude/anthropic",
+  "to_agent": "codex/openai",
+  "topic": "Test quality gate genişletme — BLK-004 mock-return tautology kuralı tasarım istişaresi",
+  "question": {
+    "title": "tests/conftest.py'a BLK-004 (mock-return tautology) kuralı eklemek için tasarım sağlamlığı + scope sınırı",
+    "body": "ao-kernel test suite'inde HARD RULE No Fake Work doğrudan yasakladığı bir anti-pattern var:\n\n  > Test'i yazıp test'in mock'unun aslında ne dönmesi gerektiğini check etmeden geçer kabul etme | False-positive guarantee\n\nMevcut conftest.py 4 kural içeriyor: BLK-001 (assert callable), BLK-002 (assert True), BLK-003 (except: pass), ADV-001 (no assertions), ADV-002 (sole is-not-None). Mock-return tautology henüz kapatılmamış. PR-001 olarak BLK-004 eklemek istiyorum:\n\n  ```python\n  def test_user_fetch():\n      mock_repo = Mock()\n      mock_repo.get_user.return_value = User(id=42, name=\"Alice\")\n      \n      result = service.fetch_user(mock_repo, 42)\n      \n      assert result.id == 42    # ← TAUTOLOGY: mock'a yazdığımız değerin geri gelmesi\n      assert result.name == \"Alice\"\n  ```\n\nBu test sadece Mock'un dönüş değerini geri ekoluyor — service.fetch_user'ın gerçek davranışını exercise etmiyor.\n\n## Önerdiğim BLK-004 tasarım\n\n**AST detection algoritması**:\n1. Test fonksiyonunu walk et\n2. `<mock_var>.<attr>.return_value = <expr>` atama node'larını topla → map: `{(mock_var, attr): return_expr}`\n3. Test gövdesinde `assert <call_or_attr> == <literal_or_var>` formundaki Assert node'larını bul\n4. Her assert için: sağ taraf bir önceki return_expr ile **structurally equal** mi? Ve sol taraf `<mock_var>.<attr>(...)` veya call chain'i bunu kullanıyor mu? → tautology\n5. Eğer test fonksiyonunda **başka behavioral assert var ise** (mock.assert_called_with, mock.call_count check, isinstance check, kapsamlı yan etki kontrolü) → false-positive azalt → ADV (warning) düşür, BLK yapma\n\n**Yasak sıkı pattern**:\n```python\nm = Mock()\nm.method.return_value = VALUE\n... (no behavioral check) ...\nassert <something using m.method> == VALUE\n```\n\n**False-positive cases** (BLK olmamalı):\n- Cache'leme testi: `m.method.return_value = X; cache_warm(m); assert cache_size() == 1` (assert farklı şeyi check ediyor)\n- Call count testi: `m.method.return_value = X; svc.do(m); m.method.assert_called_once_with(...)` (assert behavior)\n- Side-effect testi: `m.method.side_effect = [a, b]; ...; assert m.method.call_count == 2`\n\n## Sorular\n\n**Q1**: BLK-004 ad + scope doğru mu? Yoksa daha dar (`BLK-004: assert == value where value was Mock.return_value set in same test function`) veya daha geniş tutmalıyım?\n\n**Q2**: AST detection algoritması sağlam mı? Edge case'ler: `Mock(spec=X)`, `patch.object(Class, 'method', return_value=X)`, `MagicMock`, `AsyncMock`, `MockerFixture.patch`, kwargs `return_value=X`. Hepsini kapsamak gerekli mi yoksa sadece `<var>.<attr>.return_value = <expr>` atamasıyla başlamalı mı (incremental)?\n\n**Q3**: Initial release **BLK (fail-closed)** mi **ADV (warning)** mi? Mevcut 200+ test dosyasında kaç false-positive olur tahmini? Pre-impl olarak audit script koşmalı mıyım — varsa, ADV ile başla 30 gün sonra BLK'ya promote et?\n\n**Q4**: Alternatif scope: HARD RULE Uzun Vadeli Kalıcı Çözüm 'env-spesifik skip pattern'i de yasaklıyor (`pytest.skip(\"OPENAI_API_KEY not set\")` tarzı). BLK-004 yerine veya yanı sıra BLK-005 olarak bunu da öneriyor musun? Veya tek bir PR'da iki kural mı, ayrı PR'lar mı?\n\n**Q5**: Schema/test pattern: `tests/test_conftest_quality_gate.py` mevcut mu? Yoksa yeni test fixture'larıyla forcing function pattern yazmalı mıyım — `tests/_quality_gate_fixtures/` altında her kural için tek positive + tek negative örnek + AST parse-only smoke?\n\n**Q6**: Geriye dönük etki: Mevcut tests/ içinde rule violation tespit edilirse, bu PR'da hem rule eklemeli hem mevcut ihlal eden testleri fix etmeliyim, yoksa rule sadece eklenecek ama fail-closed olarak başlayacak (mevcutlar fix edilince enable)?\n\n## Beklenen yanıt formatı\n\nverdict: AGREE | REVISE | RED\nready_for_impl: true | false\n\nEğer AGREE: önerilen scope onaylandı, impl başlasın.\nEğer REVISE: hangi noktada değişiklik (Q1-Q6'dan), önerilen alternatif yol.\nEğer RED: blocker, yeniden plan gerekir.",
+    "context_refs": [
+      {
+        "kind": "file",
+        "path": "tests/conftest.py",
+        "ref": "BLK-001/002/003 + ADV-001/002 mevcut implementasyon, 202 satır AST scanner pattern"
+      },
+      {
+        "kind": "rule",
+        "ref": "HARD RULE No Fake Work (2026-04-25 CLAUDE.md global)",
+        "summary": "Test mock'unun ne dönmesi gerektiğini check etmeden geçer kabul etme — false-positive guarantee"
+      },
+      {
+        "kind": "rule",
+        "ref": "HARD RULE Uzun Vadeli Kalıcı Çözüm (2026-05-27 CLAUDE.md global)",
+        "summary": "Symptom-fix değil kök-sebep; machine-enforced gate, self-attestation değil"
+      },
+      {
+        "kind": "rule",
+        "ref": "HARD RULE Cross-AI Peer Review (2026-05-05/14 CLAUDE.md global)",
+        "summary": "Code yazan sağlayıcı review yapmaz; bu plan-time consultation + post-impl review iki ayrı gate"
+      }
+    ],
+    "options": [
+      {
+        "id": "A_NARROW",
+        "title": "Dar scope tek kural",
+        "body": "BLK-004 yalnız `<var>.<attr>.return_value = LITERAL` + same-function assert ile başlat. MagicMock/AsyncMock/patch.object sonraki PR'lara. Initial ADV (warning), 1 ay sonra BLK promote."
+      },
+      {
+        "id": "B_BROAD",
+        "title": "Geniş scope tek kural",
+        "body": "BLK-004 tüm mock varyantlarını (Mock, MagicMock, AsyncMock, patch.object, mocker.patch) ilk PR'da kapsar. Initial BLK fail-closed."
+      },
+      {
+        "id": "C_TWO_RULES",
+        "title": "İki kural birlikte",
+        "body": "BLK-004 (mock-return tautology) + BLK-005 (env-spesifik pytest.skip without guard) aynı PR'da. Daha büyük scope ama HARD RULE Uzun Vadeli Kalıcı Çözüm ile uyum daha güçlü."
+      },
+      {
+        "id": "D_AUDIT_FIRST",
+        "title": "Pre-impl audit + faz planı",
+        "body": "Önce mevcut tests/ üzerinde proposed AST detector'ı dry-run et, ihlal sayısını raporla. Sayı düşükse (≤5) BLK ile başla + fix mevcut ihlalleri aynı PR'da. Yüksekse (>5) ADV ile başla."
+      }
+    ]
+  },
+  "created_at": "2026-05-29T12:30:00Z",
+  "branch": "codex/b1-blk004-mock-tautology",
+  "head_sha": "5ee4de8"
+}
