@@ -175,6 +175,13 @@ AO-MA-10h does not:
    reviewer evidence rather than reading a committed head-bound artifact.
 4. **AO-MA-10k**: high-risk autonomous smoke with a disposable PR: success path
    and fail-closed path.
+5. **AO-MA-10u**: raw high-risk review producer. It may call configured OpenAI
+   and Anthropic reviewer commands and write the two raw
+   `local-ai-review-evidence.v1` files under
+   `ao-ma-10-high-risk-reviews/`. It does not become release authority; it only
+   automates evidence production. The trusted-base supersession builder and
+   `ao-release-gate` remain the authority that validate provider binding,
+   context binding, no-secret posture, guard flags, and consensus.
 
 ## Acceptance Criteria
 

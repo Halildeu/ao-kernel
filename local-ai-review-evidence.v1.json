@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-1-POST-CUTOVER-SYNC",
+  "work_package": "AO-MA-10U",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,11 +13,12 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma1-post-cutover-sync",
+    "head_ref": "refs/heads/codex/ao-ma10-high-risk-review-producer",
     "changed_files": [
-      ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
+      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma1_design_invariants.py"
+      "scripts/ao_ma10_high_risk_raw_review_producer.py",
+      "tests/test_ao_ma10_high_risk_raw_review_producer.py"
     ]
   },
   "checks_considered": [
@@ -30,7 +31,11 @@
       "status": "pass"
     },
     {
-      "name": "guard_flags",
+      "name": "ruff",
+      "status": "pass"
+    },
+    {
+      "name": "mypy",
       "status": "pass"
     },
     {
@@ -38,18 +43,18 @@
       "status": "pass"
     },
     {
-      "name": "evidence_consistency",
+      "name": "authority_boundary",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude review verdict AGREE for AO-MA-1-POST-CUTOVER-SYNC after reviewing the current diff and focused validation output.",
-    "Low-risk autonomous merge language is correctly scoped to eligible PRs with AO-MA-10A0/A1 plus AO-MA-10q merged-smoke evidence.",
-    "High-risk fail-closed language explicitly requires context-bound cross-provider supersession evidence and does not fall back to model output as authority.",
-    "Forbidden-action boundary remains explicit: GPP-2 reopening, support widening, live adapter execution, and production platform claim require an operator-bound supersession PR.",
-    "Focused validation passed: pytest -q tests/test_ao_ma1_design_invariants.py tests/test_gpp_next.py tests/test_ao_ma10_low_risk_autonomous_merge_lane.py reported 47 passed and 1 skipped; git diff --check was clean.",
-    "Scope is docs and invariant tests only. No workflow mutation, ruleset mutation, runtime change, CODEOWNERS change, support widening, production platform claim, or live adapter execution is introduced.",
-    "No credential material, API keys, tokens, PEMs, webhook secrets, Vault tokens, or other secret values were found in the diff."
+    "Claude review verdict AGREE for AO-MA-10U after reviewing the staged diff and focused validation output.",
+    "The raw high-risk review producer keeps AI output as evidence only; ao-release-gate plus the GitHub ruleset remain release authority.",
+    "The script calls configured OpenAI and Anthropic reviewer commands, normalizes their output into local-ai-review-evidence.v1 files, and requires both providers.",
+    "Fail-closed behavior covers missing provider commands, non-AGREE verdicts, missing tests or secret_scan checks, low-risk diffs, forbidden findings, provider command failures, and secret-like stdout, stderr, diff, prompt, or evidence content.",
+    "Guard flags remain false: no support widening, no production platform claim, and no live adapter execution.",
+    "Focused validation passed: ruff check, mypy, pytest for the raw producer, ao_release_gate, and gpp_next reported 129 passing tests; git diff --check was clean.",
+    "No workflow mutation, ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, or secret value is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
