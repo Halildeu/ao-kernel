@@ -13,12 +13,11 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10ah-eligibility-integration-token",
+    "head_ref": "refs/heads/codex/ao-ma10ai-readiness-integration-permission",
     "changed_files": [
-      "ao_kernel/defaults/schemas/ao-ma-10-autonomous-merge-eligibility.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_autonomous_merge_eligibility.py",
-      "tests/test_ao_ma10_autonomous_merge_eligibility.py"
+      "scripts/ao_ma10_github_readiness_snapshot.py",
+      "tests/test_ao_ma10_github_readiness_snapshot.py"
     ]
   },
   "checks_considered": [
@@ -48,11 +47,11 @@
     }
   ],
   "findings": [
-    "The integration-token path is additive and preserves the existing administration_write_absent_for_dedicated_actor=true path.",
-    "The new path requires all four conditions: github_user_endpoint_unavailable_for_integration_token warning, github-actions[bot] actor, write permission, and viewer_can_administer=false.",
-    "Admin actors remain blocked independently through merge_actor_admin_permission_observed and cannot satisfy the integration-token helper.",
-    "Wrong actor, non-write permission, admin permission, and missing integration warning cases are covered by regression tests.",
-    "The warning enum change is additive and keeps existing eligibility payloads backward-compatible.",
+    "The readiness snapshot fallback is limited to github-actions[bot] integration-token warning cases where standard permission endpoints return 403 or 404.",
+    "The added probe uses a read-only pull-request list endpoint with per_page=1 and performs no mutation.",
+    "Successful pull-request read is treated only as integration-token fallback evidence for write permission; failed or malformed probe output remains fail-closed through collection_errors and github_api_read_failed.",
+    "Regression tests cover both inferred-write success and probe-failure blocked paths, with schema validation in both cases.",
+    "Claude CLI independent review returned AGREE with no required fixes.",
     "No secrets or sensitive data are present in the diff."
   ],
   "secrets_recorded": false,
