@@ -35,6 +35,7 @@ from ao_kernel.orchestration.verifier import (
     Verifier,
     VerifierError,
 )
+from ao_kernel.orchestration.worker_invoker import WorkerInvocationError, WorkerInvoker
 from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
 
@@ -515,6 +516,30 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         help="Stdout summary format (default: text)",
     )
 
+    # AO-MA-4.5: invoke pinned deterministic local worker fixture per prepared worktree
+    invoke_p = orchestration_sub.add_parser(
+        "invoke",
+        help=(
+            "AO-MA-4.5 worker invocation v1: run the pinned deterministic local worker "
+            "fixture for each prepared runner_report worktree and emit "
+            "worker_invocation_report.v1.json. No arbitrary adapter selection, no live "
+            "adapter execution — a live adapter or open live_adapter_execution flag is "
+            "rejected fail-closed."
+        ),
+    )
+    invoke_p.add_argument("--manifest", required=True, help="Path to AO-MA-3 manifest.v1.json")
+    invoke_p.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root path (default: current working directory)",
+    )
+    invoke_p.add_argument(
+        "--format",
+        choices=["text", "json"],
+        default="text",
+        help="Stdout summary format (default: text)",
+    )
+
 
 def _parse_per_task_paths(raw: list[str] | None, kind: str) -> dict[str, Path]:
     """Parse repeated '--worker-result <task_id>=<path>' CLI args into a dict.
@@ -783,3 +808,45 @@ def cmd_orchestration_verify(args: argparse.Namespace) -> int:
         print(f"emitted to: {manifest_path.parent / 'workers' / args.task_id / 'verification_report.v1.json'}")
 
     return 1 if result.failed_checks else 0
+
+
+def cmd_orchestration_invoke(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration invoke`` (AO-MA-4.5 v1).
+
+    Runs the pinned deterministic local worker fixture for each eligible
+    runner_report worker entry (``prepared`` / ``skipped_existing_idempotent``)
+    and emits ``worker_invocation_report.v1.json``. There is no arbitrary
+    adapter selection and no live adapter execution; a live adapter or an open
+    ``live_adapter_execution`` flag is rejected fail-closed.
+
+    Exit codes:
+
+    - 0 — invocation report emitted; no worker entry failed
+    - 1 — invocation report emitted; at least one worker entry failed
+    - 2 — manifest not found / trust-boundary or fail-closed error
+    """
+
+    manifest_path = Path(args.manifest).resolve()
+    if not manifest_path.exists():
+        print(f"error: manifest not found: {manifest_path!s}", file=sys.stderr)
+        return 2
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+    invoker = WorkerInvoker(repo_root=repo_root)
+    try:
+        report = invoker.invoke(manifest_path=manifest_path)
+    except WorkerInvocationError as exc:
+        print(f"orchestration invoke failed: {exc}", file=sys.stderr)
+        return 2
+
+    if args.format == "json":
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(f"task_graph_id: {report['task_graph_id']}")
+        print(f"fixture_id: {report['fixture_id']}")
+        print(f"invoked ({len(report['invoked'])}):")
+        for entry in report["invoked"]:
+            print(f"  - {entry['task_id']} [{entry['status']}] {entry['reason']}")
+
+    if any(entry["status"] == "failed" for entry in report["invoked"]):
+        return 1
+    return 0

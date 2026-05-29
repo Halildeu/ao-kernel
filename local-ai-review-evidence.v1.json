@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-PUBLIC-CONTEXT-AUDIT",
+  "work_package": "AO-MA-4.5-WORKER-INVOCATION",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,10 +13,17 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-public-context-audit",
+    "head_ref": "refs/heads/codex/ao-ma-4-5-worker-invocation",
     "changed_files": [
-      "docs/audits/PUBLIC-CONTEXT-TEST-QUALITY-AUDIT-2026-05-29.md",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/AO-MA-1-MULTI-AGENT-ORCHESTRATION-DESIGN.md",
+      ".claude/plans/AO-MA-4.5-WORKER-INVOCATION.md",
+      "ao_kernel/cli.py",
+      "ao_kernel/defaults/schemas/ao-ma-worker-invocation-report.schema.v1.json",
+      "ao_kernel/fixtures/ao_ma_worker_stub.py",
+      "ao_kernel/orchestration/cli_handlers.py",
+      "ao_kernel/orchestration/worker_invoker.py",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_ma_4_5_worker_invocation.py"
     ]
   },
   "checks_considered": [
@@ -29,25 +36,29 @@
       "status": "pass"
     },
     {
-      "name": "doc_only_scope",
-      "status": "pass"
-    },
-    {
-      "name": "coverage_data_recorded",
+      "name": "coverage_gate",
       "status": "pass"
     },
     {
       "name": "guard_flags_remain_false",
       "status": "pass"
+    },
+    {
+      "name": "trust_boundary_fail_closed",
+      "status": "pass"
+    },
+    {
+      "name": "no_workflow_or_ruleset_mutation",
+      "status": "pass"
     }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e7547) returned REVISE + ready_for_impl: audit-only, full 18-module table with actionable analysis on the 5 sub-85% modules, part-level external-vs-actionable classification, single doc-only PR.",
-    "Doc-only diff: adds docs/audits/PUBLIC-CONTEXT-TEST-QUALITY-AUDIT-2026-05-29.md. No ao_kernel/context runtime module, no tests, no pyproject, no workflow, no schema, no guard flag, no gpp_status change.",
-    "Coverage data recorded (full suite, head a124c3b, branch): 18 context/ modules, 1211 statements; 5 modules below 85% (semantic_retrieval 63.3%, checkpoint 79.2%, memory_tiers 80.0%, context_compiler 84.2%, session_lifecycle 84.6%).",
-    "Per Codex REVISE: low coverage on embedding/vector modules is classified part-level, not wholesale external. Provider HTTP (embed_text/semantic_search) and live pgvector are external_integration; cosine/cache/rerank/budget/config and fail-closed paths are actionable_offline; defensive logging fallbacks are intentionally_uncovered.",
-    "Audit is doc-only and proposes clustered follow-up test PRs (CONTEXT-GAPS-01/02/03 + optional pgvector integration lane); it does not add tests in this PR.",
-    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
+    "Codex plan-time consultation (thread 019e74ef): iter-1 REVISE -> iter-2 AGREE (ready_for_impl=true). Scope pinned to a deterministic local worker fixture only; the live-LLM worker is deferred to an operator-bound GPP supersession, so live_adapter_execution stays false.",
+    "Codex post-impl review (thread 019e7522): iter-1 RED -> iter-2 RED -> iter-3 AGREE (ready_to_merge=true). Two security/governance blockers were found and closed: (1) a tampered runner_report actual_worktree could drive an out-of-scope filesystem write; (2) a schema-valid but wrong-provenance worker_result could be reported as a successful invocation.",
+    "AO-MA-4.5 adds the ao_ma_worker_stub deterministic local worker fixture plus WorkerInvoker, closing the AO-MA dogfooding gap where AO-MA-4 prepared worktrees but no worker ever wrote worker_result.v1.",
+    "Trust boundary is fail-closed before any filesystem write: manifest envelope + runner_report manifest_sha256 + assignment artifact triple-SHA binding (on-disk == manifest == runner_report) + assignment schema + cross-ref + worktree-root expected path + git worktree verification (toplevel / HEAD == base_sha / branch / same-repo common-dir). The fixture self-verifies the worktree and rejects absolute/traversal declared paths. The emitted worker_result is bound to this graph/task/base/branch before the bridge copy.",
+    "Full suite 4655 passed / 76 skipped, coverage 85.20%. ruff + mypy clean. 26 AO-MA-4.5 tests including out-of-repo worktree, foreign git repo, tampered assignment SHA, stale runner_report SHA, traversal declared path, and emitted-binding negatives.",
+    "No secrets, API keys, tokens, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, gpp_status mutation, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
