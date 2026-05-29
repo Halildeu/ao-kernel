@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8c-final-promote-decision-evidence:v1",
+  "title": "RI-7.8c Final Operator Promote Decision Evidence",
+  "description": "Final operator promote decision evidence for RI-7.8 chain. Records the operator's authoritative non-promotion decision under current CLI-only subscription mode. Decision is consistent with existing GPP-9 closure (keep_narrow_stable_runtime_authoritative_program_closed): BC-1 + BC-10 are scope-out under cli-only mode (not 'passed'), bc10 chain assets remain dormant per PR #731 defer-decision (asset_preserved_for_future_api_mode=true), top-level guard flags const FALSE PRESERVED. Future API-mode promotion would require a new operator-bound supersession PR with explicit production_platform_claim_allowed flip + full production matrix evidence + operator-verified semantics. This artifact flips submanifest final_operator_promotion_decision_recorded false to true, completing RI-7.8 chain.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "decision_effect",
+    "does_not_authorize",
+    "ri78a_predecessor_ref",
+    "ri78b_bc1_6c_predecessor_ref",
+    "ri78b_bc10_6c_defer_decision_predecessor_ref",
+    "operator_decision_record",
+    "non_promotion_rationale",
+    "bc_baseline_scope_out_record",
+    "gpp9_closure_consistency",
+    "submanifest_transition",
+    "current_readiness_snapshot",
+    "current_gpp_guard_snapshot",
+    "ri78_submanifest_snapshot_after_decision",
+    "secret_boundary",
+    "mutations_performed",
+    "no_fake_work_attestation",
+    "future_promotion_authority_chain",
+    "stale_replay_guard",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "context_binding",
+    "forbidden_change_audit",
+    "cross_ai_review_ref"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8c-final-promote-decision-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8c_final_promote_decision_evidence"},
+    "decision": {
+      "type": "string",
+      "const": "ri78c_final_operator_non_promotion_keep_narrow_stable_runtime_authoritative_cli_only_no_programmatic_api_no_live_adapter_execution_no_support_widening_no_production_claim"
+    },
+    "decision_effect": {
+      "type": "string",
+      "const": "ri78_chain_closed_with_non_promotion_top_level_guard_flags_preserved_false_bc1_bc10_scope_out_under_cli_only_mode_assets_dormant_future_promotion_requires_new_operator_bound_supersession_pr"
+    },
+    "does_not_authorize": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "support_widening",
+          "production_platform_claim",
+          "live_adapter_execution",
+          "top_level_guard_flag_flip",
+          "bc10_chain_dormant_asset_retire_or_delete",
+          "bc1_or_bc10_baseline_reclassification_to_passed",
+          "billable_provider_call",
+          "openai_api_key_reference",
+          "general_purpose_production_platform_promotion_under_cli_only_mode",
+          "promote_general_purpose_beta_under_cli_only_mode"
+        ]
+      }
+    },
+    "ri78a_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 673},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc1_6c_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "closure_evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 691},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "ri78b_bc10_6c_defer_decision_predecessor_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha", "defer_evidence_sha256"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 731},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "defer_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "operator_decision_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_login",
+        "decision_recorded_at",
+        "decision_source",
+        "no_secret_assertion",
+        "decision_scope",
+        "observation_notes"
+      ],
+      "properties": {
+        "github_login": {"type": "string", "const": "Halildeu"},
+        "decision_recorded_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        },
+        "decision_source": {"type": "string", "minLength": 1},
+        "no_secret_assertion": {"type": "boolean", "const": true},
+        "decision_scope": {"type": "string", "const": "ri7_8c_final_operator_promotion_decision_event_recording_non_promotion_outcome_under_cli_only_mode"},
+        "observation_notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "non_promotion_rationale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_usage_pattern_is_cli_only_monthly_subscription",
+        "no_programmatic_api_call_in_current_or_planned_use",
+        "no_openai_api_key_available_or_planned",
+        "bc1_marker_only_under_cli_only_not_real_attestation_for_general_purpose_production",
+        "bc10_chain_deferred_under_cli_only_per_pr_731",
+        "promoting_general_purpose_production_under_cli_only_would_be_fake_work_violation",
+        "keep_narrow_stable_runtime_remains_authoritative"
+      ],
+      "properties": {
+        "current_usage_pattern_is_cli_only_monthly_subscription": {"type": "boolean", "const": true},
+        "no_programmatic_api_call_in_current_or_planned_use": {"type": "boolean", "const": true},
+        "no_openai_api_key_available_or_planned": {"type": "boolean", "const": true},
+        "bc1_marker_only_under_cli_only_not_real_attestation_for_general_purpose_production": {"type": "boolean", "const": true},
+        "bc10_chain_deferred_under_cli_only_per_pr_731": {"type": "boolean", "const": true},
+        "promoting_general_purpose_production_under_cli_only_would_be_fake_work_violation": {"type": "boolean", "const": true},
+        "keep_narrow_stable_runtime_remains_authoritative": {"type": "boolean", "const": true}
+      }
+    },
+    "bc_baseline_scope_out_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bc1_status_under_cli_only_mode",
+        "bc10_status_under_cli_only_mode",
+        "bc1_reclassification_to_passed_explicitly_forbidden",
+        "bc10_reclassification_to_passed_explicitly_forbidden",
+        "bc1_through_bc9_baseline_preserved",
+        "no_enum_migration"
+      ],
+      "properties": {
+        "bc1_status_under_cli_only_mode": {
+          "type": "string",
+          "const": "scope_out_under_cli_only_mode_not_passed_marker_only_evidence_in_pr_691"
+        },
+        "bc10_status_under_cli_only_mode": {
+          "type": "string",
+          "const": "scope_out_under_cli_only_mode_not_passed_deferred_per_pr_731_assets_dormant"
+        },
+        "bc1_reclassification_to_passed_explicitly_forbidden": {"type": "boolean", "const": true},
+        "bc10_reclassification_to_passed_explicitly_forbidden": {"type": "boolean", "const": true},
+        "bc1_through_bc9_baseline_preserved": {"type": "boolean", "const": true},
+        "no_enum_migration": {"type": "boolean", "const": true}
+      }
+    },
+    "gpp9_closure_consistency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "existing_gpp9_decision_string",
+        "ri78c_decision_aligned_with_gpp9_closure",
+        "top_level_guard_flags_remain_const_false",
+        "keep_narrow_stable_runtime_remains_authoritative",
+        "no_program_reopening"
+      ],
+      "properties": {
+        "existing_gpp9_decision_string": {
+          "type": "string",
+          "const": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim"
+        },
+        "ri78c_decision_aligned_with_gpp9_closure": {"type": "boolean", "const": true},
+        "top_level_guard_flags_remain_const_false": {"type": "boolean", "const": true},
+        "keep_narrow_stable_runtime_remains_authoritative": {"type": "boolean", "const": true},
+        "no_program_reopening": {"type": "boolean", "const": true}
+      }
+    },
+    "submanifest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["final_operator_promotion_decision_recorded"],
+          "properties": {
+            "final_operator_promotion_decision_recorded": {"type": "boolean", "const": false}
+          }
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["final_operator_promotion_decision_recorded"],
+          "properties": {
+            "final_operator_promotion_decision_recorded": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    },
+    "current_readiness_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nine_key_manifest_all_true", "readiness_gate_decision"],
+      "properties": {
+        "nine_key_manifest_all_true": {"type": "boolean", "const": true},
+        "readiness_gate_decision": {"type": "string", "const": "ready_for_operator_promotion_decision"}
+      }
+    },
+    "current_gpp_guard_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "ri78_submanifest_snapshot_after_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_evidence_pre_authorization_recorded",
+        "bc1_protected_live_adapter_attestation_recorded",
+        "bc10_real_adapter_usage_cost_aggregate_recorded",
+        "bc10_defer_decision_recorded",
+        "final_operator_promotion_decision_recorded"
+      ],
+      "properties": {
+        "live_evidence_pre_authorization_recorded": {"type": "boolean", "const": true},
+        "bc1_protected_live_adapter_attestation_recorded": {"type": "boolean", "const": true},
+        "bc10_real_adapter_usage_cost_aggregate_recorded": {"type": "boolean", "const": false},
+        "bc10_defer_decision_recorded": {"type": "boolean", "const": true},
+        "final_operator_promotion_decision_recorded": {"type": "boolean", "const": true}
+      }
+    },
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_repo_no_provider_api_key_reference"},
+    "mutations_performed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_created",
+        "evidence_created",
+        "submanifest_final_decision_key_flipped",
+        "gpp_status_mutated",
+        "workflow_modified",
+        "activation_script_modified",
+        "runner_script_modified",
+        "pricing_source_modified",
+        "bc10_chain_schemas_modified",
+        "bc10_chain_evidence_modified",
+        "bc10_workflow_dispatched",
+        "provider_call_performed",
+        "secret_referenced",
+        "guard_flag_flipped",
+        "asset_retired_or_deleted",
+        "gpp9_closure_record_modified"
+      ],
+      "properties": {
+        "schema_created": {"type": "boolean", "const": true},
+        "evidence_created": {"type": "boolean", "const": true},
+        "submanifest_final_decision_key_flipped": {"type": "boolean", "const": true},
+        "gpp_status_mutated": {"type": "boolean", "const": false},
+        "workflow_modified": {"type": "boolean", "const": false},
+        "activation_script_modified": {"type": "boolean", "const": false},
+        "runner_script_modified": {"type": "boolean", "const": false},
+        "pricing_source_modified": {"type": "boolean", "const": false},
+        "bc10_chain_schemas_modified": {"type": "boolean", "const": false},
+        "bc10_chain_evidence_modified": {"type": "boolean", "const": false},
+        "bc10_workflow_dispatched": {"type": "boolean", "const": false},
+        "provider_call_performed": {"type": "boolean", "const": false},
+        "secret_referenced": {"type": "boolean", "const": false},
+        "guard_flag_flipped": {"type": "boolean", "const": false},
+        "asset_retired_or_deleted": {"type": "boolean", "const": false},
+        "gpp9_closure_record_modified": {"type": "boolean", "const": false}
+      }
+    },
+    "no_fake_work_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "non_promotion_under_cli_only_is_real_acceptance",
+        "promoting_to_general_purpose_production_under_cli_only_would_be_fake_work",
+        "no_billable_call_recorded",
+        "no_real_aggregate_recorded",
+        "no_artificial_promotion_evidence_generated"
+      ],
+      "properties": {
+        "non_promotion_under_cli_only_is_real_acceptance": {"type": "boolean", "const": true},
+        "promoting_to_general_purpose_production_under_cli_only_would_be_fake_work": {"type": "boolean", "const": true},
+        "no_billable_call_recorded": {"type": "boolean", "const": true},
+        "no_real_aggregate_recorded": {"type": "boolean", "const": true},
+        "no_artificial_promotion_evidence_generated": {"type": "boolean", "const": true}
+      }
+    },
+    "future_promotion_authority_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "future_general_purpose_production_promotion_requires_new_operator_bound_supersession_pr",
+        "future_general_purpose_beta_promotion_requires_new_operator_bound_supersession_pr",
+        "future_promotion_requires_explicit_production_platform_claim_allowed_flip",
+        "future_promotion_requires_full_production_matrix_evidence",
+        "future_promotion_requires_operator_verified_semantics",
+        "bc10_chain_assets_remain_dormant_for_future_api_mode_reactivation",
+        "current_ri78c_decision_does_not_authorize_any_future_flip"
+      ],
+      "properties": {
+        "future_general_purpose_production_promotion_requires_new_operator_bound_supersession_pr": {"type": "boolean", "const": true},
+        "future_general_purpose_beta_promotion_requires_new_operator_bound_supersession_pr": {"type": "boolean", "const": true},
+        "future_promotion_requires_explicit_production_platform_claim_allowed_flip": {"type": "boolean", "const": true},
+        "future_promotion_requires_full_production_matrix_evidence": {"type": "boolean", "const": true},
+        "future_promotion_requires_operator_verified_semantics": {"type": "boolean", "const": true},
+        "bc10_chain_assets_remain_dormant_for_future_api_mode_reactivation": {"type": "boolean", "const": true},
+        "current_ri78c_decision_does_not_authorize_any_future_flip": {"type": "boolean", "const": true}
+      }
+    },
+    "stale_replay_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_ref",
+        "head_ref",
+        "pr_number_hint",
+        "base_sha",
+        "ri78a_evidence_sha256",
+        "ri78b_bc1_6c_closure_evidence_sha256",
+        "ri78b_bc10_6c_defer_evidence_sha256",
+        "ri78_submanifest_sha256_before_flip",
+        "readiness_manifest_sha256",
+        "timestamp"
+      ],
+      "properties": {
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8c-non-promotion-decision"},
+        "pr_number_hint": {"type": "string"},
+        "base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ri78a_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc1_6c_closure_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78b_bc10_6c_defer_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ri78_submanifest_sha256_before_flip": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "readiness_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false},
+    "context_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "base_ref", "head_ref", "pr_number_hint"],
+      "properties": {
+        "repo": {"type": "string", "const": "Halildeu/ao-kernel"},
+        "base_ref": {"type": "string", "const": "refs/heads/main"},
+        "head_ref": {"type": "string", "const": "refs/heads/codex/ri-7-8c-non-promotion-decision"},
+        "pr_number_hint": {"type": "string"}
+      }
+    },
+    "forbidden_change_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_surfaces", "all_unchanged"],
+      "properties": {
+        "forbidden_surfaces": {
+          "type": "array",
+          "minItems": 17,
+          "maxItems": 17,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "allOf": [
+            {"contains": {"const": ".claude/plans/gpp_status.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".github/workflows/bc10-real-adapter-usage-cost.yml"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/ri78b_bc10_activation_window.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "scripts/bc10_run_scenarios.py"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-defer-decision-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6b-protected-execution-window-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"}, "minContains": 1, "maxContains": 1}
+          ]
+        },
+        "all_unchanged": {"type": "boolean", "const": true}
+      }
+    },
+    "cross_ai_review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "implementer_provider", "reviewer_provider", "final_verdict"],
+      "properties": {
+        "thread_id": {"type": "string", "minLength": 1},
+        "implementer_provider": {"type": "string", "const": "anthropic"},
+        "reviewer_provider": {"type": "string", "const": "openai"},
+        "final_verdict": {"type": "string", "enum": ["REVISE", "AGREE"]}
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
