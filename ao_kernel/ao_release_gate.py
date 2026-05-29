@@ -47,6 +47,7 @@ HIGH_RISK_PATH_PATTERNS = (
 
 AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX = "docs/evidence/ao-ma-10l-autonomous-smoke/"
 AO_MA10_DEDICATED_MERGE_ACTOR = "gladyatore-lab"
+AO_MA10_OPERATOR_PRODUCER_ACTOR = "halildeu"
 
 
 def diff_digest(changed_paths: list[str]) -> str:
@@ -560,22 +561,32 @@ def _is_ao_ma10_low_risk_autonomous_smoke_path(path: str) -> bool:
     return bool(relative) and "/" not in relative and relative.endswith(".md")
 
 
+def _ao_ma10_low_risk_autonomous_smoke_actor_ok(context: AoReleaseGateContext) -> bool:
+    pr_author = (context["pr_author"] or "").lower()
+    return pr_author in {
+        AO_MA10_DEDICATED_MERGE_ACTOR,
+        AO_MA10_OPERATOR_PRODUCER_ACTOR,
+    }
+
+
 def _ao_ma10_low_risk_autonomous_smoke_scope(context: AoReleaseGateContext) -> bool:
     """Return whether context is the narrow AO-MA-10l autonomous smoke lane.
 
     The no-human substitute is intentionally much narrower than the generic
     path allowlist. It applies only to disposable smoke evidence markdown
-    authored by the dedicated non-admin merge actor. Ordinary PRs still need
+    produced by the dedicated actor or by the operator-bound governance
+    producer used by the split-token workflow. Ordinary PRs still need
     local-gpp-gate review evidence; high-risk PRs still need human review or
-    high-risk supersession evidence.
+    high-risk supersession evidence. The merge authority remains the dedicated
+    non-admin merge actor; the operator producer is accepted only for this
+    disposable smoke path.
     """
 
-    pr_author = (context["pr_author"] or "").lower()
     paths = context["changed_paths"]
     return (
         context["low_risk_autonomous_merge_request_valid"] is True
         and context["low_risk_autonomous_merge_requested"] is True
-        and pr_author == AO_MA10_DEDICATED_MERGE_ACTOR
+        and _ao_ma10_low_risk_autonomous_smoke_actor_ok(context)
         and bool(paths)
         and not context["high_risk_changed_paths"]
         and all(_is_ao_ma10_low_risk_autonomous_smoke_path(path) for path in paths)
@@ -853,15 +864,15 @@ def _evaluate_review_evidence_or_ao_ma10_low_risk_checks(
                 "review_evidence",
                 detail=(
                     "Local-gpp-gate review evidence is not required for the "
-                    "AO-MA-10l dedicated-actor low-risk autonomous smoke lane."
+                    "AO-MA-10l split-producer low-risk autonomous smoke lane."
                 ),
             ),
             _pass(
                 "review_evidence_context_bound",
                 detail=(
                     "AO-MA-10l low-risk autonomous smoke context is bound by "
-                    "API-derived payload data, required checks, dedicated PR "
-                    "author, and the disposable smoke evidence path."
+                    "API-derived payload data, required checks, approved smoke "
+                    "producer, and the disposable smoke evidence path."
                 ),
             ),
         ]
@@ -1337,28 +1348,28 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
                 "ao_ma10_evidence_bundle",
                 detail=(
                     "AO-MA-10 evidence bundle is not required for the narrow "
-                    "dedicated-actor low-risk autonomous smoke lane."
+                    "split-producer low-risk autonomous smoke lane."
                 ),
             ),
             _pass(
                 "ao_ma10_evidence_bundle_schema",
                 detail=(
                     "AO-MA-10 evidence bundle schema validation is not required "
-                    "for the narrow dedicated-actor low-risk autonomous smoke lane."
+                    "for the narrow split-producer low-risk autonomous smoke lane."
                 ),
             ),
             _pass(
                 "ao_ma10_consensus",
                 detail=(
                     "AO-MA-10 provider consensus is not required for the narrow "
-                    "dedicated-actor low-risk autonomous smoke lane."
+                    "split-producer low-risk autonomous smoke lane."
                 ),
             ),
             _pass(
                 "ao_ma10_context_bound",
                 detail=(
                     "The narrow AO-MA-10l smoke lane is context-bound by the "
-                    "API-derived payload, required checks, dedicated PR author, "
+                    "API-derived payload, required checks, approved smoke producer, "
                     "and disposable smoke evidence path."
                 ),
             ),

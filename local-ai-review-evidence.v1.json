@@ -30,12 +30,11 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict REVISE, then AGREE after absorption.",
-    "The live execute smoke failed because GitHub initially returned 'no required checks reported' immediately after disposable PR creation.",
-    "AO-MA-10L now treats both 'no checks reported' and 'no required checks reported' as transient check-discovery strings inside the existing polling window.",
-    "The transient strings are represented in code as TRANSIENT_CHECK_DISCOVERY_ERRORS and in the receipt as transient_check_discovery_errors.",
-    "Parametrized tests cover both transient string variants; unrecognized errors, invalid payloads, and timeouts still fail closed.",
-    "No branch protection mutation, release authority change, support widening, production platform claim, live adapter execution, or secret material is introduced."
+    "Live AO-MA-10q execute smoke reached disposable PR #720 and all normal required checks passed, but ao-release-gate denied because the split producer PR author was Halildeu while the narrow smoke exception only accepted gladyatore-lab.",
+    "AO-MA-10AB keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only recognizes Halildeu as the operator-bound governance producer for direct one-file AO-MA-10l smoke PRs.",
+    "The exception remains gated by low_risk_autonomous_merge_requested=true, a valid boolean request flag, no high-risk paths, and every changed path being a direct docs/evidence/ao-ma-10l-autonomous-smoke/*.md file.",
+    "Unknown PR authors still fail closed and require local-gpp-gate review evidence; tests cover gladyatore-lab allow, Halildeu split-producer allow, and unknown-producer deny.",
+    "Claude CLI review returned AGREE and specifically found no fail-open risk, no support widening, no production claim, no live adapter execution, and no branch-protection mutation."
   ],
   "implementer": {
     "agent": "codex",
@@ -55,13 +54,13 @@
     "changed_files": [
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
+      "ao_kernel/ao_release_gate.py",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10l_autonomous_smoke.py",
-      "tests/test_ao_ma10l_autonomous_smoke.py"
+      "tests/test_ao_release_gate.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10aa-wait-initial-checks"
+    "head_ref": "refs/heads/codex/ao-ma10ab-split-producer-smoke-scope"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10AA"
+  "work_package": "AO-MA-10AB"
 }

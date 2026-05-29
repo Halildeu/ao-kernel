@@ -1,35 +1,12 @@
 {
-  "schema_version": "ao-ma-10l-positive-autonomous-smoke-receipt.v1",
-  "artifact_kind": "ao_ma_10l_positive_autonomous_smoke_receipt",
-  "status": "implemented_fail_closed",
-  "script": "scripts/ao_ma10l_autonomous_smoke.py",
-  "result_schema": "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
-  "release_authority": "ao-release-gate+github-ruleset",
   "ai_output_release_authority": false,
-  "support_widening": false,
-  "production_platform_claim": false,
-  "live_adapter_execution": false,
-  "default_mode": "read_only",
-  "execute_confirmation": "AO-MA-10L-EXECUTE",
-  "supports_dedicated_gh_runtime": true,
-  "dedicated_gh_runtime_argument": "--gh-bin",
-  "supports_split_pr_producer_runtime": true,
-  "producer_gh_runtime_argument": "--producer-gh-bin",
-  "waits_for_initial_check_suite": true,
-  "transient_check_discovery_errors": [
-    "no checks reported",
-    "no required checks reported"
-  ],
-  "producer_release_authority": false,
-  "producer_allowed_operations": [
-    "base_ref_read",
-    "branch_create",
-    "file_create",
-    "pr_create"
-  ],
-  "expected_actor": "gladyatore-lab",
+  "artifact_kind": "ao_ma_10l_positive_autonomous_smoke_receipt",
   "blocks_before_github_write_when_a0_a1_blocked": true,
+  "dedicated_gh_runtime_argument": "--gh-bin",
+  "default_mode": "read_only",
   "delegates_merge_to": "scripts/ao_ma10c_merge_agent.py",
+  "execute_confirmation": "AO-MA-10L-EXECUTE",
+  "expected_actor": "gladyatore-lab",
   "forbidden_mutations": [
     "admin_merge",
     "ruleset_mutation",
@@ -39,5 +16,33 @@
     "support_widening",
     "production_platform_claim",
     "live_adapter_execution"
-  ]
+  ],
+  "live_adapter_execution": false,
+  "producer_allowed_operations": [
+    "base_ref_read",
+    "branch_create",
+    "file_create",
+    "pr_create"
+  ],
+  "producer_gh_runtime_argument": "--producer-gh-bin",
+  "producer_release_authority": false,
+  "production_platform_claim": false,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "release_gate_low_risk_smoke_pr_authors": [
+    "gladyatore-lab",
+    "Halildeu"
+  ],
+  "release_gate_low_risk_smoke_scope": "direct docs/evidence/ao-ma-10l-autonomous-smoke/*.md only; no high-risk paths; final merge remains dedicated actor only",
+  "result_schema": "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
+  "schema_version": "ao-ma-10l-positive-autonomous-smoke-receipt.v1",
+  "script": "scripts/ao_ma10l_autonomous_smoke.py",
+  "status": "implemented_fail_closed",
+  "support_widening": false,
+  "supports_dedicated_gh_runtime": true,
+  "supports_split_pr_producer_runtime": true,
+  "transient_check_discovery_errors": [
+    "no checks reported",
+    "no required checks reported"
+  ],
+  "waits_for_initial_check_suite": true
 }
