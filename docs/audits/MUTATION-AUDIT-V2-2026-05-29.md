@@ -34,8 +34,12 @@ pivoted to coverage. This V2 evaluates `mutmut` 2.4.5.
 | Module | Total | Killed | Survived | Suspicious | Mutation score | Trust |
 |---|---:|---:|---:|---:|---:|---|
 | config.py | 60 | 47 | 13 | 0 | **78.3%** | ✅ trustworthy |
-| tool_gateway.py | 220 | 0 | 65 | 155 | (0.0%) | ❌ tool anomaly |
-| llm.py | 167 | 0 | 140 | 27 | (0.0%) | ❌ tool anomaly |
+| tool_gateway.py | 220 | 0 | 65 | 155 | N/A (tool anomaly) | ❌ not reported |
+| llm.py | 167 | 0 | 140 | 27 | N/A (tool anomaly) | ❌ not reported |
+
+Raw `killed/survived/suspicious` counts are shown for transparency; the
+**score column is deliberately N/A** for the two anomaly rows so the `0
+killed` figure is never read as a published "0% mutation score" (see §3).
 
 **Only config.py is a trustworthy mutation result.** tool_gateway.py and
 llm.py reported 0 killed with high survived/suspicious counts — not a real
@@ -61,19 +65,22 @@ low-severity (message text, not behavior).
 
 Both reported **0 killed** despite having substantial test suites
 (`test_tool_gateway.py` ~60 tests, `test_llm_facade.py` test classes). A true
-0% is implausible; this is a tool/runner interaction failure:
+0% is implausible; this is a tool/runner interaction failure. Root cause is a
+**hypothesis** (no minimal mutmut repro/trace was produced), supported by an
+observed contrast with config.py:
 
-- **llm.py (0 killed / 140 survived / 27 suspicious)**: `test_llm_facade.py`
-  imports the module **inside each test function**
+- **llm.py (0 killed / 140 survived / 27 suspicious)**: *likely* import-timing.
+  `test_llm_facade.py` imports the module **inside each test function**
   (`from ao_kernel.llm import build_request`), whereas `test_config.py`
-  (which worked) imports at module top. mutmut 2.4.5's mutant injection does
-  not reliably reach a module imported lazily after the test process has
-  started, so mutated `llm` code is not exercised → survived.
+  (which worked) imports at module top. The contrast *suggests* mutmut 2.4.5's
+  mutant injection may not reach a module imported lazily after the test
+  process has started, leaving mutated `llm` code unexercised → survived. Not
+  proven without a trace.
 - **tool_gateway.py (0 killed / 65 survived / 155 suspicious)**: imports at
   module top, yet 155 mutants are **suspicious** (test suite took long but not
-  10× baseline). The large module + the gateway's per-call dispatch make the
-  selected-test runner slow per mutant, so mutmut cannot distinguish killed
-  from slow.
+  10× baseline). The large module + the gateway's per-call dispatch *plausibly*
+  make the selected-test runner slow enough per mutant that mutmut cannot
+  distinguish killed from slow. Also a hypothesis.
 
 Per the No-Fake-Work rule and Codex plan-time guidance, these are reported as
 a **tool limitation**, not a 0% mutation score.
@@ -82,7 +89,9 @@ a **tool limitation**, not a 0% mutation score.
 
 | Field | Value |
 |---|---|
-| Repo head SHA | `a124c3b` |
+| Mutation run base SHA | `a124c3b` (the tree the mutmut run was executed against) |
+| PR head SHA | `edf9745` (+ subsequent main-merge commit) |
+| Current main base SHA | `318d04d` (main advanced via PR #753 during this PR's lifetime) |
 | Date | 2026-05-29 |
 | OS | Darwin 25.5.0 arm64 (local macOS) |
 | Python | 3.13.6 (venv) |
