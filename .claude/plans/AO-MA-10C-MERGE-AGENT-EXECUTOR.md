@@ -56,14 +56,21 @@ It is dry-run by default. Execute mode requires:
 7. PR is open, not draft, base `main`, merge state clean
 8. all live required checks pass
 
-The only merge command it may construct is normal squash merge:
+The only merge command it may construct is the REST pull-request merge endpoint:
 
 ```text
-gh pr merge <pr> --repo Halildeu/ao-kernel --squash --delete-branch
+gh api repos/Halildeu/ao-kernel/pulls/<pr>/merge \
+  --method PUT \
+  -f merge_method=squash \
+  -f sha=<observed-head-sha>
 ```
 
-The executor must not construct admin bypass, bypass actors, ruleset mutation,
-or native auto-merge enablement.
+After a successful merge it may delete the same-repository PR head ref through
+the REST git-ref endpoint. Branch cleanup failure is warning-only; the merge
+result remains tied to the repo-owned required checks and GitHub ruleset.
+
+The executor must not construct admin bypass, bypass actors, GraphQL
+`mergePullRequest`, ruleset mutation, or native auto-merge enablement.
 
 ## Result Artifact
 
@@ -80,6 +87,7 @@ The artifact records:
 - live PR state
 - required-check status
 - merge command argv
+- branch delete argv/error when applicable
 - whether a merge command was attempted
 - whether mutation occurred
 - fail-closed blockers

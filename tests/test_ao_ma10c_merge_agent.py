@@ -73,7 +73,9 @@ def _ready_live_state() -> dict[str, Any]:
             "state": "OPEN",
             "isDraft": False,
             "baseRefName": "main",
+            "headRefName": "codex/ao-ma10l-smoke-test",
             "headRefOid": "a" * 40,
+            "isCrossRepository": False,
             "mergeStateStatus": "CLEAN",
         },
         "required_checks": [
@@ -92,6 +94,8 @@ def _result(
     execute: bool = False,
     confirmation: str | None = None,
     merge_exit_code: int | None = None,
+    branch_delete_exit_code: int | None = None,
+    branch_delete_stderr: str = "",
 ) -> dict[str, Any]:
     mod = _load_script_module()
     now = datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC)
@@ -107,6 +111,8 @@ def _result(
             execute=execute,
             confirmation=confirmation,
             merge_exit_code=merge_exit_code,
+            branch_delete_exit_code=branch_delete_exit_code,
+            branch_delete_stderr=branch_delete_stderr,
         ),
     )
 
@@ -149,13 +155,21 @@ def test_ao_ma10c_ready_dry_run_does_not_attempt_merge() -> None:
     assert payload["mutations_performed"] is False
     assert payload["merge_command_argv"] == [
         "gh",
-        "pr",
-        "merge",
-        "123",
-        "--repo",
-        "Halildeu/ao-kernel",
-        "--squash",
-        "--delete-branch",
+        "api",
+        "repos/Halildeu/ao-kernel/pulls/123/merge",
+        "--method",
+        "PUT",
+        "-f",
+        "merge_method=squash",
+        "-f",
+        f"sha={'a' * 40}",
+    ]
+    assert payload["branch_delete_command_argv"] == [
+        "gh",
+        "api",
+        "repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10l-smoke-test",
+        "--method",
+        "DELETE",
     ]
     assert "--admin" not in payload["merge_command_argv"]
     assert "--auto" not in payload["merge_command_argv"]
@@ -179,6 +193,117 @@ def test_ao_ma10c_merge_command_failure_is_fail_closed() -> None:
     payload = _result(execute=True, confirmation="AO-MA-10C-EXECUTE", merge_exit_code=1)
     assert payload["decision"]["result"] == "blocked"
     assert "merge_command_failed" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_branch_delete_failure_warns_without_undoing_merge_result() -> None:
+    payload = _result(
+        execute=True,
+        confirmation="AO-MA-10C-EXECUTE",
+        merge_exit_code=0,
+        branch_delete_exit_code=1,
+        branch_delete_stderr="delete failed",
+    )
+    assert payload["decision"]["result"] == "merged"
+    assert payload["branch_delete_attempted"] is True
+    assert payload["branch_delete_error"] == "delete failed"
+    assert "branch_delete_failed" in payload["decision"]["warnings"]
+
+
+def test_ao_ma10c_execute_blocks_when_pr_head_sha_is_missing() -> None:
+    live = _ready_live_state()
+    live["pr_view"]["headRefOid"] = None
+    payload = _result(live_state=live, execute=True, confirmation="AO-MA-10C-EXECUTE")
+
+    assert payload["decision"]["result"] == "blocked"
+    assert "pr_head_sha_missing" in payload["decision"]["blockers"]
+    assert payload["merge_command_attempted"] is False
+
+
+def test_ao_ma10c_execute_merge_uses_rest_merge_and_branch_delete(monkeypatch: Any) -> None:
+    mod = _load_script_module()
+    seen: list[list[str]] = []
+
+    def fake_run(command: list[str]) -> subprocess.CompletedProcess[str]:
+        seen.append(command)
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/pulls/123/merge"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"merged": True}), "")
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10l-smoke-test"]:
+            return subprocess.CompletedProcess(command, 0, "", "")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(mod, "_run", fake_run)
+    merge_exit, merge_error, delete_exit, delete_error, merge_argv, delete_argv = mod.execute_merge(
+        repo="Halildeu/ao-kernel",
+        pr_number=123,
+        pr_view=_ready_live_state()["pr_view"],
+        base_ref="main",
+        gh_bin="gh",
+    )
+
+    assert merge_exit == 0
+    assert merge_error
+    assert delete_exit == 0
+    assert delete_error == ""
+    assert merge_argv == [
+        "gh",
+        "api",
+        "repos/Halildeu/ao-kernel/pulls/123/merge",
+        "--method",
+        "PUT",
+        "-f",
+        "merge_method=squash",
+        "-f",
+        f"sha={'a' * 40}",
+    ]
+    assert delete_argv == [
+        "gh",
+        "api",
+        "repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10l-smoke-test",
+        "--method",
+        "DELETE",
+    ]
+    assert all("pr" not in command[:2] for command in seen)
+
+
+def test_ao_ma10c_execute_merge_failure_does_not_delete_branch(monkeypatch: Any) -> None:
+    mod = _load_script_module()
+    seen: list[list[str]] = []
+
+    def fake_run(command: list[str]) -> subprocess.CompletedProcess[str]:
+        seen.append(command)
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/pulls/123/merge"]:
+            return subprocess.CompletedProcess(command, 1, "", "merge rejected")
+        raise AssertionError(command)
+
+    monkeypatch.setattr(mod, "_run", fake_run)
+    merge_exit, merge_error, delete_exit, _delete_error, _merge_argv, delete_argv = mod.execute_merge(
+        repo="Halildeu/ao-kernel",
+        pr_number=123,
+        pr_view=_ready_live_state()["pr_view"],
+        base_ref="main",
+        gh_bin="gh",
+    )
+
+    assert merge_exit == 1
+    assert merge_error == "merge rejected"
+    assert delete_exit is None
+    assert delete_argv == []
+    assert len(seen) == 1
+
+
+def test_ao_ma10c_skips_branch_delete_for_cross_repository_pr() -> None:
+    live = _ready_live_state()
+    live["pr_view"]["isCrossRepository"] = True
+    payload = _result(
+        live_state=live,
+        execute=True,
+        confirmation="AO-MA-10C-EXECUTE",
+        merge_exit_code=0,
+    )
+
+    assert payload["decision"]["result"] == "merged"
+    assert payload["branch_delete_command_argv"] == []
+    assert "branch_delete_skipped_cross_repository" in payload["decision"]["warnings"]
 
 
 def test_ao_ma10c_blocks_current_admin_actor() -> None:
@@ -412,3 +537,5 @@ def test_ao_ma10c_source_does_not_construct_admin_or_auto_merge() -> None:
     assert "--admin" not in source
     assert "--auto" not in source
     assert "enablePullRequestAutoMerge" not in source
+    assert "mergePullRequest" not in source
+    assert '"pr",\n        "merge"' not in source

@@ -21,15 +21,25 @@
     "production_platform_claim": false,
     "support_widening": false
   },
+  "branch_delete_attempted": false,
+  "branch_delete_command_argv": [
+    "gh",
+    "api",
+    "repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10l-smoke-test",
+    "--method",
+    "DELETE"
+  ],
+  "branch_delete_error": "",
   "merge_command_argv": [
     "gh",
-    "pr",
-    "merge",
-    "123",
-    "--repo",
-    "Halildeu/ao-kernel",
-    "--squash",
-    "--delete-branch"
+    "api",
+    "repos/Halildeu/ao-kernel/pulls/123/merge",
+    "--method",
+    "PUT",
+    "-f",
+    "merge_method=squash",
+    "-f",
+    "sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   ],
   "merge_command_attempted": false,
   "merge_error": "",
@@ -37,7 +47,9 @@
   "pr_number": 123,
   "pr_state": {
     "base_ref": "main",
+    "head_ref": "codex/ao-ma10l-smoke-test",
     "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "is_cross_repository": false,
     "is_draft": false,
     "merge_state_status": "CLEAN",
     "state": "OPEN"

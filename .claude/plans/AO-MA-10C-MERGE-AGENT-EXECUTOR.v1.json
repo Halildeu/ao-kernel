@@ -16,13 +16,14 @@
   "live_adapter_execution": false,
   "merge_command_shape": [
     "gh",
-    "pr",
-    "merge",
-    "<pr>",
-    "--repo",
-    "Halildeu/ao-kernel",
-    "--squash",
-    "--delete-branch"
+    "api",
+    "repos/Halildeu/ao-kernel/pulls/<pr>/merge",
+    "--method",
+    "PUT",
+    "-f",
+    "merge_method=squash",
+    "-f",
+    "sha=<observed-head-sha>"
   ],
   "mutates_github_rulesets": false,
   "native_auto_merge_enablement": false,

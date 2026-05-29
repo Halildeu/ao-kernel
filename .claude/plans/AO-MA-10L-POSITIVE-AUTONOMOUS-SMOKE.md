@@ -118,7 +118,10 @@ The only merge command still lives inside AO-MA-10c and uses the same selected
 `--gh-bin` runtime:
 
 ```text
-<dedicated-gh-wrapper> pr merge <pr> --repo Halildeu/ao-kernel --squash --delete-branch
+<dedicated-gh-wrapper> api repos/Halildeu/ao-kernel/pulls/<pr>/merge \
+  --method PUT \
+  -f merge_method=squash \
+  -f sha=<observed-head-sha>
 ```
 
 AO-MA-10l never constructs an admin merge command and never mutates rulesets,
