@@ -3,9 +3,13 @@
 ## Purpose
 
 AO-MA-10S moved the final low-risk no-human smoke into a main-only GitHub
-Actions workflow, but the live dry-run evidence still blocks on the missing
-`GLADYATORE_LAB_GH_TOKEN` repository secret. AO-MA-10T narrows that remaining
-operator contact to one no-secret command path:
+Actions workflow. This document records the earlier dedicated PAT bootstrap
+path. That path is now historical: the accepted low-risk lane uses the
+repo-owned workflow executor (`github-actions[bot]` / `app/github-actions`)
+and does not require `GLADYATORE_LAB_GH_TOKEN` for the accepted AO-MA-10q
+smoke.
+
+The historical AO-MA-10T operator-contact path was:
 
 1. the dedicated actor token is provided to the agent process through one named
    environment variable;
@@ -48,7 +52,7 @@ through stdin. It does not put the token in argv or the evidence artifact.
 - `secret_value_recorded == false`
 - `secret_metadata.name == "GLADYATORE_LAB_GH_TOKEN"`
 
-After success, dispatch AO-MA-10S:
+Historical next step after success was dispatching AO-MA-10S:
 
 ```bash
 gh workflow run 285224724 \
@@ -60,8 +64,10 @@ gh workflow run 285224724 \
   -f poll_seconds=10
 ```
 
-The full no-human claim is still not complete until the AO-MA-10S artifact
-shows AO-MA-10q `merged` with merge actor `gladyatore-lab`.
+Historical note: the `gladyatore-lab` fine-grained PAT path later proved unable
+to call GitHub's pull merge endpoint. The accepted no-human low-risk evidence is
+AO-MA-10q workflow run `26633091281`, which records `runner_status=0`,
+decision `merged`, PR #737, and merge actor `app/github-actions`.
 
 ## Guardrails
 
@@ -70,5 +76,5 @@ shows AO-MA-10q `merged` with merge actor `gladyatore-lab`.
 - No live adapter execution.
 - No admin bypass.
 - No token material in evidence, PR text, logs, or command-line flags.
-- `GITHUB_TOKEN`/admin credentials can configure infrastructure, but the smoke
-  merge actor must still be the dedicated non-admin actor.
+- The accepted smoke merge actor is the repo-owned workflow executor, not a PAT
+  user and not an admin bypass.

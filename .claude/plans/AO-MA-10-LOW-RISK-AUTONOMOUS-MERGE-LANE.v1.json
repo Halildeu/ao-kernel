@@ -72,15 +72,15 @@
     },
     {
       "id": "codeowners_or_ruleset_low_risk_model_implemented",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "merge_agent_identity_and_permissions_recorded",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "positive_low_risk_autonomous_merge_smoke",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "negative_high_risk_blocked_smoke",
@@ -100,26 +100,26 @@
     },
     {
       "id": "admin_bypass_absence_verified",
-      "status": "not_started"
+      "status": "done"
     },
     {
       "id": "cutover_record_no_support_widening_no_production_claim_no_live_adapter",
-      "status": "not_started"
+      "status": "done"
     }
   ],
   "future_slices": [
     "AO-MA-10a0 GitHub readiness snapshot (recorded)",
-    "AO-MA-10a1 autonomous_merge_eligibility checker (recorded; current evidence blocked until live GitHub enforcement blockers resolve)",
+    "AO-MA-10a1 autonomous_merge_eligibility checker (recorded; workflow-context evidence ready in AO-MA-10q run 26633091281)",
     "AO-MA-10a2 context-bound evidence bundle and registered-provider consensus schemas (recorded)",
     "AO-MA-10b ao-release-gate payload and decision integration (recorded)",
     "AO-MA-10d negative fail-closed suite before real merge (recorded)",
     "AO-MA-10h high-risk cross-provider supersession contract (recorded)",
     "AO-MA-10i high-risk supersession decision-core validator/runtime support (recorded)",
     "AO-MA-10j required-check runtime high-risk supersession wiring (recorded)",
-    "AO-MA-10k disposable real-PR high-risk smoke (blocked until live GitHub enforcement blockers resolve)",
-    "AO-MA-10c merge-agent identity and dry-run executor",
-    "AO-MA-10l positive disposable low-risk autonomous merge smoke",
-    "AO-MA-10m activation/cutover"
+    "AO-MA-10k disposable real-PR high-risk smoke (future hardening for high-risk autonomous supersession, not required for the low-risk lane)",
+    "AO-MA-10c merge-agent identity and executor (recorded)",
+    "AO-MA-10l positive disposable low-risk autonomous merge smoke (recorded by PR #737)",
+    "AO-MA-10m activation/cutover (this SSOT sync)"
   ],
   "forbidden_in_this_slice": [
     "workflow_mutation",

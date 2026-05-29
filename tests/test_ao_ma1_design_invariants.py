@@ -50,7 +50,8 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
     status = json.loads(STATUS.read_text(encoding="utf-8"))
 
     assert "AO-MA-1 is a design/docs-only slice" in text
-    assert "GPP-2 stays `blocked`" in text
+    assert "AO-MA-1 originally kept GPP-2 `blocked`" in text
+    assert "low-risk autonomous merge evidence accepted" in text
     assert "support_widening=false" in text
     assert "production_platform_claim=false" in text
     assert "live_adapter_execution=false" in text
@@ -79,8 +80,11 @@ def test_agents_contract_names_active_gpp2d_and_ao_ma1_context() -> None:
     assert "GPP-2D - Autonomous Required-Check Lane" in text
     assert "GPP-2D-3 enforce job" in text
     assert "AO-MA-10A0/A1 are the current authority" in text
-    assert "the lane is blocked: ruleset 16803733 does not" in text
-    assert "Do not treat the GPP-2D/GPP-9 closeout wording" in text
+    assert "AO-MA-10q workflow run 26633091281" in text
+    assert "PR #737" in text
+    assert "app/github-actions" in text
+    assert "Low-risk autonomous merge is active for eligible low-risk changes." in text
+    assert "High-risk/governance-sensitive changes remain fail-closed" in text
     assert "GPP-2D-7 AO-GATE-9 GPP-2 closeout" in text
     assert "AO-MA-1 - Multi-Agent Orchestration Design" in text
     assert "GPP-2C - testai / smee / webhook callback integration" in text

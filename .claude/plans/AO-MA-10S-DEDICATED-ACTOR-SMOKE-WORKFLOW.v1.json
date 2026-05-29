@@ -9,7 +9,7 @@
   "producer_secret_env": "AO_GOVERNANCE_GH_TOKEN",
   "producer_release_authority": false,
   "live_adapter_execution": false,
-  "next_required_slice": "dispatch AO-MA-10q smoke with the repo-owned workflow merge executor",
+  "next_required_slice": "record AO-MA-10q merged-smoke evidence in SSOT and keep low-risk autonomous lane active",
   "production_platform_claim": false,
   "release_authority": "ao-release-gate+github-ruleset",
   "schema_version": "ao-ma-10s-dedicated-actor-smoke-workflow-receipt.v1",

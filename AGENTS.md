@@ -64,24 +64,30 @@ GPP-2 - Protected Live-Adapter Gate Runtime Binding (closed)
 Recorded GPP sublane:
 
 ```text
-GPP-2D - Autonomous Required-Check Lane (GPP closeout recorded)
+GPP-2D - Autonomous Required-Check Lane (fully landed)
   GPP-2D-2c shadow workflow recorded
   GPP-2D-3 enforce job + GPP-2D-4 real-PR evidence collected
+  GPP-2D-5 branch-protection ruleset cutover landed
+    (ruleset id 16803733; required check ao-release-gate
+    via integration_id 15368 source-pin; bypass_actors=[])
   GPP-2D-7 AO-GATE-9 GPP-2 closeout recorded
-  GPP-2D-6 low-risk auto-merge smoke remains later hardening,
-    not a GPP closeout prerequisite
+  GPP-2D-6 / AO-MA-10l low-risk auto-merge smoke recorded
+    (run 26633091281, PR #737, merged by app/github-actions)
 ```
 
 Live autonomy readiness:
 
 ```text
 AO-MA-10A0/A1 are the current authority for whether the repository can
-actually run the fully autonomous merge lane today. As of the latest
-GitHub API snapshot, the lane is blocked: ruleset 16803733 does not
-carry the required ao-release-gate check set, legacy branch protection
-still requires review/CODEOWNERS, and the observed actor is admin.
-Do not treat the GPP-2D/GPP-9 closeout wording as live GitHub
-required-check evidence.
+actually run the fully autonomous merge lane today. The accepted live
+low-risk evidence is AO-MA-10q workflow run 26633091281: it created
+low-risk PR #737, observed required checks pass, and merged through
+app/github-actions without human approval or admin bypass.
+
+Low-risk autonomous merge is active for eligible low-risk changes.
+High-risk/governance-sensitive changes remain fail-closed unless the
+repo-owned ao-release-gate checks receive required cross-provider
+review evidence and GitHub ruleset requirements pass.
 ```
 
 Related orchestration:

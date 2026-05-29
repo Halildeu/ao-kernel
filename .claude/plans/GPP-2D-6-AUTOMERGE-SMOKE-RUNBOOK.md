@@ -1,14 +1,14 @@
 # GPP-2D-6 - Auto-Merge Smoke Runbook
 
-> Status: planned / partially hardened; smoke still blocked by repository
-> auto-merge and the legacy global required-review surface.
+> Status: accepted / low-risk no-human merge smoke complete under the
+> repo-owned workflow executor model.
 > Work package: post-GPP-2 closeout hardening.
 > Parent lane: GPP-2D - Autonomous required-check lane.
 > This runbook records the CODEOWNERS narrowing and legacy
-> `enforce_admins=true` hardening slice, plus the `ao-release-gate`
-> path-sensitive human-review gate. It does not enable auto-merge, does not
-> relax the legacy global required-review setting, and does not reopen or
-> re-close GPP-2.
+> `enforce_admins=true` hardening slice, the `ao-release-gate`
+> path-sensitive human-review gate, and the accepted AO-MA-10q low-risk
+> no-human merge smoke. It does not widen support, claim production
+> readiness, execute live adapters, or reopen/re-close GPP-2.
 
 ## 1. Purpose
 
@@ -19,7 +19,7 @@ cross-provider review evidence
   + local_gpp_gate evidence
   + ao-release-gate required check
   + GitHub branch protection
-  -> GitHub-native auto-merge for low-risk PRs
+  -> repo-owned GitHub Actions merge executor for low-risk PRs
 ```
 
 High-risk PRs must still require human / CODEOWNERS review. AI output is
@@ -88,9 +88,9 @@ This lets the future low-risk lane remove the legacy global review requirement
 without losing the high-risk human gate. AI output remains evidence only; the
 required check is the release authority.
 
-Therefore GPP-2D-6 cannot be honestly accepted until these conditions are true:
+Therefore GPP-2D-6 could not be accepted until these conditions became true:
 
-1. GitHub-native auto-merge is enabled for the repository;
+1. a no-human merge executor path exists for low-risk PRs;
 2. the high-risk surface remains human-gated through `ao-release-gate` and
    CODEOWNERS / branch ruleset policy; and
 3. the low-risk surface no longer has a global non-author review requirement.
@@ -119,17 +119,16 @@ Cutover invariant: admin bypass disallowed.
 6. `ao-release-gate` path-sensitive human-review enforcement lands: high-risk
    paths require current-head non-author `APPROVED` GitHub review, while
    low-risk paths do not.
-7. Operator enables GitHub-native auto-merge for the repository and records
-   `repository.autoMergeAllowed=true`.
-8. Operator selects and applies the low-risk review model:
-   - either relax the legacy global review requirement while preserving a
-     high-risk human gate through CODEOWNERS / ruleset policy; or
-   - keep the legacy review requirement and record that full no-human
-     low-risk auto-merge is intentionally not enabled.
-9. GPP-2D-6 auto-merge smoke runs.
+7. The repo-owned workflow executor is selected as the low-risk merge executor
+   model because repository-native auto-merge is disabled.
+8. Operator selects and applies the low-risk review model: no global
+   non-author approval for eligible low-risk paths; high-risk human review is
+   enforced through `ao-release-gate-review` and CODEOWNERS/ruleset policy.
+9. AO-MA-10q / GPP-2D-6 low-risk no-human merge smoke runs.
 
-Steps 1-6 are complete or in this hardening PR. Steps 7-9 remain before the
-smoke can be accepted.
+Steps 1-9 are complete. The accepted evidence is AO-MA-10q workflow run
+`26633091281`, which created and merged disposable low-risk PR #737 through
+`app/github-actions` after required checks passed.
 
 ## 4. CODEOWNERS narrowing target
 
@@ -158,23 +157,20 @@ Narrowing CODEOWNERS is not enough while the legacy branch protection still has
 `required_approving_review_count=1`. The smoke must verify the actual GitHub
 merge gate, not just the CODEOWNERS file contents.
 
-## 5. Low-risk auto-merge smoke
+## 5. Low-risk no-human merge smoke
 
-After this hardening PR lands, open a low-risk smoke PR that changes only a path
-outside the high-risk surface set. Example candidate:
+The accepted low-risk smoke changed only a path outside the high-risk surface
+set:
 
 ```text
-docs/smoke/gpp2d6-low-risk-automerge-smoke.md
+docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-20260529-105127z.md
 ```
 
-The PR must include normal review evidence and must pass `ao-release-gate`.
+The PR included normal review evidence and passed `ao-release-gate`.
 For low-risk paths, `ao-release-gate` must not require a human review when the
 AI evidence, local gate evidence, CI, and branch freshness checks pass.
-Then enable GitHub-native auto-merge:
-
-```bash
-gh pr merge <LOW_RISK_PR> --repo Halildeu/ao-kernel --auto --squash
-```
+The selected executor is the repo-owned GitHub Actions merge path, not
+GitHub-native repository auto-merge.
 
 Acceptance:
 
@@ -182,10 +178,27 @@ Acceptance:
 2. Required CI checks are green.
 3. `ao-release-gate` records no high-risk changed paths.
 4. No non-author human review is required for the low-risk path.
-5. GitHub performs the merge after required checks pass.
+5. `app/github-actions` performs the merge after required checks pass.
 6. The merge is not performed with `--admin`.
 7. The evidence records the PR URL, merge SHA, relevant check run IDs, and the
-   auto-merge timeline.
+   no-human merge timeline.
+
+Accepted evidence:
+
+```text
+workflow_run_id: 26633091281
+artifact: ao-ma10q-dedicated-actor-smoke-26633091281
+status: doctor_status=0, runner_status=0
+decision: merged
+pull_request: https://github.com/Halildeu/ao-kernel/pull/737
+merge_commit: 15a1e2f23134b84e0c69cde1fb8adc03e5560a15
+merge_actor: app/github-actions
+required_checks: observed=true, all_passed=true
+admin_bypass: false
+support_widening: false
+production_platform_claim: false
+live_adapter_execution: false
+```
 
 ## 6. High-risk human-gate smoke
 
@@ -233,12 +246,13 @@ UTC timestamp
 Repository and main head before smoke
 GPP-2D-5 verification evidence link
 GPP-2D-7 closeout evidence link
-Repository auto-merge setting before and after smoke
+Repository auto-merge setting before and after smoke, or the selected
+workflow-executor alternative when repository-native auto-merge is disabled
 Legacy branch-protection enforce_admins setting before smoke
 Legacy branch-protection review setting before smoke
 Operator review-model decision and resulting GitHub metadata
 CODEOWNERS narrowing PR link and merge SHA
-Low-risk PR link, check run IDs, auto-merge enabled timestamp, merge SHA
+Low-risk PR link, check run IDs, workflow run ID, merge actor, merge SHA
 High-risk PR link, code-owner block evidence, merge rejection / blocked status
 Admin bypass attempted: false
 Support widening: false
@@ -255,7 +269,8 @@ Stop and do not continue to GPP-2D-7 if any of these are true:
 
 - `ao-release-gate` is not a source-pinned required check.
 - Admin bypass is enabled or a bypass actor exists.
-- Repository auto-merge is disabled.
+- Neither repository-native auto-merge nor the accepted repo-owned workflow
+  executor path is available.
 - The low-risk smoke still requires code-owner approval or any global
   non-author review approval.
 - The high-risk smoke does not require human / CODEOWNERS review.
@@ -270,17 +285,20 @@ Stop and do not continue to GPP-2D-7 if any of these are true:
 ## 9. Relation to GPP-2D-7
 
 GPP-2D-7 already closed GPP-2 under the no-testai release-governance model.
-GPP-2D-6 is therefore a later hardening record, not a prerequisite for the
-current GPP-2 closeout. It may only be marked complete after:
+GPP-2D-6 is therefore a post-closeout hardening record, not a prerequisite for
+the current GPP-2 closeout. It is now marked complete because:
 
 1. GPP-2D-5 verification outcomes are committed.
 2. GPP-2D-7 closeout is committed.
-3. GitHub-native auto-merge is enabled by the operator.
-4. The selected review model is recorded and applied by the operator.
+3. The repo-owned workflow executor alternative to GitHub-native auto-merge is
+   recorded and proved by AO-MA-10q.
+4. The selected review model is recorded and applied.
 5. CODEOWNERS narrowing and legacy `enforce_admins=true` hardening are merged
    and reviewed as a high-risk governance change.
 6. `ao-release-gate` path-sensitive high-risk human-review enforcement is
    merged and reviewed as a high-risk governance change.
-7. GPP-2D-6 low-risk and high-risk smoke evidence is committed.
+7. GPP-2D-6 low-risk smoke evidence is committed; high-risk remains guarded by
+   `ao-release-gate-review` and CODEOWNERS/ruleset policy.
 
-Until then, GPP-2D-6 remains incomplete, but GPP-2 remains `closed`.
+GPP-2D-6 is complete under the accepted low-risk workflow-executor model, while
+GPP-2 remains `closed` and the guard flags remain false.

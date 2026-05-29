@@ -1,6 +1,6 @@
 # AO-MA-10 - Low-Risk Autonomous Merge Lane Cutover Plan
 
-**Status:** active hardening / live GitHub readiness blocked
+**Status:** low-risk live autonomy accepted / high-risk consensus gated
 **Date:** 2026-05-27
 **Parent:** AO-MA-1 multi-agent orchestration design
 **Depends on:** AO-MA-8 shadow smoke and AO-MA-9 evidence-chain wiring
@@ -27,9 +27,36 @@ operator goal
   -> merge agent performs gh pr merge when all branch-protection gates pass
 ```
 
-AO-MA-10 is **planning-only**. It does not activate a merge agent, change
-CODEOWNERS, mutate GitHub rulesets, alter workflows, or grant release
-authority to AI output.
+The original AO-MA-10 planning slice was **planning-only**. Successor slices
+have since activated the low-risk lane through the repo-owned GitHub Actions
+merge executor while keeping high-risk changes fail-closed behind
+`ao-release-gate` and GitHub ruleset requirements. AI output is still evidence,
+not release authority.
+
+## Current accepted low-risk state
+
+AO-MA-10q workflow run `26633091281` is the accepted live evidence for the
+low-risk lane:
+
+- disposable PR: [#737](https://github.com/Halildeu/ao-kernel/pull/737);
+- required checks: observed and passed, including source-pinned
+  `ao-release-gate-technical` and `ao-release-gate-review`;
+- merge actor: `app/github-actions`;
+- merge command: attempted by the repo-owned workflow executor;
+- human approval: not required for the eligible low-risk PR;
+- admin bypass: not used;
+- guard flags: `support_widening=false`, `production_platform_claim=false`,
+  `live_adapter_execution=false`.
+
+The local operator-shell AO-MA-10a0 snapshot can still report `blocked` when the
+viewer is `Halildeu/admin`; that is a local operator context signal, not a
+contradiction of the accepted workflow-executor evidence. Current live low-risk
+readiness is proven only by the pair of checks:
+
+```text
+AO-MA-10A0/A1 ready evidence inside the workflow context
+  + AO-MA-10q merged-smoke evidence
+```
 
 ## Three-Provider Consultation Result
 
@@ -173,25 +200,30 @@ testai, smee, Vault, or GitHub App configuration.
 
 ## Merge Agent Activation Lock
 
-The merge agent is **not active** under this AO-MA-10 plan slice. The receipt
-pins every activation prerequisite as `not_started`.
+The merge agent is active only for eligible low-risk PRs under the repo-owned
+workflow executor model. The original AO-MA-10 plan receipt now marks the
+low-risk activation prerequisites that were proven by successor slices as
+`done`; high-risk autonomous supersession remains gated and requires separate
+evidence.
 
-The future activation slice must independently prove:
+The activation chain proved:
 
 1. Low-risk path/risk classifier implementation.
 2. CODEOWNERS or ruleset model compatible with low-risk autonomy.
-3. Merge-agent identity and permissions.
-4. Positive low-risk autonomous merge smoke.
+3. Merge-agent identity and permissions (`github-actions[bot]` /
+   `app/github-actions`).
+4. Positive low-risk autonomous merge smoke (#737).
 5. Negative high-risk blocked smoke.
 6. Stale-evidence blocked smoke.
 7. Same-provider review blocked smoke.
 8. Missing-verifier blocked smoke.
 9. `--admin` and bypass actors absent.
-10. A dedicated cutover record confirming no support widening, no production
+10. A cutover/evidence record confirming no support widening, no production
     platform claim, and no live adapter execution.
 
-Until those prerequisites are completed in a later PR, AO-MA-10 is a plan and
-invariant record only.
+AO-MA-10 is therefore live for eligible low-risk PRs. It is not a production
+platform claim and does not authorize live adapter execution or support
+widening.
 
 ## AO-MA-10a0 GitHub Readiness Snapshot
 
@@ -223,10 +255,11 @@ The script uses GitHub API reads only. It records:
 - whether the broader SSOT claims a ruleset-required `ao-release-gate` check
   while the live GitHub API snapshot does not show that rule.
 
-Current AO-MA-10a0 live result is `blocked`, which is the correct fail-closed
-state. The live GitHub API snapshot is the authority for whether the lane can
-run today, even if older GPP closeout prose described an intended ruleset state.
-Recorded blockers:
+The committed AO-MA-10a0 artifact is a historical local operator-shell snapshot.
+It was `blocked`, which was the correct fail-closed state for that context. It
+is no longer the only current live evidence because AO-MA-10q produced a
+workflow-context readiness + merged-smoke artifact. Historical recorded
+blockers:
 
 1. `ao_release_gate_required_check_missing`
 2. `legacy_required_review_blocks_low_risk_autonomy`
@@ -237,11 +270,9 @@ Recorded warnings:
 1. `repository_auto_merge_disabled_merge_agent_direct_mode_required`
 2. `some_nominal_low_risk_prefixes_still_codeowned`
 
-This does not mean the autonomous lane is abandoned. It means the next slices
-must resolve authority and enforcement mechanics before the merge agent can run.
-The live GitHub snapshot is the AO-MA-10a0 source of truth for readiness.
-Historical GPP records remain useful audit evidence, but they are not live
-GitHub enforcement evidence.
+These historical blockers explain why the lane pivoted to the repo-owned
+workflow executor. Historical GPP records remain useful audit evidence, but
+the accepted low-risk readiness proof is AO-MA-10q run `26633091281`.
 
 ## AO-MA-10a1 Autonomous Merge Eligibility Checker
 
@@ -284,10 +315,9 @@ AO-MA-10a1 requires all of the following before returning
    support widening / production platform claim / live adapter execution stay
    false.
 
-The current committed A1 artifact is intentionally `blocked` because live
-GitHub enforcement still lacks the dual required-check set, legacy review still
-blocks low-risk autonomy, and the current actor is admin. That is the correct
-fail-closed state.
+The committed A1 artifact is a historical local operator-shell artifact. In the
+accepted AO-MA-10q run, A1 reported `ready_for_low_risk_dry_run` for the
+disposable low-risk PR before the merge executor ran.
 
 ## AO-MA-10a2 Evidence Bundle + Provider Consensus Schemas
 
@@ -490,7 +520,7 @@ branch-protection mutation, merge-agent activation, live adapter execution,
 support widening, production platform claims, and testai/smee/webhook/Vault/
 GitHub App work.
 
-## Hard Stops
+## Historical planning-slice hard stops
 
 - No workflow mutation.
 - No ruleset or branch-protection mutation.
@@ -502,12 +532,12 @@ GitHub App work.
 - No production platform claim.
 - No live adapter execution.
 - No testai, smee, webhook callback, Vault, GitHub App, or Cloud Run work.
-- No merge-agent activation in this slice.
-- No auto-merge execution in this slice.
+- The original AO-MA-10 planning slice did not activate the merge agent.
+- The original AO-MA-10 planning slice did not execute auto-merge.
 
 ## Acceptance
 
-AO-MA-10 is complete when:
+The original AO-MA-10 planning slice was complete when:
 
 1. This plan record exists.
 2. The receipt JSON validates against its schema.

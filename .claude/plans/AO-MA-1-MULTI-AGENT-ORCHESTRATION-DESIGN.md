@@ -74,8 +74,10 @@ Claude MCP consultation is advisory review only, not release authority.
 does not close GPP-2, change branch protection, execute live adapters, widen
 support, or claim production readiness.
 
-GPP-2 stays `blocked` until the GPP-2D evidence, cutover, and closeout chain is
-complete.
+Historical note: AO-MA-1 originally kept GPP-2 `blocked` until the GPP-2D
+evidence, cutover, and closeout chain completed. The current SSOT records GPP-2
+closed and low-risk autonomous merge evidence accepted, while the three guard
+flags remain conceptually closed.
 
 ## 3. Agent roles
 
@@ -179,7 +181,7 @@ AO-MA is an execution accelerator for GPP-2D, not a replacement for it.
 | **AO-MA-7** | Verifier lane: GPP guard checks, secret scan, diff scope, and artifact hash reporting. | code + tests |
 | **AO-MA-8** | End-to-end autonomous low-risk smoke in shadow mode, with no branch-protection change. | evidence |
 | **AO-MA-9** | Wire AO-MA artifacts into the GPP-2D required-check lane after enforce evidence and cutover. | gated closeout |
-| **AO-MA-10** | Low-risk autonomous merge lane cutover plan: schema-pinned low-risk criteria, bounded high-risk consensus, and merge-agent activation prerequisites. AO-MA-10 is planning-only; it does not activate auto-merge or mutate CODEOWNERS, workflows, rulesets, release-gate runtime, or local-gate runtime. | docs + schema + tests |
+| **AO-MA-10** | Low-risk autonomous merge lane cutover plan and successor evidence chain: schema-pinned low-risk criteria, bounded high-risk consensus, merge-agent activation prerequisites, and accepted AO-MA-10q low-risk no-human merge evidence. The original AO-MA-10 slice was planning-only; successor slices activated the low-risk workflow-executor lane without support widening, production claim, or live adapter execution. | docs + schema + tests + evidence |
 
 AO-MA-1 does not alter `gpp_status.v1.json`. Later AO-MA slices must continue
 to keep `support_widening_allowed=false`,
@@ -221,7 +223,7 @@ AO-MA-1 is complete when:
 2. A test pins the authority separation: AO-MA execution layer vs GPP-2D
    merge / release authority layer.
 3. The test pins the required agent roles and parallel worktree ownership rule.
-4. The test pins that GPP-2 stays `blocked` and the three guard flags remain
-   conceptually closed.
+4. The test pins the historical GPP-2 blocked boundary and that the three guard
+   flags remain conceptually closed after later closeout/autonomy evidence.
 5. No runtime code, workflow enforce mode, branch protection, or
    `gpp_status.v1.json` change lands in this slice.
