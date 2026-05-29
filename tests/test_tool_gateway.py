@@ -271,6 +271,44 @@ class TestToolCallPolicyAbsorbV39B1:
         with pytest.raises(ValueError, match="allowed_tools must be list"):
             ToolCallPolicy.from_dict({"allowed_tools": "not_a_list"})
 
+    # HYG-PUBLIC-FACADE-GAPS-02: blocked_tools had no validation tests even
+    # though allowed_tools did — asymmetric coverage. These pin the
+    # blocked_tools strict-type branches (tool_gateway.py).
+    def test_from_dict_blocked_tools_non_list_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="blocked_tools must be list"):
+            ToolCallPolicy.from_dict({"blocked_tools": "not_a_list"})
+
+    def test_from_dict_blocked_tools_non_string_entry_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="blocked_tools entries must be str"):
+            ToolCallPolicy.from_dict({"blocked_tools": ["ok", 123]})
+
+    # HYG-PUBLIC-FACADE-GAPS-02: cycle_detection non-object and non-int
+    # max_identical_calls branches were uncovered (only .enabled non-bool
+    # and max_identical_calls < 1 were tested).
+    def test_from_dict_cycle_detection_non_dict_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="cycle_detection must be object"):
+            ToolCallPolicy.from_dict({"cycle_detection": "on"})
+
+    def test_from_dict_cycle_max_identical_non_int_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="cycle_detection.max_identical_calls must be int"):
+            ToolCallPolicy.from_dict({"cycle_detection": {"max_identical_calls": "2"}})
+
+    def test_from_dict_cycle_max_identical_bool_rejected_as_non_int(self):
+        # Strict: bool is a subclass of int but must NOT be accepted, mirroring
+        # the parser's isinstance(x, bool) rejection.
+        import pytest
+
+        with pytest.raises(ValueError, match="cycle_detection.max_identical_calls must be int"):
+            ToolCallPolicy.from_dict({"cycle_detection": {"max_identical_calls": True}})
+
     def test_from_dict_minimal_normalization_preserves_duplicates(self):
         # B1 normalization is intentionally minimal (list→tuple only).
         # No dedupe/sort/lowercase — that's B2's semantic layer.

@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import json
 
+import pytest
 
 
 class TestBuildRequest:
     def test_openai_request_has_required_fields(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="openai", model="gpt-4",
+            provider_id="openai",
+            model="gpt-4",
             messages=[{"role": "user", "content": "hello"}],
             base_url="https://api.openai.com/v1/chat/completions",
             api_key="sk-test",
@@ -24,8 +27,10 @@ class TestBuildRequest:
 
     def test_anthropic_request_has_required_fields(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="claude", model="claude-3-opus",
+            provider_id="claude",
+            model="claude-3-opus",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://api.anthropic.com/v1/messages",
             api_key="sk-ant-test",
@@ -38,18 +43,23 @@ class TestBuildRequest:
 
     def test_stream_flag_added_to_body(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="openai", model="gpt-4",
+            provider_id="openai",
+            model="gpt-4",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://api.openai.com/v1/chat/completions",
-            api_key="sk-test", stream=True,
+            api_key="sk-test",
+            stream=True,
         )
         assert req["body_json"]["stream"] is True
 
     def test_no_stream_flag_by_default(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="openai", model="gpt-4",
+            provider_id="openai",
+            model="gpt-4",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://api.openai.com/v1/chat/completions",
             api_key="sk-test",
@@ -58,11 +68,14 @@ class TestBuildRequest:
 
     def test_stream_with_tools_allowed(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="openai", model="gpt-4",
+            provider_id="openai",
+            model="gpt-4",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://api.openai.com/v1/chat/completions",
-            api_key="sk-test", stream=True,
+            api_key="sk-test",
+            stream=True,
             tools=[{"type": "function", "function": {"name": "test"}}],
         )
         assert req["body_json"]["stream"] is True
@@ -70,34 +83,121 @@ class TestBuildRequest:
 
     def test_google_stream_changes_endpoint(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="google", model="gemini-pro",
+            provider_id="google",
+            model="gemini-pro",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent",
-            api_key="key-test", stream=True,
+            api_key="key-test",
+            stream=True,
         )
         assert "streamGenerateContent" in req["url"]
         assert "alt=sse" in req["url"]
 
     def test_temperature_and_max_tokens(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
-            provider_id="openai", model="gpt-4",
+            provider_id="openai",
+            model="gpt-4",
             messages=[{"role": "user", "content": "hi"}],
             base_url="https://api.openai.com/v1/chat/completions",
-            api_key="sk-test", temperature=0.7, max_tokens=100,
+            api_key="sk-test",
+            temperature=0.7,
+            max_tokens=100,
         )
         assert req["body_json"]["temperature"] == 0.7
         assert req["body_json"]["max_tokens"] == 100
 
 
+class TestBuildRequestProviderGuardrails:
+    """HYG-PUBLIC-FACADE-GAPS-03: the provider-guardrails fail-closed branch
+    in build_request (llm.py) had no coverage. When a workspace ships an
+    explicit policy_llm_providers_guardrails.v1.json override that denies the
+    requested provider/model, build_request must raise ValueError; when the
+    policy allows it, build_request proceeds normally.
+
+    The tmp_workspace fixture creates ``.ao/policies/`` and chdirs into the
+    project, so ``workspace_root()`` resolves to that ``.ao`` directory and
+    build_request reads the override policy from ``.ao/policies/``. No live
+    provider call or network access occurs — build_request only constructs the
+    request dict.
+    """
+
+    def test_guardrails_deny_raises_value_error(self, tmp_workspace):
+        from ao_kernel.llm import build_request
+
+        # Disabled provider → PROVIDER_DISABLED violation → denied.
+        (tmp_workspace / "policies" / "policy_llm_providers_guardrails.v1.json").write_text(
+            json.dumps({"providers": {"openai": {"enabled": False}}})
+        )
+        with pytest.raises(ValueError, match="Provider guardrails denied"):
+            build_request(
+                provider_id="openai",
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "hi"}],
+                base_url="https://api.openai.com/v1/chat/completions",
+                api_key="sk-test",
+            )
+
+    def test_guardrails_model_not_allowed_raises(self, tmp_workspace):
+        from ao_kernel.llm import build_request
+
+        # Enabled provider but model not in allow_models → MODEL_NOT_ALLOWED.
+        (tmp_workspace / "policies" / "policy_llm_providers_guardrails.v1.json").write_text(
+            json.dumps({"providers": {"openai": {"enabled": True, "allow_models": ["gpt-4o-mini"]}}})
+        )
+        with pytest.raises(ValueError, match="Provider guardrails denied"):
+            build_request(
+                provider_id="openai",
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "hi"}],
+                base_url="https://api.openai.com/v1/chat/completions",
+                api_key="sk-test",
+            )
+
+    def test_guardrails_allow_proceeds(self, tmp_workspace):
+        from ao_kernel.llm import build_request
+
+        # Enabled provider + model in allow_models → no violation → builds.
+        (tmp_workspace / "policies" / "policy_llm_providers_guardrails.v1.json").write_text(
+            json.dumps({"providers": {"openai": {"enabled": True, "allow_models": ["gpt-4o"]}}})
+        )
+        req = build_request(
+            provider_id="openai",
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test",
+        )
+        assert req["body_json"]["model"] == "gpt-4o"
+
+    def test_no_guardrails_policy_proceeds(self, tmp_workspace):
+        from ao_kernel.llm import build_request
+
+        # No guardrails policy file present → guardrails check is skipped,
+        # build_request proceeds (the `guardrails_path.exists()` False branch).
+        req = build_request(
+            provider_id="openai",
+            model="gpt-4o",
+            messages=[{"role": "user", "content": "hi"}],
+            base_url="https://api.openai.com/v1/chat/completions",
+            api_key="sk-test",
+        )
+        assert req["body_json"]["model"] == "gpt-4o"
+
+
 class TestNormalizeResponse:
     def test_openai_text_extraction(self):
         from ao_kernel.llm import normalize_response
-        resp = json.dumps({
-            "choices": [{"message": {"content": "Hello world"}}],
-            "usage": {"prompt_tokens": 5, "completion_tokens": 2},
-        }).encode()
+
+        resp = json.dumps(
+            {
+                "choices": [{"message": {"content": "Hello world"}}],
+                "usage": {"prompt_tokens": 5, "completion_tokens": 2},
+            }
+        ).encode()
         result = normalize_response(resp, provider_id="openai")
         assert result["text"] == "Hello world"
         assert result["usage"]["input_tokens"] == 5
@@ -106,21 +206,26 @@ class TestNormalizeResponse:
 
     def test_anthropic_text_extraction(self):
         from ao_kernel.llm import normalize_response
-        resp = json.dumps({
-            "content": [{"type": "text", "text": "Merhaba"}],
-            "usage": {"input_tokens": 10, "output_tokens": 3},
-        }).encode()
+
+        resp = json.dumps(
+            {
+                "content": [{"type": "text", "text": "Merhaba"}],
+                "usage": {"input_tokens": 10, "output_tokens": 3},
+            }
+        ).encode()
         result = normalize_response(resp, provider_id="claude")
         assert result["text"] == "Merhaba"
         assert result["usage"]["input_tokens"] == 10
 
     def test_empty_response_handling(self):
         from ao_kernel.llm import normalize_response
+
         result = normalize_response(b"", provider_id="openai")
         assert isinstance(result["text"], str)
 
     def test_malformed_json_response(self):
         from ao_kernel.llm import normalize_response
+
         result = normalize_response(b"not json at all", provider_id="openai")
         assert isinstance(result["text"], str)
 
@@ -128,16 +233,19 @@ class TestNormalizeResponse:
 class TestExtractText:
     def test_extracts_from_anthropic_format(self):
         from ao_kernel.llm import extract_text
+
         resp = json.dumps({"content": [{"type": "text", "text": "Test output"}]}).encode()
         assert extract_text(resp) == "Test output"
 
     def test_extracts_from_openai_format(self):
         from ao_kernel.llm import extract_text
+
         resp = json.dumps({"choices": [{"message": {"content": "OpenAI says"}}]}).encode()
         assert extract_text(resp) == "OpenAI says"
 
     def test_handles_empty_bytes(self):
         from ao_kernel.llm import extract_text
+
         result = extract_text(b"")
         assert isinstance(result, str)
 
@@ -145,6 +253,7 @@ class TestExtractText:
 class TestExtractUsage:
     def test_openai_usage(self):
         from ao_kernel.llm import extract_usage
+
         resp = json.dumps({"usage": {"prompt_tokens": 10, "completion_tokens": 20}}).encode()
         usage = extract_usage(resp)
         assert usage is not None
@@ -153,6 +262,7 @@ class TestExtractUsage:
 
     def test_no_usage_returns_none(self):
         from ao_kernel.llm import extract_usage
+
         usage = extract_usage(b'{"choices": []}')
         assert usage is None
 
@@ -160,6 +270,7 @@ class TestExtractUsage:
 class TestTokenCounting:
     def test_heuristic_returns_positive_int(self):
         from ao_kernel.llm import count_tokens_heuristic
+
         messages = [{"role": "user", "content": "Hello world, this is a test sentence."}]
         result = count_tokens_heuristic(messages)
         assert isinstance(result, int)
@@ -167,6 +278,7 @@ class TestTokenCounting:
 
     def test_heuristic_longer_text_more_tokens(self):
         from ao_kernel.llm import count_tokens_heuristic
+
         short = [{"role": "user", "content": "Hi"}]
         long = [{"role": "user", "content": "This is a much longer message with many words."}]
         assert count_tokens_heuristic(long) > count_tokens_heuristic(short)
@@ -175,12 +287,14 @@ class TestTokenCounting:
 class TestCircuitBreaker:
     def test_new_breaker_allows_requests(self):
         from ao_kernel.llm import get_circuit_breaker
+
         cb = get_circuit_breaker("facade_test_provider")
         allowed, reason = cb.allow_request()
         assert allowed is True
 
     def test_breaker_has_status(self):
         from ao_kernel.llm import get_circuit_breaker
+
         cb = get_circuit_breaker("facade_test_status")
         status = cb.status_dict()
         assert isinstance(status, dict)
@@ -190,6 +304,7 @@ class TestCircuitBreaker:
 class TestRateLimiter:
     def test_limiter_exists_and_acquires(self):
         from ao_kernel.llm import get_rate_limiter
+
         rl = get_rate_limiter("facade_test_rl")
         assert rl is not None
         assert hasattr(rl, "acquire")
@@ -198,6 +313,7 @@ class TestRateLimiter:
 class TestStreamTypes:
     def test_stream_event_dataclass(self):
         from ao_kernel.llm import StreamEvent
+
         evt = StreamEvent(event_type="text_delta", text="hello", index=0)
         assert evt.event_type == "text_delta"
         assert evt.text == "hello"
@@ -206,6 +322,7 @@ class TestStreamTypes:
 
     def test_stream_result_dataclass(self):
         from ao_kernel.llm import StreamResult
+
         result = StreamResult(status="OK", complete=True, text="done", finish_reason="stop")
         assert result.status == "OK"
         assert result.complete is True
@@ -213,6 +330,7 @@ class TestStreamTypes:
 
     def test_all_exports_count(self):
         from ao_kernel.llm import __all__
+
         assert len(__all__) == 16  # 14 original + build_request_with_context + process_response_with_context
 
 
@@ -245,6 +363,7 @@ class TestBuildRequestWithContext:
 
     def test_without_session_falls_back_to_plain_build(self):
         from ao_kernel.llm import build_request_with_context, build_request
+
         result = build_request_with_context(
             messages=[{"role": "user", "content": "Hello"}],
             provider_id="openai",
