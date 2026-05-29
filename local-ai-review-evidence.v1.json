@@ -1,25 +1,33 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10T",
+  "work_package": "RI-7.8b-bc10-6b",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
+    "agent": "codex-cli-reviewer",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10t-secret-bootstrap",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6b-protected-execution-window",
     "changed_files": [
-      ".claude/plans/AO-MA-10T-DEDICATED-ACTOR-SECRET-BOOTSTRAP.md",
-      ".claude/plans/AO-MA-10T-DEDICATED-ACTOR-SECRET-BOOTSTRAP.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+      "ao_kernel/defaults/schemas/ao-kernel-provider-pricing-source.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6b-protected-execution-window-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10t_configure_dedicated_actor_secret.py",
-      "tests/test_ao_ma10t_configure_dedicated_actor_secret.py"
+      "scripts/bc10_run_scenarios.py",
+      "scripts/ri78b_bc10_activation_window.py",
+      "tests/test_bc10_run_scenarios.py",
+      "tests/test_ri78b_bc10_6b_protected_execution_window_invariant.py",
+      "tests/test_ri78b_bc10_activation_window.py"
     ]
   },
   "checks_considered": [
@@ -28,7 +36,7 @@
       "status": "pass"
     },
     {
-      "name": "ruff",
+      "name": "secret_scan",
       "status": "pass"
     },
     {
@@ -36,25 +44,26 @@
       "status": "pass"
     },
     {
-      "name": "secret_scan",
+      "name": "sha256_digest_match",
       "status": "pass"
     },
     {
       "name": "gpp_guard_flags_const_false",
       "status": "pass"
-    },
-    {
-      "name": "claude_cross_provider_review",
-      "status": "pass"
     }
   ],
   "findings": [
-    "AO-MA-10t narrows the remaining dedicated actor token handoff to a no-secret bootstrap script that reads one named environment variable and writes the GitHub repository secret via gh secret set stdin",
-    "The token value is never placed in argv, command logs, receipt JSON, or the result artifact; tests assert the fake token is absent from serialized output and absent from every command list",
-    "The script is fail-closed for missing source env, missing execute flag, and wrong confirmation, with no GitHub mutation before all pre-mutation gates pass",
-    "Successful execution records only metadata: secret name plus created_at/updated_at presence booleans; no token hash or token-derived value is recorded",
-    "The receipt and script pin release_authority=ao-release-gate+github-ruleset, ai_output_release_authority=false, support_widening=false, production_platform_claim=false, and live_adapter_execution=false",
-    "Claude cross-provider review initially requested import-path hardening; importlib.util file-based loading was absorbed and the re-review returned AGREE"
+    "6b evidence validates against Draft 2020-12 strict schema with zero errors. Per-call marker schema + pricing source schema both Draft 2020-12 valid. Sample success_billable + budget_cap_precheck_denied markers validate against allOf coherence rules (scenario↔provider_call_performed↔cost mappings).",
+    "Workflow file content_sha256 matches the pinned digest in gpp_status.operator_bound_supersessions[RI-7.8b-bc10-6b].future_workflow_contract.workflow_content_sha256 and 6b evidence.workflow_binding.workflow_content_sha256. Pricing source SHA-256 matches pricing_source.source_digest binding.",
+    "Authority mode pinned to manual_protected_environment with autonomous_trigger_allowed=false. Workflow only has workflow_dispatch trigger (NO push trigger). Per CC-2 cross-AI review iter-4 AGREE, bc10 requires manual operator confirmation via GitHub Environment required reviewers because bc10 involves REAL billable provider calls.",
+    "Sequential single-job execution (NOT matrix). Wrapper script bc10_run_scenarios.py runs 4 scenarios in fixed order with in-process Decimal ledger. Eliminates inter-job race that matrix parallelism would introduce.",
+    "Secret boundary: OPENAI_API_KEY scoped to runner step only. secrets.OPENAI_API_KEY appears exactly once in workflow (in env block of provider call step). Pre-secret guards (validate_dispatch_context, checkout, setup_python, validate_activation_window) run FIRST. Wrapper budget_cap_precheck_denied branch fail-closes BEFORE instantiating AoKernelClient and BEFORE reading OPENAI_API_KEY (per-call marker schema enforces with const true on budget_cap_precheck_denied_completes_without_provider_client_init + budget_cap_precheck_denied_completes_without_api_key_read).",
+    "AoKernelClient.llm_call signature matches the actual repo API (ao_kernel/client.py:466): provider_id, model, api_key, max_tokens, stream, messages. Uses provider_id='openai' + model='gpt-4o-mini' split; marker shows canonical 'openai/gpt-4o-mini' full id in requested_model + resolved_model.",
+    "Pricing source operator-pinned at SHA-256 b0c0baa6..., $0.00015/1k input + $0.00060/1k output tokens. Runtime activation guard re-computes SHA-256 and fail-closes on mismatch. max_projected_call_cost_usd=$0.10 worst-case, max_billable_calls_count=4 → 4*0.10=0.40 USD ≤ max_usd=$5.00 (defense in depth invariant).",
+    "Protected environment binding: env_name=ao-kernel-bc10-real-adapter-usage-cost, prevent_self_review=true, distinct_reviewer_required=true, admin_bypass=false, environment_setup_status=operator_pre_6c_manual_step_required. Runtime activation guard observes via GitHub Environment API and fail-closes ALL 4 paths (including budget_cap_precheck_denied) on observation failure.",
+    "Top-level guard flags (support_widening_allowed, production_platform_claim_allowed, live_adapter_execution_allowed) remain const FALSE PRESERVED in both gpp_status.v1.json and 6b evidence. Scoped live_adapter_execution_allowed=true ONLY in operator_bound_supersessions[RI-7.8b-bc10-6b].guard_flag_policy_resolution, evaluated at runtime by ri78b_bc10_activation_window.py.",
+    "10-item forbidden_change_audit + machine-enforced via git diff on introducer PR. submanifest, predecessor evidence files, GPP runtime, policies, docs untouched. mutations_performed object reports 5 true (workflow_created, activation_script_created, runner_script_created, pricing_source_created, supersession_entry_appended) + 4 false (submanifest_mutated, provider_call_performed, secret_referenced_in_repo, guard_flag_flipped).",
+    "Cross-AI peer review: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 plan-time iter chain: iter-1 REVISE (3-PR split needed) → iter-2 REVISE (6 absorb items) → iter-3 REVISE (5 more items) → iter-4 AGREE (v3 plan absorbing all 14 items). Per HARD RULE Plan Consensus Autonomy, AGREE leads to direct implementation."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

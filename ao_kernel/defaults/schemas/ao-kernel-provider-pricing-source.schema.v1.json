@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-kernel-provider-pricing-source:v1",
+  "title": "ao-kernel provider pricing source (operator-pinned)",
+  "description": "Operator-pinned pricing source for a single (provider, model) tuple. Used by RI-7.8b-bc10 cost projection and actual cost computation. Schema enforces decimal-string costs (NOT float) and ISO 8601 effective_from. Runtime activation guards verify the SHA-256 digest of this file matches the pinned digest in gpp_status.operator_bound_supersessions[].pricing_source.source_digest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "provider_id",
+    "model_id",
+    "canonical_model_id",
+    "currency",
+    "precision_decimal_places",
+    "rounding_mode",
+    "input_cost_per_1k_tokens_usd",
+    "output_cost_per_1k_tokens_usd",
+    "effective_from",
+    "source_authority",
+    "source_reference"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ao-kernel-provider-pricing-source.v1"},
+    "artifact_kind": {"type": "string", "const": "ao_kernel_provider_pricing_source"},
+    "provider_id": {"type": "string", "minLength": 1, "pattern": "^[a-z][a-z0-9_-]*$"},
+    "model_id": {"type": "string", "minLength": 1, "pattern": "^[a-z][a-z0-9._/-]*$"},
+    "canonical_model_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*/[a-z][a-z0-9._-]*$", "description": "<provider_id>/<model_id> canonical form."},
+    "currency": {"type": "string", "const": "USD"},
+    "precision_decimal_places": {"type": "integer", "minimum": 6, "maximum": 12},
+    "rounding_mode": {"type": "string", "enum": ["ROUND_HALF_UP", "ROUND_HALF_EVEN"]},
+    "input_cost_per_1k_tokens_usd": {
+      "type": "string",
+      "pattern": "^0\\.[0-9]{6,12}$|^[1-9][0-9]*\\.[0-9]{6,12}$",
+      "description": "Decimal string (NOT float) of input cost per 1000 tokens in USD."
+    },
+    "output_cost_per_1k_tokens_usd": {
+      "type": "string",
+      "pattern": "^0\\.[0-9]{6,12}$|^[1-9][0-9]*\\.[0-9]{6,12}$",
+      "description": "Decimal string (NOT float) of output cost per 1000 tokens in USD."
+    },
+    "effective_from": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+    },
+    "source_authority": {"type": "string", "enum": ["operator_pinned", "provider_official"]},
+    "source_reference": {"type": "string", "minLength": 1},
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
