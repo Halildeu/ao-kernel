@@ -19,7 +19,9 @@ DOC = ROOT / ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md"
 RECEIPT = ROOT / ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json"
 SCHEMA_NAME = "ao-ma-10q-dedicated-actor-runner-result.schema.v1.json"
 TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+GOVERNANCE_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 TOKEN_VALUE = "VALUE_NOT_IN_ARTIFACT"
+GOVERNANCE_TOKEN_VALUE = "GOVERNANCE_VALUE_NOT_IN_ARTIFACT"
 
 
 def _schema() -> dict[str, Any]:
@@ -108,6 +110,7 @@ def test_ao_ma10q_missing_token_env_blocks_before_smoke_invocation(tmp_path: Pat
             base_ref="main",
             expected_actor="gladyatore-lab",
             token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
             output=output,
             execute=False,
@@ -136,6 +139,7 @@ def test_ao_ma10q_rejects_invalid_token_env_name(tmp_path: Path) -> None:
             base_ref="main",
             expected_actor="gladyatore-lab",
             token_env="bad-token-env",
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
             output=tmp_path / "ao-ma10q.json",
             execute=False,
@@ -150,6 +154,7 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    monkeypatch.delenv(GOVERNANCE_TOKEN_ENV, raising=False)
     mod = _load_script_module()
     output = tmp_path / "ao-ma10q.json"
     runner = FakeSmokeRunner(_smoke_payload(result="merged", mutated=True))
@@ -161,6 +166,7 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
             base_ref="main",
             expected_actor="gladyatore-lab",
             token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
             output=output,
             execute=True,
@@ -180,6 +186,7 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
     assert TOKEN_VALUE not in runner.wrapper_contents
     github_token_var = "GH_" + "TOKEN"
     assert f'{github_token_var}="${{{TOKEN_ENV}}}" exec gh "$@"' in runner.wrapper_contents
+    assert "--governance-gh-bin" not in runner.commands[0]
     assert "--execute" in runner.commands[0]
     assert runner.commands[0][runner.commands[0].index("--confirmation") + 1] == "AO-MA-10L-EXECUTE"
 
@@ -192,6 +199,43 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
     assert result["token_value_recorded"] is False
     assert result["decision"]["result"] == "merged"
     assert result["mutations_performed"] is True
+
+
+def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    monkeypatch.setenv(GOVERNANCE_TOKEN_ENV, GOVERNANCE_TOKEN_VALUE)
+    mod = _load_script_module()
+    output = tmp_path / "ao-ma10q.json"
+    runner = FakeSmokeRunner(_smoke_payload(result="merged", mutated=True))
+
+    result = cast(
+        dict[str, Any],
+        mod.run(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
+            base_gh_bin="gh",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=0,
+            poll_seconds=1,
+            runner=runner,
+        ),
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert "--governance-gh-bin" in runner.commands[0]
+    assert runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1].startswith("/tmp/")
+    artifact_text = output.read_text(encoding="utf-8")
+    assert TOKEN_VALUE not in artifact_text
+    assert GOVERNANCE_TOKEN_VALUE not in artifact_text
+    assert result["smoke_command"].count("<temporary-gh-wrapper>") == 2
+    assert result["decision"]["result"] == "merged"
 
 
 def test_ao_ma10q_propagates_smoke_blockers_fail_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -210,6 +254,7 @@ def test_ao_ma10q_propagates_smoke_blockers_fail_closed(tmp_path: Path, monkeypa
             base_ref="main",
             expected_actor="gladyatore-lab",
             token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
             output=output,
             execute=True,

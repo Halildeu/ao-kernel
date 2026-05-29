@@ -1,25 +1,31 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.8b-bc10-6c-schemas",
+  "work_package": "AO-MA-10U",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex-cli-reviewer",
-    "provider": "openai",
+    "agent": "claude-code-reviewer",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6c-schemas",
+    "head_ref": "refs/heads/codex/ao-ma10u-governance-token-split",
     "changed_files": [
-      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri78b_bc10_6c_schemas_invariant.py"
+      "scripts/ao_ma10_github_readiness_snapshot.py",
+      "scripts/ao_ma10l_autonomous_smoke.py",
+      "scripts/ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10l_autonomous_smoke.py",
+      "tests/test_ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
     ]
   },
   "checks_considered": [
@@ -36,25 +42,23 @@
       "status": "pass"
     },
     {
-      "name": "sha256_digest_match",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "gpp_guard_flags_const_false",
+      "name": "git_diff_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "3 schemas (per-call evidence + aggregate + closure) are Draft 2020-12 valid; additionalProperties=false enforced on all object types via recursive check.",
-    "Per-call evidence schema re-pins the runtime marker contract fields (marker_schema_version const, marker_sha256, marker_source_url, workflow_run_id, run_attempt const '1', workflow_content_sha256, pricing_source_digest) and adds 5 allOf coherence rules including success_billable non-zero usage requirement and budget_cap_precheck_denied zero-cost requirement.",
-    "Aggregate evidence schema enforces line_items exactly 4 with scenario uniqueItems + contains constraints for each of the 4 required scenarios. billable_calls_count const 3, denied_calls_count const 1, total_markers_count const 4. usage_source mixed-semantics enum provider_api_response_plus_no_call_no_usage per Codex iter-9 implementation guard note 2.",
-    "Closure evidence schema includes protected_environment_observation_result block requiring custom_branch_policies=true with exactly 1 main-only branch policy (protected_branches=true fallback REJECTED), can_admins_bypass=false, prevent_self_review=true, observation_result=passed. environment_approval_identity block requires distinct reviewer from dispatch actor with non-empty environment_reviewer_login.",
-    "Closure schema cross_artifact_binding block requires 6 consistency invariants: all_per_call_refs_present_in_aggregate, aggregate_billing_digest_verified, workflow_run_id_consistent, run_attempt_consistent, pricing_source_digest_consistent, workflow_content_sha256_consistent (all const true). per_call_evidence_refs array exactly 4 with scenario contains constraints. aggregate_evidence_ref required with path + sha256.",
-    "bc10_flip_attestation block enforces before=false, after=true, flip_owner_slice=RI-7.8b-bc10-6c, and top_level_flags_unchanged block with 3 const false for support_widening_allowed + production_platform_claim_allowed + live_adapter_execution_allowed. Top-level guard flags PRESERVED const false in this schema-only PR + future closure PR.",
-    "status_transition_history array exactly 3 entries with contains constraints for awaiting_operator_dispatch to active and active to closed transitions. Operator-bound forcing function pattern mirrors PR #691 BC-1 closure design.",
-    "Forbidden scope tests verify: workflow, activation script, runner script, gpp_status, submanifest all UNCHANGED. 6 forbidden run evidence/aggregate/closure file paths DO NOT EXIST. Top-level guard flags const false PRESERVED in gpp_status. Submanifest bc10 key still false (flip belongs to bc10-6c-closure).",
-    "40 tests pass (34 active + 6 introducer-PR gated). Authority mode: schema_definition_only_no_execution. No gpp_status mutation, no submanifest flip, no workflow change, no script change, no provider call, no secret reference.",
-    "Cross-AI peer review: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e70be-f4e3-77c2-bd3e-27a2e55b6eb6 iter-8 REVISE (7 items: protected env observation, env approval identity, marker contract re-pin, aggregate arithmetic, cross-artifact binding, forbidden scope tests, 6c prefix naming) + iter-9 AGREE (v2 plan absorbing all 7 items). Per HARD RULE Plan Consensus Autonomy, AGREE leads to direct implementation."
+    "AO_GOVERNANCE_GH_TOKEN is split from GLADYATORE_LAB_GH_TOKEN. Governance token is used for readiness snapshot reads; actor token remains responsible for PR create, check polling, and merge operations.",
+    "No --admin flag is introduced in the changed workflow or runner path. The dedicated actor remains non-admin release authority evidence, and GitHub ruleset plus ao-release-gate remain the enforcement surface.",
+    "Receipt and runner outputs preserve support_widening=false, production_platform_claim=false, live_adapter_execution=false, ai_output_release_authority=false, and token_value_recorded=false.",
+    "Workflow secrets are bound as environment variables only. The changed workflow and tests guard against echoing GLADYATORE_LAB_GH_TOKEN or AO_GOVERNANCE_GH_TOKEN values.",
+    "Governance wrapper creation is optional and gated on AO_GOVERNANCE_GH_TOKEN being present, so the existing actor-only path remains backward compatible while split-token readiness reads are available when the secret is configured.",
+    "Smoke command sanitization handles both temporary GitHub CLI wrappers and never records wrapper paths or token values in the emitted artifact.",
+    "collect_live_snapshot keeps branch-protection and ruleset reads on the governance gh wrapper while resolving viewer login and actor repository permission through the actor wrapper, including viewerPermission fallback when collaborator permission API is inaccessible to the fine-grained actor token.",
+    "Relevant tests passed locally: test_ao_ma10_github_readiness_snapshot.py, test_ao_ma10l_autonomous_smoke.py, test_ao_ma10q_dedicated_actor_runner.py, and test_ao_ma10s_dedicated_actor_smoke_workflow.py."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

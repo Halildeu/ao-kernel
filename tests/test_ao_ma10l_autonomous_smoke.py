@@ -196,6 +196,7 @@ def _run_with_fake(
             base_ref="main",
             expected_actor="gladyatore-lab",
             gh_bin=gh_bin,
+            governance_gh_bin=None,
             smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
             output=output,
             execute=execute,
@@ -303,6 +304,44 @@ def test_ao_ma10l_propagates_custom_gh_bin_to_all_live_github_calls(tmp_path: Pa
     ]
     assert merge_agent_commands
     assert merge_agent_commands[0][merge_agent_commands[0].index("--gh-bin") + 1] == "gh-dedicated"
+
+
+def test_ao_ma10l_uses_governance_gh_bin_only_for_readiness_snapshots(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=True, gh_bin="gh-dedicated")
+    mod = _load_script_module()
+    output = tmp_path / "result.json"
+    result = cast(
+        dict[str, Any],
+        mod.run_smoke(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            gh_bin="gh-dedicated",
+            governance_gh_bin="gh-governance",
+            smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=0,
+            poll_seconds=1,
+            runner=fake,
+            now=datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC),
+        ),
+    )
+    assert result["decision"]["result"] == "merged"
+
+    readiness_commands = [
+        command
+        for command in fake.commands
+        if len(command) > 1 and command[1].endswith("ao_ma10_github_readiness_snapshot.py")
+    ]
+    assert len(readiness_commands) == 2
+    assert all(command[command.index("--gh-bin") + 1] == "gh-governance" for command in readiness_commands)
+    assert all(command[command.index("--actor-gh-bin") + 1] == "gh-dedicated" for command in readiness_commands)
+
+    live_gh_commands = [command for command in fake.commands if len(command) > 1 and command[1] in {"api", "pr"}]
+    assert live_gh_commands
+    assert all(command[0] == "gh-dedicated" for command in live_gh_commands)
 
 
 def test_ao_ma10l_required_check_failure_blocks_before_merge_agent(tmp_path: Path) -> None:

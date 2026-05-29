@@ -10,10 +10,12 @@
 
 AO-MA-10s removes the remaining local-shell dependency from AO-MA-10q. The
 dedicated non-admin merge actor token is read from the GitHub repository secret
-`GLADYATORE_LAB_GH_TOKEN`, not from a local operator shell. A Codex or Claude
-operator may dispatch the workflow, but the merge authority remains the
-repo-owned `ao-release-gate` checks plus GitHub ruleset enforcement, and the
-merge actor must still be `gladyatore-lab`.
+`GLADYATORE_LAB_GH_TOKEN`, not from a local operator shell. The optional
+governance-read token is read from `AO_GOVERNANCE_GH_TOKEN` only for read-only
+branch-protection/ruleset readiness APIs that the non-admin merge actor cannot
+read. A Codex or Claude operator may dispatch the workflow, but the merge
+authority remains the repo-owned `ao-release-gate` checks plus GitHub ruleset
+enforcement, and the merge actor must still be `gladyatore-lab`.
 
 This does not make the lane complete by itself. It makes the final smoke
 repeatable from GitHub Actions:
@@ -30,6 +32,8 @@ workflow_dispatch -> AO-MA-10r credential doctor -> AO-MA-10q runner
 - no `pull_request` or `pull_request_target` secret path is introduced;
 - workflow `GITHUB_TOKEN` has only `contents: read`;
 - the dedicated actor token is only bound as an environment variable;
+- the governance token is only bound as an environment variable and is not used
+  for PR creation or merge execution;
 - token values are never echoed, printed, committed, or uploaded;
 - execute mode still requires `AO-MA-10L-EXECUTE`;
 - all evidence is uploaded as an Actions artifact;
