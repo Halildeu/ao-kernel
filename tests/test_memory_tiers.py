@@ -32,20 +32,14 @@ class TestClassifyTier:
 
 class TestEnforceTierBudgets:
     def test_within_budget_unchanged(self):
-        decisions = [
-            {"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"}
-            for i in range(5)
-        ]
+        decisions = [{"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"} for i in range(5)]
         tiers = enforce_tier_budgets(decisions, now=NOW)
         assert len(tiers["hot"]) == 5
         assert len(tiers["warm"]) == 0
         assert len(tiers["cold"]) == 0
 
     def test_hot_overflow_demotes_to_warm(self):
-        decisions = [
-            {"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"}
-            for i in range(35)
-        ]
+        decisions = [{"key": f"k{i}", "confidence": 0.9, "created_at": "2026-04-13T12:00:00Z"} for i in range(35)]
         tiers = enforce_tier_budgets(
             decisions,
             tier_config={"hot": {"max_rules": 30}, "warm": {"max_rules": 50}},
@@ -55,10 +49,7 @@ class TestEnforceTierBudgets:
         assert len(tiers["warm"]) == 5  # overflow demoted
 
     def test_warm_overflow_demotes_to_cold(self):
-        decisions = [
-            {"key": f"k{i}", "confidence": 0.5, "created_at": "2026-03-01T12:00:00Z"}
-            for i in range(60)
-        ]
+        decisions = [{"key": f"k{i}", "confidence": 0.5, "created_at": "2026-03-01T12:00:00Z"} for i in range(60)]
         tiers = enforce_tier_budgets(
             decisions,
             tier_config={"hot": {"max_rules": 30}, "warm": {"max_rules": 50}},
@@ -81,3 +72,46 @@ class TestEnforceTierBudgets:
         assert len(tiers["hot"]) == 1
         assert len(tiers["warm"]) == 1
         assert len(tiers["cold"]) == 1
+
+
+class TestMemoryTiersEdges:
+    """HYG-PUBLIC-CONTEXT-GAPS-03: memory_tiers config/coercion/age edges the
+    audit (PR #753 §3) flagged as actionable_offline. Pure-Python, no I/O
+    beyond the bundled tier policy.
+    """
+
+    def test_classify_tier_coerces_string_confidence(self):
+        # confidence given as a numeric string is coerced to float
+        # (memory_tiers L38-41), so a high string confidence still classifies
+        # like its float equivalent.
+        from ao_kernel.context.memory_tiers import classify_tier
+
+        tier = classify_tier({"confidence": "0.9", "created_at": "2026-04-13T12:00:00Z"}, now=NOW)
+        assert tier == "hot"
+
+    def test_classify_tier_non_numeric_confidence_falls_back_to_half(self):
+        # A non-numeric confidence string falls back to 0.5 (L42-43) rather
+        # than raising. Discriminating assertion (per Codex 019e758d): with an
+        # OLD timestamp (age > 30d), a 0.5 fallback (>= 0.4) classifies WARM,
+        # whereas a 0.0 fallback would be COLD. Asserting "warm" proves the
+        # fallback is 0.5, not merely "no crash".
+        from ao_kernel.context.memory_tiers import classify_tier
+
+        tier = classify_tier({"confidence": "not-a-number", "created_at": "2025-06-01T12:00:00Z"}, now=NOW)
+        assert tier == "warm"
+
+    def test_load_tier_policy_returns_tiers(self):
+        # load_tier_policy loads the bundled policy (or falls back to
+        # DEFAULT_TIERS); either way it returns a dict carrying "tiers".
+        from ao_kernel.context.memory_tiers import load_tier_policy
+
+        policy = load_tier_policy()
+        assert isinstance(policy, dict)
+        assert "tiers" in policy
+
+    def test_age_days_malformed_timestamp_returns_large(self):
+        # An unparseable timestamp yields the large sentinel age (L112-113),
+        # which classifies as old/cold rather than raising.
+        from ao_kernel.context.memory_tiers import _age_days
+
+        assert _age_days("not-a-real-timestamp") == 999.0

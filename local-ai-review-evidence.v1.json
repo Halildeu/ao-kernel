@@ -1,28 +1,36 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-GOVERNANCE-ARC-COMPLETION",
+  "work_package": "HYG-PUBLIC-CONTEXT-GAPS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-governance-arc-completion",
-    "changed_files": [ "local-ai-review-evidence.v1.json", "tests/test_governance.py" ]
+    "head_ref": "refs/heads/codex/hyg-public-context-gaps",
+    "changed_files": [
+      "local-ai-review-evidence.v1.json",
+      "tests/test_checkpoint.py",
+      "tests/test_memory_tiers.py",
+      "tests/test_semantic_retrieval.py"
+    ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
     { "name": "test_only_scope", "status": "pass" },
     { "name": "coverage_delta_recorded", "status": "pass" },
-    { "name": "no_cosmetic_tests", "status": "pass" },
+    { "name": "no_tautological_assertions", "status": "pass" },
     { "name": "guard_flags_remain_false", "status": "pass" }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e7576) returned REVISE + small_test_pr: 2-4 named contract tests for the _check_rules public-facade dispatch, wildcard/generic/malformed arcs deliberately excluded as already-covered or cosmetic.",
-    "Test-only diff: appends TestCheckRulesDispatch (6 named contract tests) to tests/test_governance.py. No ao_kernel runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
-    "Tests pin _check_rules structural dispatch (governance.py) routing a policy dict to autonomy / tool-calling / provider-guardrails / generic checkers by structure — the public-facade path that existing helper-level tests did not exercise.",
-    "Coverage delta: governance.py dispatch lines 106 (autonomy extend) and 110 (tool-calling extend) were missing full-suite before; they are now covered by test_governance.py itself (no longer in the targeted missing list).",
-    "No-Fake-Work discipline: the wildcard allow_models=['*'] test already existed (test_wildcard_model_allows_any) and was NOT duplicated; generic complementary arcs (required/blocked/limits inverse directions) and malformed-policy fallthroughs (163-228) were deliberately excluded as cosmetic per Codex guidance.",
+    "Codex plan-time consultation (thread 019e758d) returned REVISE + ready_for_impl; post-impl review returned REVISE with 3 blocking test-quality findings, all absorbed (15 tests now).",
+    "Test-only diff across tests/test_checkpoint.py, tests/test_memory_tiers.py, tests/test_semantic_retrieval.py. No ao_kernel/context runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
+    "GAPS-02 checkpoint (6): CHECKPOINT_NO_HASH (load_context monkeypatch), CHECKPOINT_EXPIRED (mutate-resave so hash matches), expired-allowed-when-fail_on_expired-false, malformed-expiry allow-resume, has_provider_cursor (full provider_state schema), list_checkpoints skip-on-corrupt.",
+    "GAPS-01 semantic_retrieval (5): in-memory no/none-decisions empty; embed_decision embedding_config precedence (asserts provider+model+base_url+api_key); embed_decision cache-skip; AND (post-impl fix) semantic_search embedding_config precedence (L162-168) via monkeypatched embed_text, asserting provider+model+base_url+api_key. All network-free.",
+    "GAPS-03 memory_tiers (4): string-confidence coercion; non-numeric confidence falls back to 0.5 with a DISCRIMINATING assertion (old timestamp -> warm proves 0.5 not 0.0, post-impl fix for the previously tautological assert); load_tier_policy returns tiers; _age_days malformed-timestamp sentinel.",
+    "Post-impl blocking fixes absorbed: (1) added semantic_search embedding_config precedence test (162-168 was actionable_offline, not external); (2) memory_tiers non-numeric assertion now discriminates 0.5 vs 0.0 fallback (old-timestamp -> warm); (3) embed_decision precedence test now asserts base_url, not just provider/model/api_key.",
+    "Coverage delta (full suite, base aec164a): checkpoint.py 79.2%->93.5%, memory_tiers.py 80.0%->94.3%, semantic_retrieval.py 63.3%->~83% (targeted); semantic_search embedding_config precedence (162-168) now covered. Remaining semantic_retrieval uncovered is the embed_text provider HTTP path (L50-73) and the vector_store backend delegation (L182-185) — genuinely external/backend, not offline-actionable.",
+    "No-Fake-Work: embedding_config NOT touched (already 7 precedence tests); context_compiler explicitly DEFERRED to a separate follow-up (most complex module, fixture-heavy), not a closure of the whole audit cluster; session_lifecycle defensive logging intentionally uncovered.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
