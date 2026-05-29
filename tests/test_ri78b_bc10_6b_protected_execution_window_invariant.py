@@ -358,6 +358,12 @@ def test_ri78b_bc10_6b_pricing_source_digest_matches_file():
 
 
 def test_ri78b_bc10_6b_supersession_entry_present():
+    if not _is_ri78b_bc10_6b_introducer_pr():
+        pytest.skip(
+            "6b state-at-landing pin: only enforced on introducer PR. "
+            "After bc10-6c-defer-decision (PR #731+) status transitions to "
+            "deferred_cli_only_mode."
+        )
     gpp = _load_json(GPP_STATUS_PATH)
     entries = gpp.get("operator_bound_supersessions", [])
     bc10_entries = [e for e in entries if e.get("id") == "RI-7.8b-bc10-6b"]

@@ -58,6 +58,8 @@ ASSET_PRESERVED_PATHS = [
     "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
     ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
     ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
+    ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+    ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
 ]
 
 
@@ -245,6 +247,17 @@ def test_defer_submanifest_bc10_defer_decision_recorded_true():
     sub = _load_json(SUBMANIFEST_PATH)
     assert sub["bc10_defer_decision_recorded"] is True
     assert sub["bc10_defer_decision_ref"] == ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"
+
+
+def test_defer_submanifest_bc10_defer_decision_sha256_matches_evidence():
+    """iter-12 absorb #2: submanifest must pin defer evidence SHA256 (digest binding)."""
+    sub = _load_json(SUBMANIFEST_PATH)
+    assert "bc10_defer_decision_sha256" in sub
+    pinned_sha = sub["bc10_defer_decision_sha256"]
+    actual_sha = _sha256_file(EVIDENCE_PATH)
+    assert pinned_sha == actual_sha, (
+        f"submanifest bc10_defer_decision_sha256 drift: pinned={pinned_sha}, actual={actual_sha}"
+    )
 
 
 def test_defer_submanifest_other_keys_preserved():

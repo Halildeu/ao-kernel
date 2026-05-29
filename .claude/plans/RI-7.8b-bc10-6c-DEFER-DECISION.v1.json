@@ -139,7 +139,7 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision",
     "pr_number_hint": "TBD",
-    "base_sha": "2fd8ee7eff29497c3c67d14b74f7be7b7a8974d4",
+    "base_sha": "a43e11c05443235436168c93eb7f3fe93e86c152",
     "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
     "ri78b_bc1_6c_closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
     "ri78b_bc10_6a_evidence_sha256": "80e0a47b6dcaeee0deb6522fd9bf208fffcf835332447f2aa8ec88fba34ecbc4",
@@ -170,7 +170,9 @@
       "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
       "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
       ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
-      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"
+      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json"
     ],
     "all_unchanged": true
   },

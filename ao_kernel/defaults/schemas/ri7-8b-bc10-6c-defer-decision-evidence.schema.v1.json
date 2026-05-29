@@ -408,8 +408,8 @@
       "properties": {
         "forbidden_surfaces": {
           "type": "array",
-          "minItems": 12,
-          "maxItems": 12,
+          "minItems": 14,
+          "maxItems": 14,
           "uniqueItems": true,
           "items": {"type": "string", "minLength": 1},
           "allOf": [
@@ -424,7 +424,9 @@
             {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json"}, "minContains": 1, "maxContains": 1},
             {"contains": {"const": "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json"}, "minContains": 1, "maxContains": 1},
             {"contains": {"const": ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
-            {"contains": {"const": ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"}, "minContains": 1, "maxContains": 1}
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json"}, "minContains": 1, "maxContains": 1},
+            {"contains": {"const": ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json"}, "minContains": 1, "maxContains": 1}
           ]
         },
         "all_unchanged": {"type": "boolean", "const": true}

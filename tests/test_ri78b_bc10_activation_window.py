@@ -354,12 +354,20 @@ def test_validate_env_observation_refs_heads_main_policy_passes():
     )
 
 
-def test_supersession_initial_status_awaiting_operator_dispatch():
+def test_supersession_initial_status_awaiting_or_deferred():
+    """RI-7.8b-bc10-6b supersession entry status.
+
+    Initial state on bc10-6b landing (PR #697): awaiting_operator_dispatch.
+    After bc10-6c-defer-decision (PR #731+): deferred_cli_only_mode (terminal,
+    non-dispatchable). Both are valid quiescent states for the activation
+    guard (neither permits new dispatch); test accepts either.
+    """
     mod = _load_module()
     gpp = json.loads(GPP_STATUS_PATH.read_text())
     entry = mod.find_supersession_entry(gpp, "RI-7.8b-bc10-6b")
     assert entry is not None
-    assert entry["status"] == "awaiting_operator_dispatch"
+    assert entry["status"] in {"awaiting_operator_dispatch", "deferred_cli_only_mode"}
     assert entry["actual_start_at"] is None
     assert entry["actual_end_at"] is None
-    assert entry["closed_at"] is None
+    # closed_at may be None (awaiting) or absent in defer (deferred_at used instead)
+    # Both shapes are quiescent / non-dispatchable
