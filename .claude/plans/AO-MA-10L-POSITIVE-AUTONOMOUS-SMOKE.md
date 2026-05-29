@@ -95,9 +95,10 @@ When A0/A1 are ready and explicit confirmation is present, the orchestrator:
    `docs/evidence/ao-ma-10l-autonomous-smoke/`;
 3. opens a disposable PR through the selected PR producer runtime;
 4. waits for required checks, including `ao-release-gate-technical` and
-   `ao-release-gate-review`; GitHub's initial `no checks reported` response
-   immediately after PR creation is treated as transient inside the polling
-   window, but any timeout or real API/read failure remains fail-closed;
+   `ao-release-gate-review`; GitHub's initial `no checks reported` or
+   `no required checks reported` response immediately after PR creation is
+   treated as transient inside the polling window, but any timeout or real
+   API/read failure remains fail-closed;
 5. refreshes A0/A1;
 6. delegates the actual merge to `scripts/ao_ma10c_merge_agent.py`.
 

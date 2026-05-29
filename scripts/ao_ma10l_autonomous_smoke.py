@@ -412,10 +412,19 @@ def _required_checks_passed(raw_checks: list[Any]) -> tuple[bool, list[dict[str,
     return not failing, failing
 
 
+TRANSIENT_CHECK_DISCOVERY_ERRORS = (
+    "no checks reported",
+    "no required checks reported",
+)
+
+
 def _checks_not_reported_yet(error: str | None) -> bool:
     """Return true for GitHub's transient post-PR check-suite delay."""
 
-    return isinstance(error, str) and "no checks reported" in error.lower()
+    if not isinstance(error, str):
+        return False
+    normalized = error.lower()
+    return any(fragment in normalized for fragment in TRANSIENT_CHECK_DISCOVERY_ERRORS)
 
 
 def _wait_for_required_checks(
