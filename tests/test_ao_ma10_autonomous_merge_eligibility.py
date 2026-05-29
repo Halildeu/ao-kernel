@@ -64,6 +64,16 @@ def _ready_snapshot() -> dict[str, Any]:
     return snapshot
 
 
+def _actions_integration_snapshot() -> dict[str, Any]:
+    snapshot = _ready_snapshot()
+    snapshot["readiness"]["warnings"] = ["github_user_endpoint_unavailable_for_integration_token"]
+    snapshot["merge_actor"]["login"] = "github-actions[bot]"
+    snapshot["merge_actor"]["permission"] = "write"
+    snapshot["merge_actor"]["viewer_can_administer"] = False
+    snapshot["merge_actor"]["administration_write_absent_for_dedicated_actor"] = False
+    return snapshot
+
+
 def _eligibility(snapshot: dict[str, Any], changed_files: list[str]) -> dict[str, Any]:
     mod = _load_script_module()
     return cast(
@@ -150,6 +160,58 @@ def test_ao_ma10a1_ready_snapshot_and_low_risk_files_are_ready_for_dry_run() -> 
         "dedicated_merge_actor_non_admin": True,
         "dedicated_merge_actor_without_admin_write": True,
     }
+
+
+def test_ao_ma10a1_accepts_actions_integration_token_actor_shape() -> None:
+    payload = _eligibility(
+        _actions_integration_snapshot(),
+        ["tests/test_ao_ma10_autonomous_merge_eligibility.py"],
+    )
+    Draft202012Validator(_schema()).validate(payload)
+    assert payload["decision"]["result"] == "ready_for_low_risk_dry_run"
+    assert payload["decision"]["blockers"] == []
+    assert payload["decision"]["warnings"] == ["github_user_endpoint_unavailable_for_integration_token"]
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_non_admin"] is True
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_without_admin_write"] is True
+
+
+def test_ao_ma10a1_rejects_integration_warning_for_unexpected_actor() -> None:
+    snapshot = _actions_integration_snapshot()
+    snapshot["merge_actor"]["login"] = "some-other-writer"
+    payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
+    assert payload["decision"]["result"] == "blocked"
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_without_admin_write"] is False
+
+
+def test_ao_ma10a1_rejects_actions_actor_shape_without_integration_warning() -> None:
+    snapshot = _actions_integration_snapshot()
+    snapshot["readiness"]["warnings"] = []
+    payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
+    assert payload["decision"]["result"] == "blocked"
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_without_admin_write"] is False
+
+
+def test_ao_ma10a1_rejects_integration_warning_without_write_permission() -> None:
+    snapshot = _actions_integration_snapshot()
+    snapshot["merge_actor"]["permission"] = "read"
+    payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
+    assert payload["decision"]["result"] == "blocked"
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_without_admin_write"] is False
+
+
+def test_ao_ma10a1_rejects_integration_warning_when_actor_can_administer() -> None:
+    snapshot = _actions_integration_snapshot()
+    snapshot["merge_actor"]["permission"] = "admin"
+    snapshot["merge_actor"]["viewer_can_administer"] = True
+    payload = _eligibility(snapshot, ["tests/test_ao_ma10_autonomous_merge_eligibility.py"])
+    assert payload["decision"]["result"] == "blocked"
+    assert "merge_actor_admin_permission_observed" in payload["decision"]["blockers"]
+    assert "dedicated_merge_actor_not_confirmed" in payload["decision"]["blockers"]
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_non_admin"] is False
+    assert payload["github_gate_requirements"]["dedicated_merge_actor_without_admin_write"] is False
 
 
 def test_ao_ma10a1_blocks_missing_changed_files() -> None:
