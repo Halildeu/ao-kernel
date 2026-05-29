@@ -55,6 +55,7 @@ def _base_result(*, repo: str, base_ref: str, expected_actor: str, token_env: st
         "base_ref": base_ref,
         "expected_actor": expected_actor,
         "token_env": token_env,
+        "producer_token_env": token_env,
         "token_value_recorded": False,
         "execute_requested": execute,
         "mutations_performed": False,
@@ -69,6 +70,12 @@ def _base_result(*, repo: str, base_ref: str, expected_actor: str, token_env: st
             "created": False,
             "mode": None,
             "path_recorded": False,
+        },
+        "producer_wrapper": {
+            "created": False,
+            "mode": None,
+            "path_recorded": False,
+            "same_as_merge_actor_wrapper": True,
         },
         "smoke_result": None,
         "smoke_command": [],
@@ -187,6 +194,13 @@ def run(
             "mode": "0700",
             "path_recorded": False,
         }
+        result["producer_token_env"] = governance_token_env if governance_wrapper_created else token_env
+        result["producer_wrapper"] = {
+            "created": governance_wrapper_created,
+            "mode": "0700" if governance_wrapper_created else None,
+            "path_recorded": False,
+            "same_as_merge_actor_wrapper": not governance_wrapper_created,
+        }
 
         command = [
             sys.executable,
@@ -210,6 +224,7 @@ def run(
         ]
         if governance_wrapper_created:
             command.extend(["--governance-gh-bin", str(governance_wrapper)])
+            command.extend(["--producer-gh-bin", str(governance_wrapper)])
         if execute:
             command.append("--execute")
             if confirmation is not None:

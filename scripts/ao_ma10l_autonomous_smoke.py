@@ -7,7 +7,7 @@ repo-owned evidence gates:
 
 1. AO-MA-10a0 live GitHub readiness snapshot.
 2. AO-MA-10a1 low-risk autonomous merge eligibility.
-3. A disposable low-risk PR created by the dedicated non-admin actor.
+3. A disposable low-risk PR created by the selected PR producer runtime.
 4. Live required-check pass observation.
 5. AO-MA-10c merge-agent execution.
 
@@ -101,6 +101,7 @@ def _result_template(
     smoke_path: str,
     execute: bool,
     generated_at: str,
+    producer_same_as_merge_actor: bool,
 ) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
@@ -112,6 +113,12 @@ def _result_template(
         "run_id": run_id,
         "branch": branch,
         "smoke_path": smoke_path,
+        "pr_producer": {
+            "role": "merge_actor" if producer_same_as_merge_actor else "governance_producer",
+            "same_as_merge_actor": producer_same_as_merge_actor,
+            "release_authority": False,
+            "allowed_operations": ["base_ref_read", "branch_create", "file_create", "pr_create"],
+        },
         "execute_requested": execute,
         "mutations_performed": False,
         "release_authority": RELEASE_AUTHORITY,
@@ -282,7 +289,7 @@ def _parse_pr_number(value: str) -> int | None:
 def _create_disposable_pr(
     *,
     repo: str,
-    gh_bin: str,
+    producer_gh_bin: str,
     base_ref: str,
     branch: str,
     smoke_path: str,
@@ -293,7 +300,7 @@ def _create_disposable_pr(
 ) -> tuple[int | None, set[str]]:
     blockers: set[str] = set()
 
-    get_ref = [gh_bin, "api", f"repos/{repo}/git/ref/heads/{base_ref}"]
+    get_ref = [producer_gh_bin, "api", f"repos/{repo}/git/ref/heads/{base_ref}"]
     _add_command(result, get_ref)
     ref_payload, error = _run_json(get_ref, runner)
     if error is not None or not isinstance(ref_payload, dict):
@@ -303,7 +310,7 @@ def _create_disposable_pr(
         return None, {"github_base_ref_sha_missing"}
 
     create_ref = [
-        gh_bin,
+        producer_gh_bin,
         "api",
         f"repos/{repo}/git/refs",
         "--method",
@@ -335,7 +342,7 @@ def _create_disposable_pr(
         encoding="utf-8",
     )
     put_file = [
-        gh_bin,
+        producer_gh_bin,
         "api",
         f"repos/{repo}/contents/{smoke_path}",
         "--method",
@@ -355,7 +362,7 @@ def _create_disposable_pr(
         "readiness and required checks pass."
     )
     create_pr = [
-        gh_bin,
+        producer_gh_bin,
         "pr",
         "create",
         "--repo",
@@ -500,6 +507,7 @@ def run_smoke(
     expected_actor: str,
     gh_bin: str,
     governance_gh_bin: str | None,
+    producer_gh_bin: str | None,
     smoke_root: str,
     output: Path,
     execute: bool,
@@ -513,6 +521,8 @@ def run_smoke(
     run_id = generated_at.replace("-", "").replace(":", "").replace("Z", "Z").replace("T", "-")
     branch = f"codex/ao-ma10l-smoke-{run_id.lower()}"
     smoke_path = f"{smoke_root.rstrip('/')}/ao-ma-10l-smoke-{run_id.lower()}.md"
+    effective_producer_gh_bin = producer_gh_bin or gh_bin
+    producer_same_as_merge_actor = effective_producer_gh_bin == gh_bin
     result = _result_template(
         repo=repo,
         base_ref=base_ref,
@@ -522,6 +532,7 @@ def run_smoke(
         smoke_path=smoke_path,
         execute=execute,
         generated_at=generated_at,
+        producer_same_as_merge_actor=producer_same_as_merge_actor,
     )
     blockers: set[str] = set()
     warnings: set[str] = set()
@@ -571,7 +582,7 @@ def run_smoke(
 
         pr_number, create_blockers = _create_disposable_pr(
             repo=repo,
-            gh_bin=gh_bin,
+            producer_gh_bin=effective_producer_gh_bin,
             base_ref=base_ref,
             branch=branch,
             smoke_path=smoke_path,
@@ -661,6 +672,13 @@ def main(argv: list[str] | None = None) -> int:
         "--governance-gh-bin",
         help="Optional GitHub CLI binary or wrapper for read-only governance API checks.",
     )
+    parser.add_argument(
+        "--producer-gh-bin",
+        help=(
+            "Optional GitHub CLI binary or wrapper for disposable branch/file/PR creation. "
+            "Defaults to --gh-bin so existing dedicated-actor-only runs remain unchanged."
+        ),
+    )
     parser.add_argument("--smoke-root", default=DEFAULT_SMOKE_ROOT)
     parser.add_argument("--output", required=True)
     parser.add_argument("--execute", action="store_true")
@@ -676,6 +694,7 @@ def main(argv: list[str] | None = None) -> int:
         expected_actor=args.expected_actor,
         gh_bin=args.gh_bin,
         governance_gh_bin=args.governance_gh_bin,
+        producer_gh_bin=args.producer_gh_bin,
         smoke_root=args.smoke_root,
         output=Path(args.output),
         execute=args.execute,
