@@ -71,9 +71,9 @@ AO-MA-10j is accepted when:
 | AO-MA-10h | Evidence contract | Done |
 | AO-MA-10i | Decision-core validator/runtime support | Done |
 | AO-MA-10j | Required-check workflow wiring | Done |
-| AO-MA-10k | Disposable real-PR smoke: positive + negative high-risk paths | Next after live GitHub enforcement blockers are resolved |
-| AO-MA-10l | Low-risk end-to-end auto-merge smoke / merge actor hardening | Later |
-| AO-MA-10m | Activation/cutover record | Later |
+| AO-MA-10k | Disposable real-PR smoke: positive + negative high-risk paths | Done; positive PR #744 and negative fail-closed PR #747 recorded |
+| AO-MA-10l | Low-risk end-to-end auto-merge smoke / merge actor hardening | Done; low-risk PR #737 merged by app/github-actions |
+| AO-MA-10m | Activation/cutover record | Done; issue #683 closed after live enforcement evidence |
 
 ## Hard Stops
 
