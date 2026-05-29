@@ -1,0 +1,152 @@
+name: AO Autonomous Merge Executor
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to evaluate and merge after required checks pass"
+        required: true
+        type: string
+      confirmation:
+        description: "Required confirmation: AO-AUTONOMOUS-MERGE-EXECUTE"
+        required: true
+        type: string
+      event_head_sha:
+        description: "Optional expected PR head SHA; empty means use current live head"
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+  statuses: read
+
+concurrency:
+  group: ao-autonomous-merge-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  autonomous-merge:
+    name: autonomous-merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CONFIRMATION: AO-AUTONOMOUS-MERGE-EXECUTE
+    steps:
+      - name: Resolve target PR
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number || '' }}
+          DISPATCH_CONFIRMATION: ${{ inputs.confirmation || '' }}
+          DISPATCH_EVENT_HEAD_SHA: ${{ inputs.event_head_sha || '' }}
+        run: |
+          set -euo pipefail
+
+          should_run=false
+          pr_number=""
+          event_head_sha=""
+          reason="not-applicable"
+
+          case "$EVENT_NAME" in
+            workflow_run)
+              workflow_event="$(jq -r '.workflow_run.event // ""' "$GITHUB_EVENT_PATH")"
+              workflow_conclusion="$(jq -r '.workflow_run.conclusion // ""' "$GITHUB_EVENT_PATH")"
+              pr_count="$(jq '.workflow_run.pull_requests | length' "$GITHUB_EVENT_PATH")"
+
+              if [ "$workflow_event" = "pull_request" ] && [ "$workflow_conclusion" = "success" ] && [ "$pr_count" = "1" ]; then
+                pr_number="$(jq -r '.workflow_run.pull_requests[0].number' "$GITHUB_EVENT_PATH")"
+                event_head_sha="$(jq -r '.workflow_run.head_sha // ""' "$GITHUB_EVENT_PATH")"
+                should_run=true
+                reason="workflow_run:test-success"
+              else
+                reason="workflow_run:${workflow_event}:${workflow_conclusion}:pr_count_${pr_count}"
+              fi
+              ;;
+            workflow_dispatch)
+              if [ "$DISPATCH_CONFIRMATION" != "$CONFIRMATION" ]; then
+                echo "::error::workflow_dispatch requires confirmation $CONFIRMATION"
+                exit 1
+              fi
+              pr_number="$DISPATCH_PR_NUMBER"
+              event_head_sha="$DISPATCH_EVENT_HEAD_SHA"
+              should_run=true
+              reason="workflow_dispatch"
+              ;;
+            *)
+              reason="unsupported-event:$EVENT_NAME"
+              ;;
+          esac
+
+          if [ "$should_run" = "true" ]; then
+            if ! printf '%s' "$pr_number" | grep -Eq '^[0-9]+$'; then
+              echo "::error::Invalid PR number: $pr_number"
+              exit 1
+            fi
+            if [ -n "$event_head_sha" ] && ! printf '%s' "$event_head_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+              echo "::error::Invalid event head SHA"
+              exit 1
+            fi
+          fi
+
+          {
+            echo "should_run=$should_run"
+            echo "pr_number=$pr_number"
+            echo "event_head_sha=$event_head_sha"
+            echo "reason=$reason"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Explain target decision
+        env:
+          SHOULD_RUN: ${{ steps.target.outputs.should_run }}
+          REASON: ${{ steps.target.outputs.reason }}
+          PR_NUMBER: ${{ steps.target.outputs.pr_number }}
+          EVENT_HEAD_SHA: ${{ steps.target.outputs.event_head_sha }}
+        run: |
+          echo "should_run=$SHOULD_RUN"
+          echo "reason=$REASON"
+          echo "pr_number=$PR_NUMBER"
+          echo "event_head_sha=$EVENT_HEAD_SHA"
+
+      - uses: actions/checkout@v6
+        if: steps.target.outputs.should_run == 'true'
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Run fail-closed autonomous merge executor
+        if: steps.target.outputs.should_run == 'true'
+        env:
+          PR_NUMBER: ${{ steps.target.outputs.pr_number }}
+          EVENT_HEAD_SHA: ${{ steps.target.outputs.event_head_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p .ao/evidence/ao-autonomous-merge
+
+          args=(
+            --repo "$GITHUB_REPOSITORY"
+            --pr "$PR_NUMBER"
+            --expected-actor "github-actions[bot]"
+            --output ".ao/evidence/ao-autonomous-merge/result.json"
+            --execute
+            --confirmation "$CONFIRMATION"
+            --format text
+          )
+          if [ -n "$EVENT_HEAD_SHA" ]; then
+            args+=(--event-head-sha "$EVENT_HEAD_SHA")
+          fi
+
+          python scripts/ao_autonomous_pr_merge_executor.py "${args[@]}"
+
+      - name: Upload merge evidence
+        if: always() && steps.target.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ao-autonomous-merge-${{ steps.target.outputs.pr_number }}-${{ github.run_id }}
+          path: .ao/evidence/ao-autonomous-merge/
+          if-no-files-found: warn
