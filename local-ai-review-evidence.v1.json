@@ -13,7 +13,8 @@
     "verdict_history": [
       {"iter": 4, "verdict": "AGREE", "scope": "plan-time"},
       {"iter": 5, "verdict": "REVISE", "scope": "post-impl"},
-      {"iter": 6, "verdict": "REVISE", "scope": "post-impl-fix-1"}
+      {"iter": 6, "verdict": "REVISE", "scope": "post-impl-fix-1"},
+      {"iter": 7, "verdict": "AGREE", "scope": "post-impl-fix-2"}
     ]
   },
   "scope_reviewed": {
