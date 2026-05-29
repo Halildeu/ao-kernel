@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-BC10-API-MODE-REACTIVATION-RUNBOOK",
+  "work_package": "HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT",
   "implementer": {
     "agent": "claude",
     "provider": "anthropic"
@@ -13,9 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-bc10-api-mode-reactivation",
+    "head_ref": "refs/heads/codex/hyg-mutmut-coverage-audit",
     "changed_files": [
-      "docs/RB-BC10-API-MODE-REACTIVATION.md",
+      "docs/audits/PUBLIC-FACADE-TEST-QUALITY-AUDIT-2026-05-29.md",
       "local-ai-review-evidence.v1.json"
     ]
   },
@@ -33,7 +33,7 @@
       "status": "pass"
     },
     {
-      "name": "no_touch_list_respected",
+      "name": "no_fake_work_disclosure",
       "status": "pass"
     },
     {
@@ -41,22 +41,22 @@
       "status": "pass"
     },
     {
-      "name": "no_top_level_flag_flip_language",
+      "name": "no_runtime_code_changes",
       "status": "pass"
     },
     {
-      "name": "cost_guardrails_mirror_dormant_assets",
+      "name": "no_pyproject_or_workflow_mutation",
       "status": "pass"
     }
   ],
   "findings": [
-    "Codex post-impl review returned AGREE for HYG-BC10-API-MODE-REACTIVATION-RUNBOOK after reviewing the doc-only diff (Codex thread 019e74e6, CNS-20260529-002 Track 2, iter-2 AGREE + post-impl AGREE).",
-    "Diff surface is doc-only: adds the runbook document and the consultation request artifact only; no workflow, script, schema, pricing source, guard flag, gpp_status, or evidence-artifact mutation.",
-    "ADR-0027 mirror sequence is explicit and preserves 6a, 6b, and 6c semantics: operator supersession, preflight guardrails, workflow_dispatch-only activation, per-call evidence, aggregate evidence, closure decision, and scoped authority close.",
-    "No top-level flag flip language leaks through. All live_adapter_execution_allowed, support_widening_allowed, and production_platform_claim_allowed references either state no flip or preserve const false; future action is scoped supersession permission only.",
-    "Cost guardrails match the dormant assets exactly: openai/gpt-4o-mini only, max_output_tokens_cap 64, max_usd 5.00, max_billable_calls_count 4, max_distinct_runs 5, run_attempt equals 1. gpt-4o is described as a separate operator-bound supersession, not the default path.",
-    "Rollback semantics are correct: the existing defer decision is immutable; rollback and abort use a new supersession-over-reversal artifact; there is no flip-back-to-false semantic.",
-    "Promotion disclaimer is clear: BC-10 reactivation evidence is not Beta or Production promotion and does not override the RI-7.8c final non-promotion decision.",
+    "Codex post-impl review returned AGREE for HYG-PUBLIC-FACADE-TEST-QUALITY-AUDIT after reviewing the doc-only diff and source-line consistency checks (Codex thread 019e74e6, CNS-20260529-002 Track 1, iter-3 AGREE + post-impl AGREE).",
+    "Diff surface is doc-only: adds the audit document and the consultation request artifact only; no tests, no pyproject or mutmut config change, no workflow, no guard flag, no gpp_status, no runtime module.",
+    "Mutmut failure disclosure is No-Fake-Work aligned: it records mutmut 3.5.0, local macOS and Python context, three observed failure classes, and avoids an upstream-defect claim without a minimal repro. No synthetic mutation result was fabricated.",
+    "The audit does not claim mutation coverage; it is framed as coverage-driven and states covered does not equal well asserted.",
+    "Critical-gap definition is narrow and applied consistently: fail-closed, input-validation, provider-guardrail, and policy branches are critical; defensive import and except fallbacks are recorded as intentionally_uncovered_or_unreachable.",
+    "Source-line spot checks match cited code: config.py non-object JSON errors, llm.py provider guardrail denial, tool_gateway.py strict policy type validation, governance.py provider and generic violation branches.",
+    "Coverage JSON and mutmut working directories were generated locally for extraction and were intentionally excluded from the committed diff.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
