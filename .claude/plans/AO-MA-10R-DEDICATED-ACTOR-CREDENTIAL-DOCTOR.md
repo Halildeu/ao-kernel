@@ -22,10 +22,10 @@ This is not release authority. Release authority remains the repo-owned
 scripts/ao_ma10r_dedicated_actor_credential_doctor.py
 ```
 
-Default token environment variable for legacy/local runs:
+Default token environment variable for workflow-owned runs:
 
 ```text
-GLADYATORE_LAB_GH_TOKEN
+AO_MERGE_GITHUB_TOKEN
 ```
 
 The GitHub Actions smoke workflow passes the repo-owned executor explicitly:
@@ -39,6 +39,15 @@ The doctor never accepts token values as CLI arguments and never records token
 values, token prefixes, token hashes, or credential paths. It sets `GH_TOKEN`
 only inside the subprocess environment for GitHub API calls.
 
+When the expected actor is `github-actions[bot]`, the token is an integration
+token rather than a user token. GitHub returns `Resource not accessible by
+integration` for user-shaped endpoints such as `gh api user`, and may do the
+same for repository permission introspection. AO-MA-10r treats those endpoint
+shapes as expected integration-token behavior, records warnings, requires
+pull-request API read access, and leaves the actual merge write proof to the
+AO-MA-10q runner. This keeps the doctor from rejecting the repo-owned
+`github.token` before the fail-closed merge path can be exercised.
+
 By default the doctor remains read-only. In execute-mode smoke runs the
 workflow passes `--branch-write-probe`, which creates and immediately deletes a
 temporary `codex/ao-ma10r-token-probe-*` branch. This proves the exact write
@@ -47,7 +56,7 @@ path AO-MA-10l needs before the smoke attempts to create its disposable PR.
 ## Command
 
 ```bash
-GLADYATORE_LAB_GH_TOKEN=<redacted> \
+AO_MERGE_GITHUB_TOKEN=<redacted> \
   python3 scripts/ao_ma10r_dedicated_actor_credential_doctor.py \
     --output /tmp/ao-ma10r.json \
     --format text
@@ -68,6 +77,12 @@ The doctor always performs read-only checks:
   admin;
 - `gh api repos/Halildeu/ao-kernel/pulls?state=open&per_page=1` -> actor can
   read pull-request state.
+
+For `github-actions[bot]` integration tokens, the first two endpoints may be
+unavailable by GitHub design. In that mode AO-MA-10r records
+`github_user_endpoint_unavailable_for_integration_token` and
+`repository_permission_endpoint_unavailable_for_integration_token` as warnings
+instead of blockers, while keeping pull-request read access mandatory.
 
 With `--branch-write-probe`, the doctor additionally:
 

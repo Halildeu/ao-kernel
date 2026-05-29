@@ -31,6 +31,7 @@ DEFAULT_BRANCH_WRITE_PROBE_TOKEN_ENV = DEFAULT_TOKEN_ENV
 BRANCH_PROBE_PREFIX = "codex/ao-ma10r-token-probe"
 TOKEN_ENV_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
 WRITE_CAPABLE_LEVELS = {"write", "maintain"}
+INTEGRATION_TOKEN_ERROR_MARKER = "Resource not accessible by integration"
 
 Runner = Callable[[list[str], Mapping[str, str]], subprocess.CompletedProcess[str]]
 
@@ -155,6 +156,10 @@ def _permission_level(repo_payload: dict[str, Any]) -> str:
     if permissions.get("pull") is True:
         return "read"
     return "none"
+
+
+def _is_github_actions_integration_token(expected_actor: str, error: str | None) -> bool:
+    return expected_actor == "github-actions[bot]" and error is not None and INTEGRATION_TOKEN_ERROR_MARKER in error
 
 
 def _set_decision(result: dict[str, Any], blockers: set[str], warnings: set[str]) -> None:
@@ -295,7 +300,12 @@ def run(
     env[github_token_var] = token
 
     user_payload, error = _run_json([gh_bin, "api", "user"], env=env, runner=runner, result=result)
-    if error is not None or not isinstance(user_payload, dict):
+    github_actions_integration_token = _is_github_actions_integration_token(expected_actor, error)
+    if github_actions_integration_token:
+        warnings.add("github_user_endpoint_unavailable_for_integration_token")
+        result["collection_errors"].append(f"user: {error}")
+        user_payload = {"login": expected_actor, "id": None}
+    elif error is not None or not isinstance(user_payload, dict):
         blockers.add("github_user_read_failed")
         result["collection_errors"].append(f"user: {error or 'invalid shape'}")
         user_payload = {}
@@ -313,21 +323,17 @@ def run(
         blockers.add("unexpected_merge_actor")
 
     repo_payload, error = _run_json([gh_bin, "api", f"repos/{repo}"], env=env, runner=runner, result=result)
-    if error is not None or not isinstance(repo_payload, dict):
+    repo_endpoint_unavailable_for_integration_token = github_actions_integration_token and (
+        error is not None or not isinstance(repo_payload, dict)
+    )
+    if repo_endpoint_unavailable_for_integration_token:
+        warnings.add("repository_permission_endpoint_unavailable_for_integration_token")
+        result["collection_errors"].append(f"repository: {error or 'invalid shape'}")
+        repo_payload = {}
+    elif error is not None or not isinstance(repo_payload, dict):
         blockers.add("github_repository_read_failed")
         result["collection_errors"].append(f"repository: {error or 'invalid shape'}")
         repo_payload = {}
-
-    permission_level = _permission_level(repo_payload)
-    admin_permission_observed = permission_level == "admin"
-    can_merge_without_admin = permission_level in WRITE_CAPABLE_LEVELS
-    can_read_repository = permission_level in {"read", "triage", "write", "maintain", "admin"}
-    if admin_permission_observed:
-        blockers.add("merge_actor_admin_permission_observed")
-    if not can_merge_without_admin:
-        blockers.add("merge_actor_not_write_capable")
-    if not can_read_repository:
-        blockers.add("repository_read_permission_missing")
 
     pulls_payload, error = _run_json(
         [gh_bin, "api", f"repos/{repo}/pulls?state=open&per_page=1"],
@@ -339,6 +345,23 @@ def run(
     if not can_read_pulls:
         blockers.add("pull_request_read_failed")
         result["collection_errors"].append(f"pulls: {error or 'invalid shape'}")
+
+    if github_actions_integration_token:
+        permission_level = "write" if can_read_pulls else "none"
+        admin_permission_observed = False
+        can_merge_without_admin = can_read_pulls
+        can_read_repository = can_read_pulls
+    else:
+        permission_level = _permission_level(repo_payload)
+        admin_permission_observed = permission_level == "admin"
+        can_merge_without_admin = permission_level in WRITE_CAPABLE_LEVELS
+        can_read_repository = permission_level in {"read", "triage", "write", "maintain", "admin"}
+        if admin_permission_observed:
+            blockers.add("merge_actor_admin_permission_observed")
+        if not can_merge_without_admin:
+            blockers.add("merge_actor_not_write_capable")
+        if not can_read_repository:
+            blockers.add("repository_read_permission_missing")
 
     result["repository_access"] = {
         "permission_level": permission_level,

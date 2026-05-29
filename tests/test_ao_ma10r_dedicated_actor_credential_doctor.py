@@ -44,12 +44,16 @@ class FakeGitHubRunner:
         permissions: dict[str, bool] | None = None,
         pulls: list[dict[str, Any]] | None = None,
         fail_command_contains: str | None = None,
+        integration_user_unavailable: bool = False,
+        integration_repo_unavailable: bool = False,
     ) -> None:
         self.login = login
         self.actor_id = actor_id
         self.permissions = permissions if permissions is not None else {"pull": True, "push": True, "admin": False}
         self.pulls = [] if pulls is None else pulls
         self.fail_command_contains = fail_command_contains
+        self.integration_user_unavailable = integration_user_unavailable
+        self.integration_repo_unavailable = integration_repo_unavailable
         self.commands: list[list[str]] = []
         self.envs: list[dict[str, str]] = []
 
@@ -60,8 +64,12 @@ class FakeGitHubRunner:
         if self.fail_command_contains and self.fail_command_contains in joined:
             return subprocess.CompletedProcess(command, 1, "", "forced failure")
         if command == ["gh", "api", "user"]:
+            if self.integration_user_unavailable:
+                return subprocess.CompletedProcess(command, 1, "", "gh: Resource not accessible by integration (HTTP 403)")
             return subprocess.CompletedProcess(command, 0, json.dumps({"login": self.login, "id": self.actor_id}), "")
         if command == ["gh", "api", "repos/Halildeu/ao-kernel"]:
+            if self.integration_repo_unavailable:
+                return subprocess.CompletedProcess(command, 1, "", "gh: Resource not accessible by integration (HTTP 403)")
             return subprocess.CompletedProcess(command, 0, json.dumps({"permissions": self.permissions}), "")
         if command == ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"]:
             return subprocess.CompletedProcess(command, 0, json.dumps(self.pulls), "")
@@ -135,7 +143,10 @@ def test_ao_ma10r_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert receipt["default_token_env"] == TOKEN_ENV
     assert receipt["default_branch_write_probe_token_env"] == TOKEN_ENV
     assert receipt["split_producer_branch_write_probe_token_env"] == PRODUCER_TOKEN_ENV
+    assert receipt["github_actions_integration_token_mode"].startswith("user_and_repository_permission_endpoints_may_403")
     assert "never accepts token values as CLI arguments" in text
+    assert "Resource not accessible by" in text
+    assert "integration" in text
     assert "Release authority remains the repo-owned" in text
     assert "--branch-write-probe" in text
     assert "--branch-write-probe-token-env" in text
@@ -204,6 +215,34 @@ def test_ao_ma10r_happy_path_ready_without_recording_secret_or_mutating(
         ["gh", "api", "repos/Halildeu/ao-kernel"],
         ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"],
     ]
+
+
+def test_ao_ma10r_accepts_github_actions_integration_token_shape(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = FakeGitHubRunner(integration_user_unavailable=True, integration_repo_unavailable=True)
+    result = _run_doctor(tmp_path, monkeypatch, runner)
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "credential_ready"
+    assert result["decision"]["blockers"] == []
+    assert result["decision"]["warnings"] == [
+        "github_user_endpoint_unavailable_for_integration_token",
+        "repository_permission_endpoint_unavailable_for_integration_token",
+    ]
+    assert result["actor"] == {"login": "github-actions[bot]", "id": None, "matches_expected": True}
+    assert result["repository_access"] == {
+        "permission_level": "write",
+        "can_read_repository": True,
+        "can_read_pull_requests": True,
+        "can_merge_without_admin": True,
+        "admin_permission_observed": False,
+    }
+    assert any(item.startswith("user: gh: Resource not accessible by integration") for item in result["collection_errors"])
+    assert any(
+        item.startswith("repository: gh: Resource not accessible by integration")
+        for item in result["collection_errors"]
+    )
 
 
 def test_ao_ma10r_branch_write_probe_creates_and_deletes_temp_branch(
