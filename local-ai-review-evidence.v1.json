@@ -20,7 +20,9 @@
       ".claude/plans/gpp_status.v1.json",
       "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-defer-decision-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri78b_bc10_6c_defer_decision_invariant.py"
+      "tests/test_ri78b_bc10_6b_protected_execution_window_invariant.py",
+      "tests/test_ri78b_bc10_6c_defer_decision_invariant.py",
+      "tests/test_ri78b_bc10_activation_window.py"
     ]
   },
   "checks_considered": [
