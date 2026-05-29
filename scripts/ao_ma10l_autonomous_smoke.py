@@ -165,6 +165,7 @@ def _collect_readiness(
     repo: str,
     expected_actor: str,
     gh_bin: str,
+    actor_gh_bin: str | None,
     output: Path,
     runner: Runner,
 ) -> tuple[dict[str, Any], list[str]]:
@@ -180,6 +181,8 @@ def _collect_readiness(
         "--output",
         str(output),
     ]
+    if actor_gh_bin is not None and actor_gh_bin != gh_bin:
+        command.extend(["--actor-gh-bin", actor_gh_bin])
     _, error = _run_checked(command, runner)
     if error is not None:
         return {}, [f"readiness_snapshot_failed: {error}"]
@@ -496,6 +499,7 @@ def run_smoke(
     base_ref: str,
     expected_actor: str,
     gh_bin: str,
+    governance_gh_bin: str | None,
     smoke_root: str,
     output: Path,
     execute: bool,
@@ -527,12 +531,14 @@ def run_smoke(
 
     with tempfile.TemporaryDirectory(prefix="ao-ma10l-") as temp:
         temp_dir = Path(temp)
+        readiness_gh_bin = governance_gh_bin or gh_bin
         initial_snapshot_path = temp_dir / "a0-initial.json"
         initial_eligibility_path = temp_dir / "a1-initial.json"
         snapshot, errors = _collect_readiness(
             repo=repo,
             expected_actor=expected_actor,
-            gh_bin=gh_bin,
+            gh_bin=readiness_gh_bin,
+            actor_gh_bin=gh_bin,
             output=initial_snapshot_path,
             runner=runner,
         )
@@ -594,7 +600,8 @@ def run_smoke(
             final_snapshot, errors = _collect_readiness(
                 repo=repo,
                 expected_actor=expected_actor,
-                gh_bin=gh_bin,
+                gh_bin=readiness_gh_bin,
+                actor_gh_bin=gh_bin,
                 output=final_snapshot_path,
                 runner=runner,
             )
@@ -648,7 +655,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--gh-bin",
         default="gh",
-        help="GitHub CLI binary or wrapper to use for every live GitHub call.",
+        help="GitHub CLI binary or wrapper to use for actor-owned live GitHub writes and merge checks.",
+    )
+    parser.add_argument(
+        "--governance-gh-bin",
+        help="Optional GitHub CLI binary or wrapper for read-only governance API checks.",
     )
     parser.add_argument("--smoke-root", default=DEFAULT_SMOKE_ROOT)
     parser.add_argument("--output", required=True)
@@ -664,6 +675,7 @@ def main(argv: list[str] | None = None) -> int:
         base_ref=args.base_ref,
         expected_actor=args.expected_actor,
         gh_bin=args.gh_bin,
+        governance_gh_bin=args.governance_gh_bin,
         smoke_root=args.smoke_root,
         output=Path(args.output),
         execute=args.execute,

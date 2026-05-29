@@ -60,10 +60,14 @@ def test_ao_ma10s_workflow_permissions_are_minimal() -> None:
 def test_ao_ma10s_secret_is_only_bound_as_env_and_not_echoed() -> None:
     text = _workflow_text()
     assert 'GLADYATORE_LAB_GH_TOKEN: ${{ secrets.GLADYATORE_LAB_GH_TOKEN }}' in text
+    assert 'AO_GOVERNANCE_GH_TOKEN: ${{ secrets.AO_GOVERNANCE_GH_TOKEN }}' in text
     assert text.count("${{ secrets.GLADYATORE_LAB_GH_TOKEN }}") == 1
+    assert text.count("${{ secrets.AO_GOVERNANCE_GH_TOKEN }}") == 1
     shell_blocks = "\n".join(_run_step_blocks(text))
     assert "$GLADYATORE_LAB_GH_TOKEN" not in shell_blocks
     assert "${GLADYATORE_LAB_GH_TOKEN" not in shell_blocks
+    assert "$AO_GOVERNANCE_GH_TOKEN" not in shell_blocks
+    assert "${AO_GOVERNANCE_GH_TOKEN" not in shell_blocks
     assert "set -x" not in shell_blocks
     assert "env |" not in shell_blocks
     assert "printenv" not in shell_blocks
@@ -97,6 +101,7 @@ def test_ao_ma10s_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["trigger"] == "workflow_dispatch_only"
     assert receipt["allowed_ref"] == "refs/heads/main"
     assert receipt["secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
+    assert receipt["governance_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
     assert receipt["token_value_recorded"] is False
     assert receipt["release_authority"] == "ao-release-gate+github-ruleset"
     assert receipt["ai_output_release_authority"] is False

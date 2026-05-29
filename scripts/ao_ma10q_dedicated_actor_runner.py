@@ -30,6 +30,7 @@ DEFAULT_REPO = "Halildeu/ao-kernel"
 DEFAULT_BASE_REF = "main"
 DEFAULT_EXPECTED_ACTOR = "gladyatore-lab"
 DEFAULT_TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+DEFAULT_GOVERNANCE_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 EXECUTE_CONFIRMATION = "AO-MA-10L-EXECUTE"
 TOKEN_ENV_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
 
@@ -128,10 +129,11 @@ def _load_smoke_result(path: Path) -> dict[str, Any]:
     return data
 
 
-def _sanitize_smoke_command(command: list[str], *, wrapper: Path, smoke_output: Path) -> list[str]:
+def _sanitize_smoke_command(command: list[str], *, wrappers: list[Path], smoke_output: Path) -> list[str]:
+    wrapper_paths = {str(wrapper) for wrapper in wrappers}
     sanitized: list[str] = []
     for item in command:
-        if item == str(wrapper):
+        if item in wrapper_paths:
             sanitized.append("<temporary-gh-wrapper>")
         elif item == str(smoke_output):
             sanitized.append("<temporary-smoke-output>")
@@ -146,6 +148,7 @@ def run(
     base_ref: str,
     expected_actor: str,
     token_env: str,
+    governance_token_env: str,
     base_gh_bin: str,
     output: Path,
     execute: bool,
@@ -155,6 +158,7 @@ def run(
     runner: Runner = _run,
 ) -> dict[str, Any]:
     _validate_token_env_name(token_env)
+    _validate_token_env_name(governance_token_env)
     result = _base_result(
         repo=repo,
         base_ref=base_ref,
@@ -171,8 +175,13 @@ def run(
     with tempfile.TemporaryDirectory(prefix="ao-ma10q-") as temp:
         temp_dir = Path(temp)
         wrapper = temp_dir / "gh-dedicated"
+        governance_wrapper = temp_dir / "gh-governance"
         smoke_output = temp_dir / "ao-ma10l-result.json"
         _write_gh_wrapper(path=wrapper, token_env=token_env, base_gh_bin=base_gh_bin)
+        governance_wrapper_created = False
+        if os.environ.get(governance_token_env):
+            _write_gh_wrapper(path=governance_wrapper, token_env=governance_token_env, base_gh_bin=base_gh_bin)
+            governance_wrapper_created = True
         result["wrapper"] = {
             "created": True,
             "mode": "0700",
@@ -199,11 +208,16 @@ def run(
             "--format",
             "json",
         ]
+        if governance_wrapper_created:
+            command.extend(["--governance-gh-bin", str(governance_wrapper)])
         if execute:
             command.append("--execute")
             if confirmation is not None:
                 command.extend(["--confirmation", confirmation])
-        result["smoke_command"] = _sanitize_smoke_command(command, wrapper=wrapper, smoke_output=smoke_output)
+        wrappers = [wrapper]
+        if governance_wrapper_created:
+            wrappers.append(governance_wrapper)
+        result["smoke_command"] = _sanitize_smoke_command(command, wrappers=wrappers, smoke_output=smoke_output)
 
         proc = runner(command)
         blockers: list[str] = []
@@ -243,6 +257,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-ref", default=DEFAULT_BASE_REF)
     parser.add_argument("--expected-actor", default=DEFAULT_EXPECTED_ACTOR)
     parser.add_argument("--token-env", default=DEFAULT_TOKEN_ENV)
+    parser.add_argument("--governance-token-env", default=DEFAULT_GOVERNANCE_TOKEN_ENV)
     parser.add_argument("--base-gh-bin", default="gh")
     parser.add_argument("--output", required=True)
     parser.add_argument("--execute", action="store_true")
@@ -257,6 +272,7 @@ def main(argv: list[str] | None = None) -> int:
         base_ref=args.base_ref,
         expected_actor=args.expected_actor,
         token_env=args.token_env,
+        governance_token_env=args.governance_token_env,
         base_gh_bin=args.base_gh_bin,
         output=Path(args.output),
         execute=args.execute,

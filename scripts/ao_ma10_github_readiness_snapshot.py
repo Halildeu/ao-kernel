@@ -423,17 +423,36 @@ def collect_live_snapshot(
     branch: str,
     gh_bin: str,
     dedicated_merge_actor: str = DEFAULT_DEDICATED_MERGE_ACTOR,
+    actor_gh_bin: str | None = None,
 ) -> dict[str, Any]:
     collection_errors: list[str] = []
+    actor_gh_bin = actor_gh_bin or gh_bin
     repo_info, error = _repo_info_with_error(gh_bin, repository)
     if error:
         collection_errors.append(error)
-    login, error = _viewer_login_with_error(gh_bin)
+    actor_repo_info = repo_info
+    if actor_gh_bin != gh_bin:
+        actor_repo_info, error = _repo_info_with_error(actor_gh_bin, repository)
+        if error:
+            collection_errors.append(error)
+            actor_repo_info = {}
+
+    login, error = _viewer_login_with_error(actor_gh_bin)
     if error:
         collection_errors.append(error)
-    permission, error = _viewer_repo_permission_with_error(gh_bin, repository, login)
+    permission, error = _viewer_repo_permission_with_error(actor_gh_bin, repository, login)
     if error:
-        collection_errors.append(error)
+        fallback_permission = actor_repo_info.get("viewerPermission")
+        if isinstance(fallback_permission, str):
+            permission = fallback_permission.lower()
+        else:
+            collection_errors.append(error)
+    effective_repo_info = dict(repo_info)
+    if "viewerPermission" in actor_repo_info:
+        effective_repo_info["viewerPermission"] = actor_repo_info.get("viewerPermission")
+    if "viewerCanAdminister" in actor_repo_info:
+        effective_repo_info["viewerCanAdminister"] = actor_repo_info.get("viewerCanAdminister")
+
     protection, error = _run_json_with_error(
         [gh_bin, "api", f"repos/{repository}/branches/{branch}/protection"],
         "branch_protection",
@@ -471,7 +490,7 @@ def collect_live_snapshot(
         repository=repository,
         branch=branch,
         generated_at=datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        repo_info=repo_info,
+        repo_info=effective_repo_info,
         viewer_login=login,
         viewer_permission=permission,
         branch_protection=protection if isinstance(protection, dict) else {},
@@ -488,6 +507,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repository", default="Halildeu/ao-kernel")
     parser.add_argument("--branch", default="main")
     parser.add_argument("--gh-bin", default="gh")
+    parser.add_argument("--actor-gh-bin")
     parser.add_argument("--dedicated-merge-actor", default=DEFAULT_DEDICATED_MERGE_ACTOR)
     parser.add_argument(
         "--ssot-status-path",
@@ -496,7 +516,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
 
-    snapshot = collect_live_snapshot(args.repository, args.branch, args.gh_bin, args.dedicated_merge_actor)
+    snapshot = collect_live_snapshot(
+        args.repository,
+        args.branch,
+        args.gh_bin,
+        args.dedicated_merge_actor,
+        actor_gh_bin=args.actor_gh_bin,
+    )
     ssot_path = Path(args.ssot_status_path)
     ssot_claim_observed = _ssot_required_check_claim_observed(ssot_path)
     ssot_conflict = ssot_claim_observed and not snapshot["rulesets"]["ao_release_gate_source_pinned_to_actions"]

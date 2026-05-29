@@ -29,11 +29,18 @@ Default token environment variable:
 GLADYATORE_LAB_GH_TOKEN
 ```
 
+Optional governance-read token environment variable:
+
+```text
+AO_GOVERNANCE_GH_TOKEN
+```
+
 The runner never accepts token values on CLI arguments. It only accepts the
-name of an environment variable and creates a temporary `0700` wrapper:
+name of an environment variable and creates temporary `0700` wrappers:
 
 ```text
 GH_TOKEN="${GLADYATORE_LAB_GH_TOKEN}" exec gh "$@"
+GH_TOKEN="${AO_GOVERNANCE_GH_TOKEN}" exec gh "$@"
 ```
 
 The output artifact records neither the token value nor the temporary wrapper
@@ -43,6 +50,7 @@ path.
 
 ```bash
 GLADYATORE_LAB_GH_TOKEN=<redacted> \
+AO_GOVERNANCE_GH_TOKEN=<redacted> \
   python3 scripts/ao_ma10q_dedicated_actor_runner.py \
     --output /tmp/ao-ma10q.json \
     --format text
@@ -58,6 +66,7 @@ dedicated_actor_token_env_missing
 
 ```bash
 GLADYATORE_LAB_GH_TOKEN=<redacted> \
+AO_GOVERNANCE_GH_TOKEN=<redacted> \
   python3 scripts/ao_ma10q_dedicated_actor_runner.py \
     --output /tmp/ao-ma10q.json \
     --execute \
@@ -68,12 +77,17 @@ GLADYATORE_LAB_GH_TOKEN=<redacted> \
 AO-MA-10q delegates all live GitHub sequencing to AO-MA-10l:
 
 ```text
-AO-MA-10q dedicated actor wrapper -> AO-MA-10l smoke -> AO-MA-10c merge-agent
+AO-MA-10q dedicated actor wrapper + governance-read wrapper -> AO-MA-10l smoke -> AO-MA-10c merge-agent
 ```
 
 AO-MA-10l still performs A0/A1 readiness checks, required check observation,
 and AO-MA-10c merge delegation. If those checks fail, AO-MA-10q records the
 blockers and does not turn AI review into release authority.
+
+The governance wrapper is read-only from AO-MA-10l's perspective and is used
+only for branch-protection/ruleset readiness reads that fine-grained non-admin
+merge actor tokens cannot access. PR creation, check polling, and merge
+execution continue to use the dedicated actor wrapper.
 
 ## Result Artifact
 
