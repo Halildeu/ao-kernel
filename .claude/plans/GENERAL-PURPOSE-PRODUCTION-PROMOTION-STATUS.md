@@ -10,28 +10,21 @@ The GPP closeout is a release-governance lifecycle closure record only:
 `support_widening`, `production_platform_claim`, and `live_adapter_execution`
 remain disallowed.
 
-**Current live autonomy readiness:** AO-MA-10A0/A1 are the authority for
-whether the repository can actually run the fully autonomous merge lane today.
-The latest GitHub API snapshot reports the lane **blocked**, but the blocker is
-now narrower than the earlier GPP-2D drift record: ruleset `16803733` has the
-dual source-pinned `ao-release-gate-technical` / `ao-release-gate-review`
-required-check set, `bypass_actors=[]`, and the legacy `main` review gate has
-`required_approving_review_count=0` plus `require_code_owner_reviews=false`.
-The former hard blocker was the merge actor: operator shells observed
-`Halildeu` with admin permission, and the attempted `gladyatore-lab`
-fine-grained PAT path proved write/non-admin identity but could not call either
-GitHub CLI GraphQL merge or REST pull merge (`HTTP 403 Resource not accessible
-by personal access token`). The active no-human proof path is now the
-repo-owned GitHub Actions merge executor (`github-actions[bot]`) using the
-workflow-scoped `github.token`; it still only acts after AO-MA-10A0/A1,
-required `ao-release-gate` checks, and the GitHub ruleset are green. Therefore
-the no-testai model remains the recorded design outcome, but it is **not live
-autonomous merge readiness** until AO-MA-10q records a `merged` result under the
-repo-owned workflow executor. `testai.acik.com/ao-gate`, smee.io delivery, deployment-protection
-callback evidence, and policy App slug reconciliation remain **deferred
-optional future GPP-2C infrastructure**, not active blockers. The AO-MA-1
-multi-agent orchestration design feeds evidence into the lane without becoming
-release authority.
+**Current live autonomy readiness:** AO-MA-10A0/A1 plus AO-MA-10q merged-smoke
+evidence are the authority for whether the repository can actually run the
+fully autonomous low-risk merge lane today. The accepted live evidence is
+AO-MA-10q workflow run `26633091281`: it created disposable low-risk PR
+[#737](https://github.com/Halildeu/ao-kernel/pull/737), observed the required
+source-pinned `ao-release-gate-technical` / `ao-release-gate-review` checks
+pass, and merged through `app/github-actions` with no human approval and no
+admin bypass. The no-testai model is therefore live for eligible low-risk
+autonomous merges. High-risk/governance-sensitive changes remain fail-closed
+unless the repo-owned `ao-release-gate` checks receive required cross-provider
+review evidence and GitHub ruleset requirements pass. `testai.acik.com/ao-gate`,
+smee.io delivery, deployment-protection callback evidence, and policy App slug
+reconciliation remain **deferred optional future GPP-2C infrastructure**, not
+active blockers. The AO-MA-1 multi-agent orchestration design feeds evidence
+into the lane without becoming release authority.
 **Date:** 2026-05-24
 **Authority:** live `origin/main`; run `git rev-parse --short origin/main` for
 the current head
@@ -473,7 +466,7 @@ The final production claim stays closed until `GPP-9` passes.
 | `GPP-2ae` | Completed / no support widening | Internal operator host bundle | Caddy + policy service + `ao-release-gate` compose bundle and no-secret metadata attestation ready; services are still not publicly hosted/evidenced |
 | `GPP-2af` | Completed / no support widening | Internal gate host health probe | no-secret public HTTPS health probe ready; actual hosted health evidence, webhooks, callback/check-run evidence, and cutover are still missing |
 | `GPP-2ag` | Completed / no support widening | Local AI review gate pivot + LOCAL-GATE-1 (GPP-2A) | pivot recorded (PR #576) and local AI review evidence gate implemented + merged (PR #577); operator-controlled local trust evidence only; under the GPP-2D-7 / AO-GATE-9 closeout (`2026-05-24`) the gate runs within the closed GPP-2 release-governance lifecycle and does not by itself widen support, claim production readiness, or replace the source-pinned ao-release-gate required check |
-| `GPP-2D` | Completed / no support widening; live autonomy readiness blocked | Autonomous required-check lane | design, context-binding, decision-core wiring, enforce job, real-PR enforce evidence, and AO-GATE-9 closeout are recorded; AO-MA-10A0/A1 live GitHub readiness now confirms the ruleset/review model (`ao-release-gate-technical` + `ao-release-gate-review` source-pinned, `bypass_actors=[]`, no legacy low-risk review requirement), but low-risk autonomous merge smoke and merge-agent activation remain blocked until the dedicated non-admin merge actor (`gladyatore-lab`) is authenticated and AO-MA-10q records a merged disposable PR |
+| `GPP-2D` | Completed / no support widening; low-risk live autonomy verified | Autonomous required-check lane | design, context-binding, decision-core wiring, enforce job, real-PR enforce evidence, AO-GATE-9 closeout, and AO-MA-10q low-risk merged smoke are recorded; AO-MA-10A0/A1 live GitHub readiness confirms the ruleset/review model (`ao-release-gate-technical` + `ao-release-gate-review` source-pinned, `bypass_actors=[]`, no legacy low-risk review requirement), and AO-MA-10q run `26633091281` merged PR #737 via `app/github-actions` without human approval or admin bypass |
 | `AO-MA-1` | Planned / docs only / no support widening | Multi-agent orchestration design | planner/explorer/worker/reviewer/verifier/integrator model feeds evidence into GPP-2D; it is not release authority |
 | `GPP-2` | Closed / no support widening; not live autonomy readiness | Protected live-adapter gate runtime binding | closed on `2026-05-24` under decision `gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution`; release-governance design outcome is no-testai/local-operator, while AO-MA-10A0/A1 remains the current live GitHub readiness authority; deployment-protection callback/testai hosting remains deferred optional GPP-2C infrastructure; closeout record `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md` |
 | `GPP-3` | Not started | Real-adapter usage/cost evidence closure | `cost_evidence_ready` / `defer_cost_policy` |
@@ -1237,6 +1230,7 @@ admin bypass for PR merge automation, and must keep
 | 2026-05-24 | GPP-2D-7 / AO-GATE-9 GPP-2 closeout recorded | `current_wp.status` flipped from `blocked` to `closed`, `blocked_wps=[]`, decision `gpp2_closed_no_testai_release_governance_required_check_enforced_callback_deferred_no_support_widening_no_production_claim_no_live_adapter_execution` recorded under `.claude/plans/GPP-2D-7-AO-GATE-9-GPP-CLOSEOUT.md`. `support_widening_allowed`, `production_platform_claim_allowed`, and `live_adapter_execution_allowed` remain `false`. Deployment-protection callback path remains deferred optional future GPP-2C infrastructure. GPP-2D-6 low-risk auto-merge smoke and CODEOWNERS narrowing remain optional later hardening slices, not closeout prerequisites. |
 | 2026-05-28 | AO-MA-10 live GitHub readiness drift synced | Current GitHub API evidence from `scripts/ao_ma10_github_readiness_snapshot.py` now shows ruleset `16803733` carries the dual source-pinned required-check shape (`ao-release-gate-technical` + `ao-release-gate-review` via GitHub Actions integration `15368`), `bypass_actors=[]`, and legacy low-risk review gating is disabled. The GPP closeout remains closed with guard flags false, but AO-MA-10A0/A1 is still blocked because the observed merge actor is `Halildeu/admin` rather than the dedicated non-admin actor `gladyatore-lab`; low-risk autonomous merge smoke, merge-agent activation, and any "fully autonomous" claim remain blocked until AO-MA-10A0/A1 reports `ready_for_dry_run` and AO-MA-10q records a `merged` disposable PR. |
 | 2026-05-29 | AO-MA-10 fine-grained PAT merge path rejected; workflow executor pivot opened | AO-MA-10q execute smoke run `26625417101` created PR #726, observed all 16 required checks pass and mergeState `CLEAN`, but the `gladyatore-lab` fine-grained PAT failed REST `PUT /pulls/726/merge` with `HTTP 403 Resource not accessible by personal access token`. This narrows the remaining blocker to merge executor authority. The active fix path is to use the repo-owned workflow executor (`github-actions[bot]` via `github.token`) for the final merge command while preserving `ao-release-gate+github-ruleset` as release authority. |
+| 2026-05-29 | AO-MA-10 low-risk autonomous merge smoke accepted | AO-MA-10q workflow run `26633091281` completed successfully: `doctor_status=0`, `runner_status=0`, decision `merged`, required checks observed and passed, merge command attempted, PR #737 merged by `app/github-actions`, and no human approval/admin bypass was used. This records low-risk live autonomous merge readiness while preserving high-risk cross-provider review gating, `support_widening=false`, `production_platform_claim=false`, and `live_adapter_execution=false`. Evidence: `docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-20260529-105127z.md` and GitHub run artifact `ao-ma10q-dedicated-actor-smoke-26633091281`. |
 | 2026-04-28 | GPP-5d issue opened | Issue [#559](https://github.com/Halildeu/ao-kernel/issues/559) tracks repo-intelligence read-only workflow closeout before GPP-6 preparation. |
 | 2026-04-28 | GPP-5d closeout preflight added | `scripts/gpp5_repo_intelligence_closeout.py` records GPP-5 as closed for read-only workflow-surface purposes while keeping GPP-6 execution blocked by GPP-2 and GPP-4. |
 | 2026-04-28 | GPP-6a issue opened | Issue [#561](https://github.com/Halildeu/ao-kernel/issues/561) tracks the read-only E2E preflight contract for GPP-6 preparation. |

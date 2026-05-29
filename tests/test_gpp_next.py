@@ -345,7 +345,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     assert any("python3 scripts/gpp_next.py" == item["command"] for item in payload["required_startup_checks"])
     assert any(
         action
-        == "continue the no-testai local/operator release-governance model as the recorded design outcome, but do not treat it as live autonomous merge readiness until AO-MA-10A0/A1 reports ready_for_dry_run and GitHub API evidence shows required checks, review model, bypass actors, and merge actor aligned"
+        == "continue the no-testai local/operator release-governance model as the recorded design outcome; treat live low-risk autonomous merge readiness as proven only by AO-MA-10A0/A1 ready evidence plus AO-MA-10q merged-smoke evidence, while high-risk changes remain gated by ao-release-gate cross-provider review evidence and GitHub ruleset enforcement"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -356,7 +356,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     # AO-MA-10 live-readiness truth is stronger than historical closeout prose.
     assert any(
         action
-        == "treat AO-MA-10A0/A1 live GitHub readiness snapshots as the authority for autonomous merge readiness; current live evidence has the source-pinned ao-release-gate checks, empty bypass actors, and no legacy low-risk review requirement, but keep the autonomous merge lane blocked before smoke or merge-agent activation until the dedicated non-admin merge actor is authenticated and A0/A1 reports ready_for_dry_run"
+        == "treat AO-MA-10A0/A1 live GitHub readiness plus AO-MA-10q merged-smoke evidence as the authority for low-risk autonomous merge readiness; current accepted evidence includes source-pinned ao-release-gate checks, empty bypass actors, no legacy low-risk review requirement, AO-MA-10q run 26633091281, PR #737 merged by app/github-actions, and no human approval or admin bypass"
         for action in payload["next_allowed_actions"]
     )
     assert any(
@@ -500,7 +500,7 @@ def test_gpp_status_contract_keeps_support_widening_closed() -> None:
     )
     assert any(
         action
-        == "treat GPP-2 closeout as completion of low-risk auto-merge smoke or CODEOWNERS narrowing without an explicit later GPP-2D-6/hardening record"
+        == "treat GPP-2 closeout alone as completion of low-risk auto-merge smoke or CODEOWNERS narrowing without an explicit AO-MA-10q merged-smoke evidence record"
         for action in payload["forbidden_actions"]
     )
     assert any(

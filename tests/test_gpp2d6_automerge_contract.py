@@ -37,19 +37,22 @@ def test_gpp2d6_requires_cutover_and_operator_review_model_before_smoke() -> Non
     assert "GPP-2D-7 / AO-GATE-9 closeout records GPP-2 as closed. Done" in doc
     assert "CODEOWNERS narrowing lands and legacy `enforce_admins=true` is verified." in doc
     assert "`ao-release-gate` path-sensitive human-review enforcement lands" in doc
-    assert "Operator enables GitHub-native auto-merge" in doc
+    assert "repo-owned workflow executor is selected as the low-risk merge executor" in doc
     assert "Operator selects and applies the low-risk review model" in doc
-    assert "Steps 1-6 are complete or in this hardening PR. Steps 7-9 remain" in doc
+    assert "Steps 1-9 are complete." in doc
+    assert "AO-MA-10q workflow run" in doc
 
 
 def test_gpp2d6_pins_low_risk_and_high_risk_smoke_acceptance() -> None:
     doc = DOC.read_text(encoding="utf-8")
 
-    assert "Low-risk auto-merge smoke" in doc
+    assert "Low-risk no-human merge smoke" in doc
     assert "For low-risk paths, `ao-release-gate` must not require a human review" in doc
     assert "`ao-release-gate` records no high-risk changed paths." in doc
     assert "No non-author human review is required for the low-risk path." in doc
-    assert "GitHub performs the merge after required checks pass." in doc
+    assert "`app/github-actions` performs the merge after required checks pass." in doc
+    assert "workflow_run_id: 26633091281" in doc
+    assert "pull_request: https://github.com/Halildeu/ao-kernel/pull/737" in doc
     assert "High-risk human-gate smoke" in doc
     assert "`ao-release-gate` fails with" in doc
     assert "ao_release_gate_high_risk_human_review_missing" in doc
@@ -67,6 +70,6 @@ def test_gpp2d6_keeps_hard_stops_and_gpp2_closeout_boundary() -> None:
     assert "Live adapter execution: false" in doc
     assert "testai / smee dependency: false" in doc
     assert "Legacy branch-protection enforce_admins setting before smoke" in doc
-    assert "Repository auto-merge is disabled." in doc
+    assert "Neither repository-native auto-merge nor the accepted repo-owned workflow" in doc
     assert "GPP-2 status after smoke: remains closed" in doc
-    assert "Until then, GPP-2D-6 remains incomplete, but GPP-2 remains `closed`." in doc
+    assert "GPP-2D-6 is complete under the accepted low-risk workflow-executor model" in doc

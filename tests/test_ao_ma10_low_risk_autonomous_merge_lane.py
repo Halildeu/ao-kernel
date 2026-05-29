@@ -107,7 +107,7 @@ def test_ao_ma10_low_risk_criteria_are_schema_pinned() -> None:
     assert "no_live_adapter_execution" in criteria["required_signals"]
 
 
-def test_ao_ma10_merge_agent_activation_locked_not_started() -> None:
+def test_ao_ma10_low_risk_activation_prerequisites_are_recorded_done() -> None:
     receipt = _load_json(RECEIPT)
     prereqs = receipt["merge_agent_activation_prerequisites"]
     assert len(prereqs) == 10
@@ -116,9 +116,11 @@ def test_ao_ma10_merge_agent_activation_locked_not_started() -> None:
     assert by_id["stale_evidence_blocked_smoke"] == "done"
     assert by_id["same_provider_review_blocked_smoke"] == "done"
     assert by_id["missing_verifier_blocked_smoke"] == "done"
-    assert by_id["positive_low_risk_autonomous_merge_smoke"] == "not_started"
-    assert by_id["admin_bypass_absence_verified"] == "not_started"
-    assert by_id["merge_agent_identity_and_permissions_recorded"] == "not_started"
+    assert by_id["positive_low_risk_autonomous_merge_smoke"] == "done"
+    assert by_id["admin_bypass_absence_verified"] == "done"
+    assert by_id["merge_agent_identity_and_permissions_recorded"] == "done"
+    assert by_id["codeowners_or_ruleset_low_risk_model_implemented"] == "done"
+    assert by_id["cutover_record_no_support_widening_no_production_claim_no_live_adapter"] == "done"
 
 
 def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
@@ -132,24 +134,30 @@ def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
     assert consensus["escalate_to_human_after_max_rounds"] is True
 
 
-def test_ao_ma10_docs_state_planning_only_no_runtime_cutover() -> None:
+def test_ao_ma10_docs_state_low_risk_live_high_risk_gated() -> None:
     text = DOC.read_text(encoding="utf-8")
-    assert "planning-only" in text
+    assert "low-risk live autonomy accepted / high-risk consensus gated" in text
+    assert "The original AO-MA-10 planning slice was **planning-only**" in text
+    assert "AO-MA-10q workflow run `26633091281`" in text
+    assert "[#737](https://github.com/Halildeu/ao-kernel/pull/737)" in text
+    assert "app/github-actions" in text
     assert "AO-MA-10a0  GitHub readiness snapshot" in text
     assert "MiniMax remains a provider-integration prerequisite" in text
-    assert "The merge agent is **not active**" in text
+    assert "AO-MA-10 is therefore live for eligible low-risk PRs" in text
+    assert "high-risk autonomous supersession remains gated" in text
     assert "No workflow mutation." in text
     assert "No ruleset or branch-protection mutation." in text
     assert "No CODEOWNERS mutation." in text
-    assert "No merge-agent activation in this slice." in text
-    assert "No auto-merge execution in this slice." in text
+    assert "The original AO-MA-10 planning slice did not activate the merge agent." in text
+    assert "The original AO-MA-10 planning slice did not execute auto-merge." in text
 
 
 def test_ao_ma10_updates_ao_ma1_plan_without_claiming_cutover() -> None:
     text = AO_MA_1.read_text(encoding="utf-8")
     assert "AO-MA-10" in text
     assert "Low-risk autonomous merge lane cutover plan" in text
-    assert "AO-MA-10 is planning-only" in text
+    assert "The original AO-MA-10 slice was planning-only" in text
+    assert "accepted AO-MA-10q low-risk no-human merge evidence" in text
 
 
 def test_ao_ma10_gpp_status_guards_remain_closed() -> None:
