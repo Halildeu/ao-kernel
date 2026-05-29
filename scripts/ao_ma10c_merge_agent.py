@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -23,8 +24,12 @@ RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 DEFAULT_EXPECTED_ACTOR = "gladyatore-lab"
 DEFAULT_BASE_REF = "main"
 DEFAULT_MAX_SNAPSHOT_AGE_SECONDS = 300
+DEFAULT_MERGE_STATE_MAX_ATTEMPTS = 12
+DEFAULT_MERGE_STATE_POLL_SECONDS = 5
 EXECUTE_CONFIRMATION = "AO-MA-10C-EXECUTE"
 FORBIDDEN_ADMIN_FLAG = "--" "admin"
+READY_MERGE_STATES = {"CLEAN", "HAS_HOOKS"}
+TRANSIENT_MERGE_STATES = {"UNKNOWN", "UNSTABLE"}
 
 Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
@@ -64,6 +69,30 @@ def _json_command(command: list[str], runner: Runner) -> tuple[dict[str, Any] | 
     return parsed, None
 
 
+def _permission_from_repo_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    permissions = payload.get("permissions")
+    if not isinstance(permissions, dict):
+        return {}
+    if permissions.get("admin") is True:
+        return {"permission": "admin", "role_name": "admin"}
+    if permissions.get("maintain") is True:
+        return {"permission": "maintain", "role_name": "maintain"}
+    if permissions.get("push") is True:
+        return {"permission": "write", "role_name": "write"}
+    if permissions.get("triage") is True:
+        return {"permission": "triage", "role_name": "triage"}
+    if permissions.get("pull") is True:
+        return {"permission": "read", "role_name": "read"}
+    return {}
+
+
+def _permission_fallback_allowed(error: str | None) -> bool:
+    if not error:
+        return False
+    normalized = error.lower()
+    return "resource not accessible by personal access token" in normalized and "http 403" in normalized
+
+
 def _parse_time(value: Any) -> datetime | None:
     if not isinstance(value, str):
         return None
@@ -100,7 +129,15 @@ def merge_command(repo: str, pr_number: int, gh_bin: str = "gh") -> list[str]:
     ]
 
 
-def collect_live_github_state(*, repo: str, pr_number: int, gh_bin: str, runner: Runner = _run) -> dict[str, Any]:
+def collect_live_github_state(
+    *,
+    repo: str,
+    pr_number: int,
+    gh_bin: str,
+    runner: Runner = _run,
+    merge_state_max_attempts: int = DEFAULT_MERGE_STATE_MAX_ATTEMPTS,
+    merge_state_poll_seconds: int = DEFAULT_MERGE_STATE_POLL_SECONDS,
+) -> dict[str, Any]:
     """Collect live GitHub state needed immediately before a merge attempt."""
 
     collection_errors: list[str] = []
@@ -118,26 +155,45 @@ def collect_live_github_state(*, repo: str, pr_number: int, gh_bin: str, runner:
             runner,
         )
         if error is not None or not isinstance(permission_payload, dict):
-            collection_errors.append(f"permission: {error or 'invalid shape'}")
+            if not _permission_fallback_allowed(error):
+                collection_errors.append(f"permission: {error or 'invalid shape'}")
+            else:
+                repo_payload, repo_error = _json_command([gh_bin, "api", f"repos/{repo}"], runner)
+                if repo_error is not None or not isinstance(repo_payload, dict):
+                    collection_errors.append(f"permission: {error or 'invalid shape'}")
+                    collection_errors.append(f"repo_permission_fallback: {repo_error or 'invalid shape'}")
+                else:
+                    permission = _permission_from_repo_payload(repo_payload)
+                    if not permission:
+                        collection_errors.append("repo_permission_fallback: missing permissions")
         else:
             permission = permission_payload
 
-    pr_view, error = _json_command(
-        [
-            gh_bin,
-            "pr",
-            "view",
-            str(pr_number),
-            "--repo",
-            repo,
-            "--json",
-            "state,isDraft,baseRefName,headRefOid,mergeStateStatus",
-        ],
-        runner,
-    )
-    if error is not None or not isinstance(pr_view, dict):
-        collection_errors.append(f"pr_view: {error or 'invalid shape'}")
-        pr_view = {}
+    pr_view: dict[str, Any] = {}
+    attempts = max(1, merge_state_max_attempts)
+    for attempt in range(attempts):
+        payload, error = _json_command(
+            [
+                gh_bin,
+                "pr",
+                "view",
+                str(pr_number),
+                "--repo",
+                repo,
+                "--json",
+                "state,isDraft,baseRefName,headRefOid,mergeStateStatus",
+            ],
+            runner,
+        )
+        if error is not None or not isinstance(payload, dict):
+            collection_errors.append(f"pr_view: {error or 'invalid shape'}")
+            pr_view = {}
+            break
+        pr_view = payload
+        merge_state = pr_view.get("mergeStateStatus")
+        if merge_state in READY_MERGE_STATES or merge_state not in TRANSIENT_MERGE_STATES or attempt == attempts - 1:
+            break
+        time.sleep(max(0, merge_state_poll_seconds))
 
     checks, error = _json_command(
         [
@@ -268,7 +324,7 @@ def build_result(
         blockers.add("pr_is_draft")
     if pr_view.get("baseRefName") != base_ref:
         blockers.add("pr_base_not_main")
-    if pr_view.get("mergeStateStatus") not in {"CLEAN", "HAS_HOOKS"}:
+    if pr_view.get("mergeStateStatus") not in READY_MERGE_STATES:
         blockers.add("pr_merge_state_not_clean")
 
     checks_ok, failing_checks = _checks_pass(required_checks_list)

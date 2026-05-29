@@ -268,6 +268,145 @@ def test_ao_ma10c_collect_live_state_reads_only() -> None:
     assert " --method DELETE " not in flat
 
 
+def test_ao_ma10c_collect_live_state_falls_back_to_repo_permissions_when_collaborator_permission_403() -> None:
+    mod = _load_script_module()
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "gh: Resource not accessible by personal access token (HTTP 403)",
+            )
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel"]:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                json.dumps({"permissions": {"admin": False, "push": True, "pull": True}}),
+                "",
+            )
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+
+    assert state["collection_errors"] == []
+    assert state["permission"]["permission"] == "write"
+    assert state["permission"]["role_name"] == "write"
+
+
+def test_ao_ma10c_collect_live_state_does_not_fallback_for_unexpected_permission_read_errors() -> None:
+    mod = _load_script_module()
+    repo_fallback_called = False
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        nonlocal repo_fallback_called
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 1, "", "gh: server error (HTTP 500)")
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel"]:
+            repo_fallback_called = True
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                json.dumps({"permissions": {"admin": False, "push": True, "pull": True}}),
+                "",
+            )
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+    payload = _result(live_state=state)
+
+    assert repo_fallback_called is False
+    assert state["permission"] == {}
+    assert any("HTTP 500" in error for error in state["collection_errors"])
+    assert "github_api_read_failed" in payload["decision"]["blockers"]
+    assert "merge_actor_not_write" in payload["decision"]["blockers"]
+
+
+def test_ao_ma10c_collect_live_state_retries_transient_unstable_merge_state() -> None:
+    mod = _load_script_module()
+    pr_views = [
+        {
+            **_ready_live_state()["pr_view"],
+            "mergeStateStatus": "UNSTABLE",
+        },
+        _ready_live_state()["pr_view"],
+    ]
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(pr_views.pop(0)), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(
+        repo="Halildeu/ao-kernel",
+        pr_number=123,
+        gh_bin="gh",
+        runner=fake_runner,
+        merge_state_max_attempts=2,
+        merge_state_poll_seconds=0,
+    )
+
+    assert state["collection_errors"] == []
+    assert state["pr_view"]["mergeStateStatus"] == "CLEAN"
+    assert pr_views == []
+
+
+def test_ao_ma10c_collect_live_state_blocks_when_transient_merge_state_never_settles() -> None:
+    mod = _load_script_module()
+    seen_pr_views = 0
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        nonlocal seen_pr_views
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
+        if command[:3] == ["gh", "pr", "view"]:
+            seen_pr_views += 1
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                json.dumps({**_ready_live_state()["pr_view"], "mergeStateStatus": "UNSTABLE"}),
+                "",
+            )
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(
+        repo="Halildeu/ao-kernel",
+        pr_number=123,
+        gh_bin="gh",
+        runner=fake_runner,
+        merge_state_max_attempts=2,
+        merge_state_poll_seconds=0,
+    )
+    payload = _result(live_state=state)
+
+    assert seen_pr_views == 2
+    assert state["pr_view"]["mergeStateStatus"] == "UNSTABLE"
+    assert "pr_merge_state_not_clean" in payload["decision"]["blockers"]
+
+
 def test_ao_ma10c_source_does_not_construct_admin_or_auto_merge() -> None:
     source = SCRIPT.read_text(encoding="utf-8")
     assert "--admin" not in source
