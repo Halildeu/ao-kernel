@@ -16,3 +16,6 @@ The file intentionally lives under the narrow
 `docs/evidence/ao-ma-10l-autonomous-smoke/` allowlist so the release gate can
 classify it as a low-risk autonomous merge smoke request. It does not widen
 support, claim production platform readiness, or execute a live adapter.
+
+Retry note: this smoke was re-triggered after PR #746 landed the executor
+readiness normalization fix on `main`.
