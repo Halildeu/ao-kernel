@@ -11,7 +11,7 @@
 
 AO-MA-10q removes the remaining ad-hoc shell wrapper step from the low-risk
 autonomous merge smoke. It runs AO-MA-10l through a temporary GitHub CLI wrapper
-that is scoped to the dedicated non-admin merge actor.
+that is scoped to the configured merge executor.
 
 The runner does not replace release authority. AI provider output remains evidence only.
 Release authority remains the repo-owned `ao-release-gate` required checks plus
@@ -23,10 +23,17 @@ GitHub ruleset enforcement.
 scripts/ao_ma10q_dedicated_actor_runner.py
 ```
 
-Default token environment variable:
+Default token environment variable for legacy/local runs:
 
 ```text
 GLADYATORE_LAB_GH_TOKEN
+```
+
+The GitHub Actions smoke workflow uses the repo-owned executor instead:
+
+```text
+AO_MERGE_GITHUB_TOKEN=${{ github.token }}
+expected actor: github-actions[bot]
 ```
 
 Optional governance-read token environment variable:
@@ -40,6 +47,7 @@ name of an environment variable and creates temporary `0700` wrappers:
 
 ```text
 GH_TOKEN="${GLADYATORE_LAB_GH_TOKEN}" exec gh "$@"
+GH_TOKEN="${AO_MERGE_GITHUB_TOKEN}" exec gh "$@"
 GH_TOKEN="${AO_GOVERNANCE_GH_TOKEN}" exec gh "$@"
 ```
 
@@ -77,7 +85,7 @@ AO_GOVERNANCE_GH_TOKEN=<redacted> \
 AO-MA-10q delegates all live GitHub sequencing to AO-MA-10l:
 
 ```text
-AO-MA-10q dedicated actor wrapper + governance/producer wrapper -> AO-MA-10l smoke -> AO-MA-10c merge-agent
+AO-MA-10q merge-executor wrapper + governance/producer wrapper -> AO-MA-10l smoke -> AO-MA-10c merge-agent
 ```
 
 AO-MA-10l still performs A0/A1 readiness checks, required check observation,
@@ -98,7 +106,7 @@ The governance wrapper has two bounded roles from AO-MA-10l's perspective:
    `file_create`, `pr_create`) when the dedicated non-admin actor token cannot
    create refs.
 
-Required-check polling and merge execution continue to use the dedicated actor
+Required-check polling and merge execution continue to use the merge-executor
 wrapper. The producer wrapper is not release authority and cannot satisfy the
 AO-MA-10c merge-agent actor assertion.
 
@@ -133,7 +141,8 @@ The no-human low-risk merge path is proven only when AO-MA-10q produces a
 
 - token value is not recorded;
 - wrapper path is not recorded;
-- actor is the dedicated non-admin merge actor;
+- actor is the configured merge executor (`github-actions[bot]` in the
+  workflow-owned no-human lane);
 - any split PR producer is not treated as release authority;
 - AO-MA-10l reports `merged`;
 - required checks pass;

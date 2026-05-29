@@ -1,4 +1,46 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "GPP-9",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-ma10ae-actions-merge",
+    "changed_files": [
+      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md",
+      ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json",
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
+      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md",
+      ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
+      ".claude/plans/GENERAL-PURPOSE-PRODUCTION-PROMOTION-STATUS.md",
+      ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_ma10_github_readiness_snapshot.py",
+      "scripts/ao_ma10c_merge_agent.py",
+      "scripts/ao_ma10l_autonomous_smoke.py",
+      "scripts/ao_ma10q_dedicated_actor_runner.py",
+      "scripts/ao_ma10r_dedicated_actor_credential_doctor.py",
+      "tests/test_ao_ma10_github_readiness_snapshot.py",
+      "tests/test_ao_ma10c_merge_agent.py",
+      "tests/test_ao_ma10l_autonomous_smoke.py",
+      "tests/test_ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10r_dedicated_actor_credential_doctor.py",
+      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -13,59 +55,35 @@
       "status": "pass"
     },
     {
-      "name": "json_parse",
-      "status": "pass"
-    },
-    {
       "name": "py_compile",
       "status": "pass"
     },
     {
-      "name": "diff_check",
+      "name": "gpp_next",
       "status": "pass"
     },
     {
-      "name": "cross_ai_review",
+      "name": "git_diff_check",
       "status": "pass"
     }
   ],
   "findings": [
-    "Live AO-MA-10q execute smoke reached disposable PR #724 with credential_ready, actual_actor gladyatore-lab, actor_permission write, mergeStateStatus CLEAN, and 16 required checks passing, but AO-MA-10c blocked because GitHub CLI gh pr merge used GraphQL mergePullRequest and returned Resource not accessible by personal access token.",
-    "AO-MA-10AD keeps merge authority with ao-release-gate plus GitHub ruleset and the dedicated non-admin merge actor; it only changes the final merge executor from gh pr merge GraphQL to REST PUT /pulls/{pr}/merge and does not add admin bypass, native auto-merge, support widening, production claim, or live adapter execution.",
-    "The REST merge command includes sha=headRefOid so a PR head change between readiness/check evidence and merge execution fails closed instead of merging an unobserved commit.",
-    "Branch cleanup is a separate REST git-ref DELETE attempted only for same-repository non-base head refs; branch delete failure is warning-only because a successful merge cannot be undone and artifact truth must remain merged.",
-    "OpenAI explorer independently recommended the same REST merge path and flagged head-sha and cross-repository delete guardrails; those guardrails were absorbed with tests.",
-    "Claude CLI reviewer returned VERDICT: AGREE on the REST merge patch; residual notes were non-blocking test/comment robustness observations only."
+    "All 6 scripts and 6 test files consistently replace gladyatore-lab with github-actions[bot] and GLADYATORE_LAB_GH_TOKEN with AO_MERGE_GITHUB_TOKEN",
+    "Workflow permissions expanded from contents:read to contents:write+pull-requests:write+actions:read+checks:read+statuses:read; this is the minimum write surface needed for github.token merge execution",
+    "Test test_ao_ma10s_workflow_permissions_are_minimal updated: contents:write and pull-requests:write moved from forbidden to required; administration:write added to forbidden list",
+    "release_authority remains ao-release-gate+github-ruleset in all 5 plan receipts and all 5 script constants",
+    "ai_output_release_authority:false preserved in all receipts",
+    "live_adapter_execution:false preserved in all receipts and plan JSONs",
+    "support_widening:false preserved in all receipts",
+    "production_platform_claim:false preserved in all receipts",
+    "No secret material, token values, or credential content in diff",
+    "No admin bypass pattern: no --admin flag, no ruleset mutation, no branch-protection mutation",
+    "release_gate_low_risk_smoke_pr_authors narrowed from [gladyatore-lab, Halildeu] to [Halildeu] only; github-actions[bot] is merge executor not PR author",
+    "GPP status table gains 2026-05-29 row documenting the gladyatore-lab PAT 403 failure and workflow executor pivot rationale",
+    "Workflow still dispatch-only from refs/heads/main; no pull_request or pull_request_target trigger introduced"
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-        ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.md",
-        ".claude/plans/AO-MA-10C-MERGE-AGENT-EXECUTOR.v1.json",
-        ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
-        "ao_kernel/defaults/schemas/ao-ma-10c-merge-agent-result.schema.v1.json",
-        "local-ai-review-evidence.v1.json",
-        "scripts/ao_ma10c_merge_agent.py",
-        "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json",
-        "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json",
-        "tests/test_ao_ma10c_merge_agent.py"
-      ],
-      "head_ref": "refs/heads/codex/ao-ma10ad-rest-merge"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10AD"
+  "production_platform_claim": false
 }

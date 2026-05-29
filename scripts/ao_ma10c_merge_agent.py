@@ -21,7 +21,7 @@ from typing import Any, Callable
 SCHEMA_VERSION = "ao-ma-10c-merge-agent-result.v1"
 ARTIFACT_KIND = "ao_ma_10c_merge_agent_result"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
-DEFAULT_EXPECTED_ACTOR = "gladyatore-lab"
+DEFAULT_EXPECTED_ACTOR = "github-actions[bot]"
 DEFAULT_BASE_REF = "main"
 DEFAULT_MAX_SNAPSHOT_AGE_SECONDS = 300
 DEFAULT_MERGE_STATE_MAX_ATTEMPTS = 12

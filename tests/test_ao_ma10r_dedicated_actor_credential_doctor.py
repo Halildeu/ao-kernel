@@ -17,7 +17,7 @@ SCRIPT = ROOT / "scripts" / "ao_ma10r_dedicated_actor_credential_doctor.py"
 DOC = ROOT / ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.md"
 RECEIPT = ROOT / ".claude/plans/AO-MA-10R-DEDICATED-ACTOR-CREDENTIAL-DOCTOR.v1.json"
 SCHEMA_NAME = "ao-ma-10r-dedicated-actor-credential-doctor-result.schema.v1.json"
-TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+TOKEN_ENV = "AO_MERGE_GITHUB_TOKEN"
 PRODUCER_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 TOKEN_VALUE = "VALUE_NOT_IN_ARTIFACT"
 PRODUCER_TOKEN_VALUE = "PRODUCER_VALUE_NOT_IN_ARTIFACT"
@@ -39,7 +39,7 @@ class FakeGitHubRunner:
     def __init__(
         self,
         *,
-        login: str = "gladyatore-lab",
+        login: str = "github-actions[bot]",
         actor_id: int = 12345,
         permissions: dict[str, bool] | None = None,
         pulls: list[dict[str, Any]] | None = None,
@@ -86,7 +86,7 @@ def _run_doctor(
     *,
     token_value: str | None = TOKEN_VALUE,
     producer_token_value: str | None = None,
-    expected_actor: str = "gladyatore-lab",
+    expected_actor: str = "github-actions[bot]",
     branch_write_probe: bool = False,
     branch_write_probe_token_env: str | None = None,
 ) -> dict[str, Any]:
@@ -161,7 +161,7 @@ def test_ao_ma10r_rejects_invalid_token_env_name(tmp_path: Path) -> None:
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env="bad-token-env",
             branch_write_probe_token_env=None,
             gh_bin="gh",
@@ -183,7 +183,7 @@ def test_ao_ma10r_happy_path_ready_without_recording_secret_or_mutating(
     assert all(env.get("GH_TOKEN") == TOKEN_VALUE for env in runner.envs)
     assert result["decision"]["result"] == "credential_ready"
     assert result["decision"]["blockers"] == []
-    assert result["actor"] == {"login": "gladyatore-lab", "id": 12345, "matches_expected": True}
+    assert result["actor"] == {"login": "github-actions[bot]", "id": 12345, "matches_expected": True}
     assert result["repository_access"]["permission_level"] == "write"
     assert result["repository_access"]["can_merge_without_admin"] is True
     assert result["repository_access"]["admin_permission_observed"] is False
@@ -253,7 +253,7 @@ def test_ao_ma10r_branch_write_probe_can_use_split_producer_token(
     assert PRODUCER_TOKEN_VALUE not in artifact_text
     assert result["decision"]["result"] == "credential_ready"
     assert result["mutations_performed"] is True
-    assert result["actor"]["login"] == "gladyatore-lab"
+    assert result["actor"]["login"] == "github-actions[bot]"
     probe = result["branch_write_probe"]
     assert probe["requested"] is True
     assert probe["token_env"] == PRODUCER_TOKEN_ENV

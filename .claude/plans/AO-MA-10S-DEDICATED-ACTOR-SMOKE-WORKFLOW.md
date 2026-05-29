@@ -9,14 +9,14 @@
 ## Purpose
 
 AO-MA-10s removes the remaining local-shell dependency from AO-MA-10q. The
-dedicated non-admin merge actor token is read from the GitHub repository secret
-`GLADYATORE_LAB_GH_TOKEN`, not from a local operator shell. The optional
-governance/producer token is read from `AO_GOVERNANCE_GH_TOKEN` for
-branch-protection/ruleset readiness APIs and disposable low-risk PR production.
-Merge execution stays bound to the dedicated non-admin actor token. A Codex or
-Claude operator may dispatch the workflow, but the merge
-authority remains the repo-owned `ao-release-gate` checks plus GitHub ruleset
-enforcement, and the merge actor must still be `gladyatore-lab`.
+merge executor is the repo-owned workflow runtime (`github-actions[bot]`) using
+the workflow-scoped `github.token`, not an operator shell token and not a
+human-user personal access token. The optional governance/producer token is read
+from `AO_GOVERNANCE_GH_TOKEN` for branch-protection/ruleset readiness APIs and
+disposable low-risk PR production. Merge execution stays bound to the
+repo-owned workflow executor. A Codex or Claude operator may dispatch the
+workflow, but the merge authority remains the repo-owned `ao-release-gate`
+checks plus GitHub ruleset enforcement.
 
 This does not make the lane complete by itself. It makes the final smoke
 repeatable from GitHub Actions:
@@ -31,13 +31,15 @@ workflow_dispatch -> AO-MA-10r credential doctor -> AO-MA-10q runner
 - trigger is `workflow_dispatch` only;
 - dispatch must run from `refs/heads/main`;
 - no `pull_request` or `pull_request_target` secret path is introduced;
-- workflow `GITHUB_TOKEN` has only `contents: read`;
-- the dedicated actor token is only bound as an environment variable;
+- workflow `github.token` is scoped to the minimum write surface needed for the
+  executor path: `contents: write` and `pull-requests: write`, plus read-only
+  check/status/action observation permissions;
+- the merge token is only bound as `AO_MERGE_GITHUB_TOKEN` and is never echoed;
 - the governance token is only bound as an environment variable and may be used
   only for readiness reads plus disposable PR production;
 - execute mode proves the disposable PR producer branch-write path with
   `--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN`;
-- merge execution remains bound to the dedicated non-admin merge actor token;
+- merge execution remains bound to the repo-owned workflow executor token;
 - AO-MA-10q fails closed if delegated AO-MA-10l evidence reports a producer
   that claims release authority or widens beyond the bounded producer
   operations;
@@ -73,7 +75,7 @@ gh workflow run ao-ma10q-dedicated-actor-smoke.yml \
 ## Completion Criteria
 
 AO-MA-10s is ready when the workflow exists, validates with tests, and fails
-closed if `GLADYATORE_LAB_GH_TOKEN` is not configured.
+closed if the workflow-scoped merge token is unavailable.
 
 The low-risk no-human merge lane is complete only when an execute-mode run
 produces:
@@ -82,7 +84,7 @@ produces:
 - AO-MA-10q `merged`;
 - AO-MA-10l disposable PR merged;
 - AO-MA-10c merge-agent result `merged`;
-- live GitHub evidence that the merge actor is `gladyatore-lab`, not
+- live GitHub evidence that the merge executor is `github-actions[bot]`, not
   `Halildeu`;
 - required `ao-release-gate-technical` and `ao-release-gate-review` checks
   remain source-pinned and passing.

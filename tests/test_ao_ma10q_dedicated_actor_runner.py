@@ -18,7 +18,7 @@ SCRIPT = ROOT / "scripts" / "ao_ma10q_dedicated_actor_runner.py"
 DOC = ROOT / ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md"
 RECEIPT = ROOT / ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json"
 SCHEMA_NAME = "ao-ma-10q-dedicated-actor-runner-result.schema.v1.json"
-TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+TOKEN_ENV = "AO_MERGE_GITHUB_TOKEN"
 GOVERNANCE_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 TOKEN_VALUE = "VALUE_NOT_IN_ARTIFACT"
 GOVERNANCE_TOKEN_VALUE = "GOVERNANCE_VALUE_NOT_IN_ARTIFACT"
@@ -139,7 +139,7 @@ def test_ao_ma10q_missing_token_env_blocks_before_smoke_invocation(tmp_path: Pat
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -175,7 +175,7 @@ def test_ao_ma10q_rejects_invalid_token_env_name(tmp_path: Path) -> None:
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env="bad-token-env",
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -202,7 +202,7 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -268,7 +268,7 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -321,7 +321,7 @@ def test_ao_ma10q_blocks_split_context_if_smoke_reports_merge_actor_producer(
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -367,7 +367,7 @@ def test_ao_ma10q_accepts_bounded_governance_producer_without_release_authority(
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -409,7 +409,7 @@ def test_ao_ma10q_blocks_if_split_producer_claims_release_authority(
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -448,7 +448,7 @@ def test_ao_ma10q_catches_smoke_command_timeout_fail_closed(
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -500,7 +500,7 @@ def test_ao_ma10q_default_runner_applies_aligned_subprocess_timeout(
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",
@@ -534,7 +534,7 @@ def test_ao_ma10q_propagates_smoke_blockers_fail_closed(tmp_path: Path, monkeypa
         mod.run(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             token_env=TOKEN_ENV,
             governance_token_env=GOVERNANCE_TOKEN_ENV,
             base_gh_bin="gh",

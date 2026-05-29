@@ -22,10 +22,10 @@ local/process evidence -> ao-release-gate required checks -> GitHub ruleset -> m
 
 AI output remains evidence only.
 
-## Current Live Blocker
+## Historical Live Blocker
 
-The current authenticated `gh` actor is `Halildeu` with admin permission. The
-merge-agent executor therefore blocks live execution with:
+Earlier live readiness runs observed `Halildeu` with admin permission. The
+merge-agent executor correctly blocked that path with:
 
 ```text
 unexpected_merge_actor
@@ -33,9 +33,12 @@ merge_actor_admin_permission_observed
 dedicated_merge_actor_not_confirmed
 ```
 
-The approval work ends only when the local/runtime merge actor is the dedicated
-non-admin merge actor (`gladyatore-lab`) and the live readiness snapshot reports
-`ready_for_dry_run`.
+The `gladyatore-lab` fine-grained PAT path later proved repository write and
+non-admin identity but failed both GitHub CLI GraphQL merge and REST pull merge
+with `HTTP 403 Resource not accessible by personal access token`. The current
+no-human workflow path therefore uses the repo-owned GitHub Actions executor
+(`github-actions[bot]`) through `github.token`; the release authority remains
+the required `ao-release-gate` checks plus GitHub ruleset.
 
 ## Executor Contract
 
@@ -51,7 +54,7 @@ It is dry-run by default. Execute mode requires:
 2. `--confirmation AO-MA-10C-EXECUTE`
 3. fresh AO-MA-10a0 readiness snapshot
 4. AO-MA-10a1 eligibility result `ready_for_low_risk_dry_run`
-5. authenticated actor equals `gladyatore-lab`
+5. authenticated actor equals the configured expected merge executor
 6. actor has `write`, not `admin`
 7. PR is open, not draft, base `main`, merge state clean
 8. all live required checks pass
@@ -96,7 +99,7 @@ The artifact records:
 
 This slice does not:
 
-- authenticate the local `gh` runtime as `gladyatore-lab`
+- authenticate an operator shell as release authority
 - perform a live merge
 - alter CODEOWNERS
 - alter branch protection or rulesets
@@ -107,7 +110,7 @@ This slice does not:
 
 ## Next Slice
 
-After the runtime is authenticated as the dedicated non-admin actor:
+After the runtime is authenticated as the configured merge executor:
 
 ```text
 AO-MA-10l positive disposable low-risk autonomous merge smoke

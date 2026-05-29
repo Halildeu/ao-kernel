@@ -6,7 +6,7 @@
   "default_mode": "read_only",
   "delegates_merge_to": "scripts/ao_ma10c_merge_agent.py",
   "execute_confirmation": "AO-MA-10L-EXECUTE",
-  "expected_actor": "gladyatore-lab",
+  "expected_actor": "github-actions[bot]",
   "forbidden_mutations": [
     "admin_merge",
     "ruleset_mutation",
@@ -29,10 +29,9 @@
   "production_platform_claim": false,
   "release_authority": "ao-release-gate+github-ruleset",
   "release_gate_low_risk_smoke_pr_authors": [
-    "gladyatore-lab",
     "Halildeu"
   ],
-  "release_gate_low_risk_smoke_scope": "direct docs/evidence/ao-ma-10l-autonomous-smoke/*.md only; no high-risk paths; final merge remains dedicated actor only",
+  "release_gate_low_risk_smoke_scope": "direct docs/evidence/ao-ma-10l-autonomous-smoke/*.md only; no high-risk paths; final merge remains repo-owned workflow executor only",
   "result_schema": "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
   "schema_version": "ao-ma-10l-positive-autonomous-smoke-receipt.v1",
   "script": "scripts/ao_ma10l_autonomous_smoke.py",

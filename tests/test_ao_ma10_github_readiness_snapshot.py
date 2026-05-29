@@ -53,7 +53,7 @@ def _valid_ready_inputs() -> dict[str, Any]:
             "viewerCanAdminister": False,
             "viewerPermission": "WRITE",
         },
-        "viewer_login": "gladyatore-lab",
+        "viewer_login": "github-actions[bot]",
         "viewer_permission": "write",
         "branch_protection": {
             "required_pull_request_reviews": {

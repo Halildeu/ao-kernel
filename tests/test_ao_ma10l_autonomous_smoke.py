@@ -54,7 +54,7 @@ def _ready_snapshot() -> dict[str, Any]:
         },
         "readiness": {"decision": "ready_for_dry_run", "blockers": [], "warnings": []},
         "merge_actor": {
-            "login": "gladyatore-lab",
+            "login": "github-actions[bot]",
             "permission": "write",
             "viewer_can_administer": False,
             "administration_write_absent_for_dedicated_actor": True,
@@ -217,7 +217,7 @@ def _run_with_fake(
         mod.run_smoke(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             gh_bin=gh_bin,
             governance_gh_bin=governance_gh_bin,
             producer_gh_bin=producer_gh_bin,
@@ -248,7 +248,7 @@ def test_ao_ma10l_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["support_widening"] is False
     assert receipt["production_platform_claim"] is False
     assert receipt["live_adapter_execution"] is False
-    assert receipt["expected_actor"] == "gladyatore-lab"
+    assert receipt["expected_actor"] == "github-actions[bot]"
     assert "AI provider output remains evidence only." in text
     assert "AO-MA-10c merge-agent" in text
 
@@ -345,7 +345,7 @@ def test_ao_ma10l_uses_governance_gh_bin_only_for_readiness_snapshots(tmp_path: 
         mod.run_smoke(
             repo="Halildeu/ao-kernel",
             base_ref="main",
-            expected_actor="gladyatore-lab",
+            expected_actor="github-actions[bot]",
             gh_bin="gh-dedicated",
             governance_gh_bin="gh-governance",
             producer_gh_bin=None,
@@ -433,7 +433,7 @@ def test_ao_ma10l_waits_for_initial_required_checks_to_appear(tmp_path: Path, tr
             mod.run_smoke(
                 repo="Halildeu/ao-kernel",
                 base_ref="main",
-                expected_actor="gladyatore-lab",
+                expected_actor="github-actions[bot]",
                 gh_bin="gh",
                 governance_gh_bin=None,
                 producer_gh_bin=None,

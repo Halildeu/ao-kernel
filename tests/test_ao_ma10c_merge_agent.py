@@ -21,6 +21,7 @@ READY_ELIGIBILITY = ROOT / "tests/fixtures/ao_ma_10/autonomous_merge_eligibility
 DRY_RUN_FIXTURE = ROOT / "tests/fixtures/ao_ma_10c/merge_agent.ready_dry_run.valid.json"
 BLOCKED_FIXTURE = ROOT / "tests/fixtures/ao_ma_10c/merge_agent.blocked_admin_actor.valid.json"
 SCHEMA_NAME = "ao-ma-10c-merge-agent-result.schema.v1.json"
+EXPECTED_ACTOR = "github-actions[bot]"
 
 
 def _schema() -> dict[str, Any]:
@@ -57,7 +58,7 @@ def _ready_snapshot(now: datetime) -> dict[str, Any]:
         },
         "readiness": {"decision": "ready_for_dry_run", "blockers": [], "warnings": []},
         "merge_actor": {
-            "login": "gladyatore-lab",
+            "login": EXPECTED_ACTOR,
             "permission": "write",
             "viewer_can_administer": False,
             "administration_write_absent_for_dedicated_actor": True,
@@ -67,7 +68,7 @@ def _ready_snapshot(now: datetime) -> dict[str, Any]:
 
 def _ready_live_state() -> dict[str, Any]:
     return {
-        "viewer": {"login": "gladyatore-lab"},
+        "viewer": {"login": EXPECTED_ACTOR},
         "permission": {"permission": "write", "role_name": "write"},
         "pr_view": {
             "state": "OPEN",
@@ -132,7 +133,7 @@ def test_ao_ma10c_receipt_and_doc_preserve_authority_boundary() -> None:
     assert receipt["support_widening"] is False
     assert receipt["production_platform_claim"] is False
     assert receipt["live_adapter_execution"] is False
-    assert receipt["expected_actor"] == "gladyatore-lab"
+    assert receipt["expected_actor"] == EXPECTED_ACTOR
     assert receipt["native_auto_merge_enablement"] is False
     assert "AI output remains evidence only." in text
     assert "Halildeu` with admin permission" in text
@@ -374,7 +375,7 @@ def test_ao_ma10c_collect_live_state_reads_only() -> None:
     def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         seen.append(command)
         if command[:3] == ["gh", "api", "user"]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "github-actions[bot]"}), "")
         if "/collaborators/" in command[2]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
         if command[:3] == ["gh", "pr", "view"]:
@@ -398,7 +399,7 @@ def test_ao_ma10c_collect_live_state_falls_back_to_repo_permissions_when_collabo
 
     def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         if command[:3] == ["gh", "api", "user"]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "github-actions[bot]"}), "")
         if len(command) >= 3 and "/collaborators/" in command[2]:
             return subprocess.CompletedProcess(
                 command,
@@ -433,7 +434,7 @@ def test_ao_ma10c_collect_live_state_does_not_fallback_for_unexpected_permission
     def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         nonlocal repo_fallback_called
         if command[:3] == ["gh", "api", "user"]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "github-actions[bot]"}), "")
         if len(command) >= 3 and "/collaborators/" in command[2]:
             return subprocess.CompletedProcess(command, 1, "", "gh: server error (HTTP 500)")
         if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel"]:
@@ -472,7 +473,7 @@ def test_ao_ma10c_collect_live_state_retries_transient_unstable_merge_state() ->
 
     def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         if command[:3] == ["gh", "api", "user"]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "github-actions[bot]"}), "")
         if len(command) >= 3 and "/collaborators/" in command[2]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
         if command[:3] == ["gh", "pr", "view"]:
@@ -502,7 +503,7 @@ def test_ao_ma10c_collect_live_state_blocks_when_transient_merge_state_never_set
     def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         nonlocal seen_pr_views
         if command[:3] == ["gh", "api", "user"]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "gladyatore-lab"}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"login": "github-actions[bot]"}), "")
         if len(command) >= 3 and "/collaborators/" in command[2]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
         if command[:3] == ["gh", "pr", "view"]:
