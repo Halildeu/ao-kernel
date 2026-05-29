@@ -1,27 +1,26 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10AA",
+  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex-reviewer-godel",
+    "agent": "codex-reviewer-dewey",
     "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10aa-bind-autonomous-smoke-evidence",
+    "head_ref": "refs/heads/codex/ao-auto-merge-executor",
     "changed_files": [
-      ".github/workflows/test.yml",
+      ".github/workflows/ao-autonomous-merge-executor.yml",
       "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
       "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/ao_release_gate.py",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_enforce_job.py"
+      "scripts/ao_autonomous_pr_merge_executor.py",
+      "tests/test_ao_autonomous_pr_merge_executor.py"
     ]
   },
   "checks_considered": [
@@ -42,16 +41,17 @@
       "status": "pass"
     },
     {
-      "name": "yaml_parse",
+      "name": "actionlint",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI reviewer verdict AGREE after REVISE findings were absorbed.",
-    "Workflow detector now requires changeType ADDED and rejects renamed, deleted, changed, modified, missing changeType, dotdot, nested, absolute, and backslash paths.",
-    "Decision-core smoke helper now rejects dot, dotdot, empty segment, nested child, absolute, backslash, non-smoke, and non-markdown paths.",
-    "The bypass remains constrained by explicit request, dedicated gladyatore-lab actor, non-empty changed paths, no high-risk paths, and direct smoke markdown paths.",
-    "Adversarial probes passed for happy smoke, request false, non-dedicated actor, dotdot path, nested path, absolute path, backslash path, and non-md path.",
+    "OpenAI reviewer verdict AGREE after adversarial review of the autonomous merge executor patch.",
+    "The prior expression-injection, unpinned-checkout, stale-head, noop masking, and concurrency payload findings are absorbed.",
+    "The workflow routes untrusted values through env vars, pins checkout to the default branch, and validates PR number plus optional event_head_sha before invoking the executor.",
+    "The executor requires GitHub Actions actor identity, write permission, current main-base open PR, clean merge state, successful required checks, and source-pinned ao-release-gate checks.",
+    "The merge mutation is limited to gh api PUT /pulls/{number}/merge with squash and sha=headRefOid; branch delete is best-effort and never uses --admin.",
+    "Focused validation passed: actionlint, ruff, mypy, pytest -q tests/test_ao_autonomous_pr_merge_executor.py, and combined merge-agent/release-gate regression subset.",
     "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
   "secrets_recorded": false,
