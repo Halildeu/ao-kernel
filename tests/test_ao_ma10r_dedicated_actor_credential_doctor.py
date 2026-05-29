@@ -63,6 +63,17 @@ class FakeGitHubRunner:
             return subprocess.CompletedProcess(command, 0, json.dumps({"permissions": self.permissions}), "")
         if command == ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"]:
             return subprocess.CompletedProcess(command, 0, json.dumps(self.pulls), "")
+        if command == ["gh", "api", "repos/Halildeu/ao-kernel/git/ref/heads/main"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"object": {"sha": "abc123"}}), "")
+        if command[:5] == ["gh", "api", "repos/Halildeu/ao-kernel/git/refs", "--method", "POST"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"ref": command[6].removeprefix("ref=")}), "")
+        if (
+            len(command) == 5
+            and command[0:2] == ["gh", "api"]
+            and command[2].startswith("repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10r-token-probe-")
+            and command[3:] == ["--method", "DELETE"]
+        ):
+            return subprocess.CompletedProcess(command, 0, "", "")
         return subprocess.CompletedProcess(command, 1, "", f"unexpected command: {joined}")
 
 
@@ -73,6 +84,7 @@ def _run_doctor(
     *,
     token_value: str | None = TOKEN_VALUE,
     expected_actor: str = "gladyatore-lab",
+    branch_write_probe: bool = False,
 ) -> dict[str, Any]:
     if token_value is None:
         monkeypatch.delenv(TOKEN_ENV, raising=False)
@@ -83,10 +95,12 @@ def _run_doctor(
         dict[str, Any],
         mod.run(
             repo="Halildeu/ao-kernel",
+            base_ref="main",
             expected_actor=expected_actor,
             token_env=TOKEN_ENV,
             gh_bin="gh",
             output=tmp_path / "ao-ma10r.json",
+            branch_write_probe=branch_write_probe,
             runner=runner,
         ),
     )
@@ -108,9 +122,11 @@ def test_ao_ma10r_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert receipt["production_platform_claim"] is False
     assert receipt["live_adapter_execution"] is False
     assert receipt["token_value_recorded"] is False
+    assert receipt["mutations_performed"] == "read_only_by_default_true_only_for_execute_mode_branch_write_probe"
     assert receipt["default_token_env"] == TOKEN_ENV
     assert "never accepts token values as CLI arguments" in text
     assert "Release authority remains the repo-owned" in text
+    assert "--branch-write-probe" in text
 
 
 def test_ao_ma10r_missing_token_env_blocks_before_github_calls(
@@ -132,10 +148,12 @@ def test_ao_ma10r_rejects_invalid_token_env_name(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="token env name"):
         mod.run(
             repo="Halildeu/ao-kernel",
+            base_ref="main",
             expected_actor="gladyatore-lab",
             token_env="bad-token-env",
             gh_bin="gh",
             output=tmp_path / "ao-ma10r.json",
+            branch_write_probe=False,
             runner=FakeGitHubRunner(),
         )
 
@@ -159,11 +177,100 @@ def test_ao_ma10r_happy_path_ready_without_recording_secret_or_mutating(
     assert result["repository_access"]["can_read_pull_requests"] is True
     assert result["token_value_recorded"] is False
     assert result["mutations_performed"] is False
+    assert result["branch_write_probe"] == {
+        "requested": False,
+        "branch": None,
+        "base_ref": None,
+        "create_result": "not_requested",
+        "delete_result": "not_requested",
+    }
     assert result["commands"] == [
         ["gh", "api", "user"],
         ["gh", "api", "repos/Halildeu/ao-kernel"],
         ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"],
     ]
+
+
+def test_ao_ma10r_branch_write_probe_creates_and_deletes_temp_branch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = FakeGitHubRunner()
+    result = _run_doctor(tmp_path, monkeypatch, runner, branch_write_probe=True)
+
+    Draft202012Validator(_schema()).validate(result)
+    artifact_text = (tmp_path / "ao-ma10r.json").read_text(encoding="utf-8")
+    assert TOKEN_VALUE not in artifact_text
+    assert result["decision"]["result"] == "credential_ready"
+    assert result["mutations_performed"] is True
+    probe = result["branch_write_probe"]
+    assert probe["requested"] is True
+    assert probe["base_ref"] == "main"
+    assert probe["branch"].startswith("codex/ao-ma10r-token-probe-")
+    assert probe["create_result"] == "created"
+    assert probe["delete_result"] == "deleted"
+    assert any(command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/git/refs"] for command in result["commands"])
+    assert any(
+        command[0:2] == ["gh", "api"]
+        and command[2].startswith("repos/Halildeu/ao-kernel/git/refs/heads/codex/ao-ma10r-token-probe-")
+        for command in result["commands"]
+    )
+
+
+def test_ao_ma10r_branch_write_probe_blocks_base_ref_read_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    result = _run_doctor(
+        tmp_path,
+        monkeypatch,
+        FakeGitHubRunner(fail_command_contains="git/ref/heads/main"),
+        branch_write_probe=True,
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "blocked"
+    assert "branch_write_probe_base_ref_read_failed" in result["decision"]["blockers"]
+    assert result["mutations_performed"] is False
+    assert result["branch_write_probe"]["create_result"] == "blocked"
+    assert result["branch_write_probe"]["delete_result"] == "not_attempted"
+    assert any(item.startswith("branch_probe_base_ref:") for item in result["collection_errors"])
+
+
+def test_ao_ma10r_branch_write_probe_blocks_create_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    result = _run_doctor(
+        tmp_path,
+        monkeypatch,
+        FakeGitHubRunner(fail_command_contains="git/refs --method POST"),
+        branch_write_probe=True,
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "blocked"
+    assert "branch_write_probe_create_failed" in result["decision"]["blockers"]
+    assert result["mutations_performed"] is False
+    assert result["branch_write_probe"]["create_result"] == "failed"
+    assert result["branch_write_probe"]["delete_result"] == "not_attempted"
+    assert any(item.startswith("branch_probe_create:") for item in result["collection_errors"])
+
+
+def test_ao_ma10r_branch_write_probe_blocks_cleanup_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    result = _run_doctor(
+        tmp_path,
+        monkeypatch,
+        FakeGitHubRunner(fail_command_contains="git/refs/heads/codex/ao-ma10r-token-probe-"),
+        branch_write_probe=True,
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert result["decision"]["result"] == "blocked"
+    assert "branch_write_probe_cleanup_failed" in result["decision"]["blockers"]
+    assert result["mutations_performed"] is True
+    assert result["branch_write_probe"]["create_result"] == "created"
+    assert result["branch_write_probe"]["delete_result"] == "failed"
+    assert any(item.startswith("branch_probe_delete:") for item in result["collection_errors"])
 
 
 def test_ao_ma10r_accepts_maintain_as_non_admin_merge_capable(

@@ -24,8 +24,10 @@ SCHEMA_VERSION = "ao-ma-10r-dedicated-actor-credential-doctor-result.v1"
 ARTIFACT_KIND = "ao_ma_10r_dedicated_actor_credential_doctor_result"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 DEFAULT_REPO = "Halildeu/ao-kernel"
+DEFAULT_BASE_REF = "main"
 DEFAULT_EXPECTED_ACTOR = "gladyatore-lab"
 DEFAULT_TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
+BRANCH_PROBE_PREFIX = "codex/ao-ma10r-token-probe"
 TOKEN_ENV_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
 WRITE_CAPABLE_LEVELS = {"write", "maintain"}
 
@@ -61,6 +63,13 @@ def _base_result(*, repo: str, expected_actor: str, token_env: str) -> dict[str,
             "support_widening": False,
             "production_platform_claim": False,
             "live_adapter_execution": False,
+        },
+        "branch_write_probe": {
+            "requested": False,
+            "branch": None,
+            "base_ref": None,
+            "create_result": "not_requested",
+            "delete_result": "not_requested",
         },
         "actor": {
             "login": None,
@@ -114,6 +123,20 @@ def _run_json(
     return payload, None
 
 
+def _run_status(
+    command: list[str],
+    *,
+    env: Mapping[str, str],
+    runner: Runner,
+    result: dict[str, Any],
+) -> str | None:
+    result["commands"].append(_redacted_command(command))
+    proc = runner(command, env)
+    if proc.returncode != 0:
+        return proc.stderr.strip() or proc.stdout.strip() or f"exit {proc.returncode}"
+    return None
+
+
 def _permission_level(repo_payload: dict[str, Any]) -> str:
     permissions = repo_payload.get("permissions")
     if not isinstance(permissions, dict):
@@ -146,13 +169,102 @@ def _set_decision(result: dict[str, Any], blockers: set[str], warnings: set[str]
     }
 
 
+def _run_branch_write_probe(
+    *,
+    repo: str,
+    base_ref: str,
+    gh_bin: str,
+    env: Mapping[str, str],
+    runner: Runner,
+    result: dict[str, Any],
+    blockers: set[str],
+) -> None:
+    branch = f"{BRANCH_PROBE_PREFIX}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')}"
+    probe = {
+        "requested": True,
+        "branch": branch,
+        "base_ref": base_ref,
+        "create_result": "not_attempted",
+        "delete_result": "not_attempted",
+    }
+    result["branch_write_probe"] = probe
+
+    base_payload, error = _run_json(
+        [gh_bin, "api", f"repos/{repo}/git/ref/heads/{base_ref}"],
+        env=env,
+        runner=runner,
+        result=result,
+    )
+    if error is not None or not isinstance(base_payload, dict):
+        blockers.add("branch_write_probe_base_ref_read_failed")
+        result["collection_errors"].append(f"branch_probe_base_ref: {error or 'invalid shape'}")
+        probe["create_result"] = "blocked"
+        probe["delete_result"] = "not_attempted"
+        return
+
+    object_payload = base_payload.get("object")
+    sha = object_payload.get("sha") if isinstance(object_payload, dict) else None
+    if not isinstance(sha, str) or not sha:
+        blockers.add("branch_write_probe_base_ref_read_failed")
+        result["collection_errors"].append("branch_probe_base_ref: missing object.sha")
+        probe["create_result"] = "blocked"
+        probe["delete_result"] = "not_attempted"
+        return
+
+    error = _run_status(
+        [
+            gh_bin,
+            "api",
+            f"repos/{repo}/git/refs",
+            "--method",
+            "POST",
+            "-f",
+            f"ref=refs/heads/{branch}",
+            "-f",
+            f"sha={sha}",
+        ],
+        env=env,
+        runner=runner,
+        result=result,
+    )
+    if error is not None:
+        blockers.add("branch_write_probe_create_failed")
+        result["collection_errors"].append(f"branch_probe_create: {error}")
+        probe["create_result"] = "failed"
+        probe["delete_result"] = "not_attempted"
+        return
+
+    result["mutations_performed"] = True
+    probe["create_result"] = "created"
+    error = _run_status(
+        [
+            gh_bin,
+            "api",
+            f"repos/{repo}/git/refs/heads/{branch}",
+            "--method",
+            "DELETE",
+        ],
+        env=env,
+        runner=runner,
+        result=result,
+    )
+    if error is not None:
+        blockers.add("branch_write_probe_cleanup_failed")
+        result["collection_errors"].append(f"branch_probe_delete: {error}")
+        probe["delete_result"] = "failed"
+        return
+    probe["delete_result"] = "deleted"
+
+
 def run(
     *,
     repo: str,
+    base_ref: str,
     expected_actor: str,
     token_env: str,
     gh_bin: str,
     output: Path,
+    branch_write_probe: bool,
     runner: Runner = _run,
 ) -> dict[str, Any]:
     _validate_token_env_name(token_env)
@@ -225,6 +337,16 @@ def run(
         "can_merge_without_admin": can_merge_without_admin,
         "admin_permission_observed": admin_permission_observed,
     }
+    if branch_write_probe and not blockers:
+        _run_branch_write_probe(
+            repo=repo,
+            base_ref=base_ref,
+            gh_bin=gh_bin,
+            env=env,
+            runner=runner,
+            result=result,
+            blockers=blockers,
+        )
     _set_decision(result, blockers, warnings)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -234,19 +356,27 @@ def run(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=DEFAULT_REPO)
+    parser.add_argument("--base-ref", default=DEFAULT_BASE_REF)
     parser.add_argument("--expected-actor", default=DEFAULT_EXPECTED_ACTOR)
     parser.add_argument("--token-env", default=DEFAULT_TOKEN_ENV)
     parser.add_argument("--gh-bin", default="gh")
     parser.add_argument("--output", required=True)
+    parser.add_argument(
+        "--branch-write-probe",
+        action="store_true",
+        help="Create and delete a temporary branch to prove the token can perform the write path used by AO-MA-10l.",
+    )
     parser.add_argument("--format", choices=["json", "text"], default="json")
     args = parser.parse_args(argv)
 
     result = run(
         repo=args.repo,
+        base_ref=args.base_ref,
         expected_actor=args.expected_actor,
         token_env=args.token_env,
         gh_bin=args.gh_bin,
         output=Path(args.output),
+        branch_write_probe=args.branch_write_probe,
     )
 
     if args.format == "text":
