@@ -62,12 +62,14 @@ class FakeSmokeRunner:
         self.payload = payload
         self.returncode = returncode
         self.commands: list[list[str]] = []
+        self.timeouts: list[int] = []
         self.wrapper_path: str | None = None
         self.wrapper_mode: int | None = None
         self.wrapper_contents: str | None = None
 
-    def __call__(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+    def __call__(self, command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:
         self.commands.append(command)
+        self.timeouts.append(timeout)
         assert command[0]
         assert command[1].endswith("ao_ma10l_autonomous_smoke.py")
         assert "--gh-bin" in command
@@ -79,6 +81,18 @@ class FakeSmokeRunner:
         self.wrapper_contents = wrapper.read_text(encoding="utf-8")
         output.write_text(json.dumps(self.payload), encoding="utf-8")
         return subprocess.CompletedProcess(command, self.returncode, json.dumps(self.payload), "")
+
+
+class TimeoutSmokeRunner:
+    def __init__(self, timeout: int) -> None:
+        self.timeout = timeout
+        self.commands: list[list[str]] = []
+        self.timeouts: list[int] = []
+
+    def __call__(self, command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]:
+        self.commands.append(command)
+        self.timeouts.append(timeout)
+        raise subprocess.TimeoutExpired(command, timeout=self.timeout)
 
 
 def test_ao_ma10q_schema_is_valid_draft_2020_12() -> None:
@@ -218,6 +232,7 @@ def test_ao_ma10q_execute_uses_temporary_gh_wrapper_without_recording_secret_or_
     assert result["producer_token_env"] == TOKEN_ENV
     assert result["token_value_recorded"] is False
     assert result["decision"]["result"] == "merged"
+    assert runner.timeouts == [180]
     assert result["mutations_performed"] is True
 
 
@@ -269,6 +284,99 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
         "same_as_merge_actor_wrapper": False,
     }
     assert result["decision"]["result"] == "merged"
+    assert runner.timeouts == [180]
+
+
+def test_ao_ma10q_default_subprocess_timeout_exceeds_inner_smoke_window() -> None:
+    mod = _load_script_module()
+    assert mod._smoke_process_timeout(timeout_seconds=900, poll_seconds=15) == 960
+    assert mod._smoke_process_timeout(timeout_seconds=60, poll_seconds=30) == 180
+    assert mod._smoke_process_timeout(timeout_seconds=0, poll_seconds=1) == 180
+
+
+def test_ao_ma10q_catches_smoke_command_timeout_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    mod = _load_script_module()
+    output = tmp_path / "ao-ma10q.json"
+    runner = TimeoutSmokeRunner(timeout=321)
+
+    result = cast(
+        dict[str, Any],
+        mod.run(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
+            base_gh_bin="gh",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=900,
+            poll_seconds=15,
+            runner=runner,
+        ),
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert output.exists()
+    assert runner.commands
+    assert runner.timeouts == [960]
+    assert result["decision"]["result"] == "blocked"
+    assert result["decision"]["blockers"] == ["smoke_command_timeout: 321s"]
+    assert result["smoke_result"] is None
+    assert result["mutations_performed"] is False
+    assert result["token_value_recorded"] is False
+
+
+def test_ao_ma10q_default_runner_applies_aligned_subprocess_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
+    mod = _load_script_module()
+    output = tmp_path / "ao-ma10q.json"
+    observed: dict[str, Any] = {}
+
+    def fake_subprocess_run(
+        command: list[str],
+        *,
+        capture_output: bool,
+        text: bool,
+        timeout: int,
+    ) -> subprocess.CompletedProcess[str]:
+        observed["command"] = command
+        observed["capture_output"] = capture_output
+        observed["text"] = text
+        observed["timeout"] = timeout
+        raise subprocess.TimeoutExpired(command, timeout=timeout)
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_subprocess_run)
+
+    result = cast(
+        dict[str, Any],
+        mod.run(
+            repo="Halildeu/ao-kernel",
+            base_ref="main",
+            expected_actor="gladyatore-lab",
+            token_env=TOKEN_ENV,
+            governance_token_env=GOVERNANCE_TOKEN_ENV,
+            base_gh_bin="gh",
+            output=output,
+            execute=True,
+            confirmation="AO-MA-10L-EXECUTE",
+            timeout_seconds=900,
+            poll_seconds=15,
+        ),
+    )
+
+    Draft202012Validator(_schema()).validate(result)
+    assert observed["timeout"] == 960
+    assert observed["capture_output"] is True
+    assert observed["text"] is True
+    assert result["decision"]["result"] == "blocked"
+    assert result["decision"]["blockers"] == ["smoke_command_timeout: 960s"]
 
 
 def test_ao_ma10q_propagates_smoke_blockers_fail_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
