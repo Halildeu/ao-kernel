@@ -15,6 +15,8 @@
   "dedicated_gh_runtime_argument": "--gh-bin",
   "supports_split_pr_producer_runtime": true,
   "producer_gh_runtime_argument": "--producer-gh-bin",
+  "waits_for_initial_check_suite": true,
+  "initial_no_checks_reported_is_transient": true,
   "producer_release_authority": false,
   "producer_allowed_operations": [
     "base_ref_read",

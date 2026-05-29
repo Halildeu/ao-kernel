@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10V",
+  "work_package": "AO-MA-10W",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,22 +13,13 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10v-producer-token-split",
+    "head_ref": "refs/heads/codex/ao-ma10w-wait-for-initial-checks",
     "changed_files": [
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
       ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
-      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.md",
-      ".claude/plans/AO-MA-10Q-DEDICATED-ACTOR-RUNNER.v1.json",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
-      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10l-autonomous-smoke-result.schema.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10q-dedicated-actor-runner-result.schema.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ao_ma10l_autonomous_smoke.py",
-      "scripts/ao_ma10q_dedicated_actor_runner.py",
-      "tests/test_ao_ma10l_autonomous_smoke.py",
-      "tests/test_ao_ma10q_dedicated_actor_runner.py",
-      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
+      "tests/test_ao_ma10l_autonomous_smoke.py"
     ]
   },
   "checks_considered": [
@@ -59,11 +50,11 @@
   ],
   "findings": [
     "Claude reviewer verdict AGREE. Blocking bulgu yok.",
-    "Producer token only creates the disposable branch, file, and PR. Required-check polling and AO-MA-10c merge-agent remain bound to the dedicated non-admin merge actor runtime.",
-    "pr_producer.release_authority is false and producer_wrapper.path_recorded is false in the emitted artifacts and schemas.",
-    "No new GitHub workflow trigger or GITHUB_TOKEN write permission is introduced; workflow remains workflow_dispatch only with contents read.",
-    "Backward compatibility is preserved because --producer-gh-bin is optional and defaults to --gh-bin.",
-    "Relevant validations passed locally: 35 AO-MA-10r/l/q/s tests, focused 23 AO-MA-10l/q/s tests, ruff on touched tests, compileall on touched scripts, JSON validation, and git diff check."
+    "The change addresses the AO-MA-10S execute race observed after PR #703: GitHub may initially return no checks reported before required check suites appear.",
+    "Only the specific no checks reported condition is retried inside the existing polling timeout; timeout, invalid payloads, and real GitHub API read failures still fail closed.",
+    "The new focused test exercises one transient no-checks response followed by a successful required-check observation and merge decision.",
+    "No branch-protection, ruleset, release authority, support tier, live adapter execution, or production platform claim change is introduced.",
+    "Relevant validations passed locally: focused AO-MA-10L tests, compileall on the touched script, JSON validation, local GPP gate, and git diff check."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

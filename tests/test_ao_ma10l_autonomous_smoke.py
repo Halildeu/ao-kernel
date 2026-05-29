@@ -138,11 +138,13 @@ class FakeRunner:
         *,
         ready: bool = True,
         checks_pass: bool = True,
+        checks_transient_failures: int = 0,
         gh_bin: str = "gh",
         producer_gh_bin: str | None = None,
     ) -> None:
         self.ready = ready
         self.checks_pass = checks_pass
+        self.checks_transient_failures = checks_transient_failures
         self.gh_bin = gh_bin
         self.producer_gh_bin = producer_gh_bin or gh_bin
         self.commands: list[list[str]] = []
@@ -168,6 +170,14 @@ class FakeRunner:
         if command[:3] == [self.producer_gh_bin, "pr", "create"]:
             return subprocess.CompletedProcess(command, 0, "https://github.com/Halildeu/ao-kernel/pull/999\n", "")
         if command[:3] == [self.gh_bin, "pr", "checks"]:
+            if self.checks_transient_failures > 0:
+                self.checks_transient_failures -= 1
+                return subprocess.CompletedProcess(
+                    command,
+                    1,
+                    "",
+                    "no checks reported on the 'codex/ao-ma10l-smoke-example' branch",
+                )
             checks = (
                 [
                     {"name": "ao-release-gate-technical", "bucket": "pass", "state": "SUCCESS"},
@@ -400,6 +410,39 @@ def test_ao_ma10l_can_split_disposable_pr_producer_from_merge_actor(tmp_path: Pa
     ]
     assert merge_agent_commands
     assert merge_agent_commands[0][merge_agent_commands[0].index("--gh-bin") + 1] == "gh-dedicated"
+
+
+def test_ao_ma10l_waits_for_initial_required_checks_to_appear(tmp_path: Path) -> None:
+    fake = FakeRunner(ready=True, checks_transient_failures=1)
+    mod = _load_script_module()
+    monkeypatch_sleep = mod.time.sleep
+    mod.time.sleep = lambda _seconds: None
+    try:
+        result = cast(
+            dict[str, Any],
+            mod.run_smoke(
+                repo="Halildeu/ao-kernel",
+                base_ref="main",
+                expected_actor="gladyatore-lab",
+                gh_bin="gh",
+                governance_gh_bin=None,
+                producer_gh_bin=None,
+                smoke_root="docs/evidence/ao-ma-10l-autonomous-smoke",
+                output=tmp_path / "result.json",
+                execute=True,
+                confirmation="AO-MA-10L-EXECUTE",
+                timeout_seconds=5,
+                poll_seconds=1,
+                runner=fake,
+                now=datetime(2026, 5, 28, 21, 0, 0, tzinfo=UTC),
+            ),
+        )
+    finally:
+        mod.time.sleep = monkeypatch_sleep
+
+    assert result["decision"]["result"] == "merged"
+    check_commands = [command for command in fake.commands if command[:3] == ["gh", "pr", "checks"]]
+    assert len(check_commands) == 2
 
 
 def test_ao_ma10l_required_check_failure_blocks_before_merge_agent(tmp_path: Path) -> None:
