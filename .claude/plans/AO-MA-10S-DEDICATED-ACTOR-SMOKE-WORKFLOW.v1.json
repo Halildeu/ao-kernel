@@ -3,7 +3,7 @@
   "allowed_ref": "refs/heads/main",
   "artifact_kind": "ao_ma_10s_dedicated_actor_smoke_workflow_receipt",
   "governance_secret_env": "AO_GOVERNANCE_GH_TOKEN",
-  "producer_secret_env": "AO_GOVERNANCE_GH_TOKEN",
+  "producer_secret_env": "GLADYATORE_LAB_GH_TOKEN",
   "producer_release_authority": false,
   "live_adapter_execution": false,
   "next_required_slice": "configure GLADYATORE_LAB_GH_TOKEN and AO_GOVERNANCE_GH_TOKEN repository secrets and dispatch AO-MA-10q smoke",

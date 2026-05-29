@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10AA",
+  "work_package": "AO-MA-10AB",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,15 +13,14 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10aa-bind-autonomous-smoke-evidence",
+    "head_ref": "refs/heads/codex/ao-ma10ab-dedicated-producer-smoke",
     "changed_files": [
-      ".github/workflows/test.yml",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/ao_release_gate.py",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.md",
+      ".claude/plans/AO-MA-10S-DEDICATED-ACTOR-SMOKE-WORKFLOW.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_release_gate.py",
-      "tests/test_ao_release_gate_enforce_job.py"
+      "scripts/ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10q_dedicated_actor_runner.py",
+      "tests/test_ao_ma10s_dedicated_actor_smoke_workflow.py"
     ]
   },
   "checks_considered": [
@@ -51,11 +50,12 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE on the final AO-MA-10AA patch.",
-    "The no-review substitute is limited to explicit AO-MA-10l low-risk autonomous smoke requests by the dedicated gladyatore-lab actor.",
-    "Path validation rejects backslash, absolute path, empty segment, dot segment, dotdot segment, nested child path, non-markdown path, and non-smoke prefix.",
-    "Workflow detection requires every PR file to be changeType ADDED and a direct smoke markdown path before setting the autonomous request flag.",
-    "Ordinary PRs, high-risk PRs, non-dedicated actors, malformed AO-MA10 bundles, and authority-open bundles remain fail-closed.",
+    "Claude reviewer verdict AGREE on the final AO-MA-10AB patch.",
+    "The optional governance token remains limited to readiness and read-only GitHub API checks.",
+    "Disposable low-risk PR production is no longer routed through the governance wrapper when AO_GOVERNANCE_GH_TOKEN is present.",
+    "AO-MA-10q result metadata now records producer_token_env as GLADYATORE_LAB_GH_TOKEN and same_as_merge_actor_wrapper true.",
+    "AO-MA-10q fails closed if delegated AO-MA-10l evidence reports pr_producer.role other than merge_actor or same_as_merge_actor other than true.",
+    "Docs, receipt, and tests are aligned with the dedicated producer and merge actor boundary.",
     "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
   "secrets_recorded": false,
