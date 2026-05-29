@@ -20,7 +20,7 @@ import sys
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Protocol
 
 
 SCHEMA_VERSION = "ao-ma-10q-dedicated-actor-runner-result.v1"
@@ -33,12 +33,38 @@ DEFAULT_TOKEN_ENV = "GLADYATORE_LAB_GH_TOKEN"
 DEFAULT_GOVERNANCE_TOKEN_ENV = "AO_GOVERNANCE_GH_TOKEN"
 EXECUTE_CONFIRMATION = "AO-MA-10L-EXECUTE"
 TOKEN_ENV_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
+MIN_SMOKE_SUBPROCESS_GRACE_SECONDS = 60
+SMOKE_SUBPROCESS_GRACE_POLLS = 4
 
-Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
+
+class Runner(Protocol):
+    def __call__(self, command: list[str], *, timeout: int) -> subprocess.CompletedProcess[str]: ...
 
 
-def _run(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, capture_output=True, text=True, timeout=180)
+def _smoke_process_timeout(*, timeout_seconds: int, poll_seconds: int) -> int:
+    """Return the subprocess budget for the delegated AO-MA-10l smoke."""
+
+    if timeout_seconds <= 0:
+        return 180
+    grace_seconds = max(MIN_SMOKE_SUBPROCESS_GRACE_SECONDS, poll_seconds * SMOKE_SUBPROCESS_GRACE_POLLS)
+    return timeout_seconds + grace_seconds
+
+
+def _run(command: list[str], *, timeout: int = 180) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+
+
+def _run_smoke_command(
+    runner: Runner,
+    command: list[str],
+    *,
+    timeout_seconds: int,
+    poll_seconds: int,
+) -> subprocess.CompletedProcess[str]:
+    return runner(
+        command,
+        timeout=_smoke_process_timeout(timeout_seconds=timeout_seconds, poll_seconds=poll_seconds),
+    )
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -234,10 +260,21 @@ def run(
             wrappers.append(governance_wrapper)
         result["smoke_command"] = _sanitize_smoke_command(command, wrappers=wrappers, smoke_output=smoke_output)
 
-        proc = runner(command)
         blockers: list[str] = []
         warnings: list[str] = []
         smoke_result: dict[str, Any] | None = None
+        try:
+            proc = _run_smoke_command(
+                runner,
+                command,
+                timeout_seconds=timeout_seconds,
+                poll_seconds=poll_seconds,
+            )
+        except subprocess.TimeoutExpired as exc:
+            blockers.append(f"smoke_command_timeout: {int(exc.timeout)}s")
+            _set_decision(result, decision="blocked", blockers=blockers, warnings=warnings)
+            _write_json(output, result)
+            return result
         if smoke_output.exists():
             try:
                 smoke_result = _load_smoke_result(smoke_output)

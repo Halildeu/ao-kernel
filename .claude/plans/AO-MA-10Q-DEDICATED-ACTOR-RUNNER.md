@@ -84,6 +84,12 @@ AO-MA-10l still performs A0/A1 readiness checks, required check observation,
 and AO-MA-10c merge delegation. If those checks fail, AO-MA-10q records the
 blockers and does not turn AI review into release authority.
 
+AO-MA-10q gives the delegated AO-MA-10l subprocess the full AO-MA-10l polling
+window plus a bounded grace period: `timeout_seconds + max(60, poll_seconds * 4)`.
+A subprocess timeout is caught and recorded as a fail-closed
+`smoke_command_timeout` blocker so the workflow always uploads a diagnostic
+artifact instead of ending with an uncaught traceback.
+
 The governance wrapper has two bounded roles from AO-MA-10l's perspective:
 
 1. read-only branch-protection/ruleset readiness APIs that fine-grained

@@ -21,6 +21,8 @@
   "token_value_recorded": false,
   "wrapper_path_recorded": false,
   "wrapper_mode": "0700",
+  "subprocess_timeout_aligned_with_smoke_timeout": true,
+  "subprocess_timeout_fail_closed_artifact": true,
   "execute_confirmation": "AO-MA-10L-EXECUTE",
   "delegates_to": "scripts/ao_ma10l_autonomous_smoke.py",
   "expected_actor": "gladyatore-lab",
