@@ -427,6 +427,100 @@ def test_ao_ma10c_collect_live_state_falls_back_to_repo_permissions_when_collabo
     assert state["permission"]["role_name"] == "write"
 
 
+def test_ao_ma10c_collect_live_state_accepts_actions_integration_user_endpoint_failure() -> None:
+    mod = _load_script_module()
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "gh: Resource not accessible by integration (HTTP 403)",
+            )
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "write"}), "")
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+    payload = _result(live_state=state)
+
+    assert state["collection_errors"] == []
+    assert state["collection_warnings"] == ["github_user_endpoint_unavailable_for_integration_token"]
+    assert state["viewer"]["login"] == "github-actions[bot]"
+    assert state["permission"]["permission"] == "write"
+    assert payload["decision"]["result"] == "ready_for_merge_dry_run"
+
+
+def test_ao_ma10c_collect_live_state_infers_actions_integration_write_after_read_permission() -> None:
+    mod = _load_script_module()
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "gh: Resource not accessible by integration (HTTP 403)",
+            )
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "read"}), "")
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([]), "")
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+    payload = _result(live_state=state)
+
+    assert state["collection_errors"] == []
+    assert state["permission"] == {"permission": "write", "role_name": "write"}
+    assert payload["actor_permission"] == "write"
+    assert payload["decision"]["result"] == "ready_for_merge_dry_run"
+
+
+def test_ao_ma10c_collect_live_state_blocks_actions_integration_read_when_pull_probe_fails() -> None:
+    mod = _load_script_module()
+
+    def fake_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        if command[:3] == ["gh", "api", "user"]:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "gh: Resource not accessible by integration (HTTP 403)",
+            )
+        if len(command) >= 3 and "/collaborators/" in command[2]:
+            return subprocess.CompletedProcess(command, 0, json.dumps({"permission": "read"}), "")
+        if command[:3] == ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"]:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                "gh: Resource not accessible by integration (HTTP 403)",
+            )
+        if command[:3] == ["gh", "pr", "view"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["pr_view"]), "")
+        if command[:3] == ["gh", "pr", "checks"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps(_ready_live_state()["required_checks"]), "")
+        raise AssertionError(command)
+
+    state = mod.collect_live_github_state(repo="Halildeu/ao-kernel", pr_number=123, gh_bin="gh", runner=fake_runner)
+    payload = _result(live_state=state)
+
+    assert any(error.startswith("pulls:") for error in state["collection_errors"])
+    assert state["permission"]["permission"] == "read"
+    assert "github_api_read_failed" in payload["decision"]["blockers"]
+    assert "merge_actor_not_write" in payload["decision"]["blockers"]
+
+
 def test_ao_ma10c_collect_live_state_does_not_fallback_for_unexpected_permission_read_errors() -> None:
     mod = _load_script_module()
     repo_fallback_called = False
