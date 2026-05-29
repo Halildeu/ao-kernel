@@ -284,11 +284,13 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
     Draft202012Validator(_schema()).validate(result)
     assert "--governance-gh-bin" in runner.commands[0]
     assert "--producer-gh-bin" in runner.commands[0]
-    assert runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1].startswith("/tmp/")
-    assert runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1].startswith("/tmp/")
+    governance_wrapper = runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1]
+    producer_wrapper = runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1]
+    assert Path(governance_wrapper).name == "gh-governance"
+    assert Path(producer_wrapper).name == "gh-governance"
     assert (
-        runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1]
-        == runner.commands[0][runner.commands[0].index("--governance-gh-bin") + 1]
+        producer_wrapper
+        == governance_wrapper
     )
     artifact_text = output.read_text(encoding="utf-8")
     assert TOKEN_VALUE not in artifact_text
