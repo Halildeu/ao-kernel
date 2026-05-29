@@ -1,24 +1,25 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR-FIX",
+  "work_package": "AO-MA-10K-EVIDENCE-SYNC",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
   },
   "reviewer": {
-    "agent": "claude-sonnet-reviewer",
+    "agent": "claude-sonnet-4-6-reviewer",
     "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-auto-merge-executor-fix",
+    "head_ref": "refs/heads/codex/ao-ma10k-evidence-sync",
     "changed_files": [
-      ".github/workflows/ao-autonomous-merge-executor.yml",
+      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
+      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
+      ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md",
       "local-ai-review-evidence.v1.json",
-      "scripts/ao_autonomous_pr_merge_executor.py",
-      "tests/test_ao_autonomous_pr_merge_executor.py"
+      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
     ]
   },
   "checks_considered": [
@@ -31,36 +32,53 @@
       "status": "pass"
     },
     {
-      "name": "ruff",
+      "name": "scope_paths_allowed_only",
       "status": "pass"
     },
     {
-      "name": "mypy",
+      "name": "prohibited_paths_absent",
       "status": "pass"
     },
     {
-      "name": "scope_boundary",
+      "name": "pr747_facts_accurately_recorded",
       "status": "pass"
     },
     {
-      "name": "authority_boundary",
+      "name": "guard_flags_remain_false",
       "status": "pass"
     },
     {
-      "name": "cross_ai_review",
+      "name": "authority_model_preserved",
+      "status": "pass"
+    },
+    {
+      "name": "no_runtime_code_changes",
+      "status": "pass"
+    },
+    {
+      "name": "tests_match_documented_facts",
+      "status": "pass"
+    },
+    {
+      "name": "no_support_widening",
+      "status": "pass"
+    },
+    {
+      "name": "no_admin_bypass",
+      "status": "pass"
+    },
+    {
+      "name": "no_ruleset_or_workflow_mutation",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewer returned AGREE for the v3 autonomous merge executor readiness fix after reviewing the staged patch.",
-    "The fix groups duplicate required check contexts by name so a current passing context wins over stale pending or skipped duplicates while real failing contexts still block.",
-    "The fix keeps source-pinned ao-release-gate checks authoritative and does not accept same-name checks from an untrusted integration.",
-    "The GitHub Actions integration token path now requires repo-owned workflow proof for synthetic github-actions identity, independent of whether a permissions probe reports write.",
-    "The workflow declares AO_AUTONOMOUS_MERGE_TOKEN_SOURCE=github.token plus contents and pull-requests write permissions, and the executor verifies the main-branch workflow provenance before accepting an unobservable integration-token permission path.",
-    "The executor still denies non-main base refs, draft PRs, cross-repository PRs, dirty merge states, admin actors, admin permissions, missing required checks, missing source-pinned release checks, and unverified synthetic integration identity.",
-    "Focused validation passed for actionlint, ruff, mypy, and pytest covering the autonomous executor, merge-agent, and release-gate conclusion mapping subset.",
-    "Claude v3 and OpenAI subagent v3 both returned AGREE after the identity-proof bypass concern was absorbed.",
-    "No ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, support widening, production platform claim, or live adapter execution is introduced."
+    "Claude reviewer returned AGREE for PR #748 after reviewing the AO-MA-10k evidence-sync diff and the planned local review evidence wrapper.",
+    "All changed files are within allowed plan/test/evidence paths; no prohibited runtime, workflow, ruleset, branch-protection, AGENTS, CLAUDE, or gpp_status path is touched.",
+    "PR #747 negative high-risk smoke facts are recorded: mergeStateStatus BLOCKED, ao-release-gate-technical success, ao-release-gate-review ACTION_REQUIRED, decision deny_policy_violation, allow false, and finding ao_release_gate_high_risk_human_review_missing.",
+    "The JSON receipt diff updates only the future_slices status text; support_widening, production_platform_claim, and live_adapter_execution guards remain false per implementer validation.",
+    "The new test assertions match the documented PR #747 facts and do not introduce runtime behavior.",
+    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

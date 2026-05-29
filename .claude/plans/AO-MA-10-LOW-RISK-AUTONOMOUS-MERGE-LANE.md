@@ -58,6 +58,50 @@ AO-MA-10A0/A1 ready evidence inside the workflow context
   + AO-MA-10q merged-smoke evidence
 ```
 
+## Current accepted high-risk state
+
+High-risk changes remain fail-closed unless the repo-owned required checks see
+current, context-bound cross-provider supersession evidence or an acceptable
+non-author approval path.
+
+The positive high-risk path has real PR evidence:
+
+- PR [#744](https://github.com/Halildeu/ao-kernel/pull/744), workflow run
+  `26641972231`;
+- `ao-release-gate-review=success`;
+- `ao-release-gate-technical=success`;
+- audit artifact `ao-release-gate-744-26641972231`;
+- high-risk supersession evidence sha256
+  `1e4b1d956987be067d60195a13dd2680d0939722a8ea0866018d8100587e071a`;
+- decision artifact sha256
+  `3a3547282b534981ccc0232ba12625511c3355080de26bc1f03da7555f67cae1`.
+
+The negative high-risk path has real PR evidence:
+
+- disposable PR [#747](https://github.com/Halildeu/ao-kernel/pull/747),
+  workflow run `26645644773`;
+- check run
+  [78531416645](https://github.com/Halildeu/ao-kernel/runs/78531416645);
+- `mergeStateStatus=BLOCKED`;
+- `ao-release-gate-technical=success`;
+- `ao-release-gate-review=ACTION_REQUIRED`;
+- gate decision `deny_policy_violation`;
+- `allow=false`;
+- finding `ao_release_gate_high_risk_human_review_missing`;
+- `decision.json` sha256
+  `5930f3ca17993688867b5a610bdd34daec126d98d49e82b8bab69135560762e0`;
+- `local-gpp-gate-evidence.v1.json` sha256
+  `77f5d228e615f0fa08164383c88ad07776a6c31b76621428a303acc7007a14c5`;
+- `payload.json` sha256
+  `40dd97d0e27711d75536cbe92b6bc1529f95210edb7c07e379f4f2a890379262`.
+
+PR #747 intentionally removed the raw per-provider high-risk review files from
+the PR head. The local operator gate evidence was present, but
+`ao-release-gate-review` correctly failed closed because current-head
+non-author approval or valid high-risk supersession evidence was missing. Issue
+[#683](https://github.com/Halildeu/ao-kernel/issues/683) was closed after this
+live positive/negative evidence chain was recorded.
+
 ## Three-Provider Consultation Result
 
 The first implementation order was reviewed after AO-MA-10 landed.
@@ -79,7 +123,7 @@ AO-MA-10d   negative fail-closed suite before any real merge
 AO-MA-10h   high-risk cross-provider supersession contract
 AO-MA-10i   high-risk supersession decision-core validator
 AO-MA-10j   required-check runtime high-risk supersession wiring
-AO-MA-10k   disposable real-PR high-risk smoke
+AO-MA-10k   disposable real-PR high-risk smoke (positive and negative recorded)
 AO-MA-10c   merge-agent identity + dry-run executor
 AO-MA-10l   positive disposable low-risk autonomous merge smoke
 AO-MA-10m   activation/cutover

@@ -116,7 +116,7 @@
     "AO-MA-10h high-risk cross-provider supersession contract (recorded)",
     "AO-MA-10i high-risk supersession decision-core validator/runtime support (recorded)",
     "AO-MA-10j required-check runtime high-risk supersession wiring (recorded)",
-    "AO-MA-10k disposable real-PR high-risk smoke (future hardening for high-risk autonomous supersession, not required for the low-risk lane)",
+    "AO-MA-10k disposable real-PR high-risk smoke (recorded by positive PR #744 and negative fail-closed PR #747; issue #683 closed)",
     "AO-MA-10c merge-agent identity and executor (recorded)",
     "AO-MA-10l positive disposable low-risk autonomous merge smoke (recorded by PR #737)",
     "AO-MA-10m activation/cutover (this SSOT sync)"

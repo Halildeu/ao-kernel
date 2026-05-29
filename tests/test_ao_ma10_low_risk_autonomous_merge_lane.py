@@ -121,6 +121,7 @@ def test_ao_ma10_low_risk_activation_prerequisites_are_recorded_done() -> None:
     assert by_id["merge_agent_identity_and_permissions_recorded"] == "done"
     assert by_id["codeowners_or_ruleset_low_risk_model_implemented"] == "done"
     assert by_id["cutover_record_no_support_widening_no_production_claim_no_live_adapter"] == "done"
+    assert any("PR #747" in item for item in receipt["future_slices"])
 
 
 def test_ao_ma10_high_risk_consensus_is_bounded_and_escalates() -> None:
@@ -140,6 +141,10 @@ def test_ao_ma10_docs_state_low_risk_live_high_risk_gated() -> None:
     assert "The original AO-MA-10 planning slice was **planning-only**" in text
     assert "AO-MA-10q workflow run `26633091281`" in text
     assert "[#737](https://github.com/Halildeu/ao-kernel/pull/737)" in text
+    assert "[#747](https://github.com/Halildeu/ao-kernel/pull/747)" in text
+    assert "workflow run `26645644773`" in text
+    assert "ao-release-gate-review=ACTION_REQUIRED" in text
+    assert "ao_release_gate_high_risk_human_review_missing" in text
     assert "app/github-actions" in text
     assert "AO-MA-10a0  GitHub readiness snapshot" in text
     assert "MiniMax remains a provider-integration prerequisite" in text
