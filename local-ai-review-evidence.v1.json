@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR",
+  "work_package": "AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR-FIX",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,11 +13,9 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-auto-merge-executor",
+    "head_ref": "refs/heads/codex/ao-auto-merge-executor-fix",
     "changed_files": [
       ".github/workflows/ao-autonomous-merge-executor.yml",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
       "local-ai-review-evidence.v1.json",
       "scripts/ao_autonomous_pr_merge_executor.py",
       "tests/test_ao_autonomous_pr_merge_executor.py"
@@ -54,13 +52,14 @@
     }
   ],
   "findings": [
-    "Claude reviewer returned AGREE for AO-MA-10Y-AUTONOMOUS-MERGE-EXECUTOR after reviewing the staged autonomous merge executor patch.",
-    "No direct GitHub Actions expression injection remains: GitHub event and dispatch values used in shell are routed through environment variables and validated before use.",
-    "The executor workflow checks out the default branch rather than PR head code, so the write token does not execute untrusted branch scripts.",
-    "The merge path uses the GitHub pull merge REST endpoint with merge_method=squash and sha=headRefOid; no admin merge flag or admin bypass is constructed.",
-    "The executor fails closed on stale event head SHA, non-main base, draft PR, cross-repository PR, non-clean merge state, missing required checks, wrong actor, admin permission, and missing source-pinned ao-release-gate checks.",
-    "Source-pinned release authority remains ao-release-gate plus GitHub ruleset: ao-release-gate-technical and ao-release-gate-review must be completed successfully from GitHub Actions app id 15368.",
-    "Focused validation passed: actionlint, ruff, mypy, pytest -q tests/test_ao_autonomous_pr_merge_executor.py, and the combined ao autonomous merge / merge-agent / release-gate regression subset.",
+    "Claude reviewer returned AGREE for the v3 autonomous merge executor readiness fix after reviewing the staged patch.",
+    "The fix groups duplicate required check contexts by name so a current passing context wins over stale pending or skipped duplicates while real failing contexts still block.",
+    "The fix keeps source-pinned ao-release-gate checks authoritative and does not accept same-name checks from an untrusted integration.",
+    "The GitHub Actions integration token path now requires repo-owned workflow proof for synthetic github-actions identity, independent of whether a permissions probe reports write.",
+    "The workflow declares AO_AUTONOMOUS_MERGE_TOKEN_SOURCE=github.token plus contents and pull-requests write permissions, and the executor verifies the main-branch workflow provenance before accepting an unobservable integration-token permission path.",
+    "The executor still denies non-main base refs, draft PRs, cross-repository PRs, dirty merge states, admin actors, admin permissions, missing required checks, missing source-pinned release checks, and unverified synthetic integration identity.",
+    "Focused validation passed for actionlint, ruff, mypy, and pytest covering the autonomous executor, merge-agent, and release-gate conclusion mapping subset.",
+    "Claude v3 and OpenAI subagent v3 both returned AGREE after the identity-proof bypass concern was absorbed.",
     "No ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,

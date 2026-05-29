@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +30,8 @@ GITHUB_ACTIONS_APP_ID = 15368
 SOURCE_PINNED_REQUIRED_CHECKS = ("ao-release-gate-technical", "ao-release-gate-review")
 READY_MERGE_STATES = {"CLEAN", "HAS_HOOKS"}
 INTEGRATION_TOKEN_WARNING = "github_user_endpoint_unavailable_for_integration_token"
+INTEGRATION_TOKEN_PERMISSION_WARNING = "github_actions_integration_token_permission_unobservable"
+REPO_OWNED_ACTIONS_TOKEN_WORKFLOW = ".github/workflows/ao-autonomous-merge-executor.yml"
 FORBIDDEN_ADMIN_FLAG = "--" "admin"
 
 Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
@@ -75,6 +79,47 @@ def _is_actions_integration_error(expected_actor: str, error: str | None) -> boo
         and error is not None
         and "resource not accessible by integration" in error.lower()
     )
+
+
+def _workflow_declares_github_token(path: Path) -> tuple[bool, list[str]]:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return False, [f"workflow_file_read_failed:{exc.__class__.__name__}"]
+
+    checks = {
+        "gh_token_is_github_token": "GH_TOKEN: ${{ github.token }}" in text,
+        "contents_write_permission": re.search(r"(?m)^  contents: write$", text) is not None,
+        "pull_requests_write_permission": re.search(r"(?m)^  pull-requests: write$", text) is not None,
+        "no_admin_flag_literal": FORBIDDEN_ADMIN_FLAG not in text,
+    }
+    return all(checks.values()), [name for name, passed in checks.items() if not passed]
+
+
+def _repo_owned_actions_token_proof(repo: str) -> dict[str, Any]:
+    workflow_path = Path(REPO_OWNED_ACTIONS_TOKEN_WORKFLOW)
+    workflow_ok, workflow_failures = _workflow_declares_github_token(workflow_path)
+    expected_workflow_ref = f"{repo}/{REPO_OWNED_ACTIONS_TOKEN_WORKFLOW}@refs/heads/main"
+    checks = {
+        "github_actions": os.environ.get("GITHUB_ACTIONS") == "true",
+        "event": os.environ.get("GITHUB_EVENT_NAME") in {"workflow_run", "workflow_dispatch"},
+        "repository": os.environ.get("GITHUB_REPOSITORY") == repo,
+        "workflow_ref": os.environ.get("GITHUB_WORKFLOW_REF") == expected_workflow_ref,
+        "token_source": os.environ.get("AO_AUTONOMOUS_MERGE_TOKEN_SOURCE") == "github.token",
+        "workflow_declares_github_token": workflow_ok,
+    }
+    failures = [name for name, passed in checks.items() if not passed]
+    failures.extend(workflow_failures)
+    return {
+        "verified": not failures,
+        "workflow_ref": os.environ.get("GITHUB_WORKFLOW_REF"),
+        "expected_workflow_ref": expected_workflow_ref,
+        "event_name": os.environ.get("GITHUB_EVENT_NAME"),
+        "repository": os.environ.get("GITHUB_REPOSITORY"),
+        "token_source": os.environ.get("AO_AUTONOMOUS_MERGE_TOKEN_SOURCE"),
+        "workflow_file": REPO_OWNED_ACTIONS_TOKEN_WORKFLOW,
+        "failures": sorted(set(failures)),
+    }
 
 
 def _permission_from_repo_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -132,12 +177,14 @@ def collect_live_state(
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
+    repo_owned_actions_token: dict[str, Any] = {"verified": False, "failures": ["not_evaluated"]}
 
     viewer, error = _json_command([gh_bin, "api", "user"], runner)
     if error is not None or not isinstance(viewer, dict):
         if _is_actions_integration_error(expected_actor, error):
             viewer = {"login": expected_actor}
             warnings.append(INTEGRATION_TOKEN_WARNING)
+            repo_owned_actions_token = _repo_owned_actions_token_proof(repo)
         else:
             errors.append(f"viewer: {error or 'invalid shape'}")
             viewer = {}
@@ -212,24 +259,61 @@ def collect_live_state(
         "pr_view": pr_view,
         "required_checks": required_checks,
         "check_runs": check_runs,
+        "repo_owned_actions_token": repo_owned_actions_token,
         "collection_errors": errors,
         "collection_warnings": warnings,
     }
 
 
 def _required_checks_pass(required_checks: list[Any]) -> tuple[bool, list[dict[str, Any]]]:
-    failing: list[dict[str, Any]] = []
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    anonymous_index = 0
     for raw in required_checks:
         item = raw if isinstance(raw, dict) else {}
-        if item.get("bucket") != "pass":
+        name = _string(item.get("name"))
+        if not name:
+            anonymous_index += 1
+            name = f"<unnamed-{anonymous_index}>"
+        grouped.setdefault(name, []).append(item)
+
+    failing: list[dict[str, Any]] = []
+    for name, items in grouped.items():
+        buckets = {_string(item.get("bucket")) for item in items}
+        states = {_string(item.get("state")) for item in items}
+
+        if "fail" in buckets:
             failing.append(
                 {
-                    "name": item.get("name"),
-                    "bucket": item.get("bucket"),
-                    "state": item.get("state"),
-                    "link": item.get("link"),
+                    "name": name,
+                    "bucket": "fail",
+                    "state": sorted(str(state) for state in states if state is not None),
+                    "observed": items,
                 }
             )
+            continue
+
+        # GitHub can report duplicate required-check contexts for the same PR
+        # head while older workflow runs are still visible. One successful
+        # context is enough; pending duplicates should not override it.
+        if "pass" in buckets:
+            continue
+
+        # Skipped contexts from event-gate-only workflow runs are not release
+        # authority; source-pinned ao-release-gate check-runs and mergeState
+        # still have to pass before a merge can happen.
+        if buckets and buckets <= {"skipping"}:
+            continue
+
+        representative = items[0] if items else {}
+        failing.append(
+            {
+                "name": name,
+                "bucket": representative.get("bucket"),
+                "state": representative.get("state"),
+                "link": representative.get("link"),
+                "observed": items,
+            }
+        )
     return not failing, failing
 
 
@@ -296,15 +380,29 @@ def build_result(
     required_checks_list = required_checks if isinstance(required_checks, list) else []
     check_runs = _object(live_state.get("check_runs"))
     collection_error_items = _string_list(live_state.get("collection_errors"))
+    repo_owned_actions_token = _object(live_state.get("repo_owned_actions_token"))
 
     actual_actor = _string(viewer.get("login"))
     permission_name = _string(permission.get("permission")) or _string(permission.get("role_name"))
+    integration_actor_permission_unobservable = (
+        actual_actor == expected_actor
+        and INTEGRATION_TOKEN_WARNING in warnings
+        and permission_name is None
+    )
+    integration_actor_identity_synthetic = actual_actor == expected_actor and INTEGRATION_TOKEN_WARNING in warnings
+    repo_owned_actions_token_verified = repo_owned_actions_token.get("verified") is True
 
     if actual_actor != expected_actor:
         blockers.add("unexpected_merge_actor")
+    if integration_actor_identity_synthetic and not repo_owned_actions_token_verified:
+        blockers.add("merge_actor_identity_unverified")
     if permission_name == "admin" or permission.get("role_name") == "admin":
         blockers.add("merge_actor_admin_permission_observed")
-    if permission_name != "write":
+    if integration_actor_permission_unobservable and repo_owned_actions_token_verified:
+        warnings.add(INTEGRATION_TOKEN_PERMISSION_WARNING)
+    elif integration_actor_permission_unobservable:
+        blockers.add("merge_actor_permission_unobservable")
+    elif permission_name != "write":
         blockers.add("merge_actor_not_write")
 
     pr_state = pr_view.get("state")
@@ -390,6 +488,7 @@ def build_result(
         "mutations_performed": result == "merged",
         "release_authority": RELEASE_AUTHORITY,
         "ai_output_release_authority": False,
+        "repo_owned_actions_token": repo_owned_actions_token,
         "guard_flags": {
             "support_widening": False,
             "production_platform_claim": False,
