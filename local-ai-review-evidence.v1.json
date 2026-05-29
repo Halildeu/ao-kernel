@@ -13,6 +13,14 @@
       "status": "pass"
     },
     {
+      "name": "json_parse",
+      "status": "pass"
+    },
+    {
+      "name": "py_compile",
+      "status": "pass"
+    },
+    {
       "name": "diff_check",
       "status": "pass"
     },
@@ -22,11 +30,12 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE on AO-MA-10Z Darwin tempdir portability fix.",
-    "The failing assertion assumed tempfile paths start with /tmp, which is false on macOS where temporary paths commonly resolve under /var/folders or /private/var/folders.",
-    "The test now asserts the generated wrapper basename is gh-governance and preserves the stronger invariant that --governance-gh-bin and --producer-gh-bin point to the same wrapper.",
-    "Path is already imported in the file, so the updated assertion introduces no missing import.",
-    "The patch changes only test assertions and does not change runtime behavior, workflow behavior, branch protection, release authority, support tier, production claim, live adapter execution, or secret handling."
+    "Claude reviewer verdict REVISE, then AGREE after absorption.",
+    "The live execute smoke failed because GitHub initially returned 'no required checks reported' immediately after disposable PR creation.",
+    "AO-MA-10L now treats both 'no checks reported' and 'no required checks reported' as transient check-discovery strings inside the existing polling window.",
+    "The transient strings are represented in code as TRANSIENT_CHECK_DISCOVERY_ERRORS and in the receipt as transient_check_discovery_errors.",
+    "Parametrized tests cover both transient string variants; unrecognized errors, invalid payloads, and timeouts still fail closed.",
+    "No branch protection mutation, release authority change, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
   "implementer": {
     "agent": "codex",
@@ -44,12 +53,15 @@
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
     "changed_files": [
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.md",
+      ".claude/plans/AO-MA-10L-POSITIVE-AUTONOMOUS-SMOKE.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10q_dedicated_actor_runner.py"
+      "scripts/ao_ma10l_autonomous_smoke.py",
+      "tests/test_ao_ma10l_autonomous_smoke.py"
     ],
-    "head_ref": "refs/heads/codex/ao-ma10z-darwin-tempdir-test-fix"
+    "head_ref": "refs/heads/codex/ao-ma10aa-wait-initial-checks"
   },
   "secrets_recorded": false,
   "support_widening": false,
-  "work_package": "AO-MA-10Z"
+  "work_package": "AO-MA-10AA"
 }

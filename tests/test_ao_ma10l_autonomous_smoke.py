@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
 from jsonschema import Draft202012Validator
 
 from ao_kernel.config import load_default
@@ -139,12 +140,14 @@ class FakeRunner:
         ready: bool = True,
         checks_pass: bool = True,
         checks_transient_failures: int = 0,
+        checks_transient_error: str = "no checks reported on the 'codex/ao-ma10l-smoke-example' branch",
         gh_bin: str = "gh",
         producer_gh_bin: str | None = None,
     ) -> None:
         self.ready = ready
         self.checks_pass = checks_pass
         self.checks_transient_failures = checks_transient_failures
+        self.checks_transient_error = checks_transient_error
         self.gh_bin = gh_bin
         self.producer_gh_bin = producer_gh_bin or gh_bin
         self.commands: list[list[str]] = []
@@ -176,7 +179,7 @@ class FakeRunner:
                     command,
                     1,
                     "",
-                    "no checks reported on the 'codex/ao-ma10l-smoke-example' branch",
+                    self.checks_transient_error,
                 )
             checks = (
                 [
@@ -412,8 +415,15 @@ def test_ao_ma10l_can_split_disposable_pr_producer_from_merge_actor(tmp_path: Pa
     assert merge_agent_commands[0][merge_agent_commands[0].index("--gh-bin") + 1] == "gh-dedicated"
 
 
-def test_ao_ma10l_waits_for_initial_required_checks_to_appear(tmp_path: Path) -> None:
-    fake = FakeRunner(ready=True, checks_transient_failures=1)
+@pytest.mark.parametrize(
+    "transient_error",
+    [
+        "no checks reported on the 'codex/ao-ma10l-smoke-example' branch",
+        "no required checks reported on the 'codex/ao-ma10l-smoke-example' branch",
+    ],
+)
+def test_ao_ma10l_waits_for_initial_required_checks_to_appear(tmp_path: Path, transient_error: str) -> None:
+    fake = FakeRunner(ready=True, checks_transient_failures=1, checks_transient_error=transient_error)
     mod = _load_script_module()
     monkeypatch_sleep = mod.time.sleep
     mod.time.sleep = lambda _seconds: None
