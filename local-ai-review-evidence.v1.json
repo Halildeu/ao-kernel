@@ -1,28 +1,35 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-GOVERNANCE-ARC-COMPLETION",
+  "work_package": "HYG-PUBLIC-CONTEXT-GAPS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-governance-arc-completion",
-    "changed_files": [ "local-ai-review-evidence.v1.json", "tests/test_governance.py" ]
+    "head_ref": "refs/heads/codex/hyg-public-context-gaps",
+    "changed_files": [
+      "local-ai-review-evidence.v1.json",
+      "tests/test_checkpoint.py",
+      "tests/test_memory_tiers.py",
+      "tests/test_semantic_retrieval.py"
+    ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
     { "name": "test_only_scope", "status": "pass" },
     { "name": "coverage_delta_recorded", "status": "pass" },
-    { "name": "no_cosmetic_tests", "status": "pass" },
+    { "name": "no_fake_work_already_covered_excluded", "status": "pass" },
     { "name": "guard_flags_remain_false", "status": "pass" }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e7576) returned REVISE + small_test_pr: 2-4 named contract tests for the _check_rules public-facade dispatch, wildcard/generic/malformed arcs deliberately excluded as already-covered or cosmetic.",
-    "Test-only diff: appends TestCheckRulesDispatch (6 named contract tests) to tests/test_governance.py. No ao_kernel runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
-    "Tests pin _check_rules structural dispatch (governance.py) routing a policy dict to autonomy / tool-calling / provider-guardrails / generic checkers by structure — the public-facade path that existing helper-level tests did not exercise.",
-    "Coverage delta: governance.py dispatch lines 106 (autonomy extend) and 110 (tool-calling extend) were missing full-suite before; they are now covered by test_governance.py itself (no longer in the targeted missing list).",
-    "No-Fake-Work discipline: the wildcard allow_models=['*'] test already existed (test_wildcard_model_allows_any) and was NOT duplicated; generic complementary arcs (required/blocked/limits inverse directions) and malformed-policy fallthroughs (163-228) were deliberately excluded as cosmetic per Codex guidance.",
+    "Codex plan-time consultation (thread 019e758d) returned REVISE + ready_for_impl: single combined PR, checkpoint fixture must mutate-then-resave so the integrity hash matches (raw mutate hits CORRUPTED instead), NO_HASH reached via load_context monkeypatch, actionable_offline only, coverage-delta required.",
+    "Test-only diff across tests/test_checkpoint.py, tests/test_memory_tiers.py, tests/test_semantic_retrieval.py. No ao_kernel/context runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
+    "GAPS-02 checkpoint (6 tests): CHECKPOINT_NO_HASH (load_context monkeypatch), CHECKPOINT_EXPIRED (mutate-resave past expires_at + valid hash), expired-allowed-when-fail_on_expired-false, malformed-expiry allow-resume, has_provider_cursor metadata (full provider_state schema), list_checkpoints skip-on-corrupt.",
+    "GAPS-01 semantic_retrieval (4 tests): in-memory no-decisions/none-decisions returns empty; embed_decision embedding_config precedence (embed_text monkeypatched to capture resolved provider/model, no network); embed_decision cache-skip when hash+model match (embed_text not called). Existing tests already covered no-query-embedding/without-embeddings/top_k, NOT duplicated.",
+    "GAPS-03 memory_tiers (4 tests): string-confidence coercion + non-numeric fallback, load_tier_policy returns tiers, _age_days malformed-timestamp large-sentinel.",
+    "Coverage delta (full suite, base main aec164a -> branch): checkpoint.py 79.2%->93.5% (closed 90/102/106/107/112/147/148), semantic_retrieval.py 63.3%->78.0% (closed 99-104/115/123-125/192; remainder is external embed_text/semantic_search provider HTTP), memory_tiers.py 80.0%->94.3% (closed 40-43/94-96/112-113).",
+    "No-Fake-Work: embedding_config (already 7 precedence tests) NOT touched; context_compiler deferred to a separate follow-up (most complex module, fixture-heavy — not force-tested here); session_lifecycle defensive logging excluded.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
