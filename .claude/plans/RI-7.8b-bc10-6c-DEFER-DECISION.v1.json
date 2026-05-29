@@ -1,0 +1,192 @@
+{
+  "schema_version": "ri7-8b-bc10-6c-defer-decision-evidence.v1",
+  "artifact_kind": "ri7_8b_bc10_6c_defer_decision_evidence",
+  "decision": "ri78b_bc10_6c_defer_cli_only_mode_no_billable_api_call_required_assets_preserved_dormant",
+  "decision_effect": "bc10_chain_dormant_supersession_entry_non_dispatchable_no_provider_call_no_secret_no_guard_flag_flip_assets_preserved_for_future_api_mode",
+  "does_not_authorize": [
+    "billable_provider_call_now",
+    "billable_provider_call_ever_under_this_decision",
+    "openai_api_key_reference_anywhere",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "top_level_guard_flag_flip",
+    "asset_retire_or_delete",
+    "bc10_real_adapter_usage_cost_aggregate_flip_to_true"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2"
+  },
+  "ri78b_bc1_6c_predecessor_ref": {
+    "pr_number": 691,
+    "commit_sha": "7cca702592e4b9c288ed5b64440deadf786b65ee",
+    "closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5"
+  },
+  "ri78b_bc10_6a_predecessor_ref": {
+    "pr_number": 695,
+    "commit_sha": "1fc8c7d0f01e3b0e7d1459e63aef0664eb6932ab",
+    "evidence_sha256": "80e0a47b6dcaeee0deb6522fd9bf208fffcf835332447f2aa8ec88fba34ecbc4"
+  },
+  "ri78b_bc10_6b_predecessor_ref": {
+    "pr_number": 697,
+    "commit_sha": "cfbbb18eb501cee8e912e4259cccdef815e4169b",
+    "evidence_sha256": "dc34ae1d0aaa9612a615753895855cb47fcdb48a6992226b6e762df4108e9eab"
+  },
+  "ri78b_bc10_6c_schemas_predecessor_ref": {
+    "pr_number": 700,
+    "commit_sha": "c1c201127379a725540a43be82afb57415af6401",
+    "per_call_schema_sha256": "ad0e688ed03de1e9b3a73b7c78278fc5810888ce1ea808e8c8e35e94712a769f",
+    "aggregate_schema_sha256": "4de36ed72361e31e2e1c41229ad98cec67e8f04e58972850404020b79bf0e0b8",
+    "closure_schema_sha256": "4af2b6ead615686debd65e83282448e16c141942101c666385cc22b637181928"
+  },
+  "operator_decision_record": {
+    "github_login": "Halildeu",
+    "decision_recorded_at": "2026-05-29T09:44:21Z",
+    "decision_source": "Operator chat clarification 2026-05-29: 'biz api aracılı ile ai ile çalışmıypruz şimdilik cli üzerinden aylık kullanımlarla çalılşıyruz' (we don't work with API-based AI, currently using CLI with monthly subscriptions)",
+    "no_secret_assertion": true,
+    "decision_scope": "bc10_real_adapter_usage_cost_chain_defer_under_cli_only_mode",
+    "observation_notes": "Operator clarified actual ao-kernel usage pattern is CLI-only (Claude Code CLI + Codex CLI monthly subscriptions). No programmatic OpenAI API calls planned; no OPENAI_API_KEY available; no AoKernelClient.llm_call invocations. The bc10 chain (PR #695 authorization + PR #697 infrastructure + PR #700 closure schemas) was designed assuming API-based programmatic usage. Continuing bc10-6c-closure with a real billable provider call (~$0.0003) solely for evidence chain completion would be HARD RULE No Fake Work violation under current usage pattern. This defer decision records the cli-only mode acceptance, marks the RI-7.8b-bc10-6b supersession entry terminal/non-dispatchable, and preserves the bc10 chain assets dormant for future API-mode reactivation via a new operator-bound supersession PR. NO support widening, NO production platform claim, NO live adapter execution, NO provider call, NO secret reference, NO workflow/script/pricing source mutation."
+  },
+  "current_usage_pattern": {
+    "claude_code_cli_monthly_subscription": true,
+    "codex_cli_monthly_subscription": true,
+    "no_programmatic_api_usage": true,
+    "no_openai_api_key_available_or_planned": true,
+    "no_AoKernelClient_llm_call_invocations": true,
+    "cli_subscription_operator_managed_mode": true
+  },
+  "asset_preservation_block": {
+    "current_mode": "cli_subscription_only",
+    "current_dispatch_allowed": false,
+    "assets_preserved": [
+      {"pr": 695, "kind": "authorization_contract_schema_and_evidence"},
+      {"pr": 697, "kind": "workflow_and_activation_guard_and_runner_and_pricing_source"},
+      {"pr": 700, "kind": "per_call_aggregate_closure_schemas"}
+    ],
+    "future_reactivation_requires": "new_operator_bound_supersession_pr",
+    "asset_preserved_for_future_api_mode": true,
+    "retire_status": "not_retired_dormant_assets_for_audit_continuity_and_future_api_mode",
+    "bc10_api_mode_assets_preserved_but_not_currently_applicable": true
+  },
+  "supersession_entry_transition": {
+    "entry_id": "RI-7.8b-bc10-6b",
+    "before_status": "awaiting_operator_dispatch",
+    "after_status": "deferred_cli_only_mode",
+    "authority_consumed": false,
+    "effective_execution_state": "deferred_non_dispatchable",
+    "dispatch_allowed_after_decision": false,
+    "defer_reason": "operator_cli_only_no_programmatic_api_no_openai_api_key",
+    "deferred_at": "2026-05-29T09:44:21Z",
+    "billable_provider_call_count": 0,
+    "live_adapter_execution_consumed": false,
+    "historical_authority_preserved_but_non_effective": true
+  },
+  "submanifest_transition": {
+    "before": {
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+      "bc10_defer_decision_recorded": false
+    },
+    "after": {
+      "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+      "bc10_defer_decision_recorded": true
+    }
+  },
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision"
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot_after_decision": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": true,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "bc10_defer_decision_recorded": true,
+    "final_operator_promotion_decision_recorded": false
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo_no_provider_api_key_reference",
+  "mutations_performed": {
+    "schema_created": true,
+    "evidence_created": true,
+    "supersession_entry_transitioned_to_terminal": true,
+    "submanifest_additive_key_added": true,
+    "workflow_modified": false,
+    "activation_script_modified": false,
+    "runner_script_modified": false,
+    "pricing_source_modified": false,
+    "per_call_schema_modified": false,
+    "aggregate_schema_modified": false,
+    "closure_schema_modified": false,
+    "bc10_workflow_dispatched": false,
+    "provider_call_performed": false,
+    "secret_referenced": false,
+    "guard_flag_flipped": false,
+    "asset_retired_or_deleted": false
+  },
+  "no_fake_work_attestation": {
+    "real_billable_call_under_cli_only_would_be_fake_work": true,
+    "evidence_for_cli_only_mode_is_real_acceptance": true,
+    "no_provider_response_recorded": true,
+    "no_token_usage_recorded": true,
+    "no_cost_aggregate_computed": true
+  },
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision",
+    "pr_number_hint": "TBD",
+    "base_sha": "2fd8ee7eff29497c3c67d14b74f7be7b7a8974d4",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_bc1_6c_closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78b_bc10_6a_evidence_sha256": "80e0a47b6dcaeee0deb6522fd9bf208fffcf835332447f2aa8ec88fba34ecbc4",
+    "ri78b_bc10_6b_evidence_sha256": "dc34ae1d0aaa9612a615753895855cb47fcdb48a6992226b6e762df4108e9eab",
+    "ri78_submanifest_sha256_before_decision": "665dfd8db86f46f3529489f7e94894ff8bd8eef7e79dc8b09bcaf1eb874d1b2a",
+    "gpp_status_sha256_before_decision": "a4cf0b04ff6c9b08ef4b2dee7dbde452b465c78cc5432b61a0a63bb669d09a4d",
+    "timestamp": "2026-05-29T09:44:21Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision",
+    "pr_number_hint": "TBD"
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      "scripts/ri78b_bc10_activation_window.py",
+      "scripts/bc10_run_scenarios.py",
+      "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6b-protected-execution-window-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e731b-728d-7932-b20b-e293c9868211",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "Pivot rationale: operator clarified actual usage pattern is CLI-only monthly subscription mode. bc10 chain assets (PR #695 + #697 + #700) were designed for API-based programmatic usage; continuing bc10-6c-closure with real billable call solely for evidence chain completion would be HARD RULE No Fake Work violation.",
+    "Defer scope: bc10-6c-closure (per-call + aggregate + BC-10 submanifest flip) does NOT execute under this decision. PR #695/#697/#700 artifacts remain in repo as dormant assets, NOT retired or deleted. Future API-mode reactivation requires a new operator-bound supersession PR.",
+    "Supersession entry semantic: RI-7.8b-bc10-6b transitions awaiting_operator_dispatch -> deferred_cli_only_mode (terminal/non-dispatchable). historical guard_flag_policy_resolution.live_adapter_execution_allowed=true is PRESERVED in the entry as audit-historical record but authority_consumed=false + effective_execution_state=deferred_non_dispatchable makes it NON-EFFECTIVE. No future dispatch can be made against this entry.",
+    "Submanifest semantic: bc10_real_adapter_usage_cost_aggregate_recorded STAYS FALSE (no real aggregate exists; no enum migration). NEW additive key bc10_defer_decision_recorded=true tracks the defer decision separately.",
+    "Top-level guard flags const FALSE PRESERVED: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false. GPP-9 keep_narrow_stable_runtime closure baseline maintained.",
+    "Cross-AI peer review: Codex thread 019e731b-728d-7932-b20b-e293c9868211 iter-10 REVISE (5 absorb items) + iter-11 AGREE (v2 plan).",
+    "Next slice: RI-7.8c non-promotion decision PR (after this PR merged). Will reference this defer decision as predecessor and flip final_operator_promotion_decision_recorded false -> true with decision = ri78c_final_operator_non_promotion_keep_narrow_stable_runtime_authoritative_cli_only_no_programmatic_api_no_live_adapter_execution_no_support_widening_no_production_claim."
+  ]
+}
