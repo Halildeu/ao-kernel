@@ -34,6 +34,8 @@ SCHEMA_VERSION = "ao-ma-10-autonomous-merge-eligibility.v1"
 ARTIFACT_KIND = "ao_ma_10_autonomous_merge_eligibility"
 RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 GITHUB_ACTIONS_APP_ID = 15368
+GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]"
+INTEGRATION_TOKEN_WARNING = "github_user_endpoint_unavailable_for_integration_token"
 TECHNICAL_CHECK = RELEASE_GATE_TECHNICAL_CHECK_NAME
 REVIEW_CHECK = RELEASE_GATE_REVIEW_CHECK_NAME
 DEFAULT_PLAN_PATH = ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json"
@@ -129,6 +131,29 @@ def _snapshot_collection_blockers(snapshot: dict[str, Any]) -> list[str]:
 
 def _snapshot_warnings(snapshot: dict[str, Any]) -> list[str]:
     return _string_list(_object(snapshot.get("readiness")).get("warnings"))
+
+
+def _merge_actor_permission(merge_actor: dict[str, Any]) -> str:
+    permission = merge_actor.get("permission")
+    return permission.lower() if isinstance(permission, str) else ""
+
+
+def _github_actions_integration_actor_confirmed(merge_actor: dict[str, Any], warnings: set[str]) -> bool:
+    """Confirm the GitHub Actions integration-token actor without relying on /user.
+
+    GitHub's Actions integration token can return "Resource not accessible by
+    integration" for the normal user endpoint. A0 records that as a warning and
+    still captures repo permission and admin state through repository-scoped
+    endpoints. A1 may accept that shape only for the exact Actions bot with
+    write permission and explicit non-admin evidence.
+    """
+
+    return (
+        INTEGRATION_TOKEN_WARNING in warnings
+        and merge_actor.get("login") == GITHUB_ACTIONS_BOT_LOGIN
+        and _merge_actor_permission(merge_actor) == "write"
+        and merge_actor.get("viewer_can_administer") is False
+    )
 
 
 def _low_risk_evaluation(
@@ -234,9 +259,14 @@ def build_eligibility(
         blockers.add("legacy_required_review_blocks_low_risk_autonomy")
     if branch_protection.get("require_code_owner_reviews") is not False:
         blockers.add("legacy_code_owner_review_blocks_low_risk_autonomy")
-    if merge_actor.get("viewer_can_administer") is True or merge_actor.get("permission") == "admin":
+    dedicated_merge_actor_confirmed = (
+        merge_actor.get("administration_write_absent_for_dedicated_actor") is True
+        or _github_actions_integration_actor_confirmed(merge_actor, warnings)
+    )
+
+    if merge_actor.get("viewer_can_administer") is True or _merge_actor_permission(merge_actor) == "admin":
         blockers.add("merge_actor_admin_permission_observed")
-    if merge_actor.get("administration_write_absent_for_dedicated_actor") is not True:
+    if not dedicated_merge_actor_confirmed:
         blockers.add("dedicated_merge_actor_not_confirmed")
     if codeowners.get("broad_default_owner_absent") is not True:
         blockers.add("codeowners_broad_default_owner_present")
@@ -287,12 +317,9 @@ def build_eligibility(
             "legacy_code_owner_review_disabled_for_low_risk": branch_protection.get("require_code_owner_reviews")
             is False,
             "dedicated_merge_actor_non_admin": not (
-                merge_actor.get("viewer_can_administer") is True or merge_actor.get("permission") == "admin"
+                merge_actor.get("viewer_can_administer") is True or _merge_actor_permission(merge_actor) == "admin"
             ),
-            "dedicated_merge_actor_without_admin_write": merge_actor.get(
-                "administration_write_absent_for_dedicated_actor"
-            )
-            is True,
+            "dedicated_merge_actor_without_admin_write": dedicated_merge_actor_confirmed,
         },
         "decision": {
             "result": decision,

@@ -24,12 +24,14 @@ RELEASE_AUTHORITY = "ao-release-gate+github-ruleset"
 AO_RELEASE_GATE_REQUIRED_CHECKS = ("ao-release-gate-technical", "ao-release-gate-review")
 GITHUB_ACTIONS_APP_ID = 15368
 DEFAULT_DEDICATED_MERGE_ACTOR = "github-actions[bot]"
+INTEGRATION_TOKEN_ERROR_MARKER = "Resource not accessible by integration"
 
 
 def _run_json_with_error(command: list[str], label: str) -> tuple[dict[str, Any] | list[Any], str | None]:
     proc = subprocess.run(command, capture_output=True, text=True, timeout=30)
     if proc.returncode != 0:
-        return {}, f"{label}: command failed with exit {proc.returncode}"
+        detail = proc.stderr.strip() or proc.stdout.strip() or f"command failed with exit {proc.returncode}"
+        return {}, f"{label}: {detail}"
     if not proc.stdout.strip():
         return {}, f"{label}: empty response"
     try:
@@ -109,6 +111,14 @@ def _viewer_repo_permission_with_error(gh_bin: str, repository: str, login: str 
     if isinstance(data, dict) and isinstance(data.get("permission"), str):
         return data["permission"], None
     return None, "viewer_permission: missing permission"
+
+
+def _is_github_actions_integration_token(dedicated_merge_actor: str, error: str | None) -> bool:
+    return (
+        dedicated_merge_actor == DEFAULT_DEDICATED_MERGE_ACTOR
+        and error is not None
+        and INTEGRATION_TOKEN_ERROR_MARKER in error
+    )
 
 
 def _codeowners_text_with_error(gh_bin: str, repository: str, branch: str) -> tuple[str, str | None]:
@@ -293,6 +303,7 @@ def build_snapshot(
     codeowners_text: str,
     dedicated_merge_actor: str = DEFAULT_DEDICATED_MERGE_ACTOR,
     collection_errors: list[str] | None = None,
+    collection_warnings: list[str] | None = None,
     ssot_required_check_claim_observed: bool = False,
     ssot_claim_source: str | None = None,
 ) -> dict[str, Any]:
@@ -317,6 +328,7 @@ def build_snapshot(
     warnings: list[str] = []
 
     errors = collection_errors or []
+    warnings.extend(collection_warnings or [])
 
     if errors:
         blockers.append("github_api_read_failed")
@@ -439,7 +451,14 @@ def collect_live_snapshot(
 
     login, error = _viewer_login_with_error(actor_gh_bin)
     if error:
-        collection_errors.append(error)
+        if _is_github_actions_integration_token(dedicated_merge_actor, error):
+            login = dedicated_merge_actor
+            integration_warnings = ["github_user_endpoint_unavailable_for_integration_token"]
+        else:
+            integration_warnings = []
+            collection_errors.append(error)
+    else:
+        integration_warnings = []
     permission, error = _viewer_repo_permission_with_error(actor_gh_bin, repository, login)
     if error:
         fallback_permission = actor_repo_info.get("viewerPermission")
@@ -499,6 +518,7 @@ def collect_live_snapshot(
         codeowners_text=codeowners,
         dedicated_merge_actor=dedicated_merge_actor,
         collection_errors=collection_errors,
+        collection_warnings=integration_warnings,
     )
 
 

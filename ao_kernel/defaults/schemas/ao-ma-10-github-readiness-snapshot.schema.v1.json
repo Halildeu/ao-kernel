@@ -253,7 +253,8 @@
             "type": "string",
             "enum": [
               "repository_auto_merge_disabled_merge_agent_direct_mode_required",
-              "some_nominal_low_risk_prefixes_still_codeowned"
+              "some_nominal_low_risk_prefixes_still_codeowned",
+              "github_user_endpoint_unavailable_for_integration_token"
             ]
           },
           "uniqueItems": true
