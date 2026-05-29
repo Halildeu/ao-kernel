@@ -23,7 +23,11 @@ removed.
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
+import sys
+import textwrap
 from pathlib import Path
 
 
@@ -76,6 +80,28 @@ def _gate_job_block() -> str:
     if next_job is None:
         return after
     return after[: len("  ao-release-gate:\n") + next_job.start()]
+
+
+def _ao_ma10_smoke_detector_python() -> str:
+    block = _gate_job_block()
+    start_marker = "REQUESTED=\"$(python - <<'PY'\n"
+    end_marker = "\n          PY"
+    start = block.index(start_marker) + len(start_marker)
+    end = block.index(end_marker, start)
+    return textwrap.dedent(block[start:end]).strip()
+
+
+def _run_ao_ma10_smoke_detector(tmp_path: Path, files: list[dict[str, str]]) -> str:
+    (tmp_path / "pr-files.json").write_text(json.dumps({"files": files}), encoding="utf-8")
+    completed = subprocess.run(
+        [sys.executable, "-c", _ao_ma10_smoke_detector_python()],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return completed.stdout.strip()
 
 
 def test_shadow_workflow_file_is_retired() -> None:
@@ -193,7 +219,31 @@ def test_enforce_job_builds_payload_from_api_not_pr_committed_json() -> None:
     assert "--pr-files-json pr-files.json" in block
     assert "--check-runs-json check-runs.json" in block
     assert "--gpp-status .claude/plans/gpp_status.v1.json" in block
+    assert "Detect AO-MA-10l low-risk autonomous smoke request" in block
+    assert 'prefix = "docs/evidence/ao-ma-10l-autonomous-smoke/"' in block
+    assert 'entry.get("changeType") == "ADDED"' in block
+    assert "--ao-ma10-autonomous-merge-requested" in block
+    assert "${{ steps.ao_ma10_smoke.outputs.requested }}" in block
     assert "head/payload.json" not in block
+
+
+def test_enforce_job_smoke_detector_requires_added_smoke_markdown(tmp_path: Path) -> None:
+    smoke_path = "docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-test.md"
+    assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": "ADDED"}]) == "true"
+
+    for change_type in ("RENAMED", "DELETED", "CHANGED", "MODIFIED"):
+        assert (
+            _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}])
+            == "false"
+        )
+    assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path}]) == "false"
+    assert (
+        _run_ao_ma10_smoke_detector(
+            tmp_path,
+            [{"path": "docs/evidence/ao-ma-10l-autonomous-smoke/../other.md", "changeType": "ADDED"}],
+        )
+        == "false"
+    )
 
 
 def test_enforce_job_augments_payload_with_review_metadata_after_base_builder() -> None:

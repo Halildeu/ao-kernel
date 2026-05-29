@@ -45,6 +45,9 @@ HIGH_RISK_PATH_PATTERNS = (
     "deploy/**",
 )
 
+AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX = "docs/evidence/ao-ma-10l-autonomous-smoke/"
+AO_MA10_DEDICATED_MERGE_ACTOR = "gladyatore-lab"
+
 
 def diff_digest(changed_paths: list[str]) -> str:
     """Return the ``sha256:`` prefixed digest of a changed-files list.
@@ -543,6 +546,42 @@ def _high_risk_paths(changed_paths: list[str]) -> list[str]:
     ]
 
 
+def _is_ao_ma10_low_risk_autonomous_smoke_path(path: str) -> bool:
+    """Return whether path is a direct AO-MA-10l smoke evidence markdown file."""
+
+    if "\\" in path or path.startswith("/"):
+        return False
+    parts = path.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        return False
+    if not path.startswith(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):
+        return False
+    relative = path[len(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):]
+    return bool(relative) and "/" not in relative and relative.endswith(".md")
+
+
+def _ao_ma10_low_risk_autonomous_smoke_scope(context: AoReleaseGateContext) -> bool:
+    """Return whether context is the narrow AO-MA-10l autonomous smoke lane.
+
+    The no-human substitute is intentionally much narrower than the generic
+    path allowlist. It applies only to disposable smoke evidence markdown
+    authored by the dedicated non-admin merge actor. Ordinary PRs still need
+    local-gpp-gate review evidence; high-risk PRs still need human review or
+    high-risk supersession evidence.
+    """
+
+    pr_author = (context["pr_author"] or "").lower()
+    paths = context["changed_paths"]
+    return (
+        context["low_risk_autonomous_merge_request_valid"] is True
+        and context["low_risk_autonomous_merge_requested"] is True
+        and pr_author == AO_MA10_DEDICATED_MERGE_ACTOR
+        and bool(paths)
+        and not context["high_risk_changed_paths"]
+        and all(_is_ao_ma10_low_risk_autonomous_smoke_path(path) for path in paths)
+    )
+
+
 def _has_current_non_author_approval(context: AoReleaseGateContext) -> bool:
     """Return whether a high-risk PR has a current-head non-author approval."""
 
@@ -798,6 +837,35 @@ def _evaluate_review_evidence_checks(
         )
 
     return [accepted, bound]
+
+
+def _evaluate_review_evidence_or_ao_ma10_low_risk_checks(
+    review_evidence: object,
+    context: AoReleaseGateContext,
+) -> list[AoReleaseGateCheck]:
+    """Evaluate review evidence with a narrow AO-MA-10l smoke substitute."""
+
+    if isinstance(review_evidence, dict):
+        return _evaluate_review_evidence_checks(review_evidence, context)
+    if _ao_ma10_low_risk_autonomous_smoke_scope(context):
+        return [
+            _pass(
+                "review_evidence",
+                detail=(
+                    "Local-gpp-gate review evidence is not required for the "
+                    "AO-MA-10l dedicated-actor low-risk autonomous smoke lane."
+                ),
+            ),
+            _pass(
+                "review_evidence_context_bound",
+                detail=(
+                    "AO-MA-10l low-risk autonomous smoke context is bound by "
+                    "API-derived payload data, required checks, dedicated PR "
+                    "author, and the disposable smoke evidence path."
+                ),
+            ),
+        ]
+    return _evaluate_review_evidence_checks(review_evidence, context)
 
 
 def _high_risk_supersession_binding_matches(binding: dict[str, Any], context: AoReleaseGateContext) -> bool:
@@ -1261,6 +1329,47 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
 
     if not requested and not supplied:
         return _not_required_checks()
+
+    if requested and not supplied and _ao_ma10_low_risk_autonomous_smoke_scope(context):
+        return [
+            request_check,
+            _pass(
+                "ao_ma10_evidence_bundle",
+                detail=(
+                    "AO-MA-10 evidence bundle is not required for the narrow "
+                    "dedicated-actor low-risk autonomous smoke lane."
+                ),
+            ),
+            _pass(
+                "ao_ma10_evidence_bundle_schema",
+                detail=(
+                    "AO-MA-10 evidence bundle schema validation is not required "
+                    "for the narrow dedicated-actor low-risk autonomous smoke lane."
+                ),
+            ),
+            _pass(
+                "ao_ma10_consensus",
+                detail=(
+                    "AO-MA-10 provider consensus is not required for the narrow "
+                    "dedicated-actor low-risk autonomous smoke lane."
+                ),
+            ),
+            _pass(
+                "ao_ma10_context_bound",
+                detail=(
+                    "The narrow AO-MA-10l smoke lane is context-bound by the "
+                    "API-derived payload, required checks, dedicated PR author, "
+                    "and disposable smoke evidence path."
+                ),
+            ),
+            _pass(
+                "ao_ma10_authority_boundary",
+                detail=(
+                    "AO-MA-10l low-risk smoke keeps release authority with "
+                    "ao-release-gate plus the GitHub ruleset."
+                ),
+            ),
+        ]
 
     if not isinstance(ao_ma10_evidence_bundle, dict):
         return [
@@ -1938,7 +2047,7 @@ def build_ao_release_gate_decision(
             blocked_detail="Live adapter execution is requested or not explicitly ruled out.",
         ),
     ]
-    checks.extend(_evaluate_review_evidence_checks(review_evidence, context))
+    checks.extend(_evaluate_review_evidence_or_ao_ma10_low_risk_checks(review_evidence, context))
     checks.extend(_evaluate_ao_ma10_evidence_bundle_checks(ao_ma10_evidence_bundle, context))
     findings = [check["finding_code"] for check in checks if check["finding_code"] is not None]
     decision = _decision_from_findings(findings)
