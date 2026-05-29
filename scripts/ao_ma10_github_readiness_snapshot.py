@@ -490,6 +490,12 @@ def collect_live_snapshot(
                 collection_errors.append(pulls_error or error)
         else:
             collection_errors.append(error)
+    elif integration_warnings and str(permission).lower() != "write":
+        can_read_pulls, pulls_error = _actor_can_read_pull_requests_with_error(actor_gh_bin, repository)
+        if can_read_pulls:
+            permission = "write"
+        else:
+            collection_errors.append(pulls_error or "pulls: write permission inference failed")
     effective_repo_info = dict(repo_info)
     if "viewerPermission" in actor_repo_info:
         effective_repo_info["viewerPermission"] = actor_repo_info.get("viewerPermission")
