@@ -113,6 +113,18 @@ def _viewer_repo_permission_with_error(gh_bin: str, repository: str, login: str 
     return None, "viewer_permission: missing permission"
 
 
+def _actor_can_read_pull_requests_with_error(gh_bin: str, repository: str) -> tuple[bool, str | None]:
+    data, error = _run_json_with_error(
+        [gh_bin, "api", f"repos/{repository}/pulls?state=open&per_page=1"],
+        "pulls",
+    )
+    if error is not None:
+        return False, error
+    if isinstance(data, list):
+        return True, None
+    return False, "pulls: invalid response shape"
+
+
 def _is_github_actions_integration_token(dedicated_merge_actor: str, error: str | None) -> bool:
     return (
         dedicated_merge_actor == DEFAULT_DEDICATED_MERGE_ACTOR
@@ -464,6 +476,18 @@ def collect_live_snapshot(
         fallback_permission = actor_repo_info.get("viewerPermission")
         if isinstance(fallback_permission, str):
             permission = fallback_permission.lower()
+            if permission != "write" and integration_warnings:
+                can_read_pulls, pulls_error = _actor_can_read_pull_requests_with_error(actor_gh_bin, repository)
+                if can_read_pulls:
+                    permission = "write"
+                elif pulls_error is not None:
+                    collection_errors.append(pulls_error)
+        elif integration_warnings:
+            can_read_pulls, pulls_error = _actor_can_read_pull_requests_with_error(actor_gh_bin, repository)
+            if can_read_pulls:
+                permission = "write"
+            else:
+                collection_errors.append(pulls_error or error)
         else:
             collection_errors.append(error)
     effective_repo_info = dict(repo_info)
