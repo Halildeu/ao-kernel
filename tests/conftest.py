@@ -28,7 +28,7 @@ import ast
 import json
 import os
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from pathlib import Path
 
 import pytest
@@ -143,11 +143,62 @@ def _ast_eq(a: ast.AST, b: ast.AST) -> bool:
     )
 
 
-def _blk004_method_key(expr: ast.AST) -> tuple[str, str] | None:
-    """Return ``(<mock_name>, <method>)`` for ``mock.method`` expressions."""
-    if isinstance(expr, ast.Attribute) and isinstance(expr.value, ast.Name):
-        return (expr.value.id, expr.attr)
-    return None
+def _walk_outside_nested_scopes(node: ast.AST) -> Iterator[ast.AST]:
+    """Yield ``node`` and all descendants in source order without entering nested
+    function/lambda/class scopes.
+
+    This is a same-function precision boundary for BLK-004. A nested helper
+    inside ``def test_xxx`` should NOT contribute return-value assignments or
+    asserts to the outer test scan.
+    """
+    yield node
+    for child in ast.iter_child_nodes(node):
+        if isinstance(
+            child,
+            (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef),
+        ):
+            continue
+        yield from _walk_outside_nested_scopes(child)
+
+
+def _collect_behavioral_signal_keys(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> set[tuple[str, str]]:
+    """Return the set of ``(mock_name, method)`` keys that have a real
+    behavioral assertion in the test function body.
+
+    A behavioral signal is one of:
+      - a *call* to ``<var>.<method>.<assert_called_*>(...)``
+      - a behavioral attribute (``call_count``, ``called``, ``call_args``...)
+        appearing *inside an ``ast.Assert``* (or other check context — we
+        scope to Assert/Call comparison here for precision).
+
+    Bare expressions like ``_ = m.method.call_count`` outside an Assert do
+    NOT count, so a direct-echo BLK stays blocking. Unrelated mocks (different
+    ``(mock_name, method)`` key) also do NOT downgrade the targeted echo.
+    """
+    keys: set[tuple[str, str]] = set()
+    for child in _walk_outside_nested_scopes(node):
+        # Behavioral method call: <mock>.<method>.assert_called*(...)
+        if (
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Attribute)
+            and child.func.attr in _BLK004_BEHAVIORAL_METHODS
+            and isinstance(child.func.value, ast.Attribute)
+            and isinstance(child.func.value.value, ast.Name)
+        ):
+            keys.add((child.func.value.value.id, child.func.value.attr))
+        # Behavioral attr inside Assert: assert m.method.call_count == 2 etc.
+        if isinstance(child, ast.Assert):
+            for sub in ast.walk(child):
+                if (
+                    isinstance(sub, ast.Attribute)
+                    and sub.attr in _BLK004_BEHAVIORAL_ATTRS
+                    and isinstance(sub.value, ast.Attribute)
+                    and isinstance(sub.value.value, ast.Name)
+                ):
+                    keys.add((sub.value.value.id, sub.value.attr))
+    return keys
 
 
 def _blk004_scan(
@@ -158,112 +209,120 @@ def _blk004_scan(
 ) -> None:
     """Detect BLK-004 mock-return direct-echo tautology in a test function.
 
-    Narrow scope per Codex CNS-20260529-001:
+    Narrow scope per Codex CNS-20260529-001 (iter-1 REVISE absorbed):
       - assignment form: ``<Name>.<attr>.return_value = <expr>``
       - echo form A:     ``assert <Name>.<attr>(...) == <expr>``
       - echo form B:     ``<result> = <Name>.<attr>(...); assert <result> == <expr>``
-      - BLK iff sole/primary outcome assertion is direct echo AND no
-        behavioral signals (assert_called_*, call_count, ...) present.
-      - Behavioral signals present → emit ADV-003 (advisory) instead.
+      - BLK iff direct echo AND no per-key behavioral signal in the same
+        function.
+      - Per-key behavioral signal present → emit ADV-003 (advisory) instead.
 
     Out of scope (first release): patch/patch.object/mocker.patch kwargs,
     AsyncMock, side_effect, service pass-through, attribute projection.
+
+    Precision (Codex post-impl iter-2 BLOCKING fixes absorbed):
+      - Nested function/lambda/class bodies are pruned from the scan, so a
+        helper inside the test cannot leak return_value/assert events to the
+        outer scope.
+      - Statement order is preserved: ``return_value`` reassignments and
+        ``result = m.method()`` rebindings are evaluated in source order, so
+        a stale value or a reassigned ``result`` does not produce a hit.
+      - Behavioral-signal downgrade is per-``(mock_name, method)`` key.
+        Bare references like ``_ = m.method.call_count`` outside an Assert
+        do not demote a sibling direct echo.
     """
-    # Pass 1: gather return_value assignments and result bindings.
-    # Use ast.dump of the return_expr as the canonical key, so AST structural
-    # equality decides matches.
-    return_value_map: dict[tuple[str, str], ast.expr] = {}
-    result_call_map: dict[str, tuple[str, str]] = {}
+    # Pre-pass: collect per-key behavioral signals for the downgrade rule.
+    behavioral_keys = _collect_behavioral_signal_keys(node)
 
-    for stmt in ast.walk(node):
-        if not (isinstance(stmt, ast.Assign) and len(stmt.targets) == 1):
-            continue
-        tgt = stmt.targets[0]
-
-        # <name>.<attr>.return_value = <expr>
-        if (
-            isinstance(tgt, ast.Attribute)
-            and tgt.attr == "return_value"
-            and isinstance(tgt.value, ast.Attribute)
-            and isinstance(tgt.value.value, ast.Name)
-        ):
-            mock_name = tgt.value.value.id
-            method = tgt.value.attr
-            return_value_map[(mock_name, method)] = stmt.value
-
-        # <result> = <name>.<attr>(...)
-        if (
-            isinstance(tgt, ast.Name)
-            and isinstance(stmt.value, ast.Call)
-            and isinstance(stmt.value.func, ast.Attribute)
-            and isinstance(stmt.value.func.value, ast.Name)
-        ):
-            call_func = stmt.value.func
-            assert isinstance(call_func, ast.Attribute)  # narrows for mypy
-            call_recv = call_func.value
-            assert isinstance(call_recv, ast.Name)  # narrows for mypy
-            result_call_map[tgt.id] = (call_recv.id, call_func.attr)
-
-    if not return_value_map:
-        return
-
-    # Pass 2: behavioral signals tied to a specific mock method suppress
-    # BLK to ADV-003 for that method only. An unrelated mock assertion must
-    # not downgrade a direct-echo tautology.
-    behavioral_keys: set[tuple[str, str]] = set()
-    for stmt in ast.walk(node):
-        if (
-            isinstance(stmt, ast.Call)
-            and isinstance(stmt.func, ast.Attribute)
-            and stmt.func.attr in _BLK004_BEHAVIORAL_METHODS
-        ):
-            key = _blk004_method_key(stmt.func.value)
-            if key is not None:
-                behavioral_keys.add(key)
-        if isinstance(stmt, ast.Attribute) and stmt.attr in _BLK004_BEHAVIORAL_ATTRS:
-            key = _blk004_method_key(stmt.value)
-            if key is not None:
-                behavioral_keys.add(key)
-
-    # Pass 3: scan asserts for direct echo.
+    # Main pass: walk function body in source order, maintaining a
+    # point-in-time state of return_value bindings and result aliases.
+    return_value_state: dict[tuple[str, str], ast.expr] = {}
+    result_active: dict[str, tuple[str, str]] = {}
     seen_keys: set[tuple[str, str]] = set()
-    for stmt in ast.walk(node):
-        if not isinstance(stmt, ast.Assert):
-            continue
-        test = stmt.test
-        if not (isinstance(test, ast.Compare) and len(test.ops) == 1 and isinstance(test.ops[0], ast.Eq)):
-            continue
-        lhs = test.left
-        rhs = test.comparators[0]
 
-        # Form A: assert <var>.<attr>(...) == <expr>
-        if isinstance(lhs, ast.Call) and isinstance(lhs.func, ast.Attribute) and isinstance(lhs.func.value, ast.Name):
-            key = (lhs.func.value.id, lhs.func.attr)
-            if key in return_value_map and _ast_eq(rhs, return_value_map[key]):
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-                rule, label = ("ADV-003", "advisory") if key in behavioral_keys else ("BLK-004", "blocking")
-                detail = (
-                    f"mock-return tautology ({label}): {key[0]}.{key[1]}.return_value "
-                    "was set to the same expression asserted via direct call"
-                )
-                violations.append(_TestQualityViolation(fname, func_name, rule, detail))
-                continue
+    def _emit(key: tuple[str, str], via: str) -> None:
+        if key in seen_keys:
+            return
+        seen_keys.add(key)
+        has_beh = key in behavioral_keys
+        rule, label = ("ADV-003", "advisory") if has_beh else ("BLK-004", "blocking")
+        detail = (
+            f"mock-return tautology ({label}): "
+            f"{key[0]}.{key[1]}.return_value was set to the same expression "
+            f"asserted via {via}"
+        )
+        violations.append(_TestQualityViolation(fname, func_name, rule, detail))
 
-        # Form B: assert <result_name> == <expr> (result bound from mock call)
-        if isinstance(lhs, ast.Name) and lhs.id in result_call_map:
-            key = result_call_map[lhs.id]
-            if key in return_value_map and _ast_eq(rhs, return_value_map[key]):
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-                rule, label = ("ADV-003", "advisory") if key in behavioral_keys else ("BLK-004", "blocking")
-                detail = (
-                    f"mock-return tautology ({label}): {key[0]}.{key[1]}.return_value "
-                    f"was set to the same expression asserted via {lhs.id}"
-                )
-                violations.append(_TestQualityViolation(fname, func_name, rule, detail))
+    def _process(stmt: ast.AST) -> None:
+        # Order-aware: handle Assign FIRST so result alias updates before any
+        # nested Asserts in the same statement, then Assert.
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+            tgt = stmt.targets[0]
+
+            # <var>.<attr>.return_value = <expr>
+            if (
+                isinstance(tgt, ast.Attribute)
+                and tgt.attr == "return_value"
+                and isinstance(tgt.value, ast.Attribute)
+                and isinstance(tgt.value.value, ast.Name)
+            ):
+                return_value_state[(tgt.value.value.id, tgt.value.attr)] = stmt.value
+                return
+
+            # <result> = <var>.<attr>(...)  → bind alias
+            # any other RHS → clear alias (Codex iter-2 finding #2)
+            if isinstance(tgt, ast.Name):
+                if (
+                    isinstance(stmt.value, ast.Call)
+                    and isinstance(stmt.value.func, ast.Attribute)
+                    and isinstance(stmt.value.func.value, ast.Name)
+                ):
+                    call_func = stmt.value.func
+                    call_recv = call_func.value
+                    assert isinstance(call_func, ast.Attribute)
+                    assert isinstance(call_recv, ast.Name)
+                    result_active[tgt.id] = (call_recv.id, call_func.attr)
+                else:
+                    result_active.pop(tgt.id, None)
+                return
+
+        if isinstance(stmt, ast.Assert):
+            test = stmt.test
+            if not (isinstance(test, ast.Compare) and len(test.ops) == 1 and isinstance(test.ops[0], ast.Eq)):
+                return
+            lhs = test.left
+            rhs = test.comparators[0]
+
+            # Form A: assert <var>.<attr>(...) == <expr>
+            if (
+                isinstance(lhs, ast.Call)
+                and isinstance(lhs.func, ast.Attribute)
+                and isinstance(lhs.func.value, ast.Name)
+            ):
+                key = (lhs.func.value.id, lhs.func.attr)
+                if key in return_value_state and _ast_eq(rhs, return_value_state[key]):
+                    _emit(key, "direct call")
+                    return
+
+            # Form B: assert <result_name> == <expr> (result currently aliased)
+            if isinstance(lhs, ast.Name) and lhs.id in result_active:
+                key = result_active[lhs.id]
+                if key in return_value_state and _ast_eq(rhs, return_value_state[key]):
+                    _emit(key, lhs.id)
+                    return
+
+    # Source-order body traversal (with nested-scope pruning).
+    for top in node.body:
+        if isinstance(
+            top,
+            (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef),
+        ):
+            continue
+        for sub in _walk_outside_nested_scopes(top):
+            _process(sub)
+
+
+# ── Test Quality Gate (Scanner Entrypoint) ──────────────────────────────
 
 
 def _scan_test_file(filepath: Path) -> list[_TestQualityViolation]:

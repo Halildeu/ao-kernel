@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "B1-BLK004",
+  "work_package": "B1-BLK004-HARDENING",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,7 +13,7 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/b1-blk004-mock-tautology",
+    "head_ref": "refs/heads/codex/blk004-hardening-main",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
       "tests/conftest.py",
@@ -51,12 +51,12 @@
     }
   ],
   "findings": [
-    "Claude reviewer returned AGREE for B1-BLK004 after reviewing the diff and focused validation output.",
-    "The change adds BLK-004 to block direct mock-return tautologies in tests, reducing false-green test evidence in autonomous agent workflows.",
-    "The implementation stays narrow: direct <mock>.<method>.return_value assignment followed by direct call equality or one-hop result equality in the same test function.",
-    "Codex added a hardening fix so unrelated mock behavioral assertions no longer downgrade BLK-004 to ADV-003; only behavioral signals tied to the same mock method can downgrade.",
-    "Focused validation passed: ruff check tests/conftest.py tests/test_conftest_quality_gate.py, mypy tests/conftest.py, and pytest -q tests/test_conftest_quality_gate.py with 22 passing tests.",
-    "The whole-suite dry-run forcing function asserts zero BLK-004 hits outside the quality-gate fixture file.",
+    "Claude reviewer returned AGREE for B1-BLK004-HARDENING after reviewing the staged diff and focused validation output.",
+    "The change hardens BLK-004 so nested helper function bodies cannot leak mock-return events into the outer test scan.",
+    "The implementation makes BLK-004 source-order aware: later return_value assignments win and result aliases are cleared when a variable is rebound.",
+    "Behavioral-signal downgrade is scoped to the same mock method key; unrelated mock behavior and bare call_count reads do not downgrade blocking direct echoes.",
+    "Focused validation passed: ruff check tests/conftest.py tests/test_conftest_quality_gate.py, mypy tests/conftest.py, pytest -q tests/test_conftest_quality_gate.py, and pytest -q tests/test_conftest_quality_gate.py tests/test_ao_ma10_high_risk_raw_review_producer.py.",
+    "The current-suite forcing function continues to assert zero BLK-004 hits outside the quality-gate fixture file.",
     "No workflow mutation, ruleset mutation, CODEOWNERS change, branch protection mutation, admin bypass, credential material, support widening, production platform claim, or live adapter execution is introduced."
   ],
   "secrets_recorded": false,
