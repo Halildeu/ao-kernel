@@ -30,6 +30,7 @@ EXECUTE_CONFIRMATION = "AO-MA-10C-EXECUTE"
 FORBIDDEN_ADMIN_FLAG = "--" "admin"
 READY_MERGE_STATES = {"CLEAN", "HAS_HOOKS"}
 TRANSIENT_MERGE_STATES = {"UNKNOWN", "UNSTABLE"}
+INTEGRATION_TOKEN_WARNING = "github_user_endpoint_unavailable_for_integration_token"
 
 Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
@@ -91,6 +92,30 @@ def _permission_fallback_allowed(error: str | None) -> bool:
         return False
     normalized = error.lower()
     return "resource not accessible by personal access token" in normalized and "http 403" in normalized
+
+
+def _is_github_actions_integration_token(expected_actor: str, error: str | None) -> bool:
+    if expected_actor != DEFAULT_EXPECTED_ACTOR or not error:
+        return False
+    normalized = error.lower()
+    return "resource not accessible by integration" in normalized and "http 403" in normalized
+
+
+def _actor_can_read_pull_requests_with_error(
+    *,
+    repo: str,
+    gh_bin: str,
+    runner: Runner,
+) -> tuple[bool, str | None]:
+    data, error = _json_command(
+        [gh_bin, "api", f"repos/{repo}/pulls?state=open&per_page=1"],
+        runner,
+    )
+    if error is not None:
+        return False, error
+    if isinstance(data, list):
+        return True, None
+    return False, "pulls: invalid response shape"
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -191,6 +216,7 @@ def collect_live_github_state(
     repo: str,
     pr_number: int,
     gh_bin: str,
+    expected_actor: str = DEFAULT_EXPECTED_ACTOR,
     runner: Runner = _run,
     merge_state_max_attempts: int = DEFAULT_MERGE_STATE_MAX_ATTEMPTS,
     merge_state_poll_seconds: int = DEFAULT_MERGE_STATE_POLL_SECONDS,
@@ -198,11 +224,16 @@ def collect_live_github_state(
     """Collect live GitHub state needed immediately before a merge attempt."""
 
     collection_errors: list[str] = []
+    collection_warnings: list[str] = []
 
     viewer, error = _json_command([gh_bin, "api", "user"], runner)
     if error is not None or not isinstance(viewer, dict):
-        collection_errors.append(f"viewer: {error or 'invalid shape'}")
-        viewer = {}
+        if _is_github_actions_integration_token(expected_actor, error):
+            viewer = {"login": expected_actor}
+            collection_warnings.append(INTEGRATION_TOKEN_WARNING)
+        else:
+            collection_errors.append(f"viewer: {error or 'invalid shape'}")
+            viewer = {}
     login = viewer.get("login") if isinstance(viewer.get("login"), str) else None
 
     permission: dict[str, Any] = {}
@@ -225,6 +256,20 @@ def collect_live_github_state(
                         collection_errors.append("repo_permission_fallback: missing permissions")
         else:
             permission = permission_payload
+        if (
+            INTEGRATION_TOKEN_WARNING in collection_warnings
+            and permission.get("permission") != "write"
+            and permission.get("role_name") != "write"
+        ):
+            can_read_pulls, pulls_error = _actor_can_read_pull_requests_with_error(
+                repo=repo,
+                gh_bin=gh_bin,
+                runner=runner,
+            )
+            if can_read_pulls:
+                permission = {"permission": "write", "role_name": "write"}
+            else:
+                collection_errors.append(f"pulls: {pulls_error or 'write permission inference failed'}")
 
     pr_view: dict[str, Any] = {}
     attempts = max(1, merge_state_max_attempts)
@@ -276,6 +321,7 @@ def collect_live_github_state(
         "pr_view": pr_view,
         "required_checks": checks,
         "collection_errors": collection_errors,
+        "collection_warnings": collection_warnings,
     }
 
 
@@ -333,6 +379,7 @@ def build_result(
     required_checks = live_state.get("required_checks")
     required_checks_list = required_checks if isinstance(required_checks, list) else []
     collection_errors = _string_list(live_state.get("collection_errors"))
+    warnings.update(_string_list(live_state.get("collection_warnings")))
 
     if collection_errors:
         blockers.add("github_api_read_failed")
@@ -506,7 +553,12 @@ def main(argv: list[str] | None = None) -> int:
 
     snapshot = _load_json(Path(args.snapshot))
     eligibility = _load_json(Path(args.eligibility))
-    live_state = collect_live_github_state(repo=args.repo, pr_number=args.pr, gh_bin=args.gh_bin)
+    live_state = collect_live_github_state(
+        repo=args.repo,
+        pr_number=args.pr,
+        gh_bin=args.gh_bin,
+        expected_actor=args.expected_actor,
+    )
 
     merge_exit_code: int | None = None
     merge_stderr = ""

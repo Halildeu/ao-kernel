@@ -1,49 +1,58 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "RI-7.8b-bc10-6c-defer-decision",
+  "work_package": "GPP-9",
   "implementer": {
-    "agent": "claude",
-    "provider": "anthropic"
+    "agent": "codex",
+    "provider": "openai"
   },
   "reviewer": {
-    "agent": "codex-cli-reviewer",
-    "provider": "openai",
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ri-7-8b-bc10-6c-defer-decision",
+    "head_ref": "refs/heads/codex/ao-ma10ak-merge-agent-integration-actor",
     "changed_files": [
-      ".claude/plans/RI-7.8-EVIDENCE-MANIFEST.v1.json",
-      ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json",
-      ".claude/plans/gpp_status.v1.json",
-      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-defer-decision-evidence.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_ri78b_bc10_6b_protected_execution_window_invariant.py",
-      "tests/test_ri78b_bc10_6c_defer_decision_invariant.py",
-      "tests/test_ri78b_bc10_activation_window.py"
+      "scripts/ao_ma10c_merge_agent.py",
+      "tests/test_ao_ma10c_merge_agent.py"
     ]
   },
   "checks_considered": [
-    {"name": "tests", "status": "pass"},
-    {"name": "secret_scan", "status": "pass"},
-    {"name": "json_schema", "status": "pass"},
-    {"name": "sha256_digest_match", "status": "pass"},
-    {"name": "gpp_guard_flags_const_false", "status": "pass"}
+    {
+      "name": "tests",
+      "status": "pass"
+    },
+    {
+      "name": "secret_scan",
+      "status": "pass"
+    },
+    {
+      "name": "schema_validation",
+      "status": "pass"
+    },
+    {
+      "name": "ruff_lint",
+      "status": "pass"
+    },
+    {
+      "name": "py_compile",
+      "status": "pass"
+    },
+    {
+      "name": "git_diff_check",
+      "status": "pass"
+    }
   ],
   "findings": [
-    "Defer decision schema Draft 2020-12 valid with additionalProperties=false recursive check. Evidence validates against schema with zero errors. 449 lines schema + 200 lines evidence + 600 lines tests (39 tests, 37 active + 2 introducer-PR gated, all pass locally).",
-    "Strategic pivot rationale: operator clarified actual ao-kernel usage pattern is CLI-only monthly subscription mode (Claude Code CLI + Codex CLI). No programmatic OpenAI API calls. No OPENAI_API_KEY. Continuing bc10-6c-closure with a real billable provider call (~$0.0003) solely for evidence chain completion would be HARD RULE No Fake Work violation under current usage pattern.",
-    "Supersession entry RI-7.8b-bc10-6b transitions from awaiting_operator_dispatch to deferred_cli_only_mode (terminal/non-dispatchable). authority_consumed=false, effective_execution_state=deferred_non_dispatchable, dispatch_allowed_after_decision=false per Codex iter-11 absorb item #1.",
-    "Historical guard_flag_policy_resolution.live_adapter_execution_allowed=true PRESERVED in the entry as audit-historical record (was set true in PR #697 when entry was active). authority_consumed=false + effective_execution_state=deferred_non_dispatchable make it NON-EFFECTIVE. No future dispatch can be made against this entry.",
-    "Submanifest bc10_real_adapter_usage_cost_aggregate_recorded STAYS FALSE (no enum migration; no aggregate exists). NEW additive key bc10_defer_decision_recorded=true tracks the defer decision separately per Codex iter-11 absorb item #2.",
-    "bc10 chain assets PRESERVED dormant: PR #695 authorization schema + evidence, PR #697 workflow + activation guard + runner + pricing source + 6b schema, PR #700 per-call + aggregate + closure schemas. NO file deletion, NO retire. Future API-mode reactivation requires new operator-bound supersession PR per Codex iter-11 absorb item #3.",
-    "Top-level guard flags const FALSE PRESERVED across this defer PR: support_widening_allowed=false, production_platform_claim_allowed=false, live_adapter_execution_allowed=false. GPP-9 keep_narrow_stable_runtime closure baseline maintained.",
-    "12-item forbidden_change_audit + machine-enforced via git diff on introducer PR. bc10 workflow + scripts + pricing source + per-call/aggregate/closure schemas + ri78a evidence + ri78b-bc1-6c closure evidence all UNCHANGED. Asset preservation verified via test_defer_no_asset_retire_or_delete + test_defer_forbidden_change_audit_machine_enforced.",
-    "16-key mutations_performed object reports 4 true (schema_created, evidence_created, supersession_entry_transitioned_to_terminal, submanifest_additive_key_added) + 12 false (workflow_modified, activation_script_modified, runner_script_modified, pricing_source_modified, per_call/aggregate/closure schema_modified, bc10_workflow_dispatched, provider_call_performed, secret_referenced, guard_flag_flipped, asset_retired_or_deleted).",
-    "5-key no_fake_work_attestation: real_billable_call_under_cli_only_would_be_fake_work=true, evidence_for_cli_only_mode_is_real_acceptance=true, no_provider_response_recorded=true, no_token_usage_recorded=true, no_cost_aggregate_computed=true. HARD RULE No Fake Work compliance attested.",
-    "Cross-AI peer review: implementer=anthropic (claude), reviewer=openai (codex). Codex thread 019e731b-728d-7932-b20b-e293c9868211 iter-10 REVISE (5 absorb items: terminal/non-dispatchable status, boolean submanifest preservation, dormant asset language, no_live_adapter_execution in RI-7.8c string, two separate PRs) + iter-11 AGREE on v2 plan. Per HARD RULE Plan Consensus Autonomy, AGREE leads to direct implementation. Next slice: RI-7.8c non-promotion decision PR will reference this defer evidence as predecessor."
+    "The merge-agent now handles GitHub Actions integration-token user endpoint 403 only for the expected github-actions[bot] actor.",
+    "Integration-token collection warnings are separated from collection_errors so warnings do not block by themselves.",
+    "When collaborator permission is non-write under the integration-token warning, a read-only pull-request list probe can infer write for the merge actor; if the probe fails, merge remains blocked.",
+    "The actual merge endpoint still provides fail-closed enforcement if the token lacks real merge/write capability.",
+    "Regression tests cover integration user endpoint failure, inferred-write success, and pull-probe failure paths.",
+    "Claude CLI independent review returned AGREE with no required fixes."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
