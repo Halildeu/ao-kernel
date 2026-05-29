@@ -220,12 +220,12 @@ def run(
             "mode": "0700",
             "path_recorded": False,
         }
-        result["producer_token_env"] = token_env
+        result["producer_token_env"] = governance_token_env if governance_wrapper_created else token_env
         result["producer_wrapper"] = {
-            "created": False,
-            "mode": None,
+            "created": governance_wrapper_created,
+            "mode": "0700" if governance_wrapper_created else None,
             "path_recorded": False,
-            "same_as_merge_actor_wrapper": True,
+            "same_as_merge_actor_wrapper": not governance_wrapper_created,
         }
 
         command = [
@@ -250,6 +250,7 @@ def run(
         ]
         if governance_wrapper_created:
             command.extend(["--governance-gh-bin", str(governance_wrapper)])
+            command.extend(["--producer-gh-bin", str(governance_wrapper)])
         if execute:
             command.append("--execute")
             if confirmation is not None:
@@ -289,10 +290,24 @@ def run(
             pr_producer: dict[str, Any] = raw_pr_producer if isinstance(raw_pr_producer, dict) else {}
             producer_role = pr_producer.get("role")
             producer_same_as_merge_actor = pr_producer.get("same_as_merge_actor")
-            if producer_role != "merge_actor":
-                blockers.append(f"producer_not_merge_actor: {producer_role}")
-            if producer_same_as_merge_actor is not True:
-                blockers.append("producer_not_same_as_merge_actor")
+            producer_release_authority = pr_producer.get("release_authority")
+            producer_allowed_operations = pr_producer.get("allowed_operations")
+            expected_producer_role = "governance_producer" if governance_wrapper_created else "merge_actor"
+            expected_same_as_merge_actor = not governance_wrapper_created
+            if producer_role not in {"merge_actor", "governance_producer"}:
+                blockers.append(f"producer_role_invalid: {producer_role}")
+            if producer_role != expected_producer_role:
+                blockers.append("producer_role_execution_context_mismatch")
+            if producer_same_as_merge_actor is not expected_same_as_merge_actor:
+                blockers.append("producer_same_actor_execution_context_mismatch")
+            if producer_role == "merge_actor" and producer_same_as_merge_actor is not True:
+                blockers.append("producer_merge_actor_role_mismatch")
+            if producer_role == "governance_producer" and producer_same_as_merge_actor is not False:
+                blockers.append("producer_governance_role_mismatch")
+            if producer_release_authority is not False:
+                blockers.append("producer_release_authority_observed")
+            if producer_allowed_operations != ["base_ref_read", "branch_create", "file_create", "pr_create"]:
+                blockers.append("producer_allowed_operations_mismatch")
             raw_smoke_decision = smoke_result.get("decision")
             smoke_decision: dict[str, Any] = raw_smoke_decision if isinstance(raw_smoke_decision, dict) else {}
             blockers.extend(item for item in smoke_decision.get("blockers", []) if isinstance(item, str))

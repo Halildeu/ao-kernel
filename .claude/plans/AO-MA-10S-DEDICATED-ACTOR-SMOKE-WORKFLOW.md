@@ -11,10 +11,10 @@
 AO-MA-10s removes the remaining local-shell dependency from AO-MA-10q. The
 dedicated non-admin merge actor token is read from the GitHub repository secret
 `GLADYATORE_LAB_GH_TOKEN`, not from a local operator shell. The optional
-governance token is read from `AO_GOVERNANCE_GH_TOKEN` for
-branch-protection/ruleset readiness APIs only. Disposable low-risk PR
-production and merge execution both stay bound to the dedicated non-admin actor
-token. A Codex or Claude operator may dispatch the workflow, but the merge
+governance/producer token is read from `AO_GOVERNANCE_GH_TOKEN` for
+branch-protection/ruleset readiness APIs and disposable low-risk PR production.
+Merge execution stays bound to the dedicated non-admin actor token. A Codex or
+Claude operator may dispatch the workflow, but the merge
 authority remains the repo-owned `ao-release-gate` checks plus GitHub ruleset
 enforcement, and the merge actor must still be `gladyatore-lab`.
 
@@ -34,11 +34,13 @@ workflow_dispatch -> AO-MA-10r credential doctor -> AO-MA-10q runner
 - workflow `GITHUB_TOKEN` has only `contents: read`;
 - the dedicated actor token is only bound as an environment variable;
 - the governance token is only bound as an environment variable and may be used
-  only for readiness reads;
-- disposable PR production and merge execution remain bound to the dedicated
-  non-admin merge actor token;
+  only for readiness reads plus disposable PR production;
+- execute mode proves the disposable PR producer branch-write path with
+  `--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN`;
+- merge execution remains bound to the dedicated non-admin merge actor token;
 - AO-MA-10q fails closed if delegated AO-MA-10l evidence reports a producer
-  that is not the merge actor;
+  that claims release authority or widens beyond the bounded producer
+  operations;
 - token values are never echoed, printed, committed, or uploaded;
 - execute mode still requires `AO-MA-10L-EXECUTE`;
 - all evidence is uploaded as an Actions artifact;

@@ -85,6 +85,7 @@ def test_ao_ma10s_workflow_runs_doctor_before_runner_and_uploads_artifacts() -> 
     assert "actions/upload-artifact@v7" in text
     assert "if: always()" in text
     assert "if-no-files-found: error" in text
+    assert "--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN" in text
 
 
 def test_ao_ma10s_workflow_skips_runner_when_doctor_fails() -> None:
@@ -112,7 +113,7 @@ def test_ao_ma10s_doc_and_receipt_preserve_authority_boundary() -> None:
     assert receipt["allowed_ref"] == "refs/heads/main"
     assert receipt["secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
     assert receipt["governance_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
-    assert receipt["producer_secret_env"] == "GLADYATORE_LAB_GH_TOKEN"
+    assert receipt["producer_secret_env"] == "AO_GOVERNANCE_GH_TOKEN"
     assert receipt["producer_release_authority"] is False
     assert receipt["token_value_recorded"] is False
     assert receipt["release_authority"] == "ao-release-gate+github-ruleset"
