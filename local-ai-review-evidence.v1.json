@@ -1,25 +1,23 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10K-EVIDENCE-SYNC",
+  "work_package": "HYG-BC10-API-MODE-REACTIVATION-RUNBOOK",
   "implementer": {
-    "agent": "codex",
-    "provider": "openai"
+    "agent": "claude",
+    "provider": "anthropic"
   },
   "reviewer": {
-    "agent": "claude-sonnet-4-6-reviewer",
-    "provider": "anthropic",
+    "agent": "codex",
+    "provider": "openai",
     "verdict": "AGREE"
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10k-evidence-sync",
+    "head_ref": "refs/heads/codex/hyg-bc10-api-mode-reactivation",
     "changed_files": [
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.md",
-      ".claude/plans/AO-MA-10-LOW-RISK-AUTONOMOUS-MERGE-LANE.v1.json",
-      ".claude/plans/AO-MA-10J-REQUIRED-CHECK-HIGH-RISK-WIRING.md",
-      "local-ai-review-evidence.v1.json",
-      "tests/test_ao_ma10_low_risk_autonomous_merge_lane.py"
+      ".ao/consultations/requests/CNS-20260529-002.request.v1.json",
+      "docs/RB-BC10-API-MODE-REACTIVATION.md",
+      "local-ai-review-evidence.v1.json"
     ]
   },
   "checks_considered": [
@@ -32,15 +30,11 @@
       "status": "pass"
     },
     {
-      "name": "scope_paths_allowed_only",
+      "name": "doc_only_scope",
       "status": "pass"
     },
     {
-      "name": "prohibited_paths_absent",
-      "status": "pass"
-    },
-    {
-      "name": "pr747_facts_accurately_recorded",
+      "name": "no_touch_list_respected",
       "status": "pass"
     },
     {
@@ -48,36 +42,22 @@
       "status": "pass"
     },
     {
-      "name": "authority_model_preserved",
+      "name": "no_top_level_flag_flip_language",
       "status": "pass"
     },
     {
-      "name": "no_runtime_code_changes",
-      "status": "pass"
-    },
-    {
-      "name": "tests_match_documented_facts",
-      "status": "pass"
-    },
-    {
-      "name": "no_support_widening",
-      "status": "pass"
-    },
-    {
-      "name": "no_admin_bypass",
-      "status": "pass"
-    },
-    {
-      "name": "no_ruleset_or_workflow_mutation",
+      "name": "cost_guardrails_mirror_dormant_assets",
       "status": "pass"
     }
   ],
   "findings": [
-    "Claude reviewer returned AGREE for PR #748 after reviewing the AO-MA-10k evidence-sync diff and the planned local review evidence wrapper.",
-    "All changed files are within allowed plan/test/evidence paths; no prohibited runtime, workflow, ruleset, branch-protection, AGENTS, CLAUDE, or gpp_status path is touched.",
-    "PR #747 negative high-risk smoke facts are recorded: mergeStateStatus BLOCKED, ao-release-gate-technical success, ao-release-gate-review ACTION_REQUIRED, decision deny_policy_violation, allow false, and finding ao_release_gate_high_risk_human_review_missing.",
-    "The JSON receipt diff updates only the future_slices status text; support_widening, production_platform_claim, and live_adapter_execution guards remain false per implementer validation.",
-    "The new test assertions match the documented PR #747 facts and do not introduce runtime behavior.",
+    "Codex post-impl review returned AGREE for HYG-BC10-API-MODE-REACTIVATION-RUNBOOK after reviewing the doc-only diff (Codex thread 019e74e6, CNS-20260529-002 Track 2, iter-2 AGREE + post-impl AGREE).",
+    "Diff surface is doc-only: adds the runbook document and the consultation request artifact only; no workflow, script, schema, pricing source, guard flag, gpp_status, or evidence-artifact mutation.",
+    "ADR-0027 mirror sequence is explicit and preserves 6a, 6b, and 6c semantics: operator supersession, preflight guardrails, workflow_dispatch-only activation, per-call evidence, aggregate evidence, closure decision, and scoped authority close.",
+    "No top-level flag flip language leaks through. All live_adapter_execution_allowed, support_widening_allowed, and production_platform_claim_allowed references either state no flip or preserve const false; future action is scoped supersession permission only.",
+    "Cost guardrails match the dormant assets exactly: openai/gpt-4o-mini only, max_output_tokens_cap 64, max_usd 5.00, max_billable_calls_count 4, max_distinct_runs 5, run_attempt equals 1. gpt-4o is described as a separate operator-bound supersession, not the default path.",
+    "Rollback semantics are correct: the existing defer decision is immutable; rollback and abort use a new supersession-over-reversal artifact; there is no flip-back-to-false semantic.",
+    "Promotion disclaimer is clear: BC-10 reactivation evidence is not Beta or Production promotion and does not override the RI-7.8c final non-promotion decision.",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
