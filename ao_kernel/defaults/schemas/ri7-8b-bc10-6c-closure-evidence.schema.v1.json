@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6c-closure-evidence:v1",
+  "title": "RI-7.8b-bc10-6c Closure Evidence",
+  "description": "Closure evidence artifact for RI-7.8b-bc10-6c. Records the operator-bound BC-10 submanifest flip + supersession entry closure + cross-artifact binding to per-call evidence files + aggregate evidence + protected environment observation truth + environment approval identity. This is the FINAL bc10 PR; after this lands, RI-7.8c can begin. Top-level guard flags const FALSE PRESERVED. Schema enforces strict admin_bypass=false, custom_branch_policies=true with main-only single policy, distinct reviewer from dispatch actor, and cross-artifact consistency (workflow_run_id, run_attempt, pricing digest, workflow content SHA).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "decision",
+    "closure_proof",
+    "spend_ledger",
+    "bounded_window_envelope",
+    "operator_activation_identity",
+    "commit_verification",
+    "required_checks_passed",
+    "ao_ma_10_high_risk_prerequisite",
+    "bc10_flip_attestation",
+    "status_transition_history",
+    "protected_environment_observation_result",
+    "environment_approval_identity",
+    "per_call_evidence_refs",
+    "aggregate_evidence_ref",
+    "cross_artifact_binding",
+    "guard_flags",
+    "secret_boundary",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6c-closure-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6c_closure_evidence"},
+    "decision": {"type": "string", "const": "ri78b_bc10_6c_closure_recorded_with_aggregate_and_submanifest_flip_operator_bound"},
+    "closure_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_outcomes", "no_unexpected_failure", "run_count", "run_attempt"],
+      "properties": {
+        "scenario_outcomes": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": false,
+          "items": {
+            "type": "string",
+            "enum": ["success_billable", "budget_cap_precheck_denied"]
+          }
+        },
+        "no_unexpected_failure": {"type": "boolean", "const": true},
+        "run_count": {"type": "integer", "const": 1},
+        "run_attempt": {"type": "string", "const": "1"}
+      }
+    },
+    "spend_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_usd", "cumulative_usd", "billable_calls_count", "cost_source", "line_items"],
+      "properties": {
+        "max_usd": {"type": "number", "const": 5.00},
+        "cumulative_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+        "billable_calls_count": {"type": "integer", "const": 3},
+        "cost_source": {"type": "string", "const": "provider_usage_plus_pinned_pricing_source"},
+        "line_items": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scenario", "billable", "actual_cost_usd"],
+            "properties": {
+              "scenario": {"type": "string"},
+              "billable": {"type": "boolean"},
+              "actual_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"}
+            }
+          }
+        }
+      }
+    },
+    "bounded_window_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_distinct_runs",
+        "actual_runs",
+        "max_usd",
+        "cumulative_usd",
+        "max_duration_hours",
+        "actual_duration_hours",
+        "max_run_attempt"
+      ],
+      "properties": {
+        "max_distinct_runs": {"type": "integer", "const": 5},
+        "actual_runs": {"type": "integer", "minimum": 1, "maximum": 5},
+        "max_usd": {"type": "number", "const": 5.00},
+        "cumulative_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+        "max_duration_hours": {"type": "integer", "const": 24},
+        "actual_duration_hours": {"type": "number", "minimum": 0, "maximum": 24},
+        "max_run_attempt": {"type": "integer", "const": 1}
+      }
+    },
+    "operator_activation_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator_github_login", "merged_by_login", "identity_match"],
+      "properties": {
+        "operator_github_login": {"type": "string", "const": "Halildeu"},
+        "merged_by_login": {"type": "string", "const": "Halildeu"},
+        "identity_match": {"type": "boolean", "const": true}
+      }
+    },
+    "commit_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verified", "reason"],
+      "properties": {
+        "verified": {"type": "boolean", "const": true},
+        "reason": {"type": "string", "const": "valid"}
+      }
+    },
+    "required_checks_passed": {"type": "boolean", "const": true},
+    "ao_ma_10_high_risk_prerequisite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr_number", "commit_sha"],
+      "properties": {
+        "pr_number": {"type": "integer", "const": 687},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "bc10_flip_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after", "flip_owner_slice", "top_level_flags_unchanged"],
+      "properties": {
+        "before": {"type": "boolean", "const": false},
+        "after": {"type": "boolean", "const": true},
+        "flip_owner_slice": {"type": "string", "const": "RI-7.8b-bc10-6c"},
+        "top_level_flags_unchanged": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+          "properties": {
+            "support_widening_allowed": {"type": "boolean", "const": false},
+            "production_platform_claim_allowed": {"type": "boolean", "const": false},
+            "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+          }
+        }
+      }
+    },
+    "status_transition_history": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from_status", "to_status", "at"],
+        "properties": {
+          "from_status": {
+            "type": "string",
+            "enum": ["awaiting_operator_dispatch", "active", "closed"]
+          },
+          "to_status": {
+            "type": "string",
+            "enum": ["awaiting_operator_dispatch", "active", "closed"]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "from_status": {"const": "awaiting_operator_dispatch"},
+              "to_status": {"const": "active"}
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "from_status": {"const": "active"},
+              "to_status": {"const": "closed"}
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "protected_environment_observation_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "env_name",
+        "observation_source",
+        "observed_before_provider_call",
+        "required_reviewers_count",
+        "distinct_reviewer_present",
+        "prevent_self_review",
+        "can_admins_bypass",
+        "custom_branch_policies",
+        "deployment_branch_policies",
+        "main_only_policy_verified",
+        "observation_result"
+      ],
+      "properties": {
+        "env_name": {"type": "string", "const": "ao-kernel-bc10-real-adapter-usage-cost"},
+        "observation_source": {"type": "string", "const": "github_environment_api"},
+        "observed_before_provider_call": {"type": "boolean", "const": true},
+        "required_reviewers_count": {"type": "integer", "minimum": 1},
+        "distinct_reviewer_present": {"type": "boolean", "const": true},
+        "prevent_self_review": {"type": "boolean", "const": true},
+        "can_admins_bypass": {"type": "boolean", "const": false},
+        "custom_branch_policies": {"type": "boolean", "const": true},
+        "deployment_branch_policies": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "name"],
+            "properties": {
+              "type": {"type": "string", "const": "branch"},
+              "name": {"type": "string", "enum": ["main", "refs/heads/main"]}
+            }
+          }
+        },
+        "main_only_policy_verified": {"type": "boolean", "const": true},
+        "observation_result": {"type": "string", "const": "passed"}
+      }
+    },
+    "environment_approval_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow_dispatch_actor",
+        "environment_reviewer_login",
+        "reviewer_distinct_from_dispatch_actor",
+        "approval_record_source",
+        "approved_at"
+      ],
+      "properties": {
+        "workflow_dispatch_actor": {"type": "string", "const": "Halildeu"},
+        "environment_reviewer_login": {"type": "string", "minLength": 1},
+        "reviewer_distinct_from_dispatch_actor": {"type": "boolean", "const": true},
+        "approval_record_source": {"type": "string", "const": "github_deployment_review_api"},
+        "approved_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"
+        }
+      }
+    },
+    "per_call_evidence_refs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenario", "path", "sha256"],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": ["small_completion_a", "small_completion_b", "small_completion_c", "budget_cap_precheck_denied"]
+          },
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      },
+      "allOf": [
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_a"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_b"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_c"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "budget_cap_precheck_denied"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "aggregate_evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "cross_artifact_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "all_per_call_refs_present_in_aggregate",
+        "aggregate_billing_digest_verified",
+        "workflow_run_id_consistent",
+        "run_attempt_consistent",
+        "pricing_source_digest_consistent",
+        "workflow_content_sha256_consistent"
+      ],
+      "properties": {
+        "all_per_call_refs_present_in_aggregate": {"type": "boolean", "const": true},
+        "aggregate_billing_digest_verified": {"type": "boolean", "const": true},
+        "workflow_run_id_consistent": {"type": "boolean", "const": true},
+        "run_attempt_consistent": {"type": "boolean", "const": true},
+        "pricing_source_digest_consistent": {"type": "boolean", "const": true},
+        "workflow_content_sha256_consistent": {"type": "boolean", "const": true}
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening_allowed", "production_platform_claim_allowed", "live_adapter_execution_allowed"],
+      "properties": {
+        "support_widening_allowed": {"type": "boolean", "const": false},
+        "production_platform_claim_allowed": {"type": "boolean", "const": false},
+        "live_adapter_execution_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "secret_boundary": {"type": "string", "const": "no_secret_material_no_credential_names_no_token_in_repo"},
+    "support_widening": {"type": "boolean", "const": false},
+    "production_platform_claim": {"type": "boolean", "const": false},
+    "live_adapter_execution": {"type": "boolean", "const": false}
+  }
+}

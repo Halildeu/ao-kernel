@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6c-per-call-evidence:v1",
+  "title": "RI-7.8b-bc10-6c Per-Call Evidence (final form for closure PR)",
+  "description": "Final per-call evidence artifact for RI-7.8b-bc10-6c closure. This is NOT the runtime marker (which is emitted by the workflow and described by ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json). The per-call evidence is the COMMITTED form pinned into the 6c closure PR after the workflow runs. It re-pins all marker contract fields (does NOT trust the marker schema by reference) and adds binding fields: marker_sha256 + marker_source_url + workflow_run_id for audit traceability. 4 per-call evidence files per workflow run (3 success_billable + 1 budget_cap_precheck_denied).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "marker_schema_version",
+    "marker_sha256",
+    "marker_source_url",
+    "workflow_run_id",
+    "run_attempt",
+    "head_sha",
+    "workflow_ref",
+    "workflow_content_sha256",
+    "pricing_source_digest",
+    "scenario",
+    "scenario_outcome",
+    "requested_model",
+    "resolved_model",
+    "model_allowlist_enforced",
+    "model_allowlist",
+    "max_output_tokens_cap",
+    "provider_call_performed",
+    "billable_call_count_delta",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "projected_cost_usd",
+    "actual_cost_usd",
+    "cumulative_cost_usd_before",
+    "cumulative_cost_usd_after",
+    "usage_source",
+    "cost_source",
+    "secret_boundary",
+    "raw_response_recorded",
+    "secret_material_recorded",
+    "secret_scope_after_all_pre_provider_guards",
+    "budget_cap_precheck_denied_completes_without_provider_client_init",
+    "budget_cap_precheck_denied_completes_without_api_key_read",
+    "retry_behavior"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6c-per-call-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6c_per_call_evidence"},
+    "marker_schema_version": {
+      "type": "string",
+      "const": "ri7-8b-bc10-per-call-runtime-call-marker.v1",
+      "description": "Pins the runtime marker schema version that this per-call evidence derives from."
+    },
+    "marker_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the runtime marker JSON file emitted by the workflow."
+    },
+    "marker_source_url": {
+      "type": "string",
+      "pattern": "^https://",
+      "description": "Artifact download URL for the runtime marker (GitHub Actions artifact)."
+    },
+    "workflow_run_id": {"type": "string", "minLength": 1},
+    "run_attempt": {"type": "string", "const": "1"},
+    "head_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "workflow_ref": {"type": "string", "minLength": 1},
+    "workflow_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Raw bytes SHA-256 of .github/workflows/bc10-real-adapter-usage-cost.yml at workflow run time. MUST equal the 6b pinned value (verified via cross-artifact test)."
+    },
+    "pricing_source_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Pricing source SHA-256. MUST equal the 6b pinned value (verified via cross-artifact test)."
+    },
+    "scenario": {
+      "type": "string",
+      "enum": ["small_completion_a", "small_completion_b", "small_completion_c", "budget_cap_precheck_denied"]
+    },
+    "scenario_outcome": {
+      "type": "string",
+      "enum": ["success_billable", "budget_cap_precheck_denied", "unexpected_failure"]
+    },
+    "requested_model": {"type": "string", "enum": ["openai/gpt-4o-mini"]},
+    "resolved_model": {"type": "string", "enum": ["openai/gpt-4o-mini"]},
+    "model_allowlist_enforced": {"type": "boolean", "const": true},
+    "model_allowlist": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "enum": ["openai/gpt-4o-mini"]}
+    },
+    "max_output_tokens_cap": {"type": "integer", "minimum": 1, "maximum": 256},
+    "provider_call_performed": {"type": "boolean"},
+    "billable_call_count_delta": {"type": "integer", "minimum": 0, "maximum": 1},
+    "input_tokens": {"type": "integer", "minimum": 0},
+    "output_tokens": {"type": "integer", "minimum": 0},
+    "total_tokens": {"type": "integer", "minimum": 0},
+    "projected_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+    "actual_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+    "cumulative_cost_usd_before": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+    "cumulative_cost_usd_after": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+    "usage_source": {"type": "string", "enum": ["provider_api_response", "no_call_no_usage"]},
+    "cost_source": {"type": "string", "enum": ["provider_usage_plus_pinned_pricing_source", "no_billable_provider_call"]},
+    "secret_boundary": {"type": "string", "const": "no_secret_material_emitted_no_token_no_credential"},
+    "raw_response_recorded": {"type": "boolean", "const": false},
+    "secret_material_recorded": {"type": "boolean", "const": false},
+    "secret_scope_after_all_pre_provider_guards": {"type": "boolean", "const": true},
+    "budget_cap_precheck_denied_completes_without_provider_client_init": {"type": "boolean", "const": true},
+    "budget_cap_precheck_denied_completes_without_api_key_read": {"type": "boolean", "const": true},
+    "retry_behavior": {"type": "string", "const": "wrapper_no_retry_loop_transport_default_skipped"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"scenario": {"const": "budget_cap_precheck_denied"}},
+        "required": ["scenario"]
+      },
+      "then": {
+        "properties": {
+          "provider_call_performed": {"const": false},
+          "billable_call_count_delta": {"const": 0},
+          "scenario_outcome": {"const": "budget_cap_precheck_denied"},
+          "input_tokens": {"const": 0},
+          "output_tokens": {"const": 0},
+          "total_tokens": {"const": 0},
+          "actual_cost_usd": {"const": "0.00000000"},
+          "usage_source": {"const": "no_call_no_usage"},
+          "cost_source": {"const": "no_billable_provider_call"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"scenario_outcome": {"const": "success_billable"}},
+        "required": ["scenario_outcome"]
+      },
+      "then": {
+        "properties": {
+          "provider_call_performed": {"const": true},
+          "billable_call_count_delta": {"const": 1},
+          "input_tokens": {"minimum": 1},
+          "output_tokens": {"minimum": 1},
+          "total_tokens": {"minimum": 2},
+          "actual_cost_usd": {"not": {"const": "0.00000000"}},
+          "usage_source": {"const": "provider_api_response"},
+          "cost_source": {"const": "provider_usage_plus_pinned_pricing_source"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"provider_call_performed": {"const": true}},
+        "required": ["provider_call_performed"]
+      },
+      "then": {
+        "properties": {
+          "input_tokens": {"minimum": 1},
+          "output_tokens": {"minimum": 1},
+          "actual_cost_usd": {"not": {"const": "0.00000000"}},
+          "usage_source": {"const": "provider_api_response"},
+          "cost_source": {"const": "provider_usage_plus_pinned_pricing_source"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"provider_call_performed": {"const": false}},
+        "required": ["provider_call_performed"]
+      },
+      "then": {
+        "properties": {
+          "actual_cost_usd": {"const": "0.00000000"},
+          "usage_source": {"const": "no_call_no_usage"},
+          "cost_source": {"const": "no_billable_provider_call"},
+          "billable_call_count_delta": {"const": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scenario": {"enum": ["small_completion_a", "small_completion_b", "small_completion_c"]}
+        },
+        "required": ["scenario"]
+      },
+      "then": {
+        "properties": {
+          "scenario_outcome": {"enum": ["success_billable", "unexpected_failure"]}
+        }
+      }
+    }
+  ]
+}

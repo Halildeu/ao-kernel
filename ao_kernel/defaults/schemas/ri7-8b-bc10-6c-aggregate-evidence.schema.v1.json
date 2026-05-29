@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ri7-8b-bc10-6c-aggregate-evidence:v1",
+  "title": "RI-7.8b-bc10-6c Aggregate Evidence",
+  "description": "Aggregate evidence artifact for RI-7.8b-bc10-6c closure. Summarizes 4 per-call evidence files (3 success_billable + 1 budget_cap_precheck_denied) into a single aggregate with cumulative cost, line items, billing digest, and pricing source pinning. Arithmetic invariants (cumulative_usd == sum line_items, billing_digest == sha256 canonical line_items) are enforced via cross-artifact tests (cannot be expressed in JSON Schema). Schema enforces scenario exact-set + line item count constraints.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "aggregate_kind",
+    "workflow_run_id",
+    "run_attempt",
+    "head_sha",
+    "workflow_content_sha256",
+    "pricing_source_digest",
+    "cumulative_usd",
+    "billable_calls_count",
+    "denied_calls_count",
+    "total_markers_count",
+    "line_items",
+    "usage_source",
+    "cost_source",
+    "billing_digest",
+    "worst_case_invariant_holds",
+    "max_usd",
+    "max_billable_calls_count",
+    "max_projected_call_cost_usd",
+    "raw_response_recorded",
+    "secret_material_recorded"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "ri7-8b-bc10-6c-aggregate-evidence.v1"},
+    "artifact_kind": {"type": "string", "const": "ri7_8b_bc10_6c_aggregate_evidence"},
+    "aggregate_kind": {"type": "string", "const": "ri7_8b_bc10_aggregate_evidence"},
+    "workflow_run_id": {"type": "string", "minLength": 1},
+    "run_attempt": {"type": "string", "const": "1"},
+    "head_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "workflow_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pricing_source_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "cumulative_usd": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]{8}$",
+      "description": "Sum of all line_items.actual_cost_usd as Decimal. Test-enforced equality."
+    },
+    "billable_calls_count": {
+      "type": "integer",
+      "const": 3,
+      "description": "3 success_billable scenarios. Test-enforced equal to sum of line_items.billable=true."
+    },
+    "denied_calls_count": {
+      "type": "integer",
+      "const": 1,
+      "description": "1 budget_cap_precheck_denied scenario."
+    },
+    "total_markers_count": {"type": "integer", "const": 4},
+    "line_items": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario",
+          "scenario_outcome",
+          "billable",
+          "actual_cost_usd",
+          "projected_cost_usd",
+          "marker_sha256",
+          "per_call_evidence_path",
+          "per_call_evidence_sha256",
+          "usage_source",
+          "cost_source"
+        ],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": ["small_completion_a", "small_completion_b", "small_completion_c", "budget_cap_precheck_denied"]
+          },
+          "scenario_outcome": {
+            "type": "string",
+            "enum": ["success_billable", "budget_cap_precheck_denied", "unexpected_failure"]
+          },
+          "billable": {"type": "boolean"},
+          "actual_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+          "projected_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+          "marker_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "per_call_evidence_path": {"type": "string", "minLength": 1},
+          "per_call_evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "usage_source": {"type": "string", "enum": ["provider_api_response", "no_call_no_usage"]},
+          "cost_source": {"type": "string", "enum": ["provider_usage_plus_pinned_pricing_source", "no_billable_provider_call"]}
+        }
+      },
+      "allOf": [
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_a"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_b"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "small_completion_c"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {"properties": {"scenario": {"const": "budget_cap_precheck_denied"}}, "required": ["scenario"]},
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "usage_source": {
+      "type": "string",
+      "enum": ["provider_api_response_plus_no_call_no_usage"],
+      "description": "Aggregate usage source: 3 billable items have provider_api_response, 1 budget_denied has no_call_no_usage. Explicit mixed-semantics enum value."
+    },
+    "cost_source": {
+      "type": "string",
+      "const": "provider_usage_plus_pinned_pricing_source",
+      "description": "Aggregate cost source. Per-line-item cost_source carries the per-call form."
+    },
+    "billing_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over canonical-JSON line_items. Test-enforced equality."
+    },
+    "worst_case_invariant_holds": {
+      "type": "boolean",
+      "const": true,
+      "description": "max_billable_calls_count * max_projected_call_cost_usd <= max_usd"
+    },
+    "max_usd": {"type": "number", "const": 5.00},
+    "max_billable_calls_count": {"type": "integer", "const": 4},
+    "max_projected_call_cost_usd": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{8}$"},
+    "raw_response_recorded": {"type": "boolean", "const": false},
+    "secret_material_recorded": {"type": "boolean", "const": false}
+  }
+}
