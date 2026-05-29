@@ -258,6 +258,10 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
 
     block = _gate_job_block()
     assert "Locate optional high-risk raw reviewer evidence on PR head" in block
+    assert "working-directory: base" in block
+    assert "payload.json" in block
+    assert "_high_risk_paths(changed_paths)" in block
+    assert '[ "$HIGH_RISK_CHANGED" != "true" ]' in block
     assert "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
     assert "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
     assert "high-risk supersession evidence requires both OpenAI and Anthropic raw reviewer files" in block
