@@ -52,6 +52,12 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
     assert "AO-MA-1 is a design/docs-only slice" in text
     assert "AO-MA-1 originally kept GPP-2 `blocked`" in text
     assert "low-risk autonomous merge evidence accepted" in text
+    assert "Low-risk autonomous merge is active only for eligible low-risk PRs" in text
+    assert "AO-MA-10A0/A1 readiness evidence plus the accepted AO-MA-10q merged-smoke" in text
+    assert "High-risk and governance-sensitive PRs remain fail-closed" in text
+    assert "context-bound cross-provider" in text
+    assert "supersession evidence" in text
+    assert "blocked instead of falling back to model output as authority" in text
     assert "support_widening=false" in text
     assert "production_platform_claim=false" in text
     assert "live_adapter_execution=false" in text
@@ -61,10 +67,9 @@ def test_ao_ma1_is_docs_only_and_keeps_gpp2_guards_closed() -> None:
         "No testai.acik.com/ao-gate, smee.io, GitHub App webhook, or deployment-protection callback work in AO-MA-1."
         in text
     )
-    # GPP-2 closeout (AO-GATE-9) is recorded in completed_wps; AO-MA-1 stays
-    # docs-only and does not change the three guard flags. The active slice
-    # at this point in the program is GPP-3a (Faz 1 of GPP-3) which migrated
-    # current_wp away from GPP-2.
+    assert "No reopening GPP-2, testai/smee callback topology, production tier promotion" in text
+    # GPP-2 closeout (AO-GATE-9) and later GPP closure are recorded in the
+    # SSOT; AO-MA-1 stays docs-only and does not change the three guard flags.
     gpp2_entries = [item for item in status["completed_wps"] if item.get("id") == "GPP-2"]
     assert len(gpp2_entries) == 1
     assert "closed_at" in gpp2_entries[0]

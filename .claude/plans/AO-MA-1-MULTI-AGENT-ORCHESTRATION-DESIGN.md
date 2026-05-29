@@ -160,9 +160,14 @@ AO-MA is an execution accelerator for GPP-2D, not a replacement for it.
 - AO-MA can produce implementer, reviewer, verifier, and integration evidence.
 - `local_gpp_gate` can validate that evidence as operator/process evidence.
 - `ao-release-gate` remains the deterministic merge authority.
-- Low-risk PRs may eventually auto-merge only after GPP-2D-5 branch-protection
-  cutover makes `ao-release-gate` required.
-- High-risk PRs remain CODEOWNERS / human-gated.
+- Low-risk autonomous merge is active only for eligible low-risk PRs after
+  AO-MA-10A0/A1 readiness evidence plus the accepted AO-MA-10q merged-smoke
+  evidence; the merge executor remains an executor, not release authority.
+- High-risk and governance-sensitive PRs remain fail-closed unless
+  `ao-release-gate` validates current, context-bound cross-provider
+  supersession evidence and GitHub ruleset requirements pass. Missing,
+  stale, same-provider, non-AGREE, or guard-violating evidence keeps the PR
+  blocked instead of falling back to model output as authority.
 - testai, smee.io, public webhooks, and deployment-protection callbacks are
   not required for this AO-MA path; they remain deferred optional GPP-2C
   infrastructure unless explicitly reactivated.
@@ -207,8 +212,9 @@ the relevant promotion gates.
 - No treating Codex, Claude, or any other model output as release authority.
 - No testai or public webhook dependency for the near-term AO-MA lane.
 - No testai.acik.com/ao-gate, smee.io, GitHub App webhook, or deployment-protection callback work in AO-MA-1.
-- No GPP-2 closeout until GPP-2D enforce evidence, branch-protection cutover,
-  auto-merge smoke, and AO-GATE-9 closeout are complete.
+- No reopening GPP-2, testai/smee callback topology, production tier promotion,
+  support widening, live adapter execution, or production platform claim from
+  an AO-MA slice without an explicit operator-bound supersession PR.
 
 If a future AO-MA slice touches GitHub Actions workflow design, the inherited
 GPP-2D boundary is: pull_request only, never pull_request_target; read-only
