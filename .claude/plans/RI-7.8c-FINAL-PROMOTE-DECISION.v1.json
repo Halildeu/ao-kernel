@@ -1,0 +1,181 @@
+{
+  "schema_version": "ri7-8c-final-promote-decision-evidence.v1",
+  "artifact_kind": "ri7_8c_final_promote_decision_evidence",
+  "decision": "ri78c_final_operator_non_promotion_keep_narrow_stable_runtime_authoritative_cli_only_no_programmatic_api_no_live_adapter_execution_no_support_widening_no_production_claim",
+  "decision_effect": "ri78_chain_closed_with_non_promotion_top_level_guard_flags_preserved_false_bc1_bc10_scope_out_under_cli_only_mode_assets_dormant_future_promotion_requires_new_operator_bound_supersession_pr",
+  "does_not_authorize": [
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "top_level_guard_flag_flip",
+    "bc10_chain_dormant_asset_retire_or_delete",
+    "bc1_or_bc10_baseline_reclassification_to_passed",
+    "billable_provider_call",
+    "openai_api_key_reference",
+    "general_purpose_production_platform_promotion_under_cli_only_mode",
+    "promote_general_purpose_beta_under_cli_only_mode"
+  ],
+  "ri78a_predecessor_ref": {
+    "pr_number": 673,
+    "commit_sha": "a6cd89c28daa3379b64c32e22ce844a5ab3faed2",
+    "evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2"
+  },
+  "ri78b_bc1_6c_predecessor_ref": {
+    "pr_number": 691,
+    "commit_sha": "7cca702592e4b9c288ed5b64440deadf786b65ee",
+    "closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5"
+  },
+  "ri78b_bc10_6c_defer_decision_predecessor_ref": {
+    "pr_number": 731,
+    "commit_sha": "904bb4da32f252d9466e08c32ff0ce3d61c63235",
+    "defer_evidence_sha256": "0c9d0f1d9f694cd0becbcc362d1c45b7c1d779fa896e186e81e17ae5335de581"
+  },
+  "operator_decision_record": {
+    "github_login": "Halildeu",
+    "decision_recorded_at": "2026-05-29T10:34:21Z",
+    "decision_source": "Operator chat clarification 2026-05-29: 'biz api aracılı ile ai ile çalışmıypruz şimdilik cli üzerinden aylık kullanımlarla çalılşıyruz' + 'önerdiğin şekilde tam otonom devam edelim' (we don't work with API-based AI, currently using CLI with monthly subscriptions + proceed autonomously per recommendation). Final operator promote decision under current CLI-only mode is non-promotion.",
+    "no_secret_assertion": true,
+    "decision_scope": "ri7_8c_final_operator_promotion_decision_event_recording_non_promotion_outcome_under_cli_only_mode",
+    "observation_notes": "RI-7.8c records the final operator promotion decision event for the RI-7 readiness chain. Under current CLI-only subscription mode (Claude Code CLI + Codex CLI monthly subscriptions; no programmatic API calls; no OPENAI_API_KEY), the operator's authoritative decision is non-promotion: keep_narrow_stable_runtime remains authoritative. This is fully consistent with existing GPP-9 closure (gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim). BC-1 + BC-10 are scope-out under CLI-only mode, not 'passed' or 'reclassified'. bc10 chain assets (PR #695/#697/#700) remain dormant per PR #731 defer-decision. Future promotion to general_purpose_production_platform or general_purpose_beta requires a NEW operator-bound supersession PR with: (a) explicit production_platform_claim_allowed flip authorization, (b) full production matrix evidence including real billable API call aggregate, (c) operator-verified semantics including API-mode usage pattern transition. RI-7.8 chain closes here with all submanifest decision keys recorded: live_pre_auth=true, bc1=true, bc10=false (deferred), final_decision=true. Top-level guard flags const FALSE PRESERVED."
+  },
+  "non_promotion_rationale": {
+    "current_usage_pattern_is_cli_only_monthly_subscription": true,
+    "no_programmatic_api_call_in_current_or_planned_use": true,
+    "no_openai_api_key_available_or_planned": true,
+    "bc1_marker_only_under_cli_only_not_real_attestation_for_general_purpose_production": true,
+    "bc10_chain_deferred_under_cli_only_per_pr_731": true,
+    "promoting_general_purpose_production_under_cli_only_would_be_fake_work_violation": true,
+    "keep_narrow_stable_runtime_remains_authoritative": true
+  },
+  "bc_baseline_scope_out_record": {
+    "bc1_status_under_cli_only_mode": "scope_out_under_cli_only_mode_not_passed_marker_only_evidence_in_pr_691",
+    "bc10_status_under_cli_only_mode": "scope_out_under_cli_only_mode_not_passed_deferred_per_pr_731_assets_dormant",
+    "bc1_reclassification_to_passed_explicitly_forbidden": true,
+    "bc10_reclassification_to_passed_explicitly_forbidden": true,
+    "bc1_through_bc9_baseline_preserved": true,
+    "no_enum_migration": true
+  },
+  "gpp9_closure_consistency": {
+    "existing_gpp9_decision_string": "gpp9_keep_narrow_stable_runtime_authoritative_program_closed_no_live_adapter_execution_no_support_widening_no_production_claim",
+    "ri78c_decision_aligned_with_gpp9_closure": true,
+    "top_level_guard_flags_remain_const_false": true,
+    "keep_narrow_stable_runtime_remains_authoritative": true,
+    "no_program_reopening": true
+  },
+  "submanifest_transition": {
+    "before": {
+      "final_operator_promotion_decision_recorded": false
+    },
+    "after": {
+      "final_operator_promotion_decision_recorded": true
+    }
+  },
+  "current_readiness_snapshot": {
+    "nine_key_manifest_all_true": true,
+    "readiness_gate_decision": "ready_for_operator_promotion_decision"
+  },
+  "current_gpp_guard_snapshot": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "ri78_submanifest_snapshot_after_decision": {
+    "live_evidence_pre_authorization_recorded": true,
+    "bc1_protected_live_adapter_attestation_recorded": true,
+    "bc10_real_adapter_usage_cost_aggregate_recorded": false,
+    "bc10_defer_decision_recorded": true,
+    "final_operator_promotion_decision_recorded": true
+  },
+  "secret_boundary": "no_secret_material_no_credential_names_no_token_in_repo_no_provider_api_key_reference",
+  "mutations_performed": {
+    "schema_created": true,
+    "evidence_created": true,
+    "submanifest_final_decision_key_flipped": true,
+    "gpp_status_mutated": false,
+    "workflow_modified": false,
+    "activation_script_modified": false,
+    "runner_script_modified": false,
+    "pricing_source_modified": false,
+    "bc10_chain_schemas_modified": false,
+    "bc10_chain_evidence_modified": false,
+    "bc10_workflow_dispatched": false,
+    "provider_call_performed": false,
+    "secret_referenced": false,
+    "guard_flag_flipped": false,
+    "asset_retired_or_deleted": false,
+    "gpp9_closure_record_modified": false
+  },
+  "no_fake_work_attestation": {
+    "non_promotion_under_cli_only_is_real_acceptance": true,
+    "promoting_to_general_purpose_production_under_cli_only_would_be_fake_work": true,
+    "no_billable_call_recorded": true,
+    "no_real_aggregate_recorded": true,
+    "no_artificial_promotion_evidence_generated": true
+  },
+  "future_promotion_authority_chain": {
+    "future_general_purpose_production_promotion_requires_new_operator_bound_supersession_pr": true,
+    "future_general_purpose_beta_promotion_requires_new_operator_bound_supersession_pr": true,
+    "future_promotion_requires_explicit_production_platform_claim_allowed_flip": true,
+    "future_promotion_requires_full_production_matrix_evidence": true,
+    "future_promotion_requires_operator_verified_semantics": true,
+    "bc10_chain_assets_remain_dormant_for_future_api_mode_reactivation": true,
+    "current_ri78c_decision_does_not_authorize_any_future_flip": true
+  },
+  "stale_replay_guard": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8c-non-promotion-decision",
+    "pr_number_hint": "TBD",
+    "base_sha": "904bb4da32f252d9466e08c32ff0ce3d61c63235",
+    "ri78a_evidence_sha256": "c87df7b2961cb726257cbea203802dbdfd39b60e109643db71975913cc7958f2",
+    "ri78b_bc1_6c_closure_evidence_sha256": "09cc565a39b0da0512d89cf1e48c6796ca9600c565575fec80bef691435383f5",
+    "ri78b_bc10_6c_defer_evidence_sha256": "0c9d0f1d9f694cd0becbcc362d1c45b7c1d779fa896e186e81e17ae5335de581",
+    "ri78_submanifest_sha256_before_flip": "7cdf5189bba8c965d2027a6d79b752a295856b95257750736f559f1a9d230b3c",
+    "readiness_manifest_sha256": "8427c500bd6646f104da2ecd1bb2f843c7a8ee2bb97438d29232b855414a6b84",
+    "timestamp": "2026-05-29T10:34:21Z"
+  },
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "context_binding": {
+    "repo": "Halildeu/ao-kernel",
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ri-7-8c-non-promotion-decision",
+    "pr_number_hint": "TBD"
+  },
+  "forbidden_change_audit": {
+    "forbidden_surfaces": [
+      ".claude/plans/gpp_status.v1.json",
+      ".github/workflows/bc10-real-adapter-usage-cost.yml",
+      "scripts/ri78b_bc10_activation_window.py",
+      "scripts/bc10_run_scenarios.py",
+      "ao_kernel/defaults/pricing/openai_gpt_4o_mini.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-per-call-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-aggregate-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-closure-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6c-defer-decision-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6b-protected-execution-window-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-6a-execution-window-authorization-evidence.schema.v1.json",
+      "ao_kernel/defaults/schemas/ri7-8b-bc10-per-call-runtime-call-marker.schema.v1.json",
+      ".claude/plans/RI-7.8a-LIVE-EVIDENCE-PRE-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8b-bc1-6c-CLOSURE.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6a-EXECUTION-WINDOW-AUTHORIZATION.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6b-PROTECTED-EXECUTION-WINDOW.v1.json",
+      ".claude/plans/RI-7.8b-bc10-6c-DEFER-DECISION.v1.json"
+    ],
+    "all_unchanged": true
+  },
+  "cross_ai_review_ref": {
+    "thread_id": "019e731b-728d-7932-b20b-e293c9868211",
+    "implementer_provider": "anthropic",
+    "reviewer_provider": "openai",
+    "final_verdict": "AGREE"
+  },
+  "notes": [
+    "RI-7.8c is the final operator promotion decision artifact for the RI-7 readiness chain. Under current CLI-only subscription mode, the operator's authoritative decision is non-promotion: keep_narrow_stable_runtime remains authoritative.",
+    "Decision string aligned with GPP-9 closure: top-level guard flags const FALSE PRESERVED, BC-1 + BC-10 scope-out under cli-only mode (not 'passed'), no general purpose production platform promotion, no general purpose beta promotion.",
+    "Submanifest final_operator_promotion_decision_recorded flips false -> true, completing RI-7.8 chain with all decision keys recorded.",
+    "Predecessor refs: PR #673 (RI-7.8a operator pre-authorization), PR #691 (BC-1 closure attestation), PR #731 (bc10 defer-decision). BC-1 marker-only attestation in PR #691 is scope-out under cli-only mode (not real attestation for general purpose production). bc10 chain assets dormant per PR #731.",
+    "Future promotion to general_purpose_production_platform or general_purpose_beta requires NEW operator-bound supersession PR with: (a) explicit production_platform_claim_allowed flip, (b) full production matrix evidence including real billable API call aggregate, (c) operator-verified semantics including API-mode usage pattern transition.",
+    "Cross-AI peer review: Codex thread 019e731b-728d-7932-b20b-e293c9868211 iter-10 REVISE + iter-11 AGREE for the bc10-6c-defer + RI-7.8c chain plan. iter-11 absorb #4: decision string must include no_live_adapter_execution per GPP-9 closure alignment. iter-11 absorb #5: two separate PRs (PR A defer + PR B non-promotion) with PR B referencing PR A as predecessor."
+  ]
+}
