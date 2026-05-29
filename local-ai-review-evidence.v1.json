@@ -1,18 +1,13 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-PUBLIC-CONTEXT-GAPS",
+  "work_package": "HYG-CONTEXT-COMPILER",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-public-context-gaps",
-    "changed_files": [
-      "local-ai-review-evidence.v1.json",
-      "tests/test_checkpoint.py",
-      "tests/test_memory_tiers.py",
-      "tests/test_semantic_retrieval.py"
-    ]
+    "head_ref": "refs/heads/codex/hyg-context-compiler-gaps",
+    "changed_files": [ "local-ai-review-evidence.v1.json", "tests/test_context_compiler.py" ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
@@ -23,14 +18,13 @@
     { "name": "guard_flags_remain_false", "status": "pass" }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e758d) returned REVISE + ready_for_impl; post-impl review returned REVISE with 3 blocking test-quality findings, all absorbed (15 tests now).",
-    "Test-only diff across tests/test_checkpoint.py, tests/test_memory_tiers.py, tests/test_semantic_retrieval.py. No ao_kernel/context runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
-    "GAPS-02 checkpoint (6): CHECKPOINT_NO_HASH (load_context monkeypatch), CHECKPOINT_EXPIRED (mutate-resave so hash matches), expired-allowed-when-fail_on_expired-false, malformed-expiry allow-resume, has_provider_cursor (full provider_state schema), list_checkpoints skip-on-corrupt.",
-    "GAPS-01 semantic_retrieval (5): in-memory no/none-decisions empty; embed_decision embedding_config precedence (asserts provider+model+base_url+api_key); embed_decision cache-skip; AND (post-impl fix) semantic_search embedding_config precedence (L162-168) via monkeypatched embed_text, asserting provider+model+base_url+api_key. All network-free.",
-    "GAPS-03 memory_tiers (4): string-confidence coercion; non-numeric confidence falls back to 0.5 with a DISCRIMINATING assertion (old timestamp -> warm proves 0.5 not 0.0, post-impl fix for the previously tautological assert); load_tier_policy returns tiers; _age_days malformed-timestamp sentinel.",
-    "Post-impl blocking fixes absorbed: (1) added semantic_search embedding_config precedence test (162-168 was actionable_offline, not external); (2) memory_tiers non-numeric assertion now discriminates 0.5 vs 0.0 fallback (old-timestamp -> warm); (3) embed_decision precedence test now asserts base_url, not just provider/model/api_key.",
-    "Coverage delta (full suite, base aec164a): checkpoint.py 79.2%->93.5%, memory_tiers.py 80.0%->94.3%, semantic_retrieval.py 63.3%->~83% (targeted); semantic_search embedding_config precedence (162-168) now covered. Remaining semantic_retrieval uncovered is the embed_text provider HTTP path (L50-73) and the vector_store backend delegation (L182-185) — genuinely external/backend, not offline-actionable.",
-    "No-Fake-Work: embedding_config NOT touched (already 7 precedence tests); context_compiler explicitly DEFERRED to a separate follow-up (most complex module, fixture-heavy), not a closure of the whole audit cluster; session_lifecycle defensive logging intentionally uncovered.",
+    "Codex plan-time consultation (thread 019e75bb) returned REVISE + ready_for_impl: do CONTEXT-COMPILER as a single PR; defer CONFIG-HARDEN and AUDIT-V3 (error-message ossify + tooling risk; mutation-v2 already decided not-a-repo-gate). _recency_score cover all branches; _apply_semantic_reranking assert in test body not stub; budget assert on exclusion branch + reason not weak total; 438-439 fail-open intentionally uncovered.",
+    "Test-only diff: appends TestRecencyScore (6), TestSemanticReranking (3), and one token-budget-exclusion test to tests/test_context_compiler.py. No ao_kernel/context runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
+    "_recency_score (context_compiler L335-351): all branches pinned — empty/malformed -> 0.3, <1h -> 1.0, <24h -> 0.8, <168h -> 0.5, older -> 0.2 (timestamps computed relative to now for deterministic buckets).",
+    "_apply_semantic_reranking (L354-436): semantic_search monkeypatched to a deterministic stub (network-free); assertions in the test body (not the stub, which the broad except would swallow). Covers sim_map blend (0.5*0.7+1.0*0.3=0.65) + re-sort, multimodal content-list query join (L393-398), and the disabled short-circuit no-op. The fail-open except (L438-439) is intentionally left uncovered as a defensive non-critical branch.",
+    "token-budget exclusion (L154-156): a few LARGE-value decisions exceed max_tokens before the max_decisions cap, so the excluded item carries the 'token budget' selection reason; the assertion discriminates the token-budget branch from the max_decisions branch (not a weak total_tokens<=N check).",
+    "Coverage (targeted test_context_compiler.py): _recency_score (335-351), the rerank blend/resort (425-436), and token-budget exclusion (155-156) are no longer in the missing list. Remaining uncovered context_compiler lines are the fail-open defensive branch (438-439) and the separate _render_consultation/_build_preamble helpers (449-453/470-490), out of this PR's scope.",
+    "No-Fake-Work: CONFIG-HARDEN (error-message exact-text) and AUDIT-V3 (mutation tooling) deferred per Codex; no tautological assertions (recency exact buckets, rerank exact blend, budget discriminated reason).",
     "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
