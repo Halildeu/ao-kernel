@@ -213,6 +213,10 @@ def test_enforce_job_reads_only_head_sha_free_raw_reviewer_evidence_from_pr_head
     base code, never read directly from PR head."""
     block = _gate_job_block()
     assert "head/local-ai-review-evidence.v1.json" in block
+    assert "pr-files.json" in block
+    assert "if not path.exists()" in block
+    assert '"local-ai-review-evidence.v1.json" in paths' in block
+    assert '[ "$REVIEW_CHANGED" = "true" ]' in block
     assert "head/ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json" in block
     assert "head/ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json" in block
     # Head-bound evidence files must NOT be read from PR head.

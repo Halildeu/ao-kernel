@@ -530,13 +530,31 @@ jobs:
 
       - name: Locate optional raw reviewer evidence on PR head
         id: reviewer
+        working-directory: base
         run: |
           # The reviewer schema (local-ai-review-evidence.schema.v1.json)
           # carries no head_sha, so the file is safe to commit on the PR
           # head: it does not create the head_sha self-reference fixed
           # point that a head-bound `local-gpp-gate-evidence.v1.json`
-          # would.
-          if [ -f head/local-ai-review-evidence.v1.json ]; then
+          # would. However, the root evidence file must also be part of
+          # the current PR diff. Otherwise a PR inherits stale evidence
+          # from the base branch and the gate may evaluate a previous PR's
+          # review as if it belonged to this one.
+          REVIEW_CHANGED="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("pr-files.json")
+          if not path.exists():
+              print("false")
+              raise SystemExit(0)
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          files = payload.get("files", []) if isinstance(payload, dict) else []
+          paths = {entry.get("path") for entry in files if isinstance(entry, dict)}
+          print("true" if "local-ai-review-evidence.v1.json" in paths else "false")
+          PY
+          )"
+          if [ "$REVIEW_CHANGED" = "true" ] && [ -f ../head/local-ai-review-evidence.v1.json ]; then
             echo "path=head/local-ai-review-evidence.v1.json" >> "$GITHUB_OUTPUT"
           else
             echo "path=" >> "$GITHUB_OUTPUT"
