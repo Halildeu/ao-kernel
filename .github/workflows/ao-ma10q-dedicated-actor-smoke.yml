@@ -1,0 +1,130 @@
+name: AO-MA-10q Dedicated Actor Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run checks readiness; execute creates and merges the disposable smoke PR"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - "dry-run"
+          - "execute"
+      confirmation:
+        description: "Required for execute mode: AO-MA-10L-EXECUTE"
+        required: false
+        type: string
+      timeout_seconds:
+        description: "Maximum seconds to wait for required checks on the disposable smoke PR"
+        required: true
+        default: "900"
+        type: string
+      poll_seconds:
+        description: "Polling interval for required checks on the disposable smoke PR"
+        required: true
+        default: "15"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ao-ma10q-dedicated-actor-smoke
+  cancel-in-progress: false
+
+jobs:
+  ao-ma10q-dedicated-actor-smoke:
+    name: ao-ma10q-dedicated-actor-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GLADYATORE_LAB_GH_TOKEN: ${{ secrets.GLADYATORE_LAB_GH_TOKEN }}
+      MODE: ${{ inputs.mode }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+      POLL_SECONDS: ${{ inputs.poll_seconds }}
+      EVIDENCE_DIR: .ao/evidence/ao-ma-10s
+    steps:
+      - name: Refuse non-main dispatch
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::AO-MA-10q smoke must be dispatched from refs/heads/main"
+            exit 1
+          fi
+
+      - name: Validate execute confirmation
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            dry-run)
+              ;;
+            execute)
+              if [ "$CONFIRMATION" != "AO-MA-10L-EXECUTE" ]; then
+                echo "::error::execute mode requires confirmation AO-MA-10L-EXECUTE"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::mode must be dry-run or execute"
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install ao-kernel
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[mcp]"
+
+      - name: Run AO-MA-10r credential doctor and AO-MA-10q smoke
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+
+          set +e
+          python scripts/ao_ma10r_dedicated_actor_credential_doctor.py \
+            --output "$EVIDENCE_DIR/ao-ma10r-credential-doctor-result.json" \
+            --format text
+          doctor_status=$?
+
+          q_args=(
+            --output "$EVIDENCE_DIR/ao-ma10q-dedicated-actor-runner-result.json"
+            --timeout-seconds "$TIMEOUT_SECONDS"
+            --poll-seconds "$POLL_SECONDS"
+            --format text
+          )
+          if [ "$MODE" = "execute" ]; then
+            q_args+=(--execute --confirmation "$CONFIRMATION")
+          fi
+
+          python scripts/ao_ma10q_dedicated_actor_runner.py "${q_args[@]}"
+          runner_status=$?
+          set -e
+
+          {
+            echo "mode=$MODE"
+            echo "doctor_status=$doctor_status"
+            echo "runner_status=$runner_status"
+          } > "$EVIDENCE_DIR/status.txt"
+
+          if [ "$doctor_status" -ne 0 ] || [ "$runner_status" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload AO-MA-10q smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ao-ma10q-dedicated-actor-smoke-${{ github.run_id }}
+          path: .ao/evidence/ao-ma-10s/
+          if-no-files-found: error

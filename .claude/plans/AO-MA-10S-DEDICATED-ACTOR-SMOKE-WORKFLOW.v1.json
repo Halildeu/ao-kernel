@@ -1,0 +1,16 @@
+{
+  "artifact_kind": "ao_ma_10s_dedicated_actor_smoke_workflow_receipt",
+  "schema_version": "ao-ma-10s-dedicated-actor-smoke-workflow-receipt.v1",
+  "status": "implemented_fail_closed",
+  "workflow": ".github/workflows/ao-ma10q-dedicated-actor-smoke.yml",
+  "trigger": "workflow_dispatch_only",
+  "allowed_ref": "refs/heads/main",
+  "secret_env": "GLADYATORE_LAB_GH_TOKEN",
+  "token_value_recorded": false,
+  "release_authority": "ao-release-gate+github-ruleset",
+  "ai_output_release_authority": false,
+  "support_widening": false,
+  "production_platform_claim": false,
+  "live_adapter_execution": false,
+  "next_required_slice": "configure GLADYATORE_LAB_GH_TOKEN repository secret and dispatch AO-MA-10q smoke"
+}
