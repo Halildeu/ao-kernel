@@ -1,4 +1,29 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-10AA",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "claude-cli-reviewer",
+    "provider": "anthropic",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-ma10aa-bind-autonomous-smoke-evidence",
+    "changed_files": [
+      ".github/workflows/test.yml",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_release_gate.py",
+      "tests/test_ao_release_gate_enforce_job.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -17,48 +42,20 @@
       "status": "pass"
     },
     {
-      "name": "schema_draft_2020_12_valid",
+      "name": "yaml_parse",
       "status": "pass"
     }
   ],
   "findings": [
-    "Anthropic review: binding_mode added/modified/unchanged correctly separates current-PR strict binding from state-at-landing reuse.",
-    "Immutable safety properties remain enforced for every raw review evidence file regardless of binding_mode.",
-    "Strict current-PR scope binding remains required for raw evidence files added or modified by this PR.",
-    "Path-to-provider binding prevents OpenAI and Anthropic reviewer evidence from being shuffled.",
-    "No support widening, production platform claim, live adapter execution, branch-protection bypass, or release-authority widening is introduced."
+    "Anthropic reviewer verdict AGREE on the final AO-MA-10AA patch.",
+    "Path validator covers backslash, absolute path, empty-segment, dot, dotdot, and nested-child vectors for the prefix-pinned scope.",
+    "Workflow and decision-core validation provide defense in depth; the request flag is computed from GitHub API response, not PR content.",
+    "Review-evidence and bundle checks only relax when explicit request, dedicated actor, non-empty paths, no high-risk paths, and every-path-valid conditions hold simultaneously.",
+    "Explicit malformed or authority-open AO-MA10 bundles still validate and fail even when smoke scope is active.",
+    "No support widening, production platform claim, live adapter execution, admin bypass, branch protection mutation, or secret material is introduced."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "claude-cli-reviewer",
-    "provider": "anthropic",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
-      ".github/workflows/test.yml",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/fixtures/ao_ma_10h/high_risk_supersession.valid.json",
-      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
-      "tests/test_ao_ma10j_high_risk_supersession_evidence_builder.py",
-      "tests/test_ao_release_gate.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma10-runtime-introducer-detection"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10j"
+  "production_platform_claim": false
 }

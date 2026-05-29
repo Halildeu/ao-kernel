@@ -459,6 +459,41 @@ jobs:
             echo "branch_up_to_date=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Detect AO-MA-10l low-risk autonomous smoke request
+        id: ao_ma10_smoke
+        working-directory: base
+        run: |
+          REQUESTED="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("pr-files.json").read_text(encoding="utf-8"))
+          files = payload.get("files", []) if isinstance(payload, dict) else []
+          prefix = "docs/evidence/ao-ma-10l-autonomous-smoke/"
+
+          def is_smoke_add(entry):
+              if not isinstance(entry, dict):
+                  return False
+              path = entry.get("path")
+              if not isinstance(path, str):
+                  return False
+              parts = path.split("/")
+              return (
+                  entry.get("changeType") == "ADDED"
+                  and "\\" not in path
+                  and not path.startswith("/")
+                  and path.startswith(prefix)
+                  and path.endswith(".md")
+                  and "/" not in path[len(prefix):]
+                  and all(part not in ("", ".", "..") for part in parts)
+              )
+
+          requested = bool(files) and all(is_smoke_add(entry) for entry in files)
+          print("true" if requested else "false")
+          PY
+          )"
+          echo "requested=$REQUESTED" >> "$GITHUB_OUTPUT"
+
       - name: Build API-derived release-gate payload
         working-directory: base
         run: |
@@ -482,6 +517,7 @@ jobs:
             --required-check packaging-smoke \
             --required-check policy-container-smoke \
             --required-check release-gate-container-smoke \
+            --ao-ma10-autonomous-merge-requested "${{ steps.ao_ma10_smoke.outputs.requested }}" \
             --output payload.json
 
       - name: Augment release-gate payload with PR review metadata

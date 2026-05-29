@@ -1,4 +1,29 @@
 {
+  "schema_version": "local-ai-review-evidence.v1",
+  "repo": "Halildeu/ao-kernel",
+  "work_package": "AO-MA-10AA",
+  "implementer": {
+    "agent": "codex",
+    "provider": "openai"
+  },
+  "reviewer": {
+    "agent": "codex-reviewer-godel",
+    "provider": "openai",
+    "verdict": "AGREE"
+  },
+  "scope_reviewed": {
+    "base_ref": "refs/heads/main",
+    "head_ref": "refs/heads/codex/ao-ma10aa-bind-autonomous-smoke-evidence",
+    "changed_files": [
+      ".github/workflows/test.yml",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/ao_release_gate.py",
+      "local-ai-review-evidence.v1.json",
+      "tests/test_ao_release_gate.py",
+      "tests/test_ao_release_gate_enforce_job.py"
+    ]
+  },
   "checks_considered": [
     {
       "name": "tests",
@@ -17,48 +42,20 @@
       "status": "pass"
     },
     {
-      "name": "schema_draft_2020_12_valid",
+      "name": "yaml_parse",
       "status": "pass"
     }
   ],
   "findings": [
-    "OpenAI review: #687 fixes the trusted-base bootstrap failure by classifying raw reviewer evidence by its real PR diff status.",
-    "The workflow still runs the decision core from the protected base checkout and does not trust head-bound gate artifacts as release authority.",
-    "Unknown git name-status values fall back to modified, preserving fail-strict behavior.",
-    "The current PR evidence is rebound to #687 scope so the existing base script can validate this self-bootstrap PR.",
-    "No secrets, admin bypass, support widening, production claim, or live adapter execution are introduced."
+    "OpenAI reviewer verdict AGREE after REVISE findings were absorbed.",
+    "Workflow detector now requires changeType ADDED and rejects renamed, deleted, changed, modified, missing changeType, dotdot, nested, absolute, and backslash paths.",
+    "Decision-core smoke helper now rejects dot, dotdot, empty segment, nested child, absolute, backslash, non-smoke, and non-markdown paths.",
+    "The bypass remains constrained by explicit request, dedicated gladyatore-lab actor, non-empty changed paths, no high-risk paths, and direct smoke markdown paths.",
+    "Adversarial probes passed for happy smoke, request false, non-dedicated actor, dotdot path, nested path, absolute path, backslash path, and non-md path.",
+    "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
-  "implementer": {
-    "agent": "codex",
-    "provider": "openai"
-  },
-  "live_adapter_execution": false,
-  "production_platform_claim": false,
-  "repo": "Halildeu/ao-kernel",
-  "reviewer": {
-    "agent": "codex-reviewer",
-    "provider": "openai",
-    "verdict": "AGREE"
-  },
-  "schema_version": "local-ai-review-evidence.v1",
-  "scope_reviewed": {
-    "base_ref": "refs/heads/main",
-    "changed_files": [
-      ".claude/plans/AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md",
-      ".github/workflows/test.yml",
-      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
-      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-10-high-risk-supersession-evidence.schema.v1.json",
-      "local-ai-review-evidence.v1.json",
-      "scripts/ao_ma10_high_risk_supersession_evidence.py",
-      "tests/fixtures/ao_ma_10h/high_risk_supersession.valid.json",
-      "tests/test_ao_ma10h_high_risk_supersession_contract.py",
-      "tests/test_ao_ma10j_high_risk_supersession_evidence_builder.py",
-      "tests/test_ao_release_gate.py"
-    ],
-    "head_ref": "refs/heads/codex/ao-ma10-runtime-introducer-detection"
-  },
   "secrets_recorded": false,
+  "live_adapter_execution": false,
   "support_widening": false,
-  "work_package": "AO-MA-10j"
+  "production_platform_claim": false
 }

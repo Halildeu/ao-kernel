@@ -370,6 +370,25 @@ def _ao_ma10_requested_payload() -> dict[str, object]:
     return payload
 
 
+def _ao_ma10_low_risk_smoke_payload() -> dict[str, object]:
+    path = "docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-test.md"
+    payload = _allow_payload()
+    pull_request = payload["pull_request"]
+    assert isinstance(pull_request, dict)
+    pull_request["author"] = {"login": "gladyatore-lab"}
+    pull_request["head"] = {
+        "ref": "codex/ao-ma10l-smoke-test",
+        "sha": _ALLOW_HEAD_SHA,
+        "repo": {"fork": False},
+    }
+    payload["pr_author"] = "gladyatore-lab"
+    payload["human_reviews"] = []
+    payload["changed_paths"] = [path]
+    payload["allowed_path_prefixes"] = ["docs/"]
+    payload["low_risk_autonomous_merge_requested"] = True
+    return payload
+
+
 def _high_risk_without_review_payload() -> dict[str, object]:
     payload = _allow_payload()
     payload["human_reviews"] = []
@@ -843,6 +862,119 @@ def test_release_gate_denies_when_review_evidence_missing() -> None:
     # finding), so the decision stays in the missing-evidence bucket.
     assert "ao_release_gate_review_evidence_context_unverifiable" in decision["findings"]
     assert "ao_release_gate_review_evidence_context_unbound" not in decision["findings"]
+
+
+def test_release_gate_allows_ao_ma10_low_risk_smoke_without_review_evidence() -> None:
+    """Dedicated actor smoke PRs may pass without local review evidence."""
+
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_low_risk_smoke_payload(),
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["decision"] == ALLOW_AUTONOMOUS_MERGE_DECISION
+    assert decision["allow"] is True
+    assert _find_check(decision, "review_evidence")["status"] == "pass"
+    assert _find_check(decision, "review_evidence_context_bound")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_evidence_bundle")["status"] == "pass"
+    assert _find_check(decision, "ao_ma10_context_bound")["status"] == "pass"
+
+
+def test_release_gate_denies_ao_ma10_low_risk_smoke_without_dedicated_actor() -> None:
+    payload = _ao_ma10_low_risk_smoke_payload()
+    pull_request = payload["pull_request"]
+    assert isinstance(pull_request, dict)
+    pull_request["author"] = {"login": "Halildeu"}
+    payload["pr_author"] = "Halildeu"
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_review_evidence_missing" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_requested_non_smoke_path_without_review_evidence() -> None:
+    payload = _ao_ma10_low_risk_smoke_payload()
+    payload["changed_paths"] = ["docs/not-smoke.md"]
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_review_evidence_missing" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_smoke_with_dotdot_path() -> None:
+    payload = _ao_ma10_low_risk_smoke_payload()
+    payload["changed_paths"] = [
+        "docs/evidence/ao-ma-10l-autonomous-smoke/../other.md",
+    ]
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_review_evidence_missing" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_smoke_mixed_with_high_risk_path() -> None:
+    payload = _ao_ma10_low_risk_smoke_payload()
+    payload["changed_paths"] = [
+        "docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-test.md",
+        ".github/workflows/test.yml",
+    ]
+    payload["allowed_path_prefixes"] = ["docs/", ".github/workflows/"]
+
+    decision = build_ao_release_gate_decision(
+        payload,
+        _gpp_status(),
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_review_evidence_missing" in decision["findings"]
+    assert "ao_release_gate_high_risk_human_review_missing" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_smoke_with_malformed_bundle() -> None:
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_low_risk_smoke_payload(),
+        _gpp_status(),
+        ao_ma10_evidence_bundle="not-a-bundle",
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_ao_ma10_evidence_bundle_missing" in decision["findings"]
+
+
+def test_release_gate_denies_ao_ma10_smoke_with_authority_open_bundle() -> None:
+    bundle = _ao_ma10_evidence_bundle(
+        changed_paths=["docs/evidence/ao-ma-10l-autonomous-smoke/ao-ma-10l-smoke-test.md"],
+        head_ref="refs/heads/codex/ao-ma10l-smoke-test",
+    )
+    bundle["ai_output_release_authority"] = True
+
+    decision = build_ao_release_gate_decision(
+        _ao_ma10_low_risk_smoke_payload(),
+        _gpp_status(),
+        ao_ma10_evidence_bundle=bundle,
+        generated_at="2026-05-28T00:00:00Z",
+    )
+
+    assert decision["allow"] is False
+    assert "ao_release_gate_ao_ma10_authority_boundary_open" in decision["findings"]
 
 
 def test_release_gate_denies_when_review_evidence_not_a_dict() -> None:

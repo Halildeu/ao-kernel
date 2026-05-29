@@ -1,7 +1,7 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-10Z",
+  "work_package": "AO-MA-10AA",
   "implementer": {
     "agent": "codex",
     "provider": "openai"
@@ -13,10 +13,14 @@
   },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/ao-ma10z-skip-unneeded-high-risk-supersession",
+    "head_ref": "refs/heads/codex/ao-ma10aa-bind-autonomous-smoke-evidence",
     "changed_files": [
       ".github/workflows/test.yml",
+      "ao-ma-10-high-risk-reviews/anthropic.local-ai-review-evidence.v1.json",
+      "ao-ma-10-high-risk-reviews/openai.local-ai-review-evidence.v1.json",
+      "ao_kernel/ao_release_gate.py",
       "local-ai-review-evidence.v1.json",
+      "tests/test_ao_release_gate.py",
       "tests/test_ao_release_gate_enforce_job.py"
     ]
   },
@@ -30,11 +34,15 @@
       "status": "pass"
     },
     {
-      "name": "yaml_parse",
+      "name": "ruff",
       "status": "pass"
     },
     {
-      "name": "git_diff_check",
+      "name": "mypy",
+      "status": "pass"
+    },
+    {
+      "name": "yaml_parse",
       "status": "pass"
     },
     {
@@ -43,12 +51,12 @@
     }
   ],
   "findings": [
-    "Claude reviewer verdict AGREE. Blocking bulgu yok.",
-    "The workflow now computes current PR high-risk path presence from base/payload.json before locating inherited high-risk raw review files.",
-    "When current changed_paths has no high-risk paths, the workflow sets high-risk reviewer outputs empty and skips supersession generation.",
-    "High-risk behavior is preserved because PRs with high-risk changed paths still require the OpenAI and Anthropic raw review pair before generating supersession evidence.",
-    "Path handling remains consistent with working-directory base: payload.json is read from base and head file existence checks use ../head while downstream output values preserve the head/... contract.",
-    "No branch-protection, ruleset, release authority, support tier, live adapter execution, or production platform claim change is introduced."
+    "Claude reviewer verdict AGREE on the final AO-MA-10AA patch.",
+    "The no-review substitute is limited to explicit AO-MA-10l low-risk autonomous smoke requests by the dedicated gladyatore-lab actor.",
+    "Path validation rejects backslash, absolute path, empty segment, dot segment, dotdot segment, nested child path, non-markdown path, and non-smoke prefix.",
+    "Workflow detection requires every PR file to be changeType ADDED and a direct smoke markdown path before setting the autonomous request flag.",
+    "Ordinary PRs, high-risk PRs, non-dedicated actors, malformed AO-MA10 bundles, and authority-open bundles remain fail-closed.",
+    "No branch protection mutation, admin bypass, support widening, production platform claim, live adapter execution, or secret material is introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
