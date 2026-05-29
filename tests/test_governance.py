@@ -278,3 +278,90 @@ class TestCheckProviderGuardrails:
         policy = {"providers": {"openai": {"enabled": True, "allow_models": ["*"]}}}
         violations = _check_provider_guardrails(policy, {"provider_id": "openai", "model": "any-model"})
         assert violations == []
+
+
+class TestCheckRulesDispatch:
+    """HYG-GOVERNANCE-ARC-COMPLETION: the public-facade dispatch in
+    _check_rules (governance.py) routes a policy dict to the right checker(s)
+    by structure. Existing tests exercise the helpers directly
+    (_check_autonomy / _check_tool_calling / _check_provider_guardrails), but
+    not the _check_rules dispatch itself (the autonomy/tool-calling extend
+    branches). These named contract tests pin that structural routing.
+
+    Per Codex thread 019e7576, wildcard allow_models, generic complementary
+    arcs, and malformed-policy fallthroughs are deliberately excluded
+    (already covered or cosmetic, No-Fake-Work).
+    """
+
+    def test_check_rules_dispatches_autonomy(self):
+        # Policy with intents+defaults.mode → _check_autonomy is dispatched and
+        # a mode mismatch surfaces through the public _check_rules path.
+        from ao_kernel.governance import _check_rules
+
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+        }
+        violations = _check_rules(policy, {"intent": "urn:core:deploy", "mode": "full_auto"})
+        assert any("AUTONOMY_MODE_DENIED" in v for v in violations)
+
+    def test_check_rules_dispatches_tool_calling(self):
+        # Policy with blocked_tools (enabled) → _check_tool_calling dispatched;
+        # a blocked tool surfaces through _check_rules.
+        from ao_kernel.governance import _check_rules
+
+        policy = {"enabled": True, "blocked_tools": ["dangerous_tool"], "allowed_tools": []}
+        violations = _check_rules(policy, {"tool_name": "dangerous_tool"})
+        assert any("TOOL_BLOCKED" in v for v in violations)
+
+    def test_check_rules_dispatches_provider_guardrails(self):
+        # Policy with providers dict → _check_provider_guardrails dispatched;
+        # a disabled provider surfaces through _check_rules.
+        from ao_kernel.governance import _check_rules
+
+        policy = {"providers": {"openai": {"enabled": False}}}
+        violations = _check_rules(policy, {"provider_id": "openai", "model": "gpt-4"})
+        assert any("PROVIDER_DISABLED" in v for v in violations)
+
+    def test_check_rules_multi_type_policy_dispatches_all(self):
+        # A policy carrying multiple type markers dispatches to each checker;
+        # both an autonomy violation and a provider violation surface together.
+        from ao_kernel.governance import _check_rules
+
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+            "providers": {"openai": {"enabled": False}},
+        }
+        violations = _check_rules(
+            policy,
+            {"intent": "urn:core:deploy", "mode": "full_auto", "provider_id": "openai", "model": "gpt-4"},
+        )
+        assert any("AUTONOMY_MODE_DENIED" in v for v in violations)
+        assert any("PROVIDER_DISABLED" in v for v in violations)
+
+    def test_check_rules_generic_always_runs(self):
+        # Generic rules (required_fields) run regardless of other type markers;
+        # a missing required field surfaces even with no autonomy/tool/provider
+        # markers present.
+        from ao_kernel.governance import _check_rules
+
+        policy = {"required_fields": ["intent"]}
+        violations = _check_rules(policy, {"action": "test"})
+        assert any("MISSING_REQUIRED_FIELD:intent" in v for v in violations)
+
+    def test_check_rules_clean_action_no_violation(self):
+        # A conforming action against a multi-type policy yields no violations
+        # (every dispatched checker passes).
+        from ao_kernel.governance import _check_rules
+
+        policy = {
+            "intents": {"urn:core:deploy": {"mode": "human_review"}},
+            "defaults": {"mode": "human_review"},
+            "providers": {"openai": {"enabled": True, "allow_models": ["gpt-4"]}},
+        }
+        violations = _check_rules(
+            policy,
+            {"intent": "urn:core:deploy", "mode": "human_review", "provider_id": "openai", "model": "gpt-4"},
+        )
+        assert violations == []
