@@ -195,7 +195,9 @@ Operatörün **tek müdahale noktası**: tam-mutabık planın onayı. Öncesi (p
 | 4.6 | Worker = deterministic stub | Gerçek AI native çıktısı import edilir |
 | 11G | Kalite ad-hoc | ADR + kalite profili sistematik |
 
-**Geçiş kriteri:** Bir faz "sistem modu"na geçer ancak (a) kendi **DoD'sini (Bölüm 10) tam geçmiş**, (b) merge olmuş, (c) cross-AI AGREE almış, (d) kendi testleri yeşil ve (e) bir sonraki slice o makineden geçirilerek üretilmişse. Faz N+1'in AO-MA-11A consensus bundle'ından geçmesi = Faz N'in çalıştığının canlı kanıtı.
+**Geçiş kriteri:** Bir faz "sistem modu"na geçer ancak (a) kendi **DoD'sini (Bölüm 10) tam geçmiş**, (b) merge olmuş, (c) cross-AI AGREE almış, (d) kendi testleri yeşil ve (e) bir sonraki slice o makineden geçirilerek üretilmişse.
+
+**Canlı kanıt semantiği (Codex review absorbe):** Faz N'in sistem moduna geçtiğinin canlı kanıtı, Faz N+1'in *yalnızca* AO-MA-11A consensus bundle'ından geçmesi DEĞİLDİR — bu sadece 11A'nın çalıştığını kanıtlar. Her fazın canlı kanıtı, **kendi ürettiği mekanizmanın** Faz N+1'in acceptance zincirinde fiilen kullanılmasıdır: 11E için mirror sync + drift-check, 11I için pause/budget safe-stop, 11H için escalation delivery, 11F için register update + evidence bundle, 4.6 için import-only provenance-bind, 11G için ADR + kalite profili uygulanması.
 
 ---
 
@@ -244,6 +246,9 @@ Operatörün **tek müdahale noktası**: tam-mutabık planın onayı. Öncesi (p
 | GPP programı | KAPALI (keep_narrow_stable_runtime) | gpp_status + gate boundaries |
 | `--admin` merge | YASAK | HARD RULE + ruleset bypass_actors=[] |
 | Kill-switch | `.ao/autonomous/PAUSE` | 11I governor (fail-closed) |
+| **risk_class / risk-lane otoritesi** | Yalnız `RiskClassifier` / release-gate changed-path classifier | aşağıdaki invariant |
+
+**risk_class / risk-lane otoritesi (Codex review absorbe — kritik invariant):** Risk sınıfı yalnız **protected/base-ref koddan çalışan `RiskClassifier`** ve/veya **`ao-release-gate` changed-path classifier** çıktısından, **gerçek değişen dosya yollarından** türetilir. Plan consensus bundle, AI beyanı, GitHub Issue/Project `risk-lane` alanı veya manuel mirror edit **risk'i DÜŞÜREMEZ** (downgrade yasak). Unknown/empty write-set worker spawn yetkisi üretmez — explicit write-set + computed risk_class gerekir. `high`/`critical` sonuç AO-MA-10 high-risk lane / cross-provider supersession evidence gerektirir. (Bu yüzden `risk_class` AO-MA-11A consensus bundle schema'sında YOK — bkz. `AO-MA-11A-PLAN-CONSENSUS-APPROVAL.md` §7.)
 
 **Operatör kararı gereken istisnalar (tek-gate dışında):** guard-flag flip, irreversible action, stratejik pivot, RI-7.8c supersession. Bunlar ayrı operator-bound PR ister.
 
@@ -251,19 +256,26 @@ Operatörün **tek müdahale noktası**: tam-mutabık planın onayı. Öncesi (p
 
 ## 10. Definition of Done (her slice için kalite/kanıt kapısı)
 
-Bir slice "tamamlandı" sayılır ancak TÜM kalemler sağlanırsa:
+Bir slice "tamamlandı" sayılır ancak ilgili TÜM kalemler sağlanırsa. Bazı kalemler **koşulludur** (slice o yüzeye dokunuyorsa); koşullu kalemler "lifecycle-aware" işaretlidir (Codex review absorbe — evrensel yazım imkânsız gate veya yanlış N/A üretmesin).
 
+**Her slice (zorunlu):**
 - [ ] 3-AI plan-consensus bundle AGREE (machine-recompute doğrulandı)
 - [ ] Operatör onayı (tek insan gate) — `ao-ma-11a-plan-approval` artifact
-- [ ] Schema'lar Draft 2020-12 strict (additionalProperties:false, const-pin, required maksimal)
-- [ ] Validator pure-decision (no LLM/GitHub-write/subprocess — AST-enforced)
 - [ ] Testler: unit + negatif + integrity + I/O; ilgili modül ≥%85 branch (hedef 100%)
 - [ ] Cross-AI review AGREE (implementer ≠ reviewer sağlayıcı)
 - [ ] CI tamamen yeşil (ao-release-gate technical + review); kırmızıyla merge YASAK
 - [ ] Guard flag'ler FALSE (schema + backstop)
 - [ ] Evidence audit izi (JSONL + SHA256 / local-ai-review-evidence)
-- [ ] Forensic cleanup + tracking mirror güncel (11E gelene kadar milestone/issue güncellemesi manuel)
+- [ ] **Computed risk_class** protected/base RiskClassifier veya release-gate changed-path classifier'dan kayıtlı; GH mirror / manuel risk-lane risk'i DÜŞÜREMEZ
+- [ ] `high`/`critical` ise high-risk lane / cross-provider supersession evidence mevcut
+- [ ] Consensus/approval/review evidence freshness bağı (base_ref/base_sha/head_sha/diff_digest) korunuyor; stale evidence fail-closed
+- [ ] Forensic cleanup
 - [ ] Plan doc + bu master plan statüsü güncellendi
+
+**Koşullu (lifecycle-aware — slice o yüzeye dokunuyorsa):**
+- [ ] *Yeni/değişen schema varsa:* Draft 2020-12 strict (additionalProperties:false, const-pin, required maksimal)
+- [ ] *Yeni/değişen validator varsa:* pure-decision (no LLM/GitHub-write/subprocess — AST-enforced)
+- [ ] *11E öncesi:* geçici status/plan kayıtları güncel (milestone/issue manuel). *11E sonrası:* mirror sync + drift checker yeşil
 
 ---
 
