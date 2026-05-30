@@ -1,31 +1,38 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "HYG-CONTEXT-COMPILER",
+  "work_package": "AO-MA-11A-PLAN-CONSENSUS-APPROVAL",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/hyg-context-compiler-gaps",
-    "changed_files": [ "local-ai-review-evidence.v1.json", "tests/test_context_compiler.py" ]
+    "head_ref": "refs/heads/feat/ao-ma-11a-plan-consensus",
+    "changed_files": [
+      "local-ai-review-evidence.v1.json",
+      ".claude/plans/AO-MA-11A-PLAN-CONSENSUS-APPROVAL.md",
+      "ao_kernel/defaults/schemas/ao-ma-11a-plan-approval.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-11a-plan-consensus-bundle.schema.v1.json",
+      "ao_kernel/orchestration/plan_consensus.py",
+      "tests/test_ao_ma_11a_plan_consensus.py"
+    ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
-    { "name": "test_only_scope", "status": "pass" },
-    { "name": "coverage_delta_recorded", "status": "pass" },
+    { "name": "coverage_branch_100_module", "status": "pass" },
     { "name": "no_tautological_assertions", "status": "pass" },
-    { "name": "guard_flags_remain_false", "status": "pass" }
+    { "name": "guard_flags_remain_false", "status": "pass" },
+    { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Codex plan-time consultation (thread 019e75bb) returned REVISE + ready_for_impl: do CONTEXT-COMPILER as a single PR; defer CONFIG-HARDEN and AUDIT-V3 (error-message ossify + tooling risk; mutation-v2 already decided not-a-repo-gate). _recency_score cover all branches; _apply_semantic_reranking assert in test body not stub; budget assert on exclusion branch + reason not weak total; 438-439 fail-open intentionally uncovered.",
-    "Test-only diff: appends TestRecencyScore (6), TestSemanticReranking (3), and one token-budget-exclusion test to tests/test_context_compiler.py. No ao_kernel/context runtime, no pyproject, no workflow, no guard flag, no gpp_status change.",
-    "_recency_score (context_compiler L335-351): all branches pinned — empty/malformed -> 0.3, <1h -> 1.0, <24h -> 0.8, <168h -> 0.5, older -> 0.2 (timestamps computed relative to now for deterministic buckets).",
-    "_apply_semantic_reranking (L354-436): semantic_search monkeypatched to a deterministic stub (network-free); assertions in the test body (not the stub, which the broad except would swallow). Covers sim_map blend (0.5*0.7+1.0*0.3=0.65) + re-sort, multimodal content-list query join (L393-398), and the disabled short-circuit no-op. The fail-open except (L438-439) is intentionally left uncovered as a defensive non-critical branch.",
-    "token-budget exclusion (L154-156): a few LARGE-value decisions exceed max_tokens before the max_decisions cap, so the excluded item carries the 'token budget' selection reason; the assertion discriminates the token-budget branch from the max_decisions branch (not a weak total_tokens<=N check).",
-    "Coverage (targeted test_context_compiler.py): _recency_score (335-351), the rerank blend/resort (425-436), and token-budget exclusion (155-156) are no longer in the missing list. Remaining uncovered context_compiler lines are the fail-open defensive branch (438-439) and the separate _render_consultation/_build_preamble helpers (449-453/470-490), out of this PR's scope.",
-    "No-Fake-Work: CONFIG-HARDEN (error-message exact-text) and AUDIT-V3 (mutation tooling) deferred per Codex; no tautological assertions (recency exact buckets, rerank exact blend, budget discriminated reason).",
-    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
+    "AO-MA-11A-1: plan-time multi-provider (anthropic+openai+minimax) consensus + single operator-approval gate governance contract. Two new schemas (ao-ma-11a-plan-consensus-bundle, ao-ma-11a-plan-approval), one pure-decision validator (plan_consensus.py), 39 tests, plan doc. 3-AI consensus (Claude+Codex+Mavis) + operator approval obtained before implementation.",
+    "Codex (OpenAI) cross-AI review thread 019e7633: iter-1 REVISE -> iter-2 AGREE. Implementer provider (anthropic) != reviewer provider (openai); cross-provider hard rule satisfied.",
+    "Codex iter-1 findings absorbed: (F1) approval_request_sha256 now enforced -- validate_approval requires approval_request_path and binds approval[approval_request_sha256]==sha256_of(request); real triple SHA-bind (bundle+request+plan_digest). (F2) round-budget bound to verdict round_index -- rounds contiguous 1..max, rounds_used==max(round_index), max(round_index)<=round_budget. (F3) risk_class removed from the bundle (self-attestation + low/high vs classifier low|normal|high|critical drift); risk authority stays RiskClassifier on real changed paths. (F4) AST import-allowlist static test added (no subprocess/os/LLM import => no shell-out/GitHub-write/LLM call). Extra-provider hole closed: provider_id restricted to the 3-AI quorum + conservative dissent.",
+    "Unanimity is machine-recomputed from provider_verdicts (latest round per provider); a stored unanimous_status disagreeing with the recomputation is rejected fail-closed (no self-attestation). Approval exists only for unanimous_status AGREE.",
+    "release_authority pinned const ao-release-gate+github-ruleset; ai_output_release_authority const false; the single gate authorizes an autonomous run-start, NOT a merge/release. plan_consensus is pure deterministic policy: no LLM call, no GitHub write, no subprocess (AST-enforced).",
+    "Local gate green: ruff + ruff format + mypy clean; plan_consensus.py 39 tests at 100% branch coverage; full suite 4731 passed / 76 skipped; ao_ma+orchestration regression 621 passed / 4 skipped. No regressions.",
+    "11A-2 (GitHub Environment ao-ma-plan-approval required-reviewer wiring under .github, high-risk) is scoped as a follow-up; this PR carries only schemas + validator + tests + plan doc + this evidence.",
+    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced. Guard flags remain literal false across both schemas and the validator backstops."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
