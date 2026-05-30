@@ -1,38 +1,31 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11A-PLAN-CONSENSUS-APPROVAL",
+  "work_package": "AO-MA-SPM-MASTER-PLAN",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/ao-ma-11a-plan-consensus",
+    "head_ref": "refs/heads/docs/ao-ma-spm-master-plan",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
-      ".claude/plans/AO-MA-11A-PLAN-CONSENSUS-APPROVAL.md",
-      "ao_kernel/defaults/schemas/ao-ma-11a-plan-approval.schema.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-11a-plan-consensus-bundle.schema.v1.json",
-      "ao_kernel/orchestration/plan_consensus.py",
-      "tests/test_ao_ma_11a_plan_consensus.py"
+      ".claude/plans/AO-MA-SPM-MASTER-PLAN.md"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
-    { "name": "coverage_branch_100_module", "status": "pass" },
-    { "name": "no_tautological_assertions", "status": "pass" },
+    { "name": "docs_only_scope", "status": "pass" },
     { "name": "guard_flags_remain_false", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11A-1: plan-time multi-provider (anthropic+openai+minimax) consensus + single operator-approval gate governance contract. Two new schemas (ao-ma-11a-plan-consensus-bundle, ao-ma-11a-plan-approval), one pure-decision validator (plan_consensus.py), 39 tests, plan doc. 3-AI consensus (Claude+Codex+Mavis) + operator approval obtained before implementation.",
-    "Codex (OpenAI) cross-AI review thread 019e7633: iter-1 REVISE -> iter-2 AGREE. Implementer provider (anthropic) != reviewer provider (openai); cross-provider hard rule satisfied.",
-    "Codex iter-1 findings absorbed: (F1) approval_request_sha256 now enforced -- validate_approval requires approval_request_path and binds approval[approval_request_sha256]==sha256_of(request); real triple SHA-bind (bundle+request+plan_digest). (F2) round-budget bound to verdict round_index -- rounds contiguous 1..max, rounds_used==max(round_index), max(round_index)<=round_budget. (F3) risk_class removed from the bundle (self-attestation + low/high vs classifier low|normal|high|critical drift); risk authority stays RiskClassifier on real changed paths. (F4) AST import-allowlist static test added (no subprocess/os/LLM import => no shell-out/GitHub-write/LLM call). Extra-provider hole closed: provider_id restricted to the 3-AI quorum + conservative dissent.",
-    "Unanimity is machine-recomputed from provider_verdicts (latest round per provider); a stored unanimous_status disagreeing with the recomputation is rejected fail-closed (no self-attestation). Approval exists only for unanimous_status AGREE.",
-    "release_authority pinned const ao-release-gate+github-ruleset; ai_output_release_authority const false; the single gate authorizes an autonomous run-start, NOT a merge/release. plan_consensus is pure deterministic policy: no LLM call, no GitHub write, no subprocess (AST-enforced).",
-    "Local gate green: ruff + ruff format + mypy clean; plan_consensus.py 39 tests at 100% branch coverage; full suite 4731 passed / 76 skipped; ao_ma+orchestration regression 621 passed / 4 skipped. No regressions.",
-    "11A-2 (GitHub Environment ao-ma-plan-approval required-reviewer wiring under .github, high-risk) is scoped as a follow-up; this PR carries only schemas + validator + tests + plan doc + this evidence.",
-    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced. Guard flags remain literal false across both schemas and the validator backstops."
+    "AO-MA-SPM-MASTER-PLAN.md: end-to-end master plan (program SSOT, human-readable) for the governed autonomous multi-AI software production system. Documents vision (3 uses: production tool + dogfooding + self-hosting), principles, architecture (control-plane + two-layer SSOT), industry standards matrix, 7-phase roadmap (11A->11E->11I->11H->11F->4.6->11G), bootstrap/self-hosting, slice lifecycle, visibility, security invariants, DoD. Docs-only change (single plan file + this evidence); risk classifier: normal (not high-risk).",
+    "Codex (OpenAI) cross-AI review thread 019e765b: iter-1 REVISE -> iter-2 AGREE. Implementer provider (anthropic) != reviewer provider (openai); cross-provider hard rule satisfied.",
+    "Codex iter-1 findings absorbed: (1) risk_class/risk-lane authority invariant added to Section 9 -- risk derived ONLY from RiskClassifier / ao-release-gate changed-path classifier on real changed paths; plan bundle / AI claim / GitHub mirror / manual edit cannot downgrade; unknown/empty write-set grants no spawn; high/critical requires AO-MA-10 high-risk lane / cross-provider supersession. (2) bootstrap live-proof semantics scoped per-phase (each phase proven by ITS OWN mechanism used in N+1 acceptance, not merely passing the 11A bundle). (3) DoD split into mandatory + conditional (lifecycle-aware): computed risk_class, supersession, evidence freshness mandatory; schema-strict/validator-pure/tracking-mirror conditional. iter-2 AGREE: no blocking risk remains; non-blocking polish (risk_class in Section 1.3 parenthetical) also applied.",
+    "Governance SSOT consistency confirmed by reviewer: live_adapter_execution/support_widening/production_platform_claim=FALSE, GPP-9 closed, release_authority pinned, --admin forbidden, risk downgrade forbidden -- all consistently preserved. No scope-creep or invariant-loosening risk remains.",
+    "First slice AO-MA-11A-1 is LIVE on main (PR #758, merge commit e1d39c8); this master plan consolidates the already-agreed 3-AI + operator-approved program (record, not a new decision).",
+    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
