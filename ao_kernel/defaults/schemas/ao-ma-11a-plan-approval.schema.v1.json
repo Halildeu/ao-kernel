@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-11a-plan-approval:v1",
+  "title": "AO-MA-11A Plan Approval",
+  "description": "The single operator approval-gate record for the autonomous multi-AI coding workflow. Produced ONLY for a plan-consensus bundle whose unanimous_status is 'AGREE' (unanimous_status here is pinned const 'AGREE'; the validator additionally re-verifies the bound bundle recomputes to AGREE). The approval binds to the exact consensus bundle bytes (consensus_bundle_sha256), the plan (plan_digest) and the presented approval request (approval_request_sha256), so an environment-gated job can re-verify all three before proceeding. The single human gate is realized natively as a GitHub Environment ('ao-ma-plan-approval') required reviewer; this artifact records the operator's decision. Evidence only; release authority remains ao-release-gate plus the GitHub ruleset. An approval accepted via admin/bypass is invalid (bypass_detected must be false).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "approval_id",
+    "consensus_id",
+    "consensus_bundle_sha256",
+    "plan_digest",
+    "approval_request_sha256",
+    "unanimous_status",
+    "decision",
+    "environment_ref",
+    "approved_by",
+    "approved_at",
+    "audit_url",
+    "bypass_detected",
+    "guard_flags",
+    "release_authority",
+    "ai_output_release_authority",
+    "secrets_recorded",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-11a-plan-approval.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_11a_plan_approval"
+    },
+    "approval_id": {
+      "type": "string",
+      "pattern": "^ao-ma-approval-[0-9]{8}-[a-z0-9]{6}$"
+    },
+    "consensus_id": {
+      "type": "string",
+      "pattern": "^ao-ma-plan-[0-9]{8}-[a-z0-9]{6}$",
+      "description": "Foreign key to the plan-consensus bundle this approval gates."
+    },
+    "consensus_bundle_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 of the exact consensus bundle file bytes; re-verified by the environment-gated job (Codex guardrail)."
+    },
+    "plan_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Must equal the bound bundle's plan_digest (enforced by the validator)."
+    },
+    "approval_request_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 of the approval request payload presented to the operator at the gate."
+    },
+    "unanimous_status": {
+      "type": "string",
+      "const": "AGREE",
+      "description": "Pinned const: an approval artifact exists only for a unanimous-AGREE plan. REVISE/PARTIAL/RED/missing-provider never produce an approval."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["approved", "rejected", "expired"],
+      "description": "The operator's decision at the single gate. 'approved' authorizes the autonomous run to start; 'rejected'/'expired' halt it."
+    },
+    "environment_ref": {
+      "type": "string",
+      "const": "ao-ma-plan-approval",
+      "description": "The dedicated GitHub Environment whose required reviewer realizes the single human gate."
+    },
+    "approved_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Operator identity (e.g. GitHub login) recorded by the environment reviewer event."
+    },
+    "approved_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "audit_url": {
+      "type": "string",
+      "minLength": 1,
+      "description": "URL of the GitHub deployment/approval audit record (run/deployment URL)."
+    },
+    "bypass_detected": {
+      "type": "boolean",
+      "const": false,
+      "description": "Must be false for a valid approval; an admin/bypass-accepted gate is not a valid single-gate approval."
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false
+    },
+    "secrets_recorded": {
+      "type": "boolean",
+      "const": false
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  }
+}
