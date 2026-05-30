@@ -39,7 +39,7 @@ Sistemin merkez fikri: **bugün manuel olan, yarın otomatik.**
 
 Her faz, geçici modun bir parçasını sistem moduna devreder. "Geçici uygulayıcı" rolü kademeli olarak sisteme geçer.
 
-> **Değişmez kuralı (defensive):** "Geçici mod" hiçbir zaman bir değişmezi gevşetmenin gerekçesi değildir. Bölüm 9'daki invariantlar (3 guard flag FALSE, RI-7.8c, GPP-9, release_authority pin, `--admin` yasağı) geçici modda da sistem modunda da aynen geçerlidir. "Şimdilik geçici, sonra düzeltiriz" pattern'i YASAK.
+> **Değişmez kuralı (defensive):** "Geçici mod" hiçbir zaman bir değişmezi gevşetmenin gerekçesi değildir. Bölüm 9'daki invariantlar (3 guard flag FALSE, RI-7.8c, GPP-9, release_authority pin, `--admin` yasağı, risk_class authority — risk downgrade yasak) geçici modda da sistem modunda da aynen geçerlidir. "Şimdilik geçici, sonra düzeltiriz" pattern'i YASAK.
 
 ### 1.4 Tek insan gate felsefesi
 
