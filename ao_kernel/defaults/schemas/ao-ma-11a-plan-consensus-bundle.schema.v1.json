@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-11a-plan-consensus-bundle:v1",
+  "title": "AO-MA-11A Plan Consensus Bundle",
+  "description": "Plan-time, multi-provider consensus bundle for the autonomous multi-AI coding workflow. AIs (anthropic+openai+minimax) review a proposed plan in rounds; this bundle aggregates their latest-round verdicts into a single unanimous_status. ONLY when unanimous_status == 'AGREE' may a plan-approval artifact (ao-ma-11a-plan-approval.v1) be requested at the single operator gate. This is the PLAN-TIME analog of the merge-time per-provider record (ao-ma-10-provider-consensus.v1): it reuses the same verdict vocabulary and a 3-AI subset of the provider_id vocabulary but binds to a plan (plan_digest + base) rather than a PR diff. Evidence only; release authority remains ao-release-gate plus the GitHub ruleset; AI consensus is NOT release authority. unanimous_status is machine-recomputed from provider_verdicts at validation time (no self-attestation).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "consensus_id",
+    "operator_goal",
+    "plan_digest",
+    "plan_binding",
+    "acceptance_criteria",
+    "required_providers",
+    "provider_verdicts",
+    "round_budget",
+    "rounds_used",
+    "unanimous_status",
+    "spm_anchor",
+    "guard_flags",
+    "release_authority",
+    "ai_output_release_authority",
+    "secrets_recorded",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-11a-plan-consensus-bundle.v1"
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "ao_ma_11a_plan_consensus_bundle"
+    },
+    "consensus_id": {
+      "type": "string",
+      "pattern": "^ao-ma-plan-[0-9]{8}-[a-z0-9]{6}$",
+      "description": "Stable consensus identifier: ao-ma-plan-YYYYMMDD-<6 lowercase alnum>."
+    },
+    "operator_goal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The operator goal the AIs planned for (free text, no secrets)."
+    },
+    "plan_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 of the agreed plan document the verdicts refer to."
+    },
+    "plan_binding": {
+      "$ref": "#/$defs/plan_binding"
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Machine- or human-checkable definition of done for the planned work."
+    },
+    "required_providers": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["anthropic", "openai", "minimax"] },
+      "description": "Exactly the three providers that must reach AGREE for unanimity: anthropic, openai, minimax."
+    },
+    "provider_verdicts": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/verdict_entry" },
+      "description": "Per-provider, per-round verdicts for the mandated 3-AI quorum. Must contain at least one entry for each of anthropic, openai and minimax; the latest round per provider drives unanimity. Round indices must be contiguous (1..max) and bound to round_budget by the validator.",
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": ["provider_id"],
+            "properties": { "provider_id": { "const": "anthropic" } }
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["provider_id"],
+            "properties": { "provider_id": { "const": "openai" } }
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["provider_id"],
+            "properties": { "provider_id": { "const": "minimax" } }
+          },
+          "minContains": 1
+        }
+      ]
+    },
+    "round_budget": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Maximum number of consensus rounds before escalation to the operator (matches the merge-lane max of 3)."
+    },
+    "rounds_used": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Number of rounds actually used; must be <= round_budget (enforced by the validator)."
+    },
+    "unanimous_status": {
+      "type": "string",
+      "enum": ["AGREE", "NOT_AGREE"],
+      "description": "Aggregate consensus outcome. AGREE iff every required provider's latest-round verdict is AGREE. Machine-recomputed from provider_verdicts at validation time; a stored value that disagrees with the recomputation is rejected fail-closed."
+    },
+    "spm_anchor": {
+      "$ref": "#/$defs/spm_anchor"
+    },
+    "guard_flags": {
+      "$ref": "#/$defs/guard_flags"
+    },
+    "release_authority": {
+      "type": "string",
+      "const": "ao-release-gate+github-ruleset"
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false
+    },
+    "secrets_recorded": {
+      "type": "boolean",
+      "const": false
+    },
+    "created_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  },
+  "$defs": {
+    "provider_id": {
+      "type": "string",
+      "enum": ["anthropic", "openai", "minimax"],
+      "description": "Plan-time quorum providers; a 3-AI subset of the merge-time ao-ma-10 provider_id vocabulary (no extra/advisory providers in the plan bundle)."
+    },
+    "verdict_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "agent_id", "verdict", "round_index", "rationale", "objections"],
+      "properties": {
+        "provider_id": { "$ref": "#/$defs/provider_id" },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "verdict": {
+          "type": "string",
+          "enum": ["AGREE", "REVISE", "PARTIAL", "RED"]
+        },
+        "round_index": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "objections": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Recorded objections for this verdict (empty array when AGREE with no objections)."
+        }
+      }
+    },
+    "plan_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_full_name", "base_ref", "base_sha"],
+      "properties": {
+        "repository_full_name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "base_ref": { "type": "string", "minLength": 1 },
+        "base_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "spm_anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spm_profile_ref", "roadmap_item_id", "quality_targets", "tracking_refs"],
+      "properties": {
+        "spm_profile_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path/ref to the SPM quality profile (formalized in AO-MA-11G). May be a forward placeholder until 11G lands."
+        },
+        "roadmap_item_id": {
+          "type": "string",
+          "pattern": "^AO-MA-[A-Z0-9][A-Z0-9.]*$"
+        },
+        "quality_targets": { "$ref": "#/$defs/quality_targets" },
+        "tracking_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "GitHub milestone/issue/project refs (AO-MA-11E mirror). Empty array until 11E wiring lands."
+        }
+      }
+    },
+    "quality_targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage_branch_min", "required_test_classes", "required_evidence_classes"],
+      "properties": {
+        "coverage_branch_min": { "type": "number", "minimum": 0, "maximum": 100 },
+        "required_test_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_evidence_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
