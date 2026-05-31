@@ -177,15 +177,23 @@ def test_enforce_job_carries_no_continue_on_error() -> None:
 
 
 def test_enforce_job_runs_with_fail_closed_needs_short_circuit() -> None:
-    """`if: always()` + (should_run OR event-gate result != success)
-    plus an early step that inspects every required `needs.*.result`
-    and exits 1 with a fail-closed audit artifact when any one is not
-    `success`."""
+    """`if: always()` + (pull_request OR pull_request_review), with the
+    fail-closed behaviour in an early STEP that inspects every required
+    `needs.*.result` and exits 1 with an audit artifact when any one is not
+    `success`.
+
+    CI-FIX (CNS-20260531-001): the job-level `if:` no longer gates on
+    event-gate.should_run. ao-release-gate posts the ruleset-required
+    ao-release-gate-technical / -review check-runs, so it must run on every
+    PR/review event; gating it on should_run let a cosmetic `edited` event skip
+    it and shadow-block the PR. The fail-closed guard lives in the STEP below,
+    not the job `if:`."""
     block = _gate_job_block()
     assert "always() && (" in block
     assert "github.event_name == 'pull_request'" in block
     assert "github.event_name == 'pull_request_review'" in block
-    assert "needs.event-gate.outputs.should_run == 'true'" in block
+    # The fix: the job `if:` is no longer gated on event-gate.should_run.
+    assert "needs.event-gate.outputs.should_run == 'true'" not in block
     assert "needs.event-gate.result != 'success'" in block
     assert "Fail closed if any required CI job did not succeed" in block
     for needed in (
@@ -232,10 +240,7 @@ def test_enforce_job_smoke_detector_requires_added_smoke_markdown(tmp_path: Path
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": "ADDED"}]) == "true"
 
     for change_type in ("RENAMED", "DELETED", "CHANGED", "MODIFIED"):
-        assert (
-            _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}])
-            == "false"
-        )
+        assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}]) == "false"
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path}]) == "false"
     assert (
         _run_ao_ma10_smoke_detector(
@@ -322,7 +327,7 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert '--review-head-ref "refs/heads/$HEAD_REF"' in block
     assert '--diff-base-ref "$BASE_SHA"' in block
     assert '--diff-head-ref "$HEAD_SHA"' in block
-    assert '--output high-risk-supersession-evidence.v1.json' in block
+    assert "--output high-risk-supersession-evidence.v1.json" in block
 
 
 def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:

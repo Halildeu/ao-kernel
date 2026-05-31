@@ -25,6 +25,15 @@ on:
         required: false
         type: string
 
+# Cancel an in-flight run for the same PR (or ref) when a newer event arrives.
+# Without this, a force-push or rapid edits can leave two runs racing on the
+# same head SHA; the loser can finalize a stale/skipped check-run that shadows
+# the winner's success and blocks the PR. One live run per PR keeps the
+# required-context conclusions unambiguous.
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   event-gate:
     name: event-gate
@@ -58,7 +67,12 @@ jobs:
                   trigger_reason="pull_request:$EVENT_ACTION"
                   ;;
                 edited)
-                  # Retarget (`base` changed) must rerun the full PR gate.
+                  # Retarget (`base` changed) must rerun the full PR gate. Note:
+                  # the REQUIRED jobs below no longer depend on this gate (they
+                  # always run on every PR event), so a non-retarget `edited`
+                  # event can no longer skip a required context and shadow its
+                  # earlier success. This flag now only gates the EXPENSIVE,
+                  # NON-required jobs (container smokes, benchmark).
                   if jq -e '.changes.base.ref.from' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
                     should_run=true
                     trigger_reason="pull_request:retargeted"
@@ -82,8 +96,8 @@ jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # REQUIRED context: always runs on every PR/push event (no event-gate),
+    # so its conclusion can never regress success->skipped and shadow-block.
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -100,8 +114,7 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # REQUIRED context (test (3.11/3.12/3.13)): always runs (no event-gate).
     strategy:
       fail-fast: false
       matrix:
@@ -121,8 +134,7 @@ jobs:
   coverage:
     name: coverage
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # REQUIRED context: always runs (no event-gate).
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -144,8 +156,9 @@ jobs:
   packaging-smoke:
     name: packaging-smoke
     runs-on: ubuntu-latest
-    needs: [event-gate, test, coverage, lint, typecheck]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # REQUIRED context: always runs (no event-gate). Still waits on the other
+    # required jobs so it reflects a fully-built tree.
+    needs: [test, coverage, lint, typecheck]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -159,8 +172,11 @@ jobs:
   policy-container-smoke:
     name: policy-container-smoke
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # CI-FIX (CNS-20260531-001): ungated. ao-release-gate `needs:` this job and
+    # fail-closes on its non-success, so it backs the ruleset-required
+    # ao-release-gate-technical/-review contexts. A cosmetic `edited` event must
+    # not skip it (that would fail-close the gate and turn the required ruleset
+    # contexts red). It therefore runs on every PR/push event.
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -176,8 +192,10 @@ jobs:
   release-gate-container-smoke:
     name: release-gate-container-smoke
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # CI-FIX (CNS-20260531-001): ungated (same reason as policy-container-smoke):
+    # ao-release-gate `needs:` this job and fail-closes on its non-success, so it
+    # backs the ruleset-required ao-release-gate contexts and must run on every
+    # PR/push event.
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -193,8 +211,7 @@ jobs:
   typecheck:
     name: typecheck
     runs-on: ubuntu-latest
-    needs: [event-gate]
-    if: needs.event-gate.outputs.should_run == 'true'
+    # REQUIRED context: always runs (no event-gate).
     # CNS-006 Q4: after the 131-error cleanup (PR #56), typecheck is a real
     # gate. _internal/* is still under per-module ignore (D13).
     #
@@ -356,13 +373,18 @@ jobs:
     # cancelled upstream `needs:` job does NOT silently skip the gate.
     # The fail-closed needs short-circuit below produces a `failure`
     # conclusion instead.
+    # CI-FIX (CNS-20260531-001): this job posts the RULESET-required
+    # ao-release-gate-technical / ao-release-gate-review check-runs. It must run
+    # on every pull_request / pull_request_review event — NOT be gated on
+    # event-gate.should_run — otherwise a cosmetic `edited` event would skip it
+    # and (like the classic-required jobs) shadow the required ruleset contexts,
+    # re-blocking the PR. The required CI jobs it depends on are now always-run
+    # too, so the fail-closed `needs.*.result != 'success'` short-circuit below
+    # still holds.
     if: |
       always() && (
         github.event_name == 'pull_request' ||
         github.event_name == 'pull_request_review'
-      ) && (
-        needs.event-gate.outputs.should_run == 'true' ||
-        needs.event-gate.result != 'success'
       )
     timeout-minutes: 10
     permissions:
