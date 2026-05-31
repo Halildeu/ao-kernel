@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-notification-receipt:v1",
+  "title": "AO-MA Notification Receipt (contract-first; produced by AO-MA-11H-2)",
+  "description": "Delivery-observation artifact written by the external side-effect executor (AO-MA-11H-2: Mavis CLI / gh) after attempting to deliver a notification intent, and consumed by the governor feedback slice (AO-MA-11H-3) to decide blocked_notification_failed -> safe-stop. This is a pure contract: AO-MA-11H-1 defines it but produces no receipts. The executor binds the receipt to the intent by recomputing the intent's canonical-bytes sha256; intent_ref is never a trusted input on the consumer side (tamper-evident).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "intent_ref",
+    "channel",
+    "delivery_status",
+    "attempted_at",
+    "failure_code",
+    "failure_summary_redacted",
+    "receipt_authority",
+    "delivery_authority",
+    "no_secret_payload",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-notification-receipt.v1" },
+    "artifact_kind": { "const": "ao_ma_notification_receipt" },
+    "intent_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "artifact_kind", "schema_version"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]*(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$"
+        },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "artifact_kind": { "const": "ao_ma_notification_intent" },
+        "schema_version": { "const": "ao-ma-notification-intent.v1" }
+      }
+    },
+    "channel": { "enum": ["mavis_chat", "github_native"] },
+    "delivery_status": { "enum": ["delivered", "failed", "skipped"] },
+    "attempted_at": { "type": "string", "minLength": 1 },
+    "failure_code": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "transport_error",
+            "timeout",
+            "auth_error",
+            "target_unreachable",
+            "rate_limited",
+            "unknown"
+          ]
+        }
+      ]
+    },
+    "failure_summary_redacted": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "minLength": 1, "maxLength": 2000 }
+      ]
+    },
+    "receipt_authority": { "const": "delivery_observation_only" },
+    "delivery_authority": { "const": "external_executor_only" },
+    "no_secret_payload": { "const": true },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "delivery_status": { "const": "failed" } }, "required": ["delivery_status"] },
+      "then": {
+        "properties": {
+          "failure_code": {
+            "enum": [
+              "transport_error",
+              "timeout",
+              "auth_error",
+              "target_unreachable",
+              "rate_limited",
+              "unknown"
+            ]
+          },
+          "failure_summary_redacted": { "type": "string", "minLength": 1, "maxLength": 2000 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "delivery_status": { "const": "delivered" } }, "required": ["delivery_status"] },
+      "then": {
+        "properties": {
+          "failure_code": { "type": "null" },
+          "failure_summary_redacted": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "delivery_status": { "const": "skipped" } }, "required": ["delivery_status"] },
+      "then": {
+        "properties": {
+          "failure_code": { "type": "null" },
+          "failure_summary_redacted": { "type": "null" }
+        }
+      }
+    }
+  ]
+}
