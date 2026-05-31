@@ -127,7 +127,9 @@ class TestSaveClaimCas:
         updated = {**original, "heartbeat_at": "2026-04-17T10:00:30+00:00"}
         updated["revision"] = claim_revision(updated)
         save_claim_cas(
-            tmp_path, original["resource_id"], updated,
+            tmp_path,
+            original["resource_id"],
+            updated,
             expected_revision=original["revision"],
         )
         on_disk = json.loads(claim_path(tmp_path, original["resource_id"]).read_text())
@@ -141,7 +143,9 @@ class TestSaveClaimCas:
         updated["revision"] = claim_revision(updated)
         with pytest.raises(ClaimRevisionConflictError) as excinfo:
             save_claim_cas(
-                tmp_path, original["resource_id"], updated,
+                tmp_path,
+                original["resource_id"],
+                updated,
                 expected_revision="sha256:" + "0" * 64,  # wrong revision
             )
         assert excinfo.value.expected_revision.startswith("sha256:0")
@@ -153,7 +157,9 @@ class TestSaveClaimCas:
         doc = _valid_claim_dict()
         with pytest.raises(ClaimRevisionConflictError) as excinfo:
             save_claim_cas(
-                tmp_path, doc["resource_id"], doc,
+                tmp_path,
+                doc["resource_id"],
+                doc,
                 expected_revision="sha256:" + "0" * 64,
             )
         assert excinfo.value.actual_revision == "<absent>"
@@ -166,7 +172,9 @@ class TestSaveClaimCas:
         # Deliberately do NOT restamp revision.
         with pytest.raises(ClaimCorruptedError) as excinfo:
             save_claim_cas(
-                tmp_path, original["resource_id"], bad_update,
+                tmp_path,
+                original["resource_id"],
+                bad_update,
                 expected_revision=original["revision"],
             )
         assert "stamped revision" in str(excinfo.value)
@@ -178,7 +186,9 @@ class TestSaveClaimCas:
         doc = _valid_claim_dict(resource_id="corrupt-resource")
         with pytest.raises(ClaimCorruptedError) as excinfo:
             save_claim_cas(
-                tmp_path, "corrupt-resource", doc,
+                tmp_path,
+                "corrupt-resource",
+                doc,
                 expected_revision="sha256:" + "0" * 64,
             )
         assert "JSON decode failed" in str(excinfo.value)

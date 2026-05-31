@@ -41,10 +41,7 @@ def _write_workspace_policy(workspace_root: Path, doc: dict[str, object]) -> Non
 
 class TestPathNormalization:
     def test_normalize_relative_path(self, tmp_path: Path) -> None:
-        assert (
-            normalize_workspace_relative_path(tmp_path, Path("pkg/demo.py"))
-            == "pkg/demo.py"
-        )
+        assert normalize_workspace_relative_path(tmp_path, Path("pkg/demo.py")) == "pkg/demo.py"
 
     def test_normalize_absolute_path_under_workspace(self, tmp_path: Path) -> None:
         target = tmp_path / "pkg" / "demo.py"
@@ -136,9 +133,7 @@ class TestAcquireReleaseHelpers:
 
         assert [lease.scope.area for lease in lease_set.leases] == ["pkg", "tests"]
         live_claims = registry.list_agent_claims("agent-alpha")
-        assert {claim.resource_id for claim in live_claims} == {
-            lease.scope.resource_id for lease in lease_set.leases
-        }
+        assert {claim.resource_id for claim in live_claims} == {lease.scope.resource_id for lease in lease_set.leases}
 
     def test_conflict_on_same_area_blocks_second_writer(self, tmp_path: Path) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
@@ -162,7 +157,8 @@ class TestAcquireReleaseHelpers:
         release_path_write_claims(registry, first)
 
     def test_partial_conflict_rolls_back_earlier_acquired_scopes(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
@@ -184,9 +180,7 @@ class TestAcquireReleaseHelpers:
 
         assert registry.list_agent_claims("agent-alpha") == []
         remaining = registry.list_agent_claims("agent-beta")
-        assert [claim.resource_id for claim in remaining] == [
-            blocked.leases[0].scope.resource_id
-        ]
+        assert [claim.resource_id for claim in remaining] == [blocked.leases[0].scope.resource_id]
 
     def test_release_reverses_claims_and_clears_registry(self, tmp_path: Path) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
@@ -204,7 +198,8 @@ class TestAcquireReleaseHelpers:
         assert registry.list_agent_claims("agent-alpha") == []
 
     def test_acquire_rejects_workspace_registry_root_mismatch(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)

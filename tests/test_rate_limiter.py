@@ -37,6 +37,7 @@ class TestTokenBucket:
         rl = TokenBucketRateLimiter(rps=100.0)  # fast refill
         rl.try_acquire()  # drain
         import time
+
         time.sleep(0.02)  # wait for refill
         assert rl.try_acquire() is True
 

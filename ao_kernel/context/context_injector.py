@@ -92,7 +92,9 @@ def inject_context_into_messages(
     Returns new message list (does not mutate input).
     """
     preamble = build_context_preamble(
-        context, max_tokens=max_tokens, relevance_filter=relevance_filter,
+        context,
+        max_tokens=max_tokens,
+        relevance_filter=relevance_filter,
     )
     if not preamble:
         return messages
@@ -107,10 +109,13 @@ def inject_context_into_messages(
             "content": preamble + "\n\n" + original,
         }
     else:
-        new_messages.insert(0, {
-            "role": "system",
-            "content": preamble,
-        })
+        new_messages.insert(
+            0,
+            {
+                "role": "system",
+                "content": preamble,
+            },
+        )
 
     return new_messages
 

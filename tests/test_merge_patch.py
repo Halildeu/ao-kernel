@@ -83,7 +83,8 @@ class TestImmutabilityInvariants:
 
 class TestLoadPoliciesPatchesFromDir:
     def test_versioned_filename_convention(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """PR-C5 reversible filename: <name>.v1.patch.json → <name>.v1.json."""
         patches_dir = tmp_path / "patches"

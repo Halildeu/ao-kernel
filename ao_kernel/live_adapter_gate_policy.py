@@ -257,7 +257,9 @@ def extract_live_adapter_gate_policy_context(payload: object) -> LiveAdapterGate
     )
     pull_requests = _as_list(root.get("pull_requests"))
     return {
-        "repository": _first_string(repository.get("full_name"), root.get("repository_full_name"), verified.get("repository")),
+        "repository": _first_string(
+            repository.get("full_name"), root.get("repository_full_name"), verified.get("repository")
+        ),
         "environment": environment,
         "event": _first_string(root.get("event"), workflow_run.get("event"), verified.get("event")),
         "ref": ref,
@@ -307,13 +309,10 @@ def build_live_adapter_gate_policy_decision(
     """
 
     context = extract_live_adapter_gate_policy_context(payload)
-    prerequisites_ready = (
-        context["prerequisites_ready"] is True or context["attestation_overall_status"] == "ready"
-    )
+    prerequisites_ready = context["prerequisites_ready"] is True or context["attestation_overall_status"] == "ready"
     live_execution_closed = context["live_execution_allowed"] is False
     support_boundary_closed = (
-        context["support_widening_allowed"] is False
-        and context["production_platform_claim_allowed"] is False
+        context["support_widening_allowed"] is False and context["production_platform_claim_allowed"] is False
     )
     checks = [
         _check(

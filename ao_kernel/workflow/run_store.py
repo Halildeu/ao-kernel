@@ -276,9 +276,7 @@ def _mutate_with_cas(
             if expected_revision is None:
                 # CREATE
                 if existing:
-                    raise FileExistsError(
-                        f"Run {run_id!r} already exists at {data_path}"
-                    )
+                    raise FileExistsError(f"Run {run_id!r} already exists at {data_path}")
                 current: dict[str, Any] = {}
             else:
                 # UPDATE
@@ -316,12 +314,15 @@ def _mutate_with_cas(
         validate_workflow_run(new_record, run_id=run_id)
 
         # Atomic write; tempfile + fsync + os.replace on POSIX.
-        payload = json.dumps(
-            new_record,
-            sort_keys=True,
-            ensure_ascii=False,
-            indent=2,
-        ) + "\n"
+        payload = (
+            json.dumps(
+                new_record,
+                sort_keys=True,
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n"
+        )
         write_text_atomic(data_path, payload)
 
         return new_record, new_revision

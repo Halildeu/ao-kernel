@@ -3,6 +3,7 @@
 Validates provider output before allowing execution to proceed.
 Gates: schema_valid, output_not_empty, consistency_check, regression_check.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,6 +53,7 @@ def _load_quality_gate_policy(workspace_root: Path | None = None) -> dict[str, A
                 return parsed
             except (ValueError, Exception) as exc:
                 import logging
+
                 logging.getLogger("ao_kernel").warning(
                     "quality_gate workspace policy parse failed, falling back: %s", exc
                 )
@@ -62,22 +64,33 @@ def _load_quality_gate_policy(workspace_root: Path | None = None) -> dict[str, A
     except (FileNotFoundError, Exception) as exc:
         # Fail-closed: if policy can't load, enable restrictive defaults
         import logging
+
         logging.getLogger("ao_kernel").warning(
             "quality_gate policy load failed, enabling restrictive defaults: %s", exc
         )
-        return {"enabled": True, "gates": {
-            "output_not_empty": {"enabled": True, "action": "reject"},
-            "schema_valid": {"enabled": True, "action": "reject"},
-        }}
+        return {
+            "enabled": True,
+            "gates": {
+                "output_not_empty": {"enabled": True, "action": "reject"},
+                "schema_valid": {"enabled": True, "action": "reject"},
+            },
+        }
 
 
 def _check_output_not_empty(output: Any, gate_cfg: dict[str, Any]) -> QualityGateResult:
     min_chars = int(gate_cfg.get("min_output_chars", 10))
     if not isinstance(output, dict):
-        return QualityGateResult(False, "output_not_empty", str(gate_cfg.get("on_fail", "reject")), "output is not a dict")
+        return QualityGateResult(
+            False, "output_not_empty", str(gate_cfg.get("on_fail", "reject")), "output is not a dict"
+        )
     text = str(output.get("text") or output.get("summary") or "")
     if len(text.strip()) < min_chars:
-        return QualityGateResult(False, "output_not_empty", str(gate_cfg.get("on_fail", "reject")), f"output too short: {len(text)} chars < {min_chars}")
+        return QualityGateResult(
+            False,
+            "output_not_empty",
+            str(gate_cfg.get("on_fail", "reject")),
+            f"output too short: {len(text)} chars < {min_chars}",
+        )
     return QualityGateResult(True, "output_not_empty", "pass", "")
 
 
@@ -87,7 +100,9 @@ def _check_schema_valid(output: Any, gate_cfg: dict[str, Any]) -> QualityGateRes
     return QualityGateResult(True, "schema_valid", "pass", "")
 
 
-def _check_consistency(output: dict[str, Any], gate_cfg: dict[str, Any], previous_decisions: list[dict[str, Any]] | None) -> QualityGateResult:
+def _check_consistency(
+    output: dict[str, Any], gate_cfg: dict[str, Any], previous_decisions: list[dict[str, Any]] | None
+) -> QualityGateResult:
     if not previous_decisions:
         return QualityGateResult(True, "consistency_check", "pass", "no_previous_decisions")
 
@@ -98,12 +113,19 @@ def _check_consistency(output: dict[str, Any], gate_cfg: dict[str, Any], previou
         # Simple contradiction: same key, opposite boolean
         if isinstance(pd.get("value"), bool) and isinstance(output.get(pd.get("key", "")), bool):
             if pd["value"] != output.get(pd["key"]):
-                return QualityGateResult(False, "consistency_check", str(gate_cfg.get("on_fail", "warn")), f"contradicts decision: {pd.get('key')}")
+                return QualityGateResult(
+                    False,
+                    "consistency_check",
+                    str(gate_cfg.get("on_fail", "warn")),
+                    f"contradicts decision: {pd.get('key')}",
+                )
 
     return QualityGateResult(True, "consistency_check", "pass", "")
 
 
-def _check_regression(output: dict[str, Any], gate_cfg: dict[str, Any], previous_decisions: list[dict[str, Any]] | None) -> QualityGateResult:
+def _check_regression(
+    output: dict[str, Any], gate_cfg: dict[str, Any], previous_decisions: list[dict[str, Any]] | None
+) -> QualityGateResult:
     if not previous_decisions:
         return QualityGateResult(True, "regression_check", "pass", "no_history")
 
@@ -122,7 +144,12 @@ def _check_regression(output: dict[str, Any], gate_cfg: dict[str, Any], previous
             if isinstance(h, dict):
                 hist_val = json.dumps(h.get("value"), sort_keys=True, ensure_ascii=True)
                 if hist_val == current_output_val:
-                    return QualityGateResult(False, "regression_check", str(gate_cfg.get("on_fail", "escalate")), f"regression on key: {current_key}")
+                    return QualityGateResult(
+                        False,
+                        "regression_check",
+                        str(gate_cfg.get("on_fail", "escalate")),
+                        f"regression on key: {current_key}",
+                    )
 
     return QualityGateResult(True, "regression_check", "pass", "")
 

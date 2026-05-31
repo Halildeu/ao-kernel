@@ -17,7 +17,12 @@ class TestBuildContextPreamble:
         context = {
             "decisions": [
                 {"key": "runtime.python", "value": "3.11", "source": "agent", "created_at": "2026-01-01T00:00:00Z"},
-                {"key": "deploy.target", "value": "staging", "source": "user_chat", "created_at": "2026-01-02T00:00:00Z"},
+                {
+                    "key": "deploy.target",
+                    "value": "staging",
+                    "source": "user_chat",
+                    "created_at": "2026-01-02T00:00:00Z",
+                },
             ],
         }
         preamble = build_context_preamble(context)
@@ -40,8 +45,7 @@ class TestBuildContextPreamble:
     def test_token_budget_enforced(self):
         context = {
             "decisions": [
-                {"key": f"key_{i}", "value": "x" * 100, "created_at": "2026-01-01T00:00:00Z"}
-                for i in range(100)
+                {"key": f"key_{i}", "value": "x" * 100, "created_at": "2026-01-01T00:00:00Z"} for i in range(100)
             ],
         }
         preamble = build_context_preamble(context, max_tokens=50)

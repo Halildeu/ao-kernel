@@ -23,21 +23,15 @@ from ao_kernel.workflow import (
 # Schema is PR-A0 frozen; any drift requires an explicit update here.
 _EXPECTED_TRANSITIONS: dict[str, frozenset[str]] = {
     "created": frozenset({"running", "cancelled"}),
-    "running": frozenset(
-        {"interrupted", "waiting_approval", "applying", "failed", "cancelled"}
-    ),
+    "running": frozenset({"interrupted", "waiting_approval", "applying", "failed", "cancelled"}),
     "interrupted": frozenset({"running", "failed", "cancelled"}),
     # PR-A4: waiting_approval -> running added for governance-gate
     # approval granted flows (non-patch resume).
-    "waiting_approval": frozenset(
-        {"applying", "running", "failed", "cancelled"}
-    ),
+    "waiting_approval": frozenset({"applying", "running", "failed", "cancelled"}),
     "applying": frozenset({"verifying", "failed", "cancelled"}),
     # PR-A4: verifying -> waiting_approval added for post-CI governance
     # gate (workflow step_def.gate=post_ci).
-    "verifying": frozenset(
-        {"completed", "waiting_approval", "failed", "cancelled"}
-    ),
+    "verifying": frozenset({"completed", "waiting_approval", "failed", "cancelled"}),
     "completed": frozenset(),
     "failed": frozenset(),
     "cancelled": frozenset(),
@@ -68,11 +62,7 @@ class TestTerminalInvariant:
 class TestValidateTransitionMatrix:
     @pytest.mark.parametrize(
         "current,new",
-        [
-            (c, n)
-            for c, allowed in _EXPECTED_TRANSITIONS.items()
-            for n in allowed
-        ],
+        [(c, n) for c, allowed in _EXPECTED_TRANSITIONS.items() for n in allowed],
     )
     def test_allowed_transitions(self, current: str, new: str) -> None:
         """Every ``(current, new)`` pair in the expected table validates."""
@@ -83,12 +73,7 @@ class TestValidateTransitionMatrix:
 
     @pytest.mark.parametrize(
         "current,new",
-        [
-            (c, n)
-            for c, allowed in _EXPECTED_TRANSITIONS.items()
-            for n in _EXPECTED_TRANSITIONS
-            if n not in allowed
-        ],
+        [(c, n) for c, allowed in _EXPECTED_TRANSITIONS.items() for n in _EXPECTED_TRANSITIONS if n not in allowed],
     )
     def test_illegal_transitions_raise(self, current: str, new: str) -> None:
         """Every forbidden pair raises ``WorkflowTransitionError`` with context."""

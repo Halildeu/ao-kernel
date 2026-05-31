@@ -19,6 +19,7 @@ def new_context(
 ) -> dict[str, Any]:
     """Create a new session context."""
     from ao_kernel._internal.session.context_store import new_context as _new
+
     return _new(
         session_id=session_id,
         workspace_root=str(workspace_root),
@@ -33,6 +34,7 @@ def save_context(
 ) -> None:
     """Save session context atomically."""
     from ao_kernel._internal.session.context_store import save_context_atomic, SessionPaths
+
     sid = session_id or context.get("session_id", "default")
     paths = SessionPaths(workspace_root=Path(workspace_root), session_id=sid)
     save_context_atomic(paths.context_path, context)
@@ -48,6 +50,7 @@ def load_context(
     Raises SessionContextError for corruption (fail-closed path).
     """
     from ao_kernel._internal.session.context_store import load_context as _load, SessionPaths
+
     paths = SessionPaths(workspace_root=Path(workspace_root), session_id=session_id)
     if not paths.context_path.exists():
         raise FileNotFoundError(f"No session file: {paths.context_path}")
@@ -60,6 +63,7 @@ def distill_memory(
 ) -> dict[str, Any]:
     """Consolidate session facts."""
     from ao_kernel._internal.session.memory_distiller import consolidate_facts
+
     return consolidate_facts(
         workspace_root=Path(workspace_root),
         distilled=distilled or [],

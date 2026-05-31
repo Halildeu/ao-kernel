@@ -17,11 +17,10 @@ def cmd_timeline(args: Any) -> int:
     workspace = _resolve_workspace(args)
     try:
         output = timeline(
-            workspace, args.run_id,
+            workspace,
+            args.run_id,
             format=getattr(args, "format", "table"),
-            filter_kinds=(
-                args.filter_kind.split(",") if getattr(args, "filter_kind", None) else None
-            ),
+            filter_kinds=(args.filter_kind.split(",") if getattr(args, "filter_kind", None) else None),
             filter_actor=getattr(args, "filter_actor", None),
             limit=getattr(args, "limit", None),
         )
@@ -43,7 +42,8 @@ def cmd_replay(args: Any) -> int:
     workspace = _resolve_workspace(args)
     try:
         report = replay(
-            workspace, args.run_id,
+            workspace,
+            args.run_id,
             mode=getattr(args, "mode", "inspect"),
         )
     except FileNotFoundError as exc:
@@ -81,7 +81,8 @@ def cmd_verify_manifest(args: Any) -> int:
     workspace = _resolve_workspace(args)
     try:
         result = verify_manifest(
-            workspace, args.run_id,
+            workspace,
+            args.run_id,
             generate_if_missing=getattr(args, "generate_if_missing", False),
         )
     except FileNotFoundError as exc:
@@ -117,6 +118,7 @@ def _resolve_workspace(args: Any) -> Path:
     if ws:
         return Path(ws)
     from ao_kernel.config import workspace_root
+
     resolved = workspace_root()
     if resolved is None:
         print("error: no .ao/ workspace found", file=sys.stderr)

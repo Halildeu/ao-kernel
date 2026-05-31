@@ -230,9 +230,7 @@ class TestBundledCodexStubEndToEnd:
     runtime emits the payload and the rule walker extracts it without
     tripping output_parse_failed."""
 
-    def test_bundled_manifest_invocation_extracts_review_findings(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bundled_manifest_invocation_extracts_review_findings(self, tmp_path: Path) -> None:
         import os as _os
         from ao_kernel.adapters import AdapterRegistry
 
@@ -452,9 +450,7 @@ class TestHttpInvoke:
         assert result.status == "ok"
         assert result.diff == diff_body.strip()
 
-    def test_text_plain_without_write_diff_capability_fails(
-        self, tmp_path: Path
-    ) -> None:
+    def test_text_plain_without_write_diff_capability_fails(self, tmp_path: Path) -> None:
         rid = "00000000-0000-4000-8000-00000000ab07"
         diff_body = "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n"
         manifest = _manifest_http(capabilities=("read_repo",))
@@ -494,9 +490,7 @@ class TestHttpInvoke:
         )
         worktree = _worktree(tmp_path, rid)
         budget = _budget()
-        body = json.dumps(
-            {"result": {"status": "ok", "diff": "--- a"}}
-        )
+        body = json.dumps({"result": {"status": "ok", "diff": "--- a"}})
         with patch(
             "urllib.request.urlopen",
             return_value=_FakeResponse(body),
@@ -653,9 +647,7 @@ class TestOutputParseExtraction:
         assert payload["summary"].startswith("Reviewed")
         assert len(payload["findings"]) == 1
 
-    def test_edge_case_1_multi_rule_same_capability_is_loader_concern_not_runtime(
-        self, tmp_path: Path
-    ) -> None:
+    def test_edge_case_1_multi_rule_same_capability_is_loader_concern_not_runtime(self, tmp_path: Path) -> None:
         """The rule walker itself does not enforce uniqueness — the
         loader does (see TestDuplicateCapabilityLoaderCheck). If a
         manifest with duplicate capabilities bypassed the loader, the
@@ -709,9 +701,7 @@ class TestOutputParseExtraction:
         assert "schema_ref" in str(excinfo.value).lower()
         assert "does-not-exist" in str(excinfo.value)
 
-    def test_edge_case_3a_null_payload_rejected_when_schema_disallows(
-        self, tmp_path: Path
-    ) -> None:
+    def test_edge_case_3a_null_payload_rejected_when_schema_disallows(self, tmp_path: Path) -> None:
         """``review-findings.schema.v1.json`` requires ``findings`` +
         ``summary``; a bare ``null`` payload fails validation."""
         from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
@@ -739,9 +729,7 @@ class TestOutputParseExtraction:
         # "validation failed" phrase is stable in our error wording.
         assert "validation failed" in str(excinfo.value).lower()
 
-    def test_edge_case_3b_null_payload_accepted_when_schema_allows(
-        self, tmp_path: Path
-    ) -> None:
+    def test_edge_case_3b_null_payload_accepted_when_schema_allows(self, tmp_path: Path) -> None:
         """When no ``schema_ref`` is declared, a null envelope field is
         walked but not keyed (rule walker stores dict-shaped payloads
         only) — extracted_outputs stays empty, no error."""
@@ -797,17 +785,13 @@ class TestOutputParseExtraction:
             )
         assert "did not resolve" in str(excinfo.value)
 
-    def test_edge_case_5_envelope_field_without_rule_is_silent_ignore(
-        self, tmp_path: Path
-    ) -> None:
+    def test_edge_case_5_envelope_field_without_rule_is_silent_ignore(self, tmp_path: Path) -> None:
         """Envelope carries a payload for which the manifest has no rule
         — silently ignored. Extraction is opt-in, never surprise."""
         from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
 
         manifest = _manifest_with_output_parse(
-            output_parse={"rules": [
-                {"json_path": "$.x", "capability": "x", "schema_ref": None}
-            ]},
+            output_parse={"rules": [{"json_path": "$.x", "capability": "x", "schema_ref": None}]},
         )
         envelope = {
             "status": "ok",
@@ -823,9 +807,7 @@ class TestOutputParseExtraction:
         )
         assert set(result.extracted_outputs.keys()) == {"x"}
 
-    def test_schema_validation_failure_surfaces_as_output_parse_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_schema_validation_failure_surfaces_as_output_parse_error(self, tmp_path: Path) -> None:
         from ao_kernel.executor.adapter_invoker import _invocation_from_envelope
 
         manifest = _manifest_with_output_parse(
@@ -912,12 +894,8 @@ class TestDuplicateCapabilityLoaderCheck:
                         "run_id": "11111111-1111-4111-8111-111111111111",
                     },
                     "output_envelope": {"status": "ok"},
-                    "policy_refs": [
-                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-                    ],
-                    "evidence_refs": [
-                        ".ao/evidence/workflows/{run_id}/adapter-dupe-stub.jsonl"
-                    ],
+                    "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+                    "evidence_refs": [".ao/evidence/workflows/{run_id}/adapter-dupe-stub.jsonl"],
                     "output_parse": {
                         "rules": [
                             {
@@ -949,9 +927,7 @@ class TestCapabilityCrossRefLoaderCheck:
     Extraction rules advertise typed payload surface; that surface cannot
     bypass the top-level capability advertisement."""
 
-    def test_unadvertised_capability_in_rule_fails_at_load(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unadvertised_capability_in_rule_fails_at_load(self, tmp_path: Path) -> None:
         from ao_kernel.adapters.manifest_loader import AdapterRegistry
 
         manifest_dir = tmp_path / ".ao" / "adapters"
@@ -979,12 +955,8 @@ class TestCapabilityCrossRefLoaderCheck:
                         "run_id": "11111111-1111-4111-8111-111111111111",
                     },
                     "output_envelope": {"status": "ok"},
-                    "policy_refs": [
-                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-                    ],
-                    "evidence_refs": [
-                        ".ao/evidence/workflows/{run_id}/adapter-sneaky-stub.jsonl"
-                    ],
+                    "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+                    "evidence_refs": [".ao/evidence/workflows/{run_id}/adapter-sneaky-stub.jsonl"],
                     "output_parse": {
                         "rules": [
                             {
@@ -1006,9 +978,7 @@ class TestCapabilityCrossRefLoaderCheck:
         assert "review_findings" in skipped.details
         assert "not listed" in skipped.details.lower() or "capabilities" in skipped.details
 
-    def test_rule_without_capability_does_not_need_cross_ref(
-        self, tmp_path: Path
-    ) -> None:
+    def test_rule_without_capability_does_not_need_cross_ref(self, tmp_path: Path) -> None:
         """Rules without a ``capability`` key are descriptive-only schema
         guards; they do not participate in the cross-ref check (there is
         nothing to cross-ref)."""
@@ -1037,12 +1007,8 @@ class TestCapabilityCrossRefLoaderCheck:
                         "run_id": "11111111-1111-4111-8111-111111111111",
                     },
                     "output_envelope": {"status": "ok"},
-                    "policy_refs": [
-                        "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-                    ],
-                    "evidence_refs": [
-                        ".ao/evidence/workflows/{run_id}/adapter-guard-only-stub.jsonl"
-                    ],
+                    "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+                    "evidence_refs": [".ao/evidence/workflows/{run_id}/adapter-guard-only-stub.jsonl"],
                     "output_parse": {
                         "rules": [
                             {"json_path": "$.meta"},  # no capability — OK

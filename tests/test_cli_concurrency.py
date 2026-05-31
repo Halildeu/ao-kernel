@@ -29,7 +29,10 @@ from ao_kernel.context.canonical_store import promote_decision, query
 
 class TestDoctorFromSubdirectory:
     def test_doctor_resolves_workspace_from_subdir(
-        self, tmp_workspace, capsys, monkeypatch,
+        self,
+        tmp_workspace,
+        capsys,
+        monkeypatch,
     ):
         # tmp_workspace fixture has already chdir'd into the workspace root.
         subdir = tmp_workspace.parent / "nested" / "deep"
@@ -99,6 +102,4 @@ class TestParallelCanonicalWrites:
         items = query(workspace, key_pattern="concurrent.key.*")
         keys = {item["key"] for item in items}
         expected = {f"concurrent.key.{i:02d}" for i in range(8)}
-        assert expected.issubset(keys), (
-            f"missing keys after concurrent writes: expected={expected}, got={keys}"
-        )
+        assert expected.issubset(keys), f"missing keys after concurrent writes: expected={expected}, got={keys}"

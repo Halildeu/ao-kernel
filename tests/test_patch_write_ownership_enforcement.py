@@ -153,15 +153,14 @@ def _bare_record(run_id: str) -> dict[str, object]:
 
 
 def _events(workspace_root: Path, run_id: str) -> list[dict[str, Any]]:
-    events_path = (
-        workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    events_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     return [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines()]
 
 
 class TestPatchWriteOwnershipEnforcement:
     def test_patch_preview_remains_claim_free_when_coordination_enabled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -192,7 +191,8 @@ class TestPatchWriteOwnershipEnforcement:
         assert registry.list_agent_claims(f"workflow-run:{run_id}") == []
 
     def test_patch_apply_skips_claims_when_coordination_disabled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -218,7 +218,8 @@ class TestPatchWriteOwnershipEnforcement:
         assert "write_claim_areas" not in diff_applied["payload"]
 
     def test_patch_apply_acquires_and_releases_write_claims(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -253,16 +254,15 @@ class TestPatchWriteOwnershipEnforcement:
         assert len(diff_applied["payload"]["write_claim_resource_ids"]) == 1
 
         run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
-        artifact = json.loads(
-            (run_dir / result["output_ref"]).read_text(encoding="utf-8")
-        )
+        artifact = json.loads((run_dir / result["output_ref"]).read_text(encoding="utf-8"))
         assert artifact["write_claim_areas"] == ["src"]
 
         registry = ClaimRegistry(tmp_path)
         assert registry.list_agent_claims(f"workflow-run:{run_id}") == []
 
     def test_patch_apply_conflict_surfaces_as_step_failed_signal(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -297,13 +297,12 @@ class TestPatchWriteOwnershipEnforcement:
         assert kinds == ["step_started", "claim_conflict"]
 
         remaining = registry.list_agent_claims("agent-existing")
-        assert [claim.resource_id for claim in remaining] == [
-            blocked.leases[0].scope.resource_id
-        ]
+        assert [claim.resource_id for claim in remaining] == [blocked.leases[0].scope.resource_id]
         release_path_write_claims(registry, blocked)
 
     def test_patch_rollback_skips_claims_when_coordination_disabled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -341,13 +340,12 @@ class TestPatchWriteOwnershipEnforcement:
             "step_started",
             "diff_rolled_back",
         ]
-        diff_rolled_back = next(
-            event for event in events if event["kind"] == "diff_rolled_back"
-        )
+        diff_rolled_back = next(event for event in events if event["kind"] == "diff_rolled_back")
         assert "write_claim_areas" not in diff_rolled_back["payload"]
 
     def test_patch_rollback_acquires_and_releases_write_claims(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -389,22 +387,19 @@ class TestPatchWriteOwnershipEnforcement:
             "claim_released",
         ]
 
-        diff_rolled_back = next(
-            event for event in events if event["kind"] == "diff_rolled_back"
-        )
+        diff_rolled_back = next(event for event in events if event["kind"] == "diff_rolled_back")
         assert diff_rolled_back["payload"]["write_claim_areas"] == ["src"]
         assert len(diff_rolled_back["payload"]["write_claim_resource_ids"]) == 1
 
-        artifact = json.loads(
-            (run_dir / result["output_ref"]).read_text(encoding="utf-8")
-        )
+        artifact = json.loads((run_dir / result["output_ref"]).read_text(encoding="utf-8"))
         assert artifact["write_claim_areas"] == ["src"]
 
         registry = ClaimRegistry(tmp_path)
         assert registry.list_agent_claims(f"workflow-run:{run_id}") == []
 
     def test_patch_rollback_conflict_surfaces_as_step_failed_signal(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         _install_patch_target_repo(tmp_path)
@@ -454,7 +449,5 @@ class TestPatchWriteOwnershipEnforcement:
         ]
 
         remaining = registry.list_agent_claims("agent-existing")
-        assert [claim.resource_id for claim in remaining] == [
-            blocked.leases[0].scope.resource_id
-        ]
+        assert [claim.resource_id for claim in remaining] == [blocked.leases[0].scope.resource_id]
         release_path_write_claims(registry, blocked)

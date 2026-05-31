@@ -110,11 +110,11 @@ def _render_compaction_summary(*, markdown: str, session_id: str, approx_input_t
     digest = sha256(normalized.encode("utf-8")).hexdigest()
     lines = [line.rstrip() for line in normalized.split("\n")]
     headings = [line.lstrip("#").strip() for line in lines if line.startswith("#") and line.lstrip("#").strip()]
-    bullets = [line.lstrip("-* ").strip() for line in lines if line.startswith(("-", "*")) and line.lstrip("-* ").strip()]
+    bullets = [
+        line.lstrip("-* ").strip() for line in lines if line.startswith(("-", "*")) and line.lstrip("-* ").strip()
+    ]
     paragraphs = [
-        line.strip()
-        for line in lines
-        if line.strip() and not line.startswith("#") and not line.startswith(("-", "*"))
+        line.strip() for line in lines if line.strip() and not line.startswith("#") and not line.startswith(("-", "*"))
     ]
 
     out: list[str] = [
@@ -204,6 +204,7 @@ def maybe_auto_compact_markdown(
         write_text_atomic(archive_path, markdown)
     except Exception as exc:
         import logging
+
         logging.getLogger("ao_kernel").warning("session archive write failed (best-effort): %s", exc)
 
     summary_path = reports_dir / f"session_compaction_{_safe_slug(session_id)}.v1.md"

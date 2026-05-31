@@ -43,6 +43,7 @@ class TestStoreLifecycle:
         """
         import pytest
         from ao_kernel.errors import CanonicalStoreCorruptedError
+
         (tmp_path / "canonical_decisions.v1.json").write_text("{{invalid")
         with pytest.raises(CanonicalStoreCorruptedError):
             load_store(tmp_path)

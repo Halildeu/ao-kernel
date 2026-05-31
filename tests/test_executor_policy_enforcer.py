@@ -37,9 +37,7 @@ def _bundled_policy() -> dict[str, Any]:
 
 
 class TestBuildSandbox:
-    def test_inherit_false_strict_no_parent_passthrough(
-        self, tmp_path: Path
-    ) -> None:
+    def test_inherit_false_strict_no_parent_passthrough(self, tmp_path: Path) -> None:
         policy = _bundled_policy()
         parent = {"PATH": "/host/bin", "HOME": "/home/user", "SECRET": "x"}
         sandbox, violations = build_sandbox(
@@ -69,9 +67,7 @@ class TestBuildSandbox:
         assert "/usr/bin" in path
         assert "/opt/homebrew/bin" in path
 
-    def test_explicit_additions_override_everything(
-        self, tmp_path: Path
-    ) -> None:
+    def test_explicit_additions_override_everything(self, tmp_path: Path) -> None:
         policy = _bundled_policy()
         # Inject explicit_additions via copy-and-modify
         policy = dict(policy)
@@ -100,9 +96,7 @@ class TestBuildSandbox:
 
 
 class TestValidateCommand:
-    def test_runtime_interpreter_not_globally_allowlisted(
-        self, tmp_path: Path
-    ) -> None:
+    def test_runtime_interpreter_not_globally_allowlisted(self, tmp_path: Path) -> None:
         policy = _bundled_policy()
         policy = dict(policy)
         policy["command_allowlist"] = {"exact": ["git"], "prefixes": []}
@@ -125,9 +119,7 @@ class TestValidateCommand:
         kinds = {v.kind for v in violations}
         assert "command_path_outside_policy" in kinds
 
-    def test_runtime_override_is_localized_to_explicit_path(
-        self, tmp_path: Path
-    ) -> None:
+    def test_runtime_override_is_localized_to_explicit_path(self, tmp_path: Path) -> None:
         policy = _bundled_policy()
         policy = dict(policy)
         policy["command_allowlist"] = {"exact": ["git"], "prefixes": []}
@@ -172,15 +164,11 @@ class TestValidateCommand:
             resolved_secrets={},
             parent_env={},
         )
-        violations = validate_command(
-            "python3", (), sandbox, secret_values={}
-        )
+        violations = validate_command("python3", (), sandbox, secret_values={})
         # Must find at least one violation because evil dir is NOT under
         # policy-declared prefixes.
         kinds = {v.kind for v in violations}
-        assert "command_path_outside_policy" in kinds, (
-            f"path poisoning not denied: {violations}"
-        )
+        assert "command_path_outside_policy" in kinds, f"path poisoning not denied: {violations}"
 
     def test_unresolvable_command_denied(self, tmp_path: Path) -> None:
         policy = _bundled_policy()
@@ -250,9 +238,7 @@ class TestResolveAllowedSecrets:
                 "allowlist_secret_ids": ["TOKEN_A", "TOKEN_B"],
             }
         }
-        resolved, v = resolve_allowed_secrets(
-            policy, {"TOKEN_A": "a-val", "TOKEN_B": "b-val", "OTHER": "x"}
-        )
+        resolved, v = resolve_allowed_secrets(policy, {"TOKEN_A": "a-val", "TOKEN_B": "b-val", "OTHER": "x"})
         assert resolved == {"TOKEN_A": "a-val", "TOKEN_B": "b-val"}
         assert v == []
 
@@ -279,9 +265,7 @@ class TestHttpHeaderExposure:
             "transport": "http",
             "auth_secret_id_ref": "TOKEN",
         }
-        violations = check_http_header_exposure(
-            policy=policy, adapter_manifest_invocation=invocation
-        )
+        violations = check_http_header_exposure(policy=policy, adapter_manifest_invocation=invocation)
         assert violations
         assert violations[0].kind == "http_header_exposure_unauthorized"
 
@@ -296,25 +280,19 @@ class TestHttpHeaderExposure:
             "transport": "http",
             "auth_secret_id_ref": "TOKEN",
         }
-        violations = check_http_header_exposure(
-            policy=policy, adapter_manifest_invocation=invocation
-        )
+        violations = check_http_header_exposure(policy=policy, adapter_manifest_invocation=invocation)
         assert violations == []
 
     def test_cli_transport_ignored(self) -> None:
         """Non-HTTP invocations are not gated by http_header exposure."""
         policy = {"secrets": {"exposure_modes": ["env"]}}
         invocation = {"transport": "cli"}
-        assert check_http_header_exposure(
-            policy=policy, adapter_manifest_invocation=invocation
-        ) == []
+        assert check_http_header_exposure(policy=policy, adapter_manifest_invocation=invocation) == []
 
     def test_no_auth_secret_ref_ignored(self) -> None:
         policy = {"secrets": {"exposure_modes": ["env"]}}
         invocation = {"transport": "http"}
-        assert check_http_header_exposure(
-            policy=policy, adapter_manifest_invocation=invocation
-        ) == []
+        assert check_http_header_exposure(policy=policy, adapter_manifest_invocation=invocation) == []
 
 
 class TestPolicyViolationShape:

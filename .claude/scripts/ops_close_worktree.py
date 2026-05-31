@@ -98,17 +98,11 @@ def main(argv: list[str]) -> int:
     untracked = _count_lines(target, "ls-files", "--others", "--exclude-standard")
 
     print(f"Target branch: {info.branch}")
-    print(
-        "Target status: "
-        f"staged={staged}, unstaged={unstaged}, untracked={untracked}"
-    )
+    print(f"Target status: staged={staged}, unstaged={unstaged}, untracked={untracked}")
 
     if staged or unstaged or untracked:
         print("Refusing to close dirty worktree")
-        print(
-            "Next step: use `bash .claude/scripts/ops.sh archive-worktree <path>` "
-            "veya önce bilinçli olarak temizle"
-        )
+        print("Next step: use `bash .claude/scripts/ops.sh archive-worktree <path>` veya önce bilinçli olarak temizle")
         return 1
 
     _run_git(repo_root, "worktree", "remove", target.as_posix())

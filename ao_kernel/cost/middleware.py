@@ -99,9 +99,7 @@ def _safe_emit(
             payload=dict(payload),
         )
     except Exception as exc:  # pragma: no cover — fail-open side-channel
-        logger.warning(
-            "cost evidence emit failed (fail-open, kind=%s): %s", kind, exc
-        )
+        logger.warning("cost evidence emit failed (fail-open, kind=%s): %s", kind, exc)
 
 
 def _iso_now() -> str:
@@ -179,10 +177,7 @@ def pre_dispatch_reserve(
         if budget_dict is None:
             raise CostTrackingConfigError(
                 run_id=run_id,
-                details=(
-                    "run has no 'budget' field; cost_usd axis is required "
-                    "when policy.enabled=true"
-                ),
+                details=("run has no 'budget' field; cost_usd axis is required when policy.enabled=true"),
             )
         budget = budget_from_dict(budget_dict)
         if budget.cost_usd is None:
@@ -294,7 +289,8 @@ def post_response_reconcile(
             usage_missing=True,
         )
         event = dataclasses.replace(
-            event, billing_digest=compute_billing_digest(event),
+            event,
+            billing_digest=compute_billing_digest(event),
         )
 
         def _usage_missing_mutator(record: dict[str, Any]) -> dict[str, Any]:
@@ -379,7 +375,8 @@ def post_response_reconcile(
         usage_missing=False,
     )
     event = dataclasses.replace(
-        event, billing_digest=compute_billing_digest(event),
+        event,
+        billing_digest=compute_billing_digest(event),
     )
 
     # Governed-call budget mutator: delta + token axes. Preserves the
@@ -408,10 +405,7 @@ def post_response_reconcile(
         if delta != 0:
             spend_kwargs["cost_usd"] = delta
 
-        has_full_granular = (
-            budget.tokens_input is not None
-            and budget.tokens_output is not None
-        )
+        has_full_granular = budget.tokens_input is not None and budget.tokens_output is not None
         if has_full_granular:
             spend_kwargs["tokens_input"] = tokens_input
             spend_kwargs["tokens_output"] = tokens_output
@@ -420,10 +414,7 @@ def post_response_reconcile(
         elif budget.tokens_input is not None:
             spend_kwargs["tokens_input"] = tokens_input
 
-        spendable = any(
-            k in spend_kwargs
-            for k in ("cost_usd", "tokens_input", "tokens_output", "tokens")
-        )
+        spendable = any(k in spend_kwargs for k in ("cost_usd", "tokens_input", "tokens_output", "tokens"))
         if spendable:
             new_budget = record_budget_spend(budget, **spend_kwargs)
         else:
@@ -584,17 +575,20 @@ def post_adapter_reconcile(
     # it as the marker key. Required by apply_spend_with_marker
     # contract (ValueError on empty digest).
     event = dataclasses.replace(
-        event, billing_digest=compute_billing_digest(event),
+        event,
+        billing_digest=compute_billing_digest(event),
     )
 
     # Usage-missing: audit-only ledger entry + marker + llm_usage_missing
     # emit (mirror post_response_reconcile contract, now marker-guarded).
     if event.usage_missing:
         missing_fields = [
-            f for f, v in (
+            f
+            for f, v in (
                 ("tokens_input", cost_actual.get("tokens_input")),
                 ("tokens_output", cost_actual.get("tokens_output")),
-            ) if v is None
+            )
+            if v is None
         ]
 
         def _usage_missing_mutator(record: dict[str, Any]) -> dict[str, Any]:
@@ -637,22 +631,18 @@ def post_adapter_reconcile(
         if budget_dict is None:
             raise CostTrackingConfigError(
                 run_id=run_id,
-                details=(
-                    "run.budget dropped between adapter return "
-                    "and reconcile"
-                ),
+                details=("run.budget dropped between adapter return and reconcile"),
             )
         budget = budget_from_dict(budget_dict)
         if budget.cost_usd is None:
             raise CostTrackingConfigError(
                 run_id=run_id,
-                details=(
-                    "run.budget.cost_usd dropped between adapter "
-                    "return and reconcile"
-                ),
+                details=("run.budget.cost_usd dropped between adapter return and reconcile"),
             )
         new_budget = record_budget_spend(
-            budget, cost_usd=event.cost_usd, run_id=run_id,
+            budget,
+            cost_usd=event.cost_usd,
+            run_id=run_id,
         )
         return {**record, "budget": budget_to_dict(new_budget)}
 

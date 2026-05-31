@@ -61,6 +61,7 @@ def run_pytest(
     (B1 absorb) before any subprocess is spawned.
     """
     import sys
+
     cmd = (sys.executable, "-m", "pytest", *extra_args)
     return _run_check(
         check_name="pytest",
@@ -88,6 +89,7 @@ def run_ruff(
     (B1 absorb) before any subprocess is spawned.
     """
     import sys
+
     args = extra_args or (".",)
     cmd = (sys.executable, "-m", "ruff", "check", *args)
     return _run_check(
@@ -157,7 +159,10 @@ def _run_check(
     # Preflight policy check — raises CIRunnerNotFoundError if the
     # resolved command realpath is outside policy prefixes (B1 absorb).
     violations = validate_command(
-        command[0], tuple(command[1:]), sandbox, secret_values={},
+        command[0],
+        tuple(command[1:]),
+        sandbox,
+        secret_values={},
     )
     if violations:
         attempted = " ".join(command)

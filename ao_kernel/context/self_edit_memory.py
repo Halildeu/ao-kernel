@@ -160,6 +160,7 @@ def recall(
         recall(ws, key_pattern="test.fact")  → memory.test.fact
     """
     from ao_kernel.context.canonical_store import query
+
     full_pattern = f"memory.{key_pattern}" if not key_pattern.startswith("memory.") else key_pattern
     return query(workspace_root, key_pattern=full_pattern)
 

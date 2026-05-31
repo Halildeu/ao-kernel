@@ -138,9 +138,7 @@ class TestBillingDigest:
 
 
 class TestIdempotency:
-    def test_same_key_same_digest_is_noop(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_same_key_same_digest_is_noop(self, tmp_path: Path, caplog) -> None:
         """Retry with identical event → warn log, no second append."""
         record_spend(tmp_path, _event(), policy=_policy())
         with caplog.at_level("WARNING"):
@@ -165,9 +163,7 @@ class TestIdempotency:
         lines = _read_lines(tmp_path / ".ao" / "cost" / "spend.jsonl")
         assert len(lines) == 1
 
-    def test_distinct_attempt_for_same_step_appends(
-        self, tmp_path: Path
-    ) -> None:
+    def test_distinct_attempt_for_same_step_appends(self, tmp_path: Path) -> None:
         """Retry with attempt=2 → separate ledger line (distinct key)."""
         record_spend(tmp_path, _event(attempt=1), policy=_policy())
         record_spend(tmp_path, _event(attempt=2), policy=_policy())
@@ -236,9 +232,7 @@ class TestBoundedWindow:
 
 
 class TestSchemaValidation:
-    def test_event_schema_validated_pre_write(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_event_schema_validated_pre_write(self, tmp_path: Path, monkeypatch) -> None:
         """Writer validates each event against the ledger schema.
 
         We exercise this by constructing an event that parses OK as a

@@ -92,7 +92,10 @@ def rollback_patch(
     # → fail-closed. Paths confined to the revdiff set are expected
     # (the apply we're about to undo). Anything else is unrelated dirt.
     unrelated = _unrelated_dirty_paths(
-        worktree_root, sandbox.env_vars, revdiff_paths, timeout=timeout,
+        worktree_root,
+        sandbox.env_vars,
+        revdiff_paths,
+        timeout=timeout,
     )
     if unrelated:
         raise PatchRollbackError(
@@ -103,7 +106,10 @@ def rollback_patch(
     # Preflight subprocess command against policy
     cmd_check = ["git", "apply", "--check", "--3way", "--index", "-"]
     violations = validate_command(
-        cmd_check[0], tuple(cmd_check[1:]), sandbox, secret_values={},
+        cmd_check[0],
+        tuple(cmd_check[1:]),
+        sandbox,
+        secret_values={},
     )
     if violations:
         raise PolicyViolationError(violations=list(violations))

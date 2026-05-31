@@ -17,9 +17,14 @@ class TestStreamPostProcessors:
         ws.mkdir(parents=True)
 
         result = StreamResult(
-            status="OK", complete=True, text="Hello world",
-            finish_reason="stop", elapsed_ms=150, first_token_ms=30,
-            chunk_count=5, usage={"input_tokens": 10, "output_tokens": 5},
+            status="OK",
+            complete=True,
+            text="Hello world",
+            finish_reason="stop",
+            elapsed_ms=150,
+            first_token_ms=30,
+            chunk_count=5,
+            usage={"input_tokens": 10, "output_tokens": 5},
         )
 
         summary = process_stream_response(
@@ -47,8 +52,12 @@ class TestStreamPostProcessors:
         ws.mkdir(parents=True)
 
         result = StreamResult(
-            status="OK", complete=True, text="Full output text",
-            finish_reason="stop", elapsed_ms=100, chunk_count=3,
+            status="OK",
+            complete=True,
+            text="Full output text",
+            finish_reason="stop",
+            elapsed_ms=100,
+            chunk_count=3,
         )
 
         process_stream_response(
@@ -70,8 +79,12 @@ class TestStreamPostProcessors:
         ws.mkdir(parents=True)
 
         result = StreamResult(
-            status="OK", complete=True, text="test",
-            finish_reason="stop", elapsed_ms=50, chunk_count=2,
+            status="OK",
+            complete=True,
+            text="test",
+            finish_reason="stop",
+            elapsed_ms=50,
+            chunk_count=2,
             events=[
                 {"choices": [{"delta": {"content": "te"}}]},
                 {"choices": [{"delta": {"content": "st"}}]},
@@ -98,8 +111,12 @@ class TestStreamPostProcessors:
         ws.mkdir(parents=True)
 
         result = StreamResult(
-            status="PARTIAL", complete=False, text="partial output",
-            finish_reason="timeout", elapsed_ms=5000, chunk_count=10,
+            status="PARTIAL",
+            complete=False,
+            text="partial output",
+            finish_reason="timeout",
+            elapsed_ms=5000,
+            chunk_count=10,
             error_code="STREAM_IDLE_TIMEOUT",
         )
 

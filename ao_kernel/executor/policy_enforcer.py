@@ -99,9 +99,7 @@ def build_sandbox(
 
     env_spec: Mapping[str, Any] = policy.get("env_allowlist", {})
     allowed_keys = frozenset(env_spec.get("allowed_keys", ()))
-    explicit_additions: Mapping[str, str] = env_spec.get(
-        "explicit_additions", {}
-    ) or {}
+    explicit_additions: Mapping[str, str] = env_spec.get("explicit_additions", {}) or {}
     inherit_from_parent = bool(env_spec.get("inherit_from_parent", False))
     deny_on_unknown = bool(env_spec.get("deny_on_unknown", True))
 
@@ -136,9 +134,7 @@ def build_sandbox(
         if inherit_from_parent and "PATH" in parent_env:
             env_vars["PATH"] = parent_env["PATH"]
         else:
-            env_vars["PATH"] = ":".join(
-                p.rstrip("/") for p in allowed_prefixes
-            )
+            env_vars["PATH"] = ":".join(p.rstrip("/") for p in allowed_prefixes)
 
     # Compute authoritative policy-derived path entries (real directories
     # that commands may be anchored in).
@@ -158,15 +154,9 @@ def build_sandbox(
 
     # --- redaction config --------------------------------------------------
     redaction_spec: Mapping[str, Any] = policy.get("evidence_redaction", {})
-    env_key_regexes = tuple(
-        re.compile(p) for p in redaction_spec.get("env_keys_matching", ())
-    )
-    stdout_regexes = tuple(
-        re.compile(p) for p in redaction_spec.get("stdout_patterns", ())
-    )
-    file_regexes = tuple(
-        re.compile(p) for p in redaction_spec.get("file_content_patterns", ())
-    )
+    env_key_regexes = tuple(re.compile(p) for p in redaction_spec.get("env_keys_matching", ()))
+    stdout_regexes = tuple(re.compile(p) for p in redaction_spec.get("stdout_patterns", ()))
+    file_regexes = tuple(re.compile(p) for p in redaction_spec.get("file_content_patterns", ()))
     redaction = RedactionConfig(
         env_keys_matching=env_key_regexes,
         stdout_patterns=stdout_regexes,
@@ -219,57 +209,49 @@ def validate_command(
     """
     violations: list[PolicyViolation] = []
     policy_ref = "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-    runtime_allowed = {
-        path.resolve() for path in runtime_allowed_realpaths
-    }
+    runtime_allowed = {path.resolve() for path in runtime_allowed_realpaths}
 
     resolved = shutil.which(command, path=sandbox.env_vars.get("PATH", ""))
     if resolved is None:
-        violations.append(PolicyViolation(
-            kind="command_not_allowlisted",
-            detail=f"command {command!r} not resolvable via sandbox PATH",
-            policy_ref=policy_ref,
-            field_path="command_allowlist",
-        ))
+        violations.append(
+            PolicyViolation(
+                kind="command_not_allowlisted",
+                detail=f"command {command!r} not resolvable via sandbox PATH",
+                policy_ref=policy_ref,
+                field_path="command_allowlist",
+            )
+        )
         return violations
 
     realpath = Path(os.path.realpath(resolved))
     basename = realpath.name
 
-    prefix_ok = any(
-        _is_path_under(realpath, Path(prefix))
-        for prefix in sandbox.allowed_command_prefixes
-    )
-    exact_ok_with_anchor = (
-        basename in sandbox.allowed_commands_exact
-        and any(
-            _is_path_under(realpath, anchor)
-            for anchor in sandbox.policy_derived_path_entries
-        )
+    prefix_ok = any(_is_path_under(realpath, Path(prefix)) for prefix in sandbox.allowed_command_prefixes)
+    exact_ok_with_anchor = basename in sandbox.allowed_commands_exact and any(
+        _is_path_under(realpath, anchor) for anchor in sandbox.policy_derived_path_entries
     )
     runtime_override_ok = realpath in runtime_allowed
     if not (prefix_ok or exact_ok_with_anchor or runtime_override_ok):
-        violations.append(PolicyViolation(
-            kind="command_path_outside_policy",
-            detail=(
-                f"command {command!r} resolved to {realpath} which is "
-                f"outside policy-declared path prefixes"
-            ),
-            policy_ref=policy_ref,
-            field_path="command_allowlist",
-        ))
+        violations.append(
+            PolicyViolation(
+                kind="command_path_outside_policy",
+                detail=(f"command {command!r} resolved to {realpath} which is outside policy-declared path prefixes"),
+                policy_ref=policy_ref,
+                field_path="command_allowlist",
+            )
+        )
 
     for idx, arg in enumerate(resolved_args):
         for secret_id, secret_value in secret_values.items():
             if secret_value and secret_value in arg:
-                violations.append(PolicyViolation(
-                    kind="secret_exposure_denied",
-                    detail=(
-                        f"secret {secret_id!r} value appears in args[{idx}]"
-                    ),
-                    policy_ref=policy_ref,
-                    field_path=f"args[{idx}]",
-                ))
+                violations.append(
+                    PolicyViolation(
+                        kind="secret_exposure_denied",
+                        detail=(f"secret {secret_id!r} value appears in args[{idx}]"),
+                        policy_ref=policy_ref,
+                        field_path=f"args[{idx}]",
+                    )
+                )
 
     return violations
 
@@ -288,23 +270,24 @@ def validate_cwd(
         resolved_req = requested_cwd.resolve()
         resolved_root = sandbox.cwd.resolve()
     except OSError as exc:
-        return [PolicyViolation(
-            kind="cwd_escape",
-            detail=f"could not resolve cwd {requested_cwd}: {exc}",
-            policy_ref=policy_ref,
-            field_path="cwd_confinement.root_template",
-        )]
+        return [
+            PolicyViolation(
+                kind="cwd_escape",
+                detail=f"could not resolve cwd {requested_cwd}: {exc}",
+                policy_ref=policy_ref,
+                field_path="cwd_confinement.root_template",
+            )
+        ]
 
     if not _is_path_under(resolved_req, resolved_root):
-        return [PolicyViolation(
-            kind="cwd_escape",
-            detail=(
-                f"resolved cwd {resolved_req} is outside worktree root "
-                f"{resolved_root}"
-            ),
-            policy_ref=policy_ref,
-            field_path="cwd_confinement.root_template",
-        )]
+        return [
+            PolicyViolation(
+                kind="cwd_escape",
+                detail=(f"resolved cwd {resolved_req} is outside worktree root {resolved_root}"),
+                policy_ref=policy_ref,
+                field_path="cwd_confinement.root_template",
+            )
+        ]
     return []
 
 
@@ -329,12 +312,14 @@ def resolve_allowed_secrets(
         if secret_id in all_env:
             resolved[secret_id] = all_env[secret_id]
         else:
-            violations.append(PolicyViolation(
-                kind="secret_missing",
-                detail=f"secret {secret_id!r} not present in host env",
-                policy_ref=policy_ref,
-                field_path="secrets.allowlist_secret_ids",
-            ))
+            violations.append(
+                PolicyViolation(
+                    kind="secret_missing",
+                    detail=f"secret {secret_id!r} not present in host env",
+                    policy_ref=policy_ref,
+                    field_path="secrets.allowlist_secret_ids",
+                )
+            )
     return resolved, violations
 
 
@@ -355,20 +340,20 @@ def check_http_header_exposure(
     auth_ref = adapter_manifest_invocation.get("auth_secret_id_ref")
     if not auth_ref:
         return []
-    exposure_modes = frozenset(
-        policy.get("secrets", {}).get("exposure_modes", ())
-    )
+    exposure_modes = frozenset(policy.get("secrets", {}).get("exposure_modes", ()))
     if "http_header" in exposure_modes:
         return []
-    return [PolicyViolation(
-        kind="http_header_exposure_unauthorized",
-        detail=(
-            f"HTTP adapter binds auth_secret_id_ref={auth_ref!r} but "
-            f"policy.secrets.exposure_modes does not include 'http_header'"
-        ),
-        policy_ref="ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
-        field_path="secrets.exposure_modes",
-    )]
+    return [
+        PolicyViolation(
+            kind="http_header_exposure_unauthorized",
+            detail=(
+                f"HTTP adapter binds auth_secret_id_ref={auth_ref!r} but "
+                f"policy.secrets.exposure_modes does not include 'http_header'"
+            ),
+            policy_ref="ao_kernel/defaults/policies/policy_worktree_profile.v1.json",
+            field_path="secrets.exposure_modes",
+        )
+    ]
 
 
 # ---------------------------------------------------------------------------

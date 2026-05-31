@@ -102,13 +102,11 @@ def generate_textfile_strict(
     if built is None:
         if not is_metrics_available():
             raise MetricsExtraNotInstalledError(
-                "prometheus-client not installed; "
-                "cannot serialize metrics without the [metrics] extra"
+                "prometheus-client not installed; cannot serialize metrics without the [metrics] extra"
             )
         # is_metrics_available() true + built None is a caller bug.
         raise MetricsExtraNotInstalledError(
-            "built registry is None despite prometheus-client present; "
-            "caller must pass a valid BuiltRegistry"
+            "built registry is None despite prometheus-client present; caller must pass a valid BuiltRegistry"
         )
     return generate_textfile(
         built,

@@ -72,7 +72,8 @@ class TestSimpleHappyPath:
         assert result.resume_token is None
 
     def test_context_compile_emits_real_materialisation_payload(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """PR-C1a: context_compile step now materialises actual
         preamble + writes markdown. Test renamed from stub-marker
@@ -81,16 +82,13 @@ class TestSimpleHappyPath:
         existing file."""
         driver, run_id = self._setup(tmp_path)
         driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert events_path.exists()
         lines = [json.loads(ln) for ln in events_path.read_text().splitlines()]
         compile_completed = [
-            e for e in lines
-            if e.get("kind") == "step_completed"
-            and e.get("payload", {}).get("operation") == "context_compile"
+            e
+            for e in lines
+            if e.get("kind") == "step_completed" and e.get("payload", {}).get("operation") == "context_compile"
         ]
         assert len(compile_completed) == 2
         for event in compile_completed:
@@ -102,16 +100,15 @@ class TestSimpleHappyPath:
             assert Path(context_path).is_file()
 
     def test_context_compile_remains_claim_free_when_coordination_enabled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = self._setup(tmp_path)
         _write_coordination_policy(tmp_path, enabled=True)
 
         driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         events = [json.loads(line) for line in events_path.read_text().splitlines()]
         kinds = [event["kind"] for event in events]
         assert "claim_acquired" not in kinds
@@ -121,9 +118,7 @@ class TestSimpleHappyPath:
     def test_artifact_written_for_each_step(self, tmp_path: Path) -> None:
         driver, run_id = self._setup(tmp_path)
         driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
-        artifacts = list(
-            (tmp_path / ".ao" / "evidence" / "workflows" / run_id / "artifacts").glob("*.json")
-        )
+        artifacts = list((tmp_path / ".ao" / "evidence" / "workflows" / run_id / "artifacts").glob("*.json"))
         assert len(artifacts) >= 2
 
     def test_run_record_state_is_completed(self, tmp_path: Path) -> None:
@@ -280,7 +275,8 @@ class TestApprovalResume:
         assert first.final_state == "waiting_approval"
 
         second = driver.resume_workflow(
-            run_id, first.resume_token,
+            run_id,
+            first.resume_token,
             payload={"decision": "granted", "notes": "LGTM"},
         )
         assert second.final_state == "completed"
@@ -289,7 +285,8 @@ class TestApprovalResume:
         driver, run_id = self._setup_gate_flow(tmp_path)
         first = driver.run_workflow(run_id, "gate_flow", "1.0.0")
         second = driver.resume_workflow(
-            run_id, first.resume_token,
+            run_id,
+            first.resume_token,
             payload={"decision": "denied"},
         )
         assert second.final_state == "cancelled"
@@ -298,9 +295,11 @@ class TestApprovalResume:
         driver, run_id = self._setup_gate_flow(tmp_path)
         first = driver.run_workflow(run_id, "gate_flow", "1.0.0")
         from ao_kernel.workflow.errors import WorkflowTokenInvalidError
+
         with pytest.raises(WorkflowTokenInvalidError):
             driver.resume_workflow(
-                run_id, first.resume_token,
+                run_id,
+                first.resume_token,
                 payload={"decision": "maybe"},
             )
 
@@ -336,7 +335,8 @@ class TestDriverResultShape:
 
 class TestCiMypyReject:
     def test_ci_mypy_step_fails_with_unsupported_operation(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         flow = {
@@ -388,8 +388,14 @@ class TestErrorCategoryMapping:
         # Schema-legal category ∈ {timeout, policy_denied, adapter_error,
         # budget_exhausted, ci_failed, apply_conflict, approval_denied, other}
         assert err.get("category") in {
-            "timeout", "policy_denied", "adapter_error", "budget_exhausted",
-            "ci_failed", "apply_conflict", "approval_denied", "other",
+            "timeout",
+            "policy_denied",
+            "adapter_error",
+            "budget_exhausted",
+            "ci_failed",
+            "apply_conflict",
+            "approval_denied",
+            "other",
         }
         # Internal code like CROSS_REF is on error.code, NOT error.category
         assert err.get("code") == "CROSS_REF"

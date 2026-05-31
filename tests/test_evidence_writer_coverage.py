@@ -57,8 +57,8 @@ class TestHashJsonDir:
     def test_hashes_all_json_files_sorted(self, tmp_path: Path):
         policies = tmp_path / "policies"
         policies.mkdir()
-        (policies / "zeta.json").write_text("{\"version\": 1}", encoding="utf-8")
-        (policies / "alpha.json").write_text("{\"version\": 2}", encoding="utf-8")
+        (policies / "zeta.json").write_text('{"version": 1}', encoding="utf-8")
+        (policies / "alpha.json").write_text('{"version": 2}', encoding="utf-8")
         digest1 = _hash_json_dir(tmp_path, "policies")
         assert len(digest1) == 64
         # Deterministic
@@ -77,6 +77,7 @@ class TestGitCommitAndDirty:
     def test_git_missing_binary_falls_back(self, tmp_path: Path, monkeypatch):
         def _raise(*_a, **_kw):
             raise FileNotFoundError("git not found")
+
         monkeypatch.setattr(subprocess, "run", _raise)
         commit, dirty = _git_commit_and_dirty(tmp_path)
         assert commit == "unknown"
@@ -128,12 +129,10 @@ class TestEvidenceWriterWrites:
     def test_write_node_input_and_output(self, writer: EvidenceWriter):
         writer.write_node_input("node-A", {"args": 1})
         writer.write_node_output("node-A", {"result": 2})
-        assert json.loads(
-            (writer.run_dir / "nodes" / "node-A" / "input.json").read_text(encoding="utf-8")
-        )["args"] == 1
-        assert json.loads(
-            (writer.run_dir / "nodes" / "node-A" / "output.json").read_text(encoding="utf-8")
-        )["result"] == 2
+        assert json.loads((writer.run_dir / "nodes" / "node-A" / "input.json").read_text(encoding="utf-8"))["args"] == 1
+        assert (
+            json.loads((writer.run_dir / "nodes" / "node-A" / "output.json").read_text(encoding="utf-8"))["result"] == 2
+        )
 
     def test_write_node_log_appends_text_and_jsonl(self, writer: EvidenceWriter):
         writer.write_node_log("node-B", "log line 1")
@@ -142,8 +141,7 @@ class TestEvidenceWriterWrites:
         assert "log line 1" in txt
         assert "log line 2" in txt
         jsonl_lines = (
-            (writer.run_dir / "nodes" / "node-B" / "events.v1.jsonl")
-            .read_text(encoding="utf-8").strip().splitlines()
+            (writer.run_dir / "nodes" / "node-B" / "events.v1.jsonl").read_text(encoding="utf-8").strip().splitlines()
         )
         assert len(jsonl_lines) == 2
         events = [json.loads(line) for line in jsonl_lines]
@@ -190,7 +188,5 @@ class TestEvidenceWriterWrites:
 
     def test_write_integrity_manifest_with_empty_run_dir(self, writer: EvidenceWriter):
         writer.write_integrity_manifest()
-        manifest = json.loads(
-            (writer.run_dir / "integrity.manifest.v1.json").read_text(encoding="utf-8")
-        )
+        manifest = json.loads((writer.run_dir / "integrity.manifest.v1.json").read_text(encoding="utf-8"))
         assert manifest["files"] == []

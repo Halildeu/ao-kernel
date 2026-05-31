@@ -160,14 +160,16 @@ def dry_run_execution_context(
         return (_canned_invocation_result(manifest), budget)
 
     def _mock_create_worktree(
-        *args: Any, **kwargs: Any,
+        *args: Any,
+        **kwargs: Any,
     ) -> _DummyWorktree:
         return _DummyWorktree(
             path=workspace_root / ".dry-run-stub" / run_id,
         )
 
     def _mock_cleanup_worktree(
-        *args: Any, **kwargs: Any,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         return None
 

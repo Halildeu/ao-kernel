@@ -33,4 +33,3 @@ class EnvSecretsProvider(SecretsProvider):
         raw = self._environ.get(env_var, "")
         value = raw.strip() if isinstance(raw, str) else ""
         return value or None
-

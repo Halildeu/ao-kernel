@@ -88,9 +88,7 @@ def _load_ao_ma10_evidence_bundle_schema() -> dict[str, Any]:
 def _load_ao_ma10_high_risk_supersession_schema() -> dict[str, Any]:
     """Load the bundled AO-MA-10 high-risk supersession evidence schema."""
 
-    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(
-        AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME
-    )
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME)
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
@@ -557,7 +555,7 @@ def _is_ao_ma10_low_risk_autonomous_smoke_path(path: str) -> bool:
         return False
     if not path.startswith(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):
         return False
-    relative = path[len(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):]
+    relative = path[len(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX) :]
     return bool(relative) and "/" not in relative and relative.endswith(".md")
 
 
@@ -938,14 +936,8 @@ def _high_risk_supersession_authority_boundary_open(evidence: dict[str, Any]) ->
         if not isinstance(verdict, dict):
             continue
         if (
-            (
-                "release_authority" in verdict
-                and verdict.get("release_authority") != "ao-release-gate+github-ruleset"
-            )
-            or (
-                "ai_output_release_authority" in verdict
-                and verdict.get("ai_output_release_authority") is not False
-            )
+            ("release_authority" in verdict and verdict.get("release_authority") != "ao-release-gate+github-ruleset")
+            or ("ai_output_release_authority" in verdict and verdict.get("ai_output_release_authority") is not False)
             or ("secrets_recorded" in verdict and verdict.get("secrets_recorded") is not False)
             or ("support_widening" in verdict and verdict.get("support_widening") is not False)
             or ("production_platform_claim" in verdict and verdict.get("production_platform_claim") is not False)
@@ -1252,9 +1244,7 @@ def _evaluate_high_risk_supersession_checks(
         for provider_binding in provider_bindings
     )
     context_bound = (
-        binding is not None
-        and _high_risk_supersession_binding_matches(binding, context)
-        and provider_bindings_match
+        binding is not None and _high_risk_supersession_binding_matches(binding, context) and provider_bindings_match
     )
     context_check = (
         _pass(
@@ -1376,8 +1366,7 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             _pass(
                 "ao_ma10_authority_boundary",
                 detail=(
-                    "AO-MA-10l low-risk smoke keeps release authority with "
-                    "ao-release-gate plus the GitHub ruleset."
+                    "AO-MA-10l low-risk smoke keeps release authority with ao-release-gate plus the GitHub ruleset."
                 ),
             ),
         ]
@@ -1436,10 +1425,7 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             "production_platform_claim" in raw_guard_flags
             and raw_guard_flags.get("production_platform_claim") is not False
         )
-        or (
-            "live_adapter_execution" in raw_guard_flags
-            and raw_guard_flags.get("live_adapter_execution") is not False
-        )
+        or ("live_adapter_execution" in raw_guard_flags and raw_guard_flags.get("live_adapter_execution") is not False)
     )
     if authority_boundary_explicitly_open:
         return [
@@ -1582,17 +1568,13 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             authority_check,
         ]
 
-    repo_match = (
-        context["repository"] is not None and binding.get("repository_full_name") == context["repository"]
-    )
-    base_match = (
-        context["base_ref"] is not None
-        and _normalize_binding_ref(binding.get("base_ref")) == _normalize_binding_ref(context["base_ref"])
-    )
-    head_ref_match = (
-        context["head_ref"] is not None
-        and _normalize_binding_ref(binding.get("head_ref")) == _normalize_binding_ref(context["head_ref"])
-    )
+    repo_match = context["repository"] is not None and binding.get("repository_full_name") == context["repository"]
+    base_match = context["base_ref"] is not None and _normalize_binding_ref(
+        binding.get("base_ref")
+    ) == _normalize_binding_ref(context["base_ref"])
+    head_ref_match = context["head_ref"] is not None and _normalize_binding_ref(
+        binding.get("head_ref")
+    ) == _normalize_binding_ref(context["head_ref"])
     head_match = context["head_sha"] is not None and binding.get("head_sha") == context["head_sha"]
     digest_match = binding.get("diff_digest") == diff_digest(context["changed_paths"])
     count_match = binding.get("changed_files_count") == len(context["changed_paths"])
@@ -1890,12 +1872,10 @@ def build_ao_release_gate_decision(
 
     decision_generated_at = generated_at or utc_timestamp()
     context = extract_ao_release_gate_context(payload, gpp_status)
-    high_risk_supersession_checks, high_risk_supersession_valid = (
-        _evaluate_high_risk_supersession_checks(
-            high_risk_supersession_evidence,
-            context,
-            decision_generated_at=decision_generated_at,
-        )
+    high_risk_supersession_checks, high_risk_supersession_valid = _evaluate_high_risk_supersession_checks(
+        high_risk_supersession_evidence,
+        context,
+        decision_generated_at=decision_generated_at,
     )
     checks = [
         _check(
@@ -2008,9 +1988,7 @@ def build_ao_release_gate_decision(
         *high_risk_supersession_checks,
         _check(
             "path_sensitive_human_review",
-            _path_sensitive_human_review_satisfied(
-                context, high_risk_supersession_valid=high_risk_supersession_valid
-            ),
+            _path_sensitive_human_review_satisfied(context, high_risk_supersession_valid=high_risk_supersession_valid),
             finding_code="ao_release_gate_high_risk_human_review_missing",
             pass_detail=(
                 "The path-sensitive human-review gate is inactive, no high-risk paths changed, "

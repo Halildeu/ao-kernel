@@ -43,24 +43,14 @@ class TestMergeState:
     def test_merge_overlays_probe_data(self):
         provider_map = {
             "classes": {
-                "REASONING": {
-                    "providers": {
-                        "openai": {
-                            "models": [{"model_id": "gpt-4", "stage": "verified"}]
-                        }
-                    }
-                }
+                "REASONING": {"providers": {"openai": {"models": [{"model_id": "gpt-4", "stage": "verified"}]}}}
             }
         }
         probe_state = {
             "classes": {
                 "REASONING": {
                     "providers": {
-                        "openai": {
-                            "models": {
-                                "gpt-4": {"probe_status": "ok", "probe_last_at": "2026-04-13T00:00:00Z"}
-                            }
-                        }
+                        "openai": {"models": {"gpt-4": {"probe_status": "ok", "probe_last_at": "2026-04-13T00:00:00Z"}}}
                     }
                 }
             }

@@ -13,11 +13,11 @@ def test_policy_container_publish_workflow_builds_smokes_and_publishes_ghcr() ->
 
     assert "ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service" in text
     assert "deploy/live-adapter-gate-policy-service/Dockerfile" in text
-    assert "docker build -f \"$DOCKERFILE\"" in text
+    assert 'docker build -f "$DOCKERFILE"' in text
     assert "scripts/live_adapter_gate_policy_container_smoke.py" in text
     assert "--skip-build" in text
-    assert "docker push \"$image_sha\"" in text
-    assert "docker push \"$image_main\"" in text
+    assert 'docker push "$image_sha"' in text
+    assert 'docker push "$image_main"' in text
 
 
 def test_policy_container_publish_workflow_keeps_prs_and_live_credentials_closed() -> None:

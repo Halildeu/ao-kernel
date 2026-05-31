@@ -14,9 +14,7 @@ from tests._patch_helpers import build_test_sandbox, init_repo, make_patch_from_
 class TestPreviewHappyPath:
     def test_simple_single_file_addition(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nline4\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nline4\n"})
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         assert isinstance(preview, DiffPreview)
         assert preview.lines_added == 1
@@ -27,34 +25,34 @@ class TestPreviewHappyPath:
         assert preview.duration_seconds >= 0.0
 
     def test_multi_file_changes(self, tmp_path: Path) -> None:
-        init_repo(tmp_path, initial_files={
-            "a.txt": "one\ntwo\n",
-            "b.txt": "alpha\nbeta\n",
-            "c.txt": "red\ngreen\n",
-        })
-        patch = make_patch_from_changes(tmp_path, {
-            "a.txt": "one\ntwo\nthree\n",
-            "b.txt": "alpha\nbeta\ngamma\n",
-        })
+        init_repo(
+            tmp_path,
+            initial_files={
+                "a.txt": "one\ntwo\n",
+                "b.txt": "alpha\nbeta\n",
+                "c.txt": "red\ngreen\n",
+            },
+        )
+        patch = make_patch_from_changes(
+            tmp_path,
+            {
+                "a.txt": "one\ntwo\nthree\n",
+                "b.txt": "alpha\nbeta\ngamma\n",
+            },
+        )
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         assert set(preview.files_changed) >= {"a.txt", "b.txt"}
         assert preview.lines_added >= 2
 
     def test_patch_id_is_respected_when_provided(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
-        preview = preview_diff(
-            tmp_path, patch, build_test_sandbox(tmp_path), patch_id="pr-a4a-test-id"
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
+        preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path), patch_id="pr-a4a-test-id")
         assert preview.patch_id == "pr-a4a-test-id"
 
     def test_patch_id_is_generated_when_missing(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         # token_urlsafe(32) → 43-char URL-safe string
         assert len(preview.patch_id) >= 40
@@ -62,7 +60,8 @@ class TestPreviewHappyPath:
     def test_lines_added_and_removed_are_counted(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
         patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "X\nY\nZ\n"}  # replace 3 lines with 3 new ones
+            tmp_path,
+            {"a.txt": "X\nY\nZ\n"},  # replace 3 lines with 3 new ones
         )
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         assert preview.lines_added == 3
@@ -116,9 +115,7 @@ class TestPreviewRejection:
 class TestPreviewTimeout:
     def test_tiny_timeout_raises_timeout_reason(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nextra\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nextra\n"})
         # Timeout of 0s on a typical machine may still complete; use a
         # tiny value and accept either a timeout or a successful preview.
         try:
@@ -136,7 +133,9 @@ class TestPreviewPatchIdConsistency:
         init_repo(tmp_path)
         with pytest.raises(ValueError):
             preview_diff(
-                tmp_path, "\n", build_test_sandbox(tmp_path),
+                tmp_path,
+                "\n",
+                build_test_sandbox(tmp_path),
                 patch_id="",
             )
 
@@ -144,17 +143,19 @@ class TestPreviewPatchIdConsistency:
         init_repo(tmp_path)
         with pytest.raises(ValueError):
             preview_diff(
-                tmp_path, "\n", build_test_sandbox(tmp_path),
+                tmp_path,
+                "\n",
+                build_test_sandbox(tmp_path),
                 patch_id="../escape",
             )
 
     def test_preview_generates_when_patch_id_is_none(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
         preview = preview_diff(
-            tmp_path, patch, build_test_sandbox(tmp_path),
+            tmp_path,
+            patch,
+            build_test_sandbox(tmp_path),
             patch_id=None,
         )
         assert len(preview.patch_id) >= 40
@@ -163,26 +164,20 @@ class TestPreviewPatchIdConsistency:
 class TestPreviewResultShape:
     def test_diff_preview_is_frozen(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         with pytest.raises(Exception):
             preview.patch_id = "overwrite"  # type: ignore[misc]
 
     def test_files_changed_is_tuple(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         assert isinstance(preview.files_changed, tuple)
 
     def test_duration_is_nonnegative_float(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
-        patch = make_patch_from_changes(
-            tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"}
-        )
+        patch = make_patch_from_changes(tmp_path, {"a.txt": "line1\nline2\nline3\nnew\n"})
         preview = preview_diff(tmp_path, patch, build_test_sandbox(tmp_path))
         assert isinstance(preview.duration_seconds, float)
         assert preview.duration_seconds >= 0.0

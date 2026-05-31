@@ -28,10 +28,7 @@ class PolicySimSideEffectError(PolicySimError):
         self.sentinel_name = sentinel_name
         self.context = context
         suffix = f" ({context})" if context else ""
-        super().__init__(
-            f"policy-sim side-effect sentinel tripped: "
-            f"{sentinel_name!r}{suffix}"
-        )
+        super().__init__(f"policy-sim side-effect sentinel tripped: {sentinel_name!r}{suffix}")
 
 
 class PolicySimReentrantError(PolicySimError):
@@ -44,10 +41,7 @@ class PolicySimReentrantError(PolicySimError):
     """
 
     def __init__(self) -> None:
-        super().__init__(
-            "pure_execution_context is not re-entrant; nested "
-            "entry would leak sentinel state on exit"
-        )
+        super().__init__("pure_execution_context is not re-entrant; nested entry would leak sentinel state on exit")
 
 
 class ScenarioValidationError(PolicySimError):
@@ -61,9 +55,7 @@ class ScenarioValidationError(PolicySimError):
     def __init__(self, scenario_id: str, reason: str) -> None:
         self.scenario_id = scenario_id
         self.reason = reason
-        super().__init__(
-            f"scenario {scenario_id!r} failed validation: {reason}"
-        )
+        super().__init__(f"scenario {scenario_id!r} failed validation: {reason}")
 
 
 class ScenarioAdapterMissingError(PolicySimError):
@@ -121,10 +113,7 @@ class ProposedPolicyInvalidError(PolicySimError):
         self.policy_name = policy_name
         self.violations = violations
         joined = "; ".join(violations) if violations else "(no detail)"
-        super().__init__(
-            f"proposed policy {policy_name!r} failed structural "
-            f"shape checks: {joined}"
-        )
+        super().__init__(f"proposed policy {policy_name!r} failed structural shape checks: {joined}")
 
 
 class SimulationAbortedError(PolicySimError):
@@ -145,10 +134,7 @@ class SimulationAbortedError(PolicySimError):
     ) -> None:
         self.scenario_ids = scenario_ids
         self.causes = causes
-        super().__init__(
-            f"simulation aborted on scenarios {list(scenario_ids)!r}: "
-            f"{len(causes)} underlying error(s)"
-        )
+        super().__init__(f"simulation aborted on scenarios {list(scenario_ids)!r}: {len(causes)} underlying error(s)")
         if causes:
             self.__cause__ = causes[0]
 

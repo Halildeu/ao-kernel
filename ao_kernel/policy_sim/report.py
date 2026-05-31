@@ -68,9 +68,7 @@ def _render_text(report: DiffReport) -> str:
     lines.extend(_render_policies_section(report))
     lines.append("")
     lines.append(f"Scenarios evaluated: {report.scenarios_evaluated}")
-    lines.append(
-        f"host_fs_dependent: {str(report.host_fs_dependent).lower()}"
-    )
+    lines.append(f"host_fs_dependent: {str(report.host_fs_dependent).lower()}")
     if report.host_fs_fingerprint:
         lines.append(f"host_fs_fingerprint: {report.host_fs_fingerprint}")
     lines.append("")
@@ -83,9 +81,7 @@ def _render_text(report: DiffReport) -> str:
 
 
 def _render_policies_section(report: DiffReport) -> Iterable[str]:
-    all_policies = sorted(
-        set(report.baseline_policy_hashes) | set(report.proposed_policy_hashes)
-    )
+    all_policies = sorted(set(report.baseline_policy_hashes) | set(report.proposed_policy_hashes))
     yield "Policies under test:"
     for name in all_policies:
         baseline = report.baseline_policy_hashes.get(name, "<missing>")
@@ -109,11 +105,7 @@ def _render_transitions_per_policy(report: DiffReport) -> Iterable[str]:
     for policy in sorted(report.transitions_by_policy):
         counts = report.transitions_by_policy[policy]
         total = sum(counts.values())
-        parts = [
-            f"{label}={counts.get(kind, 0)}"
-            for kind, label in _KIND_LABELS_PER_POLICY
-            if counts.get(kind, 0)
-        ]
+        parts = [f"{label}={counts.get(kind, 0)}" for kind, label in _KIND_LABELS_PER_POLICY if counts.get(kind, 0)]
         summary = ", ".join(parts) if parts else "no transitions"
         yield f"  - {policy}: {total} scenario(s) ({summary})"
 
@@ -125,7 +117,7 @@ def _render_notable_deltas(report: DiffReport) -> Iterable[str]:
         return
     yield "Notable deltas:"
     for delta in sorted(notables, key=lambda d: d.scenario_id):
-        yield f"  - [{delta.transition}] {delta.scenario_id} " f"({delta.target_policy_name})"
+        yield f"  - [{delta.transition}] {delta.scenario_id} ({delta.target_policy_name})"
         if delta.violation_diff.added:
             yield f"      added violations: {sorted(delta.violation_diff.added)}"
         if delta.violation_diff.removed:
@@ -139,10 +131,7 @@ def _render_notable_deltas(report: DiffReport) -> Iterable[str]:
 def has_tightening(report: DiffReport) -> bool:
     """Return True iff the report carries at least one
     ``allow_to_deny`` transition — triggers CLI exit code 3."""
-    return any(
-        report.transitions.get(kind, 0) > 0
-        for kind in _TIGHTENING_KINDS
-    )
+    return any(report.transitions.get(kind, 0) > 0 for kind in _TIGHTENING_KINDS)
 
 
 def write_atomic(output_path: Path, content: str) -> None:

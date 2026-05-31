@@ -45,7 +45,8 @@ def _policy_schema() -> dict[str, Any]:
     global _POLICY_SCHEMA_CACHE
     if _POLICY_SCHEMA_CACHE is None:
         _POLICY_SCHEMA_CACHE = load_default(
-            "schemas", "policy-cost-tracking.schema.v1.json",
+            "schemas",
+            "policy-cost-tracking.schema.v1.json",
         )
     return _POLICY_SCHEMA_CACHE
 
@@ -55,7 +56,8 @@ def _bundled_policy() -> dict[str, Any]:
     global _BUNDLED_POLICY_CACHE
     if _BUNDLED_POLICY_CACHE is None:
         _BUNDLED_POLICY_CACHE = load_default(
-            "policies", "policy_cost_tracking.v1.json",
+            "policies",
+            "policy_cost_tracking.v1.json",
         )
     return _BUNDLED_POLICY_CACHE
 
@@ -110,9 +112,7 @@ def _from_dict(doc: Mapping[str, Any]) -> CostTrackingPolicy:
     routing = RoutingByCost(
         enabled=bool(routing_raw.get("enabled", False)),
         priority=str(routing_raw.get("priority", "provider_priority")),
-        fail_closed_on_catalog_missing=bool(
-            routing_raw.get("fail_closed_on_catalog_missing", True)
-        ),
+        fail_closed_on_catalog_missing=bool(routing_raw.get("fail_closed_on_catalog_missing", True)),
     )
     return CostTrackingPolicy(
         enabled=bool(doc["enabled"]),
@@ -120,12 +120,8 @@ def _from_dict(doc: Mapping[str, Any]) -> CostTrackingPolicy:
         spend_ledger_path=str(doc["spend_ledger_path"]),
         fail_closed_on_exhaust=bool(doc["fail_closed_on_exhaust"]),
         strict_freshness=bool(doc["strict_freshness"]),
-        fail_closed_on_missing_usage=bool(
-            doc.get("fail_closed_on_missing_usage", True)
-        ),
-        idempotency_window_lines=int(
-            doc.get("idempotency_window_lines", 1000)
-        ),
+        fail_closed_on_missing_usage=bool(doc.get("fail_closed_on_missing_usage", True)),
+        idempotency_window_lines=int(doc.get("idempotency_window_lines", 1000)),
         routing_by_cost=routing,
         version=str(doc.get("version", "v1")),
     )
@@ -168,12 +164,7 @@ def load_cost_policy(
         _validate(override)
         return _from_dict(override)
 
-    ws_path = (
-        workspace_root
-        / ".ao"
-        / "policies"
-        / "policy_cost_tracking.v1.json"
-    )
+    ws_path = workspace_root / ".ao" / "policies" / "policy_cost_tracking.v1.json"
     if ws_path.is_file():
         with ws_path.open("r", encoding="utf-8") as fh:
             loaded: Mapping[str, Any] = json.load(fh)

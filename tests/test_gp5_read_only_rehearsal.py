@@ -125,10 +125,7 @@ def test_parse_demo_final_state_requires_demo_marker() -> None:
 
 
 def test_parse_demo_artifact_and_timeline_paths_require_demo_markers() -> None:
-    stdout = (
-        "[demo] review artifact: /tmp/demo/review-findings.json\n"
-        "[demo] events: /tmp/demo/events.jsonl\n"
-    )
+    stdout = "[demo] review artifact: /tmp/demo/review-findings.json\n[demo] events: /tmp/demo/events.jsonl\n"
 
     assert parse_demo_review_artifact_path(stdout) == "/tmp/demo/review-findings.json"
     assert parse_demo_events_path(stdout) == "/tmp/demo/events.jsonl"

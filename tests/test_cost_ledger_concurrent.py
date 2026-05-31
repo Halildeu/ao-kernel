@@ -78,11 +78,7 @@ def _read_ledger(workspace_root: Path) -> list[dict[str, Any]]:
     ledger = workspace_root / ".ao" / "cost" / "spend.jsonl"
     if not ledger.is_file():
         return []
-    return [
-        json.loads(line)
-        for line in ledger.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _run_threads(
@@ -99,10 +95,7 @@ def _run_threads(
         except BaseException as exc:
             captured[idx] = exc
 
-    threads = [
-        threading.Thread(target=_wrap, args=(i, args))
-        for i, args in enumerate(args_per_thread)
-    ]
+    threads = [threading.Thread(target=_wrap, args=(i, args)) for i, args in enumerate(args_per_thread)]
     for t in threads:
         t.start()
     for t in threads:
@@ -120,10 +113,7 @@ class TestConcurrentDistinctKeys:
         lock serialises writes → the ledger contains exactly 5 lines,
         one per thread, all schema-valid JSON."""
         policy = _policy()
-        events = [
-            _event(step_id=f"step-{i}", attempt=1, cost_usd=Decimal("0.01"))
-            for i in range(5)
-        ]
+        events = [_event(step_id=f"step-{i}", attempt=1, cost_usd=Decimal("0.01")) for i in range(5)]
         errors = _run_threads(
             lambda e: record_spend(tmp_path, e, policy=policy),
             [(e,) for e in events],
@@ -163,9 +153,7 @@ class TestConcurrentDistinctKeys:
             assert "run_id" in line
             assert "attempt" in line
 
-    def test_higher_concurrency_preserves_line_count(
-        self, tmp_path: Path
-    ) -> None:
+    def test_higher_concurrency_preserves_line_count(self, tmp_path: Path) -> None:
         """Twenty distinct events in parallel — harsher stress test for
         the lock. Line count remains exact."""
         policy = _policy()
@@ -189,9 +177,7 @@ class TestConcurrentDistinctKeys:
 
 
 class TestConcurrentIdenticalKeys:
-    def test_same_digest_concurrent_only_one_line(
-        self, tmp_path: Path
-    ) -> None:
+    def test_same_digest_concurrent_only_one_line(self, tmp_path: Path) -> None:
         """Five threads submit an identical event. The first writer wins
         the lock and appends; the rest scan the tail, find their key with
         the same digest, and no-op. Final count: 1."""
@@ -236,9 +222,7 @@ class TestCASRetryExhaustion:
                     "remaining": 10.0,
                 },
             },
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
         )
 
@@ -302,9 +286,7 @@ class TestCASRetryExhaustion:
                     "remaining": 10.0,
                 },
             },
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
         )
 
@@ -328,9 +310,7 @@ class TestCASRetryExhaustion:
             effective_date="2024-10-22",
             vendor_model_id="claude-3-5-sonnet-20241022",
         )
-        raw = json.dumps(
-            {"usage": {"input_tokens": 100, "output_tokens": 50}}
-        ).encode("utf-8")
+        raw = json.dumps({"usage": {"input_tokens": 100, "output_tokens": 50}}).encode("utf-8")
 
         with pytest.raises(WorkflowCASConflictError):
             middleware.post_response_reconcile(
@@ -351,9 +331,7 @@ class TestCASRetryExhaustion:
 
 
 class TestDormantConcurrent:
-    def test_dormant_policy_no_file_under_concurrency(
-        self, tmp_path: Path
-    ) -> None:
+    def test_dormant_policy_no_file_under_concurrency(self, tmp_path: Path) -> None:
         """Even with many concurrent callers, dormant policy must NOT
         create the ledger file or acquire the lock."""
         policy = _policy(enabled=False)

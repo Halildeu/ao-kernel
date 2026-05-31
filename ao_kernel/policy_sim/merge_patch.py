@@ -33,20 +33,12 @@ def apply_merge_patch(
     See module docstring for the full contract.
     """
     if not isinstance(patch, Mapping):
-        raise TypeError(
-            "apply_merge_patch: patch must be a Mapping "
-            "(policy-doc object patch only)"
-        )
-    out: dict[str, Any] = (
-        dict(baseline) if isinstance(baseline, Mapping) else {}
-    )
+        raise TypeError("apply_merge_patch: patch must be a Mapping (policy-doc object patch only)")
+    out: dict[str, Any] = dict(baseline) if isinstance(baseline, Mapping) else {}
     for key, pval in patch.items():
         if pval is None:
             out.pop(key, None)
-        elif (
-            isinstance(pval, Mapping)
-            and isinstance(out.get(key), Mapping)
-        ):
+        elif isinstance(pval, Mapping) and isinstance(out.get(key), Mapping):
             out[key] = apply_merge_patch(out[key], pval)
         else:
             out[key] = pval
@@ -73,9 +65,7 @@ def load_policy_patches_from_dir(
 
     patches_dir = _Path(patches_dir)
     if not patches_dir.is_dir():
-        raise FileNotFoundError(
-            f"patches directory does not exist: {patches_dir}"
-        )
+        raise FileNotFoundError(f"patches directory does not exist: {patches_dir}")
     result: dict[str, dict[str, Any]] = {}
     for patch_file in sorted(patches_dir.glob("*.patch.json")):
         # Strip .patch.json suffix; add .json back.
@@ -83,9 +73,7 @@ def load_policy_patches_from_dir(
         policy_filename = f"{stem}.json"
         patch_content = json.loads(patch_file.read_text(encoding="utf-8"))
         if not isinstance(patch_content, dict):
-            raise TypeError(
-                f"patch file {patch_file!s} must contain a JSON object"
-            )
+            raise TypeError(f"patch file {patch_file!s} must contain a JSON object")
         result[policy_filename] = patch_content
     return result
 

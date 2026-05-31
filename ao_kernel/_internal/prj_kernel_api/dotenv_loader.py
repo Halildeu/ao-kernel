@@ -34,13 +34,15 @@ def _parse_env_file(path: Path, *, source_label: str) -> Tuple[Dict[str, str], l
         if not key:
             errors.append(f"{source_label}_LINE_{idx}_INVALID")
             continue
-        if value.startswith(("\"", "'")) and value.endswith(("\"", "'")) and len(value) >= 2:
+        if value.startswith(('"', "'")) and value.endswith(('"', "'")) and len(value) >= 2:
             value = value[1:-1]
         data[key] = value
     return data, errors
 
 
-def _load_env_sources(workspace_root: str, *, repo_root: Path | None) -> Tuple[Dict[str, str], Dict[str, str], list[str]]:
+def _load_env_sources(
+    workspace_root: str, *, repo_root: Path | None
+) -> Tuple[Dict[str, str], Dict[str, str], list[str]]:
     ws_env = Path(workspace_root) / ".env"
     ws_data, ws_errors = _parse_env_file(ws_env, source_label="WORKSPACE_ENV")
     repo_data: Dict[str, str] = {}

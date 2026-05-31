@@ -8,6 +8,7 @@ Criteria for promotion:
   - Key has stable value (not changing every session)
   - Source is "agent" (automated decisions more reliable)
 """
+
 from __future__ import annotations
 
 import json
@@ -18,6 +19,7 @@ from typing import Any
 from ao_kernel._internal.session.context_store import SessionContextError, SessionPaths, load_context
 
 from ao_kernel._internal.shared.utils import write_json_atomic
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -118,15 +120,17 @@ def distill_decisions_from_sessions(
 
         confidence = min(1.0, stable_count / max(len(values), 1) * (session_count / max(min_occurrences, 1)))
 
-        distilled.append({
-            "key": key,
-            "value": data["latest_value"],
-            "confidence": round(confidence, 4),
-            "first_seen": data["first_seen"],
-            "last_confirmed": data["latest_created"],
-            "occurrences": len(values),
-            "source_sessions": sorted(data["sessions"]),
-        })
+        distilled.append(
+            {
+                "key": key,
+                "value": data["latest_value"],
+                "confidence": round(confidence, 4),
+                "first_seen": data["first_seen"],
+                "last_confirmed": data["latest_created"],
+                "occurrences": len(values),
+                "source_sessions": sorted(data["sessions"]),
+            }
+        )
 
     return sorted(distilled, key=lambda x: str(x.get("key") or ""))
 
@@ -149,6 +153,7 @@ def consolidate_facts(
             existing_facts = data.get("facts", []) if isinstance(data, dict) else []
         except Exception as exc:
             import logging
+
             logging.getLogger("ao_kernel").warning("workspace facts load failed: %s", exc)
 
     # Merge: existing + distilled, latest wins on same key
@@ -188,6 +193,7 @@ def consolidate_facts(
             distillation_runs = int(old.get("distillation_runs", 0)) + 1
         except Exception as exc:
             import logging
+
             logging.getLogger("ao_kernel").warning("distillation run counter read failed: %s", exc)
 
     store = {

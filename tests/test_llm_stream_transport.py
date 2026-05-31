@@ -225,8 +225,12 @@ class TestStreamNormalizer:
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import normalize_stream_result
 
         result = StreamResult(
-            status="OK", complete=True, text="Hello", finish_reason="stop",
-            elapsed_ms=100, chunk_count=2,
+            status="OK",
+            complete=True,
+            text="Hello",
+            finish_reason="stop",
+            elapsed_ms=100,
+            chunk_count=2,
         )
         normalized = normalize_stream_result(result, "openai")
         assert normalized["text"] == "Hello"
@@ -237,8 +241,12 @@ class TestStreamNormalizer:
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import is_stream_complete, normalize_stream_result
 
         result = StreamResult(
-            status="PARTIAL", complete=False, text="partial",
-            finish_reason="timeout", elapsed_ms=5000, chunk_count=10,
+            status="PARTIAL",
+            complete=False,
+            text="partial",
+            finish_reason="timeout",
+            elapsed_ms=5000,
+            chunk_count=10,
         )
         normalized = normalize_stream_result(result, "openai")
         assert not is_stream_complete(normalized)

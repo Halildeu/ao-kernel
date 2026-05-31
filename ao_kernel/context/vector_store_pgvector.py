@@ -52,8 +52,7 @@ class PgvectorBackend(VectorStoreBackend):
             from pgvector.psycopg2 import register_vector
         except ImportError:
             raise ImportError(
-                "pgvector backend requires psycopg2 and pgvector. "
-                "Install with: pip install ao-kernel[pgvector]"
+                "pgvector backend requires psycopg2 and pgvector. Install with: pip install ao-kernel[pgvector]"
             ) from None
 
         self._dsn = dsn
@@ -148,14 +147,21 @@ class PgvectorBackend(VectorStoreBackend):
         if self._embedding_model:
             model_filter = "AND embedding_model = %s"
             params: tuple[Any, ...] = (
-                query_embedding, query_embedding, min_similarity,
-                self._embedding_model, query_embedding, top_k,
+                query_embedding,
+                query_embedding,
+                min_similarity,
+                self._embedding_model,
+                query_embedding,
+                top_k,
             )
         else:
             model_filter = ""
             params = (
-                query_embedding, query_embedding, min_similarity,
-                query_embedding, top_k,
+                query_embedding,
+                query_embedding,
+                min_similarity,
+                query_embedding,
+                top_k,
             )
 
         sql = f"""
@@ -169,8 +175,7 @@ class PgvectorBackend(VectorStoreBackend):
         with self._conn.cursor() as cur:
             cur.execute(sql, params)
             return [
-                {"key": row[0], "similarity": round(float(row[1]), 4), "metadata": row[2]}
-                for row in cur.fetchall()
+                {"key": row[0], "similarity": round(float(row[1]), 4), "metadata": row[2]} for row in cur.fetchall()
             ]
 
     def delete(self, key: str) -> bool:

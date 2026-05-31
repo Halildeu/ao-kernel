@@ -72,34 +72,30 @@ class TestCommitMessageSchema:
     def test_missing_subject_rejected(self) -> None:
         schema = load_default("schemas", "commit-message.schema.v1.json")
         with pytest.raises(ValidationError):
-            Draft202012Validator(schema).validate(
-                {"schema_version": "1"}
-            )
+            Draft202012Validator(schema).validate({"schema_version": "1"})
 
     def test_subject_length_max(self) -> None:
         schema = load_default("schemas", "commit-message.schema.v1.json")
         too_long = "x" * 73  # 73 > 72 max
         with pytest.raises(ValidationError):
-            Draft202012Validator(schema).validate(
-                {"schema_version": "1", "subject": too_long}
-            )
+            Draft202012Validator(schema).validate({"schema_version": "1", "subject": too_long})
 
     def test_schema_version_pinned(self) -> None:
         schema = load_default("schemas", "commit-message.schema.v1.json")
         with pytest.raises(ValidationError):
             # Wrong version literal
-            Draft202012Validator(schema).validate(
-                {"schema_version": "2", "subject": "x"}
-            )
+            Draft202012Validator(schema).validate({"schema_version": "2", "subject": "x"})
 
     def test_additional_properties_rejected(self) -> None:
         schema = load_default("schemas", "commit-message.schema.v1.json")
         with pytest.raises(ValidationError):
-            Draft202012Validator(schema).validate({
-                "schema_version": "1",
-                "subject": "x",
-                "extra_field": "foo",  # closed shape
-            })
+            Draft202012Validator(schema).validate(
+                {
+                    "schema_version": "1",
+                    "subject": "x",
+                    "extra_field": "foo",  # closed shape
+                }
+            )
 
 
 class TestCapabilityEnumParity:
@@ -108,14 +104,16 @@ class TestCapabilityEnumParity:
 
     def test_agent_adapter_contract_includes_commit_message(self) -> None:
         schema = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )
         enum = schema["$defs"]["capability_enum"]["enum"]
         assert "commit_message" in enum
 
     def test_workflow_definition_includes_commit_message(self) -> None:
         schema = load_default(
-            "schemas", "workflow-definition.schema.v1.json",
+            "schemas",
+            "workflow-definition.schema.v1.json",
         )
         enum = schema["$defs"]["capability_enum"]["enum"]
         assert "commit_message" in enum
@@ -123,15 +121,15 @@ class TestCapabilityEnumParity:
     def test_enums_are_byte_identical(self) -> None:
         """Drift guard — two capability_enum schemas must match."""
         a = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )["$defs"]["capability_enum"]["enum"]
         b = load_default(
-            "schemas", "workflow-definition.schema.v1.json",
+            "schemas",
+            "workflow-definition.schema.v1.json",
         )["$defs"]["capability_enum"]["enum"]
         assert list(a) == list(b), (
-            f"capability_enum drift:\n"
-            f"  agent-adapter-contract: {a}\n"
-            f"  workflow-definition:    {b}"
+            f"capability_enum drift:\n  agent-adapter-contract: {a}\n  workflow-definition:    {b}"
         )
 
     def test_commit_write_still_prohibited(self) -> None:
@@ -139,7 +137,8 @@ class TestCapabilityEnumParity:
         hypothetical commit_write — the schema's prohibition of
         commit_write remains intact (ao-kernel owns git commit)."""
         schema = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )
         enum = schema["$defs"]["capability_enum"]["enum"]
         # Negative assertion: commit_write MUST NOT appear
@@ -155,18 +154,14 @@ class TestCodexStubManifestOutputParse:
     def test_review_findings_rule(self) -> None:
         manifest = _bundled_adapter_manifest("codex-stub.manifest.v1.json")
         rules = manifest["output_parse"]["rules"]
-        review_rule = next(
-            r for r in rules if r["capability"] == "review_findings"
-        )
+        review_rule = next(r for r in rules if r["capability"] == "review_findings")
         assert review_rule["json_path"] == "$.review_findings"
         assert review_rule["schema_ref"] == "review-findings.schema.v1.json"
 
     def test_commit_message_rule(self) -> None:
         manifest = _bundled_adapter_manifest("codex-stub.manifest.v1.json")
         rules = manifest["output_parse"]["rules"]
-        commit_rule = next(
-            r for r in rules if r["capability"] == "commit_message"
-        )
+        commit_rule = next(r for r in rules if r["capability"] == "commit_message")
         assert commit_rule["json_path"] == "$.commit_message"
         assert commit_rule["schema_ref"] == "commit-message.schema.v1.json"
 

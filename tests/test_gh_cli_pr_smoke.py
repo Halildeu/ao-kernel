@@ -285,9 +285,7 @@ def test_manifest_contract_mismatch_is_reported() -> None:
 
     assert report.overall_status == "blocked"
     assert "gh_pr_manifest_contract_mismatch" in report.findings
-    manifest_check = next(
-        check for check in report.checks if check.name == "manifest_contract"
-    )
+    manifest_check = next(check for check in report.checks if check.name == "manifest_contract")
     assert manifest_check.finding_code == "gh_pr_manifest_contract_mismatch"
 
 
@@ -329,10 +327,7 @@ def test_clean_pass_reports_repo_and_dry_run_success() -> None:
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "Would have created a Pull Request with:\n"
-                    "Title: ao-kernel gh-cli-pr smoke probe\n"
-                ),
+                stdout=("Would have created a Pull Request with:\nTitle: ao-kernel gh-cli-pr smoke probe\n"),
             )
         raise AssertionError(f"unexpected argv: {cmd!r}")
 
@@ -393,10 +388,7 @@ def test_repo_override_uses_positional_repo_view_arg() -> None:
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "Would have created a Pull Request with:\n"
-                    "Title: ao-kernel gh-cli-pr smoke probe\n"
-                ),
+                stdout=("Would have created a Pull Request with:\nTitle: ao-kernel gh-cli-pr smoke probe\n"),
             )
         raise AssertionError(f"unexpected argv: {cmd!r}")
 
@@ -516,10 +508,7 @@ def test_live_write_passes_with_create_and_rollback() -> None:
             assert "--draft" in cmd
             return _result(
                 cmd,
-                stdout=(
-                    "https://github.com/Halildeu/ao-kernel/pull/123\n"
-                    "Creating draft pull request...\n"
-                ),
+                stdout=("https://github.com/Halildeu/ao-kernel/pull/123\nCreating draft pull request...\n"),
             )
         if cmd[:4] == (
             "/fake/gh",
@@ -562,12 +551,8 @@ def test_live_write_passes_with_create_and_rollback() -> None:
     assert report.overall_status == "pass"
     assert report.findings == ()
     live_check = next(check for check in report.checks if check.name == "pr_live_write")
-    verify_check = next(
-        check for check in report.checks if check.name == "pr_live_write_verify"
-    )
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    verify_check = next(check for check in report.checks if check.name == "pr_live_write_verify")
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert live_check.status == "pass"
     assert verify_check.status == "pass"
     assert rollback_check.status == "pass"
@@ -667,12 +652,8 @@ def test_live_write_requires_explicit_base_ref() -> None:
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_base_ref_required" in report.findings
     create_check = next(check for check in report.checks if check.name == "pr_live_write")
-    verify_check = next(
-        check for check in report.checks if check.name == "pr_live_write_verify"
-    )
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    verify_check = next(check for check in report.checks if check.name == "pr_live_write_verify")
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert create_check.status == "fail"
     assert verify_check.status == "skip"
     assert rollback_check.status == "skip"
@@ -716,12 +697,8 @@ def test_live_write_create_failure_skips_verify_and_rollback() -> None:
 
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_failed" in report.findings
-    verify_check = next(
-        check for check in report.checks if check.name == "pr_live_write_verify"
-    )
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    verify_check = next(check for check in report.checks if check.name == "pr_live_write_verify")
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert verify_check.status == "skip"
     assert rollback_check.status == "skip"
     assert verify_called is False
@@ -744,10 +721,7 @@ def test_live_write_verify_failure_is_fail_closed_and_still_rolls_back() -> None
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "https://github.com/Halildeu/ao-kernel/pull/456\n"
-                    "Creating draft pull request...\n"
-                ),
+                stdout=("https://github.com/Halildeu/ao-kernel/pull/456\nCreating draft pull request...\n"),
             )
         if cmd[:4] == (
             "/fake/gh",
@@ -779,12 +753,8 @@ def test_live_write_verify_failure_is_fail_closed_and_still_rolls_back() -> None
 
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_verify_failed" in report.findings
-    verify_check = next(
-        check for check in report.checks if check.name == "pr_live_write_verify"
-    )
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    verify_check = next(check for check in report.checks if check.name == "pr_live_write_verify")
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert verify_check.status == "fail"
     assert rollback_check.status == "pass"
     assert close_called is True
@@ -806,10 +776,7 @@ def test_live_write_keep_open_is_marked_as_blocking_risk() -> None:
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "https://github.com/Halildeu/ao-kernel/pull/777\n"
-                    "Creating draft pull request...\n"
-                ),
+                stdout=("https://github.com/Halildeu/ao-kernel/pull/777\nCreating draft pull request...\n"),
             )
         if cmd[:4] == (
             "/fake/gh",
@@ -851,9 +818,7 @@ def test_live_write_keep_open_is_marked_as_blocking_risk() -> None:
 
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_keep_open_requested" in report.findings
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert rollback_check.status == "fail"
     assert close_called is False
 
@@ -871,10 +836,7 @@ def test_live_write_rollback_failure_blocks_lane() -> None:
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "https://github.com/Halildeu/ao-kernel/pull/999\n"
-                    "Creating draft pull request...\n"
-                ),
+                stdout=("https://github.com/Halildeu/ao-kernel/pull/999\nCreating draft pull request...\n"),
             )
         if cmd[:4] == (
             "/fake/gh",
@@ -914,9 +876,7 @@ def test_live_write_rollback_failure_blocks_lane() -> None:
 
     assert report.overall_status == "blocked"
     assert "gh_pr_live_write_rollback_failed" in report.findings
-    rollback_check = next(
-        check for check in report.checks if check.name == "pr_live_write_rollback"
-    )
+    rollback_check = next(check for check in report.checks if check.name == "pr_live_write_rollback")
     assert rollback_check.status == "fail"
 
 
@@ -935,10 +895,7 @@ def test_write_smoke_report_json_persists_canonical_payload(
         if cmd[:4] == ("/fake/gh", "pr", "create", "--repo"):
             return _result(
                 cmd,
-                stdout=(
-                    "Would have created a Pull Request with:\n"
-                    "Title: ao-kernel gh-cli-pr smoke probe\n"
-                ),
+                stdout=("Would have created a Pull Request with:\nTitle: ao-kernel gh-cli-pr smoke probe\n"),
             )
         raise AssertionError(f"unexpected argv: {cmd!r}")
 

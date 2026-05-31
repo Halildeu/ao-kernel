@@ -88,15 +88,11 @@ def test_gp58_cli_writes_ready_report(tmp_path: Path) -> None:
 
 def test_gp58_docs_keep_no_support_widening_boundary() -> None:
     repo_root = _repo_root()
-    program = (
-        repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md"
-    ).read_text(encoding="utf-8")
-    status = (
-        repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md"
-    ).read_text(encoding="utf-8")
-    plan = (
-        repo_root / ".claude" / "plans" / "GP-5.8-OPERATIONS-SUPPORT-PACKAGE.md"
-    ).read_text(encoding="utf-8")
+    program = (repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md").read_text(
+        encoding="utf-8"
+    )
+    status = (repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(encoding="utf-8")
+    plan = (repo_root / ".claude" / "plans" / "GP-5.8-OPERATIONS-SUPPORT-PACKAGE.md").read_text(encoding="utf-8")
     runbook = (repo_root / "docs" / "OPERATIONS-RUNBOOK.md").read_text(encoding="utf-8")
     public_beta = (repo_root / "docs" / "PUBLIC-BETA.md").read_text(encoding="utf-8")
     support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(encoding="utf-8")

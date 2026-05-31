@@ -49,10 +49,7 @@ class TestReportRender:
         rendered = render(report, "json")
         # Valid JSON, same shape as to_dict output.
         parsed = json.loads(rendered)
-        assert (
-            parsed["scenarios_evaluated"]
-            == report.scenarios_evaluated
-        )
+        assert parsed["scenarios_evaluated"] == report.scenarios_evaluated
 
     def test_render_text_contains_header(self, tmp_path: Path) -> None:
         report = simulate_policy_change(
@@ -76,9 +73,7 @@ class TestReportRender:
 
 
 class TestHasTightening:
-    def test_bundled_empty_proposed_no_tightening(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bundled_empty_proposed_no_tightening(self, tmp_path: Path) -> None:
         report = simulate_policy_change(
             project_root=tmp_path,
             scenarios=load_bundled_scenarios(),
@@ -113,12 +108,8 @@ class TestLoadPoliciesFromDir:
         assert load_policies_from_dir(tmp_path / "missing") == {}
 
     def test_loads_json_files(self, tmp_path: Path) -> None:
-        (tmp_path / "a.json").write_text(
-            json.dumps({"one": 1}), encoding="utf-8"
-        )
-        (tmp_path / "b.json").write_text(
-            json.dumps({"two": 2}), encoding="utf-8"
-        )
+        (tmp_path / "a.json").write_text(json.dumps({"one": 1}), encoding="utf-8")
+        (tmp_path / "b.json").write_text(json.dumps({"two": 2}), encoding="utf-8")
         mapping = load_policies_from_dir(tmp_path)
         assert mapping == {"a.json": {"one": 1}, "b.json": {"two": 2}}
 

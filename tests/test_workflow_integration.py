@@ -68,14 +68,9 @@ class TestFixture:
     def test_fixture_adapters_and_policies_present(self) -> None:
         fixture = _load_fixture()
         assert set(fixture["adapter_refs"]) == {"codex-stub", "gh-cli-pr"}
-        adapter_step_ids = {
-            s["adapter_id"] for s in fixture["steps"] if s["actor"] == "adapter"
-        }
+        adapter_step_ids = {s["adapter_id"] for s in fixture["steps"] if s["actor"] == "adapter"}
         assert adapter_step_ids == {"codex-stub", "gh-cli-pr"}
-        assert any(
-            "policy_worktree_profile" in ref
-            for ref in fixture["policy_refs"]
-        )
+        assert any("policy_worktree_profile" in ref for ref in fixture["policy_refs"])
 
     def test_state_machine_visits_from_created(self) -> None:
         """Synthesize a hand-written trace of the canonical bug-fix path
@@ -107,12 +102,8 @@ class TestLifecycle:
                 "cost_usd": {"limit": 1.00, "spent": 0.0, "remaining": 1.00},
                 "fail_closed_on_exhaust": True,
             },
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
-            evidence_refs=[
-                f".ao/evidence/workflows/{run_id}/events.jsonl"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+            evidence_refs=[f".ao/evidence/workflows/{run_id}/events.jsonl"],
             adapter_refs=["codex-stub"],
         )
         assert rec["state"] == "created"
@@ -132,9 +123,7 @@ class TestLifecycle:
             validate_transition(r["state"], "applying")
             # Spend some budget along the way
             budget = budget_from_dict(r["budget"])
-            budget = record_spend(
-                budget, tokens=250, cost_usd=Decimal("0.15"), run_id=run_id
-            )
+            budget = record_spend(budget, tokens=250, cost_usd=Decimal("0.15"), run_id=run_id)
             r["budget"] = budget_to_dict(budget)
             r["state"] = "applying"
             return r
@@ -177,9 +166,7 @@ class TestLifecycle:
                 "tokens": {"limit": 10, "spent": 0, "remaining": 10},
                 "fail_closed_on_exhaust": True,
             },
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[f".ao/evidence/workflows/{run_id}/events.jsonl"],
         )
 
@@ -223,16 +210,13 @@ class TestPrimitivesInContext:
             workflow_version="1.0.0",
             intent={"kind": "inline_prompt", "payload": "x"},
             budget={"fail_closed_on_exhaust": True},
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[f".ao/evidence/workflows/{run_id}/events.jsonl"],
         )
         approval = create_approval(gate="pre_apply", actor="halildeu")
-        granted = resume_approval(
-            approval, token=approval.approval_token, decision="granted"
-        )
+        granted = resume_approval(approval, token=approval.approval_token, decision="granted")
         assert granted.decision == "granted"
+
         # Persist the approval as part of the run (schema approvals list).
         def _attach(r: dict[str, Any]) -> dict[str, Any]:
             r.setdefault("approvals", [])

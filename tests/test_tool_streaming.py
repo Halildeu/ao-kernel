@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 
 
-
 class TestStreamToolsAllowed:
     def test_stream_with_tools_no_longer_raises(self):
         from ao_kernel._internal.prj_kernel_api.llm_request_builder import build_live_request
+
         req = build_live_request(
             provider_id="openai",
             model="gpt-4",
@@ -23,6 +23,7 @@ class TestStreamToolsAllowed:
 
     def test_facade_stream_tools_works(self):
         from ao_kernel.llm import build_request
+
         req = build_request(
             provider_id="openai",
             model="gpt-4",
@@ -40,15 +41,39 @@ class TestToolCallReconstruction:
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
-            {"choices": [{"delta": {"tool_calls": [
-                {"index": 0, "id": "call_1", "function": {"name": "get_weather", "arguments": ""}},
-            ]}}]},
-            {"choices": [{"delta": {"tool_calls": [
-                {"index": 0, "function": {"arguments": '{"city":'}},
-            ]}}]},
-            {"choices": [{"delta": {"tool_calls": [
-                {"index": 0, "function": {"arguments": '"London"}'}},
-            ]}}]},
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "tool_calls": [
+                                {"index": 0, "id": "call_1", "function": {"name": "get_weather", "arguments": ""}},
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "tool_calls": [
+                                {"index": 0, "function": {"arguments": '{"city":'}},
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "tool_calls": [
+                                {"index": 0, "function": {"arguments": '"London"}'}},
+                            ]
+                        }
+                    }
+                ]
+            },
         ]
 
         tools = reconstruct_tool_calls(events, "openai")
@@ -61,12 +86,28 @@ class TestToolCallReconstruction:
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
-            {"choices": [{"delta": {"tool_calls": [
-                {"index": 0, "id": "call_1", "function": {"name": "tool_a", "arguments": '{"x":1}'}},
-            ]}}]},
-            {"choices": [{"delta": {"tool_calls": [
-                {"index": 1, "id": "call_2", "function": {"name": "tool_b", "arguments": '{"y":2}'}},
-            ]}}]},
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "tool_calls": [
+                                {"index": 0, "id": "call_1", "function": {"name": "tool_a", "arguments": '{"x":1}'}},
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "tool_calls": [
+                                {"index": 1, "id": "call_2", "function": {"name": "tool_b", "arguments": '{"y":2}'}},
+                            ]
+                        }
+                    }
+                ]
+            },
         ]
 
         tools = reconstruct_tool_calls(events, "openai")
@@ -79,15 +120,31 @@ class TestToolCallReconstruction:
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
 
         events = [
-            {"type": "content_block_start", "index": 1, "content_block": {
-                "type": "tool_use", "id": "toolu_1", "name": "search",
-            }},
-            {"type": "content_block_delta", "index": 1, "delta": {
-                "type": "input_json_delta", "partial_json": '{"query":',
-            }},
-            {"type": "content_block_delta", "index": 1, "delta": {
-                "type": "input_json_delta", "partial_json": '"test"}',
-            }},
+            {
+                "type": "content_block_start",
+                "index": 1,
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "toolu_1",
+                    "name": "search",
+                },
+            },
+            {
+                "type": "content_block_delta",
+                "index": 1,
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": '{"query":',
+                },
+            },
+            {
+                "type": "content_block_delta",
+                "index": 1,
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": '"test"}',
+                },
+            },
         ]
 
         tools = reconstruct_tool_calls(events, "claude")
@@ -98,11 +155,13 @@ class TestToolCallReconstruction:
 
     def test_empty_events_no_tools(self):
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+
         assert reconstruct_tool_calls([], "openai") == []
         assert reconstruct_tool_calls([], "claude") == []
 
     def test_text_only_events_no_tools(self):
         from ao_kernel._internal.prj_kernel_api.llm_stream_normalizer import reconstruct_tool_calls
+
         events = [
             {"choices": [{"delta": {"content": "Hello"}}]},
             {"choices": [{"delta": {"content": " world"}}]},

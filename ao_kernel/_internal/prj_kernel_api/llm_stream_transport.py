@@ -29,10 +29,10 @@ from ao_kernel._internal.prj_kernel_api.llm_transport import redact_secrets, res
 class StreamResult:
     """Result of a streaming HTTP request."""
 
-    status: str                           # OK | PARTIAL | FAIL
-    complete: bool = False                # True only if stream finished normally
-    text: str = ""                        # Full accumulated text
-    finish_reason: str = "unknown"        # stop | stream_error | timeout | cancelled | connect_error
+    status: str  # OK | PARTIAL | FAIL
+    complete: bool = False  # True only if stream finished normally
+    text: str = ""  # Full accumulated text
+    finish_reason: str = "unknown"  # stop | stream_error | timeout | cancelled | connect_error
     usage: dict[str, int] | None = None
     elapsed_ms: int = 0
     first_token_ms: int | None = None
@@ -145,6 +145,7 @@ def execute_stream_request(
             # Usage extraction
             if event.event_type == "usage" and event.raw:
                 from ao_kernel._internal.prj_kernel_api.llm_stream import extract_stream_usage
+
                 u = extract_stream_usage(event.raw, provider_id)
                 if u:
                     usage = u
@@ -215,12 +216,17 @@ def execute_stream_request(
 
     # Telemetry
     from ao_kernel.telemetry import record_llm_call_duration, record_stream_first_token
+
     record_llm_call_duration(
-        elapsed, provider=provider_id, model="unknown", status=status,
+        elapsed,
+        provider=provider_id,
+        model="unknown",
+        status=status,
     )
     if first_token_time is not None:
         record_stream_first_token(
-            _elapsed_ms_from(start, first_token_time), provider=provider_id,
+            _elapsed_ms_from(start, first_token_time),
+            provider=provider_id,
         )
 
     return StreamResult(

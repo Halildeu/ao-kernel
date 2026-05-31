@@ -57,7 +57,7 @@ def _repo_with_workspace(tmp_path: Path) -> Path:
     (project / "pkg").mkdir()
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "main.py").write_text("def main():\n    return 0\n", encoding="utf-8")
-    (project / "pyproject.toml").write_text("[project]\nname = \"artifact-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "artifact-project"\n', encoding="utf-8")
     return project
 
 
@@ -227,7 +227,9 @@ def test_write_repo_vector_write_plan_artifact_writes_schema_backed_output(tmp_p
         context_dir=project / ".ao" / "context",
         vector_write_plan=vector_write_plan,
     )
-    written_plan = json.loads((project / ".ao" / "context" / REPO_VECTOR_WRITE_PLAN_FILENAME).read_text(encoding="utf-8"))
+    written_plan = json.loads(
+        (project / ".ao" / "context" / REPO_VECTOR_WRITE_PLAN_FILENAME).read_text(encoding="utf-8")
+    )
 
     validate_repo_vector_write_plan(written_plan)
     assert [item["path"] for item in result["artifacts"]] == [

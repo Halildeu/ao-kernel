@@ -100,7 +100,9 @@ class TestRedaction:
         # contain a pattern the pre-commit guard would flag.
         fake_key = "sk-" + ("a" * 20)
         record_mcp_event(
-            tmp_path, "t", {"allowed": True},
+            tmp_path,
+            "t",
+            {"allowed": True},
             extra={"api_key": fake_key, "normal_key": "visible"},
         )
         text = (next((tmp_path / ".ao" / "evidence" / "mcp").glob("*.jsonl"))).read_text()
@@ -111,7 +113,9 @@ class TestRedaction:
     def test_extra_redacts_secret_shaped_substrings(self, tmp_path):
         fake_key = "sk-" + ("b" * 20)
         record_mcp_event(
-            tmp_path, "t", {"allowed": True},
+            tmp_path,
+            "t",
+            {"allowed": True},
             extra={"note": f"leaked {fake_key} during test"},
         )
         text = (next((tmp_path / ".ao" / "evidence" / "mcp").glob("*.jsonl"))).read_text()
@@ -121,7 +125,9 @@ class TestRedaction:
     def test_nested_mapping_redacted(self, tmp_path):
         fake_token = "ghp_" + ("c" * 20)
         record_mcp_event(
-            tmp_path, "t", {"allowed": True},
+            tmp_path,
+            "t",
+            {"allowed": True},
             extra={"auth": {"token": fake_token, "scheme": "bearer"}},
         )
         event = json.loads((next((tmp_path / ".ao" / "evidence" / "mcp").glob("*.jsonl"))).read_text())
@@ -130,7 +136,9 @@ class TestRedaction:
 
     def test_messages_key_redacted(self, tmp_path):
         record_mcp_event(
-            tmp_path, "t", {"allowed": True},
+            tmp_path,
+            "t",
+            {"allowed": True},
             extra={"messages": [{"role": "user", "content": "private user text"}]},
         )
         text = (next((tmp_path / ".ao" / "evidence" / "mcp").glob("*.jsonl"))).read_text()

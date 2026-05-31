@@ -71,11 +71,7 @@ def _install_bugfix_repo(root: Path) -> None:
 
 
 def _policy_with_pythonpath() -> dict[str, object]:
-    policy = json.loads(
-        (_BUNDLED_ROOT / "policies" / "policy_worktree_profile.v1.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    policy = json.loads((_BUNDLED_ROOT / "policies" / "policy_worktree_profile.v1.json").read_text(encoding="utf-8"))
     policy["enabled"] = True
     env_spec = dict(policy["env_allowlist"])
     env_spec["explicit_additions"] = {
@@ -105,12 +101,12 @@ class TestAdapterPlusCIFlow:
         driver, run_id = self._setup(tmp_path)
         try:
             result = driver.run_workflow(
-                run_id, "adapter_plus_ci_flow", "1.0.0",
+                run_id,
+                "adapter_plus_ci_flow",
+                "1.0.0",
             )
         except Exception as exc:  # pragma: no cover - subprocess platform variance
-            pytest.skip(
-                f"integration env cannot run adapter+ci chain: {exc!r}"
-            )
+            pytest.skip(f"integration env cannot run adapter+ci chain: {exc!r}")
         # Either completes or fails depending on whether ruff is
         # available on this host. The driver should produce a
         # DriverResult either way; we only assert it reached a terminal.
@@ -123,10 +119,7 @@ class TestAdapterPlusCIFlow:
             driver.run_workflow(run_id, "adapter_plus_ci_flow", "1.0.0")
         except Exception:  # pragma: no cover
             pytest.skip("integration env cannot run adapter+ci chain")
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert events_path.exists()
         lines = [json.loads(ln) for ln in events_path.read_text().splitlines()]
         kinds = [e.get("kind") for e in lines]
@@ -167,17 +160,13 @@ class TestBundledBugFixFlow:
         assert step_records["preview_diff"]["state"] == "completed"
 
         coding_artifact = json.loads(
-            (run_dir / step_records["invoke_coding_agent"]["output_ref"]).read_text(
-                encoding="utf-8"
-            )
+            (run_dir / step_records["invoke_coding_agent"]["output_ref"]).read_text(encoding="utf-8")
         )
         assert "--- a/src/foo.py" in coding_artifact["diff"]
         assert "+++ b/src/foo.py" in coding_artifact["diff"]
 
         preview_artifact = json.loads(
-            (run_dir / step_records["preview_diff"]["output_ref"]).read_text(
-                encoding="utf-8"
-            )
+            (run_dir / step_records["preview_diff"]["output_ref"]).read_text(encoding="utf-8")
         )
         assert preview_artifact["files_changed"] == ["src/foo.py"]
         assert preview_artifact["lines_added"] == 1
@@ -191,12 +180,8 @@ class TestBundledBugFixFlow:
         else:
             assert result.final_state == "failed"
             error = ci_gate.get("error") or {}
-            assert (
-                error.get("code") in {"CI_RUNNER_NOT_FOUND", "CI_CHECK_FAILED"}
-                or (
-                    error.get("code") == "STEP_FAILED"
-                    and error.get("message") == "ci_pytest_fail"
-                )
+            assert error.get("code") in {"CI_RUNNER_NOT_FOUND", "CI_CHECK_FAILED"} or (
+                error.get("code") == "STEP_FAILED" and error.get("message") == "ci_pytest_fail"
             ), error
 
     def test_real_codex_stub_with_mocked_ci_and_open_pr_completes_full_flow(
@@ -258,12 +243,7 @@ class TestBundledBugFixFlow:
                 )
 
             log_path = (
-                workspace_root
-                / ".ao"
-                / "evidence"
-                / "workflows"
-                / run_id
-                / f"adapter-{manifest.adapter_id}.stdout.log"
+                workspace_root / ".ao" / "evidence" / "workflows" / run_id / f"adapter-{manifest.adapter_id}.stdout.log"
             )
             log_path.parent.mkdir(parents=True, exist_ok=True)
             log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
@@ -282,9 +262,7 @@ class TestBundledBugFixFlow:
                 "ao_kernel.executor.executor.invoke_cli",
                 side_effect=_dispatch_cli,
             ):
-                with patch.object(
-                    ci_module, "run_pytest", side_effect=_mock_run_pytest
-                ):
+                with patch.object(ci_module, "run_pytest", side_effect=_mock_run_pytest):
                     first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
                     assert first.final_state == "waiting_approval"
                     assert first.resume_token is not None
@@ -307,34 +285,20 @@ class TestBundledBugFixFlow:
         assert step_records["apply_patch"]["state"] == "completed"
         assert step_records["open_pr"]["state"] == "completed"
 
-        ci_artifact = json.loads(
-            (run_dir / step_records["ci_gate"]["output_ref"]).read_text(
-                encoding="utf-8"
-            )
-        )
+        ci_artifact = json.loads((run_dir / step_records["ci_gate"]["output_ref"]).read_text(encoding="utf-8"))
         assert ci_artifact["status"] == "pass"
         assert ci_artifact["exit_code"] == 0
 
-        apply_artifact = json.loads(
-            (run_dir / step_records["apply_patch"]["output_ref"]).read_text(
-                encoding="utf-8"
-            )
-        )
+        apply_artifact = json.loads((run_dir / step_records["apply_patch"]["output_ref"]).read_text(encoding="utf-8"))
         assert apply_artifact["files_changed"] == ["src/foo.py"]
 
-        open_pr_artifact = json.loads(
-            (run_dir / step_records["open_pr"]["output_ref"]).read_text(
-                encoding="utf-8"
-            )
-        )
+        open_pr_artifact = json.loads((run_dir / step_records["open_pr"]["output_ref"]).read_text(encoding="utf-8"))
         assert open_pr_artifact["pr_url"].endswith("/pull/999")
         assert open_pr_artifact["pr_number"] == 999
 
         events = [
             json.loads(line)
-            for line in (run_dir / "events.jsonl").read_text(
-                encoding="utf-8"
-            ).splitlines()
+            for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         kinds = [event.get("kind") for event in events]
@@ -398,12 +362,7 @@ class TestBundledBugFixFlow:
                 )
 
             log_path = (
-                workspace_root
-                / ".ao"
-                / "evidence"
-                / "workflows"
-                / run_id
-                / f"adapter-{manifest.adapter_id}.stdout.log"
+                workspace_root / ".ao" / "evidence" / "workflows" / run_id / f"adapter-{manifest.adapter_id}.stdout.log"
             )
             log_path.parent.mkdir(parents=True, exist_ok=True)
             log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
@@ -430,9 +389,7 @@ class TestBundledBugFixFlow:
                 "ao_kernel.executor.executor.invoke_cli",
                 side_effect=_dispatch_cli,
             ):
-                with patch.object(
-                    ci_module, "run_pytest", side_effect=_mock_run_pytest
-                ):
+                with patch.object(ci_module, "run_pytest", side_effect=_mock_run_pytest):
                     first = driver.run_workflow(run_id, "bug_fix_flow", "1.0.0")
                     assert first.final_state == "waiting_approval"
                     assert first.resume_token is not None
@@ -448,9 +405,7 @@ class TestBundledBugFixFlow:
         assert run_error.get("category") == "invocation_failed"
         assert run_error.get("code") == "PR_CREATE_FAILED"
 
-        step_records = {
-            step["step_name"]: step for step in record.get("steps", [])
-        }
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
         assert step_records["open_pr"]["state"] == "failed"
         step_error = step_records["open_pr"].get("error") or {}
         assert step_error.get("category") == "invocation_failed"
@@ -458,17 +413,17 @@ class TestBundledBugFixFlow:
 
         events = [
             json.loads(line)
-            for line in (
-                tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-            ).read_text(encoding="utf-8").splitlines()
+            for line in (tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
             if line.strip()
         ]
         kinds = [event.get("kind") for event in events]
         assert "pr_opened" not in kinds
         open_pr_failed = [
-            event for event in events
-            if event.get("kind") == "step_failed"
-            and event.get("payload", {}).get("step_name") == "open_pr"
+            event
+            for event in events
+            if event.get("kind") == "step_failed" and event.get("payload", {}).get("step_name") == "open_pr"
         ]
         assert open_pr_failed, kinds
         payload = open_pr_failed[-1]["payload"]
@@ -534,12 +489,7 @@ class TestBundledBugFixFlow:
 
             gh_open_pr_calls += 1
             log_path = (
-                workspace_root
-                / ".ao"
-                / "evidence"
-                / "workflows"
-                / run_id
-                / f"adapter-{manifest.adapter_id}.stdout.log"
+                workspace_root / ".ao" / "evidence" / "workflows" / run_id / f"adapter-{manifest.adapter_id}.stdout.log"
             )
             log_path.parent.mkdir(parents=True, exist_ok=True)
             log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
@@ -575,9 +525,7 @@ class TestBundledBugFixFlow:
         assert run_error.get("category") == "policy_denied"
         assert run_error.get("code") == "LIVE_WRITE_NOT_ALLOWED"
 
-        step_records = {
-            step["step_name"]: step for step in record.get("steps", [])
-        }
+        step_records = {step["step_name"]: step for step in record.get("steps", [])}
         assert step_records["open_pr"]["state"] == "failed"
         step_error = step_records["open_pr"].get("error") or {}
         assert step_error.get("category") == "policy_denied"
@@ -585,22 +533,21 @@ class TestBundledBugFixFlow:
 
         events = [
             json.loads(line)
-            for line in (
-                tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-            ).read_text(encoding="utf-8").splitlines()
+            for line in (tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
             if line.strip()
         ]
         kinds = [event.get("kind") for event in events]
         assert "pr_opened" not in kinds
         assert not any(
-            event.get("kind") == "adapter_invoked"
-            and event.get("payload", {}).get("step_name") == "open_pr"
+            event.get("kind") == "adapter_invoked" and event.get("payload", {}).get("step_name") == "open_pr"
             for event in events
         )
         open_pr_failed = [
-            event for event in events
-            if event.get("kind") == "step_failed"
-            and event.get("payload", {}).get("step_name") == "open_pr"
+            event
+            for event in events
+            if event.get("kind") == "step_failed" and event.get("payload", {}).get("step_name") == "open_pr"
         ]
         assert open_pr_failed, kinds
         payload = open_pr_failed[-1]["payload"]
@@ -621,10 +568,7 @@ class TestSimpleFlowEvidenceOrder:
         result = driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
         assert result.final_state == "completed"
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         lines = [json.loads(ln) for ln in events_path.read_text().splitlines()]
         kinds = [e.get("kind") for e in lines]
 

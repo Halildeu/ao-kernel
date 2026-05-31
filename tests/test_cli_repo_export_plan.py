@@ -23,7 +23,7 @@ def _make_cli_project(tmp_path: Path) -> Path:
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "cli.py").write_text("def main():\n    return 0\n", encoding="utf-8")
     (project / "pyproject.toml").write_text(
-        "[project]\nname = \"cli-export-plan-project\"\n[project.scripts]\ncli-export-plan-project = \"pkg.cli:main\"\n",
+        '[project]\nname = "cli-export-plan-project"\n[project.scripts]\ncli-export-plan-project = "pkg.cli:main"\n',
         encoding="utf-8",
     )
     return project
@@ -38,11 +38,7 @@ def _root_snapshot(project: Path) -> dict[str, bytes | None]:
 
 def _context_files(project: Path) -> set[str]:
     context_dir = project / ".ao" / "context"
-    return {
-        item.relative_to(context_dir).as_posix()
-        for item in sorted(context_dir.rglob("*"))
-        if item.is_file()
-    }
+    return {item.relative_to(context_dir).as_posix() for item in sorted(context_dir.rglob("*")) if item.is_file()}
 
 
 def test_repo_export_plan_help_is_available(capsys) -> None:

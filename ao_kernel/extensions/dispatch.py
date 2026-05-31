@@ -58,8 +58,7 @@ class ActionRegistry:
         existing = self._actions.get(action)
         if existing is not None and not replace:
             raise ValueError(
-                f"action {action!r} already registered by "
-                f"{existing.extension_id!r}; pass replace=True to override"
+                f"action {action!r} already registered by {existing.extension_id!r}; pass replace=True to override"
             )
         self._actions[action] = RegisteredAction(
             action=action,

@@ -39,9 +39,7 @@ def run_kernel_api_write_smoke(
 
     managed_temp_root: Path | None = None
     if workspace_root is None:
-        managed_temp_root = Path(
-            tempfile.mkdtemp(prefix="ao-kernel-kernel-api-write-smoke-")
-        )
+        managed_temp_root = Path(tempfile.mkdtemp(prefix="ao-kernel-kernel-api-write-smoke-"))
         resolved_workspace = managed_temp_root
     else:
         resolved_workspace = workspace_root.expanduser().resolve()
@@ -63,10 +61,7 @@ def run_kernel_api_write_smoke(
             dry_run.get("ok") is True
             and dry_result.get("dry_run") is True
             and dry_result.get("write_applied") is False
-            and (
-                dry_report_abs is None
-                or not dry_report_abs.exists()
-            )
+            and (dry_report_abs is None or not dry_report_abs.exists())
         )
         checks.append(
             SmokeCheck(
@@ -77,17 +72,13 @@ def run_kernel_api_write_smoke(
                     if dry_run_ok
                     else "project_status dry-run default contract ihlali"
                 ),
-                finding_code=(
-                    None if dry_run_ok else "kernel_api_project_status_dry_run_contract_violation"
-                ),
+                finding_code=(None if dry_run_ok else "kernel_api_project_status_dry_run_contract_violation"),
                 observed={
                     "ok": dry_run.get("ok"),
                     "status": dry_run.get("status"),
                     "dry_run": dry_result.get("dry_run"),
                     "write_applied": dry_result.get("write_applied"),
-                    "report_exists": (
-                        dry_report_abs.exists() if dry_report_abs is not None else False
-                    ),
+                    "report_exists": (dry_report_abs.exists() if dry_report_abs is not None else False),
                 },
             )
         )
@@ -102,8 +93,7 @@ def run_kernel_api_write_smoke(
         confirm_required_ok = (
             confirm_required.get("ok") is False
             and confirm_required.get("status") == "BLOCKED"
-            and str(confirm_required.get("error", {}).get("code"))
-            == "WRITE_CONFIRM_REQUIRED"
+            and str(confirm_required.get("error", {}).get("code")) == "WRITE_CONFIRM_REQUIRED"
         )
         checks.append(
             SmokeCheck(
@@ -114,9 +104,7 @@ def run_kernel_api_write_smoke(
                     if confirm_required_ok
                     else "project_status write-side confirm guard ihlali"
                 ),
-                finding_code=(
-                    None if confirm_required_ok else "kernel_api_write_confirm_guard_missing"
-                ),
+                finding_code=(None if confirm_required_ok else "kernel_api_write_confirm_guard_missing"),
                 observed={
                     "ok": confirm_required.get("ok"),
                     "status": confirm_required.get("status"),
@@ -151,17 +139,13 @@ def run_kernel_api_write_smoke(
                     if first_write_ok
                     else "project_status write-side apply contract ihlali"
                 ),
-                finding_code=(
-                    None if first_write_ok else "kernel_api_project_status_write_apply_failed"
-                ),
+                finding_code=(None if first_write_ok else "kernel_api_project_status_write_apply_failed"),
                 observed={
                     "ok": first_write.get("ok"),
                     "status": first_write.get("status"),
                     "write_applied": first_result.get("write_applied"),
                     "idempotent": first_result.get("idempotent"),
-                    "report_exists": (
-                        report_abs.exists() if report_abs is not None else False
-                    ),
+                    "report_exists": (report_abs.exists() if report_abs is not None else False),
                 },
             )
         )
@@ -184,9 +168,7 @@ def run_kernel_api_write_smoke(
                     if second_write_ok
                     else "project_status idempotency contract ihlali"
                 ),
-                finding_code=(
-                    None if second_write_ok else "kernel_api_project_status_idempotency_failed"
-                ),
+                finding_code=(None if second_write_ok else "kernel_api_project_status_idempotency_failed"),
                 observed={
                     "ok": second_write.get("ok"),
                     "status": second_write.get("status"),
@@ -240,9 +222,7 @@ def run_kernel_api_write_smoke(
                     if follow_contract_ok
                     else "roadmap_follow conflict/takeover contract ihlali"
                 ),
-                finding_code=(
-                    None if follow_contract_ok else "kernel_api_roadmap_follow_contract_failed"
-                ),
+                finding_code=(None if follow_contract_ok else "kernel_api_roadmap_follow_contract_failed"),
                 observed={
                     "follow_ok": follow_first.get("ok"),
                     "conflict_status": follow_conflict.get("status"),
@@ -282,9 +262,7 @@ def run_kernel_api_write_smoke(
                     if finish_contract_ok
                     else "roadmap_finish write+idempotency contract ihlali"
                 ),
-                finding_code=(
-                    None if finish_contract_ok else "kernel_api_roadmap_finish_contract_failed"
-                ),
+                finding_code=(None if finish_contract_ok else "kernel_api_roadmap_finish_contract_failed"),
                 observed={
                     "first_ok": finish_first.get("ok"),
                     "first_status": finish_first_result.get("status"),
@@ -295,19 +273,13 @@ def run_kernel_api_write_smoke(
             )
         )
 
-        audit_rel = str(finish_first_result.get("audit_path", "")) or str(
-            first_result.get("audit_path", "")
-        )
+        audit_rel = str(finish_first_result.get("audit_path", "")) or str(first_result.get("audit_path", ""))
         audit_abs = resolved_workspace / audit_rel if audit_rel else None
         audit_actions: list[str] = []
         if audit_abs is not None and audit_abs.exists():
             artifacts.append(str(audit_abs))
             try:
-                lines = [
-                    line
-                    for line in audit_abs.read_text(encoding="utf-8").splitlines()
-                    if line.strip()
-                ]
+                lines = [line for line in audit_abs.read_text(encoding="utf-8").splitlines() if line.strip()]
                 for line in lines:
                     payload = json.loads(line)
                     action = payload.get("action")
@@ -318,9 +290,7 @@ def run_kernel_api_write_smoke(
         audit_ok = (
             audit_abs is not None
             and audit_abs.exists()
-            and {"project_status", "roadmap_follow", "roadmap_finish"}.issubset(
-                set(audit_actions)
-            )
+            and {"project_status", "roadmap_follow", "roadmap_finish"}.issubset(set(audit_actions))
         )
         checks.append(
             SmokeCheck(
@@ -331,9 +301,7 @@ def run_kernel_api_write_smoke(
                     if audit_ok
                     else "kernel_api write audit artifact kontrati ihlali"
                 ),
-                finding_code=(
-                    None if audit_ok else "kernel_api_write_audit_missing_or_incomplete"
-                ),
+                finding_code=(None if audit_ok else "kernel_api_write_audit_missing_or_incomplete"),
                 observed={
                     "audit_exists": audit_abs.exists() if audit_abs is not None else False,
                     "actions": audit_actions,
@@ -344,15 +312,7 @@ def run_kernel_api_write_smoke(
         if managed_temp_root is not None and not keep_workspace:
             shutil.rmtree(managed_temp_root, ignore_errors=True)
 
-    findings = tuple(
-        sorted(
-            {
-                check.finding_code
-                for check in checks
-                if check.status != "pass" and check.finding_code
-            }
-        )
-    )
+    findings = tuple(sorted({check.finding_code for check in checks if check.status != "pass" and check.finding_code}))
     overall_status: Literal["pass", "blocked"] = "pass" if not findings else "blocked"
     return KernelApiWriteSmokeReport(
         overall_status=overall_status,
@@ -394,8 +354,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="kernel_api_write_smoke",
         description=(
-            "Run PRJ-KERNEL-API write-side smoke checks "
-            "(dry-run/confirm/idempotency/conflict/takeover/audit)."
+            "Run PRJ-KERNEL-API write-side smoke checks (dry-run/confirm/idempotency/conflict/takeover/audit)."
         ),
     )
     parser.add_argument(
@@ -406,10 +365,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--workspace-root",
-        help=(
-            "Optional workspace root to keep artifacts. "
-            "By default a disposable temp workspace is used."
-        ),
+        help=("Optional workspace root to keep artifacts. By default a disposable temp workspace is used."),
     )
     parser.add_argument(
         "--keep-workspace",
@@ -419,9 +375,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     report = run_kernel_api_write_smoke(
-        workspace_root=Path(args.workspace_root).expanduser()
-        if args.workspace_root
-        else None,
+        workspace_root=Path(args.workspace_root).expanduser() if args.workspace_root else None,
         keep_workspace=args.keep_workspace,
     )
     if args.output == "json":

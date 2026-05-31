@@ -15,7 +15,7 @@ def _make_cli_project(tmp_path: Path) -> Path:
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "cli.py").write_text("def main():\n    return 0\n", encoding="utf-8")
     (project / "pyproject.toml").write_text(
-        "[project]\nname = \"cli-index-project\"\n[project.scripts]\ncli-index-project = \"pkg.cli:main\"\n",
+        '[project]\nname = "cli-index-project"\n[project.scripts]\ncli-index-project = "pkg.cli:main"\n',
         encoding="utf-8",
     )
     return project

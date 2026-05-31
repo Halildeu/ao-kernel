@@ -54,9 +54,7 @@ def _seed_run(
         "revision": "0" * 64,
         "intent": {"kind": "inline_prompt", "payload": "x"},
         "steps": [],
-        "policy_refs": [
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         "adapter_refs": [],
         "evidence_refs": [
             f".ao/evidence/workflows/{run_id}/events.jsonl",
@@ -89,8 +87,11 @@ def _stamp_markers(root: Path, run_id: str, count: int = 3) -> None:
         )
         event = replace(event, billing_digest=compute_billing_digest(event))
         apply_spend_with_marker(
-            root, run_id, event,
-            policy=_policy(), source="adapter_path",
+            root,
+            run_id,
+            event,
+            policy=_policy(),
+            source="adapter_path",
             budget_mutator=lambda r: r,
         )
 
@@ -107,7 +108,8 @@ def _read_record(root: Path, run_id: str) -> dict[str, Any]:
 
 class TestCompactRunMarkers:
     def test_compacts_populated_markers_into_archive(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000f34a0001"
         _seed_run(tmp_path, run_id)
@@ -120,17 +122,12 @@ class TestCompactRunMarkers:
 
         record = _read_record(tmp_path, run_id)
         assert record["cost_reconciled"] == []
-        assert record["cost_reconciled_archive_ref"] == (
-            f".ao/cost/markers-archive/{run_id}.jsonl"
-        )
+        assert record["cost_reconciled_archive_ref"] == (f".ao/cost/markers-archive/{run_id}.jsonl")
         assert "cost_reconciled_compacted_at" in record
 
         archive = tmp_path / ".ao" / "cost" / "markers-archive" / f"{run_id}.jsonl"
         assert archive.is_file()
-        lines = [
-            line for line in archive.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        lines = [line for line in archive.read_text(encoding="utf-8").splitlines() if line.strip()]
         assert len(lines) == 3
 
     def test_already_compact_is_noop(self, tmp_path: Path) -> None:
@@ -172,7 +169,8 @@ class TestCompactRunMarkers:
         # Valid UUID format but no on-disk record
         with pytest.raises(WorkflowRunNotFoundError):
             compact_run_markers(
-                tmp_path, "00000000-0000-4000-8000-0000f34a0099",
+                tmp_path,
+                "00000000-0000-4000-8000-0000f34a0099",
             )
 
 
@@ -228,6 +226,7 @@ class TestCompactAllTerminalRuns:
 
         # Move to terminal state
         from ao_kernel.workflow.run_store import run_revision
+
         sf = tmp_path / ".ao" / "runs" / rid / "state.v1.json"
         record = json.loads(sf.read_text(encoding="utf-8"))
         record["state"] = "completed"

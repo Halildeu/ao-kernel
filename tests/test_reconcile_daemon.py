@@ -63,9 +63,7 @@ def _seed_run(root: Path, run_id: str, *, cost_remaining: float = 10.0) -> None:
         "revision": "0" * 64,
         "intent": {"kind": "inline_prompt", "payload": "x"},
         "steps": [],
-        "policy_refs": [
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         "adapter_refs": [],
         "evidence_refs": [
             f".ao/evidence/workflows/{run_id}/events.jsonl",
@@ -147,16 +145,23 @@ class TestNoOrphans:
         # Reconcile via the real helper so marker + ledger are both
         # stamped (non-orphan state).
         event = SpendEvent(
-            run_id=run_id, step_id="s1", attempt=1,
-            provider_id="codex", model="stub",
-            tokens_input=100, tokens_output=50,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            tokens_input=100,
+            tokens_output=50,
             cost_usd=Decimal("0.05"),
             ts="2026-04-18T10:00:01+00:00",
         )
         event = replace(event, billing_digest=compute_billing_digest(event))
         apply_spend_with_marker(
-            tmp_path, run_id, event,
-            policy=_policy(), source="adapter_path",
+            tmp_path,
+            run_id,
+            event,
+            policy=_policy(),
+            source="adapter_path",
             budget_mutator=lambda r: r,
         )
 
@@ -178,7 +183,10 @@ class TestOrphanDetectionAndFix:
         run_id = "00000000-0000-4000-8000-0000d34a0002"
         _seed_run(tmp_path, run_id, cost_remaining=10.0)
         _seed_ledger_entry(
-            tmp_path, run_id=run_id, step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            cost_usd=0.05,
         )
 
         # Marker absent → orphan
@@ -197,6 +205,7 @@ class TestOrphanDetectionAndFix:
 
         # Budget unchanged (recovery is marker-only)
         from ao_kernel.workflow.run_store import load_run
+
         record, _ = load_run(tmp_path, run_id)
         assert record["budget"]["cost_usd"]["remaining"] == pytest.approx(10.0)
 
@@ -206,12 +215,16 @@ class TestOrphanDetectionAndFix:
 
 class TestDryRun:
     def test_dry_run_reports_but_does_not_mutate(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000d34a0003"
         _seed_run(tmp_path, run_id)
         _seed_ledger_entry(
-            tmp_path, run_id=run_id, step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            cost_usd=0.05,
         )
 
         result = scan_and_fix(tmp_path, _policy(), dry_run=True)
@@ -230,7 +243,8 @@ class TestDryRun:
 
 class TestCorruptLedger:
     def test_corrupt_line_skipped_scan_continues(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000d34a0004"
         _seed_run(tmp_path, run_id)
@@ -242,7 +256,10 @@ class TestCorruptLedger:
             encoding="utf-8",
         )
         _seed_ledger_entry(
-            tmp_path, run_id=run_id, step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            cost_usd=0.05,
         )
 
         result = scan_and_fix(tmp_path, _policy())
@@ -260,14 +277,18 @@ class TestCorruptLedger:
 
 class TestMissingRun:
     def test_orphan_for_missing_run_is_skipped(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Ledger references a run that doesn't exist (e.g. cleaned
         up) → scan skips without error."""
         # Seed ledger without the corresponding run record
         (tmp_path / ".ao" / "cost").mkdir(parents=True, exist_ok=True)
         _seed_ledger_entry(
-            tmp_path, run_id="missing-run-id", step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id="missing-run-id",
+            step_id="s1",
+            cost_usd=0.05,
         )
 
         result = scan_and_fix(tmp_path, _policy())
@@ -283,7 +304,10 @@ class TestCursorReset:
         run_id = "00000000-0000-4000-8000-0000d34a0006"
         _seed_run(tmp_path, run_id)
         _seed_ledger_entry(
-            tmp_path, run_id=run_id, step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            cost_usd=0.05,
         )
 
         # First pass: orphan found + fixed, cursor ticks
@@ -315,7 +339,8 @@ class TestCursorRoundtrip:
         assert state["last_scanned_line_offset"] == 0
 
     def test_load_cursor_version_mismatch_resets(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         cursor = tmp_path / "cursor.json"
         cursor.write_text(
@@ -328,12 +353,15 @@ class TestCursorRoundtrip:
 
     def test_save_and_load_roundtrip(self, tmp_path: Path) -> None:
         cursor = tmp_path / "cursor.json"
-        save_cursor(cursor, {
-            "version": "v1",
-            "last_scanned_line_offset": 42,
-            "last_check_ts": "2026-04-18T10:00:00+00:00",
-            "orphans_fixed_total": 7,
-        })
+        save_cursor(
+            cursor,
+            {
+                "version": "v1",
+                "last_scanned_line_offset": 42,
+                "last_check_ts": "2026-04-18T10:00:00+00:00",
+                "orphans_fixed_total": 7,
+            },
+        )
         state = load_cursor(cursor)
         assert state["last_scanned_line_offset"] == 42
         assert state["orphans_fixed_total"] == 7
@@ -347,7 +375,10 @@ class TestFixOrphanIdempotency:
         run_id = "00000000-0000-4000-8000-0000d34a0008"
         _seed_run(tmp_path, run_id)
         digest = _seed_ledger_entry(
-            tmp_path, run_id=run_id, step_id="s1", cost_usd=0.05,
+            tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            cost_usd=0.05,
         )
         orphan = OrphanSpend(
             run_id=run_id,
@@ -378,8 +409,5 @@ class TestFixOrphanIdempotency:
 
         # Ledger still has only 1 entry (record_spend silent no-op)
         ledger = tmp_path / ".ao" / "cost" / "spend.jsonl"
-        lines = [
-            line for line in ledger.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        lines = [line for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
         assert len(lines) == 1

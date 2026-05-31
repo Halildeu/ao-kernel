@@ -57,6 +57,7 @@ def _load_policy(workspace: Path | None) -> dict[str, Any]:
     """Load memory tiers policy. Returns empty dict if load fails (fail-open for config)."""
     try:
         from ao_kernel.config import load_with_override
+
         policy = load_with_override(
             "policies",
             "policy_context_memory_tiers.v1.json",
@@ -118,10 +119,7 @@ def resolve_vector_store(
     # (4) Backend selection: env takes precedence over policy type when both present.
     backend_type = env_backend or backend_cfg.get("type", "inmemory")
     if backend_type not in _VALID_BACKENDS:
-        raise VectorStoreConfigError(
-            f"Invalid vector backend: {backend_type!r}. "
-            f"Allowed: {sorted(_VALID_BACKENDS)}"
-        )
+        raise VectorStoreConfigError(f"Invalid vector backend: {backend_type!r}. Allowed: {sorted(_VALID_BACKENDS)}")
     if backend_type == "disabled":
         return None, False
 
@@ -129,12 +127,11 @@ def resolve_vector_store(
     if backend_type == "pgvector":
         dsn = os.environ.get(_ENV_DSN, "").strip()
         if not dsn:
-            raise VectorStoreConfigError(
-                f"{_ENV_BACKEND}=pgvector requires {_ENV_DSN} (connection string)."
-            )
+            raise VectorStoreConfigError(f"{_ENV_BACKEND}=pgvector requires {_ENV_DSN} (connection string).")
         try:
             from ao_kernel.context.embedding_config import resolve_embedding_config
             from ao_kernel.context.vector_store_pgvector import PgvectorBackend
+
             dimension = _parse_dimension(os.environ.get(_ENV_DIMENSION))
             table = os.environ.get(_ENV_TABLE, "ao_embeddings")
             # Bind the backend to the currently-configured embedding model so
@@ -159,6 +156,7 @@ def resolve_vector_store(
     # (6) inmemory path
     if backend_type == "inmemory":
         from ao_kernel.context.vector_store import InMemoryVectorStore
+
         return InMemoryVectorStore(), True
 
     # Unreachable due to _VALID_BACKENDS check above.
@@ -172,13 +170,9 @@ def _parse_dimension(raw: str | None) -> int:
     try:
         dim = int(raw)
     except ValueError as exc:
-        raise VectorStoreConfigError(
-            f"{_ENV_DIMENSION} must be a positive integer, got {raw!r}"
-        ) from exc
+        raise VectorStoreConfigError(f"{_ENV_DIMENSION} must be a positive integer, got {raw!r}") from exc
     if dim <= 0:
-        raise VectorStoreConfigError(
-            f"{_ENV_DIMENSION} must be positive, got {dim}"
-        )
+        raise VectorStoreConfigError(f"{_ENV_DIMENSION} must be positive, got {dim}")
     return dim
 
 

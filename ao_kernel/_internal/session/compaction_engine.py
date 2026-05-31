@@ -3,6 +3,7 @@
 Inspired by JetBrains NeurIPS 2025 research: observation masking + summary hybrid.
 Keeps last N decisions in full detail, archives older ones.
 """
+
 from __future__ import annotations
 
 import json
@@ -43,6 +44,7 @@ def _load_compaction_policy(workspace_root: Path) -> dict[str, Any]:
                 return obj
         except Exception as exc:
             import logging
+
             logging.getLogger("ao_kernel").warning("compaction policy load failed, using defaults: %s", exc)
     return defaults
 

@@ -138,9 +138,7 @@ def _run_executor_primitive(
             adapter_manifest,
         )
 
-        violations = list(sv_violations) + list(sb_violations) + list(
-            hh_violations
-        )
+        violations = list(sv_violations) + list(sb_violations) + list(hh_violations)
 
         # validate_command integration is deferred for simulator v1
         # (plan v3 §2.3 notes it requires the full sandbox + resolved
@@ -246,9 +244,7 @@ def _violation_codes(violations: Any) -> tuple[str, ...]:
         if isinstance(kind, str):
             codes.append(kind)
             continue
-        if isinstance(violation, Mapping) and isinstance(
-            violation.get("kind"), str
-        ):
+        if isinstance(violation, Mapping) and isinstance(violation.get("kind"), str):
             codes.append(violation["kind"])
             continue
         codes.append(type(violation).__name__)
@@ -269,9 +265,7 @@ def _run_governance_policy(
     from ao_kernel import governance
 
     action_str = scenario.inputs.action or ""
-    action_dict: dict[str, Any] = (
-        {"intent": action_str} if action_str else {}
-    )
+    action_dict: dict[str, Any] = {"intent": action_str} if action_str else {}
     try:
         result = governance.check_policy(
             target_policy_name,
@@ -298,9 +292,7 @@ def _run_governance_policy(
     # aggregator's "any violations → deny" semantics honest
     # (iter-3 combined-semantic blocker absorb).
     violations = reason_codes if not allowed else ()
-    gov_decision: Literal["allow", "deny"] = (
-        "allow" if allowed else "deny"
-    )
+    gov_decision: Literal["allow", "deny"] = "allow" if allowed else "deny"
     return SimulationResult(
         scenario_id=scenario.scenario_id,
         decision=gov_decision,
@@ -350,9 +342,7 @@ def _evaluate_scenario(
     from memory.
     """
     if scenario.kind == "executor_primitive":
-        return _run_executor_primitive(
-            scenario, policy, adapter_manifest, include_host_fs_probes
-        )
+        return _run_executor_primitive(scenario, policy, adapter_manifest, include_host_fs_probes)
     if scenario.kind == "governance_policy":
         with policy_override_context(active_policy_map):
             return _run_governance_policy(scenario, target_policy_name)
@@ -362,9 +352,7 @@ def _evaluate_scenario(
     # 'worktree' → executor primitive target; any other name →
     # governance_policy target. Aggregate violations union.
     exec_target, gov_target = _split_combined_targets(scenario)
-    exec_policy = (
-        active_policy_map.get(exec_target, policy) if exec_target else None
-    )
+    exec_policy = active_policy_map.get(exec_target, policy) if exec_target else None
     exec_result = (
         _run_executor_primitive(
             scenario,
@@ -462,9 +450,7 @@ def simulate_policy_change(
     baseline_source: BaselineSource = BaselineSource.BUNDLED,
     baseline_overrides: Mapping[str, Mapping[str, Any]] | None = None,
     include_host_fs_probes: bool = False,
-    proposed_policy_patches: (
-        Mapping[str, Mapping[str, Any]] | None
-    ) = None,
+    proposed_policy_patches: (Mapping[str, Mapping[str, Any]] | None) = None,
 ) -> DiffReport:
     """Evaluate each scenario twice (baseline + proposed) under
     the purity contract and return a ``DiffReport``.
@@ -483,14 +469,8 @@ def simulate_policy_change(
     "explicitly empty" — the two are different semantically.
     """
     # PR-C5: Mutex guard — explicit-semantic `is not None`
-    if (
-        proposed_policies is not None
-        and proposed_policy_patches is not None
-    ):
-        raise ValueError(
-            "proposed_policies and proposed_policy_patches are mutually "
-            "exclusive — supply at most one."
-        )
+    if proposed_policies is not None and proposed_policy_patches is not None:
+        raise ValueError("proposed_policies and proposed_policy_patches are mutually exclusive — supply at most one.")
 
     # PR-C5: apply patches against resolved baselines to produce
     # effective proposed_policies (fail-fast on unknown policy).
@@ -508,7 +488,8 @@ def simulate_policy_change(
                 baseline_overrides=baseline_overrides,
             )
             effective_proposed[policy_name] = apply_merge_patch(
-                baseline, patch,
+                baseline,
+                patch,
             )
         proposed_policies = effective_proposed
 
@@ -535,9 +516,7 @@ def simulate_policy_change(
     adapter_manifests: dict[str, Any | None] = {}
 
     for scenario in scenario_list:
-        adapter_manifests[scenario.scenario_id] = _resolve_adapter_manifest(
-            scenario, adapter_snapshot
-        )
+        adapter_manifests[scenario.scenario_id] = _resolve_adapter_manifest(scenario, adapter_snapshot)
         # Preload every policy the scenario references. Combined
         # kind carries multiple names in `target_policy_names`;
         # collapsing to the first entry (iter-1 bug) meant the
@@ -555,9 +534,7 @@ def simulate_policy_change(
                     baseline_overrides=baseline_overrides,
                 )
             if name not in proposed_map:
-                proposed_map[name] = dict(
-                    proposed_policies.get(name) or baseline_map[name]
-                )
+                proposed_map[name] = dict(proposed_policies.get(name) or baseline_map[name])
 
     deltas: list[ScenarioDelta] = []
     with pure_execution_context():
@@ -592,14 +569,8 @@ def simulate_policy_change(
             )
 
     overall, by_policy = aggregate_transition_counts(deltas)
-    baseline_hashes = {
-        name: canonical_policy_hash(policy)
-        for name, policy in baseline_map.items()
-    }
-    proposed_hashes = {
-        name: canonical_policy_hash(policy)
-        for name, policy in proposed_map.items()
-    }
+    baseline_hashes = {name: canonical_policy_hash(policy) for name, policy in baseline_map.items()}
+    proposed_hashes = {name: canonical_policy_hash(policy) for name, policy in proposed_map.items()}
 
     return DiffReport(
         baseline_policy_hashes=baseline_hashes,

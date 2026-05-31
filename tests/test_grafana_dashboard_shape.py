@@ -18,12 +18,7 @@ import json
 from pathlib import Path
 
 
-_DASHBOARD_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "docs"
-    / "grafana"
-    / "ao_kernel_default.v1.json"
-)
+_DASHBOARD_PATH = Path(__file__).resolve().parent.parent / "docs" / "grafana" / "ao_kernel_default.v1.json"
 
 
 # Panel title → metric family substring that must appear in the
@@ -46,9 +41,7 @@ def _load_dashboard() -> dict:
 
 class TestStructure:
     def test_dashboard_file_exists(self) -> None:
-        assert _DASHBOARD_PATH.is_file(), (
-            f"bundled dashboard missing at {_DASHBOARD_PATH}"
-        )
+        assert _DASHBOARD_PATH.is_file(), f"bundled dashboard missing at {_DASHBOARD_PATH}"
 
     def test_dashboard_is_valid_json(self) -> None:
         # Raises JSONDecodeError on failure.
@@ -79,22 +72,17 @@ class TestPanels:
             seen[title] = expr
 
         missing_titles = set(_EXPECTED_PANELS.keys()) - set(seen.keys())
-        assert not missing_titles, (
-            f"dashboard missing expected panels: {sorted(missing_titles)}"
-        )
+        assert not missing_titles, f"dashboard missing expected panels: {sorted(missing_titles)}"
         for title, metric_fragment in _EXPECTED_PANELS.items():
             assert metric_fragment in seen[title], (
-                f"panel {title!r} expr does not reference {metric_fragment!r}; "
-                f"got: {seen[title]!r}"
+                f"panel {title!r} expr does not reference {metric_fragment!r}; got: {seen[title]!r}"
             )
 
     def test_every_panel_has_gridpos(self) -> None:
         """Layout drift — missing gridPos breaks auto-arrangement."""
         doc = _load_dashboard()
         for panel in doc["panels"]:
-            assert "gridPos" in panel, (
-                f"panel {panel.get('title')!r} missing gridPos"
-            )
+            assert "gridPos" in panel, f"panel {panel.get('title')!r} missing gridPos"
 
 
 class TestTemplating:
@@ -114,6 +102,4 @@ class TestDocsParity:
         readme_path = _DASHBOARD_PATH.parent / "README.md"
         text = readme_path.read_text(encoding="utf-8")
         for metric in _EXPECTED_PANELS.values():
-            assert metric in text, (
-                f"README.md does not document metric {metric!r}"
-            )
+            assert metric in text, f"README.md does not document metric {metric!r}"

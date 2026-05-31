@@ -18,10 +18,14 @@ if TYPE_CHECKING:
 
 
 _GIT_CONFIG = [
-    "-c", "user.name=ao-kernel-test",
-    "-c", "user.email=test@ao-kernel.local",
-    "-c", "commit.gpgsign=false",
-    "-c", "init.defaultBranch=main",
+    "-c",
+    "user.name=ao-kernel-test",
+    "-c",
+    "user.email=test@ao-kernel.local",
+    "-c",
+    "commit.gpgsign=false",
+    "-c",
+    "init.defaultBranch=main",
 ]
 
 
@@ -36,10 +40,14 @@ def init_repo(root: Path, *, initial_files: dict[str, str] | None = None) -> Pat
         check=True,
         capture_output=True,
     )
-    files = initial_files if initial_files is not None else {
-        "a.txt": "line1\nline2\nline3\n",
-        "README.md": "# test repo\n",
-    }
+    files = (
+        initial_files
+        if initial_files is not None
+        else {
+            "a.txt": "line1\nline2\nline3\n",
+            "README.md": "# test repo\n",
+        }
+    )
     for relpath, content in files.items():
         (root / relpath).parent.mkdir(parents=True, exist_ok=True)
         (root / relpath).write_text(content, encoding="utf-8")
@@ -181,17 +189,23 @@ def build_test_sandbox(
         if parent and parent not in dynamic_prefixes:
             dynamic_prefixes.append(parent)
 
-    prefixes = allowed_prefixes if allowed_prefixes is not None else (
-        "/usr/bin",
-        "/usr/local/bin",
-        "/opt/homebrew/bin",
-        "/Library/Frameworks/Python.framework/Versions",
-        "/opt/local/bin",
-        "/opt/hostedtoolcache/Python",
-        *dynamic_prefixes,
+    prefixes = (
+        allowed_prefixes
+        if allowed_prefixes is not None
+        else (
+            "/usr/bin",
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+            "/Library/Frameworks/Python.framework/Versions",
+            "/opt/local/bin",
+            "/opt/hostedtoolcache/Python",
+            *dynamic_prefixes,
+        )
     )
-    exact = allowed_commands_exact if allowed_commands_exact is not None else (
-        frozenset({"git", "python", "python3", "pytest", "ruff", "mypy"})
+    exact = (
+        allowed_commands_exact
+        if allowed_commands_exact is not None
+        else (frozenset({"git", "python", "python3", "pytest", "ruff", "mypy"}))
     )
 
     return SandboxedEnvironment(

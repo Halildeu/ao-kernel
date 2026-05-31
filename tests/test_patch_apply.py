@@ -60,9 +60,7 @@ class TestApplyHappyPath:
         init_repo(repo)
         patch = make_patch_from_changes(repo, {"a.txt": "X\nY\nZ\n"})
         run_dir = _run_dir(tmp_path)
-        result = apply_patch(
-            repo, patch, build_test_sandbox(repo), run_dir, patch_id="custom-apply-id"
-        )
+        result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir, patch_id="custom-apply-id")
         assert result.patch_id == "custom-apply-id"
         assert result.reverse_diff_path.name == "custom-apply-id.revdiff"
 
@@ -86,7 +84,9 @@ class TestApplyHappyPath:
         apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         proc = subprocess.run(
             ["git", "-C", str(repo), "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         assert "a.txt" in proc.stdout
 
@@ -124,9 +124,9 @@ class TestApplyConflict:
         # ...but mutate a.txt differently on disk so --3way conflicts
         (repo / "a.txt").write_text("completely\ndifferent\ncontent\nhere\n")
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-am", "drift"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-am", "drift"],
+            check=True,
+            capture_output=True,
         )
         run_dir = _run_dir(tmp_path)
         with pytest.raises((PatchApplyConflictError, PatchApplyError, PatchPreviewError)):
@@ -140,6 +140,7 @@ class TestApplyPolicyPreflight:
 
     def test_disallowed_git_raises_policy_violation(self, tmp_path: Path) -> None:
         from ao_kernel.executor.errors import PolicyViolationError
+
         repo = tmp_path / "repo"
         repo.mkdir()
         init_repo(repo)
@@ -167,7 +168,10 @@ class TestApplyPatchIdTraversal:
         run_dir = _run_dir(tmp_path)
         with pytest.raises(ValueError):
             apply_patch(
-                repo, patch, build_test_sandbox(repo), run_dir,
+                repo,
+                patch,
+                build_test_sandbox(repo),
+                run_dir,
                 patch_id="../escape",
             )
 
@@ -179,7 +183,10 @@ class TestApplyPatchIdTraversal:
         run_dir = _run_dir(tmp_path)
         with pytest.raises(ValueError):
             apply_patch(
-                repo, patch, build_test_sandbox(repo), run_dir,
+                repo,
+                patch,
+                build_test_sandbox(repo),
+                run_dir,
                 patch_id="nested/path",
             )
 
@@ -191,12 +198,16 @@ class TestApplyPatchIdTraversal:
         run_dir = _run_dir(tmp_path)
         with pytest.raises(ValueError):
             apply_patch(
-                repo, patch, build_test_sandbox(repo), run_dir,
+                repo,
+                patch,
+                build_test_sandbox(repo),
+                run_dir,
                 patch_id="",
             )
 
     def test_accepts_token_urlsafe_format(self, tmp_path: Path) -> None:
         import secrets as _s
+
         repo = tmp_path / "repo"
         repo.mkdir()
         init_repo(repo)
@@ -204,7 +215,10 @@ class TestApplyPatchIdTraversal:
         run_dir = _run_dir(tmp_path)
         custom_id = _s.token_urlsafe(32)  # 43 URL-safe chars
         result = apply_patch(
-            repo, patch, build_test_sandbox(repo), run_dir,
+            repo,
+            patch,
+            build_test_sandbox(repo),
+            run_dir,
             patch_id=custom_id,
         )
         assert result.patch_id == custom_id
@@ -217,9 +231,11 @@ class TestApplyRollbackWithoutCommit:
     'unrelated dirt'."""
 
     def test_apply_then_rollback_round_trip_no_commit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel.patch import rollback_patch
+
         repo = tmp_path / "repo"
         repo.mkdir()
         init_repo(repo, initial_files={"a.txt": "original\n"})
@@ -235,9 +251,11 @@ class TestApplyRollbackWithoutCommit:
         assert (repo / "a.txt").read_text() == "original\n"
 
     def test_second_rollback_no_commit_is_idempotent(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel.patch import rollback_patch
+
         repo = tmp_path / "repo"
         repo.mkdir()
         init_repo(repo, initial_files={"a.txt": "original\n"})
@@ -250,7 +268,10 @@ class TestApplyRollbackWithoutCommit:
         # now a no-op relative to HEAD. Either it skips OR raises a
         # controlled error; it MUST NOT silently re-apply.
         second = rollback_patch(
-            repo, apply_result.reverse_diff_id, sandbox, run_dir,
+            repo,
+            apply_result.reverse_diff_id,
+            sandbox,
+            run_dir,
         )
         # Codex iter-4 W1: pin the contract — idempotent_skip contract
         # states rolled_back=False, idempotent_skip=True, files_reverted=().

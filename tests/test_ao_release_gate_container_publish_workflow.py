@@ -17,11 +17,11 @@ def test_release_gate_container_publish_workflow_builds_smokes_and_publishes_ghc
 
     assert "ghcr.io/halildeu/ao-kernel-ao-release-gate-service" in text
     assert "deploy/ao-release-gate-service/Dockerfile" in text
-    assert "docker build -f \"$DOCKERFILE\"" in text
+    assert 'docker build -f "$DOCKERFILE"' in text
     assert "scripts/ao_release_gate_container_smoke.py" in text
     assert "--skip-build" in text
-    assert "docker push \"$image_sha\"" in text
-    assert "docker push \"$image_main\"" in text
+    assert 'docker push "$image_sha"' in text
+    assert 'docker push "$image_main"' in text
     assert "sha-${GITHUB_SHA}" in text
 
 

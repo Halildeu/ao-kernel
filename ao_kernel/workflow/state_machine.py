@@ -45,17 +45,19 @@ WorkflowState = Literal[
     "cancelled",
 ]
 
-_ALL_STATES: Final[frozenset[str]] = frozenset({
-    "created",
-    "running",
-    "interrupted",
-    "waiting_approval",
-    "applying",
-    "verifying",
-    "completed",
-    "failed",
-    "cancelled",
-})
+_ALL_STATES: Final[frozenset[str]] = frozenset(
+    {
+        "created",
+        "running",
+        "interrupted",
+        "waiting_approval",
+        "applying",
+        "verifying",
+        "completed",
+        "failed",
+        "cancelled",
+    }
+)
 
 TERMINAL_STATES: Final[frozenset[str]] = frozenset({"completed", "failed", "cancelled"})
 
@@ -69,13 +71,15 @@ def _build_transition_table() -> Mapping[str, frozenset[str]]:
     """
     return {
         "created": frozenset({"running", "cancelled"}),
-        "running": frozenset({
-            "interrupted",
-            "waiting_approval",
-            "applying",
-            "failed",
-            "cancelled",
-        }),
+        "running": frozenset(
+            {
+                "interrupted",
+                "waiting_approval",
+                "applying",
+                "failed",
+                "cancelled",
+            }
+        ),
         "interrupted": frozenset({"running", "failed", "cancelled"}),
         # PR-A4 addition: `running` — approval granted by governance gate
         # before the run's next internal step (patch apply or CI run)
@@ -143,7 +147,4 @@ def _check_state(state: str) -> None:
     unknown state is a programming bug, not a runtime lifecycle mismatch.
     """
     if state not in _ALL_STATES:
-        raise ValueError(
-            f"Unknown workflow state: {state!r}; "
-            f"known: {sorted(_ALL_STATES)}"
-        )
+        raise ValueError(f"Unknown workflow state: {state!r}; known: {sorted(_ALL_STATES)}")

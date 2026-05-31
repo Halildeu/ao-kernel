@@ -35,7 +35,7 @@ def _make_context_pack_repo(tmp_path: Path) -> Path:
     (project / "pkg" / "worker.py").write_text("class Worker:\n    pass\n", encoding="utf-8")
     (project / "README.md").write_text("# Context Pack\n", encoding="utf-8")
     (project / "pyproject.toml").write_text(
-        "[project]\nname = \"context-pack-project\"\n[project.scripts]\ncontext-pack = \"pkg.main:run\"\n",
+        '[project]\nname = "context-pack-project"\n[project.scripts]\ncontext-pack = "pkg.main:run"\n',
         encoding="utf-8",
     )
     return project

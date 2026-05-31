@@ -25,8 +25,7 @@ def _approved_payload() -> dict[str, object]:
         "sha": "abc123",
         "ref": "refs/heads/main",
         "deployment_callback_url": (
-            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/"
-            "deployment_protection_rule"
+            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/deployment_protection_rule"
         ),
         "repository": {"full_name": "Halildeu/ao-kernel"},
         "pull_requests": [],

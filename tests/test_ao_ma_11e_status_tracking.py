@@ -270,7 +270,9 @@ def test_drift_detects_duplicate_slice_id() -> None:
 def test_drift_detects_current_slice_phase_mismatch() -> None:
     payload = _load_status()
     # current_slice exists but belongs to a different phase than current_phase.
-    payload["current_phase"] = "AO-MA-11I"
+    # Pick a phase that the current slice does NOT belong to (11A always exists
+    # and never owns the current 11x tracking slice).
+    payload["current_phase"] = "AO-MA-11A"
     drift = ao_ma_next.check_drift(payload)
     assert any("not current_phase" in d for d in drift)
 

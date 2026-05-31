@@ -62,9 +62,7 @@ reconcile path produced a given budget drain."""
 
 
 def _iso_now() -> str:
-    return _dt.datetime.now(_dt.timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%S.%f+00:00"
-    )
+    return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
 
 
 def apply_spend_with_marker(

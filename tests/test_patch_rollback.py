@@ -29,12 +29,15 @@ class TestRollbackHappyPath:
         assert (repo / "a.txt").read_text() == "modified\n"
         # Commit the applied change so the worktree is "clean" minus our mutation
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         rb_result = rollback_patch(
-            repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir,
+            repo,
+            apply_result.reverse_diff_id,
+            build_test_sandbox(repo),
+            run_dir,
         )
         assert isinstance(rb_result, RollbackResult)
         assert rb_result.rolled_back is True
@@ -49,12 +52,15 @@ class TestRollbackHappyPath:
         run_dir = _run_dir(tmp_path)
         apply_result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         rb = rollback_patch(
-            repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir,
+            repo,
+            apply_result.reverse_diff_id,
+            build_test_sandbox(repo),
+            run_dir,
         )
         assert rb.duration_seconds >= 0.0
 
@@ -69,19 +75,22 @@ class TestRollbackIdempotency:
         apply_result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         # Commit, rollback once, then commit the rollback — worktree clean
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         rollback_patch(repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir)
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-am", "rollback"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-am", "rollback"],
+            check=True,
+            capture_output=True,
         )
         # Second rollback on a clean tree → idempotent skip
         second = rollback_patch(
-            repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir,
+            repo,
+            apply_result.reverse_diff_id,
+            build_test_sandbox(repo),
+            run_dir,
         )
         assert second.idempotent_skip is True
         assert second.rolled_back is False
@@ -109,15 +118,18 @@ class TestRollbackErrors:
         apply_result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         # Commit the apply
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         # Dirty an UNRELATED file so rollback should refuse
         (repo / "README.md").write_text("dirty unrelated\n")
         with pytest.raises(PatchRollbackError) as excinfo:
             rollback_patch(
-                repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir,
+                repo,
+                apply_result.reverse_diff_id,
+                build_test_sandbox(repo),
+                run_dir,
             )
         assert excinfo.value.reason == "worktree_dirty"
 
@@ -131,9 +143,9 @@ class TestRollbackResultShape:
         run_dir = _run_dir(tmp_path)
         apply_result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         rb = rollback_patch(repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir)
         with pytest.raises(Exception):
@@ -147,9 +159,9 @@ class TestRollbackResultShape:
         run_dir = _run_dir(tmp_path)
         apply_result = apply_patch(repo, patch, build_test_sandbox(repo), run_dir)
         subprocess.run(
-            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo),
-             "commit", "-m", "apply"],
-            check=True, capture_output=True,
+            ["git", "-c", "user.name=t", "-c", "user.email=t@t.t", "-C", str(repo), "commit", "-m", "apply"],
+            check=True,
+            capture_output=True,
         )
         rb = rollback_patch(repo, apply_result.reverse_diff_id, build_test_sandbox(repo), run_dir)
         assert isinstance(rb.files_reverted, tuple)

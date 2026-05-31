@@ -44,7 +44,10 @@ def test_ao_ma10s_workflow_is_dispatch_only_and_main_bound() -> None:
 
 def test_ao_ma10s_workflow_permissions_are_minimal() -> None:
     text = _workflow_text()
-    assert "\npermissions:\n  actions: read\n  checks: read\n  contents: write\n  pull-requests: write\n  statuses: read\n" in text
+    assert (
+        "\npermissions:\n  actions: read\n  checks: read\n  contents: write\n  pull-requests: write\n  statuses: read\n"
+        in text
+    )
     forbidden = [
         "checks: write",
         "issues: write",
@@ -58,9 +61,9 @@ def test_ao_ma10s_workflow_permissions_are_minimal() -> None:
 
 def test_ao_ma10s_secret_is_only_bound_as_env_and_not_echoed() -> None:
     text = _workflow_text()
-    assert 'AO_MERGE_GITHUB_TOKEN: ${{ github.token }}' in text
+    assert "AO_MERGE_GITHUB_TOKEN: ${{ github.token }}" in text
     assert "AO_MERGE_ACTOR: github-actions[bot]" in text
-    assert 'AO_GOVERNANCE_GH_TOKEN: ${{ secrets.AO_GOVERNANCE_GH_TOKEN }}' in text
+    assert "AO_GOVERNANCE_GH_TOKEN: ${{ secrets.AO_GOVERNANCE_GH_TOKEN }}" in text
     assert "secrets.GLADYATORE_LAB_GH_TOKEN" not in text
     assert text.count("${{ github.token }}") == 1
     assert text.count("${{ secrets.AO_GOVERNANCE_GH_TOKEN }}") == 1
@@ -86,7 +89,7 @@ def test_ao_ma10s_workflow_runs_doctor_before_runner_and_uploads_artifacts() -> 
     assert "actions/upload-artifact@v7" in text
     assert "if: always()" in text
     assert "if-no-files-found: error" in text
-    assert "--expected-actor \"$AO_MERGE_ACTOR\"" in text
+    assert '--expected-actor "$AO_MERGE_ACTOR"' in text
     assert "--token-env AO_MERGE_GITHUB_TOKEN" in text
     assert "--branch-write-probe-token-env AO_GOVERNANCE_GH_TOKEN" in text
 

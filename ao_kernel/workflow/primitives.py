@@ -29,14 +29,16 @@ from typing import Any, Literal, Mapping
 
 from ao_kernel.workflow.errors import WorkflowTokenInvalidError
 
-_APPROVAL_GATES = frozenset({
-    "pre_diff",
-    "pre_apply",
-    "pre_pr",
-    "pre_merge",
-    "post_ci",
-    "custom",
-})
+_APPROVAL_GATES = frozenset(
+    {
+        "pre_diff",
+        "pre_apply",
+        "pre_pr",
+        "pre_merge",
+        "post_ci",
+        "custom",
+    }
+)
 
 _APPROVAL_DECISIONS = frozenset({"granted", "denied", "timeout"})
 
@@ -132,9 +134,7 @@ def create_approval(
     raise ``ValueError`` rather than silently coerced to ``custom``.
     """
     if gate not in _APPROVAL_GATES:
-        raise ValueError(
-            f"Unknown approval gate: {gate!r}; known: {sorted(_APPROVAL_GATES)}"
-        )
+        raise ValueError(f"Unknown approval gate: {gate!r}; known: {sorted(_APPROVAL_GATES)}")
     # Coerce gate to the Literal type via explicit cast-free assignment.
     # ``gate`` guaranteed to be one of the literal values by the check above.
     return Approval(
@@ -213,10 +213,7 @@ def resume_approval(
     literal values (defence in depth against caller type errors).
     """
     if decision not in _APPROVAL_DECISIONS:
-        raise ValueError(
-            f"Unknown approval decision: {decision!r}; "
-            f"known: {sorted(_APPROVAL_DECISIONS)}"
-        )
+        raise ValueError(f"Unknown approval decision: {decision!r}; known: {sorted(_APPROVAL_DECISIONS)}")
     if token != approval.approval_token:
         raise WorkflowTokenInvalidError(
             run_id=run_id,

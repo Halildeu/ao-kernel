@@ -112,9 +112,7 @@ def _events_for_run(run_dir: Path) -> list[dict[str, Any]]:
         try:
             events.append(json.loads(stripped))
         except json.JSONDecodeError as exc:
-            raise EvidenceSourceCorruptedError(
-                f"malformed JSONL at {events_path}:{lineno}: {exc}"
-            ) from exc
+            raise EvidenceSourceCorruptedError(f"malformed JSONL at {events_path}:{lineno}: {exc}") from exc
     return events
 
 
@@ -221,9 +219,7 @@ def _apply_usage_missing(
     return True
 
 
-def _apply_policy_checked(
-    built: BuiltRegistry, payload: dict[str, Any]
-) -> bool:
+def _apply_policy_checked(built: BuiltRegistry, payload: dict[str, Any]) -> bool:
     violations_raw = payload.get("violations_count")
     try:
         violations = int(violations_raw or 0)
@@ -246,9 +242,7 @@ def _apply_workflow_duration(
     final_state: str,
 ) -> bool:
     try:
-        delta = (
-            _parse_iso(completed_ts) - _parse_iso(started_ts)
-        ).total_seconds()
+        delta = (_parse_iso(completed_ts) - _parse_iso(started_ts)).total_seconds()
     except (TypeError, ValueError):
         return False
     if delta < 0:
@@ -313,7 +307,9 @@ def derive_metrics_from_evidence(
             payload = event.get("payload") or {}
             if kind == _LLM_SPEND:
                 spend_counted, duration_missing = _apply_llm_spend(
-                    built, payload, advanced_model,
+                    built,
+                    payload,
+                    advanced_model,
                 )
                 if spend_counted:
                     stats.llm_spend_counted += 1
@@ -338,13 +334,12 @@ def derive_metrics_from_evidence(
                 run_id = payload.get("run_id") or run_dir.name
                 started = started_ts_by_run.pop(run_id, None)
                 if started and ts:
-                    final_state = (
-                        "completed"
-                        if kind == _WORKFLOW_COMPLETED
-                        else "failed"
-                    )
+                    final_state = "completed" if kind == _WORKFLOW_COMPLETED else "failed"
                     if _apply_workflow_duration(
-                        built, started, str(ts), final_state,
+                        built,
+                        started,
+                        str(ts),
+                        final_state,
                     ):
                         stats.workflow_terminals_counted += 1
 
@@ -358,7 +353,10 @@ def derive_metrics_from_evidence(
         if not (started and completed):
             continue
         if _apply_workflow_duration(
-            built, str(started), str(completed), "cancelled",
+            built,
+            str(started),
+            str(completed),
+            "cancelled",
         ):
             stats.cancelled_from_state += 1
 

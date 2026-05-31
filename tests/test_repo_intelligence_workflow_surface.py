@@ -17,11 +17,7 @@ from ao_kernel.repo_intelligence import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = (
-    ROOT
-    / "ao_kernel"
-    / "defaults"
-    / "schemas"
-    / "repo-intelligence-read-only-workflow-surface.schema.v1.json"
+    ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-read-only-workflow-surface.schema.v1.json"
 )
 
 

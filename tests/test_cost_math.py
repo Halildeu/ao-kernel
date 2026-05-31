@@ -52,9 +52,7 @@ class TestComputeCost:
         cost = 800 * 0.003 / 1000 + 200 * 0.0003 / 1000 + 100 * 0.015 / 1000
              = 0.0024 + 0.00006 + 0.0015 = 0.00396 USD
         """
-        cost = compute_cost(
-            _entry(), tokens_input=1000, tokens_output=100, cached_tokens=200
-        )
+        cost = compute_cost(_entry(), tokens_input=1000, tokens_output=100, cached_tokens=200)
         assert cost == Decimal("0.00396")
 
     def test_cached_fallback_when_no_cached_rate(self) -> None:

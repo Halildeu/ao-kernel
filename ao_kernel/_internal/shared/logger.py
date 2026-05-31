@@ -9,6 +9,7 @@ Usage::
     log = get_logger(__name__)
     log.info("Runner started", run_id="abc123", intent="apply")
 """
+
 from __future__ import annotations
 
 import logging

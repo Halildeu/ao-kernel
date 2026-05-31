@@ -40,7 +40,7 @@ def _repo_with_workspace(tmp_path: Path) -> Path:
     (project / "pkg").mkdir()
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "main.py").write_text("def main():\n    return 0\n", encoding="utf-8")
-    (project / "pyproject.toml").write_text("[project]\nname = \"root-export-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "root-export-project"\n', encoding="utf-8")
     return project
 
 
@@ -109,10 +109,7 @@ def _replace_plan(project: Path, plan: dict[str, Any]) -> None:
 
 
 def _root_snapshot(project: Path) -> dict[str, bytes | None]:
-    return {
-        name: (project / name).read_bytes() if (project / name).is_file() else None
-        for name in ROOT_FILES
-    }
+    return {name: (project / name).read_bytes() if (project / name).is_file() else None for name in ROOT_FILES}
 
 
 def _target(plan: dict[str, Any], target: str) -> dict[str, Any]:

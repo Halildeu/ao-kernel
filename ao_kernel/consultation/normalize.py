@@ -133,7 +133,10 @@ def _extract_raw_verdict(response_doc: Mapping[str, Any]) -> Any:
             return response_doc[key]
     status = response_doc.get("status")
     if isinstance(status, str) and status.strip().upper() not in (
-        "OPEN", "CLAIMED", "RUNNING", "",
+        "OPEN",
+        "CLAIMED",
+        "RUNNING",
+        "",
     ):
         return status
     return ""
@@ -208,7 +211,8 @@ def _agent_from_response_filename(filename: str) -> str:
 
 
 def _build_request_entry(
-    path: Path, snapshot_rel: str,
+    path: Path,
+    snapshot_rel: str,
 ) -> RequestEntry:
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
@@ -218,24 +222,20 @@ def _build_request_entry(
         iteration=iteration_from_filename(path.name),
         path_rel=snapshot_rel,
         sha256=sha256_file(path),
-        created_at=(
-            doc.get("created_at")
-            if isinstance(doc.get("created_at"), str) else None
-        ),
+        created_at=(doc.get("created_at") if isinstance(doc.get("created_at"), str) else None),
     )
 
 
 def _build_response_entry(
-    path: Path, snapshot_rel: str,
+    path: Path,
+    snapshot_rel: str,
 ) -> ResponseEntry:
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         doc = {}
     raw_verdict = _extract_raw_verdict(doc)
-    raw_str = (
-        raw_verdict if isinstance(raw_verdict, str) else json.dumps(raw_verdict)
-    )
+    raw_str = raw_verdict if isinstance(raw_verdict, str) else json.dumps(raw_verdict)
     return ResponseEntry(
         iteration=iteration_from_filename(path.name),
         agent=_agent_from_response_filename(path.name),
@@ -246,8 +246,10 @@ def _build_response_entry(
         responded_at=(
             doc.get("responded_at") or doc.get("answered_at")
             if isinstance(
-                doc.get("responded_at") or doc.get("answered_at"), str,
-            ) else None
+                doc.get("responded_at") or doc.get("answered_at"),
+                str,
+            )
+            else None
         ),
     )
 
@@ -260,6 +262,7 @@ def _order_responses(
     Codex iter-4 mikro: parse_iso8601 used for timestamp tie-break —
     naive string comparison fails on offset-aware ISO variants.
     """
+
     def _key(r: ResponseEntry) -> tuple[int, float, str]:
         ts_val = parse_iso8601(r.responded_at) if r.responded_at else None
         return (
@@ -267,17 +270,16 @@ def _order_responses(
             ts_val.timestamp() if ts_val is not None else 0.0,
             r.path_rel,
         )
+
     return tuple(sorted(responses, key=_key))
 
 
 def _derive_resolved_at(responses: tuple[ResponseEntry, ...]) -> str | None:
     """Last normalizable response's ``responded_at`` (or None)."""
-    normalized = [
-        r for r in responses
-        if r.normalized_verdict != NormalizedVerdict.UNCLASSIFIED
-    ]
+    normalized = [r for r in responses if r.normalized_verdict != NormalizedVerdict.UNCLASSIFIED]
     if not normalized:
         return None
+
     # Pick the latest by the same deterministic ordering
     def _sort_key(r: ResponseEntry) -> tuple[int, float, str]:
         ts_val = parse_iso8601(r.responded_at) if r.responded_at else None
@@ -286,6 +288,7 @@ def _derive_resolved_at(responses: tuple[ResponseEntry, ...]) -> str | None:
             ts_val.timestamp() if ts_val is not None else 0.0,
             r.path_rel,
         )
+
     last = max(normalized, key=_sort_key)
     return last.responded_at
 
@@ -307,12 +310,8 @@ def build_resolution_record(
         request_doc_for_meta: Parsed initial request JSON — provides
             ``topic``, ``from_agent``, ``to_agent``.
     """
-    requests = tuple(
-        _build_request_entry(p, rel) for p, rel in request_snapshots
-    )
-    responses_unordered = [
-        _build_response_entry(p, rel) for p, rel in response_snapshots
-    ]
+    requests = tuple(_build_request_entry(p, rel) for p, rel in request_snapshots)
+    responses_unordered = [_build_response_entry(p, rel) for p, rel in response_snapshots]
     responses = _order_responses(responses_unordered)
 
     final_verdict = NormalizedVerdict.UNCLASSIFIED
@@ -322,11 +321,7 @@ def build_resolution_record(
             break
 
     has_any_response = len(responses) > 0
-    status = (
-        ResolutionStatus.RESOLVED
-        if final_verdict != NormalizedVerdict.UNCLASSIFIED
-        else ResolutionStatus.PENDING
-    )
+    status = ResolutionStatus.RESOLVED if final_verdict != NormalizedVerdict.UNCLASSIFIED else ResolutionStatus.PENDING
     # Pending even if responses present but all UNCLASSIFIED
     if has_any_response and final_verdict == NormalizedVerdict.UNCLASSIFIED:
         status = ResolutionStatus.PENDING
@@ -394,8 +389,11 @@ def record_digest(record_dict: Mapping[str, Any]) -> str:
     execution note #1).
     """
     import hashlib as _hashlib
+
     canonical = json.dumps(
-        dict(record_dict), sort_keys=True, ensure_ascii=False,
+        dict(record_dict),
+        sort_keys=True,
+        ensure_ascii=False,
         separators=(",", ":"),
     ).encode("utf-8")
     return _hashlib.sha256(canonical).hexdigest()

@@ -190,11 +190,13 @@ def execute_http_request_with_resilience(
     retry_evidence: list[dict[str, Any]] = []
 
     def _on_retry(attempt: int, wait: float, exc: Exception) -> None:
-        retry_evidence.append({
-            "attempt": attempt,
-            "wait_seconds": round(wait, 2),
-            "error": str(exc)[:100],
-        })
+        retry_evidence.append(
+            {
+                "attempt": attempt,
+                "wait_seconds": round(wait, 2),
+                "error": str(exc)[:100],
+            }
+        )
 
     def _do_request() -> Dict[str, Any]:
         return execute_http_request(
@@ -207,11 +209,14 @@ def execute_http_request_with_resilience(
 
     from ao_kernel.telemetry import span as otel_span, record_llm_call_duration
 
-    with otel_span("ao.llm_call", {
-        "gen_ai.system": provider_id,
-        "ao.request_id": request_id,
-        "ao.retry.max": max_retries,
-    }) as s:
+    with otel_span(
+        "ao.llm_call",
+        {
+            "gen_ai.system": provider_id,
+            "ao.request_id": request_id,
+            "ao.retry.max": max_retries,
+        },
+    ) as s:
         result = execute_with_retry(
             _do_request,
             max_retries=max_retries,
@@ -224,9 +229,7 @@ def execute_http_request_with_resilience(
         if result.get("status") == "OK":
             cb.record_success()
         else:
-            cb.record_failure(
-                Exception(f"HTTP {result.get('http_status')} {result.get('error_code')}")
-            )
+            cb.record_failure(Exception(f"HTTP {result.get('http_status')} {result.get('error_code')}"))
 
         # Attach retry evidence
         if retry_evidence:

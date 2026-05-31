@@ -31,15 +31,10 @@ class TestBundledFixtureEndToEnd:
             proposed_policies={},
         )
         assert report.scenarios_evaluated == 3
-        assert all(
-            d.transition in {"allow_to_allow", "deny_to_deny"}
-            for d in report.deltas
-        )
+        assert all(d.transition in {"allow_to_allow", "deny_to_deny"} for d in report.deltas)
         assert report.host_fs_dependent is False
 
-    def test_proposed_autonomy_allow_triggers_flip(
-        self, tmp_path: Path
-    ) -> None:
+    def test_proposed_autonomy_allow_triggers_flip(self, tmp_path: Path) -> None:
         """Proposed policy_autonomy with allow defaults should
         flip the governance_policy scenario to allow."""
         proposed = {
@@ -57,12 +52,8 @@ class TestBundledFixtureEndToEnd:
         )
         assert report.scenarios_evaluated == 3
         # At minimum the hashes must differ for the flipped policy.
-        baseline_hash = report.baseline_policy_hashes[
-            "policy_autonomy.v1.json"
-        ]
-        proposed_hash = report.proposed_policy_hashes[
-            "policy_autonomy.v1.json"
-        ]
+        baseline_hash = report.baseline_policy_hashes["policy_autonomy.v1.json"]
+        proposed_hash = report.proposed_policy_hashes["policy_autonomy.v1.json"]
         assert baseline_hash != proposed_hash
 
     def test_policy_hash_stable_across_runs(self, tmp_path: Path) -> None:
@@ -92,9 +83,7 @@ class TestBundledFixtureEndToEnd:
             ensure_ascii=False,
             separators=(",", ":"),
         )
-        expected_digest = hashlib.sha256(
-            expected_canonical.encode("utf-8")
-        ).hexdigest()
+        expected_digest = hashlib.sha256(expected_canonical.encode("utf-8")).hexdigest()
         assert canonical_policy_hash(payload) == f"sha256:{expected_digest}"
 
 

@@ -127,9 +127,7 @@ def run_claude_code_cli_workflow_smoke(
 
     owns_workspace = workspace_root is None
     root = (
-        Path(tempfile.mkdtemp(prefix="ao-kernel-claude-workflow-smoke-"))
-        if workspace_root is None
-        else workspace_root
+        Path(tempfile.mkdtemp(prefix="ao-kernel-claude-workflow-smoke-")) if workspace_root is None else workspace_root
     ).resolve()
 
     try:
@@ -401,11 +399,7 @@ def _check_event_order(
     return WorkflowSmokeCheck(
         name="event_order",
         status=status,
-        detail=(
-            "required event order present"
-            if status == "pass"
-            else "required event order missing or out of order"
-        ),
+        detail=("required event order present" if status == "pass" else "required event order missing or out of order"),
         finding_code=None if status == "pass" else "evidence_event_order_invalid",
         path=str(events_path),
         observed={"expected": expected, "seen": seen, "positions": positions},
@@ -418,10 +412,7 @@ def _check_review_artifact(
     record: Mapping[str, Any],
 ) -> tuple[WorkflowSmokeCheck, Path | None]:
     review_step = next(
-        (
-            step for step in record.get("steps", ())
-            if step.get("step_name") == _REVIEW_STEP_NAME
-        ),
+        (step for step in record.get("steps", ()) if step.get("step_name") == _REVIEW_STEP_NAME),
         None,
     )
     if not isinstance(review_step, Mapping):
@@ -446,9 +437,7 @@ def _check_review_artifact(
             ),
             None,
         )
-    artifact_path = (
-        workspace_root / ".ao" / "evidence" / "workflows" / run_id / artifact_ref
-    )
+    artifact_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / artifact_ref
     status: Literal["pass", "fail"] = "pass" if artifact_path.is_file() else "fail"
     return (
         WorkflowSmokeCheck(
@@ -480,11 +469,7 @@ def _check_schema_valid_artifact(artifact_path: Path) -> WorkflowSmokeCheck:
     return WorkflowSmokeCheck(
         name="review_findings_schema",
         status=status,
-        detail=(
-            "review_findings schema-valid"
-            if not errors
-            else "; ".join(error.message for error in errors[:3])
-        ),
+        detail=("review_findings schema-valid" if not errors else "; ".join(error.message for error in errors[:3])),
         finding_code=None if not errors else "review_findings_schema_invalid",
         path=str(artifact_path),
     )
@@ -505,16 +490,12 @@ def _check_review_artifact_contents(artifact_path: Path) -> WorkflowSmokeCheck:
         name="review_findings_contents",
         status="pass" if ok else "fail",
         detail=(
-            "review_findings semantic fields present"
-            if ok
-            else "review_findings semantic fields missing or empty"
+            "review_findings semantic fields present" if ok else "review_findings semantic fields missing or empty"
         ),
         finding_code=None if ok else "review_findings_contents_invalid",
         path=str(artifact_path),
         observed={
-            "schema_version": (
-                payload.get("schema_version") if isinstance(payload, Mapping) else None
-            ),
+            "schema_version": (payload.get("schema_version") if isinstance(payload, Mapping) else None),
             "findings_count": len(findings) if isinstance(findings, list) else None,
             "summary_present": isinstance(summary, str) and bool(summary.strip()),
         },
@@ -525,10 +506,7 @@ def _check_adapter_log(adapter_log_path: Path) -> WorkflowSmokeCheck:
     records = _load_jsonl(adapter_log_path)
     status: Literal["pass", "fail"] = "pass" if records else "fail"
     redaction_leaks = [
-        token
-        for record in records
-        for token in ("sk-ant-", "ghp_", "Bearer ")
-        if token in json.dumps(record)
+        token for record in records for token in ("sk-ant-", "ghp_", "Bearer ") if token in json.dumps(record)
     ]
     if redaction_leaks:
         status = "fail"
@@ -556,9 +534,7 @@ def _finalize_report(
     cleanup_requested: bool,
 ) -> ClaudeWorkflowSmokeReport:
     findings = tuple(
-        check.finding_code or f"{check.name}: {check.detail}"
-        for check in checks
-        if check.status == "fail"
+        check.finding_code or f"{check.name}: {check.detail}" for check in checks if check.status == "fail"
     )
     overall_status: Literal["pass", "blocked"] = (
         "pass" if checks and all(check.status == "pass" for check in checks) else "blocked"

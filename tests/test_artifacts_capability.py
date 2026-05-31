@@ -19,9 +19,7 @@ from ao_kernel.executor.artifacts import write_capability_artifact
 
 
 class TestHappyPath:
-    def test_writes_file_and_returns_ref_and_digest(
-        self, tmp_path: Path
-    ) -> None:
+    def test_writes_file_and_returns_ref_and_digest(self, tmp_path: Path) -> None:
         payload = {
             "schema_version": "1",
             "findings": [{"severity": "info", "message": "ok"}],
@@ -48,9 +46,7 @@ class TestHappyPath:
         assert written.read_bytes() == expected_body
         assert digest == hashlib.sha256(expected_body).hexdigest()
 
-    def test_distinct_capabilities_write_distinct_files(
-        self, tmp_path: Path
-    ) -> None:
+    def test_distinct_capabilities_write_distinct_files(self, tmp_path: Path) -> None:
         ref_a, _ = write_capability_artifact(
             run_dir=tmp_path,
             step_id="s1",
@@ -111,9 +107,7 @@ class TestHappyPath:
 
 
 class TestParentDirAutoCreate:
-    def test_creates_artifacts_dir_with_restricted_perms(
-        self, tmp_path: Path
-    ) -> None:
+    def test_creates_artifacts_dir_with_restricted_perms(self, tmp_path: Path) -> None:
         """Parent ``artifacts/`` directory auto-created with mode 0o700
         (mirrors write_artifact contract)."""
         write_capability_artifact(

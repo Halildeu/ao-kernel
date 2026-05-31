@@ -49,6 +49,7 @@ def _install_fake_psycopg2(monkeypatch):
 def pgvector_env(monkeypatch):
     conn, cur = _install_fake_psycopg2(monkeypatch)
     from ao_kernel.context.vector_store_pgvector import PgvectorBackend
+
     return PgvectorBackend, conn, cur
 
 
@@ -76,7 +77,8 @@ class TestModelNamespace:
         )
         with pytest.raises(VectorStoreConfigError, match="model mismatch"):
             backend.store(
-                "k", [0.0, 0.0],
+                "k",
+                [0.0, 0.0],
                 metadata={"embedding_model": "text-embedding-3-large"},
             )
 
@@ -90,10 +92,7 @@ class TestModelNamespace:
         backend.store("k", [0.0, 0.0])  # no metadata passed
         # Last execute should be the INSERT; the 3rd positional param is
         # the model tag.
-        insert_call = [
-            c for c in cur.execute.call_args_list
-            if "INSERT INTO" in c.args[0]
-        ][-1]
+        insert_call = [c for c in cur.execute.call_args_list if "INSERT INTO" in c.args[0]][-1]
         params = insert_call.args[1]
         assert params[2] == "m-v1"
 
@@ -105,10 +104,7 @@ class TestModelNamespace:
             embedding_model="m-v1",
         )
         backend.search([0.1, 0.2])
-        select_calls = [
-            c for c in cur.execute.call_args_list
-            if "SELECT key" in c.args[0]
-        ]
+        select_calls = [c for c in cur.execute.call_args_list if "SELECT key" in c.args[0]]
         assert select_calls, "no SELECT query executed by search()"
         sql = select_calls[-1].args[0]
         assert "embedding_model = %s" in sql
@@ -118,10 +114,7 @@ class TestModelNamespace:
         backend = PgvectorBackend(dsn="postgresql://x", dimension=2)
         # embedding_model="" means no namespace binding
         backend.search([0.1, 0.2])
-        select_calls = [
-            c for c in cur.execute.call_args_list
-            if "SELECT key" in c.args[0]
-        ]
+        select_calls = [c for c in cur.execute.call_args_list if "SELECT key" in c.args[0]]
         assert select_calls, "no SELECT query executed by search()"
         sql = select_calls[-1].args[0]
         assert "embedding_model = %s" not in sql

@@ -54,6 +54,7 @@ def _check_prometheus() -> bool:
         return _PROMETHEUS_AVAILABLE
     try:
         import prometheus_client  # noqa: F401
+
         _PROMETHEUS_AVAILABLE = True
     except ImportError:
         _PROMETHEUS_AVAILABLE = False
@@ -73,13 +74,29 @@ def is_metrics_available() -> bool:
 
 # Plan v4 §2.2: LLM upper raised to 600 (GPT-4-turbo outlier tolerance).
 _LLM_DURATION_BUCKETS: tuple[float, ...] = (
-    0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 300.0, 600.0,
+    0.1,
+    0.5,
+    1.0,
+    2.5,
+    5.0,
+    10.0,
+    30.0,
+    60.0,
+    300.0,
+    600.0,
 )
 
 # Workflow buckets extend to 7200s (2h) because human-approval steps
 # can dwell overnight.
 _WORKFLOW_DURATION_BUCKETS: tuple[float, ...] = (
-    1.0, 5.0, 15.0, 60.0, 300.0, 900.0, 3600.0, 7200.0,
+    1.0,
+    5.0,
+    15.0,
+    60.0,
+    300.0,
+    900.0,
+    3600.0,
+    7200.0,
 )
 
 
@@ -125,9 +142,7 @@ def _label_names(
     function returns the ``base`` labels unchanged so the default
     low-cardinality surface is preserved.
     """
-    advanced = tuple(
-        name for name in advanced_candidates if name in allowlist
-    )
+    advanced = tuple(name for name in advanced_candidates if name in allowlist)
     return base + advanced
 
 
@@ -175,7 +190,9 @@ def build_registry(
     llm_usage_missing: Any | None = None
     if include_llm_metrics:
         llm_duration_labels = _label_names(
-            ("provider",), ("model",), allowlist,
+            ("provider",),
+            ("model",),
+            allowlist,
         )
         llm_call_duration = Histogram(
             "ao_llm_call_duration_seconds",
@@ -186,17 +203,20 @@ def build_registry(
             registry=registry,
         )
         llm_tokens_labels = _label_names(
-            ("provider", "direction"), ("model",), allowlist,
+            ("provider", "direction"),
+            ("model",),
+            allowlist,
         )
         llm_tokens_used = Counter(
             "ao_llm_tokens_used_total",
-            "Token counts from llm_spend_recorded.tokens_input / "
-            "tokens_output / cached_tokens (direction label).",
+            "Token counts from llm_spend_recorded.tokens_input / tokens_output / cached_tokens (direction label).",
             labelnames=llm_tokens_labels,
             registry=registry,
         )
         llm_cost_labels = _label_names(
-            ("provider",), ("model",), allowlist,
+            ("provider",),
+            ("model",),
+            allowlist,
         )
         llm_cost_usd = Counter(
             "ao_llm_cost_usd_total",
@@ -206,8 +226,7 @@ def build_registry(
         )
         llm_usage_missing = Counter(
             "ao_llm_usage_missing_total",
-            "Count of llm_usage_missing events (adapter responses "
-            "without usage fields; cost reservation held).",
+            "Count of llm_usage_missing events (adapter responses without usage fields; cost reservation held).",
             labelnames=llm_cost_labels,
             registry=registry,
         )
@@ -231,20 +250,20 @@ def build_registry(
     )
 
     claim_active_labels = _label_names(
-        (), ("agent_id",), allowlist,
+        (),
+        ("agent_id",),
+        allowlist,
     )
     claim_active = Gauge(
         "ao_claim_active_total",
-        "Live coordination claims, computed via "
-        "coordination.registry.live_claims_count() (plan v4 Q1).",
+        "Live coordination claims, computed via coordination.registry.live_claims_count() (plan v4 Q1).",
         labelnames=claim_active_labels,
         registry=registry,
     )
 
     claim_takeover = Counter(
         "ao_claim_takeover_total",
-        "Count of claim_takeover events (coordination forced "
-        "takeover path).",
+        "Count of claim_takeover events (coordination forced takeover path).",
         labelnames=(),
         registry=registry,
     )

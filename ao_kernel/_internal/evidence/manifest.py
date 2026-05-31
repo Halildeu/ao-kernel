@@ -77,10 +77,7 @@ def generate_manifest(workspace_root: Path, run_id: str) -> ManifestResult:
         "version": "1",
         "run_id": run_id,
         "generated_at": now,
-        "files": [
-            {"path": e.path, "sha256": e.sha256, "bytes": e.bytes}
-            for e in entries
-        ],
+        "files": [{"path": e.path, "sha256": e.sha256, "bytes": e.bytes} for e in entries],
     }
     manifest_path = run_dir / "manifest.json"
     _atomic_write_json(manifest_path, manifest)
@@ -124,9 +121,7 @@ def verify_manifest(
             )
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    listed: dict[str, dict[str, object]] = {
-        f["path"]: f for f in manifest.get("files", [])
-    }
+    listed: dict[str, dict[str, object]] = {f["path"]: f for f in manifest.get("files", [])}
 
     mismatches: list[str] = []
     missing: list[str] = []
@@ -187,10 +182,15 @@ def _sha256(path: Path) -> str:
 
 def _atomic_write_json(path: Path, data: Mapping[str, object]) -> None:
     body = json.dumps(
-        data, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+        data,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
     ).encode("utf-8")
     fd, tmp = tempfile.mkstemp(
-        prefix=path.name + ".", suffix=".tmp", dir=path.parent,
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=path.parent,
     )
     try:
         with os.fdopen(fd, "wb") as fh:

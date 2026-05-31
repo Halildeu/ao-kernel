@@ -389,9 +389,7 @@ def test_gp56a_schema_rejects_support_widening(tmp_path: Path) -> None:
 def test_gp56a_docs_keep_disposable_boundary_explicit() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     public_beta = (repo_root / "docs" / "PUBLIC-BETA.md").read_text(encoding="utf-8")
-    support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(
-        encoding="utf-8"
-    )
+    support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(encoding="utf-8")
     runbook = (repo_root / "docs" / "OPERATIONS-RUNBOOK.md").read_text(encoding="utf-8")
     adapters = (repo_root / "docs" / "ADAPTERS.md").read_text(encoding="utf-8")
 

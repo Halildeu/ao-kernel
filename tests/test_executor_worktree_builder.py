@@ -55,9 +55,7 @@ class TestCreateNewPerRun:
     def test_creates_worktree_at_expected_path(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         rid = "00000000-0000-4000-8000-0000000000a1"
-        handle = create_worktree(
-            workspace_root=tmp_path, run_id=rid, policy=_policy()
-        )
+        handle = create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         assert isinstance(handle, WorktreeHandle)
         assert handle.path == tmp_path / ".ao" / "runs" / rid / "worktree"
         assert handle.path.exists()
@@ -67,9 +65,7 @@ class TestCreateNewPerRun:
     def test_chmod_0o700_applied(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         rid = "00000000-0000-4000-8000-0000000000a2"
-        handle = create_worktree(
-            workspace_root=tmp_path, run_id=rid, policy=_policy()
-        )
+        handle = create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         mode = stat.S_IMODE(os.stat(handle.path).st_mode)
         assert mode == 0o700, f"got mode {oct(mode)}"
 
@@ -78,9 +74,7 @@ class TestCreateNewPerRun:
         rid = "00000000-0000-4000-8000-0000000000a3"
         create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         with pytest.raises(WorktreeBuilderError) as ei:
-            create_worktree(
-                workspace_root=tmp_path, run_id=rid, policy=_policy()
-            )
+            create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         assert ei.value.reason == "already_exists"
 
 
@@ -110,9 +104,7 @@ class TestCleanup:
     def test_cleanup_removes_worktree(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         rid = "00000000-0000-4000-8000-0000000000a6"
-        handle = create_worktree(
-            workspace_root=tmp_path, run_id=rid, policy=_policy()
-        )
+        handle = create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         assert handle.path.exists()
         cleanup_worktree(handle, workspace_root=tmp_path)
         assert not handle.path.exists()
@@ -120,9 +112,7 @@ class TestCleanup:
     def test_cleanup_idempotent(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
         rid = "00000000-0000-4000-8000-0000000000a7"
-        handle = create_worktree(
-            workspace_root=tmp_path, run_id=rid, policy=_policy()
-        )
+        handle = create_worktree(workspace_root=tmp_path, run_id=rid, policy=_policy())
         cleanup_worktree(handle, workspace_root=tmp_path)
         # Second call on absent path is a no-op, not an error.
         cleanup_worktree(handle, workspace_root=tmp_path)

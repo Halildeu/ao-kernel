@@ -25,9 +25,7 @@ def timeline(
     Raises ``FileNotFoundError`` when run dir or events.jsonl absent.
     Returns ``"no events"`` for empty JSONL.
     """
-    events_path = (
-        workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    events_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     if not events_path.exists():
         raise FileNotFoundError(f"events not found: {events_path}")
 
@@ -53,9 +51,7 @@ def timeline(
         return "no events (after filters)"
 
     if format == "json":
-        return "\n".join(
-            json.dumps(e, sort_keys=True, ensure_ascii=False) for e in events
-        )
+        return "\n".join(json.dumps(e, sort_keys=True, ensure_ascii=False) for e in events)
 
     return _format_table(events)
 
@@ -69,9 +65,7 @@ def _parse_events(path: Path) -> list[dict[str, Any]]:
         try:
             events.append(json.loads(line))
         except json.JSONDecodeError as exc:
-            raise ValueError(
-                f"malformed JSONL at {path}:{lineno}: {exc}"
-            ) from exc
+            raise ValueError(f"malformed JSONL at {path}:{lineno}: {exc}") from exc
     return events
 
 
@@ -86,15 +80,16 @@ def _format_table(events: list[dict[str, Any]]) -> str:
         actor = e.get("actor", "")[:12]
         step_id = (e.get("step_id") or "")[:30]
         summary = _payload_summary(e.get("payload", {}))
-        rows.append(
-            f"{seq:>5} | {ts:24} | {kind:24} | {actor:12} | {step_id:30} | {summary}"
-        )
+        rows.append(f"{seq:>5} | {ts:24} | {kind:24} | {actor:12} | {step_id:30} | {summary}")
     return "\n".join(rows)
 
 
 def _payload_summary(payload: dict[str, Any], max_len: int = 96) -> str:
     compact = json.dumps(
-        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+        payload,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
     )
     if len(compact) <= max_len:
         return compact

@@ -49,9 +49,7 @@ def parse_iso8601_strict(value: str) -> datetime:
             raised message as a CLI error.
     """
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(
-            "--since: ISO-8601 string required (got empty / non-string)"
-        )
+        raise ValueError("--since: ISO-8601 string required (got empty / non-string)")
     parsed = parse_iso8601(value)
     if parsed is None:
         raise ValueError(
@@ -60,10 +58,7 @@ def parse_iso8601_strict(value: str) -> datetime:
             f"'2026-04-17T18:00:00+00:00'"
         )
     if parsed.tzinfo is None:
-        raise ValueError(
-            f"--since: timezone required, use 'Z' or '+HH:MM' offset "
-            f"(got {value!r})"
-        )
+        raise ValueError(f"--since: timezone required, use 'Z' or '+HH:MM' offset (got {value!r})")
     return parsed
 
 
@@ -91,7 +86,9 @@ def cmd_metrics_debug_query(args: Any) -> int:
     # callback, so we receive either None or a tz-aware datetime.
     try:
         events = _collect_events(
-            workspace, since=since, run_filter=run_filter,
+            workspace,
+            since=since,
+            run_filter=run_filter,
         )
     except EvidenceSourceCorruptedError as exc:
         print(f"error: corrupt evidence JSONL — {exc}", file=sys.stderr)
@@ -112,7 +109,10 @@ def cmd_metrics_debug_query(args: Any) -> int:
     }
 
     serialized = json.dumps(
-        payload, sort_keys=True, ensure_ascii=False, indent=2,
+        payload,
+        sort_keys=True,
+        ensure_ascii=False,
+        indent=2,
     )
     output_path = getattr(args, "output", None)
     if output_path:
@@ -133,17 +133,13 @@ def _collect_events(
     root = workspace / ".ao" / "evidence" / "workflows"
     if not root.is_dir():
         if run_filter:
-            raise EvidenceSourceMissingError(
-                f"no evidence directory at {root}"
-            )
+            raise EvidenceSourceMissingError(f"no evidence directory at {root}")
         return []
 
     if run_filter:
         targets = [root / run_filter]
         if not targets[0].is_dir():
-            raise EvidenceSourceMissingError(
-                f"run {run_filter!r} has no evidence at {targets[0]}"
-            )
+            raise EvidenceSourceMissingError(f"run {run_filter!r} has no evidence at {targets[0]}")
     else:
         targets = [d for d in sorted(root.iterdir()) if d.is_dir()]
 
@@ -160,9 +156,7 @@ def _collect_events(
             try:
                 event = json.loads(stripped)
             except json.JSONDecodeError as exc:
-                raise EvidenceSourceCorruptedError(
-                    f"malformed JSONL at {events_path}:{lineno}: {exc}"
-                ) from exc
+                raise EvidenceSourceCorruptedError(f"malformed JSONL at {events_path}:{lineno}: {exc}") from exc
             if since is not None and not _event_at_or_after(event, since):
                 continue
             results.append(event)

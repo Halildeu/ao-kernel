@@ -50,7 +50,8 @@ def _policy_schema() -> dict[str, Any]:
     global _POLICY_SCHEMA_CACHE
     if _POLICY_SCHEMA_CACHE is None:
         _POLICY_SCHEMA_CACHE = load_default(
-            "schemas", "policy-metrics.schema.v1.json",
+            "schemas",
+            "policy-metrics.schema.v1.json",
         )
     return _POLICY_SCHEMA_CACHE
 
@@ -182,9 +183,7 @@ def load_metrics_policy(
         _validate(override)
         return _from_dict(override)
 
-    workspace_override = (
-        workspace_root / ".ao" / "policies" / "policy_metrics.v1.json"
-    )
+    workspace_override = workspace_root / ".ao" / "policies" / "policy_metrics.v1.json"
     if workspace_override.is_file():
         doc = json.loads(workspace_override.read_text(encoding="utf-8"))
         _validate(doc)

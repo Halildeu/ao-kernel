@@ -12,6 +12,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+
 class RoadmapStepError(RuntimeError):
     def __init__(self, error_code: str, message: str, details: dict[str, Any] | None = None):
         super().__init__(message)
@@ -52,7 +53,9 @@ class VirtualFS:
         return p.exists()
 
 
-def step_create_file(*, workspace: Path, virtual_fs: VirtualFS, path: str, content: str, overwrite: bool, dry_run: bool) -> dict[str, Any]:
+def step_create_file(
+    *, workspace: Path, virtual_fs: VirtualFS, path: str, content: str, overwrite: bool, dry_run: bool
+) -> dict[str, Any]:
     rel = Path(path).as_posix()
     p = (workspace / rel).resolve()
     _ensure_inside_workspace(workspace, p)
@@ -66,11 +69,14 @@ def step_create_file(*, workspace: Path, virtual_fs: VirtualFS, path: str, conte
 
     if dry_run:
         virtual_fs.set_text(rel, content)
-        return {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode('utf-8'))}}}
+        return {
+            "status": "SKIPPED_DRY_RUN",
+            "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode("utf-8"))}},
+        }
 
     p.parent.mkdir(parents=True, exist_ok=True)
     write_text_atomic(p, content)
-    return {"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode('utf-8'))}}}
+    return {"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode("utf-8"))}}}
 
 
 def step_ensure_dir(*, workspace: Path, path: str, dry_run: bool) -> dict[str, Any]:
@@ -116,14 +122,21 @@ def step_create_json_from_template(
     if dry_run:
         virtual_fs.set_text(rel, content)
         return (
-            {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode('utf-8'))}}},
+            {
+                "status": "SKIPPED_DRY_RUN",
+                "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode("utf-8"))}},
+            },
             old,
             content,
         )
 
     p.parent.mkdir(parents=True, exist_ok=True)
     write_text_atomic(p, content)
-    return ({"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode('utf-8'))}}}, old, content)
+    return (
+        {"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode("utf-8"))}}},
+        old,
+        content,
+    )
 
 
 def step_add_schema_file(
@@ -172,14 +185,21 @@ def step_add_ci_gate_script(
     if dry_run:
         virtual_fs.set_text(rel, content)
         return (
-            {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode('utf-8'))}}},
+            {
+                "status": "SKIPPED_DRY_RUN",
+                "side_effects": {"would_write": {"path": rel, "bytes_estimate": len(content.encode("utf-8"))}},
+            },
             old,
             content,
         )
 
     p.parent.mkdir(parents=True, exist_ok=True)
     write_text_atomic(p, content)
-    return ({"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode('utf-8'))}}}, old, content)
+    return (
+        {"status": "OK", "side_effects": {"wrote": {"path": rel, "bytes": len(content.encode("utf-8"))}}},
+        old,
+        content,
+    )
 
 
 def step_patch_policy_report_inject(
@@ -217,7 +237,9 @@ def step_patch_policy_report_inject(
     )
 
 
-def step_patch_file(*, workspace: Path, virtual_fs: VirtualFS, path: str, patches: list[dict[str, Any]], dry_run: bool) -> dict[str, Any]:
+def step_patch_file(
+    *, workspace: Path, virtual_fs: VirtualFS, path: str, patches: list[dict[str, Any]], dry_run: bool
+) -> dict[str, Any]:
     rel = Path(path).as_posix()
     p = (workspace / rel).resolve()
     _ensure_inside_workspace(workspace, p)
@@ -296,6 +318,7 @@ def step_run_cmd(
     logs = stdout + ("\n" if stdout and stderr else "") + stderr
 
     if must_succeed and proc.returncode != 0:
+
         def _tail(text: str, max_lines: int = 8) -> str:
             lines = [ln for ln in (text or "").splitlines() if ln.strip()]
             if not lines:
@@ -338,6 +361,7 @@ def step_assert_paths_exist(*, workspace: Path, virtual_fs: VirtualFS, paths: li
         raise RoadmapStepError("PATHS_MISSING", "Missing required paths: " + ", ".join(sorted(missing)))
     return {"status": "OK", "side_effects": {"asserted": {"paths": [Path(p).as_posix() for p in paths]}}}
 
+
 def step_assert_pointer_target_exists(*, workspace: Path, pointer_path: str) -> dict[str, Any]:
     rel = Path(pointer_path).as_posix()
     pointer_file = (workspace / rel).resolve()
@@ -359,6 +383,7 @@ def step_assert_pointer_target_exists(*, workspace: Path, pointer_path: str) -> 
     if not stored_path.exists():
         raise RoadmapStepError("POINTER_TARGET_MISSING", f"Pointer target missing: {stored_rel}")
     return {"status": "OK", "side_effects": {"asserted_pointer": {"pointer_path": rel, "stored_path": stored_rel}}}
+
 
 def step_assert_core_paths_exist(*, core_root: Path, paths: list[str]) -> dict[str, Any]:
     core_root = core_root.resolve()
@@ -398,4 +423,7 @@ def step_iso_core_check(*, workspace: Path, tenant: str, required_files: list[st
     if missing:
         raise RoadmapStepError("ISO_CORE_MISSING", "Missing ISO core files: " + ", ".join(sorted(missing)))
 
-    return {"status": "OK", "side_effects": {"iso_core_ok": {"tenant": tenant_id, "files": [Path(f).as_posix() for f in required_files]}}}
+    return {
+        "status": "OK",
+        "side_effects": {"iso_core_ok": {"tenant": tenant_id, "files": [Path(f).as_posix() for f in required_files]}},
+    }

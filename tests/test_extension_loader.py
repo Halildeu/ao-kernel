@@ -85,9 +85,7 @@ class TestBundledDefaults:
             "roadmap_finish",
         ]
         assert ext.guardrails == {"offline": True, "network_default": False}
-        assert ext.policy_files == (
-            "defaults/policies/policy_kernel_api_guardrails.v1.json",
-        )
+        assert ext.policy_files == ("defaults/policies/policy_kernel_api_guardrails.v1.json",)
         assert ext.layer_contract.get("write_roots_allowlist") == [
             ".ao/reports/",
             ".ao/state/",
@@ -114,9 +112,7 @@ class TestBundledDefaults:
         assert ext.missing_runtime_refs == ()
         assert ext.docs_ref == ""
         assert ext.tests_entrypoints == ()
-        assert ext.policy_files == (
-            "defaults/policies/policy_context_orchestration.v1.json",
-        )
+        assert ext.policy_files == ("defaults/policies/policy_context_orchestration.v1.json",)
         assert ext.entrypoints.get("ops", []) == []
         assert ext.entrypoints.get("ops_single_gate", []) == []
         assert ext.entrypoints.get("cockpit_sections", []) == []
@@ -171,20 +167,24 @@ class TestBundledDefaults:
         ext_dir = tmp_path / ".ao" / "extensions" / "PRJ-CUSTOMER-INTAKE"
         ext_dir.mkdir(parents=True)
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps({
-                "version": "v1",
-                "extension_id": "PRJ-CUSTOMER-INTAKE",
-                "semver": "0.1.0",
-                "origin": "CUSTOMER",
-                "owner": "CUSTOMER",
-                "entrypoints": {
-                    "ops": [], "kernel_api_actions": ["intake_create_plan"],
-                    "cockpit_sections": [],
-                },
-                "layer_contract": {"write_roots_allowlist": []},
-                "policies": [], "ui_surfaces": [],
-                "compat": {"core_min": "0.0.0", "core_max": "", "notes": []},
-            }),
+            json.dumps(
+                {
+                    "version": "v1",
+                    "extension_id": "PRJ-CUSTOMER-INTAKE",
+                    "semver": "0.1.0",
+                    "origin": "CUSTOMER",
+                    "owner": "CUSTOMER",
+                    "entrypoints": {
+                        "ops": [],
+                        "kernel_api_actions": ["intake_create_plan"],
+                        "cockpit_sections": [],
+                    },
+                    "layer_contract": {"write_roots_allowlist": []},
+                    "policies": [],
+                    "ui_surfaces": [],
+                    "compat": {"core_min": "0.0.0", "core_max": "", "notes": []},
+                }
+            ),
             encoding="utf-8",
         )
         reg = ExtensionRegistry()
@@ -222,7 +222,8 @@ class TestWorkspaceOverride:
         ext_dir = project_root / ".ao" / "extensions" / "MY-EXT"
         ext_dir.mkdir(parents=True)
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(_valid_manifest("MY-EXT")), encoding="utf-8",
+            json.dumps(_valid_manifest("MY-EXT")),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         report = reg.load_from_workspace(project_root)
@@ -240,7 +241,8 @@ class TestWorkspaceOverride:
         ext_dir.mkdir(parents=True)
         overridden = _valid_manifest("PRJ-AIRUNNER", semver="9.9.9")
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(overridden), encoding="utf-8",
+            json.dumps(overridden),
+            encoding="utf-8",
         )
         reg.load_from_workspace(project_root)
         ext = reg.get("PRJ-AIRUNNER")
@@ -277,7 +279,8 @@ class TestWorkspaceOverride:
             ],
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
 
         reg = ExtensionRegistry()
@@ -304,7 +307,8 @@ class TestWorkspaceOverride:
             ],
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
 
         reg = ExtensionRegistry()
@@ -324,7 +328,8 @@ class TestSchemaValidation:
         ext_dir.mkdir(parents=True)
         # Missing required fields.
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps({"extension_id": "BROKEN"}), encoding="utf-8",
+            json.dumps({"extension_id": "BROKEN"}),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         report = reg.load_from_workspace(project_root)
@@ -353,7 +358,8 @@ class TestCompatGating:
             compat={"core_min": "99.0.0", "core_max": "", "notes": []},
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         reg.load_from_workspace(project_root)
@@ -373,7 +379,8 @@ class TestCompatGating:
             compat={"core_min": "0.0.0", "core_max": "999.0.0", "notes": []},
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         reg.load_from_workspace(project_root)
@@ -392,7 +399,8 @@ class TestStaleRefs:
             ai_context_refs=["nonexistent/file.md", "also-missing.txt"],
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         reg.load_from_workspace(project_root, refs_base=project_root)
@@ -411,7 +419,8 @@ class TestStaleRefs:
             ai_context_refs=["real.md"],
         )
         (ext_dir / "extension.manifest.v1.json").write_text(
-            json.dumps(manifest), encoding="utf-8",
+            json.dumps(manifest),
+            encoding="utf-8",
         )
         reg = ExtensionRegistry()
         reg.load_from_workspace(project_root, refs_base=project_root)

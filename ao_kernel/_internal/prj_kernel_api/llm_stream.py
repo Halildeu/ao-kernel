@@ -160,9 +160,7 @@ def _extract_google_delta(data: dict[str, Any]) -> str:
 # ── Usage Extraction ────────────────────────────────────────────────
 
 
-def extract_stream_usage(
-    event_data: dict[str, Any], provider_id: str
-) -> dict[str, int] | None:
+def extract_stream_usage(event_data: dict[str, Any], provider_id: str) -> dict[str, int] | None:
     """Extract token usage from streaming event (typically final event).
 
     Returns {input_tokens, output_tokens} or None.
@@ -209,9 +207,7 @@ def extract_stream_usage(
 # ── Event Classification ────────────────────────────────────────────
 
 
-def _classify_event(
-    event_data: dict[str, Any], provider_id: str
-) -> str:
+def _classify_event(event_data: dict[str, Any], provider_id: str) -> str:
     """Classify event type from parsed data."""
     if provider_id == "claude":
         evt = event_data.get("type", "")

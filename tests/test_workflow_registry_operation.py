@@ -63,9 +63,7 @@ def _base_definition(**overrides: Any) -> dict[str, Any]:
             },
         ],
         "expected_adapter_refs": [],
-        "default_policy_refs": [
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        "default_policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         "created_at": "2026-04-15T00:00:00+00:00",
     }
     defn.update(overrides)
@@ -126,7 +124,8 @@ class TestOperationParsing:
 
 class TestSchemaRejects:
     def test_missing_operation_for_ao_kernel_is_rejected_by_schema(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         payload = _base_definition(
             steps=[
@@ -146,7 +145,8 @@ class TestSchemaRejects:
         assert report.skipped[0].reason == "schema_invalid"
 
     def test_operation_not_allowed_for_adapter_actor(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         payload = _base_definition(
             steps=[
@@ -167,7 +167,8 @@ class TestSchemaRejects:
         assert report.skipped[0].reason == "schema_invalid"
 
     def test_patch_apply_with_escalate_to_human_rejected_by_schema(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         payload = _base_definition(
             steps=[

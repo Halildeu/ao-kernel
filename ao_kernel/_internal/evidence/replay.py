@@ -51,11 +51,15 @@ class ReplayReport:
 
 
 # Effective replay_safe taxonomy (B2 absorb — authoritative, not stored value)
-_NON_REPLAY_SAFE_KINDS = frozenset({
-    "adapter_invoked", "adapter_returned",
-    "approval_granted", "approval_denied",
-    "pr_opened",
-})
+_NON_REPLAY_SAFE_KINDS = frozenset(
+    {
+        "adapter_invoked",
+        "adapter_returned",
+        "approval_granted",
+        "approval_denied",
+        "pr_opened",
+    }
+)
 
 
 def replay(
@@ -70,9 +74,7 @@ def replay(
     ``mode="dry-run"``: full state machine walk with warnings for
     illegal/unexpected transitions.
     """
-    events_path = (
-        workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    events_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     if not events_path.exists():
         raise FileNotFoundError(f"events not found: {events_path}")
 
@@ -97,18 +99,23 @@ def replay(
             # No state implication — step_started, step_completed etc.
             # Record for inspect but don't transition.
             if mode == "inspect":
-                report.transitions.append(StateTransition(
-                    seq=seq, event_kind=kind,
-                    from_state=current_state, to_state=current_state,
-                    state_source="synthetic",
-                    replay_safe=effective_safe,
-                    stored_replay_safe=stored_safe,
-                    note="no state transition",
-                ))
+                report.transitions.append(
+                    StateTransition(
+                        seq=seq,
+                        event_kind=kind,
+                        from_state=current_state,
+                        to_state=current_state,
+                        state_source="synthetic",
+                        replay_safe=effective_safe,
+                        stored_replay_safe=stored_safe,
+                        note="no state transition",
+                    )
+                )
             continue
 
         # Check legality; insert synthetic chain if needed (I4-B3)
         from ao_kernel.workflow.state_machine import allowed_next
+
         try:
             legal = target in allowed_next(current_state)
         except ValueError:
@@ -119,30 +126,37 @@ def replay(
             chain = _synthetic_chain(current_state, target)
             if chain:
                 for intermediate in chain:
-                    report.transitions.append(StateTransition(
-                        seq=seq, event_kind=kind,
-                        from_state=current_state, to_state=intermediate,
-                        state_source="synthetic",
-                        replay_safe=effective_safe,
-                        stored_replay_safe=stored_safe,
-                        note="synthetic intermediate",
-                    ))
+                    report.transitions.append(
+                        StateTransition(
+                            seq=seq,
+                            event_kind=kind,
+                            from_state=current_state,
+                            to_state=intermediate,
+                            state_source="synthetic",
+                            replay_safe=effective_safe,
+                            stored_replay_safe=stored_safe,
+                            note="synthetic intermediate",
+                        )
+                    )
                     current_state = intermediate
                 legal = True  # chain resolved the gap
             else:
                 report.warnings.append(
-                    f"seq={seq}: illegal transition {current_state!r} → {target!r} "
-                    f"(event={kind}, source={source})"
+                    f"seq={seq}: illegal transition {current_state!r} → {target!r} (event={kind}, source={source})"
                 )
 
-        report.transitions.append(StateTransition(
-            seq=seq, event_kind=kind,
-            from_state=current_state, to_state=target,
-            state_source=source,
-            replay_safe=effective_safe,
-            stored_replay_safe=stored_safe,
-            note="illegal" if not legal and current_state != target else "",
-        ))
+        report.transitions.append(
+            StateTransition(
+                seq=seq,
+                event_kind=kind,
+                from_state=current_state,
+                to_state=target,
+                state_source=source,
+                replay_safe=effective_safe,
+                stored_replay_safe=stored_safe,
+                note="illegal" if not legal and current_state != target else "",
+            )
+        )
         current_state = target
 
     report.final_inferred_state = current_state

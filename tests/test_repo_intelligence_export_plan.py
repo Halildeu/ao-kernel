@@ -32,7 +32,7 @@ def _repo_with_workspace(tmp_path: Path) -> Path:
     (project / "pkg").mkdir()
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "main.py").write_text("def main():\n    return 0\n", encoding="utf-8")
-    (project / "pyproject.toml").write_text("[project]\nname = \"export-plan-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "export-plan-project"\n', encoding="utf-8")
     return project
 
 

@@ -74,10 +74,7 @@ class ConsultationPaths:
             "config": self.config,
         }
         if artefact not in mapping:
-            raise KeyError(
-                f"unknown artefact type {artefact!r}; expected one of "
-                f"{sorted(mapping)}"
-            )
+            raise KeyError(f"unknown artefact type {artefact!r}; expected one of {sorted(mapping)}")
         return mapping[artefact]
 
     def legacy(self, artefact: str) -> Path | None:
@@ -121,9 +118,7 @@ def load_consultation_paths(
     paths_doc = policy.get("paths") or {}
     missing = [k for k in _ARTEFACT_KEYS if k not in paths_doc]
     if missing:
-        raise ValueError(
-            f"consultation policy.paths missing required keys: {missing!r}"
-        )
+        raise ValueError(f"consultation policy.paths missing required keys: {missing!r}")
 
     def _abs(rel: str) -> Path:
         return (workspace_root / rel).resolve()
@@ -164,8 +159,7 @@ def resolve_consultation_dir(
     """
     if is_file_artefact(artefact):
         raise ValueError(
-            f"artefact {artefact!r} is modeled as a file, not a directory; "
-            "call resolve_consultation_path() instead"
+            f"artefact {artefact!r} is modeled as a file, not a directory; call resolve_consultation_path() instead"
         )
     paths = load_consultation_paths(policy, workspace_root=workspace_root)
     canonical = paths.canonical(artefact)
@@ -194,8 +188,7 @@ def resolve_consultation_path(
     """
     if not is_file_artefact(artefact):
         raise ValueError(
-            f"artefact {artefact!r} is modeled as a directory, not a file; "
-            "call resolve_consultation_dir() instead"
+            f"artefact {artefact!r} is modeled as a directory, not a file; call resolve_consultation_dir() instead"
         )
     paths = load_consultation_paths(policy, workspace_root=workspace_root)
     canonical = paths.canonical(artefact)

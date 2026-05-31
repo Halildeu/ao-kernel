@@ -21,10 +21,12 @@ def create_provider(provider_type: str, **kwargs: Any) -> SecretsProvider:
     """
     if provider_type == "env":
         from ao_kernel._internal.secrets.env_provider import EnvSecretsProvider
+
         return EnvSecretsProvider(**kwargs)
 
     if provider_type == "vault_stub":
         from ao_kernel._internal.secrets.vault_stub_provider import VaultStubSecretsProvider
+
         secrets_path = kwargs.get("secrets_path")
         if secrets_path is None:
             secrets_path = Path(".secrets/vault.json")
@@ -34,6 +36,7 @@ def create_provider(provider_type: str, **kwargs: Any) -> SecretsProvider:
 
     if provider_type == "hashicorp_vault":
         from ao_kernel._internal.secrets.hashicorp_vault_provider import HashiCorpVaultProvider
+
         return HashiCorpVaultProvider(**kwargs)
 
     raise ValueError(f"Unknown secrets provider type: {provider_type!r}")

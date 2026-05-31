@@ -70,4 +70,3 @@ def test_script_wrapper_emits_json_report() -> None:
     assert payload["extension_id"] == "PRJ-KERNEL-API"
     assert isinstance(payload["checks"], list)
     assert isinstance(payload["artifacts"], list)
-

@@ -436,12 +436,16 @@ def test_ri78a_forbidden_surfaces_actually_unchanged_in_diff() -> None:
         ):
             allowed_planned_successor_touches.add("ao_kernel/ao_release_gate.py")
 
-    if "ao_kernel/ao_release_gate.py" in changed and {
-        ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
-        "scripts/ao_release_gate_decision.py",
-        "tests/test_ao_release_gate.py",
-        "tests/test_gpp2b_mapping_drift_guard.py",
-    } <= changed:
+    if (
+        "ao_kernel/ao_release_gate.py" in changed
+        and {
+            ".claude/plans/GPP-2B-AO-RELEASE-GATE-REQUIRED-CHECK-MAPPING.md",
+            "scripts/ao_release_gate_decision.py",
+            "tests/test_ao_release_gate.py",
+            "tests/test_gpp2b_mapping_drift_guard.py",
+        }
+        <= changed
+    ):
         ao_ma10h_text = (_REPO_ROOT / ".claude" / "plans" / "AO-MA-10H-HIGH-RISK-SUPERSESSION-CONTRACT.md").read_text(
             encoding="utf-8"
         )

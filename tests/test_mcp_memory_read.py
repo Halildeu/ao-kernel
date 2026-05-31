@@ -62,7 +62,8 @@ def _write_policy(
         },
     }
     (policies_dir / "policy_mcp_memory.v1.json").write_text(
-        json.dumps(doc), encoding="utf-8",
+        json.dumps(doc),
+        encoding="utf-8",
     )
 
 
@@ -103,6 +104,7 @@ def test_read_disabled_by_default_fails_closed(tmp_path: Path):
 
 def test_workspace_root_absent_library_mode_denies(monkeypatch):
     from ao_kernel import mcp_server
+
     monkeypatch.setattr(mcp_server, "_find_workspace_root", lambda: None)
     result = handle_memory_read({})
     assert result["decision"] == "deny"

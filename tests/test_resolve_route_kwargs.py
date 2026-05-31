@@ -65,7 +65,10 @@ class TestPlumbingForwardsKwargsToInternal:
         captured: dict = {}
 
         def _fake_resolve(
-            request, repo_root=None, now=None, workspace_root=None,
+            request,
+            repo_root=None,
+            now=None,
+            workspace_root=None,
         ):
             captured.update(request)
             return {

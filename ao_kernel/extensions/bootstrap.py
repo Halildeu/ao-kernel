@@ -50,7 +50,9 @@ def register_default_handlers(
         except Exception as exc:  # noqa: BLE001 — one bad handler must not block the rest
             logger.warning(
                 "extension handler registration failed for %s (%s): %s",
-                extension_id, module_path, exc,
+                extension_id,
+                module_path,
+                exc,
             )
     return registered
 
@@ -61,7 +63,8 @@ def default_handler_extension_ids() -> frozenset[str]:
 
 
 def _manifest_activatable(
-    extensions: "ExtensionRegistry | None", extension_id: str,
+    extensions: "ExtensionRegistry | None",
+    extension_id: str,
 ) -> bool:
     """Return True when no extensions registry was supplied, or when the
     extension is present, enabled, and free of activation blockers."""

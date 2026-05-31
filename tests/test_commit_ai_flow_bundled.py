@@ -21,6 +21,7 @@ from ao_kernel.config import load_default
 
 def _bundled_workflow(name: str) -> dict:
     import ao_kernel
+
     pkg_root = Path(ao_kernel.__file__).parent
     path = pkg_root / "defaults" / "workflows" / name
     return json.loads(path.read_text(encoding="utf-8"))
@@ -28,6 +29,7 @@ def _bundled_workflow(name: str) -> dict:
 
 def _bundled_adapter_manifest(name: str) -> dict:
     import ao_kernel
+
     pkg_root = Path(ao_kernel.__file__).parent
     path = pkg_root / "defaults" / "adapters" / name
     return json.loads(path.read_text(encoding="utf-8"))
@@ -44,8 +46,7 @@ class TestCommitAiFlowSchema:
         flow = _bundled_workflow("commit_ai_flow.v1.json")
         errors = list(Draft202012Validator(schema).iter_errors(flow))
         assert errors == [], (
-            f"bundled commit_ai_flow.v1.json fails workflow-definition "
-            f"schema: {[e.message for e in errors]}"
+            f"bundled commit_ai_flow.v1.json fails workflow-definition schema: {[e.message for e in errors]}"
         )
 
     def test_required_top_level_fields(self) -> None:
@@ -78,8 +79,7 @@ class TestCommitAiFlowSchema:
         flow = _bundled_workflow("commit_ai_flow.v1.json")
         for step in flow["steps"]:
             assert isinstance(step["on_failure"], str), (
-                f"step {step['step_name']!r} on_failure must be string, "
-                f"got {type(step['on_failure']).__name__}"
+                f"step {step['step_name']!r} on_failure must be string, got {type(step['on_failure']).__name__}"
             )
             assert step["on_failure"] in {
                 "transition_to_failed",
@@ -104,14 +104,11 @@ class TestCrossRefWithCodexStub:
         manifest = _bundled_adapter_manifest("codex-stub.manifest.v1.json")
         stub_caps = set(manifest["capabilities"])
 
-        adapter_step = next(
-            s for s in flow["steps"] if s["actor"] == "adapter"
-        )
+        adapter_step = next(s for s in flow["steps"] if s["actor"] == "adapter")
         step_caps = set(adapter_step["required_capabilities"])
         missing = step_caps - stub_caps
         assert missing == set(), (
-            f"codex-stub missing capabilities required by "
-            f"commit_ai_flow.invoke_commit_agent: {missing}"
+            f"codex-stub missing capabilities required by commit_ai_flow.invoke_commit_agent: {missing}"
         )
 
     def test_commit_message_output_parse_rule_exists(self) -> None:
@@ -120,9 +117,7 @@ class TestCrossRefWithCodexStub:
         envelope)."""
         manifest = _bundled_adapter_manifest("codex-stub.manifest.v1.json")
         rules = manifest["output_parse"]["rules"]
-        commit_rules = [
-            r for r in rules if r["capability"] == "commit_message"
-        ]
+        commit_rules = [r for r in rules if r["capability"] == "commit_message"]
         assert len(commit_rules) == 1
         rule = commit_rules[0]
         assert rule["json_path"] == "$.commit_message"

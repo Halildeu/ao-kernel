@@ -132,13 +132,15 @@ def load_cursor(cursor_path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning(
             "reconciler cursor unreadable at %s (%s); resetting",
-            cursor_path, exc,
+            cursor_path,
+            exc,
         )
         return _default_cursor_state()
     if state.get("version") != _CURSOR_VERSION:
         logger.warning(
             "reconciler cursor version %r != expected %r; resetting",
-            state.get("version"), _CURSOR_VERSION,
+            state.get("version"),
+            _CURSOR_VERSION,
         )
         return _default_cursor_state()
     return state
@@ -154,7 +156,8 @@ def save_cursor(cursor_path: Path, state: Mapping[str, Any]) -> None:
 
 
 def _iter_ledger_lines(
-    ledger_path: Path, start_offset: int,
+    ledger_path: Path,
+    start_offset: int,
 ) -> Iterator[tuple[int, dict[str, Any]]]:
     """Yield (line_offset, parsed_dict) for lines at offset >= start.
 
@@ -250,14 +253,17 @@ def find_orphan_spends(
             record, _ = load_run(workspace_root, run_id)
         except WorkflowRunNotFoundError:
             logger.info(
-                "reconciler: ledger entry references missing run %s at "
-                "offset %d (skipping)", run_id, offset,
+                "reconciler: ledger entry references missing run %s at offset %d (skipping)",
+                run_id,
+                offset,
             )
             continue
         except Exception as exc:  # run store read error
             logger.warning(
                 "reconciler: failed to load run %s at offset %d: %s",
-                run_id, offset, exc,
+                run_id,
+                offset,
+                exc,
             )
             continue
         source = _infer_source(entry)
@@ -367,9 +373,7 @@ def scan_and_fix(
     lock_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     with file_lock(lock_path):
-        state = (
-            _default_cursor_state() if cursor_reset else load_cursor(cursor_path)
-        )
+        state = _default_cursor_state() if cursor_reset else load_cursor(cursor_path)
         start_offset = int(state.get("last_scanned_line_offset", 0) or 0)
 
         found = 0
@@ -379,7 +383,9 @@ def scan_and_fix(
         last_offset = start_offset - 1
 
         for orphan in find_orphan_spends(
-            workspace_root, policy, start_offset=start_offset,
+            workspace_root,
+            policy,
+            start_offset=start_offset,
         ):
             found += 1
             last_offset = orphan.ledger_line_offset
@@ -394,10 +400,7 @@ def scan_and_fix(
                     # missed the actual source). Count as skipped.
                     skipped += 1
             except Exception as exc:
-                errors.append(
-                    f"run_id={orphan.run_id} offset={orphan.ledger_line_offset}: "
-                    f"{type(exc).__name__}: {exc}"
-                )
+                errors.append(f"run_id={orphan.run_id} offset={orphan.ledger_line_offset}: {type(exc).__name__}: {exc}")
 
         # Scan the ledger tail — even when there are no orphans in the
         # already-seen range, we need to record the new furthest
@@ -420,9 +423,12 @@ def scan_and_fix(
             state["last_check_ts"] = _dt.datetime.now(
                 _dt.timezone.utc,
             ).isoformat()
-            state["orphans_fixed_total"] = int(
-                state.get("orphans_fixed_total", 0) or 0,
-            ) + fixed
+            state["orphans_fixed_total"] = (
+                int(
+                    state.get("orphans_fixed_total", 0) or 0,
+                )
+                + fixed
+            )
             save_cursor(cursor_path, state)
 
         return ScanResult(

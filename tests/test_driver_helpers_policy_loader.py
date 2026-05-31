@@ -36,7 +36,8 @@ def _install_workflow(root: Path) -> None:
         ],
     }
     (workflows_dir / "smoke_flow.workflow.v1.json").write_text(
-        json.dumps(wf, indent=2), encoding="utf-8",
+        json.dumps(wf, indent=2),
+        encoding="utf-8",
     )
 
 
@@ -61,9 +62,7 @@ class TestBuildDriverPolicyLoaderForward:
         driver = build_driver(tmp_path, policy_loader=custom_policy)
         executor = driver._executor
         # Executor stores policy on ``_policy`` attribute
-        assert executor._policy.get("_pr_c1a_sentinel") == (
-            "policy_loader_forward_test"
-        )
+        assert executor._policy.get("_pr_c1a_sentinel") == ("policy_loader_forward_test")
 
     def test_none_kwarg_matches_default_behavior(self, tmp_path: Path) -> None:
         """Passing policy_loader=None is identical to omitting it —

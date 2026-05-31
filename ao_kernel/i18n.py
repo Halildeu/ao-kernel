@@ -19,8 +19,7 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "error_no_workspace": "Error: No workspace found. Run 'ao-kernel init' first.",
         "error_corrupted": "Error: {detail}",
         "error_mcp_missing": (
-            "Error: MCP server requires the 'mcp' package.\n"
-            "Install with: pip install ao-kernel[mcp]"
+            "Error: MCP server requires the 'mcp' package.\nInstall with: pip install ao-kernel[mcp]"
         ),
         "usage_mcp_serve": "Usage: ao-kernel mcp serve",
     },
@@ -29,10 +28,7 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "workspace_already_exists": "Workspace zaten mevcut: {path}",
         "error_no_workspace": "Hata: Workspace bulunamadı. Önce 'ao-kernel init' çalıştırın.",
         "error_corrupted": "Hata: {detail}",
-        "error_mcp_missing": (
-            "Hata: MCP server için 'mcp' paketi gerekli.\n"
-            "Kurmak için: pip install ao-kernel[mcp]"
-        ),
+        "error_mcp_missing": ("Hata: MCP server için 'mcp' paketi gerekli.\nKurmak için: pip install ao-kernel[mcp]"),
         "usage_mcp_serve": "Kullanım: ao-kernel mcp serve",
     },
 }

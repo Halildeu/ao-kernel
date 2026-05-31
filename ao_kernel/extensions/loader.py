@@ -106,10 +106,10 @@ class ExtensionManifest:
 class ConflictRecord:
     """Duplicate entrypoint conflict between two manifests."""
 
-    entrypoint_group: str     # e.g. "kernel_api_actions"
-    entrypoint: str           # e.g. "intake_create_plan"
-    winner: str               # extension_id that registered first
-    shadowed: list[str]       # extension_ids whose declaration was ignored
+    entrypoint_group: str  # e.g. "kernel_api_actions"
+    entrypoint: str  # e.g. "intake_create_plan"
+    winner: str  # extension_id that registered first
+    shadowed: list[str]  # extension_ids whose declaration was ignored
 
 
 @dataclass
@@ -211,6 +211,7 @@ def _validate_schema(data: dict[str, Any], *, schema: dict[str, Any] | None) -> 
         return None
     try:
         import jsonschema
+
         jsonschema.validate(data, schema)
     except Exception as exc:  # jsonschema.ValidationError and friends
         return str(exc).splitlines()[0]
@@ -220,6 +221,7 @@ def _validate_schema(data: dict[str, Any], *, schema: dict[str, Any] | None) -> 
 def _load_schema() -> dict[str, Any] | None:
     try:
         from ao_kernel.config import load_default
+
         return load_default("schemas", "extension-manifest.schema.v1.json")
     except Exception as exc:
         logger.debug("extension schema load failed: %s", exc)
@@ -232,6 +234,7 @@ def _compat_blockers(manifest: ExtensionManifest) -> tuple[str, ...]:
     core_max = manifest.compat.get("core_max", "")
     try:
         import ao_kernel
+
         current = getattr(ao_kernel, "__version__", "0.0.0")
     except Exception:
         current = "0.0.0"
@@ -343,6 +346,7 @@ class ExtensionRegistry:
         schema = _load_schema()
         try:
             import importlib.resources as resources
+
             extensions_pkg = resources.files("ao_kernel.defaults.extensions")
         except (ImportError, ModuleNotFoundError):
             return LoadReport(loaded=0)
@@ -403,29 +407,14 @@ class ExtensionRegistry:
 
     def list_enabled(self) -> list[ExtensionManifest]:
         """Enabled manifests with NO activation blockers (compat-healthy)."""
-        return [
-            m for m in self.list_all()
-            if m.enabled and not m.activation_blockers
-        ]
+        return [m for m in self.list_all() if m.enabled and not m.activation_blockers]
 
     def truth_summary(self) -> ExtensionTruthSummary:
         """Return an aggregated runtime-truth summary for loaded manifests."""
         manifests = self.list_all()
-        runtime_backed_ids = tuple(
-            m.extension_id
-            for m in manifests
-            if m.truth_tier == TRUTH_TIER_RUNTIME_BACKED
-        )
-        contract_only_ids = tuple(
-            m.extension_id
-            for m in manifests
-            if m.truth_tier == TRUTH_TIER_CONTRACT_ONLY
-        )
-        quarantined_ids = tuple(
-            m.extension_id
-            for m in manifests
-            if m.truth_tier == TRUTH_TIER_QUARANTINED
-        )
+        runtime_backed_ids = tuple(m.extension_id for m in manifests if m.truth_tier == TRUTH_TIER_RUNTIME_BACKED)
+        contract_only_ids = tuple(m.extension_id for m in manifests if m.truth_tier == TRUTH_TIER_CONTRACT_ONLY)
+        quarantined_ids = tuple(m.extension_id for m in manifests if m.truth_tier == TRUTH_TIER_QUARANTINED)
         return ExtensionTruthSummary(
             total_extensions=len(manifests),
             runtime_backed=len(runtime_backed_ids),
@@ -483,7 +472,9 @@ class ExtensionRegistry:
         if err:
             report.skipped.append({"path": str(manifest_file), "reason": f"schema_invalid: {err}"})
             logger.warning(
-                "extension manifest schema invalid (%s): %s", manifest_file, err,
+                "extension manifest schema invalid (%s): %s",
+                manifest_file,
+                err,
             )
             return
 
@@ -503,10 +494,12 @@ class ExtensionRegistry:
         ext_id = manifest.extension_id
         if ext_id in self._extensions and not allow_override:
             # Duplicate extension_id inside bundled set — keep first, warn.
-            report.skipped.append({
-                "path": str(manifest_file),
-                "reason": f"duplicate_extension_id: {ext_id}",
-            })
+            report.skipped.append(
+                {
+                    "path": str(manifest_file),
+                    "reason": f"duplicate_extension_id: {ext_id}",
+                }
+            )
             logger.warning("duplicate extension_id ignored: %s", ext_id)
             return
 
@@ -554,18 +547,23 @@ class ExtensionRegistry:
                     None,
                 )
                 if existing is None:
-                    self._conflicts.append(ConflictRecord(
-                        entrypoint_group=group,
-                        entrypoint=name,
-                        winner=owner,
-                        shadowed=[manifest.extension_id],
-                    ))
+                    self._conflicts.append(
+                        ConflictRecord(
+                            entrypoint_group=group,
+                            entrypoint=name,
+                            winner=owner,
+                            shadowed=[manifest.extension_id],
+                        )
+                    )
                 else:
                     if manifest.extension_id not in existing.shadowed:
                         existing.shadowed.append(manifest.extension_id)
                 logger.warning(
                     "entrypoint conflict: %s/%s declared by %s (winner) and %s",
-                    group, name, owner, manifest.extension_id,
+                    group,
+                    name,
+                    owner,
+                    manifest.extension_id,
                 )
 
 

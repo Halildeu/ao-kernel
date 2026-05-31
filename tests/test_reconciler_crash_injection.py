@@ -68,7 +68,8 @@ def _seed_run(root: Path, run_id: str) -> None:
 
 class TestReconcilerRealCrashRecovery:
     def test_crash_between_ledger_append_and_marker_survives(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Child process writes a ledger entry, fsyncs it, then
         ``os._exit(77)`` BEFORE the marker CAS runs. Parent process
@@ -129,15 +130,13 @@ class TestReconcilerRealCrashRecovery:
         # marker absent.
         ledger_path = tmp_path / ".ao" / "cost" / "spend.jsonl"
         assert ledger_path.is_file(), "ledger did not survive the crash"
-        lines = [
-            line for line in ledger_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        lines = [line for line in ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         assert len(lines) == 1
         entry = json.loads(lines[0])
         assert entry["step_id"] == "crashed-step"
 
         from ao_kernel.workflow.run_store import load_run
+
         record, _ = load_run(tmp_path, run_id)
         assert record.get("cost_reconciled", []) == []
 

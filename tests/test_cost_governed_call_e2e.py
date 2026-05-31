@@ -101,9 +101,7 @@ def _create_run_with_cost_budget(
                 "remaining": cost_limit_usd,
             },
         },
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
     )
     return run_id
@@ -154,22 +152,11 @@ def _read_ledger_lines(workspace_root: Path) -> list[dict[str, Any]]:
     ledger = workspace_root / ".ao" / "cost" / "spend.jsonl"
     if not ledger.is_file():
         return []
-    return [
-        json.loads(line)
-        for line in ledger.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _read_evidence_kinds(workspace_root: Path, run_id: str) -> list[str]:
-    events_path = (
-        workspace_root
-        / ".ao"
-        / "evidence"
-        / "workflows"
-        / run_id
-        / "events.jsonl"
-    )
+    events_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     if not events_path.is_file():
         return []
     return [
@@ -203,9 +190,7 @@ class TestCapabilityGapEnvelope:
 
         def _fail_if_called(**_kwargs: Any) -> dict[str, Any]:
             call_count["transport"] += 1
-            raise AssertionError(
-                "execute_request must not be called after CAPABILITY_GAP"
-            )
+            raise AssertionError("execute_request must not be called after CAPABILITY_GAP")
 
         monkeypatch.setattr(
             "ao_kernel.llm.check_capabilities",
@@ -255,9 +240,7 @@ class TestCapabilityGapEnvelope:
 
 
 class TestTransportErrorEnvelope:
-    def test_transport_error_returns_envelope(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_transport_error_returns_envelope(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
             "ao_kernel.llm.check_capabilities",
             lambda **_: (True, "anthropic", []),
@@ -318,9 +301,7 @@ class TestTransportErrorEnvelope:
 
 
 class TestOkCostActive:
-    def test_full_cost_active_flow_rich_success_dict(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_full_cost_active_flow_rich_success_dict(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_enabled_policy(tmp_path)
         run_id = _create_run_with_cost_budget(tmp_path)
 
@@ -330,9 +311,7 @@ class TestOkCostActive:
         )
         monkeypatch.setattr(
             "ao_kernel.llm.execute_request",
-            lambda **_: _ok_transport_result(
-                input_tokens=1000, output_tokens=500, elapsed_ms=420
-            ),
+            lambda **_: _ok_transport_result(input_tokens=1000, output_tokens=500, elapsed_ms=420),
         )
 
         result = governed_call(
@@ -353,9 +332,7 @@ class TestOkCostActive:
         assert isinstance(result["normalized"], dict)
         assert result["normalized"].get("usage") is not None
 
-    def test_full_cost_active_flow_ledger_appended(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_full_cost_active_flow_ledger_appended(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_enabled_policy(tmp_path)
         run_id = _create_run_with_cost_budget(tmp_path)
 
@@ -365,9 +342,7 @@ class TestOkCostActive:
         )
         monkeypatch.setattr(
             "ao_kernel.llm.execute_request",
-            lambda **_: _ok_transport_result(
-                input_tokens=1000, output_tokens=500
-            ),
+            lambda **_: _ok_transport_result(input_tokens=1000, output_tokens=500),
         )
 
         governed_call(
@@ -390,9 +365,7 @@ class TestOkCostActive:
         assert entry["billing_digest"].startswith("sha256:")
         assert entry["cost_usd"] > 0
 
-    def test_full_cost_active_flow_budget_decremented(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_full_cost_active_flow_budget_decremented(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_enabled_policy(tmp_path)
         run_id = _create_run_with_cost_budget(tmp_path, cost_limit_usd=10.0)
 
@@ -402,9 +375,7 @@ class TestOkCostActive:
         )
         monkeypatch.setattr(
             "ao_kernel.llm.execute_request",
-            lambda **_: _ok_transport_result(
-                input_tokens=1000, output_tokens=500
-            ),
+            lambda **_: _ok_transport_result(input_tokens=1000, output_tokens=500),
         )
 
         governed_call(
@@ -423,9 +394,7 @@ class TestOkCostActive:
         remaining = Decimal(str(record["budget"]["cost_usd"]["remaining"]))
         assert remaining == Decimal("10.0") - spent
 
-    def test_full_cost_active_flow_two_evidence_events(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_full_cost_active_flow_two_evidence_events(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """PR-B2 additive kinds — pre-dispatch + post-response both fire."""
         _write_enabled_policy(tmp_path)
         run_id = _create_run_with_cost_budget(tmp_path)
@@ -458,9 +427,7 @@ class TestOkCostActive:
 
 
 class TestRefundSemantics:
-    def test_actual_less_than_estimate_refunds_budget(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_actual_less_than_estimate_refunds_budget(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Reserve reservation is later adjusted down when actual usage
         lands below estimate. Ledger records ACTUAL (not estimate)."""
         _write_enabled_policy(tmp_path)
@@ -491,9 +458,7 @@ class TestRefundSemantics:
         spent = Decimal(str(record["budget"]["cost_usd"]["spent"]))
         # actual = 10 * 0.003/1k + 5 * 0.015/1k = 0.00003 + 0.000075 = 0.000105
         expected_actual = Decimal("0.000105")
-        assert spent == expected_actual, (
-            f"spent={spent} should reconcile to ACTUAL cost, not estimate"
-        )
+        assert spent == expected_actual, f"spent={spent} should reconcile to ACTUAL cost, not estimate"
 
         lines = _read_ledger_lines(tmp_path)
         assert len(lines) == 1
@@ -505,9 +470,7 @@ class TestRefundSemantics:
 
 
 class TestUsageMissing:
-    def test_fail_closed_raises_llm_usage_missing_error(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_fail_closed_raises_llm_usage_missing_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Cost-active + usage missing + fail_closed=true → raise.
         Audit-only ledger entry is still recorded BEFORE the raise."""
         _write_enabled_policy(tmp_path, fail_closed_on_missing_usage=True)
@@ -544,9 +507,7 @@ class TestUsageMissing:
         assert "llm_cost_estimated" in kinds
         assert "llm_spend_recorded" not in kinds
 
-    def test_fail_open_warns_and_returns_ok(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_fail_open_warns_and_returns_ok(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_enabled_policy(tmp_path, fail_closed_on_missing_usage=False)
         run_id = _create_run_with_cost_budget(tmp_path)
 
@@ -578,9 +539,7 @@ class TestUsageMissing:
 
 
 class TestBypassPath:
-    def test_no_identity_kwargs_bypasses_cost_runtime(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_no_identity_kwargs_bypasses_cost_runtime(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """All cost-identity kwargs None → transparent pre-B2 flow:
         no ledger write, no evidence emit, no policy load. Success
         return is still the rich dict shape."""
@@ -599,9 +558,7 @@ class TestBypassPath:
         assert "normalized" in result
         assert _read_ledger_lines(tmp_path) == []
 
-    def test_dormant_policy_bypasses_cost_runtime(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_dormant_policy_bypasses_cost_runtime(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """All identity kwargs present but bundled policy is dormant →
         bypass. No override written → bundled default (enabled=false)
         is loaded."""

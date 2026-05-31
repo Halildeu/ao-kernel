@@ -74,9 +74,7 @@ class TestSentinelCoverage:
         assert expected.issubset(PATCHED_SENTINEL_NAMES)
 
     def test_socket_network_covered(self) -> None:
-        assert {"socket.socket.connect", "socket.socket.bind"}.issubset(
-            PATCHED_SENTINEL_NAMES
-        )
+        assert {"socket.socket.connect", "socket.socket.bind"}.issubset(PATCHED_SENTINEL_NAMES)
 
     def test_importlib_resource_extraction_covered(self) -> None:
         assert "importlib.resources.as_file" in PATCHED_SENTINEL_NAMES
@@ -201,9 +199,7 @@ class TestImportlibResourceGuarded:
     def test_as_file_raises(self) -> None:
         with pure_execution_context():
             with pytest.raises(PolicySimSideEffectError):
-                ctx = _importlib_resources.as_file(
-                    _importlib_resources.files("ao_kernel")
-                )
+                ctx = _importlib_resources.as_file(_importlib_resources.files("ao_kernel"))
                 ctx.__enter__()
 
 
@@ -214,10 +210,7 @@ class TestEmitEventGuarded:
         with pure_execution_context():
             with pytest.raises(PolicySimSideEffectError) as exc_info:
                 em.emit_event("any_kind", {"foo": "bar"})
-        assert (
-            exc_info.value.sentinel_name
-            == "ao_kernel.executor.evidence_emitter.emit_event"
-        )
+        assert exc_info.value.sentinel_name == "ao_kernel.executor.evidence_emitter.emit_event"
 
     def test_multi_step_driver_alias_raises(self) -> None:
         """Pre-imported alias must be patched too (plan v3 warning 3)."""
@@ -226,10 +219,7 @@ class TestEmitEventGuarded:
         with pure_execution_context():
             with pytest.raises(PolicySimSideEffectError) as exc_info:
                 driver_mod.emit_event("any_kind", {"foo": "bar"})
-        assert (
-            exc_info.value.sentinel_name
-            == "ao_kernel.executor.multi_step_driver.emit_event"
-        )
+        assert exc_info.value.sentinel_name == "ao_kernel.executor.multi_step_driver.emit_event"
 
     def test_public_facade_alias_raises(self) -> None:
         """Public re-export must be patched too (plan v3 iter-2 warning 3)."""
@@ -238,10 +228,7 @@ class TestEmitEventGuarded:
         with pure_execution_context():
             with pytest.raises(PolicySimSideEffectError) as exc_info:
                 facade.emit_event("any_kind", {"foo": "bar"})
-        assert (
-            exc_info.value.sentinel_name
-            == "ao_kernel.executor.emit_event"
-        )
+        assert exc_info.value.sentinel_name == "ao_kernel.executor.emit_event"
 
 
 class TestReentrancy:

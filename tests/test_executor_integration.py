@@ -31,17 +31,11 @@ _FIXTURE_SRC = Path(__file__).parent / "fixtures" / "adapter_manifests"
 
 def _init_git_repo(root: Path) -> None:
     subprocess.run(["git", "init", "-q", str(root)], check=True)
-    subprocess.run(
-        ["git", "-C", str(root), "config", "user.email", "t@e"], check=True
-    )
-    subprocess.run(
-        ["git", "-C", str(root), "config", "user.name", "t"], check=True
-    )
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "t@e"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "t"], check=True)
     (root / "seed.txt").write_text("seed\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(root), "add", "seed.txt"], check=True)
-    subprocess.run(
-        ["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True
-    )
+    subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True)
 
 
 def _bundled_policy_with_overrides() -> dict:
@@ -81,9 +75,7 @@ def _create_run_record(workspace_root: Path, run_id: str) -> None:
             "time_seconds": {"limit": 120.0, "spent": 0.0, "remaining": 120.0},
             "fail_closed_on_exhaust": True,
         },
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[f".ao/evidence/workflows/{run_id}/events.jsonl"],
         adapter_refs=["codex-stub"],
     )
@@ -129,9 +121,7 @@ class TestIntegrationHappy:
         worktree_path = tmp_path / ".ao" / "runs" / rid / "worktree"
         assert not worktree_path.exists()
 
-    def test_bundled_codex_stub_allows_localized_python_executable_override(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bundled_codex_stub_allows_localized_python_executable_override(self, tmp_path: Path) -> None:
         """Bundled ``{python_executable}`` stays runnable under a
         restrictive command policy, but only for that resolved path."""
 
@@ -163,21 +153,13 @@ class TestIntegrationHappy:
         assert result.invocation_result is not None
         assert result.invocation_result.status == "ok"
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
-        )
-        events = [
-            json.loads(line)
-            for line in events_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
+        events = [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         checked = next(e for e in events if e.get("kind") == "policy_checked")
         assert checked["payload"]["violations_count"] == 0
         assert checked["payload"]["violation_kinds"] == []
 
-    def test_open_pr_step_persists_pr_metadata_and_emits_event(
-        self, tmp_path: Path
-    ) -> None:
+    def test_open_pr_step_persists_pr_metadata_and_emits_event(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
 
         wf_reg = WorkflowRegistry()
@@ -225,14 +207,7 @@ class TestIntegrationHappy:
                     resolved_invocation=resolved_invocation,
                 )
 
-            log_path = (
-                workspace_root
-                / ".ao"
-                / "evidence"
-                / "workflows"
-                / run_id
-                / "adapter-gh-cli-pr.stdout.log"
-            )
+            log_path = workspace_root / ".ao" / "evidence" / "workflows" / run_id / "adapter-gh-cli-pr.stdout.log"
             log_path.parent.mkdir(parents=True, exist_ok=True)
             log_path.write_text(json.dumps({"_mock": True}), encoding="utf-8")
             envelope = bug_envelopes.open_pr_happy()
@@ -257,26 +232,13 @@ class TestIntegrationHappy:
         record, _ = load_run(tmp_path, rid)
         step = record["steps"][0]
         artifact = json.loads(
-            (
-                tmp_path
-                / ".ao"
-                / "evidence"
-                / "workflows"
-                / rid
-                / step["output_ref"]
-            ).read_text(encoding="utf-8")
+            (tmp_path / ".ao" / "evidence" / "workflows" / rid / step["output_ref"]).read_text(encoding="utf-8")
         )
         assert artifact["pr_url"].endswith("/pull/999")
         assert artifact["pr_number"] == 999
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
-        )
-        events = [
-            json.loads(line)
-            for line in events_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
+        events = [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         returned = next(event for event in events if event.get("kind") == "adapter_returned")
         pr_opened = next(event for event in events if event.get("kind") == "pr_opened")
         assert returned["payload"]["pr_url"].endswith("/pull/999")
@@ -286,9 +248,7 @@ class TestIntegrationHappy:
 
 
 class TestIntegrationPolicyDenied:
-    def test_missing_adapter_manifest_raises_cross_ref(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_adapter_manifest_raises_cross_ref(self, tmp_path: Path) -> None:
         """No adapter manifests shipped → validate_cross_refs returns
         non-empty → Executor.run_step raises."""
         from ao_kernel.workflow import WorkflowDefinitionCrossRefError

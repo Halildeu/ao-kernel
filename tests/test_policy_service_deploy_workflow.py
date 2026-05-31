@@ -32,8 +32,8 @@ def test_policy_service_deploy_workflow_uses_published_image_and_health_evidence
 
     assert "ghcr.io/halildeu/ao-kernel-live-adapter-gate-policy-service" in text
     assert "sha-${source_sha}" in text
-    assert "docker pull \"${{ steps.images.outputs.ghcr_image }}\"" in text
-    assert "docker push \"${{ steps.images.outputs.gar_image }}\"" in text
+    assert 'docker pull "${{ steps.images.outputs.ghcr_image }}"' in text
+    assert 'docker push "${{ steps.images.outputs.gar_image }}"' in text
     assert "$service_url/healthz" in text
     assert "policy-service-deploy-evidence/healthz.json" in text
     assert "policy-service-deploy-evidence/policy-service-deploy.v1.json" in text

@@ -40,11 +40,15 @@ class TestForgetCAS:
 
     def test_forget_with_matching_revision(self, project_with_ao):
         remember(
-            project_with_ao, key="x", value="v", importance="normal",
+            project_with_ao,
+            key="x",
+            value="v",
+            importance="normal",
         )
         rev = store_revision(load_store(project_with_ao))
         result = forget(
-            project_with_ao, key="x",
+            project_with_ao,
+            key="x",
             expected_revision=rev,
             allow_overwrite=False,
         )
@@ -52,16 +56,23 @@ class TestForgetCAS:
 
     def test_forget_with_stale_revision_raises(self, project_with_ao):
         remember(
-            project_with_ao, key="x", value="v", importance="normal",
+            project_with_ao,
+            key="x",
+            value="v",
+            importance="normal",
         )
         rev = store_revision(load_store(project_with_ao))
         # Concurrent writer moves the store forward.
         promote_decision(
-            project_with_ao, key="other", value=1, confidence=0.9,
+            project_with_ao,
+            key="other",
+            value=1,
+            confidence=0.9,
         )
         with pytest.raises(CanonicalRevisionConflict):
             forget(
-                project_with_ao, key="x",
+                project_with_ao,
+                key="x",
                 expected_revision=rev,
                 allow_overwrite=False,
             )
@@ -80,7 +91,10 @@ class TestForgetCAS:
 class TestForgetNoLongerEmitsDeprecation:
     def test_forget_does_not_trigger_save_store_deprecation(self, project_with_ao, recwarn):
         remember(
-            project_with_ao, key="x", value="v", importance="normal",
+            project_with_ao,
+            key="x",
+            value="v",
+            importance="normal",
         )
         forget(project_with_ao, key="x")
         deprecations = [w for w in recwarn.list if issubclass(w.category, DeprecationWarning)]
@@ -88,6 +102,4 @@ class TestForgetNoLongerEmitsDeprecation:
         # After CAS migration, forget() uses _mutate_with_cas which does
         # NOT emit the deprecation. Regression guard.
         for w in deprecations:
-            assert "save_store" not in str(w.message), (
-                "forget() should no longer trigger save_store deprecation"
-            )
+            assert "save_store" not in str(w.message), "forget() should no longer trigger save_store deprecation"

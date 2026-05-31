@@ -129,6 +129,7 @@ def _index_session_decision(
     embedding path NEVER blocks the main write pipeline.
     """
     from ao_kernel.context.semantic_indexer import index_decision
+
     index_decision(
         key=key,
         value=value,

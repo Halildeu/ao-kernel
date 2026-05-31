@@ -45,16 +45,19 @@ def _seed_cns(
     resp_dir.mkdir(parents=True, exist_ok=True)
 
     (req_dir / f"{cns_id}.request.v1.json").write_text(
-        json.dumps(request_payload), encoding="utf-8",
+        json.dumps(request_payload),
+        encoding="utf-8",
     )
     if request_iter2 is not None:
         (req_dir / f"{cns_id}.iter2.request.v1.json").write_text(
-            json.dumps(request_iter2), encoding="utf-8",
+            json.dumps(request_iter2),
+            encoding="utf-8",
         )
     for i, (agent, payload) in enumerate(responses, start=1):
         suffix = "" if i == 1 else f".iter{i}"
         (resp_dir / f"{cns_id}{suffix}.{agent}.response.v1.json").write_text(
-            json.dumps(payload), encoding="utf-8",
+            json.dumps(payload),
+            encoding="utf-8",
         )
 
 
@@ -122,49 +125,59 @@ class TestVerdictNormalization:
 
 class TestResolutionRecordSourceStable:
     def test_config_digest_not_in_record(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
             "CNS-20260418-001",
             request_payload={"consultation_id": "CNS-20260418-001", "topic": "test"},
-            responses=[("codex", {
-                "consultation_id": "CNS-20260418-001",
-                "overall_verdict": "AGREE",
-            })],
+            responses=[
+                (
+                    "codex",
+                    {
+                        "consultation_id": "CNS-20260418-001",
+                        "overall_verdict": "AGREE",
+                    },
+                )
+            ],
         )
         archive_all(policy, workspace_root=tmp_path)
-        record_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-001" / "resolution.record.v1.json"
-        )
+        record_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-001" / "resolution.record.v1.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
         assert "config_digest" not in record
         assert "archived_at" not in record  # archive-time metadata separate
 
     def test_resolved_at_from_last_response(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
             "CNS-20260418-002",
             request_payload={"consultation_id": "CNS-20260418-002"},
-            responses=[("codex", {
-                "consultation_id": "CNS-20260418-002",
-                "overall_verdict": "AGREE",
-                "responded_at": "2026-04-15T10:00:00+00:00",
-            })],
+            responses=[
+                (
+                    "codex",
+                    {
+                        "consultation_id": "CNS-20260418-002",
+                        "overall_verdict": "AGREE",
+                        "responded_at": "2026-04-15T10:00:00+00:00",
+                    },
+                )
+            ],
         )
         archive_all(policy, workspace_root=tmp_path)
-        record_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-002" / "resolution.record.v1.json"
-        )
+        record_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-002" / "resolution.record.v1.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
         assert record["resolved_at"] == "2026-04-15T10:00:00+00:00"
 
     def test_archive_meta_separate_file(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
@@ -173,17 +186,16 @@ class TestResolutionRecordSourceStable:
             responses=[("codex", {"consultation_id": "CNS-20260418-003", "overall_verdict": "AGREE"})],
         )
         archive_all(policy, workspace_root=tmp_path)
-        meta_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-003" / "archive-meta.json"
-        )
+        meta_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-003" / "archive-meta.json"
         assert meta_path.is_file()
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         assert "archived_at" in meta
         assert meta["archiver_version"] == "v1"
 
     def test_request_revisions_first_class(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
@@ -193,31 +205,32 @@ class TestResolutionRecordSourceStable:
             responses=[("codex", {"consultation_id": "CNS-20260418-004", "overall_verdict": "AGREE"})],
         )
         archive_all(policy, workspace_root=tmp_path)
-        record_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-004" / "resolution.record.v1.json"
-        )
+        record_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-004" / "resolution.record.v1.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
         iters = sorted(r["iteration"] for r in record["requests"])
         assert iters == [1, 2]
 
     def test_status_pending_when_all_unclassified(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
             "CNS-20260418-005",
             request_payload={"consultation_id": "CNS-20260418-005"},
-            responses=[("codex", {
-                "consultation_id": "CNS-20260418-005",
-                "overall_verdict": "WEIRD_VERDICT",
-            })],
+            responses=[
+                (
+                    "codex",
+                    {
+                        "consultation_id": "CNS-20260418-005",
+                        "overall_verdict": "WEIRD_VERDICT",
+                    },
+                )
+            ],
         )
         archive_all(policy, workspace_root=tmp_path)
-        record_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-005" / "resolution.record.v1.json"
-        )
+        record_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-005" / "resolution.record.v1.json"
         record = json.loads(record_path.read_text(encoding="utf-8"))
         assert record["status"] == ResolutionStatus.PENDING.value
         assert record["resolved_at"] is None
@@ -254,7 +267,9 @@ class TestPerKindDedupe:
         assert _identity_for_event(evt_a) != _identity_for_event(evt_b)
 
     def test_idempotent_archive_no_duplicate_events(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         _seed_cns(
             tmp_path,
@@ -263,10 +278,7 @@ class TestPerKindDedupe:
             responses=[("codex", {"consultation_id": "CNS-20260418-006", "overall_verdict": "AGREE"})],
         )
         archive_all(policy, workspace_root=tmp_path)
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-006" / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-006" / "events.jsonl"
         first_len = len(events_path.read_text(encoding="utf-8").splitlines())
         archive_all(policy, workspace_root=tmp_path)
         second_len = len(events_path.read_text(encoding="utf-8").splitlines())
@@ -285,13 +297,12 @@ class TestIntegrityManifest:
             responses=[("codex", {"consultation_id": "CNS-20260418-007", "overall_verdict": "AGREE"})],
         )
         archive_all(policy, workspace_root=tmp_path)
-        return (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-007"
-        )
+        return tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-007"
 
     def test_manifest_covers_snapshots_events_record(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_dir = self._base_setup(tmp_path, policy)
         manifest = compute_consultation_manifest(cns_dir)
@@ -302,7 +313,9 @@ class TestIntegrityManifest:
         assert "resolution.record.v1.json" in keys
 
     def test_manifest_excludes_archive_meta(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_dir = self._base_setup(tmp_path, policy)
         manifest = compute_consultation_manifest(cns_dir)
@@ -310,7 +323,9 @@ class TestIntegrityManifest:
         assert "integrity.manifest.v1.json" not in manifest["entries"]
 
     def test_verify_detects_tampering(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_dir = self._base_setup(tmp_path, policy)
         # Tamper with the record
@@ -323,7 +338,9 @@ class TestIntegrityManifest:
         assert any("digest mismatch" in e for e in errors)
 
     def test_verify_detects_missing_file(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_dir = self._base_setup(tmp_path, policy)
         (cns_dir / "resolution.record.v1.json").unlink()
@@ -343,27 +360,30 @@ class TestSuffixedCnsIdPreservation:
     filename first-segment is the INVALID_JSON fallback."""
 
     def test_suffixed_cns_id_preserved_from_json(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_id = "CNS-20260416-028v2"
         _seed_cns(
             tmp_path,
             cns_id,
             request_payload={"consultation_id": cns_id, "topic": "test"},
-            responses=[("codex", {
-                "consultation_id": cns_id,
-                "overall_verdict": "AGREE",
-            })],
+            responses=[
+                (
+                    "codex",
+                    {
+                        "consultation_id": cns_id,
+                        "overall_verdict": "AGREE",
+                    },
+                )
+            ],
         )
         archive_all(policy, workspace_root=tmp_path)
 
         # Evidence dir must use the full suffixed id
-        evidence_dir = (
-            tmp_path / ".ao" / "evidence" / "consultations" / cns_id
-        )
-        assert evidence_dir.is_dir(), (
-            f"evidence dir missing for suffixed id: {evidence_dir}"
-        )
+        evidence_dir = tmp_path / ".ao" / "evidence" / "consultations" / cns_id
+        assert evidence_dir.is_dir(), f"evidence dir missing for suffixed id: {evidence_dir}"
         # Resolution record round-trips the full id
         record = json.loads(
             (evidence_dir / "resolution.record.v1.json").read_text(
@@ -373,10 +393,7 @@ class TestSuffixedCnsIdPreservation:
         assert record["cns_id"] == cns_id
 
         # Naively-truncated id must NOT exist as a parallel bucket
-        wrong_dir = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260416-028"
-        )
+        wrong_dir = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260416-028"
         assert not wrong_dir.exists()
 
 
@@ -387,20 +404,14 @@ class TestDualSourceDedupe:
     single-entry."""
 
     def _seed_canonical_and_legacy(
-        self, workspace_root: Path, cns_id: str,
+        self,
+        workspace_root: Path,
+        cns_id: str,
     ) -> None:
-        canonical_req = (
-            workspace_root / ".ao" / "consultations" / "requests"
-        )
-        legacy_req = (
-            workspace_root / ".cache" / "index" / "consultations" / "requests"
-        )
-        canonical_res = (
-            workspace_root / ".ao" / "consultations" / "responses"
-        )
-        legacy_res = (
-            workspace_root / ".cache" / "reports" / "consultations"
-        )
+        canonical_req = workspace_root / ".ao" / "consultations" / "requests"
+        legacy_req = workspace_root / ".cache" / "index" / "consultations" / "requests"
+        canonical_res = workspace_root / ".ao" / "consultations" / "responses"
+        legacy_res = workspace_root / ".cache" / "reports" / "consultations"
         for d in (canonical_req, legacy_req, canonical_res, legacy_res):
             d.mkdir(parents=True, exist_ok=True)
 
@@ -419,10 +430,12 @@ class TestDualSourceDedupe:
         }
 
         (canonical_req / filename_req).write_text(
-            json.dumps(canonical_payload), encoding="utf-8",
+            json.dumps(canonical_payload),
+            encoding="utf-8",
         )
         (legacy_req / filename_req).write_text(
-            json.dumps(legacy_payload), encoding="utf-8",
+            json.dumps(legacy_payload),
+            encoding="utf-8",
         )
 
         response_canonical = {
@@ -434,42 +447,36 @@ class TestDualSourceDedupe:
             "overall_verdict": "STALE_LEGACY",
         }
         (canonical_res / filename_res).write_text(
-            json.dumps(response_canonical), encoding="utf-8",
+            json.dumps(response_canonical),
+            encoding="utf-8",
         )
         (legacy_res / filename_res).write_text(
-            json.dumps(response_legacy), encoding="utf-8",
+            json.dumps(response_legacy),
+            encoding="utf-8",
         )
 
     def test_dual_source_dedupe_canonical_wins(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_id = "CNS-20260418-099"
         self._seed_canonical_and_legacy(tmp_path, cns_id)
 
         archive_all(policy, workspace_root=tmp_path)
 
-        evidence_dir = (
-            tmp_path / ".ao" / "evidence" / "consultations" / cns_id
-        )
+        evidence_dir = tmp_path / ".ao" / "evidence" / "consultations" / cns_id
         # Single snapshot per artefact (no duplicates from dual source)
-        req_snaps = list(
-            (evidence_dir / "requests").iterdir()
-        )
+        req_snaps = list((evidence_dir / "requests").iterdir())
         assert len(req_snaps) == 1
-        res_snaps = list(
-            (evidence_dir / "responses").iterdir()
-        )
+        res_snaps = list((evidence_dir / "responses").iterdir())
         assert len(res_snaps) == 1
 
         # Canonical content wins (legacy STALE not picked up)
-        req_body = json.loads(
-            req_snaps[0].read_text(encoding="utf-8")
-        )
+        req_body = json.loads(req_snaps[0].read_text(encoding="utf-8"))
         assert "STALE LEGACY CONTENT" not in req_body.get("body", "")
 
-        res_body = json.loads(
-            res_snaps[0].read_text(encoding="utf-8")
-        )
+        res_body = json.loads(res_snaps[0].read_text(encoding="utf-8"))
         assert res_body["overall_verdict"] == "AGREE"
 
         # Record has single request + single response entry
@@ -491,19 +498,24 @@ class TestVerifyCli:
             tmp_path,
             "CNS-20260418-501",
             request_payload={"consultation_id": "CNS-20260418-501"},
-            responses=[("codex", {
-                "consultation_id": "CNS-20260418-501",
-                "overall_verdict": "AGREE",
-            })],
+            responses=[
+                (
+                    "codex",
+                    {
+                        "consultation_id": "CNS-20260418-501",
+                        "overall_verdict": "AGREE",
+                    },
+                )
+            ],
         )
         archive_all(policy, workspace_root=tmp_path)
-        return (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-501"
-        )
+        return tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-501"
 
     def test_cli_verify_success(
-        self, tmp_path: Path, policy: dict, capsys: pytest.CaptureFixture[str],
+        self,
+        tmp_path: Path,
+        policy: dict,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         self._archive_fixture(tmp_path, policy)
 
@@ -526,7 +538,9 @@ class TestVerifyCli:
         assert payload["scanned"] >= 1
 
     def test_cli_verify_detects_tampering_nonzero(
-        self, tmp_path: Path, policy: dict,
+        self,
+        tmp_path: Path,
+        policy: dict,
     ) -> None:
         cns_dir = self._archive_fixture(tmp_path, policy)
         record = cns_dir / "resolution.record.v1.json"

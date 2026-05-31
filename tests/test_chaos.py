@@ -97,6 +97,7 @@ class TestEdgeCases:
 
     def test_empty_output_decision_extraction(self):
         from ao_kernel.context.decision_extractor import extract_decisions
+
         assert extract_decisions("") == []
         assert extract_decisions("   ") == []
         assert extract_decisions("\n\n") == []
@@ -134,11 +135,7 @@ class TestEdgeCases:
         """Zero token budget should return empty preamble."""
         from ao_kernel.context.context_compiler import compile_context
 
-        ctx = {
-            "ephemeral_decisions": [
-                {"key": "test", "value": "x", "created_at": "2026-01-01T00:00:00Z"}
-            ]
-        }
+        ctx = {"ephemeral_decisions": [{"key": "test", "value": "x", "created_at": "2026-01-01T00:00:00Z"}]}
         result = compile_context(ctx, profile="STARTUP")
         # STARTUP has 1000 token budget, should include 1 decision
         assert result.items_included >= 0
@@ -146,6 +143,7 @@ class TestEdgeCases:
     def test_profile_detection_empty_content(self):
         """Empty message content shouldn't crash profile detection."""
         from ao_kernel.context.profile_router import detect_profile
+
         assert detect_profile([{"role": "user", "content": ""}]) == "TASK_EXECUTION"
         assert detect_profile([{"role": "user", "content": []}]) == "TASK_EXECUTION"
 

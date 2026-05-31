@@ -16,10 +16,14 @@ from ao_kernel.workflow.registry import WorkflowRegistry
 
 
 _GIT_CFG = [
-    "-c", "user.name=ao-kernel-driver-test",
-    "-c", "user.email=driver@test.local",
-    "-c", "init.defaultBranch=main",
-    "-c", "commit.gpgsign=false",
+    "-c",
+    "user.name=ao-kernel-driver-test",
+    "-c",
+    "user.email=driver@test.local",
+    "-c",
+    "init.defaultBranch=main",
+    "-c",
+    "commit.gpgsign=false",
 ]
 
 _FIXTURE_DIR = Path(__file__).parent / "fixtures" / "workflows"
@@ -41,16 +45,19 @@ def install_workspace(root: Path) -> Path:
     # Minimal git repo at root
     subprocess.run(
         ["git", "init", "-q", "--initial-branch=main", str(root)],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
     (root / "README.md").write_text("# driver test\n")
     subprocess.run(
         ["git", *_GIT_CFG, "-C", str(root), "add", "."],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
     subprocess.run(
         ["git", *_GIT_CFG, "-C", str(root), "commit", "-q", "-m", "initial"],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
     return root
 
@@ -149,10 +156,12 @@ def seed_run(
     # intent.payload is schema-typed as string for inline_prompt;
     # tests wanting to pass structured data use json.dumps wrapper.
     payload_str = (
-        intent_payload if isinstance(intent_payload, str)
+        intent_payload
+        if isinstance(intent_payload, str)
         else (json.dumps(intent_payload) if intent_payload else "driver test prompt")
     )
     from ao_kernel.workflow.run_store import run_revision
+
     record: dict[str, Any] = {
         "run_id": run_id,
         "workflow_id": workflow_id,

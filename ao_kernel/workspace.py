@@ -21,6 +21,7 @@ def find_root(override: str | Path | None = None) -> Path | None:
     :func:`project_root` instead — it normalizes the ``.ao`` tail away.
     """
     from ao_kernel.config import workspace_root
+
     return workspace_root(override=override)
 
 
@@ -59,6 +60,7 @@ def project_root(override: str | Path | None = None) -> Path | None:
 def load_config(workspace: Path | None = None) -> dict[str, Any]:
     """Load workspace.json from workspace root."""
     from ao_kernel.config import load_workspace_json, workspace_root
+
     ws = workspace or workspace_root()
     if ws is None:
         return {}
@@ -68,12 +70,14 @@ def load_config(workspace: Path | None = None) -> dict[str, Any]:
 def init(workspace_root_override: str | None = None) -> int:
     """Create .ao/ workspace. Returns exit code."""
     from ao_kernel.init_cmd import run
+
     return run(workspace_root_override=workspace_root_override)
 
 
 def doctor(workspace_root_override: str | None = None) -> int:
     """Run workspace health check. Returns exit code."""
     from ao_kernel.doctor_cmd import run
+
     return run(workspace_root_override=workspace_root_override)
 
 
@@ -85,6 +89,7 @@ def migrate(
 ) -> int:
     """Run workspace migration. Returns exit code."""
     from ao_kernel.migrate_cmd import run
+
     return run(
         workspace_root_override=workspace_root_override,
         dry_run=dry_run,

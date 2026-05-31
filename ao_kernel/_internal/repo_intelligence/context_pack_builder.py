@@ -229,14 +229,10 @@ def _append_diagnostics(
     repo_chunks: Mapping[str, Any] | None,
 ) -> None:
     diagnostic_records: list[Mapping[str, Any]] = [
-        {"source": "repo_map", **item}
-        for item in _list(repo_map.get("diagnostics"))
-        if isinstance(item, Mapping)
+        {"source": "repo_map", **item} for item in _list(repo_map.get("diagnostics")) if isinstance(item, Mapping)
     ]
     diagnostic_records.extend(
-        {"source": "python_ast", **item}
-        for item in _list(import_graph.get("diagnostics"))
-        if isinstance(item, Mapping)
+        {"source": "python_ast", **item} for item in _list(import_graph.get("diagnostics")) if isinstance(item, Mapping)
     )
     if repo_chunks is not None:
         diagnostic_records.extend(

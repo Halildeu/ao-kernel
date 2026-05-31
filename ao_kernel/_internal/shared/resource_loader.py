@@ -50,6 +50,7 @@ def load_resource(resource_type: str, filename: str) -> Any:
 
     # Fallback to bundled defaults
     from ao_kernel.config import load_default
+
     return load_default(resource_type, filename)
 
 

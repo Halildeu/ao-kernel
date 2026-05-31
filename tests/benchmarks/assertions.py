@@ -261,8 +261,7 @@ def assert_no_spend_recorded_event(
         payload = event.get("payload") or {}
         if isinstance(payload, Mapping) and payload.get("source") == source:
             raise AssertionError(
-                f"unexpected llm_spend_recorded event with source={source!r} "
-                f"in {run_dir / 'events.jsonl'!s}"
+                f"unexpected llm_spend_recorded event with source={source!r} in {run_dir / 'events.jsonl'!s}"
             )
 
 

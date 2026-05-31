@@ -16,9 +16,7 @@ from ao_kernel.workspace import find_root, project_root
 def project_with_ao(tmp_path):
     """tmp_path/ contains .ao/ — represents a real workspace root."""
     (tmp_path / ".ao").mkdir()
-    (tmp_path / ".ao" / "workspace.json").write_text(
-        '{"version": "v2", "kind": "ao-kernel"}'
-    )
+    (tmp_path / ".ao" / "workspace.json").write_text('{"version": "v2", "kind": "ao-kernel"}')
     return tmp_path
 
 
@@ -68,18 +66,21 @@ class TestProjectRootContractAlignment:
 
     def test_client_uses_project_root_semantics(self, project_with_ao, monkeypatch):
         from ao_kernel.client import AoKernelClient
+
         monkeypatch.chdir(project_with_ao)
         client = AoKernelClient()
         assert client.workspace_root == project_with_ao
 
     def test_mcp_helper_uses_project_root_semantics(self, project_with_ao, monkeypatch):
         from ao_kernel.mcp_server import _find_workspace_root
+
         monkeypatch.chdir(project_with_ao)
         assert _find_workspace_root() == project_with_ao
 
     def test_extension_loader_documents_project_root_input(self, project_with_ao):
         # Behavioral check: loader expects project root, not .ao directly.
         from ao_kernel.extensions.loader import ExtensionRegistry
+
         ext_dir = project_with_ao / ".ao" / "extensions" / "DEMO"
         ext_dir.mkdir(parents=True)
         (ext_dir / "extension.manifest.v1.json").write_text(

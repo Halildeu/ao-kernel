@@ -85,11 +85,13 @@ class InMemoryVectorStore(VectorStoreBackend):
         for key, entry in self._store.items():
             sim = cosine_similarity(query_embedding, entry["embedding"])
             if sim >= min_similarity:
-                results.append({
-                    "key": key,
-                    "similarity": round(sim, 4),
-                    "metadata": entry["metadata"],
-                })
+                results.append(
+                    {
+                        "key": key,
+                        "similarity": round(sim, 4),
+                        "metadata": entry["metadata"],
+                    }
+                )
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results[:top_k]
 

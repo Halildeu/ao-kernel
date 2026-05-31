@@ -69,7 +69,8 @@ def index_decision(
     if not api_key:
         logger.debug(
             "semantic_indexer: no api_key for provider %r; skip index of %r",
-            config.provider, key,
+            config.provider,
+            key,
         )
         return False
 

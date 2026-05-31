@@ -67,7 +67,7 @@ def _make_cli_project(tmp_path: Path) -> Path:
     (project / "pkg" / "__init__.py").write_text("", encoding="utf-8")
     (project / "pkg" / "cli.py").write_text("def main():\n    return 0\n", encoding="utf-8")
     (project / "pyproject.toml").write_text(
-        "[project]\nname = \"cli-query-project\"\n[project.scripts]\ncli-query-project = \"pkg.cli:main\"\n",
+        '[project]\nname = "cli-query-project"\n[project.scripts]\ncli-query-project = "pkg.cli:main"\n',
         encoding="utf-8",
     )
     return project
@@ -101,27 +101,30 @@ def _scan_and_write_vectors(project: Path, store: _FakeVectorStore, capsys: Any,
     monkeypatch.setattr("ao_kernel.context.semantic_retrieval.embed_text", _fake_embed_text)
     assert main(["repo", "scan", "--project-root", str(project), "--output", "json"]) == 0
     capsys.readouterr()
-    assert main(
-        [
-            "repo",
-            "index",
-            "--project-root",
-            str(project),
-            "--workspace-root",
-            ".ao",
-            "--write-vectors",
-            "--confirm-vector-index",
-            CONFIRM_VECTOR_INDEX,
-            "--embedding-provider",
-            "openai",
-            "--embedding-model",
-            "test-embedding-model",
-            "--embedding-dimension",
-            "3",
-            "--output",
-            "json",
-        ]
-    ) == 0
+    assert (
+        main(
+            [
+                "repo",
+                "index",
+                "--project-root",
+                str(project),
+                "--workspace-root",
+                ".ao",
+                "--write-vectors",
+                "--confirm-vector-index",
+                CONFIRM_VECTOR_INDEX,
+                "--embedding-provider",
+                "openai",
+                "--embedding-model",
+                "test-embedding-model",
+                "--embedding-dimension",
+                "3",
+                "--output",
+                "json",
+            ]
+        )
+        == 0
+    )
     capsys.readouterr()
 
 

@@ -84,5 +84,6 @@ class TestDecisionDataclass:
     def test_frozen(self):
         d = Decision(key="k", value="v")
         import pytest
+
         with pytest.raises(AttributeError):
             d.key = "new_key"

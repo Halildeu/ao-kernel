@@ -51,7 +51,8 @@ def _catalog_schema() -> dict[str, Any]:
     global _CATALOG_SCHEMA_CACHE
     if _CATALOG_SCHEMA_CACHE is None:
         _CATALOG_SCHEMA_CACHE = load_default(
-            "schemas", "price-catalog.schema.v1.json",
+            "schemas",
+            "price-catalog.schema.v1.json",
         )
     return _CATALOG_SCHEMA_CACHE
 
@@ -61,7 +62,8 @@ def _bundled_catalog() -> dict[str, Any]:
     global _BUNDLED_CATALOG_CACHE
     if _BUNDLED_CATALOG_CACHE is None:
         _BUNDLED_CATALOG_CACHE = load_default(
-            "catalogs", "price-catalog.v1.json",
+            "catalogs",
+            "price-catalog.v1.json",
         )
     return _BUNDLED_CATALOG_CACHE
 
@@ -158,9 +160,7 @@ def _check_staleness(
     """
     stale_after_raw = str(doc.get("stale_after", ""))
     try:
-        stale_after = _dt.datetime.fromisoformat(
-            stale_after_raw.replace("Z", "+00:00")
-        )
+        stale_after = _dt.datetime.fromisoformat(stale_after_raw.replace("Z", "+00:00"))
     except ValueError:
         # Schema validation already constrains format: date-time, so a
         # malformed value here would mean the schema was bypassed. Treat
@@ -180,8 +180,7 @@ def _check_staleness(
             now=now_iso,
         )
     logger.warning(
-        "price catalog at %s is stale (stale_after=%s, now=%s); "
-        "strict_freshness=false — serving anyway",
+        "price catalog at %s is stale (stale_after=%s, now=%s); strict_freshness=false — serving anyway",
         source_path,
         stale_after_raw,
         now_iso,
@@ -210,13 +209,9 @@ def _from_dict(doc: Mapping[str, Any]) -> PriceCatalog:
             currency=str(e["currency"]),
             billing_unit=str(e["billing_unit"]),
             effective_date=str(e["effective_date"]),
-            vendor_model_id=(
-                str(e["vendor_model_id"]) if "vendor_model_id" in e else None
-            ),
+            vendor_model_id=(str(e["vendor_model_id"]) if "vendor_model_id" in e else None),
             cached_input_cost_per_1k=(
-                float(e["cached_input_cost_per_1k"])
-                if "cached_input_cost_per_1k" in e
-                else None
+                float(e["cached_input_cost_per_1k"]) if "cached_input_cost_per_1k" in e else None
             ),
         )
         for e in doc["entries"]
@@ -240,9 +235,7 @@ def _resolve_source(
     if policy is not None:
         override_path = workspace_root / policy.price_catalog_path
     else:
-        override_path = (
-            workspace_root / ".ao" / "cost" / "catalog.v1.json"
-        )
+        override_path = workspace_root / ".ao" / "cost" / "catalog.v1.json"
     if override_path.is_file():
         with override_path.open("r", encoding="utf-8") as fh:
             loaded: Mapping[str, Any] = json.load(fh)

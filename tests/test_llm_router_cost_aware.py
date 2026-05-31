@@ -28,15 +28,16 @@ from ao_kernel.cost.errors import RoutingCatalogMissingError
 
 
 def _canonical_entries(entries: list[dict[str, Any]]) -> str:
-    return json.dumps(
-        entries, sort_keys=True, ensure_ascii=False, separators=(",", ":")
-    )
+    return json.dumps(entries, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
 
 def _checksum(entries: list[dict[str, Any]]) -> str:
-    return "sha256:" + hashlib.sha256(
-        _canonical_entries(entries).encode("utf-8"),
-    ).hexdigest()
+    return (
+        "sha256:"
+        + hashlib.sha256(
+            _canonical_entries(entries).encode("utf-8"),
+        ).hexdigest()
+    )
 
 
 def _catalog_doc(entries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -85,9 +86,7 @@ def _policy(
     }
 
 
-def _price_entry(
-    provider_id: str, model: str, inp: float, out: float
-) -> dict[str, Any]:
+def _price_entry(provider_id: str, model: str, inp: float, out: float) -> dict[str, Any]:
     return {
         "provider_id": provider_id,
         "model": model,
@@ -117,18 +116,14 @@ def fast_text_request() -> dict[str, Any]:
 
 
 class TestDormantGatePreserved:
-    def test_no_workspace_override_is_dormant(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_no_workspace_override_is_dormant(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Bundled policy ships enabled=false → pre-B3 order preserved."""
         manifest = resolve(fast_text_request, workspace_root=workspace)
         # Either OK with some selection OR FAIL (no verified model) — we
         # only need to assert the router doesn't raise because of cost.
         assert manifest.get("status") in {"OK", "FAIL"}
 
-    def test_policy_enabled_but_routing_off(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_policy_enabled_but_routing_off(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Cost policy enabled but routing_by_cost.enabled=false → order
         unchanged vs pre-B3."""
         _write_policy(
@@ -158,9 +153,7 @@ class TestDormantGatePreserved:
 
 
 class TestCostAwareActive:
-    def test_all_known_sorted_ascending(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_all_known_sorted_ascending(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """2+ known-cost providers, all in catalog → ascending sort.
 
         Strategy: write a catalog where 'openai' is cheaper than
@@ -186,21 +179,15 @@ class TestCostAwareActive:
         has_openai = "openai" in attempt_providers
         has_claude = "claude" in attempt_providers
         if has_openai and has_claude:
-            assert attempt_providers.index(
-                "openai"
-            ) < attempt_providers.index("claude")
+            assert attempt_providers.index("openai") < attempt_providers.index("claude")
 
-    def test_all_unknown_fallback_original_order(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_all_unknown_fallback_original_order(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """No provider has a catalog entry → fallback to original
         provider_priority order (no elimination)."""
         _write_policy(workspace, _policy())
         _write_catalog(
             workspace,
-            _catalog_doc(
-                [_price_entry("nonexistent", "model-x", 0.001, 0.001)]
-            ),
+            _catalog_doc([_price_entry("nonexistent", "model-x", 0.001, 0.001)]),
         )
         manifest = resolve(fast_text_request, workspace_root=workspace)
         # No raise; no elimination; attempts cover the full fallback.
@@ -211,9 +198,7 @@ class TestCostAwareActive:
 
 
 class TestFailClosedCatalogMissing:
-    def test_catalog_missing_strict_raises(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_catalog_missing_strict_raises(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Active routing + no catalog + fail_closed_on_catalog_missing=true
         → RoutingCatalogMissingError."""
         _write_policy(
@@ -234,9 +219,7 @@ class TestFailClosedCatalogMissing:
         assert err.provider_order
         assert str(workspace) in err.workspace_root
 
-    def test_catalog_missing_warn_log_fallback(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_catalog_missing_warn_log_fallback(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Active routing + corrupt catalog + fail_closed_on_catalog_missing=false
         → warn-log + fallback to provider_priority (no raise)."""
         _write_policy(
@@ -255,9 +238,7 @@ class TestFailClosedCatalogMissing:
 
 
 class TestExplicitProviderPriorityWins:
-    def test_explicit_arg_bypasses_cost_sort(
-        self, workspace: Path
-    ) -> None:
+    def test_explicit_arg_bypasses_cost_sort(self, workspace: Path) -> None:
         """Caller-supplied provider_priority wins over cost-aware
         re-sort (plan v5 §2.4 Yüksek 2 absorb)."""
         _write_policy(workspace, _policy())
@@ -265,9 +246,7 @@ class TestExplicitProviderPriorityWins:
             workspace,
             _catalog_doc(
                 [
-                    _price_entry(
-                        "anthropic", "claude-3-5-haiku", 0.0008, 0.004
-                    ),
+                    _price_entry("anthropic", "claude-3-5-haiku", 0.0008, 0.004),
                     _price_entry("openai", "gpt-4o-mini", 0.00015, 0.0006),
                 ]
             ),
@@ -280,41 +259,31 @@ class TestExplicitProviderPriorityWins:
         attempts = manifest.get("provider_attempts", [])
         attempt_providers = [a.get("provider") for a in attempts]
         if "claude" in attempt_providers and "openai" in attempt_providers:
-            assert attempt_providers.index(
-                "claude"
-            ) < attempt_providers.index("openai")
+            assert attempt_providers.index("claude") < attempt_providers.index("openai")
 
 
 # --- Fail-closed policy loader invariant (plan v5 iter-4 absorb) ------
 
 
 class TestPolicyLoaderFailClosed:
-    def test_missing_override_bundled_fallback(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_missing_override_bundled_fallback(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """No workspace policy override → bundled dormant fallback;
         router does not raise."""
         # workspace has no .ao/policies/policy_cost_tracking.v1.json
         manifest = resolve(fast_text_request, workspace_root=workspace)
         assert "status" in manifest  # no raise
 
-    def test_malformed_json_override_propagates(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_malformed_json_override_propagates(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Malformed JSON override → JSONDecodeError propagates
         (router does not swallow; honors cost/policy.py:115-116)."""
-        bad_path = (
-            workspace / ".ao" / "policies" / "policy_cost_tracking.v1.json"
-        )
+        bad_path = workspace / ".ao" / "policies" / "policy_cost_tracking.v1.json"
         bad_path.parent.mkdir(parents=True, exist_ok=True)
         bad_path.write_text("{not valid {", encoding="utf-8")
 
         with pytest.raises(json.JSONDecodeError):
             resolve(fast_text_request, workspace_root=workspace)
 
-    def test_schema_invalid_override_propagates(
-        self, workspace: Path, fast_text_request: dict[str, Any]
-    ) -> None:
+    def test_schema_invalid_override_propagates(self, workspace: Path, fast_text_request: dict[str, Any]) -> None:
         """Schema-invalid override → ValidationError propagates
         (honors cost/policy.py:142-143)."""
         from jsonschema.exceptions import ValidationError
@@ -331,19 +300,13 @@ class TestPolicyLoaderFailClosed:
 
 
 class TestRegression:
-    def test_unknown_intent_still_fails_fast(
-        self, workspace: Path
-    ) -> None:
+    def test_unknown_intent_still_fails_fast(self, workspace: Path) -> None:
         """Cost-aware path does not alter unknown-intent handling."""
-        manifest = resolve(
-            {"intent": "NOT_A_REAL_INTENT"}, workspace_root=workspace
-        )
+        manifest = resolve({"intent": "NOT_A_REAL_INTENT"}, workspace_root=workspace)
         assert manifest.get("status") == "FAIL"
         assert manifest.get("reason") == "UNKNOWN_INTENT"
 
-    def test_model_override_rejected(
-        self, workspace: Path
-    ) -> None:
+    def test_model_override_rejected(self, workspace: Path) -> None:
         """PR-B3 does not open a model-override path."""
         manifest = resolve(
             {"intent": "BASELINE", "model": "custom-model"},

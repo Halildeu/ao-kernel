@@ -61,7 +61,9 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_missing_source_token_env_fails_closed_without_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_source_token_env_fails_closed_without_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.delenv("GLADYATORE_LAB_GH_TOKEN", raising=False)
     output = tmp_path / "result.json"
     runner = FakeRunner()

@@ -46,6 +46,7 @@ def _load_schema() -> dict[str, Any]:
     # Fallback: bundled defaults
     try:
         from ao_kernel._internal.shared.resource_loader import load_resource
+
         bundled: dict[str, Any] = load_resource("schemas", "session-context.schema.json")
         return bundled
     except (ImportError, FileNotFoundError):

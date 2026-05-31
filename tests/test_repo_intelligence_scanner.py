@@ -26,7 +26,7 @@ def _make_sample_repo(tmp_path: Path) -> Path:
     (project / "__pycache__" / "cached.pyc").write_bytes(b"cache")
     (project / "build" / "ignored.py").write_text("ignored = True\n", encoding="utf-8")
     (project / "pyproject.toml").write_text(
-        "[project]\nname = \"sample-project\"\n[project.scripts]\nsample = \"pkg.cli:main\"\n",
+        '[project]\nname = "sample-project"\n[project.scripts]\nsample = "pkg.cli:main"\n',
         encoding="utf-8",
     )
     if hasattr(os, "symlink"):

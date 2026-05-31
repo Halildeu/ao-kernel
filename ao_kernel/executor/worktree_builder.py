@@ -67,10 +67,7 @@ def create_worktree(
     if sys.platform == "win32":
         raise WorktreeBuilderError(
             reason="permissions",
-            detail=(
-                "worktree builder is POSIX-only; Windows support is "
-                "Tranche D"
-            ),
+            detail=("worktree builder is POSIX-only; Windows support is Tranche D"),
         )
 
     worktree_spec: Mapping[str, Any] = policy.get("worktree", {})
@@ -84,9 +81,7 @@ def create_worktree(
             reason="git_worktree_failed",
             detail=f"unknown worktree strategy: {strategy_raw!r}",
         )
-    strategy: Literal[
-        "new_per_run", "reuse_per_agent", "shared_readonly"
-    ] = strategy_raw
+    strategy: Literal["new_per_run", "reuse_per_agent", "shared_readonly"] = strategy_raw
 
     worktree_path = workspace_root / ".ao" / "runs" / run_id / "worktree"
     worktree_path.parent.mkdir(parents=True, exist_ok=True)
@@ -100,10 +95,7 @@ def create_worktree(
     if strategy == "reuse_per_agent":
         raise WorktreeBuilderError(
             reason="git_worktree_failed",
-            detail=(
-                "reuse_per_agent strategy is reserved for PR-A4; use "
-                "new_per_run for PR-A3 demos"
-            ),
+            detail=("reuse_per_agent strategy is reserved for PR-A4; use new_per_run for PR-A3 demos"),
         )
 
     if strategy == "new_per_run":

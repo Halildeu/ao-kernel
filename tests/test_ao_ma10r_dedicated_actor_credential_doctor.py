@@ -65,11 +65,15 @@ class FakeGitHubRunner:
             return subprocess.CompletedProcess(command, 1, "", "forced failure")
         if command == ["gh", "api", "user"]:
             if self.integration_user_unavailable:
-                return subprocess.CompletedProcess(command, 1, "", "gh: Resource not accessible by integration (HTTP 403)")
+                return subprocess.CompletedProcess(
+                    command, 1, "", "gh: Resource not accessible by integration (HTTP 403)"
+                )
             return subprocess.CompletedProcess(command, 0, json.dumps({"login": self.login, "id": self.actor_id}), "")
         if command == ["gh", "api", "repos/Halildeu/ao-kernel"]:
             if self.integration_repo_unavailable:
-                return subprocess.CompletedProcess(command, 1, "", "gh: Resource not accessible by integration (HTTP 403)")
+                return subprocess.CompletedProcess(
+                    command, 1, "", "gh: Resource not accessible by integration (HTTP 403)"
+                )
             return subprocess.CompletedProcess(command, 0, json.dumps({"permissions": self.permissions}), "")
         if command == ["gh", "api", "repos/Halildeu/ao-kernel/pulls?state=open&per_page=1"]:
             return subprocess.CompletedProcess(command, 0, json.dumps(self.pulls), "")
@@ -143,7 +147,9 @@ def test_ao_ma10r_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert receipt["default_token_env"] == TOKEN_ENV
     assert receipt["default_branch_write_probe_token_env"] == TOKEN_ENV
     assert receipt["split_producer_branch_write_probe_token_env"] == PRODUCER_TOKEN_ENV
-    assert receipt["github_actions_integration_token_mode"].startswith("user_and_repository_permission_endpoints_may_403")
+    assert receipt["github_actions_integration_token_mode"].startswith(
+        "user_and_repository_permission_endpoints_may_403"
+    )
     assert "never accepts token values as CLI arguments" in text
     assert "Resource not accessible by" in text
     assert "integration" in text
@@ -152,9 +158,7 @@ def test_ao_ma10r_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert "--branch-write-probe-token-env" in text
 
 
-def test_ao_ma10r_missing_token_env_blocks_before_github_calls(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ao_ma10r_missing_token_env_blocks_before_github_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = FakeGitHubRunner()
     result = _run_doctor(tmp_path, monkeypatch, runner, token_value=None)
 
@@ -238,7 +242,9 @@ def test_ao_ma10r_accepts_github_actions_integration_token_shape(
         "can_merge_without_admin": True,
         "admin_permission_observed": False,
     }
-    assert any(item.startswith("user: gh: Resource not accessible by integration") for item in result["collection_errors"])
+    assert any(
+        item.startswith("user: gh: Resource not accessible by integration") for item in result["collection_errors"]
+    )
     assert any(
         item.startswith("repository: gh: Resource not accessible by integration")
         for item in result["collection_errors"]
@@ -349,9 +355,7 @@ def test_ao_ma10r_branch_write_probe_blocks_base_ref_read_failure(
     assert any(item.startswith("branch_probe_base_ref:") for item in result["collection_errors"])
 
 
-def test_ao_ma10r_branch_write_probe_blocks_create_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ao_ma10r_branch_write_probe_blocks_create_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     result = _run_doctor(
         tmp_path,
         monkeypatch,
@@ -368,9 +372,7 @@ def test_ao_ma10r_branch_write_probe_blocks_create_failure(
     assert any(item.startswith("branch_probe_create:") for item in result["collection_errors"])
 
 
-def test_ao_ma10r_branch_write_probe_blocks_cleanup_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ao_ma10r_branch_write_probe_blocks_cleanup_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     result = _run_doctor(
         tmp_path,
         monkeypatch,
@@ -387,9 +389,7 @@ def test_ao_ma10r_branch_write_probe_blocks_cleanup_failure(
     assert any(item.startswith("branch_probe_delete:") for item in result["collection_errors"])
 
 
-def test_ao_ma10r_accepts_maintain_as_non_admin_merge_capable(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ao_ma10r_accepts_maintain_as_non_admin_merge_capable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     result = _run_doctor(
         tmp_path,
         monkeypatch,

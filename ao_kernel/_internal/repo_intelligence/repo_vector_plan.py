@@ -74,10 +74,7 @@ def build_repo_vector_write_plan(
         project_root_identity=project_root_identity,
         embedding_space_id=embedding_space_id,
     )
-    planned_deletes = [
-        {"operation": "delete", "key": key}
-        for key in sorted(set(previous_keys) - current_keys)
-    ]
+    planned_deletes = [{"operation": "delete", "key": key} for key in sorted(set(previous_keys) - current_keys)]
 
     return {
         "schema_version": "1",
@@ -257,11 +254,7 @@ def _extract_key_list(manifest: Mapping[str, Any]) -> list[str]:
 
     vectors = manifest.get("vectors")
     if isinstance(vectors, list):
-        keys = {
-            str(item["key"])
-            for item in vectors
-            if isinstance(item, Mapping) and isinstance(item.get("key"), str)
-        }
+        keys = {str(item["key"]) for item in vectors if isinstance(item, Mapping) and isinstance(item.get("key"), str)}
         return sorted(keys)
     return []
 
@@ -294,11 +287,7 @@ def _stable_document_sha256(document: Mapping[str, Any]) -> str:
 
 def _without_generated_at(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return {
-            str(key): _without_generated_at(item)
-            for key, item in value.items()
-            if str(key) != "generated_at"
-        }
+        return {str(key): _without_generated_at(item) for key, item in value.items() if str(key) != "generated_at"}
     if isinstance(value, list):
         return [_without_generated_at(item) for item in value]
     return value

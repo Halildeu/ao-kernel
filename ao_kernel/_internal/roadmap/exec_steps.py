@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Any
 
 from ao_kernel._internal.roadmap.exec_contracts import ChangeCounter, _CoreImmutabilityPolicy, _ExecutionState
-from ao_kernel._internal.roadmap.exec_evidence import _git_status_porcelain, _normalize_rel_path, _now_iso8601, _snapshot_tree
+from ao_kernel._internal.roadmap.exec_evidence import (
+    _git_status_porcelain,
+    _normalize_rel_path,
+    _now_iso8601,
+    _snapshot_tree,
+)
 from ao_kernel._internal.roadmap.step_templates import (
     RoadmapStepError,
     step_add_ci_gate_script,
@@ -219,7 +224,9 @@ def _constraints_for_step(
     constraints = milestone_constraints.get(ms_id, {})
     forbidden_raw = constraints.get("forbidden_paths") if isinstance(constraints.get("forbidden_paths"), list) else []
     forbidden = [str(x) for x in forbidden_raw]
-    max_files_changed = constraints.get("max_files_changed") if isinstance(constraints.get("max_files_changed"), int) else None
+    max_files_changed = (
+        constraints.get("max_files_changed") if isinstance(constraints.get("max_files_changed"), int) else None
+    )
     max_diff_lines = constraints.get("max_diff_lines") if isinstance(constraints.get("max_diff_lines"), int) else None
     return (forbidden, max_files_changed, max_diff_lines, constraints)
 
@@ -228,7 +235,9 @@ def _enforce_milestone_caps(
     *, counter: ChangeCounter, ms_id: str, max_files_changed: int | None, max_diff_lines: int | None
 ) -> None:
     if isinstance(max_files_changed, int) and len(counter.paths_touched) > max_files_changed:
-        raise RoadmapStepError("MAX_FILES_CHANGED", f"Exceeded max_files_changed={max_files_changed} for milestone {ms_id}")
+        raise RoadmapStepError(
+            "MAX_FILES_CHANGED", f"Exceeded max_files_changed={max_files_changed} for milestone {ms_id}"
+        )
     if isinstance(max_diff_lines, int) and counter.diff_lines > max_diff_lines:
         raise RoadmapStepError("MAX_DIFF_LINES", f"Exceeded max_diff_lines={max_diff_lines} for milestone {ms_id}")
 
@@ -624,7 +633,10 @@ def _handle_change_proposal_apply_step(
 
     if dry_run:
         return (
-            {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_apply_change": {"change": ch_rel, "roadmap": rm_abs.as_posix()}}},
+            {
+                "status": "SKIPPED_DRY_RUN",
+                "side_effects": {"would_apply_change": {"change": ch_rel, "roadmap": rm_abs.as_posix()}},
+            },
             "",
         )
 
@@ -813,7 +825,10 @@ def _handle_assert_paths_exist_step(
         raise RoadmapStepError("STEP_INVALID", "assert_paths_exist apply_only must be boolean if present")
     if dry_run and apply_only:
         return (
-            {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_assert": {"paths": [Path(str(x)).as_posix() for x in paths]}}},
+            {
+                "status": "SKIPPED_DRY_RUN",
+                "side_effects": {"would_assert": {"paths": [Path(str(x)).as_posix() for x in paths]}},
+            },
             "",
         )
     res = step_assert_paths_exist(
@@ -859,7 +874,10 @@ def _handle_assert_pointer_target_exists_step(
         raise RoadmapStepError("STEP_INVALID", "assert_pointer_target_exists apply_only must be boolean if present")
     if dry_run and apply_only:
         return (
-            {"status": "SKIPPED_DRY_RUN", "side_effects": {"would_assert_pointer": {"pointer_path": str(pointer_path)}}},
+            {
+                "status": "SKIPPED_DRY_RUN",
+                "side_effects": {"would_assert_pointer": {"pointer_path": str(pointer_path)}},
+            },
             "",
         )
     res = step_assert_pointer_target_exists(
@@ -1114,4 +1132,6 @@ def _apply_plan_steps(
             summary["failed_stdout_preview"] = details.get("stdout_tail")
             raise
         finally:
-            write_step_evidence(paths=evidence_paths, step_id=step_id, step_input=step_input, step_output=step_output, logs=logs)
+            write_step_evidence(
+                paths=evidence_paths, step_id=step_id, step_input=step_input, step_output=step_output, logs=logs
+            )

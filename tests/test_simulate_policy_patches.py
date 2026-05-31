@@ -16,12 +16,14 @@ from ao_kernel.policy_sim.simulator import simulate_policy_change
 
 class TestMutexSemantics:
     def test_both_non_none_raises_value_error(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """v3 explicit semantic: both kwargs `is not None` → ValueError.
         ``None`` means "not provided"; ``{}`` means "provided, empty"."""
         with pytest.raises(
-            ValueError, match="mutually exclusive",
+            ValueError,
+            match="mutually exclusive",
         ):
             simulate_policy_change(
                 project_root=tmp_path,
@@ -46,7 +48,8 @@ class TestMutexSemantics:
 
 class TestProposedPolicyPatches:
     def test_patches_apply_against_baseline(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Plumbing test: verify the simulator routes patches through
         ``resolve_target_policy`` + ``apply_merge_patch`` before the
@@ -97,7 +100,8 @@ class TestProposedPolicyPatches:
         }
 
     def test_unknown_policy_patch_fails_fast(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """PR-C5 v3: fail-fast on unknown policy filename (typo
         protection). resolve_target_policy raises
@@ -128,15 +132,21 @@ class TestCliParserMutex:
         return _build_parser()
 
     def test_both_flags_triggers_system_exit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         parser = self._build_parser()
         with pytest.raises(SystemExit):
-            parser.parse_args([
-                "policy-sim", "run",
-                "--proposed-policies", str(tmp_path),
-                "--proposed-patches", str(tmp_path),
-            ])
+            parser.parse_args(
+                [
+                    "policy-sim",
+                    "run",
+                    "--proposed-policies",
+                    str(tmp_path),
+                    "--proposed-patches",
+                    str(tmp_path),
+                ]
+            )
 
     def test_neither_flag_triggers_system_exit(self) -> None:
         parser = self._build_parser()
@@ -145,18 +155,26 @@ class TestCliParserMutex:
 
     def test_only_policies_flag_accepted(self, tmp_path: Path) -> None:
         parser = self._build_parser()
-        args = parser.parse_args([
-            "policy-sim", "run",
-            "--proposed-policies", str(tmp_path),
-        ])
+        args = parser.parse_args(
+            [
+                "policy-sim",
+                "run",
+                "--proposed-policies",
+                str(tmp_path),
+            ]
+        )
         assert args.proposed_policies == str(tmp_path)
         assert args.proposed_patches is None
 
     def test_only_patches_flag_accepted(self, tmp_path: Path) -> None:
         parser = self._build_parser()
-        args = parser.parse_args([
-            "policy-sim", "run",
-            "--proposed-patches", str(tmp_path),
-        ])
+        args = parser.parse_args(
+            [
+                "policy-sim",
+                "run",
+                "--proposed-patches",
+                str(tmp_path),
+            ]
+        )
         assert args.proposed_patches == str(tmp_path)
         assert args.proposed_policies is None

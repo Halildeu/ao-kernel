@@ -16,7 +16,8 @@ class TestRoadmapCheckpointManager:
         """Save checkpoint and load it back with same data."""
         mgr = RoadmapCheckpointManager(tmp_path)
         mgr.save(
-            "run-001", "plan-abc",
+            "run-001",
+            "plan-abc",
             completed_milestones=["m1"],
             completed_steps=["s1", "s2"],
             current_milestone_id="m2",
@@ -54,7 +55,8 @@ class TestRoadmapCheckpointManager:
         """get_resume_skip_set returns completed step IDs."""
         mgr = RoadmapCheckpointManager(tmp_path)
         mgr.save(
-            "run-003", "plan-y",
+            "run-003",
+            "plan-y",
             completed_milestones=["m1"],
             completed_steps=["step-1", "step-2", "step-3"],
         )

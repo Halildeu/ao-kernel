@@ -124,17 +124,20 @@ def _reconstruct_anthropic_tools(events: list[dict[str, Any]]) -> list[dict[str,
                     tools[idx]["input_json"] += delta.get("partial_json", "")
 
     import json
+
     result = []
     for t in tools.values():
         try:
             args = json.loads(t["input_json"]) if t["input_json"] else {}
         except (json.JSONDecodeError, ValueError):
             args = {}
-        result.append({
-            "id": t["id"],
-            "type": "function",
-            "function": {"name": t["name"], "arguments": json.dumps(args)},
-        })
+        result.append(
+            {
+                "id": t["id"],
+                "type": "function",
+                "function": {"name": t["name"], "arguments": json.dumps(args)},
+            }
+        )
     return result
 
 

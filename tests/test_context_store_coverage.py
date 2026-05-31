@@ -97,7 +97,11 @@ class TestUpsertActorState:
     def test_sets_actor_state_minimal(self, tmp_path: Path):
         ctx = new_context("s", str(tmp_path), 3600)
         out = upsert_actor_state(
-            ctx, role="architect", actor="alpha", provider="openai", model="gpt-4",
+            ctx,
+            role="architect",
+            actor="alpha",
+            provider="openai",
+            model="gpt-4",
         )
         state = out["actor_state"]
         assert state["role"] == "architect"
@@ -108,8 +112,13 @@ class TestUpsertActorState:
     def test_optional_fields_included(self, tmp_path: Path):
         ctx = new_context("s", str(tmp_path), 3600)
         out = upsert_actor_state(
-            ctx, role="implementer", actor="beta", provider="claude", model="sonnet",
-            target_id="target-7", selection_reason="highest-confidence",
+            ctx,
+            role="implementer",
+            actor="beta",
+            provider="claude",
+            model="sonnet",
+            target_id="target-7",
+            selection_reason="highest-confidence",
             fallback_used=True,
         )
         state = out["actor_state"]
@@ -121,7 +130,11 @@ class TestUpsertActorState:
         ctx = new_context("s", str(tmp_path), 3600)
         with pytest.raises(SessionContextError, match="role"):
             upsert_actor_state(
-                ctx, role="bogus", actor="a", provider="p", model="m",
+                ctx,
+                role="bogus",
+                actor="a",
+                provider="p",
+                model="m",
             )
 
     def test_missing_fields_raise(self, tmp_path: Path):
@@ -145,7 +158,10 @@ class TestMarkCompaction:
     def test_sets_compaction_block(self, tmp_path: Path):
         ctx = new_context("s", str(tmp_path), 3600)
         out = mark_compaction(
-            ctx, summary_ref="summary.md", trigger="auto", source="router",
+            ctx,
+            summary_ref="summary.md",
+            trigger="auto",
+            source="router",
             approx_input_tokens=12_000,
         )
         comp = out["compaction"]
@@ -182,14 +198,16 @@ class TestRenewContext:
         ctx = new_context("s", str(tmp_path), 3600)
         # Insert an already-expired decision.
         past = _iso(FIXED_COVERAGE_NOW - timedelta(hours=1))
-        ctx["ephemeral_decisions"].append({
-            "key": "old",
-            "value": "x",
-            "source": "agent",
-            "created_at": past,
-            "ttl_seconds": 60,
-            "expires_at": past,
-        })
+        ctx["ephemeral_decisions"].append(
+            {
+                "key": "old",
+                "value": "x",
+                "source": "agent",
+                "created_at": past,
+                "ttl_seconds": 60,
+                "expires_at": past,
+            }
+        )
         _freeze_context_store_now(
             monkeypatch,
             now_iso=FIXED_COVERAGE_RENEW_ISO,
@@ -230,8 +248,12 @@ class TestInheritParentDecisions:
         created = _iso(FIXED_COVERAGE_NOW)
         expires = _iso(FIXED_COVERAGE_NOW + timedelta(seconds=ttl))
         return {
-            "key": key, "value": value, "source": "agent",
-            "created_at": created, "ttl_seconds": ttl, "expires_at": expires,
+            "key": key,
+            "value": value,
+            "source": "agent",
+            "created_at": created,
+            "ttl_seconds": ttl,
+            "expires_at": expires,
         }
 
     def test_inherits_parent_decisions(
@@ -284,10 +306,16 @@ class TestInheritParentDecisions:
         child = new_context("child", str(tmp_path), 3600)
         parent = new_context("parent", str(tmp_path), 3600)
         past = _iso(FIXED_COVERAGE_NOW - timedelta(hours=1))
-        parent["ephemeral_decisions"].append({
-            "key": "expired", "value": "x", "source": "agent",
-            "created_at": past, "ttl_seconds": 60, "expires_at": past,
-        })
+        parent["ephemeral_decisions"].append(
+            {
+                "key": "expired",
+                "value": "x",
+                "source": "agent",
+                "created_at": past,
+                "ttl_seconds": 60,
+                "expires_at": past,
+            }
+        )
         out = inherit_parent_decisions(child, parent_context=parent)
         assert all(d["key"] != "expired" for d in out["ephemeral_decisions"])
 

@@ -129,7 +129,9 @@ def build_repo_export_plan(
         }
         for path in missing_required
     )
-    diagnostics.sort(key=lambda item: (str(item.get("code", "")), str(item.get("target", "")), str(item.get("source_path", ""))))
+    diagnostics.sort(
+        key=lambda item: (str(item.get("code", "")), str(item.get("target", "")), str(item.get("source_path", "")))
+    )
 
     plan: JsonDict = {
         "schema_version": "1",
@@ -289,7 +291,9 @@ def _target_record(
     if missing_required:
         action = "blocked"
         for path in missing_required:
-            diagnostics.append(_target_diagnostic("required_source_missing", f"required source artifact is missing: {path}"))
+            diagnostics.append(
+                _target_diagnostic("required_source_missing", f"required source artifact is missing: {path}")
+            )
 
     diagnostics.sort(key=lambda item: (str(item["code"]), str(item["message"])))
     return {

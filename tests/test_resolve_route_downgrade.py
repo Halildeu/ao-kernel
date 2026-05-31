@@ -79,19 +79,23 @@ def _fake_rules(
         rules.append(rule)
     if include_inert_rule:
         # Rule without threshold → inert in C4.1
-        rules.append({
-            "from_class": "BALANCED_TEXT",
-            "to_class": "FAST_TEXT",
-            "intents": ["DISCOVERY"],
-        })
+        rules.append(
+            {
+                "from_class": "BALANCED_TEXT",
+                "to_class": "FAST_TEXT",
+                "intents": ["DISCOVERY"],
+            }
+        )
     if reasoning_downgrade_rule:
         # Rule targets a degrade_allowed=false class
-        rules.append({
-            "from_class": "REASONING_TEXT",
-            "to_class": "BALANCED_TEXT",
-            "intents": ["GAP_ANALYSIS"],
-            "budget_remaining_threshold_usd": 5.0,
-        })
+        rules.append(
+            {
+                "from_class": "REASONING_TEXT",
+                "to_class": "BALANCED_TEXT",
+                "intents": ["GAP_ANALYSIS"],
+                "budget_remaining_threshold_usd": 5.0,
+            }
+        )
 
     return {
         "policy_version": "v0.1-test",
@@ -233,10 +237,12 @@ class TestThresholdlessRulesInert:
         skipped by the C4.1 runtime evaluator — preserves bundled
         cost-agnostic DISCOVERY/BASELINE rules at their pre-v3.3.1
         dormant behavior."""
-        fake_ops(_fake_rules(
-            balanced_to_fast_threshold=None,
-            include_inert_rule=True,
-        ))
+        fake_ops(
+            _fake_rules(
+                balanced_to_fast_threshold=None,
+                include_inert_rule=True,
+            )
+        )
         from ao_kernel.llm import resolve_route
 
         result = resolve_route(
@@ -254,15 +260,18 @@ class TestThresholdlessRulesInert:
 
 class TestStrictnessGate:
     def test_degrade_not_allowed_class_blocks_downgrade(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         """REASONING_TEXT has ``strictness.degrade_allowed=false`` →
         even a matching rule with satisfied budget threshold MUST
         NOT trigger a downgrade."""
-        fake_ops(_fake_rules(
-            balanced_to_fast_threshold=None,
-            reasoning_downgrade_rule=True,
-        ))
+        fake_ops(
+            _fake_rules(
+                balanced_to_fast_threshold=None,
+                reasoning_downgrade_rule=True,
+            )
+        )
         from ao_kernel.llm import resolve_route
 
         result = resolve_route(
@@ -303,7 +312,8 @@ class TestDormantPathways:
         assert result["budget_remaining_usd"] is None
 
     def test_cost_usd_axis_missing_silent_no_downgrade(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         """Budget snapshot with ``cost_usd=None`` axis → router treats
         as no-signal, no downgrade, no raise."""
@@ -335,7 +345,8 @@ class TestDormantPathways:
 
 class TestResponseContract:
     def test_response_carries_downgrade_metadata_on_ok(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         """Every OK path response dict has the full C4.1 metadata set."""
         from ao_kernel.llm import resolve_route
@@ -356,7 +367,8 @@ class TestResponseContract:
             assert key in result, f"missing {key!r} on OK path"
 
     def test_response_carries_downgrade_metadata_on_fail(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         """FAIL paths MUST also carry the C4.1 metadata set (empty)."""
         from ao_kernel._internal.prj_kernel_api.llm_router import resolve
@@ -374,7 +386,8 @@ class TestResponseContract:
         assert result["downgrade_applied"] is False
 
     def test_selected_class_is_effective_class_on_downgrade(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         from ao_kernel.llm import resolve_route
 
@@ -412,9 +425,7 @@ class TestClientRouteHelperIntegration:
             "revision": "0" * 64,
             "intent": {"kind": "inline_prompt", "payload": "x"},
             "steps": [],
-            "policy_refs": [
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             "adapter_refs": [],
             "evidence_refs": [
                 f".ao/evidence/workflows/{run_id}/events.jsonl",
@@ -434,7 +445,9 @@ class TestClientRouteHelperIntegration:
         )
 
     def test_route_helper_forwards_budget_snapshot_with_run_id(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """`_route(intent, run_id=...)` loads the budget and calls
         `resolve_route(cross_class_downgrade=True, budget_remaining=<Budget>)`."""
@@ -463,10 +476,13 @@ class TestClientRouteHelperIntegration:
         assert captured["budget_remaining"] is not None
         # Budget forwarded as a Budget object (not dict)
         from ao_kernel.workflow.budget import Budget
+
         assert isinstance(captured["budget_remaining"], Budget)
 
     def test_route_helper_dormant_without_run_id(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Without `run_id`, snapshot load is skipped; `_route` calls
         `resolve_route` with `cross_class_downgrade=False` →
@@ -488,7 +504,9 @@ class TestClientRouteHelperIntegration:
         assert captured["budget_remaining"] is None
 
     def test_route_helper_dormant_on_missing_run_record(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Missing run record → warn-log + no-downgrade (silent)."""
         captured: dict[str, Any] = {}
@@ -520,16 +538,10 @@ class TestClientLlmCallEmit:
     def _read_events(self, root, run_id: str) -> list[dict[str, Any]]:
         import json
 
-        path = (
-            root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-        )
+        path = root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         if not path.is_file():
             return []
-        return [
-            json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     def _downgrade_route(self, **overrides: Any) -> dict[str, Any]:
         route = {
@@ -548,14 +560,17 @@ class TestClientLlmCallEmit:
         return route
 
     def test_downgrade_applied_emits_evidence_event(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c41ca001"
         from ao_kernel.client import AoKernelClient
 
         client = AoKernelClient(workspace_root=tmp_path)
         monkeypatch.setattr(
-            client, "_route",
+            client,
+            "_route",
             lambda intent, run_id=None: self._downgrade_route(),
         )
         monkeypatch.setattr(
@@ -569,9 +584,7 @@ class TestClientLlmCallEmit:
         )
 
         events = self._read_events(tmp_path, run_id)
-        downgrades = [
-            e for e in events if e.get("kind") == "route_cross_class_downgrade"
-        ]
+        downgrades = [e for e in events if e.get("kind") == "route_cross_class_downgrade"]
         assert len(downgrades) == 1
         payload = downgrades[0]["payload"]
         assert payload["intent"] == "DISCOVERY"
@@ -580,7 +593,9 @@ class TestClientLlmCallEmit:
         assert payload["threshold_usd"] == 2.0
 
     def test_provider_override_bypasses_emit(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Explicit provider_id/model → auto-route branch skipped →
         no downgrade evidence emitted even if `_route` would have."""
@@ -603,20 +618,20 @@ class TestClientLlmCallEmit:
         client.llm_call(
             messages=[{"role": "user", "content": "hi"}],
             intent="DISCOVERY",
-            provider_id="openai",   # explicit override
+            provider_id="openai",  # explicit override
             model="gpt-4o-mini",
             run_id=run_id,
         )
 
         assert route_called == []  # _route never invoked
         events = self._read_events(tmp_path, run_id)
-        downgrades = [
-            e for e in events if e.get("kind") == "route_cross_class_downgrade"
-        ]
+        downgrades = [e for e in events if e.get("kind") == "route_cross_class_downgrade"]
         assert downgrades == []
 
     def test_emit_failure_is_fail_open(
-        self, tmp_path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Evidence I/O failure during emit MUST NOT cascade to the
         caller — the fail-open wrapper must swallow the OSError and
@@ -627,7 +642,8 @@ class TestClientLlmCallEmit:
 
         client = AoKernelClient(workspace_root=tmp_path)
         monkeypatch.setattr(
-            client, "_route",
+            client,
+            "_route",
             lambda intent, run_id=None: self._downgrade_route(),
         )
 
@@ -635,7 +651,8 @@ class TestClientLlmCallEmit:
             raise OSError("simulated evidence write failure")
 
         monkeypatch.setattr(
-            "ao_kernel.executor.evidence_emitter.emit_event", _boom,
+            "ao_kernel.executor.evidence_emitter.emit_event",
+            _boom,
         )
         monkeypatch.setattr(
             "ao_kernel.llm.governed_call",
@@ -717,7 +734,8 @@ class TestMultiStepDowngradeChain:
         assert chain[1]["to_class"] == "FAST_TEXT"
 
     def test_partial_chain_when_second_threshold_not_crossed(
-        self, fake_ops,
+        self,
+        fake_ops,
     ) -> None:
         """remaining=3.0 < 5.0 (first hop) but >= 2.0 (second hop) →
         single-step downgrade (PREMIUM → BALANCED_TEXT only)."""
@@ -736,33 +754,35 @@ class TestMultiStepDowngradeChain:
     def test_cycle_protection_breaks_loop(self, fake_ops) -> None:
         """A → B → A rule-graph would cycle; visited set prevents
         re-entering a class already downgraded FROM."""
-        fake_ops({
-            "policy_version": "v0.1-cycle",
-            "intent_to_class": {"DISCOVERY": "A_CLASS"},
-            "fallback_order_by_class": {
-                "A_CLASS": ["openai"],
-                "B_CLASS": ["openai"],
-            },
-            "strictness": {},
-            "soft_degrade": {
-                "enabled": True,
-                "rules": [
-                    {
-                        "from_class": "A_CLASS",
-                        "to_class": "B_CLASS",
-                        "intents": ["DISCOVERY"],
-                        "budget_remaining_threshold_usd": 10.0,
-                    },
-                    {
-                        "from_class": "B_CLASS",
-                        "to_class": "A_CLASS",  # cycle
-                        "intents": ["DISCOVERY"],
-                        "budget_remaining_threshold_usd": 10.0,
-                    },
-                ],
-            },
-            "ttl_hours_default": 72,
-        })
+        fake_ops(
+            {
+                "policy_version": "v0.1-cycle",
+                "intent_to_class": {"DISCOVERY": "A_CLASS"},
+                "fallback_order_by_class": {
+                    "A_CLASS": ["openai"],
+                    "B_CLASS": ["openai"],
+                },
+                "strictness": {},
+                "soft_degrade": {
+                    "enabled": True,
+                    "rules": [
+                        {
+                            "from_class": "A_CLASS",
+                            "to_class": "B_CLASS",
+                            "intents": ["DISCOVERY"],
+                            "budget_remaining_threshold_usd": 10.0,
+                        },
+                        {
+                            "from_class": "B_CLASS",
+                            "to_class": "A_CLASS",  # cycle
+                            "intents": ["DISCOVERY"],
+                            "budget_remaining_threshold_usd": 10.0,
+                        },
+                    ],
+                },
+                "ttl_hours_default": 72,
+            }
+        )
         from ao_kernel.llm import resolve_route
 
         result = resolve_route(
@@ -796,7 +816,8 @@ class TestWorkspaceOverride:
     forking the package."""
 
     def test_workspace_override_takes_priority(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel._internal.prj_kernel_api import llm_router
 
@@ -809,30 +830,36 @@ class TestWorkspaceOverride:
             "ttl_hours_default": 72,
         }
         (ops_dir / "llm_resolver_rules.v1.json").write_text(
-            json.dumps(override_rules), encoding="utf-8",
+            json.dumps(override_rules),
+            encoding="utf-8",
         )
         (ops_dir / "llm_class_registry.v1.json").write_text(
-            json.dumps({"classes": []}), encoding="utf-8",
+            json.dumps({"classes": []}),
+            encoding="utf-8",
         )
         (ops_dir / "llm_provider_map.v1.json").write_text(
-            json.dumps({
-                "classes": {
-                    "CUSTOM_CLASS": {
-                        "providers": {
-                            "openai": {
-                                "pinned_model_id": "stub-model",
-                                "models": [{
-                                    "model_id": "stub-model",
-                                    "stage": "verified",
-                                    "probe_status": "ok",
-                                    "probe_last_at": "2099-01-01T00:00:00+00:00",
-                                    "verified_at": "2099-01-01T00:00:00+00:00",
-                                }],
+            json.dumps(
+                {
+                    "classes": {
+                        "CUSTOM_CLASS": {
+                            "providers": {
+                                "openai": {
+                                    "pinned_model_id": "stub-model",
+                                    "models": [
+                                        {
+                                            "model_id": "stub-model",
+                                            "stage": "verified",
+                                            "probe_status": "ok",
+                                            "probe_last_at": "2099-01-01T00:00:00+00:00",
+                                            "verified_at": "2099-01-01T00:00:00+00:00",
+                                        }
+                                    ],
+                                },
                             },
                         },
                     },
-                },
-            }),
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -850,7 +877,8 @@ class TestWorkspaceOverride:
             llm_router._reset_resolver_rules_cache()
 
     def test_malformed_override_fails_closed(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel._internal.prj_kernel_api import llm_router
 
@@ -880,21 +908,25 @@ class TestSchemaValidation:
         additive schema's ``minimum: 0`` constraint."""
         from jsonschema import ValidationError
 
-        fake_ops({
-            "policy_version": "v0.1",
-            "intent_to_class": {"DISCOVERY": "BALANCED_TEXT"},
-            "fallback_order_by_class": {"BALANCED_TEXT": ["openai"]},
-            "soft_degrade": {
-                "enabled": True,
-                "rules": [{
-                    "from_class": "BALANCED_TEXT",
-                    "to_class": "FAST_TEXT",
-                    "intents": ["DISCOVERY"],
-                    "budget_remaining_threshold_usd": -1.0,  # invalid
-                }],
-            },
-            "ttl_hours_default": 72,
-        })
+        fake_ops(
+            {
+                "policy_version": "v0.1",
+                "intent_to_class": {"DISCOVERY": "BALANCED_TEXT"},
+                "fallback_order_by_class": {"BALANCED_TEXT": ["openai"]},
+                "soft_degrade": {
+                    "enabled": True,
+                    "rules": [
+                        {
+                            "from_class": "BALANCED_TEXT",
+                            "to_class": "FAST_TEXT",
+                            "intents": ["DISCOVERY"],
+                            "budget_remaining_threshold_usd": -1.0,  # invalid
+                        }
+                    ],
+                },
+                "ttl_hours_default": 72,
+            }
+        )
 
         from ao_kernel.llm import resolve_route
 

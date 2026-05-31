@@ -93,6 +93,7 @@ def load_tier_policy() -> dict[str, Any]:
     """Load tier policy from bundled defaults."""
     try:
         from ao_kernel.config import load_default
+
         return load_default("policies", "policy_context_memory_tiers.v1.json")
     except Exception:
         return {"tiers": DEFAULT_TIERS}

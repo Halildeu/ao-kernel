@@ -54,18 +54,15 @@ def _write_memory_policy(
         "read": {"enabled": False, "allowed_patterns": ["*"]},
         "write": {
             "enabled": write_enabled,
-            "allowed_key_prefixes": (
-                allowed_key_prefixes if allowed_key_prefixes is not None else ["mem."]
-            ),
+            "allowed_key_prefixes": (allowed_key_prefixes if allowed_key_prefixes is not None else ["mem."]),
             "max_value_bytes": max_value_bytes,
-            "allowed_source_prefixes": (
-                allowed_source_prefixes if allowed_source_prefixes is not None else ["mcp:"]
-            ),
+            "allowed_source_prefixes": (allowed_source_prefixes if allowed_source_prefixes is not None else ["mcp:"]),
         },
         "rate_limit": {"reads_per_minute": 60, "writes_per_minute": writes_per_minute},
     }
     (policies_dir / "policy_mcp_memory.v1.json").write_text(
-        json.dumps(doc), encoding="utf-8",
+        json.dumps(doc),
+        encoding="utf-8",
     )
 
 
@@ -80,12 +77,14 @@ def ws_enabled(tmp_path: Path) -> Path:
 
 
 def test_write_enabled_routes_through_cas(ws_enabled: Path):
-    result = handle_memory_write({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.example.hello",
-        "value": "world",
-        "source": "mcp:manual",
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.example.hello",
+            "value": "world",
+            "source": "mcp:manual",
+        }
+    )
     assert result["allowed"] is True
     assert result["decision"] == "executed"
     assert result["data"]["key"] == "mem.example.hello"
@@ -96,11 +95,13 @@ def test_write_enabled_routes_through_cas(ws_enabled: Path):
 
 def test_write_disabled_fails_closed(tmp_path: Path):
     _write_memory_policy(tmp_path, write_enabled=False)
-    result = handle_memory_write({
-        "workspace_root": str(tmp_path),
-        "key": "mem.x",
-        "value": "y",
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(tmp_path),
+            "key": "mem.x",
+            "value": "y",
+        }
+    )
     assert result["decision"] == "deny"
     assert "write_disabled_by_policy" in result["reason_codes"]
 
@@ -110,11 +111,13 @@ def test_write_disabled_fails_closed(tmp_path: Path):
 
 def test_empty_key_prefix_denies_all(tmp_path: Path):
     _write_memory_policy(tmp_path, write_enabled=True, allowed_key_prefixes=[])
-    result = handle_memory_write({
-        "workspace_root": str(tmp_path),
-        "key": "mem.foo",
-        "value": "bar",
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(tmp_path),
+            "key": "mem.foo",
+            "value": "bar",
+        }
+    )
     assert result["decision"] == "deny"
     assert "key_prefix_not_allowed" in result["reason_codes"]
 
@@ -123,11 +126,13 @@ def test_empty_key_prefix_denies_all(tmp_path: Path):
 
 
 def test_key_prefix_miss_denies(ws_enabled: Path):
-    result = handle_memory_write({
-        "workspace_root": str(ws_enabled),
-        "key": "other.foo",
-        "value": "bar",
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "other.foo",
+            "value": "bar",
+        }
+    )
     assert result["decision"] == "deny"
     assert "key_prefix_not_allowed" in result["reason_codes"]
 
@@ -136,12 +141,14 @@ def test_key_prefix_miss_denies(ws_enabled: Path):
 
 
 def test_bad_source_prefix_denies(ws_enabled: Path):
-    result = handle_memory_write({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.x",
-        "value": "y",
-        "source": "sdk:internal",
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.x",
+            "value": "y",
+            "source": "sdk:internal",
+        }
+    )
     assert result["decision"] == "deny"
     assert "source_prefix_not_allowed" in result["reason_codes"]
 
@@ -152,11 +159,13 @@ def test_bad_source_prefix_denies(ws_enabled: Path):
 def test_oversize_value_denies(tmp_path: Path):
     _write_memory_policy(tmp_path, write_enabled=True, max_value_bytes=32)
     big = "x" * 200
-    result = handle_memory_write({
-        "workspace_root": str(tmp_path),
-        "key": "mem.x",
-        "value": big,
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(tmp_path),
+            "key": "mem.x",
+            "value": big,
+        }
+    )
     assert result["decision"] == "deny"
     assert "oversize" in result["reason_codes"]
 
@@ -165,11 +174,13 @@ def test_oversize_value_denies(tmp_path: Path):
 
 
 def test_non_json_serializable_value_denies(ws_enabled: Path):
-    result = handle_memory_write({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.x",
-        "value": {1, 2, 3},  # sets are not JSON-serializable
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.x",
+            "value": {1, 2, 3},  # sets are not JSON-serializable
+        }
+    )
     assert result["decision"] == "deny"
     assert "value_not_serializable" in result["reason_codes"]
 
@@ -179,6 +190,7 @@ def test_non_json_serializable_value_denies(ws_enabled: Path):
 
 def test_workspace_root_absent_library_mode_denies(monkeypatch):
     from ao_kernel import mcp_server
+
     monkeypatch.setattr(mcp_server, "_find_workspace_root", lambda: None)
     result = handle_memory_write({"key": "mem.x", "value": "y"})
     assert result["decision"] == "deny"
@@ -190,11 +202,13 @@ def test_workspace_root_absent_library_mode_denies(monkeypatch):
 
 def test_workspace_root_present_invalid_denies():
     for bad in (None, 123, "", "   "):
-        result = handle_memory_write({
-            "workspace_root": bad,
-            "key": "mem.x",
-            "value": "y",
-        })
+        result = handle_memory_write(
+            {
+                "workspace_root": bad,
+                "key": "mem.x",
+                "value": "y",
+            }
+        )
         assert result["decision"] == "deny", f"expected deny for {bad!r}"
 
 
@@ -202,13 +216,15 @@ def test_workspace_root_present_invalid_denies():
 
 
 def test_caller_supplied_confidence_is_ignored(ws_enabled: Path):
-    result = handle_memory_write({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.x",
-        "value": "y",
-        "source": "mcp:manual",
-        "confidence": 0.99,  # caller tries to boost; server should ignore
-    })
+    result = handle_memory_write(
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.x",
+            "value": "y",
+            "source": "mcp:manual",
+            "confidence": 0.99,  # caller tries to boost; server should ignore
+        }
+    )
     assert result["decision"] == "executed"
     assert result["data"]["confidence"] == _SERVER_SIDE_CONFIDENCE
 
@@ -218,17 +234,21 @@ def test_caller_supplied_confidence_is_ignored(ws_enabled: Path):
 
 def test_rate_limit_triggers_on_write_bucket(tmp_path: Path):
     _write_memory_policy(tmp_path, write_enabled=True, writes_per_minute=1)
-    first = handle_memory_write({
-        "workspace_root": str(tmp_path),
-        "key": "mem.a",
-        "value": "1",
-    })
+    first = handle_memory_write(
+        {
+            "workspace_root": str(tmp_path),
+            "key": "mem.a",
+            "value": "1",
+        }
+    )
     assert first["decision"] == "executed"
-    second = handle_memory_write({
-        "workspace_root": str(tmp_path),
-        "key": "mem.b",
-        "value": "2",
-    })
+    second = handle_memory_write(
+        {
+            "workspace_root": str(tmp_path),
+            "key": "mem.b",
+            "value": "2",
+        }
+    )
     assert second["decision"] == "deny"
     assert "rate_limit_exceeded" in second["reason_codes"]
 
@@ -256,7 +276,8 @@ def test_implicit_promote_threshold_from_workspace_override(tmp_path: Path):
         },
     }
     (policies_dir / "policy_tool_calling.v1.json").write_text(
-        json.dumps(override), encoding="utf-8",
+        json.dumps(override),
+        encoding="utf-8",
     )
 
     # Simulate a tool result with confidence=0.95 — should NOT promote at 0.99.
@@ -268,6 +289,7 @@ def test_implicit_promote_threshold_from_workspace_override(tmp_path: Path):
     }
     # Monkey-patch extract_from_tool_result to return a controlled decision.
     import ao_kernel._internal.mcp.memory_tools as mt
+
     original = mt.__dict__.get("_test_extract_override")
     try:
         # Directly call run_implicit_promote; extractor yields from fake_result
@@ -292,12 +314,14 @@ def test_write_explicit_promote_but_no_implicit_double_write(ws_enabled: Path):
     assert "ao_memory_write" in _IMPLICIT_PROMOTE_SKIP
     # Drive through the real MCP dispatch path so both the explicit
     # promote (handler) and the implicit side-channel are exercised.
-    TOOL_DISPATCH["ao_memory_write"]({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.note",
-        "value": "persistent",
-        "source": "mcp:manual",
-    })
+    TOOL_DISPATCH["ao_memory_write"](
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.note",
+            "value": "persistent",
+            "source": "mcp:manual",
+        }
+    )
     items = query(ws_enabled, key_pattern="*")
     keys = {i["key"] for i in items}
     assert "mem.note" in keys  # explicit promote succeeded
@@ -310,21 +334,19 @@ def test_write_explicit_promote_but_no_implicit_double_write(ws_enabled: Path):
 def test_evidence_jsonl_assert_fields(ws_enabled: Path):
     from ao_kernel.mcp_server import TOOL_DISPATCH
 
-    TOOL_DISPATCH["ao_memory_write"]({
-        "workspace_root": str(ws_enabled),
-        "key": "mem.evidence",
-        "value": {"ok": True},
-        "source": "mcp:manual",
-    })
+    TOOL_DISPATCH["ao_memory_write"](
+        {
+            "workspace_root": str(ws_enabled),
+            "key": "mem.evidence",
+            "value": {"ok": True},
+            "source": "mcp:manual",
+        }
+    )
     evidence_dir = ws_enabled / ".ao" / "evidence" / "mcp"
     assert evidence_dir.is_dir()
     jsonl_files = list(evidence_dir.glob("*.jsonl"))
     assert jsonl_files, "expected an MCP evidence file"
-    records = [
-        json.loads(line)
-        for line in jsonl_files[0].read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    records = [json.loads(line) for line in jsonl_files[0].read_text(encoding="utf-8").splitlines() if line.strip()]
     match = [r for r in records if r.get("tool") == "ao_memory_write"]
     assert match, "expected an ao_memory_write evidence record"
     last = match[-1]

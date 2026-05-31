@@ -299,9 +299,7 @@ def test_build_live_adapter_gate_attestation_rejects_wrong_deployment_protection
         secret_payload=[{"name": "AO_CLAUDE_CODE_CLI_AUTH", "updatedAt": "2026-04-25T00:00:00Z"}],
         collaborator_payload=[],
         deployment_protection_payload={
-            "custom_deployment_protection_rules": [
-                {"id": 10, "enabled": True, "app": {"slug": "some-other-app"}}
-            ]
+            "custom_deployment_protection_rules": [{"id": 10, "enabled": True, "app": {"slug": "some-other-app"}}]
         },
         generated_at="2026-04-25T00:00:00Z",
     )
@@ -593,13 +591,9 @@ def test_gp4_closeout_docs_keep_support_boundary_narrow() -> None:
         assert "GP-4.5" in text, doc
         assert expected_verdict in text, doc
 
-    status = (repo_root / ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(
-        encoding="utf-8"
-    )
+    status = (repo_root / ".claude/plans/POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(encoding="utf-8")
     assert "stable maintenance / no active widening gate" in status
 
-    decision = (repo_root / ".claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md").read_text(
-        encoding="utf-8"
-    )
+    decision = (repo_root / ".claude/plans/GP-4.5-SUPPORT-BOUNDARY-CLOSEOUT.md").read_text(encoding="utf-8")
     assert "No support tier changes" in decision
     assert "No live `claude` invocation is made by the gate." in decision

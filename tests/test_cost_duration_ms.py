@@ -79,9 +79,7 @@ def _create_run_with_budget(ws: Path) -> str:
         workflow_version="1.0.0",
         intent={"kind": "inline_prompt", "payload": "test"},
         budget=budget,
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
     )
     return rid
@@ -100,21 +98,13 @@ def _ok_response(input_tokens: int = 100, output_tokens: int = 50) -> bytes:
 
 
 def _spend_events(ws: Path, run_id: str) -> list[dict[str, Any]]:
-    events_path = (
-        ws / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    events_path = ws / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     lines = events_path.read_text(encoding="utf-8").strip().splitlines()
-    return [
-        json.loads(line)
-        for line in lines
-        if json.loads(line).get("kind") == "llm_spend_recorded"
-    ]
+    return [json.loads(line) for line in lines if json.loads(line).get("kind") == "llm_spend_recorded"]
 
 
 class TestDurationMsPassthrough:
-    def test_elapsed_ms_appears_as_duration_ms(
-        self, tmp_path: Path
-    ) -> None:
+    def test_elapsed_ms_appears_as_duration_ms(self, tmp_path: Path) -> None:
         """C2b canonical case: ``elapsed_ms=250.5`` threads through
         the reconcile into the emitted ``llm_spend_recorded`` payload
         as ``duration_ms=250.5``. This is the single source of truth
@@ -153,9 +143,7 @@ class TestDurationMsPassthrough:
 
 
 class TestDurationMsBackwardCompat:
-    def test_duration_ms_omitted_when_elapsed_ms_none(
-        self, tmp_path: Path
-    ) -> None:
+    def test_duration_ms_omitted_when_elapsed_ms_none(self, tmp_path: Path) -> None:
         """Backward compat (plan v4 R13): legacy callers that don't
         pass ``elapsed_ms`` see the pre-B5 payload shape — no
         ``duration_ms`` key at all, not ``None``. The derivation
@@ -194,9 +182,7 @@ class TestDurationMsBackwardCompat:
 
 
 class TestDurationMsPrecision:
-    def test_float_rounded_to_three_decimals(
-        self, tmp_path: Path
-    ) -> None:
+    def test_float_rounded_to_three_decimals(self, tmp_path: Path) -> None:
         """Excess precision is rounded to 3 decimals so the emitted
         event stays compact and deterministic across runs. Prometheus
         converts ms→s anyway, so sub-microsecond detail is noise."""
@@ -241,9 +227,7 @@ class TestDurationMsGovernedCallPassthrough:
     end-to-end with a monkey-patched transport so real HTTP is not
     required."""
 
-    def test_governed_call_threads_elapsed_ms_to_event(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_governed_call_threads_elapsed_ms_to_event(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         import ao_kernel.llm as llm_mod
 
         run_id = _create_run_with_budget(tmp_path)
@@ -253,20 +237,20 @@ class TestDurationMsGovernedCallPassthrough:
         # (which relies on the bundled price catalog at
         # ao_kernel/defaults/catalogs/price-catalog.v1.json).
         (tmp_path / ".ao" / "policies").mkdir(parents=True, exist_ok=True)
-        (
-            tmp_path / ".ao" / "policies" / "policy_cost_tracking.v1.json"
-        ).write_text(
-            json.dumps({
-                "version": "v1",
-                "enabled": True,
-                "price_catalog_path": ".ao/cost/catalog.v1.json",
-                "spend_ledger_path": ".ao/cost/spend.jsonl",
-                "fail_closed_on_exhaust": True,
-                "strict_freshness": False,
-                "fail_closed_on_missing_usage": True,
-                "idempotency_window_lines": 1000,
-                "routing_by_cost": {"enabled": False},
-            }),
+        (tmp_path / ".ao" / "policies" / "policy_cost_tracking.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "enabled": True,
+                    "price_catalog_path": ".ao/cost/catalog.v1.json",
+                    "spend_ledger_path": ".ao/cost/spend.jsonl",
+                    "fail_closed_on_exhaust": True,
+                    "strict_freshness": False,
+                    "fail_closed_on_missing_usage": True,
+                    "idempotency_window_lines": 1000,
+                    "routing_by_cost": {"enabled": False},
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -276,18 +260,22 @@ class TestDurationMsGovernedCallPassthrough:
             return {
                 "status": "OK",
                 "http_status": 200,
-                "resp_bytes": json.dumps({
-                    "text": "mock response",
-                    "usage": {
-                        "input_tokens": 100,
-                        "output_tokens": 50,
-                    },
-                }).encode("utf-8"),
+                "resp_bytes": json.dumps(
+                    {
+                        "text": "mock response",
+                        "usage": {
+                            "input_tokens": 100,
+                            "output_tokens": 50,
+                        },
+                    }
+                ).encode("utf-8"),
                 "elapsed_ms": 987.654,
             }
 
         monkeypatch.setattr(
-            llm_mod, "execute_request", _fake_execute_request,
+            llm_mod,
+            "execute_request",
+            _fake_execute_request,
         )
         monkeypatch.setattr(
             "ao_kernel.llm.check_capabilities",
@@ -317,9 +305,7 @@ class TestDurationMsGovernedCallPassthrough:
 
 
 class TestDurationMsAbsentInUsageMissingPath:
-    def test_usage_missing_event_has_no_duration_ms(
-        self, tmp_path: Path
-    ) -> None:
+    def test_usage_missing_event_has_no_duration_ms(self, tmp_path: Path) -> None:
         """Plan v4 R14: the usage-missing path emits
         ``llm_usage_missing`` (not ``llm_spend_recorded``), so
         ``duration_ms`` is not relevant there. This test pins the
@@ -357,14 +343,7 @@ class TestDurationMsAbsentInUsageMissingPath:
                 elapsed_ms=250.5,  # passed but irrelevant
             )
 
-        events_path = (
-            tmp_path
-            / ".ao"
-            / "evidence"
-            / "workflows"
-            / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         lines = events_path.read_text(encoding="utf-8").strip().splitlines()
         kinds = [json.loads(line).get("kind") for line in lines]
         assert "llm_usage_missing" in kinds

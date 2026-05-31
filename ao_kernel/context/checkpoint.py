@@ -137,13 +137,15 @@ def list_checkpoints(
             continue
         try:
             ctx = json.loads(ctx_file.read_text(encoding="utf-8"))
-            checkpoints.append({
-                "session_id": ctx.get("session_id", session_dir.name),
-                "created_at": ctx.get("created_at", ""),
-                "expires_at": ctx.get("expires_at", ""),
-                "decision_count": len(ctx.get("ephemeral_decisions", [])),
-                "path": str(ctx_file),
-            })
+            checkpoints.append(
+                {
+                    "session_id": ctx.get("session_id", session_dir.name),
+                    "created_at": ctx.get("created_at", ""),
+                    "expires_at": ctx.get("expires_at", ""),
+                    "decision_count": len(ctx.get("ephemeral_decisions", [])),
+                    "path": str(ctx_file),
+                }
+            )
         except (json.JSONDecodeError, OSError):
             continue
 

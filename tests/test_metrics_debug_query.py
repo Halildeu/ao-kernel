@@ -30,9 +30,7 @@ def _args(workspace: Path, **kwargs) -> SimpleNamespace:
     )
 
 
-def _write_events(
-    ws: Path, run_id: str, events: list[dict]
-) -> None:
+def _write_events(ws: Path, run_id: str, events: list[dict]) -> None:
     path = ws / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -64,9 +62,7 @@ class TestParseIso8601Strict:
         # underlying helper, strict wrapper surfaces the message.
         with pytest.raises(ValueError) as excinfo:
             parse_iso8601_strict("1713376200")
-        assert "ISO-8601" in str(excinfo.value) or "timezone" in str(
-            excinfo.value
-        )
+        assert "ISO-8601" in str(excinfo.value) or "timezone" in str(excinfo.value)
 
     def test_rejects_empty_string(self) -> None:
         with pytest.raises(ValueError):
@@ -74,9 +70,7 @@ class TestParseIso8601Strict:
 
 
 class TestHappyPath:
-    def test_empty_workspace_returns_empty_events(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_empty_workspace_returns_empty_events(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         rc = cmd_metrics_debug_query(_args(tmp_path))
         assert rc == 0
         out = capsys.readouterr().out
@@ -84,9 +78,7 @@ class TestHappyPath:
         assert payload["summary"] == {"total": 0, "by_kind": {}}
         assert payload["events"] == []
 
-    def test_summary_counts_by_kind(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_summary_counts_by_kind(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _write_events(
             tmp_path,
             "run-alpha",
@@ -119,9 +111,7 @@ class TestHappyPath:
 
 
 class TestSinceFilter:
-    def test_since_filters_out_earlier_events(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_since_filters_out_earlier_events(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _write_events(
             tmp_path,
             "run-beta",
@@ -146,9 +136,7 @@ class TestSinceFilter:
 
 
 class TestRunFilter:
-    def test_run_filter_scopes_events(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_run_filter_scopes_events(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _write_events(
             tmp_path,
             "run-c1",
@@ -177,21 +165,15 @@ class TestRunFilter:
         assert payload["summary"]["total"] == 1
         assert payload["filter"]["run_id"] == "run-c1"
 
-    def test_run_filter_unknown_returns_one(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_run_filter_unknown_returns_one(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         # No evidence dir at all → run filter cannot resolve → exit 1.
         rc = cmd_metrics_debug_query(_args(tmp_path, run="run-missing"))
         assert rc == 1
 
 
 class TestCorruptJSONL:
-    def test_corrupt_events_returns_exit_two(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        evidence_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / "run-x"
-        )
+    def test_corrupt_events_returns_exit_two(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        evidence_dir = tmp_path / ".ao" / "evidence" / "workflows" / "run-x"
         evidence_dir.mkdir(parents=True, exist_ok=True)
         (evidence_dir / "events.jsonl").write_text(
             '{"kind": "policy_checked"}\n{ not valid\n',
@@ -206,9 +188,7 @@ class TestCorruptJSONL:
 class TestOutputFlag:
     def test_atomic_output_writes_json(self, tmp_path: Path) -> None:
         output_path = tmp_path / "debug.json"
-        rc = cmd_metrics_debug_query(
-            _args(tmp_path, output=str(output_path))
-        )
+        rc = cmd_metrics_debug_query(_args(tmp_path, output=str(output_path)))
         assert rc == 0
         content = json.loads(output_path.read_text(encoding="utf-8"))
         assert set(content.keys()) == {"filter", "summary", "events"}

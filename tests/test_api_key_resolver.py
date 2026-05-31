@@ -95,10 +95,12 @@ class TestFactoryPath:
 
     def test_factory_tries_alternate_secret_ids(self):
         """claude -> ANTHROPIC_API_KEY primary, CLAUDE_API_KEY alternate."""
-        provider = _DictProvider({
-            "ANTHROPIC_API_KEY": None,
-            "CLAUDE_API_KEY": "sk-legacy",
-        })
+        provider = _DictProvider(
+            {
+                "ANTHROPIC_API_KEY": None,
+                "CLAUDE_API_KEY": "sk-legacy",
+            }
+        )
         key = resolve_api_key(
             "claude",
             environ={},

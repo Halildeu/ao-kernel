@@ -128,7 +128,9 @@ def test_ao_ma10q_doc_and_receipt_preserve_no_secret_authority_boundary() -> Non
     assert "AI provider output remains evidence only." in text
 
 
-def test_ao_ma10q_missing_token_env_blocks_before_smoke_invocation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ao_ma10q_missing_token_env_blocks_before_smoke_invocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.delenv(TOKEN_ENV, raising=False)
     mod = _load_script_module()
     output = tmp_path / "ao-ma10q.json"
@@ -288,10 +290,7 @@ def test_ao_ma10q_uses_optional_governance_wrapper_without_recording_secret_or_p
     producer_wrapper = runner.commands[0][runner.commands[0].index("--producer-gh-bin") + 1]
     assert Path(governance_wrapper).name == "gh-governance"
     assert Path(producer_wrapper).name == "gh-governance"
-    assert (
-        producer_wrapper
-        == governance_wrapper
-    )
+    assert producer_wrapper == governance_wrapper
     artifact_text = output.read_text(encoding="utf-8")
     assert TOKEN_VALUE not in artifact_text
     assert GOVERNANCE_TOKEN_VALUE not in artifact_text
@@ -435,9 +434,7 @@ def test_ao_ma10q_default_subprocess_timeout_exceeds_inner_smoke_window() -> Non
     assert mod._smoke_process_timeout(timeout_seconds=0, poll_seconds=1) == 180
 
 
-def test_ao_ma10q_catches_smoke_command_timeout_fail_closed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ao_ma10q_catches_smoke_command_timeout_fail_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(TOKEN_ENV, TOKEN_VALUE)
     mod = _load_script_module()
     output = tmp_path / "ao-ma10q.json"

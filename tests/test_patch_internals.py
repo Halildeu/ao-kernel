@@ -89,7 +89,9 @@ class TestGitRevParseHead:
     def test_returns_sha_for_valid_repo(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
         sha = _git_rev_parse_head(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         assert len(sha) == 40
         assert all(c in "0123456789abcdef" for c in sha)
@@ -97,7 +99,9 @@ class TestGitRevParseHead:
     def test_returns_empty_outside_repo(self, tmp_path: Path) -> None:
         # tmp_path is not a git repo → rev-parse fails non-zero
         sha = _git_rev_parse_head(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         assert sha == ""
 
@@ -119,7 +123,9 @@ class TestGenerateReverseDiff:
     def test_empty_index_produces_empty_diff(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
         diff = _generate_reverse_diff(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         assert diff == ""
 
@@ -128,10 +134,13 @@ class TestGenerateReverseDiff:
         (tmp_path / "a.txt").write_text("completely new\n")
         subprocess.run(
             ["git", "-C", str(tmp_path), "add", "a.txt"],
-            check=True, capture_output=True,
+            check=True,
+            capture_output=True,
         )
         diff = _generate_reverse_diff(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         # Reverse of "line1/2/3 -> completely new" contains the marker
         assert "diff --git" in diff
@@ -182,22 +191,12 @@ class TestDecodeAndTail:
 
 class TestExtractPathsFromDiff:
     def test_extracts_both_sides(self) -> None:
-        diff = (
-            "diff --git a/foo.txt b/foo.txt\n"
-            "--- a/foo.txt\n"
-            "+++ b/foo.txt\n"
-            "@@ -1 +1 @@\n-old\n+new\n"
-        )
+        diff = "diff --git a/foo.txt b/foo.txt\n--- a/foo.txt\n+++ b/foo.txt\n@@ -1 +1 @@\n-old\n+new\n"
         paths = _extract_paths_from_diff(diff)
         assert "foo.txt" in paths
 
     def test_dev_null_excluded(self) -> None:
-        diff = (
-            "diff --git a/new.txt b/new.txt\n"
-            "--- /dev/null\n"
-            "+++ b/new.txt\n"
-            "@@ -0,0 +1 @@\n+content\n"
-        )
+        diff = "diff --git a/new.txt b/new.txt\n--- /dev/null\n+++ b/new.txt\n@@ -0,0 +1 @@\n+content\n"
         paths = _extract_paths_from_diff(diff)
         assert "new.txt" in paths
         assert "/dev/null" not in paths
@@ -210,14 +209,18 @@ class TestIndexTreeSha:
     def test_returns_sha_for_valid_repo(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
         sha = _index_tree_sha(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         assert len(sha) == 40
 
     def test_returns_empty_outside_repo(self, tmp_path: Path) -> None:
         # tmp_path is not a git repo → write-tree fails
         sha = _index_tree_sha(
-            tmp_path, host_env_for_git(), timeout=30.0,
+            tmp_path,
+            host_env_for_git(),
+            timeout=30.0,
         )
         assert sha == ""
 
@@ -225,13 +228,17 @@ class TestIndexTreeSha:
 class TestCaptureForensics:
     def test_captures_rej_files_into_tarball(self, tmp_path: Path) -> None:
         import tarfile
+
         worktree = tmp_path / "wt"
         worktree.mkdir()
         _gen_rej(worktree, "a.txt.rej", body="@@ -1 +1 @@\n-old\n+new\n")
         run_dir = tmp_path / "run"
         run_dir.mkdir()
         _capture_forensics(
-            run_dir, "patch-xyz", worktree, ("a.txt.rej",),
+            run_dir,
+            "patch-xyz",
+            worktree,
+            ("a.txt.rej",),
         )
         tar_path = run_dir / "artifacts" / "rejected" / "patch-xyz.tgz"
         assert tar_path.exists()
@@ -247,7 +254,10 @@ class TestCaptureForensics:
         run_dir.mkdir()
         # Pass a rej path that doesn't actually exist on disk
         _capture_forensics(
-            run_dir, "p1", worktree, ("nonexistent.rej",),
+            run_dir,
+            "p1",
+            worktree,
+            ("nonexistent.rej",),
         )
         # Still creates the output path with the manifest entry
         assert (run_dir / "artifacts" / "rejected" / "p1.tgz").exists()
@@ -275,7 +285,8 @@ class TestUnrelatedDirtyPaths:
     def test_clean_repo_empty(self, tmp_path: Path) -> None:
         init_repo(tmp_path)
         result = _unrelated_dirty_paths(
-            tmp_path, host_env_for_git(),
+            tmp_path,
+            host_env_for_git(),
             expected_paths=frozenset(),
             timeout=30.0,
         )
@@ -285,7 +296,8 @@ class TestUnrelatedDirtyPaths:
         init_repo(tmp_path)
         (tmp_path / "a.txt").write_text("dirty\n")
         result = _unrelated_dirty_paths(
-            tmp_path, host_env_for_git(),
+            tmp_path,
+            host_env_for_git(),
             expected_paths=frozenset({"a.txt"}),
             timeout=30.0,
         )
@@ -296,7 +308,8 @@ class TestUnrelatedDirtyPaths:
         (tmp_path / "a.txt").write_text("dirty\n")
         (tmp_path / "b.txt").write_text("also dirty\n")
         result = _unrelated_dirty_paths(
-            tmp_path, host_env_for_git(),
+            tmp_path,
+            host_env_for_git(),
             expected_paths=frozenset({"a.txt"}),
             timeout=30.0,
         )
@@ -305,7 +318,8 @@ class TestUnrelatedDirtyPaths:
     def test_broken_git_returns_sentinel(self, tmp_path: Path) -> None:
         # Not a git repo → porcelain exits non-zero
         result = _unrelated_dirty_paths(
-            tmp_path, host_env_for_git(),
+            tmp_path,
+            host_env_for_git(),
             expected_paths=frozenset(),
             timeout=30.0,
         )

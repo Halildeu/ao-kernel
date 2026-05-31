@@ -60,6 +60,7 @@ class TestEndSession:
     def test_end_session_saves_context(self, tmp_path):
         """end_session should save context to workspace."""
         from ao_kernel.session import new_context
+
         ctx = new_context(session_id="end-001", workspace_root=tmp_path)
         with patch("ao_kernel._internal.session.compaction_engine.compact_session_decisions"):
             result = end_session(ctx, workspace_root=tmp_path)

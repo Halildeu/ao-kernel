@@ -130,8 +130,7 @@ def build_deployment_protection_review_payload(
     if decision["findings"]:
         finding_suffix = " Findings: " + ", ".join(decision["findings"])
     comment = (
-        f"ao-kernel live-adapter gate policy decision: {decision['decision']}. "
-        f"{decision['reason']}{finding_suffix}"
+        f"ao-kernel live-adapter gate policy decision: {decision['decision']}. {decision['reason']}{finding_suffix}"
     )
     return {
         "environment_name": environment_name,
@@ -260,9 +259,7 @@ def build_live_adapter_gate_policy_service_result(
         checks.append(_pass("webhook_json", detail="Webhook body decoded as a JSON object."))
 
     pre_policy_blockers = [
-        check["finding_code"]
-        for check in checks
-        if check["status"] == "blocked" and check["finding_code"] is not None
+        check["finding_code"] for check in checks if check["status"] == "blocked" and check["finding_code"] is not None
     ]
     if payload is None or pre_policy_blockers:
         return {
@@ -298,9 +295,7 @@ def build_live_adapter_gate_policy_service_result(
         )
 
     findings = [
-        check["finding_code"]
-        for check in checks
-        if check["status"] == "blocked" and check["finding_code"] is not None
+        check["finding_code"] for check in checks if check["status"] == "blocked" and check["finding_code"] is not None
     ]
     return {
         "schema_version": POLICY_SERVICE_SCHEMA_VERSION,

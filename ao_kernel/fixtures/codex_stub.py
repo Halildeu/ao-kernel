@@ -94,10 +94,7 @@ def resolve_canned_diff(worktree_root: Path | None = None) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="codex_stub",
-        description=(
-            "Deterministic CLI adapter stub used by ao-kernel demos "
-            "and integration tests."
-        ),
+        description=("Deterministic CLI adapter stub used by ao-kernel demos and integration tests."),
     )
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--prompt-file", required=False)

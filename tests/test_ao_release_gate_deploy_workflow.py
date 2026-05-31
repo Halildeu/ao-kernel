@@ -32,8 +32,8 @@ def test_release_gate_deploy_workflow_uses_published_image_and_health_evidence()
 
     assert "ghcr.io/halildeu/ao-kernel-ao-release-gate-service" in text
     assert "sha-${source_sha}" in text
-    assert "docker pull \"${{ steps.images.outputs.ghcr_image }}\"" in text
-    assert "docker push \"${{ steps.images.outputs.gar_image }}\"" in text
+    assert 'docker pull "${{ steps.images.outputs.ghcr_image }}"' in text
+    assert 'docker push "${{ steps.images.outputs.gar_image }}"' in text
     assert "$service_url/healthz" in text
     assert "ao-release-gate-deploy-evidence/healthz.json" in text
     assert "ao-release-gate-deploy-evidence/ao-release-gate-deploy.v1.json" in text
@@ -61,7 +61,4 @@ def test_release_gate_deploy_workflow_keeps_prs_and_live_credentials_closed() ->
     assert "gh api repos/Halildeu/ao-kernel/branches/main/protection" not in text
     assert "gcloud secrets versions access" not in text
     assert "AO_RELEASE_GATE_WEBHOOK_SECRET=${{ env.AO_RELEASE_GATE_WEBHOOK_SECRET_NAME }}" in text
-    assert (
-        "AO_GITHUB_APP_PRIVATE_KEY_PEM=${{ env.AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_SECRET_NAME }}"
-        in text
-    )
+    assert "AO_GITHUB_APP_PRIVATE_KEY_PEM=${{ env.AO_RELEASE_GATE_GITHUB_APP_PRIVATE_KEY_SECRET_NAME }}" in text

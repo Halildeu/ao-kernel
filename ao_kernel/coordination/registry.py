@@ -241,18 +241,12 @@ def build_coordination_sink(
     # worktree profile; the emitter does not currently consume it.)
     import re
 
-    combined_stdout = tuple(
-        policy.evidence_redaction.stdout_patterns
-    ) + tuple(policy.evidence_redaction.patterns)
+    combined_stdout = tuple(policy.evidence_redaction.stdout_patterns) + tuple(policy.evidence_redaction.patterns)
 
     redaction = RedactionConfig(
-        env_keys_matching=tuple(
-            re.compile(p) for p in policy.evidence_redaction.env_keys_matching
-        ),
+        env_keys_matching=tuple(re.compile(p) for p in policy.evidence_redaction.env_keys_matching),
         stdout_patterns=tuple(re.compile(p) for p in combined_stdout),
-        file_content_patterns=tuple(
-            re.compile(p) for p in policy.evidence_redaction.file_content_patterns
-        ),
+        file_content_patterns=tuple(re.compile(p) for p in policy.evidence_redaction.file_content_patterns),
     )
 
     def _sink(kind: str, payload: Mapping[str, Any]) -> Any:
@@ -287,7 +281,8 @@ def _safe_emit_coordination_event(
     except Exception as e:
         logger.warning(
             "coordination evidence emit failed: kind=%s, cause=%r",
-            kind, e,
+            kind,
+            e,
             extra={"coordination_kind": kind, "error": repr(e)},
         )
 
@@ -523,7 +518,10 @@ class ClaimRegistry:
         _claims_dir(self._workspace_root).mkdir(parents=True, exist_ok=True)
         with file_lock(_claims_lock_path(self._workspace_root)):
             return self._takeover_locked(
-                resource_id, new_owner_agent_id, policy, skip_gate=False,
+                resource_id,
+                new_owner_agent_id,
+                policy,
+                skip_gate=False,
             )
 
     def prune_expired_claims(
@@ -574,8 +572,7 @@ class ClaimRegistry:
                 if claim is None:
                     continue
                 grace_end = _parse_iso(claim.heartbeat_at) + timedelta(
-                    seconds=policy.expiry_seconds
-                    + policy.takeover_grace_period_seconds,
+                    seconds=policy.expiry_seconds + policy.takeover_grace_period_seconds,
                 )
                 if now <= grace_end:
                     continue
@@ -661,7 +658,10 @@ class ClaimRegistry:
             # bypasses its own live/grace gate (skip_gate=True) because
             # the gate check above already proved past-grace status.
             return self._takeover_locked(
-                resource_id, owner_agent_id, policy, skip_gate=True,
+                resource_id,
+                owner_agent_id,
+                policy,
+                skip_gate=True,
             )
 
         # Absent — fresh acquire
@@ -684,7 +684,8 @@ class ClaimRegistry:
         claim = self._load_claim_if_exists(resource_id)
         if claim is None:
             raise ClaimAlreadyReleasedError(
-                resource_id=resource_id, claim_id=claim_id,
+                resource_id=resource_id,
+                claim_id=claim_id,
             )
         if claim.claim_id != claim_id or claim.owner_agent_id != owner_agent_id:
             raise ClaimOwnershipError(
@@ -699,13 +700,12 @@ class ClaimRegistry:
         )
         if now > grace_end:
             raise ClaimAlreadyReleasedError(
-                resource_id=resource_id, claim_id=claim_id,
+                resource_id=resource_id,
+                claim_id=claim_id,
             )
         updated = {**claim_to_dict(claim)}
         updated["heartbeat_at"] = now.isoformat()
-        updated["expires_at"] = (
-            now + timedelta(seconds=policy.expiry_seconds)
-        ).isoformat()
+        updated["expires_at"] = (now + timedelta(seconds=policy.expiry_seconds)).isoformat()
         updated["revision"] = claim_revision(updated)
         save_claim_cas(
             self._workspace_root,
@@ -734,7 +734,8 @@ class ClaimRegistry:
         claim = self._load_claim_if_exists(resource_id)
         if claim is None:
             raise ClaimAlreadyReleasedError(
-                resource_id=resource_id, claim_id=claim_id,
+                resource_id=resource_id,
+                claim_id=claim_id,
             )
         if claim.claim_id != claim_id or claim.owner_agent_id != owner_agent_id:
             raise ClaimOwnershipError(
@@ -750,7 +751,10 @@ class ClaimRegistry:
         current_fencing_rev = fencing_state_revision(fencing_state.to_dict())
         released_at = _now_iso()
         new_state = update_on_release(
-            fencing_state, resource_id, owner_agent_id, released_at,
+            fencing_state,
+            resource_id,
+            owner_agent_id,
+            released_at,
         )
 
         # 1. Delete claim file (only now, after fencing pre-validated).
@@ -862,9 +866,7 @@ class ClaimRegistry:
             "fencing_token": new_token,
             "acquired_at": now.isoformat(),
             "heartbeat_at": now.isoformat(),
-            "expires_at": (
-                now + timedelta(seconds=policy.expiry_seconds)
-            ).isoformat(),
+            "expires_at": (now + timedelta(seconds=policy.expiry_seconds)).isoformat(),
         }
         new_claim_dict["revision"] = claim_revision(new_claim_dict)
         write_text_atomic(
@@ -936,8 +938,11 @@ class ClaimRegistry:
                 # Forward-only: never decrease.
                 if recovered_next > current_next:
                     from ao_kernel.coordination.fencing import set_next_token
+
                     new_state = set_next_token(
-                        new_state, resource_id, recovered_next,
+                        new_state,
+                        resource_id,
+                        recovered_next,
                     )
         # Only persist if there was a change.
         if new_state is not state:
@@ -970,7 +975,8 @@ class ClaimRegistry:
             doc = json.loads(raw)
         except json.JSONDecodeError as exc:
             raise ClaimCorruptedError(
-                str(path), f"JSON decode failed: {exc}",
+                str(path),
+                f"JSON decode failed: {exc}",
             ) from exc
         return claim_from_dict(doc, source_path=path)
 
@@ -1023,9 +1029,7 @@ class ClaimRegistry:
             # rebuild. Returning an empty snapshot signals the drift
             # check below that a rebuild is needed.
             return AgentClaimIndex()
-        agents = {
-            agent: tuple(rids) for agent, rids in (doc.get("agents") or {}).items()
-        }
+        agents = {agent: tuple(rids) for agent, rids in (doc.get("agents") or {}).items()}
         return AgentClaimIndex(
             agents=agents,
             generated_at=str(doc.get("generated_at", "")),
@@ -1042,9 +1046,12 @@ class ClaimRegistry:
         """
         index = self._load_index()
         computed = _compute_index_revision(index.agents)
-        if computed != index.revision or not _index_path(
-            self._workspace_root,
-        ).exists():
+        if (
+            computed != index.revision
+            or not _index_path(
+                self._workspace_root,
+            ).exists()
+        ):
             self._rebuild_index_locked()
 
     def _rebuild_index_locked(self) -> None:
@@ -1070,7 +1077,8 @@ class ClaimRegistry:
                     doc = json.loads(path.read_text(encoding="utf-8"))
                 except (OSError, json.JSONDecodeError) as exc:
                     raise ClaimCorruptedError(
-                        str(path), f"rebuild scan failed: {exc}",
+                        str(path),
+                        f"rebuild scan failed: {exc}",
                     ) from exc
                 # SSOT validation happens here — claim_from_dict raises
                 # ClaimCorruptedError on schema / revision failure.
@@ -1138,9 +1146,11 @@ class ClaimRegistry:
         # Use empty-baseline revision when this is the first-ever write.
         expected_rev = (
             current_fencing_rev
-            if _claims_dir(self._workspace_root).joinpath(
+            if _claims_dir(self._workspace_root)
+            .joinpath(
                 "_fencing.v1.json",
-            ).exists()
+            )
+            .exists()
             else empty_fencing_revision()
         )
         save_fencing_state_cas(
@@ -1157,9 +1167,7 @@ class ClaimRegistry:
             "fencing_token": token,
             "acquired_at": now.isoformat(),
             "heartbeat_at": now.isoformat(),
-            "expires_at": (
-                now + timedelta(seconds=policy.expiry_seconds)
-            ).isoformat(),
+            "expires_at": (now + timedelta(seconds=policy.expiry_seconds)).isoformat(),
         }
         claim_dict["revision"] = claim_revision(claim_dict)
         write_text_atomic(

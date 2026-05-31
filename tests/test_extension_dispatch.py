@@ -339,6 +339,7 @@ class TestBootstrapSkipsBlocked:
         reg._extensions["PRJ-HELLO"] = fake
 
         from ao_kernel.extensions.bootstrap import register_default_handlers
+
         actions = ActionRegistry()
         registered = register_default_handlers(actions, extensions=reg)
         assert registered == 0
@@ -347,6 +348,7 @@ class TestBootstrapSkipsBlocked:
     def test_bootstrap_skips_activation_blocked(self):
         """Compat-blocked manifests are skipped even when enabled=True."""
         from ao_kernel.extensions.loader import ExtensionManifest
+
         reg = ExtensionRegistry()
         reg._extensions["PRJ-HELLO"] = ExtensionManifest(
             version="v1",
@@ -363,6 +365,7 @@ class TestBootstrapSkipsBlocked:
             activation_blockers=("compat:core_min=99.0.0 > current=2.2.0",),
         )
         from ao_kernel.extensions.bootstrap import register_default_handlers
+
         actions = ActionRegistry()
         registered = register_default_handlers(actions, extensions=reg)
         assert registered == 0
@@ -370,6 +373,7 @@ class TestBootstrapSkipsBlocked:
     def test_bootstrap_without_extensions_registers_unconditionally(self):
         """Library-mode callers can bypass the gate by passing extensions=None."""
         from ao_kernel.extensions.bootstrap import register_default_handlers
+
         actions = ActionRegistry()
         registered = register_default_handlers(actions, extensions=None)
         assert registered == 2

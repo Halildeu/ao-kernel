@@ -70,9 +70,7 @@ def _resolve(
 
 
 class TestHappyPath:
-    def test_bug_fix_intent_resolves_to_definition_and_passes_cross_ref(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bug_fix_intent_resolves_to_definition_and_passes_cross_ref(self, tmp_path: Path) -> None:
         _copy_adapters(
             tmp_path,
             [
@@ -80,9 +78,7 @@ class TestHappyPath:
                 "gh-cli-pr.manifest.v1.json",
             ],
         )
-        definition, issues = _resolve(
-            tmp_path, "Please fix the broken login bug in production"
-        )
+        definition, issues = _resolve(tmp_path, "Please fix the broken login bug in production")
         assert definition.workflow_id == "bug_fix_flow"
         assert issues == []
 
@@ -99,9 +95,7 @@ class TestHappyPath:
         assert classification is not None
         assert 0 <= classification.confidence <= 1
 
-    def test_no_adapters_shipped_surfaces_missing_adapter_issues(
-        self, tmp_path: Path
-    ) -> None:
+    def test_no_adapters_shipped_surfaces_missing_adapter_issues(self, tmp_path: Path) -> None:
         # Zero adapters in workspace; bundled workflow expects codex-stub + gh-cli-pr.
         _, issues = _resolve(tmp_path, "please fix the crash")
         kinds = {i.kind for i in issues}
@@ -118,9 +112,7 @@ class TestHappyPath:
 
 
 class TestFailClosedAcceptance:
-    def test_integration_raises_aggregated_cross_ref_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_integration_raises_aggregated_cross_ref_error(self, tmp_path: Path) -> None:
         """Demonstrates the pattern PR-A3 executor will adopt: when
         cross-ref validation returns a non-empty issue list, the caller
         raises a ``WorkflowDefinitionCrossRefError`` carrying the full
@@ -143,9 +135,7 @@ class TestFailClosedAcceptance:
         assert ei.value.workflow_id == "bug_fix_flow"
         assert len(ei.value.issues) == len(issues)
 
-    def test_partial_capability_gap_surfaces_structured(
-        self, tmp_path: Path
-    ) -> None:
+    def test_partial_capability_gap_surfaces_structured(self, tmp_path: Path) -> None:
         """Ship a manifest declaring an adapter but missing some
         capabilities the workflow requires; integration test observes
         a ``capability_gap`` CrossRefIssue.
@@ -191,9 +181,7 @@ class TestFailClosedAcceptance:
         _, issues = _resolve(tmp_path, "please fix the crash")
         caps_gaps = [i for i in issues if i.kind == "capability_gap"]
         assert caps_gaps, f"expected capability_gap, got {issues}"
-        assert any(
-            "write_diff" in g.missing_capabilities for g in caps_gaps
-        )
+        assert any("write_diff" in g.missing_capabilities for g in caps_gaps)
 
 
 # ---------------------------------------------------------------------------
@@ -202,9 +190,7 @@ class TestFailClosedAcceptance:
 
 
 class TestNoMatch:
-    def test_unrelated_intent_returns_none_from_router(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unrelated_intent_returns_none_from_router(self, tmp_path: Path) -> None:
         router = IntentRouter()
         result = router.classify("Completely unrelated philosophical musings")
         assert result is None

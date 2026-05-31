@@ -69,6 +69,7 @@ def _load_operations_json(
             )
             return payload
     from ao_kernel._internal.shared.resource_loader import load_resource
+
     resource_payload: Dict[str, Any] = load_resource("operations", filename)
     return resource_payload
 
@@ -90,6 +91,7 @@ def _validate_resolver_rules_once(rules_dict: Dict[str, Any]) -> None:
         return
     from jsonschema import Draft7Validator
     from ao_kernel._internal.shared.resource_loader import load_resource
+
     schema = load_resource("schemas", "schema_llm_resolver_rules.v1.json")
     Draft7Validator(schema).validate(rules_dict)
     _RESOLVER_RULES_SCHEMA_VALIDATED = True
@@ -105,7 +107,9 @@ def _reset_resolver_rules_cache() -> None:
     _RESOLVER_RULES_SCHEMA_VALIDATED = False
 
 
-def _policy_paths(repo_root: Path, workspace_root: str | Path | None = None) -> Tuple[Path | None, Path | None, Path | None, Path]:
+def _policy_paths(
+    repo_root: Path, workspace_root: str | Path | None = None
+) -> Tuple[Path | None, Path | None, Path | None, Path]:
     """Return probe_state path only. Operations loaded via _load_operations_json()."""
     ws_root = _resolve_workspace_root(repo_root, workspace_root)
     probe_state = ws_root / ".cache" / "state" / "llm_probe_state.v1.json"
@@ -203,16 +207,19 @@ def resolve(
 
     # Load operations via resource_loader (bundled defaults fallback)
     _load_operations_json(
-        "llm_class_registry.v1.json", repo_root,
+        "llm_class_registry.v1.json",
+        repo_root,
         workspace_root=workspace_root,
     )  # validate
     resolver_rules = _load_operations_json(
-        "llm_resolver_rules.v1.json", repo_root,
+        "llm_resolver_rules.v1.json",
+        repo_root,
         workspace_root=workspace_root,
     )
     _validate_resolver_rules_once(resolver_rules)
     provider_map = _load_operations_json(
-        "llm_provider_map.v1.json", repo_root,
+        "llm_provider_map.v1.json",
+        repo_root,
         workspace_root=workspace_root,
     )
     probe_state = _load_json(probe_state_path) if probe_state_path.exists() else {"classes": {}}
@@ -244,17 +251,11 @@ def resolve(
     want_downgrade = bool(request.get("cross_class_downgrade", False))
     strictness = resolver_rules.get("strictness", {})
     soft_degrade = resolver_rules.get("soft_degrade", {})
-    soft_degrade_rules = (
-        soft_degrade.get("rules", []) if soft_degrade.get("enabled", False) else []
-    )
+    soft_degrade_rules = soft_degrade.get("rules", []) if soft_degrade.get("enabled", False) else []
 
     target_class = requested_class
 
-    if (
-        want_downgrade
-        and budget_snap is not None
-        and soft_degrade_rules
-    ):
+    if want_downgrade and budget_snap is not None and soft_degrade_rules:
         strict_cfg = strictness.get(requested_class, {})
         if strict_cfg.get("degrade_allowed", True):
             # budget_snap expected to be a Budget (workflow.budget)
@@ -303,17 +304,20 @@ def resolve(
                                 continue
                             next_strict = strictness.get(to_class, {})
                             if not next_strict.get(
-                                "degrade_allowed", True,
+                                "degrade_allowed",
+                                True,
                             ):
                                 # target class itself is absolute-deny;
                                 # halt chain at current target
                                 continue
-                            downgrade_chain.append({
-                                "from_class": target_class,
-                                "to_class": to_class,
-                                "rule_index": idx,
-                                "threshold_usd": float(threshold),
-                            })
+                            downgrade_chain.append(
+                                {
+                                    "from_class": target_class,
+                                    "to_class": to_class,
+                                    "rule_index": idx,
+                                    "threshold_usd": float(threshold),
+                                }
+                            )
                             visited.add(to_class)
                             target_class = to_class
                             matched = True
@@ -356,6 +360,7 @@ def resolve(
     ws_root_for_cost = _resolve_workspace_root(repo_root, workspace_root)
 
     from ao_kernel.cost.policy import load_cost_policy
+
     cost_policy = load_cost_policy(ws_root_for_cost)
 
     cost_route_active = (
@@ -367,16 +372,19 @@ def resolve(
     if cost_route_active and not explicit_provider_priority:
         try:
             from ao_kernel.cost.catalog import load_price_catalog
+
             catalog = load_price_catalog(ws_root_for_cost, policy=cost_policy)
         except Exception as exc:
             if cost_policy.routing_by_cost.fail_closed_on_catalog_missing:
                 from ao_kernel.cost.errors import RoutingCatalogMissingError
+
                 raise RoutingCatalogMissingError(
                     provider_order=list(order),
                     target_class=target_class,
                     workspace_root=str(ws_root_for_cost),
                 ) from exc
             import logging as _logging
+
             _logging.getLogger(__name__).warning(
                 "cost-aware routing: price catalog load failed; "
                 "fail_closed_on_catalog_missing=false — falling back to "
@@ -386,6 +394,7 @@ def resolve(
             )
         else:
             from ao_kernel.cost.routing import sort_providers_by_cost
+
             known_cost_sorted, _unknown = sort_providers_by_cost(
                 provider_order=order,
                 providers_map=providers,
@@ -462,6 +471,7 @@ def resolve(
 
 def main() -> None:
     import argparse
+
     parser = argparse.ArgumentParser(description="LLM router resolve")
     parser.add_argument("--intent", required=True)
     parser.add_argument("--perspective", default="")

@@ -27,8 +27,7 @@ def _approved_payload() -> dict[str, object]:
         "sha": "abc123",
         "ref": "refs/heads/main",
         "deployment_callback_url": (
-            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/"
-            "deployment_protection_rule"
+            "https://api.github.com/repos/Halildeu/ao-kernel/actions/runs/25020015357/deployment_protection_rule"
         ),
         "repository": {"full_name": "Halildeu/ao-kernel"},
         "pull_requests": [],
@@ -116,10 +115,7 @@ def test_policy_decision_rejects_missing_callback_url() -> None:
     decision = build_live_adapter_gate_policy_decision(payload)
 
     assert decision["decision"] == REJECT_DECISION
-    assert (
-        _find_check(decision, "deployment_callback_url")["finding_code"]
-        == "live_gate_policy_missing_callback_url"
-    )
+    assert _find_check(decision, "deployment_callback_url")["finding_code"] == "live_gate_policy_missing_callback_url"
 
 
 def test_policy_decision_rejects_live_execution_signal() -> None:

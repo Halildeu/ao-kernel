@@ -105,8 +105,7 @@ def claim_from_dict(doc: Mapping[str, Any], *, source_path: Path | None = None) 
     if stored_revision != computed_revision:
         raise ClaimCorruptedError(
             str(source_path) if source_path is not None else "<inline>",
-            f"revision hash mismatch: stored={stored_revision!r} "
-            f"computed={computed_revision!r}",
+            f"revision hash mismatch: stored={stored_revision!r} computed={computed_revision!r}",
         )
 
     return Claim(

@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 
 # --- Provider-native tool format builders ---
 
+
 def build_tools_param_claude(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Convert tool registry entries to Claude's tool format.
 
@@ -23,11 +24,13 @@ def build_tools_param_claude(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]
             # Already Claude-native format — pass through
             result.append(tool)
         else:
-            result.append({
-                "name": tool["name"],
-                "description": tool.get("description", ""),
-                "input_schema": tool.get("parameters", {"type": "object", "properties": {}}),
-            })
+            result.append(
+                {
+                    "name": tool["name"],
+                    "description": tool.get("description", ""),
+                    "input_schema": tool.get("parameters", {"type": "object", "properties": {}}),
+                }
+            )
     return result
 
 
@@ -43,14 +46,16 @@ def build_tools_param_openai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]
             # Already OpenAI-native format — pass through
             result.append(tool)
         else:
-            result.append({
-                "type": "function",
-                "function": {
-                    "name": tool["name"],
-                    "description": tool.get("description", ""),
-                    "parameters": tool.get("parameters", {"type": "object", "properties": {}}),
-                },
-            })
+            result.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tool["name"],
+                        "description": tool.get("description", ""),
+                        "parameters": tool.get("parameters", {"type": "object", "properties": {}}),
+                    },
+                }
+            )
     return result
 
 
@@ -64,6 +69,7 @@ def build_tools_param(provider_id: str, tools: List[Dict[str, Any]]) -> List[Dic
 
 # --- Tool call extraction from responses ---
 
+
 def extract_tool_calls_claude(resp_bytes: bytes) -> List[Dict[str, Any]]:
     """Extract tool_use blocks from Claude Messages API response.
 
@@ -73,6 +79,7 @@ def extract_tool_calls_claude(resp_bytes: bytes) -> List[Dict[str, Any]]:
         obj = json.loads(resp_bytes.decode("utf-8", errors="ignore"))
     except Exception as exc:
         import logging
+
         logging.getLogger("ao_kernel").warning("tool_call extraction failed (claude): %s", exc)
         return []
 
@@ -88,11 +95,13 @@ def extract_tool_calls_claude(resp_bytes: bytes) -> List[Dict[str, Any]]:
         if not isinstance(block, dict):
             continue
         if block.get("type") == "tool_use":
-            calls.append({
-                "id": block.get("id", ""),
-                "name": block.get("name", ""),
-                "input": block.get("input", {}),
-            })
+            calls.append(
+                {
+                    "id": block.get("id", ""),
+                    "name": block.get("name", ""),
+                    "input": block.get("input", {}),
+                }
+            )
     return calls
 
 
@@ -105,6 +114,7 @@ def extract_tool_calls_openai(resp_bytes: bytes) -> List[Dict[str, Any]]:
         obj = json.loads(resp_bytes.decode("utf-8", errors="ignore"))
     except Exception as exc:
         import logging
+
         logging.getLogger("ao_kernel").warning("tool_call extraction failed (openai): %s", exc)
         return []
 
@@ -128,11 +138,13 @@ def extract_tool_calls_openai(resp_bytes: bytes) -> List[Dict[str, Any]]:
                     args = json.loads(args_str) if isinstance(args_str, str) else args_str
                 except json.JSONDecodeError:
                     args = {}
-                calls.append({
-                    "id": tc.get("id", ""),
-                    "name": fn.get("name", ""),
-                    "arguments": args if isinstance(args, dict) else {},
-                })
+                calls.append(
+                    {
+                        "id": tc.get("id", ""),
+                        "name": fn.get("name", ""),
+                        "arguments": args if isinstance(args, dict) else {},
+                    }
+                )
             return calls
 
     # Responses API: output[].type=="function_call"
@@ -148,11 +160,13 @@ def extract_tool_calls_openai(resp_bytes: bytes) -> List[Dict[str, Any]]:
                     args = json.loads(args_str) if isinstance(args_str, str) else args_str
                 except json.JSONDecodeError:
                     args = {}
-                calls.append({
-                    "id": item.get("call_id", item.get("id", "")),
-                    "name": item.get("name", ""),
-                    "arguments": args if isinstance(args, dict) else {},
-                })
+                calls.append(
+                    {
+                        "id": item.get("call_id", item.get("id", "")),
+                        "name": item.get("name", ""),
+                        "arguments": args if isinstance(args, dict) else {},
+                    }
+                )
         return calls
 
     return []
@@ -174,6 +188,7 @@ def extract_tool_calls(provider_id: str, resp_bytes: bytes) -> List[Dict[str, An
 
 
 # --- Tool result message builders ---
+
 
 def build_tool_result_claude(tool_call_id: str, result: Dict[str, Any]) -> Dict[str, Any]:
     """Build Claude tool_result message block."""

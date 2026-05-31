@@ -1,2 +1,1 @@
 """Internal coordination CLI glue."""
-

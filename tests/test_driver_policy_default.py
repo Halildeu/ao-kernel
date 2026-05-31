@@ -61,14 +61,13 @@ class TestDefaultPolicyLoad:
             "cwd_confinement",
             "evidence_redaction",
         ):
-            assert key in policy, (
-                f"bundled policy missing top-level {key!r}"
-            )
+            assert key in policy, f"bundled policy missing top-level {key!r}"
         # Bundled default is DORMANT (enabled=false).
         assert policy.get("enabled") is False
 
     def test_explicit_policy_config_overrides_bundled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Non-empty ``policy_config`` kwarg still wins over the
         bundled fallback — backwards-compat invariant."""
@@ -80,7 +79,8 @@ class TestDefaultPolicyLoad:
         assert driver._policy is custom
 
     def test_empty_dict_policy_config_falls_back_to_bundled(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Driver/Executor parity (Codex deep-review follow-up
         note): both sides use truthiness-based fallback, so an
@@ -97,7 +97,8 @@ class TestDefaultPolicyLoad:
         assert "command_allowlist" in executor_policy
 
     def test_default_policy_contains_command_prefixes(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """The bundled policy's ``command_allowlist.prefixes`` is
         what ``_build_sandbox`` uses to synthesise the sandbox PATH
@@ -110,6 +111,5 @@ class TestDefaultPolicyLoad:
         prefixes = cmd_spec.get("prefixes", [])
         assert isinstance(prefixes, list)
         assert len(prefixes) > 0, (
-            "bundled command_allowlist.prefixes empty — sandbox PATH "
-            "would not resolve system binaries"
+            "bundled command_allowlist.prefixes empty — sandbox PATH would not resolve system binaries"
         )

@@ -70,7 +70,8 @@ def cmd_metrics_export(args: Any) -> int:
             _emit_output(payload, args)
         except (OSError, PermissionError) as exc:
             print(
-                f"error: output write failed — {exc}", file=sys.stderr,
+                f"error: output write failed — {exc}",
+                file=sys.stderr,
             )
             return 1
         return 0
@@ -127,9 +128,7 @@ def cmd_metrics_export(args: Any) -> int:
     return 0
 
 
-def _banner_only_textfile(
-    *, metrics_dormant: bool, cost_dormant: bool
-) -> str:
+def _banner_only_textfile(*, metrics_dormant: bool, cost_dormant: bool) -> str:
     """Emit just the banner comments, no metric body.
 
     Used by the dormant branch (post-impl review CNS-036 iter-1 A2

@@ -200,8 +200,11 @@ class TestMultiAgentScenario:
     def test_two_agents_same_store(self, tmp_path: Path):
         """Simulate: Agent A writes, Agent B reads same canonical store."""
         record_decision(
-            tmp_path, key="plan.approved", value=True,
-            confidence=0.95, source="claude",
+            tmp_path,
+            key="plan.approved",
+            value=True,
+            confidence=0.95,
+            source="claude",
         )
         result_b = read_with_revision(tmp_path)
         assert result_b["count"] == 1
@@ -209,8 +212,11 @@ class TestMultiAgentScenario:
         assert check_stale(tmp_path, last_revision=result_b["revision"]) is False
 
         record_decision(
-            tmp_path, key="deploy.ready", value=True,
-            confidence=0.9, source="claude",
+            tmp_path,
+            key="deploy.ready",
+            value=True,
+            confidence=0.9,
+            source="claude",
         )
         assert check_stale(tmp_path, last_revision=result_b["revision"]) is True
 

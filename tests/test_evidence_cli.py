@@ -25,26 +25,66 @@ def _seed_run(tmp_path: Path, run_id: str = "test-run-001") -> Path:
     run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
     run_dir.mkdir(parents=True)
     events = [
-        {"seq": 1, "ts": "2026-04-16T00:00:01Z", "kind": "workflow_started",
-         "actor": "ao-kernel", "step_id": None, "run_id": run_id,
-         "event_id": "e1", "payload": {"workflow_id": "test_flow"},
-         "payload_hash": "aaa", "replay_safe": True},
-        {"seq": 2, "ts": "2026-04-16T00:00:02Z", "kind": "step_started",
-         "actor": "ao-kernel", "step_id": "step1", "run_id": run_id,
-         "event_id": "e2", "payload": {"step_name": "step1", "attempt": 1},
-         "payload_hash": "bbb", "replay_safe": True},
-        {"seq": 3, "ts": "2026-04-16T00:00:03Z", "kind": "adapter_invoked",
-         "actor": "ao-kernel", "step_id": "step1", "run_id": run_id,
-         "event_id": "e3", "payload": {"adapter_id": "codex-stub"},
-         "payload_hash": "ccc", "replay_safe": False},
-        {"seq": 4, "ts": "2026-04-16T00:00:04Z", "kind": "step_completed",
-         "actor": "ao-kernel", "step_id": "step1", "run_id": run_id,
-         "event_id": "e4", "payload": {"step_name": "step1", "final_state": "completed"},
-         "payload_hash": "ddd", "replay_safe": True},
-        {"seq": 5, "ts": "2026-04-16T00:00:05Z", "kind": "workflow_completed",
-         "actor": "ao-kernel", "step_id": None, "run_id": run_id,
-         "event_id": "e5", "payload": {"steps_executed": ["step1"]},
-         "payload_hash": "eee", "replay_safe": True},
+        {
+            "seq": 1,
+            "ts": "2026-04-16T00:00:01Z",
+            "kind": "workflow_started",
+            "actor": "ao-kernel",
+            "step_id": None,
+            "run_id": run_id,
+            "event_id": "e1",
+            "payload": {"workflow_id": "test_flow"},
+            "payload_hash": "aaa",
+            "replay_safe": True,
+        },
+        {
+            "seq": 2,
+            "ts": "2026-04-16T00:00:02Z",
+            "kind": "step_started",
+            "actor": "ao-kernel",
+            "step_id": "step1",
+            "run_id": run_id,
+            "event_id": "e2",
+            "payload": {"step_name": "step1", "attempt": 1},
+            "payload_hash": "bbb",
+            "replay_safe": True,
+        },
+        {
+            "seq": 3,
+            "ts": "2026-04-16T00:00:03Z",
+            "kind": "adapter_invoked",
+            "actor": "ao-kernel",
+            "step_id": "step1",
+            "run_id": run_id,
+            "event_id": "e3",
+            "payload": {"adapter_id": "codex-stub"},
+            "payload_hash": "ccc",
+            "replay_safe": False,
+        },
+        {
+            "seq": 4,
+            "ts": "2026-04-16T00:00:04Z",
+            "kind": "step_completed",
+            "actor": "ao-kernel",
+            "step_id": "step1",
+            "run_id": run_id,
+            "event_id": "e4",
+            "payload": {"step_name": "step1", "final_state": "completed"},
+            "payload_hash": "ddd",
+            "replay_safe": True,
+        },
+        {
+            "seq": 5,
+            "ts": "2026-04-16T00:00:05Z",
+            "kind": "workflow_completed",
+            "actor": "ao-kernel",
+            "step_id": None,
+            "run_id": run_id,
+            "event_id": "e5",
+            "payload": {"steps_executed": ["step1"]},
+            "payload_hash": "eee",
+            "replay_safe": True,
+        },
     ]
     lines = [json.dumps(e, sort_keys=True) for e in events]
     (run_dir / "events.jsonl").write_text("\n".join(lines) + "\n")
@@ -53,14 +93,10 @@ def _seed_run(tmp_path: Path, run_id: str = "test-run-001") -> Path:
 
 def _seed_artifacts(run_dir: Path) -> None:
     """Add adapter log + artifact + revdiff for manifest tests."""
-    (run_dir / "adapter-codex-stub.jsonl").write_text(
-        json.dumps({"line": 1, "log": "hello"}) + "\n"
-    )
+    (run_dir / "adapter-codex-stub.jsonl").write_text(json.dumps({"line": 1, "log": "hello"}) + "\n")
     artifacts_dir = run_dir / "artifacts"
     artifacts_dir.mkdir(exist_ok=True)
-    (artifacts_dir / "step1-attempt1.json").write_text(
-        json.dumps({"status": "ok"}, sort_keys=True)
-    )
+    (artifacts_dir / "step1-attempt1.json").write_text(json.dumps({"status": "ok"}, sort_keys=True))
     patches_dir = run_dir / "patches"
     patches_dir.mkdir(exist_ok=True)
     (patches_dir / "patch-abc.revdiff").write_text("--- a/x\n+++ b/x\n")
@@ -89,8 +125,7 @@ class TestTimeline:
 
     def test_filter_by_kind(self, tmp_path: Path) -> None:
         _seed_run(tmp_path)
-        out = timeline(tmp_path, "test-run-001",
-                       filter_kinds=["workflow_started", "workflow_completed"])
+        out = timeline(tmp_path, "test-run-001", filter_kinds=["workflow_started", "workflow_completed"])
         assert "adapter_invoked" not in out
         assert "workflow_started" in out
 
@@ -130,9 +165,15 @@ class TestTimeline:
         run_dir.mkdir(parents=True)
         big_payload = {"key": "x" * 200}
         event = {
-            "seq": 1, "ts": "2026-04-16T00:00:01Z", "kind": "workflow_started",
-            "actor": "ao-kernel", "run_id": "long-payload", "event_id": "e1",
-            "payload": big_payload, "payload_hash": "fff", "replay_safe": True,
+            "seq": 1,
+            "ts": "2026-04-16T00:00:01Z",
+            "kind": "workflow_started",
+            "actor": "ao-kernel",
+            "run_id": "long-payload",
+            "event_id": "e1",
+            "payload": big_payload,
+            "payload_hash": "fff",
+            "replay_safe": True,
         }
         (run_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
         out = timeline(tmp_path, "long-payload")
@@ -151,9 +192,7 @@ class TestReplay:
         assert report.run_id == "test-run-001"
         assert report.final_inferred_state == "completed"
         # adapter_invoked should be marked non-replay-safe
-        adapter_transitions = [
-            t for t in report.transitions if t.event_kind == "adapter_invoked"
-        ]
+        adapter_transitions = [t for t in report.transitions if t.event_kind == "adapter_invoked"]
         assert len(adapter_transitions) == 1
         assert adapter_transitions[0].replay_safe is False
 
@@ -275,7 +314,9 @@ class TestVerifyManifest:
         run_dir = _seed_run(tmp_path)
         _seed_artifacts(run_dir)
         result = verify_manifest(
-            tmp_path, "test-run-001", generate_if_missing=True,
+            tmp_path,
+            "test-run-001",
+            generate_if_missing=True,
         )
         assert result.all_match is True
         assert (run_dir / "manifest.json").exists()
@@ -323,29 +364,52 @@ class TestCLIEntrypoint:
     def test_timeline_subcommand(self, tmp_path: Path) -> None:
         _seed_run(tmp_path)
         from ao_kernel.cli import main
-        exit_code = main([
-            "--workspace-root", str(tmp_path),
-            "evidence", "timeline", "--run", "test-run-001",
-        ])
+
+        exit_code = main(
+            [
+                "--workspace-root",
+                str(tmp_path),
+                "evidence",
+                "timeline",
+                "--run",
+                "test-run-001",
+            ]
+        )
         assert exit_code == 0
 
     def test_replay_subcommand(self, tmp_path: Path) -> None:
         _seed_run(tmp_path)
         from ao_kernel.cli import main
-        exit_code = main([
-            "--workspace-root", str(tmp_path),
-            "evidence", "replay", "--run", "test-run-001", "--mode", "inspect",
-        ])
+
+        exit_code = main(
+            [
+                "--workspace-root",
+                str(tmp_path),
+                "evidence",
+                "replay",
+                "--run",
+                "test-run-001",
+                "--mode",
+                "inspect",
+            ]
+        )
         assert exit_code == 0
 
     def test_generate_manifest_subcommand(self, tmp_path: Path) -> None:
         run_dir = _seed_run(tmp_path)
         _seed_artifacts(run_dir)
         from ao_kernel.cli import main
-        exit_code = main([
-            "--workspace-root", str(tmp_path),
-            "evidence", "generate-manifest", "--run", "test-run-001",
-        ])
+
+        exit_code = main(
+            [
+                "--workspace-root",
+                str(tmp_path),
+                "evidence",
+                "generate-manifest",
+                "--run",
+                "test-run-001",
+            ]
+        )
         assert exit_code == 0
         assert (run_dir / "manifest.json").exists()
 
@@ -353,25 +417,37 @@ class TestCLIEntrypoint:
         run_dir = _seed_run(tmp_path)
         _seed_artifacts(run_dir)
         from ao_kernel.cli import main
-        main(["--workspace-root", str(tmp_path),
-              "evidence", "generate-manifest", "--run", "test-run-001"])
-        exit_code = main([
-            "--workspace-root", str(tmp_path),
-            "evidence", "verify-manifest", "--run", "test-run-001",
-        ])
+
+        main(["--workspace-root", str(tmp_path), "evidence", "generate-manifest", "--run", "test-run-001"])
+        exit_code = main(
+            [
+                "--workspace-root",
+                str(tmp_path),
+                "evidence",
+                "verify-manifest",
+                "--run",
+                "test-run-001",
+            ]
+        )
         assert exit_code == 0
 
     def test_evidence_no_subcommand_prints_usage(self, tmp_path: Path) -> None:
         from ao_kernel.cli import main
-        exit_code = main([
-            "--workspace-root", str(tmp_path), "evidence",
-        ])
+
+        exit_code = main(
+            [
+                "--workspace-root",
+                str(tmp_path),
+                "evidence",
+            ]
+        )
         assert exit_code == 1
 
     def test_verify_missing_manifest_exit_3(self, tmp_path: Path) -> None:
         _seed_run(tmp_path)
         from ao_kernel._internal.evidence.cli_handlers import cmd_verify_manifest
         import argparse
+
         args = argparse.Namespace(
             workspace_root=str(tmp_path),
             run_id="test-run-001",

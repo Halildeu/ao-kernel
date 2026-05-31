@@ -73,10 +73,20 @@ class TestSemanticRetrievalFlag:
         from ao_kernel.context.context_compiler import compile_context
 
         decisions = [
-            {"key": "arch.pattern", "value": "microservices", "source": "agent",
-             "created_at": "2026-01-01T00:00:00Z", "confidence": 0.9},
-            {"key": "lang", "value": "python", "source": "agent",
-             "created_at": "2026-01-02T00:00:00Z", "confidence": 0.5},
+            {
+                "key": "arch.pattern",
+                "value": "microservices",
+                "source": "agent",
+                "created_at": "2026-01-01T00:00:00Z",
+                "confidence": 0.9,
+            },
+            {
+                "key": "lang",
+                "value": "python",
+                "source": "agent",
+                "created_at": "2026-01-02T00:00:00Z",
+                "confidence": 0.5,
+            },
         ]
         ctx = {"ephemeral_decisions": decisions}
 

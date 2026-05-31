@@ -90,6 +90,7 @@ def _append_archive(archive: Path, markers: list[Mapping[str, Any]]) -> None:
             fh.flush()
             try:
                 import os as _os
+
                 _os.fsync(fh.fileno())
             except OSError:
                 # Fail-open on fsync — the lock path already serializes
@@ -210,7 +211,8 @@ def _iter_terminal_run_ids(workspace_root: Path) -> list[str]:
         except (OSError, json.JSONDecodeError) as exc:
             logger.warning(
                 "marker compaction: unable to read %s (%s); skipping",
-                state_file, exc,
+                state_file,
+                exc,
             )
             continue
         if payload.get("state") in _TERMINAL_STATES:
@@ -220,7 +222,9 @@ def _iter_terminal_run_ids(workspace_root: Path) -> list[str]:
 
 
 def compact_all_terminal_runs(
-    workspace_root: Path, *, dry_run: bool = False,
+    workspace_root: Path,
+    *,
+    dry_run: bool = False,
 ) -> BulkCompactionResult:
     """Compact markers for every on-disk run in a terminal state.
 

@@ -81,8 +81,7 @@ def file_lock(
     """
     if sys.platform == "win32":
         raise LockPlatformNotSupported(
-            "Filesystem lock requires POSIX fcntl; Windows support is "
-            "planned for v3.1.0 (Tranche D)."
+            "Filesystem lock requires POSIX fcntl; Windows support is planned for v3.1.0 (Tranche D)."
         )
 
     # Deferred import keeps the module importable on Windows for the
@@ -102,9 +101,7 @@ def file_lock(
                 break
             except OSError:
                 if time.monotonic() >= deadline:
-                    raise LockTimeoutError(
-                        f"Could not acquire lock on {lockfile} within {timeout}s"
-                    )
+                    raise LockTimeoutError(f"Could not acquire lock on {lockfile} within {timeout}s")
                 time.sleep(poll_interval)
         yield
     finally:

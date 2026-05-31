@@ -483,11 +483,7 @@ def _stable_document_sha256(document: Mapping[str, Any]) -> str:
 
 def _without_generated_at(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return {
-            str(key): _without_generated_at(item)
-            for key, item in value.items()
-            if str(key) != "generated_at"
-        }
+        return {str(key): _without_generated_at(item) for key, item in value.items() if str(key) != "generated_at"}
     if isinstance(value, list):
         return [_without_generated_at(item) for item in value]
     return value

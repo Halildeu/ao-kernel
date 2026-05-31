@@ -8,7 +8,12 @@ from typing import Any
 from ao_kernel._internal.roadmap.compiler import compile_roadmap
 from ao_kernel._internal.roadmap.evidence import init_evidence_dir, write_integrity_manifest, write_json
 from ao_kernel._internal.roadmap.exec_contracts import _ExecutionState
-from ao_kernel._internal.roadmap.exec_evidence import _git_info, _now_iso8601, _prepare_readonly_baselines, _sha256_bytes
+from ao_kernel._internal.roadmap.exec_evidence import (
+    _git_info,
+    _now_iso8601,
+    _prepare_readonly_baselines,
+    _sha256_bytes,
+)
 from ao_kernel._internal.roadmap.exec_steps import (
     _apply_plan_steps,
     _collect_milestone_constraints,

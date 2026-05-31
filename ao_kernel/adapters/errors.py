@@ -39,14 +39,16 @@ class AdapterManifestCorruptedError(AdapterError):
       ``adapter_id``; deterministic loading rejects the later arrival.
     """
 
-    _REASONS = frozenset({
-        "json_decode",
-        "schema_invalid",
-        "adapter_id_mismatch",
-        "read_error",
-        "not_an_object",
-        "duplicate_adapter_id",
-    })
+    _REASONS = frozenset(
+        {
+            "json_decode",
+            "schema_invalid",
+            "adapter_id_mismatch",
+            "read_error",
+            "not_an_object",
+            "duplicate_adapter_id",
+        }
+    )
 
     def __init__(
         self,
@@ -58,10 +60,7 @@ class AdapterManifestCorruptedError(AdapterError):
         self.source_path = source_path
         self.reason = reason
         self.details = details
-        super().__init__(
-            f"Adapter manifest at {source_path!r} corrupted "
-            f"({reason}): {details}"
-        )
+        super().__init__(f"Adapter manifest at {source_path!r} corrupted ({reason}): {details}")
 
 
 class AdapterRegistryEmptyError(AdapterError):

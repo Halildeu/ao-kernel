@@ -31,9 +31,7 @@ def _valid_record(**overrides: Any) -> dict[str, Any]:
         "revision": "a" * 64,
         "intent": {"kind": "inline_prompt", "payload": "test"},
         "steps": [],
-        "policy_refs": [
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         "adapter_refs": [],
         "evidence_refs": [".ao/evidence/workflows/x/events.jsonl"],
         "budget": {"fail_closed_on_exhaust": True},
@@ -91,11 +89,7 @@ class TestStructuredErrors:
             validate_workflow_run(rec, run_id=rec["run_id"])
         err = ei.value
         # at least one entry targets $.state with validator=enum
-        targeted = [
-            e
-            for e in err.errors
-            if "state" in e["json_path"] and e["validator"] == "enum"
-        ]
+        targeted = [e for e in err.errors if "state" in e["json_path"] and e["validator"] == "enum"]
         assert targeted, err.errors
 
     def test_missing_required_revision_surfaces_required_validator(self) -> None:

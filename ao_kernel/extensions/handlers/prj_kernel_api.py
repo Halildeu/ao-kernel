@@ -72,10 +72,7 @@ def _safe_relative(workspace_root: Path, target: Path) -> str:
     except ValueError as exc:
         raise ValueError(f"Path escapes workspace_root: {target}") from exc
     rel_norm = rel.as_posix()
-    if not any(
-        rel_norm == prefix.rstrip("/") or rel_norm.startswith(prefix)
-        for prefix in ALLOWED_WRITE_PREFIXES
-    ):
+    if not any(rel_norm == prefix.rstrip("/") or rel_norm.startswith(prefix) for prefix in ALLOWED_WRITE_PREFIXES):
         raise ValueError(f"Path outside write allowlist: {rel_norm}")
     return rel_norm
 
@@ -126,9 +123,7 @@ def _resolve_write_mode(action: str, params: dict[str, Any]) -> tuple[bool | Non
                 _error_envelope(
                     action,
                     error_code="WRITE_CONFIRM_REQUIRED",
-                    message=(
-                        "set confirm_write to the required token before write-side execution"
-                    ),
+                    message=("set confirm_write to the required token before write-side execution"),
                     status="BLOCKED",
                 ),
             )
@@ -300,11 +295,7 @@ def system_status(params: dict[str, Any]) -> dict[str, Any]:
             "write_actions": list(WRITE_ACTIONS),
             "write_side_contract": _write_contract(),
             "extension_truth": _truth_payload(),
-            "params_echo": {
-                key: params[key]
-                for key in sorted(params)
-                if key in {"detail", "request_id"}
-            },
+            "params_echo": {key: params[key] for key in sorted(params) if key in {"detail", "request_id"}},
         },
     )
 
@@ -321,11 +312,7 @@ def doc_nav_check(params: dict[str, Any]) -> dict[str, Any]:
             "write_side_contract": _write_contract(),
             "network_required": False,
             "workspace_write": False,
-            "params_echo": {
-                key: params[key]
-                for key in sorted(params)
-                if key in {"detail", "request_id"}
-            },
+            "params_echo": {key: params[key] for key in sorted(params) if key in {"detail", "request_id"}},
         },
     )
 
@@ -392,10 +379,7 @@ def project_status(params: dict[str, Any]) -> dict[str, Any]:
             error_code="PROJECT_STATUS_INVALID",
             message=str(exc),
         )
-    idempotent = (
-        current is not None
-        and _project_status_signature(current) == _project_status_signature(report_payload)
-    )
+    idempotent = current is not None and _project_status_signature(current) == _project_status_signature(report_payload)
 
     if dry_run:
         return _envelope(

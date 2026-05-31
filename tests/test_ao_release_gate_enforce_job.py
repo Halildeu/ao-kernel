@@ -232,10 +232,7 @@ def test_enforce_job_smoke_detector_requires_added_smoke_markdown(tmp_path: Path
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": "ADDED"}]) == "true"
 
     for change_type in ("RENAMED", "DELETED", "CHANGED", "MODIFIED"):
-        assert (
-            _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}])
-            == "false"
-        )
+        assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path, "changeType": change_type}]) == "false"
     assert _run_ao_ma10_smoke_detector(tmp_path, [{"path": smoke_path}]) == "false"
     assert (
         _run_ao_ma10_smoke_detector(
@@ -322,7 +319,7 @@ def test_enforce_job_generates_high_risk_supersession_evidence_at_runtime() -> N
     assert '--review-head-ref "refs/heads/$HEAD_REF"' in block
     assert '--diff-base-ref "$BASE_SHA"' in block
     assert '--diff-head-ref "$HEAD_SHA"' in block
-    assert '--output high-risk-supersession-evidence.v1.json' in block
+    assert "--output high-risk-supersession-evidence.v1.json" in block
 
 
 def test_enforce_job_patches_reviewed_slice_before_decision_core() -> None:

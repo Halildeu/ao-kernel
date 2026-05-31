@@ -150,9 +150,7 @@ def _collect_snapshot(info: WorktreeInfo) -> WorktreeSnapshot:
         "--others",
         "--exclude-standard",
     )
-    changed_paths = _sorted_unique(
-        committed_paths + staged_paths + unstaged_paths + untracked_paths
-    )
+    changed_paths = _sorted_unique(committed_paths + staged_paths + unstaged_paths + untracked_paths)
     areas = _sorted_unique([_path_area(path) for path in changed_paths])
 
     return WorktreeSnapshot(
@@ -185,11 +183,7 @@ def _compute_exact_overlaps(
         for path in snapshot.changed_paths:
             overlaps.setdefault(path, []).append(snapshot.branch)
     return sorted(
-        [
-            (path, sorted(branches))
-            for path, branches in overlaps.items()
-            if len(branches) > 1
-        ],
+        [(path, sorted(branches)) for path, branches in overlaps.items() if len(branches) > 1],
         key=lambda item: (len(item[1]) * -1, item[0]),
     )
 
@@ -202,11 +196,7 @@ def _compute_area_overlaps(
         for area in snapshot.areas:
             overlaps.setdefault(area, []).append(snapshot.branch)
     return sorted(
-        [
-            (area, sorted(branches))
-            for area, branches in overlaps.items()
-            if len(branches) > 1
-        ],
+        [(area, sorted(branches)) for area, branches in overlaps.items() if len(branches) > 1],
         key=lambda item: (len(item[1]) * -1, item[0]),
     )
 
@@ -214,8 +204,7 @@ def _compute_area_overlaps(
 def main() -> int:
     repo_root = Path(_git_value(Path.cwd(), "rev-parse", "--show-toplevel"))
     snapshots = [
-        _collect_snapshot(info)
-        for info in sorted(_parse_worktrees(repo_root), key=lambda item: item.path.as_posix())
+        _collect_snapshot(info) for info in sorted(_parse_worktrees(repo_root), key=lambda item: item.path.as_posix())
     ]
 
     exact_overlaps = _compute_exact_overlaps(snapshots)

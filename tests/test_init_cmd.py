@@ -23,8 +23,9 @@ class TestInitCmd:
     def test_workspace_json_content(self, empty_dir: Path):
         run()
         data = json.loads((empty_dir / ".ao" / "workspace.json").read_text())
-        
+
         import ao_kernel
+
         assert data["version"] == ao_kernel.__version__
         assert data["kind"] == "ao-workspace"
         assert "created_at" in data

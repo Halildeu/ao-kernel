@@ -128,9 +128,7 @@ class DriverTokenRequiredError(Exception):
     """Run is in waiting_approval / interrupted; resume_workflow needed."""
 
     def __init__(self, run_id: str, state: str, hint: str = "") -> None:
-        super().__init__(
-            f"run {run_id!r} is {state!r}; {hint or 'use resume_workflow'}"
-        )
+        super().__init__(f"run {run_id!r} is {state!r}; {hint or 'use resume_workflow'}")
         self.run_id = run_id
         self.state = state
 
@@ -138,13 +136,8 @@ class DriverTokenRequiredError(Exception):
 class DriverStateInconsistencyError(Exception):
     """Terminal run state but retry is still available; data corruption."""
 
-    def __init__(
-        self, *, run_state: str, terminal_step_ok: bool, reason: str = ""
-    ) -> None:
-        super().__init__(
-            f"run_state={run_state!r}, terminal_step_ok={terminal_step_ok}: "
-            f"{reason}"
-        )
+    def __init__(self, *, run_state: str, terminal_step_ok: bool, reason: str = "") -> None:
+        super().__init__(f"run_state={run_state!r}, terminal_step_ok={terminal_step_ok}: {reason}")
         self.run_state = run_state
         self.terminal_step_ok = terminal_step_ok
         self.reason = reason
@@ -212,9 +205,7 @@ class MultiStepDriver:
         # while Executor's ``or _load_bundled_policy()`` fell back
         # to bundled — reintroducing the driver/executor split
         # flagged by Codex in retrospective bulgu 1.
-        self._policy: Mapping[str, Any] = (
-            policy_config or _load_bundled_policy()
-        )
+        self._policy: Mapping[str, Any] = policy_config or _load_bundled_policy()
 
     # ------------------------------------------------------------------
     # Public: run_workflow
@@ -245,11 +236,14 @@ class MultiStepDriver:
         state = record["state"]
         if state == "created":
             record = self._cas_state_transition(
-                run_id, record, "running",
+                run_id,
+                record,
+                "running",
                 extra={"started_at": _now_iso()},
             )
             self._emit(
-                run_id, "workflow_started",
+                run_id,
+                "workflow_started",
                 {"workflow_id": workflow_id, "workflow_version": workflow_version},
             )
         elif state == "running":
@@ -260,27 +254,34 @@ class MultiStepDriver:
         elif state in ("completed", "failed", "cancelled"):
             if self._is_retryable_terminal(record, definition):
                 raise DriverStateInconsistencyError(
-                    run_state=state, terminal_step_ok=False,
+                    run_state=state,
+                    terminal_step_ok=False,
                     reason="terminal but retry still available",
                 )
             return self._idempotent_terminal_result(run_id, record, state, start)
         else:
-            raise WorkflowStateCorruptedError(
-                f"run {run_id!r} has unknown state {state!r}"
-            )
+            raise WorkflowStateCorruptedError(f"run {run_id!r} has unknown state {state!r}")
 
         # Workflow-level cross-ref (invariant #24) — early fail, no step runs
         issues = self._registry.validate_cross_refs(definition, self._adapter_registry)
         if issues:
             return self._transition_to_failed(
-                run_id, record, start,
-                category="other", code="CROSS_REF",
+                run_id,
+                record,
+                start,
+                category="other",
+                code="CROSS_REF",
                 message=f"cross-ref issues: {len(issues)}",
                 failed_step=None,
             )
 
         return self._main_loop(
-            run_id, record, definition, budget, context_preamble, start,
+            run_id,
+            record,
+            definition,
+            budget,
+            context_preamble,
+            start,
         )
 
     # ------------------------------------------------------------------
@@ -309,14 +310,20 @@ class MultiStepDriver:
         pending_approval = self._find_pending_approval(record, resume_token)
         if pending_approval is not None:
             return self._resume_approval(
-                run_id, record, pending_approval, payload or {},
+                run_id,
+                record,
+                pending_approval,
+                payload or {},
             )
 
         # Match interrupt
         pending_interrupt = self._find_pending_interrupt(record, resume_token)
         if pending_interrupt is not None:
             return self._resume_interrupt(
-                run_id, record, pending_interrupt, payload or {},
+                run_id,
+                record,
+                pending_interrupt,
+                payload or {},
             )
 
         raise WorkflowTokenInvalidError(
@@ -352,7 +359,9 @@ class MultiStepDriver:
                 exhausted, axis = is_exhausted(budget)
                 if exhausted:
                     return self._transition_to_failed(
-                        run_id, mutable_record, start,
+                        run_id,
+                        mutable_record,
+                        start,
                         category="budget_exhausted",
                         code="BUDGET_EXHAUSTED",
                         message=f"budget axis {axis} exhausted",
@@ -364,8 +373,12 @@ class MultiStepDriver:
             # Pre-step governance gate
             if step_def.gate is not None:
                 return self._open_governance_gate(
-                    run_id, mutable_record, step_def, start,
-                    completed=completed, retried=retried,
+                    run_id,
+                    mutable_record,
+                    step_def,
+                    start,
+                    completed=completed,
+                    retried=retried,
                 )
 
             # Dispatch
@@ -383,33 +396,50 @@ class MultiStepDriver:
                         exec_result,
                         capability_output_refs,
                     ) = self._run_adapter_step(
-                        run_id, mutable_record, step_def,
-                        attempt=attempt, step_id=step_id,
+                        run_id,
+                        mutable_record,
+                        step_def,
+                        attempt=attempt,
+                        step_id=step_id,
                         context_preamble=context_preamble,
                     )
                 elif step_def.actor == "ao-kernel":
                     mutable_record, exec_result = self._run_aokernel_step(
-                        run_id, mutable_record, step_def,
-                        attempt=attempt, step_id=step_id,
+                        run_id,
+                        mutable_record,
+                        step_def,
+                        attempt=attempt,
+                        step_id=step_id,
                     )
                 elif step_def.actor == "system":
                     mutable_record, exec_result = self._run_system_step(
-                        run_id, mutable_record, step_def,
-                        attempt=attempt, step_id=step_id,
+                        run_id,
+                        mutable_record,
+                        step_def,
+                        attempt=attempt,
+                        step_id=step_id,
                     )
                 elif step_def.actor == "human":
                     return self._run_human_gate(
-                        run_id, mutable_record, step_def, start,
-                        completed=completed, retried=retried,
+                        run_id,
+                        mutable_record,
+                        step_def,
+                        start,
+                        completed=completed,
+                        retried=retried,
                     )
                 else:
-                    raise WorkflowStateCorruptedError(
-                        f"unknown actor {step_def.actor!r}"
-                    )
+                    raise WorkflowStateCorruptedError(f"unknown actor {step_def.actor!r}")
             except _StepFailed as sf:
                 return self._handle_step_failure(
-                    run_id, mutable_record, step_def, sf, budget, start,
-                    completed=completed, retried=retried,
+                    run_id,
+                    mutable_record,
+                    step_def,
+                    sf,
+                    budget,
+                    start,
+                    completed=completed,
+                    retried=retried,
                 )
 
             # Step succeeded — record completion.
@@ -417,16 +447,23 @@ class MultiStepDriver:
             # completion helper so step_record persists the per-capability
             # artifact map. Empty for non-adapter paths (default).
             mutable_record = self._record_step_completion(
-                run_id, mutable_record, step_def, exec_result,
-                attempt=attempt, step_id=step_id,
+                run_id,
+                mutable_record,
+                step_def,
+                exec_result,
+                attempt=attempt,
+                step_id=step_id,
                 capability_output_refs=capability_output_refs,
             )
             completed.add(step_def.step_name)
 
         # All steps done
         return self._transition_to_completed(
-            run_id, mutable_record, start,
-            completed=completed, retried=retried,
+            run_id,
+            mutable_record,
+            start,
+            completed=completed,
+            retried=retried,
             budget_consumed=mutable_record.get("budget"),
         )
 
@@ -484,7 +521,9 @@ class MultiStepDriver:
         # PR-C1a: resolve context_pack_ref from prior context_compile step's
         # artifact; None → Executor default envelope (backwards-compat).
         envelope_override = self._build_adapter_envelope_with_context(
-            run_id, step_def, record,
+            run_id,
+            step_def,
+            record,
         )
 
         # PR-C2: adapter sandbox UNION parent_env (secret_ids + env_keys)
@@ -583,9 +622,7 @@ class MultiStepDriver:
 
         if exec_result.step_state != "completed":
             invocation_result = getattr(exec_result, "invocation_result", None)
-            adapter_status = getattr(
-                invocation_result, "status", exec_result.step_state
-            )
+            adapter_status = getattr(invocation_result, "status", exec_result.step_state)
             error_payload: Mapping[str, Any] = {}
             if invocation_result is not None:
                 raw_error = getattr(invocation_result, "error", None)
@@ -625,15 +662,9 @@ class MultiStepDriver:
         # failure fails-closed via _StepFailed (output_parse_failed
         # category).
         capability_output_refs: dict[str, str] = {}
-        run_dir = (
-            self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
-        )
+        run_dir = self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
         invocation_result = getattr(exec_result, "invocation_result", None)
-        extracted = (
-            getattr(invocation_result, "extracted_outputs", None)
-            if invocation_result is not None
-            else None
-        )
+        extracted = getattr(invocation_result, "extracted_outputs", None) if invocation_result is not None else None
         if extracted:
             for capability, payload in extracted.items():
                 try:
@@ -650,10 +681,7 @@ class MultiStepDriver:
                     # dropped. _LEGAL_CATEGORIES includes
                     # output_parse_failed (parity sync).
                     raise _StepFailed(
-                        reason=(
-                            f"capability artifact write failed for "
-                            f"{capability!r}: {exc!s}"
-                        ),
+                        reason=(f"capability artifact write failed for {capability!r}: {exc!s}"),
                         attempt=attempt,
                         category="output_parse_failed",
                         code="CAPABILITY_ARTIFACT_WRITE_FAILED",
@@ -685,10 +713,7 @@ class MultiStepDriver:
             return
 
         raise _StepFailed(
-            reason=(
-                "gh-cli-pr live-write guard blocked: set "
-                f"{_OPEN_PR_LIVE_WRITE_GUARD_ENV}=1"
-            ),
+            reason=(f"gh-cli-pr live-write guard blocked: set {_OPEN_PR_LIVE_WRITE_GUARD_ENV}=1"),
             attempt=attempt,
             category="policy_denied",
             code="LIVE_WRITE_NOT_ALLOWED",
@@ -721,10 +746,7 @@ class MultiStepDriver:
             workflow_id,
             version=workflow_version,
         )
-        compile_step_names = {
-            sd.step_name for sd in workflow_def.steps
-            if sd.operation == "context_compile"
-        }
+        compile_step_names = {sd.step_name for sd in workflow_def.steps if sd.operation == "context_compile"}
         if not compile_step_names:
             return None
 
@@ -740,9 +762,7 @@ class MultiStepDriver:
         if compile_record is None:
             return None
 
-        run_dir = (
-            self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
-        )
+        run_dir = self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
         artifact_path = run_dir / compile_record["output_ref"]
         if not artifact_path.is_file():
             return None
@@ -773,10 +793,12 @@ class MultiStepDriver:
         """Dispatch ao-kernel operations (context_compile, patch_*)."""
         op = step_def.operation
         run_dir = self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
-        self._emit(run_id, "step_started",
-            {"step_name": step_def.step_name, "actor": "ao-kernel",
-             "operation": op, "attempt": attempt},
-            step_id=step_id)
+        self._emit(
+            run_id,
+            "step_started",
+            {"step_name": step_def.step_name, "actor": "ao-kernel", "operation": op, "attempt": attempt},
+            step_id=step_id,
+        )
 
         if op == "context_compile":
             # PR-C1a: real materialisation replacing A4b stub. Uses
@@ -801,16 +823,10 @@ class MultiStepDriver:
                 canonical_list = _canonical_query(self._workspace_root)
             except Exception:  # noqa: BLE001
                 canonical_list = []
-            canonical = {
-                item.get("key", f"_idx_{idx}"): item
-                for idx, item in enumerate(canonical_list)
-            }
+            canonical = {item.get("key", f"_idx_{idx}"): item for idx, item in enumerate(canonical_list)}
 
             # Workspace facts: direct JSON read; corrupt file → {}
-            facts_path = (
-                self._workspace_root / ".cache" / "index"
-                / "workspace_facts.v1.json"
-            )
+            facts_path = self._workspace_root / ".cache" / "index" / "workspace_facts.v1.json"
             facts: dict[str, Any] = {}
             if facts_path.is_file():
                 try:
@@ -826,17 +842,13 @@ class MultiStepDriver:
             )
 
             # Absolute path for adapter subprocess (C1a B3 absorb).
-            context_path = (
-                run_dir / f"context-{step_id}-attempt{attempt}.md"
-            )
+            context_path = run_dir / f"context-{step_id}-attempt{attempt}.md"
             write_text_atomic(context_path, compiled.preamble)
 
             payload = {
                 "operation": "context_compile",
                 "stub": False,
-                "context_preamble_bytes": len(
-                    compiled.preamble.encode("utf-8")
-                ),
+                "context_preamble_bytes": len(compiled.preamble.encode("utf-8")),
                 "context_path": str(context_path),
                 "total_tokens": compiled.total_tokens,
                 "items_included": compiled.items_included,
@@ -844,7 +856,10 @@ class MultiStepDriver:
                 "profile_id": compiled.profile_id,
             }
             output_ref, output_sha256 = write_artifact(
-                run_dir=run_dir, step_id=step_id, attempt=attempt, payload=payload,
+                run_dir=run_dir,
+                step_id=step_id,
+                attempt=attempt,
+                payload=payload,
             )
             return dict(record), {
                 "step_state": "completed",
@@ -852,15 +867,17 @@ class MultiStepDriver:
                 "output_sha256": output_sha256,
                 "operation": op,
                 # PR-C1a propagate to _record_step_completion
-                "context_preamble_bytes": len(
-                    compiled.preamble.encode("utf-8")
-                ),
+                "context_preamble_bytes": len(compiled.preamble.encode("utf-8")),
                 "context_path": str(context_path),
             }
 
         if op in ("patch_preview", "patch_apply", "patch_rollback"):
             return self._run_patch_step(
-                run_id, record, step_def, attempt=attempt, step_id=step_id,
+                run_id,
+                record,
+                step_def,
+                attempt=attempt,
+                step_id=step_id,
                 run_dir=run_dir,
             )
 
@@ -883,12 +900,15 @@ class MultiStepDriver:
         """Dispatch system operations (ci_*)."""
         from ao_kernel.ci import run_pytest, run_ruff  # lazy to avoid cycle
         from ao_kernel.ci.errors import CIRunnerNotFoundError  # lazy
+
         op = step_def.operation
         run_dir = self._workspace_root / ".ao" / "evidence" / "workflows" / run_id
-        self._emit(run_id, "step_started",
-            {"step_name": step_def.step_name, "actor": "system",
-             "operation": op, "attempt": attempt},
-            step_id=step_id)
+        self._emit(
+            run_id,
+            "step_started",
+            {"step_name": step_def.step_name, "actor": "system", "operation": op, "attempt": attempt},
+            step_id=step_id,
+        )
 
         if op == "ci_mypy":
             # W7 absorb: reject explicitly; don't fall through to run_all
@@ -927,11 +947,18 @@ class MultiStepDriver:
             ) from exc
 
         # test_executed event (per 18-kind taxonomy)
-        self._emit(run_id, "test_executed",
-            {"step_name": step_def.step_name, "check_name": result.check_name,
-             "status": result.status, "exit_code": result.exit_code,
-             "attempt": attempt},
-            step_id=step_id)
+        self._emit(
+            run_id,
+            "test_executed",
+            {
+                "step_name": step_def.step_name,
+                "check_name": result.check_name,
+                "status": result.status,
+                "exit_code": result.exit_code,
+                "attempt": attempt,
+            },
+            step_id=step_id,
+        )
 
         # Persist artifact
         artifact = {
@@ -944,7 +971,10 @@ class MultiStepDriver:
             "stderr_tail": result.stderr_tail,
         }
         output_ref, output_sha256 = write_artifact(
-            run_dir=run_dir, step_id=step_id, attempt=attempt, payload=artifact,
+            run_dir=run_dir,
+            step_id=step_id,
+            attempt=attempt,
+            payload=artifact,
         )
 
         if result.status != "pass":
@@ -974,13 +1004,17 @@ class MultiStepDriver:
     ) -> tuple[dict[str, Any], Any]:
         """Dispatch patch_preview / patch_apply / patch_rollback."""
         from ao_kernel.patch import (  # lazy to avoid cycle through executor
-            apply_patch, preview_diff, rollback_patch, PatchError,
+            apply_patch,
+            preview_diff,
+            rollback_patch,
+            PatchError,
         )
         from ao_kernel.coordination.errors import (
             ClaimConflictError,
             ClaimConflictGraceError,
             CoordinationError,
         )
+
         op = step_def.operation
         sandbox = self._build_sandbox(run_id)
         worktree = self._workspace_root / ".ao" / "runs" / run_id / "worktree"
@@ -991,7 +1025,9 @@ class MultiStepDriver:
         # prior adapter's output_ref. For now, empty content signals
         # this is a demo-tier flow; tests supply content via fixture.
         patch_content = _load_pending_patch_content(
-            record, step_def.step_name, workspace_root=self._workspace_root,
+            record,
+            step_def.step_name,
+            workspace_root=self._workspace_root,
         )
         ownership: tuple[Any, Any] | None = None
         ownership_payload: dict[str, Any] = {}
@@ -999,12 +1035,20 @@ class MultiStepDriver:
         try:
             if op == "patch_preview":
                 preview = preview_diff(worktree, patch_content, sandbox)
-                self._emit(run_id, "diff_previewed",
-                    {"step_name": step_def.step_name, "patch_id": preview.patch_id,
-                     "files_changed": list(preview.files_changed), "attempt": attempt},
-                    step_id=step_id)
+                self._emit(
+                    run_id,
+                    "diff_previewed",
+                    {
+                        "step_name": step_def.step_name,
+                        "patch_id": preview.patch_id,
+                        "files_changed": list(preview.files_changed),
+                        "attempt": attempt,
+                    },
+                    step_id=step_id,
+                )
                 artifact = {
-                    "operation": op, "patch_id": preview.patch_id,
+                    "operation": op,
+                    "patch_id": preview.patch_id,
                     "files_changed": list(preview.files_changed),
                     "lines_added": preview.lines_added,
                     "lines_removed": preview.lines_removed,
@@ -1020,7 +1064,10 @@ class MultiStepDriver:
                     ownership_payload = self._ownership_payload(ownership[1])
                 try:
                     apply_result = apply_patch(
-                        worktree, patch_content, sandbox, run_dir,
+                        worktree,
+                        patch_content,
+                        sandbox,
+                        run_dir,
                     )
                 except BaseException:
                     if ownership is not None:
@@ -1029,15 +1076,21 @@ class MultiStepDriver:
                         except CoordinationError:
                             pass
                     raise
-                self._emit(run_id, "diff_applied",
-                    {"step_name": step_def.step_name,
-                     "patch_id": apply_result.patch_id,
-                     "applied_sha": apply_result.applied_sha,
-                     "attempt": attempt,
-                     **ownership_payload},
-                    step_id=step_id)
+                self._emit(
+                    run_id,
+                    "diff_applied",
+                    {
+                        "step_name": step_def.step_name,
+                        "patch_id": apply_result.patch_id,
+                        "applied_sha": apply_result.applied_sha,
+                        "attempt": attempt,
+                        **ownership_payload,
+                    },
+                    step_id=step_id,
+                )
                 artifact = {
-                    "operation": op, "patch_id": apply_result.patch_id,
+                    "operation": op,
+                    "patch_id": apply_result.patch_id,
                     "reverse_diff_id": apply_result.reverse_diff_id,
                     "files_changed": list(apply_result.files_changed),
                     "applied_sha": apply_result.applied_sha,
@@ -1054,7 +1107,10 @@ class MultiStepDriver:
                     ownership_payload = self._ownership_payload(ownership[1])
                 try:
                     rb_result = rollback_patch(
-                        worktree, reverse_diff_id, sandbox, run_dir,
+                        worktree,
+                        reverse_diff_id,
+                        sandbox,
+                        run_dir,
                     )
                 except BaseException:
                     if ownership is not None:
@@ -1064,13 +1120,20 @@ class MultiStepDriver:
                             pass
                     raise
                 if rb_result.rolled_back:
-                    self._emit(run_id, "diff_rolled_back",
-                        {"step_name": step_def.step_name,
-                         "patch_id": rb_result.patch_id, "attempt": attempt,
-                         **ownership_payload},
-                        step_id=step_id)
+                    self._emit(
+                        run_id,
+                        "diff_rolled_back",
+                        {
+                            "step_name": step_def.step_name,
+                            "patch_id": rb_result.patch_id,
+                            "attempt": attempt,
+                            **ownership_payload,
+                        },
+                        step_id=step_id,
+                    )
                 artifact = {
-                    "operation": op, "patch_id": rb_result.patch_id,
+                    "operation": op,
+                    "patch_id": rb_result.patch_id,
                     "rolled_back": rb_result.rolled_back,
                     "idempotent_skip": rb_result.idempotent_skip,
                     "files_reverted": list(rb_result.files_reverted),
@@ -1104,7 +1167,10 @@ class MultiStepDriver:
             ) from exc
 
         output_ref, output_sha256 = write_artifact(
-            run_dir=run_dir, step_id=step_id, attempt=attempt, payload=artifact,
+            run_dir=run_dir,
+            step_id=step_id,
+            attempt=attempt,
+            payload=artifact,
         )
         if ownership is not None:
             try:
@@ -1219,9 +1285,7 @@ class MultiStepDriver:
         """Return additive audit fields for patch-operation evidence."""
         return {
             "write_claim_areas": [lease.scope.area for lease in lease_set.leases],
-            "write_claim_resource_ids": [
-                lease.scope.resource_id for lease in lease_set.leases
-            ],
+            "write_claim_resource_ids": [lease.scope.resource_id for lease in lease_set.leases],
         }
 
     def _run_human_gate(
@@ -1236,8 +1300,12 @@ class MultiStepDriver:
     ) -> DriverResult:
         """Pure human step acts like a pre-step gate."""
         return self._open_governance_gate(
-            run_id, record, step_def, start,
-            completed=completed, retried=retried,
+            run_id,
+            record,
+            step_def,
+            start,
+            completed=completed,
+            retried=retried,
         )
 
     # ------------------------------------------------------------------
@@ -1271,16 +1339,19 @@ class MultiStepDriver:
             # decision + responded_at left unset until resume
         }
         new_record = self._cas_state_transition(
-            run_id, record, "waiting_approval",
+            run_id,
+            record,
+            "waiting_approval",
             extra={
                 "approvals": list(record.get("approvals", [])) + [approval_dict],
             },
         )
-        self._emit(run_id, "approval_requested",
-            {"step_name": step_def.step_name,
-             "gate": step_def.gate or "pre_step",
-             "approval_id": approval.approval_id},
-            step_id=step_def.step_name)
+        self._emit(
+            run_id,
+            "approval_requested",
+            {"step_name": step_def.step_name, "gate": step_def.gate or "pre_step", "approval_id": approval.approval_id},
+            step_id=step_def.step_name,
+        )
         return DriverResult(
             run_id=run_id,
             final_state="waiting_approval",
@@ -1305,7 +1376,8 @@ class MultiStepDriver:
         decision = payload.get("decision")
         if decision not in ("granted", "denied"):
             raise WorkflowTokenInvalidError(
-                run_id=run_id, token_kind="approval",
+                run_id=run_id,
+                token_kind="approval",
                 token_value=approval_dict["approval_token"],
                 reason="resumed_with_different_payload",
             )
@@ -1321,8 +1393,10 @@ class MultiStepDriver:
             responded_at=approval_dict.get("responded_at"),
         )
         resumed = resume_approval(
-            approval, token=approval_dict["approval_token"],
-            decision=decision, run_id=run_id,
+            approval,
+            token=approval_dict["approval_token"],
+            decision=decision,
+            run_id=run_id,
         )
 
         kind = "approval_granted" if decision == "granted" else "approval_denied"
@@ -1338,7 +1412,9 @@ class MultiStepDriver:
         if decision == "denied":
             # Cancel path
             new_record = self._cas_state_transition(
-                run_id, record, "cancelled",
+                run_id,
+                record,
+                "cancelled",
                 extra={"completed_at": _now_iso()},
             )
             return DriverResult(
@@ -1363,8 +1439,7 @@ class MultiStepDriver:
             approvals = list(cur.get("approvals", []))
             for i, a in enumerate(approvals):
                 if a.get("approval_token") == approval_dict["approval_token"]:
-                    approvals[i] = {**a, "decision": decision,
-                                     "responded_at": resumed.responded_at}
+                    approvals[i] = {**a, "decision": decision, "responded_at": resumed.responded_at}
                     break
             cur["approvals"] = approvals
             # Append a completed step_record for the approved step so
@@ -1372,34 +1447,38 @@ class MultiStepDriver:
             if pending_step:
                 steps = list(cur.get("steps", []))
                 already_completed = any(
-                    sr.get("step_name") == pending_step
-                    and sr.get("state") == "completed"
-                    for sr in steps
+                    sr.get("step_name") == pending_step and sr.get("state") == "completed" for sr in steps
                 )
                 if not already_completed:
-                    steps.append({
-                        "step_id": pending_step,
-                        "step_name": pending_step,
-                        "state": "completed",
-                        "actor": "human",
-                        "started_at": _now_iso(),
-                        "completed_at": _now_iso(),
-                        "attempt": 1,
-                    })
+                    steps.append(
+                        {
+                            "step_id": pending_step,
+                            "step_name": pending_step,
+                            "state": "completed",
+                            "actor": "human",
+                            "started_at": _now_iso(),
+                            "completed_at": _now_iso(),
+                            "attempt": 1,
+                        }
+                    )
                     cur["steps"] = steps
             return cur
+
         new_record = self._cas_mutate(run_id, _mutator)
 
         # Re-enter main loop
         definition = self._registry.get(
-            new_record["workflow_id"], version=new_record["workflow_version"],
+            new_record["workflow_id"],
+            version=new_record["workflow_version"],
         )
-        budget = (
-            budget_from_dict(new_record["budget"])
-            if new_record.get("budget") else None
-        )
+        budget = budget_from_dict(new_record["budget"]) if new_record.get("budget") else None
         return self._main_loop(
-            run_id, new_record, definition, budget, None, time.monotonic(),
+            run_id,
+            new_record,
+            definition,
+            budget,
+            None,
+            time.monotonic(),
         )
 
     def _resume_interrupt(
@@ -1414,16 +1493,20 @@ class MultiStepDriver:
             validate_transition(cur["state"], "running")
             cur["state"] = "running"
             return cur
+
         new_record = self._cas_mutate(run_id, _mutator)
         definition = self._registry.get(
-            new_record["workflow_id"], version=new_record["workflow_version"],
+            new_record["workflow_id"],
+            version=new_record["workflow_version"],
         )
-        budget = (
-            budget_from_dict(new_record["budget"])
-            if new_record.get("budget") else None
-        )
+        budget = budget_from_dict(new_record["budget"]) if new_record.get("budget") else None
         return self._main_loop(
-            run_id, new_record, definition, budget, None, time.monotonic(),
+            run_id,
+            new_record,
+            definition,
+            budget,
+            None,
+            time.monotonic(),
         )
 
     # ------------------------------------------------------------------
@@ -1443,15 +1526,24 @@ class MultiStepDriver:
         retried: set[str],
     ) -> DriverResult:
         on_failure = step_def.on_failure
-        self._emit(run_id, "step_failed",
-            {"step_name": step_def.step_name, "reason": failure.reason,
-             "attempt": failure.attempt, "code": failure.code,
-             "category": _legal_error_category(failure.category)},
-            step_id=self._step_id_for_attempt(step_def.step_name, failure.attempt))
+        self._emit(
+            run_id,
+            "step_failed",
+            {
+                "step_name": step_def.step_name,
+                "reason": failure.reason,
+                "attempt": failure.attempt,
+                "code": failure.code,
+                "category": _legal_error_category(failure.category),
+            },
+            step_id=self._step_id_for_attempt(step_def.step_name, failure.attempt),
+        )
 
         # CAS: append terminal failed attempt step_record
         record = self._append_failed_attempt_record(
-            run_id, record, step_def,
+            run_id,
+            record,
+            step_def,
             attempt=failure.attempt,
             reason=failure.reason,
             category=failure.category,
@@ -1460,8 +1552,11 @@ class MultiStepDriver:
 
         if on_failure == "transition_to_failed":
             return self._transition_to_failed(
-                run_id, record, start,
-                category=failure.category, code=failure.code,
+                run_id,
+                record,
+                start,
+                category=failure.category,
+                code=failure.code,
                 message=failure.reason,
                 failed_step=step_def.step_name,
                 steps_executed=completed,
@@ -1472,8 +1567,11 @@ class MultiStepDriver:
         if on_failure == "retry_once":
             if failure.attempt >= 2:
                 return self._transition_to_failed(
-                    run_id, record, start,
-                    category="other", code="RETRY_EXHAUSTED",
+                    run_id,
+                    record,
+                    start,
+                    category="other",
+                    code="RETRY_EXHAUSTED",
                     message=f"attempt=2 failed: {failure.reason}",
                     failed_step=step_def.step_name,
                     steps_executed=completed,
@@ -1483,11 +1581,15 @@ class MultiStepDriver:
             # Append placeholder attempt=2 + invoke
             retried = retried | {step_def.step_name}
             placeholder_step_id = self._step_id_for_attempt(
-                step_def.step_name, attempt=2,
+                step_def.step_name,
+                attempt=2,
             )
             record = self._append_attempt_placeholder(
-                run_id, record, step_def,
-                step_id=placeholder_step_id, attempt=2,
+                run_id,
+                record,
+                step_def,
+                step_id=placeholder_step_id,
+                attempt=2,
             )
             # PR-B6 v4 §2.2: retry-success capability_output_refs map
             # (populated by adapter path; empty for others).
@@ -1499,31 +1601,49 @@ class MultiStepDriver:
                         exec_result,
                         capability_output_refs,
                     ) = self._run_adapter_step(
-                        run_id, record, step_def, attempt=2,
-                        step_id=placeholder_step_id, context_preamble=None,
+                        run_id,
+                        record,
+                        step_def,
+                        attempt=2,
+                        step_id=placeholder_step_id,
+                        context_preamble=None,
                     )
                 elif step_def.actor == "ao-kernel":
                     record, exec_result = self._run_aokernel_step(
-                        run_id, record, step_def, attempt=2,
+                        run_id,
+                        record,
+                        step_def,
+                        attempt=2,
                         step_id=placeholder_step_id,
                     )
                 elif step_def.actor == "system":
                     record, exec_result = self._run_system_step(
-                        run_id, record, step_def, attempt=2,
+                        run_id,
+                        record,
+                        step_def,
+                        attempt=2,
                         step_id=placeholder_step_id,
                     )
                 else:
                     raise _StepFailed(
                         reason=f"retry_on_actor_{step_def.actor}",
-                        attempt=2, category="other", code="UNSUPPORTED_OPERATION",
+                        attempt=2,
+                        category="other",
+                        code="UNSUPPORTED_OPERATION",
                     )
             except _StepFailed as sf2:
                 record = self._update_placeholder_to_failed(
-                    run_id, record, placeholder_step_id, reason=sf2.reason,
+                    run_id,
+                    record,
+                    placeholder_step_id,
+                    reason=sf2.reason,
                 )
                 return self._transition_to_failed(
-                    run_id, record, start,
-                    category="other", code="RETRY_EXHAUSTED",
+                    run_id,
+                    record,
+                    start,
+                    category="other",
+                    code="RETRY_EXHAUSTED",
                     message=f"attempt=2 failed: {sf2.reason}",
                     failed_step=step_def.step_name,
                     steps_executed=completed,
@@ -1531,22 +1651,34 @@ class MultiStepDriver:
                     steps_retried=retried,
                 )
             record = self._update_placeholder_to_completed(
-                run_id, record, placeholder_step_id, exec_result, attempt=2,
+                run_id,
+                record,
+                placeholder_step_id,
+                exec_result,
+                attempt=2,
                 capability_output_refs=capability_output_refs,
             )
             completed.add(step_def.step_name)
 
             # Continue main loop from next step
             definition = self._registry.get(
-                record["workflow_id"], version=record["workflow_version"],
+                record["workflow_id"],
+                version=record["workflow_version"],
             )
             return self._continue_after_retry(
-                run_id, record, definition, step_def, budget, start,
-                completed=completed, retried=retried,
+                run_id,
+                record,
+                definition,
+                step_def,
+                budget,
+                start,
+                completed=completed,
+                retried=retried,
             )
 
         if on_failure == "escalate_to_human":
             from ao_kernel.workflow.primitives import create_approval
+
             approval = create_approval(
                 gate="custom",  # escalate_to_human uses the custom gate slot
                 actor="human",
@@ -1561,17 +1693,24 @@ class MultiStepDriver:
                 "payload": dict(approval.payload),
             }
             new_record = self._cas_state_transition(
-                run_id, record, "waiting_approval",
+                run_id,
+                record,
+                "waiting_approval",
                 extra={
                     "approvals": list(record.get("approvals", [])) + [approval_dict],
                 },
             )
-            self._emit(run_id, "approval_requested",
-                {"step_name": step_def.step_name,
-                 "escalation": True,
-                 "failure_reason": failure.reason,
-                 "approval_id": approval.approval_id},
-                step_id=step_def.step_name)
+            self._emit(
+                run_id,
+                "approval_requested",
+                {
+                    "step_name": step_def.step_name,
+                    "escalation": True,
+                    "failure_reason": failure.reason,
+                    "approval_id": approval.approval_id,
+                },
+                step_id=step_def.step_name,
+            )
             return DriverResult(
                 run_id=run_id,
                 final_state="waiting_approval",
@@ -1584,9 +1723,7 @@ class MultiStepDriver:
                 duration_seconds=time.monotonic() - start,
             )
 
-        raise WorkflowStateCorruptedError(
-            f"unknown on_failure {on_failure!r}"
-        )
+        raise WorkflowStateCorruptedError(f"unknown on_failure {on_failure!r}")
 
     def _continue_after_retry(
         self,
@@ -1602,7 +1739,12 @@ class MultiStepDriver:
     ) -> DriverResult:
         """After a successful retry, advance through remaining steps."""
         return self._main_loop(
-            run_id, record, definition, budget, None, start,
+            run_id,
+            record,
+            definition,
+            budget,
+            None,
+            start,
         )
 
     # ------------------------------------------------------------------
@@ -1622,15 +1764,14 @@ class MultiStepDriver:
             attempts += 1
             try:
                 updated, _revision = update_run(
-                    self._workspace_root, run_id, mutator=mutator,
+                    self._workspace_root,
+                    run_id,
+                    mutator=mutator,
                 )
                 return dict(updated)
             except WorkflowCASConflictError:
                 if attempts > max_retries:
-                    raise DriverStateConflictError(
-                        f"CAS conflict on run {run_id!r} after "
-                        f"{max_retries} retry"
-                    )
+                    raise DriverStateConflictError(f"CAS conflict on run {run_id!r} after {max_retries} retry")
                 continue
 
     def _cas_state_transition(
@@ -1649,6 +1790,7 @@ class MultiStepDriver:
             for k, v in extra.items():
                 cur[k] = v
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     def _append_failed_attempt_record(
@@ -1705,6 +1847,7 @@ class MultiStepDriver:
             steps.append(entry)
             cur["steps"] = steps
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     def _append_attempt_placeholder(
@@ -1720,17 +1863,20 @@ class MultiStepDriver:
 
         def _mutator(cur: dict[str, Any]) -> dict[str, Any]:
             steps = list(cur.get("steps", []))
-            steps.append({
-                "step_id": step_id,
-                "step_name": step_def.step_name,
-                "state": "running",
-                "actor": step_def.actor,
-                "started_at": now,
-                "attempt": attempt,
-                **({"adapter_id": step_def.adapter_id} if step_def.adapter_id else {}),
-            })
+            steps.append(
+                {
+                    "step_id": step_id,
+                    "step_name": step_def.step_name,
+                    "state": "running",
+                    "actor": step_def.actor,
+                    "started_at": now,
+                    "attempt": attempt,
+                    **({"adapter_id": step_def.adapter_id} if step_def.adapter_id else {}),
+                }
+            )
             cur["steps"] = steps
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     def _update_placeholder_to_completed(
@@ -1763,13 +1909,12 @@ class MultiStepDriver:
                     if output_ref:
                         updated["output_ref"] = output_ref
                     if capability_output_refs:
-                        updated["capability_output_refs"] = dict(
-                            capability_output_refs
-                        )
+                        updated["capability_output_refs"] = dict(capability_output_refs)
                     steps[i] = updated
                     break
             cur["steps"] = steps
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     def _update_placeholder_to_failed(
@@ -1789,12 +1934,12 @@ class MultiStepDriver:
                     updated = dict(sr)
                     updated["state"] = "failed"
                     updated["completed_at"] = now
-                    updated["error"] = {"category": "other", "code": "RETRY_FAILED",
-                                         "message": reason}
+                    updated["error"] = {"category": "other", "code": "RETRY_FAILED", "message": reason}
                     steps[i] = updated
                     break
             cur["steps"] = steps
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     def _record_step_completion(
@@ -1821,10 +1966,7 @@ class MultiStepDriver:
         # path already emits step_completed via Executor.run_step when
         # driver_managed=True propagates a completed status).
         if step_def.actor in ("ao-kernel", "system"):
-            is_context_compile = (
-                isinstance(exec_result, Mapping)
-                and exec_result.get("operation") == "context_compile"
-            )
+            is_context_compile = isinstance(exec_result, Mapping) and exec_result.get("operation") == "context_compile"
             payload: dict[str, Any] = {
                 "step_name": step_def.step_name,
                 "final_state": "completed",
@@ -1837,9 +1979,7 @@ class MultiStepDriver:
                 # stub=False regardless since handler wrote markdown.
                 payload["stub"] = False
                 payload["operation"] = "context_compile"
-                payload["context_preamble_bytes"] = exec_result.get(
-                    "context_preamble_bytes", 0
-                )
+                payload["context_preamble_bytes"] = exec_result.get("context_preamble_bytes", 0)
                 ctx_path = exec_result.get("context_path")
                 if ctx_path is not None:
                     payload["context_path"] = ctx_path
@@ -1862,9 +2002,7 @@ class MultiStepDriver:
                     if output_ref:
                         updated["output_ref"] = output_ref
                     if capability_output_refs:
-                        updated["capability_output_refs"] = dict(
-                            capability_output_refs
-                        )
+                        updated["capability_output_refs"] = dict(capability_output_refs)
                     steps[i] = updated
                     cur["steps"] = steps
                     return cur
@@ -1889,12 +2027,11 @@ class MultiStepDriver:
                 # PR-B6 v4 §2.2: persist per-capability artifact refs when
                 # the adapter dispatch populated them. Empty map absent
                 # (schema additionalProperties: false respected).
-                record_entry["capability_output_refs"] = dict(
-                    capability_output_refs
-                )
+                record_entry["capability_output_refs"] = dict(capability_output_refs)
             steps.append(record_entry)
             cur["steps"] = steps
             return cur
+
         return self._cas_mutate(run_id, _mutator)
 
     # ------------------------------------------------------------------
@@ -1929,11 +2066,14 @@ class MultiStepDriver:
                 "message": message,
             }
             return cur
+
         new_record = self._cas_mutate(run_id, _mutator)
 
-        self._emit(run_id, "workflow_failed",
-            {"category": _legal_error_category(category), "code": code,
-             "reason": message, "failed_step": failed_step})
+        self._emit(
+            run_id,
+            "workflow_failed",
+            {"category": _legal_error_category(category), "code": code, "reason": message, "failed_step": failed_step},
+        )
 
         return DriverResult(
             run_id=run_id,
@@ -1976,15 +2116,14 @@ class MultiStepDriver:
 
         new_record: dict[str, Any] = dict(record)
         for idx, next_state in enumerate(chain):
-            extras: Mapping[str, Any] = (
-                {"completed_at": _now_iso()}
-                if next_state == "completed" else {}
-            )
+            extras: Mapping[str, Any] = {"completed_at": _now_iso()} if next_state == "completed" else {}
             new_record = self._cas_state_transition(
-                run_id, new_record, next_state, extra=extras,
+                run_id,
+                new_record,
+                next_state,
+                extra=extras,
             )
-        self._emit(run_id, "workflow_completed",
-            {"steps_executed": sorted(completed)})
+        self._emit(run_id, "workflow_completed", {"steps_executed": sorted(completed)})
         return DriverResult(
             run_id=run_id,
             final_state="completed",
@@ -2079,10 +2218,7 @@ class MultiStepDriver:
         # Run-state guard: only runnable states
         run_state = record.get("state")
         if run_state not in ("created", "running"):
-            raise ValueError(
-                f"dry-run requires run in 'created' or 'running' state; "
-                f"current state={run_state!r}"
-            )
+            raise ValueError(f"dry-run requires run in 'created' or 'running' state; current state={run_state!r}")
 
         # Completed-step guard
         completed = self._completed_step_names(record)
@@ -2096,21 +2232,17 @@ class MultiStepDriver:
         workflow_id = record.get("workflow_id")
         workflow_version = record.get("workflow_version")
         if not workflow_id or not workflow_version:
-            raise ValueError(
-                f"run {run_id!r} lacks workflow_id/workflow_version"
-            )
+            raise ValueError(f"run {run_id!r} lacks workflow_id/workflow_version")
         definition = self._registry.get(
-            workflow_id, version=workflow_version,
+            workflow_id,
+            version=workflow_version,
         )
         step_def = next(
             (s for s in definition.steps if s.step_name == step_name),
             None,
         )
         if step_def is None:
-            raise KeyError(
-                f"step_name {step_name!r} not in workflow "
-                f"{workflow_id}@{workflow_version}"
-            )
+            raise KeyError(f"step_name {step_name!r} not in workflow {workflow_id}@{workflow_version}")
 
         # Attempt derivation + validation
         legal_attempt = self._next_attempt_number(record, step_name)
@@ -2125,18 +2257,10 @@ class MultiStepDriver:
         # step_id: reuse running placeholder OR mint fresh
         placeholder_step_id: str | None = None
         for sr in record.get("steps", []):
-            if (
-                sr.get("step_name") == step_name
-                and sr.get("attempt", 1) == attempt
-                and sr.get("state") == "running"
-            ):
+            if sr.get("step_name") == step_name and sr.get("attempt", 1) == attempt and sr.get("state") == "running":
                 placeholder_step_id = sr.get("step_id")
                 break
-        step_id = (
-            placeholder_step_id
-            if placeholder_step_id
-            else self._step_id_for_attempt(step_name, attempt)
-        )
+        step_id = placeholder_step_id if placeholder_step_id else self._step_id_for_attempt(step_name, attempt)
 
         # Adapter-only parity; non-adapter defer to executor fallback
         # (CLI routes them there explicitly; inner API call is strict).
@@ -2150,11 +2274,11 @@ class MultiStepDriver:
         # surface explicitly in tests.
         if step_def.actor == "adapter":
             envelope = self._build_adapter_envelope_with_context(
-                run_id, step_def, record,
+                run_id,
+                step_def,
+                record,
             )
-            parent_env: Mapping[str, str] | None = (
-                self._compute_adapter_parent_env(self._policy)
-            )
+            parent_env: Mapping[str, str] | None = self._compute_adapter_parent_env(self._policy)
         elif step_def.actor == "system":
             envelope = None
             parent_env = self._compute_sandbox_parent_env(self._policy)
@@ -2200,7 +2324,9 @@ class MultiStepDriver:
         return {n for n in names if n}
 
     def _is_retryable_terminal(
-        self, record: Mapping[str, Any], definition: Any,
+        self,
+        record: Mapping[str, Any],
+        definition: Any,
     ) -> bool:
         """MV1 invariant: highest-attempt failed + on_failure=retry_once + attempt<2."""
         if record["state"] != "failed":
@@ -2222,7 +2348,9 @@ class MultiStepDriver:
         return False
 
     def _next_attempt_number(
-        self, record: Mapping[str, Any], step_name: str,
+        self,
+        record: Mapping[str, Any],
+        step_name: str,
     ) -> int:
         """Find the next attempt number or resume a non-terminal placeholder."""
         highest = 0
@@ -2235,9 +2363,7 @@ class MultiStepDriver:
         if highest == 0:
             return 1
         for sr in record.get("steps", ()):
-            if (sr.get("step_name") == step_name
-                and sr.get("attempt", 1) == highest
-                and sr.get("state") == "running"):
+            if sr.get("step_name") == step_name and sr.get("attempt", 1) == highest and sr.get("state") == "running":
                 return highest  # resume placeholder, don't increment
         return highest + 1
 
@@ -2248,7 +2374,9 @@ class MultiStepDriver:
         return f"{step_name}-a{attempt}-{uuid.uuid4().hex[:6]}"
 
     def _find_pending_approval(
-        self, record: Mapping[str, Any], token: str,
+        self,
+        record: Mapping[str, Any],
+        token: str,
     ) -> Mapping[str, Any] | None:
         for a in record.get("approvals", ()):
             if a.get("approval_token") == token and not a.get("decision"):
@@ -2256,7 +2384,9 @@ class MultiStepDriver:
         return None
 
     def _find_pending_interrupt(
-        self, record: Mapping[str, Any], token: str,
+        self,
+        record: Mapping[str, Any],
+        token: str,
     ) -> Mapping[str, Any] | None:
         for i in record.get("interrupts", ()):
             if i.get("interrupt_token") == token and not i.get("resumed_at"):
@@ -2335,8 +2465,11 @@ class MultiStepDriver:
         try:
             emit_event(
                 self._workspace_root,
-                run_id=run_id, kind=kind, actor=actor,
-                payload=dict(payload), step_id=step_id,
+                run_id=run_id,
+                kind=kind,
+                actor=actor,
+                payload=dict(payload),
+                step_id=step_id,
                 replay_safe=replay_safe,
             )
         except Exception:  # noqa: BLE001 - evidence write is best-effort side-channel
@@ -2360,11 +2493,11 @@ class MultiStepDriver:
 # categories. Parity is now required + test-enforced.
 _LEGAL_CATEGORIES = {
     "timeout",
-    "invocation_failed",        # transport-layer adapter fail
-    "output_parse_failed",      # walker fail or capability artifact write fail
+    "invocation_failed",  # transport-layer adapter fail
+    "output_parse_failed",  # walker fail or capability artifact write fail
     "policy_denied",
     "budget_exhausted",
-    "adapter_crash",            # subprocess crash
+    "adapter_crash",  # subprocess crash
     "approval_denied",
     "ci_failed",
     "apply_conflict",
@@ -2412,16 +2545,13 @@ def _load_pending_patch_content(
     if not run_id:
         return ""
     for prior in reversed(record.get("steps", [])):
-        if (
-            prior.get("actor") == "adapter"
-            and prior.get("state") == "completed"
-            and prior.get("output_ref")
-        ):
+        if prior.get("actor") == "adapter" and prior.get("state") == "completed" and prior.get("output_ref"):
             run_dir = workspace_root / ".ao" / "evidence" / "workflows" / run_id
             artifact_path = run_dir / prior["output_ref"]
             if not artifact_path.is_file():
                 return ""
             import json as _json
+
             try:
                 artifact = _json.loads(artifact_path.read_text())
             except (OSError, _json.JSONDecodeError):

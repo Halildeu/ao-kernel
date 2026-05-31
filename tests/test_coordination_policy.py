@@ -131,12 +131,14 @@ class TestEvidenceRedactionDataclass:
         assert policy.evidence_redaction == EvidenceRedaction()
 
     def test_populated_redaction_roundtrip(self, tmp_path: Path) -> None:
-        doc = _valid_policy_dict(evidence_redaction={
-            "env_keys_matching": ["(?i).*secret.*"],
-            "stdout_patterns": ["sk-[A-Za-z0-9]{20,}"],
-            "file_content_patterns": [],
-            "patterns": ["Bearer\\s+.+"],
-        })
+        doc = _valid_policy_dict(
+            evidence_redaction={
+                "env_keys_matching": ["(?i).*secret.*"],
+                "stdout_patterns": ["sk-[A-Za-z0-9]{20,}"],
+                "file_content_patterns": [],
+                "patterns": ["Bearer\\s+.+"],
+            }
+        )
         policy = load_coordination_policy(tmp_path, override=doc)
         assert policy.evidence_redaction.env_keys_matching == ("(?i).*secret.*",)
         assert policy.evidence_redaction.stdout_patterns == ("sk-[A-Za-z0-9]{20,}",)
@@ -216,10 +218,7 @@ class TestBuildCoordinationSink:
                 "acquired_at": "2026-04-17T10:00:00+00:00",
             },
         )
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert events_path.is_file()
         line = events_path.read_text(encoding="utf-8").strip().splitlines()[-1]
         event = json.loads(line)
@@ -274,10 +273,7 @@ class TestBuildCoordinationSink:
         )
 
         # Read the on-disk JSONL to confirm redaction applied
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert events_path.is_file()
         line = events_path.read_text(encoding="utf-8").strip().splitlines()[-1]
         event = json.loads(line)
@@ -287,7 +283,8 @@ class TestBuildCoordinationSink:
         assert "***REDACTED***" in line
 
     def test_helper_binds_patterns_convenience_field(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """CNS-029v4 iter-4 absorb: ``evidence_redaction.patterns`` is
         the policy schema's convenience flat list ("apply to any string
@@ -334,10 +331,7 @@ class TestBuildCoordinationSink:
             },
         )
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         line = events_path.read_text(encoding="utf-8").strip().splitlines()[-1]
         # The authed token is scrubbed even though only "patterns" was
         # set — stdout_patterns would have caught it too, but this test
@@ -346,7 +340,8 @@ class TestBuildCoordinationSink:
         assert "***REDACTED***" in line
 
     def test_helper_binds_env_keys_matching(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """The emitter's env-key redaction kicks in when a payload
         nests an ``env`` mapping. ``build_coordination_sink`` compiles
@@ -385,10 +380,7 @@ class TestBuildCoordinationSink:
             },
         )
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         line = events_path.read_text(encoding="utf-8").strip().splitlines()[-1]
         event = json.loads(line)
         env = event["payload"]["env"]

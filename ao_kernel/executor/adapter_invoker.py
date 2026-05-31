@@ -77,9 +77,7 @@ class InvocationResult:
     pr_number: int | None = None
     base_sha: str | None = None
     head_sha: str | None = None
-    extracted_outputs: Mapping[str, Mapping[str, Any]] = field(
-        default_factory=lambda: _EMPTY_EXTRACTED
-    )
+    extracted_outputs: Mapping[str, Mapping[str, Any]] = field(default_factory=lambda: _EMPTY_EXTRACTED)
     """Capability-keyed, schema-validated payloads extracted from the
     adapter envelope by the ``output_parse`` rule walker (PR-B0, net-new).
 
@@ -141,9 +139,7 @@ def invoke_cli(
     if invocation.get("transport") != "cli":
         raise AdapterInvocationFailedError(
             reason="subprocess_crash",
-            detail=(
-                f"invoke_cli called with transport={invocation.get('transport')!r}"
-            ),
+            detail=(f"invoke_cli called with transport={invocation.get('transport')!r}"),
         )
 
     resolved_cli = resolved_invocation or _resolve_cli_invocation(
@@ -201,12 +197,14 @@ def invoke_cli(
                 status="partial",
                 diff=None,
                 evidence_events=(),
-                commands_executed=({
-                    "command": command,
-                    "exit_code": -1,
-                    "elapsed_s": elapsed,
-                    "timeout": True,
-                },),
+                commands_executed=(
+                    {
+                        "command": command,
+                        "exit_code": -1,
+                        "elapsed_s": elapsed,
+                        "timeout": True,
+                    },
+                ),
                 error=None,
                 finish_reason="timeout",
                 interrupt_token=None,
@@ -287,9 +285,7 @@ def invoke_http(
     if invocation.get("transport") != "http":
         raise AdapterInvocationFailedError(
             reason="http_error",
-            detail=(
-                f"invoke_http called with transport={invocation.get('transport')!r}"
-            ),
+            detail=(f"invoke_http called with transport={invocation.get('transport')!r}"),
         )
 
     endpoint = invocation["endpoint"]
@@ -305,10 +301,7 @@ def invoke_http(
         if not secret_value:
             raise AdapterInvocationFailedError(
                 reason="http_error",
-                detail=(
-                    f"auth_secret_id_ref={auth_secret_id_ref!r} not present "
-                    f"in sandbox env"
-                ),
+                detail=(f"auth_secret_id_ref={auth_secret_id_ref!r} not present in sandbox env"),
             )
         headers["Authorization"] = f"Bearer {secret_value}"
 
@@ -411,20 +404,19 @@ def _parse_cli_stdout(
     # text/plain fallback triple-gate (CLI side: no content-type, so
     # use (diff markers + write_diff capability + no prose) as the
     # triple).
-    if (
-        _is_clear_unified_diff(stripped)
-        and "write_diff" in manifest.capabilities
-    ):
+    if _is_clear_unified_diff(stripped) and "write_diff" in manifest.capabilities:
         return InvocationResult(
             status="ok",
             diff=stripped,
             evidence_events=(),
-            commands_executed=({
-                "command": command,
-                "exit_code": 0,
-                "elapsed_s": elapsed,
-                "timeout": False,
-            },),
+            commands_executed=(
+                {
+                    "command": command,
+                    "exit_code": 0,
+                    "elapsed_s": elapsed,
+                    "timeout": False,
+                },
+            ),
             error=None,
             finish_reason="normal",
             interrupt_token=None,
@@ -436,8 +428,7 @@ def _parse_cli_stdout(
     raise AdapterOutputParseError(
         raw_excerpt=stripped[:120],
         detail=(
-            "stdout neither a valid JSON output_envelope nor a clear "
-            "unified diff; embedded-diff-in-prose is rejected"
+            "stdout neither a valid JSON output_envelope nor a clear unified diff; embedded-diff-in-prose is rejected"
         ),
     )
 
@@ -498,10 +489,7 @@ def _parse_http_response(
 
     raise AdapterOutputParseError(
         raw_excerpt=stripped[:120],
-        detail=(
-            "HTTP body neither JSON nor text/plain+unified-diff with "
-            "write_diff capability"
-        ),
+        detail=("HTTP body neither JSON nor text/plain+unified-diff with write_diff capability"),
     )
 
 
@@ -557,12 +545,15 @@ def _invocation_from_envelope(
         status=status,
         diff=envelope.get("diff"),
         evidence_events=tuple(envelope.get("evidence_events", ())),
-        commands_executed=tuple(envelope.get("commands_executed", ())) or ({
-            "command": command,
-            "exit_code": 0,
-            "elapsed_s": elapsed,
-            "timeout": False,
-        },),
+        commands_executed=tuple(envelope.get("commands_executed", ()))
+        or (
+            {
+                "command": command,
+                "exit_code": 0,
+                "elapsed_s": elapsed,
+                "timeout": False,
+            },
+        ),
         error=envelope.get("error"),
         finish_reason=envelope.get("finish_reason", "normal"),
         interrupt_token=envelope.get("interrupt_token"),
@@ -572,8 +563,7 @@ def _invocation_from_envelope(
         pr_url=envelope.get("pr_url") if isinstance(envelope.get("pr_url"), str) else None,
         pr_number=(
             envelope.get("pr_number")
-            if isinstance(envelope.get("pr_number"), int)
-            and not isinstance(envelope.get("pr_number"), bool)
+            if isinstance(envelope.get("pr_number"), int) and not isinstance(envelope.get("pr_number"), bool)
             else None
         ),
         base_sha=envelope.get("base_sha") if isinstance(envelope.get("base_sha"), str) else None,
@@ -620,24 +610,16 @@ def _walk_output_parse(
         if value is _SENTINEL_MISSING:
             raise AdapterOutputParseError(
                 raw_excerpt=json.dumps(envelope)[:120],
-                detail=(
-                    f"output_parse rule json_path={json_path!r} did not "
-                    f"resolve in adapter envelope (key absent)."
-                ),
+                detail=(f"output_parse rule json_path={json_path!r} did not resolve in adapter envelope (key absent)."),
             )
         if schema_ref:
             schema = _resolve_schema_ref(schema_ref, manifest.source_path)
             errors = list(Draft202012Validator(schema).iter_errors(value))
             if errors:
-                summary = "; ".join(
-                    f"{list(e.absolute_path)}: {e.message}" for e in errors[:3]
-                )
+                summary = "; ".join(f"{list(e.absolute_path)}: {e.message}" for e in errors[:3])
                 raise AdapterOutputParseError(
                     raw_excerpt=json.dumps(value)[:120],
-                    detail=(
-                        f"output_parse rule schema_ref={schema_ref!r} "
-                        f"validation failed: {summary}"
-                    ),
+                    detail=(f"output_parse rule schema_ref={schema_ref!r} validation failed: {summary}"),
                 )
         if capability and isinstance(value, Mapping):
             out[capability] = value
@@ -678,9 +660,7 @@ def _resolve_schema_ref(
     for _ in range(5):
         candidate = probe / ".ao" / "schemas" / schema_ref
         if candidate.is_file():
-            loaded_override: Mapping[str, Any] = json.loads(
-                candidate.read_text(encoding="utf-8")
-            )
+            loaded_override: Mapping[str, Any] = json.loads(candidate.read_text(encoding="utf-8"))
             return loaded_override
         if probe.parent == probe:
             break
@@ -708,10 +688,7 @@ def _jsonpath_dotted(root: Mapping[str, Any], path: str) -> Any:
     if not path.startswith("$."):
         raise AdapterOutputParseError(
             raw_excerpt=path,
-            detail=(
-                f"JSONPath {path!r} must begin with '$.'. Only dotted "
-                f"key subset is supported."
-            ),
+            detail=(f"JSONPath {path!r} must begin with '$.'. Only dotted key subset is supported."),
         )
     if "[" in path or "*" in path or ".." in path or "?" in path:
         raise AdapterOutputParseError(
@@ -770,17 +747,11 @@ def _resolve_cli_invocation(
     command_template = str(invocation["command"])
     args_template = tuple(str(arg) for arg in invocation.get("args", ()))
     reserved_command_tokens = tuple(
-        dict.fromkeys(
-            token
-            for token in _placeholder_tokens(command_template)
-            if token in _RESERVED_RUNTIME_TOKENS
-        )
+        dict.fromkeys(token for token in _placeholder_tokens(command_template) if token in _RESERVED_RUNTIME_TOKENS)
     )
     return ResolvedCliInvocation(
         command=_substitute_args(command_template, substitution_context),
-        args=tuple(
-            _substitute_args(arg, substitution_context) for arg in args_template
-        ),
+        args=tuple(_substitute_args(arg, substitution_context) for arg in args_template),
         stdin_payload=_build_stdin(
             invocation.get("stdin_mode", "none"),
             input_envelope,

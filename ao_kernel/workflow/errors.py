@@ -49,8 +49,7 @@ class WorkflowTransitionError(WorkflowError):
         self.attempted_state = attempted_state
         self.allowed_next = allowed_next
         super().__init__(
-            f"Illegal transition {current_state!r} -> {attempted_state!r}; "
-            f"allowed: {sorted(allowed_next)}"
+            f"Illegal transition {current_state!r} -> {attempted_state!r}; allowed: {sorted(allowed_next)}"
         )
 
 
@@ -98,8 +97,7 @@ class WorkflowCASConflictError(WorkflowError):
         self.expected_revision = expected_revision
         self.actual_revision = actual_revision
         super().__init__(
-            f"CAS conflict for {run_id!r}: expected={expected_revision[:12]}..., "
-            f"actual={actual_revision[:12]}..."
+            f"CAS conflict for {run_id!r}: expected={expected_revision[:12]}..., actual={actual_revision[:12]}..."
         )
 
 
@@ -126,10 +124,7 @@ class WorkflowBudgetExhaustedError(WorkflowError):
         self.limit = limit
         self.attempted_spend = attempted_spend
         rid = run_id if run_id else "<no-run>"
-        super().__init__(
-            f"Budget exhausted for {rid!r} axis={axis}: "
-            f"limit={limit}, attempted_spend={attempted_spend}"
-        )
+        super().__init__(f"Budget exhausted for {rid!r} axis={axis}: limit={limit}, attempted_spend={attempted_spend}")
 
 
 class WorkflowSchemaValidationError(WorkflowError):
@@ -154,10 +149,7 @@ class WorkflowSchemaValidationError(WorkflowError):
         self.run_id = run_id
         self.errors = errors
         rid = run_id if run_id else "<no-run>"
-        summary_parts = [
-            f"{e.get('json_path', '?')}: {e.get('message', '?')}"
-            for e in errors[:3]
-        ]
+        summary_parts = [f"{e.get('json_path', '?')}: {e.get('message', '?')}" for e in errors[:3]]
         summary = "; ".join(summary_parts)
         if len(errors) > 3:
             summary = f"{summary} (+{len(errors) - 3} more)"
@@ -181,11 +173,13 @@ class WorkflowTokenInvalidError(WorkflowError):
     """
 
     _KINDS = frozenset({"interrupt", "approval"})
-    _REASONS = frozenset({
-        "token_mismatch",
-        "resumed_with_different_payload",
-        "cross_domain_use",
-    })
+    _REASONS = frozenset(
+        {
+            "token_mismatch",
+            "resumed_with_different_payload",
+            "cross_domain_use",
+        }
+    )
 
     def __init__(
         self,
@@ -201,10 +195,7 @@ class WorkflowTokenInvalidError(WorkflowError):
         self.reason = reason
         rid = run_id if run_id else "<no-run>"
         redacted = token_value[:8] if token_value else ""
-        super().__init__(
-            f"Invalid {token_kind} token for {rid!r}: reason={reason} "
-            f"token={redacted}..."
-        )
+        super().__init__(f"Invalid {token_kind} token for {rid!r}: reason={reason} token={redacted}...")
 
 
 class WorkflowRunIdInvalidError(WorkflowError):
@@ -217,9 +208,7 @@ class WorkflowRunIdInvalidError(WorkflowError):
 
     def __init__(self, *, run_id: str) -> None:
         self.run_id = run_id
-        super().__init__(
-            f"run_id {run_id!r} is not a valid UUID; refusing to build path"
-        )
+        super().__init__(f"run_id {run_id!r} is not a valid UUID; refusing to build path")
 
 
 # ---------------------------------------------------------------------------
@@ -240,9 +229,7 @@ class WorkflowDefinitionNotFoundError(WorkflowError):
         self.workflow_id = workflow_id
         self.version = version
         pinned = f" (version={version!r})" if version is not None else ""
-        super().__init__(
-            f"Workflow {workflow_id!r} not found in registry{pinned}"
-        )
+        super().__init__(f"Workflow {workflow_id!r} not found in registry{pinned}")
 
 
 class WorkflowDefinitionCorruptedError(WorkflowError):
@@ -251,21 +238,20 @@ class WorkflowDefinitionCorruptedError(WorkflowError):
     ``reason`` enumerates the load-time failure mode.
     """
 
-    _REASONS = frozenset({
-        "json_decode",
-        "schema_invalid",
-        "duplicate_workflow_key",
-        "read_error",
-    })
+    _REASONS = frozenset(
+        {
+            "json_decode",
+            "schema_invalid",
+            "duplicate_workflow_key",
+            "read_error",
+        }
+    )
 
     def __init__(self, *, source_path: str, reason: str, details: str = "") -> None:
         self.source_path = source_path
         self.reason = reason
         self.details = details
-        super().__init__(
-            f"Workflow definition at {source_path!r} corrupted "
-            f"({reason}): {details}"
-        )
+        super().__init__(f"Workflow definition at {source_path!r} corrupted ({reason}): {details}")
 
 
 class WorkflowDefinitionCrossRefError(WorkflowError):
@@ -281,10 +267,7 @@ class WorkflowDefinitionCrossRefError(WorkflowError):
     def __init__(self, *, workflow_id: str, issues: tuple[object, ...]) -> None:
         self.workflow_id = workflow_id
         self.issues = issues
-        super().__init__(
-            f"Cross-reference validation failed for workflow {workflow_id!r}: "
-            f"{len(issues)} issue(s)"
-        )
+        super().__init__(f"Cross-reference validation failed for workflow {workflow_id!r}: {len(issues)} issue(s)")
 
 
 class IntentRulesCorruptedError(WorkflowError):
@@ -297,13 +280,15 @@ class IntentRulesCorruptedError(WorkflowError):
     own reasons so audit logs can distinguish.
     """
 
-    _REASONS = frozenset({
-        "schema_invalid",
-        "duplicate_rule_id",
-        "regex_compile",
-        "duplicate_priority_match",
-        "read_error",
-    })
+    _REASONS = frozenset(
+        {
+            "schema_invalid",
+            "duplicate_rule_id",
+            "regex_compile",
+            "duplicate_priority_match",
+            "read_error",
+        }
+    )
 
     def __init__(
         self,
@@ -316,9 +301,7 @@ class IntentRulesCorruptedError(WorkflowError):
         self.reason = reason
         self.details = details
         where = f" at {source_path!r}" if source_path else ""
-        super().__init__(
-            f"Intent rules{where} corrupted ({reason}): {details}"
-        )
+        super().__init__(f"Intent rules{where} corrupted ({reason}): {details}")
 
 
 class IntentClassificationError(WorkflowError):
@@ -341,6 +324,4 @@ class IntentClassificationError(WorkflowError):
         self.intent_text = intent_text
         self.reason = reason
         self.details = details
-        super().__init__(
-            f"Intent classification failed ({reason}): {details}"
-        )
+        super().__init__(f"Intent classification failed ({reason}): {details}")

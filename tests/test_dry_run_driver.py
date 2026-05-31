@@ -59,7 +59,8 @@ def _prepare_workspace(root: Path) -> tuple[MultiStepDriver, str]:
 
 class TestAdapterDryRunHappyPath:
     def test_driver_dry_run_returns_DryRunResult(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = _prepare_workspace(tmp_path)
         result = driver.dry_run_step(run_id, "invoke_agent")
@@ -98,9 +99,11 @@ class TestRunStateGuard:
         record = json.loads(state_path.read_text(encoding="utf-8"))
         record["state"] = "failed"
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_path.write_text(
-            json.dumps(record, indent=2, sort_keys=True), encoding="utf-8",
+            json.dumps(record, indent=2, sort_keys=True),
+            encoding="utf-8",
         )
 
         with pytest.raises(ValueError, match="dry-run requires run in"):
@@ -112,9 +115,11 @@ class TestRunStateGuard:
         record = json.loads(state_path.read_text(encoding="utf-8"))
         record["state"] = "waiting_approval"
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_path.write_text(
-            json.dumps(record, indent=2, sort_keys=True), encoding="utf-8",
+            json.dumps(record, indent=2, sort_keys=True),
+            encoding="utf-8",
         )
 
         with pytest.raises(ValueError, match="dry-run requires run in"):
@@ -126,7 +131,8 @@ class TestRunStateGuard:
 
 class TestCompletedStepGuard:
     def test_highest_completed_step_blocks_even_with_explicit_attempt(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Even with ``attempt=2``, a step_name whose highest-attempt
         is ``completed`` blocks — the real driver would never spawn
@@ -134,19 +140,23 @@ class TestCompletedStepGuard:
         driver, run_id = _prepare_workspace(tmp_path)
         state_path = tmp_path / ".ao" / "runs" / run_id / "state.v1.json"
         record = json.loads(state_path.read_text(encoding="utf-8"))
-        record["steps"] = [{
-            "step_name": "invoke_agent",
-            "step_id": "invoke_agent",
-            "attempt": 1,
-            "state": "completed",
-            "actor": "adapter",
-            "started_at": "2026-04-18T10:00:00+00:00",
-            "completed_at": "2026-04-18T10:00:01+00:00",
-        }]
+        record["steps"] = [
+            {
+                "step_name": "invoke_agent",
+                "step_id": "invoke_agent",
+                "attempt": 1,
+                "state": "completed",
+                "actor": "adapter",
+                "started_at": "2026-04-18T10:00:00+00:00",
+                "completed_at": "2026-04-18T10:00:01+00:00",
+            }
+        ]
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_path.write_text(
-            json.dumps(record, indent=2, sort_keys=True), encoding="utf-8",
+            json.dumps(record, indent=2, sort_keys=True),
+            encoding="utf-8",
         )
 
         with pytest.raises(ValueError, match="already completed"):
@@ -163,7 +173,8 @@ class TestAttemptValidation:
             driver.dry_run_step(run_id, "invoke_agent", attempt=0)
 
     def test_explicit_attempt_must_match_derived(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """On a fresh run, derived attempt is 1; passing attempt=2
         without any prior step records is a fictional path → ValueError."""
@@ -177,7 +188,8 @@ class TestAttemptValidation:
 
 class TestRunningPlaceholderReuse:
     def test_running_placeholder_reuses_step_id(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Mid-crash resume: record has attempt=2 state=running → dry-run
         must reuse that placeholder's step_id, not mint a new one."""
@@ -211,9 +223,11 @@ class TestRunningPlaceholderReuse:
             },
         ]
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_path.write_text(
-            json.dumps(record, indent=2, sort_keys=True), encoding="utf-8",
+            json.dumps(record, indent=2, sort_keys=True),
+            encoding="utf-8",
         )
 
         captured: dict[str, Any] = {}
@@ -235,7 +249,8 @@ class TestRunningPlaceholderReuse:
 
 class TestNonAdapterScope:
     def test_system_actor_uses_sandbox_parent_env(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """v3.4.0 #4: `system` actors (ci-runner / patch-apply) now
         route through the driver with sandbox-style parent_env
@@ -278,7 +293,8 @@ class TestAoKernelActorScope:
         return driver, run_id
 
     def test_aokernel_actor_no_envelope_no_parent_env(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = self._prepare_aokernel_workspace(tmp_path)
         captured: dict[str, Any] = {}
@@ -303,7 +319,9 @@ class TestAoKernelActorScope:
 
 class TestParentEnvDerivation:
     def test_parent_env_includes_allowlisted_env_vars(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """parent_env = UNION(allowlist_secret_ids, env_allowlist.allowed_keys)
         filtered to keys present in os.environ."""

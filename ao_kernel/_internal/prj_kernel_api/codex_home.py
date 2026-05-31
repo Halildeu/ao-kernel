@@ -4,6 +4,7 @@ from __future__ import annotations
 from ao_kernel._internal.shared.utils import write_text_atomic
 
 import json
+
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -73,7 +74,7 @@ def _runtime_overlay(*, repo_root: Path, workspace_root: Path) -> tuple[Dict[str
 
 
 def _toml_escape(text: str) -> str:
-    return str(text).replace("\\", "\\\\").replace("\"", "\\\"")
+    return str(text).replace("\\", "\\\\").replace('"', '\\"')
 
 
 def _toml_value(value: Any) -> str:
@@ -84,7 +85,7 @@ def _toml_value(value: Any) -> str:
     if isinstance(value, float):
         return repr(value)
     if isinstance(value, str):
-        return f"\"{_toml_escape(value)}\""
+        return f'"{_toml_escape(value)}"'
     if isinstance(value, list):
         return "[" + ", ".join(_toml_value(item) for item in value) + "]"
     raise TypeError(f"Unsupported TOML value: {type(value).__name__}")
@@ -157,5 +158,7 @@ def ensure_codex_home(workspace_root: str) -> Dict[str, str]:
     env_overrides = {"CODEX_HOME": str(target)}
     overlay_sources = resolved.get("overlay_sources")
     if isinstance(overlay_sources, list) and overlay_sources:
-        env_overrides["CODEX_RUNTIME_POLICY_SOURCE"] = ",".join(str(item) for item in overlay_sources if isinstance(item, str))
+        env_overrides["CODEX_RUNTIME_POLICY_SOURCE"] = ",".join(
+            str(item) for item in overlay_sources if isinstance(item, str)
+        )
     return env_overrides

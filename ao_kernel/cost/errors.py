@@ -45,8 +45,7 @@ class CostTrackingConfigError(CostTrackingError):
         self.run_id = run_id
         self.details = details
         super().__init__(
-            f"run {run_id!r} cost policy is enabled but run.budget.cost_usd "
-            f"axis is not configured. {details}".strip()
+            f"run {run_id!r} cost policy is enabled but run.budget.cost_usd axis is not configured. {details}".strip()
         )
 
 
@@ -71,8 +70,7 @@ class PriceCatalogNotFoundError(CostTrackingError):
         self.model = model
         self.catalog_version = catalog_version
         super().__init__(
-            f"price catalog version {catalog_version!r} has no entry for "
-            f"provider={provider_id!r} model={model!r}"
+            f"price catalog version {catalog_version!r} has no entry for provider={provider_id!r} model={model!r}"
         )
 
 
@@ -174,9 +172,7 @@ class SpendLedgerCorruptedError(CostTrackingError):
         self.ledger_path = ledger_path
         self.line_number = line_number
         self.reason = reason
-        super().__init__(
-            f"spend ledger {ledger_path!r} line {line_number} corrupted: {reason}"
-        )
+        super().__init__(f"spend ledger {ledger_path!r} line {line_number} corrupted: {reason}")
 
 
 class LLMUsageMissingError(CostTrackingError):
@@ -234,9 +230,7 @@ class BudgetExhaustedError(CostTrackingError):
         self.estimate_usd = estimate_usd
         self.remaining_usd = remaining_usd
         super().__init__(
-            f"budget exhausted for run {run_id!r}: "
-            f"estimate={estimate_usd} USD exceeds "
-            f"remaining={remaining_usd} USD"
+            f"budget exhausted for run {run_id!r}: estimate={estimate_usd} USD exceeds remaining={remaining_usd} USD"
         )
 
 

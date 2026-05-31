@@ -158,9 +158,7 @@ class TestWorkspaceOverride:
 
 class TestInlineOverride:
     def test_inline_override_bypasses_filesystem(self, tmp_path: Path) -> None:
-        doc = _catalog_doc(
-            entries=[_entry_doc(provider_id="acme", model="acme-tiny")]
-        )
+        doc = _catalog_doc(entries=[_entry_doc(provider_id="acme", model="acme-tiny")])
         catalog = load_price_catalog(tmp_path, override=doc)
         entry = find_entry(catalog, "acme", "acme-tiny")
         assert entry is not None
@@ -197,9 +195,7 @@ class TestChecksumVerify:
 
 class TestStaleGate:
     def test_strict_stale_raises(self, tmp_path: Path) -> None:
-        past_ts = (
-            _dt.datetime.now(tz=_dt.timezone.utc) - _dt.timedelta(days=1)
-        ).isoformat()
+        past_ts = (_dt.datetime.now(tz=_dt.timezone.utc) - _dt.timedelta(days=1)).isoformat()
         doc = _catalog_doc(stale_after=past_ts)
         with pytest.raises(PriceCatalogStaleError):
             load_price_catalog(
@@ -209,9 +205,7 @@ class TestStaleGate:
             )
 
     def test_lenient_stale_warns(self, tmp_path: Path, caplog) -> None:
-        past_ts = (
-            _dt.datetime.now(tz=_dt.timezone.utc) - _dt.timedelta(days=1)
-        ).isoformat()
+        past_ts = (_dt.datetime.now(tz=_dt.timezone.utc) - _dt.timedelta(days=1)).isoformat()
         doc = _catalog_doc(stale_after=past_ts)
         with caplog.at_level("WARNING"):
             catalog = load_price_catalog(
@@ -220,14 +214,10 @@ class TestStaleGate:
                 policy=_policy(strict_freshness=False),
             )
         assert catalog.catalog_version == "1"  # served despite stale
-        assert any(
-            "stale" in rec.getMessage() for rec in caplog.records
-        )
+        assert any("stale" in rec.getMessage() for rec in caplog.records)
 
     def test_fresh_catalog_passes(self, tmp_path: Path) -> None:
-        future_ts = (
-            _dt.datetime.now(tz=_dt.timezone.utc) + _dt.timedelta(days=30)
-        ).isoformat()
+        future_ts = (_dt.datetime.now(tz=_dt.timezone.utc) + _dt.timedelta(days=30)).isoformat()
         doc = _catalog_doc(stale_after=future_ts)
         catalog = load_price_catalog(
             tmp_path,

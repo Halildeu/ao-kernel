@@ -32,9 +32,7 @@ class PatchPreviewError(PatchError):
         git_stderr_tail: str = "",
         reason: Literal["git_check_failed", "timeout", "subprocess_error"] = "git_check_failed",
     ) -> None:
-        super().__init__(
-            f"patch preview failed ({reason}): {len(files_rejected)} file(s) rejected"
-        )
+        super().__init__(f"patch preview failed ({reason}): {len(files_rejected)} file(s) rejected")
         self.patch_id = patch_id
         self.files_rejected = files_rejected
         self.git_stderr_tail = git_stderr_tail
@@ -56,9 +54,7 @@ class PatchApplyError(PatchError):
         exit_code: int,
         git_stderr_tail: str = "",
     ) -> None:
-        super().__init__(
-            f"patch apply failed (exit={exit_code}): stderr tail omitted"
-        )
+        super().__init__(f"patch apply failed (exit={exit_code}): stderr tail omitted")
         self.patch_id = patch_id
         self.exit_code = exit_code
         self.git_stderr_tail = git_stderr_tail
@@ -82,9 +78,7 @@ class PatchApplyConflictError(PatchError):
         rejected_hunks: tuple[str, ...] = (),
         dirty_paths: tuple[str, ...] = (),
     ) -> None:
-        super().__init__(
-            f"patch apply conflict: {len(conflict_paths)} file(s) with .rej hunks"
-        )
+        super().__init__(f"patch apply conflict: {len(conflict_paths)} file(s) with .rej hunks")
         self.patch_id = patch_id
         self.conflict_paths = conflict_paths
         self.rejected_hunks = rejected_hunks
@@ -132,9 +126,7 @@ class PatchBinaryUnsupportedError(PatchError):
         patch_id: str,
         binary_paths: tuple[str, ...],
     ) -> None:
-        super().__init__(
-            f"binary diff unsupported: {len(binary_paths)} binary path(s)"
-        )
+        super().__init__(f"binary diff unsupported: {len(binary_paths)} binary path(s)")
         self.patch_id = patch_id
         self.binary_paths = binary_paths
 

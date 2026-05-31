@@ -101,9 +101,7 @@ def verify_consultation_manifest(
             continue
         actual = sha256_file(file)
         if actual != expected:
-            errors.append(
-                f"digest mismatch for {rel}: stored={expected} actual={actual}"
-            )
+            errors.append(f"digest mismatch for {rel}: stored={expected} actual={actual}")
 
     current: set[str] = set()
     for file in _iter_consultation_files(cns_dir):

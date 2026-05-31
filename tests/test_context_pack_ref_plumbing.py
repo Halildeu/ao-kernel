@@ -64,7 +64,8 @@ class TestEnvelopeResolverBackwardsCompat:
         assert result is None
 
     def test_partial_record_missing_version_returns_none(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Record has workflow_id but not workflow_version (malformed
         intermediate state) → resolver returns None defensively."""
@@ -87,7 +88,8 @@ class TestEnvelopeResolverSuccessPath:
     """
 
     def test_resolver_forwards_context_path_from_artifact(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Unit-level resolver success path: mock the workflow registry
         so this test doesn't depend on fixture loading plumbing.
@@ -108,9 +110,7 @@ class TestEnvelopeResolverSuccessPath:
         # 2. Write canned context artifact + markdown as if prior
         #    context_compile step had just completed.
         run_id = "00000000-0000-4000-8000-000000ddddd1"
-        run_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-        )
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
         artifacts_dir = run_dir / "artifacts"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         context_md_path = run_dir / "context-compile_ctx-attempt1.md"
@@ -118,16 +118,16 @@ class TestEnvelopeResolverSuccessPath:
             "# Run Context\n\nTest preamble body.\n",
             encoding="utf-8",
         )
-        artifact_json_path = (
-            artifacts_dir / "compile_ctx-attempt1.json"
-        )
+        artifact_json_path = artifacts_dir / "compile_ctx-attempt1.json"
         artifact_json_path.write_text(
-            json.dumps({
-                "operation": "context_compile",
-                "stub": False,
-                "context_preamble_bytes": 27,
-                "context_path": str(context_md_path),
-            }),
+            json.dumps(
+                {
+                    "operation": "context_compile",
+                    "stub": False,
+                    "context_preamble_bytes": 27,
+                    "context_path": str(context_md_path),
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -152,7 +152,9 @@ class TestEnvelopeResolverSuccessPath:
 
         # 4. Resolver reads artifact JSON and builds envelope override.
         result = driver._build_adapter_envelope_with_context(
-            run_id=run_id, step_def=step_def, record=record,
+            run_id=run_id,
+            step_def=step_def,
+            record=record,
         )
         assert result == {
             "task_prompt": "do the adapter thing",

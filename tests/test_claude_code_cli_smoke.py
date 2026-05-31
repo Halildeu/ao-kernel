@@ -111,8 +111,7 @@ def _prompt_access_denied_runner(
             cmd,
             returncode=1,
             stderr=(
-                "Your organization does not have access to Claude. "
-                "Please login again or contact your administrator."
+                "Your organization does not have access to Claude. Please login again or contact your administrator."
             ),
         )
     raise AssertionError(f"unexpected argv: {cmd!r}")
@@ -250,9 +249,7 @@ def test_api_key_env_presence_is_observed_not_primary_success_signal() -> None:
     assert payload["overall_status"] == "blocked"
     assert "prompt_access_denied" in payload["findings"]
 
-    auth_check = next(
-        check for check in payload["checks"] if check["name"] == "auth_status"
-    )
+    auth_check = next(check for check in payload["checks"] if check["name"] == "auth_status")
     assert auth_check["observed"]["fallback_api_key_env_present"] is True
 
 
@@ -267,9 +264,7 @@ def test_auth_status_not_logged_in_blocks_preflight_contract() -> None:
 
     assert payload["overall_status"] == "blocked"
     assert "claude_not_logged_in" in payload["findings"]
-    auth_check = next(
-        check for check in payload["checks"] if check["name"] == "auth_status"
-    )
+    auth_check = next(check for check in payload["checks"] if check["name"] == "auth_status")
     assert auth_check["status"] == "fail"
     assert auth_check["finding_code"] == "claude_not_logged_in"
     assert auth_check["observed"]["loggedIn"] is False
@@ -314,9 +309,7 @@ def test_auth_status_non_json_blocks_preflight_contract() -> None:
 
     assert payload["overall_status"] == "blocked"
     assert "claude_auth_status_not_json" in payload["findings"]
-    auth_check = next(
-        check for check in payload["checks"] if check["name"] == "auth_status"
-    )
+    auth_check = next(check for check in payload["checks"] if check["name"] == "auth_status")
     assert auth_check["status"] == "fail"
     assert auth_check["finding_code"] == "claude_auth_status_not_json"
 
@@ -371,9 +364,7 @@ def test_prompt_access_denied_is_classified_explicitly() -> None:
     assert "prompt_access_denied" in report.findings
     prompt_check = next(check for check in report.checks if check.name == "prompt_access")
     assert prompt_check.finding_code == "prompt_access_denied"
-    assert prompt_check.detail == (
-        "canli prompt smoke org-duzeyi OAuth/prompt access blokajina dustu"
-    )
+    assert prompt_check.detail == ("canli prompt smoke org-duzeyi OAuth/prompt access blokajina dustu")
     assert prompt_check.observed["failure_kind"] == "org_oauth_not_allowed"
 
 
@@ -419,9 +410,7 @@ def test_invalid_bearer_token_is_classified_explicitly() -> None:
     assert "prompt_access_denied" in report.findings
     prompt_check = next(check for check in report.checks if check.name == "prompt_access")
     assert prompt_check.finding_code == "prompt_access_denied"
-    assert prompt_check.detail == (
-        "canli prompt smoke bearer token gecersizligi nedeniyle bloklandi"
-    )
+    assert prompt_check.detail == ("canli prompt smoke bearer token gecersizligi nedeniyle bloklandi")
     assert prompt_check.observed["failure_kind"] == "invalid_bearer_token"
 
 
@@ -499,7 +488,12 @@ def test_manifest_contract_mismatch_is_reported() -> None:
             )
         if cmd == ("/fake/claude", "-p", "reply with the single token ok"):
             return _result(cmd, stdout="ok\n")
-        if cmd[:4] == ("/fake/claude", "-p", "Your entire response MUST be a single JSON object with exactly this shape: {\"status\":\"ok\",\"review_findings\":{\"schema_version\":\"1\",\"findings\":[],\"summary\":\"smoke ok\"}}", "--append-system-prompt-file"):
+        if cmd[:4] == (
+            "/fake/claude",
+            "-p",
+            'Your entire response MUST be a single JSON object with exactly this shape: {"status":"ok","review_findings":{"schema_version":"1","findings":[],"summary":"smoke ok"}}',
+            "--append-system-prompt-file",
+        ):
             return _result(
                 cmd,
                 returncode=1,
@@ -515,9 +509,7 @@ def test_manifest_contract_mismatch_is_reported() -> None:
 
     assert report.overall_status == "blocked"
     assert "manifest_cli_contract_mismatch" in report.findings
-    manifest_check = next(
-        check for check in report.checks if check.name == "manifest_invocation"
-    )
+    manifest_check = next(check for check in report.checks if check.name == "manifest_invocation")
     assert manifest_check.finding_code == "manifest_cli_contract_mismatch"
 
 
@@ -555,9 +547,7 @@ def test_manifest_timeout_is_reported_without_success_promotion() -> None:
 
     assert report.overall_status == "blocked"
     assert "manifest_smoke_timeout" in report.findings
-    manifest_check = next(
-        check for check in report.checks if check.name == "manifest_invocation"
-    )
+    manifest_check = next(check for check in report.checks if check.name == "manifest_invocation")
     assert manifest_check.finding_code == "manifest_smoke_timeout"
     assert manifest_check.observed["timed_out"] == "true"
 
@@ -596,9 +586,7 @@ def test_manifest_non_json_output_is_contract_failure() -> None:
 
     assert report.overall_status == "blocked"
     assert "manifest_output_not_json" in report.findings
-    manifest_check = next(
-        check for check in report.checks if check.name == "manifest_invocation"
-    )
+    manifest_check = next(check for check in report.checks if check.name == "manifest_invocation")
     assert manifest_check.finding_code == "manifest_output_not_json"
 
 
@@ -636,9 +624,7 @@ def test_manifest_json_missing_status_is_contract_failure() -> None:
 
     assert report.overall_status == "blocked"
     assert "manifest_output_missing_status" in report.findings
-    manifest_check = next(
-        check for check in report.checks if check.name == "manifest_invocation"
-    )
+    manifest_check = next(check for check in report.checks if check.name == "manifest_invocation")
     assert manifest_check.finding_code == "manifest_output_missing_status"
     assert manifest_check.observed["stdout_keys"] == ["review_findings"]
 

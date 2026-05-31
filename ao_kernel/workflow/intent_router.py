@@ -83,11 +83,7 @@ class ClassificationResult:
 
 @functools.lru_cache(maxsize=1)
 def _load_schema() -> Mapping[str, Any]:
-    text = (
-        resources.files(_SCHEMA_PACKAGE)
-        .joinpath(_SCHEMA_FILENAME)
-        .read_text(encoding="utf-8")
-    )
+    text = resources.files(_SCHEMA_PACKAGE).joinpath(_SCHEMA_FILENAME).read_text(encoding="utf-8")
     schema: Mapping[str, Any] = json.loads(text)
     return schema
 
@@ -111,11 +107,7 @@ def load_default_rules() -> tuple[tuple[IntentRule, ...], str | None, str]:
     Cached per-process. Raises ``IntentRulesCorruptedError`` on any
     load-time invariant miss.
     """
-    text = (
-        resources.files(_BUNDLED_RULES_PACKAGE)
-        .joinpath(_BUNDLED_RULES_FILENAME)
-        .read_text(encoding="utf-8")
-    )
+    text = resources.files(_BUNDLED_RULES_PACKAGE).joinpath(_BUNDLED_RULES_FILENAME).read_text(encoding="utf-8")
     try:
         raw = json.loads(text)
     except json.JSONDecodeError as exc:
@@ -151,9 +143,7 @@ def _compile_rules_payload(
 ) -> tuple[tuple[IntentRule, ...], str | None, str]:
     errors = list(_validator().iter_errors(raw))
     if errors:
-        summary = "; ".join(
-            f"{e.json_path}: {e.message}" for e in errors[:3]
-        )
+        summary = "; ".join(f"{e.json_path}: {e.message}" for e in errors[:3])
         if len(errors) > 3:
             summary += f" (+{len(errors) - 3} more)"
         raise IntentRulesCorruptedError(
@@ -181,21 +171,21 @@ def _compile_rules_payload(
                 raise IntentRulesCorruptedError(
                     source_path=source_path,
                     reason="regex_compile",
-                    details=(
-                        f"rule_id={rule_id!r} pattern={pattern!r}: {exc}"
-                    ),
+                    details=(f"rule_id={rule_id!r} pattern={pattern!r}: {exc}"),
                 ) from exc
-        compiled.append(IntentRule(
-            rule_id=rule_id,
-            workflow_id=raw_rule["workflow_id"],
-            workflow_version=raw_rule.get("workflow_version"),
-            priority=int(raw_rule["priority"]),
-            match_type=raw_rule["match_type"],
-            keywords=tuple(raw_rule.get("keywords", ())),
-            regex_any=tuple(patterns),
-            confidence=float(raw_rule["confidence"]),
-            description=str(raw_rule.get("description", "")),
-        ))
+        compiled.append(
+            IntentRule(
+                rule_id=rule_id,
+                workflow_id=raw_rule["workflow_id"],
+                workflow_version=raw_rule.get("workflow_version"),
+                priority=int(raw_rule["priority"]),
+                match_type=raw_rule["match_type"],
+                keywords=tuple(raw_rule.get("keywords", ())),
+                regex_any=tuple(patterns),
+                confidence=float(raw_rule["confidence"]),
+                description=str(raw_rule.get("description", "")),
+            )
+        )
     # Priority DESC stable sort (rule_id lexical tie-break; guaranteed
     # distinct by the duplicate check above).
     compiled.sort(key=lambda r: (-r.priority, r.rule_id))
@@ -236,15 +226,10 @@ class IntentRouter:
         else:
             # Caller-supplied rules; validate consistency.
             if fallback_strategy == "use_default" and not default_workflow_id:
-                raise ValueError(
-                    "fallback_strategy=use_default requires a non-empty "
-                    "default_workflow_id"
-                )
+                raise ValueError("fallback_strategy=use_default requires a non-empty default_workflow_id")
             # Ensure rules are priority-sorted (caller may have passed
             # pre-sorted or not; we guarantee sort order here).
-            self._rules = tuple(
-                sorted(rules, key=lambda r: (-r.priority, r.rule_id))
-            )
+            self._rules = tuple(sorted(rules, key=lambda r: (-r.priority, r.rule_id)))
             self._default_workflow_id = default_workflow_id
             self._fallback_strategy = fallback_strategy
 
@@ -269,9 +254,7 @@ class IntentRouter:
         so the operator sees the ambiguity rather than a silent
         nondeterministic pick.
         """
-        matching: list[IntentRule] = [
-            r for r in self._rules if _rule_matches(r, input_text)
-        ]
+        matching: list[IntentRule] = [r for r in self._rules if _rule_matches(r, input_text)]
         if not matching:
             return self._fallback_result(input_text)
 
@@ -282,8 +265,7 @@ class IntentRouter:
                 source_path=None,
                 reason="duplicate_priority_match",
                 details=(
-                    f"rules {[r.rule_id for r in tied]!r} share priority "
-                    f"{top_priority} and all match the same input"
+                    f"rules {[r.rule_id for r in tied]!r} share priority {top_priority} and all match the same input"
                 ),
             )
         winner = tied[0]
@@ -312,9 +294,7 @@ class IntentRouter:
         if self._fallback_strategy == "llm_fallback":
             return self._llm_classify(input_text)
         # Unreachable per schema enum; loud fail for safety.
-        raise RuntimeError(
-            f"Unknown fallback_strategy: {self._fallback_strategy!r}"
-        )
+        raise RuntimeError(f"Unknown fallback_strategy: {self._fallback_strategy!r}")
 
     def _llm_classify(self, input_text: str) -> ClassificationResult:
         """LLM-based intent classification fallback (PR-A6 B4; PR-B2 v7 iter-6 absorb).
@@ -417,9 +397,7 @@ class IntentRouter:
     @property
     def _available_workflow_ids(self) -> frozenset[str]:
         """Collect workflow_ids from all registered rules."""
-        return frozenset(
-            r.workflow_id for r in self._rules if r.workflow_id
-        )
+        return frozenset(r.workflow_id for r in self._rules if r.workflow_id)
 
 
 # ---------------------------------------------------------------------------

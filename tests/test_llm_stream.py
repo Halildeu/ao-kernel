@@ -21,7 +21,7 @@ def _make_response(lines: list[str]) -> io.BytesIO:
 
 class TestSSEParser:
     def test_simple_data_line(self):
-        resp = _make_response(["data: {\"text\":\"hello\"}", ""])
+        resp = _make_response(['data: {"text":"hello"}', ""])
         events = list(_parse_sse_lines(resp))
         assert len(events) == 1
         assert events[0]["data"] == '{"text":"hello"}'
@@ -33,18 +33,20 @@ class TestSSEParser:
         assert events[0]["data"] == "line1\nline2"
 
     def test_done_termination(self):
-        resp = _make_response([
-            "data: {\"text\":\"hi\"}",
-            "",
-            "data: [DONE]",
-            "",
-        ])
+        resp = _make_response(
+            [
+                'data: {"text":"hi"}',
+                "",
+                "data: [DONE]",
+                "",
+            ]
+        )
         events = list(_parse_sse_lines(resp))
         assert len(events) == 2
         assert events[1]["data"] == "[DONE]"
 
     def test_comment_ignored(self):
-        resp = _make_response([": this is a comment", "data: {\"ok\":true}", ""])
+        resp = _make_response([": this is a comment", 'data: {"ok":true}', ""])
         events = list(_parse_sse_lines(resp))
         assert len(events) == 1
         assert "comment" not in events[0]["data"]
@@ -55,16 +57,20 @@ class TestSSEParser:
         assert events[0]["event"] == "message"
 
     def test_empty_lines_boundary(self):
-        resp = _make_response([
-            "data: {\"n\":1}", "",
-            "data: {\"n\":2}", "",
-        ])
+        resp = _make_response(
+            [
+                'data: {"n":1}',
+                "",
+                'data: {"n":2}',
+                "",
+            ]
+        )
         events = list(_parse_sse_lines(resp))
         assert len(events) == 2
 
     def test_no_trailing_empty_line(self):
         """Server doesn't send trailing empty line — still yields."""
-        resp = _make_response(["data: {\"final\":true}"])
+        resp = _make_response(['data: {"final":true}'])
         events = list(_parse_sse_lines(resp))
         assert len(events) == 1
 
@@ -139,9 +145,11 @@ class TestOpenAIDelta:
 class TestGoogleDelta:
     def test_candidates_text(self):
         event = {
-            "candidates": [{
-                "content": {"parts": [{"text": "gemini says"}]},
-            }],
+            "candidates": [
+                {
+                    "content": {"parts": [{"text": "gemini says"}]},
+                }
+            ],
         }
         assert extract_delta_text(event, "google") == "gemini says"
 

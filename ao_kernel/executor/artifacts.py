@@ -145,9 +145,7 @@ def write_capability_artifact(
     if attempt < 1:
         raise ValueError(f"attempt must be >= 1, got {attempt}")
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", capability):
-        raise ValueError(
-            f"capability must match ^[a-z][a-z0-9_]{{0,63}}$, got {capability!r}"
-        )
+        raise ValueError(f"capability must match ^[a-z][a-z0-9_]{{0,63}}$, got {capability!r}")
 
     artifacts_dir = run_dir / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True, mode=0o700)

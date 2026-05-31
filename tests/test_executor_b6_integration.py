@@ -133,7 +133,8 @@ class TestReviewAiRoundtrip:
     materialization → disk artifact."""
 
     def test_review_findings_extracted_then_materialized(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         result, rid = _invoke_codex_stub(tmp_path)
         assert result.status == "ok"
@@ -167,10 +168,7 @@ class TestReviewAiRoundtrip:
         schema = load_default("schemas", "review-findings.schema.v1.json")
         payload = json.loads(artifact_path.read_text(encoding="utf-8"))
         errors = list(Draft202012Validator(schema).iter_errors(payload))
-        assert errors == [], (
-            f"review_findings artifact fails schema validation: "
-            f"{[e.message for e in errors]}"
-        )
+        assert errors == [], f"review_findings artifact fails schema validation: {[e.message for e in errors]}"
 
 
 class TestCommitAiRoundtrip:
@@ -178,7 +176,8 @@ class TestCommitAiRoundtrip:
     materialization → disk artifact."""
 
     def test_commit_message_extracted_then_materialized(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         result, rid = _invoke_codex_stub(tmp_path)
         assert result.status == "ok"
@@ -213,7 +212,8 @@ class TestCommitAiRoundtrip:
         assert errors == []
 
     def test_two_capabilities_yield_two_distinct_artifacts(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Codex-stub fixture emits BOTH review_findings AND
         commit_message — driver materialization writes two separate
@@ -262,10 +262,7 @@ class TestBackwardCompatPreB6:
             "output_ref": "artifacts/step-sample-attempt1.json",
         }
         errors = list(Draft202012Validator(step_schema).iter_errors(record))
-        assert errors == [], (
-            f"pre-B6 step_record should validate (additive widen): "
-            f"{[e.message for e in errors]}"
-        )
+        assert errors == [], f"pre-B6 step_record should validate (additive widen): {[e.message for e in errors]}"
 
     def test_b6_record_with_capability_output_refs_schema_valid(self) -> None:
         from ao_kernel.config import load_default
@@ -362,22 +359,14 @@ class TestCapabilityRefsPersistAcrossRetry:
 
         from ao_kernel.executor.multi_step_driver import MultiStepDriver
 
-        src_record = inspect.getsource(
-            MultiStepDriver._record_step_completion
-        )
-        src_retry = inspect.getsource(
-            MultiStepDriver._update_placeholder_to_completed
-        )
+        src_record = inspect.getsource(MultiStepDriver._record_step_completion)
+        src_retry = inspect.getsource(MultiStepDriver._update_placeholder_to_completed)
         # Both mutators must assign to step_record["capability_output_refs"]
         assert "capability_output_refs" in src_record
         assert "capability_output_refs" in src_retry
         # And convert the kwarg to dict (not reference-copy a Mapping)
-        assert "dict(capability_output_refs)" in src_record or (
-            'updated["capability_output_refs"]' in src_record
-        )
-        assert "dict(capability_output_refs)" in src_retry or (
-            'updated["capability_output_refs"]' in src_retry
-        )
+        assert "dict(capability_output_refs)" in src_record or ('updated["capability_output_refs"]' in src_record)
+        assert "dict(capability_output_refs)" in src_retry or ('updated["capability_output_refs"]' in src_retry)
 
 
 class TestDriverErrorTranslationSource:

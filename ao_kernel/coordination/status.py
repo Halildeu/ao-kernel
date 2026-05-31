@@ -188,11 +188,7 @@ def render_coordination_status(snapshot: dict[str, Any]) -> str:
         f"Workspace: {snapshot['workspace_root']}",
         f"Generated: {snapshot['generated_at']}",
         f"Coordination enabled: {'yes' if snapshot.get('coordination_enabled') else 'no'}",
-        (
-            "Claims: "
-            f"reported={summary.get('total_reported', 0)} "
-            f"active={summary.get('total_active', 0)}"
-        ),
+        (f"Claims: reported={summary.get('total_reported', 0)} active={summary.get('total_active', 0)}"),
         (
             "Claim states: "
             f"ACTIVE={summary['by_claim_state']['ACTIVE']} "

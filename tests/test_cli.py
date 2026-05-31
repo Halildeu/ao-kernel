@@ -18,6 +18,7 @@ class TestVersion:
 
     def test_version_matches_package(self, capsys):
         import ao_kernel
+
         main(["version"])
         out = capsys.readouterr().out.strip()
         assert ao_kernel.__version__ in out
@@ -47,8 +48,9 @@ class TestInit:
     def test_workspace_json_has_required_fields(self, empty_dir):
         main(["init"])
         data = json.loads((empty_dir / ".ao" / "workspace.json").read_text())
-        
+
         import ao_kernel
+
         assert data["version"] == ao_kernel.__version__
         assert data["kind"] == "ao-workspace"
         assert "created_at" in data

@@ -58,9 +58,7 @@ def test_gp55b_rehearsal_passes_with_explicit_apply_and_cleans_up(tmp_path: Path
     assert _errors(persisted_report) == []
 
     assert persisted_report["overall_status"] == "pass"
-    assert persisted_report["decision"] == (
-        "pass_controlled_local_patch_test_rehearsal_no_support_widening"
-    )
+    assert persisted_report["decision"] == ("pass_controlled_local_patch_test_rehearsal_no_support_widening")
     assert persisted_report["support_widening"] is False
     assert persisted_report["runtime_patch_support_widening"] is False
     assert persisted_report["remote_side_effects_allowed"] is False
@@ -68,9 +66,7 @@ def test_gp55b_rehearsal_passes_with_explicit_apply_and_cleans_up(tmp_path: Path
     assert persisted_report["target_worktree"]["separate_from_operator_main"] is True
     assert persisted_report["target_worktree"]["dirty_state_preflight"] == []
     assert persisted_report["target_worktree"]["dirty_state_after_rollback"] == []
-    assert persisted_report["patch"]["changed_paths"] == [
-        "gp5_controlled_patch_rehearsal_target.txt"
-    ]
+    assert persisted_report["patch"]["changed_paths"] == ["gp5_controlled_patch_rehearsal_target.txt"]
     assert persisted_report["patch"]["apply_status"] == "pass"
     assert persisted_report["write_ownership"]["apply_claims"]
     assert persisted_report["write_ownership"]["rollback_claims"]

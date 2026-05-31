@@ -102,10 +102,7 @@ def budget_from_dict(record: Mapping[str, Any]) -> Budget:
     """
     fail_closed = record.get("fail_closed_on_exhaust", False)
     if fail_closed is not True:
-        raise ValueError(
-            "Budget must have fail_closed_on_exhaust=True "
-            f"(got {fail_closed!r})"
-        )
+        raise ValueError(f"Budget must have fail_closed_on_exhaust=True (got {fail_closed!r})")
     tokens_axis = _parse_int_axis(record.get("tokens"))
     tokens_input_raw = record.get("tokens_input")
     tokens_output_raw = record.get("tokens_output")
@@ -162,10 +159,7 @@ def budget_to_dict(budget: Budget) -> dict[str, Any]:
     # synthesizes the aggregate from the sum so readers always see a
     # coherent `tokens` view. This carries the "aggregate always
     # emitted" invariant from plan v7 §2.5 forward.
-    if (
-        "tokens" not in out
-        and budget.tokens_input is not None
-    ):
+    if "tokens" not in out and budget.tokens_input is not None:
         limit = int(budget.tokens_input.limit)
         spent = int(budget.tokens_input.spent)
         remaining = int(budget.tokens_input.remaining)
@@ -228,23 +222,27 @@ def record_spend(
     # Spend on granular axes first (if configured).
     new_tokens_input = (
         _spend_axis(
-            budget.tokens_input, "tokens_input", int(tokens_input), run_id,
+            budget.tokens_input,
+            "tokens_input",
+            int(tokens_input),
+            run_id,
         )
         if tokens_input is not None
         else budget.tokens_input
     )
     new_tokens_output = (
         _spend_axis(
-            budget.tokens_output, "tokens_output", int(tokens_output), run_id,
+            budget.tokens_output,
+            "tokens_output",
+            int(tokens_output),
+            run_id,
         )
         if tokens_output is not None
         else budget.tokens_output
     )
 
     # Aggregate tokens: explicit kwarg XOR implicit from granular.
-    effective_tokens = tokens if tokens is not None else (
-        implicit_tokens if implicit_tokens > 0 else None
-    )
+    effective_tokens = tokens if tokens is not None else (implicit_tokens if implicit_tokens > 0 else None)
     new_tokens = (
         _spend_axis(budget.tokens, "tokens", int(effective_tokens), run_id)
         if effective_tokens is not None and budget.tokens is not None
@@ -252,16 +250,12 @@ def record_spend(
     )
 
     new_time = (
-        _spend_axis(
-            budget.time_seconds, "time_seconds", float(time_seconds), run_id
-        )
+        _spend_axis(budget.time_seconds, "time_seconds", float(time_seconds), run_id)
         if time_seconds is not None
         else budget.time_seconds
     )
     new_cost = (
-        _spend_axis(
-            budget.cost_usd, "cost_usd", _to_decimal(cost_usd), run_id
-        )
+        _spend_axis(budget.cost_usd, "cost_usd", _to_decimal(cost_usd), run_id)
         if cost_usd is not None
         else budget.cost_usd
     )
@@ -312,9 +306,7 @@ def _spend_axis(
     arithmetic lines below.
     """
     if axis is None:
-        raise ValueError(
-            f"Cannot spend on unconfigured axis: {axis_name}"
-        )
+        raise ValueError(f"Cannot spend on unconfigured axis: {axis_name}")
     # mypy: consistent numeric type guaranteed at runtime; see docstring.
     new_spent = axis.spent + spend  # type: ignore[operator]
     new_remaining = axis.remaining - spend  # type: ignore[operator]

@@ -50,8 +50,10 @@ class TestSaveStoreCAS:
     def test_first_write_with_none_revision_and_allow_overwrite(self, project_with_ao):
         initial = {"version": "v1", "decisions": {"k": {"value": 1}}, "facts": {}}
         new_rev = save_store_cas(
-            project_with_ao, initial,
-            expected_revision=None, allow_overwrite=True,
+            project_with_ao,
+            initial,
+            expected_revision=None,
+            allow_overwrite=True,
         )
         assert len(new_rev) == 64
         reloaded = load_store(project_with_ao)
@@ -61,7 +63,8 @@ class TestSaveStoreCAS:
         store = load_store(project_with_ao)
         store["decisions"]["k"] = {"value": 1}
         new_rev = save_store_cas(
-            project_with_ao, store,
+            project_with_ao,
+            store,
             expected_revision=store_revision(load_store(project_with_ao)),
             allow_overwrite=False,
         )
@@ -72,12 +75,16 @@ class TestSaveStoreCAS:
         stale_rev = store_revision(store1)
         # Concurrent-ish writer moves the store forward.
         promote_decision(
-            project_with_ao, key="other", value=1, confidence=0.9,
+            project_with_ao,
+            key="other",
+            value=1,
+            confidence=0.9,
         )
         store1["decisions"]["k"] = {"value": 1}
         with pytest.raises(CanonicalRevisionConflict):
             save_store_cas(
-                project_with_ao, store1,
+                project_with_ao,
+                store1,
                 expected_revision=stale_rev,
                 allow_overwrite=False,
             )
@@ -86,12 +93,16 @@ class TestSaveStoreCAS:
         store1 = load_store(project_with_ao)
         stale_rev = store_revision(store1)
         promote_decision(
-            project_with_ao, key="other", value=1, confidence=0.9,
+            project_with_ao,
+            key="other",
+            value=1,
+            confidence=0.9,
         )
         store1["decisions"]["k"] = {"value": 1}
         # Even with a stale expected_revision, allow_overwrite wins.
         new_rev = save_store_cas(
-            project_with_ao, store1,
+            project_with_ao,
+            store1,
             expected_revision=stale_rev,
             allow_overwrite=True,
         )
@@ -104,7 +115,9 @@ class TestPromoteDecisionCAS:
     def test_promote_default_behavior_unchanged(self, project_with_ao):
         cd = promote_decision(
             project_with_ao,
-            key="x", value=1, confidence=0.9,
+            key="x",
+            value=1,
+            confidence=0.9,
         )
         assert cd.key == "x"
 
@@ -112,15 +125,15 @@ class TestPromoteDecisionCAS:
         rev = store_revision(load_store(project_with_ao))
         cd = promote_decision(
             project_with_ao,
-            key="x", value=1, confidence=0.9,
+            key="x",
+            value=1,
+            confidence=0.9,
             expected_revision=rev,
             allow_overwrite=False,
         )
         assert cd.key == "x"
 
-    def test_promote_with_matching_empty_revision_survives_clock_tick(
-        self, project_with_ao, monkeypatch
-    ):
+    def test_promote_with_matching_empty_revision_survives_clock_tick(self, project_with_ao, monkeypatch):
         tick = {"count": 0}
 
         def ticking_now() -> str:
@@ -131,7 +144,9 @@ class TestPromoteDecisionCAS:
         rev = store_revision(load_store(project_with_ao))
         cd = promote_decision(
             project_with_ao,
-            key="x", value=1, confidence=0.9,
+            key="x",
+            value=1,
+            confidence=0.9,
             expected_revision=rev,
             allow_overwrite=False,
         )
@@ -140,12 +155,17 @@ class TestPromoteDecisionCAS:
     def test_promote_with_stale_revision_raises(self, project_with_ao):
         rev = store_revision(load_store(project_with_ao))
         promote_decision(
-            project_with_ao, key="other", value=1, confidence=0.9,
+            project_with_ao,
+            key="other",
+            value=1,
+            confidence=0.9,
         )
         with pytest.raises(CanonicalRevisionConflict):
             promote_decision(
                 project_with_ao,
-                key="x", value=1, confidence=0.9,
+                key="x",
+                value=1,
+                confidence=0.9,
                 expected_revision=rev,
                 allow_overwrite=False,
             )
@@ -153,9 +173,7 @@ class TestPromoteDecisionCAS:
 
 class TestCorruptionFailClosed:
     def test_load_store_raises_on_invalid_json(self, project_with_ao):
-        (project_with_ao / ".ao" / "canonical_decisions.v1.json").write_text(
-            "{not json"
-        )
+        (project_with_ao / ".ao" / "canonical_decisions.v1.json").write_text("{not json")
         with pytest.raises(CanonicalStoreCorruptedError):
             load_store(project_with_ao)
 

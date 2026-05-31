@@ -15,9 +15,7 @@ from ao_kernel.repo_intelligence import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = (
-    ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-explicit-workflow-context.schema.v1.json"
-)
+SCHEMA_PATH = ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-explicit-workflow-context.schema.v1.json"
 
 
 def _schema() -> dict:

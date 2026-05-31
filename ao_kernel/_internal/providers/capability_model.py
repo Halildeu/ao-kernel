@@ -17,6 +17,7 @@ from ao_kernel._internal.shared.utils import load_json
 
 class ProviderCapability(Enum):
     """All known LLM provider capabilities — aligned with registry."""
+
     CHAT = "chat"
     STREAMING = "streaming"
     TOOL_USE = "tool_use"
@@ -44,6 +45,7 @@ LEVEL_UNSUPPORTED = "unsupported"
 @dataclass(frozen=True)
 class CapabilityManifest:
     """Resolved capability manifest for a provider+model combination."""
+
     provider_id: str
     model: str
     capabilities: FrozenSet[ProviderCapability]
@@ -85,6 +87,7 @@ def load_capability_registry(repo_root: Path | str | None = None) -> Dict[str, A
     # Fallback to bundled defaults (importlib.resources)
     try:
         from ao_kernel.config import load_default
+
         return load_default("registry", "provider_capability_registry.v1.json")
     except Exception:
         return {"version": "v1", "capabilities": [], "providers": {}}
@@ -191,6 +194,4 @@ def get_provider_capabilities(
     Returns frozenset of capability string names.
     """
     manifest = resolve_manifest(provider_id, repo_root=repo_root)
-    return frozenset(
-        cap.value for cap in manifest.capabilities | manifest.experimental
-    )
+    return frozenset(cap.value for cap in manifest.capabilities | manifest.experimental)

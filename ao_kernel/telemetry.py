@@ -42,6 +42,7 @@ def _check_otel() -> bool:
         return _OTEL_AVAILABLE
     try:
         from opentelemetry import trace, metrics  # noqa: F401
+
         _OTEL_AVAILABLE = True
     except ImportError:
         _OTEL_AVAILABLE = False
@@ -55,6 +56,7 @@ def _get_tracer() -> Any:
     if not _check_otel():
         return None
     from opentelemetry import trace
+
     _tracer = trace.get_tracer("ao-kernel", "0.1.0")
     return _tracer
 
@@ -66,6 +68,7 @@ def _get_meter() -> Any:
     if not _check_otel():
         return None
     from opentelemetry import metrics
+
     _meter = metrics.get_meter("ao-kernel", "0.1.0")
     return _meter
 
@@ -121,6 +124,7 @@ def span(
         return
 
     from opentelemetry import trace
+
     with tracer.start_as_current_span(name, attributes=attributes) as s:
         try:
             yield s

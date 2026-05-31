@@ -37,7 +37,7 @@ def _make_chunk_project(tmp_path: Path) -> Path:
     (project / "config.json").write_text('{"enabled": true}\n', encoding="utf-8")
     (project / ".env").write_text("TOKEN=secret\n", encoding="utf-8")
     (project / "image.png").write_bytes(b"\x89PNG\r\n")
-    (project / "pyproject.toml").write_text("[project]\nname = \"chunk-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "chunk-project"\n', encoding="utf-8")
     return project
 
 

@@ -56,9 +56,7 @@ class TestAvailability:
 
 
 class TestBuildRegistryDefaultLabels:
-    def test_build_returns_registry_when_extra_present(
-        self, tmp_path: Path
-    ) -> None:
+    def test_build_returns_registry_when_extra_present(self, tmp_path: Path) -> None:
         built = metrics_registry.build_registry(_bundled_policy(tmp_path))
         assert built is not None
         assert isinstance(built.registry, prometheus_client.CollectorRegistry)
@@ -76,9 +74,7 @@ class TestBuildRegistryDefaultLabels:
         assert built.claim_active is not None
         assert built.claim_takeover is not None
 
-    def test_default_low_cardinality_labels(
-        self, tmp_path: Path
-    ) -> None:
+    def test_default_low_cardinality_labels(self, tmp_path: Path) -> None:
         """Bundled policy (labels_advanced disabled) → default low-
         cardinality label set. No ``model`` / ``agent_id`` labels."""
         built = metrics_registry.build_registry(_bundled_policy(tmp_path))
@@ -100,7 +96,9 @@ class TestBuildRegistryAdvancedLabels:
         assert built is not None
         assert built.llm_call_duration._labelnames == ("provider", "model")
         assert built.llm_tokens_used._labelnames == (
-            "provider", "direction", "model",
+            "provider",
+            "direction",
+            "model",
         )
         assert built.llm_cost_usd._labelnames == ("provider", "model")
         assert built.llm_usage_missing._labelnames == ("provider", "model")
@@ -117,18 +115,14 @@ class TestBuildRegistryAdvancedLabels:
         assert built.llm_cost_usd._labelnames == ("provider",)
 
     def test_both_advanced_labels_expand_independently(self) -> None:
-        built = metrics_registry.build_registry(
-            _advanced_policy("model", "agent_id")
-        )
+        built = metrics_registry.build_registry(_advanced_policy("model", "agent_id"))
         assert built is not None
         assert built.llm_call_duration._labelnames == ("provider", "model")
         assert built.claim_active._labelnames == ("agent_id",)
 
 
 class TestCostDisjunction:
-    def test_include_llm_metrics_false_omits_llm_families(
-        self, tmp_path: Path
-    ) -> None:
+    def test_include_llm_metrics_false_omits_llm_families(self, tmp_path: Path) -> None:
         """Plan v4 §2 cost-disjunction: cost tracking dormant →
         ``ao_llm_*`` families absent from the registry. Prevents
         zero-synthetic series in the textfile output."""
@@ -147,9 +141,7 @@ class TestCostDisjunction:
         assert built.claim_active is not None
         assert built.claim_takeover is not None
 
-    def test_cost_dormant_textfile_lacks_llm_prefix(
-        self, tmp_path: Path
-    ) -> None:
+    def test_cost_dormant_textfile_lacks_llm_prefix(self, tmp_path: Path) -> None:
         """With LLM families omitted the Prometheus exposition must
         not mention ``ao_llm_`` — the strongest acceptance criterion
         for "LLM metric family absent" (plan v4 iter-2 A3)."""
@@ -158,16 +150,12 @@ class TestCostDisjunction:
             include_llm_metrics=False,
         )
         assert built is not None
-        output = prometheus_client.generate_latest(built.registry).decode(
-            "utf-8"
-        )
+        output = prometheus_client.generate_latest(built.registry).decode("utf-8")
         assert "ao_llm_" not in output
 
 
 class TestHistogramBuckets:
-    def test_llm_duration_upper_is_600_seconds(
-        self, tmp_path: Path
-    ) -> None:
+    def test_llm_duration_upper_is_600_seconds(self, tmp_path: Path) -> None:
         """Plan v4 §2.2: LLM upper bucket = 600s (GPT-4-turbo outlier
         tolerance; raised from 300s in v3)."""
         built = metrics_registry.build_registry(_bundled_policy(tmp_path))
@@ -176,9 +164,7 @@ class TestHistogramBuckets:
         # bucket tuple we configured.
         assert built.llm_call_duration._upper_bounds[-2] == 600.0
 
-    def test_workflow_duration_upper_is_7200_seconds(
-        self, tmp_path: Path
-    ) -> None:
+    def test_workflow_duration_upper_is_7200_seconds(self, tmp_path: Path) -> None:
         built = metrics_registry.build_registry(_bundled_policy(tmp_path))
         assert built is not None
         assert built.workflow_duration._upper_bounds[-2] == 7200.0

@@ -23,57 +23,53 @@ def _resp(obj: dict) -> bytes:
 
 class TestStrictPresent:
     def test_anthropic_style_input_output(self) -> None:
-        p = extract_usage_strict(
-            _resp({"usage": {"input_tokens": 100, "output_tokens": 50}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"input_tokens": 100, "output_tokens": 50}}))
         assert p.tokens_input == 100
         assert p.tokens_output == 50
         assert p.cached_tokens is None
 
     def test_openai_style_prompt_completion(self) -> None:
-        p = extract_usage_strict(
-            _resp({"usage": {"prompt_tokens": 80, "completion_tokens": 40}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"prompt_tokens": 80, "completion_tokens": 40}}))
         assert p.tokens_input == 80
         assert p.tokens_output == 40
 
     def test_anthropic_cache_read(self) -> None:
         p = extract_usage_strict(
-            _resp({
-                "usage": {
-                    "input_tokens": 200,
-                    "output_tokens": 50,
-                    "cache_read_input_tokens": 100,
+            _resp(
+                {
+                    "usage": {
+                        "input_tokens": 200,
+                        "output_tokens": 50,
+                        "cache_read_input_tokens": 100,
+                    }
                 }
-            })
+            )
         )
         assert p.cached_tokens == 100
 
     def test_openai_cached_tokens(self) -> None:
         p = extract_usage_strict(
-            _resp({
-                "usage": {
-                    "prompt_tokens": 300,
-                    "completion_tokens": 60,
-                    "cached_tokens": 150,
+            _resp(
+                {
+                    "usage": {
+                        "prompt_tokens": 300,
+                        "completion_tokens": 60,
+                        "cached_tokens": 150,
+                    }
                 }
-            })
+            )
         )
         assert p.cached_tokens == 150
 
 
 class TestStrictAbsent:
     def test_missing_input_is_none(self) -> None:
-        p = extract_usage_strict(
-            _resp({"usage": {"output_tokens": 50}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"output_tokens": 50}}))
         assert p.tokens_input is None
         assert p.tokens_output == 50
 
     def test_missing_output_is_none(self) -> None:
-        p = extract_usage_strict(
-            _resp({"usage": {"input_tokens": 100}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"input_tokens": 100}}))
         assert p.tokens_input == 100
         assert p.tokens_output is None
 
@@ -87,9 +83,7 @@ class TestStrictAbsent:
 
     def test_non_int_values_treated_as_absent(self) -> None:
         """Schema contract says int; provider bug (string) → None."""
-        p = extract_usage_strict(
-            _resp({"usage": {"input_tokens": "200", "output_tokens": 40}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"input_tokens": "200", "output_tokens": 40}}))
         # "200" is str, not int → None
         assert p.tokens_input is None
         assert p.tokens_output == 40
@@ -125,17 +119,13 @@ class TestZeroVsMissing:
         """``tokens_output=0`` in usage dict is PRESERVED (distinct from
         absent → None). B2 cost middleware treats 0 as valid 'no
         completion generated' case."""
-        p = extract_usage_strict(
-            _resp({"usage": {"input_tokens": 50, "output_tokens": 0}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"input_tokens": 50, "output_tokens": 0}}))
         assert p.tokens_output == 0  # not None
         assert p.tokens_input == 50
 
     def test_explicit_null_treated_as_absent(self) -> None:
         """JSON null → Python None → treated as absent (str isinstance check
         fails); B2 middleware flags usage_missing."""
-        p = extract_usage_strict(
-            _resp({"usage": {"input_tokens": None, "output_tokens": 50}})
-        )
+        p = extract_usage_strict(_resp({"usage": {"input_tokens": None, "output_tokens": 50}}))
         assert p.tokens_input is None
         assert p.tokens_output == 50

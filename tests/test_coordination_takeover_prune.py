@@ -105,7 +105,8 @@ class TestTakeoverLiveGracePastGate:
         assert excinfo.value.current_fencing_token == first.fencing_token
 
     def test_takeover_on_in_grace_raises_conflict_grace(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Takeover attempted inside grace window yields distinct error."""
         _write_workspace_policy(tmp_path, _enabled_policy())
@@ -139,10 +140,7 @@ class TestTakeoverLiveGracePastGate:
         kinds = [k for k, _ in events]
         assert "claim_takeover" in kinds
         # Takeover path must NOT emit claim_acquired
-        assert "claim_acquired" not in [
-            k for k, p in events
-            if p.get("owner_agent_id") == "agent-beta"
-        ]
+        assert "claim_acquired" not in [k for k, p in events if p.get("owner_agent_id") == "agent-beta"]
         # Payload includes prev_ + new_ tokens (B6v2 + W1v2)
         takeover_payload = next(p for k, p in events if k == "claim_takeover")
         assert takeover_payload["prev_owner_agent_id"] == "agent-alpha"
@@ -151,7 +149,8 @@ class TestTakeoverLiveGracePastGate:
         assert takeover_payload["new_fencing_token"] == new_claim.fencing_token
 
     def test_takeover_on_absent_resource_raises_not_found(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
@@ -166,7 +165,8 @@ class TestTakeoverLiveGracePastGate:
 
 class TestAcquireTakeoverDelegate:
     def test_acquire_on_past_grace_delegates_to_takeover(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Acquire on a past-grace claim silently takes over — caller
         sees a successful acquire, evidence records claim_takeover."""
@@ -190,7 +190,8 @@ class TestAcquireTakeoverDelegate:
     def test_takeover_quota_enforced_on_both_paths(self, tmp_path: Path) -> None:
         """B1v3: quota check runs on takeover too (not just fresh acquire)."""
         _write_workspace_policy(
-            tmp_path, _enabled_policy(max_claims_per_agent=1),
+            tmp_path,
+            _enabled_policy(max_claims_per_agent=1),
         )
         registry = ClaimRegistry(tmp_path)
         # agent-beta acquires their one allowed claim
@@ -248,7 +249,9 @@ class TestPruneExpiredClaims:
         for i in range(5):
             registry.acquire_claim(f"worktree-{i:02d}", "agent-alpha")
             _rewind_claim_heartbeat(
-                tmp_path, f"worktree-{i:02d}", seconds_ago=120,
+                tmp_path,
+                f"worktree-{i:02d}",
+                seconds_ago=120,
             )
         pruned_first = registry.prune_expired_claims(max_batch=3)
         assert len(pruned_first) == 3
@@ -273,7 +276,8 @@ class TestPruneExpiredClaims:
 
 class TestForwardOnlyReconcile:
     def test_reconcile_advances_to_max_claim_plus_one(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Fencing state behind claim.fencing_token → reconcile catches up."""
         _write_workspace_policy(tmp_path, _enabled_policy())
@@ -283,12 +287,15 @@ class TestForwardOnlyReconcile:
         # Simulate drift: force fencing next_token back to 0 even though
         # a claim with fencing_token=0 exists (so next should be 1).
         from ao_kernel._internal.shared.lock import file_lock
+
         with file_lock(tmp_path / ".ao" / "claims" / "claims.lock"):
             state = load_fencing_state(tmp_path)
             rev = fencing_state_revision(state.to_dict())
             rewound = set_next_token(state, "worktree-a", 0)
             save_fencing_state_cas(
-                tmp_path, rewound, expected_revision=rev,
+                tmp_path,
+                rewound,
+                expected_revision=rev,
             )
 
         # Now reconcile — should set next_token back to 1 (max_claim+1)
@@ -299,7 +306,8 @@ class TestForwardOnlyReconcile:
         assert state_after.resources["worktree-a"].next_token == 1
 
     def test_reconcile_does_not_rewind_ahead_fencing(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Forward-only invariant: fencing already ahead of claims is
         preserved, not rewound to max_claim+1."""
@@ -310,12 +318,15 @@ class TestForwardOnlyReconcile:
         # Bump fencing ahead to next_token=10 (simulating prior
         # acquire/release cycles whose claims are no longer on disk).
         from ao_kernel._internal.shared.lock import file_lock
+
         with file_lock(tmp_path / ".ao" / "claims" / "claims.lock"):
             state = load_fencing_state(tmp_path)
             rev = fencing_state_revision(state.to_dict())
             advanced = set_next_token(state, "worktree-a", 10)
             save_fencing_state_cas(
-                tmp_path, advanced, expected_revision=rev,
+                tmp_path,
+                advanced,
+                expected_revision=rev,
             )
 
         # Reconcile should NOT rewind to max_claim+1 (= 1) — forward-only.
@@ -418,7 +429,8 @@ class TestExecutorFencingEntry:
             )
 
     def test_fencing_without_registry_raises_value_error(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Supplying fencing kwargs without claim_registry injection is
         a programmer error — the executor cannot validate without a
@@ -449,7 +461,8 @@ class TestExecutorFencingEntry:
             )
 
     def test_driver_translates_stale_fencing_to_step_failed(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """CNS-029v4 iter-3 blocker #2 fix: MultiStepDriver's adapter
         step helper forwards fencing kwargs to Executor.run_step and
@@ -511,7 +524,8 @@ class TestExecutorFencingEntry:
         assert "supplied_token=0" in excinfo.value.reason
 
     def test_stale_fencing_propagates_before_any_side_effects(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """W1v5: stale fencing raises ClaimStaleFencingError BEFORE any
         evidence emit, worktree build, or adapter invoke. The run
@@ -554,13 +568,11 @@ class TestExecutorFencingEntry:
         evidence_dir = tmp_path / ".ao" / "evidence"
         # evidence_dir may or may not exist from tmp fixtures; what we
         # really want is that no run directory was created for our id.
-        assert not (
-            evidence_dir / "workflows"
-            / "00000000-0000-4000-8000-000000000001"
-        ).exists()
+        assert not (evidence_dir / "workflows" / "00000000-0000-4000-8000-000000000001").exists()
 
     def test_driver_fencing_optout_behaves_as_pre_b1(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """CNS-029v4 iter-4 absorb: callers that leave fencing kwargs
         as ``None`` on ``_run_adapter_step`` must retain pre-B1
@@ -626,8 +638,7 @@ class TestExecutorFencingEntry:
         # signal. If fencing had been opted in by mistake, we would see
         # ClaimStaleFencingError or _StepFailed(STALE_FENCING).
         assert raised is not None, (
-            "expected some exception when run record is absent; "
-            "got None — this regresses the pre-B1 driver contract"
+            "expected some exception when run record is absent; got None — this regresses the pre-B1 driver contract"
         )
         assert not isinstance(raised, ClaimStaleFencingError), (
             "fencing-kwargs-None path must not invoke fencing validation"

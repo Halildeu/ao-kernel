@@ -75,9 +75,7 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
         )
 
         try:
-            proposed_patches = load_policy_patches_from_dir(
-                Path(args.proposed_patches)
-            )
+            proposed_patches = load_policy_patches_from_dir(Path(args.proposed_patches))
         except (FileNotFoundError, json.JSONDecodeError, TypeError) as exc:
             print(
                 f"invalid patches directory: {exc}",
@@ -97,14 +95,9 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
         return _EXIT_USER_ERROR
 
     baseline_overrides = None
-    if (
-        baseline_source is BaselineSource.EXPLICIT
-        and getattr(args, "baseline_overrides", None)
-    ):
+    if baseline_source is BaselineSource.EXPLICIT and getattr(args, "baseline_overrides", None):
         try:
-            baseline_overrides = load_policies_from_dir(
-                Path(args.baseline_overrides)
-            )
+            baseline_overrides = load_policies_from_dir(Path(args.baseline_overrides))
         except json.JSONDecodeError as exc:
             print(
                 f"invalid JSON in --baseline-overrides: {exc}",
@@ -122,9 +115,7 @@ def cmd_policy_sim_run(args: argparse.Namespace) -> int:
             proposed_policy_patches=proposed_patches,
             baseline_source=baseline_source,
             baseline_overrides=baseline_overrides,
-            include_host_fs_probes=bool(
-                getattr(args, "enable_host_fs_probes", False)
-            ),
+            include_host_fs_probes=bool(getattr(args, "enable_host_fs_probes", False)),
         )
     except (
         ProposedPolicyInvalidError,

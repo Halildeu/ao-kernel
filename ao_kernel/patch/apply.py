@@ -83,9 +83,7 @@ def apply_patch(
     ``validate_command`` (B1 absorb); ``patch_id`` is validated by the
     narrow id regex (B3 absorb).
     """
-    assigned_patch_id = (
-        secrets.token_urlsafe(32) if patch_id is None else patch_id
-    )
+    assigned_patch_id = secrets.token_urlsafe(32) if patch_id is None else patch_id
     validate_patch_id(assigned_patch_id)
     start = time.monotonic()
 
@@ -105,7 +103,10 @@ def apply_patch(
 
     cmd = ["git", "apply", "--3way", "--index", "-"]
     violations = validate_command(
-        cmd[0], tuple(cmd[1:]), sandbox, secret_values={},
+        cmd[0],
+        tuple(cmd[1:]),
+        sandbox,
+        secret_values={},
     )
     if violations:
         raise PolicyViolationError(violations=list(violations))
@@ -313,7 +314,9 @@ def _atomic_write_text(path: Path, content: str) -> None:
     """Write text atomically (tempfile + fsync + rename)."""
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd, tmp_path_str = tempfile.mkstemp(
-        prefix=path.name + ".", suffix=".tmp", dir=path.parent,
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=path.parent,
     )
     tmp_path = Path(tmp_path_str)
     try:
@@ -321,6 +324,7 @@ def _atomic_write_text(path: Path, content: str) -> None:
             fh.write(content)
             fh.flush()
             import os
+
             os.fsync(fh.fileno())
         tmp_path.replace(path)
     except Exception:

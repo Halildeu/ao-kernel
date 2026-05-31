@@ -110,27 +110,20 @@ def _read_ledger(root: Path) -> list[dict[str, Any]]:
     path = root / ".ao" / "cost" / "spend.jsonl"
     if not path.is_file():
         return []
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _read_events_of_kind(
-    root: Path, run_id: str, kind: str,
+    root: Path,
+    run_id: str,
+    kind: str,
 ) -> list[dict[str, Any]]:
-    path = (
-        root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    path = root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     if not path.is_file():
         return []
     return [
-        ev for ev in (
-            json.loads(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        )
+        ev
+        for ev in (json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
         if ev.get("kind") == kind
     ]
 
@@ -151,14 +144,20 @@ def _cost_actual_fixed() -> dict[str, Any]:
 
 class TestAdapterPathIdempotency:
     def test_double_call_single_drain_single_emit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c3d20001"
         _seed_run(tmp_path, run_id)
         kwargs = dict(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         post_adapter_reconcile(**kwargs)
         post_adapter_reconcile(**kwargs)
@@ -186,20 +185,31 @@ class TestAdapterPathIdempotency:
 
 class TestAdapterPathPartitioning:
     def test_different_step_same_cost_both_applied(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c3d20002"
         _seed_run(tmp_path, run_id)
         # Two steps, same cost → different marker keys, both applied
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s2",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s2",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         budget = _read_run(tmp_path, run_id).get("budget", {})
         assert budget["cost_usd"]["remaining"] == pytest.approx(9.90)  # 2× drain
@@ -209,20 +219,31 @@ class TestAdapterPathPartitioning:
         assert {m["step_id"] for m in markers} == {"s1", "s2"}
 
     def test_different_attempt_same_cost_both_applied(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Retry semantics: same step_id, different attempt → new marker."""
         run_id = "00000000-0000-4000-8000-0000c3d20003"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=2, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=2,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         budget = _read_run(tmp_path, run_id).get("budget", {})
         assert budget["cost_usd"]["remaining"] == pytest.approx(9.90)
@@ -237,14 +258,19 @@ class TestAdapterPathPartitioning:
 
 class TestUsageMissingIdempotency:
     def test_usage_missing_double_call_single_emit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c3d20010"
         _seed_run(tmp_path, run_id)
         # Adapter returned cost but no tokens → usage_missing path
         kwargs = dict(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={"cost_usd": 0.0},  # tokens_input/output absent
             policy=_policy(),
         )
@@ -261,11 +287,15 @@ class TestUsageMissingIdempotency:
 
         # Evidence: single llm_usage_missing emit (not llm_spend_recorded)
         missing_emits = _read_events_of_kind(
-            tmp_path, run_id, "llm_usage_missing",
+            tmp_path,
+            run_id,
+            "llm_usage_missing",
         )
         assert len(missing_emits) == 1
         spend_emits = _read_events_of_kind(
-            tmp_path, run_id, "llm_spend_recorded",
+            tmp_path,
+            run_id,
+            "llm_spend_recorded",
         )
         assert spend_emits == []
 
@@ -279,7 +309,8 @@ class TestUsageMissingIdempotency:
 
 class TestFailClosedOnMissingBudgetAxis:
     def test_budget_cost_usd_missing_raises_after_ledger_append(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Per Codex iter-3 bulgu: fail-closed contract is preserved.
 
@@ -294,9 +325,14 @@ class TestFailClosedOnMissingBudgetAxis:
 
         with pytest.raises(CostTrackingConfigError):
             post_adapter_reconcile(
-                workspace_root=tmp_path, run_id=run_id, step_id="s1",
-                attempt=1, provider_id="codex", model="stub",
-                cost_actual=_cost_actual_fixed(), policy=_policy(),
+                workspace_root=tmp_path,
+                run_id=run_id,
+                step_id="s1",
+                attempt=1,
+                provider_id="codex",
+                model="stub",
+                cost_actual=_cost_actual_fixed(),
+                policy=_policy(),
             )
 
         # Ledger entry WAS appended (ledger-first ordering)
@@ -311,7 +347,9 @@ class TestFailClosedOnMissingBudgetAxis:
 
 class TestOrderUniform:
     def test_record_spend_runs_before_update_run(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Per Codex iter-5 note: mtime comparison is flaky under
         write_text_atomic + os.replace; verify ordering via call-spy
@@ -336,9 +374,14 @@ class TestOrderUniform:
         monkeypatch.setattr(_reconcile_mod, "update_run", _spy_update_run)
 
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         # record_spend first, then update_run (ledger-first contract)
         assert call_log[0] == "record_spend"
@@ -351,7 +394,8 @@ class TestOrderUniform:
 
 class TestHelperPrecondition:
     def test_apply_spend_with_marker_requires_precomputed_digest(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c3d20040"
         _seed_run(tmp_path, run_id)
@@ -370,14 +414,17 @@ class TestHelperPrecondition:
         )
         with pytest.raises(ValueError, match="billing_digest"):
             apply_spend_with_marker(
-                tmp_path, run_id, event,
+                tmp_path,
+                run_id,
+                event,
                 policy=_policy(),
                 source="adapter_path",
                 budget_mutator=lambda r: r,
             )
 
     def test_apply_spend_with_marker_accepts_precomputed_digest(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c3d20041"
         _seed_run(tmp_path, run_id)
@@ -395,7 +442,9 @@ class TestHelperPrecondition:
         )
         event = replace(event, billing_digest=compute_billing_digest(event))
         committed = apply_spend_with_marker(
-            tmp_path, run_id, event,
+            tmp_path,
+            run_id,
+            event,
             policy=_policy(),
             source="adapter_path",
             budget_mutator=lambda r: r,  # no-op for this probe
@@ -486,7 +535,9 @@ class TestSchemaAcceptsCostReconciled:
 
 class TestCrashSemantics:
     def test_crash_after_ledger_before_marker_retry_succeeds(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Phase-1 crash: ledger appended, marker not stamped yet.
 
@@ -510,9 +561,14 @@ class TestCrashSemantics:
         # First call crashes inside update_run (after record_spend)
         with pytest.raises(RuntimeError):
             post_adapter_reconcile(
-                workspace_root=tmp_path, run_id=run_id, step_id="s1",
-                attempt=1, provider_id="codex", model="stub",
-                cost_actual=_cost_actual_fixed(), policy=_policy(),
+                workspace_root=tmp_path,
+                run_id=run_id,
+                step_id="s1",
+                attempt=1,
+                provider_id="codex",
+                model="stub",
+                cost_actual=_cost_actual_fixed(),
+                policy=_policy(),
             )
         # Ledger has entry; marker does NOT (mutator never committed)
         assert len(_read_ledger(tmp_path)) == 1
@@ -520,9 +576,14 @@ class TestCrashSemantics:
 
         # Retry: recovers cleanly
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         # Ledger still 1 entry (silent same-digest no-op)
         assert len(_read_ledger(tmp_path)) == 1
@@ -534,7 +595,9 @@ class TestCrashSemantics:
         assert budget["cost_usd"]["remaining"] == pytest.approx(9.95)
 
     def test_duplicate_call_after_commit_produces_no_duplicate_emit(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Covers the emit-guard invariant: if a marker is already
         committed, the caller MUST NOT re-emit evidence.
@@ -550,23 +613,37 @@ class TestCrashSemantics:
 
         # First call succeeds (marker stamped, emit successful)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         emits_after_first = _read_events_of_kind(
-            tmp_path, run_id, "llm_spend_recorded",
+            tmp_path,
+            run_id,
+            "llm_spend_recorded",
         )
         assert len(emits_after_first) == 1
 
         # Second call — simulates retry after crash between marker and emit
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=_cost_actual_fixed(), policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=_cost_actual_fixed(),
+            policy=_policy(),
         )
         emits_after_second = _read_events_of_kind(
-            tmp_path, run_id, "llm_spend_recorded",
+            tmp_path,
+            run_id,
+            "llm_spend_recorded",
         )
         # Still exactly 1 — duplicate emit suppressed
         assert len(emits_after_second) == 1

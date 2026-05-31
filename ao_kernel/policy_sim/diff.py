@@ -116,22 +116,14 @@ class DiffReport:
             "scenarios_evaluated": self.scenarios_evaluated,
             "baseline_policy_hashes": dict(self.baseline_policy_hashes),
             "proposed_policy_hashes": dict(self.proposed_policy_hashes),
-            "transitions": {
-                _TRANSITION_LABELS[k]: v
-                for k, v in self.transitions.items()
-            },
+            "transitions": {_TRANSITION_LABELS[k]: v for k, v in self.transitions.items()},
             "transitions_by_policy": {
-                policy: {
-                    _TRANSITION_LABELS[k]: v for k, v in counts.items()
-                }
+                policy: {_TRANSITION_LABELS[k]: v for k, v in counts.items()}
                 for policy, counts in self.transitions_by_policy.items()
             },
             "host_fs_dependent": self.host_fs_dependent,
             "host_fs_fingerprint": self.host_fs_fingerprint,
-            "deltas": [
-                _serialise_delta(d)
-                for d in sorted(self.deltas, key=lambda x: x.scenario_id)
-            ],
+            "deltas": [_serialise_delta(d) for d in sorted(self.deltas, key=lambda x: x.scenario_id)],
             "notable_deltas_count": len(self.notable_deltas),
         }
 
@@ -159,9 +151,7 @@ def _serialise_result(result: SimulationResult) -> dict[str, Any]:
     }
 
 
-def compute_transition(
-    baseline: SimulationResult, proposed: SimulationResult
-) -> TransitionKind:
+def compute_transition(baseline: SimulationResult, proposed: SimulationResult) -> TransitionKind:
     """Classify a (baseline, proposed) pair into a ``TransitionKind``."""
     if baseline.decision == "error" or proposed.decision == "error":
         return "error"
@@ -174,9 +164,7 @@ def compute_transition(
     return mapping[(baseline.decision, proposed.decision)]
 
 
-def compute_violation_diff(
-    baseline: SimulationResult, proposed: SimulationResult
-) -> ViolationDiff:
+def compute_violation_diff(baseline: SimulationResult, proposed: SimulationResult) -> ViolationDiff:
     base = frozenset(baseline.violation_kinds)
     prop = frozenset(proposed.violation_kinds)
     return ViolationDiff(added=prop - base, removed=base - prop)
@@ -191,9 +179,7 @@ def make_scenario_delta(
 ) -> ScenarioDelta:
     transition = compute_transition(baseline, proposed)
     diff = compute_violation_diff(baseline, proposed)
-    notable = transition not in ("allow_to_allow", "deny_to_deny") or bool(
-        diff.added or diff.removed
-    )
+    notable = transition not in ("allow_to_allow", "deny_to_deny") or bool(diff.added or diff.removed)
     return ScenarioDelta(
         scenario_id=scenario_id,
         target_policy_name=target_policy_name,
@@ -225,9 +211,7 @@ def canonical_policy_hash(policy: Mapping[str, Any]) -> str:
 
 def aggregate_transition_counts(
     deltas: Iterable[ScenarioDelta],
-) -> tuple[
-    Mapping[TransitionKind, int], Mapping[str, Mapping[TransitionKind, int]]
-]:
+) -> tuple[Mapping[TransitionKind, int], Mapping[str, Mapping[TransitionKind, int]]]:
     """Fold per-delta transitions into aggregate + per-policy
     counters. Keys are present for every ``TransitionKind`` so
     downstream reporters don't have to guard for missing axes."""
@@ -242,9 +226,7 @@ def aggregate_transition_counts(
     by_policy: dict[str, dict[TransitionKind, int]] = {}
     for delta in deltas:
         overall[delta.transition] += 1
-        bucket = by_policy.setdefault(
-            delta.target_policy_name, {k: 0 for k in all_kinds}
-        )
+        bucket = by_policy.setdefault(delta.target_policy_name, {k: 0 for k in all_kinds})
         bucket[delta.transition] += 1
     return overall, by_policy
 

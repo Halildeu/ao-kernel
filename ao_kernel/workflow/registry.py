@@ -155,11 +155,7 @@ class LoadReport:
 
 @functools.lru_cache(maxsize=1)
 def _load_schema() -> Mapping[str, Any]:
-    text = (
-        resources.files(_SCHEMA_PACKAGE)
-        .joinpath(_SCHEMA_FILENAME)
-        .read_text(encoding="utf-8")
-    )
+    text = resources.files(_SCHEMA_PACKAGE).joinpath(_SCHEMA_FILENAME).read_text(encoding="utf-8")
     schema: Mapping[str, Any] = json.loads(text)
     return schema
 
@@ -268,40 +264,46 @@ class WorkflowRegistry:
         try:
             text = source_path.read_text(encoding="utf-8")
         except OSError as exc:
-            skipped.append(SkippedDefinition(
-                source_path=source_path,
-                reason="read_error",
-                details=str(exc),
-            ))
+            skipped.append(
+                SkippedDefinition(
+                    source_path=source_path,
+                    reason="read_error",
+                    details=str(exc),
+                )
+            )
             return
         try:
             raw = json.loads(text)
         except json.JSONDecodeError as exc:
-            skipped.append(SkippedDefinition(
-                source_path=source_path,
-                reason="json_decode",
-                details=str(exc),
-            ))
+            skipped.append(
+                SkippedDefinition(
+                    source_path=source_path,
+                    reason="json_decode",
+                    details=str(exc),
+                )
+            )
             return
         if not isinstance(raw, dict):
-            skipped.append(SkippedDefinition(
-                source_path=source_path,
-                reason="schema_invalid",
-                details="top-level value is not an object",
-            ))
+            skipped.append(
+                SkippedDefinition(
+                    source_path=source_path,
+                    reason="schema_invalid",
+                    details="top-level value is not an object",
+                )
+            )
             return
         errors = list(_validator().iter_errors(raw))
         if errors:
-            summary = "; ".join(
-                f"{e.json_path}: {e.message}" for e in errors[:3]
-            )
+            summary = "; ".join(f"{e.json_path}: {e.message}" for e in errors[:3])
             if len(errors) > 3:
                 summary += f" (+{len(errors) - 3} more)"
-            skipped.append(SkippedDefinition(
-                source_path=source_path,
-                reason="schema_invalid",
-                details=summary,
-            ))
+            skipped.append(
+                SkippedDefinition(
+                    source_path=source_path,
+                    reason="schema_invalid",
+                    details=summary,
+                )
+            )
             return
 
         definition = _parse_definition(raw, source=source, source_path=source_path)
@@ -314,38 +316,38 @@ class WorkflowRegistry:
                 self._by_key[key] = definition
                 loaded.append(definition)
                 # Record the demotion of the bundled record.
-                skipped.append(SkippedDefinition(
-                    source_path=existing.source_path,
-                    reason="workspace_overrides_bundled",
-                    details=(
-                        f"workspace definition at {source_path} "
-                        f"overrides bundled"
-                    ),
-                ))
+                skipped.append(
+                    SkippedDefinition(
+                        source_path=existing.source_path,
+                        reason="workspace_overrides_bundled",
+                        details=(f"workspace definition at {source_path} overrides bundled"),
+                    )
+                )
                 return
             if existing.source == "workspace" and source == "bundled":
                 # Workspace already loaded wins; new bundled arrival
                 # is skipped for audit.
-                skipped.append(SkippedDefinition(
-                    source_path=source_path,
-                    reason="workspace_overrides_bundled",
-                    details=(
-                        f"bundled definition superseded by workspace at "
-                        f"{existing.source_path}"
-                    ),
-                ))
+                skipped.append(
+                    SkippedDefinition(
+                        source_path=source_path,
+                        reason="workspace_overrides_bundled",
+                        details=(f"bundled definition superseded by workspace at {existing.source_path}"),
+                    )
+                )
                 return
             # Same source + same key → genuine duplicate; reject the
             # second arrival so loads are deterministic.
-            skipped.append(SkippedDefinition(
-                source_path=source_path,
-                reason="duplicate_workflow_key",
-                details=(
-                    f"duplicate (workflow_id={definition.workflow_id!r}, "
-                    f"workflow_version={definition.workflow_version!r}) in "
-                    f"{source}"
-                ),
-            ))
+            skipped.append(
+                SkippedDefinition(
+                    source_path=source_path,
+                    reason="duplicate_workflow_key",
+                    details=(
+                        f"duplicate (workflow_id={definition.workflow_id!r}, "
+                        f"workflow_version={definition.workflow_version!r}) in "
+                        f"{source}"
+                    ),
+                )
+            )
             return
 
         self._by_key[key] = definition
@@ -376,16 +378,15 @@ class WorkflowRegistry:
             definition = self._by_key.get(key)
             if definition is None:
                 raise WorkflowDefinitionNotFoundError(
-                    workflow_id=workflow_id, version=version,
+                    workflow_id=workflow_id,
+                    version=version,
                 )
             return definition
-        candidates = [
-            defn for (wid, _), defn in self._by_key.items()
-            if wid == workflow_id
-        ]
+        candidates = [defn for (wid, _), defn in self._by_key.items() if wid == workflow_id]
         if not candidates:
             raise WorkflowDefinitionNotFoundError(
-                workflow_id=workflow_id, version=None,
+                workflow_id=workflow_id,
+                version=None,
             )
         candidates.sort(key=lambda d: _semver_sort_key(d.workflow_version))
         return candidates[-1]
@@ -414,12 +415,14 @@ class WorkflowRegistry:
             try:
                 adapter_registry.get(expected_adapter_id)
             except Exception:  # noqa: BLE001 - registry raises its own type
-                issues.append(CrossRefIssue(
-                    kind="missing_adapter",
-                    workflow_id=definition.workflow_id,
-                    step_name=None,
-                    adapter_id=expected_adapter_id,
-                ))
+                issues.append(
+                    CrossRefIssue(
+                        kind="missing_adapter",
+                        workflow_id=definition.workflow_id,
+                        step_name=None,
+                        adapter_id=expected_adapter_id,
+                    )
+                )
 
         # Per-step checks: adapter_id must resolve AND capabilities align.
         for step in definition.steps:
@@ -431,25 +434,30 @@ class WorkflowRegistry:
             try:
                 adapter_registry.get(adapter_id)
             except Exception:  # noqa: BLE001
-                issues.append(CrossRefIssue(
-                    kind="missing_adapter",
-                    workflow_id=definition.workflow_id,
-                    step_name=step.step_name,
-                    adapter_id=adapter_id,
-                ))
-                continue
-            if step.required_capabilities:
-                gap = adapter_registry.missing_capabilities(
-                    adapter_id, step.required_capabilities,
-                )
-                if gap:
-                    issues.append(CrossRefIssue(
-                        kind="capability_gap",
+                issues.append(
+                    CrossRefIssue(
+                        kind="missing_adapter",
                         workflow_id=definition.workflow_id,
                         step_name=step.step_name,
                         adapter_id=adapter_id,
-                        missing_capabilities=frozenset(gap),
-                    ))
+                    )
+                )
+                continue
+            if step.required_capabilities:
+                gap = adapter_registry.missing_capabilities(
+                    adapter_id,
+                    step.required_capabilities,
+                )
+                if gap:
+                    issues.append(
+                        CrossRefIssue(
+                            kind="capability_gap",
+                            workflow_id=definition.workflow_id,
+                            step_name=step.step_name,
+                            adapter_id=adapter_id,
+                            missing_capabilities=frozenset(gap),
+                        )
+                    )
 
         # PR-A4a: operation_required for actor in {ao-kernel, system}.
         # Schema allOf conditional enforces this at validation time, but we
@@ -457,11 +465,13 @@ class WorkflowRegistry:
         # (e.g., loader warnings) or programmatic audit.
         for step in definition.steps:
             if step.actor in {"ao-kernel", "system"} and step.operation is None:
-                issues.append(CrossRefIssue(
-                    kind="operation_required",
-                    workflow_id=definition.workflow_id,
-                    step_name=step.step_name,
-                ))
+                issues.append(
+                    CrossRefIssue(
+                        kind="operation_required",
+                        workflow_id=definition.workflow_id,
+                        step_name=step.step_name,
+                    )
+                )
 
         # PR-A4a: invalid_on_failure_for_operation — patch_apply forbids
         # escalate_to_human (partial index/worktree state must not enter
@@ -469,16 +479,14 @@ class WorkflowRegistry:
         # should also reject this via conditional allOf; this guard is
         # defence-in-depth with typed diagnostic.
         for step in definition.steps:
-            if (
-                step.actor == "ao-kernel"
-                and step.operation == "patch_apply"
-                and step.on_failure == "escalate_to_human"
-            ):
-                issues.append(CrossRefIssue(
-                    kind="invalid_on_failure_for_operation",
-                    workflow_id=definition.workflow_id,
-                    step_name=step.step_name,
-                ))
+            if step.actor == "ao-kernel" and step.operation == "patch_apply" and step.on_failure == "escalate_to_human":
+                issues.append(
+                    CrossRefIssue(
+                        kind="invalid_on_failure_for_operation",
+                        workflow_id=definition.workflow_id,
+                        step_name=step.step_name,
+                    )
+                )
         return issues
 
 

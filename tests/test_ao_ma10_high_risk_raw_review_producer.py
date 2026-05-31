@@ -61,11 +61,7 @@ def _repo_with_low_risk_change(tmp_path: Path) -> Path:
 
 def _fake_provider(tmp_path: Path, *, verdict: str = "AGREE", secret: bool = False) -> Path:
     script = tmp_path / f"fake_{verdict.lower()}_{'secret' if secret else 'clean'}.py"
-    finding_expr = (
-        "'contains ' + 'token' + '=' + 'abcdefghijklmnopqrstuvwxyz'"
-        if secret
-        else "'review clean'"
-    )
+    finding_expr = "'contains ' + 'token' + '=' + 'abcdefghijklmnopqrstuvwxyz'" if secret else "'review clean'"
     script.write_text(
         "\n".join(
             [

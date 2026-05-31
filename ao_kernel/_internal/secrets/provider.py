@@ -8,4 +8,3 @@ class SecretsProvider(abc.ABC):
 
     @abc.abstractmethod
     def get(self, secret_id: str) -> str | None: ...
-

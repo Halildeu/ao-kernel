@@ -11,9 +11,7 @@ from ao_kernel.repo_intelligence import validate_repo_intelligence_product_onboa
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = (
-    ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-product-onboarding.schema.v1.json"
-)
+SCHEMA_PATH = ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-product-onboarding.schema.v1.json"
 
 
 def _schema() -> dict:

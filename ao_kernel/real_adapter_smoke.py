@@ -30,21 +30,15 @@ from ao_kernel.executor.adapter_invoker import _resolve_cli_invocation
 _AUTH_ENV_KEYS = ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY")
 _PROMPT_ACCESS_PROBE = "reply with the single token ok"
 _MANIFEST_SMOKE_PROMPT = (
-    'Your entire response MUST be a single JSON object with exactly this shape: '
+    "Your entire response MUST be a single JSON object with exactly this shape: "
     '{"status":"ok","review_findings":{"schema_version":"1","findings":[],"summary":"smoke ok"}}'
 )
 _GH_PR_DRY_RUN_TITLE = "ao-kernel gh-cli-pr smoke probe"
 _GH_PR_DRY_RUN_BODY = "Safe dry-run preflight for gh-cli-pr certification."
 _GH_DRY_RUN_MARKER = "would have created a pull request"
-_GH_LIVE_WRITE_ROLLBACK_COMMENT = (
-    "ao-kernel gh-cli-pr live-write smoke rollback"
-)
-_GH_LIVE_WRITE_VERIFY_JSON_FIELDS = (
-    "state,isDraft,url,number,headRefName,baseRefName"
-)
-_GITHUB_PR_URL_RE = re.compile(
-    r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+"
-)
+_GH_LIVE_WRITE_ROLLBACK_COMMENT = "ao-kernel gh-cli-pr live-write smoke rollback"
+_GH_LIVE_WRITE_VERIFY_JSON_FIELDS = "state,isDraft,url,number,headRefName,baseRefName"
+_GITHUB_PR_URL_RE = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+")
 
 
 @dataclass(frozen=True)
@@ -123,9 +117,7 @@ def run_claude_code_cli_smoke(
             SmokeCheck(
                 name="binary",
                 status="fail",
-                detail=(
-                    f"bundled manifest command {command!r} PATH uzerinde bulunamadi"
-                ),
+                detail=(f"bundled manifest command {command!r} PATH uzerinde bulunamadi"),
                 finding_code="claude_binary_missing",
                 observed={"command": command},
             )
@@ -257,9 +249,7 @@ def run_gh_cli_pr_smoke(
             SmokeCheck(
                 name="binary",
                 status="fail",
-                detail=(
-                    f"bundled manifest command {command!r} PATH uzerinde bulunamadi"
-                ),
+                detail=(f"bundled manifest command {command!r} PATH uzerinde bulunamadi"),
                 finding_code="gh_binary_missing",
                 observed={"command": command},
             )
@@ -345,18 +335,14 @@ def run_gh_cli_pr_smoke(
     repo_view_argv = [binary_path, "repo", "view"]
     if repo:
         repo_view_argv.append(repo)
-    repo_view_argv.extend(
-        ("--json", "nameWithOwner,defaultBranchRef,isPrivate,url")
-    )
+    repo_view_argv.extend(("--json", "nameWithOwner,defaultBranchRef,isPrivate,url"))
     repo_result = _run_check(
         runner,
         tuple(repo_view_argv),
         working_dir,
         timeout_seconds,
     )
-    repo_check, resolved_repo, detected_default_branch, repo_url = (
-        _classify_gh_repo_view_check(repo_result)
-    )
+    repo_check, resolved_repo, detected_default_branch, repo_url = _classify_gh_repo_view_check(repo_result)
     checks.append(repo_check)
 
     resolved_base = base_ref or detected_default_branch
@@ -402,9 +388,7 @@ def run_gh_cli_pr_smoke(
                 SmokeCheck(
                     name="pr_dry_run",
                     status="skip",
-                    detail=(
-                        "repo/default-branch cozulmedigi icin PR dry-run smoke atlandi"
-                    ),
+                    detail=("repo/default-branch cozulmedigi icin PR dry-run smoke atlandi"),
                 )
             )
         return _finalize_gh_report(
@@ -421,9 +405,7 @@ def run_gh_cli_pr_smoke(
             SmokeCheck(
                 name="pr_live_write",
                 status="fail",
-                detail=(
-                    "live-write smoke icin --allow-live-write explicit opt-in gereklidir"
-                ),
+                detail=("live-write smoke icin --allow-live-write explicit opt-in gereklidir"),
                 finding_code="gh_pr_live_write_opt_in_required",
                 observed={"mode": mode},
             )
@@ -488,10 +470,7 @@ def run_gh_cli_pr_smoke(
             SmokeCheck(
                 name="pr_live_write",
                 status="fail",
-                detail=(
-                    "live-write smoke icin explicit --base verilmelidir "
-                    "(default branch fallback kabul edilmez)"
-                ),
+                detail=("live-write smoke icin explicit --base verilmelidir (default branch fallback kabul edilmez)"),
                 finding_code="gh_pr_live_write_base_ref_required",
                 observed={
                     "resolved_base": resolved_base,
@@ -527,10 +506,7 @@ def run_gh_cli_pr_smoke(
             SmokeCheck(
                 name="pr_live_write",
                 status="fail",
-                detail=(
-                    "live-write smoke icin explicit --head verilmelidir "
-                    "(default branch fallback kabul edilmez)"
-                ),
+                detail=("live-write smoke icin explicit --head verilmelidir (default branch fallback kabul edilmez)"),
                 finding_code="gh_pr_live_write_head_ref_required",
                 observed={
                     "resolved_base": resolved_base,
@@ -607,10 +583,7 @@ def run_gh_cli_pr_smoke(
                 SmokeCheck(
                     name="pr_live_write",
                     status="fail",
-                    detail=(
-                        "live-write smoke disposable repo guard'ina takildi "
-                        f"(keyword={required_keyword!r})"
-                    ),
+                    detail=(f"live-write smoke disposable repo guard'ina takildi (keyword={required_keyword!r})"),
                     finding_code="gh_pr_live_write_repo_not_disposable",
                     observed={
                         "repo_name": resolved_repo,
@@ -730,8 +703,7 @@ def run_gh_cli_pr_smoke(
                 name="pr_live_write_rollback",
                 status="fail",
                 detail=(
-                    "--keep-live-write-pr-open nedeniyle rollback devre disi kaldigi "
-                    "icin lane riskli kabul edildi"
+                    "--keep-live-write-pr-open nedeniyle rollback devre disi kaldigi icin lane riskli kabul edildi"
                 ),
                 finding_code="gh_pr_live_write_keep_open_requested",
                 observed={
@@ -978,10 +950,7 @@ def _classify_auth_status_check(
         )
 
     logged_in = bool(payload.get("loggedIn"))
-    detail = (
-        f"loggedIn={logged_in} authMethod={payload.get('authMethod')!r} "
-        f"orgName={payload.get('orgName')!r}"
-    )
+    detail = f"loggedIn={logged_in} authMethod={payload.get('authMethod')!r} orgName={payload.get('orgName')!r}"
     if logged_in:
         return SmokeCheck(
             name="auth_status",
@@ -1052,11 +1021,7 @@ def _classify_gh_auth_status_check(result: CommandResult) -> SmokeCheck:
     active_entry = None
     if isinstance(github_hosts, list):
         for entry in github_hosts:
-            if (
-                isinstance(entry, dict)
-                and entry.get("active") is True
-                and entry.get("state") == "success"
-            ):
+            if isinstance(entry, dict) and entry.get("active") is True and entry.get("state") == "success":
                 active_entry = entry
                 break
 
@@ -1077,8 +1042,7 @@ def _classify_gh_auth_status_check(result: CommandResult) -> SmokeCheck:
         name="auth_status",
         status="pass",
         detail=(
-            f"host='github.com' login={active_entry.get('login')!r} "
-            f"tokenSource={active_entry.get('tokenSource')!r}"
+            f"host='github.com' login={active_entry.get('login')!r} tokenSource={active_entry.get('tokenSource')!r}"
         ),
         argv=result.argv,
         returncode=result.returncode,
@@ -1209,10 +1173,7 @@ def _classify_gh_repo_view_check(
         SmokeCheck(
             name="repo_view",
             status="pass",
-            detail=(
-                f"repo={repo_name!r} default_branch={default_branch!r} "
-                f"isPrivate={payload.get('isPrivate')!r}"
-            ),
+            detail=(f"repo={repo_name!r} default_branch={default_branch!r} isPrivate={payload.get('isPrivate')!r}"),
             argv=result.argv,
             returncode=result.returncode,
             observed={
@@ -1251,10 +1212,7 @@ def _classify_gh_pr_dry_run_check(
         return SmokeCheck(
             name="pr_dry_run",
             status="pass",
-            detail=(
-                f"gh pr create --dry-run gecti "
-                f"(repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"
-            ),
+            detail=(f"gh pr create --dry-run gecti (repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"),
             argv=result.argv,
             returncode=result.returncode,
         )
@@ -1324,10 +1282,7 @@ def _classify_gh_pr_live_write_check(
         SmokeCheck(
             name="pr_live_write",
             status="pass",
-            detail=(
-                "gh pr create --draft gecti "
-                f"(repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"
-            ),
+            detail=(f"gh pr create --draft gecti (repo={repo_name!r}, head={head_ref!r}, base={base_ref!r})"),
             argv=result.argv,
             returncode=result.returncode,
             observed={"pr_url": pr_url},
@@ -1396,10 +1351,7 @@ def _classify_gh_pr_live_write_verify_check(
         return SmokeCheck(
             name="pr_live_write_verify",
             status="pass",
-            detail=(
-                "gh pr view verify gecti "
-                f"(repo={repo_name!r}, pr={pr_url!r}, number={observed_number})"
-            ),
+            detail=(f"gh pr view verify gecti (repo={repo_name!r}, pr={pr_url!r}, number={observed_number})"),
             argv=result.argv,
             returncode=result.returncode,
             observed={
@@ -1609,8 +1561,7 @@ def _classify_auth_failure(
     combined = f"{result.stdout}\n{result.stderr}".lower()
     if (
         "organization does not have access to claude" in combined
-        or "oauth authentication is currently not allowed for this organization"
-        in combined
+        or "oauth authentication is currently not allowed for this organization" in combined
     ):
         return (
             "prompt_access_denied",
@@ -1698,16 +1649,8 @@ def _finalize_report(
     api_key_env_present: bool,
     checks: Sequence[SmokeCheck],
 ) -> ClaudeCodeSmokeReport:
-    findings = tuple(
-        dict.fromkeys(
-            check.finding_code
-            for check in checks
-            if check.finding_code is not None
-        )
-    )
-    overall_status: Literal["pass", "blocked"] = (
-        "pass" if not findings else "blocked"
-    )
+    findings = tuple(dict.fromkeys(check.finding_code for check in checks if check.finding_code is not None))
+    overall_status: Literal["pass", "blocked"] = "pass" if not findings else "blocked"
     return ClaudeCodeSmokeReport(
         overall_status=overall_status,
         adapter_id=adapter_id,
@@ -1727,16 +1670,8 @@ def _finalize_gh_report(
     repo_url: str | None,
     checks: Sequence[SmokeCheck],
 ) -> GhCliPrSmokeReport:
-    findings = tuple(
-        dict.fromkeys(
-            check.finding_code
-            for check in checks
-            if check.finding_code is not None
-        )
-    )
-    overall_status: Literal["pass", "blocked"] = (
-        "pass" if not findings else "blocked"
-    )
+    findings = tuple(dict.fromkeys(check.finding_code for check in checks if check.finding_code is not None))
+    overall_status: Literal["pass", "blocked"] = "pass" if not findings else "blocked"
     return GhCliPrSmokeReport(
         overall_status=overall_status,
         adapter_id=adapter_id,

@@ -105,7 +105,8 @@ class TestDormantDefault:
             registry.get_claim("worktree-a")
 
     def test_validate_fencing_token_dormant_refuses(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         registry = ClaimRegistry(tmp_path)
         with pytest.raises(ClaimCoordinationDisabledError):
@@ -125,7 +126,8 @@ class TestDormantDefault:
             registry.prune_expired_claims()
 
     def test_dormant_gate_fires_before_evidence_sink(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """CNS-029v4 iter-4 absorb: dormant gate must raise *before*
         the evidence sink is invoked — a dormant registry never emits
@@ -234,7 +236,8 @@ class TestAcquireHappyPath:
         assert (claims_dir / "_index.v1.json").is_file()
 
     def test_second_resource_for_same_agent_also_token_zero(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Fencing tokens are per-resource — two different resources
         both start at 0."""
@@ -277,7 +280,8 @@ class TestAcquireConflict:
         assert excinfo.value.current_fencing_token == first.fencing_token
 
     def test_conflict_payload_carries_current_fencing_token(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """B6v2: claim_conflict evidence must include current_fencing_token
         for FAZ-B master plan §10 race test."""
@@ -308,7 +312,9 @@ class TestHeartbeat:
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         updated = registry.heartbeat(
-            "worktree-a", first.claim_id, "agent-alpha",
+            "worktree-a",
+            first.claim_id,
+            "agent-alpha",
         )
         assert updated.heartbeat_at >= first.heartbeat_at
         assert updated.revision != first.revision
@@ -351,13 +357,16 @@ class TestHeartbeat:
 
 class TestRelease:
     def test_happy_path_removes_claim_preserves_fencing(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         registry.release_claim(
-            "worktree-a", first.claim_id, "agent-alpha",
+            "worktree-a",
+            first.claim_id,
+            "agent-alpha",
         )
         assert registry.get_claim("worktree-a") is None
 
@@ -366,33 +375,42 @@ class TestRelease:
         assert second.fencing_token == 1
 
     def test_second_release_raises_already_released(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """W5v2: second release on absent claim raises, not silent no-op."""
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         registry.release_claim(
-            "worktree-a", first.claim_id, "agent-alpha",
+            "worktree-a",
+            first.claim_id,
+            "agent-alpha",
         )
         with pytest.raises(ClaimAlreadyReleasedError):
             registry.release_claim(
-                "worktree-a", first.claim_id, "agent-alpha",
+                "worktree-a",
+                first.claim_id,
+                "agent-alpha",
             )
 
     def test_ownership_mismatch_on_release_raises(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         with pytest.raises(ClaimOwnershipError):
             registry.release_claim(
-                "worktree-a", first.claim_id, "agent-beta",
+                "worktree-a",
+                first.claim_id,
+                "agent-beta",
             )
 
     def test_corrupt_fencing_raises_before_delete(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """B3v5 fail-closed order: corrupt _fencing.v1.json raises while
         the claim file is still recoverable on disk."""
@@ -406,13 +424,13 @@ class TestRelease:
 
         with pytest.raises(ClaimCorruptedError):
             registry.release_claim(
-                "worktree-a", first.claim_id, "agent-alpha",
+                "worktree-a",
+                first.claim_id,
+                "agent-alpha",
             )
 
         # Claim file NOT deleted — caller can recover after fixing fencing
-        assert (
-            tmp_path / ".ao" / "claims" / "worktree-a.v1.json"
-        ).is_file()
+        assert (tmp_path / ".ao" / "claims" / "worktree-a.v1.json").is_file()
 
 
 # ---------------------------------------------------------------------------
@@ -427,16 +445,22 @@ class TestValidateFencingToken:
         claim = registry.acquire_claim("worktree-a", "agent-alpha")
         # Live issued token is fencing_token (which is next_token - 1 from
         # the fencing state perspective after acquire advances next_token).
-        assert registry.validate_fencing_token(
-            "worktree-a", claim.fencing_token,
-        ) is None
+        assert (
+            registry.validate_fencing_token(
+                "worktree-a",
+                claim.fencing_token,
+            )
+            is None
+        )
 
     def test_stale_token_raises(self, tmp_path: Path) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         registry.release_claim(
-            "worktree-a", first.claim_id, "agent-alpha",
+            "worktree-a",
+            first.claim_id,
+            "agent-alpha",
         )
         # New acquire advances fencing_token to 1; old token (0) is stale
         registry.acquire_claim("worktree-a", "agent-beta")
@@ -483,7 +507,8 @@ class TestQuota:
     def test_limit_zero_is_unlimited(self, tmp_path: Path) -> None:
         """B1v3: max_claims_per_agent=0 ⇒ quota disabled."""
         _write_workspace_policy(
-            tmp_path, _enabled_policy(max_claims_per_agent=0),
+            tmp_path,
+            _enabled_policy(max_claims_per_agent=0),
         )
         registry = ClaimRegistry(tmp_path)
         acquired = []
@@ -498,7 +523,8 @@ class TestQuota:
 
     def test_positive_limit_enforced(self, tmp_path: Path) -> None:
         _write_workspace_policy(
-            tmp_path, _enabled_policy(max_claims_per_agent=2),
+            tmp_path,
+            _enabled_policy(max_claims_per_agent=2),
         )
         registry = ClaimRegistry(tmp_path)
         registry.acquire_claim("worktree-a", "agent-alpha")
@@ -510,12 +536,15 @@ class TestQuota:
 
     def test_released_claim_frees_quota_slot(self, tmp_path: Path) -> None:
         _write_workspace_policy(
-            tmp_path, _enabled_policy(max_claims_per_agent=1),
+            tmp_path,
+            _enabled_policy(max_claims_per_agent=1),
         )
         registry = ClaimRegistry(tmp_path)
         first = registry.acquire_claim("worktree-a", "agent-alpha")
         registry.release_claim(
-            "worktree-a", first.claim_id, "agent-alpha",
+            "worktree-a",
+            first.claim_id,
+            "agent-alpha",
         )
         # Same agent can acquire another resource after release
         second = registry.acquire_claim("worktree-b", "agent-alpha")

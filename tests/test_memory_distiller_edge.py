@@ -91,7 +91,9 @@ class TestDistillEdgeCases:
         _write_session(tmp_path, "s3", [_decision("fw", "flask", "2026-01-03T00:00:00Z")])
 
         result = distill_decisions_from_sessions(
-            workspace_root=tmp_path, min_occurrences=2, min_stability=2,
+            workspace_root=tmp_path,
+            min_occurrences=2,
+            min_stability=2,
         )
         fw_entries = [r for r in result if r["key"] == "fw"]
         assert fw_entries == []

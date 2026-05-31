@@ -228,9 +228,7 @@ class TestPriority:
 class TestFallback:
     def test_error_on_no_match_returns_none(self) -> None:
         rule = _rule(rule_id="r1", keywords=("fix",))
-        router = IntentRouter(
-            rules=[rule], fallback_strategy="error_on_no_match"
-        )
+        router = IntentRouter(rules=[rule], fallback_strategy="error_on_no_match")
         assert router.classify("unrelated text") is None
 
     def test_use_default_requires_non_null_default(self) -> None:

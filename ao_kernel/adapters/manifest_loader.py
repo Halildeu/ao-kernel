@@ -35,11 +35,7 @@ _MANIFEST_SUFFIX = ".manifest.v1.json"
 
 @functools.lru_cache(maxsize=1)
 def _load_schema() -> Mapping[str, Any]:
-    text = (
-        resources.files(_SCHEMA_PACKAGE)
-        .joinpath(_SCHEMA_FILENAME)
-        .read_text(encoding="utf-8")
-    )
+    text = resources.files(_SCHEMA_PACKAGE).joinpath(_SCHEMA_FILENAME).read_text(encoding="utf-8")
     schema: Mapping[str, Any] = json.loads(text)
     return schema
 
@@ -157,7 +153,9 @@ class AdapterRegistry:
             return LoadReport(loaded=(), skipped=())
         for source_path in sorted(dir_path.glob(f"*{_MANIFEST_SUFFIX}")):
             self._ingest(
-                source_path=source_path, loaded=loaded, skipped=skipped,
+                source_path=source_path,
+                loaded=loaded,
+                skipped=skipped,
                 allow_override=True,
             )
         return LoadReport(loaded=tuple(loaded), skipped=tuple(skipped))
@@ -175,43 +173,49 @@ class AdapterRegistry:
         try:
             text = source_path.read_text(encoding="utf-8")
         except OSError as exc:
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="read_error",
-                details=str(exc),
-            ))
+            skipped.append(
+                SkippedManifest(
+                    source_path=source_path,
+                    reason="read_error",
+                    details=str(exc),
+                )
+            )
             return
 
         try:
             raw = json.loads(text)
         except json.JSONDecodeError as exc:
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="json_decode",
-                details=str(exc),
-            ))
+            skipped.append(
+                SkippedManifest(
+                    source_path=source_path,
+                    reason="json_decode",
+                    details=str(exc),
+                )
+            )
             return
 
         if not isinstance(raw, dict):
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="not_an_object",
-                details="top-level JSON value is not an object",
-            ))
+            skipped.append(
+                SkippedManifest(
+                    source_path=source_path,
+                    reason="not_an_object",
+                    details="top-level JSON value is not an object",
+                )
+            )
             return
 
         errors = list(_validator().iter_errors(raw))
         if errors:
-            summary = "; ".join(
-                f"{e.json_path}: {e.message}" for e in errors[:3]
-            )
+            summary = "; ".join(f"{e.json_path}: {e.message}" for e in errors[:3])
             if len(errors) > 3:
                 summary += f" (+{len(errors) - 3} more)"
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="schema_invalid",
-                details=summary,
-            ))
+            skipped.append(
+                SkippedManifest(
+                    source_path=source_path,
+                    reason="schema_invalid",
+                    details=summary,
+                )
+            )
             return
 
         # Edge case contract (CNS-028v2 Q6v7, docs/BENCHMARK-SUITE.md §3.2):
@@ -241,44 +245,47 @@ class AdapterRegistry:
                 cap = rule.get("capability")
                 if isinstance(cap, str):
                     if cap in seen_caps:
-                        skipped.append(SkippedManifest(
-                            source_path=source_path,
-                            reason="schema_invalid",
-                            details=(
-                                f"output_parse.rules has multiple entries "
-                                f"for capability={cap!r}; duplicate "
-                                f"capability is invalid (see "
-                                f"docs/BENCHMARK-SUITE.md §3.2 edge-case "
-                                f"contract)."
-                            ),
-                        ))
+                        skipped.append(
+                            SkippedManifest(
+                                source_path=source_path,
+                                reason="schema_invalid",
+                                details=(
+                                    f"output_parse.rules has multiple entries "
+                                    f"for capability={cap!r}; duplicate "
+                                    f"capability is invalid (see "
+                                    f"docs/BENCHMARK-SUITE.md §3.2 edge-case "
+                                    f"contract)."
+                                ),
+                            )
+                        )
                         return
                     seen_caps.add(cap)
                     if cap not in advertised_caps:
-                        skipped.append(SkippedManifest(
-                            source_path=source_path,
-                            reason="schema_invalid",
-                            details=(
-                                f"output_parse.rules references capability="
-                                f"{cap!r} that is not listed in top-level "
-                                f"capabilities={sorted(advertised_caps)!r}; "
-                                f"extraction rules may only reference "
-                                f"advertised capabilities (CNS-028v2 iter-6 "
-                                f"W2)."
-                            ),
-                        ))
+                        skipped.append(
+                            SkippedManifest(
+                                source_path=source_path,
+                                reason="schema_invalid",
+                                details=(
+                                    f"output_parse.rules references capability="
+                                    f"{cap!r} that is not listed in top-level "
+                                    f"capabilities={sorted(advertised_caps)!r}; "
+                                    f"extraction rules may only reference "
+                                    f"advertised capabilities (CNS-028v2 iter-6 "
+                                    f"W2)."
+                                ),
+                            )
+                        )
                         return
 
         raw_id = raw.get("adapter_id")
         if raw_id != expected_id:
-            skipped.append(SkippedManifest(
-                source_path=source_path,
-                reason="adapter_id_mismatch",
-                details=(
-                    f"filename implies adapter_id={expected_id!r} but "
-                    f"manifest declares {raw_id!r}"
-                ),
-            ))
+            skipped.append(
+                SkippedManifest(
+                    source_path=source_path,
+                    reason="adapter_id_mismatch",
+                    details=(f"filename implies adapter_id={expected_id!r} but manifest declares {raw_id!r}"),
+                )
+            )
             return
 
         if raw_id in self._by_id:
@@ -286,14 +293,13 @@ class AdapterRegistry:
                 # Workspace > bundled precedence (PR-A6 B3)
                 pass  # fall through to overwrite
             else:
-                skipped.append(SkippedManifest(
-                    source_path=source_path,
-                    reason="duplicate_adapter_id",
-                    details=(
-                        f"adapter_id={raw_id!r} already registered from "
-                        f"{self._by_id[raw_id].source_path}"
-                    ),
-                ))
+                skipped.append(
+                    SkippedManifest(
+                        source_path=source_path,
+                        reason="duplicate_adapter_id",
+                        details=(f"adapter_id={raw_id!r} already registered from {self._by_id[raw_id].source_path}"),
+                    )
+                )
                 return
 
         manifest = _parse_manifest(raw, source_path=source_path)
@@ -373,20 +379,14 @@ def _parse_manifest(
         invocation=dict(raw.get("invocation", {})),
         input_envelope_shape=dict(raw.get("input_envelope", {})),
         output_envelope_shape=dict(raw.get("output_envelope", {})),
-        interrupt_contract=(
-            dict(raw["interrupt_contract"])
-            if "interrupt_contract" in raw
-            else None
-        ),
+        interrupt_contract=(dict(raw["interrupt_contract"]) if "interrupt_contract" in raw else None),
         policy_refs=tuple(raw.get("policy_refs", ())),
         evidence_refs=tuple(raw.get("evidence_refs", ())),
         source_path=source_path,
         output_parse=(
             # Deep-copy the rule list so mutation of the original raw
             # dict cannot retroactively affect the loaded manifest.
-            {"rules": [dict(r) for r in raw["output_parse"].get("rules", ())]}
-            if "output_parse" in raw
-            else None
+            {"rules": [dict(r) for r in raw["output_parse"].get("rules", ())]} if "output_parse" in raw else None
         ),
     )
 

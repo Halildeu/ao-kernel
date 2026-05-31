@@ -115,8 +115,11 @@ def embed_decision(
         return decision
 
     embedding = embed_text(
-        text, provider_id=provider_id, model=model,
-        base_url=base_url, api_key=api_key,
+        text,
+        provider_id=provider_id,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
     )
 
     if embedding:
@@ -170,8 +173,11 @@ def semantic_search(
     # Get query embedding
     if query_embedding is None:
         query_embedding = embed_text(
-            query, provider_id=provider_id, model=model,
-            base_url=base_url, api_key=api_key,
+            query,
+            provider_id=provider_id,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
         )
 
     if not query_embedding:
@@ -180,11 +186,12 @@ def semantic_search(
     # Use vector store backend if provided
     if vector_store is not None:
         raw_results = vector_store.search(
-            query_embedding, top_k=top_k, min_similarity=min_similarity,
+            query_embedding,
+            top_k=top_k,
+            min_similarity=min_similarity,
         )
         return [
-            {"key": r["key"], "_similarity": round(r["similarity"], 4), **r.get("metadata", {})}
-            for r in raw_results
+            {"key": r["key"], "_similarity": round(r["similarity"], 4), **r.get("metadata", {})} for r in raw_results
         ]
 
     # In-memory search (default)

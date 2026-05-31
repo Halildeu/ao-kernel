@@ -53,36 +53,15 @@ class TestBundledScenarios:
 
     def test_targets_point_at_expected_policies(self) -> None:
         scenarios = {s.scenario_id: s for s in load_bundled_scenarios()}
-        assert (
-            scenarios["adapter_http_with_secret"].target_policy_name
-            == "policy_worktree_profile.v1.json"
-        )
-        assert (
-            scenarios["path_poisoned_python"].target_policy_name
-            == "policy_worktree_profile.v1.json"
-        )
-        assert (
-            scenarios["autonomy_unknown_intent"].target_policy_name
-            == "policy_autonomy.v1.json"
-        )
+        assert scenarios["adapter_http_with_secret"].target_policy_name == "policy_worktree_profile.v1.json"
+        assert scenarios["path_poisoned_python"].target_policy_name == "policy_worktree_profile.v1.json"
+        assert scenarios["autonomy_unknown_intent"].target_policy_name == "policy_autonomy.v1.json"
 
     def test_decisions_match_expected_shape(self) -> None:
         scenarios = {s.scenario_id: s for s in load_bundled_scenarios()}
-        assert (
-            scenarios["adapter_http_with_secret"]
-            .expected_baseline.decision_expected
-            == "allow"
-        )
-        assert (
-            scenarios["path_poisoned_python"]
-            .expected_baseline.decision_expected
-            == "deny"
-        )
-        assert (
-            scenarios["autonomy_unknown_intent"]
-            .expected_baseline.decision_expected
-            == "deny"
-        )
+        assert scenarios["adapter_http_with_secret"].expected_baseline.decision_expected == "allow"
+        assert scenarios["path_poisoned_python"].expected_baseline.decision_expected == "deny"
+        assert scenarios["autonomy_unknown_intent"].expected_baseline.decision_expected == "deny"
 
 
 class TestLoadScenarioFile:
@@ -112,9 +91,7 @@ class TestLoadScenarioFile:
         with pytest.raises(ScenarioValidationError):
             load_scenario_file(target)
 
-    def test_missing_target_policy_for_executor_primitive(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_target_policy_for_executor_primitive(self, tmp_path: Path) -> None:
         bad = _valid_scenario()
         del bad["target_policy_name"]
         target = tmp_path / "x.json"
@@ -132,9 +109,7 @@ class TestLoadScenarioFile:
         with pytest.raises(ScenarioValidationError):
             load_scenario_file(target)
 
-    def test_combined_without_target_names_rejected(
-        self, tmp_path: Path
-    ) -> None:
+    def test_combined_without_target_names_rejected(self, tmp_path: Path) -> None:
         bad = _valid_scenario(kind="combined")
         del bad["target_policy_name"]
         target = tmp_path / "x.json"
@@ -169,9 +144,7 @@ class TestLoadScenariosFromDir:
     def test_loads_sorted(self, tmp_path: Path) -> None:
         for sid in ("zebra", "alpha", "mango"):
             doc = _valid_scenario(scenario_id=sid)
-            (tmp_path / f"{sid}.json").write_text(
-                json.dumps(doc), encoding="utf-8"
-            )
+            (tmp_path / f"{sid}.json").write_text(json.dumps(doc), encoding="utf-8")
         scenarios = load_scenarios_from_dir(tmp_path)
         assert [s.scenario_id for s in scenarios] == ["alpha", "mango", "zebra"]
 
@@ -204,9 +177,7 @@ class TestScenarioModel:
         with pytest.raises(Exception):
             scenario_set.name = "other"  # type: ignore[misc]
 
-    def test_default_governance_policy_action_optional(
-        self, tmp_path: Path
-    ) -> None:
+    def test_default_governance_policy_action_optional(self, tmp_path: Path) -> None:
         """governance_policy scenarios can omit adapter_manifest_ref
         (set to null) and still validate."""
         doc = _valid_scenario(

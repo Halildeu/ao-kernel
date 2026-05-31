@@ -15,13 +15,7 @@ from ao_kernel.repo_intelligence import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = (
-    ROOT
-    / "ao_kernel"
-    / "defaults"
-    / "schemas"
-    / "repo-intelligence-workflow-context-opt-in.schema.v1.json"
-)
+SCHEMA_PATH = ROOT / "ao_kernel" / "defaults" / "schemas" / "repo-intelligence-workflow-context-opt-in.schema.v1.json"
 WORKFLOW_DIR = ROOT / "ao_kernel" / "defaults" / "workflows"
 
 

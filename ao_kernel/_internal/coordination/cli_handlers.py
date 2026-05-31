@@ -113,8 +113,7 @@ def cmd_coordination_takeover(args: Any) -> int:
         )
     except ClaimCoordinationDisabledError:
         print(
-            "error: coordination disabled — "
-            "policy_coordination_claims.enabled=false",
+            "error: coordination disabled — policy_coordination_claims.enabled=false",
             file=sys.stderr,
         )
         return 1

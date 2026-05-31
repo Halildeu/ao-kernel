@@ -14,20 +14,14 @@ from typing import Any, Dict, List
 
 from ao_kernel._internal.providers.capability_model import ProviderCapability, negotiate, resolve_manifest
 
-_XAI_USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/120.0 Safari/537.36"
-)
+_XAI_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
 
 
 def _as_text(content: Any) -> str:
     if isinstance(content, str):
         return content
     if isinstance(content, list):
-        return " ".join(
-            str(c.get("text", "")) if isinstance(c, dict) else str(c) for c in content
-        )
+        return " ".join(str(c.get("text", "")) if isinstance(c, dict) else str(c) for c in content)
     return str(content) if content else ""
 
 
@@ -99,6 +93,7 @@ def build_live_request(
             req_body["response_format"] = response_format
         if tools:
             from ao_kernel._internal.prj_kernel_api.tool_calling import build_tools_param
+
             req_body["tools"] = build_tools_param(provider_id, tools)
         if tool_choice is not None:
             req_body["tool_choice"] = tool_choice
@@ -120,6 +115,7 @@ def build_live_request(
             req_body["response_format"] = response_format
         if tools:
             from ao_kernel._internal.prj_kernel_api.tool_calling import build_tools_param
+
             req_body["tools"] = build_tools_param(provider_id, tools)
         if tool_choice is not None:
             req_body["tool_choice"] = tool_choice
@@ -159,6 +155,7 @@ def build_live_request(
 
 
 # --- Capability-aware request building (PR4b) ---
+
 
 def check_capabilities_before_request(
     *,

@@ -143,6 +143,7 @@ def _default_provider() -> "SecretsProvider | None":
     """
     try:
         from ao_kernel._internal.secrets.factory import create_provider_from_env
+
         return create_provider_from_env()
     except Exception:  # noqa: BLE001 — factory load is best-effort
         return None
@@ -155,4 +156,5 @@ __all__ = ["resolve_api_key", "env_names_for"]
 # TYPE_CHECKING — kept lazy to avoid import cycles at module load.
 def _runtime_check() -> Any:  # pragma: no cover — smoke helper
     from ao_kernel._internal.secrets.provider import SecretsProvider  # noqa: F401
+
     return SecretsProvider

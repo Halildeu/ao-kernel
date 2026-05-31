@@ -179,7 +179,9 @@ def query_repo_vectors(
         "embedding_space": dict(embedding_space),
         "vector_namespace": dict(_mapping(vector_index_manifest.get("vector_namespace"))),
         "source_artifacts": {
-            "repo_chunks_sha256": str(_mapping(vector_index_manifest.get("source_artifacts")).get("repo_chunks_sha256")),
+            "repo_chunks_sha256": str(
+                _mapping(vector_index_manifest.get("source_artifacts")).get("repo_chunks_sha256")
+            ),
             "repo_vector_index_manifest_sha256": _stable_document_sha256(vector_index_manifest),
         },
         "summary": {
@@ -375,11 +377,7 @@ def _stable_document_sha256(document: Mapping[str, Any]) -> str:
 
 def _without_generated_at(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return {
-            str(key): _without_generated_at(item)
-            for key, item in value.items()
-            if str(key) != "generated_at"
-        }
+        return {str(key): _without_generated_at(item) for key, item in value.items() if str(key) != "generated_at"}
     if isinstance(value, list):
         return [_without_generated_at(item) for item in value]
     return value

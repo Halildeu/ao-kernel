@@ -19,6 +19,7 @@ class TestLoadConfig:
     def test_returns_empty_when_no_workspace(self, monkeypatch, tmp_path: Path):
         monkeypatch.chdir(tmp_path)
         from ao_kernel import config as cfg_mod
+
         monkeypatch.setattr(cfg_mod, "workspace_root", lambda override=None: None)
         assert ws_mod.load_config() == {}
 
@@ -30,6 +31,7 @@ class TestLoadConfig:
             encoding="utf-8",
         )
         from ao_kernel import config as cfg_mod
+
         monkeypatch.setattr(cfg_mod, "workspace_root", lambda override=None: ao_dir)
         assert ws_mod.load_config()["kind"] == "repo"
 
@@ -43,6 +45,7 @@ class TestDoctorEntry:
             return 0
 
         from ao_kernel import doctor_cmd as doctor_mod
+
         monkeypatch.setattr(doctor_mod, "run", _fake_run)
         assert ws_mod.doctor(workspace_root_override="/tmp/ws") == 0
         assert called["ws"] == "/tmp/ws"
@@ -59,10 +62,13 @@ class TestMigrateEntry:
             return 0
 
         from ao_kernel import migrate_cmd as migrate_mod
+
         monkeypatch.setattr(migrate_mod, "run", _fake_run)
         assert (
             ws_mod.migrate(
-                workspace_root_override="/tmp/ws", dry_run=True, backup=True,
+                workspace_root_override="/tmp/ws",
+                dry_run=True,
+                backup=True,
             )
             == 0
         )

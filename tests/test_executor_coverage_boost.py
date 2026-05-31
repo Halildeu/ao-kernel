@@ -35,17 +35,11 @@ from ao_kernel.workflow import WorkflowRegistry, create_run
 
 def _init_git_repo(root: Path) -> None:
     subprocess.run(["git", "init", "-q", str(root)], check=True)
-    subprocess.run(
-        ["git", "-C", str(root), "config", "user.email", "t@e"], check=True
-    )
-    subprocess.run(
-        ["git", "-C", str(root), "config", "user.name", "t"], check=True
-    )
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "t@e"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "t"], check=True)
     (root / "seed.txt").write_text("seed\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(root), "add", "seed.txt"], check=True)
-    subprocess.run(
-        ["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True
-    )
+    subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True)
 
 
 # ---------------------------------------------------------------------------
@@ -60,17 +54,13 @@ class TestErrorBranches:
         assert "0 policy violations" in str(err)
 
     def test_adapter_invocation_failed_str(self) -> None:
-        err = AdapterInvocationFailedError(
-            reason="timeout", detail="adapter ran too long"
-        )
+        err = AdapterInvocationFailedError(reason="timeout", detail="adapter ran too long")
         assert "timeout" in str(err)
         assert err.reason == "timeout"
 
     def test_adapter_output_parse_error_excerpt(self) -> None:
         long_excerpt = "x" * 1000
-        err = AdapterOutputParseError(
-            raw_excerpt=long_excerpt, detail="cannot parse"
-        )
+        err = AdapterOutputParseError(raw_excerpt=long_excerpt, detail="cannot parse")
         # Excerpt truncated in __str__ to 120 chars
         assert len(str(err)) < 200
         assert err.raw_excerpt == long_excerpt
@@ -124,9 +114,7 @@ class TestExecutorPlaceholderPath:
             workflow_version="1.0.0",
             intent={"kind": "inline_prompt", "payload": "x"},
             budget={"fail_closed_on_exhaust": True},
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[f".ao/evidence/workflows/{rid}/events.jsonl"],
         )
 

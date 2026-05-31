@@ -81,9 +81,7 @@ class TestParse:
 
     def test_fail_closed_missing_rejected(self) -> None:
         with pytest.raises(ValueError, match="fail_closed_on_exhaust"):
-            budget_from_dict(
-                {"tokens": {"limit": 10, "spent": 0, "remaining": 10}}
-            )
+            budget_from_dict({"tokens": {"limit": 10, "spent": 0, "remaining": 10}})
 
 
 class TestSerialize:
@@ -142,9 +140,7 @@ class TestSerialize:
             "revision": "a" * 64,
             "intent": {"kind": "inline_prompt", "payload": "x"},
             "steps": [],
-            "policy_refs": [
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            "policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             "adapter_refs": [],
             "evidence_refs": [".ao/evidence/workflows/x/events.jsonl"],
             "budget": budget_to_dict(b),

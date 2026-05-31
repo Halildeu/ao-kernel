@@ -27,7 +27,9 @@ from ao_kernel.cost.policy import CostTrackingPolicy
 
 
 def _policy(
-    *, enabled: bool = True, fail_on_missing: bool = False,
+    *,
+    enabled: bool = True,
+    fail_on_missing: bool = False,
 ) -> CostTrackingPolicy:
     """Tight policy sufficient for the adapter reconcile path."""
     return CostTrackingPolicy(
@@ -88,24 +90,14 @@ def _read_ledger(root: Path) -> list[dict[str, Any]]:
     path = root / ".ao" / "cost" / "spend.jsonl"
     if not path.is_file():
         return []
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _read_events(root: Path, run_id: str) -> list[dict[str, Any]]:
-    path = (
-        root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-    )
+    path = root / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
     if not path.is_file():
         return []
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _read_run_budget(root: Path, run_id: str) -> dict[str, Any]:
@@ -150,7 +142,8 @@ class TestDormantAndNoOp:
 
 class TestHappyPath:
     def test_happy_path_drains_budget_and_emits(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-000000aaa003"
         _seed_run(tmp_path, run_id, cost_limit=10.0, cost_remaining=10.0)
@@ -200,7 +193,8 @@ class TestHappyPath:
 
 class TestUsageMissing:
     def test_usage_missing_emits_llm_usage_missing(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-000000aaa004"
         _seed_run(tmp_path, run_id)
@@ -223,12 +217,8 @@ class TestUsageMissing:
 
         # Emit: llm_usage_missing (NOT llm_spend_recorded).
         events = _read_events(tmp_path, run_id)
-        usage_missing_events = [
-            e for e in events if e.get("kind") == "llm_usage_missing"
-        ]
-        spend_events = [
-            e for e in events if e.get("kind") == "llm_spend_recorded"
-        ]
+        usage_missing_events = [e for e in events if e.get("kind") == "llm_usage_missing"]
+        spend_events = [e for e in events if e.get("kind") == "llm_spend_recorded"]
         assert len(usage_missing_events) == 1
         assert len(spend_events) == 0
         payload = usage_missing_events[0]["payload"]
@@ -239,7 +229,8 @@ class TestUsageMissing:
         assert payload["provider_id"] == "codex"
         assert payload["model"] == "stub"
         assert set(payload["missing_fields"]) == {
-            "tokens_input", "tokens_output",
+            "tokens_input",
+            "tokens_output",
         }
 
         # Budget NOT drained (audit-only path).
@@ -253,13 +244,18 @@ class TestSpendEvidenceVendorEnrichment:
     having to cross-reference the ledger."""
 
     def test_vendor_model_id_on_llm_spend_recorded_emit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000e34a0001"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "tokens_input": 100,
                 "tokens_output": 50,
@@ -271,20 +267,23 @@ class TestSpendEvidenceVendorEnrichment:
         events = _read_events(tmp_path, run_id)
         spend_events = [e for e in events if e.get("kind") == "llm_spend_recorded"]
         assert len(spend_events) == 1
-        assert spend_events[0]["payload"]["vendor_model_id"] == (
-            "claude-3-5-sonnet-20241022"
-        )
+        assert spend_events[0]["payload"]["vendor_model_id"] == ("claude-3-5-sonnet-20241022")
 
     def test_vendor_model_id_absent_when_adapter_omits(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Adapter that doesn't populate vendor_model_id → evidence
         payload omits the key (not null)."""
         run_id = "00000000-0000-4000-8000-0000e34a0002"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "tokens_input": 100,
                 "tokens_output": 50,
@@ -301,7 +300,8 @@ class TestSpendEvidenceVendorEnrichment:
 
 class TestIdempotency:
     def test_same_digest_silent_no_op_on_second_call(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-000000aaa005"
         _seed_run(tmp_path, run_id)
@@ -313,16 +313,26 @@ class TestIdempotency:
         }
         # First call: full reconcile.
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=cost_actual, policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=cost_actual,
+            policy=_policy(),
         )
         # Second call: same (run_id, step_id, attempt) + same cost →
         # same digest → silent no-op.
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
-            cost_actual=cost_actual, policy=_policy(),
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
+            cost_actual=cost_actual,
+            policy=_policy(),
         )
         # Ledger still has exactly ONE entry.
         assert len(_read_ledger(tmp_path)) == 1
@@ -332,17 +342,24 @@ class TestIdempotency:
         assert budget["cost_usd"]["remaining"] == pytest.approx(9.95)
 
     def test_different_digest_raises_duplicate(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-000000aaa006"
         _seed_run(tmp_path, run_id)
 
         # First call with one cost value.
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
-                "tokens_input": 100, "tokens_output": 50, "cost_usd": 0.05,
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
             },
             policy=_policy(),
         )
@@ -350,10 +367,16 @@ class TestIdempotency:
         # digest → SpendLedgerDuplicateError.
         with pytest.raises(SpendLedgerDuplicateError):
             post_adapter_reconcile(
-                workspace_root=tmp_path, run_id=run_id, step_id="s1",
-                attempt=1, provider_id="codex", model="stub",
+                workspace_root=tmp_path,
+                run_id=run_id,
+                step_id="s1",
+                attempt=1,
+                provider_id="codex",
+                model="stub",
                 cost_actual={
-                    "tokens_input": 200, "tokens_output": 100, "cost_usd": 0.10,
+                    "tokens_input": 200,
+                    "tokens_output": 100,
+                    "cost_usd": 0.10,
                 },
                 policy=_policy(),
             )
@@ -368,13 +391,18 @@ class TestVendorModelIdAttribution:
     """
 
     def test_vendor_model_id_propagates_to_ledger(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c31a0001"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "tokens_input": 100,
                 "tokens_output": 50,
@@ -388,13 +416,18 @@ class TestVendorModelIdAttribution:
         assert ledger[0]["vendor_model_id"] == "claude-3-5-sonnet-20241022"
 
     def test_vendor_model_id_absent_defaults_to_none(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         run_id = "00000000-0000-4000-8000-0000c31a0002"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "tokens_input": 100,
                 "tokens_output": 50,
@@ -408,15 +441,20 @@ class TestVendorModelIdAttribution:
         assert "vendor_model_id" not in ledger[0]
 
     def test_vendor_model_id_blank_string_normalized_to_none(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Defensive middleware normalization — adapter bug emits empty
         string, ledger stores None (not empty)."""
         run_id = "00000000-0000-4000-8000-0000c31a0003"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "tokens_input": 100,
                 "tokens_output": 50,
@@ -429,15 +467,20 @@ class TestVendorModelIdAttribution:
         assert "vendor_model_id" not in ledger[0]
 
     def test_usage_missing_preserves_vendor_model_id(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Adapter reports vendor but no tokens → usage_missing path
         still carries the attribution for audit."""
         run_id = "00000000-0000-4000-8000-0000c31a0004"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
                 "cost_usd": 0.0,
                 "vendor_model_id": "claude-3-5-sonnet-20241022",
@@ -449,27 +492,40 @@ class TestVendorModelIdAttribution:
         assert ledger[0]["usage_missing"] is True
 
     def test_different_vendor_same_tokens_raises_duplicate(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Digest includes vendor_model_id → same tokens/cost but
         different vendor raise SpendLedgerDuplicateError on re-reconcile."""
         run_id = "00000000-0000-4000-8000-0000c31a0005"
         _seed_run(tmp_path, run_id)
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={
-                "tokens_input": 100, "tokens_output": 50, "cost_usd": 0.05,
+                "tokens_input": 100,
+                "tokens_output": 50,
+                "cost_usd": 0.05,
                 "vendor_model_id": "v1",
             },
             policy=_policy(),
         )
         with pytest.raises(SpendLedgerDuplicateError):
             post_adapter_reconcile(
-                workspace_root=tmp_path, run_id=run_id, step_id="s1",
-                attempt=1, provider_id="codex", model="stub",
+                workspace_root=tmp_path,
+                run_id=run_id,
+                step_id="s1",
+                attempt=1,
+                provider_id="codex",
+                model="stub",
                 cost_actual={
-                    "tokens_input": 100, "tokens_output": 50, "cost_usd": 0.05,
+                    "tokens_input": 100,
+                    "tokens_output": 50,
+                    "cost_usd": 0.05,
                     "vendor_model_id": "v2",
                 },
                 policy=_policy(),
@@ -483,7 +539,8 @@ class TestCostRecordSchema:
         from ao_kernel.config import load_default
 
         schema = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )
         cost_record_schema = schema["$defs"]["cost_record"]
         validator = Draft202012Validator(cost_record_schema)
@@ -502,7 +559,8 @@ class TestCostRecordSchema:
         from ao_kernel.config import load_default
 
         schema = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )
         cost_record_schema = schema["$defs"]["cost_record"]
         validator = Draft202012Validator(cost_record_schema)
@@ -521,22 +579,26 @@ class TestCostRecordSchema:
         from ao_kernel.config import load_default
 
         schema = load_default(
-            "schemas", "agent-adapter-contract.schema.v1.json",
+            "schemas",
+            "agent-adapter-contract.schema.v1.json",
         )
         cost_record_schema = schema["$defs"]["cost_record"]
         validator = Draft202012Validator(cost_record_schema)
         with pytest.raises(ValidationError):
-            validator.validate({
-                "tokens_input": 100,
-                "tokens_output": 50,
-                "cost_usd": 0.05,
-                "vendor_model_id": "",  # empty → violates minLength:1
-            })
+            validator.validate(
+                {
+                    "tokens_input": 100,
+                    "tokens_output": 50,
+                    "cost_usd": 0.05,
+                    "vendor_model_id": "",  # empty → violates minLength:1
+                }
+            )
 
 
 class TestWireFormat:
     def test_cost_actual_wire_format_not_usage(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Builder reads ``cost_actual.tokens_input/tokens_output``,
         NOT ``usage.*``. A payload with ``usage.*`` but no
@@ -546,8 +608,12 @@ class TestWireFormat:
 
         # usage.* fields present but cost_actual lacks tokens → usage-missing.
         post_adapter_reconcile(
-            workspace_root=tmp_path, run_id=run_id, step_id="s1",
-            attempt=1, provider_id="codex", model="stub",
+            workspace_root=tmp_path,
+            run_id=run_id,
+            step_id="s1",
+            attempt=1,
+            provider_id="codex",
+            model="stub",
             cost_actual={"cost_usd": 0.01},  # no tokens_input/output
             policy=_policy(),
         )

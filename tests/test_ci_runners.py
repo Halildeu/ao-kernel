@@ -43,6 +43,7 @@ def _sandbox_with_pythonpath(root: Path):  # noqa: ANN201 - returns SandboxedEnv
 class TestRunPytest:
     def test_passing_suite_returns_pass(self, tmp_path: Path) -> None:
         import sys
+
         root = _micro_repo(tmp_path, pytest_pass=True)
         result = run_pytest(root, _sandbox_with_pythonpath(root), timeout=60.0)
         assert isinstance(result, CIResult)
@@ -75,8 +76,10 @@ class TestRunPytest:
         outcome: CITimeoutError | CIResult | None = None
         try:
             outcome = run_pytest(
-                root, _sandbox_with_pythonpath(root),
-                timeout=0.001, raise_on_timeout=True,
+                root,
+                _sandbox_with_pythonpath(root),
+                timeout=0.001,
+                raise_on_timeout=True,
             )
         except CITimeoutError as exc:
             outcome = exc
@@ -107,6 +110,7 @@ class TestRunRuff:
 
     def test_command_starts_with_python3_m_ruff(self, tmp_path: Path) -> None:
         import sys
+
         root = _micro_repo(tmp_path)
         result = run_ruff(root, build_test_sandbox(root), timeout=30.0)
         # Uses sys.executable (not hardcoded "python3") for multi-version safety
@@ -117,7 +121,8 @@ class TestRunAll:
     def test_runs_multiple_checks_in_order(self, tmp_path: Path) -> None:
         root = _micro_repo(tmp_path)
         results = run_all(
-            root, _sandbox_with_pythonpath(root),
+            root,
+            _sandbox_with_pythonpath(root),
             checks=["pytest", "ruff"],
             timeouts={"pytest": 60.0, "ruff": 30.0},
         )
@@ -128,7 +133,8 @@ class TestRunAll:
     def test_fail_fast_stops_on_first_non_pass(self, tmp_path: Path) -> None:
         root = _micro_repo(tmp_path, pytest_pass=False)
         results = run_all(
-            root, _sandbox_with_pythonpath(root),
+            root,
+            _sandbox_with_pythonpath(root),
             checks=["pytest", "ruff"],
             fail_fast=True,
             timeouts={"pytest": 60.0, "ruff": 30.0},
@@ -140,7 +146,8 @@ class TestRunAll:
     def test_no_fail_fast_runs_all_even_on_failure(self, tmp_path: Path) -> None:
         root = _micro_repo(tmp_path, pytest_pass=False)
         results = run_all(
-            root, _sandbox_with_pythonpath(root),
+            root,
+            _sandbox_with_pythonpath(root),
             checks=["pytest", "ruff"],
             fail_fast=False,
             timeouts={"pytest": 60.0, "ruff": 30.0},
@@ -151,7 +158,8 @@ class TestRunAll:
         root = _micro_repo(tmp_path)
         # mypy is a valid literal but no runner is implemented → skip
         results = run_all(
-            root, _sandbox_with_pythonpath(root),
+            root,
+            _sandbox_with_pythonpath(root),
             checks=["mypy"],  # type: ignore[list-item]
         )
         assert results == []

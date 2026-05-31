@@ -75,7 +75,8 @@ def _backup_dir(workspace_root: Path) -> Path:
 
 
 def _write_backup_manifest(
-    backup_dir: Path, entries: list[MigrationEntry],
+    backup_dir: Path,
+    entries: list[MigrationEntry],
 ) -> Path:
     backup_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     timestamp = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -141,53 +142,59 @@ def migrate_consultations(
                 canonical.mkdir(parents=True, exist_ok=True, mode=0o700)
 
         for path, origin, classification in iter_consultation_files(
-            policy, artefact, workspace_root=workspace_root,
+            policy,
+            artefact,
+            workspace_root=workspace_root,
         ):
             if origin != "legacy":
                 continue  # already canonical
 
             # File artefact: target is the canonical path itself (fixed
             # filename); directory artefact: target = canonical/<name>.
-            target = (
-                canonical if is_file_artefact(artefact)
-                else canonical / path.name
-            )
+            target = canonical if is_file_artefact(artefact) else canonical / path.name
 
             if classification == FileClassification.INVALID_JSON and not include_invalid:
-                entries.append(MigrationEntry(
-                    artefact=artefact,
-                    source=path,
-                    target=target,
-                    status="skipped_invalid",
-                    classification=classification,
-                ))
+                entries.append(
+                    MigrationEntry(
+                        artefact=artefact,
+                        source=path,
+                        target=target,
+                        status="skipped_invalid",
+                        classification=classification,
+                    )
+                )
                 continue
 
             if target.exists() and not force:
-                entries.append(MigrationEntry(
-                    artefact=artefact,
-                    source=path,
-                    target=target,
-                    status="skipped_exists",
-                    classification=classification,
-                ))
+                entries.append(
+                    MigrationEntry(
+                        artefact=artefact,
+                        source=path,
+                        target=target,
+                        status="skipped_exists",
+                        classification=classification,
+                    )
+                )
                 continue
 
             if not dry_run:
                 shutil.copy2(path, target)
 
-            entries.append(MigrationEntry(
-                artefact=artefact,
-                source=path,
-                target=target,
-                status="copied",
-                classification=classification,
-            ))
+            entries.append(
+                MigrationEntry(
+                    artefact=artefact,
+                    source=path,
+                    target=target,
+                    status="copied",
+                    classification=classification,
+                )
+            )
 
     backup_manifest: Path | None = None
     if not dry_run and entries:
         backup_manifest = _write_backup_manifest(
-            _backup_dir(workspace_root), entries,
+            _backup_dir(workspace_root),
+            entries,
         )
 
     return MigrationResult(

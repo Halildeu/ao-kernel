@@ -59,7 +59,9 @@ def test_policy_cloud_run_bootstrap_attestation_blocks_missing_required_variable
     assert attestation["overall_status"] == "blocked"
     assert attestation["finding_code"] == "policy_cloud_run_bootstrap_missing_repository_variables"
     assert attestation["missing_repository_variables"] == ["GCP_SERVICE_ACCOUNT"]
-    account = next(item for item in attestation["required_repository_variables"] if item["name"] == "GCP_SERVICE_ACCOUNT")
+    account = next(
+        item for item in attestation["required_repository_variables"] if item["name"] == "GCP_SERVICE_ACCOUNT"
+    )
     assert account == {"name": "GCP_SERVICE_ACCOUNT", "present": False, "updated_at": None}
 
 
@@ -120,7 +122,7 @@ def test_policy_cloud_run_bootstrap_attestation_cli_can_fail_on_blocked(tmp_path
 def test_policy_cloud_run_bootstrap_live_collection_does_not_request_values() -> None:
     source = (_repo_root() / "scripts" / "policy_service_cloud_run_bootstrap_attest.py").read_text(encoding="utf-8")
 
-    assert "--json\", \"name,updatedAt\"" in source
+    assert '--json", "name,updatedAt"' in source
     assert "gcloud secrets versions access" not in source
     assert "secrets." not in source
     assert "AO_CLAUDE_CODE_CLI_AUTH" not in source

@@ -149,10 +149,7 @@ def main(argv: list[str]) -> int:
     info = known_paths[target]
     dirty = _dirty_status(target)
     print(f"Target branch: {info.branch}")
-    print(
-        "Target status: "
-        f"staged={dirty.staged}, unstaged={dirty.unstaged}, untracked={dirty.untracked}"
-    )
+    print(f"Target status: staged={dirty.staged}, unstaged={dirty.unstaged}, untracked={dirty.untracked}")
 
     if not dirty.is_dirty:
         print("Refusing to archive clean worktree")
@@ -162,9 +159,7 @@ def main(argv: list[str]) -> int:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     common_git_dir = _resolve_git_common_dir(repo_root)
     archive_dir = (
-        common_git_dir
-        / "ops-worktree-archives"
-        / f"{timestamp}-{_branch_slug(info.branch)}-{uuid4().hex[:8]}"
+        common_git_dir / "ops-worktree-archives" / f"{timestamp}-{_branch_slug(info.branch)}-{uuid4().hex[:8]}"
     )
     archive_dir.mkdir(parents=True, exist_ok=False)
 

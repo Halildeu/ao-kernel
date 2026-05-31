@@ -53,7 +53,8 @@ def _minimal_driver(
 
 class TestAdapterParentEnvUnion:
     def test_includes_allowlist_secret_ids(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setenv("AO_C2_SECRET_TOKEN", "secret-value")
         policy = {
@@ -64,7 +65,8 @@ class TestAdapterParentEnvUnion:
         assert result == {"AO_C2_SECRET_TOKEN": "secret-value"}
 
     def test_includes_env_allowlist_allowed_keys(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setenv("AO_C2_ENV_KEY", "env-value")
         policy = {
@@ -75,7 +77,8 @@ class TestAdapterParentEnvUnion:
         assert result == {"AO_C2_ENV_KEY": "env-value"}
 
     def test_merges_both_sets(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setenv("AO_C2_TOK", "tok")
         monkeypatch.setenv("AO_C2_ENV", "env")
@@ -87,7 +90,8 @@ class TestAdapterParentEnvUnion:
         assert result == {"AO_C2_TOK": "tok", "AO_C2_ENV": "env"}
 
     def test_omits_missing_keys(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.delenv("AO_C2_MISSING", raising=False)
         policy = {
@@ -100,7 +104,8 @@ class TestAdapterParentEnvUnion:
 
 class TestSandboxParentEnvEnvOnly:
     def test_excludes_secrets(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Security: CI/patch sandbox parent_env'de secret YOK."""
         monkeypatch.setenv("AO_C2_SECRET", "leak-candidate")
@@ -114,7 +119,8 @@ class TestSandboxParentEnvEnvOnly:
         assert result == {"AO_C2_SAFE": "env-value"}
 
     def test_excludes_operator_misuse_overlap(
-        self, monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """v3 HARDENING: Operator yanlışlıkla aynı key'i hem
         allowlist_secret_ids hem env_allowlist.allowed_keys'e koyarsa
@@ -129,9 +135,7 @@ class TestSandboxParentEnvEnvOnly:
             },
         }
         result = MultiStepDriver._compute_sandbox_parent_env(policy)
-        assert "AO_C2_OVERLAP" not in result, (
-            "operator misuse overlap leaked into sandbox env"
-        )
+        assert "AO_C2_OVERLAP" not in result, "operator misuse overlap leaked into sandbox env"
         assert result == {"AO_C2_PATH": "/usr/bin"}
 
 
@@ -140,7 +144,9 @@ class TestSandboxParentEnvEnvOnly:
 
 class TestAdapterPathUnionIntegration:
     def test_run_adapter_step_computes_adapter_union(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify ``_run_adapter_step`` builds adapter union for
         ``executor.run_step(parent_env=...)`` call. Unit-level — we
@@ -156,7 +162,9 @@ class TestAdapterPathUnionIntegration:
         assert result == {"AO_C2_GH_TOKEN": "gh-token-value"}
 
     def test_build_sandbox_uses_env_only_no_secret_resolution(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify _build_sandbox does NOT invoke resolve_allowed_secrets
         (v3 hardening: resolved_secrets literal ``{}``). The resulting
@@ -188,7 +196,9 @@ class TestAdapterPathUnionIntegration:
 
 class TestSecurityRegression:
     def test_ci_sandbox_does_not_leak_secret(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Sec regression: policy allowlists GH_TOKEN as secret AND
         host env has it — _build_sandbox MUST NOT expose it."""
@@ -209,7 +219,9 @@ class TestSecurityRegression:
         assert "AO_C2_LEAK_CANDIDATE" not in sandbox.env_vars
 
     def test_adapter_parent_env_includes_secret(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Positive security: adapter path DOES include allowlisted
         secret (so gh-cli-pr / codex-stub can authenticate)."""
@@ -231,7 +243,8 @@ class TestSecurityRegression:
 
 class TestBuildDriverPolicyForward:
     def test_forwards_policy_to_both_driver_and_executor(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """PR-C2 B2 regression: build_driver(policy_loader=...) must
         propagate the same policy to BOTH the Executor instance AND
@@ -245,12 +258,8 @@ class TestBuildDriverPolicyForward:
             "env_allowlist": {"allowed_keys": ["Y"]},
         }
         driver = build_driver(tmp_path, policy_loader=custom_policy)
-        assert driver._policy is custom_policy, (
-            "driver._policy must be the forwarded policy"
-        )
-        assert driver._executor._policy is custom_policy, (
-            "executor._policy must be the forwarded policy"
-        )
+        assert driver._policy is custom_policy, "driver._policy must be the forwarded policy"
+        assert driver._executor._policy is custom_policy, "executor._policy must be the forwarded policy"
         # Contract: sandbox path uses driver._policy; adapter path
         # executes via executor (which uses executor._policy). When
         # build_driver forwards both, both sides see the same splits.

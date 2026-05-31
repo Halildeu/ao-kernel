@@ -74,9 +74,7 @@ def preview_diff(
     # None → generate; everything else (including empty string) passes
     # through ``validate_patch_id`` so preview + apply share the same id
     # rejection surface (CNS-023 iter-4 W3 absorb).
-    assigned_patch_id = (
-        secrets.token_urlsafe(32) if patch_id is None else patch_id
-    )
+    assigned_patch_id = secrets.token_urlsafe(32) if patch_id is None else patch_id
     validate_patch_id(assigned_patch_id)
     start = time.monotonic()
 
@@ -142,7 +140,10 @@ def _enforce_command_policy(
     spawned until this check passes.
     """
     violations = validate_command(
-        cmd[0], tuple(cmd[1:]), sandbox, secret_values={},
+        cmd[0],
+        tuple(cmd[1:]),
+        sandbox,
+        secret_values={},
     )
     if violations:
         raise PolicyViolationError(violations=list(violations))

@@ -395,10 +395,7 @@ class TestObservabilityAccounting:
         )
         PROFILES["H5_TIGHT"] = custom
         try:
-            consultations = tuple(
-                _mk_consultation(f"CNS-DROP-{i:03d}", topic="x" * 80)
-                for i in range(5)
-            )
+            consultations = tuple(_mk_consultation(f"CNS-DROP-{i:03d}", topic="x" * 80) for i in range(5))
             result = compile_context(
                 {"ephemeral_decisions": []},
                 consultations=consultations,
@@ -407,27 +404,19 @@ class TestObservabilityAccounting:
             # Some accepted, some dropped; total must equal input count.
             assert result.items_included >= 1
             assert result.items_excluded >= 1
-            assert (
-                result.items_included + result.items_excluded == len(consultations)
-            ), (
+            assert result.items_included + result.items_excluded == len(consultations), (
                 f"counter drift: included={result.items_included} + "
                 f"excluded={result.items_excluded} != {len(consultations)}"
             )
             # selection_log has a consultation-lane entry for each
             # capped consultation (accepted or excluded).
-            consultation_log = [
-                row
-                for row in result.selection_log
-                if row.get("lane") == "consultation"
-            ]
+            consultation_log = [row for row in result.selection_log if row.get("lane") == "consultation"]
             assert len(consultation_log) == len(consultations)
-            excluded_rows = [
-                row for row in consultation_log if row["included"] is False
-            ]
+            excluded_rows = [row for row in consultation_log if row["included"] is False]
             assert excluded_rows
-            assert all(
-                "budget" in row["reason"] for row in excluded_rows
-            ), f"unexpected exclusion reasons: {[r['reason'] for r in excluded_rows]}"
+            assert all("budget" in row["reason"] for row in excluded_rows), (
+                f"unexpected exclusion reasons: {[r['reason'] for r in excluded_rows]}"
+            )
         finally:
             PROFILES.pop("H5_TIGHT", None)
 
@@ -441,9 +430,7 @@ class TestObservabilityAccounting:
         # Fresh workspace with no other lanes either.
         assert result.items_included == 0
         assert result.items_excluded == 0
-        assert not [
-            r for r in result.selection_log if r.get("lane") == "consultation"
-        ]
+        assert not [r for r in result.selection_log if r.get("lane") == "consultation"]
 
 
 class TestCapBasedExclusionAccounting:
@@ -454,9 +441,7 @@ class TestCapBasedExclusionAccounting:
     def test_task_execution_cap_drops_are_counted(self) -> None:
         """TASK_EXECUTION has max_consultations=3; passing 5
         consultations should leave 3 accepted and 2 cap-excluded."""
-        consultations = tuple(
-            _mk_consultation(f"CNS-CAP-{i:03d}") for i in range(5)
-        )
+        consultations = tuple(_mk_consultation(f"CNS-CAP-{i:03d}") for i in range(5))
         result = compile_context(
             {"ephemeral_decisions": []},
             consultations=consultations,
@@ -464,26 +449,19 @@ class TestCapBasedExclusionAccounting:
         )
         assert result.items_included == 3
         assert result.items_excluded == 2
-        consultation_log = [
-            row
-            for row in result.selection_log
-            if row.get("lane") == "consultation"
-        ]
+        consultation_log = [row for row in result.selection_log if row.get("lane") == "consultation"]
         # Every consultation — including cap-dropped tail — appears.
         assert len(consultation_log) == 5
         excluded_rows = [r for r in consultation_log if r["included"] is False]
         assert len(excluded_rows) == 2
         assert all("max_consultations" in r["reason"] for r in excluded_rows), (
-            f"cap-dropped rows should surface max_consultations reason; "
-            f"got {[r['reason'] for r in excluded_rows]}"
+            f"cap-dropped rows should surface max_consultations reason; got {[r['reason'] for r in excluded_rows]}"
         )
 
     def test_emergency_profile_all_consultations_excluded(self) -> None:
         """EMERGENCY has max_consultations=0; any consultation passed
         must be fully cap-excluded and reflected in counters."""
-        consultations = tuple(
-            _mk_consultation(f"CNS-EMERG-{i:03d}") for i in range(3)
-        )
+        consultations = tuple(_mk_consultation(f"CNS-EMERG-{i:03d}") for i in range(3))
         result = compile_context(
             {"ephemeral_decisions": []},
             consultations=consultations,
@@ -491,13 +469,7 @@ class TestCapBasedExclusionAccounting:
         )
         assert result.items_included == 0
         assert result.items_excluded == 3
-        consultation_log = [
-            row
-            for row in result.selection_log
-            if row.get("lane") == "consultation"
-        ]
+        consultation_log = [row for row in result.selection_log if row.get("lane") == "consultation"]
         assert len(consultation_log) == 3
         assert all(r["included"] is False for r in consultation_log)
-        assert all(
-            "max_consultations" in r["reason"] for r in consultation_log
-        )
+        assert all("max_consultations" in r["reason"] for r in consultation_log)

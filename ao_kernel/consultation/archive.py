@@ -94,11 +94,10 @@ def _extract_cns_id(path: Path) -> str | None:
 
 
 def _evidence_dir(
-    workspace_root: Path, cns_id: str,
+    workspace_root: Path,
+    cns_id: str,
 ) -> Path:
-    return (
-        workspace_root / ".ao" / "evidence" / "consultations" / cns_id
-    ).resolve()
+    return (workspace_root / ".ao" / "evidence" / "consultations" / cns_id).resolve()
 
 
 def _copy_snapshot(src: Path, target_dir: Path) -> Path:
@@ -128,7 +127,9 @@ def _group_files_by_cns(
     # apply canonical-wins dedupe after the full walk.
     raw: dict[str, dict[str, tuple[Path, FileClassification, str]]] = {}
     for path, origin, classification in iter_consultation_files(
-        policy, artefact, workspace_root=workspace_root,
+        policy,
+        artefact,
+        workspace_root=workspace_root,
     ):
         cns_id = _extract_cns_id(path)
         if cns_id is None:
@@ -146,9 +147,7 @@ def _group_files_by_cns(
         # else: keep the first-seen canonical (or first legacy if canonical absent)
     groups: dict[str, list[tuple[Path, FileClassification]]] = {}
     for cns_id, by_name in raw.items():
-        groups[cns_id] = [
-            (entry[0], entry[1]) for entry in by_name.values()
-        ]
+        groups[cns_id] = [(entry[0], entry[1]) for entry in by_name.values()]
     return groups
 
 
@@ -213,11 +212,7 @@ def _archive_cns(
             iteration = _iteration_from_name(src.name)
             source_sha = sha256_file(snap_dest)
 
-            kind = (
-                ConsultationEventKind.OPENED
-                if iteration == 1
-                else ConsultationEventKind.REQUEST_REVISED
-            )
+            kind = ConsultationEventKind.OPENED if iteration == 1 else ConsultationEventKind.REQUEST_REVISED
             payload = {
                 "cns_id": cns_id,
                 "source_path": rel,
@@ -331,6 +326,7 @@ def _archive_cns(
 
 def _iteration_from_name(name: str) -> int:
     from ao_kernel.consultation.normalize import iteration_from_filename
+
     return iteration_from_filename(name)
 
 
@@ -364,11 +360,7 @@ def archive_all(
         )
         results.append(result)
         errors_total += len(result.errors)
-        if (
-            result.events_appended > 0
-            or result.record_written
-            or result.manifest_written
-        ):
+        if result.events_appended > 0 or result.record_written or result.manifest_written:
             archived += 1
 
     return ArchiveSummary(

@@ -31,7 +31,7 @@ def _make_vector_plan_project(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     (project / "README.md").write_text("# Vector Plan Project\n\nLocal docs.\n", encoding="utf-8")
-    (project / "pyproject.toml").write_text("[project]\nname = \"vector-plan-project\"\n", encoding="utf-8")
+    (project / "pyproject.toml").write_text('[project]\nname = "vector-plan-project"\n', encoding="utf-8")
     return project
 
 

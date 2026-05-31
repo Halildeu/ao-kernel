@@ -42,6 +42,7 @@ class TestSessionRoundtrip:
 
         # Load should detect tampering (hash mismatch or schema violation)
         from ao_kernel._internal.session.context_store import SessionContextError
+
         with pytest.raises(SessionContextError):
             load_context(workspace_root=tmp_path, session_id="tamper-001")
 
@@ -55,6 +56,7 @@ class TestSessionRoundtrip:
         (session_dir / "session_context.v1.json").write_text("NOT VALID JSON!!!")
 
         from ao_kernel._internal.session.context_store import SessionContextError
+
         with pytest.raises(SessionContextError, match="Invalid JSON"):
             load_context(workspace_root=tmp_path, session_id="corrupt-001")
 
@@ -88,6 +90,7 @@ class TestClientSessionLifecycle:
 
         # Add a decision via context store
         from ao_kernel._internal.session.context_store import upsert_decision
+
         upsert_decision(
             client.context,
             key="test.architecture",
@@ -110,14 +113,18 @@ class TestClientLlmPipelineMocked:
 
         mock_response = MagicMock()
         mock_response.status = 200
-        mock_response.read.return_value = json.dumps({
-            "id": "resp-001",
-            "choices": [{
-                "message": {"role": "assistant", "content": "Hello!"},
-                "finish_reason": "stop",
-            }],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "id": "resp-001",
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "Hello!"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            }
+        ).encode()
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
@@ -141,6 +148,7 @@ class TestGovernancePolicyE2E:
     def test_policy_check_with_bundled_policy(self):
         """check_policy against a real bundled policy."""
         from ao_kernel.governance import check_policy
+
         result = check_policy(
             "policy_tool_calling.v1.json",
             {"tool_name": "dangerous_tool"},
@@ -152,6 +160,7 @@ class TestGovernancePolicyE2E:
     def test_quality_gate_with_real_output(self):
         """evaluate_quality against real quality gates."""
         from ao_kernel.governance import evaluate_quality, quality_summary
+
         results = evaluate_quality("This is a valid LLM output with meaningful content.")
         summary = quality_summary(results)
         assert "all_passed" in summary
@@ -161,6 +170,7 @@ class TestGovernancePolicyE2E:
     def test_quality_gate_fail_closed_on_empty(self):
         """Empty output should be denied by quality gate."""
         from ao_kernel.governance import evaluate_quality, quality_summary
+
         results = evaluate_quality("")
         summary = quality_summary(results)
         # Empty output should trigger at least one gate failure
@@ -172,31 +182,41 @@ class TestMcpToolDispatchE2E:
 
     def test_policy_check_dispatch(self):
         from ao_kernel.mcp_server import handle_policy_check
-        result = handle_policy_check({
-            "policy_name": "policy_tool_calling.v1.json",
-            "action": {"tool_name": "some_tool"},
-        })
+
+        result = handle_policy_check(
+            {
+                "policy_name": "policy_tool_calling.v1.json",
+                "action": {"tool_name": "some_tool"},
+            }
+        )
         assert result["tool"] == "ao_policy_check"
         assert "allowed" in result
         assert "decision" in result
 
     def test_workspace_status_dispatch(self, tmp_workspace: Path):
         from ao_kernel.mcp_server import handle_workspace_status
-        result = handle_workspace_status({
-            "workspace_root": str(tmp_workspace.parent),
-        })
+
+        result = handle_workspace_status(
+            {
+                "workspace_root": str(tmp_workspace.parent),
+            }
+        )
         assert result["tool"] == "ao_workspace_status"
 
     def test_quality_gate_dispatch(self):
         from ao_kernel.mcp_server import handle_quality_gate
-        result = handle_quality_gate({
-            "output_text": "A meaningful LLM response with proper content.",
-        })
+
+        result = handle_quality_gate(
+            {
+                "output_text": "A meaningful LLM response with proper content.",
+            }
+        )
         assert result["tool"] == "ao_quality_gate"
         assert result["decision"] in ("allow", "deny")
 
     def test_llm_route_dispatch(self):
         from ao_kernel.mcp_server import handle_llm_route
+
         result = handle_llm_route({"intent": "FAST_TEXT"})
         assert result["tool"] == "ao_llm_route"
         assert "decision" in result

@@ -5,9 +5,7 @@ import subprocess
 from pathlib import Path
 
 
-OPS_SCRIPT = (
-    Path(__file__).resolve().parents[1] / ".claude" / "scripts" / "ops.sh"
-)
+OPS_SCRIPT = Path(__file__).resolve().parents[1] / ".claude" / "scripts" / "ops.sh"
 
 
 def _run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:

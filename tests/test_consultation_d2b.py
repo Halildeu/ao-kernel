@@ -43,12 +43,15 @@ def _seed_cns(
     req_dir.mkdir(parents=True, exist_ok=True)
     resp_dir.mkdir(parents=True, exist_ok=True)
     (req_dir / f"{cns_id}.request.v1.json").write_text(
-        json.dumps({
-            "consultation_id": cns_id,
-            "topic": "architecture",
-            "from_agent": "claude",
-            "to_agent": "codex",
-        }), encoding="utf-8",
+        json.dumps(
+            {
+                "consultation_id": cns_id,
+                "topic": "architecture",
+                "from_agent": "claude",
+                "to_agent": "codex",
+            }
+        ),
+        encoding="utf-8",
     )
     if request_iter2:
         (req_dir / f"{cns_id}.iter2.request.v1.json").write_text(
@@ -56,21 +59,28 @@ def _seed_cns(
             encoding="utf-8",
         )
     (resp_dir / f"{cns_id}.codex.response.v1.json").write_text(
-        json.dumps({
-            "consultation_id": cns_id,
-            "overall_verdict": verdict,
-            "responded_at": "2026-04-18T10:00:00+00:00",
-        }), encoding="utf-8",
+        json.dumps(
+            {
+                "consultation_id": cns_id,
+                "overall_verdict": verdict,
+                "responded_at": "2026-04-18T10:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
     )
 
 
 def _archive_and_promote(
-    tmp_path: Path, policy: dict, cns_id: str, verdict: str = "AGREE",
+    tmp_path: Path,
+    policy: dict,
+    cns_id: str,
+    verdict: str = "AGREE",
 ) -> PromotionSummary:
     _seed_cns(tmp_path, cns_id, verdict=verdict)
     # D2a archive needs a consultation policy too — reuse default
     archive_policy = load_default(
-        "policies", "policy_agent_consultation.v1.json",
+        "policies",
+        "policy_agent_consultation.v1.json",
     )
     archive_all(archive_policy, workspace_root=tmp_path)
     return promote_resolved_consultations(tmp_path, policy)
@@ -97,47 +107,71 @@ class TestVerdictConfidence:
 
 class TestEligibility:
     def test_agree_resolved_promoted(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-601", verdict="AGREE",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-601",
+            verdict="AGREE",
         )
         assert summary.eligible == 1
         assert summary.promoted == 1
 
     def test_partial_resolved_promoted(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-602", verdict="PARTIAL",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-602",
+            verdict="PARTIAL",
         )
         assert summary.eligible == 1
         assert summary.promoted == 1
 
     def test_revise_skipped_ineligible(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-603", verdict="REVISE",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-603",
+            verdict="REVISE",
         )
         assert summary.eligible == 0
         assert summary.skipped_ineligible == 1
         assert summary.promoted == 0
 
     def test_reject_skipped_ineligible(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-604", verdict="REJECT",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-604",
+            verdict="REJECT",
         )
         assert summary.skipped_ineligible == 1
         assert summary.promoted == 0
 
     def test_unclassified_skipped_ineligible(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-605",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-605",
             verdict="WEIRD_VERDICT_XYZ",
         )
         # Status becomes pending when UNCLASSIFIED
@@ -149,25 +183,35 @@ class TestEligibility:
 
 class TestIdempotency:
     def test_same_digest_skipped_on_rerun(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         first = _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-611", verdict="AGREE",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-611",
+            verdict="AGREE",
         )
         assert first.promoted == 1
 
         second = promote_resolved_consultations(
-            tmp_path, policy_enabled,
+            tmp_path,
+            policy_enabled,
         )
         assert second.skipped_same_digest == 1
         assert second.promoted == 0
         assert second.updated == 0
 
     def test_provenance_record_digest_prefixed(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-612",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-612",
         )
         store = load_store(tmp_path)
         key = "consultation.CNS-20260418-612"
@@ -182,17 +226,23 @@ class TestIdempotency:
 class TestKeyValueContract:
     def test_key_namespaced(self, tmp_path: Path, policy_enabled: dict) -> None:
         _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-621",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-621",
         )
         store = load_store(tmp_path)
         assert "consultation.CNS-20260418-621" in store["decisions"]
         assert "CNS-20260418-621" not in store["decisions"]  # bare key forbidden
 
     def test_value_compact_no_full_corpus(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         _archive_and_promote(
-            tmp_path, policy_enabled, "CNS-20260418-622",
+            tmp_path,
+            policy_enabled,
+            "CNS-20260418-622",
         )
         store = load_store(tmp_path)
         entry = store["decisions"]["consultation.CNS-20260418-622"]
@@ -210,7 +260,9 @@ class TestKeyValueContract:
 
 class TestPolicyFlag:
     def test_disabled_default_skips_everything(
-        self, tmp_path: Path, policy_disabled: dict,
+        self,
+        tmp_path: Path,
+        policy_disabled: dict,
     ) -> None:
         _seed_cns(tmp_path, "CNS-20260418-631", verdict="AGREE")
         archive_all(
@@ -218,14 +270,17 @@ class TestPolicyFlag:
             workspace_root=tmp_path,
         )
         summary = promote_resolved_consultations(
-            tmp_path, policy_disabled,
+            tmp_path,
+            policy_disabled,
         )
         assert summary.skipped_disabled == 1
         assert summary.promoted == 0
         assert summary.scanned == 0  # short-circuit before walking
 
     def test_force_bypasses_disabled(
-        self, tmp_path: Path, policy_disabled: dict,
+        self,
+        tmp_path: Path,
+        policy_disabled: dict,
     ) -> None:
         _seed_cns(tmp_path, "CNS-20260418-632", verdict="AGREE")
         archive_all(
@@ -233,7 +288,9 @@ class TestPolicyFlag:
             workspace_root=tmp_path,
         )
         summary = promote_resolved_consultations(
-            tmp_path, policy_disabled, force=True,
+            tmp_path,
+            policy_disabled,
+            force=True,
         )
         assert summary.skipped_disabled == 0
         assert summary.promoted == 1
@@ -244,17 +301,22 @@ class TestPolicyFlag:
 
 class TestIntegrityAndEmpty:
     def test_empty_workspace_clean_summary(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         summary = promote_resolved_consultations(
-            tmp_path, policy_enabled,
+            tmp_path,
+            policy_enabled,
         )
         assert summary.scanned == 0
         assert summary.promoted == 0
         assert summary.errors == ()
 
     def test_integrity_failure_skips_cns(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         _seed_cns(tmp_path, "CNS-20260418-641", verdict="AGREE")
         archive_all(
@@ -262,16 +324,14 @@ class TestIntegrityAndEmpty:
             workspace_root=tmp_path,
         )
         # Tamper with resolution record
-        record_path = (
-            tmp_path / ".ao" / "evidence" / "consultations"
-            / "CNS-20260418-641" / "resolution.record.v1.json"
-        )
+        record_path = tmp_path / ".ao" / "evidence" / "consultations" / "CNS-20260418-641" / "resolution.record.v1.json"
         doc = json.loads(record_path.read_text(encoding="utf-8"))
         doc["final_verdict"] = "TAMPERED"
         record_path.write_text(json.dumps(doc), encoding="utf-8")
 
         summary = promote_resolved_consultations(
-            tmp_path, policy_enabled,
+            tmp_path,
+            policy_enabled,
         )
         assert summary.skipped_integrity == 1
         assert summary.promoted == 0
@@ -282,7 +342,9 @@ class TestIntegrityAndEmpty:
 
 class TestDryRun:
     def test_dry_run_counts_without_store_write(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         _seed_cns(tmp_path, "CNS-20260418-651", verdict="AGREE")
         archive_all(
@@ -290,13 +352,16 @@ class TestDryRun:
             workspace_root=tmp_path,
         )
         summary = promote_resolved_consultations(
-            tmp_path, policy_enabled, dry_run=True,
+            tmp_path,
+            policy_enabled,
+            dry_run=True,
         )
         assert summary.promoted == 1  # would-promote counter
         # But store not written
         store = load_store(tmp_path)
         assert "consultation.CNS-20260418-651" not in store.get(
-            "decisions", {},
+            "decisions",
+            {},
         )
 
 
@@ -305,11 +370,15 @@ class TestDryRun:
 
 class TestRequestRevisions:
     def test_promote_preserves_topic_and_agents(
-        self, tmp_path: Path, policy_enabled: dict,
+        self,
+        tmp_path: Path,
+        policy_enabled: dict,
     ) -> None:
         _seed_cns(
-            tmp_path, "CNS-20260418-661",
-            verdict="AGREE", request_iter2=True,
+            tmp_path,
+            "CNS-20260418-661",
+            verdict="AGREE",
+            request_iter2=True,
         )
         archive_all(
             load_default("policies", "policy_agent_consultation.v1.json"),

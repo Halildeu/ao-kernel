@@ -480,8 +480,7 @@ def build_live_adapter_gate_environment_contract(
             "forks_allowed": False,
             "pull_request_secrets_allowed": False,
             "detail": (
-                "Project-owned live credentials must never be exposed to fork or "
-                "untrusted pull_request contexts."
+                "Project-owned live credentials must never be exposed to fork or untrusted pull_request contexts."
             ),
         },
         "required_secrets": [
@@ -806,10 +805,7 @@ def build_live_adapter_gate_attestation(
             "deployment_protection_gate",
             deployment_protection_gate_ok,
             "live_gate_deployment_protection_missing",
-            (
-                "Selected GitHub App deployment protection gate "
-                f"{required_deployment_protection_app_slug!r} is present."
-            ),
+            (f"Selected GitHub App deployment protection gate {required_deployment_protection_app_slug!r} is present."),
             (
                 "Selected GitHub App deployment protection gate "
                 f"{required_deployment_protection_app_slug!r} is missing; observed={deployment_rule_names!r}."

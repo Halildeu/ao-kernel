@@ -93,16 +93,10 @@ def build_report() -> dict[str, Any]:
     )
 
     ordered_queue = {
-        "promotion_candidate": [
-            row.extension_id for row in rows if row.bucket == "promotion_candidate"
-        ],
+        "promotion_candidate": [row.extension_id for row in rows if row.bucket == "promotion_candidate"],
         "remap_priority": [row.extension_id for row in remap_queue],
-        "quarantine_keep": sorted(
-            row.extension_id for row in rows if row.bucket == "quarantine_keep"
-        ),
-        "retire_candidate": sorted(
-            row.extension_id for row in rows if row.bucket == "retire_candidate"
-        ),
+        "quarantine_keep": sorted(row.extension_id for row in rows if row.bucket == "quarantine_keep"),
+        "retire_candidate": sorted(row.extension_id for row in rows if row.bucket == "retire_candidate"),
     }
 
     return {

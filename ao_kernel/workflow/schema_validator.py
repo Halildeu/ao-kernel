@@ -40,11 +40,7 @@ def load_workflow_run_schema() -> Mapping[str, Any]:
     architecture decision D4). Cached; callers MUST NOT mutate the
     returned mapping.
     """
-    text = (
-        resources.files(_SCHEMA_PACKAGE)
-        .joinpath(_SCHEMA_FILENAME)
-        .read_text(encoding="utf-8")
-    )
+    text = resources.files(_SCHEMA_PACKAGE).joinpath(_SCHEMA_FILENAME).read_text(encoding="utf-8")
     schema: Mapping[str, Any] = json.loads(text)
     return schema
 

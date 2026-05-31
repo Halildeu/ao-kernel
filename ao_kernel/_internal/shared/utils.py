@@ -6,6 +6,7 @@ Bu dosyadaki fonksiyonları başka dosyalarda yeniden tanımlamak YASAKTIR.
 Usage:
     from ao_kernel._internal.shared.utils import load_json, write_json_atomic, now_iso8601
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -182,7 +183,5 @@ def load_policy_validated(policy_path: Path, schema_path: Path) -> Any:
     errors = sorted(validator.iter_errors(instance), key=lambda e: e.json_path)
     if errors:
         msgs = "; ".join(f"{e.json_path}: {e.message}" for e in errors[:3])
-        raise ValueError(
-            f"Policy {policy_path.name} failed schema validation: {msgs}"
-        )
+        raise ValueError(f"Policy {policy_path.name} failed schema validation: {msgs}")
     return instance

@@ -277,9 +277,7 @@ class TestTierReportOnly:
         assert record["steps"][-1]["step_id"] == placeholder_step_id
         assert record["steps"][-1]["attempt"] == 2
 
-    def test_report_only_command_violation_emits_checked_and_continues(
-        self, tmp_path: Path
-    ) -> None:
+    def test_report_only_command_violation_emits_checked_and_continues(self, tmp_path: Path) -> None:
         policy = _policy_with_command_violation(
             enabled=True,
             mode_default="report_only",
@@ -410,9 +408,7 @@ class TestTierBlock:
         assert record["steps"][-1]["step_id"] == placeholder_step_id
         assert record["steps"][-1]["state"] == "failed"
 
-    def test_block_command_violation_fails_before_adapter_invocation(
-        self, tmp_path: Path
-    ) -> None:
+    def test_block_command_violation_fails_before_adapter_invocation(self, tmp_path: Path) -> None:
         policy = _policy_with_command_violation(enabled=True, mode_default="block")
         ex, step = _build_executor(tmp_path, policy)
         rid = str(uuid.uuid4())

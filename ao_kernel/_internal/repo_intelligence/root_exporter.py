@@ -78,9 +78,7 @@ def export_repo_roots(
 
     requested_targets = _normalize_targets(targets)
     if confirm_root_export != CONFIRM_RI5B_ROOT_EXPORT:
-        raise RepoRootExportError(
-            f"exact confirmation token required: {CONFIRM_RI5B_ROOT_EXPORT}"
-        )
+        raise RepoRootExportError(f"exact confirmation token required: {CONFIRM_RI5B_ROOT_EXPORT}")
 
     plan_path = workspace / "context" / REPO_EXPORT_PLAN_FILENAME
     plan = _load_plan(plan_path)
@@ -135,15 +133,11 @@ def _ensure_roots(project: Path, workspace: Path) -> None:
     if not project.is_dir():
         raise RepoRootExportError(f"project root not found: {project}")
     if not workspace.is_dir():
-        raise RepoRootExportError(
-            f".ao workspace not found at {workspace}. Run 'ao-kernel init' first."
-        )
+        raise RepoRootExportError(f".ao workspace not found at {workspace}. Run 'ao-kernel init' first.")
     try:
         workspace.relative_to(project)
     except ValueError as exc:
-        raise RepoRootExportError(
-            f"workspace root must be inside project root: {workspace}"
-        ) from exc
+        raise RepoRootExportError(f"workspace root must be inside project root: {workspace}") from exc
 
 
 def _normalize_targets(targets: Sequence[str]) -> tuple[str, ...]:
@@ -153,9 +147,7 @@ def _normalize_targets(targets: Sequence[str]) -> tuple[str, ...]:
     supported = set(supported_repo_export_targets())
     unsupported = sorted(set(requested) - supported)
     if unsupported:
-        raise RepoRootExportError(
-            f"unsupported root export target(s): {', '.join(unsupported)}"
-        )
+        raise RepoRootExportError(f"unsupported root export target(s): {', '.join(unsupported)}")
     return requested
 
 
@@ -177,9 +169,7 @@ def _verify_plan_identity(plan: Mapping[str, Any], project: Path, workspace: Pat
         raise RepoRootExportError("repo export plan project_root must be '.'")
     expected_workspace = _display_workspace(project, workspace)
     if plan.get("workspace_root") != expected_workspace:
-        raise RepoRootExportError(
-            "repo export plan workspace_root does not match requested workspace"
-        )
+        raise RepoRootExportError("repo export plan workspace_root does not match requested workspace")
     confirmation = plan.get("confirmation") or {}
     if confirmation.get("token") != CONFIRM_RI5B_ROOT_EXPORT:
         raise RepoRootExportError("repo export plan confirmation token is invalid")
@@ -197,18 +187,12 @@ def _verify_source_artifacts(project: Path, workspace: Path, plan: Mapping[str, 
         expected_present = bool(raw_record.get("present"))
         actual_present = path.is_file() and not path.is_symlink()
         if actual_present != expected_present:
-            raise RepoRootExportError(
-                f"source artifact stale: {display_path} presence changed"
-            )
+            raise RepoRootExportError(f"source artifact stale: {display_path} presence changed")
         if bool(raw_record.get("required")) and not actual_present:
-            raise RepoRootExportError(
-                f"required source artifact is missing: {display_path}"
-            )
+            raise RepoRootExportError(f"required source artifact is missing: {display_path}")
         expected_sha = raw_record.get("sha256")
         if actual_present and sha256_file(path) != expected_sha:
-            raise RepoRootExportError(
-                f"source artifact stale: {display_path} digest changed"
-            )
+            raise RepoRootExportError(f"source artifact stale: {display_path} digest changed")
 
 
 def _build_candidates(
@@ -244,9 +228,7 @@ def _candidate_from_record(
     root_path = str(record.get("root_path") or "")
     path = _resolve_target_path(project, root_path)
     if root_path != spec.root_path:
-        raise RepoRootExportError(
-            f"target {spec.target!r} root_path does not match supported path {spec.root_path}"
-        )
+        raise RepoRootExportError(f"target {spec.target!r} root_path does not match supported path {spec.root_path}")
     if record.get("content_source") != spec.content_source:
         raise RepoRootExportError(f"target {spec.target!r} content_source is invalid")
     if record.get("confirmation_token") != CONFIRM_RI5B_ROOT_EXPORT:
@@ -256,9 +238,7 @@ def _candidate_from_record(
     if action == "blocked":
         raise RepoRootExportError(f"target {spec.target!r} is blocked in repo export plan")
     if action == "update":
-        raise RepoRootExportError(
-            f"target {spec.target!r} requires update; RI-5b first slice is create-only"
-        )
+        raise RepoRootExportError(f"target {spec.target!r} requires update; RI-5b first slice is create-only")
     if action not in {"create", "unchanged"}:
         raise RepoRootExportError(f"target {spec.target!r} action is invalid: {action}")
 
@@ -269,9 +249,7 @@ def _candidate_from_record(
     )
     generated_sha = sha256_text(content)
     if record.get("generated_content_sha256") != generated_sha:
-        raise RepoRootExportError(
-            f"target {spec.target!r} generated content digest is stale"
-        )
+        raise RepoRootExportError(f"target {spec.target!r} generated content digest is stale")
 
     return _TargetCandidate(
         target=spec.target,
@@ -290,19 +268,13 @@ def _preflight_candidates(candidates: Sequence[_TargetCandidate]) -> None:
         if candidate.path.is_symlink():
             raise RepoRootExportError(f"target {candidate.root_path} is a symlink")
         if candidate.path.exists() and not candidate.path.is_file():
-            raise RepoRootExportError(
-                f"target {candidate.root_path} exists but is not a file"
-            )
+            raise RepoRootExportError(f"target {candidate.root_path} exists but is not a file")
         if candidate.action == "create" and candidate.path.exists():
-            raise RepoRootExportError(
-                f"target {candidate.root_path} now exists; rebuild export plan"
-            )
+            raise RepoRootExportError(f"target {candidate.root_path} now exists; rebuild export plan")
         if candidate.action == "unchanged":
             snapshot = _snapshot(candidate.path)
             if snapshot["sha256"] != candidate.generated_sha256:
-                raise RepoRootExportError(
-                    f"target {candidate.root_path} is no longer unchanged"
-                )
+                raise RepoRootExportError(f"target {candidate.root_path} is no longer unchanged")
 
 
 def _build_result(
@@ -317,9 +289,7 @@ def _build_result(
     for candidate in candidates:
         after = _snapshot(candidate.path)
         if after["sha256"] != candidate.generated_sha256:
-            raise RepoRootExportError(
-                f"target {candidate.root_path} post-write verification failed"
-            )
+            raise RepoRootExportError(f"target {candidate.root_path} post-write verification failed")
         result = "unchanged" if candidate.action == "unchanged" else "written"
         target_results.append(
             {
@@ -404,9 +374,7 @@ def _resolve_target_path(project: Path, display_path: str) -> Path:
     try:
         candidate.relative_to(project)
     except ValueError as exc:
-        raise RepoRootExportError(
-            f"target path escapes project root: {display_path}"
-        ) from exc
+        raise RepoRootExportError(f"target path escapes project root: {display_path}") from exc
     return candidate
 
 

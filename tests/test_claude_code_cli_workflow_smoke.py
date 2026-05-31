@@ -290,12 +290,7 @@ def _seed_completed_run(
         "workflow_completed",
     ]
     (run_dir / "events.jsonl").write_text(
-        "\n".join(
-            json.dumps({"kind": kind})
-            for kind in event_kinds
-            if kind != omit_event
-        )
-        + "\n",
+        "\n".join(json.dumps({"kind": kind}) for kind in event_kinds if kind != omit_event) + "\n",
         encoding="utf-8",
     )
 

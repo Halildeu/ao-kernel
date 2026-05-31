@@ -24,9 +24,7 @@ def _redaction() -> RedactionConfig:
     # live in policy_worktree_profile.v1.json and are validated separately.
     return RedactionConfig(
         env_keys_matching=(re.compile(r"(?i).*(token|secret|key).*"),),
-        stdout_patterns=(
-            re.compile(r"FAKESEC-[A-Za-z0-9]{10,}"),
-        ),
+        stdout_patterns=(re.compile(r"FAKESEC-[A-Za-z0-9]{10,}"),),
         file_content_patterns=(),
     )
 
@@ -112,9 +110,7 @@ class TestKindWhitelist:
 
 
 class TestRedaction:
-    def test_openai_style_secret_redacted_in_stdout(
-        self, tmp_path: Path
-    ) -> None:
+    def test_openai_style_secret_redacted_in_stdout(self, tmp_path: Path) -> None:
         rid = "00000000-0000-4000-8000-000000000006"
         payload = {"msg": "leaked FAKESEC-abcdefghij token"}
         e = emit_event(
@@ -171,9 +167,7 @@ class TestJSONLLayout:
                 actor="ao-kernel",
                 payload={"i": i},
             )
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / rid / "events.jsonl"
         lines = events_path.read_text(encoding="utf-8").splitlines()
         assert len(lines) == 3
         records = [json.loads(line) for line in lines]

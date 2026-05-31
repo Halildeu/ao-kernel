@@ -100,9 +100,7 @@ def _create_run_with_cost_budget(
         workflow_version="1.0.0",
         intent={"kind": "inline_prompt", "payload": "test"},
         budget=budget,
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
     )
     return rid
@@ -117,9 +115,7 @@ def _create_run_without_cost_axis(ws: Path) -> str:
         workflow_version="1.0.0",
         intent={"kind": "inline_prompt", "payload": "test"},
         budget={"fail_closed_on_exhaust": True},  # no cost_usd axis
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
     )
     return rid
@@ -212,9 +208,7 @@ class TestPreDispatchConfigError:
 class TestPreDispatchBudgetExhausted:
     def test_estimate_exceeds_remaining_raises(self, tmp_path: Path) -> None:
         # Tiny budget — single call with any real prompt exceeds
-        run_id = _create_run_with_cost_budget(
-            tmp_path, cost_limit_usd="0.0001"
-        )
+        run_id = _create_run_with_cost_budget(tmp_path, cost_limit_usd="0.0001")
         with pytest.raises(BudgetExhaustedError) as excinfo:
             pre_dispatch_reserve(
                 workspace_root=tmp_path,
@@ -223,9 +217,7 @@ class TestPreDispatchBudgetExhausted:
                 attempt=1,
                 provider_id="anthropic",
                 model="claude-3-5-sonnet",
-                prompt_messages=[
-                    {"role": "user", "content": "hello " * 200}
-                ],
+                prompt_messages=[{"role": "user", "content": "hello " * 200}],
                 max_tokens=500,
                 policy=_policy(),
             )
@@ -270,10 +262,7 @@ class TestPostResponseReconcileHappyPath:
         # Ledger line exists with actual cost
         ledger = tmp_path / ".ao" / "cost" / "spend.jsonl"
         assert ledger.is_file()
-        lines = [
-            json.loads(line)
-            for line in ledger.read_text(encoding="utf-8").strip().splitlines()
-        ]
+        lines = [json.loads(line) for line in ledger.read_text(encoding="utf-8").strip().splitlines()]
         assert len(lines) == 1
         assert lines[0]["tokens_input"] == 1000
         assert lines[0]["tokens_output"] == 500
@@ -281,7 +270,8 @@ class TestPostResponseReconcileHappyPath:
         assert "billing_digest" in lines[0]
 
     def test_duplicate_reconcile_single_drain_single_emit(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """PR-C3.2 governed-path regression pin: 2× post_response_reconcile
         with identical (run_id, step_id, attempt) + identical raw response
@@ -322,15 +312,11 @@ class TestPostResponseReconcileHappyPath:
 
         post_response_reconcile(**reconcile_kwargs)
         record_after_first, _ = load_run(tmp_path, run_id)
-        spent_after_first = Decimal(
-            str(record_after_first["budget"]["cost_usd"]["spent"])
-        )
+        spent_after_first = Decimal(str(record_after_first["budget"]["cost_usd"]["spent"]))
 
         post_response_reconcile(**reconcile_kwargs)
         record_after_second, _ = load_run(tmp_path, run_id)
-        spent_after_second = Decimal(
-            str(record_after_second["budget"]["cost_usd"]["spent"])
-        )
+        spent_after_second = Decimal(str(record_after_second["budget"]["cost_usd"]["spent"]))
 
         # Budget: drained exactly once — spent is unchanged between calls
         assert spent_after_second == spent_after_first
@@ -344,22 +330,12 @@ class TestPostResponseReconcileHappyPath:
 
         # Ledger: single entry (same-digest silent no-op on 2nd)
         ledger = tmp_path / ".ao" / "cost" / "spend.jsonl"
-        lines = [
-            line for line in ledger.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        lines = [line for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
         assert len(lines) == 1
 
         # Events: single llm_spend_recorded emit
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows"
-            / run_id / "events.jsonl"
-        )
-        events = [
-            json.loads(line)
-            for line in events_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
+        events = [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         spend_emits = [e for e in events if e.get("kind") == "llm_spend_recorded"]
         assert len(spend_emits) == 1
 
@@ -436,17 +412,12 @@ class TestPostResponseUsageMissing:
 
         # Audit-only ledger entry recorded BEFORE the raise
         ledger = tmp_path / ".ao" / "cost" / "spend.jsonl"
-        lines = [
-            json.loads(line)
-            for line in ledger.read_text(encoding="utf-8").strip().splitlines()
-        ]
+        lines = [json.loads(line) for line in ledger.read_text(encoding="utf-8").strip().splitlines()]
         assert len(lines) == 1
         assert lines[0]["usage_missing"] is True
         assert lines[0]["cost_usd"] == 0.0
 
-    def test_fail_open_warns_and_continues(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_fail_open_warns_and_continues(self, tmp_path: Path, caplog) -> None:
         """fail_closed_on_missing_usage=false → warn + continue."""
         run_id = _create_run_with_cost_budget(tmp_path)
         policy = _policy(fail_closed_on_missing_usage=False)
@@ -478,10 +449,7 @@ class TestPostResponseUsageMissing:
                 policy=policy,
             )
 
-        assert any(
-            "missing usage" in rec.getMessage()
-            for rec in caplog.records
-        )
+        assert any("missing usage" in rec.getMessage() for rec in caplog.records)
 
 
 class TestEvidenceEmits:
@@ -500,9 +468,7 @@ class TestEvidenceEmits:
             policy=_policy(),
         )
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         # Evidence file should exist and carry llm_cost_estimated event
         assert events_path.is_file()
         lines = events_path.read_text(encoding="utf-8").strip().splitlines()
@@ -537,9 +503,7 @@ class TestEvidenceEmits:
             policy=policy,
         )
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         lines = events_path.read_text(encoding="utf-8").strip().splitlines()
         kinds = [json.loads(line).get("kind") for line in lines]
         assert "llm_spend_recorded" in kinds
@@ -572,9 +536,7 @@ class TestEvidenceEmits:
             policy=policy,
         )
 
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         lines = events_path.read_text(encoding="utf-8").strip().splitlines()
         kinds = [json.loads(line).get("kind") for line in lines]
         assert "llm_usage_missing" in kinds
@@ -611,7 +573,8 @@ class TestLegacyTokensBackCompat:
     """
 
     def test_legacy_run_output_tokens_hit_aggregate(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         # Create a run with ONLY aggregate `tokens` axis (legacy shape).
         rid = str(uuid.uuid4())
@@ -630,9 +593,7 @@ class TestLegacyTokensBackCompat:
                     "remaining": 10.0,
                 },
             },
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
         )
         policy = _policy()
@@ -676,7 +637,8 @@ class TestAttemptValidation:
     """CNS-032 iter-1 absorb: fail-fast on attempt < 1 before transport."""
 
     def test_governed_call_rejects_attempt_zero(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel.llm import governed_call
 
@@ -695,7 +657,8 @@ class TestAttemptValidation:
             )
 
     def test_governed_call_rejects_attempt_negative(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         from ao_kernel.llm import governed_call
 
@@ -714,7 +677,8 @@ class TestAttemptValidation:
             )
 
     def test_governed_call_accepts_attempt_one_does_not_raise_validation(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """attempt=1 is the minimum valid value; the attempt-validation
         gate does NOT raise ValueError.
@@ -767,9 +731,7 @@ class TestAggregateRecomputeWriter:
             fail_closed_on_exhaust=True,
         )
         out = budget_to_dict(b)
-        assert "tokens" in out, (
-            "writer must synthesize aggregate tokens from granular axes"
-        )
+        assert "tokens" in out, "writer must synthesize aggregate tokens from granular axes"
         assert out["tokens"]["limit"] == 700  # 500 + 200
         assert out["tokens"]["spent"] == 150  # 100 + 50
         assert out["tokens"]["remaining"] == 550  # 400 + 150
@@ -788,8 +750,7 @@ class TestGovernedCallContract:
 
         doc = (governed_call.__doc__ or "").lower()
         assert "non-streaming" in doc, (
-            "governed_call docstring must explicitly state non-streaming "
-            "boundary (plan v5 iter-4 B2 absorb)"
+            "governed_call docstring must explicitly state non-streaming boundary (plan v5 iter-4 B2 absorb)"
         )
         assert "stream" in doc
         assert "capability_gap" in doc
@@ -803,6 +764,4 @@ class TestGovernedCallContract:
 
         doc = (governed_call.__doc__ or "").lower()
         for token in ("status", "normalized", "resp_bytes", "transport_result", "elapsed_ms"):
-            assert token in doc, (
-                f"governed_call docstring must pin rich return field {token!r}"
-            )
+            assert token in doc, f"governed_call docstring must pin rich return field {token!r}"

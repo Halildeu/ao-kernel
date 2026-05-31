@@ -169,7 +169,9 @@ class FakeRunner:
         if command[:3] == [self.producer_gh_bin, "api", "repos/Halildeu/ao-kernel/git/refs"]:
             return subprocess.CompletedProcess(command, 0, json.dumps({"ref": "refs/heads/example"}), "")
         if len(command) >= 3 and command[:2] == [self.producer_gh_bin, "api"] and "/contents/" in command[2]:
-            return subprocess.CompletedProcess(command, 0, json.dumps({"content": {"path": "docs/evidence/example.md"}}), "")
+            return subprocess.CompletedProcess(
+                command, 0, json.dumps({"content": {"path": "docs/evidence/example.md"}}), ""
+            )
         if command[:3] == [self.producer_gh_bin, "pr", "create"]:
             return subprocess.CompletedProcess(command, 0, "https://github.com/Halildeu/ao-kernel/pull/999\n", "")
         if command[:3] == [self.gh_bin, "pr", "checks"]:
@@ -300,7 +302,9 @@ def test_ao_ma10l_execute_success_creates_pr_and_delegates_merge_agent(tmp_path:
     assert result["required_checks"]["all_passed"] is True
     assert result["merge_agent_result"]["decision"]["result"] == "merged"
     assert any(command[:3] == ["gh", "pr", "create"] for command in fake.commands)
-    merge_agent_commands = [command for command in fake.commands if len(command) > 1 and command[1].endswith("ao_ma10c_merge_agent.py")]
+    merge_agent_commands = [
+        command for command in fake.commands if len(command) > 1 and command[1].endswith("ao_ma10c_merge_agent.py")
+    ]
     assert merge_agent_commands
     assert "--execute" in merge_agent_commands[0]
     assert "--admin" not in merge_agent_commands[0]

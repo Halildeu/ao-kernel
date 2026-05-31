@@ -469,9 +469,7 @@ class Executor:
             )
             runtime_allowed_realpaths: tuple[Path, ...] = ()
             if "python_executable" in resolved_cli_invocation.reserved_command_tokens:
-                runtime_allowed_realpaths = (
-                    Path(resolved_cli_invocation.command).resolve(),
-                )
+                runtime_allowed_realpaths = (Path(resolved_cli_invocation.command).resolve(),)
             policy_violations.extend(
                 validate_command(
                     resolved_cli_invocation.command,
@@ -627,12 +625,8 @@ class Executor:
             )
             evidence_event_ids.append(returned.event_id)
 
-            if (
-                invocation_result.status == "ok"
-                and (
-                    invocation_result.pr_url is not None
-                    or invocation_result.pr_number is not None
-                )
+            if invocation_result.status == "ok" and (
+                invocation_result.pr_url is not None or invocation_result.pr_number is not None
             ):
                 pr_payload: dict[str, Any] = {
                     "step_name": step_def.step_name,
@@ -960,7 +954,6 @@ def _normalize_invocation_for_artifact(
     if getattr(invocation_result, "head_sha", None) is not None:
         artifact["head_sha"] = invocation_result.head_sha
     return artifact
-
 
 
 def _load_bundled_policy() -> Mapping[str, Any]:

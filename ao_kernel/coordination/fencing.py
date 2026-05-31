@@ -131,9 +131,7 @@ def load_fencing_state(workspace_root: Path) -> FencingState:
 
         Draft202012Validator(_fencing_schema()).validate(doc)
     except Exception as exc:
-        raise ClaimCorruptedError(
-            str(path), f"schema validation failed: {exc}"
-        ) from exc
+        raise ClaimCorruptedError(str(path), f"schema validation failed: {exc}") from exc
 
     resources: dict[str, ResourceFencingState] = {}
     for rid, entry in doc["resources"].items():

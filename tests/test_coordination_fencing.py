@@ -79,9 +79,11 @@ class TestNextToken:
         assert new_state.resources["res-a"].next_token == 1
 
     def test_existing_resource_advances(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=5),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=5),
+            }
+        )
         issued, new_state = next_token(state, "res-a")
         assert issued == 5
         assert new_state.resources["res-a"].next_token == 6
@@ -102,9 +104,11 @@ class TestNextToken:
         assert a1 == 0 and b1 == 0 and a2 == 1
 
     def test_pure_function_does_not_mutate_input(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=5),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=5),
+            }
+        )
         next_token(state, "res-a")
         # Original must be untouched
         assert state.resources["res-a"].next_token == 5
@@ -112,18 +116,22 @@ class TestNextToken:
 
 class TestValidateFencingToken:
     def test_live_token_passes(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=3),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=3),
+            }
+        )
         # Live issued token is next_token - 1 = 2. Assert the value
         # survived construction and the call returns None on success.
         assert state.resources["res-a"].next_token == 3
         assert validate_fencing_token(state, "res-a", 2) is None
 
     def test_stale_token_raises(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=3),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=3),
+            }
+        )
         with pytest.raises(ClaimStaleFencingError) as excinfo:
             validate_fencing_token(state, "res-a", 1)
         assert excinfo.value.supplied_token == 1
@@ -131,9 +139,11 @@ class TestValidateFencingToken:
 
     def test_future_token_raises(self) -> None:
         """Exact-equality semantics: future / fabricated tokens reject too."""
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=3),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=3),
+            }
+        )
         with pytest.raises(ClaimStaleFencingError) as excinfo:
             validate_fencing_token(state, "res-a", 5)
         assert excinfo.value.supplied_token == 5
@@ -149,9 +159,11 @@ class TestValidateFencingToken:
 
 class TestUpdateOnRelease:
     def test_preserves_next_token(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=5, last_owner_agent_id=None),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=5, last_owner_agent_id=None),
+            }
+        )
         new_state = update_on_release(state, "res-a", "agent-y", "2026-04-17T10:00:00+00:00")
         assert new_state.resources["res-a"].next_token == 5  # unchanged
         assert new_state.resources["res-a"].last_owner_agent_id == "agent-y"
@@ -162,13 +174,15 @@ class TestForwardOnlyReconcile:
     """Forward-only invariant check via ``set_next_token`` (caller-driven)."""
 
     def test_set_next_token_preserves_audit_fields(self) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(
-                next_token=5,
-                last_owner_agent_id="agent-x",
-                last_released_at="2026-04-17T09:00:00+00:00",
-            ),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(
+                    next_token=5,
+                    last_owner_agent_id="agent-x",
+                    last_released_at="2026-04-17T09:00:00+00:00",
+                ),
+            }
+        )
         new_state = set_next_token(state, "res-a", 7)
         assert new_state.resources["res-a"].next_token == 7
         assert new_state.resources["res-a"].last_owner_agent_id == "agent-x"
@@ -178,9 +192,11 @@ class TestForwardOnlyReconcile:
         ``max(current, recovered+1)`` rule themselves. The function does
         not enforce monotonicity (by design — facilitates test fixtures
         for the forward-only reconcile logic in the registry)."""
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=10),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=10),
+            }
+        )
         # Set to a lower value — function allows; registry's reconcile
         # helper is the guard.
         rewound = set_next_token(state, "res-a", 3)
@@ -213,11 +229,15 @@ class TestFencingStateRevision:
 
 class TestSaveFencingStateCas:
     def test_first_write_with_empty_baseline(self, tmp_path: Path) -> None:
-        state = FencingState(resources={
-            "res-a": ResourceFencingState(next_token=1),
-        })
+        state = FencingState(
+            resources={
+                "res-a": ResourceFencingState(next_token=1),
+            }
+        )
         save_fencing_state_cas(
-            tmp_path, state, expected_revision=empty_fencing_revision(),
+            tmp_path,
+            state,
+            expected_revision=empty_fencing_revision(),
         )
         path = _fencing_path(tmp_path)
         assert path.exists()
@@ -227,19 +247,25 @@ class TestSaveFencingStateCas:
     def test_cas_conflict_on_second_write(self, tmp_path: Path) -> None:
         state1 = FencingState(resources={"res-a": ResourceFencingState(next_token=1)})
         save_fencing_state_cas(
-            tmp_path, state1, expected_revision=empty_fencing_revision(),
+            tmp_path,
+            state1,
+            expected_revision=empty_fencing_revision(),
         )
         # Second writer thinks it's still at empty baseline — conflict
         state2 = FencingState(resources={"res-a": ResourceFencingState(next_token=2)})
         with pytest.raises(ClaimRevisionConflictError):
             save_fencing_state_cas(
-                tmp_path, state2, expected_revision=empty_fencing_revision(),
+                tmp_path,
+                state2,
+                expected_revision=empty_fencing_revision(),
             )
 
     def test_cas_round_trip(self, tmp_path: Path) -> None:
         state1 = FencingState(resources={"res-a": ResourceFencingState(next_token=1)})
         save_fencing_state_cas(
-            tmp_path, state1, expected_revision=empty_fencing_revision(),
+            tmp_path,
+            state1,
+            expected_revision=empty_fencing_revision(),
         )
         # Second writer uses correct post-first-write revision
         on_disk_rev = fencing_state_revision(load_fencing_state(tmp_path).to_dict())
@@ -254,5 +280,7 @@ class TestSaveFencingStateCas:
         state = FencingState(resources={})
         with pytest.raises(ClaimCorruptedError):
             save_fencing_state_cas(
-                tmp_path, state, expected_revision="sha256:" + "0" * 64,
+                tmp_path,
+                state,
+                expected_revision="sha256:" + "0" * 64,
             )

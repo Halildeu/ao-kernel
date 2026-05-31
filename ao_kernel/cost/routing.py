@@ -28,10 +28,10 @@ from ao_kernel.cost.catalog import PriceCatalog, PriceCatalogEntry, find_entry
 # Model aliasing is intentionally absent in v1 — uncovered models
 # flow through the unknown bucket. FAZ-C scope.
 _PROVIDER_ALIAS_MAP: Mapping[str, str] = {
-    "claude": "anthropic",     # router short name → catalog vendor name
+    "claude": "anthropic",  # router short name → catalog vendor name
     "openai": "openai",
     "google": "google",
-    "deepseek": "deepseek",    # no bundled catalog entries → unknown bucket
+    "deepseek": "deepseek",  # no bundled catalog entries → unknown bucket
     "qwen": "qwen",
     "xai": "xai",
 }

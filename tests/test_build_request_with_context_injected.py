@@ -97,9 +97,7 @@ class TestInjectedMessagesRoundtrip:
         )
 
         injected = result["injected_messages"]
-        assert injected != raw_messages, (
-            "session decisions must change the effective prompt"
-        )
+        assert injected != raw_messages, "session decisions must change the effective prompt"
         # System preamble is the first element.
         assert injected[0].get("role") == "system"
         preamble = injected[0].get("content", "")
@@ -170,6 +168,5 @@ class TestInjectedMessagesBackwardCompat:
 
         for required_key in ("url", "headers", "body_bytes"):
             assert required_key in result, (
-                f"build_request_with_context must preserve {required_key!r} "
-                f"even with injected_messages field added"
+                f"build_request_with_context must preserve {required_key!r} even with injected_messages field added"
             )

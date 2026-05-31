@@ -25,7 +25,9 @@ def ws_client(tmp_path):
 class TestRecordDecisionWrapper:
     def test_auto_promote_writes_canonical(self, ws_client):
         result = ws_client.record_decision(
-            "release.version", "2.3.0", confidence=0.9,
+            "release.version",
+            "2.3.0",
+            confidence=0.9,
         )
         assert result["promoted"] is True
         assert result["destination"] == "canonical"
@@ -34,7 +36,9 @@ class TestRecordDecisionWrapper:
 
     def test_session_id_threads_into_provenance(self, ws_client):
         ws_client.record_decision(
-            "plan.ok", True, confidence=0.95,
+            "plan.ok",
+            True,
+            confidence=0.95,
         )
         items = ws_client.query_memory()
         assert items[0]["promoted_from"] == ws_client.session_id
@@ -44,19 +48,20 @@ class TestRecordDecisionWrapper:
         must land in ephemeral storage — no silent canonical write."""
         ws_client.start_session()
         result = ws_client.record_decision(
-            "scratch.note", "tentative", confidence=0.3,
+            "scratch.note",
+            "tentative",
+            confidence=0.3,
         )
         assert result["destination"] == "session"
         assert result["promoted"] is False
         assert ws_client.query_memory(key_pattern="scratch.*") == []
-        assert any(
-            d["key"] == "scratch.note"
-            for d in ws_client.context["ephemeral_decisions"]
-        )
+        assert any(d["key"] == "scratch.note" for d in ws_client.context["ephemeral_decisions"])
 
     def test_below_threshold_without_session_drops(self, ws_client):
         result = ws_client.record_decision(
-            "lost.note", "dropped", confidence=0.3,
+            "lost.note",
+            "dropped",
+            confidence=0.3,
         )
         assert result["destination"] == "dropped"
         assert result["recorded"] is False
@@ -102,6 +107,7 @@ class TestFinalizeSession:
         ws_client.start_session()
         import json
         from ao_kernel.context.memory_pipeline import process_turn
+
         process_turn(
             json.dumps({"plan.status": "ready"}),
             ws_client.context,

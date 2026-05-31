@@ -51,9 +51,7 @@ def _minimal_definition(
             }
         ],
         "expected_adapter_refs": expected_adapter_refs or [],
-        "default_policy_refs": [
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        "default_policy_refs": ["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         "created_at": "2026-04-15T00:00:00+00:00",
     }
 
@@ -83,9 +81,7 @@ class _StubAdapterRegistry:
             raise KeyError(adapter_id)
         return type("_Manifest", (), {"capabilities": self._manifests[adapter_id]})()
 
-    def missing_capabilities(
-        self, adapter_id: str, required
-    ) -> frozenset[str]:
+    def missing_capabilities(self, adapter_id: str, required) -> frozenset[str]:
         caps = self._manifests[adapter_id]
         return frozenset(required) - caps
 
@@ -133,9 +129,7 @@ class TestWorkspaceLoad:
         reg.load_bundled()
         _write_workspace_definition(
             tmp_path,
-            _minimal_definition(
-                workflow_id="bug_fix_flow", workflow_version="1.0.0"
-            ),
+            _minimal_definition(workflow_id="bug_fix_flow", workflow_version="1.0.0"),
             filename="bug_fix_flow.v1.json",
         )
         rpt = reg.load_workspace(tmp_path)
@@ -143,15 +137,11 @@ class TestWorkspaceLoad:
         assert demoted, f"expected demotion, got skipped={rpt.skipped}"
         assert reg.get("bug_fix_flow").source == "workspace"
 
-    def test_workspace_different_version_coexists(
-        self, tmp_path: Path
-    ) -> None:
+    def test_workspace_different_version_coexists(self, tmp_path: Path) -> None:
         """workspace 0.9.0 and bundled 1.0.0 both load; highest SemVer wins."""
         _write_workspace_definition(
             tmp_path,
-            _minimal_definition(
-                workflow_id="bug_fix_flow", workflow_version="0.9.0"
-            ),
+            _minimal_definition(workflow_id="bug_fix_flow", workflow_version="0.9.0"),
             filename="bug_fix_flow_0_9.v1.json",
         )
         reg = WorkflowRegistry()
@@ -241,9 +231,7 @@ class TestSemVerComparator:
             ),
         ],
     )
-    def test_sort_matches_semver_ordering(
-        self, versions: list[str], expected: list[str]
-    ) -> None:
+    def test_sort_matches_semver_ordering(self, versions: list[str], expected: list[str]) -> None:
         assert sorted(versions, key=_semver_sort_key) == expected
 
 
@@ -326,10 +314,12 @@ class TestCrossRefValidation:
         reg = WorkflowRegistry()
         reg.load_bundled()
         defn = reg.get("bug_fix_flow")
-        stub = _StubAdapterRegistry({
-            "codex-stub": frozenset({"read_repo", "write_diff"}),
-            "gh-cli-pr": frozenset({"open_pr"}),
-        })
+        stub = _StubAdapterRegistry(
+            {
+                "codex-stub": frozenset({"read_repo", "write_diff"}),
+                "gh-cli-pr": frozenset({"open_pr"}),
+            }
+        )
         issues = reg.validate_cross_refs(defn, stub)
         assert issues == []
 
@@ -337,10 +327,12 @@ class TestCrossRefValidation:
         reg = WorkflowRegistry()
         reg.load_bundled()
         defn = reg.get("bug_fix_flow")
-        stub = _StubAdapterRegistry({
-            # codex-stub missing
-            "gh-cli-pr": frozenset({"open_pr"}),
-        })
+        stub = _StubAdapterRegistry(
+            {
+                # codex-stub missing
+                "gh-cli-pr": frozenset({"open_pr"}),
+            }
+        )
         issues = reg.validate_cross_refs(defn, stub)
         kinds = {i.kind for i in issues}
         missing_ids = {i.adapter_id for i in issues if i.kind == "missing_adapter"}
@@ -351,10 +343,12 @@ class TestCrossRefValidation:
         reg = WorkflowRegistry()
         reg.load_bundled()
         defn = reg.get("bug_fix_flow")
-        stub = _StubAdapterRegistry({
-            "codex-stub": frozenset({"read_repo"}),  # missing write_diff
-            "gh-cli-pr": frozenset({"open_pr"}),
-        })
+        stub = _StubAdapterRegistry(
+            {
+                "codex-stub": frozenset({"read_repo"}),  # missing write_diff
+                "gh-cli-pr": frozenset({"open_pr"}),
+            }
+        )
         issues = reg.validate_cross_refs(defn, stub)
         caps_gaps = [i for i in issues if i.kind == "capability_gap"]
         assert caps_gaps, f"expected capability_gap, got {issues}"
@@ -381,36 +375,23 @@ class TestPatternDriftGuard:
     def _load_schema(self, name: str) -> dict[str, Any]:
         from importlib import resources
 
-        text = (
-            resources.files("ao_kernel.defaults.schemas")
-            .joinpath(name)
-            .read_text(encoding="utf-8")
-        )
+        text = resources.files("ao_kernel.defaults.schemas").joinpath(name).read_text(encoding="utf-8")
         return json.loads(text)
 
     def test_workflow_id_pattern_matches_workflow_run(self) -> None:
         run_s = self._load_schema("workflow-run.schema.v1.json")
         def_s = self._load_schema("workflow-definition.schema.v1.json")
-        assert (
-            run_s["properties"]["workflow_id"]["pattern"]
-            == def_s["properties"]["workflow_id"]["pattern"]
-        )
+        assert run_s["properties"]["workflow_id"]["pattern"] == def_s["properties"]["workflow_id"]["pattern"]
 
     def test_workflow_version_pattern_matches_workflow_run(self) -> None:
         run_s = self._load_schema("workflow-run.schema.v1.json")
         def_s = self._load_schema("workflow-definition.schema.v1.json")
-        assert (
-            run_s["properties"]["workflow_version"]["pattern"]
-            == def_s["properties"]["workflow_version"]["pattern"]
-        )
+        assert run_s["properties"]["workflow_version"]["pattern"] == def_s["properties"]["workflow_version"]["pattern"]
 
     def test_capability_enum_matches_adapter_contract(self) -> None:
         contract_s = self._load_schema("agent-adapter-contract.schema.v1.json")
         def_s = self._load_schema("workflow-definition.schema.v1.json")
-        assert (
-            set(contract_s["$defs"]["capability_enum"]["enum"])
-            == set(def_s["$defs"]["capability_enum"]["enum"])
-        )
+        assert set(contract_s["$defs"]["capability_enum"]["enum"]) == set(def_s["$defs"]["capability_enum"]["enum"])
 
     def test_adapter_id_pattern_matches_adapter_contract(self) -> None:
         contract_s = self._load_schema("agent-adapter-contract.schema.v1.json")

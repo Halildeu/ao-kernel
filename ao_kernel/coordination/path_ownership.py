@@ -71,8 +71,7 @@ def _ensure_matching_registry_root(
     registry_root = _project_root(registry._workspace_root)
     if helper_root != registry_root:
         raise ValueError(
-            "workspace_root does not match ClaimRegistry workspace root: "
-            f"{helper_root!s} != {registry_root!s}"
+            f"workspace_root does not match ClaimRegistry workspace root: {helper_root!s} != {registry_root!s}"
         )
     return helper_root
 
@@ -94,17 +93,13 @@ def normalize_workspace_relative_path(
     try:
         relative = resolved.relative_to(project_root)
     except ValueError as exc:
-        raise ValueError(
-            f"path {candidate!s} resolves outside project root {project_root!s}"
-        ) from exc
+        raise ValueError(f"path {candidate!s} resolves outside project root {project_root!s}") from exc
 
     relative_posix = PurePosixPath(relative.as_posix())
     if not relative_posix.parts:
         raise ValueError("path must point to a file or directory under the project root")
     if any(part in {"", ".", ".."} for part in relative_posix.parts):
-        raise ValueError(
-            f"path {candidate!s} does not normalize to a stable workspace-relative path"
-        )
+        raise ValueError(f"path {candidate!s} does not normalize to a stable workspace-relative path")
     return relative_posix.as_posix()
 
 

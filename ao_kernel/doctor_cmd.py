@@ -38,6 +38,7 @@ def _check_workspace(ws_override: str | None) -> bool:
 
 def _check_workspace_json(ws_override: str | None) -> bool:
     from ao_kernel.config import load_workspace_json
+
     ws = workspace_root(override=ws_override)
     if ws is None:
         return False
@@ -47,6 +48,7 @@ def _check_workspace_json(ws_override: str | None) -> bool:
 
 def _check_bundled_defaults() -> bool:
     from ao_kernel.config import load_default
+
     load_default("policies", "policy_autonomy.v1.json")
     return True
 
@@ -57,6 +59,7 @@ def _check_python_version() -> bool:
 
 def _check_required_deps() -> bool:
     import jsonschema  # noqa: F401
+
     return True
 
 
@@ -74,6 +77,7 @@ def _check_optional_deps() -> bool | str:
 def _check_internal_import() -> bool:
     """v2.0.0: Check ao_kernel._internal modules (src.* removed)."""
     import importlib
+
     for mod in (
         "ao_kernel._internal.shared.utils",
         "ao_kernel._internal.prj_kernel_api.llm_router",
@@ -205,10 +209,6 @@ def run(workspace_root_override: str | None = None) -> int:
             print(f"    quarantined_ids={preview}{suffix}")
         print("-" * 50)
 
-    print(
-        f"  {summary['ok_count']} OK, "
-        f"{summary['warn_count']} WARN, "
-        f"{summary['fail_count']} FAIL"
-    )
+    print(f"  {summary['ok_count']} OK, {summary['warn_count']} WARN, {summary['fail_count']} FAIL")
 
     return cast(int, report["exit_code"])

@@ -46,9 +46,7 @@ def _create_sample(ws: Path, run_id: str | None = None) -> tuple[dict[str, Any],
         workflow_version="1.0.0",
         intent={"kind": "inline_prompt", "payload": "test"},
         budget={"fail_closed_on_exhaust": True},
-        policy_refs=[
-            "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-        ],
+        policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
         evidence_refs=[".ao/evidence/workflows/x/events.jsonl"],
     )
 
@@ -124,9 +122,7 @@ class TestCreateRun:
             workflow_version="1.0.0",
             intent={"kind": "inline_prompt", "payload": "x"},
             budget={"fail_closed_on_exhaust": True},
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
             evidence_refs=[".ao/evidence/workflows/y/events.jsonl"],
             adapter_refs=["claude-code-cli", "gh-cli-pr"],
         )
@@ -186,6 +182,7 @@ class TestLoadRun:
 class TestSaveRunCAS:
     def test_cas_conflict_on_stale_revision(self, tmp_path: Path) -> None:
         rec, rev = _create_sample(tmp_path)
+
         # update once so the on-disk revision moves away from rev
         def _bump(r: dict[str, Any]) -> dict[str, Any]:
             r["state"] = "running"
@@ -241,9 +238,7 @@ class TestUpdateRun:
         assert rec2["state"] == "running"
         assert rev2 != rev
 
-    def test_invalid_schema_rejected_at_save_boundary(
-        self, tmp_path: Path
-    ) -> None:
+    def test_invalid_schema_rejected_at_save_boundary(self, tmp_path: Path) -> None:
         rec, _ = _create_sample(tmp_path)
 
         def _bad(r: dict[str, Any]) -> dict[str, Any]:

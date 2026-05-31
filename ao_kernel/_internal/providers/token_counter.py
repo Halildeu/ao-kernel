@@ -119,6 +119,7 @@ def count_tokens(
 @dataclass
 class UsageRecord:
     """Single LLM call usage record."""
+
     provider_id: str
     model: str
     input_tokens: int

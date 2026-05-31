@@ -48,9 +48,7 @@ class TestCanonicalPolicyHash:
         assert canonical_policy_hash(p1) == canonical_policy_hash(p2)
 
     def test_different_inputs_differ(self) -> None:
-        assert canonical_policy_hash({"a": 1}) != canonical_policy_hash(
-            {"a": 2}
-        )
+        assert canonical_policy_hash({"a": 1}) != canonical_policy_hash({"a": 2})
 
     def test_prefix(self) -> None:
         h = canonical_policy_hash({"x": "y"})
@@ -62,9 +60,7 @@ class TestCanonicalPolicyHash:
 
 
 class TestComputeTransition:
-    def _result(
-        self, decision: str, violations: tuple[str, ...] = ()
-    ) -> SimulationResult:
+    def _result(self, decision: str, violations: tuple[str, ...] = ()) -> SimulationResult:
         return SimulationResult(
             scenario_id="x",
             decision=decision,  # type: ignore[arg-type]
@@ -72,56 +68,34 @@ class TestComputeTransition:
         )
 
     def test_allow_to_allow(self) -> None:
-        assert (
-            compute_transition(self._result("allow"), self._result("allow"))
-            == "allow_to_allow"
-        )
+        assert compute_transition(self._result("allow"), self._result("allow")) == "allow_to_allow"
 
     def test_allow_to_deny(self) -> None:
-        assert (
-            compute_transition(self._result("allow"), self._result("deny"))
-            == "allow_to_deny"
-        )
+        assert compute_transition(self._result("allow"), self._result("deny")) == "allow_to_deny"
 
     def test_deny_to_allow(self) -> None:
-        assert (
-            compute_transition(self._result("deny"), self._result("allow"))
-            == "deny_to_allow"
-        )
+        assert compute_transition(self._result("deny"), self._result("allow")) == "deny_to_allow"
 
     def test_deny_to_deny(self) -> None:
-        assert (
-            compute_transition(self._result("deny"), self._result("deny"))
-            == "deny_to_deny"
-        )
+        assert compute_transition(self._result("deny"), self._result("deny")) == "deny_to_deny"
 
     def test_baseline_error(self) -> None:
-        assert (
-            compute_transition(self._result("error"), self._result("allow"))
-            == "error"
-        )
+        assert compute_transition(self._result("error"), self._result("allow")) == "error"
 
     def test_proposed_error(self) -> None:
-        assert (
-            compute_transition(self._result("allow"), self._result("error"))
-            == "error"
-        )
+        assert compute_transition(self._result("allow"), self._result("error")) == "error"
 
 
 class TestComputeViolationDiff:
     def test_added(self) -> None:
         base = SimulationResult(scenario_id="x", decision="allow")
-        prop = SimulationResult(
-            scenario_id="x", decision="deny", violation_kinds=("new_code",)
-        )
+        prop = SimulationResult(scenario_id="x", decision="deny", violation_kinds=("new_code",))
         diff = compute_violation_diff(base, prop)
         assert diff.added == frozenset({"new_code"})
         assert diff.removed == frozenset()
 
     def test_removed(self) -> None:
-        base = SimulationResult(
-            scenario_id="x", decision="deny", violation_kinds=("old_code",)
-        )
+        base = SimulationResult(scenario_id="x", decision="deny", violation_kinds=("old_code",))
         prop = SimulationResult(scenario_id="x", decision="allow")
         diff = compute_violation_diff(base, prop)
         assert diff.added == frozenset()
@@ -146,9 +120,7 @@ class TestComputeViolationDiff:
 class TestMakeScenarioDelta:
     def test_notable_on_transition_change(self) -> None:
         base = SimulationResult(scenario_id="x", decision="allow")
-        prop = SimulationResult(
-            scenario_id="x", decision="deny", violation_kinds=("v",)
-        )
+        prop = SimulationResult(scenario_id="x", decision="deny", violation_kinds=("v",))
         delta = make_scenario_delta(
             scenario_id="x",
             target_policy_name="p.json",
@@ -192,33 +164,25 @@ class TestValidateProposedPolicy:
     def test_valid_passes(self) -> None:
         # Well-formed policy must not raise; validator returns
         # None on success, ProposedPolicyInvalidError otherwise.
-        result = validate_proposed_policy(
-            "policy_worktree_profile.v1.json", self._worktree_policy()
-        )
+        result = validate_proposed_policy("policy_worktree_profile.v1.json", self._worktree_policy())
         assert result is None
 
     def test_missing_top_key_raises(self) -> None:
         bad = self._worktree_policy()
         del bad["env_allowlist"]
         with pytest.raises(ProposedPolicyInvalidError):
-            validate_proposed_policy(
-                "policy_worktree_profile.v1.json", bad
-            )
+            validate_proposed_policy("policy_worktree_profile.v1.json", bad)
 
     def test_wrong_type_raises(self) -> None:
         bad = self._worktree_policy()
         bad["env_allowlist"] = {"allowed_keys": "not_a_list"}
         with pytest.raises(ProposedPolicyInvalidError):
-            validate_proposed_policy(
-                "policy_worktree_profile.v1.json", bad
-            )
+            validate_proposed_policy("policy_worktree_profile.v1.json", bad)
 
     def test_unknown_policy_name_passes_through(self) -> None:
         """No registry entry → no structural checks (schema gate
         is authoritative for those). Validator returns None."""
-        result = validate_proposed_policy(
-            "policy_unknown.v1.json", {"arbitrary": True}
-        )
+        result = validate_proposed_policy("policy_unknown.v1.json", {"arbitrary": True})
         assert result is None
 
 
@@ -229,9 +193,7 @@ class TestPolicyOverrideContext:
     def test_patches_and_restores(self) -> None:
         original = _config.load_with_override
         with policy_override_context({"policy_x.v1.json": {"custom": 1}}):
-            result = _config.load_with_override(
-                "policies", "policy_x.v1.json"
-            )
+            result = _config.load_with_override("policies", "policy_x.v1.json")
             assert result == {"custom": 1}
         assert _config.load_with_override is original
 
@@ -239,24 +201,16 @@ class TestPolicyOverrideContext:
         """Policies not in the override set reach the original loader."""
         seen: list[tuple[str, str]] = []
 
-        def _fake(
-            resource_type: str, filename: str, workspace: Any = None
-        ) -> dict[str, Any]:
+        def _fake(resource_type: str, filename: str, workspace: Any = None) -> dict[str, Any]:
             seen.append((resource_type, filename))
             return {"from_real": filename}
 
         original = _config.load_with_override
         _config.load_with_override = _fake  # type: ignore[assignment]
         try:
-            with policy_override_context(
-                {"override_one.v1.json": {"patched": True}}
-            ):
-                assert _config.load_with_override(
-                    "policies", "other.v1.json"
-                ) == {"from_real": "other.v1.json"}
-                assert _config.load_with_override(
-                    "policies", "override_one.v1.json"
-                ) == {"patched": True}
+            with policy_override_context({"override_one.v1.json": {"patched": True}}):
+                assert _config.load_with_override("policies", "other.v1.json") == {"from_real": "other.v1.json"}
+                assert _config.load_with_override("policies", "override_one.v1.json") == {"patched": True}
         finally:
             _config.load_with_override = original  # type: ignore[assignment]
         assert ("policies", "other.v1.json") in seen
@@ -420,9 +374,7 @@ class TestSimulatePolicyChange:
         # Both target policies must appear in the baseline + proposed
         # hash maps — the preload fix from absorb iter-2 ensures
         # secondary targets are materialised.
-        assert (
-            "policy_worktree_profile.v1.json" in report.baseline_policy_hashes
-        )
+        assert "policy_worktree_profile.v1.json" in report.baseline_policy_hashes
         assert "policy_autonomy.v1.json" in report.baseline_policy_hashes
         assert "policy_autonomy.v1.json" in report.proposed_policy_hashes
         # Proposed autonomy differs from bundled → hashes diverge.
@@ -485,10 +437,7 @@ class TestDiffReportSerialisation:
         # Roundtrip through json.dumps/json.loads; no TypeError.
         encoded = json.dumps(payload, sort_keys=True)
         roundtripped = json.loads(encoded)
-        assert (
-            roundtripped["scenarios_evaluated"]
-            == report.scenarios_evaluated
-        )
+        assert roundtripped["scenarios_evaluated"] == report.scenarios_evaluated
 
     def test_dump_json_stable(self, tmp_path: Path) -> None:
         report = simulate_policy_change(

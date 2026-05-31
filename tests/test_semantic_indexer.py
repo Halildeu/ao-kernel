@@ -24,11 +24,15 @@ class TestNoOpPaths:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         backend = MagicMock()
         cfg = EmbeddingConfig()
-        assert index_decision(
-            key="k", value="v",
-            vector_store=backend,
-            embedding_config=cfg,
-        ) is False
+        assert (
+            index_decision(
+                key="k",
+                value="v",
+                vector_store=backend,
+                embedding_config=cfg,
+            )
+            is False
+        )
         backend.store.assert_not_called()
 
     def test_embed_returns_none_returns_false(self):
@@ -38,11 +42,15 @@ class TestNoOpPaths:
             "ao_kernel.context.semantic_retrieval.embed_text",
             return_value=None,
         ):
-            assert index_decision(
-                key="k", value="v",
-                vector_store=backend,
-                embedding_config=cfg,
-            ) is False
+            assert (
+                index_decision(
+                    key="k",
+                    value="v",
+                    vector_store=backend,
+                    embedding_config=cfg,
+                )
+                is False
+            )
         backend.store.assert_not_called()
 
     def test_embed_raises_returns_false(self):
@@ -52,11 +60,15 @@ class TestNoOpPaths:
             "ao_kernel.context.semantic_retrieval.embed_text",
             side_effect=RuntimeError("network"),
         ):
-            assert index_decision(
-                key="k", value="v",
-                vector_store=backend,
-                embedding_config=cfg,
-            ) is False
+            assert (
+                index_decision(
+                    key="k",
+                    value="v",
+                    vector_store=backend,
+                    embedding_config=cfg,
+                )
+                is False
+            )
         backend.store.assert_not_called()
 
     def test_store_raises_is_swallowed(self):
@@ -67,11 +79,15 @@ class TestNoOpPaths:
             "ao_kernel.context.semantic_retrieval.embed_text",
             return_value=[0.1, 0.2],
         ):
-            assert index_decision(
-                key="k", value="v",
-                vector_store=backend,
-                embedding_config=cfg,
-            ) is False
+            assert (
+                index_decision(
+                    key="k",
+                    value="v",
+                    vector_store=backend,
+                    embedding_config=cfg,
+                )
+                is False
+            )
 
 
 class TestSuccessfulIndex:
@@ -138,7 +154,8 @@ class TestSuccessfulIndex:
             return_value=[0.0],
         ):
             index_decision(
-                key="k", value="v",
+                key="k",
+                value="v",
                 vector_store=backend,
                 embedding_config=cfg,
                 extra_metadata={"confidence": 0.95, "tag": "important"},
@@ -156,7 +173,8 @@ class TestSuccessfulIndex:
             return_value=[0.0],
         ):
             index_decision(
-                key="k", value="v",
+                key="k",
+                value="v",
                 namespace="ns-1",
                 vector_store=backend,
                 embedding_config=cfg,

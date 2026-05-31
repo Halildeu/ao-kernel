@@ -400,9 +400,7 @@ def test_gp57b_blocks_support_widening_in_clean_subreport(tmp_path: Path) -> Non
     assert _schema_errors(report) == []
     assert report["overall_status"] == "blocked"
     assert report["clean_runs"][0]["status"] == "blocked"
-    assert "controlled_patch_support_widening_not_false" in report["clean_runs"][0][
-        "controlled_patch_test"
-    ]["findings"]
+    assert "controlled_patch_support_widening_not_false" in report["clean_runs"][0]["controlled_patch_test"]["findings"]
 
 
 def test_gp57b_requires_failure_scenario_to_be_blocked(tmp_path: Path) -> None:
@@ -478,12 +476,10 @@ def test_gp57b_cli_writes_pass_report(tmp_path: Path) -> None:
 
 def test_gp57b_docs_keep_execution_gate_boundary_explicit() -> None:
     repo_root = _repo_root()
-    program = (
-        repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md"
-    ).read_text(encoding="utf-8")
-    status = (
-        repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md"
-    ).read_text(encoding="utf-8")
+    program = (repo_root / ".claude" / "plans" / "GP-5-GENERAL-PURPOSE-PRODUCTION-PLATFORM-INTEGRATION.md").read_text(
+        encoding="utf-8"
+    )
+    status = (repo_root / ".claude" / "plans" / "POST-BETA-CORRECTNESS-EXPANSION-STATUS.md").read_text(encoding="utf-8")
     runbook = (repo_root / "docs" / "OPERATIONS-RUNBOOK.md").read_text(encoding="utf-8")
     public_beta = (repo_root / "docs" / "PUBLIC-BETA.md").read_text(encoding="utf-8")
     support_boundary = (repo_root / "docs" / "SUPPORT-BOUNDARY.md").read_text(encoding="utf-8")

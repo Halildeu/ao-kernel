@@ -114,9 +114,7 @@ _SENTINELS: tuple[tuple[str, Any, str], ...] = (
 )
 
 
-PATCHED_SENTINEL_NAMES: frozenset[str] = frozenset(
-    entry[0] for entry in _SENTINELS
-)
+PATCHED_SENTINEL_NAMES: frozenset[str] = frozenset(entry[0] for entry in _SENTINELS)
 """Public read-only view of the sentinel names for test assertions."""
 
 

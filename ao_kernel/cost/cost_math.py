@@ -44,13 +44,10 @@ def compute_cost(
     """
     if cached_tokens < 0 or tokens_input < 0 or tokens_output < 0:
         raise ValueError(
-            f"token counts must be non-negative: "
-            f"input={tokens_input}, output={tokens_output}, cached={cached_tokens}"
+            f"token counts must be non-negative: input={tokens_input}, output={tokens_output}, cached={cached_tokens}"
         )
     if cached_tokens > tokens_input:
-        raise ValueError(
-            f"cached_tokens={cached_tokens} exceeds tokens_input={tokens_input}"
-        )
+        raise ValueError(f"cached_tokens={cached_tokens} exceeds tokens_input={tokens_input}")
 
     billable_input = tokens_input - cached_tokens
     input_rate = Decimal(str(entry.input_cost_per_1k))
@@ -83,16 +80,10 @@ def estimate_cost(
     Raises ``ValueError`` on negative inputs.
     """
     if est_tokens_input < 0 or est_tokens_output < 0:
-        raise ValueError(
-            f"estimate counts must be non-negative: "
-            f"input={est_tokens_input}, output={est_tokens_output}"
-        )
+        raise ValueError(f"estimate counts must be non-negative: input={est_tokens_input}, output={est_tokens_output}")
     input_rate = Decimal(str(entry.input_cost_per_1k))
     output_rate = Decimal(str(entry.output_cost_per_1k))
-    return (
-        Decimal(est_tokens_input) * input_rate / _THOUSAND
-        + Decimal(est_tokens_output) * output_rate / _THOUSAND
-    )
+    return Decimal(est_tokens_input) * input_rate / _THOUSAND + Decimal(est_tokens_output) * output_rate / _THOUSAND
 
 
 def estimate_output_tokens(
@@ -116,9 +107,7 @@ def estimate_output_tokens(
     are deferred post-MVP.
     """
     if est_tokens_input < 0:
-        raise ValueError(
-            f"est_tokens_input must be non-negative: {est_tokens_input}"
-        )
+        raise ValueError(f"est_tokens_input must be non-negative: {est_tokens_input}")
     ratio_estimate = int(est_tokens_input * 0.25)
     if max_tokens is None:
         return ratio_estimate

@@ -93,14 +93,16 @@ def extract_from_tool_result(
         if key.startswith("_") or key in ("type", "id", "timestamp", "error"):
             continue
         if isinstance(value, (str, int, float, bool)):
-            decisions.append(Decision(
-                key=f"tool.{tool_name}.{key}",
-                value=value,
-                source="agent",
-                confidence=0.95,
-                evidence_id=request_id,
-                extracted_at=ts,
-            ))
+            decisions.append(
+                Decision(
+                    key=f"tool.{tool_name}.{key}",
+                    value=value,
+                    source="agent",
+                    confidence=0.95,
+                    evidence_id=request_id,
+                    extracted_at=ts,
+                )
+            )
 
     return decisions[:10]
 
@@ -131,26 +133,30 @@ def _extract_from_json(text: str, *, request_id: str, timestamp: str) -> list[De
         if key.startswith("_") or key in ("type", "id", "timestamp"):
             continue
         if isinstance(value, (str, int, float, bool)):
-            decisions.append(Decision(
-                key=f"llm.{key}",
-                value=value,
-                source="agent",
-                confidence=0.9,
-                evidence_id=request_id,
-                extracted_at=timestamp,
-            ))
+            decisions.append(
+                Decision(
+                    key=f"llm.{key}",
+                    value=value,
+                    source="agent",
+                    confidence=0.9,
+                    evidence_id=request_id,
+                    extracted_at=timestamp,
+                )
+            )
         elif isinstance(value, dict) and len(value) <= 5:
             # Nested dict with few keys — extract each
             for sub_key, sub_val in value.items():
                 if isinstance(sub_val, (str, int, float, bool)):
-                    decisions.append(Decision(
-                        key=f"llm.{key}.{sub_key}",
-                        value=sub_val,
-                        source="agent",
-                        confidence=0.8,
-                        evidence_id=request_id,
-                        extracted_at=timestamp,
-                    ))
+                    decisions.append(
+                        Decision(
+                            key=f"llm.{key}.{sub_key}",
+                            value=sub_val,
+                            source="agent",
+                            confidence=0.8,
+                            evidence_id=request_id,
+                            extracted_at=timestamp,
+                        )
+                    )
 
     return decisions[:20]  # Cap at 20 decisions per response
 
@@ -175,14 +181,16 @@ def _extract_heuristic(text: str, *, request_id: str, timestamp: str) -> list[De
         key = match.group(1).strip().lower().replace(" ", "_")
         value = match.group(2).strip().rstrip(".,;")
         if len(key) >= 3 and len(value) >= 3:
-            decisions.append(Decision(
-                key=f"llm.heuristic.{key}",
-                value=value,
-                source="agent",
-                confidence=0.4,
-                evidence_id=request_id,
-                extracted_at=timestamp,
-            ))
+            decisions.append(
+                Decision(
+                    key=f"llm.heuristic.{key}",
+                    value=value,
+                    source="agent",
+                    confidence=0.4,
+                    evidence_id=request_id,
+                    extracted_at=timestamp,
+                )
+            )
 
     # Pattern: "decided to X" or "decision: X"
     decision_pattern = re.compile(
@@ -191,13 +199,15 @@ def _extract_heuristic(text: str, *, request_id: str, timestamp: str) -> list[De
     )
     for match in decision_pattern.finditer(text):
         value = match.group(1).strip()
-        decisions.append(Decision(
-            key="llm.decision",
-            value=value,
-            source="agent",
-            confidence=0.5,
-            evidence_id=request_id,
-            extracted_at=timestamp,
-        ))
+        decisions.append(
+            Decision(
+                key="llm.decision",
+                value=value,
+                source="agent",
+                confidence=0.5,
+                evidence_id=request_id,
+                extracted_at=timestamp,
+            )
+        )
 
     return decisions[:10]  # Cap heuristic extractions

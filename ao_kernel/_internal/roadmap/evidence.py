@@ -58,7 +58,9 @@ def init_evidence_dir(evidence_root: Path, run_id: str) -> RoadmapEvidencePaths:
     )
 
 
-def write_step_evidence(paths: RoadmapEvidencePaths, step_id: str, *, step_input: Any, step_output: Any, logs: str) -> None:
+def write_step_evidence(
+    paths: RoadmapEvidencePaths, step_id: str, *, step_input: Any, step_output: Any, logs: str
+) -> None:
     step_dir = paths.steps_dir / step_id
     step_dir.mkdir(parents=True, exist_ok=True)
     write_json(step_dir / "input.json", step_input)
@@ -82,4 +84,3 @@ def write_integrity_manifest(run_dir: Path) -> None:
         "files": sorted(entries, key=lambda e: e["path"]),
     }
     write_json(run_dir / MANIFEST_NAME, manifest)
-

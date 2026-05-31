@@ -43,9 +43,7 @@ class BaselineSource(enum.Enum):
     EXPLICIT = "explicit"
 
 
-def validate_proposed_policy(
-    policy_name: str, policy: Mapping[str, Any]
-) -> None:
+def validate_proposed_policy(policy_name: str, policy: Mapping[str, Any]) -> None:
     """Run structural shape checks for ``policy``.
 
     Uses the shape registry aggregators so a single policy that
@@ -67,15 +65,10 @@ def validate_proposed_policy(
     for path, expected in type_contracts.items():
         observed = walk_policy(policy, path)
         if observed is _MISSING:
-            violations.append(
-                f"missing required path {'.'.join(path)!r}"
-            )
+            violations.append(f"missing required path {'.'.join(path)!r}")
             continue
         if not isinstance(observed, expected):
-            violations.append(
-                f"path {'.'.join(path)!r} expected {expected.__name__}, "
-                f"got {type(observed).__name__}"
-            )
+            violations.append(f"path {'.'.join(path)!r} expected {expected.__name__}, got {type(observed).__name__}")
 
     if violations:
         raise ProposedPolicyInvalidError(
@@ -132,9 +125,7 @@ def resolve_target_policy(
         from ao_kernel import config as _cfg
 
         try:
-            return _cfg.load_with_override(
-                "policies", policy_name, workspace=project_root
-            )
+            return _cfg.load_with_override("policies", policy_name, workspace=project_root)
         except FileNotFoundError:
             # Missing workspace override → fall through to bundled.
             pass

@@ -66,9 +66,7 @@ def _rewind_claim_heartbeat(
 
 
 class TestCoordinationStatusCli:
-    def test_text_output_reports_disabled_workspace(
-        self, tmp_path: Path, capsys
-    ) -> None:
+    def test_text_output_reports_disabled_workspace(self, tmp_path: Path, capsys) -> None:
         rc = cmd_coordination_status(_args(tmp_path, format="text"))
         assert rc == 0
         out = capsys.readouterr().out
@@ -80,9 +78,7 @@ class TestCoordinationStatusCli:
         registry.acquire_claim("worktree-a", "agent-alpha")
         output_path = tmp_path / "coordination-status.json"
 
-        rc = cmd_coordination_status(
-            _args(tmp_path, format="json", output=str(output_path))
-        )
+        rc = cmd_coordination_status(_args(tmp_path, format="json", output=str(output_path)))
 
         assert rc == 0
         payload = json.loads(output_path.read_text(encoding="utf-8"))
@@ -92,9 +88,7 @@ class TestCoordinationStatusCli:
 
 
 class TestCoordinationTakeoverCli:
-    def test_text_output_reports_successful_takeover(
-        self, tmp_path: Path, capsys
-    ) -> None:
+    def test_text_output_reports_successful_takeover(self, tmp_path: Path, capsys) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         registry.acquire_claim("worktree-a", "agent-alpha")
@@ -194,9 +188,7 @@ class TestCoordinationTakeoverCli:
         err = capsys.readouterr().err
         assert "no claim exists" in err
 
-    def test_main_dispatch_executes_takeover_command(
-        self, tmp_path: Path, capsys
-    ) -> None:
+    def test_main_dispatch_executes_takeover_command(self, tmp_path: Path, capsys) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
         registry.acquire_claim("worktree-a", "agent-alpha")

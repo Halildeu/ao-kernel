@@ -14,6 +14,7 @@ from ao_kernel.context.session_lifecycle import end_session, start_session
 class TestProcessTurn:
     def test_extracts_json_decisions(self, tmp_path: Path):
         from ao_kernel.session import new_context
+
         ctx = new_context(session_id="pipeline-001", workspace_root=tmp_path, ttl_seconds=3600)
         output = json.dumps({"status": "approved", "version": "3.11"})
 
@@ -26,15 +27,18 @@ class TestProcessTurn:
 
     def test_prune_expired_decisions(self, tmp_path: Path):
         from ao_kernel.session import new_context
+
         ctx = new_context(session_id="pipeline-002", workspace_root=tmp_path, ttl_seconds=60)
         # Manually add expired decision
-        ctx["ephemeral_decisions"].append({
-            "key": "old_decision",
-            "value": "stale",
-            "source": "agent",
-            "created_at": "2020-01-01T00:00:00Z",
-            "expires_at": "2020-01-01T01:00:00Z",
-        })
+        ctx["ephemeral_decisions"].append(
+            {
+                "key": "old_decision",
+                "value": "stale",
+                "source": "agent",
+                "created_at": "2020-01-01T00:00:00Z",
+                "expires_at": "2020-01-01T01:00:00Z",
+            }
+        )
 
         updated = process_turn("no json here", ctx, workspace_root=tmp_path)
 
@@ -43,6 +47,7 @@ class TestProcessTurn:
 
     def test_saves_context_after_processing(self, tmp_path: Path):
         from ao_kernel.session import new_context, load_context
+
         ctx = new_context(session_id="pipeline-003", workspace_root=tmp_path)
         output = json.dumps({"result": "success"})
 
@@ -53,12 +58,14 @@ class TestProcessTurn:
 
     def test_empty_output_no_crash(self, tmp_path: Path):
         from ao_kernel.session import new_context
+
         ctx = new_context(session_id="pipeline-004", workspace_root=tmp_path)
         updated = process_turn("", ctx, workspace_root=tmp_path)
         assert isinstance(updated, dict)
 
     def test_multiple_turns_accumulate(self, tmp_path: Path):
         from ao_kernel.session import new_context
+
         ctx = new_context(session_id="pipeline-005", workspace_root=tmp_path)
 
         ctx = process_turn(json.dumps({"lang": "python"}), ctx, request_id="t1", workspace_root=tmp_path)
@@ -78,6 +85,7 @@ class TestSessionLifecycle:
 
     def test_start_loads_existing(self, tmp_path: Path):
         from ao_kernel.session import new_context, save_context
+
         ctx = new_context(session_id="lifecycle-002", workspace_root=tmp_path)
         save_context(ctx, workspace_root=tmp_path, session_id="lifecycle-002")
 
@@ -89,6 +97,7 @@ class TestSessionLifecycle:
         end_session(ctx, workspace_root=tmp_path)
 
         from ao_kernel.session import load_context
+
         loaded = load_context(workspace_root=tmp_path, session_id="lifecycle-003")
         assert loaded.get("session_id") == "lifecycle-003"
 
@@ -103,7 +112,9 @@ class TestSessionLifecycle:
         # Turn 3: decision
         ctx = process_turn(
             json.dumps({"python_version": "3.11", "framework": "ao-kernel"}),
-            ctx, request_id="turn3", workspace_root=tmp_path,
+            ctx,
+            request_id="turn3",
+            workspace_root=tmp_path,
         )
 
         # Turn 4-5: more turns

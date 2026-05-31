@@ -55,7 +55,8 @@ def _ledger_schema() -> dict[str, Any]:
     global _LEDGER_SCHEMA_CACHE
     if _LEDGER_SCHEMA_CACHE is None:
         _LEDGER_SCHEMA_CACHE = load_default(
-            "schemas", "spend-ledger.schema.v1.json",
+            "schemas",
+            "spend-ledger.schema.v1.json",
         )
     return _LEDGER_SCHEMA_CACHE
 
@@ -226,11 +227,7 @@ def _find_duplicate(
 ) -> dict[str, Any] | None:
     """Return the matching existing event dict or None."""
     for entry in window:
-        if (
-            entry.get("run_id") == run_id
-            and entry.get("step_id") == step_id
-            and entry.get("attempt") == attempt
-        ):
+        if entry.get("run_id") == run_id and entry.get("step_id") == step_id and entry.get("attempt") == attempt:
             return entry
     return None
 
@@ -308,7 +305,10 @@ def record_spend(
     with file_lock(lock_path):
         window = _scan_tail(ledger_path, policy.idempotency_window_lines)
         existing = _find_duplicate(
-            window, event.run_id, event.step_id, event.attempt,
+            window,
+            event.run_id,
+            event.step_id,
+            event.attempt,
         )
         if existing is not None:
             existing_digest = str(existing.get("billing_digest", ""))

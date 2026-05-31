@@ -61,7 +61,8 @@ class TestCoordinationStatus:
         assert snapshot["summary"]["total_reported"] == 0
 
     def test_enabled_empty_workspace_returns_idle_enabled_snapshot(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
 
@@ -74,7 +75,8 @@ class TestCoordinationStatus:
         assert snapshot["summary"]["coordination_enabled"] is True
 
     def test_path_area_claims_surface_resource_kind_and_label(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(tmp_path, _enabled_policy())
         registry = ClaimRegistry(tmp_path)
@@ -97,7 +99,8 @@ class TestCoordinationStatus:
         assert ("path-area", "tests") in labels
 
     def test_grace_and_takeover_ready_states_are_reported(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         _write_workspace_policy(
             tmp_path,
@@ -107,12 +110,8 @@ class TestCoordinationStatus:
         grace_claim = registry.acquire_claim("worktree-grace", "agent-alpha")
         ready_claim = registry.acquire_claim("worktree-ready", "agent-beta")
 
-        grace_doc = json.loads(
-            claim_path(tmp_path, grace_claim.resource_id).read_text(encoding="utf-8")
-        )
-        ready_doc = json.loads(
-            claim_path(tmp_path, ready_claim.resource_id).read_text(encoding="utf-8")
-        )
+        grace_doc = json.loads(claim_path(tmp_path, grace_claim.resource_id).read_text(encoding="utf-8"))
+        ready_doc = json.loads(claim_path(tmp_path, ready_claim.resource_id).read_text(encoding="utf-8"))
         grace_doc["heartbeat_at"] = (FIXED_NOW - timedelta(seconds=12)).isoformat()
         grace_doc["expires_at"] = (FIXED_NOW - timedelta(seconds=2)).isoformat()
         ready_doc["heartbeat_at"] = (FIXED_NOW - timedelta(seconds=20)).isoformat()
@@ -146,9 +145,7 @@ class TestCoordinationStatus:
         registry = ClaimRegistry(tmp_path)
         registry.acquire_claim("worktree-a", "agent-alpha")
 
-        rendered = render_coordination_status(
-            build_coordination_status(tmp_path, now=FIXED_NOW)
-        )
+        rendered = render_coordination_status(build_coordination_status(tmp_path, now=FIXED_NOW))
 
         assert "== coordination status ==" in rendered
         assert "owner=agent-alpha" in rendered

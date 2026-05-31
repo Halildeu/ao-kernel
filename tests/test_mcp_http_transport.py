@@ -11,11 +11,13 @@ class TestServeHttpContract:
     def test_serve_http_is_async_function(self):
         """serve_http is an async coroutine function (not sync)."""
         from ao_kernel.mcp_server import serve_http
+
         assert inspect.iscoroutinefunction(serve_http), "serve_http must be async"
 
     def test_serve_http_default_params(self):
         """serve_http defaults: host='127.0.0.1', port=8080."""
         from ao_kernel.mcp_server import serve_http
+
         sig = inspect.signature(serve_http)
         assert sig.parameters["host"].default == "127.0.0.1"
         assert sig.parameters["port"].default == 8080

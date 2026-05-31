@@ -525,9 +525,7 @@ def test_build_payload_required_check_skipped_only_still_fails_closed(tmp_path: 
         ]
     )
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["required_checks"] == [
-        {"name": "lint", "status": "completed", "conclusion": "skipped"}
-    ]
+    assert payload["required_checks"] == [{"name": "lint", "status": "completed", "conclusion": "skipped"}]
 
 
 def test_build_payload_defaults_dangerous_flags_to_false(tmp_path: Path) -> None:

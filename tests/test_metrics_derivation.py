@@ -67,9 +67,7 @@ def _sample_values(family: Any) -> list[tuple[dict[str, str], float]]:
 
 
 class TestLLMSpendDerivation:
-    def test_duration_ms_populates_histogram(
-        self, tmp_path: Path
-    ) -> None:
+    def test_duration_ms_populates_histogram(self, tmp_path: Path) -> None:
         """`llm_spend_recorded.duration_ms` is the canonical source
         for `ao_llm_call_duration_seconds` (plan v4 iter-2 fix)."""
         _write_events(
@@ -109,13 +107,9 @@ class TestLLMSpendDerivation:
         ]
         # One of the samples with those labels should match the
         # observed duration (histogram `_sum`).
-        assert any(
-            v == pytest.approx(0.2505) for _, v in sum_samples
-        )
+        assert any(v == pytest.approx(0.2505) for _, v in sum_samples)
 
-    def test_tokens_counter_three_directions(
-        self, tmp_path: Path
-    ) -> None:
+    def test_tokens_counter_three_directions(self, tmp_path: Path) -> None:
         """`tokens_input/tokens_output/cached_tokens` → direction
         label with three series."""
         _write_events(
@@ -184,15 +178,10 @@ class TestLLMSpendDerivation:
         derive_metrics_from_evidence(tmp_path, built, policy)
 
         samples = _sample_values(built.llm_cost_usd)
-        anthropic_total = next(
-            v for labels, v in samples
-            if labels == {"provider": "anthropic"}
-        )
+        anthropic_total = next(v for labels, v in samples if labels == {"provider": "anthropic"})
         assert anthropic_total == pytest.approx(0.003)
 
-    def test_missing_duration_ms_skips_histogram(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_duration_ms_skips_histogram(self, tmp_path: Path) -> None:
         """Plan v4 R13: pre-B5 events without ``duration_ms`` are
         counted for tokens/cost but skipped for the duration
         histogram. Stats.duration_ms_missing surfaces the count."""
@@ -225,9 +214,7 @@ class TestLLMSpendDerivation:
 
 
 class TestUsageMissingCounter:
-    def test_llm_usage_missing_event_increments(
-        self, tmp_path: Path
-    ) -> None:
+    def test_llm_usage_missing_event_increments(self, tmp_path: Path) -> None:
         _write_events(
             tmp_path,
             "run-gamma",
@@ -249,10 +236,7 @@ class TestUsageMissingCounter:
 
         assert stats.llm_usage_missing_counted == 1
         samples = _sample_values(built.llm_usage_missing)
-        assert any(
-            labels == {"provider": "anthropic"} and v == 1.0
-            for labels, v in samples
-        )
+        assert any(labels == {"provider": "anthropic"} and v == 1.0 for labels, v in samples)
 
 
 class TestPolicyCheckOutcome:
@@ -278,9 +262,7 @@ class TestPolicyCheckOutcome:
         derive_metrics_from_evidence(tmp_path, built, policy)
 
         samples = dict(
-            (labels["outcome"], value)
-            for labels, value in _sample_values(built.policy_check)
-            if "outcome" in labels
+            (labels["outcome"], value) for labels, value in _sample_values(built.policy_check) if "outcome" in labels
         )
         assert samples == {"allow": 1.0, "deny": 1.0}
 
@@ -308,9 +290,7 @@ class TestClaimTakeoverCounter:
 
 
 class TestWorkflowDuration:
-    def test_started_completed_pair_records_duration(
-        self, tmp_path: Path
-    ) -> None:
+    def test_started_completed_pair_records_duration(self, tmp_path: Path) -> None:
         run_id = "00000000-0000-4000-8000-000000000001"
         _write_events(
             tmp_path,
@@ -335,15 +315,9 @@ class TestWorkflowDuration:
         assert stats.workflow_terminals_counted == 1
         samples = _sample_values(built.workflow_duration)
         # Histogram sum for completed ≈ 30 seconds.
-        assert any(
-            labels.get("final_state") == "completed"
-            and v == pytest.approx(30.0)
-            for labels, v in samples
-        )
+        assert any(labels.get("final_state") == "completed" and v == pytest.approx(30.0) for labels, v in samples)
 
-    def test_cancelled_from_state_completed_at(
-        self, tmp_path: Path
-    ) -> None:
+    def test_cancelled_from_state_completed_at(self, tmp_path: Path) -> None:
         """Plan v4 Q3 A: cancelled runs are read from
         state.v1.json.completed_at because no terminal event exists."""
         from ao_kernel.workflow.run_store import create_run
@@ -356,12 +330,8 @@ class TestWorkflowDuration:
             workflow_version="1.0.0",
             intent={"kind": "inline_prompt", "payload": "t"},
             budget={"fail_closed_on_exhaust": True},
-            policy_refs=[
-                "ao_kernel/defaults/policies/policy_worktree_profile.v1.json"
-            ],
-            evidence_refs=[
-                f".ao/evidence/workflows/{run_id}/events.jsonl"
-            ],
+            policy_refs=["ao_kernel/defaults/policies/policy_worktree_profile.v1.json"],
+            evidence_refs=[f".ao/evidence/workflows/{run_id}/events.jsonl"],
         )
         # Directly mutate state to cancelled with completed_at for
         # this derivation test (production code transitions via
@@ -373,9 +343,7 @@ class TestWorkflowDuration:
         record["created_at"] = "2026-04-17T09:58:00+00:00"
         # Recompute revision not needed for derivation (list_terminal_runs
         # does raw JSON read without schema validation).
-        state_path.write_text(
-            json.dumps(record, sort_keys=True), encoding="utf-8"
-        )
+        state_path.write_text(json.dumps(record, sort_keys=True), encoding="utf-8")
 
         policy = _bundled_policy(tmp_path)
         built = _build(policy)
@@ -384,17 +352,14 @@ class TestWorkflowDuration:
         assert stats.cancelled_from_state == 1
         samples = _sample_values(built.workflow_duration)
         assert any(
-            labels.get("final_state") == "cancelled"
-            and v == pytest.approx(120.0)  # 2 minutes
+            labels.get("final_state") == "cancelled" and v == pytest.approx(120.0)  # 2 minutes
             for labels, v in samples
         )
 
 
 class TestFailClosedOnCorruptJSONL:
     def test_corrupt_events_jsonl_raises(self, tmp_path: Path) -> None:
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / "run-x" / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / "run-x" / "events.jsonl"
         events_path.parent.mkdir(parents=True, exist_ok=True)
         events_path.write_text(
             '{"kind": "policy_checked"}\n{ not valid json\n',
@@ -408,9 +373,7 @@ class TestFailClosedOnCorruptJSONL:
 
 
 class TestEmptyWorkspace:
-    def test_no_evidence_dir_returns_empty_stats(
-        self, tmp_path: Path
-    ) -> None:
+    def test_no_evidence_dir_returns_empty_stats(self, tmp_path: Path) -> None:
         """Missing `.ao/evidence/workflows/` → zero scans, no raise.
         Dormant-parity behaviour per plan v4 §2.3."""
         policy = _bundled_policy(tmp_path)
@@ -420,9 +383,7 @@ class TestEmptyWorkspace:
 
 
 class TestAdvancedLabels:
-    def test_model_label_appears_when_allowlisted(
-        self, tmp_path: Path
-    ) -> None:
+    def test_model_label_appears_when_allowlisted(self, tmp_path: Path) -> None:
         _write_events(
             tmp_path,
             "run-zeta",
@@ -453,16 +414,13 @@ class TestAdvancedLabels:
 
         samples = _sample_values(built.llm_cost_usd)
         assert any(
-            labels.get("model") == "claude-3-5-sonnet"
-            and labels.get("provider") == "anthropic"
+            labels.get("model") == "claude-3-5-sonnet" and labels.get("provider") == "anthropic"
             for labels, _ in samples
         )
 
 
 class TestCostDisjunction:
-    def test_llm_spend_events_ignored_when_llm_families_absent(
-        self, tmp_path: Path
-    ) -> None:
+    def test_llm_spend_events_ignored_when_llm_families_absent(self, tmp_path: Path) -> None:
         """With `include_llm_metrics=False` (cost dormant), the
         registry has `llm_cost_usd=None`; spend events are parsed
         but produce no samples."""

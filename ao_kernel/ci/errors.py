@@ -30,9 +30,7 @@ class CIRunnerNotFoundError(CIError):
         attempted_command: str,
         realpath: str = "",
     ) -> None:
-        super().__init__(
-            f"CI runner not allowed: {check_name} via {attempted_command!r}"
-        )
+        super().__init__(f"CI runner not allowed: {check_name} via {attempted_command!r}")
         self.check_name = check_name
         self.attempted_command = attempted_command
         self.realpath = realpath
@@ -53,9 +51,7 @@ class CITimeoutError(CIError):
         stdout_tail: str = "",
         stderr_tail: str = "",
     ) -> None:
-        super().__init__(
-            f"CI runner {check_name!r} timed out after {timeout_seconds}s"
-        )
+        super().__init__(f"CI runner {check_name!r} timed out after {timeout_seconds}s")
         self.check_name = check_name
         self.timeout_seconds = timeout_seconds
         self.stdout_tail = stdout_tail

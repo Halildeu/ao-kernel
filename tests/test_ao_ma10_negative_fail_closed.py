@@ -388,9 +388,7 @@ def test_ao_ma10d_missing_verifier_blocked_smoke_non_accepting_review_evidence()
     ],
     ids=lambda case: case if isinstance(case, str) else None,
 )
-def test_ao_ma10d_authority_boundary_negative(
-    mutate: Callable[[dict[str, Any]], object], case_id: str
-) -> None:
+def test_ao_ma10d_authority_boundary_negative(mutate: Callable[[dict[str, Any]], object], case_id: str) -> None:
     del case_id
     bundle = deepcopy(_ao_ma10_evidence_bundle())
     mutate(bundle)

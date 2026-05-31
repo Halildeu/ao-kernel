@@ -44,14 +44,17 @@ def _build_executor(root: Path, workflow_name: str) -> tuple[Executor, str]:
         adapter_registry=areg,
     )
     run_id = seed_run(
-        root, workflow_id=workflow_name, workflow_version="1.0.0",
+        root,
+        workflow_id=workflow_name,
+        workflow_version="1.0.0",
     )
     return executor, run_id
 
 
 class TestDryRunExecutionContext:
     def test_emit_event_captured_not_written(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Mock'd emit_event records to recorder + returns a stub
         EvidenceEvent with event_id + ts attrs (executor reads both).
@@ -78,14 +81,12 @@ class TestDryRunExecutionContext:
         assert payload == {"step_name": "demo"}
 
         # No events.jsonl file materialised.
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert not events_path.exists()
 
     def test_invoke_cli_returns_canned_tuple(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         """Mock'd invoke_cli returns (InvocationResult, Budget) tuple;
         InvocationResult has all 10 required fields."""
@@ -120,13 +121,12 @@ class TestDryRunExecutionContext:
         assert budget_back == "any-budget-sentinel"
 
     def test_write_artifact_captured_not_written(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         install_workspace(tmp_path)
         run_id = "00000000-0000-4000-8000-000000aaaa03"
-        run_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-        )
+        run_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         with dry_run_execution_context(tmp_path, run_id) as recorder:
             from ao_kernel.executor import executor as _exec_mod
@@ -141,10 +141,7 @@ class TestDryRunExecutionContext:
         assert sha == "dry-run-sha256-stub"
         # Artifact directory must NOT contain any file.
         artifacts_dir = run_dir / "artifacts"
-        assert (
-            not artifacts_dir.exists()
-            or list(artifacts_dir.iterdir()) == []
-        )
+        assert not artifacts_dir.exists() or list(artifacts_dir.iterdir()) == []
         # Recorder captured the would-be ref.
         assert recorder.simulated_outputs == {
             "demo_step": "artifacts/demo_step-attempt1.json",
@@ -153,18 +150,18 @@ class TestDryRunExecutionContext:
 
 class TestDryRunStepReadOnly:
     def test_returns_dry_run_result_with_adapter_step(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         executor, run_id = _build_executor(
-            tmp_path, "adapter_plus_ci_flow",
+            tmp_path,
+            "adapter_plus_ci_flow",
         )
         definition = executor._workflow_registry.get(
-            "adapter_plus_ci_flow", version="1.0.0",
+            "adapter_plus_ci_flow",
+            version="1.0.0",
         )
-        step_def = next(
-            s for s in definition.steps
-            if s.step_name == "invoke_agent"
-        )
+        step_def = next(s for s in definition.steps if s.step_name == "invoke_agent")
         result = executor.dry_run_step(run_id, step_def)
         assert isinstance(result, DryRunResult)
         # At minimum step_started emitted before adapter invocation.
@@ -175,78 +172,65 @@ class TestDryRunStepReadOnly:
         """Read-only invariant: full state.v1.json byte-for-byte
         unchanged after dry_run_step."""
         executor, run_id = _build_executor(
-            tmp_path, "simple_aokernel_flow",
+            tmp_path,
+            "simple_aokernel_flow",
         )
-        state_path = (
-            tmp_path / ".ao" / "runs" / run_id / "state.v1.json"
-        )
+        state_path = tmp_path / ".ao" / "runs" / run_id / "state.v1.json"
         before = state_path.read_bytes()
 
         definition = executor._workflow_registry.get(
-            "simple_aokernel_flow", version="1.0.0",
+            "simple_aokernel_flow",
+            version="1.0.0",
         )
         step_def = definition.steps[0]
         executor.dry_run_step(run_id, step_def)
 
         after = state_path.read_bytes()
-        assert before == after, (
-            "state.v1.json bytes must not change during dry-run"
-        )
+        assert before == after, "state.v1.json bytes must not change during dry-run"
 
     def test_no_evidence_file_written(self, tmp_path: Path) -> None:
         executor, run_id = _build_executor(
-            tmp_path, "simple_aokernel_flow",
+            tmp_path,
+            "simple_aokernel_flow",
         )
         definition = executor._workflow_registry.get(
-            "simple_aokernel_flow", version="1.0.0",
+            "simple_aokernel_flow",
+            version="1.0.0",
         )
         step_def = definition.steps[0]
         executor.dry_run_step(run_id, step_def)
-        events_path = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "events.jsonl"
-        )
+        events_path = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "events.jsonl"
         assert not events_path.exists()
 
     def test_no_artifact_directory_materialised(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         executor, run_id = _build_executor(
-            tmp_path, "adapter_plus_ci_flow",
+            tmp_path,
+            "adapter_plus_ci_flow",
         )
         definition = executor._workflow_registry.get(
-            "adapter_plus_ci_flow", version="1.0.0",
+            "adapter_plus_ci_flow",
+            version="1.0.0",
         )
-        step_def = next(
-            s for s in definition.steps
-            if s.step_name == "invoke_agent"
-        )
+        step_def = next(s for s in definition.steps if s.step_name == "invoke_agent")
         executor.dry_run_step(run_id, step_def)
-        artifacts_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "artifacts"
-        )
-        assert (
-            not artifacts_dir.exists()
-            or list(artifacts_dir.iterdir()) == []
-        )
+        artifacts_dir = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "artifacts"
+        assert not artifacts_dir.exists() or list(artifacts_dir.iterdir()) == []
 
     def test_no_adapter_log_written(self, tmp_path: Path) -> None:
         """PR-C6 v3 W3 absorb: adapter-<id>.jsonl not created
         during dry-run (invoke_cli path fully mocked)."""
         executor, run_id = _build_executor(
-            tmp_path, "adapter_plus_ci_flow",
+            tmp_path,
+            "adapter_plus_ci_flow",
         )
         definition = executor._workflow_registry.get(
-            "adapter_plus_ci_flow", version="1.0.0",
+            "adapter_plus_ci_flow",
+            version="1.0.0",
         )
-        step_def = next(
-            s for s in definition.steps
-            if s.step_name == "invoke_agent"
-        )
+        step_def = next(s for s in definition.steps if s.step_name == "invoke_agent")
         executor.dry_run_step(run_id, step_def)
-        adapter_log = (
-            tmp_path / ".ao" / "evidence" / "workflows" / run_id
-            / "adapter-codex-stub.jsonl"
-        )
+        adapter_log = tmp_path / ".ao" / "evidence" / "workflows" / run_id / "adapter-codex-stub.jsonl"
         assert not adapter_log.exists()

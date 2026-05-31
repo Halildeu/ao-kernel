@@ -23,9 +23,7 @@ def _args(workspace: Path, **kwargs) -> SimpleNamespace:
 
 
 class TestStdoutHappyPath:
-    def test_dormant_workspace_exit_zero_with_banner(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_dormant_workspace_exit_zero_with_banner(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Plan v4 §2.6 Q2: dormant policy → exit 0 + banner."""
         rc = cmd_metrics_export(_args(tmp_path))
         assert rc == 0
@@ -36,9 +34,7 @@ class TestStdoutHappyPath:
 class TestOutputFlag:
     def test_atomic_output_writes_file(self, tmp_path: Path) -> None:
         output_path = tmp_path / "metrics.prom"
-        rc = cmd_metrics_export(
-            _args(tmp_path, output=str(output_path))
-        )
+        rc = cmd_metrics_export(_args(tmp_path, output=str(output_path)))
         assert rc == 0
         assert output_path.is_file()
         content = output_path.read_text(encoding="utf-8")
@@ -46,9 +42,7 @@ class TestOutputFlag:
 
 
 class TestCorruptJSONL:
-    def test_corrupt_events_returns_exit_two(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_corrupt_events_returns_exit_two(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Plan v4 §2.6 exit 2: corrupt evidence JSONL fail-closed.
 
         Post-impl review absorb: evidence validation runs only when
@@ -59,19 +53,17 @@ class TestCorruptJSONL:
         import json
 
         (tmp_path / ".ao" / "policies").mkdir(parents=True)
-        (
-            tmp_path / ".ao" / "policies" / "policy_metrics.v1.json"
-        ).write_text(
-            json.dumps({
-                "version": "v1",
-                "enabled": True,
-                "labels_advanced": {"enabled": False, "allowlist": []},
-            }),
+        (tmp_path / ".ao" / "policies" / "policy_metrics.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "enabled": True,
+                    "labels_advanced": {"enabled": False, "allowlist": []},
+                }
+            ),
             encoding="utf-8",
         )
-        evidence_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / "run-x"
-        )
+        evidence_dir = tmp_path / ".ao" / "evidence" / "workflows" / "run-x"
         evidence_dir.mkdir(parents=True, exist_ok=True)
         (evidence_dir / "events.jsonl").write_text(
             '{"kind": "policy_checked"}\n{ not valid\n',
@@ -105,19 +97,22 @@ class TestExtraMissingInformational:
         from ao_kernel.metrics import registry as registry_mod
 
         (tmp_path / ".ao" / "policies").mkdir(parents=True)
-        (
-            tmp_path / ".ao" / "policies" / "policy_metrics.v1.json"
-        ).write_text(
-            json.dumps({
-                "version": "v1",
-                "enabled": True,
-                "labels_advanced": {"enabled": False, "allowlist": []},
-            }),
+        (tmp_path / ".ao" / "policies" / "policy_metrics.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "enabled": True,
+                    "labels_advanced": {"enabled": False, "allowlist": []},
+                }
+            ),
             encoding="utf-8",
         )
 
         monkeypatch.setattr(
-            registry_mod, "_PROMETHEUS_AVAILABLE", False, raising=False,
+            registry_mod,
+            "_PROMETHEUS_AVAILABLE",
+            False,
+            raising=False,
         )
         rc = cmd_metrics_export(_args(tmp_path))
         assert rc == 3
@@ -130,9 +125,7 @@ class TestDormantBannerOnly:
     comments ONLY, no synthetic zero samples from label-less
     Gauge/Counter families."""
 
-    def test_dormant_output_has_no_metric_samples(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_dormant_output_has_no_metric_samples(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """`ao_claim_active_total 0.0` (Gauge) + `ao_claim_takeover_total
         0.0` (Counter) must NOT appear when policy dormant."""
         rc = cmd_metrics_export(_args(tmp_path))
@@ -145,13 +138,9 @@ class TestDormantBannerOnly:
             stripped = line.strip()
             if not stripped:
                 continue
-            assert stripped.startswith("#"), (
-                f"dormant output contains non-comment line: {stripped!r}"
-            )
+            assert stripped.startswith("#"), f"dormant output contains non-comment line: {stripped!r}"
 
-    def test_dormant_is_valid_prometheus_exposition(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_dormant_is_valid_prometheus_exposition(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Banner-only text still parses as Prometheus exposition
         (zero families, but no syntax error)."""
         from prometheus_client.parser import text_string_to_metric_families
@@ -181,29 +170,27 @@ class TestWorkspaceAutoResolution:
         import json
 
         (tmp_path / ".ao" / "policies").mkdir(parents=True)
-        (
-            tmp_path
-            / ".ao"
-            / "policies"
-            / "policy_metrics.v1.json"
-        ).write_text(
-            json.dumps({
-                "version": "v1",
-                "enabled": True,
-                "labels_advanced": {"enabled": False, "allowlist": []},
-            }),
+        (tmp_path / ".ao" / "policies" / "policy_metrics.v1.json").write_text(
+            json.dumps(
+                {
+                    "version": "v1",
+                    "enabled": True,
+                    "labels_advanced": {"enabled": False, "allowlist": []},
+                }
+            ),
             encoding="utf-8",
         )
-        evidence_dir = (
-            tmp_path / ".ao" / "evidence" / "workflows" / "run-auto"
-        )
+        evidence_dir = tmp_path / ".ao" / "evidence" / "workflows" / "run-auto"
         evidence_dir.mkdir(parents=True)
         (evidence_dir / "events.jsonl").write_text(
-            json.dumps({
-                "kind": "policy_checked",
-                "ts": "2026-04-17T10:00:00+00:00",
-                "payload": {"violations_count": 0},
-            }) + "\n",
+            json.dumps(
+                {
+                    "kind": "policy_checked",
+                    "ts": "2026-04-17T10:00:00+00:00",
+                    "payload": {"violations_count": 0},
+                }
+            )
+            + "\n",
             encoding="utf-8",
         )
 
@@ -214,9 +201,7 @@ class TestWorkspaceAutoResolution:
         # No --workspace-root arg → exercise the auto-resolution branch.
         from types import SimpleNamespace
 
-        rc = cmd_metrics_export(
-            SimpleNamespace(workspace_root=None, output=None, format="prometheus")
-        )
+        rc = cmd_metrics_export(SimpleNamespace(workspace_root=None, output=None, format="prometheus"))
         assert rc == 0
         out = capsys.readouterr().out
         # Policy should be NON-dormant — the metric family appears

@@ -16,8 +16,16 @@ from ao_kernel._internal.prj_kernel_api.tool_calling import (
 
 
 SAMPLE_TOOLS = [
-    {"name": "get_weather", "description": "Get weather", "parameters": {"type": "object", "properties": {"city": {"type": "string"}}}},
-    {"name": "search", "description": "Search", "parameters": {"type": "object", "properties": {"q": {"type": "string"}}}},
+    {
+        "name": "get_weather",
+        "description": "Get weather",
+        "parameters": {"type": "object", "properties": {"city": {"type": "string"}}},
+    },
+    {
+        "name": "search",
+        "description": "Search",
+        "parameters": {"type": "object", "properties": {"q": {"type": "string"}}},
+    },
 ]
 
 
@@ -48,12 +56,14 @@ class TestBuildToolsParam:
 
 class TestExtractToolCallsClaude:
     def test_normal_tool_use(self):
-        resp = json.dumps({
-            "content": [
-                {"type": "text", "text": "Let me check the weather."},
-                {"type": "tool_use", "id": "call_1", "name": "get_weather", "input": {"city": "Istanbul"}},
-            ]
-        }).encode()
+        resp = json.dumps(
+            {
+                "content": [
+                    {"type": "text", "text": "Let me check the weather."},
+                    {"type": "tool_use", "id": "call_1", "name": "get_weather", "input": {"city": "Istanbul"}},
+                ]
+            }
+        ).encode()
         calls = extract_tool_calls_claude(resp)
         assert len(calls) == 1
         assert calls[0]["id"] == "call_1"
@@ -74,11 +84,23 @@ class TestExtractToolCallsClaude:
 
 class TestExtractToolCallsOpenAI:
     def test_chat_completions_format(self):
-        resp = json.dumps({
-            "choices": [{"message": {"tool_calls": [
-                {"id": "tc_1", "type": "function", "function": {"name": "search", "arguments": '{"q": "ao-kernel"}'}},
-            ]}}]
-        }).encode()
+        resp = json.dumps(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {
+                                    "id": "tc_1",
+                                    "type": "function",
+                                    "function": {"name": "search", "arguments": '{"q": "ao-kernel"}'},
+                                },
+                            ]
+                        }
+                    }
+                ]
+            }
+        ).encode()
         calls = extract_tool_calls_openai(resp)
         assert len(calls) == 1
         assert calls[0]["id"] == "tc_1"
@@ -86,11 +108,18 @@ class TestExtractToolCallsOpenAI:
         assert calls[0]["arguments"]["q"] == "ao-kernel"
 
     def test_responses_api_format(self):
-        resp = json.dumps({
-            "output": [
-                {"type": "function_call", "call_id": "fc_1", "name": "get_weather", "arguments": '{"city": "Ankara"}'},
-            ]
-        }).encode()
+        resp = json.dumps(
+            {
+                "output": [
+                    {
+                        "type": "function_call",
+                        "call_id": "fc_1",
+                        "name": "get_weather",
+                        "arguments": '{"city": "Ankara"}',
+                    },
+                ]
+            }
+        ).encode()
         calls = extract_tool_calls_openai(resp)
         assert len(calls) == 1
         assert calls[0]["id"] == "fc_1"
@@ -98,11 +127,23 @@ class TestExtractToolCallsOpenAI:
         assert calls[0]["arguments"]["city"] == "Ankara"
 
     def test_malformed_arguments_json(self):
-        resp = json.dumps({
-            "choices": [{"message": {"tool_calls": [
-                {"id": "tc_2", "type": "function", "function": {"name": "test", "arguments": "not valid json{"}},
-            ]}}]
-        }).encode()
+        resp = json.dumps(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {
+                                    "id": "tc_2",
+                                    "type": "function",
+                                    "function": {"name": "test", "arguments": "not valid json{"},
+                                },
+                            ]
+                        }
+                    }
+                ]
+            }
+        ).encode()
         calls = extract_tool_calls_openai(resp)
         assert len(calls) == 1
         assert calls[0]["arguments"] == {}
@@ -113,19 +154,25 @@ class TestExtractToolCallsOpenAI:
 
 class TestExtractToolCallsDispatch:
     def test_claude_dispatch(self):
-        resp = json.dumps({
-            "content": [{"type": "tool_use", "id": "c1", "name": "test", "input": {"a": 1}}]
-        }).encode()
+        resp = json.dumps({"content": [{"type": "tool_use", "id": "c1", "name": "test", "input": {"a": 1}}]}).encode()
         calls = extract_tool_calls("claude", resp)
         assert len(calls) == 1
         assert calls[0]["input"]["a"] == 1
 
     def test_openai_dispatch_normalizes_arguments_to_input(self):
-        resp = json.dumps({
-            "choices": [{"message": {"tool_calls": [
-                {"id": "t1", "type": "function", "function": {"name": "fn", "arguments": '{"x": 2}'}},
-            ]}}]
-        }).encode()
+        resp = json.dumps(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {"id": "t1", "type": "function", "function": {"name": "fn", "arguments": '{"x": 2}'}},
+                            ]
+                        }
+                    }
+                ]
+            }
+        ).encode()
         calls = extract_tool_calls("openai", resp)
         assert len(calls) == 1
         assert "input" in calls[0]

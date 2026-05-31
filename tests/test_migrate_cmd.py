@@ -55,8 +55,9 @@ class TestMigrateCmd:
         assert "backup_path" in out
 
         updated = json.loads(ws_json.read_text())
-        
+
         import ao_kernel
+
         assert updated["version"] == ao_kernel.__version__
         assert "migrated_at" in updated
 

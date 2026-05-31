@@ -110,6 +110,7 @@ def _load_embedding_policy(workspace: Path | None) -> dict[str, Any]:
     """Best-effort policy load. Returns {} on any failure (fail-open for config)."""
     try:
         from ao_kernel.config import load_with_override
+
         policy = load_with_override(
             "policies",
             "policy_context_memory_tiers.v1.json",

@@ -71,9 +71,15 @@ class TestContextManagerCleanup:
     def test_close_without_close_method_is_safe(self):
         class NoCloseBackend:
             def store(self, *a, **k): ...
-            def search(self, *a, **k): return []
-            def delete(self, *a, **k): return False
-            def count(self): return 0
+            def search(self, *a, **k):
+                return []
+
+            def delete(self, *a, **k):
+                return False
+
+            def count(self):
+                return 0
+
         backend = NoCloseBackend()
         # Must not raise — presence of the test completing is the guarantee.
         with AoKernelClient(vector_store=backend, owns_vector_store=True):
@@ -86,10 +92,7 @@ class TestContextManagerCleanup:
         with AoKernelClient(vector_store=backend, owns_vector_store=True):
             pass
         # No exception bubbles out; a warning is logged.
-        assert any(
-            "close failed" in record.message
-            for record in caplog.records
-        ) or backend.close.called
+        assert any("close failed" in record.message for record in caplog.records) or backend.close.called
 
     def test_exception_inside_with_still_closes_backend(self):
         backend = MagicMock()
@@ -115,6 +118,7 @@ class TestEmbeddingConfigPropagation:
 
     def test_embedding_config_injection(self):
         from ao_kernel.context.embedding_config import EmbeddingConfig
+
         injected = EmbeddingConfig(
             provider="openai",
             model="text-embedding-3-large",

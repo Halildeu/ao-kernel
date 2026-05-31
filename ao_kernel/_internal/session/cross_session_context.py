@@ -119,6 +119,7 @@ def build_cross_session_context(*, workspace_root: Path, session_name_filter: st
                     save_context_atomic(ctx_path, ctx)
                 except SessionContextError as exc:
                     import logging
+
                     logging.getLogger("ao_kernel").warning("cross-session pruned context save failed: %s", exc)
 
             decisions = _aslist(ctx.get("ephemeral_decisions"))
@@ -199,8 +200,13 @@ def build_cross_session_context(*, workspace_root: Path, session_name_filter: st
         "decisions_by_session": {k: int(v) for k, v in sorted(decisions_by_session.items())},
         "shared_decisions": shared_decisions,
         "provider_state_sessions": len(provider_rows),
-        "provider_states": sorted(provider_rows, key=lambda item: (str(item.get("provider") or ""), str(item.get("session_id") or ""))),
-        "compactions": sorted(compaction_rows, key=lambda item: (str(item.get("session_id") or ""), str(item.get("last_compacted_at") or ""))),
+        "provider_states": sorted(
+            provider_rows, key=lambda item: (str(item.get("provider") or ""), str(item.get("session_id") or ""))
+        ),
+        "compactions": sorted(
+            compaction_rows,
+            key=lambda item: (str(item.get("session_id") or ""), str(item.get("last_compacted_at") or "")),
+        ),
         "notes": ["PROGRAM_LED=true", "SESSION_SCOPED=true"],
     }
 
@@ -270,11 +276,13 @@ def build_hierarchical_context(
                                 child_inherited += 1
             except SessionContextError:
                 pass
-        child_stats.append({
-            "workspace_root": str(child_ws),
-            "decisions": child_count,
-            "inherited": child_inherited,
-        })
+        child_stats.append(
+            {
+                "workspace_root": str(child_ws),
+                "decisions": child_count,
+                "inherited": child_inherited,
+            }
+        )
 
     merged = sorted(all_decisions.values(), key=lambda x: str(x.get("key") or ""))
 

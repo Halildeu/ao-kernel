@@ -27,9 +27,7 @@ def validate_patch_id(patch_id: str) -> None:
     injection, and relative-parent references.
     """
     if not isinstance(patch_id, str):
-        raise ValueError(
-            f"patch_id must be a string, got {type(patch_id).__name__}"
-        )
+        raise ValueError(f"patch_id must be a string, got {type(patch_id).__name__}")
     if not _VALID_ID_RE.match(patch_id):
         raise ValueError(
             f"invalid patch_id {patch_id!r}: must match "

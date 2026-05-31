@@ -77,8 +77,7 @@ class ClaimStaleFencingError(CoordinationError):
 
     def __init__(self, resource_id: str, supplied_token: int, live_token: int) -> None:
         super().__init__(
-            f"resource {resource_id!r} stale fencing: supplied_token="
-            f"{supplied_token} live_token={live_token}"
+            f"resource {resource_id!r} stale fencing: supplied_token={supplied_token} live_token={live_token}"
         )
         self.resource_id = resource_id
         self.supplied_token = supplied_token
@@ -100,10 +99,7 @@ class ClaimOwnershipError(CoordinationError):
         requesting_agent_id: str,
         current_owner_agent_id: str,
     ) -> None:
-        super().__init__(
-            f"claim {claim_id!r} is owned by {current_owner_agent_id!r}, "
-            f"not {requesting_agent_id!r}"
-        )
+        super().__init__(f"claim {claim_id!r} is owned by {current_owner_agent_id!r}, not {requesting_agent_id!r}")
         self.claim_id = claim_id
         self.requesting_agent_id = requesting_agent_id
         self.current_owner_agent_id = current_owner_agent_id
@@ -125,8 +121,7 @@ class ClaimRevisionConflictError(CoordinationError):
         actual_revision: str,
     ) -> None:
         super().__init__(
-            f"resource {resource_id!r} CAS conflict: expected "
-            f"{expected_revision!r}, actual {actual_revision!r}"
+            f"resource {resource_id!r} CAS conflict: expected {expected_revision!r}, actual {actual_revision!r}"
         )
         self.resource_id = resource_id
         self.expected_revision = expected_revision
@@ -142,10 +137,7 @@ class ClaimQuotaExceededError(CoordinationError):
     """
 
     def __init__(self, owner_agent_id: str, current_count: int, limit: int) -> None:
-        super().__init__(
-            f"agent {owner_agent_id!r} has {current_count} active claim(s); "
-            f"limit is {limit}"
-        )
+        super().__init__(f"agent {owner_agent_id!r} has {current_count} active claim(s); limit is {limit}")
         self.owner_agent_id = owner_agent_id
         self.current_count = current_count
         self.limit = limit
@@ -161,10 +153,7 @@ class ClaimResourcePatternError(CoordinationError):
     """
 
     def __init__(self, resource_id: str, patterns: tuple[str, ...]) -> None:
-        super().__init__(
-            f"resource_id {resource_id!r} does not match any pattern in "
-            f"{list(patterns)!r}"
-        )
+        super().__init__(f"resource_id {resource_id!r} does not match any pattern in {list(patterns)!r}")
         self.resource_id = resource_id
         self.patterns = patterns
 
@@ -178,9 +167,7 @@ class ClaimResourceIdInvalidError(CoordinationError):
     """
 
     def __init__(self, resource_id: str, rejection_reason: str) -> None:
-        super().__init__(
-            f"resource_id {resource_id!r} invalid: {rejection_reason}"
-        )
+        super().__init__(f"resource_id {resource_id!r} invalid: {rejection_reason}")
         self.resource_id = resource_id
         self.rejection_reason = rejection_reason
 
@@ -219,9 +206,7 @@ class ClaimAlreadyReleasedError(CoordinationError):
     """
 
     def __init__(self, resource_id: str, claim_id: str) -> None:
-        super().__init__(
-            f"claim {claim_id!r} on resource {resource_id!r} is already released"
-        )
+        super().__init__(f"claim {claim_id!r} on resource {resource_id!r} is already released")
         self.resource_id = resource_id
         self.claim_id = claim_id
 

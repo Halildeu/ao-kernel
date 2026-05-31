@@ -41,8 +41,12 @@ class _ProgrammableExecutor(Executor):
     """
 
     def __init__(
-        self, workspace_root: Path, *, workflow_registry: WorkflowRegistry,
-        adapter_registry: AdapterRegistry, outcomes: list[str],
+        self,
+        workspace_root: Path,
+        *,
+        workflow_registry: WorkflowRegistry,
+        adapter_registry: AdapterRegistry,
+        outcomes: list[str],
     ) -> None:
         super().__init__(
             workspace_root=workspace_root,
@@ -69,7 +73,8 @@ class _ProgrammableExecutor(Executor):
 
 
 def _build_driver_with_outcomes(
-    workspace: Path, outcomes: list[str],
+    workspace: Path,
+    outcomes: list[str],
 ) -> MultiStepDriver:
     wreg = WorkflowRegistry()
     wreg.load_workspace(workspace)
@@ -114,10 +119,7 @@ class TestRetryOnceSuccess:
         driver.run_workflow(run_id, "retry_once_flow", "1.0.0")
         record, _ = load_run(tmp_path, run_id)
         # Two step_records for invoke_agent — attempt=1 failed, attempt=2 completed
-        invoke_records = [
-            sr for sr in record["steps"]
-            if sr.get("step_name") == "invoke_agent"
-        ]
+        invoke_records = [sr for sr in record["steps"] if sr.get("step_name") == "invoke_agent"]
         assert len(invoke_records) == 2
         attempts = {sr.get("attempt"): sr.get("state") for sr in invoke_records}
         assert attempts[1] == "failed"
@@ -173,7 +175,9 @@ class TestEscalateToHuman:
         driver, run_id = self._setup(tmp_path, outcomes=["failed"])
         first = driver.run_workflow(run_id, "escalate_flow", "1.0.0")
         second = driver.resume_workflow(
-            run_id, first.resume_token, payload={"decision": "denied"},
+            run_id,
+            first.resume_token,
+            payload={"decision": "denied"},
         )
         assert second.final_state == "cancelled"
 
@@ -186,17 +190,23 @@ class TestEscalateToHuman:
 class TestBudgetExhaust:
     def test_exhausted_time_budget_fails_workflow(self, tmp_path: Path) -> None:
         from ao_kernel.workflow.budget import budget_from_dict
+
         install_workspace(tmp_path)
         copy_workflow_fixture(tmp_path, "simple_aokernel_flow")
         run_id = seed_run(tmp_path, "simple_aokernel_flow")
         # Build an exhausted budget: time_seconds.remaining = 0
-        budget = budget_from_dict({
-            "fail_closed_on_exhaust": True,
-            "time_seconds": {"limit": 1.0, "remaining": 0.0},
-        })
+        budget = budget_from_dict(
+            {
+                "fail_closed_on_exhaust": True,
+                "time_seconds": {"limit": 1.0, "remaining": 0.0},
+            }
+        )
         driver = _build_driver_with_outcomes(tmp_path, outcomes=[])
         result = driver.run_workflow(
-            run_id, "simple_aokernel_flow", "1.0.0", budget=budget,
+            run_id,
+            "simple_aokernel_flow",
+            "1.0.0",
+            budget=budget,
         )
         # Budget exhausted → first step rejected → workflow_failed
         assert result.final_state == "failed"
@@ -255,7 +265,8 @@ class TestDriverHelpers:
         assert driver._next_attempt_number(record, "invoke_agent") == 2
 
     def test_next_attempt_number_resumes_running_placeholder(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver = self._driver(tmp_path)
         record = {
@@ -320,13 +331,15 @@ class TestIdempotentTerminalReturn:
         if terminal_state == "failed":
             record["error"] = {"category": "other", "code": "X", "message": "x"}
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_file.write_text(json.dumps(record, indent=2, sort_keys=True))
         driver = _build_driver_with_outcomes(tmp_path, outcomes=[])
         return driver, run_id
 
     def test_completed_terminal_returns_completed_result(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = self._build_terminal(tmp_path, "completed")
         result = driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
@@ -336,14 +349,16 @@ class TestIdempotentTerminalReturn:
         assert result.steps_failed == ()
 
     def test_cancelled_terminal_returns_cancelled_result(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = self._build_terminal(tmp_path, "cancelled")
         result = driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
         assert result.final_state == "cancelled"
 
     def test_failed_terminal_non_retryable_returns_failed(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         driver, run_id = self._build_terminal(tmp_path, "failed")
         result = driver.run_workflow(run_id, "simple_aokernel_flow", "1.0.0")
@@ -353,6 +368,7 @@ class TestIdempotentTerminalReturn:
 class TestDriverStateInconsistency:
     def test_retryable_terminal_raises_inconsistency(self, tmp_path: Path) -> None:
         from ao_kernel.executor import DriverStateInconsistencyError
+
         install_workspace(tmp_path)
         copy_workflow_fixture(tmp_path, "retry_once_flow")
         write_stub_adapter_manifest(tmp_path)
@@ -381,6 +397,7 @@ class TestDriverStateInconsistency:
         record["error"] = {"category": "other", "code": "X", "message": "x"}
         # Recompute revision
         from ao_kernel.workflow.run_store import run_revision
+
         record["revision"] = run_revision(record)
         state_file.write_text(json.dumps(record, indent=2, sort_keys=True))
 

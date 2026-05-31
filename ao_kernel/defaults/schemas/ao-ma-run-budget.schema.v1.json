@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-run-budget:v1",
+  "title": "AO-MA Run Budget (autonomous run governor config)",
+  "description": "Hard caps for an autonomous AO-MA run, consumed by the AO-MA-11I run governor. Every limit is REQUIRED with an explicit value: there is no 'null = unlimited' (that would be fail-open). To run without a meaningful cap you must set a deliberately high explicit value, which stays auditable. Each configured budget axis has a matching REQUIRED state counter (see the governor): a configured cap whose usage axis is absent from run state is a fail-closed halt, never a silent continue. Cost capping is dormant under the CLI-subscription model (RI-7.8c: no cost API), so cost_tracking.available is const false and token count is the primary runaway guard. This config is governor input only; it is NOT a governance authority and cannot widen support, claim production, enable live adapters, authorize GitHub writes, or perform side effects.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "max_slices",
+    "max_consensus_rounds",
+    "max_retries_per_slice",
+    "max_total_retries",
+    "max_governor_steps",
+    "max_wall_clock_seconds",
+    "max_total_output_tokens",
+    "cost_tracking",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "github_write_authorized",
+    "side_effect_authority",
+    "release_authority",
+    "ai_output_release_authority",
+    "governor_authority"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "ao-ma-run-budget.v1" },
+    "artifact_kind": { "type": "string", "const": "ao_ma_run_budget" },
+    "max_slices": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum slices an autonomous run may start. Governor halts before starting one once slices_started >= this."
+    },
+    "max_consensus_rounds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Maximum 3-AI consensus rounds before escalation (matches the merge-lane max of 3)."
+    },
+    "max_retries_per_slice": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum retries for the CURRENT slice. 0 means no retry is permitted (retries_used >= this halts)."
+    },
+    "max_total_retries": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Global retry cap across all slices (a deterministic backstop independent of per-slice retries; guards state drift / slice renaming)."
+    },
+    "max_governor_steps": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum governor evaluations (the master plan's 'iteration cap'); a hard ceiling on autonomous-loop length."
+    },
+    "max_wall_clock_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum wall-clock seconds; elapsed is computed from an injected 'now' (deterministic). Halts when elapsed >= this."
+    },
+    "max_total_output_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum cumulative output tokens; the primary runaway guard. Deterministic schema-backed counter only (no provider API read)."
+    },
+    "cost_tracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "max_cost_usd"],
+      "description": "Cost capping is dormant (RI-7.8c CLI-subscription model: no cost API). available is const false; max_cost_usd must be null while dormant.",
+      "properties": {
+        "available": { "type": "boolean", "const": false },
+        "max_cost_usd": { "type": "null" }
+      }
+    },
+    "support_widening": { "type": "boolean", "const": false },
+    "production_platform_claim": { "type": "boolean", "const": false },
+    "live_adapter_execution": { "type": "boolean", "const": false },
+    "github_write_authorized": {
+      "type": "boolean",
+      "const": false,
+      "description": "The governor never authorizes GitHub writes (issues/PRs/merges). Pinned false."
+    },
+    "side_effect_authority": {
+      "type": "string",
+      "const": "none",
+      "description": "The governor is a pure-decision policy with no side-effect authority; the executor (not the governor) writes checkpoints."
+    },
+    "release_authority": { "type": "string", "const": "ao-release-gate+github-ruleset" },
+    "ai_output_release_authority": { "type": "boolean", "const": false },
+    "governor_authority": {
+      "type": "string",
+      "const": "run_continuation_only",
+      "description": "Pins that the governor only decides whether an autonomous run may continue; it is NOT release authority."
+    }
+  }
+}

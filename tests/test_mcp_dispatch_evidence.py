@@ -21,9 +21,7 @@ from ao_kernel.mcp_server import (
 
 def _init_workspace(path: Path) -> Path:
     (path / ".ao").mkdir()
-    (path / ".ao" / "workspace.json").write_text(
-        json.dumps({"version": "v2", "kind": "ao-kernel"})
-    )
+    (path / ".ao" / "workspace.json").write_text(json.dumps({"version": "v2", "kind": "ao-kernel"}))
     return path
 
 
@@ -86,12 +84,14 @@ class TestParamsRedactedInEvent:
         # Construct fake token at runtime to keep the source file free of
         # pre-commit secret patterns.
         fake_key = "sk-" + ("e" * 20)
-        dispatched({
-            "policy_name": "policy_autonomy.v1.json",
-            "action": {"intent": "x", "mode": "autonomous"},
-            "workspace_root": str(workspace),
-            "api_key": fake_key,
-        })
+        dispatched(
+            {
+                "policy_name": "policy_autonomy.v1.json",
+                "action": {"intent": "x", "mode": "autonomous"},
+                "workspace_root": str(workspace),
+                "api_key": fake_key,
+            }
+        )
         log_dir = workspace / ".ao" / "evidence" / "mcp"
         files = list(log_dir.glob("*.jsonl"))
         # Even the file should not contain the raw key string.
