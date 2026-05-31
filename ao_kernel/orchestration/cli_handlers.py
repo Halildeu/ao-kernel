@@ -35,6 +35,10 @@ from ao_kernel.orchestration.verifier import (
     Verifier,
     VerifierError,
 )
+from ao_kernel.orchestration.native_worker_import import (
+    NativeWorkerImportError,
+    import_native_worker_result,
+)
 from ao_kernel.orchestration.worker_invoker import WorkerInvocationError, WorkerInvoker
 from ao_kernel.orchestration.worker_runner import WorkerRunner, WorkerRunnerError
 
@@ -540,6 +544,70 @@ def add_orchestration_subparser(sub: argparse._SubParsersAction[argparse.Argumen
         help="Stdout summary format (default: text)",
     )
 
+    # AO-MA-4.6-1: native worker result import (import-only)
+    native_p = orchestration_sub.add_parser(
+        "native-import",
+        help=(
+            "AO-MA-4.6-1 native worker result import (import-only): operator/AI "
+            "produces worker_result.v1.json externally via a native interface "
+            "(claude-cli, codex-cli, mavis-cli, local-file); ao-kernel imports + "
+            "schema-validates + provenance-binds it and atomically copies to "
+            "<artifact_dir>/workers/<task_id>/worker_result.v1.json. ao-kernel "
+            "calls NOTHING — no subprocess, no network, no LLM, no GitHub. Fatal "
+            "trust-boundary errors raise NativeWorkerImportError + exit 1; "
+            "policy-invalid emits a schema-valid invalid import_report + exit 1; "
+            "all-pass emits valid import_report + integrated copy + exit 0."
+        ),
+    )
+    native_p.add_argument(
+        "--result",
+        required=True,
+        help="Path to the operator/AI-produced worker_result.v1.json (absolute permitted)",
+    )
+    native_p.add_argument(
+        "--runner-report",
+        required=True,
+        help="Path to the AO-MA-4 runner_report.v1.json (its parent is the canonical artifact_dir)",
+    )
+    native_p.add_argument(
+        "--source-interface",
+        required=True,
+        choices=["claude-cli", "codex-cli", "mavis-cli", "local-file"],
+        help="Native interface that produced the worker_result.v1.json",
+    )
+    native_p.add_argument(
+        "--imported-at",
+        default=None,
+        help=(
+            "RFC3339 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ). Default: current UTC. "
+            "Module is pure; CLI stamps the timestamp once and passes it through."
+        ),
+    )
+    native_p.add_argument(
+        "--artifact-dir",
+        default=None,
+        help=(
+            "Optional artifact directory. Default: runner_report parent. When "
+            "supplied, MUST equal runner_report.parent.resolve() (mismatch is fatal)."
+        ),
+    )
+    native_p.add_argument(
+        "--allow-source-interface",
+        action="append",
+        choices=["claude-cli", "codex-cli", "mavis-cli", "local-file"],
+        default=None,
+        help=(
+            "Narrow the source_interface allowlist for this import. Repeatable. "
+            "Default: full canonical allowlist (claude-cli, codex-cli, mavis-cli, "
+            "local-file). Effective allowlist is recorded in the import report."
+        ),
+    )
+    native_p.add_argument(
+        "--out",
+        required=True,
+        help="Path to write the ao-ma-native-worker-import-report.v1.json artifact",
+    )
+
 
 def _parse_per_task_paths(raw: list[str] | None, kind: str) -> dict[str, Path]:
     """Parse repeated '--worker-result <task_id>=<path>' CLI args into a dict.
@@ -850,3 +918,63 @@ def cmd_orchestration_invoke(args: argparse.Namespace) -> int:
     if any(entry["status"] == "failed" for entry in report["invoked"]):
         return 1
     return 0
+
+
+def _load_schema(name: str) -> dict[str, object]:
+    """Load a bundled AO-MA schema by file name (importlib.resources)."""
+
+    from importlib import resources
+
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(name)
+    return json.loads(schema_path.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+
+
+def cmd_orchestration_native_import(args: argparse.Namespace) -> int:
+    """Handle ``ao-kernel orchestration native-import`` (AO-MA-4.6-1).
+
+    Exit codes:
+    - 0 — schema-valid import_report emitted with valid=true; integrated copy written
+    - 1 — schema-valid import_report emitted with valid=false (policy-invalid)
+          OR fatal trust-boundary error before any report was written
+    """
+
+    import datetime as _dt
+
+    source_path = Path(args.result).resolve()
+    runner_report_path = Path(args.runner_report).resolve()
+    artifact_dir = Path(args.artifact_dir).resolve() if args.artifact_dir else None
+    if args.imported_at:
+        imported_at = args.imported_at
+    else:
+        imported_at = _dt.datetime.now(tz=_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    out_path = Path(args.out).resolve()
+    allowlist = args.allow_source_interface if args.allow_source_interface else None
+
+    worker_result_schema = _load_schema("ao-ma-worker-result.schema.v1.json")
+    runner_report_schema = _load_schema("ao-ma-runner-report.schema.v1.json")
+    task_graph_schema = _load_schema("ao-ma-task-graph.schema.v1.json")
+    assignment_schema = _load_schema("ao-ma-agent-assignment.schema.v1.json")
+    import_report_schema = _load_schema("ao-ma-native-worker-import-report.schema.v1.json")
+
+    try:
+        report = import_native_worker_result(
+            source_result_path=source_path,
+            runner_report_path=runner_report_path,
+            source_interface=args.source_interface,
+            imported_at=imported_at,
+            artifact_dir=artifact_dir,
+            source_interface_allowlist=allowlist,
+            worker_result_schema=worker_result_schema,
+            runner_report_schema=runner_report_schema,
+            task_graph_schema=task_graph_schema,
+            assignment_schema=assignment_schema,
+            import_report_schema=import_report_schema,
+        )
+    except NativeWorkerImportError as exc:
+        print(f"orchestration native-import failed: {exc}", file=sys.stderr)
+        return 1
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"import_report: {out_path!s} (valid={report['valid']})", file=sys.stderr)
+    return 0 if report["valid"] else 1

@@ -2141,6 +2141,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_orchestration_cleanup,
             cmd_orchestration_integrate,
             cmd_orchestration_invoke,
+            cmd_orchestration_native_import,
             cmd_orchestration_plan,
             cmd_orchestration_review,
             cmd_orchestration_spawn,
@@ -2156,6 +2157,8 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_cleanup(args)
         if orchestration_cmd == "invoke":
             return cmd_orchestration_invoke(args)
+        if orchestration_cmd == "native-import":
+            return cmd_orchestration_native_import(args)
         if orchestration_cmd == "integrate":
             return cmd_orchestration_integrate(args)
         if orchestration_cmd == "review":
@@ -2163,7 +2166,7 @@ def main(argv: list[str] | None = None) -> int:
         if orchestration_cmd == "verify":
             return cmd_orchestration_verify(args)
         print(
-            "Usage: ao-kernel orchestration {plan|spawn|cleanup|invoke|integrate|review|verify}",
+            "Usage: ao-kernel orchestration {plan|spawn|cleanup|invoke|native-import|integrate|review|verify}",
             file=sys.stderr,
         )
         return 1

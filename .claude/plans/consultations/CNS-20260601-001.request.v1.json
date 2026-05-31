@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "consultation_id": "CNS-20260601-001",
+  "status": "RESOLVED",
+  "iteration": 4,
+  "from_agent": "claude",
+  "to_agent": "codex",
+  "transport": "mcp",
+  "topic": "ao_ma_4_6_native_worker_result_import_only",
+  "mode": "adversarial_plan_review",
+  "question": {
+    "title": "AO-MA-4.6-1 slice plan: native worker result import (import-only, pure core)",
+    "body": "AO-MA-4.6 (master plan Faz 6): Native Worker Result Import (import-only). Goal: real AI output (not stub) without violating the CLI-subscription model. ao-kernel calls NOTHING; operator/AI produces worker_result.v1.json via native interface (claude-cli/codex-cli/mavis-cli), ao-kernel only imports + schema-validates + provenance-binds. live_adapter_execution=false preserved. 11A dependency; AO-MA-4.5 stub remains.\n\nProposed slice split (pure-core first, 11E-1/11I-1/11H-1/11F-1 parity):\n- AO-MA-4.6-1 (THIS SLICE, pure import-only): new schema (ao-ma-native-worker-import-report.v1) + new PURE module (native_worker_import.py: import + verify, fatal/reportable split, manifest-anchored, canonical artifact_dir, recompute-not-trust, atomic copy) + AST import-allowlist test + CLI subcommand (cli_handlers.py: native-import) + 40+ tests + plan doc. NO subprocess, NO network, NO LLM, NO GitHub.\n- AO-MA-4.6-2 (LATER, side-effect): operator runbook (claude-cli/codex-cli/mavis-cli native worker_result production), real-world dogfooding (e.g. 11G operator-produced worker_result), git_diff_evidence operator artifact (separate slice; can feed 4.6-1 as additional input).",
+    "context_refs": [
+      ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
+      "ao_kernel/orchestration/worker_invoker.py",
+      "ao_kernel/orchestration/worker_runner.py",
+      "ao_kernel/orchestration/integrator.py",
+      "ao_kernel/defaults/schemas/ao-ma-worker-result.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-runner-report.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-worker-invocation-report.schema.v1.json"
+    ]
+  },
+  "created_at": "2026-06-01T01:00:00+03:00",
+  "branch": "codex/ao-ma-4-6-1-native-import",
+  "head_sha": "0ebb7ba",
+  "mcp_thread_id": "019e8000-e794-74c0-a47d-725b41da72a4",
+  "plan_verdict": "Codex AGREE, ready_for_impl=true (4 turde olgunlasti). Iter-1 REVISE: 3 must-close (provider/source_interface ayrimi, git-rev recompute scope realist, fail-open alanlar) + 8 invariant. Iter-2 REVISE: 6 must-close (manifest anchoring kritik, manifest_dir anlami, source path schema/test celisikisi, invalid-report davranisi, checks-object enforcement, base/head/task cross-bind explicit). Iter-3 REVISE: 1 conflict (schema-invalid fatal vs guard-open reportable celisikisi: worker_result schema'da guard 3 const false zaten boundary'sinde, yani guard acik = schema-invalid). Iter-4 AGREE: 4 mekanik duzeltme (artifact schema-invalid = FATAL guard ve no_secret dahil; reportable kategoride sadece policy-invalid sema-valid kalir: source_interface allowlist/provider mismatch/actual subset/empty/known_gaps/existing different hash/runner_status; manifest envelope mevcut _validate_manifest_envelope mantigi reuse/copy; assignment_sha256 runner_report.workers[] entry uzerinden). Implementation notes (blocker degil): NativeWorkerImportError fatal exception sinifi + CLI exit 1; AST allowlist worker_runner import'una izin vermek vs copy karari (Codex copy oneriyor, daha dusuk risk).",
+  "status_note": "4.6-1 schema+module+test slice; .github'a dokunmaz -> otonom merge beklenir.",
+  "resolution": "Codex thread 019e8000 (4 tur REVISE -> AGREE ready_for_impl=true). Plan Consensus Autonomy -> direkt impl. Impl PR sonrasi post-impl review iter ile authoritative contract verify."
+}
