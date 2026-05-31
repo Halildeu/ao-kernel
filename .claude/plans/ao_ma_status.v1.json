@@ -17,8 +17,8 @@
     ]
   },
   "human_status_file": ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-  "current_phase": "AO-MA-11I",
-  "current_slice": "AO-MA-11I-1",
+  "current_phase": "AO-MA-11H",
+  "current_slice": "AO-MA-11H-1",
   "phases": [
     {
       "phase_id": "AO-MA-11A",
@@ -45,7 +45,7 @@
     {
       "phase_id": "AO-MA-11I",
       "title": "Autonomous Run Governor",
-      "status": "in_progress",
+      "status": "done",
       "milestone_ref": null,
       "slice_ids": [
         "AO-MA-11I-1"
@@ -55,7 +55,7 @@
     {
       "phase_id": "AO-MA-11H",
       "title": "Notification & Escalation",
-      "status": "pending",
+      "status": "in_progress",
       "milestone_ref": null,
       "slice_ids": [
         "AO-MA-11H-1"
@@ -232,10 +232,12 @@
       "slice_id": "AO-MA-11I-1",
       "phase_id": "AO-MA-11I",
       "title": "Autonomous Run Governor: PAUSE kill-switch + budget/iteration cap + safe-stop",
-      "status": "in_review",
+      "status": "merged",
       "risk_class": "critical",
       "issue_ref": null,
-      "pr_refs": [],
+      "pr_refs": [
+        762
+      ],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
@@ -254,7 +256,7 @@
           },
           {
             "provider_id": "openai",
-            "ref": "codex:019e7f3a"
+            "ref": "codex:019e7d44"
           },
           {
             "provider_id": "minimax",
@@ -271,8 +273,8 @@
       "slice_id": "AO-MA-11H-1",
       "phase_id": "AO-MA-11H",
       "title": "Notification & Escalation: Mavis chat + GitHub-native, blocked_notification_failed safe-stop",
-      "status": "not_started",
-      "risk_class": "normal",
+      "status": "in_progress",
+      "risk_class": "high",
       "issue_ref": null,
       "pr_refs": [],
       "anchor": {
@@ -406,9 +408,9 @@
     "write to GitHub (issues/milestones/projects) from 11E-1 (that is 11E-2 scope)"
   ],
   "next_allowed_actions": [
-    "complete AO-MA-11I-1 (current slice): land the autonomous run governor (run_governor.py + run-budget + governor-decision schemas + pure decide/is_paused/decision_to_artifact + tests) and merge its PR",
-    "then AO-MA-11H (Notification & Escalation) per the master plan roadmap order; it consumes the governor's escalation_required signal",
-    "AO-MA-11A-2 (GitHub Environment required-reviewer wiring) and AO-MA-11E-2 (GitHub Projects/Milestone/Issue mirror sync) are high-risk and deferred to their own slices"
+    "complete AO-MA-11H-1 (current slice): land the notifier pure-decision core (notifier.py decide_notification + notification-intent + notification-receipt schemas + tests) and merge its PR",
+    "then AO-MA-11H-2 (side-effect executor: Mavis CLI + gh delivery, high-risk) and AO-MA-11H-3 (governor blocked_notification_failed feedback, high-risk) per the master plan order",
+    "AO-MA-11A-2 (GitHub Environment required-reviewer wiring) and AO-MA-11E-2 (GitHub Projects/Milestone/Issue mirror sync) remain high-risk deferred slices"
   ],
   "support_widening_allowed": false,
   "production_platform_claim_allowed": false,
@@ -427,15 +429,15 @@
   },
   "progress_estimates": {
     "phases": {
-      "done_count": 0,
+      "done_count": 1,
       "total_count": 7,
-      "percent": 0,
-      "next_phase_id": "AO-MA-11A"
+      "percent": 14,
+      "next_phase_id": "AO-MA-11H"
     },
     "slices": {
-      "merged_count": 2,
+      "merged_count": 3,
       "total_count": 9,
-      "percent": 22
+      "percent": 33
     }
   },
   "created_at": "2026-05-30T04:00:00Z",

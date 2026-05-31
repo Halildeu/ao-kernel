@@ -282,8 +282,13 @@ def test_drift_detects_current_slice_phase_mismatch() -> None:
 
 def test_drift_detects_in_review_without_consensus() -> None:
     payload = _load_status()
-    inrev = next(s for s in payload["slices"] if s["status"] == "in_review")
-    inrev["consensus_ref"] = {"state": "not_started"}
+    # Construct the violating state from the payload's own data rather than
+    # assuming a slice already sits at in_review: force the first slice to
+    # in_review with a not_started consensus. This stays correct as current_*
+    # advance across phases (an in_review slice may not exist at any moment).
+    target = payload["slices"][0]
+    target["status"] = "in_review"
+    target["consensus_ref"] = {"state": "not_started"}
     drift = ao_ma_next.check_drift(payload)
     assert any("must have consensus_ref.state=agreed" in d for d in drift)
 

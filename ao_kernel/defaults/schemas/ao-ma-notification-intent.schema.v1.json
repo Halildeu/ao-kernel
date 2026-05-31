@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-notification-intent:v1",
+  "title": "AO-MA Notification Intent (AO-MA-11H-1)",
+  "description": "Pure notification-routing decision emitted by ao_kernel.orchestration.notifier. Describes WHAT to notify and HOW (severity/channels/audience/delivery condition); delivery itself is the external executor's job (AO-MA-11H-2). No secret payload, no side-effect authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "event_kind",
+    "action",
+    "severity",
+    "channels",
+    "audience",
+    "redacted_summary",
+    "evidence_refs",
+    "requires_delivery_confirmation",
+    "delivery_success_condition",
+    "dedupe_key",
+    "diagnostics",
+    "no_secret_payload",
+    "delivery_authority",
+    "intent_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "evaluated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-notification-intent.v1" },
+    "artifact_kind": { "const": "ao_ma_notification_intent" },
+    "event_kind": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "action": { "enum": ["notify", "suppress"] },
+    "severity": { "enum": ["info", "high", "critical"] },
+    "channels": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["mavis_chat", "github_native"] }
+    },
+    "audience": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["operator", "peer_agents"] }
+    },
+    "redacted_summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "evidence_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(sha256:[0-9a-f]{64})$|^([A-Za-z0-9_][A-Za-z0-9._-]*(/[A-Za-z0-9_][A-Za-z0-9._-]*)*)$"
+      }
+    },
+    "requires_delivery_confirmation": { "type": "boolean" },
+    "delivery_success_condition": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "none",
+            "at_least_one_required_channel_delivered",
+            "all_required_channels_delivered"
+          ]
+        }
+      ]
+    },
+    "dedupe_key": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "diagnostics": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 200 }
+    },
+    "no_secret_payload": { "const": true },
+    "delivery_authority": { "const": "external_executor_only" },
+    "intent_authority": { "const": "notification_decision_only" },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "evaluated_at": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "action": { "const": "suppress" } }, "required": ["action"] },
+      "then": {
+        "properties": {
+          "channels": { "maxItems": 0 },
+          "audience": { "maxItems": 0 },
+          "requires_delivery_confirmation": { "const": false },
+          "delivery_success_condition": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "action": { "const": "notify" } }, "required": ["action"] },
+      "then": {
+        "properties": {
+          "channels": { "minItems": 1 },
+          "audience": { "minItems": 1 },
+          "delivery_success_condition": {
+            "enum": [
+              "none",
+              "at_least_one_required_channel_delivered",
+              "all_required_channels_delivered"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": { "const": "notify" },
+          "severity": { "const": "critical" }
+        },
+        "required": ["action", "severity"]
+      },
+      "then": {
+        "properties": {
+          "channels": { "minItems": 2 },
+          "audience": { "minItems": 2 },
+          "requires_delivery_confirmation": { "const": true },
+          "delivery_success_condition": { "const": "at_least_one_required_channel_delivered" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": { "const": "notify" },
+          "severity": { "const": "high" }
+        },
+        "required": ["action", "severity"]
+      },
+      "then": {
+        "properties": {
+          "channels": { "minItems": 2 },
+          "audience": { "minItems": 2 },
+          "requires_delivery_confirmation": { "const": false },
+          "delivery_success_condition": { "const": "none" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": { "const": "notify" },
+          "severity": { "const": "info" }
+        },
+        "required": ["action", "severity"]
+      },
+      "then": {
+        "properties": {
+          "channels": { "maxItems": 1 },
+          "audience": { "const": ["peer_agents"] },
+          "requires_delivery_confirmation": { "const": false },
+          "delivery_success_condition": { "const": "none" }
+        }
+      }
+    }
+  ]
+}
