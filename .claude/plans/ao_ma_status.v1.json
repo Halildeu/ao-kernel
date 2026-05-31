@@ -10,19 +10,25 @@
   "master_plan_ref": {
     "path": ".claude/plans/AO-MA-SPM-MASTER-PLAN.md",
     "sha256": "sha256:a80f0a498dc9e5e269c69c60cbd5cf5c44cc361da2109c1bfa5357197b22ec9d",
-    "commit_sha": "a2f3955ef0af9b8618e33530bf8500dbd6f08cbc",
-    "section_refs": ["## 5. Roadmap — 7 Faz", "## 6. Bootstrap / Self-Hosting Mekanizması"]
+    "commit_sha": "38d2a48fd5150fd37cc82fcc0727823c344c8339",
+    "section_refs": [
+      "## 5. Roadmap — 7 Faz",
+      "## 6. Bootstrap / Self-Hosting Mekanizması"
+    ]
   },
   "human_status_file": ".claude/plans/AO-MA-ROADMAP-STATUS.md",
-  "current_phase": "AO-MA-11E",
-  "current_slice": "AO-MA-11E-1",
+  "current_phase": "AO-MA-11I",
+  "current_slice": "AO-MA-11I-1",
   "phases": [
     {
       "phase_id": "AO-MA-11A",
       "title": "Plan Consensus + Single Operator Approval Gate",
       "status": "in_progress",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11A-1", "AO-MA-11A-2"],
+      "slice_ids": [
+        "AO-MA-11A-1",
+        "AO-MA-11A-2"
+      ],
       "closed_at": null
     },
     {
@@ -30,15 +36,20 @@
       "title": "GitHub-Native Operator Tracking Mirror",
       "status": "in_progress",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11E-1", "AO-MA-11E-2"],
+      "slice_ids": [
+        "AO-MA-11E-1",
+        "AO-MA-11E-2"
+      ],
       "closed_at": null
     },
     {
       "phase_id": "AO-MA-11I",
       "title": "Autonomous Run Governor",
-      "status": "pending",
+      "status": "in_progress",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11I-1"],
+      "slice_ids": [
+        "AO-MA-11I-1"
+      ],
       "closed_at": null
     },
     {
@@ -46,7 +57,9 @@
       "title": "Notification & Escalation",
       "status": "pending",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11H-1"],
+      "slice_ids": [
+        "AO-MA-11H-1"
+      ],
       "closed_at": null
     },
     {
@@ -54,7 +67,9 @@
       "title": "Test / Suggestion / Update Evidence Registers",
       "status": "pending",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11F-1"],
+      "slice_ids": [
+        "AO-MA-11F-1"
+      ],
       "closed_at": null
     },
     {
@@ -62,7 +77,9 @@
       "title": "Native Worker Result Import (import-only)",
       "status": "pending",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-4.6-1"],
+      "slice_ids": [
+        "AO-MA-4.6-1"
+      ],
       "closed_at": null
     },
     {
@@ -70,7 +87,9 @@
       "title": "SPM Quality Profile Hardening",
       "status": "pending",
       "milestone_ref": null,
-      "slice_ids": ["AO-MA-11G-1"],
+      "slice_ids": [
+        "AO-MA-11G-1"
+      ],
       "closed_at": null
     }
   ],
@@ -82,7 +101,9 @@
       "status": "merged",
       "risk_class": "critical",
       "issue_ref": null,
-      "pr_refs": [758],
+      "pr_refs": [
+        758
+      ],
       "anchor": {
         "ao_authority_artifact": "ao_kernel/orchestration/plan_consensus.py",
         "artifact_sha256": "sha256:9c2e183c232e10f024d5d4867777a66e4f7f5fef35868b4475ed1eccc2652b38",
@@ -95,9 +116,18 @@
       "consensus_ref": {
         "state": "agreed",
         "consultation_refs": [
-          { "provider_id": "anthropic", "ref": "claude:da2b8cec" },
-          { "provider_id": "openai", "ref": "codex:019e7633" },
-          { "provider_id": "minimax", "ref": "mavis:mvs_ba774375" }
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e7633"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
         ]
       },
       "approval_ref": {
@@ -124,18 +154,24 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
       "slice_id": "AO-MA-11E-1",
       "phase_id": "AO-MA-11E",
       "title": "Derived tracking SSOT: ao_ma_status + schema + ao_ma_next + roadmap + drift core",
-      "status": "in_review",
+      "status": "merged",
       "risk_class": "critical",
       "issue_ref": null,
-      "pr_refs": [],
+      "pr_refs": [
+        760
+      ],
       "anchor": {
         "ao_authority_artifact": null,
         "artifact_sha256": null,
@@ -148,12 +184,23 @@
       "consensus_ref": {
         "state": "agreed",
         "consultation_refs": [
-          { "provider_id": "anthropic", "ref": "claude:da2b8cec" },
-          { "provider_id": "openai", "ref": "codex:019e77c0" },
-          { "provider_id": "minimax", "ref": "mavis:mvs_ba774375" }
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e77c0"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
         ]
       },
-      "approval_ref": { "state": "not_requested" },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
@@ -173,16 +220,20 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
       "slice_id": "AO-MA-11I-1",
       "phase_id": "AO-MA-11I",
       "title": "Autonomous Run Governor: PAUSE kill-switch + budget/iteration cap + safe-stop",
-      "status": "not_started",
-      "risk_class": "normal",
+      "status": "in_review",
+      "risk_class": "critical",
       "issue_ref": null,
       "pr_refs": [],
       "anchor": {
@@ -194,8 +245,26 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "agreed",
+        "consultation_refs": [
+          {
+            "provider_id": "anthropic",
+            "ref": "claude:da2b8cec"
+          },
+          {
+            "provider_id": "openai",
+            "ref": "codex:019e7f3a"
+          },
+          {
+            "provider_id": "minimax",
+            "ref": "mavis:mvs_ba774375"
+          }
+        ]
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
@@ -215,8 +284,12 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
@@ -236,8 +309,12 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
@@ -257,8 +334,12 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     },
     {
@@ -278,17 +359,33 @@
         "last_sync_run_id": null,
         "mirror_projection_sha256": null
       },
-      "consensus_ref": { "state": "not_started" },
-      "approval_ref": { "state": "not_requested" },
+      "consensus_ref": {
+        "state": "not_started"
+      },
+      "approval_ref": {
+        "state": "not_requested"
+      },
       "evidence_refs": []
     }
   ],
   "blocked_slices": [],
   "required_startup_checks": [
-    { "id": "git_status", "command": "git status --short --branch" },
-    { "id": "origin_divergence", "command": "git rev-list --left-right --count HEAD...origin/main" },
-    { "id": "preflight", "command": "bash .claude/scripts/ops.sh preflight" },
-    { "id": "ao_ma_next", "command": "python3 scripts/ao_ma_next.py" }
+    {
+      "id": "git_status",
+      "command": "git status --short --branch"
+    },
+    {
+      "id": "origin_divergence",
+      "command": "git rev-list --left-right --count HEAD...origin/main"
+    },
+    {
+      "id": "preflight",
+      "command": "bash .claude/scripts/ops.sh preflight"
+    },
+    {
+      "id": "ao_ma_next",
+      "command": "python3 scripts/ao_ma_next.py"
+    }
   ],
   "required_workflow": [
     "read this status + master plan before starting any slice",
@@ -309,9 +406,9 @@
     "write to GitHub (issues/milestones/projects) from 11E-1 (that is 11E-2 scope)"
   ],
   "next_allowed_actions": [
-    "complete AO-MA-11E-1 (this slice): land the derived tracking SSOT + schema + ao_ma_next.py + roadmap doc + pure drift comparator + tests",
-    "then AO-MA-11I-1 (Autonomous Run Governor) per the master plan roadmap order",
-    "AO-MA-11E-2 (GitHub mirror sync) is high-risk and deferred to its own slice"
+    "complete AO-MA-11I-1 (current slice): land the autonomous run governor (run_governor.py + run-budget + governor-decision schemas + pure decide/is_paused/decision_to_artifact + tests) and merge its PR",
+    "then AO-MA-11H (Notification & Escalation) per the master plan roadmap order; it consumes the governor's escalation_required signal",
+    "AO-MA-11A-2 (GitHub Environment required-reviewer wiring) and AO-MA-11E-2 (GitHub Projects/Milestone/Issue mirror sync) are high-risk and deferred to their own slices"
   ],
   "support_widening_allowed": false,
   "production_platform_claim_allowed": false,
@@ -336,9 +433,9 @@
       "next_phase_id": "AO-MA-11A"
     },
     "slices": {
-      "merged_count": 1,
+      "merged_count": 2,
       "total_count": 9,
-      "percent": 11
+      "percent": 22
     }
   },
   "created_at": "2026-05-30T04:00:00Z",

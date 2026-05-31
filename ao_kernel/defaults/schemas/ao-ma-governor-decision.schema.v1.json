@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-governor-decision:v1",
+  "title": "AO-MA Governor Decision",
+  "description": "The AO-MA-11I run governor's decision for one check point of an autonomous run. The governor is a pure-decision policy: it reads the run budget, the run state, an injected 'now', and whether an operator PAUSE flag is present, and decides continue vs halt. It performs NO side effects: it does not write checkpoints, call the network, shell out, or invoke an LLM. When action=halt it sets safe_stop_required (the executor, not the governor, writes the safe-stop checkpoint) and escalation_required (consumed by AO-MA-11H notification). PAUSE is the highest-priority halt; all parse/clock/usage-axis anomalies fail closed to halt. The governor is NOT release authority and authorizes no GitHub writes or side effects (governor_authority const run_continuation_only, github_write_authorized const false, side_effect_authority const none).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "action",
+    "halt_reason",
+    "breached_limits",
+    "safe_stop_required",
+    "escalation_required",
+    "pause_present",
+    "evaluated_at",
+    "governor_authority",
+    "ai_output_release_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "ao-ma-governor-decision.v1" },
+    "artifact_kind": { "type": "string", "const": "ao_ma_governor_decision" },
+    "action": {
+      "type": "string",
+      "enum": ["continue", "halt"],
+      "description": "continue: the autonomous run may proceed to the next step. halt: stop now."
+    },
+    "halt_reason": {
+      "description": "Machine-readable halt reason code, or null when action=continue.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "operator_pause_flag",
+            "wall_clock_exceeded",
+            "max_slices_exceeded",
+            "max_consensus_rounds_exceeded",
+            "max_retries_exceeded",
+            "max_total_retries_exceeded",
+            "max_governor_steps_exceeded",
+            "max_total_output_tokens_exceeded",
+            "clock_anomaly_negative_elapsed",
+            "usage_axis_missing",
+            "config_invalid",
+            "state_invalid"
+          ]
+        },
+        { "type": "null" }
+      ]
+    },
+    "breached_limits": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "max_slices",
+          "max_consensus_rounds",
+          "max_retries_per_slice",
+          "max_total_retries",
+          "max_governor_steps",
+          "max_wall_clock_seconds",
+          "max_total_output_tokens"
+        ]
+      },
+      "description": "The specific budget limits breached. Empty when halt is due to PAUSE or an anomaly rather than a budget breach. The governor recomputes this from budget + state; it is never trusted from input."
+    },
+    "safe_stop_required": {
+      "type": "boolean",
+      "description": "True on halt: the executor must write a safe-stop checkpoint before stopping. False on continue."
+    },
+    "escalation_required": {
+      "type": "boolean",
+      "description": "True on halt: AO-MA-11H must notify/escalate to the operator. False on continue."
+    },
+    "pause_present": {
+      "type": "boolean",
+      "description": "Whether the operator PAUSE flag was present at evaluation time."
+    },
+    "evaluated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "When the governor evaluated this decision (stamped by the caller from the injected now)."
+    },
+    "governor_authority": { "type": "string", "const": "run_continuation_only" },
+    "ai_output_release_authority": { "type": "boolean", "const": false },
+    "github_write_authorized": { "type": "boolean", "const": false },
+    "side_effect_authority": { "type": "string", "const": "none" },
+    "support_widening": { "type": "boolean", "const": false },
+    "production_platform_claim": { "type": "boolean", "const": false },
+    "live_adapter_execution": { "type": "boolean", "const": false }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "action": { "const": "continue" } } },
+      "then": {
+        "properties": {
+          "halt_reason": { "type": "null" },
+          "breached_limits": { "maxItems": 0 },
+          "safe_stop_required": { "const": false },
+          "escalation_required": { "const": false }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "action": { "const": "halt" } } },
+      "then": {
+        "properties": {
+          "halt_reason": { "type": "string" },
+          "safe_stop_required": { "const": true },
+          "escalation_required": { "const": true }
+        }
+      }
+    }
+  ]
+}
