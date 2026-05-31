@@ -1563,6 +1563,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_orchestration_subparser(sub)
 
+    # AO-MA-11G quality subcommand (ADR + ISO 25010 profile + CHANGELOG discipline).
+    # Top-level "quality" parser per Codex iter-2 daraltma (NOT under
+    # "orchestration"); the module is pure, the CLI is the thin wrapper.
+    from ao_kernel.orchestration.quality_handlers import add_quality_subparser
+
+    add_quality_subparser(sub)
+
     # Policy-sim subcommand (PR-B4)
     policy_sim_p = sub.add_parser(
         "policy-sim",
@@ -2167,6 +2174,29 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_orchestration_verify(args)
         print(
             "Usage: ao-kernel orchestration {plan|spawn|cleanup|invoke|native-import|integrate|review|verify}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if cmd == "quality":
+        from ao_kernel.orchestration.quality_handlers import (
+            cmd_quality_build_index,
+            cmd_quality_check_changelog,
+            cmd_quality_validate_adr,
+            cmd_quality_validate_iso_profile,
+        )
+
+        quality_cmd = getattr(args, "quality_command", None)
+        if quality_cmd == "validate-adr":
+            return cmd_quality_validate_adr(args)
+        if quality_cmd == "build-index":
+            return cmd_quality_build_index(args)
+        if quality_cmd == "validate-iso-profile":
+            return cmd_quality_validate_iso_profile(args)
+        if quality_cmd == "check-changelog":
+            return cmd_quality_check_changelog(args)
+        print(
+            "Usage: ao-kernel quality {validate-adr|build-index|validate-iso-profile|check-changelog}",
             file=sys.stderr,
         )
         return 1

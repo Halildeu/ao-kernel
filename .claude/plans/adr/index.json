@@ -1,0 +1,45 @@
+{
+  "entries": [
+    {
+      "filename": "ADR-0001-ao-ma-spm-program-adoption.md",
+      "id": "ADR-0001",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "AO-MA-SPM 7-phase governed autonomous multi-AI program adoption"
+    },
+    {
+      "filename": "ADR-0002-fail-closed-recompute-not-trust.md",
+      "id": "ADR-0002",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Fail-closed invariant + recompute-not-trust on every artifact boundary"
+    },
+    {
+      "filename": "ADR-0003-native-import-import-only.md",
+      "id": "ADR-0003",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Native worker result import-only contract (ao-kernel never spawns the worker)"
+    },
+    {
+      "filename": "ADR-0004-cross-ai-implementer-reviewer-distinct-provider.md",
+      "id": "ADR-0004",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Cross-AI peer review HARD RULE — implementer provider ≠ reviewer provider"
+    },
+    {
+      "filename": "ADR-0005-keep-a-changelog-per-pr-discipline.md",
+      "id": "ADR-0005",
+      "status": "accepted",
+      "superseded_by": null,
+      "supersedes": [],
+      "title": "Keep-a-Changelog per-PR discipline (Unreleased entry or chore-no-changelog opt-out)"
+    }
+  ],
+  "schema_version": "ao-ma-adr-index.v1"
+}

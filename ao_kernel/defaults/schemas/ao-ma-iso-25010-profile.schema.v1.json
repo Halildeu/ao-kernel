@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-iso-25010-profile:v1",
+  "title": "AO-MA ISO/IEC 25010:2023 Quality Profile (Reference, NOT Certification)",
+  "description": "Schema for a project-level ISO/IEC 25010:2023 quality profile **reference**. This is NOT a certification claim and does NOT widen the support boundary. Every certification-related field is pinned const false: iso_25010_certified, certification_target, external_audit_claim. The 8 product-quality characteristics and their sub-characteristics are exactly enumerated (additionalProperties:false on every level); a missing or extra characteristic/sub-characteristic is fail-closed. Each sub-characteristic carries 'applicable' (bool), 'rationale' (non-empty), and 'measure_method' (enum); when applicable=true, measure_method must be a real evidence kind (ci_test / coverage_gate / manual_review / code_review / schema_validation), not 'not_measured'. When applicable=false, measure_method MUST be 'not_measured'. AO-MA-11G-1 introduces this contract (CNS-20260601-002 Codex thread 019e8050 AGREE).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "profile_version",
+    "issued_at",
+    "iso_25010_certified",
+    "certification_target",
+    "external_audit_claim",
+    "characteristics",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-iso-25010-profile.v1"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$",
+      "description": "Stable identifier for this project's profile (e.g. ao-kernel-default)."
+    },
+    "profile_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "iso_25010_certified": {
+      "type": "boolean",
+      "const": false,
+      "description": "Hard-pinned: this profile is a reference, not a certification. No external audit body has certified this project."
+    },
+    "certification_target": {
+      "type": "boolean",
+      "const": false,
+      "description": "Hard-pinned: certification is NOT a roadmap target. The profile exists for engineering discipline + decision traceability."
+    },
+    "external_audit_claim": {
+      "type": "boolean",
+      "const": false
+    },
+    "characteristics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "functional_suitability",
+        "performance_efficiency",
+        "compatibility",
+        "interaction_capability",
+        "reliability",
+        "security",
+        "maintainability",
+        "flexibility"
+      ],
+      "properties": {
+        "functional_suitability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["functional_completeness", "functional_correctness", "functional_appropriateness"],
+          "properties": {
+            "functional_completeness": { "$ref": "#/$defs/sub_characteristic" },
+            "functional_correctness": { "$ref": "#/$defs/sub_characteristic" },
+            "functional_appropriateness": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "performance_efficiency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["time_behaviour", "resource_utilization", "capacity"],
+          "properties": {
+            "time_behaviour": { "$ref": "#/$defs/sub_characteristic" },
+            "resource_utilization": { "$ref": "#/$defs/sub_characteristic" },
+            "capacity": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "compatibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["co_existence", "interoperability"],
+          "properties": {
+            "co_existence": { "$ref": "#/$defs/sub_characteristic" },
+            "interoperability": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "interaction_capability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["appropriateness_recognizability", "learnability", "operability", "user_error_protection", "user_engagement", "inclusivity", "user_assistance", "self_descriptiveness"],
+          "properties": {
+            "appropriateness_recognizability": { "$ref": "#/$defs/sub_characteristic" },
+            "learnability": { "$ref": "#/$defs/sub_characteristic" },
+            "operability": { "$ref": "#/$defs/sub_characteristic" },
+            "user_error_protection": { "$ref": "#/$defs/sub_characteristic" },
+            "user_engagement": { "$ref": "#/$defs/sub_characteristic" },
+            "inclusivity": { "$ref": "#/$defs/sub_characteristic" },
+            "user_assistance": { "$ref": "#/$defs/sub_characteristic" },
+            "self_descriptiveness": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "reliability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["faultlessness", "availability", "fault_tolerance", "recoverability"],
+          "properties": {
+            "faultlessness": { "$ref": "#/$defs/sub_characteristic" },
+            "availability": { "$ref": "#/$defs/sub_characteristic" },
+            "fault_tolerance": { "$ref": "#/$defs/sub_characteristic" },
+            "recoverability": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["confidentiality", "integrity", "non_repudiation", "accountability", "authenticity", "resistance"],
+          "properties": {
+            "confidentiality": { "$ref": "#/$defs/sub_characteristic" },
+            "integrity": { "$ref": "#/$defs/sub_characteristic" },
+            "non_repudiation": { "$ref": "#/$defs/sub_characteristic" },
+            "accountability": { "$ref": "#/$defs/sub_characteristic" },
+            "authenticity": { "$ref": "#/$defs/sub_characteristic" },
+            "resistance": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "maintainability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["modularity", "reusability", "analysability", "modifiability", "testability"],
+          "properties": {
+            "modularity": { "$ref": "#/$defs/sub_characteristic" },
+            "reusability": { "$ref": "#/$defs/sub_characteristic" },
+            "analysability": { "$ref": "#/$defs/sub_characteristic" },
+            "modifiability": { "$ref": "#/$defs/sub_characteristic" },
+            "testability": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        },
+        "flexibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adaptability", "scalability", "installability", "replaceability"],
+          "properties": {
+            "adaptability": { "$ref": "#/$defs/sub_characteristic" },
+            "scalability": { "$ref": "#/$defs/sub_characteristic" },
+            "installability": { "$ref": "#/$defs/sub_characteristic" },
+            "replaceability": { "$ref": "#/$defs/sub_characteristic" }
+          }
+        }
+      }
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "register_authority": {
+      "type": "string",
+      "const": "evidence_record_only"
+    },
+    "github_write_authorized": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "$defs": {
+    "sub_characteristic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicable", "rationale", "measure_method"],
+      "properties": {
+        "applicable": { "type": "boolean" },
+        "rationale": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1024
+        },
+        "measure_method": {
+          "type": "string",
+          "enum": ["ci_test", "coverage_gate", "manual_review", "code_review", "schema_validation", "not_measured"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "applicable": { "const": true } } },
+          "then": {
+            "properties": {
+              "measure_method": {
+                "enum": ["ci_test", "coverage_gate", "manual_review", "code_review", "schema_validation"]
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "applicable": { "const": false } } },
+          "then": {
+            "properties": {
+              "measure_method": { "const": "not_measured" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

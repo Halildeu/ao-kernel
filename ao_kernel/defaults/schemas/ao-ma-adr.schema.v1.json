@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-adr:v1",
+  "title": "AO-MA ADR Front-matter",
+  "description": "Schema for the YAML front-matter block of an Architecture Decision Record (Markdown body). The body itself is free-form prose so human decision rationale stays human-readable; only the machine-readable front-matter is validated. AO-MA-11G-1 introduces this contract under the SPM Quality Profile Hardening slice (CNS-20260601-002 Codex thread 019e8050 AGREE). No support widening, no production platform claim, no live adapter execution, no GitHub write authority — ADRs are evidence records that document decisions; release authority remains with the ao-release-gate required check + branch ruleset + non-author approval.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "status",
+    "date",
+    "deciders",
+    "retrospective",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^ADR-[0-9]{4}$",
+      "description": "ADR identifier. The Markdown filename MUST match this id: ADR-NNNN-<slug>.md."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "accepted", "superseded", "deprecated"]
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO 8601 calendar date YYYY-MM-DD. The parse layer normalizes YAML implicit-timestamp coercion to this string form."
+    },
+    "deciders": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "supersedes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^ADR-[0-9]{4}$" },
+      "uniqueItems": true,
+      "description": "IDs of ADRs this one supersedes. Canonical supersession edge."
+    },
+    "superseded_by": {
+      "type": "string",
+      "pattern": "^ADR-[0-9]{4}$",
+      "description": "Reciprocal metadata: when this ADR's status is 'superseded', the newer ADR's id."
+    },
+    "slice_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Optional AO-MA slice / PR / consultation reference that this decision binds to (e.g. AO-MA-4.6-1 #766, CNS-20260601-001)."
+    },
+    "retrospective": {
+      "type": "boolean",
+      "description": "True if this ADR back-populates a decision that was already taken (before the ADR discipline existed). Retrospective ADRs MUST also carry review_status and back_populated_at."
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "original",
+        "back_populated_pending_cross_ai_revalidation",
+        "cross_ai_validated"
+      ],
+      "description": "Provenance of the decision record. 'original' = born in an ADR; 'back_populated_pending_cross_ai_revalidation' = retro, awaits a separate cross-AI consensus pass; 'cross_ai_validated' = retro and re-confirmed by another provider."
+    },
+    "back_populated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "RFC3339 UTC timestamp of the back-population (when the retro ADR was written, not when the underlying decision was taken)."
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "register_authority": {
+      "type": "string",
+      "const": "evidence_record_only"
+    },
+    "github_write_authorized": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "retrospective": { "const": true } }, "required": ["retrospective"] },
+      "then": {
+        "required": ["review_status", "back_populated_at"],
+        "properties": {
+          "review_status": {
+            "enum": [
+              "back_populated_pending_cross_ai_revalidation",
+              "cross_ai_validated"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "retrospective": { "const": false } }, "required": ["retrospective"] },
+      "then": {
+        "properties": {
+          "review_status": { "const": "original" }
+        },
+        "not": { "required": ["back_populated_at"] }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "superseded" } }, "required": ["status"] },
+      "then": { "required": ["superseded_by"] }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["proposed", "accepted", "deprecated"] } },
+        "required": ["status"]
+      },
+      "then": { "not": { "required": ["superseded_by"] } }
+    }
+  ]
+}
