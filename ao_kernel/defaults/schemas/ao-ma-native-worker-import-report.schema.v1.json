@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-native-worker-import-report:v1",
+  "title": "AO-MA Native Worker Result Import Report",
+  "description": "No-secret report artifact produced by the AO-MA-4.6-1 native worker result importer. The operator/AI produces worker_result.v1.json via a native interface (claude-cli, codex-cli, mavis-cli) or a local file; ao-kernel imports + schema-validates + provenance-binds it. ao-kernel does NOT spawn the worker, does NOT call an LLM/API/subprocess, does NOT widen support, and does NOT make a production platform claim. Live LLM worker execution requires a separate operator-bound GPP supersession with live_adapter_execution=true and is out of scope for 4.6-1. Two error classes: fatal trust-boundary errors (artifact schema-invalid, JSON parse fail, manifest sha mismatch, cross-id mismatch) raise NativeWorkerImportError before any report is emitted; reportable policy-invalid (source_interface/provider mismatch, declared/actual mismatch, known_gaps non-empty, existing integrated different hash, runner entry non-eligible) emit a schema-valid import_report with valid=false and no integrated copy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "import_mode",
+    "task_graph_id",
+    "task_id",
+    "assignment_id",
+    "source_result_path",
+    "source_result_sha256",
+    "source_interface",
+    "worker_provider",
+    "worker_agent_id",
+    "worker_session_id",
+    "imported_at",
+    "validation_status",
+    "valid",
+    "checks",
+    "validation_findings",
+    "integrated_worker_result_path",
+    "integrated_worker_result_sha256",
+    "runner_report_ref",
+    "manifest_ref",
+    "task_graph_ref",
+    "assignment_ref",
+    "effective_source_interface_allowlist",
+    "guard_flags",
+    "register_authority",
+    "github_write_authorized",
+    "execution_performed_by_ao_kernel",
+    "ai_output_release_authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-native-worker-import-report.v1"
+    },
+    "import_mode": {
+      "type": "string",
+      "const": "import_only",
+      "description": "Hard-pinned: ao-kernel never spawns the worker, only imports an externally produced worker_result.v1.json."
+    },
+    "task_graph_id": {
+      "type": "string",
+      "pattern": "^ao-ma-[a-z0-9][a-z0-9-]{2,80}$"
+    },
+    "task_id": {
+      "$ref": "#/$defs/id"
+    },
+    "assignment_id": {
+      "$ref": "#/$defs/id"
+    },
+    "source_result_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Audit field: where the native AI wrote the worker_result.v1.json. Absolute paths permitted (external native output). Traversal/symlink-escape policy is enforced at runtime against the canonical integrated target, not against this audit field."
+    },
+    "source_result_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_interface": {
+      "type": "string",
+      "enum": ["claude-cli", "codex-cli", "mavis-cli", "local-file"],
+      "description": "The native interface used by the operator/AI to produce the worker_result.v1.json. Distinct from worker_provider; an operator may use claude-cli to drive an anthropic model."
+    },
+    "worker_provider": {
+      "type": "string",
+      "enum": ["openai", "anthropic", "minimax", "google", "local", "tool"],
+      "description": "Mirror of worker_result.worker.provider. The (source_interface, worker_provider) pair must be consistent: claude-cli<->anthropic, codex-cli<->openai, mavis-cli<->minimax, local-file<->{local, tool}."
+    },
+    "worker_agent_id": {
+      "$ref": "#/$defs/id"
+    },
+    "worker_session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._:\\-]+$"
+    },
+    "imported_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "RFC3339 UTC timestamp. Caller-supplied (the importer module is pure and does not read the wall clock; CLI stamps this from the system clock once and passes it in)."
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": ["valid", "invalid"],
+      "description": "Top-level outcome. Mirrors valid: when valid=true, status=valid; when valid=false, status=invalid."
+    },
+    "valid": {
+      "type": "boolean",
+      "description": "Recomputed: true iff every entry in checks has outcome=pass. Forged valid=true with any non-pass check is rejected by verify_import_binding."
+    },
+    "checks": {
+      "$ref": "#/$defs/checks_object"
+    },
+    "validation_findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" },
+      "description": "Structured findings. severity=error iff any check outcome=fail; head_sha_not_git_recomputed always emitted as severity=warning for audit transparency (pure-import mode does not call git)."
+    },
+    "integrated_worker_result_path": {
+      "description": "Absolute path of the atomic copy of worker_result.v1.json under the canonical artifact tree (<artifact_dir>/workers/<task_id>/worker_result.v1.json). Null iff validation_status=invalid (no integrated copy on invalid).",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
+    "integrated_worker_result_sha256": {
+      "description": "sha256 of the integrated file. Null iff integrated_worker_result_path is null. When non-null, MUST equal source_result_sha256 (machine-recomputed by verify_import_binding).",
+      "oneOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "runner_report_ref": {
+      "$ref": "#/$defs/artifact_ref",
+      "description": "{path, sha256, worker_status} of the AO-MA runner_report.v1.json the import bound to. worker_status MUST be 'prepared' or 'skipped_existing_idempotent'."
+    },
+    "manifest_ref": {
+      "$ref": "#/$defs/artifact_ref",
+      "description": "{path, sha256} of the orchestration manifest.v1.json. sha256 MUST equal runner_report.manifest_sha256 (machine-recomputed)."
+    },
+    "task_graph_ref": {
+      "$ref": "#/$defs/artifact_ref",
+      "description": "{path, sha256} of the bound task_graph.v1.json. sha256 MUST equal the manifest entry's sha256 (machine-recomputed)."
+    },
+    "assignment_ref": {
+      "$ref": "#/$defs/artifact_ref",
+      "description": "{path, sha256} of the bound agent_assignment-*.v1.json. sha256 MUST equal the matched runner_report.workers[] entry's assignment_sha256 AND the manifest entry's sha256."
+    },
+    "effective_source_interface_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude-cli", "codex-cli", "mavis-cli", "local-file"]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "The source_interface allowlist actually enforced during this import. Audit transparency: an operator-configured narrower allowlist must appear here, not be inferred."
+    },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_widening", "production_platform_claim", "live_adapter_execution"],
+      "properties": {
+        "support_widening": { "type": "boolean", "const": false },
+        "production_platform_claim": { "type": "boolean", "const": false },
+        "live_adapter_execution": { "type": "boolean", "const": false }
+      }
+    },
+    "register_authority": {
+      "type": "string",
+      "const": "evidence_record_only"
+    },
+    "github_write_authorized": {
+      "type": "boolean",
+      "const": false
+    },
+    "execution_performed_by_ao_kernel": {
+      "type": "boolean",
+      "const": false,
+      "description": "Hard-pinned: ao-kernel did NOT spawn the worker. The operator/AI native interface produced the worker_result.v1.json before this import."
+    },
+    "ai_output_release_authority": {
+      "type": "boolean",
+      "const": false,
+      "description": "Hard-pinned: this import report records evidence; it does NOT release AI output. Release authority remains with the ao-release-gate required check + branch ruleset + non-author approval."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "validation_status": { "const": "valid" } } },
+      "then": {
+        "properties": {
+          "valid": { "const": true },
+          "integrated_worker_result_path": { "type": "string", "minLength": 1 },
+          "integrated_worker_result_sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "validation_status": { "const": "invalid" } } },
+      "then": {
+        "properties": {
+          "valid": { "const": false },
+          "integrated_worker_result_path": { "type": "null" },
+          "integrated_worker_result_sha256": { "type": "null" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "worker_status": {
+          "type": "string",
+          "enum": ["prepared", "skipped_existing_idempotent"],
+          "description": "Only present on runner_report_ref. Other refs MUST NOT carry this field."
+        }
+      }
+    },
+    "checks_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_json_readable",
+        "worker_result_schema_valid",
+        "runner_report_schema_valid",
+        "manifest_envelope_valid",
+        "manifest_sha_bound",
+        "task_graph_binding_valid",
+        "assignment_binding_valid",
+        "runner_entry_eligible",
+        "cross_id_consistent",
+        "cross_ref_consistent",
+        "declared_write_set_bound",
+        "actual_subset_declared",
+        "actual_non_empty",
+        "known_gaps_empty",
+        "no_secret_attestation",
+        "guard_flags_closed",
+        "source_interface_allowed",
+        "source_interface_provider_consistent",
+        "canonical_integrated_path",
+        "source_integrated_hash_match"
+      ],
+      "properties": {
+        "source_json_readable":              { "$ref": "#/$defs/check_outcome" },
+        "worker_result_schema_valid":         { "$ref": "#/$defs/check_outcome" },
+        "runner_report_schema_valid":         { "$ref": "#/$defs/check_outcome" },
+        "manifest_envelope_valid":            { "$ref": "#/$defs/check_outcome" },
+        "manifest_sha_bound":                 { "$ref": "#/$defs/check_outcome" },
+        "task_graph_binding_valid":           { "$ref": "#/$defs/check_outcome" },
+        "assignment_binding_valid":           { "$ref": "#/$defs/check_outcome" },
+        "runner_entry_eligible":              { "$ref": "#/$defs/check_outcome" },
+        "cross_id_consistent":                { "$ref": "#/$defs/check_outcome" },
+        "cross_ref_consistent":               { "$ref": "#/$defs/check_outcome" },
+        "declared_write_set_bound":           { "$ref": "#/$defs/check_outcome" },
+        "actual_subset_declared":             { "$ref": "#/$defs/check_outcome" },
+        "actual_non_empty":                   { "$ref": "#/$defs/check_outcome" },
+        "known_gaps_empty":                   { "$ref": "#/$defs/check_outcome" },
+        "no_secret_attestation":              { "$ref": "#/$defs/check_outcome" },
+        "guard_flags_closed":                 { "$ref": "#/$defs/check_outcome" },
+        "source_interface_allowed":           { "$ref": "#/$defs/check_outcome" },
+        "source_interface_provider_consistent":{ "$ref": "#/$defs/check_outcome" },
+        "canonical_integrated_path":          { "$ref": "#/$defs/check_outcome" },
+        "source_integrated_hash_match":       { "$ref": "#/$defs/check_outcome" }
+      }
+    },
+    "check_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "enum": ["pass", "fail", "skipped"]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning"]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    }
+  }
+}
