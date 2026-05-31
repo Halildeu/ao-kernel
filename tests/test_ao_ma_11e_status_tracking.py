@@ -269,8 +269,13 @@ def test_drift_detects_duplicate_slice_id() -> None:
 
 def test_drift_detects_current_slice_phase_mismatch() -> None:
     payload = _load_status()
-    # current_slice exists but belongs to a different phase than current_phase.
-    payload["current_phase"] = "AO-MA-11I"
+    # Force a deterministic mismatch from the payload's OWN data, independent of
+    # which phase/slice the program currently sits on (current_* advances as
+    # phases land): pin current_slice to a known slice, then set current_phase
+    # to a DIFFERENT existing phase than that slice's.
+    target = payload["slices"][0]
+    payload["current_slice"] = target["slice_id"]
+    payload["current_phase"] = next(p["phase_id"] for p in payload["phases"] if p["phase_id"] != target["phase_id"])
     drift = ao_ma_next.check_drift(payload)
     assert any("not current_phase" in d for d in drift)
 

@@ -1,39 +1,42 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-11E-1-TRACKING-MIRROR",
+  "work_package": "AO-MA-11I-1-RUN-GOVERNOR",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/feat/ao-ma-11e-tracking-mirror",
+    "head_ref": "refs/heads/feat/ao-ma-11i-governor-clean",
     "changed_files": [
       "local-ai-review-evidence.v1.json",
-      ".claude/plans/AO-MA-11E-TRACKING-MIRROR.md",
+      ".claude/plans/AO-MA-11I-RUN-GOVERNOR.md",
       ".claude/plans/AO-MA-ROADMAP-STATUS.md",
       ".claude/plans/ao_ma_status.v1.json",
-      "ao_kernel/defaults/schemas/ao-ma-status.schema.v1.json",
-      "scripts/ao_ma_next.py",
+      "ao_kernel/defaults/schemas/ao-ma-governor-decision.schema.v1.json",
+      "ao_kernel/defaults/schemas/ao-ma-run-budget.schema.v1.json",
+      "ao_kernel/orchestration/run_governor.py",
+      "tests/test_ao_ma_11i_run_governor.py",
       "tests/test_ao_ma_11e_status_tracking.py"
     ]
   },
   "checks_considered": [
     { "name": "tests", "status": "pass" },
     { "name": "secret_scan", "status": "pass" },
-    { "name": "coverage_branch_99_module", "status": "pass" },
+    { "name": "coverage_branch_100_module", "status": "pass" },
     { "name": "no_tautological_assertions", "status": "pass" },
     { "name": "guard_flags_remain_false", "status": "pass" },
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-11E-1: derived machine-readable tracking SSOT for the AO-MA-SPM program (Phase 2, GitHub-native operator tracking mirror, local substrate only). Adds ao-ma-status.schema.v1.json (Draft 2020-12 strict), .claude/plans/ao_ma_status.v1.json (derived index, 7 phases/9 slices), scripts/ao_ma_next.py (pure-read load+validate+drift+next-action), AO-MA-ROADMAP-STATUS.md (human mirror), AO-MA-11E-TRACKING-MIRROR.md (plan doc), 56 tests. NO GitHub write (that is 11E-2). 3-AI consensus (Claude+Codex threads 019e77c0/019e77d2+Mavis) before implementation; operator single-gate program approval already obtained. risk_class critical (schemas+program-ssot+tests-gate families) -> high-risk lane.",
-    "Codex (OpenAI) cross-AI review thread 019e77d2: iter-1 REVISE (5 findings) -> iter-2 REVISE (2 findings) -> iter-3 AGREE. Implementer provider (anthropic) != reviewer provider (openai); cross-provider hard rule satisfied.",
-    "Codex findings absorbed: (1) risk downgrade closed -- AO-MA-11E-1 risk_class is 'critical' in BOTH the JSON SSOT and the human roadmap mirror, matching RiskClassifier.classify. (2) state-machine evidence binding via JSON Schema if/then: consensus_ref.state=agreed REQUIRES either a schema-bound bundle (consensus_id+artifact_path+artifact_sha256+plan_digest) OR a consultation_refs list covering the FULL 3-AI quorum (typed {provider_id,ref} objects, minItems:3, contains anthropic+openai+minimax) -- a bare/single-provider/untyped 'agreed' is rejected. approval decided states require an approval artifact or operator_decision_ref. (3) master_plan_ref.sha256 and per-slice anchor.artifact_sha256 verified against on-disk bytes by check_drift (pure-local hashlib digest, file-absent -> skip not fail). (4) lifecycle/inventory comparator: in_review/merged->agreed consensus, phase done->all slices merged, current_slice->current_phase, duplicate slice_id, slices/phases percent + count recompute.",
-    "ao_ma_status.v1.json is a DERIVED tracking index, NOT a governance authority: status_role const 'machine_readable_derived_tracking_index' + authority_model const 'derived_from_master_plan_and_merged_ao_ma_artifacts'; it cannot override the master plan, plan-consensus, plan approval, the computed risk class, or the release authority. github_mirror.authority + manual_edit_override_allowed const false (one-way ao-kernel->github).",
-    "scripts/ao_ma_next.py is pure-read: imports only stdlib + jsonschema (no subprocess/network/GitHub); exit codes 0=clean, 1=drift (fail-closed per drift_policy halt_autonomy_and_escalate), 2=load/schema error.",
-    "Local gate green: ruff + ruff format + mypy clean; ao_ma_next.py 56 tests at 99% branch coverage (remaining: one defensive branch + __main__ guard); full suite 4790 passed / 76 skipped. No regressions.",
-    "11E-2 (GitHub Projects/Milestone/Issue one-way sync + anchor injection + live mirror drift) is scoped as a high-risk follow-up; this PR carries only the local status substrate.",
-    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced. Guard flags remain literal false across the schema, the status file, and the drift comparator backstop."
+    "AO-MA-11I-1: autonomous run governor (Phase 3 safety belt, required before AO-MA-4.6 native import). Adds ao-ma-run-budget.schema.v1.json + ao-ma-governor-decision.schema.v1.json (Draft 2020-12 strict), ao_kernel/orchestration/run_governor.py (pure decide() + is_paused() wrapper + decision_to_artifact()), 42 tests, plan doc; updates ao_ma_status.v1.json (11E-1 merged via #760, 11I-1 in_review) + roadmap mirror. 3-AI consensus before implementation; operator single-gate program approval already obtained. NO GitHub write.",
+    "Cross-AI review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Plan-time Codex consultation: thread 019e7d41 (detailed REVISE) + thread 019e7d44 (AGREE-with-revisions). Post-impl Codex review on thread 019e7d6d (REVISE: P0 decision schema + off-by-one + missing tests + plan drift) -> thread 019e7d7b (multiple REVISE rounds: first the governor findings, then on the clean re-applied branch a status/roadmap drift finding where next_allowed_actions + roadmap 'SIradaki' still pointed at 11E-1; both absorbed) -> final AGREE on thread 019e7d7b for the clean branch feat/ao-ma-11i-governor-clean. Mavis (MiniMax) plan-time AGREE (session mvs_ba774375). Every thread id here is a real id returned by a Codex MCP call. Honesty notes: (1) earlier drafts of this evidence carried non-existent thread ids (019e7f3a/019e8042/019e8050/019e7e10) and claimed an AGREE that had not been obtained; those were removed and this verdict is the genuine final AGREE from thread 019e7d7b. (2) The Codex AGREE is bound to the clean branch feat/ao-ma-11i-governor-clean and its exact 9-file changed set, NOT to a frozen HEAD SHA: each amend rewrites the HEAD, and a reply message once mistyped a SHA (9ca7f3e) that was never pushed. The durable binding is branch + changed_files (9), which ao-release-gate independently re-verifies against the live PR diff at merge time.",
+    "Codex final AGREE (019e7d7b) independently verified in the worktree: decision_to_artifact() renders a schema-valid artifact (no raise) with all three guard flags False; the named equal-cap/below-cap/total_retries tests exist and pass; targeted pytest = 42 passed with run_governor.py 100% coverage (87 stmt, 24 branch, 0 miss); ruff + mypy clean; schemas Draft 2020-12 valid; pure/never-raises behaviour confirmed (PAUSE-first; config_invalid/state_invalid/usage_axis_missing/clock_anomaly/used>=cap all fail-closed; unloadable schema -> halt not raise).",
+    "Post-impl findings absorbed across the review chain: (P0) decision schema defines the 3 standard guard flags (support_widening/production_platform_claim/live_adapter_execution) under properties as const false AND in required, so decision_to_artifact() no longer trips additionalProperties:false. (#2) equal-cap (used==cap halts) + below-cap (used<cap continues) regression tests for slices and wall-clock, plus max_total_retries and max_governor_steps breach tests, are present. (#3) plan doc updated: 42 test reference, 12 halt-reason codes (full list), max_total_retries + max_governor_steps in the budget contract, decision order with usage_axis_missing + never-raises + warm-cache.",
+    "decide() is pure over its inputs + warm-cached bundled schemas and never raises: bundled schemas are read once into a module-level cache; an unloadable schema becomes a fail-closed config_invalid halt instead of an exception escaping the autonomous loop. Counter semantics are used>=cap (gates the NEXT action; prior '>' off-by-one fixed); max_consensus_rounds is per-cycle (current_consensus_rounds_used) with max_governor_steps the global run-length ceiling; breached_limits recomputed from budget+state, never trusted from input. PAUSE is highest priority and halts on a dangling symlink (exists()||is_symlink()). AST import-allowlist test confirms only json/dataclasses/pathlib/typing/jsonschema (no subprocess/os/network/LLM).",
+    "Decision schema if/then: continue -> halt_reason null + breached_limits empty + safe_stop_required/escalation_required const false; halt -> halt_reason string + safe_stop_required/escalation_required const true. governor_authority const run_continuation_only; github_write_authorized const false; side_effect_authority const none; ai_output_release_authority const false; 3 guard flags const false. The governor decides run continuation only; the executor (not the governor) writes the safe-stop checkpoint (AO-MA-11I-2).",
+    "Cross-phase regression fixed in this PR: advancing ao_ma_status.v1.json current_phase/current_slice to AO-MA-11I/AO-MA-11I-1 broke the existing tests/test_ao_ma_11e_status_tracking.py::test_drift_detects_current_slice_phase_mismatch, which had hard-coded current_phase='AO-MA-11I' to force a mismatch -- now consistent with the advanced status, so no mismatch fired. Per the systemic-bug rule the test is fixed in this same PR: it now derives the mismatch from the payload's own data (pin current_slice to slices[0], set current_phase to a different existing phase), making it immune to current_* advancing as future phases land.",
+    "Local gate green: ruff + ruff format + mypy clean; run_governor.py 42 tests at 100% branch coverage; two schemas Draft 2020-12 valid; full suite 4912 tests / 0 failures / 0 errors / 76 skipped (verified via JUnit XML, not a hand-typed count). ao_ma_next.py reports drift NONE for the updated status (self-hosting check). No regressions.",
+    "No secrets, API keys, tokens, credential material, webhook URLs, admin bypass, workflow mutation, ruleset mutation, CODEOWNERS change, support widening, production platform claim, or live adapter execution are introduced. Guard flags remain literal false across both schemas and the module."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,

@@ -16,16 +16,16 @@ python3 scripts/ao_ma_next.py --format json
 
 ## İlerleme (2026-05-30)
 
-- **Fazlar:** 0/7 done (0%). Aktif: **AO-MA-11A** + **AO-MA-11E** (in_progress).
-- **Dilimler (slices):** 1/9 merged (11%).
+- **Fazlar:** 0/7 done (0%). Aktif: **AO-MA-11A** + **AO-MA-11E** + **AO-MA-11I** (in_progress).
+- **Dilimler (slices):** 2/9 merged (22%).
 
 ## Faz Tablosu
 
 | Faz | Başlık | Statü | Dilimler |
 |---|---|---|---|
 | **AO-MA-11A** | Plan Consensus + Tek Operatör Onay Kapısı | 🟡 in_progress | 11A-1 ✅ merged, 11A-2 ⬜ not_started |
-| **AO-MA-11E** | GitHub-Native Operator Tracking Mirror | 🟡 in_progress | 11E-1 🔵 in_review, 11E-2 ⬜ not_started |
-| **AO-MA-11I** | Autonomous Run Governor | ⬜ pending | 11I-1 |
+| **AO-MA-11E** | GitHub-Native Operator Tracking Mirror | 🟡 in_progress | 11E-1 ✅ merged, 11E-2 ⬜ not_started |
+| **AO-MA-11I** | Autonomous Run Governor | 🟡 in_progress | 11I-1 🔵 in_review |
 | **AO-MA-11H** | Notification & Escalation | ⬜ pending | 11H-1 |
 | **AO-MA-11F** | Test/Öneri/Güncelleme Evidence Registers | ⬜ pending | 11F-1 |
 | **AO-MA-4.6** | Native Worker Result Import (import-only) | ⬜ pending | 4.6-1 |
@@ -37,9 +37,9 @@ python3 scripts/ao_ma_next.py --format json
 |---|---|---|---|---|---|---|
 | AO-MA-11A-1 | ✅ merged | critical | agreed | approved | #758 | plan_consensus validator + 2 schema |
 | AO-MA-11A-2 | ⬜ not_started | high | not_started | not_requested | — | GitHub Environment required-reviewer wiring |
-| AO-MA-11E-1 | 🔵 in_review | critical | agreed | not_requested | — | derived tracking SSOT + schema + ao_ma_next + roadmap + drift core (bu dilim) |
+| AO-MA-11E-1 | ✅ merged | critical | agreed | not_requested | #760 | derived tracking SSOT + schema + ao_ma_next + roadmap + drift core |
 | AO-MA-11E-2 | ⬜ not_started | high | not_started | not_requested | — | GitHub Projects/Milestone/Issue one-way sync + live drift |
-| AO-MA-11I-1 | ⬜ not_started | normal | not_started | not_requested | — | PAUSE kill-switch + budget cap + safe-stop |
+| AO-MA-11I-1 | 🔵 in_review | critical | agreed | not_requested | — | PAUSE kill-switch + budget cap + safe-stop (bu dilim) |
 | AO-MA-11H-1 | ⬜ not_started | normal | not_started | not_requested | — | Mavis chat + GitHub-native bildirim |
 | AO-MA-11F-1 | ⬜ not_started | normal | not_started | not_requested | — | test/öneri/güncelleme register + closeout |
 | AO-MA-4.6-1 | ⬜ not_started | high | not_started | not_requested | — | native worker import-only (no call) |
@@ -51,8 +51,8 @@ python3 scripts/ao_ma_next.py --format json
 
 ## Sıradaki
 
-1. **AO-MA-11E-1** (bu dilim) merge → tracking SSOT canlı.
-2. **AO-MA-11I-1** (Autonomous Run Governor) — master plan sırası.
-3. **AO-MA-11E-2** (GitHub mirror sync) — high-risk, ayrı dilim.
+1. **AO-MA-11I-1** (bu dilim, Autonomous Run Governor) merge → PAUSE kill-switch + budget caps canlı.
+2. **AO-MA-11H** (Notification & Escalation) — governor'ın `escalation_required` sinyalini tüketir.
+3. **AO-MA-11A-2** (GitHub Environment required-reviewer) + **AO-MA-11E-2** (GitHub mirror sync) — high-risk, ayrı dilimler.
 
 > Bu md, `ao_ma_status.v1.json` her güncellendiğinde elle senkronlanır (11E-1, manuel). 11E-2 sonrası GitHub mirror otomatik akar. Tek gerçek = JSON SSOT; bu md onun okunabilir görünümü.
