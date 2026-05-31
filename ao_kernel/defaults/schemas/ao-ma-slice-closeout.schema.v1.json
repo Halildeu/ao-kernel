@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-slice-closeout:v1",
+  "title": "AO-MA Slice Closeout (AO-MA-11F-1)",
+  "description": "Per-slice closeout that SHA-binds the three sibling registers (test report, suggestion register, update ledger) into a tamper-evident chain. Produced by ao_kernel.orchestration.slice_evidence_registers from the canonical bytes of the siblings; the compiler refuses slice_passed=true unless the bound test report has all_passed=true, and a consumer re-hashes the siblings to verify the binding (machine-recompute, not self-attestation). The closeout does NOT reference the bundle manifest (the manifest references the closeout) so there is no circular hash. Pure evidence: no secrets, no release authority, no I/O.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "generated_at",
+    "slice_passed",
+    "bound_artifacts",
+    "consensus_status",
+    "register_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "ai_output_release_authority",
+    "release_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-slice-closeout.v1" },
+    "artifact_kind": { "const": "ao_ma_slice_closeout" },
+    "slice_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "slice_passed": { "type": "boolean" },
+    "bound_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_report", "suggestion_register", "update_ledger"],
+      "properties": {
+        "test_report": { "$ref": "#/$defs/bound_ref" },
+        "suggestion_register": { "$ref": "#/$defs/bound_ref" },
+        "update_ledger": { "$ref": "#/$defs/bound_ref" }
+      }
+    },
+    "consensus_status": { "enum": ["agreed", "not_agreed", "not_required"] },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "side_effect_authority": { "const": "none" },
+    "ai_output_release_authority": { "const": false },
+    "release_authority": { "const": "ao-release-gate+github-ruleset" },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "secrets_recorded": { "const": false }
+  },
+  "$defs": {
+    "bound_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_kind", "schema_version", "sha256"],
+      "properties": {
+        "artifact_kind": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "schema_version": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "line_count": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }] }
+      }
+    }
+  }
+}

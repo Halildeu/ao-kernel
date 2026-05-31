@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-slice-evidence-bundle-manifest:v1",
+  "title": "AO-MA Slice Evidence Bundle Manifest (AO-MA-11F-1)",
+  "description": "Top-level manifest for a slice's evidence bundle. Lists EVERY artifact produced for the slice (test report, suggestion register, update ledger, closeout) with its exact artifact_kind, schema_version, and sha256 of canonical bytes. The compiler enforces that the listed set equals the hashed set exactly: a missing artifact, an extra artifact, a duplicate kind, or a digest mismatch is fail-closed. The manifest is produced AFTER the closeout (it references the closeout's digest); the closeout does NOT reference the manifest, so there is no circular hash. Pure evidence: no secrets, no release authority, no I/O.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "generated_at",
+    "members",
+    "register_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "ai_output_release_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-slice-evidence-bundle-manifest.v1" },
+    "artifact_kind": { "const": "ao_ma_slice_evidence_bundle_manifest" },
+    "slice_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "members": {
+      "comment": "Exactly the four bundle members. uniqueItems on the whole object plus the compiler's kind-uniqueness check prevent duplicate or missing members.",
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["member_role", "artifact_kind", "schema_version", "sha256"],
+        "properties": {
+          "member_role": {
+            "enum": ["test_report", "suggestion_register", "update_ledger", "closeout"]
+          },
+          "artifact_kind": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "schema_version": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "line_count": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }] }
+        }
+      }
+    },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "side_effect_authority": { "const": "none" },
+    "ai_output_release_authority": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "secrets_recorded": { "const": false }
+  }
+}

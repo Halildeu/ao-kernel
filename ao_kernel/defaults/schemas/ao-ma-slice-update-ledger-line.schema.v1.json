@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-slice-update-ledger-line:v1",
+  "title": "AO-MA Slice Update Ledger Line (AO-MA-11F-1)",
+  "description": "One append-only line of the per-slice update ledger (ao-ma-slice-update-ledger.v1.jsonl). Each line is an independently schema-valid JSON object recording one change event during a slice's life (impl commit, review iteration, fix, doc update, etc.). The compiler enforces monotonically non-decreasing seq across lines and a single shared slice_id; a line is the unit, the file is the chain. Pure evidence: no secrets, no release authority, no I/O.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "seq",
+    "ts",
+    "event_kind",
+    "summary",
+    "ref_sha",
+    "register_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-slice-update-ledger-line.v1" },
+    "artifact_kind": { "const": "ao_ma_slice_update_ledger_line" },
+    "slice_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "seq": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "string", "minLength": 1 },
+    "event_kind": {
+      "enum": ["impl", "review_iteration", "fix", "doc_update", "schema_change", "test_change", "consensus", "closeout"]
+    },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "ref_sha": {
+      "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }]
+    },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "side_effect_authority": { "const": "none" },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "secrets_recorded": { "const": false }
+  }
+}

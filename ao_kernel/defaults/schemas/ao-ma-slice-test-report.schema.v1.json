@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-slice-test-report:v1",
+  "title": "AO-MA Slice Test Report (AO-MA-11F-1)",
+  "description": "Per-slice test outcome record produced by ao_kernel.orchestration.slice_evidence_registers. Pure evidence artifact: records test counts + per-suite results for an AO-MA slice. Carries no secrets, asserts no release authority, performs no I/O. all_passed distinguishes a real green run (required tests present AND zero failures/errors) from 'nothing ran': required_tests_present=false forces all_passed=false (a slice with no required tests is NOT a pass). The slice-closeout cross-references this report by sha256 and refuses slice_passed=true unless this report has all_passed=true.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "generated_at",
+    "required_tests_present",
+    "totals",
+    "suites",
+    "all_passed",
+    "register_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "ai_output_release_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-slice-test-report.v1" },
+    "artifact_kind": { "const": "ao_ma_slice_test_report" },
+    "slice_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "required_tests_present": {
+      "comment": "True iff at least one required (non-skipped) test actually executed. A slice with no executed required tests cannot be a pass (fail-closed: required_tests_present=false => all_passed=false).",
+      "type": "boolean"
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tests", "passed", "failed", "errors", "skipped"],
+      "properties": {
+        "tests": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "errors": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "tests", "failed", "errors", "skipped"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "tests": { "type": "integer", "minimum": 0 },
+          "failed": { "type": "integer", "minimum": 0 },
+          "errors": { "type": "integer", "minimum": 0 },
+          "skipped": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "all_passed": { "type": "boolean" },
+    "coverage_percent": {
+      "oneOf": [{ "type": "null" }, { "type": "number", "minimum": 0, "maximum": 100 }]
+    },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "side_effect_authority": { "const": "none" },
+    "ai_output_release_authority": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "secrets_recorded": { "const": false }
+  },
+  "allOf": [
+    {
+      "comment": "all_passed=true requires zero failures AND zero errors (a report cannot claim green while carrying failures).",
+      "if": { "properties": { "all_passed": { "const": true } }, "required": ["all_passed"] },
+      "then": {
+        "properties": {
+          "totals": {
+            "type": "object",
+            "properties": {
+              "failed": { "const": 0 },
+              "errors": { "const": 0 }
+            }
+          },
+          "required_tests_present": { "const": true }
+        }
+      }
+    }
+  ]
+}

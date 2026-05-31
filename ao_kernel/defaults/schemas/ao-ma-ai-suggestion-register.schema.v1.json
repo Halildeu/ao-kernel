@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:ao-ma-ai-suggestion-register:v1",
+  "title": "AO-MA AI Suggestion Register (AO-MA-11F-1)",
+  "description": "Per-slice record of every cross-AI objection (Codex / Claude / Mavis review threads) with its disposition and rationale. Implements the CLAUDE.md §15 rule that each cross-AI objection is recorded accept/reject/partial with rationale. Pure evidence artifact: no secrets (free text is machine-redacted, no_secret_payload asserted only after the redaction verifies clean), no release authority, no I/O. A reject OR partial disposition MUST carry a non-empty rationale; an accept MUST carry either an applied_ref or a no_op rationale (closing evidence). An empty register is valid ONLY with an explicit harvest_mode + register_status=no_objections (never an implicit 'no records means no objections' fail-open).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "slice_id",
+    "generated_at",
+    "harvest_mode",
+    "register_status",
+    "expected_objections_count",
+    "objections",
+    "register_authority",
+    "github_write_authorized",
+    "side_effect_authority",
+    "ai_output_release_authority",
+    "support_widening",
+    "production_platform_claim",
+    "live_adapter_execution",
+    "no_secret_payload",
+    "secrets_recorded"
+  ],
+  "properties": {
+    "schema_version": { "const": "ao-ma-ai-suggestion-register.v1" },
+    "artifact_kind": { "const": "ao_ma_ai_suggestion_register" },
+    "slice_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "harvest_mode": {
+      "comment": "How the objections were collected. 'provided' = injected records (AO-MA-11F-1, no GH read). 'gh_review_threads' = harvested from PR review threads (AO-MA-11F-2). 'not_applicable' = a slice with no cross-AI review surface. An empty register is only honest when the mode explains why.",
+      "enum": ["provided", "gh_review_threads", "not_applicable"]
+    },
+    "register_status": {
+      "comment": "Distinguishes 'no objections recorded' from 'objections complete'. no_objections requires an empty array AND a harvest_mode that explains the emptiness.",
+      "enum": ["complete", "in_progress", "no_objections"]
+    },
+    "expected_objections_count": {
+      "comment": "The number of objections the harvest expected to record. coverage = (len(objections) == expected) is cross-checked by the compiler; a register cannot claim 'all handled' if actual != expected.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "objections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "objection_id",
+          "provider",
+          "source_kind",
+          "source_id",
+          "iteration",
+          "objection_digest",
+          "summary_redacted",
+          "disposition",
+          "rationale",
+          "applied_ref"
+        ],
+        "properties": {
+          "objection_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "provider": { "enum": ["anthropic", "openai", "minimax"] },
+          "source_kind": {
+            "enum": ["codex_mcp", "claude_session", "mavis_session", "gh_review_thread"]
+          },
+          "source_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "iteration": { "type": "integer", "minimum": 1 },
+          "objection_digest": {
+            "comment": "sha256 of the canonical (provider, source_kind, source_id, iteration, raw_objection) tuple. Stable identity so duplicate / missing coverage cannot hide behind free-text drift.",
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "summary_redacted": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "disposition": { "enum": ["accept", "reject", "partial"] },
+          "rationale": {
+            "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1, "maxLength": 2000 }]
+          },
+          "applied_ref": {
+            "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }]
+          }
+        },
+        "allOf": [
+          {
+            "comment": "reject OR partial requires a non-empty rationale.",
+            "if": {
+              "properties": { "disposition": { "enum": ["reject", "partial"] } },
+              "required": ["disposition"]
+            },
+            "then": { "properties": { "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 } } }
+          },
+          {
+            "comment": "accept requires closing evidence: either an applied_ref (the commit that applied it) OR a no-op rationale.",
+            "if": {
+              "properties": { "disposition": { "const": "accept" }, "applied_ref": { "type": "null" } },
+              "required": ["disposition", "applied_ref"]
+            },
+            "then": { "properties": { "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 } } }
+          }
+        ]
+      }
+    },
+    "register_authority": { "const": "evidence_record_only" },
+    "github_write_authorized": { "const": false },
+    "side_effect_authority": { "const": "none" },
+    "ai_output_release_authority": { "const": false },
+    "support_widening": { "const": false },
+    "production_platform_claim": { "const": false },
+    "live_adapter_execution": { "const": false },
+    "no_secret_payload": { "const": true },
+    "secrets_recorded": { "const": false }
+  },
+  "allOf": [
+    {
+      "comment": "no_objections requires an empty array. The compiler additionally requires a harvest_mode that explains the emptiness (provided-with-zero-expected or not_applicable).",
+      "if": { "properties": { "register_status": { "const": "no_objections" } }, "required": ["register_status"] },
+      "then": { "properties": { "objections": { "maxItems": 0 } } }
+    },
+    {
+      "comment": "complete requires at least one recorded objection (otherwise use no_objections).",
+      "if": { "properties": { "register_status": { "const": "complete" } }, "required": ["register_status"] },
+      "then": { "properties": { "objections": { "minItems": 1 } } }
+    }
+  ]
+}
