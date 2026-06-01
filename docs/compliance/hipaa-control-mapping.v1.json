@@ -1,0 +1,296 @@
+{
+  "schema_version": "hipaa-control-mapping.v1",
+  "service": "ao-kernel",
+  "artifact_kind": "hipaa-control-mapping",
+  "framework_version": "HIPAA-2003-amended-2013",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "hipaa_disclaimer": {
+    "not_certified": true,
+    "not_audited": true,
+    "documentation_only": true,
+    "not_phi_processor": true,
+    "not_baa_template": true,
+    "operator_legal_counsel_required": true
+  },
+  "phi_handling_disclosure": {
+    "ao_kernel_processes_phi": false,
+    "no_phi_in_repo": true,
+    "operator_phi_handler_decision": true
+  },
+  "prohibited_claims": [
+    "hipaa compliant",
+    "hipaa-compliant",
+    "hipaa certified",
+    "hipaa-certified",
+    "phi-safe",
+    "baa-ready",
+    "we comply with hipaa",
+    "hipaa-grade",
+    "fully hipaa",
+    "guaranteed phi protection"
+  ],
+  "sections": [
+    {
+      "id": "administrative_safeguards",
+      "name": "Administrative Safeguards (§164.308)",
+      "section_status": "mixed",
+      "section_rationale": "Nine administrative safeguard standards; ao-kernel maps a small subset to repo evidence surfaces (governance ADRs + cross-AI peer review + incident playbook). Other standards remain operator-owned because they require organizational role assignment, workforce training, contingency planning, and business associate contracting.",
+      "controls": [
+        {
+          "control_id": "admin_security_management_process",
+          "citation": "§164.308(a)(1)",
+          "name": "Security Management Process",
+          "ao_kernel_status": "documented",
+          "status_rationale": "Repo ships governance ADRs and HARD RULE policies that describe security management posture (Pre-Production Full Authority, Cross-AI Peer Review, No Fake Work). Risk analysis program effectiveness is operator-owned.",
+          "operator_boundary": "Organization-level risk analysis, sanction policy, and information system activity review are operator-owned.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": [
+            {
+              "type": "doc",
+              "ref": "CLAUDE.md",
+              "path": "CLAUDE.md",
+              "description": "Project-level governance posture reference",
+              "claim_boundary": "documentation only"
+            }
+          ]
+        },
+        {
+          "control_id": "admin_assigned_security_responsibility",
+          "citation": "§164.308(a)(2)",
+          "name": "Assigned Security Responsibility",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Organizational security role assignment is operator-owned.",
+          "operator_boundary": "Operator designates the security official responsible for HIPAA Security Rule.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "admin_workforce_security",
+          "citation": "§164.308(a)(3)",
+          "name": "Workforce Security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Workforce authorization, supervision, and termination are operator-owned HR functions.",
+          "operator_boundary": "Operator owns workforce clearance and termination procedures.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "admin_information_access_management",
+          "citation": "§164.308(a)(4)",
+          "name": "Information Access Management",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Access authorization, establishment, and modification are operator-owned.",
+          "operator_boundary": "Operator owns access management policy and PHI access provisioning.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "admin_security_awareness_training",
+          "citation": "§164.308(a)(5)",
+          "name": "Security Awareness and Training",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Workforce security training is operator-owned.",
+          "operator_boundary": "Operator delivers security awareness training to its workforce.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "admin_security_incident_procedures",
+          "citation": "§164.308(a)(6)",
+          "name": "Security Incident Procedures",
+          "ao_kernel_status": "documented",
+          "status_rationale": "E-6-6 incident response playbook documents the incident management surface (severity matrix + escalation policy + post-mortem template + scenario runbooks). Actual incident execution and HIPAA-specific PHI breach analysis are operator-owned.",
+          "operator_boundary": "Operator executes incident response, performs PHI breach analysis, and determines HIPAA Breach Notification triggers.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": [
+            {
+              "type": "pr",
+              "ref": "PR #801",
+              "description": "E-6-6 incident response playbook merged",
+              "claim_boundary": "merge audit trail"
+            }
+          ]
+        },
+        {
+          "control_id": "admin_contingency_plan",
+          "citation": "§164.308(a)(7)",
+          "name": "Contingency Plan",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Data backup, disaster recovery, and emergency mode operation are operator-owned BCP functions.",
+          "operator_boundary": "Operator owns BCP, DR plan, and contingency procedures.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "admin_evaluation",
+          "citation": "§164.308(a)(8)",
+          "name": "Evaluation",
+          "ao_kernel_status": "documented",
+          "status_rationale": "Cross-AI peer review HARD RULE and CI gate document a non-technical evaluation surface for repo-level security posture. Periodic technical and non-technical evaluation of HIPAA Security Rule compliance is operator-owned.",
+          "operator_boundary": "Operator performs periodic HIPAA Security Rule evaluations.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": [
+            {
+              "type": "hard_rule",
+              "ref": "Cross-AI Peer Review (2026-05-05)",
+              "description": "Cross-provider review discipline",
+              "claim_boundary": "governance rule"
+            }
+          ]
+        },
+        {
+          "control_id": "admin_business_associate_contracts",
+          "citation": "§164.308(b)",
+          "name": "Business Associate Contracts and Other Arrangements",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Business Associate Agreements (BAA) are operator-owned contractual instruments. ao-kernel does NOT ship a BAA template.",
+          "operator_boundary": "Operator negotiates and executes BAAs with covered entities and downstream business associates.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "id": "physical_safeguards",
+      "name": "Physical Safeguards (§164.310)",
+      "section_status": "applicable",
+      "section_rationale": "Four physical safeguard standards covering facility access, workstation use and security, and device/media controls. All four are operator-owned at the hosting and workstation layer; ao-kernel ships no physical infrastructure.",
+      "controls": [
+        {
+          "control_id": "phys_facility_access_controls",
+          "citation": "§164.310(a)",
+          "name": "Facility Access Controls",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Datacenter and facility access is operator-owned.",
+          "operator_boundary": "Operator owns facility access policy, badge management, and visitor logs.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "phys_workstation_use",
+          "citation": "§164.310(b)",
+          "name": "Workstation Use",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Workstation usage policy is operator-owned.",
+          "operator_boundary": "Operator owns workstation use policy for workforce members handling PHI.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "phys_workstation_security",
+          "citation": "§164.310(c)",
+          "name": "Workstation Security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Physical workstation security is operator-owned.",
+          "operator_boundary": "Operator owns physical workstation safeguards.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "phys_device_and_media_controls",
+          "citation": "§164.310(d)",
+          "name": "Device and Media Controls",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Device disposal, re-use, and media accountability are operator-owned.",
+          "operator_boundary": "Operator owns device lifecycle and media accountability procedures.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "id": "technical_safeguards",
+      "name": "Technical Safeguards (§164.312)",
+      "section_status": "applicable",
+      "section_rationale": "Five technical safeguard standards covering access control, audit controls, integrity, authentication, and transmission security. All five are operator-owned at the ePHI layer; ao-kernel does NOT process PHI and ships no ePHI control. Repo evidence surfaces such as JSONL audit trails and SHA256 manifests address artifact-level audit and integrity only and are NOT ePHI control claims.",
+      "controls": [
+        {
+          "control_id": "tech_access_control",
+          "citation": "§164.312(a)",
+          "name": "Access Control",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "ePHI access control (unique user identification, emergency access, automatic logoff, encryption/decryption) is operator-owned. ao-kernel does NOT implement ePHI access control.",
+          "operator_boundary": "Operator owns ePHI access control implementation.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "tech_audit_controls",
+          "citation": "§164.312(b)",
+          "name": "Audit Controls",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Repo evidence surface only (JSONL append-only audit log + SHA256 integrity manifest) for repo artifacts. This is NOT an ePHI audit control operation claim. Operator deploys the actual ePHI audit infrastructure.",
+          "operator_boundary": "Operator owns ePHI audit control infrastructure.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "tech_integrity",
+          "citation": "§164.312(c)",
+          "name": "Integrity",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "Repo artifact integrity manifests (SHA256) cover committed artifact integrity only. This is NOT an ePHI data integrity control claim. Operator owns ePHI data integrity at rest and in transit.",
+          "operator_boundary": "Operator owns ePHI data integrity controls.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "tech_person_or_entity_authentication",
+          "citation": "§164.312(d)",
+          "name": "Person or Entity Authentication",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "ePHI authentication is operator-owned at the auth/SSO layer.",
+          "operator_boundary": "Operator owns authentication implementation.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        },
+        {
+          "control_id": "tech_transmission_security",
+          "citation": "§164.312(e)",
+          "name": "Transmission Security",
+          "ao_kernel_status": "out_of_scope",
+          "status_rationale": "ePHI transmission security (TLS, integrity, encryption) is operator-owned at the transport layer.",
+          "operator_boundary": "Operator owns transmission security at the TLS and transport layer.",
+          "ephi_control_operator_owned": true,
+          "hipaa_control_effectiveness_claim": false,
+          "evidence_refs": []
+        }
+      ]
+    },
+    {
+      "id": "privacy_rule",
+      "name": "Privacy Rule (§164.500-534)",
+      "section_status": "not_applicable",
+      "section_rationale": "ao-kernel does NOT process PHI. The HIPAA Privacy Rule applies to covered entities and business associates handling PHI; ao-kernel is not a PHI handler. If the operator handles PHI, the Privacy Rule applies to the operator and is the operator's responsibility.",
+      "controls": []
+    },
+    {
+      "id": "breach_notification",
+      "name": "Breach Notification (§164.402-414)",
+      "section_status": "not_applicable",
+      "section_rationale": "ao-kernel does NOT process PHI and is not a covered entity or business associate under HIPAA. HIPAA Breach Notification applies to PHI breaches; if the operator handles PHI, breach determination, notification (individual, HHS, media as applicable), and timeline tracking are operator and operator legal-counsel responsibilities.",
+      "controls": []
+    }
+  ]
+}
