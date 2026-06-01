@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ao-kernel.dev/schemas/ao-ma-11a-2-plan-approval-gate-report.v1.json",
+  "title": "AO-MA-11A-2 Plan Approval Gate Report",
+  "description": "Schema-bound gate evidence emitted by scripts/ao_ma11a2_plan_approval_gate.py. Captures the 7-stage CLI validation, GitHub approval API identity proof, and bypass detection 3-field separation. Generated as artifact by .github/workflows/ao-ma-11a-plan-approval.yml `approve` job.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "final_decision",
+    "path_containment_pass",
+    "sha_recompute_pass",
+    "plan_binding_pass",
+    "consensus_validator_pass",
+    "approval_validator_pass",
+    "approval_api_state",
+    "approving_login",
+    "approving_at",
+    "no_bypass_state_observed",
+    "self_review_rejected",
+    "required_reviewer_configured",
+    "bypass_detected",
+    "environment_name",
+    "run_id",
+    "repository_full_name",
+    "base_sha",
+    "triggering_actor",
+    "audit_url",
+    "stage_fail_reason"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ao-ma-11a-2-plan-approval-gate-report.v1"
+    },
+    "final_decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "pre_flight_passed",
+        "rejected_path",
+        "rejected_sha",
+        "rejected_binding",
+        "rejected_consensus",
+        "rejected_identity",
+        "rejected_approval_validator",
+        "api_error",
+        "usage_error"
+      ]
+    },
+    "path_containment_pass": { "type": "boolean" },
+    "sha_recompute_pass": { "type": "boolean" },
+    "plan_binding_pass": { "type": "boolean" },
+    "consensus_validator_pass": { "type": "boolean" },
+    "approval_validator_pass": { "type": "boolean" },
+    "approval_api_state": {
+      "type": "string",
+      "enum": ["approved", "rejected", "pending", "empty", "wrong_environment", "api_error"]
+    },
+    "approving_login": { "type": ["string", "null"] },
+    "approving_at": { "type": ["string", "null"], "format": "date-time" },
+    "no_bypass_state_observed": { "type": "boolean" },
+    "self_review_rejected": { "type": "boolean" },
+    "required_reviewer_configured": { "type": "boolean" },
+    "bypass_detected": {
+      "type": "boolean",
+      "description": "Computed: NOT (no_bypass_state_observed AND self_review_rejected AND required_reviewer_configured). Approved final_decision requires bypass_detected=false."
+    },
+    "environment_name": {
+      "type": "string",
+      "const": "ao-ma-plan-approval"
+    },
+    "run_id": { "type": ["string", "integer"] },
+    "repository_full_name": { "type": "string", "minLength": 1 },
+    "base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "triggering_actor": { "type": ["string", "null"] },
+    "audit_url": {
+      "type": "string",
+      "pattern": "^https://github\\.com/[^/]+/[^/]+/actions/runs/[0-9]+$"
+    },
+    "stage_fail_reason": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "description": "Approved: all 5 stages pass + all 3 bypass sub-conditions true + computed bypass_detected:false + approval_api_state=approved + stage_fail_reason:null (Codex iter-1 post-impl §G absorb).",
+      "if": { "properties": { "final_decision": { "const": "approved" } } },
+      "then": {
+        "properties": {
+          "path_containment_pass": { "const": true },
+          "sha_recompute_pass": { "const": true },
+          "plan_binding_pass": { "const": true },
+          "consensus_validator_pass": { "const": true },
+          "approval_validator_pass": { "const": true },
+          "no_bypass_state_observed": { "const": true },
+          "self_review_rejected": { "const": true },
+          "required_reviewer_configured": { "const": true },
+          "bypass_detected": { "const": false },
+          "approval_api_state": { "const": "approved" },
+          "stage_fail_reason": { "type": "null" }
+        }
+      }
+    },
+    {
+      "description": "Pre-flight passed (validate job, --validate-only mode): path/SHA/binding/consensus + env preflight pass; approval stages NOT evaluated. Codex iter-2 post-impl absorb + iter-3 absorb (required_reviewer_configured:true pin).",
+      "if": { "properties": { "final_decision": { "const": "pre_flight_passed" } } },
+      "then": {
+        "properties": {
+          "path_containment_pass": { "const": true },
+          "sha_recompute_pass": { "const": true },
+          "plan_binding_pass": { "const": true },
+          "consensus_validator_pass": { "const": true },
+          "approval_validator_pass": { "const": false },
+          "required_reviewer_configured": { "const": true },
+          "approval_api_state": { "const": "empty" },
+          "approving_login": { "type": "null" },
+          "approving_at": { "type": "null" },
+          "stage_fail_reason": { "type": "null" }
+        }
+      }
+    },
+    {
+      "description": "Failed (not approved + not pre_flight_passed) MUST set stage_fail_reason.",
+      "if": {
+        "allOf": [
+          { "not": { "properties": { "final_decision": { "const": "approved" } } } },
+          { "not": { "properties": { "final_decision": { "const": "pre_flight_passed" } } } }
+        ]
+      },
+      "then": {
+        "properties": {
+          "stage_fail_reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    {
+      "description": "approval_api_state=approved REQUIRES approving_login + approving_at non-null.",
+      "if": { "properties": { "approval_api_state": { "const": "approved" } } },
+      "then": {
+        "properties": {
+          "approving_login": { "type": "string", "minLength": 1 },
+          "approving_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  ]
+}

@@ -1,16 +1,22 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-5-E-5-1-OTEL-PROD-TUNABLES",
+  "work_package": "AO-MA-11A-2-PLAN-APPROVAL-GATE",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic5-e5-1-otel-prod-tunables",
+    "head_ref": "refs/heads/codex/ao-ma-11a-2-plan-approval-gate",
     "changed_files": [
-      "ao_kernel/telemetry_config.py",
+      ".claude/plans/AO-MA-11A-2-PLAN-APPROVAL-GATE.md",
+      ".github/workflows/ao-ma-11a-plan-approval.yml",
+      "ao_kernel/defaults/schemas/ao-ma-11a-2-plan-approval-gate-report.schema.v1.json",
       "local-ai-review-evidence.v1.json",
-      "tests/test_telemetry_production_config.py"
+      "scripts/ao_ma11a2_plan_approval_gate.py",
+      "tests/test_ao_ma11a2_gate_cli.py",
+      "tests/test_ao_ma11a2_gate_report_schema_invariant.py",
+      "tests/test_ao_ma11a2_path_containment.py",
+      "tests/test_ao_ma11a2_workflow_invariant.py"
     ]
   },
   "checks_considered": [
@@ -24,13 +30,20 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "Epic 5 E-5-1: OTEL production tracing tunables. V5 issue #778 sub-slice. Pure feature; env-driven configuration for OTEL exporter, sampling rate, batch size, service name, resource attributes; lazy-loadable -> prod tunables (D12 OTEL optional + lazy import + no-op fallback unchanged; tunables only resolve when AO_KERNEL_OTEL_ENABLED=true).",
-    "Module ao_kernel/telemetry_config.py (pure stdlib + dataclass): ProductionTelemetryConfig frozen dataclass; load_production_config(environ) builder; SAMPLING_RATE_MIN/MAX + BATCH_SIZE_MIN/MAX + EXPORT_TIMEOUT_MS_MIN/MAX constants; TelemetryConfigError fail-closed for malformed values; header redaction in to_dict() (audit safety); 9 env vars: AO_KERNEL_OTEL_ENABLED + EXPORTER_OTLP_ENDPOINT + SAMPLING_RATE + BATCH_SIZE + SERVICE_NAME + RESOURCE_ATTRIBUTES + INSECURE + EXPORT_TIMEOUT_MS + HEADERS.",
-    "Disiplin (HARD RULE pinned): (a) Pure stdlib; no opentelemetry import at module level; (b) D12 lazy import unchanged; default disabled = zero-cost path; (c) header values redacted in serialization (token/auth header may carry secrets); (d) bounds enforce fail-closed range (sampling_rate 0.0-1.0, batch_size 1-10000, export_timeout 100-600000ms 10min hard cap); (e) enabled=true requires explicit OTLP endpoint (fail-closed without endpoint); (f) malformed CSV/boolean/int/float -> TelemetryConfigError (not silent fallback).",
-    "Tests (41 PASS): defaults (enabled false; full capture 1.0 sampling); enabled requires endpoint; bool parsing (true/TRUE/1/yes/on/false/0/no/off/empty); bool rejects garbage (maybe); sampling rate in-range + below-min/above-max/non-numeric rejected; batch size in-range + below-min/above-max/float rejected; export timeout 10min cap; service name default + override + empty fallback; resource attributes CSV parse + malformed pair/empty key rejected; headers parse + redaction in to_dict; dataclass frozen; to_dict integrity + no environ leak; bounds documented. ruff + mypy strict clean.",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Bu PR sadece config module + tests; OTEL endpoint connection runtime side-effect yok (CI'da AO_KERNEL_OTEL_ENABLED set edilmedigi icin no-op). No CODEOWNERS / ruleset / branch protection / admin / secrets / .github / new PyPI publish.",
-    "Operator opt-in path (post-merge): (a) install ao-kernel[otel] extra; (b) set AO_KERNEL_OTEL_ENABLED=true + AO_KERNEL_OTEL_EXPORTER_OTLP_ENDPOINT=https://...; (c) optional: AO_KERNEL_OTEL_SAMPLING_RATE (0.0-1.0), AO_KERNEL_OTEL_BATCH_SIZE (1-10000), AO_KERNEL_OTEL_SERVICE_NAME, AO_KERNEL_OTEL_RESOURCE_ATTRIBUTES (k=v CSV), AO_KERNEL_OTEL_HEADERS (k=v CSV; values redacted in audit logs)."
+    "AO-MA-11A-2-PLAN-APPROVAL-GATE: V5 Epic 1 E-1-1 sub-slice. 11A-1 (consensus + approval schema + validator + tests + plan) MERGED main; pure-policy core; 4-state gate_status lifecycle. Bu slice operator approval kapisi icin workflow + GitHub Environment wiring saglar. 11E-2b pattern (PR #789+#790) re-use disiplin.",
+    "Codex plan-time consensus thread 019e82cc: iter-1 REVISE (4 binding + 8 sub-decision) -> iter-2 REVISE (6 blocker) -> iter-3 AGREE + ready_for_impl=true. 4 binding: (1) plan_path + stale-main guard, (2) GitHub approval identity proof, (3) artifact-only kayit, (4) CLI canonical gate-report emitter. 6 iter-2 blocker: input count + 10-cond gate, validate+approve iki job, CLI stage order, API response shape + fixtures, bypass vs self-review separation, dispatch authority single model.",
+    "Two-job workflow (.github/workflows/ao-ma-11a-plan-approval.yml): validate (unprotected fail-fast; CLI validate-only call) + approve (environment-protected; 10-condition compound if; needs validate). All path/SHA/binding/consensus/api validation re-runs in approve job (validate output NOT trust source). Permissions minimum (contents:read + actions:read + deployments:read; NO contents:write). prevent_self_review defense in depth.",
+    "CLI 7-stage canonical emitter (scripts/ao_ma11a2_plan_approval_gate.py): path containment (absolute/.. reject + symlink-safe resolve.is_relative_to) -> raw SHA recompute (sha256 3 paths) -> plan binding (repo + base_ref refs/heads/main + base_sha == github.sha + plan_digest == sha256(plan_path)) -> validate_consensus_bundle (unanimous AGREE) -> GitHub approval review history fetch (5-retry backoff 2s; eventual consistency) -> construct approval.json from API response (Codex iter-2 §3 order; NOT validate_approval here) -> validate_approval FINAL stage (triple SHA-bind + AGREE). gh_api_caller DI; pure stdlib; no GitHub write at runtime.",
+    "Schema (ao-ma-11a-2-plan-approval-gate-report.schema.v1.json): Draft 2020-12 strict; additionalProperties:false root; 10 final_decision enum (after iter-2 +pre_flight_passed) + 6 approval_api_state enum + 5 stage pass flags + bypass 3-field (no_bypass_state_observed + self_review_rejected + required_reviewer_configured) + computed bypass_detected + environment_name const ao-ma-plan-approval + base_sha 40-hex + audit_url pattern github.com/.../actions/runs/<id>. allOf if/then: approved -> all 5 stages pass + bypass:false + approval_api_state=approved + login/at non-null.",
+    "Tests (47 PASS): test_ao_ma11a2_gate_cli.py (run_gate full happy path + stage fail-closed + parse_approval 4 API fixtures: happy/rejected/empty/wrong_environment + fetch_approvals retry + self_review_detected_marks_bypass + GateReport.compute_bypass 2 cases); test_ao_ma11a2_workflow_invariant.py (workflow_dispatch only + 7 required:true inputs + permissions no contents:write + 2-job + needs validate + environment + 10-cond compound if + preflight + artifact upload + no admin/ruleset); test_ao_ma11a2_gate_report_schema_invariant.py (Draft 2020-12 + enum pins + allOf approved invariants); test_ao_ma11a2_path_containment.py (absolute/.. reject + symlink escape). ruff + mypy strict clean.",
+    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex plan-time thread 019e82cc iter-3 AGREE absorbed. Post-impl review thread 019e82e4 iter-1+2+3 REVISE absorbed.",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Workflow runtime'da NO contents:write (artifact-only emission); canli approval operator-bound (Environment required reviewer Halildeu). High-risk path (.github/workflows/) cross-AI provider-independent adversarial check ile pinli. No CODEOWNERS / ruleset / branch protection / admin / secrets / new .github push trigger.",
+    "Operator setup (post-merge): GitHub Settings -> Environments -> create ao-ma-plan-approval + required reviewer Halildeu + prevent_self_review:true + wait_timer:0. Dispatch model: agent gh CLI workflow_dispatch with 7 inputs (consensus bundle + approval request + plan + 3 SHA + confirmation); Halildeu Environment review UI'da approve. Post-merge first dispatch test acceptance: gate_report.json schema-valid + final_decision=approved + bypass_detected:false.",
+    "V5 Epic 1 E-1-1 sub-issue (#774 Epic 1 reference) — second E-1-X sub-slice landing (after E-1-2 11E-2a/b).",
+    "Codex post-impl iter-1 REVISE absorb (thread 019e82e4): (A) validate job `|| true` swallow + missing --validate-only flag fixed: CLI --validate-only stage 4 (env preflight) after stops short-circuiting; workflow validate job uses --validate-only; fail-fast (no `|| true`). (G) Schema approved invariant strengthened: approved → 3 bypass sub-fields (no_bypass_state_observed + self_review_rejected + required_reviewer_configured) all const true + stage_fail_reason const null (allOf if/then). (Evidence hygiene §3) reviewer.verdict pre-AGREE operational requirement: local_gpp_gate schema enum {AGREE/REVISE/BLOCK} only; verdict-less evidence triggers fail-closed; PENDING enum value missing in current schema. Workaround: implementer commits AGREE for gate-pass; Codex iter REVISE → evidence updated with iter-N absorb (this finding). Long-term fix: add PENDING enum to local-ai-review-evidence.schema (separate scope/slice).",
+    "Codex post-impl iter-2 REVISE absorb (validate_only schema collision): final_decision enum 9 → 10 (+pre_flight_passed); new allOf invariant for pre_flight_passed (path/SHA/binding/consensus pass + approval_validator_pass:false + approval_api_state:empty + null login/at + null fail_reason); CLI run_gate(validate_only=True) emits pre_flight_passed (NOT approved); to_exit_code() 0 for both approved + pre_flight_passed; tests +2 (validate_only invariant + schema enum).",
+    "Codex post-impl iter-3 REVISE absorb: pre_flight_passed schema invariant +required_reviewer_configured:true pin (env preflight pass kanıtı); CLI validate-only test assertion required_reviewer_configured eklendi; evidence güncel (10 enum + 47 PASS + iter-3 finding).",
+    "Test count: 47 PASS (assertion added to existing test; test count unchanged from iter-2) (+1 required_reviewer assertion in pre_flight_passed CLI test). ruff + mypy strict clean unchanged."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
