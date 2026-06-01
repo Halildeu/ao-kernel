@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:performance-baseline:v1",
+  "title": "ao-kernel Performance Baseline (V5 Epic 7)",
+  "description": "Single-run candidate baseline derived from a benchmark scorecard + scenario catalog join. Codex 019e8410 absorb: candidate_baseline:true + sample_count:1 + variance_profile:single_ci_run; not a contractual SLA; operator-tunable. Cross-validation with catalog uses mode + enforcement filter; only policy_threshold scenarios for the matching benchmark_mode are included.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "guard_flags",
+    "generated_from",
+    "candidate_baseline",
+    "sample_count",
+    "variance_profile",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": { "const": "performance-baseline.v1" },
+    "service": { "const": "ao-kernel" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "generated_from": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scorecard_schema_version",
+        "source_git_sha",
+        "source_git_ref",
+        "benchmark_mode",
+        "python_version",
+        "runner_os",
+        "generated_at"
+      ],
+      "properties": {
+        "scorecard_schema_version": { "type": "string", "minLength": 2 },
+        "source_git_sha": { "type": "string", "pattern": "^[a-f0-9]{7,40}$" },
+        "source_git_ref": { "type": "string", "pattern": "^refs/" },
+        "benchmark_mode": { "enum": ["fast", "full"] },
+        "python_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$" },
+        "runner_os": { "type": "string", "minLength": 4 },
+        "generated_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" }
+      }
+    },
+    "candidate_baseline": { "const": true },
+    "sample_count": { "const": 1 },
+    "variance_profile": { "const": "single_ci_run" },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/baseline_scenario" }
+    }
+  },
+  "$defs": {
+    "baseline_scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_scorecard_scenario",
+        "workflow_id",
+        "benchmark_mode",
+        "metric",
+        "status",
+        "workflow_completed",
+        "cost_source",
+        "review_score_expected",
+        "candidate_baseline",
+        "sample_count",
+        "variance_profile"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]+$" },
+        "source_scorecard_scenario": { "type": "string", "minLength": 3 },
+        "workflow_id": { "type": "string", "minLength": 4 },
+        "benchmark_mode": { "enum": ["fast", "full"] },
+        "metric": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "unit", "value", "statistic"],
+          "properties": {
+            "name": { "const": "duration_ms" },
+            "unit": { "const": "ms" },
+            "value": { "type": "number", "minimum": 0 },
+            "statistic": { "const": "single_run" }
+          }
+        },
+        "status": { "enum": ["pass", "fail"] },
+        "workflow_completed": { "type": "boolean" },
+        "cost_source": {
+          "type": ["string", "null"],
+          "enum": ["mock_shim", "real_adapter", "axis_seeded_only", null]
+        },
+        "review_score_expected": { "type": ["number", "null"] },
+        "candidate_baseline": { "const": true },
+        "sample_count": { "const": 1 },
+        "variance_profile": { "const": "single_ci_run" }
+      }
+    }
+  }
+}

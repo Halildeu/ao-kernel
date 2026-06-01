@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ao:performance-regression-threshold:v1",
+  "title": "ao-kernel Performance Regression Threshold Policy (V5 Epic 7)",
+  "description": "Policy definition for regression thresholds against a committed baseline. E-7a enforcement_mode=='advisory'; CI red gating is a future slice (E-7x promotion track). Codex 019e8410 absorb: 20% warn / 30% hard duration defaults; single-run candidate baseline disclaimer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "service",
+    "guard_flags",
+    "policy_disclaimer",
+    "enforcement_mode",
+    "baseline_ref",
+    "global_defaults",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": { "const": "performance-regression-threshold.v1" },
+    "service": { "const": "ao-kernel" },
+    "guard_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_widening_allowed",
+        "production_platform_claim_allowed",
+        "live_adapter_execution_allowed"
+      ],
+      "properties": {
+        "support_widening_allowed": { "const": false },
+        "production_platform_claim_allowed": { "const": false },
+        "live_adapter_execution_allowed": { "const": false }
+      }
+    },
+    "policy_disclaimer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["not_sla", "operator_tunable", "single_run_candidate_baseline"],
+      "properties": {
+        "not_sla": { "const": true },
+        "operator_tunable": { "const": true },
+        "single_run_candidate_baseline": { "const": true }
+      }
+    },
+    "enforcement_mode": {
+      "enum": ["advisory", "manual_block", "ci_block_candidate"]
+    },
+    "baseline_ref": {
+      "type": "string",
+      "pattern": "^docs/performance/baseline\\.v[0-9]+\\.json$"
+    },
+    "global_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_kind",
+        "unit",
+        "comparison",
+        "min_sample_count",
+        "variance_disclaimer",
+        "warn_threshold_pct",
+        "hard_fail_threshold_pct",
+        "applies_to_modes",
+        "action_on_missing_baseline",
+        "action_on_missing_head_scenario"
+      ],
+      "properties": {
+        "metric_kind": { "const": "wall_clock" },
+        "unit": { "const": "ms" },
+        "comparison": { "const": "higher_is_worse" },
+        "min_sample_count": { "type": "integer", "minimum": 1 },
+        "variance_disclaimer": { "type": "string", "minLength": 16 },
+        "warn_threshold_pct": { "type": "number", "exclusiveMinimum": 0 },
+        "hard_fail_threshold_pct": { "type": "number", "exclusiveMinimum": 0 },
+        "applies_to_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["fast", "full"] }
+        },
+        "action_on_missing_baseline": { "enum": ["skip_check", "warn", "fail"] },
+        "action_on_missing_head_scenario": { "enum": ["skip_check", "warn", "fail"] }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/threshold_scenario" }
+    }
+  },
+  "$defs": {
+    "threshold_scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "warn_threshold_pct",
+        "hard_fail_threshold_pct",
+        "applies_to_modes",
+        "enforcement_override"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]+$" },
+        "warn_threshold_pct": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "hard_fail_threshold_pct": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "applies_to_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["fast", "full"] }
+        },
+        "enforcement_override": {
+          "type": ["string", "null"],
+          "enum": [null, "advisory_only"]
+        }
+      }
+    }
+  }
+}
