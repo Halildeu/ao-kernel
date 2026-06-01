@@ -1,0 +1,130 @@
+{
+  "schema_version": "sli-catalog.v1",
+  "service": "ao-kernel",
+  "guard_flags": {
+    "support_widening_allowed": false,
+    "production_platform_claim_allowed": false,
+    "live_adapter_execution_allowed": false
+  },
+  "uptime_status": {
+    "in_scope": false,
+    "reason": "v1 metric surface (8 ao_* families) does NOT expose a service health / freshness signal. Service uptime SLI requires an operator-deployed Prometheus 'up' target or a future health metric; deferred to a follow-up slice."
+  },
+  "indicators": [
+    {
+      "name": "llm_usage_accounting_completeness",
+      "description": "Fraction of LLM transport calls for which usage (tokens/cost) was successfully accounted. NOT a 'call success rate' — measures usage attribution completeness, not transport success.",
+      "objective_kind": "ratio_slo",
+      "sli_expr": "1 - clamp_min(sum(rate(ao_llm_usage_missing_total[5m])), 0) / clamp_min(sum(rate(ao_llm_call_duration_seconds_count[5m])), 1e-9)",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "target_status": "proposed_initial_default",
+      "slo_target": 0.99,
+      "window": "30d",
+      "alerting_kind": "mwmbr",
+      "hard_slo": true,
+      "error_budget_alerts": [
+        {
+          "severity": "critical",
+          "burn_rate": 14.4,
+          "long_window": "1h",
+          "short_window": "5m"
+        },
+        {
+          "severity": "warning",
+          "burn_rate": 6,
+          "long_window": "6h",
+          "short_window": "30m"
+        }
+      ]
+    },
+    {
+      "name": "llm_latency_under_30s_ratio",
+      "description": "Fraction of LLM transport calls completing within 30 seconds. Bucket-ratio form is alertable for error-budget burn; the operator-facing p95 target is documented in docs/SLI-SLO.md.",
+      "objective_kind": "ratio_slo",
+      "sli_expr": "sum by (provider) (rate(ao_llm_call_duration_seconds_bucket{le=\"30\"}[5m])) / clamp_min(sum by (provider) (rate(ao_llm_call_duration_seconds_count[5m])), 1e-9)",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "target_status": "proposed_initial_default",
+      "slo_target": 0.95,
+      "window": "30d",
+      "alerting_kind": "mwmbr",
+      "hard_slo": true,
+      "error_budget_alerts": [
+        {
+          "severity": "critical",
+          "burn_rate": 14.4,
+          "long_window": "1h",
+          "short_window": "5m"
+        },
+        {
+          "severity": "warning",
+          "burn_rate": 6,
+          "long_window": "6h",
+          "short_window": "30m"
+        }
+      ]
+    },
+    {
+      "name": "workflow_terminal_success_rate",
+      "description": "Fraction of TERMINATED workflow runs (final_state='completed' vs 'failed' / 'cancelled'). In-flight workflows are not counted; uptime gap remains out of scope.",
+      "objective_kind": "ratio_slo",
+      "sli_expr": "sum(rate(ao_workflow_duration_seconds_count{final_state=\"completed\"}[5m])) / clamp_min(sum(rate(ao_workflow_duration_seconds_count[5m])), 1e-9)",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "target_status": "proposed_initial_default",
+      "slo_target": 0.995,
+      "window": "30d",
+      "alerting_kind": "mwmbr",
+      "hard_slo": true,
+      "error_budget_alerts": [
+        {
+          "severity": "critical",
+          "burn_rate": 14.4,
+          "long_window": "1h",
+          "short_window": "5m"
+        },
+        {
+          "severity": "warning",
+          "burn_rate": 6,
+          "long_window": "6h",
+          "short_window": "30m"
+        }
+      ]
+    },
+    {
+      "name": "policy_deny_rate",
+      "description": "Policy deny ratio (deny / (allow + deny)). Codex 019e8394 absorb: 'deny' is a policy decision, NOT an error; outcome='error' is NOT exposed by the metric surface. Advisory observability only.",
+      "objective_kind": "advisory_sli",
+      "sli_expr": "sum(rate(ao_policy_check_total{outcome=\"deny\"}[5m])) / clamp_min(sum(rate(ao_policy_check_total[5m])), 1e-9)",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "alerting_kind": "spike",
+      "hard_slo": false,
+      "baseline_required": true
+    },
+    {
+      "name": "monthly_cost_burn_projection_usd",
+      "description": "Projected USD burn over a 30-day window from the current 1h cost rate. NOT a ratio SLO; budget objective. Tenant-bound objective is out of scope (no tenant label on ao_llm_cost_usd_total in v1).",
+      "objective_kind": "budget_objective",
+      "sli_expr": "sum(rate(ao_llm_cost_usd_total[1h])) * 3600 * 24 * 30",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "unit": "usd_per_month",
+      "threshold_source": "operator_configured",
+      "target_status": "placeholder",
+      "alerting_kind": "budget_alarm"
+    },
+    {
+      "name": "coordination_takeover_rate",
+      "description": "Coordination claim takeovers per hour normalized by average active claims. Advisory only — no baseline data yet; hard SLO promotion requires baseline measurement + operator decision.",
+      "objective_kind": "advisory_sli",
+      "sli_expr": "increase(ao_claim_takeover_total[1h]) / clamp_min(sum(avg_over_time(ao_claim_active_total[1h])), 1)",
+      "operator_owned": true,
+      "is_contractual_sla": false,
+      "alerting_kind": "spike",
+      "hard_slo": false,
+      "baseline_required": true
+    }
+  ]
+}

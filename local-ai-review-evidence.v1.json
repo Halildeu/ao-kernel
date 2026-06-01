@@ -1,18 +1,19 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-6-E6-1A-SBOM-GENERATION",
+  "work_package": "EPIC-5-E5-4-SLI-SLO-DEFINITIONS",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-6-e6-1-sbom-cyclonedx",
+    "head_ref": "refs/heads/codex/epic-5-e5-4-sli-slo",
     "changed_files": [
-      ".claude/plans/EPIC-6-E6-1-SBOM-GENERATION.md",
+      ".claude/plans/EPIC-5-E5-4-SLI-SLO-DEFINITIONS.md",
+      "ao_kernel/defaults/schemas/sli-catalog.schema.v1.json",
+      "docs/SLI-SLO.md",
+      "docs/sli-catalog.v1.json",
       "local-ai-review-evidence.v1.json",
-      "pyproject.toml",
-      "scripts/generate_sbom.py",
-      "tests/test_sbom_generation.py"
+      "tests/test_sli_slo_catalog.py"
     ]
   },
   "checks_considered": [
@@ -26,13 +27,14 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 6 E-6-1a: SBOM generation sub-slice (CycloneDX 1.5 JSON). pyproject.toml [sbom] extra -> cyclonedx-bom>=4.0.0 (release/build tool, NOT runtime dep). scripts/generate_sbom.py pure-stdlib + thin CLI (isolated target venv pattern + cyclonedx-py invocation + 9-invariant validate_sbom + dist/ segment reject anywhere in resolved path).",
-    "Codex plan-time thread 019e8337 iter-1 REVISE + ready_for_impl=true (PR sirasi bolundu E-6-1a script+test+plan / E-6-1b workflow integration ayri PR). Architecture absorb: isolated target venv (wheel installed into fresh tempdir venv; cyclonedx runs from calling env against target venv python; generator NEVER leaks into SBOM components), CycloneDX 1.5 const-pinned, dist/ output rejected, CLI form pinned for cyclonedx-bom 4.x->5.x migration.",
-    "Codex post-impl review thread 019e8337 iter-1 REVISE -> iter-2 REVISE -> iter-3 AGREE + ready_to_merge:true. 3 medium absorb (nested dist/ bypass + plan doc dist/ example + command-shape test gap): _output_path_contains_dist_segment helper any-depth reject + 4 test invariant; plan doc release example build/sbom/; subprocess command-shape unit tests pin _install_wheel (--isolated, --no-input, --no-cache-dir, --disable-pip-version-check, --quiet, --no-deps YOK) + _run_cyclonedx (sys.executable -m cyclonedx_py environment <TARGET_PY> --output-format JSON --schema-version 1.5 --output-file <OUT>) + custom schema propagation + kwargs check/capture_output hardening.",
-    "5-invariant validate_sbom: bomFormat + specVersion + non-empty components + ao-kernel visible (component OR metadata.component) + generator-leak guard (cyclonedx-bom / cyclonedx-python-lib / cyclonedx-py case-insensitive). 14 -> 20 -> 21 invariant tests local.",
-    "Out-of-scope (E-6-1b follow-up PR): .github/workflows/publish.yml release-time integration; GitHub Release artifact upload (build/sbom/ NOT dist/); test_publish_workflow.py invariant tests. Imzalama (sigstore/cosign) Epic 6 follow-up veya Epic 9 final promotion.",
-    "Tests: 21 pass + 1 skip (e2e smoke gated on cyclonedx_py); ruff + mypy --ignore-missing-imports clean.",
-    "Three guard flags + production claim + iso/audit claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8337 plan-time + post-impl)."
+    "V5 Epic 5 E-5-4: SLI/SLO catalog + schema + operator doc. Schema-validated JSON catalog (Draft 2020-12 additionalProperties:false everywhere); 3 objective_kind variants (ratio_slo + budget_objective + advisory_sli) with allOf if/then invariants; 6 indicator (3 hard ratio SLO + 1 budget objective + 2 advisory). docs/SLI-SLO.md operator-facing doc with 6 numbered section.",
+    "Codex plan-time thread 019e8394 iter-1 REVISE (13 must-close absorb): llm_usage_accounting_completeness rename (was 'LLM call success rate' which mismeasures); policy_check_total outcome enum {allow,deny} only (advisory policy_deny_rate; outcome=error YASAK); latency bucket-ratio for alertable form (p95 doc-facing only); cost as budget_objective ayri kind (NOT ratio SLO); coordination claim advisory (baseline yok); uptime out-of-scope (no health metric); JSON canonical (was YAML risky); operator_owned const true + is_contractual_sla const false; E-5-5 alert routing scope disi; MWMBR fast 1h/5m 14.4x + slow 6h/30m 6x (Google SRE Workbook); production claim sizinti guard metni; runtime SLO measurement layer scope disi.",
+    "Schema sli-catalog.schema.v1.json: Draft 2020-12 + additionalProperties:false at all nodes; root requires schema_version (const 'sli-catalog.v1') + service (const 'ao-kernel') + guard_flags (3 const false) + indicators (>=3); uptime_status (in_scope const false + reason min length 16); indicator allOf if/then: ratio_slo (slo_target 0..1 exclusive + window enum + error_budget_alerts >=2 MWMBR + alerting_kind const mwmbr + hard_slo const true) / budget_objective (unit const usd_per_month + threshold_source const operator_configured + target_status const placeholder + alerting_kind const budget_alarm + slo_target forbidden) / advisory_sli (hard_slo const false + baseline_required const true + slo_target forbidden). MWMBR alert: severity enum {critical,warning} + burn_rate >0 + long/short_window enum {5m,30m,1h,6h}.",
+    "Catalog docs/sli-catalog.v1.json 6 indicator: llm_usage_accounting_completeness (ratio 99.0% 30d) + llm_latency_under_30s_ratio (ratio 95.0% 30d bucket form) + workflow_terminal_success_rate (ratio 99.5% 30d) + policy_deny_rate (advisory spike) + monthly_cost_burn_projection_usd (budget operator_configured placeholder) + coordination_takeover_rate (advisory spike baseline_required). PromQL clamp_min(_, 1e-9) divide-by-zero koruma. uptime_status.in_scope=false (v1 ao_* family'de health metric yok).",
+    "31 invariant test pass local: Schema (4) + Catalog shape (5) + Objective kind discipline (5) + Non-SLA discipline (1) + PromQL whitelist (2) + Indicator name uniqueness (1) + Doc invariants (4) + Plan doc public claim (3 parametrized). PromQL whitelist: 8 ao_* metric families + histogram suffixes (_bucket/_count/_sum); outcome enum {allow,deny} only (outcome=error reject).",
+    "Out-of-scope (E-5-4 follow-up slices): service uptime SLI (future health/freshness metric); tenant-bound cost budget (Epic 4 multi-tenancy); Alertmanager rule templates (E-5-5); Grafana SLO panel rows (E-5-2 follow-up); Sloth/Pyrra recording rules (operator choice); hard SLO promotion for advisory SLIs (baseline measurement gerek); policy_check_total outcome=error semantics (runtime metric change).",
+    "Public claim discipline (Codex 019e8394 absorb): plan doc + operator doc explicit 'Not SLA' + 'candidate, operator-tunable' + 'not production platform claim'; 3 guard flag (support_widening + production_platform_claim + live_adapter_execution) const false korunur. Bu PR HICBIR flag flip yok; HICBIR runtime ingestion (Sloth/Pyrra/Grafana SLO plugin/Alertmanager) yok; HICBIR advisory SLI hard SLO'ya promote edilmedi.",
+    "Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8394 plan-time)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
