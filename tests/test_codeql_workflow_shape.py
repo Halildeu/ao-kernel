@@ -216,3 +216,52 @@ def test_codeql_config_default_queries_remain_enabled() -> None:
     """Default queries provide essential security checks; we layer
     security-extended ON TOP (not as replacement)."""
     assert "disable-default-queries: false" in _config_text()
+
+
+def test_codeql_workflow_does_not_reference_secrets() -> None:
+    """Codex iter-2 absorb — workflow MUST NOT reference any
+    ``secrets.X`` token expressions. CodeQL SARIF upload relies
+    on default ``GITHUB_TOKEN`` permissions; explicit secrets
+    grow the surface unnecessarily.
+    """
+    assert "secrets." not in _workflow_text(), (
+        "workflow must not reference any secrets.X expression (CodeQL uses default GITHUB_TOKEN)"
+    )
+
+
+def test_codeql_workflow_no_extra_write_permissions() -> None:
+    """Codex iter-2 absorb — only ``security-events: write`` is
+    allowed; future drift adding ``packages: write``,
+    ``checks: write``, ``deployments: write``, ``id-token: write``,
+    etc. MUST be caught by this single regression pin.
+    """
+    text = _workflow_text()
+    forbidden_writes = [
+        "packages: write",
+        "checks: write",
+        "deployments: write",
+        "id-token: write",
+        "pages: write",
+        "issues: write",
+        "discussions: write",
+        "statuses: write",
+        "repository-projects: write",
+    ]
+    leaked = [w for w in forbidden_writes if w in text]
+    assert not leaked, f"workflow declares forbidden *: write permissions: {leaked}"
+
+
+def test_codeql_workflow_uses_default_pr_checkout_strategy() -> None:
+    """Codex iter-2 absorb — CodeQL analyzes the PR merge result by
+    default; explicit head-SHA / head-ref checkout bypasses that
+    semantic and would let an attacker hide changes in the merge
+    commit. Pin: workflow MUST NOT use any of these refs.
+    """
+    text = _workflow_text()
+    forbidden_ref_patterns = [
+        "github.event.pull_request.head.sha",
+        "github.event.pull_request.head.ref",
+        "github.head_ref",
+    ]
+    leaked = [p for p in forbidden_ref_patterns if p in text]
+    assert not leaked, f"workflow overrides default PR checkout (CodeQL must analyze merge result, not head): {leaked}"
