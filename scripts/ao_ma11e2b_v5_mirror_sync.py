@@ -30,7 +30,6 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import subprocess
@@ -221,15 +220,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    # Verify accepted-dry-run-report digest matches file content (if provided)
+    # Codex iter-2 absorb: verify accepted-dry-run-report digest against the
+    # canonical (volatile-free) plan digest — NOT the raw file hash. The raw
+    # file contains `checked_at` and other run-specific fields that change
+    # between dispatch events even when the plan is identical.
     if args.apply and args.accepted_dry_run_report is not None:
-        computed = (
-            "sha256:"
-            + hashlib.sha256(args.accepted_dry_run_report.read_bytes()).hexdigest()
+        from ao_kernel._internal.ao_ma.github_mirror_sync import (  # noqa: E402
+            compute_canonical_plan_digest,
         )
+        try:
+            accepted = json.loads(
+                args.accepted_dry_run_report.read_text(encoding="utf-8")
+            )
+        except Exception as exc:
+            print(
+                f"::error::failed to parse accepted dry-run report: {exc}",
+                file=sys.stderr,
+            )
+            return 2
+        computed = compute_canonical_plan_digest(accepted)
         if args.accepted_dry_run_report_digest != computed:
             print(
-                f"::error::accepted_dry_run_report_digest mismatch: "
+                f"::error::accepted_dry_run_report_digest mismatch (canonical): "
                 f"expected {computed}, got {args.accepted_dry_run_report_digest}",
                 file=sys.stderr,
             )

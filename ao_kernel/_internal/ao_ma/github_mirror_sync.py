@@ -265,6 +265,37 @@ def _file_sha256(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# Codex iter-2 absorb: digest MUST be volatile-free so the same accepted plan
+# survives across runs. Fields that change per-run (checked_at, environment
+# preflight evidence, runtime state) are excluded; only the plan content
+# (what would be written) is hashed.
+_CANONICAL_DIGEST_FIELDS = (
+    "schema_version",
+    "projection_manifest",
+    "manifest_sha256",
+    "github_owner",
+    "github_repo",
+    "expected_counts",
+    "planned_changes",
+)
+
+
+def compute_canonical_plan_digest(report_dict: dict[str, Any]) -> str:
+    """Volatile-free sha256 over the plan content of a sync report.
+
+    Excludes per-run fields: checked_at, applied_changes, pre/post drift
+    snapshots, environment_preflight, sync_state, reason, network/token
+    metadata, apply_mode, confirmation. Same manifest + same actual GitHub
+    state → same digest, regardless of run timing.
+    """
+    canonical: dict[str, Any] = {}
+    for k in _CANONICAL_DIGEST_FIELDS:
+        if k in report_dict:
+            canonical[k] = report_dict[k]
+    blob = json.dumps(canonical, sort_keys=True, separators=(",", ":"))
+    return "sha256:" + hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def _load_manifest(path: Path) -> dict[str, Any]:
     data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     return data

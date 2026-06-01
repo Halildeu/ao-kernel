@@ -122,6 +122,22 @@ def test_workflow_preflight_counts_actual_reviewers_not_rules() -> None:
     ), "preflight MUST count actual reviewers inside required_reviewers rule, not the number of rules"
 
 
+def test_workflow_verify_uses_canonical_plan_digest_not_raw_file_hash() -> None:
+    """Codex iter-2 absorb: digest is canonical plan (volatile-free), NOT raw file
+    hash. The fresh dry-run report contains run-specific `checked_at`, so a raw
+    sha256sum would mismatch even when the plan is identical across runs.
+    """
+    content = _read()
+    assert re.search(
+        r"compute_canonical_plan_digest",
+        content,
+    ), "apply workflow MUST use compute_canonical_plan_digest, not raw sha256sum"
+    # The volatile fields path (raw sha256sum of report file) must NOT be used.
+    assert "sha256sum fresh_dry_run_report.json" not in content, (
+        "apply workflow MUST NOT use raw file hash (changes per-run via checked_at)"
+    )
+
+
 def test_workflow_apply_generates_fresh_dry_run_inside_same_run() -> None:
     """Codex iter-1 §1 absorb: apply job MUST NOT depend on cross-run artifact.
     Apply runs a fresh dry-run, then digest-verifies operator input against it.
@@ -132,7 +148,7 @@ def test_workflow_apply_generates_fresh_dry_run_inside_same_run() -> None:
         content,
     ), "apply job MUST run a fresh dry-run inside the same workflow run"
     assert re.search(
-        r"Verify operator digest matches fresh dry-run",
+        r"Verify operator digest matches fresh",
         content,
     ), "apply job MUST verify operator digest against the fresh dry-run report"
 

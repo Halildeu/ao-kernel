@@ -128,17 +128,26 @@ jobs:
             --github-token-env GH_TOKEN \
             --allow-network \
             --output fresh_dry_run_report.json
-      - name: Verify operator digest matches fresh dry-run
+      - name: Verify operator digest matches fresh canonical plan
+        # Codex iter-2 absorb: digest is over the canonical (volatile-free)
+        # plan content, NOT the raw report (which contains run-specific
+        # `checked_at`). Same manifest + same actual GitHub state → same
+        # digest across runs.
         run: |
-          FRESH_DIGEST="sha256:$(sha256sum fresh_dry_run_report.json | awk '{print $1}')"
+          FRESH_DIGEST=$(python3 -c "
+          import json
+          from ao_kernel._internal.ao_ma.github_mirror_sync import compute_canonical_plan_digest
+          report = json.load(open('fresh_dry_run_report.json'))
+          print(compute_canonical_plan_digest(report))
+          ")
           OPERATOR_DIGEST="${{ inputs.accepted_dry_run_report_digest }}"
           if [ "$FRESH_DIGEST" != "$OPERATOR_DIGEST" ]; then
-            echo "::error::Digest mismatch — operator must re-dispatch with new digest"
-            echo "  fresh:    $FRESH_DIGEST"
-            echo "  operator: $OPERATOR_DIGEST"
+            echo "::error::Canonical plan digest mismatch — operator must re-dispatch with new digest"
+            echo "  fresh canonical: $FRESH_DIGEST"
+            echo "  operator:        $OPERATOR_DIGEST"
             exit 1
           fi
-          echo "Digest match confirmed: $FRESH_DIGEST"
+          echo "Canonical plan digest match confirmed: $FRESH_DIGEST"
       - name: Run apply sync
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

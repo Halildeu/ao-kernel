@@ -21,9 +21,102 @@ import pytest
 from ao_kernel._internal.ao_ma.github_mirror_sync import (
     ChangeRecord,
     SyncState,
+    compute_canonical_plan_digest,
     render_issue_body,
     sync_v5_mirror,
 )
+
+
+# ---- Canonical digest invariants (Codex iter-2 absorb) ----
+
+
+def test_canonical_digest_excludes_checked_at():
+    """Same plan + different checked_at → same digest."""
+    base = {
+        "schema_version": "ao-ma-github-mirror-sync-report.v1",
+        "projection_manifest": "x.json",
+        "manifest_sha256": "sha256:" + "0" * 64,
+        "checked_at": "2026-06-01T00:00:00Z",
+        "github_owner": "Halildeu",
+        "github_repo": "ao-kernel",
+        "expected_counts": {"issues": 1, "labels": 0, "project_items": 0},
+        "planned_changes": [
+            {
+                "category": "issue_body_rewrite",
+                "object_type": "issue",
+                "object_id": "774",
+                "before": "x",
+                "after": "y",
+            }
+        ],
+    }
+    other_time = dict(base)
+    other_time["checked_at"] = "2026-06-02T00:00:00Z"
+    assert compute_canonical_plan_digest(base) == compute_canonical_plan_digest(other_time)
+
+
+def test_canonical_digest_changes_when_plan_changes():
+    """Different planned_changes → different digest."""
+    base = {
+        "schema_version": "ao-ma-github-mirror-sync-report.v1",
+        "projection_manifest": "x.json",
+        "manifest_sha256": "sha256:" + "0" * 64,
+        "checked_at": "2026-06-01T00:00:00Z",
+        "github_owner": "Halildeu",
+        "github_repo": "ao-kernel",
+        "expected_counts": {"issues": 1, "labels": 0, "project_items": 0},
+        "planned_changes": [],
+    }
+    with_change = dict(base)
+    with_change["planned_changes"] = [
+        {
+            "category": "issue_body_rewrite",
+            "object_type": "issue",
+            "object_id": "774",
+            "before": "x",
+            "after": "y",
+        }
+    ]
+    assert compute_canonical_plan_digest(base) != compute_canonical_plan_digest(with_change)
+
+
+def test_canonical_digest_excludes_volatile_fields():
+    """sync_state, applied_changes, environment_preflight ignored."""
+    base = {
+        "schema_version": "ao-ma-github-mirror-sync-report.v1",
+        "projection_manifest": "x.json",
+        "manifest_sha256": "sha256:" + "0" * 64,
+        "github_owner": "Halildeu",
+        "github_repo": "ao-kernel",
+        "expected_counts": {"issues": 0, "labels": 0, "project_items": 0},
+        "planned_changes": [],
+    }
+    augmented = dict(base)
+    augmented["applied_changes"] = [
+        {
+            "category": "issue_body_rewrite",
+            "object_type": "issue",
+            "object_id": "1",
+            "before": "x",
+            "after": "y",
+        }
+    ]
+    augmented["sync_state"] = "applied"
+    augmented["environment_preflight"] = {
+        "environment_name": "x",
+        "environment_exists": True,
+        "required_reviewers_count": 5,
+        "environment_preflight_decision": "pass",
+    }
+    augmented["reason"] = "some reason"
+    augmented["checked_at"] = "2099-12-31T23:59:59Z"
+    assert compute_canonical_plan_digest(base) == compute_canonical_plan_digest(augmented)
+
+
+def test_canonical_digest_format_is_sha256_prefixed():
+    digest = compute_canonical_plan_digest({})
+    assert digest.startswith("sha256:")
+    assert len(digest) == len("sha256:") + 64
 
 
 _VALID_ARTIFACT_SHA = "sha256:" + "0" * 64
