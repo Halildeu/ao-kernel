@@ -44,6 +44,9 @@ from ao_kernel.consultation.paths import (
     FileClassification,
     iter_consultation_files,
 )
+from ao_kernel.consultation.trace_context import maybe_write_sidecar
+from ao_kernel.telemetry import span as _ao_span
+from ao_kernel.tracing import get_session_baggage
 
 
 logger = logging.getLogger(__name__)
@@ -94,11 +97,10 @@ def _extract_cns_id(path: Path) -> str | None:
 
 
 def _evidence_dir(
-    workspace_root: Path, cns_id: str,
+    workspace_root: Path,
+    cns_id: str,
 ) -> Path:
-    return (
-        workspace_root / ".ao" / "evidence" / "consultations" / cns_id
-    ).resolve()
+    return (workspace_root / ".ao" / "evidence" / "consultations" / cns_id).resolve()
 
 
 def _copy_snapshot(src: Path, target_dir: Path) -> Path:
@@ -128,7 +130,9 @@ def _group_files_by_cns(
     # apply canonical-wins dedupe after the full walk.
     raw: dict[str, dict[str, tuple[Path, FileClassification, str]]] = {}
     for path, origin, classification in iter_consultation_files(
-        policy, artefact, workspace_root=workspace_root,
+        policy,
+        artefact,
+        workspace_root=workspace_root,
     ):
         cns_id = _extract_cns_id(path)
         if cns_id is None:
@@ -146,9 +150,7 @@ def _group_files_by_cns(
         # else: keep the first-seen canonical (or first legacy if canonical absent)
     groups: dict[str, list[tuple[Path, FileClassification]]] = {}
     for cns_id, by_name in raw.items():
-        groups[cns_id] = [
-            (entry[0], entry[1]) for entry in by_name.values()
-        ]
+        groups[cns_id] = [(entry[0], entry[1]) for entry in by_name.values()]
     return groups
 
 
@@ -186,7 +188,15 @@ def _archive_cns(
     evidence_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     lock_path = evidence_dir / ".archive.lock"
 
-    with file_lock(lock_path):
+    # V5 Epic 5 E-5-3b: per-CNS archive span. Sidecar trace context is written
+    # inside this span (inner active context) so capture_current_trace_context()
+    # picks up the recording span produced here.
+    _cns_session = get_session_baggage()
+    _cns_attrs: dict[str, Any] = {"ao.cns_id": cns_id}
+    if _cns_session:
+        _cns_attrs["ao.session.id"] = _cns_session
+
+    with _ao_span("ao.consultation.archive.cns", _cns_attrs), file_lock(lock_path):
         events_path = evidence_dir / "events.jsonl"
         seen = preload_event_identities(events_path)
         if renormalize:
@@ -213,11 +223,7 @@ def _archive_cns(
             iteration = _iteration_from_name(src.name)
             source_sha = sha256_file(snap_dest)
 
-            kind = (
-                ConsultationEventKind.OPENED
-                if iteration == 1
-                else ConsultationEventKind.REQUEST_REVISED
-            )
+            kind = ConsultationEventKind.OPENED if iteration == 1 else ConsultationEventKind.REQUEST_REVISED
             payload = {
                 "cns_id": cns_id,
                 "source_path": rel,
@@ -319,6 +325,16 @@ def _archive_cns(
         # Integrity manifest refresh
         write_consultation_manifest(evidence_dir)
 
+        # V5 Epic 5 E-5-3b: write trace-context sidecar inside this CNS span.
+        # Idempotent first-write; no-op when no recording span / OTEL absent.
+        # Sidecar is non-authoritative correlation metadata; NOT part of
+        # the integrity manifest (intentionally written AFTER the manifest).
+        try:
+            maybe_write_sidecar(evidence_dir, cns_id)
+        except Exception:  # pragma: no cover — fail-closed degrade
+            # Tracing must never break archive flow.
+            logger.debug("consultation trace-context sidecar write skipped for %s", cns_id)
+
     return CnsArchiveResult(
         cns_id=cns_id,
         evidence_dir=evidence_dir,
@@ -331,6 +347,7 @@ def _archive_cns(
 
 def _iteration_from_name(name: str) -> int:
     from ao_kernel.consultation.normalize import iteration_from_filename
+
     return iteration_from_filename(name)
 
 
@@ -346,30 +363,38 @@ def archive_all(
     resp_groups = _group_files_by_cns(policy, workspace_root, "responses")
 
     all_cns_ids = sorted(set(req_groups.keys()) | set(resp_groups.keys()))
-    results: list[CnsArchiveResult] = []
-    archived = 0
-    errors_total = 0
 
-    for cns_id in all_cns_ids:
-        req_paths = req_groups.get(cns_id, [])
-        resp_paths = resp_groups.get(cns_id, [])
-        result = _archive_cns(
-            policy=policy,
-            workspace_root=workspace_root,
-            cns_id=cns_id,
-            request_paths=req_paths,
-            response_paths=resp_paths,
-            dry_run=dry_run,
-            renormalize=renormalize,
-        )
-        results.append(result)
-        errors_total += len(result.errors)
-        if (
-            result.events_appended > 0
-            or result.record_written
-            or result.manifest_written
-        ):
-            archived += 1
+    # V5 Epic 5 E-5-3b: top-level archive facade span. Per-CNS spans are
+    # nested inside via _archive_cns(). Low-cardinality attributes only;
+    # ao.cns_id is reserved for the inner per-CNS span.
+    _facade_session = get_session_baggage()
+    _facade_attrs: dict[str, Any] = {
+        "ao.consultation.count": len(all_cns_ids),
+    }
+    if _facade_session:
+        _facade_attrs["ao.session.id"] = _facade_session
+
+    with _ao_span("ao.consultation.archive", _facade_attrs):
+        results: list[CnsArchiveResult] = []
+        archived = 0
+        errors_total = 0
+
+        for cns_id in all_cns_ids:
+            req_paths = req_groups.get(cns_id, [])
+            resp_paths = resp_groups.get(cns_id, [])
+            result = _archive_cns(
+                policy=policy,
+                workspace_root=workspace_root,
+                cns_id=cns_id,
+                request_paths=req_paths,
+                response_paths=resp_paths,
+                dry_run=dry_run,
+                renormalize=renormalize,
+            )
+            results.append(result)
+            errors_total += len(result.errors)
+            if result.events_appended > 0 or result.record_written or result.manifest_written:
+                archived += 1
 
     return ArchiveSummary(
         scanned_cns=len(all_cns_ids),
