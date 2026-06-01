@@ -181,6 +181,61 @@ def test_cli_rejects_dist_output_path(tmp_path: Path, capsys: pytest.CaptureFixt
     assert "MUST NOT be inside dist/" in captured.err or "must NOT be inside dist/" in captured.err
 
 
+def test_cli_rejects_nested_dist_output_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Codex iter-2 absorb — nested ``dist/sbom/...`` shape must also
+    reject (direct-parent-only check missed this; release truth
+    must NEVER write under any ``dist`` segment)."""
+    fake_wheel = tmp_path / "ao_kernel-5.0.0-py3-none-any.whl"
+    fake_wheel.write_bytes(b"PK\x05\x06" + b"\x00" * 18)
+
+    dist_dir = tmp_path / "dist" / "sbom"
+    dist_dir.mkdir(parents=True)
+    target = dist_dir / "ao_kernel-5.0.0-sbom.cdx.json"
+
+    rc = _MODULE.main(["--wheel", str(fake_wheel), "--output", str(target)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "MUST NOT" in captured.err or "must NOT" in captured.err
+
+
+def test_cli_rejects_dist_deeply_nested_segment(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Codex iter-2 absorb — even deeply nested ``foo/dist/bar/...``
+    must reject (any ``dist`` segment in the resolved path)."""
+    fake_wheel = tmp_path / "ao_kernel-5.0.0-py3-none-any.whl"
+    fake_wheel.write_bytes(b"PK\x05\x06" + b"\x00" * 18)
+
+    deep_dir = tmp_path / "release" / "dist" / "outputs"
+    deep_dir.mkdir(parents=True)
+    target = deep_dir / "ao_kernel-5.0.0-sbom.cdx.json"
+
+    rc = _MODULE.main(["--wheel", str(fake_wheel), "--output", str(target)])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "MUST NOT" in captured.err or "must NOT" in captured.err
+
+
+def test_path_segment_helper_detects_dist_at_any_depth(tmp_path: Path) -> None:
+    """Direct unit test of the helper that powers the CLI rejection.
+    Pins the segment-anywhere semantic against future refactors."""
+    cases_must_reject = [
+        tmp_path / "dist" / "x.json",
+        tmp_path / "dist" / "sbom" / "x.json",
+        tmp_path / "release" / "dist" / "outputs" / "x.json",
+    ]
+    for p in cases_must_reject:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        assert _MODULE._output_path_contains_dist_segment(p), f"must reject {p}"
+
+    cases_must_accept = [
+        tmp_path / "build" / "sbom" / "x.json",
+        tmp_path / "release-artifacts" / "x.json",
+        tmp_path / "out" / "x.json",
+    ]
+    for p in cases_must_accept:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        assert not _MODULE._output_path_contains_dist_segment(p), f"must accept {p}"
+
+
 def test_cli_rejects_missing_wheel(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     fake_wheel = tmp_path / "does-not-exist.whl"
     target = tmp_path / "build" / "sbom" / "ao-kernel-sbom.cdx.json"
@@ -189,6 +244,110 @@ def test_cli_rejects_missing_wheel(tmp_path: Path, capsys: pytest.CaptureFixture
     assert rc == 1
     captured = capsys.readouterr()
     assert "wheel not found" in captured.err
+
+
+# ── Subprocess command-shape pins (Codex iter-2 absorb) ─────────────
+
+
+def test_install_wheel_command_shape(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Pin ``_install_wheel`` invocation shape so future refactors do
+    not silently drop the hardening flags (Codex iter-2 absorb)."""
+    captured: dict[str, Any] = {}
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> Any:
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+
+        class _Result:
+            returncode = 0
+            stdout = b""
+            stderr = b""
+
+        return _Result()
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+
+    target_py = tmp_path / "target" / "bin" / "python"
+    wheel = tmp_path / "ao_kernel-5.0.0-py3-none-any.whl"
+    _MODULE._install_wheel(target_py, wheel)
+
+    cmd = captured["cmd"]
+    assert cmd[0] == str(target_py)
+    assert cmd[1:5] == ["-m", "pip", "--isolated", "install"]
+    assert "--no-cache-dir" in cmd
+    assert "--disable-pip-version-check" in cmd
+    assert "--no-input" in cmd
+    assert "--quiet" in cmd
+    assert str(wheel) in cmd
+    # Hardening flag absence regression — these MUST NOT appear
+    assert "--no-deps" not in cmd, "--no-deps would skip runtime deps; SBOM truth depends on the resolved tree"
+    assert captured["kwargs"].get("check") is True
+    assert captured["kwargs"].get("capture_output") is True
+
+
+def test_run_cyclonedx_command_shape(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Pin ``_run_cyclonedx`` invocation shape including spec version
+    and output format flags (Codex iter-2 absorb — e2e smoke skip
+    leaves this otherwise un-validated when ``cyclonedx-bom`` extra
+    is absent)."""
+    captured: dict[str, Any] = {}
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> Any:
+        captured["cmd"] = cmd
+
+        class _Result:
+            returncode = 0
+            stdout = b""
+            stderr = b""
+
+        return _Result()
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+
+    target_py = tmp_path / "target" / "bin" / "python"
+    out_path = tmp_path / "build" / "sbom" / "sbom.cdx.json"
+    out_path.parent.mkdir(parents=True)
+    _MODULE._run_cyclonedx(target_py, out_path, schema_version=_MODULE.SBOM_SCHEMA_VERSION)
+
+    cmd = captured["cmd"]
+    # Generator runs from CALLING env (sys.executable), NOT the target venv
+    import sys as _sys
+
+    assert cmd[0] == _sys.executable, "generator must run from calling env, not target venv"
+    assert cmd[1:4] == ["-m", "cyclonedx_py", "environment"]
+    assert cmd[4] == str(target_py), "target venv python must be 5th argument"
+    assert "--output-format" in cmd
+    assert cmd[cmd.index("--output-format") + 1] == "JSON"
+    assert "--schema-version" in cmd
+    assert cmd[cmd.index("--schema-version") + 1] == _MODULE.SBOM_SCHEMA_VERSION
+    assert "--output-file" in cmd
+    assert cmd[cmd.index("--output-file") + 1] == str(out_path)
+
+
+def test_run_cyclonedx_command_shape_honors_custom_schema(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Custom schema version propagates through to the CLI flag
+    (defense against accidental SBOM_SCHEMA_VERSION hard-coding)."""
+    captured: dict[str, Any] = {}
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> Any:
+        captured["cmd"] = cmd
+
+        class _Result:
+            returncode = 0
+            stdout = b""
+            stderr = b""
+
+        return _Result()
+
+    monkeypatch.setattr(_MODULE.subprocess, "run", fake_run)
+
+    target_py = tmp_path / "target" / "bin" / "python"
+    out_path = tmp_path / "build" / "sbom" / "sbom.cdx.json"
+    out_path.parent.mkdir(parents=True)
+    _MODULE._run_cyclonedx(target_py, out_path, schema_version="1.4")
+
+    cmd = captured["cmd"]
+    assert cmd[cmd.index("--schema-version") + 1] == "1.4"
 
 
 # ── End-to-end smoke (gated on cyclonedx-bom presence) ──────────────

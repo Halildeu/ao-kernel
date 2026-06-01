@@ -97,15 +97,21 @@ def _build_target_venv(venv_dir: Path) -> Path:
 
 
 def _install_wheel(target_python: Path, wheel: Path) -> None:
-    """Install the wheel + its required runtime deps into target venv."""
+    """Install the wheel + its required runtime deps into target venv.
+
+    Codex iter-2 absorb — added ``--isolated`` (ignore user/env pip
+    config) and ``--no-input`` (deterministic CI behavior).
+    """
     subprocess.run(
         [
             str(target_python),
             "-m",
             "pip",
+            "--isolated",
             "install",
             "--no-cache-dir",
             "--disable-pip-version-check",
+            "--no-input",
             "--quiet",
             str(wheel),
         ],
@@ -236,8 +242,12 @@ def generate_sbom(
             _run_cyclonedx(target_python, output_path, schema_version=schema_version)
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode("utf-8", errors="replace") if exc.stderr else ""
+            stdout = exc.stdout.decode("utf-8", errors="replace") if exc.stdout else ""
+            # Codex iter-2 absorb — fall back to stdout tail when stderr empty
+            # (some pip / cyclonedx-py paths emit to stdout).
+            detail = stderr.strip() or stdout.strip()
             raise SBOMGenerationError(
-                f"SBOM generation step failed: {exc.cmd} (exit {exc.returncode}): {stderr.strip()}"
+                f"SBOM generation step failed: {exc.cmd} (exit {exc.returncode}): {detail}"
             ) from exc
 
     try:
@@ -269,6 +279,18 @@ def _shutil_check() -> None:
         raise SBOMGenerationError(f"Python executable not found: {sys.executable}")
 
 
+def _output_path_contains_dist_segment(output: Path) -> bool:
+    """Return True when ``output`` would write into a ``dist`` segment.
+
+    Codex iter-2 absorb — direct parent check missed nested
+    ``dist/sbom/...`` shapes. We now reject ANY ``dist`` segment
+    anywhere in the resolved path so the SBOM truly stays outside
+    the PyPI distribution whitelist.
+    """
+    parts = output.resolve().parts
+    return "dist" in parts
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="generate_sbom",
@@ -294,8 +316,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     _shutil_check()
-    if args.output.parent.resolve().name == "dist":
-        # Codex iter-1 invariant — never write into dist/ (twine whitelist).
+    if _output_path_contains_dist_segment(args.output):
+        # Codex iter-1 + iter-2 invariant — never write under any
+        # ``dist`` path segment (twine whitelist guards release).
         print(
             f"::error::SBOM output path must NOT be inside dist/ (got {args.output}). "
             "publish.yml will reject non-distribution files.",

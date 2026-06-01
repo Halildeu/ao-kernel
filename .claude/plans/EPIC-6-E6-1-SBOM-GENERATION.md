@@ -110,7 +110,7 @@ Bu dosya.
 | Konu | Sonra |
 |---|---|
 | `.github/workflows/publish.yml` SBOM step | E-6-1b — workflow_dispatch path + `permissions.contents: write` + `gh release view || create --verify-tag` + tag-based VERSION extraction |
-| GitHub Release artifact upload | E-6-1b — `gh release upload v$VERSION dist/...sbom.cdx.json` (NOT dist/ — separate path) |
+| GitHub Release artifact upload | E-6-1b — `gh release upload "$TAG" build/sbom/ao_kernel-${VERSION}-sbom.cdx.json` (NEVER `dist/...` — twine whitelist) |
 | Workflow invariant tests | E-6-1b — `tests/test_publish_workflow.py` extend: SBOM step exists, `dist/` whitelist unchanged, contents:write permission present |
 | Sigstore/cosign signing | Epic 6 follow-up slice veya Epic 9 final promotion |
 | SHA256 checksum file | E-6-1b veya Epic 6 follow-up |
@@ -151,6 +151,10 @@ Bu dosya.
   integration (Codex 8. madde absorb) — workflow change is its own
   validation surface; E-6-1b ships separately.
 - HARD RULE — Continuous Autonomous Mode: PR #793 chicken-and-egg ile
-  bağlantılı; ao-release-gate kendi PR'ında fail ettiği için bu PR'ın
-  da CI'ı operatör action gerektirir. Plan doc bu durum için ayrı
-  follow-up belgelemek yerine bağımlılık olarak işaretler.
+  bağlantılı; ao-release-gate her PR'da `review_evidence_missing`
+  structural fail veriyor (workflow reviewer evidence üretim adımı
+  CI runtime'da fail oluyor). Bu PR merge için: önce PR #793 main'e
+  alınır (CODEOWNER review + taksonomi extension live olur), sonra
+  bu branch re-CI gerekir; merge kararı canlı required check'ler
+  yeşil olduktan sonra (operator action değil, semantic state
+  change sonrası otomatik path).
