@@ -115,9 +115,17 @@ def _validate_hex(value: str, expected_len: int, field_name: str) -> None:
         raise ValueError(f"{field_name} must be a string; got {type(value).__name__}")
     if len(value) != expected_len:
         raise ValueError(f"{field_name} must be {expected_len} hex chars; got length {len(value)}")
-    lowered = value.lower()
-    if not set(lowered).issubset(_HEX_CHARS):
+    # Codex 019e8360 iter-2 absorb — reject uppercase explicitly.
+    # W3C traceparent is lowercase only; ``"A" * 32`` would otherwise
+    # silently pass since uppercase A is not in _HEX_CHARS but lower()
+    # would have masked the case rejection.
+    if not set(value).issubset(_HEX_CHARS):
         raise ValueError(f"{field_name} must be lowercase hex; got {value!r}")
+    # Codex 019e8360 iter-2 absorb — reject all-zero ids. A zero
+    # SpanContext fails ``is_valid`` and would yield an unusable Link;
+    # reject at the validation boundary so callers get a clear error.
+    if int(value, 16) == 0:
+        raise ValueError(f"{field_name} must not be all-zero; got {value!r}")
 
 
 # ── W3C inject / extract ────────────────────────────────────────────
@@ -152,8 +160,18 @@ def inject_trace_context(carrier: dict[str, str]) -> dict[str, str]:
 def extract_trace_context(carrier: dict[str, str]) -> Any | None:
     """Extract OTEL ``Context`` from the W3C carrier dict.
 
-    Returns ``None`` when OTEL is absent, or when the carrier contains
-    no ``traceparent`` header (extracted context would be empty).
+    Returns ``None`` when OTEL is absent, when the carrier contains
+    no ``traceparent`` key, OR when the extracted span context fails
+    ``is_valid`` (malformed traceparent value).
+
+    Carrier-key contract (Codex 019e8360 iter-2 absorb): this function
+    accepts the **lowercase W3C JSON carrier form**, i.e. exactly the
+    key ``"traceparent"`` (optionally ``"tracestate"``). HTTP header
+    objects with title-case keys (e.g. ``"Traceparent"``) are NOT
+    case-normalized here; callers that bridge from HTTP frameworks
+    should lowercase keys before passing the carrier in. This keeps
+    the contract identical to the inject side, where the default
+    OTEL propagator emits lowercase keys.
     """
     if not isinstance(carrier, dict):
         raise TypeError(f"carrier must be dict[str, str]; got {type(carrier).__name__}")
@@ -163,8 +181,18 @@ def extract_trace_context(carrier: dict[str, str]) -> Any | None:
         return None
 
     from opentelemetry.propagate import extract
+    from opentelemetry.trace import get_current_span
 
-    return extract(carrier)
+    ctx = extract(carrier)
+    # Codex 019e8360 iter-2 absorb — guard against malformed
+    # traceparent producing a non-None but invalid context. Callers
+    # use ``if ctx is not None`` and would otherwise get a false
+    # positive for an unusable extracted span.
+    span = get_current_span(ctx)
+    span_ctx = span.get_span_context()
+    if span_ctx is None or not span_ctx.is_valid:
+        return None
+    return ctx
 
 
 # ── attach / detach + traced_context manager ────────────────────────

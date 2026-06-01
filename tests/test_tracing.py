@@ -280,3 +280,82 @@ def test_make_link_accepts_empty_attributes() -> None:
         "b7ad6b7169203331",
     )
     assert link is not None
+    # Codex 019e8360 iter-2 absorb — Link context must be remote and
+    # valid (cross-trace SpanContext convention).
+    assert link.context.is_remote is True
+    assert link.context.is_valid is True
+
+
+# ── Codex 019e8360 iter-2 absorb — extra invariants ─────────────────
+
+
+def test_make_link_rejects_uppercase_hex() -> None:
+    """W3C traceparent is lowercase only. Uppercase A-F must reject."""
+    with pytest.raises(ValueError, match="lowercase hex"):
+        tracing.make_link("A" * 32, "b7ad6b7169203331")
+    with pytest.raises(ValueError, match="lowercase hex"):
+        tracing.make_link("0af7651916cd43dd8448eb211c80319c", "B" * 16)
+
+
+def test_make_link_rejects_all_zero_trace_id() -> None:
+    """All-zero trace_id fails is_valid in OTEL; reject at validation."""
+    with pytest.raises(ValueError, match="must not be all-zero"):
+        tracing.make_link("0" * 32, "b7ad6b7169203331")
+
+
+def test_make_link_rejects_all_zero_span_id() -> None:
+    """All-zero span_id fails is_valid in OTEL; reject at validation."""
+    with pytest.raises(ValueError, match="must not be all-zero"):
+        tracing.make_link("0af7651916cd43dd8448eb211c80319c", "0" * 16)
+
+
+def test_extract_returns_none_for_malformed_traceparent() -> None:
+    """Codex 019e8360 iter-2 absorb — invalid traceparent value used
+    to silently pass through extract(); we now guard against the
+    resulting invalid span context."""
+    if not tracing.is_otel_available():
+        pytest.skip("OTEL not installed")
+    # Random non-W3C string in the traceparent slot
+    assert tracing.extract_trace_context({"traceparent": "not-a-valid-traceparent"}) is None
+    # Wrong version byte
+    assert (
+        tracing.extract_trace_context({"traceparent": "ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"})
+        is None
+    )
+    # All-zero ids
+    assert (
+        tracing.extract_trace_context({"traceparent": "00-00000000000000000000000000000000-b7ad6b7169203331-01"})
+        is None
+    )
+
+
+def test_extract_ignores_title_case_traceparent_per_contract() -> None:
+    """Carrier-key contract is lowercase W3C JSON form. Title-case
+    'Traceparent' must NOT be extracted (Codex 019e8360 iter-2
+    absorb — caller must lowercase HTTP headers first)."""
+    if not tracing.is_otel_available():
+        pytest.skip("OTEL not installed")
+    # Title-case key is ignored by this surface
+    assert (
+        tracing.extract_trace_context({"Traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"})
+        is None
+    )
+
+
+def test_inject_does_not_fabricate_traceparent_without_active_span() -> None:
+    """Codex 019e8360 iter-2 absorb — when no recording span is
+    active, the default OTEL propagator MUST NOT add a traceparent
+    key to the carrier. Previous test only asserted unrelated keys
+    were preserved; this one pins the must-close invariant directly."""
+    if not tracing.is_otel_available():
+        pytest.skip("OTEL not installed")
+    carrier: dict[str, str] = {}
+    tracing.inject_trace_context(carrier)
+    assert "traceparent" not in carrier, "default propagator must not fabricate traceparent when no active span"
+
+
+def test_attach_context_with_none_returns_none() -> None:
+    """attach_context(None) returns None (no token); detach_context(None) is a no-op."""
+    assert tracing.attach_context(None) is None
+    # detach with None token must not raise
+    tracing.detach_context(None)
