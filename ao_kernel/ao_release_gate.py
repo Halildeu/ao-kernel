@@ -1825,17 +1825,24 @@ def build_review_check_run(
 ) -> AoReleaseGateCheckRun:
     """Build the ``ao-release-gate-review`` check-run shape.
 
-    Review check covers only CODEOWNER review pending on the current PR
-    head. It deliberately ignores failure / stale findings; those are
-    published on the companion ``ao-release-gate-technical`` check.
+    Review check covers reviewer/operator-action signals on the current
+    PR head: a pending CODEOWNER review, OR a procedurally-fixable review
+    evidence finding (019e830d extension —
+    ``review_evidence_not_accepting`` and
+    ``review_evidence_context_unverifiable``). It deliberately ignores
+    failure / stale findings; those are published on the companion
+    ``ao-release-gate-technical`` check.
 
     Conclusion:
 
     - ``shadow`` mode: ``success`` when no review-action finding;
-      ``neutral`` when review pending.
+      ``neutral`` when any review-action finding is present.
     - ``enforce`` mode: ``success`` when no review-action finding;
-      ``action_required`` when CODEOWNER review missing (this conclusion
-      does NOT satisfy required status check; merge stays blocked).
+      ``action_required`` when any review-action finding (CODEOWNER review
+      missing OR procedural evidence finding). This conclusion does NOT
+      satisfy a required status check; merge stays blocked until the
+      operator/reviewer resolves it (submit CODEOWNER review, accept
+      evidence, or re-run when context becomes verifiable).
 
     Operator UI signal: ``action_required`` surfaces as "needs attention"
     rather than "failing", honoring the operator HARD RULE that approve
@@ -1844,10 +1851,14 @@ def build_review_check_run(
 
     review_findings = _findings_for_kind(findings, "review_action")
     summary = (
-        "CODEOWNER review pending on current head." if review_findings else "CODEOWNER review present or not required."
+        "Reviewer/operator action required on current head."
+        if review_findings
+        else "No reviewer/operator action required."
     )
     text = (
-        "Review findings: " + ", ".join(review_findings) if review_findings else "No review-pending findings recorded."
+        "Review-action findings: " + ", ".join(review_findings)
+        if review_findings
+        else "No review-action findings recorded."
     )
     conclusion: GithubCheckConclusion
     if not review_findings:

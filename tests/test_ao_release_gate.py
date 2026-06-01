@@ -1526,6 +1526,27 @@ class TestWrapperExitCode:
             == 1
         )
 
+    def test_pr764_exact_procedural_pair_wrapper_zero(self) -> None:
+        # Codex 019e830d iter-2 absorb: PR #764's *exact* finding pair
+        # (not_accepting + context_unverifiable). Pins the regression
+        # signal at the wrapper boundary.
+        findings = [
+            "ao_release_gate_review_evidence_not_accepting",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ]
+        assert wrapper_exit_code(DENY_MISSING_EVIDENCE_DECISION, findings) == 0
+
+    def test_structural_pair_wrapper_one(self) -> None:
+        # Codex 019e830d iter-2 absorb: real decision-core often emits
+        # both structural and procedural findings in the same set
+        # (artifact missing AND context unverifiable). Wrapper must
+        # still fail closed when ANY blocker is structural failure.
+        findings = [
+            "ao_release_gate_review_evidence_missing",
+            "ao_release_gate_review_evidence_context_unverifiable",
+        ]
+        assert wrapper_exit_code(DENY_MISSING_EVIDENCE_DECISION, findings) == 1
+
     def test_stale_branch_returns_one(self) -> None:
         # Stale branch is not a review-action blocker; wrapper does not relax.
         assert (

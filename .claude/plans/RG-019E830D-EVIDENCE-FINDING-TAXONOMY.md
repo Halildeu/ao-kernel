@@ -149,15 +149,29 @@ yansıyor; type değişikliği yok. Decision JSON shape değişmiyor.
 
 ## 5. Etki
 
-- **PR #764:** taksonomi merge sonrası kendi gate'i `action_required`
-  döner; wrapper exit 0; required check yeşil (CODEOWNER review veya
-  GitHub `require_code_owner_reviews` rule pasif olduğu için). Re-run
-  + merge.
-- **Gelecek high-risk PR'lar:** evidence dosyası eksik durumlar
+- **PR #764:** taksonomi merge sonrası kendi gate'i kırmızı CI üretmez:
+  - Legacy wrapper `ao-release-gate` artık kırmızı dönmez (exit 0).
+  - Yeni `ao-release-gate-technical` `success` döner (procedural findings
+    filtered out).
+  - Yeni `ao-release-gate-review` `action_required` döner — required
+    check ise merge **hâlâ bloklu**.
+  - Merge için: operatör CODEOWNER review submit eder, VEYA review
+    evidence file commit + accept edilir, VEYA context_unverifiable
+    sebebi external (network/eventual consistency) ise re-run.
+  - Otomatik "rerun + merge" YOK — `action_required` required check
+    satisfaction değildir.
+- **Gelecek high-risk PR'lar:** sadece `review_evidence_not_accepting`
+  veya `review_evidence_context_unverifiable` bulgusu olduğunda
   "kırmızı CI" yerine "operatör action required" gösterir; doğru
   semantik signal.
-- **Gerçek defects (missing artifact, schema invalid, forged binding):**
-  failure kalır; gate sertliği korunur.
+- **Structural evidence defects** (`review_evidence_missing`,
+  `review_evidence_schema_invalid`, `review_evidence_context_unbound`):
+  hâlâ failure; kırmızı CI; gate sertliği korunur. Bu durumda
+  evidence artifact'in kendisi bozuk veya yok — procedural değil,
+  defect; üretilmesi/düzeltilmesi gerek.
+- **Boundary violations** (admin bypass, secret context, live adapter,
+  GPP boundary open, PAT-backed bot, AI release authority):
+  taksonomi taraması dışında; failure kalır.
 
 ## 6. Acceptance
 
@@ -168,6 +182,34 @@ yansıyor; type değişikliği yok. Decision JSON shape değişmiyor.
   `019df...` veya yeni thread).
 - PR squash mesajı: `Implementer: Anthropic Claude` /
   `Reviewer: OpenAI Codex` audit trail.
+
+## 6.1. Required-check topology önkoşulu (operatör doğrulama)
+
+Bu fix'in güvenliği, GitHub branch protection / ruleset üzerinde şu
+iki check'in required + source-pinned olmasına bağlıdır:
+
+- `ao-release-gate-technical`
+- `ao-release-gate-review`
+
+Eğer sadece legacy wrapper `ao-release-gate` required ise, bu patch
+wrapper'ı yeşile çevirerek (review-action-only case) merge'i fazla
+gevşetebilir. Repo SSOT (ao-ma-10 dual source-pinned model) bu modeli
+destekliyor; ancak merge öncesi operatör live ruleset'i doğrulamalı:
+
+```bash
+gh api repos/Halildeu/ao-kernel/rules/branches/main \
+  --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context'
+```
+
+Beklenen output (en az):
+```
+ao-release-gate-technical
+ao-release-gate-review
+```
+
+Codex iter-2 absorb: live ruleset bu turda sandbox/TMP/network kısıtı
+sebebiyle Codex tarafında doğrulanamadı. Merge öncesi operatör veya
+ao-release-gate-publish-check-runs.py kontrolü gerek.
 
 ## 7. Bağlantı
 
