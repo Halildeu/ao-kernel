@@ -175,7 +175,8 @@ yansıyor; type değişikliği yok. Decision JSON shape değişmiyor.
 
 ## 6. Acceptance
 
-- Local test: `pytest tests/test_ao_release_gate.py -x` (440+ pass).
+- Local test: `pytest tests/test_ao_release_gate.py -x` (111 pass).
+- Broader local: `pytest tests/ -k "release_gate or ao_ma10" -x` (440 pass + 2 skip).
 - Local lint: `ruff check ao_kernel/ tests/`.
 - Local type: `mypy ao_kernel/ scripts/ --ignore-missing-imports`.
 - Cross-AI post-impl review (Codex thread `019e830d` reply ile
@@ -209,7 +210,7 @@ ao-release-gate-review
 
 Codex iter-2 absorb: live ruleset bu turda sandbox/TMP/network kısıtı
 sebebiyle Codex tarafında doğrulanamadı. Merge öncesi operatör veya
-ao-release-gate-publish-check-runs.py kontrolü gerek.
+`scripts/ao_release_gate_publish_check_runs.py` kontrolü gerek.
 
 ## 7. Bağlantı
 
