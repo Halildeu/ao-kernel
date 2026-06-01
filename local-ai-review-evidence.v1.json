@@ -1,15 +1,21 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "AO-MA-STATUS-11G-DONE-MARK",
+  "work_package": "AO-MA-11E-2A-MIRROR-DRIFT-CHECKER",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/chore/ao-ma-status-11g-done",
+    "head_ref": "refs/heads/codex/ao-ma-11e-2a-mirror-drift-checker",
     "changed_files": [
-      ".claude/plans/ao_ma_status.v1.json",
-      "local-ai-review-evidence.v1.json"
+      ".claude/plans/AO-MA-11E-2A-MIRROR-DRIFT-CHECKER.md",
+      "ao_kernel/_internal/ao_ma/__init__.py",
+      "ao_kernel/_internal/ao_ma/github_mirror_drift.py",
+      "ao_kernel/defaults/schemas/ao-ma-github-mirror-drift-report.schema.v1.json",
+      "local-ai-review-evidence.v1.json",
+      "scripts/ao_ma11e2_v5_mirror_drift.py",
+      "tests/test_ao_ma11e2a_mirror_drift_checker.py",
+      "tests/test_ao_ma11e2a_schema_invariant.py"
     ]
   },
   "checks_considered": [
@@ -23,12 +29,15 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "AO-MA-STATUS-11G-DONE-MARK: AO-MA-SPM master plan core SON FAZ (AO-MA-11G core slice 11G-1) landed (PR #767 MERGED main f1dc032). Bu PR status manifest reflektion: phase 11G slice 11G-1 status in_progress -> done. NOT 7/7 production-ready claim; SON FAZ semantic = core capabilities all landed. 2 phase (11A + 11E) hâlâ in_progress for sub-slice follow-up (11A-2 GH Environment ao-ma-plan-approval gate wiring, 11E-2 GH Projects/Milestone one-way sync + drift checker); plus 11G-2 (CI/pre-commit changelog enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation + allowlist widening for CHANGELOG/pyproject). Follow-up sub-slices demand-driven.",
-    "Status reflection vs flag flip: bu PR status manifest reflektion only (5/7 phase=done + 2 in_progress phase for sub-slice follow-up); HİÇBİR guard flag flip içermez. live_adapter_execution=false; support_widening=false; production_platform_claim=false unchanged. 5/7 core landing production-ready claim DEĞİL; narrow stable runtime framing devam (v4.1.0 PyPI published 2026-06-01 via PR #787 publish-fix workflow_dispatch).",
-    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread 019e8219 iter-1 REVISE (wording 7/7 overclaim + branch stale) → absorbed. iter-2 REVISE (evidence findings stale 7-phase wording) → absorbed.",
-    "Branch rebased on origin/main (5fede58 after PR #787 publish-fix merge; PR #786 V5 evidence write-back was a87682b base before publish-fix); 1 commit (status manifest update) replayed cleanly with --theirs evidence conflict resolution; force-pushed origin/chore/ao-ma-status-11g-done.",
-    "Diff scope: 2 dosya (ao_ma_status.v1.json + local-ai-review-evidence.v1.json). Status manifest 4-key amend: phases[6].status in_progress -> done (11G slice 11G-1 MERGED), progress_estimates.phases.done_count 4 -> 5 (5/7 core landed), progress_estimates.phases.percent 57 -> 71 (5/7), progress_estimates.phases.next_phase_id AO-MA-11G -> null (no further core SON FAZ), next_allowed_actions content (11A-2 + 11E-2 + 11G-2 follow-up sub-slice references). Evidence dosyası work_package=AO-MA-STATUS-11G-DONE-MARK (önceki PR #786 V5-PR-X2-EVIDENCE-WRITEBACK + PR #787 AO-MA-11G-2c-PUBLISH-FIX evidence çevriminde main'de).",
-    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change introduced. Sadece .claude/plans/ao_ma_status.v1.json + evidence."
+    "AO-MA-11E-2A-MIRROR-DRIFT-CHECKER: V5 manuel mirror create chain (PR #771 + #772 + #786) tamamlandi; bu PR drift checker binding adapter MVP (read-only). 11E-2 plan §7 scope (write sync workflow + anchor injection + canli mirror drift + sync_state lifecycle) 11E-2b/c LATER guard-flipped slices. Bu PR sadece 11E-2a (read-only): generic engine github_mirror_drift.py (pure stdlib + DI gh_api_caller) + V5-specific CLI ao_ma11e2_v5_mirror_drift.py + schema ao-ma-github-mirror-drift-report.v1 (Draft 2020-12 strict + allOf if/then invariants).",
+    "Codex plan-time consensus thread 019e8230: REVISE (AGREE-with-revisions; 6 sub-decisions absorbed) -> ready_for_impl=true. (A) Scope 11E-2a read-only + 11E-2b write sync LATER + 11E-2c scheduled LATER. (B) Network: gh_api_caller DI + --allow-network explicit flag + mock-only tests + token never in log/report. (C) Anchor parse: markdown strict regex 5 fields, duplicate/missing/unknown reject, SHA format validate, placeholder rejection. (D) Severity: tum semantic drift fail-closed (exit != 0); severity tier sadece rapor ergonomi {blocker, info}; no warning tier. (E) Generic engine + V5-specific manifest path/expected counts. (F) Module naming generic core + V5-specific CLI.",
+    "Core module (ao_kernel/_internal/ao_ma/github_mirror_drift.py): public types DriftReport/DriftFinding/ExitDecision/AnchorParseResult dataclass/Enum; pure stdlib (hashlib + json + re + pathlib + dataclasses + typing + enum); NO requests/httpx/urllib/subprocess/gh import; gh_api_caller dependency injected (testlerde mock). check_github_mirror_drift() compares: milestone presence + metadata (title), issue inventory (missing/extra), per-issue labels (set equality), per-issue anchor markdown strict parse (5 fields + SHA pattern + placeholder rejection + duplicate/unknown rejection), project presence + item count.",
+    "Schema (ao-ma-github-mirror-drift-report.schema.v1.json): Draft 2020-12 strict; additionalProperties:false at root + drift item + expected_counts; required all critical fields; const schema_version + drift category enum (12 values) + severity enum {blocker, info} + exit_decision enum (5 values); SHA pattern ^sha256:[0-9a-f]{64}$; allOf if/then invariants (synced->empty drift, mirror_drift_detected->non-empty drift, network_not_allowed->network_allowed:false). 14 schema invariant test pin'ler.",
+    "CLI (scripts/ao_ma11e2_v5_mirror_drift.py): argparse thin wrapper; gh CLI subprocess adapter (ONLY CLI layer); token resolution env-var only (HARD RULE secret payload yasak); defensive belt-and-suspenders token leakage check (refuses output containing literal token value). Exit codes 0=synced, 1=drift, 2=usage/network, 3=api_error.",
+    "Tests (25 + 14 = 39 total): test_ao_ma11e2a_mirror_drift_checker.py (happy path + 12 drift categories + API error + 4 exit codes + schema envelope + token redaction + anchor parser unit + DriftFinding validation rejection); test_ao_ma11e2a_schema_invariant.py (schema Draft 2020-12 valid + additionalProperties:false + const schema_version + 3 enum pins + 3 allOf invariants + SHA pattern + parametrized round-trip 4 ExitDecision states). ruff + mypy clean.",
+    "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex plan-time thread 019e8230 AGREE-with-revisions absorbed. Post-impl review imminent yeni thread.",
+    "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. GitHub write yok (read-only checker); core module subprocess/network yok. PyPI publish yok. Public claim language UNCHANGED (roadmap; production-ready final PR'a kadar yasak). No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change, .github change introduced.",
+    "V5 Epic 1 E-1-2 sub-issue (#774 Epic 1 reference) — first E-1-X sub-slice landing; 11E-2b/c follow-up sub-slices demand-driven."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
