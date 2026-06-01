@@ -119,6 +119,116 @@ def test_canonical_digest_format_is_sha256_prefixed():
     assert len(digest) == len("sha256:") + 64
 
 
+def test_canonical_digest_stable_under_planned_changes_reordering():
+    """Codex iter-3 §3 absorb: digest MUST be stable when planned_changes is in
+    a different order (set iteration would otherwise produce non-deterministic
+    output across runs/PYTHONHASHSEED values).
+    """
+    base = {
+        "schema_version": "ao-ma-github-mirror-sync-report.v1",
+        "projection_manifest": "x.json",
+        "manifest_sha256": "sha256:" + "0" * 64,
+        "github_owner": "Halildeu",
+        "github_repo": "ao-kernel",
+        "expected_counts": {"issues": 0, "labels": 0, "project_items": 0},
+        "planned_changes": [
+            {
+                "category": "label_add",
+                "object_type": "label",
+                "object_id": "774:epic-1",
+                "before": None,
+                "after": "epic-1",
+            },
+            {
+                "category": "label_add",
+                "object_type": "label",
+                "object_id": "775:epic-2",
+                "before": None,
+                "after": "epic-2",
+            },
+            {
+                "category": "issue_body_rewrite",
+                "object_type": "issue",
+                "object_id": "774",
+                "before": "x",
+                "after": "y",
+            },
+        ],
+    }
+    reordered = dict(base)
+    reordered["planned_changes"] = list(reversed(base["planned_changes"]))
+    assert compute_canonical_plan_digest(base) == compute_canonical_plan_digest(reordered), (
+        "digest MUST be stable when planned_changes order varies"
+    )
+
+
+def test_plan_label_changes_emit_in_sorted_order(tmp_path):
+    """Codex iter-3 §3 absorb: plan computation emits sorted set-difference
+    iteration (label_add + label_remove), so digest is stable across runs.
+    """
+    # Build manifest with multiple expected mirror labels for a single issue
+    manifest = {
+        "schema_version": "v5-issue-projection.v1",
+        "labels": [],
+        "first_wave_issues": [
+            {
+                "id": "E-1",
+                "title": "x",
+                "labels": ["epic-1", "guard-flip:live_adapter", "status:planned"],
+                "body_anchor": {
+                    "spm_anchor": "X",
+                    "slice_id": "Y",
+                    "ao_authority_artifact": "p",
+                    "artifact_sha256": _VALID_ARTIFACT_SHA,
+                    "plan_digest": _VALID_PLAN_DIGEST,
+                },
+                "metadata": {},
+            }
+        ],
+        "runtime_created_state": {
+            "milestone": {"number": 3, "title": "x"},
+            "issues_created": {"E-1": 774},
+            "project_board": {"number": 3, "node_id": "PVT_x", "items_count": 1},
+            "issue_anchor_pin": {
+                "artifact_sha256_at_issue_creation": _VALID_ARTIFACT_SHA,
+                "plan_digest_at_issue_creation": _VALID_PLAN_DIGEST,
+            },
+        },
+    }
+    path = tmp_path / "m.json"
+    path.write_text(json.dumps(manifest))
+
+    # Caller returns issue with NO mirror labels
+    def caller(method, path_, body=None):
+        if path_ == ("/repos/Halildeu/ao-kernel/issues?milestone=3&state=all&per_page=100"):
+            return [{"number": 774, "body": "x", "labels": []}]
+        if path_ == "graphql:project_items:PVT_x":
+            return {
+                "items": [
+                    {
+                        "id": "i1",
+                        "content": {
+                            "number": 774,
+                            "url": "https://github.com/Halildeu/ao-kernel/issues/774",
+                        },
+                    }
+                ]
+            }
+        raise KeyError(path_)
+
+    report = sync_v5_mirror(
+        projection_manifest_path=path,
+        gh_api_caller=caller,
+        network_allowed=True,
+        token_present=True,
+        apply_mode=False,
+        now_iso=_now(),
+    )
+    # Extract label_add object_ids in emission order
+    label_adds = [c.object_id for c in report.planned_changes if c.category == "label_add"]
+    assert label_adds == sorted(label_adds), f"label_add changes MUST be emitted in sorted order; got {label_adds}"
+
+
 _VALID_ARTIFACT_SHA = "sha256:" + "0" * 64
 _VALID_PLAN_DIGEST = "sha256:" + "f" * 64
 _VALID_ACCEPTED_DIGEST = "sha256:" + "a" * 64

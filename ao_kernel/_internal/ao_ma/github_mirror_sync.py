@@ -287,11 +287,26 @@ def compute_canonical_plan_digest(report_dict: dict[str, Any]) -> str:
     snapshots, environment_preflight, sync_state, reason, network/token
     metadata, apply_mode, confirmation. Same manifest + same actual GitHub
     state → same digest, regardless of run timing.
+
+    Codex iter-3 absorb: `planned_changes` is also sorted by (category,
+    object_type, object_id) before hashing so PYTHONHASHSEED-induced set
+    iteration order does NOT change the digest. This is defense-in-depth
+    on top of `_plan_*_changes()` already producing sorted output.
     """
     canonical: dict[str, Any] = {}
     for k in _CANONICAL_DIGEST_FIELDS:
         if k in report_dict:
             canonical[k] = report_dict[k]
+    # Sort planned_changes deterministically (Codex iter-3 §3 absorb).
+    if "planned_changes" in canonical and isinstance(canonical["planned_changes"], list):
+        canonical["planned_changes"] = sorted(
+            canonical["planned_changes"],
+            key=lambda c: (
+                c.get("category", ""),
+                c.get("object_type", ""),
+                c.get("object_id", ""),
+            ),
+        )
     blob = json.dumps(canonical, sort_keys=True, separators=(",", ":"))
     return "sha256:" + hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -360,7 +375,9 @@ def _plan_label_changes(
         # Mirror-managed slice only — foreign labels preserved
         expected_mirror = {lb for lb in expected_labels if _is_mirror_managed_label(lb)}
         actual_mirror = {lb for lb in actual_label_names if _is_mirror_managed_label(lb)}
-        for missing in expected_mirror - actual_mirror:
+        # Codex iter-3 absorb: deterministic sort across set differences so
+        # PYTHONHASHSEED-induced iteration order does NOT change the plan.
+        for missing in sorted(expected_mirror - actual_mirror):
             changes.append(
                 ChangeRecord(
                     category="label_add",
@@ -370,7 +387,7 @@ def _plan_label_changes(
                     after=missing,
                 )
             )
-        for extra in actual_mirror - expected_mirror:
+        for extra in sorted(actual_mirror - expected_mirror):
             changes.append(
                 ChangeRecord(
                     category="label_remove",
@@ -393,7 +410,8 @@ def _plan_project_item_changes(
     expected_issue_numbers = set(runtime_state.get("issues_created", {}).values())
     expected_urls = {f"https://github.com/{repo_owner}/{repo_name}/issues/{n}" for n in expected_issue_numbers}
     changes: list[ChangeRecord] = []
-    for missing_url in expected_urls - actual_project_urls:
+    # Codex iter-3 absorb: deterministic sort across set differences.
+    for missing_url in sorted(expected_urls - actual_project_urls):
         changes.append(
             ChangeRecord(
                 category="project_item_add",
@@ -403,7 +421,7 @@ def _plan_project_item_changes(
                 after=missing_url,
             )
         )
-    for extra_url in actual_project_urls - expected_urls:
+    for extra_url in sorted(actual_project_urls - expected_urls):
         changes.append(
             ChangeRecord(
                 category="project_item_remove",
