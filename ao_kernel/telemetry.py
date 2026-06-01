@@ -42,6 +42,7 @@ def _check_otel() -> bool:
         return _OTEL_AVAILABLE
     try:
         from opentelemetry import trace, metrics  # noqa: F401
+
         _OTEL_AVAILABLE = True
     except ImportError:
         _OTEL_AVAILABLE = False
@@ -55,6 +56,7 @@ def _get_tracer() -> Any:
     if not _check_otel():
         return None
     from opentelemetry import trace
+
     _tracer = trace.get_tracer("ao-kernel", "0.1.0")
     return _tracer
 
@@ -66,6 +68,7 @@ def _get_meter() -> Any:
     if not _check_otel():
         return None
     from opentelemetry import metrics
+
     _meter = metrics.get_meter("ao-kernel", "0.1.0")
     return _meter
 
@@ -107,6 +110,7 @@ _NOOP_SPAN = _NoOpSpan()
 def span(
     name: str,
     attributes: dict[str, Any] | None = None,
+    links: list[Any] | None = None,
 ) -> Iterator[Any]:
     """Create a traced span. No-op if OTEL not installed.
 
@@ -114,6 +118,19 @@ def span(
         with telemetry.span("ao.llm_call", {"gen_ai.system": "openai"}) as s:
             s.set_attribute("gen_ai.response.model", model)
             # ... do work ...
+
+    Cross-trace link (V5 Epic 5 E-5-3a — distributed tracing):
+
+        from ao_kernel.tracing import make_link
+        link = make_link(other_trace_id, other_span_id,
+                         attributes={"ao.link.kind": "follows_from"})
+        with telemetry.span("ao.consultation.response", links=[link] if link else None):
+            ...
+
+    ``links`` accepts a list of ``opentelemetry.trace.Link`` instances
+    (built via ``ao_kernel.tracing.make_link``). ``None`` (default)
+    preserves the existing behavior. Each link records a cross-trace
+    relationship without merging traces.
     """
     tracer = _get_tracer()
     if tracer is None:
@@ -121,7 +138,8 @@ def span(
         return
 
     from opentelemetry import trace
-    with tracer.start_as_current_span(name, attributes=attributes) as s:
+
+    with tracer.start_as_current_span(name, attributes=attributes, links=links) as s:
         try:
             yield s
         except Exception as exc:
