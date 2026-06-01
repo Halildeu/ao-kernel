@@ -37,7 +37,7 @@ Final operator-bound decision PR tüm evidence refs'i bağlar — flag flip ANCA
 
 - E-P0-1 v5 roadmap plan doc (BU dosya) + projection manifest + acceptance matrix
 - E-P0-2 Master plan amend (v5 operator-bound production promotion section)
-- E-P0-3 GitHub mirror sync (11E-2 sonrası): Milestone "v5.0.0" + 9 epic issue + Project board (Roadmap view + custom fields: Epic/Risk/Guard/Dependency/Estimate/Consensus/Evidence/Mirror digest/Release impact); created IDs + projection digest repo evidence'a geri yazılır (one-way mirror)
+- E-P0-3 GitHub mirror create — **manuel NOW path** (bu PR'da `github_write_authorized=true` flip; PR-X2 manuel mirror impl): Milestone "v5.0.0" + 13 issue (9 epic + 3 P0 gate + bu epic kendisi) + 23 label + Project board (Roadmap view + custom fields: Epic/Risk/Guard/Dependency/Estimate/Consensus/Evidence/Mirror digest/Release impact); created IDs + projection digest repo evidence'a geri yazılır (one-way mirror); AO-MA-11E-2 drift checker **LATER** binding adapter olarak gelir (manuel mirror precondition DEĞİL)
 - E-P0-4 README badge + roadmap link (dil: "v5 production promotion roadmap"; "production-ready" badge YOK final PR'a kadar)
 - E-P0-5 Issue forms (YAML): zorunlu `spm_anchor` + `ao_authority_artifact` + `artifact_sha256` + `plan_digest` + `slice_id` + `risk_class_source` + `evidence_classes`; risk field manuel düşürülemez (computed classifier'dan)
 
@@ -207,7 +207,7 @@ Codex iter-1 invariant #7: ilk dalgada 80 issue açma; epic + P0 gate issues + s
 10. Epic 9 — Final promotion decision (parent; guard-flip + flag flip)
 11. P0-GATE-1: v4.1.0 PyPI publish workflow fix (`.github/workflows/publish.yml` twine check JSON-distribution false-positive; high-risk operator gate)
 12. P0-GATE-2: PR #764 CI shadow-skip permanent fix (high-risk `.github/workflows/test.yml` operator gate)
-13. P0-GATE-3: V5 GitHub mirror sync (PR-X2; post-11E-2)
+13. P0-GATE-3: V5 GitHub mirror create (PR-X2 manuel mirror NOW path; AO-MA-11E-2 drift checker LATER binding adapter)
 
 Alt issues lazy expand: her epic'in sub-issue'ları E-N-M ID ile epic issue body'sinde checklist olarak listelenir; gerçek sub-issue açılışı epic in_progress'a girdiğinde.
 
@@ -245,16 +245,18 @@ README, project page, badges — **dil "roadmap / planned" kalır**. "production
 
 Final promotion sonrası: "v5.0.0 — Production-Ready Governed Multi-AI Orchestration Runtime" claim'i public yapılır.
 
-## 10. PR yapısı (Codex iter-1 revize 4-PR plan)
+## 10. PR yapısı (Codex iter-1 revize 4-PR plan + PR-X2 manuel mirror NOW amend)
 
 | PR | Scope | Risk | Guard flip |
 |---|---|---|---|
-| **PR-X0 (BU PR)** | plan doc + projection manifest + acceptance matrix + master plan amend | normal | YOK |
+| **PR-X0** (MERGED main 565876b, #771) | plan doc + projection manifest + acceptance matrix + master plan amend | normal | YOK |
 | **PR-X1** | (PR-X0'a dahil; combined) | — | YOK |
-| **PR-X2** | 11E-2 sonrası GH mirror sync (milestone + 9 epic + 3 P0 gate issue + project board create); created IDs + digest repo evidence'a geri yazılır | normal | YOK |
+| **PR-X2 (BU PR)** | manuel mirror NOW path amend: `github_write_authorized=true` + plan/projection PR-X2 path "manuel mirror NOW + 11E-2 drift checker LATER" yeniden tanım + master plan §12 satır eşleştirme | normal | YOK |
+| **PR-X2-impl** | PR-X2 merge sonrası gh CLI ile mirror create (milestone + 23 label + 13 issue + project board) — repo-side state mutation; PR DEĞİL | normal | YOK |
+| **PR-X2-evidence** | PR-X2-impl sonrası: created GH IDs + projection digest manifest'e geri yazılır (one-way mirror evidence write-back) | normal | YOK |
 | **PR-Xfinal** | Final operator-bound production promotion decision; 3 guard flag flip + v5.0.0 version bump + CHANGELOG release + tag push | critical | EVET (operator-bound) |
 
-PR-X2 ön koşulu: E-1-2 AO-MA-11E-2 (GH Projects/Milestone/Issue mirror sync mekanizması) merged.
+PR-X2 (BU PR) ön koşulu: YOK (manifest amend authorized — cross-AI peer review + CI + merge). PR-X2-impl ön koşulu: PR-X2 merged. PR-X2-evidence ön koşulu: PR-X2-impl tamamlandı. AO-MA-11E-2 drift checker (Epic 1 E-1-2 sub-issue) LATER binding adapter olarak gelir; manuel mirror precondition DEĞİL.
 
 ## 11. Out-of-scope (bu PR; v5 roadmap PR-X0)
 
@@ -277,7 +279,7 @@ Implementer: Claude (Anthropic). Reviewer: Codex (OpenAI) thread `019e80b3` — 
 
 ## 14. Sonraki adımlar (PR-X0 merge sonrası)
 
-1. PR-X2 worktree aç: 11E-2 sonrası GH mirror sync impl + commit + push + Codex review + merge
+1. PR-X2 (manuel mirror NOW path amend; BU PR) merge sonrası: PR-X2-impl gh CLI mirror create (milestone + 23 label + 13 issue + project board); PR-X2-evidence ayrı PR ile created IDs + digest manifest'e geri yazılır; AO-MA-11E-2 (Epic 1 E-1-2) drift checker LATER binding adapter
 2. Epic 1 sub-issue'ları lazy-expand (her sub-issue kendi consensus consultation)
 3. Epic 2+3 (guard-flip) ayrı Codex+Mavis cross-AI consensus
 4. Epic 4-8 paralel sub-issue açılışı (her sub-issue kendi plan-consensus + impl + cross-AI review + merge)

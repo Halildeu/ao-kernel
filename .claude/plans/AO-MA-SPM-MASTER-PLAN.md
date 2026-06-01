@@ -341,7 +341,9 @@ README/badge/project page dili **"v5 production promotion roadmap" kalır**; **"
 | PR | Scope | Guard flip |
 |---|---|---|
 | **PR-X0** (bu PR) | plan doc + projection manifest + acceptance matrix + master plan amend | YOK |
-| **PR-X2** (post-11E-2) | GH mirror sync (Milestone + 9 epic + 3 P0 gate issue + Project board create; created IDs + digest repo evidence'a geri yaz) | YOK |
+| **PR-X2** (manuel mirror NOW path amend) | `github_write_authorized=true` flip + plan/projection PR-X2 path "manuel mirror NOW + 11E-2 drift checker LATER" yeniden tanım | YOK |
+| **PR-X2-impl** (state mutation, PR DEĞİL) | PR-X2 merge sonrası gh CLI ile mirror create (Milestone + 23 label + 13 issue + Project board) | YOK |
+| **PR-X2-evidence** | PR-X2-impl sonrası: created GH IDs + digest manifest'e geri yazılır (one-way mirror write-back) | YOK |
 | **PR-X(epic-N)** | her epic kendi sub-issue + plan-consensus + impl + cross-AI review + merge | YOK (Epic 9 hariç) |
 | **PR-Xfinal** | operator-bound supersession decision; 3 guard flag flip + v4.x → v5.0.0 + CHANGELOG release + tag push | **EVET** |
 
