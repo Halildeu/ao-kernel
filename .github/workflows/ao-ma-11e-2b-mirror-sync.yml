@@ -1,0 +1,183 @@
+name: AO-MA-11E-2b V5 Mirror Sync
+
+# AO-MA-11E-2b: V5 GitHub mirror write sync workflow.
+#
+# Dry-run path: runs without protected environment; produces sync_report.json.
+# Apply path: REQUIRES 7-condition compound gate (typed confirmation + accepted
+# digest + main branch + workflow_dispatch + run_attempt==1 + env protection).
+#
+# Operator dispatches via GitHub Actions UI (workflow_dispatch). Agent never
+# invokes apply autonomously; apply is operator-bound.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry-run mode (true = preview only; false = live apply)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      allow_apply:
+        description: "Allow live apply (must be true if dry_run=false)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      confirmation:
+        description: 'Typed confirmation; must equal "AO-MA-11E-2B-APPLY" for apply'
+        required: false
+        default: ""
+      accepted_dry_run_report_digest:
+        description: "SHA256 of accepted dry-run report (sha256:<64 hex>); required for apply"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  dry_run:
+    if: inputs.dry_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Run dry-run sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output sync_report.json
+      - name: Upload dry-run report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync_report
+          path: sync_report.json
+          retention-days: 90
+
+  apply:
+    # AO-MA-11E-2b 7-condition compound apply gate (Codex iter-1 §4 absorb).
+    # All conditions must be true for live GitHub write.
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.dry_run == 'false' &&
+      inputs.allow_apply == 'true' &&
+      inputs.confirmation == 'AO-MA-11E-2B-APPLY' &&
+      inputs.accepted_dry_run_report_digest != ''
+    runs-on: ubuntu-latest
+    # Environment protection gate (Codex iter-1 §5 absorb).
+    # Environment MUST be configured with required reviewers BEFORE this job runs;
+    # workflow's preflight step verifies and fail-closes if not.
+    environment: ao-ma-mirror-sync
+    steps:
+      - uses: actions/checkout@v6
+      - name: Environment preflight verify
+        # Codex iter-1 §3 absorb: count actual reviewers in the rule, not the
+        # number of rules. A single required_reviewers rule with 0 reviewers
+        # would otherwise pass the gate.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ENV_NAME="ao-ma-mirror-sync"
+          ENV_DATA=$(gh api "/repos/${{ github.repository }}/environments/$ENV_NAME" 2>&1) || {
+            echo "::error::Environment $ENV_NAME does not exist or is not accessible"
+            exit 1
+          }
+          # Sum reviewers across all required_reviewers rules (defensive against
+          # multiple rules; protection_rules format may evolve).
+          REVIEWER_COUNT=$(echo "$ENV_DATA" | jq '[.protection_rules[] | select(.type == "required_reviewers") | .reviewers[]?] | length')
+          if [ "$REVIEWER_COUNT" -lt 1 ]; then
+            echo "::error::Environment $ENV_NAME has 0 actual required reviewers"
+            exit 1
+          fi
+          echo "Environment preflight passed: $REVIEWER_COUNT required reviewers"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e ".[mcp]"
+      - name: Generate fresh dry-run inside apply job
+        # Codex iter-1 §1 absorb: apply job MUST NOT depend on cross-run artifact.
+        # dry_run job is skipped when dry_run=false; downloading its sync_report
+        # then is unreliable. Instead, run a fresh in-job dry-run and verify
+        # the operator-provided digest matches THIS run's report. This binds
+        # the digest to the apply run's own observed state.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output fresh_dry_run_report.json
+      - name: Verify operator digest matches fresh canonical plan
+        # Codex iter-2 absorb: digest is over the canonical (volatile-free)
+        # plan content, NOT the raw report (which contains run-specific
+        # `checked_at`). Same manifest + same actual GitHub state → same
+        # digest across runs.
+        run: |
+          FRESH_DIGEST=$(python3 -c "
+          import json
+          from ao_kernel._internal.ao_ma.github_mirror_sync import compute_canonical_plan_digest
+          report = json.load(open('fresh_dry_run_report.json'))
+          print(compute_canonical_plan_digest(report))
+          ")
+          OPERATOR_DIGEST="${{ inputs.accepted_dry_run_report_digest }}"
+          if [ "$FRESH_DIGEST" != "$OPERATOR_DIGEST" ]; then
+            echo "::error::Canonical plan digest mismatch — operator must re-dispatch with new digest"
+            echo "  fresh canonical: $FRESH_DIGEST"
+            echo "  operator:        $OPERATOR_DIGEST"
+            exit 1
+          fi
+          echo "Canonical plan digest match confirmed: $FRESH_DIGEST"
+      - name: Run apply sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AO_MA_11E_2B_APPLY_ACK: "1"
+        run: |
+          python3 scripts/ao_ma11e2b_v5_mirror_sync.py \
+            --apply \
+            --allow-network \
+            --confirmation "${{ inputs.confirmation }}" \
+            --accepted-dry-run-report ./fresh_dry_run_report.json \
+            --accepted-dry-run-report-digest "${{ inputs.accepted_dry_run_report_digest }}" \
+            --output apply_report.json
+      - name: Upload apply report
+        uses: actions/upload-artifact@v4
+        with:
+          name: apply_report
+          path: apply_report.json
+          retention-days: 365
+      - name: Post-drift verification
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ao_ma11e2_v5_mirror_drift.py \
+            --projection-manifest .claude/plans/v5_issue_projection.v1.json \
+            --github-token-env GH_TOKEN \
+            --allow-network \
+            --output post_drift_report.json
+      - name: Upload post-drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: post_drift_report
+          path: post_drift_report.json
+          retention-days: 365
