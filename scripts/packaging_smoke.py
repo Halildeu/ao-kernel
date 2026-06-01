@@ -67,10 +67,14 @@ def main() -> int:
         )
 
         # RI-7.4: wheel-installed scan/index/query fail-closed evidence.
+        # P0-GATE-1 (V5-PR #783, AO-MA-11G-2c-PUBLISH-FIX): evidence path moved
+        # `dist/` → `build/packaging-smoke/` so PyPI publish workflow's twine
+        # check + pypa/gh-action-pypi-publish never see non-distribution files
+        # in dist/. Distribution dir reserved for `.whl` + `.tar.gz` ONLY.
         _smoke_repo_intelligence_cli(
             venv_python=venv_python,
             outside_cwd=smoke_cwd,
-            evidence_out=repo_root / "dist" / "ri7-packaging-smoke-evidence.v1.json",
+            evidence_out=repo_root / "build" / "packaging-smoke" / "ri7-packaging-smoke-evidence.v1.json",
         )
 
     return 0
