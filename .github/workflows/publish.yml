@@ -41,6 +41,19 @@ jobs:
       - name: Run packaging smoke
         run: python scripts/packaging_smoke.py
 
+      - name: Strip non-distribution files from dist/
+        # P0-GATE-1 (V5-PR #783, Codex iter-2 absorb): defense-in-depth.
+        # When workflow_dispatch republishes an existing tag (e.g. v4.1.0),
+        # the tag's older packaging_smoke.py may still write evidence to
+        # `dist/`. Strip everything that is not a wheel or sdist BEFORE
+        # twine check + pypa publish so non-distribution files cannot leak
+        # into the PyPI upload set even if the tag predates the fix.
+        run: |
+          find dist -mindepth 1 -maxdepth 1 \
+            ! -name "*.whl" ! -name "*.tar.gz" \
+            -print -exec rm -rf {} + || true
+          ls -la dist/
+
       - name: Check
         # P0-GATE-1 fix (V5-PR #783): twine check glob MUST be distribution-specific.
         # `dist/*` matched packaging_smoke.py-emitted JSON evidence (ri7-packaging-smoke-evidence.v1.json)

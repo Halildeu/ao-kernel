@@ -119,6 +119,35 @@ def test_publish_workflow_has_workflow_dispatch_with_ref_input() -> None:
     )
 
 
+def test_publish_workflow_strips_non_distribution_files_from_dist() -> None:
+    """P0-GATE-1 (Codex iter-2 absorb): publish workflow MUST strip non-
+    distribution files from `dist/` BEFORE twine check + pypa publish.
+
+    When `workflow_dispatch` republishes an existing tag, the tag's older
+    `packaging_smoke.py` may still write evidence (JSON) to `dist/`. Defense-
+    in-depth: even if the tag predates the path-migration fix, the workflow
+    itself removes anything that is not `.whl` or `.tar.gz` from `dist/`
+    before twine + pypa publish. Without this step, existing-tag republish
+    via workflow_dispatch would reintroduce the InvalidDistribution failure.
+    """
+    content = _publish_workflow().read_text(encoding="utf-8")
+    # Multi-line shell scripts in YAML `run: |` blocks split `find ... \` across
+    # lines, so match with DOTALL. Require dist/ scope + both exclusion patterns
+    # + a delete action within a bounded window (no false-positive across job
+    # boundaries — cap at 800 chars to avoid spanning unrelated steps).
+    cleanup_block = re.search(
+        r"find\s+dist\b[\s\S]{0,800}?-name\s+['\"]\*\.whl['\"][\s\S]{0,800}?"
+        r"-name\s+['\"]\*\.tar\.gz['\"][\s\S]{0,800}?(?:-delete|-exec\s+rm)",
+        content,
+    )
+    assert cleanup_block, (
+        "publish.yml missing `find dist ! -name '*.whl' ! -name '*.tar.gz' "
+        "-delete` cleanup step — existing-tag republish via workflow_dispatch "
+        "would re-pollute dist/ with JSON evidence from the tag's older "
+        "packaging_smoke.py."
+    )
+
+
 def test_publish_workflow_has_pypi_environment() -> None:
     """Publish job MUST target `pypi` environment (trusted publishing OIDC scope)."""
     content = _publish_workflow().read_text(encoding="utf-8")

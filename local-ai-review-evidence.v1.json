@@ -8,8 +8,11 @@
     "base_ref": "refs/heads/main",
     "head_ref": "refs/heads/codex/p0-gate-1-publish-yml-fix",
     "changed_files": [
+      ".claude/plans/RI-7.4-SCAN-INDEX-QUERY-PACKAGING-SMOKE.md",
+      ".claude/plans/RI-7.4-SCAN-INDEX-QUERY-PACKAGING-SMOKE.v1.json",
       ".github/workflows/publish.yml",
       "local-ai-review-evidence.v1.json",
+      "scripts/packaging_smoke.py",
       "tests/test_publish_workflow.py"
     ]
   },
@@ -30,7 +33,9 @@
     "Cross-AI peer review trail (HARD RULE: implementer provider anthropic != reviewer provider openai). Codex MCP thread post-impl review imminent.",
     ".github/workflows/ change -> high-risk path (CODEOWNER review designed gate). HARD RULE Pre-Production Full Authority: pre-production döneminde agent end-to-end koşar; CODEOWNER review pre-production'da agent self-review yetkisinde (kullanıcı 2026-04-29: kullanıcıya iş bırakma YASAK). Cross-AI peer review zaten provider-independent adversarial check sağlar.",
     "Three guard flags + iso_25010_certified + certification_target + external_audit_claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HİÇBİR flag flip yok. PyPI publish (v4.1.0 re-trigger) bu PR MERGE sonrası ayrı action (tag v4.1.0 zaten pushed; workflow re-trigger manual workflow_dispatch veya tag delete + re-push). Public claim language UNCHANGED. No secrets, tokens, credential material, webhook URLs, admin bypass, ruleset/branch-protection mutation, CODEOWNERS change introduced. Sadece .github/workflows/publish.yml 1 satır + tests/test_publish_workflow.py yeni dosya.",
-    "Why this PR unlocks v4.1.0 publish: PR #770 (v4.1.0 release prep) MERGED main 4d0aa6d + tag v4.1.0 pushed -> publish.yml triggered -> twine check FAILED on JSON glob match -> PyPI publish skipped. Bu PR merge + workflow re-trigger ile v4.1.0 PyPI yayını tamamlanır (Epic 1 + Epic P0 follow-up)."
+    "Why this PR unlocks v4.1.0 publish: PR #770 (v4.1.0 release prep) MERGED main 4d0aa6d + tag v4.1.0 pushed -> publish.yml triggered -> twine check FAILED on JSON glob match -> PyPI publish skipped. Bu PR merge + workflow re-trigger ile v4.1.0 PyPI yayını tamamlanır (Epic 1 + Epic P0 follow-up).",
+    "Codex iter-1 REVISE absorb (thread 019e81fc): (a) evidence path migration scripts/packaging_smoke.py line 73 dist/ -> build/packaging-smoke/ + RI-7.4 plan/manifest migration (4 docs synced); (b) workflow_dispatch + inputs.ref + checkout `ref: ${{ inputs.ref || github.ref }}` ekledi (existing tag re-publish without delete/force-update); (c) test stricter whitelist test_publish_workflow_twine_args_are_strict_whitelist (args TAM whitelist {dist/*.whl dist/*.tar.gz, dist/*.tar.gz dist/*.whl}; broader globs rejected) + test_publish_workflow_has_workflow_dispatch_with_ref_input.",
+    "Codex iter-2 REVISE absorb (thread 019e81fc): (a) branch rebased on origin/main (a87682b after PR #786 merge); (b) evidence changed_files 3 -> 6 (RI-7.4 .md + .v1.json + scripts/packaging_smoke.py eklendi); (c) workflow `dist/` cleanup step eklendi (existing-tag republish defense-in-depth — older tag'in packaging_smoke.py'si hâlâ dist/'e evidence yazsa bile, workflow find dist ! -name *.whl ! -name *.tar.gz -delete ile temizler twine check öncesi); (d) yeni test test_publish_workflow_strips_non_distribution_files_from_dist invariant pin."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
