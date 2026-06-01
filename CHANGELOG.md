@@ -7,6 +7,105 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-06-01
+
+This release ships the **AO-MA-SPM master plan §Faz 1-7** — a 7-phase
+governed autonomous multi-AI orchestration program built between
+2026-05-30 and 2026-06-01 with Claude+Codex 3-AI cross-provider plan
+consensus + iter pattern. Every slice merged through cross-AI peer
+review (implementer provider ≠ reviewer provider HARD RULE) and the
+ao-release-gate autonomous merge executor. **No flag flips**: the
+three guard flags (`support_widening`, `production_platform_claim`,
+`live_adapter_execution`) remain `const false`; this release is the
+"narrow stable runtime" governance plane, not a production platform
+promotion.
+
+### Added
+
+#### AO-MA-SPM §Faz 1-7 (governed autonomous multi-AI program)
+
+- **AO-MA-11A-1** (PR #758): plan-consensus + single operator approval
+  gate. `ao-ma-plan-consensus-bundle.schema.v1.json` +
+  `ao-ma-plan-approval.schema.v1.json` + `plan_consensus.py` validator
+  (39 tests, 100% branch); GitHub Environment `ao-ma-plan-approval`
+  contract pinned.
+- **AO-MA-11E-1** (PR #760): GitHub-native operator tracking mirror
+  (core). `ao-ma-status.schema.v1.json` derived tracking SSOT +
+  `.claude/plans/ao_ma_status.v1.json` + `scripts/ao_ma_next.py`
+  (pure-read; load+validate+drift+next-action) + roadmap status doc
+  + plan doc (56 tests, 99% branch).
+- **AO-MA-11I-1** (PR #762): autonomous run governor.
+  `ao_kernel/orchestration/run_governor.py` — `decide(budget, state,
+  now_epoch, pause_present)` PURE decision core (PAUSE > config_invalid
+  > state_invalid > clock_anomaly > used>=cap breach > continue);
+  `is_paused(workspace_root)` PAUSE detection; `ao-ma-run-budget` +
+  `ao-ma-governor-decision` schemas (42 tests, 100% branch).
+- **AO-MA-11H-1** (PR #763): notification + escalation intent
+  pure-decision core. `ao_kernel/orchestration/notifier.py` —
+  `decide_notification(event)` + `_SEVERITY_MATRIX` (12 halt_reason +
+  6 lifecycle); `ao-ma-notification-intent` + `ao-ma-notification-
+  receipt` schemas; secret-safe machine redaction guard (108 tests,
+  99% branch).
+- **AO-MA-11F-1** (PR #765): test/suggestion/update evidence registers
+  pure compiler. `ao_kernel/orchestration/slice_evidence_registers.py`
+  — `build_test_report` + `build_suggestion_register` +
+  `build_update_ledger` + `build_closeout` + `verify_closeout_binding`
+  + `build_bundle_manifest` + `verify_bundle_manifest`; five new
+  schemas (test-report, suggestion-register, update-ledger,
+  closeout, evidence-bundle-manifest); SHA-bound tamper-evident audit
+  chain (49 tests, ~100% branch).
+- **AO-MA-4.6-1** (PR #766): native worker result import-only contract.
+  `ao_kernel/orchestration/native_worker_import.py` — operator/AI
+  produces `worker_result.v1.json` externally via a native interface
+  (`claude-cli` / `codex-cli` / `mavis-cli` / `local-file`); ao-kernel
+  imports + schema-validates the full artifact chain + provenance-
+  binds + atomically copies to canonical path. `live_adapter_execution
+  = false` preserved by AST import-allowlist (subprocess / socket /
+  network / LLM client unimportable). `NativeWorkerImportError` fatal
+  trust-boundary + reportable policy-invalid split; full cross-bind
+  semantic replay in `verify_import_binding` (105 tests, 86% branch).
+- **AO-MA-11G-1** (PR #767): SPM quality profile hardening (final
+  phase). Three new schemas (`ao-ma-adr` + `ao-ma-iso-25010-profile`
+  + `ao-ma-changelog-discipline`) + PURE module
+  `ao_kernel/orchestration/quality_profile.py` (parse_adr +
+  build_adr_index + load_iso_25010_profile +
+  check_changelog_compliance + helpers); top-level
+  `ao-kernel quality {validate-adr,build-index,validate-iso-profile,
+  check-changelog}` CLI; bundled ISO 25010:2023 reference profile
+  (35 sub-characteristics, NOT a certification claim); 5 ADRs (4
+  retrospective + 1 current); AO-MA tracking drift fix (72 tests,
+  89% branch).
+
+#### Master plan + governance
+
+- `.claude/plans/AO-MA-SPM-MASTER-PLAN.md` — uçtan uca program plan
+  (vision + principles + architecture + standards matrix + 7-phase
+  roadmap + bootstrap + slice lifecycle + DoD).
+- `.claude/plans/adr/` — ADR template + 5 ADRs documenting the
+  program-level decisions (AO-MA-SPM adoption, fail-closed +
+  recompute-not-trust invariant, native import import-only contract,
+  cross-AI implementer/reviewer distinct-provider HARD RULE,
+  Keep-a-Changelog per-PR discipline).
+- `ao_kernel/defaults/quality/iso-25010-profile.v1.json` — project
+  ISO/IEC 25010:2023 quality profile reference (8 characteristics ×
+  35 sub-characteristics; explicit applicable + measure_method per
+  sub-characteristic; `iso_25010_certified` + `certification_target`
+  + `external_audit_claim` const false).
+- `scripts/ao_release_gate_build_payload.py` — release-gate
+  `DEFAULT_ALLOWED_PATH_PREFIXES` extended with `CHANGELOG.md` +
+  `pyproject.toml` to unblock release lifecycle PRs (AO-MA-11G-2a,
+  PR #769); NOT semantic approval, only diff_scope hygiene.
+
+### Changed
+
+- `.claude/plans/ao_ma_status.v1.json` derived tracking index marks
+  11A/11E/11I/11H/11F/4.6/11G phases done and slices merged; current
+  phase advanced to `null` (program complete); `next_allowed_actions`
+  lists demand-driven follow-up slices (11A-2 GH Environment gate
+  wiring, 11E-2 GH Projects sync, 11G-2 CI/pre-commit changelog
+  enforcement + 4.6 dogfooding + retro ADR cross-AI revalidation +
+  allowlist widening for CHANGELOG/pyproject).
+
 ### Fixed
 
 - `gh-cli-pr` smoke helper now passes repo overrides to `gh repo view` as the
