@@ -80,6 +80,26 @@ DEFAULT_ALLOWED_PATH_PREFIXES = (
     # Do NOT allow a committed root supersession artifact here; that artifact
     # carries head_sha and must stay runtime-produced to avoid self-reference.
     "ao-ma-10-high-risk-reviews/",
+    # AO-MA-11G-2a release lifecycle widening (Codex thread 019e809a AGREE,
+    # CNS-20260601-003): Keep-a-Changelog [Unreleased]/[X.Y.Z] entry
+    # finalization and runtime dependency declaration (PEP 621
+    # ``project.dependencies`` + version pin) are repo-root metadata
+    # files that ship every minor/patch release. This allowlist entry
+    # resolves the ``diff_scope`` false-block on release lifecycle PRs;
+    # it is NOT semantic approval. ``support_widening`` /
+    # ``production_platform_claim`` / ``live_adapter_execution`` flags,
+    # branch protection, CODEOWNERS, and live adapter state still pass
+    # through their independent gate checks, evidence requirements, and
+    # tests. PR-B release prep MUST keep pyproject.toml semantic
+    # discipline: only ``project.version``, ``project.dependencies``,
+    # and (optionally) ``project.description``; ``project.scripts``,
+    # ``[build-system]``, ``[tool.setuptools.packages.find]``,
+    # ``[tool.setuptools.package-data]``, entrypoint and tool-config
+    # changes belong to a separate review lane. Future widening of
+    # this allowlist requires an explicit governance update (new
+    # ao-release-gate allowlist PR + plan doc + cross-AI review).
+    "CHANGELOG.md",
+    "pyproject.toml",
 )
 
 

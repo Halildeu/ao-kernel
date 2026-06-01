@@ -525,9 +525,7 @@ def test_build_payload_required_check_skipped_only_still_fails_closed(tmp_path: 
         ]
     )
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["required_checks"] == [
-        {"name": "lint", "status": "completed", "conclusion": "skipped"}
-    ]
+    assert payload["required_checks"] == [{"name": "lint", "status": "completed", "conclusion": "skipped"}]
 
 
 def test_build_payload_defaults_dangerous_flags_to_false(tmp_path: Path) -> None:
@@ -635,6 +633,41 @@ def test_build_payload_allowed_path_prefixes_includes_gitignore(tmp_path: Path) 
     mod.main(_build_argv(tmp_path, output=output))
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert ".gitignore" in payload["allowed_path_prefixes"]
+
+
+def test_build_payload_allowed_path_prefixes_includes_release_lifecycle_files(
+    tmp_path: Path,
+) -> None:
+    """`CHANGELOG.md` and `pyproject.toml` are pinned to the base-ref
+    allowlist so release lifecycle PRs (Keep-a-Changelog
+    [Unreleased]/[X.Y.Z] entry finalization + runtime dependency
+    declaration + semver bump) do not trigger
+    ao_release_gate_diff_out_of_scope.
+
+    Added by AO-MA-11G-2a (Codex thread 019e809a AGREE,
+    CNS-20260601-003) to unblock the v4.1.0 autonomous release lifecycle
+    after the AO-MA-SPM master plan §Faz 1-7 completed (7/7 phases
+    merged 2026-06-01). This allowlist entry is NOT semantic approval:
+    `support_widening` / `production_platform_claim` /
+    `live_adapter_execution` flags, branch protection, CODEOWNERS, and
+    live adapter state still pass through their independent gate
+    checks, evidence requirements, and tests. Future widening of this
+    allowlist requires an explicit governance update (new
+    ao-release-gate allowlist PR + plan doc + cross-AI review).
+
+    Regression guard: if a future refactor accidentally drops either
+    of these two release lifecycle paths, the next minor/patch release
+    PR will fail diff_scope; this test catches that drift at the
+    commit time of the payload builder change rather than at the
+    release PR's CI.
+    """
+    mod = _load_module()
+    output = tmp_path / "payload.json"
+    mod.main(_build_argv(tmp_path, output=output))
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    prefixes = payload["allowed_path_prefixes"]
+    assert "CHANGELOG.md" in prefixes
+    assert "pyproject.toml" in prefixes
 
 
 def test_build_payload_from_fork_is_carried(tmp_path: Path) -> None:
