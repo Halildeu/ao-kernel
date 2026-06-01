@@ -88,9 +88,7 @@ def _load_ao_ma10_evidence_bundle_schema() -> dict[str, Any]:
 def _load_ao_ma10_high_risk_supersession_schema() -> dict[str, Any]:
     """Load the bundled AO-MA-10 high-risk supersession evidence schema."""
 
-    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(
-        AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME
-    )
+    schema_path = resources.files("ao_kernel.defaults.schemas").joinpath(AO_MA10_HIGH_RISK_SUPERSESSION_SCHEMA_NAME)
     return cast(dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
 
 
@@ -114,7 +112,8 @@ GithubCheckConclusion = Literal["success", "failure", "neutral", "action_require
 ConclusionMode = Literal["shadow", "enforce"]
 DEFAULT_CONCLUSION_MODE: ConclusionMode = "shadow"
 
-# RG-CONCLUSION-SEMANTICS (Codex thread 019e65c3 absorb):
+# RG-CONCLUSION-SEMANTICS (Codex thread 019e65c3 absorb +
+# 019e830d extension):
 # Finding codes are categorized by the *operator action shape* they imply.
 # The legacy single check-run `ao-release-gate` collapses everything to
 # success/failure, which mis-signals "operator approve missing" as a CI
@@ -124,14 +123,44 @@ DEFAULT_CONCLUSION_MODE: ConclusionMode = "shadow"
 # A C-prime wrapper preserves the legacy job's required check name while
 # shifting review-missing semantics off the failure axis (see
 # wrapper_exit_code below).
+#
+# 019e830d extension — the action_required category was broadened from
+# "human review missing" to "operator/reviewer evidence action required":
+# two evidence-acceptance findings (``review_evidence_not_accepting``
+# and ``review_evidence_context_unverifiable``) are procedural, not
+# defects, and now classify as review_action. Structural evidence
+# defects (missing artifact, schema invalid, context unbound/forged)
+# remain failure. The merge-blocking allow=false decision is unchanged;
+# only the surfaced check-run conclusion and wrapper exit code shift.
 FindingConclusionKind = Literal["failure", "review_action", "stale"]
 
 # Findings that map to GitHub Checks API `action_required` conclusion.
 # This conclusion does NOT satisfy a required status check, so merge is
 # still blocked — but the UI signal is "needs attention", not "failing".
+#
+# Semantically these are *procedural* blockers — operator must submit a
+# CODEOWNER review on the current PR head, OR supply review evidence
+# that the gate can verify. Not a code defect, not a governance
+# violation, not a structural input error.
+#
+# NOTE — only the two evidence-acceptance findings are taxonomized as
+# review_action:
+#   - ``review_evidence_not_accepting`` — evidence file exists/parses
+#     but the gate does not currently accept the evidence shape for
+#     this PR's head SHA (procedurally fixable via CODEOWNER review).
+#   - ``review_evidence_context_unverifiable`` — context binding could
+#     not be verified at evaluation time (network/GitHub eventual
+#     consistency; procedurally fixable via re-run or CODEOWNER review).
+#
+# Sibling evidence findings remain ``failure`` (real defects):
+#   - ``review_evidence_missing`` (no evidence file at all)
+#   - ``review_evidence_schema_invalid`` (broken artifact)
+#   - ``review_evidence_context_unbound`` (forged / mismatched binding)
 _REVIEW_ACTION_FINDINGS: frozenset[str] = frozenset(
     {
         "ao_release_gate_high_risk_human_review_missing",
+        "ao_release_gate_review_evidence_not_accepting",
+        "ao_release_gate_review_evidence_context_unverifiable",
     }
 )
 
@@ -157,13 +186,16 @@ def finding_conclusion_kind(finding_code: str | None) -> FindingConclusionKind:
 
     Three kinds:
 
-    - ``review_action`` — the operator needs to submit a CODEOWNER review
-      on the current PR head. The blocker is procedural, not a code or
-      governance defect.
+    - ``review_action`` — the operator must submit a CODEOWNER review on
+      the current PR head, OR the supplied review evidence requires
+      procedural follow-up (not-accepting shape, context unverifiable at
+      evaluation time). The blocker is procedural, not a code or
+      governance defect. See ``_REVIEW_ACTION_FINDINGS`` for the exact
+      finding set and the rationale for which evidence sub-codes count.
     - ``stale`` — the PR branch needs rebase/update. Not a code defect.
     - ``failure`` — everything else: real governance violation, structural
       input error, secret boundary, scope mismatch, fork/trust violation,
-      and so on.
+      missing/forged/schema-invalid evidence artifact, and so on.
 
     A finding code of ``None`` returns ``failure`` defensively so unknown
     blockers never silently map to success.
@@ -203,10 +235,11 @@ def conclusion_for_findings(findings: list[str]) -> GithubCheckConclusion:
 def wrapper_exit_code(decision: ReleaseGateDecisionValue, findings: list[str]) -> int:
     """C-prime compatibility wrapper for the legacy ao-release-gate job.
 
-    Returns 0 (success) when the gate would allow merge OR when the only
-    blocker is a pending CODEOWNER review on the current PR head. Returns
-    1 (failure) for any real violation, stale branch, or mixed blocker
-    set.
+    Returns 0 (success) when the gate would allow merge OR when every
+    blocker in the set is a review-action finding (pending CODEOWNER
+    review on the current PR head OR procedurally-fixable review evidence
+    finding). Returns 1 (failure) for any real violation, stale branch,
+    or mixed blocker set containing at least one non-review-action code.
 
     This function preserves the legacy ``ao-release-gate`` job's required
     status check name while shifting review-missing semantics off the
@@ -216,9 +249,14 @@ def wrapper_exit_code(decision: ReleaseGateDecisionValue, findings: list[str]) -
     ``require_code_owner_reviews`` branch protection rule, not by this
     wrapper.
 
-    Critical: the wrapper relaxes ONLY the lone-review-action case. A
+    Critical: the wrapper relaxes ONLY the all-review-action case. A
     review_action blocker mixed with any other blocker still returns 1.
-    Real governance violations are never softened.
+    Real governance violations are never softened. Procedurally-fixable
+    evidence findings (``review_evidence_not_accepting``,
+    ``review_evidence_context_unverifiable``) count as review_action;
+    structural evidence defects (``review_evidence_missing``,
+    ``review_evidence_schema_invalid``, ``review_evidence_context_unbound``)
+    remain ``failure``.
     """
 
     if decision == ALLOW_AUTONOMOUS_MERGE_DECISION:
@@ -557,7 +595,7 @@ def _is_ao_ma10_low_risk_autonomous_smoke_path(path: str) -> bool:
         return False
     if not path.startswith(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):
         return False
-    relative = path[len(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX):]
+    relative = path[len(AO_MA10_LOW_RISK_AUTONOMOUS_SMOKE_PREFIX) :]
     return bool(relative) and "/" not in relative and relative.endswith(".md")
 
 
@@ -938,14 +976,8 @@ def _high_risk_supersession_authority_boundary_open(evidence: dict[str, Any]) ->
         if not isinstance(verdict, dict):
             continue
         if (
-            (
-                "release_authority" in verdict
-                and verdict.get("release_authority") != "ao-release-gate+github-ruleset"
-            )
-            or (
-                "ai_output_release_authority" in verdict
-                and verdict.get("ai_output_release_authority") is not False
-            )
+            ("release_authority" in verdict and verdict.get("release_authority") != "ao-release-gate+github-ruleset")
+            or ("ai_output_release_authority" in verdict and verdict.get("ai_output_release_authority") is not False)
             or ("secrets_recorded" in verdict and verdict.get("secrets_recorded") is not False)
             or ("support_widening" in verdict and verdict.get("support_widening") is not False)
             or ("production_platform_claim" in verdict and verdict.get("production_platform_claim") is not False)
@@ -1252,9 +1284,7 @@ def _evaluate_high_risk_supersession_checks(
         for provider_binding in provider_bindings
     )
     context_bound = (
-        binding is not None
-        and _high_risk_supersession_binding_matches(binding, context)
-        and provider_bindings_match
+        binding is not None and _high_risk_supersession_binding_matches(binding, context) and provider_bindings_match
     )
     context_check = (
         _pass(
@@ -1376,8 +1406,7 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             _pass(
                 "ao_ma10_authority_boundary",
                 detail=(
-                    "AO-MA-10l low-risk smoke keeps release authority with "
-                    "ao-release-gate plus the GitHub ruleset."
+                    "AO-MA-10l low-risk smoke keeps release authority with ao-release-gate plus the GitHub ruleset."
                 ),
             ),
         ]
@@ -1436,10 +1465,7 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             "production_platform_claim" in raw_guard_flags
             and raw_guard_flags.get("production_platform_claim") is not False
         )
-        or (
-            "live_adapter_execution" in raw_guard_flags
-            and raw_guard_flags.get("live_adapter_execution") is not False
-        )
+        or ("live_adapter_execution" in raw_guard_flags and raw_guard_flags.get("live_adapter_execution") is not False)
     )
     if authority_boundary_explicitly_open:
         return [
@@ -1582,17 +1608,13 @@ def _evaluate_ao_ma10_evidence_bundle_checks(
             authority_check,
         ]
 
-    repo_match = (
-        context["repository"] is not None and binding.get("repository_full_name") == context["repository"]
-    )
-    base_match = (
-        context["base_ref"] is not None
-        and _normalize_binding_ref(binding.get("base_ref")) == _normalize_binding_ref(context["base_ref"])
-    )
-    head_ref_match = (
-        context["head_ref"] is not None
-        and _normalize_binding_ref(binding.get("head_ref")) == _normalize_binding_ref(context["head_ref"])
-    )
+    repo_match = context["repository"] is not None and binding.get("repository_full_name") == context["repository"]
+    base_match = context["base_ref"] is not None and _normalize_binding_ref(
+        binding.get("base_ref")
+    ) == _normalize_binding_ref(context["base_ref"])
+    head_ref_match = context["head_ref"] is not None and _normalize_binding_ref(
+        binding.get("head_ref")
+    ) == _normalize_binding_ref(context["head_ref"])
     head_match = context["head_sha"] is not None and binding.get("head_sha") == context["head_sha"]
     digest_match = binding.get("diff_digest") == diff_digest(context["changed_paths"])
     count_match = binding.get("changed_files_count") == len(context["changed_paths"])
@@ -1890,12 +1912,10 @@ def build_ao_release_gate_decision(
 
     decision_generated_at = generated_at or utc_timestamp()
     context = extract_ao_release_gate_context(payload, gpp_status)
-    high_risk_supersession_checks, high_risk_supersession_valid = (
-        _evaluate_high_risk_supersession_checks(
-            high_risk_supersession_evidence,
-            context,
-            decision_generated_at=decision_generated_at,
-        )
+    high_risk_supersession_checks, high_risk_supersession_valid = _evaluate_high_risk_supersession_checks(
+        high_risk_supersession_evidence,
+        context,
+        decision_generated_at=decision_generated_at,
     )
     checks = [
         _check(
@@ -2008,9 +2028,7 @@ def build_ao_release_gate_decision(
         *high_risk_supersession_checks,
         _check(
             "path_sensitive_human_review",
-            _path_sensitive_human_review_satisfied(
-                context, high_risk_supersession_valid=high_risk_supersession_valid
-            ),
+            _path_sensitive_human_review_satisfied(context, high_risk_supersession_valid=high_risk_supersession_valid),
             finding_code="ao_release_gate_high_risk_human_review_missing",
             pass_detail=(
                 "The path-sensitive human-review gate is inactive, no high-risk paths changed, "
