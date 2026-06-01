@@ -67,6 +67,58 @@ def test_publish_workflow_no_naked_dist_glob() -> None:
     )
 
 
+def test_publish_workflow_twine_args_are_strict_whitelist() -> None:
+    """P0-GATE-1 (Codex iter-1 absorb): `twine check` args MUST be the strict
+    whitelist `dist/*.whl dist/*.tar.gz` ONLY — nothing more, nothing less.
+
+    Stronger than `no_naked_dist_glob`: rejects ANY broader glob like
+    `dist/*.*` (would match JSON), `dist/**` (recursive), `dist/` (entire dir),
+    or extra unrelated args. Pin exactly the wheel + sdist whitelist so future
+    drift cannot reintroduce JSON-matching surface.
+    """
+    content = _publish_workflow().read_text(encoding="utf-8")
+    twine_lines = [line for line in content.splitlines() if "twine check" in line and not line.lstrip().startswith("#")]
+    assert twine_lines, "no executable `twine check` line found in publish.yml"
+    for line in twine_lines:
+        # Capture everything after `twine check` on the executable line.
+        # Strip leading YAML scalar prefix (e.g. `run: `).
+        idx = line.find("twine check")
+        args = line[idx + len("twine check") :].strip()
+        # The strict whitelist (both globs in either order).
+        allowed = {"dist/*.whl dist/*.tar.gz", "dist/*.tar.gz dist/*.whl"}
+        assert args in allowed, (
+            f"publish.yml `twine check` args NOT in strict whitelist:\n"
+            f"  got: {args!r}\n"
+            f"  allowed: {sorted(allowed)!r}\n"
+            f"Any broader glob (dist/*, dist/*.*, dist/**) matches non-distribution files "
+            f"(e.g. JSON evidence) and causes InvalidDistribution on PyPI publish."
+        )
+
+
+def test_publish_workflow_has_workflow_dispatch_with_ref_input() -> None:
+    """P0-GATE-1 (Codex iter-1 absorb): publish workflow MUST expose
+    `workflow_dispatch` with optional `ref` input for manual re-trigger.
+
+    When an existing tag's first publish failed (as v4.1.0 did 2026-06-01)
+    and the `archive/**` ruleset blocks tag delete/force-update, the only
+    safe re-publish path is `workflow_dispatch` with `inputs.ref` pointing
+    at the existing tag. The checkout step MUST honor that input.
+    """
+    content = _publish_workflow().read_text(encoding="utf-8")
+    assert "workflow_dispatch:" in content, (
+        "publish.yml missing `workflow_dispatch:` — manual re-trigger path absent; "
+        "failed-tag re-publish blocked when `archive/**` ruleset prevents tag delete."
+    )
+    assert re.search(r"inputs:\s*\n\s*ref:", content), (
+        "publish.yml `workflow_dispatch` missing `inputs.ref` — operator cannot specify the tag/commit to re-publish."
+    )
+    # The checkout step must use that input (not hardcoded github.ref only).
+    assert re.search(r"ref:\s*\$\{\{\s*inputs\.ref\s*\|\|", content), (
+        "publish.yml checkout step does NOT honor `inputs.ref` — manual dispatch "
+        "with a ref input would still checkout the dispatching branch HEAD."
+    )
+
+
 def test_publish_workflow_has_pypi_environment() -> None:
     """Publish job MUST target `pypi` environment (trusted publishing OIDC scope)."""
     content = _publish_workflow().read_text(encoding="utf-8")

@@ -3,6 +3,16 @@ name: Publish to PyPI
 on:
   push:
     tags: ["v*"]
+  # P0-GATE-1 (V5-PR #783, Codex iter-1 absorb): manual dispatch path for
+  # re-trigger when an existing tag's first publish attempt failed and the
+  # `archive/**` ruleset blocks tag delete/force-update. Default ref = main;
+  # operator may pass explicit tag ref via input.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish (defaults to triggering branch HEAD; pass a tag like v4.1.0 to re-publish that tag)"
+        required: false
+        default: ""
 
 jobs:
   publish:
@@ -13,6 +23,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          # P0-GATE-1 (V5-PR #783): for workflow_dispatch w/ ref input,
+          # checkout the operator-specified ref (e.g. v4.1.0 tag) so we
+          # publish the intended commit, not the dispatch branch head.
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6

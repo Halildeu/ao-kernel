@@ -42,7 +42,7 @@ extended flow:
    so the smoke proves the wheel-installed surface is reachable.
 4. Each scenario asserts the documented exit code + stderr contract, and a
    schema-valid JSON evidence artifact
-   (`dist/ri7-packaging-smoke-evidence.v1.json`) is written for downstream
+   (`build/packaging-smoke/ri7-packaging-smoke-evidence.v1.json`) is written for downstream
    review.
 
 A supplementary in-process subprocess test
