@@ -1,18 +1,18 @@
 {
   "schema_version": "local-ai-review-evidence.v1",
   "repo": "Halildeu/ao-kernel",
-  "work_package": "EPIC-5-E5-3A-DISTRIBUTED-TRACING-PRIMITIVES",
+  "work_package": "EPIC-6-E6-1A-SBOM-GENERATION",
   "implementer": { "agent": "claude", "provider": "anthropic" },
   "reviewer": { "agent": "codex", "provider": "openai", "verdict": "AGREE" },
   "scope_reviewed": {
     "base_ref": "refs/heads/main",
-    "head_ref": "refs/heads/codex/epic-5-e5-3-distributed-tracing",
+    "head_ref": "refs/heads/codex/epic-6-e6-1-sbom-cyclonedx",
     "changed_files": [
-      ".claude/plans/EPIC-5-E5-3-DISTRIBUTED-TRACING.md",
-      "ao_kernel/telemetry.py",
-      "ao_kernel/tracing.py",
+      ".claude/plans/EPIC-6-E6-1-SBOM-GENERATION.md",
       "local-ai-review-evidence.v1.json",
-      "tests/test_tracing.py"
+      "pyproject.toml",
+      "scripts/generate_sbom.py",
+      "tests/test_sbom_generation.py"
     ]
   },
   "checks_considered": [
@@ -26,12 +26,13 @@
     { "name": "cross_provider_review", "status": "pass" }
   ],
   "findings": [
-    "V5 Epic 5 E-5-3a: W3C trace context propagation primitives (helper-only sub-slice). ao_kernel/tracing.py 281 satir (lazy OTEL + no-op fallback + 7 public API: inject_trace_context, extract_trace_context, attach_context/detach_context/traced_context, session_baggage context manager, get_current_trace_id/span_id, make_link cross-trace reference, get_session_baggage). ao_kernel/telemetry.py span(links=None) backward-compat extension. Sole facade: opentelemetry.{trace,context,propagate,baggage} import'lari yalniz tracing.py veya telemetry.py uzerinden.",
-    "Codex plan-time thread 019e8360 iter-1 REVISE (sub-slice split + 10 must-close revize absorb): E-5-3a helper-only / E-5-3b consultation integration ayri PR; inject aktif span yokken traceparent fabrikasyon YOK (W3C standart); tracestate opsiyonel; session_baggage context manager (token-less setter YASAK); make_link cross-trace reference (parent-context propagation DEGIL); plan doc 'production-grade' marketing YOK + 3 guard flag false; baggage key 'ao.session.id' (noktali namespace); make_link kind parameter YOK (custom attribute 'ao.link.kind'); ayri lazy cache; attach/detach context manager; test strategy NonRecordingSpan + SpanContext + set_span_in_context (SDK provider gerek YOK).",
-    "25 invariant test pass local: is_otel_available smoke (2) + inject/extract no-op fallback (4) + inject no active span behavior (2) + inject/extract roundtrip synthetic context (1) + traced_context attach/detach symmetry (2) + session baggage roundtrip + reject empty/whitespace/non-string (5) + session baggage no-op OTEL absent (1) + session_baggage_key constant (1) + current trace/span id None outside span (1) + make_link validation + no-op + Link object (6). ruff + mypy --ignore-missing-imports clean.",
-    "Out-of-scope E-5-3b follow-up PR: consultation request/response schema trace_context field (optional) + producer/consumer trace propagation + canonical store trace metadata + same-trace_id roundtrip integration tests. E-5-3a primitives only — multi-session correlation end-to-end behavior YOK; sadece API testlenebilir.",
-    "Public claim discipline: plan doc 'production-grade distributed tracing' marketing claim YOK; 'primitives only' qualifier; 3 guard flag (support_widening + production_platform_claim + live_adapter_execution) const false korunur. Bu PR HICBIR flag flip yok.",
-    "Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8360 plan-time)."
+    "V5 Epic 6 E-6-1a: SBOM generation sub-slice (CycloneDX 1.5 JSON). pyproject.toml [sbom] extra -> cyclonedx-bom>=4.0.0 (release/build tool, NOT runtime dep). scripts/generate_sbom.py pure-stdlib + thin CLI (isolated target venv pattern + cyclonedx-py invocation + 9-invariant validate_sbom + dist/ segment reject anywhere in resolved path).",
+    "Codex plan-time thread 019e8337 iter-1 REVISE + ready_for_impl=true (PR sirasi bolundu E-6-1a script+test+plan / E-6-1b workflow integration ayri PR). Architecture absorb: isolated target venv (wheel installed into fresh tempdir venv; cyclonedx runs from calling env against target venv python; generator NEVER leaks into SBOM components), CycloneDX 1.5 const-pinned, dist/ output rejected, CLI form pinned for cyclonedx-bom 4.x->5.x migration.",
+    "Codex post-impl review thread 019e8337 iter-1 REVISE -> iter-2 REVISE -> iter-3 AGREE + ready_to_merge:true. 3 medium absorb (nested dist/ bypass + plan doc dist/ example + command-shape test gap): _output_path_contains_dist_segment helper any-depth reject + 4 test invariant; plan doc release example build/sbom/; subprocess command-shape unit tests pin _install_wheel (--isolated, --no-input, --no-cache-dir, --disable-pip-version-check, --quiet, --no-deps YOK) + _run_cyclonedx (sys.executable -m cyclonedx_py environment <TARGET_PY> --output-format JSON --schema-version 1.5 --output-file <OUT>) + custom schema propagation + kwargs check/capture_output hardening.",
+    "5-invariant validate_sbom: bomFormat + specVersion + non-empty components + ao-kernel visible (component OR metadata.component) + generator-leak guard (cyclonedx-bom / cyclonedx-python-lib / cyclonedx-py case-insensitive). 14 -> 20 -> 21 invariant tests local.",
+    "Out-of-scope (E-6-1b follow-up PR): .github/workflows/publish.yml release-time integration; GitHub Release artifact upload (build/sbom/ NOT dist/); test_publish_workflow.py invariant tests. Imzalama (sigstore/cosign) Epic 6 follow-up veya Epic 9 final promotion.",
+    "Tests: 21 pass + 1 skip (e2e smoke gated on cyclonedx_py); ruff + mypy --ignore-missing-imports clean.",
+    "Three guard flags + production claim + iso/audit claim ALL const false korunur. live_adapter_execution=false; support_widening=false; production_platform_claim=false. Bu PR HICBIR flag flip yok. Cross-AI peer review trail (HARD RULE implementer Anthropic Claude != reviewer OpenAI Codex; thread 019e8337 plan-time + post-impl)."
   ],
   "secrets_recorded": false,
   "live_adapter_execution": false,
